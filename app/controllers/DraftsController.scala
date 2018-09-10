@@ -156,10 +156,16 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val draftWithNr = dao.readWriteTransaction { tx =>
-      SECURITY; SHOULD // DoS: Count num old, allow max 100 new per month? and max 1 000 in total?
-      // And *5 if >= regular? // And max post length.
       val draftWithNr =
         if (draft.draftNr != NoDraftNr) draft else {
+          // Stop DoS attacks: don't let people create an unlimited number of drafts. For now,
+          // count drafts the last week, max 30 per day?
+          COULD_OPTIMIZE // load only the Xth draft?
+          val oldDrafts = tx.listDraftsRecentlyEditedFirst(requester.id, limit = 7 * 30)
+          oldDrafts.lastOption foreach { oldDraft =>
+            val daysOld = now.daysSince(oldDraft.createdAt)
+            throwForbiddenIf(daysOld < 7, "TyE7KWBKP32", "Saving too many drafts")
+          }
           val nr = tx.nextDraftNr(requester.id)
           draft.copy(draftNr = nr)
         }
@@ -188,7 +194,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // look up the page title and incl in the response.
     val (drafts: immutable.Seq[Draft], pagePostNrsByPostId: Map[PostId, PagePostNr], pageIds) =
         dao.readOnlyTransaction { tx =>
-      val ds = tx.listDraftsRecentlyEditedFirst(userId)
+      val ds = tx.listDraftsRecentlyEditedFirst(userId, limit = 500)
       val postIds = ds.flatMap(_.forWhat.postId).toSet
       val pagePostNrsByPostId = tx.loadPagePostNrsByPostIds(postIds)
       val pageIdsToReplyTo = ds.flatMap(_.forWhat.pageId).toSet

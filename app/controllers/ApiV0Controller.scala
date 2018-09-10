@@ -30,6 +30,15 @@ import play.api.mvc._
 import scala.util.Try
 import Utils.OkXml
 
+
+// LEFT TO REVIEW:
+//     da18893 Add change password link.  — broken, bug.
+//     257b02d Bugfix: Show terms and privacy, if signing up for must-login-to-read site.
+//DONE 3664a17 Bug fixes: Watchbar menu item, and auto play videos: muted attr.
+//DONE 61d653d Add an Atom feed for all new posts.
+
+
+
 // How test API?
 //  https://medium.com/javascript-scene/why-i-use-tape-instead-of-mocha-so-should-you-6aa105d8eaf4
 //  looks nice:  https://github.com/vesln/hippie
@@ -44,21 +53,22 @@ import Utils.OkXml
 //  - API docs that can be generated to interactive HTML, so can click-&-edit-run-examples
 //  - API docs that can be parsed into JS and auto-tested by api-e2e-test-suite
 //
-
-
 // docs how? Slate? like these use:
 // https://developers.giosg.com/http_api.html#list-external-subscriptions-for-scheduled-email-report
+//
+
 
 class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.{security, globals}
+  import play.api.Logger
 
 
   def getFromApi(apiEndpoint: String): Action[Unit] =
         GetActionRateLimited(RateLimits.NoRateLimits) { request: GetRequest =>
 
-    import request.{queryString, dao, theRequester => requester}
+    import request.{siteId, queryString, dao, theRequester => requester}
     lazy val now = context.globals.now()
 
     def getOnly(queryParam: String): Option[String] =
@@ -70,22 +80,44 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
     apiEndpoint match {
-      // ex: http://localhost/-/v0/sso-create-session?oneTimeSecret=nnnnn
-      case "sso-create-session" =>
+      // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
+      case "sso-login" =>
         val oneTimeSecret = getOnlyOrThrow("oneTimeSecret", "TyE7AKK25")
-        val thenGoToUnsafe = getOnly("thenGoTo")
-        val anyUserId = dao.redisCache.getOneTimeSsoLoginUserIdDestroySecret(oneTimeSecret)
+        val anyUserId = dao.redisCache.getSsoLoginUserIdDestroySecret(oneTimeSecret)
         val userId = anyUserId getOrElse {
-          throwForbidden("TyE4AKBR02", "Bad or expired one time secret")
+          throwForbidden("TyE4AKBR02", "Non-existing or expired or already used one time secret")
         }
         val user = dao.getTheMember(userId)
-        dao.pubSub.userIsActive(request.siteId, user, request.theBrowserIdData)
-        val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, user.id)
-        // Remove server origin, so Mallory cannot somehow redirect to a phishing website.
+        dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
+        val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
+
+        // Remove server origin, so one cannot somehow get redirected to a phishing website
+        // (if one follows a link with an "evil" go-next url param to the SSO login page,
+        // which then redirects to this endpoint with that bad go-next url).
+        val thenGoToUnsafe = getOnly("thenGoTo")
         val thenGoTo = thenGoToUnsafe.flatMap(Prelude.stripOrigin) getOrElse "/"
+
         TemporaryRedirect(thenGoTo)
             .withCookies(sidAndXsrfCookies: _*)
       case "feed" =>
+        /*
+        https://server.address/-/v0/recent-posts.rss
+        https://server.address/-/v0/feed?
+            type=atom&
+            include=replies,chatMessages,topics&
+            limit=10&
+            minLikeVotes=1&
+            path=/some/category/or/page
+
+        Just going to:  https://www.talkyard.io/-/feed  = includes all new posts, type Atom, limit 10 maybe.
+
+          /page/path.atom  = new replies to that page
+          /directory/ *.atom  = new topics,
+          /directory/ **.atom  = new topics in all deeper dirs, and (?) use:
+          /directory*.atom  = new topics, and (?) use:
+            dao.listPagePaths(
+              Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
+         */
         val atomXml = dao.getAtomFeedXml()
         OkXml(atomXml, "application/atom+xml; charset=UTF-8")
       case _ =>
@@ -97,56 +129,92 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
   def postToApi(apiEndpoint: String): Action[JsValue] =
         PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
 
-    import request.{body, dao, theRequester => requester}
+    import request.{siteId, body, dao, theRequester => requester}
     lazy val now = context.globals.now()
 
     throwForbiddenIf(!request.isViaApiSecret,
-        "TyEAPI0SYSBT", "The API may be called only via Basic Auth and an API secret")
+        "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
     apiEndpoint match {
-      case "sso-upsert-user" =>
+      case "sso-upsert-user-generate-login-secret" =>
         val extUser = Try(ExternalUser(
-          externalId = (body \ "externalUserId").as[String],
-          primaryEmailAddress = (body \ "primaryEmailAddress").as[String],
+          externalId = (body \ "externalUserId").as[String].trim,
+          primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
-          username = (body \ "username").asOpt[String],
-          fullName = (body \ "fullName").asOpt[String],
-          avatarUrl = (body \ "avatarUrl").asOpt[String],
-          aboutUser = (body \ "aboutUser").asOpt[String],
+          username = (body \ "username").asOptStringNoneIfBlank,
+          fullName = (body \ "fullName").asOptStringNoneIfBlank,
+          avatarUrl = (body \ "avatarUrl").asOptStringNoneIfBlank,
+          aboutUser = (body \ "aboutUser").asOptStringNoneIfBlank,
           isAdmin = (body \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (body \ "isModerator").asOpt[Boolean].getOrElse(false))) getOrIfFailure { ex =>
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)
           }
 
-        request.dao.readWriteTransaction { tx =>
+        // where check email? Validation.checkEmail(primaryEmailAddress)
+
+        val user = request.dao.readWriteTransaction { tx =>
           def makeName(): String = "unnamed_" + (nextRandomLong() % 1000)
           val usernameToTry = extUser.username.orElse(extUser.fullName).getOrElse(makeName())
           val okayUsername = User.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
             tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
 
-          // Look up by external id, if found, login.
+          // Look up by external id. If found, login.
           // Look up by email. If found, reuse account, set external id, and login.
           // Else, create new user with specified external id and email.
 
-          val user = tx.loadMemberInclDetailsByExternalId(extUser.externalId).map({ user =>
+          tx.loadMemberInclDetailsByExternalId(extUser.externalId).map({ user =>
             // TODO update fields, if different.
-            // email:  UserController.scala:  setPrimaryEmailAddresses
+            if (extUser.primaryEmailAddress != user.primaryEmailAddress) {
+              // TODO later: The external user's email address has been changed? Update this Talkyard
+              // user's email address too, then.  —  However, would be weird,
+              // if there already is another external user mirror account, with that email??
+              val anyUser2 = tx.loadMemberByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
+              anyUser2 foreach { user2 =>
+                throwForbidden("TyE2ABK40", o"""s$siteId: Cannot update the email address of
+                    Talkyard user ${user.idSpaceName} with external id
+                    '${extUser.externalId}' to match the external user's new email address
+                    ('${extUser.primaryEmailAddress}'): The address is already in use
+                    by other Talkyard user ${user2.idSpaceName}""")
+              }
+
+              // TODO also check non-primary addrs. (5BK02A5)
+            }
+            // email:  UserController.scala:  setPrimaryEmailAddresses (don't forget to upd email table)
             // mod / admin:  UserDao:  editMember
             // name etc:  UserDao:  saveAboutMemberPrefs
+            // For now, just generate a login secret; don't sync users:
             user
-          }) orElse tx.loadMemberInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
+          }) orElse
+                // TODO what about looking up by secondary email addresses, or not?
+                // Don't do that? They aren't supposed to be used for login. And do require
+                // that there isn't any clash here: (5BK02A5)?
+                tx.loadMemberInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
+            dieIf(user.externalId is extUser.externalId, "TyE7AKBR2")
             throwForbiddenIf(user.externalId.isDefined,
-                "TyE5AKBR20", "Another external user has this email address")
-            // Apparently this Talkyard user was created "long ago", and now we're'
+                "TyE5AKBR20", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is already
+                  in use by Talkyard user ${user.idSpaceName} which mirrors
+                  external user '${user.externalId}' - cannot create a mirror account for
+                  external user '${extUser.externalId} that use that same email address""")
+
+            // Apparently this Talkyard user was created "long ago", and now we're
             // single-sign-on logging in as that user, for the first time. Connect this old account
             // with the external user account, and thereafter it'll get looked up via external
-            // id instead.
+            // id instead (in the code block just above).
+            Logger.info(o"""s$siteId: Connecting Talkyard user ${user.idSpaceName}
+                to external user ${extUser.externalId}, because of matching
+                email address: ${extUser.primaryEmailAddress}, and
+                the Talkyard user doesn't currently mirror any external user.
+                """)
+
             val updatedUser = user.copyWithExternalData(extUser)
             dieIf(updatedUser == user, "TyE4AKBRE2")
             tx.updateMemberInclDetails(updatedUser)
             updatedUser
           }) getOrElse {
-            // Create new account.
+            // Create a new Talkyard user account, for this external user.
+            // (There's no mirror account with a matching external id or email address.)
+            Logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,
+                for external user ${extUser.externalId}...""")
             val userData = // [5LKKWA10]
               NewPasswordUserData.create(
                 name = extUser.fullName,
@@ -166,12 +234,12 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
               }
             dao.createUserForExternalSsoUser(userData, request.theBrowserIdData, tx)
           }
-
-          val secret = nextRandomString()
-          dao.redisCache.saveOneTimeSsoLoginSecret(secret, user.id)
-          OkApiJson(Json.obj(
-            "createSessionSecret" -> secret))
         }
+
+        val secret = nextRandomString()
+        dao.redisCache.saveOneTimeSsoLoginSecret(secret, user.id)
+        OkApiJson(Json.obj(
+          "ssoLoginSecret" -> secret))
 
       case _ =>
         throwForbidden("TyEAPIPST404", s"No such API endpoint: $apiEndpoint")

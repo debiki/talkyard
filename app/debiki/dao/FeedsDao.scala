@@ -19,13 +19,10 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki._
 import debiki.EdHttp.throwNotFound
-import scala.xml
 
 
-/** Loads and saves settings for the whole website, a section of the website (e.g.
-  * a forum or a blog) and individual pages.
+/** Generates and caches Atom feeds for recent comments or recent topics.
   */
 trait FeedsDao {
   self: SiteDao =>
@@ -45,31 +42,31 @@ trait FeedsDao {
       feedKey,
       orCacheAndReturn = {
         Some(loadAtomFeedXml())
-      }) getOrDie "TyE5KBRQ0"
+      }) getOrDie "TyE5KBR7JQ0"
   }
 
 
   def loadAtomFeedXml(): xml.Node = {
     // ----- Dupl code [4AKB2F0]
     val postsInclForbidden = readOnlyTransaction { tx =>
-      tx.loadPostsSkipTitles(limit = 20, OrderBy.MostRecentFirst, byUserId = None)
+      tx.loadPostsSkipTitles(limit = 25, OrderBy.MostRecentFirst, byUserId = None)
     }
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)
-    val posts = for {
+    val postsOneMaySee = for {
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
       if maySeePostUseCache(post, pageMeta, user = None, maySeeUnlistedPages = false)._1
     } yield post
-    val pageIds = posts.map(_.pageId).distinct
+    val pageIds = postsOneMaySee.map(_.pageId).distinct
     val pageStuffById = getPageStuffById(pageIds)
     // ----- /Dupl code
 
-    if (posts.isEmpty)
-      throwNotFound("TyENOFEED", "No posts found, or they are private")
+    if (postsOneMaySee.isEmpty)
+      throwNotFound("TyE0FEEDPOSTS", "No posts found, or they are private")
 
     val origin = theSiteOrigin()
-    debiki.AtomFeedXml.renderFeed(origin, posts, pageStuffById)
+    debiki.AtomFeedXml.renderFeed(origin, postsOneMaySee, pageStuffById)
   }
 
 

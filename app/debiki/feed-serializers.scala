@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -66,8 +66,8 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
 
       // Convert HTML to XHTML.
       // Atom parsers wants xml — they apparently choke on unclosed html tags.
-      // Need to add closing tags, e.g. <p>...</p>, and convert entitiest like &nbsp; to &#xa0;
-      // (&nbsp; is not valid xhtml).
+      // Need to add closing tags, e.g. <p>...</p>, and convert entities like &nbsp; to &#xa0;
+      // — &nbsp; is not valid xhtml.
       // (Could strip tag ids and class names? They make no sense in atom feeds?
       // No CSS or JS that cares about them anyway?)
       val jsoupDoc = Jsoup.parse(post.approvedHtmlSanitized getOrElse "<i>Text not yet approved</i>")
@@ -112,7 +112,7 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
     }
 
     val feedUrl = hostUrl + routes.ApiV0Controller.getFromApi("feed")
-    val feedName = stripScheme(hostUrl)
+    val feedName = stripSchemeSlashSlash(hostUrl)
     val feedUpdatedAt = posts.headOption.map(_.createdAt).getOrElse(new ju.Date)
 
      // About the tags:

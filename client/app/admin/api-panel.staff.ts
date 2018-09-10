@@ -73,7 +73,8 @@ export const ApiPanel = createFactory({
               r.th({}, "Deleted"),
               r.th({}, "Capabilities"),
               r.th({}, "Value and actions")),
-            r.tbody({}, elems))
+            r.tbody({},
+              elems))
         : r.p({ className: 'e_NoApiSecrets' }, "No API secrets.");
 
     const createSecretButton = Button({ onClick: this.createSecret }, "Create new secret");
@@ -104,11 +105,14 @@ const ApiSecretItem = createComponent({
 
   deleteSecret: function() {
     const secret: ApiSecret = this.props.apiSecret;
-    Server.deleteApiSecrets([secret.nr]);  // for now: refresh page to view deleted status
+    Server.deleteApiSecrets([secret.nr], () => {
+      // For now: Needs to refresh page to view deleted status.
+    });
   },
 
   render: function() {
     const secret: ApiSecret = this.props.apiSecret;
+    // Don't show secrets that still works, unless one clicks Show — so less risk that they get exposed.
     const shallShow = this.state.showValue || secret.isDeleted;
     const valueOrShowButton = shallShow ? secret.secretValue :
         Button({ onClick: () => this.setState({ showValue: true }) }, "Show");
@@ -120,7 +124,7 @@ const ApiSecretItem = createComponent({
       r.td({}, secret.nr),
       r.td({}, "Any"),  // currently may call API using any user id
       r.td({}, timeExact(secret.createdAt)),
-      r.td({}, secret.deletedAt ? rFragment("Yes, ", timeExact(secret.deletedAt)) : "No"),
+      r.td({}, secret.isDeleted ? rFragment("Yes, ", timeExact(secret.deletedAt)) : "No"),
       r.td({}, "Do anything"), // secret.secretType is always for any user
       r.td({}, deleteButton, valueOrShowButton));
   }

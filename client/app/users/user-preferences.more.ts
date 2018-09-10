@@ -125,6 +125,10 @@ const AboutGuest = createComponent({
     return {};
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   savePrefs: function(event) {
     event.preventDefault();
     const guest: Guest = this.props.guest;
@@ -134,6 +138,7 @@ const AboutGuest = createComponent({
     };
     if (!prefs.name) return;
     Server.saveGuest(prefs, () => {
+      if (this.isGone) return;
       this.setState({ savingStatus: 'Saved' });
     });
     this.setState({ savingStatus: 'Saving' });
@@ -413,6 +418,10 @@ export const Privacy = createFactory({
     };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   savePrivacyPrefs: function(event) {
     event.preventDefault();
     const seeActivityMinTrustLevel = this.state.hideActivityForAll ? TrustLevel.CoreMember : (
@@ -516,6 +525,7 @@ export const Account = createFactory({
     this.setState({ showAddEmailInput: false, isAddingEmail: true });
     const user: MemberInclDetails = this.props.user;
     Server.addEmailAddresses(user.id, this.state.newEmailAddr, (response: UserAccountResponse) => {
+      if (this.isGone) return;
       this.setState({ isAddingEmail: false, doneAddingEmail: true });
       this.setState(response);
     });
@@ -531,6 +541,7 @@ export const Account = createFactory({
   removeEmailAddress: function(emailAddress: string) {
     const user: MemberInclDetails = this.props.user;
     Server.removeEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
+      if (this.isGone) return;
       // Remove the check-your-inbox message, in case the user remoed the email just added.
       this.setState({ doneAddingEmail: undefined, ...response });
     });
@@ -539,6 +550,7 @@ export const Account = createFactory({
   setPrimary: function(emailAddress: string) {
     const user: MemberInclDetails = this.props.user;
     Server.setPrimaryEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
+      if (this.isGone) return;
       this.setState(response);
       this.props.reloadUser();
     });
@@ -573,7 +585,7 @@ export const Account = createFactory({
             // If deleted oneself, navigate outside React-Router, so the page will reload
             // and the browser forgets all in-mem things about the current user.
             const newPath = UsersRoot + anonUsername;
-            if (isMe) {
+            if (isMe || this.isGone) {
               window.location.assign(newPath);
             }
             else {

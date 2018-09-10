@@ -33,10 +33,10 @@ POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
 POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
-#GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
-#POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
-#GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
-# also: /-/v0/login-sso via the API
+#GET   /-/login-openid       controllers.LoginWithOpenIdController.loginGet
+#POST  /-/login-openid       controllers.LoginWithOpenIdController.loginPost
+#GET   /-/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
+# also: /-/v0/sso-login via ApiV0Controller
 
 GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
 GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
@@ -302,6 +302,5 @@ GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)
-
 GET   /*path                    controllers.ViewPageController.viewPage(path)
 GET   /                         controllers.ViewPageController.viewPage(path = "")

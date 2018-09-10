@@ -499,6 +499,7 @@ trait UserDao {
 
   def createUserForExternalSsoUser(userData: NewPasswordUserData, botIdData: BrowserIdData,
         tx: SiteTransaction): MemberInclDetails = {
+    dieIf(userData.password.isDefined, "TyE7KHW2G")
     val member = createPasswordUserImpl(userData, botIdData, tx)
     memCache.fireUserCreated(member.briefUser)
     member

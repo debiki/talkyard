@@ -65,7 +65,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
 
 
   def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
-    // Could do this in a transaction. Barely matters.
+    // Could do this in a transaction. Barely matters. [REDITX]
     redis.zadd(usersOnlineKey(siteId), now().toDouble -> userId)
     redis.zrem(strangersOnlineByIpKey(siteId), browserIdData.ip)
   }
@@ -156,8 +156,9 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
     redis.set(key, userId, exSeconds = Some(SingleSignOnSecretExpireSeconds))
   }
 
-  def getOneTimeSsoLoginUserIdDestroySecret(secretValue: String): Option[UserId] = {
+  def getSsoLoginUserIdDestroySecret(secretValue: String): Option[UserId] = {
     val key = ssoUserBySecretKey(siteId, secretValue)
+    // Could do this in a transaction? [REDITX]
     val futureString: Future[Option[ByteString]] = redis.get(key)
     redis.del(key)
     val anyString: Option[ByteString] =

@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki.JsX.JsApiSecret
 import ed.server.{EdContext, EdController}
@@ -41,10 +42,15 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdCont
   def createApiSecret: Action[JsValue] = AdminPostJsonAction(maxBytes = 500) {
         request: JsonPostRequest =>
     import request.{body, dao}
-    val forUserId: Option[UserId] = (body \ "forUserId").asOpt[UserId]
 
-    // For now:
+    // Feels best to explicitly require forAnyUser=true, so won't accidentally create
+    // a for-any-user key just because forgot to specify user id.
+    val forUserId: Option[UserId] = (body \ "forUserId").asOpt[UserId]
+    val forAnyUser: Option[Boolean] = (body \ "forAnyUser").asOpt[Boolean]
+
+    // Right now, only API secrets that work with any user id, have been implemented.
     throwForbiddenIf(forUserId.isDefined, "TyE2ABKR5", "Unimplemented")
+    throwForbiddenIf(forAnyUser isNot true, "TyE5KLRG02", "Unimplemented")
 
     val secret = dao.createApiSecret(forUserId)
     OkSafeJson(JsApiSecret(secret))

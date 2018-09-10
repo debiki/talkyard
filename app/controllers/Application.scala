@@ -28,8 +28,9 @@ import play.api.libs.json.JsValue
 
 
 
-/** Miscellaneous controller functions -- try to move elsewhere and/or rename this class
-  */
+// RENAME to FlagController?
+// Or add  FlagUser fn, so can flag user with offensive username?
+// Or move to PostController?, and add flagUser() in UserController?
 class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
@@ -76,86 +77,5 @@ class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
       postsHidden.map(_.id).toSet, showHidden = false, dao)
     OkSafeJson(json)
   }
-
-  /*
-  Shortcut:
-  https://server.address/-/v0/recent-posts.rss
-  https://server.address/-/v0/feed?
-      type=atom&
-      include=replies,chatMessages,topics&
-      limit=10&
-      minLikeVotes=1&
-      path=/some/category/or/page
-
-  Just going to:  https://www.talkyard.io/-/feed  = includes all new posts, type Atom, limit 10 maybe.
-
-  /directory*.atom  = new topics
-  /page/path.atom  = new replies to that page
-  /page/path.rss  = new replies to that page
-
-  */
-
-  /**
-   * Usage example:
-   *   /some/site/section/?feed=atom&for-tree&limit=X&partial
-   * — this would feed atom for pages below /some/site/section/,
-   * the 10 most recent pages only, and only parts of each page
-   * would be included (e.g. the first 50 words).
-   *
-   * However: &limit and &partial | &full haven't been implemented.
-   *
-   * `limit` may be at most 10.
-   * /
-  def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
-        pageReq =>
-
-    throwNotImplemented("DwE5JKP4", "Currently disabled: Atom or RSS feeds, not with new Post2") /*
-    import pageReq.{pagePath}
-
-    // The tenant's name will be included in the feed.
-    val tenant: Tenant = pageReq.dao.loadTenant()
-
-    val feedPagePaths =
-      if (!pagePath.isFolderOrIndexPage) List(pagePath)
-      else pageReq.dao.listPagePaths(
-        Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
-           urlParamPrefix = "for"),
-        include = List(PageStatus.Published),
-        orderOffset = PageOrderOffset.ByPublTime,
-        limit = 10).map(_.path)
-
-    // Access control.
-    // Somewhat dupl code, see AppList.listNewestPages.
-    val feedPathsPublic = feedPagePaths filter (Utils.isPublicArticlePage _)
-
-    val pathsAndPages: Seq[(PagePath, PageParts)] = feedPathsPublic flatMap {
-      feedPagePath =>
-        val pageId: String = feedPagePath.pageId.getOrElse {
-          errDbgDie("[error DwE012210u9]")
-          "GotNoGuid"
-        }
-        unimplemented("Loading pages in order to render Atom feeds", "DwE0GY23") /* loadPageParts is gone
-        val page = pageReq.dao.loadPageParts(pageId)
-        page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
-        */
-    }
-
-    val mostRecentPageCtime: ju.Date =
-      pathsAndPages.headOption.map(pathAndPage =>
-        pathAndPage._2.getPost_!(PageParts.BodyId).creationDati
-      ).getOrElse(new ju.Date)
-
-    val feedUrl = pageReq.origin + pageReq.request.uri
-
-    val feedXml = AtomFeedXml.renderFeed(
-      hostUrl = pageReq.origin,  // should rename hostUrl to origin
-      feedId = feedUrl,  // send url path + query instead?
-      feedTitle = tenant.name +", "+ pagePath.value,
-      feedUpdated = mostRecentPageCtime,
-      pathsAndPages)
-
-    OkXml(feedXml, "application/atom+xml")
-    */
-  } */
 
 }

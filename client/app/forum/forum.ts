@@ -1305,7 +1305,7 @@ const LoadAndListCategories = createFactory({
     this.loadCategories(this.props);
   },
 
-  componentWillUnmount: function(nextProps) {
+  componentWillUnmount: function() {
     this.isGone = true;
   },
 

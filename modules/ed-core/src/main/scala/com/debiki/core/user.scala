@@ -95,7 +95,7 @@ object Invite {
 }
 
 
-// Rename to NewSocialIdentityMemberData?
+// Rename to NewMemberDataWithSocialIdentity?
 sealed abstract class NewUserData {
   def name: Option[String]
   def username: String
@@ -129,7 +129,7 @@ sealed abstract class NewUserData {
 }
 
 
-// RENAME to  NewPasswordOrExternalMemberData?
+// RENAME to NewMemberDataWithPasswordOrExtId
 case class NewPasswordUserData(
   name: Option[String],
   username: String,
@@ -258,9 +258,9 @@ case object User {
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
-  /** Like system, but only does things because of API requests (which the System user never does).
+  /** Like system, but does things via API requests, which the System user never does.
     * Nice to know if something was done because of an API request (the Sysbot user),
-    * or because of Talkyard's own source code (the System user), also if the audit log
+    * or because of Talkyard's own source code (the System user) — also if the audit log
     * has been emptied.
     */
   val SysbotUserId = 2
@@ -317,6 +317,7 @@ case object User {
       id == SystemUserId ||
       id == SysbotUserId ||
       //id == SuperAdminId ||     later
+      //id == SuperbotId ||       later
       //id == AnonymousUserId ||  later
       id == UnknownUserId ||
       id <= MaxCustomGuestId
@@ -551,7 +552,8 @@ sealed trait User {
   def anyUsername: Option[String] = None
   def usernameOrGuestName: String
 
-  def idSpaceName: String = s"$id '$usernameOrGuestName'"
+  def idSpaceName: String =
+    anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
 
   def toMemberOrThrow: Member = {
     this match {
@@ -640,20 +642,6 @@ case class Member(
   override def canPromoteToFullMember: Boolean =
     trustLevel == TrustLevel.BasicMember
 
-  /*  def copyWithExternalData(externalUser: ExternalUser): Member = {
-    copy(
-      externalUserId: String,
-      primaryEmailAddress: String,
-      isEmailAddressVerified: Boolean,
-      username: Option[String],
-      fullName: Option[String],
-      avatarUrl: Option[String],
-      aboutUser: Option[String],
-      isAdmin: Boolean,
-      isModerator: Boolean
-    )
-  } */
-
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(theUsername.length >= 2, "EsE7YKW3")
@@ -673,7 +661,12 @@ case class ExternalUser(
   isAdmin: Boolean,
   isModerator: Boolean) {
 
-  // require ...
+  require(externalId.isTrimmedNonEmpty, "TyE5KBW01")
+  Validation.checkEmail(primaryEmailAddress).badMap(errorMessage =>
+    die("TyE5KBW02", s"Bad email: $primaryEmailAddress"))
+  require(username.forall(_.isTrimmedNonEmpty), "TyE5KBW05")
+  require(fullName.forall(_.isTrimmedNonEmpty), "TyE5KBW06")
+  require(avatarUrl.forall(_.isTrimmedNonEmpty), "TyE5KBW07")
 }
 
 
@@ -755,6 +748,7 @@ case class MemberInclDetails(
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
+  require(externalId.forall(_.isTrimmedNonEmpty), "TyE5KBW0Z")
   require(externalId.forall(extId => 1 <= extId.length), "TyE5AKBR20")
   require(externalId.forall(extId => extId.length <= 200), "TyE5AKBR21")
   require(!username.contains(isBlank _), "EdE8FKY07")
@@ -800,6 +794,8 @@ case class MemberInclDetails(
 
   def usernameLowercase: String = username.toLowerCase
   //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]
+
+  def idSpaceName: String = s"$id @$username"
 
   def createdWhen: When = When.fromDate(createdAt)
 

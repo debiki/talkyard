@@ -595,18 +595,6 @@ package object core {
   }
 
 
-  /*
-  sealed abstract class ApiSecretType(val IntVal: Int) { def toInt: Int = IntVal }
-  object ApiSecretType {
-    case object BeAnyUser extends ApiSecretType(1)
-    case object ForOneUser extends ApiSecretType(2)
-    def fromInt(value: Int): Option[ApiSecretType] = Some(value match {
-      case BeAnyUser.IntVal => BeAnyUser
-      case ForOneUser.IntVal => ForOneUser
-      case _ => return None
-    })
-  }*/
-
   /** Lets one do requests via the API.
     *
     * @param nr

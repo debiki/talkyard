@@ -219,7 +219,7 @@ object Prelude {
     case _ => None
   }
 
-  def stripScheme(url: String): String =
+  def stripSchemeSlashSlash(url: String): String =
     url.replaceFirst("https://", "").replaceFirst("http://", "")
 
 

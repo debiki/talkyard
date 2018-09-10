@@ -1421,12 +1421,12 @@ export function listApiSecrets(onOk: (secrets: ApiSecret[]) => void) {
 
 export function createApiSecret(onOk: (secret: ApiSecret) => void) {
   postJsonSuccess('/-/create-api-secret', onOk, {
-    forUserId: null, // means any user
+    forAnyUser: true,
   });
 }
 
 
-export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: (secret: ApiSecret) => void) {
+export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
   postJsonSuccess('/-/delete-api-secrets', onOk, { secretNrs });
 }
 

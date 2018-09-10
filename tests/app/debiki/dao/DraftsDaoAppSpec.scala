@@ -109,13 +109,13 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "list zero drafts for user two" in {
       dao.readOnlyTransaction { tx =>
-        tx.listDraftsRecentlyEditedFirst(userTwo.id) mustBe Nil
+        tx.listDraftsRecentlyEditedFirst(userTwo.id, limit = 999) mustBe Nil
       }
     }
 
     "list one draft for user one" in {
       dao.readOnlyTransaction { tx =>
-        tx.listDraftsRecentlyEditedFirst(userOne.id) mustBe Vector(draftOne)
+        tx.listDraftsRecentlyEditedFirst(userOne.id, limit = 999) mustBe Vector(draftOne)
       }
     }
 
@@ -160,7 +160,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "list three drafts for user one, in correct order" in {
       dao.readOnlyTransaction { tx =>
-        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id, limit = 999)
         drafts.length mustBe 3
         drafts mustBe Vector(
             draftTwoNewerForNewTopic, draftOne, draftThreeOlderDirectMessage)
@@ -204,7 +204,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "no longer incl in drafts list (but the others still are)" in {
       dao.readOnlyTransaction { tx =>
-        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id, limit = 999)
         drafts.length mustBe 2
         drafts mustBe Vector(
           draftTwoNewerForNewTopic, draftOne)
@@ -250,7 +250,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "can upsert-change editedAt" in {
       dao.readOnlyTransaction { tx =>
-        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id, limit = 999)
         drafts.length mustBe 3
         drafts mustBe Vector(draftTwoNewerForNewTopic, draftOne, draftThreeUndeleted)
       }
@@ -266,7 +266,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       dao.readOnlyTransaction { tx =>
         tx.loadDraftByNr(userOne.id, draftThreeNewest.draftNr) mustBe Some(draftThreeNewest)
 
-        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id, limit = 999)
         drafts.length mustBe 3
         drafts mustBe Vector(draftThreeNewest, draftTwoNewerForNewTopic, draftOne)
       }
