@@ -25,6 +25,7 @@ import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api._
+import play.api.libs.json.{JsString, JsValue}
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 
@@ -65,14 +66,15 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     anyUser match {
       case Some(user) =>
         dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
+        var isCreating = false
         if (user.passwordHash.isDefined) {
-          Logger.info(s"s$siteId: Sending password reset email to: $emailOrUsername")
-          sendChangePasswordEmailTo(user, request, isCreating = false)
+          Logger.info(s"s$siteId: Sending password reset email to: $emailOrUsername [TyM2AKEG5]")
         }
         else {
-          Logger.info(s"s$siteId: Sending create password email to: $emailOrUsername")
-          sendChangePasswordEmailTo(user, request, isCreating = true)
+          Logger.info(s"s$siteId: Sending create password email to: $emailOrUsername [TyM6WKBA20]")
+          isCreating = true
         }
+        sendChangePasswordEmailTo(user, request, isCreating = isCreating)
       case None =>
         Logger.info(o"""s$siteId: Not sending password reset email to non-existing
              user or email address: $emailOrUsername""")
@@ -87,6 +89,26 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     }
 
     Redirect(routes.ResetPasswordController.showEmailSentPage(isEmailAddress.toString).url)
+  }
+
+
+  def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 10) {
+        request =>
+    import request.{dao, siteId, theRequester => requester}
+    val member = dao.loadTheMemberInclDetailsById(requester.id)
+
+    // Later, ask for current pwd, if no email addr available. [7B4W20]
+    throwForbiddenIf(member.primaryEmailAddress.isEmpty, "TyE5KBRE20", "No primary email address")
+    throwForbiddenIf(member.emailVerifiedAt.isEmpty, "TyE5KBRE21", "Email address not verified")
+
+    if (member.passwordHash.isDefined) {
+      Logger.info(s"s$siteId: Sending password reset email to: ${member.idSpaceName} [TyM5BKFW0]")
+    }
+    else {
+      Logger.info(s"s$siteId: Sending create password email to: ${member.idSpaceName} [TyM2AKBP05")
+    }
+    sendChangePasswordEmailTo(member.briefUser, request, isCreating = member.passwordHash.isEmpty)
+    OkSafeJson(JsString("Ok."))
   }
 
 

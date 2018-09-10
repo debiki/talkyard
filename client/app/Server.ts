@@ -575,6 +575,11 @@ export function createPasswordUser(data, success: (response) => void,
 }
 
 
+export function sendResetPasswordEmail(onOk: () => void) {
+  postJsonSuccess('/-/send-reset-password-email', onOk, {});
+}
+
+
 export function loginWithPassword(emailOrUsername: string, password: string, success: () => void,
       onDenied: () => void, onPasswordMissing: () => void) {
   function onError(xhr?: XMLHttpRequest) {

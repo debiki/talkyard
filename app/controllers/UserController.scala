@@ -241,6 +241,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
+      userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       userJson += "summaryEmailIntervalMins" ->
           JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))

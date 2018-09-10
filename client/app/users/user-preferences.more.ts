@@ -217,6 +217,26 @@ const AboutMember = createComponent({
       this.setState({ showUsernameInput: true });
   },
 
+  maybeChangePassword: function() {
+    const user: MemberInclDetails = this.props.user;
+    const question = user.hasPassword ? "Change password?" : "Create password?";  // I18N
+    // BUG only works if email addr specified and verified  [7B4W20]
+    util.openDefaultStupidDialog({  // import what?
+      body: question + " You'll get a reset password email.",  // I18N
+      primaryButtonTitle: "Yes, do that",  // I18N
+      secondaryButonTitle: "No, cancel",
+      onCloseOk: function(whichButton) {
+        if (whichButton === 1)
+          Server.sendResetPasswordEmail(() => {
+            // Continue also if this.isGone.
+            util.openDefaultStupidDialog({
+              body: "Email sent.",  // I18N
+              small: true,
+            });
+          });
+      } });
+  },
+
   enableSummaryEmails: function(event) {
     const shallEnable = event.target.checked;
     const newIntervalMins = shallEnable && (
@@ -361,6 +381,21 @@ const AboutMember = createComponent({
             NavLink({ to: this.props.emailsLoginsPath,
                 className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
           r.p({ className: 'help-block' }, t.upp.NotShown)),
+
+        // UX COULD later incl this change-pwd also on the Account tab, it fits better there maybe?
+        // However people might not think about looking there? So incl both here and there?
+        isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
+          r.label({}, t.pwd.PasswordC),
+          r.span({}, user.hasPassword ? " Yes." : " None."),   // I18N
+          r.a({ style: { verticalAlign: 'baseline' },
+            // UX COULD improve: For now, link to the reset password page where one types
+            // one's email or username, and then gets a pwd reset link via email.
+            // Later: link directly to the reset-pwd page, and have the user first type
+            // the current pwd, before asking for a new. If they've forgotte their pwd,
+            // send a pwd reset email. (But never let anyone changing pwd, without confirming
+            // that hen knows the old, or is the email addr owner.)
+            onClick: this.maybeChangePassword,
+            className: 'btn s_UP_Prefs_ChangePwB' }, t.ChangeDots)),
 
         activitySummaryStuff,
 

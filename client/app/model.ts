@@ -968,6 +968,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   email: string;
   emailVerifiedAtMs?: WhenMs;
   emailForEveryNewPost: boolean;
+  hasPassword?: boolean;
   about?: string;
   country: string;
   url: string;
