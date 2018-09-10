@@ -361,8 +361,6 @@ const ChatMessageEditor = createComponent({
   saveDraftNow: function(useBeacon?: UseBeacon) {
     // Tested here: TyT7JKMW24
     // A bit dupl code [4ABKR2J0]
-    // Drafts are currently buggy; disable drafts, for now:  [BADDRAFT]
-    return; /*
 
     // Don't save draft from both here, and the advanced editor — then might get dupl drafts. [TyT270424]
     if (this.state.advancedEditorInstead)
@@ -434,7 +432,6 @@ const ChatMessageEditor = createComponent({
         draftStatus: DraftStatus.Saved,
       });
     }), useBeacon || this.setCannotSaveDraft);
-    */
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
@@ -456,20 +453,18 @@ const ChatMessageEditor = createComponent({
     const numLines = text.split(/\r\n|\r|\n/).length;
 
     // A bit dupl code [7WKABF2]
-    /* [BADDRAFT]
     const draft: Draft = this.state.draft;
     const draftStatus = draft && draft.text === text
       ? DraftStatus.EditsUndone
-      : DraftStatus.ShouldSave; */
+      : DraftStatus.ShouldSave;
 
     this.setState({
       text: text,
-      //draft: (draftWithStatus ? draftWithStatus.draft : this.state.draft),   [BADDRAFT]
-      //draftStatus: (draftWithStatus ? draftWithStatus.draftStatus : draftStatus),  [BADDRAFT]
+      draft: (draftWithStatus ? draftWithStatus.draft : this.state.draft),
+      draftStatus: (draftWithStatus ? draftWithStatus.draftStatus : draftStatus),
       rows: Math.max(DefaultEditorRows, Math.min(8, numLines)),
     },
-      null); // draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);  [BADDRAFT]
-
+      draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
 
     // In case lines were deleted, we need to move the editor a bit downwards, so it
     // remains fixed at the bottom — because now it's smaller.
@@ -506,9 +501,7 @@ const ChatMessageEditor = createComponent({
 
   saveChatMessage: function() {
     this.setState({ isSaving: true });
-    // Drafts are currently buggy; disable drafts, for now:  [BADDRAFT]
-    const draft: Draft | undefined = undefined;// this.state.draft;
-
+    const draft: Draft | undefined = this.state.draft;
     Server.insertChatMessage(this.state.text, draft ? draft.draftNr : NoDraftNr, () => {
       if (this.isGone) return;
       this.setState({ text: '', isSaving: false, draft: null, rows: DefaultEditorRows });

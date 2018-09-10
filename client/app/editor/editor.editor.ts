@@ -599,8 +599,6 @@ export const Editor = createComponent({
           hidden: isHidden,
         };
       }
-      // Drafts are currently buggy; disable drafts, for now:  [BADDRAFT]
-      draft = null;
       this.setState({
         draft,
         text: draft ? draft.text : '',
@@ -804,12 +802,6 @@ export const Editor = createComponent({
   },
 
   saveDraftNow: function(callbackThatClosesEditor: () => void | undefined, useBeacon?: UseBeacon) {
-    // Drafts are currently buggy — do nothing.  [BADDRAFT]
-    if (callbackThatClosesEditor) {
-      callbackThatClosesEditor();
-    }
-    return; /*
-
     // Tested here: 7WKABZP2
     // A bit dupl code [4ABKR2J0]
 
@@ -885,7 +877,6 @@ export const Editor = createComponent({
         callbackThatClosesEditor();
       }
     }), useBeacon || this.setCannotSaveDraft);
-    */
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
@@ -1408,9 +1399,8 @@ export const Editor = createComponent({
     const draftStatus: DraftStatus = this.state.draftStatus;
     const skipDraft = shallSkipDraft(this.state);
 
-    // [BADDRAFT]
-    const draftStatusText = null; //skipDraft ? null :
-        //DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
+    const draftStatusText = skipDraft ? null :
+        DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
 
     return (
       r.div({ style: styles },
