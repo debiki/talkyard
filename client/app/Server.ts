@@ -54,17 +54,19 @@ interface RequestData {
 
 function postJson(urlPath: string, requestData: RequestData) {
   let url = appendE2eAndForbiddenPassword(origin() + urlPath);
+  let timeoutHandle;
   if (requestData.showLoadingOverlay !== false) {
     showLoadingOverlay();
+    timeoutHandle = setTimeout(function() {
+      maybeShowServerJustStartedMessage();
+      timeoutHandle = setTimeout(showErrorIfNotComplete, 21 * 1000);
+    }, 9 * 1000);
   }
 
-  let timeoutHandle = setTimeout(function() {
-    showServerJustStartedMessage();
-    timeoutHandle = setTimeout(showErrorIfNotComplete, 23 * 1000);
-  }, 7 * 1000);
-
   function removeTimeoutAndOverlay() {
-    clearTimeout(timeoutHandle);
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
     if (requestData.showLoadingOverlay !== false) {
       removeLoadingOverlay();
     }
@@ -188,7 +190,7 @@ function showLoadingOverlay() {
 }
 
 
-function showServerJustStartedMessage() {
+function maybeShowServerJustStartedMessage() {
   const overlayElem = $byId('theLoadingOverlay');
   if (!overlayElem) return;
   const messageElem = $h.parseHtml('<div id="theServerJustStarted"></div>')[0];
