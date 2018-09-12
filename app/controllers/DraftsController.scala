@@ -118,7 +118,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwBadRequest("TyEBDDRFTDT", ex.getMessage)
     }
 
-    throwForbiddenIf(draft.text.isEmpty && draft.title.isEmpty,
+    throwBadRequestIf(draft.text.isEmpty && draft.title.isEmpty,
       "TyE4RBK02R9", "Draft empty. Delete it instead")
 
     if (draft.isNewTopic) {
@@ -161,10 +161,12 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
           // Stop DoS attacks: don't let people create an unlimited number of drafts. For now,
           // count drafts the last week, max 30 per day?
           COULD_OPTIMIZE // load only the Xth draft?
-          val oldDrafts = tx.listDraftsRecentlyEditedFirst(requester.id, limit = 7 * 30)
-          oldDrafts.lastOption foreach { oldDraft =>
+          val limit = 7 * 30
+          val oldDrafts = tx.listDraftsRecentlyEditedFirst(requester.id, limit = limit)
+          if (oldDrafts.length >= limit) oldDrafts.lastOption foreach { oldDraft =>
             val daysOld = now.daysSince(oldDraft.createdAt)
-            throwForbiddenIf(daysOld < 7, "TyE7KWBKP32", "Saving too many drafts")
+            if (daysOld < 7)
+              throwTooManyRequests("Saving too many drafts [TyE7BKP32]")
           }
           val nr = tx.nextDraftNr(requester.id)
           draft.copy(draftNr = nr)

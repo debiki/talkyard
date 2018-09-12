@@ -313,7 +313,7 @@ const ChatMessageEditor = createComponent({
     return {
       text: '',
       draft: undefined,
-      draftStatus: DraftStatus.NothingHappened,
+      draftStatus: DraftStatus.NotLoaded,
       rows: DefaultEditorRows,
       advancedEditorInstead: false,
     };
@@ -335,6 +335,7 @@ const ChatMessageEditor = createComponent({
         pageId: page.pageId,
         postNr: BodyNr,
       };
+      this.setState({ scriptsLoaded: true });
       Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment, page.categoryId, page.pageRole,
           (guidelinesSafeHtml, draft?: Draft) => {
         if (this.isGone) return;
@@ -342,7 +343,6 @@ const ChatMessageEditor = createComponent({
           draft,
           draftStatus: DraftStatus.NothingHappened,
           text: draft ? draft.text : '',
-          scriptsLoaded: true,
         });
       });
     });
@@ -504,7 +504,13 @@ const ChatMessageEditor = createComponent({
     const draft: Draft | undefined = this.state.draft;
     Server.insertChatMessage(this.state.text, draft ? draft.draftNr : NoDraftNr, () => {
       if (this.isGone) return;
-      this.setState({ text: '', isSaving: false, draft: null, rows: DefaultEditorRows });
+      this.setState({
+        text: '',
+        isSaving: false,
+        draft: null,
+        draftStatus: DraftStatus.NothingHappened,
+        rows: DefaultEditorRows,
+      });
       this.props.scrollDownToViewNewMessage();
       // no such fn: this.refs.textarea.focus();
       // instead, for now:
@@ -538,7 +544,10 @@ const ChatMessageEditor = createComponent({
     const draftErrorStatusCode = this.state.draftErrorStatusCode;
     const draftStatusInfo = editor['DraftStatusInfo']({ draftStatus, draftNr, draftErrorStatusCode });
 
-    const disabled = this.state.isLoading || this.state.isSaving;
+    // We'll disable the editor, until any draft has been loaded. [5AKBW20]
+    const anyDraftLoaded = draftStatus !== DraftStatus.NotLoaded;
+
+    const disabled = this.state.isLoading || !anyDraftLoaded || this.state.isSaving;
     const buttons =
         r.div({ className: 'esC_Edtr_Bs' },
           draftStatusInfo,
@@ -557,7 +566,8 @@ const ChatMessageEditor = createComponent({
       r.div({ className: 'esC_Edtr' },
         // The @mentions username autocomplete might overflow the textarea. [J7UKFBW]
         ReactTextareaAutocomplete({ className: 'esC_Edtr_textarea', ref: 'textarea',
-          value: this.state.text, onChange: this.onTextEdited,
+          value: anyDraftLoaded ? this.state.text : "Loading any draft...",  // I18N same as here: [5AKBR02]
+          onChange: this.onTextEdited,
           onKeyPress: this.onKeyPress,
           onKeyDown: this.onKeyDown,
           closeOnClickOutside: true,

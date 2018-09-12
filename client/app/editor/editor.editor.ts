@@ -79,7 +79,7 @@ export const Editor = createComponent({
       text: '',
       title: '',
       draft: null,
-      draftStatus: DraftStatus.NothingHappened,
+      draftStatus: DraftStatus.NotLoaded,
       safePreviewHtml: '',
       replyToPostNrs: [],
       editingPostNr: null,
@@ -418,6 +418,7 @@ export const Editor = createComponent({
         editingPostRevisionNr: response.currentRevisionNr,
         text: draft ? draft.text : response.currentText,
         onDone: onDone,
+        draftStatus: DraftStatus.NothingHappened,
         draft,
       });
       this.updatePreview();
@@ -601,6 +602,7 @@ export const Editor = createComponent({
       }
       this.setState({
         draft,
+        draftStatus: DraftStatus.NothingHappened,
         text: draft ? draft.text : '',
         title: draft ? draft.title : '',
         guidelines,
@@ -1069,9 +1071,9 @@ export const Editor = createComponent({
       editingPostRevisionNr: null,
       text: '',
       title: '',
-      draftStatus: DraftStatus.NothingHappened,
       showTitleErrors: false,
       showTextErrors: false,
+      draftStatus: DraftStatus.NotLoaded,
       draft: null,
       safePreviewHtml: '',
       onDone: null,
@@ -1142,6 +1144,13 @@ export const Editor = createComponent({
     let settings: SettingsVisibleClientSide = store.settings;
     const isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
 
+    // We'll disable the editor, until any draft has been loaded. [5AKBW20] Otherwise one might
+    // start typing, and then the draft gets loaded (which might take some seconds if
+    // the server was just started, or maybe slow connection) and overwrites the text one
+    // has already typed.
+    const draftStatus: DraftStatus = this.state.draftStatus;
+    const anyDraftLoaded = draftStatus !== DraftStatus.NotLoaded;
+
     const guidelines = state.guidelines;
     let guidelinesElem;
     let showGuidelinesBtn;
@@ -1180,7 +1189,7 @@ export const Editor = createComponent({
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
-              value: this.state.title,
+              value: this.state.title, disabled: !anyDraftLoaded,
               placeholder: t.e.TitlePlaceholder });
 
       if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
@@ -1362,7 +1371,8 @@ export const Editor = createComponent({
 
     const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
-        ReactTextareaAutocomplete({
+        !anyDraftLoaded ? r.pre({}, "Loading any draft...") :   // I18N same as here: [5AKBR02]
+          ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'rtaTextarea',
             value: this.state.text,
@@ -1396,7 +1406,6 @@ export const Editor = createComponent({
 
     const draft: Draft = this.state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
-    const draftStatus: DraftStatus = this.state.draftStatus;
     const skipDraft = shallSkipDraft(this.state);
 
     const draftStatusText = skipDraft ? null :
@@ -1574,6 +1583,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   const draftErrorStatusCode: number | undefined = props.draftErrorStatusCode;
 
   switch (props.draftStatus) {  // I18N all draft statuses
+    case DraftStatus.NotLoaded: draftStatusText = "Loading any draft..."; break;  // I18N same as here: [5AKBR02]
     case DraftStatus.NothingHappened: break;
     case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
     case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
@@ -1587,6 +1597,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
       draftErrorClass = ' s_DfSts-Err';
       let details: string;
       if (draftErrorStatusCode === 403) details = "Access denied";
+      else if (draftErrorStatusCode === 429) details = "Too many requests";
       else if (draftErrorStatusCode) details = "Error " + draftErrorStatusCode;
       else details = "No internet connection";  // I18N reuse string
       draftStatusText = "Cannot save draft: " + details;

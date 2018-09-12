@@ -190,6 +190,7 @@ enum FlagType {
 
 
 enum DraftStatus {  // sync with test code [5ABXG20]
+  NotLoaded = 0,
   NothingHappened = 1,
   EditsUndone = 2,
   Saved = 3,
