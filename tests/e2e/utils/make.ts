@@ -226,8 +226,10 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mallory@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publ-ma020",
-      password: "publ-ma020",
+      // As two chars from one's username, just after 'publ-', use 'ml' not 'ma',
+      // so will be different from Maja's password.
+      passwordHash: "cleartext:publ-ml020",
+      password: "publ-ml020",
     };
   },
 

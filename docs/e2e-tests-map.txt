@@ -90,7 +90,11 @@ profile page -
   upload photo:  (8PK2)
   edit full name:
   change username:
+  create password:
   change password:
+    type old password:
+    via email:
+          - user-profile-change-password.test.ts  TyT6HJ2RD1
   create password:
   list & click notfs:
   suspend:

@@ -1818,7 +1818,7 @@ object JsX {
       "createdAt" -> JsWhenMs(apiSecret.createdAt),
       "deletedAt" -> JsWhenMsOrNull(apiSecret.deletedAt),
       "isDeleted" -> apiSecret.isDeleted,
-      "secretValue" -> JsString(apiSecret.secretValue))
+      "secretKey" -> JsString(apiSecret.secretKey))
   }
 
 }

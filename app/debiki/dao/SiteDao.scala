@@ -369,14 +369,14 @@ class SiteDao(
     val now = globals.now()
 
     // If more than two *sysbot* secrets get greated per day, something weird is going on.
-    val recentSecrets = listApiSecrets(limit = 100).takeWhile(s => now.daysSince(s.createdAt) < 20)
+    val recentSecrets = listApiSecrets(limit = 50).takeWhile(s => now.daysSince(s.createdAt) < 20)
     throwForbiddenIf(recentSecrets.length > 40, "TyE5PKR2Q", "You're creating secrets too fast")
 
     val value = nextRandomString()
     readWriteTransaction { tx =>
       val nr = tx.nextApiSecretNr()
       val secret = ApiSecret(nr, userId = forUserId, createdAt = now,
-        deletedAt = None, isDeleted = false, secretValue = value)
+        deletedAt = None, isDeleted = false, secretKey = value)
       tx.insertApiSecret(secret)
       secret
     }
@@ -387,8 +387,8 @@ class SiteDao(
     readWriteTransaction(tx => secretNrs.foreach(tx.setApiSecretDeleted(_, now)))
   }
 
-  def getApiSecret(secretValue: String): Option[ApiSecret] = {
-    readOnlyTransaction(_.loadApiSecretBySecretValue(secretValue))
+  def getApiSecret(secretKey: String): Option[ApiSecret] = {
+    readOnlyTransaction(_.loadApiSecretBySecretKey(secretKey))
   }
 
 

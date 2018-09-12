@@ -114,7 +114,7 @@ const ApiSecretItem = createComponent({
     const secret: ApiSecret = this.props.apiSecret;
     // Don't show secrets that still works, unless one clicks Show — so less risk that they get exposed.
     const shallShow = this.state.showValue || secret.isDeleted;
-    const valueOrShowButton = shallShow ? secret.secretValue :
+    const secretKeyOrShowButton = shallShow ? secret.secretKey :
         Button({ onClick: () => this.setState({ showValue: true }) }, "Show");
 
     const deleteButton = secret.isDeleted ? null :
@@ -126,7 +126,7 @@ const ApiSecretItem = createComponent({
       r.td({}, timeExact(secret.createdAt)),
       r.td({}, secret.isDeleted ? rFragment("Yes, ", timeExact(secret.deletedAt)) : "No"),
       r.td({}, "Do anything"), // secret.secretType is always for any user
-      r.td({}, deleteButton, valueOrShowButton));
+      r.td({}, deleteButton, secretKeyOrShowButton));
   }
 });
 

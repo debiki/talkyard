@@ -215,6 +215,7 @@ object Prelude {
    * was absent, or if there was nothing after the origin.
    */
   def stripOrigin(url: String): Option[String] = url match {
+    // SECURITY use a simpler matches-more-but-still-safe regex, because here we want to excl weird things.
     case StripOriginRegex(_, _, _, _, path) => Option(path)
     case _ => None
   }

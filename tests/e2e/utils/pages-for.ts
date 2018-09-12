@@ -1353,6 +1353,7 @@ function pagesFor(browser) {
           password = null;
         }
         if (_.isObject(username)) {
+          dieIf(_.isString(password), 'TyE2AKBF053');
           password = username.password;
           username = username.username;
         }
@@ -3129,6 +3130,10 @@ function pagesFor(browser) {
           setCheckbox('#emailForEveryNewPost', enabled);
         },
 
+        clickChangePassword: function() {
+          api.waitAndClick('.s_UP_Prefs_ChangePwB');
+        },
+
         save: function() {
           api.userProfilePage.preferences.clickSave();
           api.waitUntilModalGone();
@@ -3138,7 +3143,6 @@ function pagesFor(browser) {
         clickSave: function() {
           api.waitAndClick('#e2eUP_Prefs_SaveB');
         },
-
         // ---- /END should be wrapped in `about { .. }`.
 
         privacy: {
@@ -3877,6 +3881,13 @@ function pagesFor(browser) {
         browser.waitAndClick('input[type="submit"]');
         browser.waitForNewUrl();
         browser.waitForVisible('#e2eBeenUnsubscribed');
+      },
+    },
+
+
+    changePasswordDialog: {
+      clickYesChange: () => {
+        browser.waitAndClick('.esStupidDlg .btn-primary');
       },
     },
 

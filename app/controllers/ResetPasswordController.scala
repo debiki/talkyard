@@ -68,10 +68,10 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
         dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
         var isCreating = false
         if (user.passwordHash.isDefined) {
-          Logger.info(s"s$siteId: Sending password reset email to: $emailOrUsername [TyM2AKEG5]")
+          Logger.info(s"s$siteId: Sending password reset email ${toWho(user)} [TyM2AKEG5]")
         }
         else {
-          Logger.info(s"s$siteId: Sending create password email to: $emailOrUsername [TyM6WKBA20]")
+          Logger.info(s"s$siteId: Sending create password email ${toWho(user)} [TyM6WKBA20]")
           isCreating = true
         }
         sendChangePasswordEmailTo(user, request, isCreating = isCreating)
@@ -91,6 +91,9 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     Redirect(routes.ResetPasswordController.showEmailSentPage(isEmailAddress.toString).url)
   }
 
+  private def toWho(member: MemberMaybeDetails) =
+    s"to ${member.usernameHashId}, addr: ${member.primaryEmailAddress}"
+
 
   def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 10) {
         request =>
@@ -102,10 +105,10 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     throwForbiddenIf(member.emailVerifiedAt.isEmpty, "TyE5KBRE21", "Email address not verified")
 
     if (member.passwordHash.isDefined) {
-      Logger.info(s"s$siteId: Sending password reset email to: ${member.idSpaceName} [TyM5BKFW0]")
+      Logger.info(s"s$siteId: Sending password reset email ${toWho(member)} [TyM5BKFW0]")
     }
     else {
-      Logger.info(s"s$siteId: Sending create password email to: ${member.idSpaceName} [TyM2AKBP05")
+      Logger.info(s"s$siteId: Sending create password email ${toWho(member)} [TyM2AKBP05]")
     }
     sendChangePasswordEmailTo(member.briefUser, request, isCreating = member.passwordHash.isEmpty)
     OkSafeJson(JsString("Ok."))

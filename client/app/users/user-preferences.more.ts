@@ -387,12 +387,12 @@ const AboutMember = createComponent({
         isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
           r.label({}, t.pwd.PasswordC),
           r.span({}, user.hasPassword ? " Yes." : " None."),   // I18N
-          r.a({ style: { verticalAlign: 'baseline' },
-            // UX COULD improve: For now, link to the reset password page where one types
-            // one's email or username, and then gets a pwd reset link via email.
+          r.a({
+            // UX COULD improve: For now, send a pwd reset email — works only if the user
+            // has typed hens email addr :-/
             // Later: link directly to the reset-pwd page, and have the user first type
-            // the current pwd, before asking for a new. If they've forgotte their pwd,
-            // send a pwd reset email. (But never let anyone changing pwd, without confirming
+            // the current pwd, before asking for a new. Only if they've forgotten their pwd,
+            // a pwd reset email is needed. (But never let anyone changing pwd, without confirming
             // that hen knows the old, or is the email addr owner.)
             onClick: this.maybeChangePassword,
             className: 'btn s_UP_Prefs_ChangePwB' }, t.ChangeDots)),

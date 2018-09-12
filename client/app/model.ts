@@ -1377,7 +1377,7 @@ interface ApiSecret {
   createdAt: WhenMs;
   deletedAt?: WhenMs;
   isDeleted: boolean,
-  secretValue: string;
+  secretKey: string;
 }
 
 

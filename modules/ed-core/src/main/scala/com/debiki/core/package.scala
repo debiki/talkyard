@@ -603,7 +603,7 @@ package object core {
     * @param deletedAt
     * @param isDeleted — once set to true, never changed back to false. `deletedAt` might not`
     *   always be accurate in case the server's clock is off.
-    * @param secretValue — don't show
+    * @param secretKey — don't show
     */
   case class ApiSecret(
     nr: ApiSecretNr,
@@ -611,7 +611,7 @@ package object core {
     createdAt: When,
     deletedAt: Option[When],
     isDeleted: Boolean,
-    secretValue: String) {
+    secretKey: String) {
 
     require(!isDeleted || deletedAt.isDefined, "TyE4ABKR01")
     require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyE4ABKR02")

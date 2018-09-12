@@ -31,14 +31,6 @@ import scala.util.Try
 import Utils.OkXml
 
 
-// LEFT TO REVIEW:
-//     da18893 Add change password link.  — broken, bug.
-//DONE 257b02d Bugfix: Show terms and privacy, if signing up for must-login-to-read site.
-//DONE 3664a17 Bug fixes: Watchbar menu item, and auto play videos: muted attr.
-//DONE 61d653d Add an Atom feed for all new posts.
-
-
-
 // How test API?
 //  https://medium.com/javascript-scene/why-i-use-tape-instead-of-mocha-so-should-you-6aa105d8eaf4
 //  looks nice:  https://github.com/vesln/hippie
@@ -150,31 +142,30 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)
           }
 
-        // where check email? Validation.checkEmail(primaryEmailAddress)
+        throwForbiddenIf(!extUser.isEmailAddressVerified, "TyESSOEMLUNVERF", o"""s$siteId:
+            The email address ${extUser.primaryEmailAddress} of external user '${extUser.externalId}'
+            hasn't been verified.""")
 
         val user = request.dao.readWriteTransaction { tx =>
-          def makeName(): String = "unnamed_" + (nextRandomLong() % 1000)
-          val usernameToTry = extUser.username.orElse(extUser.fullName).getOrElse(makeName())
-          val okayUsername = User.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
-            tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
-
           // Look up by external id. If found, login.
           // Look up by email. If found, reuse account, set external id, and login.
           // Else, create new user with specified external id and email.
 
-          tx.loadMemberInclDetailsByExternalId(extUser.externalId).map({ user =>
+          tx.loadMemberInclDetailsByExternalId(extUser.externalId).map({ user =>  // (7KAB2BA)
+            dieIf(user.externalId isNot extUser.externalId, "TyE5KR02A")
             // TODO update fields, if different.
             if (extUser.primaryEmailAddress != user.primaryEmailAddress) {
               // TODO later: The external user's email address has been changed? Update this Talkyard
               // user's email address too, then.  —  However, would be weird,
-              // if there already is another external user mirror account, with that email??
+              // if there already is another Talkyard account that mirrors [*another* external user
+              // with that email]?
               val anyUser2 = tx.loadMemberByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
               anyUser2 foreach { user2 =>
                 throwForbidden("TyE2ABK40", o"""s$siteId: Cannot update the email address of
-                    Talkyard user ${user.idSpaceName} with external id
+                    Talkyard user ${user.usernameHashId} with external id
                     '${extUser.externalId}' to match the external user's new email address
-                    ('${extUser.primaryEmailAddress}'): The address is already in use
-                    by other Talkyard user ${user2.idSpaceName}""")
+                    ('${extUser.primaryEmailAddress}'): The new address is already used
+                    by another Talkyard user: ${user2.usernameHashId}""")
               }
 
               // TODO also check non-primary addrs. (5BK02A5)
@@ -185,26 +176,34 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
             // For now, just generate a login secret; don't sync users:
             user
           }) orElse
-                // TODO what about looking up by secondary email addresses, or not?
-                // Don't do that? They aren't supposed to be used for login. And do require
-                // that there isn't any clash here: (5BK02A5)?
-                tx.loadMemberInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
-            dieIf(user.externalId is extUser.externalId, "TyE7AKBR2")
+              // TODO what about looking up by secondary email addresses, or not?
+              // Don't do that? They aren't supposed to be used for login. And do require
+              // that there isn't any clash here: (5BK02A5)?
+              tx.loadMemberInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
+
+            dieIf(user.externalId is extUser.externalId, "TyE7AKBR2") // ought to have been found by id
+            dieIf(user.primaryEmailAddress != extUser.primaryEmailAddress, "TyE7AKBR8")
+
             throwForbiddenIf(user.externalId.isDefined,
                 "TyE5AKBR20", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is already
-                  in use by Talkyard user ${user.idSpaceName} which mirrors
-                  external user '${user.externalId}' - cannot create a mirror account for
+                  in use by Talkyard user ${user.usernameHashId} which mirrors
+                  external user '${user.externalId}' — cannot create a mirror account for
                   external user '${extUser.externalId} that use that same email address""")
 
+            throwForbiddenIf(user.emailVerifiedAt.isEmpty,
+               "TyE7BKG52A4", o"""s$siteId: Cannot connect Talkyard user ${user.usernameHashId}
+                  with external user '${user.externalId}': The Talkyard user account's email address
+                  hasn't been verified.""")
+
             // Apparently this Talkyard user was created "long ago", and now we're
-            // single-sign-on logging in as that user, for the first time. Connect this old account
-            // with the external user account, and thereafter it'll get looked up via external
-            // id instead (in the code block just above).
-            Logger.info(o"""s$siteId: Connecting Talkyard user ${user.idSpaceName}
-                to external user ${extUser.externalId}, because of matching
-                email address: ${extUser.primaryEmailAddress}, and
-                the Talkyard user doesn't currently mirror any external user.
-                """)
+            // single-sign-on logging in as that user, for the first time. Connect this Talkyard account
+            // with the external user account, and, in the future, we'll find it via external
+            // id lookup instead (in code block (7KAB2BA) above).
+            Logger.info(o"""s$siteId:
+                Connecting Talkyard user ${user.usernameHashId}
+                to external user '${extUser.externalId}', because they have the same
+                email address: ${extUser.primaryEmailAddress}, and the Talkyard
+                user account doesn't currently mirror any external user. [TyM2DKW07X]""")
 
             val updatedUser = user.copyWithExternalData(extUser)
             dieIf(updatedUser == user, "TyE4AKBRE2")
@@ -213,8 +212,15 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
           }) getOrElse {
             // Create a new Talkyard user account, for this external user.
             // (There's no mirror account with a matching external id or email address.)
+
+            def makeName(): String = "unnamed_" + (nextRandomLong() % 1000)
+            val usernameToTry = extUser.username.orElse(extUser.fullName).getOrElse(makeName())
+            val okayUsername = User.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
+              tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
+
             Logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,
-                for external user ${extUser.externalId}...""")
+                for external user '${extUser.externalId}'... [TyM5BKA2WA0]""")
+
             val userData = // [5LKKWA10]
               NewPasswordUserData.create(
                 name = extUser.fullName,
@@ -230,7 +236,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
               match {
                 case Good(data) => data
                 case Bad(errorMessage) =>
-                  throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
+                  throwUnprocessableEntity("TyE4BKR03J", s"$errorMessage, please try again.")
               }
             dao.createUserForExternalSsoUser(userData, request.theBrowserIdData, tx)
           }

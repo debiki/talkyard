@@ -113,9 +113,9 @@ class PlainApiActions(
       val decodedBytes: Array[Byte] = acb.Base64.decodeBase64(usernamePasswordBase64Encoded)
       val usernameColonPassword = new String(decodedBytes, "UTF-8")
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
-      val secretValue = colonPassword.drop(1)
+      val secretKey = colonPassword.drop(1)
       val dao = globals.siteDao(site.id)
-      val apiSecret = dao.getApiSecret(secretValue) getOrElse {
+      val apiSecret = dao.getApiSecret(secretKey) getOrElse {
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
       }
       val talkyardIdPrefix = "talkyardId="

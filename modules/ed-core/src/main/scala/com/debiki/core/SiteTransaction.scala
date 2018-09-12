@@ -604,7 +604,7 @@ trait SiteTransaction {
   def nextApiSecretNr(): DraftNr
   def insertApiSecret(secret: ApiSecret)
   def setApiSecretDeleted(secretNr: ApiSecretNr, when: When): Boolean
-  def loadApiSecretBySecretValue(secretValue: String): Option[ApiSecret]
+  def loadApiSecretBySecretKey(secretKey: String): Option[ApiSecret]
   def listApiSecretsRecentlyCreatedFirst(limit: Int): immutable.Seq[ApiSecret]
 }
 

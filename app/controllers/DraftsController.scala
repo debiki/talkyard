@@ -164,7 +164,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val limit = 7 * 30
           val oldDrafts = tx.listDraftsRecentlyEditedFirst(requester.id, limit = limit)
           if (oldDrafts.length >= limit) oldDrafts.lastOption foreach { oldDraft =>
-            val daysOld = now.daysSince(oldDraft.createdAt)
+            val daysOld = now.daysSince(oldDraft.lastEditedAt getOrElse oldDraft.createdAt)
             if (daysOld < 7)
               throwTooManyRequests("Saving too many drafts [TyE7BKP32]")
           }

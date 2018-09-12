@@ -69,7 +69,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
         val thePageId = pageId.getOrThrowBadArgument("TyE2AKB45", "pageId")
         val thePostNr = postNr.getOrThrowBadArgument("TyE2AKB46", "postNr")
         val thePost = dao.loadPost(thePageId, thePostNr) getOrElse {
-          throwIndistinguishableNotFound("TyE5AKBR02")
+          throwIndistinguishableNotFound("TyE8AKVR04")
         }
         Some(DraftLocator(
           DraftType.Reply,
