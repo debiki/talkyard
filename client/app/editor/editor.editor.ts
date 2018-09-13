@@ -138,7 +138,7 @@ export const Editor = createComponent({
 
   focusInputFields: function() {
     let elemToFocus = findDOMNode(this.refs.titleInput);
-    if (!elemToFocus) {
+    if (!elemToFocus && this.refs.rtaTextarea) {
       elemToFocus = findDOMNode(this.refs.rtaTextarea.textareaRef);
     }
     if (elemToFocus) {
@@ -420,8 +420,10 @@ export const Editor = createComponent({
         onDone: onDone,
         draftStatus: DraftStatus.NothingHappened,
         draft,
+      }, () => {
+        this.focusInputFields();
+        this.updatePreview();
       });
-      this.updatePreview();
     });
   },
 
@@ -442,8 +444,9 @@ export const Editor = createComponent({
       editorsPageId: store.currentPageId,
       newForumTopicCategoryId: categoryId,
       newPageRole: role,
-      text: text
-    });
+      text: text,
+    },
+      this.updatePreview);
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.Topic,
@@ -452,7 +455,6 @@ export const Editor = createComponent({
     };
 
     this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role);
-    this.updatePreview();
   },
 
   openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
@@ -512,11 +514,16 @@ export const Editor = createComponent({
   },
 
   scrollPostIntoView: function(postNr) {
-    debiki.internal.showAndHighlightPost($byId('post-' + postNr), {
-      marginTop: topbar.getTopbarHeightInclShadow(),
-      // Add + X so one sees the Reply button and a bit below the post.
-      marginBottom: this.refs.editor.clientHeight + 90,
-    })
+    const postElem = $byId('post-' + postNr);
+    // There's no pots-1 = BodyNr in embedded comments discussions (there's a blog
+    // article instead, on the embedding page).
+    if (postElem) {
+      // Try to not scroll so much, that's also confusing: specify fairly small margins.
+      debiki.internal.showAndHighlightPost(postElem, {
+        marginTop: Math.max(60, topbar.getTopbarHeightInclShadow()),
+        marginBottom: 50,
+      })
+    }
   },
 
   alertBadState: function(wantsToDoWhat = null): boolean {
@@ -571,8 +578,10 @@ export const Editor = createComponent({
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
         pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
-    if (shallSkipDraft(this.state))
+    if (shallSkipDraft(this.state)) {
+      this.setState({ draftStatus: DraftStatus.NothingHappened });
       return;
+    }
 
     const page: Page = store.currentPage;
     const theCategoryId = draftLocator.categoryId || page.categoryId;
@@ -581,8 +590,10 @@ export const Editor = createComponent({
     if (currentGuidelines &&
         currentGuidelines.categoryId === theCategoryId &&
         currentGuidelines.pageRole === thePageRole &&
-        currentGuidelines.writingWhat === writingWhat)
+        currentGuidelines.writingWhat === writingWhat) {
+      this.setState({ draftStatus: DraftStatus.NothingHappened });
       return;
+    }
 
     // Currently there are no drafts, only guidelines.
     Server.loadDraftAndGuidelines(draftLocator, writingWhat, theCategoryId, thePageRole,
@@ -606,7 +617,8 @@ export const Editor = createComponent({
         text: draft ? draft.text : '',
         title: draft ? draft.title : '',
         guidelines,
-      });
+      },
+        this.focusInputFields);
     });
   },
 
@@ -671,9 +683,12 @@ export const Editor = createComponent({
         ? DraftStatus.EditsUndone
         : DraftStatus.ShouldSave;
 
-    this.setState({ title, text, draftStatus },
-        draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
-    this.updatePreview();
+    this.setState({ title, text, draftStatus }, () => {
+      if (draftStatus === DraftStatus.ShouldSave) {
+        this.saveDraftDebounced();
+      }
+      this.updatePreview();
+    });
   },
 
   onKeyDown: function(event) {
@@ -1043,9 +1058,7 @@ export const Editor = createComponent({
       this.focusInputFields();
       this.updatePreview();
       if (opts.scrollToShowPostNr) {
-        const postElem = $byId('post-' + opts.scrollToShowPostNr);
-        // Try to not scroll so much, that's also confusing: specify fairly small margins.
-        debiki.internal.showAndHighlightPost(postElem, { marginTop: 60, marginBottom: 40 });
+        this.scrollPostIntoView(opts.scrollToShowPostNr);
       }
     }, 1);
   },
@@ -1108,32 +1121,27 @@ export const Editor = createComponent({
 
   makeTextBold: function() {
     const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exBold, '**');
-    this.setState({ text: newText });
-    this.updatePreview();
+    this.setState({ text: newText }, this.updatePreview);
   },
 
   makeTextItalic: function() {
     const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exEmph, '*');
-    this.setState({ text: newText });
-    this.updatePreview();
+    this.setState({ text: newText }, this.updatePreview);
   },
 
   markupAsCode: function() {
     const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exPre, '`');
-    this.setState({ text: newText });
-    this.updatePreview();
+    this.setState({ text: newText }, this.updatePreview);
   },
 
   quoteText: function() {
     const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exQuoted, '> ', null, '\n\n');
-    this.setState({ text: newText });
-    this.updatePreview();
+    this.setState({ text: newText }, this.updatePreview);
   },
 
   addHeading: function() {
     const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.ExHeading, '### ', null, '\n\n');
-    this.setState({ text: newText });
-    this.updatePreview();
+    this.setState({ text: newText }, this.updatePreview);
   },
 
   render: function() {
