@@ -374,6 +374,16 @@ class PlainApiActions(
       val requestUriAndIp = s"site $site, ip ${apiRequest.ip}: ${apiRequest.uri}"
       //p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
+
+      import apiRequest.tracerSpan
+      tracerSpan.setTag("siteId", site.id)
+      anyUser foreach { user =>
+        tracerSpan.setTag("userId", user.id)
+        if (user.isStaff) tracerSpan.setTag("isStaff", true)
+        if (user.isAdmin) tracerSpan.setTag("isAdmin", true)
+        if (user.isModerator) tracerSpan.setTag("isModerator", true)
+      }
+
       val timer = globals.metricRegistry.timer(request.path)
       val timerContext = timer.time()
       var result = try {

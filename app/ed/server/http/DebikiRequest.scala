@@ -49,6 +49,17 @@ abstract class DebikiRequest[A] {
   def dao: SiteDao
   def request: Request[A]
 
+  def tracerSpan: io.opentracing.Span =
+    request.attrs(SafeActions.TracerSpanKey)
+
+  def tracerSpanLogEvent(eventName: String) {
+    tracerSpan.log(com.google.common.collect.ImmutableMap.of("event", eventName))
+  }
+
+  def tracerSpanLogEventValue(eventName: String, value: String) {
+    tracerSpan.log(com.google.common.collect.ImmutableMap.of("event", eventName, "value", value))
+  }
+
   def isViaApiSecret: Boolean = sid match { // should be case obj AuthnMethod.ApiSecret instead? [5BKRH02]
     case SidOk("_api_secret_", 0, _) => true
     case _ => false

@@ -99,7 +99,8 @@ class Globals(
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
-  val actorSystem: ActorSystem) {
+  val actorSystem: ActorSystem,
+  val tracer: io.opentracing.Tracer) {
 
   def outer: Globals = this
 

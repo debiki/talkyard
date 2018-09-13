@@ -25,8 +25,15 @@ import debiki._
 import ed.server.security.EdSecurity
 import play.{api => p}
 import play.api.mvc._
+import play.api.libs.typedmap.TypedKey
 import play.api.Logger
 import scala.concurrent.{ExecutionContext, Future}
+import SafeActions._
+
+
+object SafeActions {
+  val TracerSpanKey: TypedKey[io.opentracing.Span] = TypedKey[io.opentracing.Span]("tracerSpan")
+}
 
 
 /**
@@ -79,29 +86,37 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
     override implicit protected def executionContext: ExecutionContext =
       globals.executionContext
 
-    def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
+    def invokeBlock[A](requestNoTracing: Request[A], block: Request[A] => Future[Result])
+          : Future[Result] = {
+      val tracerSpan = {
+        val path = requestNoTracing.path
+        val traceOpName =
+          if (path.startsWith("/-/v0/") ||
+            path == "/favicon.ico" ||
+            path == "/robots.txt") {
+            path
+          }
+          else if (path.startsWith("/-/")) {
+            val withoutPrefix = path.drop("/-/".length)
+            var opName = withoutPrefix.takeWhile(_ != '/')
+            if (withoutPrefix.contains('/')) {
+              opName += "/*"
+            }
+            "/-/" + opName
+          }
+          else {
+            "/view-page"
+          }
+        globals.tracer.buildSpan(traceOpName).start()
+      }
+
+      val request = requestNoTracing.addAttr(TracerSpanKey, tracerSpan)
+      var exceptionThrown = true
+
       var futureResult = try {
-        SECURITY ; COULD /* add back this extra check.
-        // No longer works, even when HTTPS is used. Something happenend when upgrading
-        // Play from 2.4.0 to 2.4.8?
-        if (globals.secure && !request.secure) {
-          // Reject this request, unless an 'insecure' param is set and we're on localhost.
-          val insecureOk = request.queryString.get("insecure").nonEmpty &&
-            request.host.matches("^localhost(:[0-9]+)?$".r)
-          if (!insecureOk)
-            return Future.successful(Results.InternalServerError(o"""I think this is a
-              HTTP request, but I, the Play Framework app, am configured to be secure, that is,
-              all requests should be HTTPS. You can:
-              ${"\n"} - Change from http:// to https:// in the URL, and update the Nginx
-              configuration accordingly.
-              ${"\n"} - If you use https:// already, then have a look at the Nginx configuration
-              — does Nginx send the 'X-Forwarded-Proto' header?
-              ${"\n"} - Or set debiki.secure=false in the Play Framework application config file.
-              ${"\n\n"}You can also append '?insecure' to the URL if you want
-              to proceed nevertheless — this works from localhost only. [DwE8KNW2]"""))
-        }
-        */
-        block(request)
+        val fr = block(request)
+        exceptionThrown = false
+        fr
       }
       catch {
         case ex: OverQuotaException =>
@@ -138,6 +153,12 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         case ex: Error =>
           Future.successful(internalError(request, ex, "DwE500ERR"))
       }
+      finally {
+        if (exceptionThrown) {
+          tracerSpan.finish()
+        }
+      }
+
       futureResult = futureResult recover {
         case ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
@@ -159,9 +180,14 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       }
 
       val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
-      anyNewFakeIp foreach { fakeIp =>
-        futureResult = futureResult map { result =>
-          result.withCookies(security.SecureCookie("dwCoFakeIp", fakeIp))
+
+      futureResult = futureResult map { result =>
+        if (!exceptionThrown) {
+          tracerSpan.finish()
+        }
+        anyNewFakeIp match {
+          case None => result
+          case Some(fakeIp) => result.withCookies(security.SecureCookie("dwCoFakeIp", fakeIp))
         }
       }
 

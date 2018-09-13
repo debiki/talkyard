@@ -56,6 +56,26 @@ services:
       E2E_TEST_PASSWORD: "public"
       FORBIDDEN_PASSWORD: "public"
 
+      # ----- Tracing
+      # See: https://github.com/jaegertracing/legacy-client-java/blob/master/jaeger-core/README.md
+      #         #configuration-via-environment
+
+      # Or "probabilistic", param 0.0 ... 1.0, or "ratelimiting" with param = num samples per second.
+      JAEGER_SAMPLER_TYPE: "const"
+      JAEGER_SAMPLER_PARAM: "1"
+      # Or 6831? 6832? will be renamed to JAEGER_CONFIG_MANAGER_HOST_PORT
+      # https://github.com/jaegertracing/jaeger-client-go/issues/282
+      #JAEGER_SAMPLER_MANAGER_HOST_PORT: "tracer:5778"
+
+      # Either configure Jaeger agent host and port:
+      # JAEGER_AGENT_HOST
+      # JAEGER_AGENT_PORT
+      # Or connect directly to the Jaeger connector: (optionally with authentication info)
+      JAEGER_ENDPOINT: "http://tracer:14268/api/traces"
+      # JAEGER_USER: ""
+      # JAEGER_PASSWORD: ""
+      # JAEGER_AUTH_TOKEN: ""
+
   cache:
     build: docker/cache/
     image: $DOCKER_REPOSITORY/talkyard-cache
@@ -129,6 +149,7 @@ services:
     # Don't want this container to start at all by default.
     command: 'exit 0'
 
+  # Dummy SMTP server, for testing.
   fakemail:
     build: docker/fakemail/mailslurper
     image: $DOCKER_REPOSITORY/fakemail
@@ -140,6 +161,18 @@ services:
      - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
      - '8026:8026'  # admin interface,  '80' + 25 + 1
      - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
+
+  # Jaeger Tracing. Access at http://localhost:16686.
+  tracer:
+    image: jaegertracing/all-in-one:1.6
+    ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
+      #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
+      - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
+      - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
+      - '5778:5778'      # Agent. serve configs
+      - '16686:16686'    # Query. Web interface + find traces.
+      - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
+      #- '9411:9411'     # Collector. Zipkin compatible endpoint
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
