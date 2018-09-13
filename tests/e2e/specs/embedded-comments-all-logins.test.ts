@@ -109,7 +109,7 @@ describe("emb cmts all logins", () => {
     majasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
     majasBrowser.topic.assertPostTextMatches(2, majasComment);
   });
-
+/*
   it("Michael signs up, with Facebook", () => {
     michaelsBrowser.waitAndClick('.dw-a-logout');
     // Now the page reloads. Wait.
@@ -168,6 +168,6 @@ describe("emb cmts all logins", () => {
     majasBrowser.topic.waitForPostNrVisible(4);
     majasBrowser.topic.assertPostTextMatches(4, majas2ndComment);
   });
-
+*/
 });
 
