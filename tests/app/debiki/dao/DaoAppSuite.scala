@@ -154,7 +154,7 @@ class DaoAppSuite(
     val password = s"public-${username take 2}-x-${username drop 2}"
     val adm = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $username"), username = username,
-      email = s"$username@x.co", password = password,
+      email = s"$username@x.co", password = Some(password),
       createdAt = theCreatedAt,
       isAdmin = true, isOwner = isOwner).get, browserIdData)
     if (emailVerified) {
@@ -169,7 +169,7 @@ class DaoAppSuite(
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val mod = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $username"), username = username, email = s"$username@x.co",
-      password = s"public-$username", createdAt = theCreatedAt,
+      password = Some(s"public-$username"), createdAt = theCreatedAt,
       isAdmin = false, isModerator = true, isOwner = false).get, browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(mod.id, theCreatedAt.toJavaDate)
@@ -187,7 +187,7 @@ class DaoAppSuite(
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $username"), username = username, email = s"$username@x.co",
-      password = s"public-$username", createdAt = theCreatedAt,
+      password = Some(s"public-$username"), createdAt = theCreatedAt,
       isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get,
       browserIdData)
     if (emailVerified) {

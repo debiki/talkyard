@@ -198,7 +198,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "55jmu24560"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = true).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = true).get,
         browserIdData)
 
       info("upload avatar images, no quota used")
@@ -236,7 +236,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "77pkw2pkw2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = false, isOwner = false).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = false, isOwner = false).get,
         browserIdData)
 
       info("set avatar")
@@ -283,7 +283,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "7gmyk25300"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = false).get,
         browserIdData)
 
       info("upload files, no quota used")
@@ -344,7 +344,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "6j35mk2100"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = false).get,
         browserIdData)
 
       info("create page, link missing file, no quota used")
@@ -390,7 +390,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "site1_6kmf2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = false).get,
         browserIdData)
 
       info("create site 2")
@@ -404,7 +404,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val dao2 = globals.siteDao(site2.id)
       val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = true).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = true).get,
         browserIdData)
 
       info("upload files, no quota used")
@@ -479,7 +479,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "7mpfku2300"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = magic, createdAt = globals.now(), isAdmin = false, isOwner = false).get,
+        password = Some(magic), createdAt = globals.now(), isAdmin = false, isOwner = false).get,
         browserIdData)
 
       info("upload files, as long as haven't uploaded too much")

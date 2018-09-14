@@ -42,7 +42,7 @@ class SignupAppSpecDefaultSettings extends DaoAppSuite() {
       val ex = intercept[ResultException] {
         dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
           name = Some("Obelix Owner"), username = "obleix",
-          email = s"obelix@x.co", password = tooShortPassword,
+          email = s"obelix@x.co", password = Some(tooShortPassword),
           createdAt = globals.now(),
           isAdmin = true, isOwner = true).get, browserIdData)
       }
@@ -68,7 +68,7 @@ class SignupAppSpecDefaultSettings extends DaoAppSuite() {
       val ex = intercept[ResultException] {
         dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
           name = Some("Mia Member"), username = "mia",
-          email = s"mia@x.co", password = tooShortPassword.take(AllSettings.HardMinPasswordLength - 1),
+          email = s"mia@x.co", password = Some(tooShortPassword.take(AllSettings.HardMinPasswordLength - 1)),
           createdAt = globals.now(),
           isAdmin = false, isOwner = false).get, browserIdData)
       }
@@ -105,7 +105,7 @@ class SignupAppSpecCustomSettings extends DaoAppSuite(
       val ex = intercept[ResultException] {
         dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
           name = Some("Obelix Owner"), username = "obleix",
-          email = s"obelix@x.co", password = tooShortPassword,
+          email = s"obelix@x.co", password = Some(tooShortPassword),
           createdAt = globals.now(),
           isAdmin = true, isOwner = true).get, browserIdData)
       }
