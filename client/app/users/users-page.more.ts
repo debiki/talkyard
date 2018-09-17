@@ -23,8 +23,6 @@
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
 /// <reference path="user-summary.more.ts" />
-////xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-//declare var moment: any;  ?? remove all these ??
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {

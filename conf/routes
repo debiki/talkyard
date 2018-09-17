@@ -306,12 +306,11 @@ GET   /-/ed-comments.v0.min.js  controllers.Assets.at(path = "/public/res", file
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
-# Prefix with 'ty-' so one quickly sees if it's Talkyards service worker, when debugging on localhost.
-# (Then might be old localhost service workers, from other unrelated open source projects.)
-GET   /ty-service-worker.js     controllers.Assets.at(path = "/public/res", file = "ty-service-worker.js")
-GET   /ty-service-worker.min.js controllers.Assets.at(path = "/public/res", file = "ty-service-worker.min.js")
-
-GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
+# Prefix with 'talkyard-' so one quickly sees if it's Talkyards service worker, when debugging on localhost.
+# (There might be old other localhost service workers, from unrelated open source projects.) [sw]
+#GET   /talkyard-service-worker.js     controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.js")
+#GET   /talkyard-service-worker.min.js controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.min.js")
+#GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

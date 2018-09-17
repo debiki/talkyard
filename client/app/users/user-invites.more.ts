@@ -21,8 +21,6 @@
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
 /// <reference path="../widgets.more.ts" />
-////xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-//declare var moment: any;   ?? rm all these?
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {

@@ -77,7 +77,7 @@
     "selenium-standalone": "^6.15.3",
     "sync-request": "^4.0.1",
     "tape": "^4.6.3",
-    "typescript": "^3.0.3",
+    "typescript": "^3.1.6",
     "wdio-dot-reporter": "^0.0.9",
     "wdio-mocha-framework": "^0.5.13",
     "wdio-sync": "^0.7.1",

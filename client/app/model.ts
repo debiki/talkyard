@@ -1511,7 +1511,7 @@ interface ListDraftsResponse {
 
 
 
-// ----- Service worker messages
+// ----- Service worker messages  [sw]
 
 
 enum SwDo {  // Service worker, do: ....

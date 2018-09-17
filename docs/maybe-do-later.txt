@@ -1,7 +1,16 @@
 When doing these things, search for the tag too e.g. "[subcats]".
 
+
+Instead of this file, maybe use a combination of:
+ - https://github.com/dspinellis/git-issue   wow! and source code with  {{ {1  vi folds
+ (- https://git-scm.com/docs/git-notes? )
+ (- https://github.com/google/git-appraise )
+
 [subcats]
 Implement sub categories.
+
+[sw]
+Service worker.
 
 [privacy-badger]:
 Privacy Badger doesn't like transient session cookies, currently.
@@ -22,6 +31,12 @@ For some reason I disabled Akismet (why? when refactoring to save time?). Enable
 Change layout of problem type topics to traditional forum flat comments layout.
 & use for formal messages too, or maybe repl w chat?
 
+[editor-drafts]:
+When editing a post, ask "Continue editing draft? [Yes, resume draft] [No, ignore draft (but keep it)]"
+instead of always opening the old draft. Because otherwise sometimes old edits I didn't want, reappears.
+How do that, UX wise? Maybe ask, when *opening* instead of when *saving*? and always
+save a draft by default? Because maybe short of time when saving (e.g. need to run and
+catch the subway, happens to me all the time) then it's annoying with questions.
 
 [sidexpsite]:
 Add session expiration time config value.

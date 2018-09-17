@@ -21,16 +21,18 @@
 const d = { i: debiki.internal };
 
 const scriptLoadDoneCallbacks = [];
-debiki.scriptLoad = {  // RENAME to tyi.whenStarted(...) ?   ("Talkyard internal")
+debiki.scriptLoad = {  // RENAME to tyd.whenStarted(...) ?
   done: function(callback) {
     scriptLoadDoneCallbacks.push(callback);
   }
 };
 
 
+/* [sw]
 let resolveServiceWorkerPromise;
 let rejectServiceWorkerPromise;
 
+// move to tyd
 debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reject) {
   resolveServiceWorkerPromise = resolve;
   rejectServiceWorkerPromise = reject;
@@ -38,7 +40,7 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
 
 if (!('serviceWorker' in navigator)) {
   rejectServiceWorkerPromise();
-}
+}  */
 
 const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
@@ -271,14 +273,16 @@ function renderPageInBrowser() {
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });
     debiki2.page.PostsReadTracker.start();
 
-    // Wait with the service worker, in case is an underpowered mobile phone
+    /* [sw] Wait with the service worker, in case is an underpowered mobile phone
     // that's 100% busy downloading things and rendering the page — then don't want the service
     // worker to start before it's probably done. Maybe in the future, it'll download
     // and cache things it, too.
     // Could maybeschedule this timeout, after a done-rendering & downloading event?
     setTimeout(registerServiceWorker, 3500);
+    */
   });
 
+  /* [sw]
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
       console.log("No service worker. [TyMSWABSENT]");
@@ -288,7 +292,7 @@ function renderPageInBrowser() {
     // @ifdef DEBUG
     dotMin = '';
     // @endif
-    navigator.serviceWorker.register(`/ty-service-worker${dotMin}.js`)
+    navigator.serviceWorker.register(`/talkyard-service-worker${dotMin}.js`)
         .then(function(registration) {
           console.log("Registered service worker. [TyMSWREGOK]");
           //registration.onupdatefound = tell the user to refresh the page
@@ -306,7 +310,7 @@ function renderPageInBrowser() {
           console.log(`Error registering service worker: ${error} [TyESWREGOK]`);
           setTimeout(rejectServiceWorkerPromise);
         });
-  }
+  } */
 
   function runNextStep() {
     debiki2.dieIf(!steps.length, "steps is empty [DwE5KPEW2]");

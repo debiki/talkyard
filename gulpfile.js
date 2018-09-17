@@ -265,7 +265,7 @@ function compileServerTypescriptConcatJavascript() {
 var swTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'ty-sw-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],  // dom: fetch() related types
+  lib: ['es5', 'es2015', 'dom'],  // dom: fetch() API related types
   types: ['core-js'],
   sourceMap: true,     // ??
   inlineSources: true  // include source code in mapping file
@@ -449,7 +449,7 @@ function makeConcatAllScriptsStream() {
   }
 
   return es.merge(
-      makeConcatStream('ty-service-worker.js', swJsFiles, 'DoCheckNewer'),
+      makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer'),
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
       makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'),

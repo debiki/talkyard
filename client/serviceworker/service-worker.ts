@@ -14,7 +14,7 @@
 // view-source:https://jakearchibald.github.io/isserviceworkerready/demos/postMessage/
 // (found via:  https://jakearchibald.github.io/isserviceworkerready/#postmessage-to-&-from-worker )
 
-console.log("Service worker v0.0.1 loading [TyMSWVLDNG]");
+console.log("Service worker v0.0.1 loading [TyMSWVLDNG]");  // [sw]
 
 type ErrorStatusHandler = (errorStatusCode?: number) => void;
 

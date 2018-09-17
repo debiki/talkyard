@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude.unimplemented
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
@@ -37,7 +38,8 @@ class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security._
 
 
-  def mobileAppWebmanifest(): Action[Unit] = GetActionAllowAnyone { _ =>
+  def mobileAppWebmanifest(): Action[Unit] = GetActionAllowAnyone { _ =>  // [sw]
+    unimplemented("TyE7KAESW")
     // See:  https://github.com/discourse/discourse/blob/master/app/controllers/metadata_controller.rb
     // or display: browser ?
     // But:  Use `display: browser` in webmanifest for iOS devices

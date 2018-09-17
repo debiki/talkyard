@@ -61,6 +61,7 @@ services:
       #         #configuration-via-environment
 
       # Or "probabilistic", param 0.0 ... 1.0, or "ratelimiting" with param = num samples per second.
+      # or "remote" (the default), asks the Jaeger agent how to sample.
       JAEGER_SAMPLER_TYPE: "const"
       JAEGER_SAMPLER_PARAM: "1"
       # Or 6831? 6832? will be renamed to JAEGER_CONFIG_MANAGER_HOST_PORT
@@ -164,7 +165,7 @@ services:
 
   # Jaeger Tracing. Access at http://localhost:16686.
   tracer:
-    image: jaegertracing/all-in-one:1.6
+    image: jaegertracing/all-in-one:1.7
     ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
       #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
       - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol

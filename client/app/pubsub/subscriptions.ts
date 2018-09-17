@@ -29,7 +29,9 @@ const RetryAfterMsDefault = 5000;
 const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
-const useSw = 'serviceWorker' in navigator;
+
+/*
+const useSw = 'serviceWorker' in navigator;  [sw]
 
 if (useSw) {
   navigator.serviceWorker.addEventListener('message', function (event) {
@@ -77,10 +79,11 @@ if (useSw) {
             "\n\nThe message body:\n\n" + JSON.stringify(message));
     }
   });
-}
+} */
 
 
 export function subscribeToServerEvents(me: Myself) {
+  /*
   if (useSw) {
     debiki.serviceWorkerPromise.then(function() {
     });
@@ -97,8 +100,9 @@ export function subscribeToServerEvents(me: Myself) {
     });
   }
   else {
+  */
     subscribeToServerEventsDirectly(me);
-  }
+  //}
 }
 
 
