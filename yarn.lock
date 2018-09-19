@@ -33,11 +33,27 @@
   version "16.0.28"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.0.28.tgz#eb0b31272528da8f20477ec27569c4f767315b33"
 
+"@types/service_worker_api@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@types/service_worker_api/-/service_worker_api-0.0.9.tgz#7269ff2fa0e27e23a38a22e8909534f63823dee8"
+  dependencies:
+    "@types/whatwg-fetch" "*"
+
 "@types/tape@^4.2.28":
   version "4.2.31"
   resolved "https://registry.yarnpkg.com/@types/tape/-/tape-4.2.31.tgz#d2cd0f2e410d2c288a5eb54c01c04e6b8a301fd2"
   dependencies:
     "@types/node" "*"
+
+"@types/whatwg-fetch@*":
+  version "0.0.33"
+  resolved "https://registry.yarnpkg.com/@types/whatwg-fetch/-/whatwg-fetch-0.0.33.tgz#19c0d2863c8cb2380f21a1c736b79cbf7895bb13"
+  dependencies:
+    "@types/whatwg-streams" "*"
+
+"@types/whatwg-streams@*":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@types/whatwg-streams/-/whatwg-streams-0.0.7.tgz#28bfe73dc850562296367249c4b32a50db81e9d3"
 
 "@webscopeio/react-textarea-autocomplete@=1.4.1":
   version "1.4.1"

@@ -119,7 +119,7 @@ ReactDispatcher.register(function(payload) {
       store.numOnlineStrangers += 1;
       store.me = makeStranger(store);
       store.user = store.me; // try to remove
-      debiki2.pubsub.subscribeToServerEvents();
+      debiki2.pubsub.subscribeToServerEvents(store.me);
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -443,7 +443,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   if (!anyNewMe) {
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageDataTo(store.me);
-    debiki2.pubsub.subscribeToServerEvents();
+    debiki2.pubsub.subscribeToServerEvents(store.me);
     this.emitChange();
     return;
   }
@@ -545,7 +545,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     }, 0);
   }
 
-  debiki2.pubsub.subscribeToServerEvents();
+  debiki2.pubsub.subscribeToServerEvents(store.me);
   store.quickUpdate = false;
 };
 

@@ -21,7 +21,7 @@ type PostNr = number;
 type DraftNr = number;
 type PageVersion = number;
 type CategoryId = number;
-type SiteId = String;
+type SiteId = number;
 type SiteVersion = number;
 type LoginId = String;
 type UserId = number;
@@ -1508,6 +1508,35 @@ interface ListDraftsResponse {
   pagePostNrsByPostId: { [postId: string]: [PageId, PostNr] };
   pageTitlesById: { [pageId: string]: string };
 }
+
+
+
+// ----- Service worker messages
+
+
+enum SwDo {  // Service worker, do: ....
+  SubscribeToEvents = 1,
+}
+
+//enum SwSays {  // Service worker says: ....
+//  GotNotfs = 1,
+//}
+
+interface MessageToServiceWorker {
+  doWhat: SwDo
+}
+
+//interface MesageFromServiceWorker {
+//  saysWhat: SwSays,
+//}
+
+
+interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
+  doWhat: SwDo.SubscribeToEvents;
+  siteId: SiteId,
+  myId: UserId,
+}
+
 
 
 // ----- Public API

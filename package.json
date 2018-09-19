@@ -21,6 +21,7 @@
     "@types/lodash": "^4.14.68",
     "@types/react": "^16.0.27",
     "@types/react-dom": "^16.0.3",
+    "@types/service_worker_api": "^0.0.9",
     "@webscopeio/react-textarea-autocomplete": "=1.4.1",
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,12 +29,83 @@ const RetryAfterMsDefault = 5000;
 const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
+const useSw = 'serviceWorker' in navigator;
+
+if (useSw) {
+  navigator.serviceWorker.addEventListener('message', function (event) {
+    const message = event.data;
+    // @ifdef DEBUG
+    console.log(`SW message: ${JSON.stringify(event)}, message: ${JSON.stringify(message)} [TyMGOTSWMSG]`);
+    // @endif
+
+    switch (message.type) {  // dupl switch, will delete the other one (7QKBAG202)
+      case 'storePatch':
+        ReactActions.patchTheStore(message.data);
+        break;
+      case 'notifications':
+        ReactActions.addNotifications(message.data);
+        break;
+      case 'presence':
+        ReactActions.updateUserPresence(message.data.user, message.data.presence);
+        break;
+      case 'disconnected':
+        $h.addClasses(document.documentElement, 's_NoInet');
+        break;
+    case 'connected':
+        $h.removeClasses(document.documentElement, 's_NoInet');
+        break;
+      case 'eventsBroken':
+        // Probably the laptop was disconnected for a short while, maybe suspended,
+        // or the mobile was in Airplane mode, maybe a meeting? Likely, all is fine.
+        // So don't pop up any dangerous looking error dialog; instead, just the below calm info.
+        // BUG won't work, unless the more-scripts bundle already loaded.
+        // Instead, find a tiny modal dialog lib, use instead of React Bootstrap? [tiny-dialog]
+        // But ... will work in prod mode? Because then caches, no server roundtrip needed?
+        Server.loadMoreScriptsBundle(function() {
+          util.openDefaultStupidDialog({  // import what?
+            body: "Refresh page to see any latest changes. (There was a disconnection)",  // I18N
+            primaryButtonTitle: "Refresh now",
+            secondaryButonTitle: "Cancel",
+            onCloseOk: function(whichButton) {
+              if (whichButton === 1)
+                window.location.reload()
+            } });
+        });
+        break;
+      default:
+        die("Unknown message type [TyE5KKRWG2]: " + message.type +
+            "\n\nThe message body:\n\n" + JSON.stringify(message));
+    }
+  });
+}
+
+
+export function subscribeToServerEvents(me: Myself) {
+  if (useSw) {
+    debiki.serviceWorkerPromise.then(function() {
+    });
+    debiki.serviceWorkerPromise.then(function(sw: ServiceWorker) {
+      // DO_AFTER 2019-01-01 add if-DEBUG around, or delete dieIf()
+      //dieIf(!navigator.serviceWorker.controller, "Service worker didn't claim this tab [TyE7KBQT2]");
+      const message: SubscribeToEventsSwMessage = {
+        doWhat: SwDo.SubscribeToEvents,
+        siteId: eds.siteId,
+        myId: me.id,
+      };
+      //navigator.serviceWorker.controller.postMessage(message);  // [6KAR3DJ9]
+      sw.postMessage(message);  // [6KAR3DJ9]
+    });
+  }
+  else {
+    subscribeToServerEventsDirectly(me);
+  }
+}
 
 
 /**
  * Deletes any old event subscription and creates a new for the current user.
  */
-export function subscribeToServerEvents() {
+function subscribeToServerEventsDirectly(me: Myself) {
   Server.abortAnyLongPollingRequest();
 
   // Remove the "No internet" message, in case the network works (again).
@@ -45,13 +116,12 @@ export function subscribeToServerEvents() {
 
   // If not logged in, don't ask for any events — if everyone did that, that could put the server
   // under an a bit high load? and not much interesting to be notified about anyway, when not logged in.
-  const me = ReactStore.getMe();
   if (!me || !me.id)
     return;
 
   Server.sendLongPollingRequest(me.id, (response) => {
     console.debug("Long polling request done, sending another...");
-    subscribeToServerEvents();
+    subscribeToServerEventsDirectly(me);
 
     // Reset backoff, since all seems fine.
     retryAfterMs = RetryAfterMsDefault;
@@ -60,7 +130,7 @@ export function subscribeToServerEvents() {
     dieIf(!response.type, 'TyE2WCX59');
     dieIf(!response.data, 'TyE4YKP02');
 
-    switch (response.type) {
+    switch (response.type) {    // dupl switch, will delete this one anyway (7QKBAG202)
       case 'storePatch':
         ReactActions.patchTheStore(response.data);
         break;
@@ -115,7 +185,7 @@ export function subscribeToServerEvents() {
       console.warn(`Long polling error, will retry in ${Math.floor(retryAfterMs / 1000)} seconds...`);
       setTimeout(() => {
         if (!Server.isLongPollingNow()) {
-          subscribeToServerEvents();
+          subscribeToServerEventsDirectly(me);
         }
       }, retryAfterMs);
     }
@@ -124,7 +194,7 @@ export function subscribeToServerEvents() {
     // No error has happened — we aborted the request intentionally. All fine then? Reset the backoff:
     retryAfterMs = RetryAfterMsDefault;
     if (!Server.isLongPollingNow()) {
-      subscribeToServerEvents();
+      subscribeToServerEventsDirectly(me);
     }
   });
 }

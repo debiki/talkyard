@@ -45,6 +45,7 @@ class SubscriberController @Inject()(cc: ControllerComponents, edContext: EdCont
     * with the site id and user id in the host header & sessiond id hash.
     */
   def authorizeSubscriber(channelId: String) = GetAction { request =>
+    play.api.Logger.info("AUTH SUBS")
     SECURITY ; COULD // include a xsrf token? They're normally used for post requests only,
     // but perhaps it makes sense to prevent someone from tricking a browser to subscribe
     // to events? Not sure what harm that could do, but ... add xsrf token just in case?
