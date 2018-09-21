@@ -1,1 +1,0 @@
-../../../modules/definitely-typed/types/keymaster/index.d.ts

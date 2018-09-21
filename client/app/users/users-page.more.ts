@@ -15,14 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../../../node_modules/moment/moment.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="user-invites.more.ts" />
 /// <reference path="user-notifications.more.ts" />
+/// <reference path="user-drafts-etc.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
 /// <reference path="user-summary.more.ts" />
-//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-declare var moment: any;
+////xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
+//declare var moment: any;  ?? remove all these ??
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {

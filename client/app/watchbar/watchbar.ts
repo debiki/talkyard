@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
+/// <reference path="../../../node_modules/@types/keymaster/index.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../store-getters.ts" />

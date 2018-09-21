@@ -10,6 +10,14 @@
   version "0.9.43"
   resolved "https://registry.yarnpkg.com/@types/core-js/-/core-js-0.9.43.tgz#65d646c5e8c0cd1bdee37065799f9d3d48748253"
 
+"@types/jquery@^3.3.9":
+  version "3.3.9"
+  resolved "https://registry.yarnpkg.com/@types/jquery/-/jquery-3.3.9.tgz#91f2aaf5c1e91fd79598fc00ecb4504d78b51fd7"
+
+"@types/keymaster@^1.6.28":
+  version "1.6.28"
+  resolved "https://registry.yarnpkg.com/@types/keymaster/-/keymaster-1.6.28.tgz#093fc6fe49deff4ee17d36935a49230edb1c935f"
+
 "@types/lodash@^4.14.68":
   version "4.14.88"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.88.tgz#97eaf2dc668f33ed8e511a5b627035f4ea20b0f5"
@@ -4278,9 +4286,9 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@^2.6.1:
-  version "2.6.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.2.tgz#3c5b6fd7f6de0914269027f03c0946758f7673a4"
+typescript@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.0.3.tgz#4853b3e275ecdaa27f78fda46dc273a7eb7fc1c8"
 
 ua-parser-js@^0.7.9:
   version "0.7.17"

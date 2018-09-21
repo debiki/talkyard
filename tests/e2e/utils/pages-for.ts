@@ -140,7 +140,7 @@ function pagesFor(browser) {
     },
 
 
-    getSiteId: function(): string {
+    getSiteId: function(): SiteId {
       const result = browser.execute(function() {
         return window['eds'].siteId;
       });

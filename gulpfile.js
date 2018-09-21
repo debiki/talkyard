@@ -221,8 +221,7 @@ var serverTypescriptProject = typeScript.createProject({
 
 var serverTypescriptSrc = [
     'client/server/**/*.ts',
-    'client/shared/plain-old-javascript.d.ts',
-    'client/typedefs/**/*.ts'];
+    'client/shared/plain-old-javascript.d.ts'];
 
 var serverJavascriptSrc = [
     // Two different sanitizers. [5FKEW2]
@@ -266,7 +265,7 @@ function compileServerTypescriptConcatJavascript() {
 var swTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'ty-sw-typescript.js',
-  lib: ['es5', 'es2015', 'webworker'],
+  lib: ['es5', 'es2015', 'dom'],  // dom: fetch() related types
   types: ['core-js'],
   sourceMap: true,     // ??
   inlineSources: true  // include source code in mapping file
@@ -334,8 +333,7 @@ var slimTypescriptSrc = [
     '!client/app/**/*.2d.ts',
     '!client/app/**/*.editor.ts',
     '!client/app/**/*.staff.ts',
-    '!client/app/slim-bundle.d.ts',
-    'client/typedefs/**/*.ts'];
+    '!client/app/slim-bundle.d.ts'];
 
 function compileSlimTypescript() {
   var stream = gulp.src(slimTypescriptSrc)
@@ -357,8 +355,7 @@ function makeOtherTypescriptSrc(what) {
     '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
     'client/shared/plain-old-javascript.d.ts',
     'client/app/model.ts',
-    'client/app/**/*.' + what + '.ts',
-    'client/typedefs/**/*.ts'];
+    'client/app/**/*.' + what + '.ts'];
 }
 
 function compileOtherTypescript(what, typescriptProject) {

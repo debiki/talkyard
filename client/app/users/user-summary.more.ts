@@ -16,7 +16,8 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
-declare var moment: any;
+/// <reference path="../../../node_modules/moment/moment.d.ts" />
+declare var moment: any;  // ??? moment.d.ts doesn't work in this file, weird.
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {

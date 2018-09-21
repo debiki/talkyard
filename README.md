@@ -327,6 +327,8 @@ This project looks like so:
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
      | +-server/       <-- React.js components rendered server side
+     | :
+     | :
      |
      +-app/            <-- Scala code — a Play Framework 2 application
      |
@@ -368,7 +370,7 @@ This project looks like so:
      |   |                 read-only in Nginx (to serve static files)
      |   ...
      |
-     +-s/         <-- Utility scripts (typing "scripts/" is too long, boring)
+     +-s/         <-- Utility scripts (typing "scripts/" is so long)
      |
      +-conf/      <-- Default config files that assume everything
                       is installed on localohost, and dev mode
