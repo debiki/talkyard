@@ -110,6 +110,7 @@ GET   /-/download-personal-data controllers.UserController.downloadPersonalData(
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
+POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
 GET   /-/load-groups            controllers.UserController.loadGroups()

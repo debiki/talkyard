@@ -19,6 +19,11 @@ modules/local/
 .tscache/
 client/forum/html/*.ts
 
+# Ensime (Scala langage server)
+.ensime
+.ensime_cache/
+ensime-langserver.log
+
 # Eclipse
 .cache
 .classpath

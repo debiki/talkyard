@@ -33,6 +33,7 @@ export interface StupidDialogStuff {
   primaryButtonTitle?: any;
   secondaryButonTitle?: any;
   small?: boolean,
+  tiny?: boolean,
   // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
   // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
   onCloseOk?: (number) => void,
@@ -101,7 +102,9 @@ export const StupidDialog = createComponent({
             onClick: makeCloseFn(2), className: 'e_SD_SecB' },
           stuff.secondaryButonTitle)));
     let result;
-    const className = 'esStupidDlg ' + (stuff.small ? 'esStupidDlg-Small ' : '') +
+    const className = 'esStupidDlg ' +
+            (stuff.small ? 'esStupidDlg-Small ' : '') +
+            (stuff.tiny ? 'esStupidDlg-Tiny ' : '') +
             (stuff.dialogClassName || '');
 
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.

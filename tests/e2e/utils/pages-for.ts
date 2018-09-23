@@ -950,7 +950,7 @@ function pagesFor(browser) {
         api.topbar.waitForMyMenuVisible();
       },
 
-      waitForMyMenuVisible: function() {
+      waitForMyMenuVisible: function() {  // RENAME to waitForMyMenuButtonVisible?
         api.waitForVisible('.esMyMenu');
       },
 
@@ -1015,13 +1015,14 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      clickLogout: function(options?: { waitForLoginButton?: boolean }) {
-        options = options || {};
+      clickLogout: function(options: { waitForLoginButton?: boolean } = {}) {   // RENAME to logout
         api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_Logout');
-        if (options.waitForLoginButton !== false) {
+        api.waitAndClick('.e_ByeD .btn-primary');
+        if (options.waitForLoginButton === false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
+        } else {
           api.waitUntilModalGone();
           api.topbar.waitUntilLoginButtonVisible();
         }
@@ -1081,9 +1082,25 @@ function pagesFor(browser) {
         assert(browser.isVisible('.esTopbar .esNotfIcon-toMe'));
       },
 
+      notfsToMeClass: '.esTopbar .esNotfIcon-toMe',
+      otherNotfsClass: '.esTopbar .esNotfIcon-toOthers',
+
       waitForNumDirectNotfs: function(numNotfs: IntAtLeastOne) {
         assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE5GKRBQQ03]");
-        api.waitUntilTextMatches('.esTopbar .esNotfIcon-toMe', '^' + numNotfs + '$');
+        api.waitUntilTextMatches(api.topbar.notfsToMeClass, '^' + numNotfs + '$');
+      },
+
+      waitForNoDirectNotfs: function() {
+        api.waitForGone(api.topbar.notfsToMeClass);
+      },
+
+      waitForNumOtherNotfs: function(numNotfs: IntAtLeastOne) {
+        assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
+        api.waitUntilTextMatches(api.topbar.otherNotfsClass, '^' + numNotfs + '$');
+      },
+
+      waitForNoOtherNotfs: function() {
+        api.waitForGone(api.topbar.otherNotfsClass);
       },
 
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
@@ -1109,28 +1126,35 @@ function pagesFor(browser) {
         api.stupidDialog.close();
       },
 
-      stopViewingAsStranger: function() {
+      stopViewingAsStranger: () => {
         api.topbar.openMyMenu();
         api.waitAndClick('.s_MM_StopImpB a');
       },
 
       myMenu: {
-        goToAdminReview: function() {
+        goToAdminReview: () => {
           api.topbar.myMenu.goToImpl('#e2eMM_Review');
           api.adminArea.review.waitUntilLoaded();
         },
 
-        goToDraftsEtc: function() {
+        goToDraftsEtc: () => {
           api.topbar.myMenu.goToImpl('.e_MyDfsB');
           api.userProfilePage.draftsEtc.waitUntilLoaded();
         },
 
-        goToImpl: function(selector: string) {
+        goToImpl: (selector: string) => {
           api.rememberCurrentUrl();
           api.topbar.openMyMenu();
           api.waitAndClick(selector);
           api.waitForNewUrl();
         },
+
+        dismNotfsBtnClass: '.e_DismNotfs',
+
+        markAllNotfsRead: () => {
+          api.topbar.openMyMenu();
+          api.waitAndClick(api.topbar.myMenu.dismNotfsBtnClass);
+        }
       },
 
       pageTools: {

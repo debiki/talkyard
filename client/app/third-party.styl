@@ -290,6 +290,23 @@ input, textarea {
     margin-bottom: 7px;
   a
     padding: 10px 20px;
+    // Use the same color as in node_modules/bootstrap/dist/css/bootstrap.css,
+    // but for all descendant 'a', not only '> a'.
+    color: #333;
+    &:hover,  // Bootstrap has: .dropdown-menu > li > a:hover,  and :focus
+    &:focus
+      color: #262626;
+      text-decoration: none;
+      background-color: #f5f5f5;
+
+  // Horizontal layout for many links on the same row.
+  &.s_Hz
+    display: flex;
+    margin-top: 0;
+    justify-content: flex-end;
+    > :first-child
+      margin-right: auto;
+
 
 // Change active dropdown menu items from white-text-on-blue, to black-on-light-blue.
 .dropdown-menu > .active

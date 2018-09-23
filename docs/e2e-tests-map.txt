@@ -530,6 +530,10 @@ restart server -
 notifications:
   mute topic:
   mute category:
+  watching-all for new topic:
+          - notfs-mark-all-as-read  TyT5BKAR24H
+  mark all as read:
+          - notfs-mark-all-as-read  TyT5BKAR24H
 
 live notifications -
   works after many long-polls:

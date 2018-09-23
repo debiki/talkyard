@@ -824,8 +824,22 @@ export function loadNotifications(userId: UserId, upToWhenMs: number,
 }
 
 
-export function markNotificationAsSeen(notfId: number, success?: () => void, error?: () => void) {
-  postJsonSuccess('/-/mark-notf-as-seen', success, error, { notfId: notfId });
+export function markNotfsRead() {
+  postJsonSuccess('/-/mark-all-notfs-as-seen', (notfs) => {
+    const myselfPatch: MyselfPatch = {
+      numTalkToMeNotfs: 0,
+      numTalkToOthersNotfs: 0,
+      numOtherNotfs: 0,
+      thereAreMoreUnseenNotfs: false,
+      notifications: notfs,
+    };
+    ReactActions.patchTheStore({ me: myselfPatch });
+  }, null, {});
+}
+
+
+export function markNotificationAsSeen(notfId: number, onDone?: () => void, onError?: () => void) {
+  postJsonSuccess('/-/mark-notf-as-seen', onDone, onError, { notfId });
 }
 
 

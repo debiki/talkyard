@@ -538,6 +538,7 @@ interface TalkyardTranslations {
     AdminHelp: string;
     StaffHelp: string;
     MoreNotfs: string;
+    DismNotfs: string;
     ViewProfile: string;
     LogOut: string;
     UnhideHelp: string;

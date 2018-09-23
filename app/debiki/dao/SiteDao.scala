@@ -354,8 +354,11 @@ class SiteDao(
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
+  def markAllNotfsAsSeen(userId: UserId): Unit =
+    readWriteTransaction(_.markNotfsAsSeenSkipEmail(userId, None))
+
   def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit =
-    readWriteTransaction(_.markNotfAsSeenSkipEmail(userId, notfId))
+    readWriteTransaction(_.markNotfsAsSeenSkipEmail(userId, Some(notfId)))
 
 
   // ----- API secrets

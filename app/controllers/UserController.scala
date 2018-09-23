@@ -1124,8 +1124,21 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def loadNotifications(userId: UserId, upToWhenMs: Long): Action[Unit] =
         GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
-    val notfsAndCounts = request.dao.loadNotifications(userId, upToWhen = None, request.who)
+    loadNotificationsImpl(userId, upToWhen = None, request)
+  }
+
+
+  def loadNotificationsImpl(userId: UserId, upToWhen: Option[When], request: DebikiRequest[_])
+        : mvc.Result = {
+    val notfsAndCounts = request.dao.loadNotifications(userId, upToWhen, request.who)
     OkSafeJson(notfsAndCounts.notfsJson)
+  }
+
+
+  def markAllNotfsAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
+        request =>
+    request.dao.markAllNotfsAsSeen(request.theUserId)
+    loadNotificationsImpl(request.theUserId, upToWhen = None, request)
   }
 
 

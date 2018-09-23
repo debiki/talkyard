@@ -662,8 +662,9 @@ var t_pt_BR: TalkyardTranslations = t = {
     NeedsReview: "Precisa de revisão ",
     AdminHelp: "Ajuda do administrador ",
     StaffHelp: "Ajuda do staff ",
-    MoreNotfs: "Ver mais notificações...",
-    ViewProfile: "Visualizar/editar seu perfil",
+    MoreNotfs: "Ver mais notificações",    // MISSING changed from "View more..." to "...all.."
+    DismNotfs: "Mark all as read",         // MISSING
+    ViewProfile: "Visualizar seu perfil",  // MAYBE, I removed "/editar"
     LogOut: "Encerrar sessão",
     UnhideHelp: "Revelar mensagens de ajuda",
   },

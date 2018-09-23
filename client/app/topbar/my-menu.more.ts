@@ -30,8 +30,25 @@ const r = ReactDOMFactories;
 export const MyMenuContent = createFactory({
   displayName: 'MyMenuContent',
 
+  markNotfsRead: function() {
+    Server.markNotfsRead();
+  },
+
   onLogoutClick: function() {
-    debiki2.ReactActions.logout();
+    // Sometimes the logout button is a bit close to the close-menu X button,
+    // so better ask, in case clicked by accident.
+    util.openDefaultStupidDialog({
+      dialogClassName: 'e_ByeD',
+      tiny: true,
+      body: "Log out?",  // I18N
+      primaryButtonTitle: "Yes, bye",  // I18N
+      secondaryButonTitle: "Cancel",
+      onCloseOk: function(whichButton) {
+        if (whichButton === 1) {
+          debiki2.ReactActions.logout();
+        }
+      }
+    });
   },
 
   viewAsOther: function() {
@@ -63,15 +80,21 @@ export const MyMenuContent = createFactory({
     // ------- Personal notf icons
 
     const notfsDivider = me.notifications.length ? MenuItemDivider() : null;
-    const notfsElems = me.notifications.map((notf: Notification) =>
+    const showMarkAsReadButton = me.numTalkToOthersNotfs + me.numTalkToMeNotfs >= 1;
+    const viewAllNotfsOrClear = !me.notifications.length ? null :
+        MenuItemsMany({ className: 's_MM_NotfsBs' },
+          LinkUnstyled({ to: linkToUsersNotfs(me.username) }, t.mm.MoreNotfs),
+          !showMarkAsReadButton ? null :
+            LinkUnstyled({ onClick: this.markNotfsRead, className: 'e_DismNotfs' }, t.mm.DismNotfs));
+    // Nice to have a View All button at the bottom of the notifications list too, if it's long,
+    // especially on mobile so won't need to scroll up.
+    const extraViewAllNotfsOrClear = me.notifications.length <= 10 ? null :
+        viewAllNotfsOrClear;
+    const notfsItems = me.notifications.map((notf: Notification) =>
         MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
-    if (me.thereAreMoreUnseenNotfs) {
-      notfsElems.push(
-          MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.username) },
-            t.mm.MoreNotfs));
-    }
+    // UX COULD if !me.thereAreMoreUnseenNotfs, show a message "No more unread notifications" ?
 
     // ------- Stop impersonating
 
@@ -103,21 +126,31 @@ export const MyMenuContent = createFactory({
 
     // ------- The current user
 
-    let viewProfileMenuItem;
+    let viewProfileLogOutMenuItem;
     let viewDraftsAndBookmarks;
-    let logoutMenuItem;
     let myStuffDivider;
     let unhideHelpMenuItem;
     if (me.isLoggedIn) {
-      viewProfileMenuItem =
-          MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
-            t.mm.ViewProfile);
+      // If is admin, show the logout button on the same line as the "View profile" link,
+      // because then there're admin links above, and lots of space for the  X close-menu button.
+      // Otherwise, show the logout button on the same line as the "Drafts..." button,
+      // so it won't overlap with the X close-menu button.
+      const logoutButtonNextToViewProfile = isStaff(me);
+      const logoutButton = LinkUnstyled({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);
+
+      viewProfileLogOutMenuItem =
+          MenuItemsMany({},
+            LinkUnstyled({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' }, t.mm.ViewProfile),
+            logoutButtonNextToViewProfile ? logoutButton : null);
+
       viewDraftsAndBookmarks =
-          MenuItemLink({ to: linkToMyDraftsEtc(store), className: 'e_MyDfsB' },
-              "Drafts, bookmarks, tasks");  // I18N
-      logoutMenuItem =
-          MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);
+          MenuItemsMany({},
+            LinkUnstyled({ to: linkToMyDraftsEtc(store), className: 'e_MyDfsB' },
+              "Drafts, bookmarks, tasks"),  // I18N
+            !logoutButtonNextToViewProfile ? logoutButton : null);
+
       myStuffDivider = MenuItemDivider();
+
       unhideHelpMenuItem =
         MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
           r.span({ className: 'icon-help' }, t.mm.UnhideHelp))
@@ -135,12 +168,13 @@ export const MyMenuContent = createFactory({
         adminHelpLink,
         reviewMenuItem,
         (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
-        viewProfileMenuItem,
+        viewProfileLogOutMenuItem,
         viewDraftsAndBookmarks,
         viewAsOtherItem,
-        logoutMenuItem,
         notfsDivider,
-        notfsElems,
+        viewAllNotfsOrClear,
+        notfsItems,
+        extraViewAllNotfsOrClear,
         myStuffDivider,
         unhideHelpMenuItem);
 

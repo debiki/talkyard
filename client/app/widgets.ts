@@ -131,33 +131,42 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       delete newProps.primary;
     }
 
+    // React Bootstrap's Link uses 'to', so better if UnstyledLink works with 'to' too, not only 'href'.
+    if (what === r.a && !newProps.href)
+      newProps.href = newProps.to;
+
     // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
     // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
     // links to user profiles and discussions, are external. And vice versa.
-    const afterClick = newProps.afterClick;
+    if (what === r.a && !newProps.onClick) {
+      let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;   // CLEAN_UP remove isInEmbeddedCommentsIframe? not set server side, works anyway, so cannot be needed? [2KBFU4]
+      // @ifdef DEBUG
+      dieIf(isServerSide() && eds.isInEmbeddedCommentsIframe, 'TyE2KWT05');
+      // @endif
 
-    let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;   // CLEAN_UP remove isInEmbeddedCommentsIframe? not set server side, works anyway, so cannot be needed? [2KBFU4]
-    // @ifdef DEBUG
-    dieIf(isServerSide() && eds.isInEmbeddedCommentsIframe, 'TyE2KWT05');
-    // @endif
+      const href = newProps.href;
+      const linksToAdminArea = href && href.search('/-/admin/') === 0; // dupl (5JKSW20)
+      isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
-    const linksToAdminArea = newProps.href && newProps.href.search('/-/admin/') === 0; // dupl (5JKSW20)
-    isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
-    delete newProps.afterClick;
-    delete newProps.ext;
-    if (what === r.a && !isExternal && !newProps.onClick) {
-      newProps.onClick = function(event) {
-        event.preventDefault(); // avoids full page reload
-        debiki2.page['Hacks'].navigateTo(newProps.href);
-        // Some ancestor components ignore events whose target is not their own divs & stuff.
-        // Not my code, cannot change that. I have in mind React-Bootstrap's Modal, which does this:
-        // `if (e.target !== e.currentTarget) return; this.props.onHide();` — so onHide() never
-        // gets called. But we can use afterClick: ...:
-        if (afterClick) {
-          afterClick();
+      if (!isExternal) {
+        const afterClick = newProps.afterClick;  // field deleted below
+
+        newProps.onClick = function(event) {
+          event.preventDefault(); // avoids full page reload
+          debiki2.page['Hacks'].navigateTo(href);
+          // Some ancestor components ignore events whose target is not their own divs & stuff.
+          // Not my code, cannot change that. I have in mind React-Bootstrap's Modal, which does this:
+          // `if (e.target !== e.currentTarget) return; this.props.onHide();` — so onHide() never
+          // gets called. But we can use afterClick: ...:
+          if (afterClick) {
+            afterClick();
+          }
         }
       }
     }
+
+    delete newProps.afterClick;
+    delete newProps.ext;
 
     const anyHelpDiv =
         helpText && r.p({ className: 'help-block', key: newProps.key + '-help' }, helpText);
@@ -167,6 +176,18 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
 
     return anyHelpDiv ? [widget, anyHelpDiv] : widget;
   }
+}
+
+
+export function MenuItemsMany(props, ...children) {
+  const className = 's_Hz ' + (props.className || '');
+  // COULD Do nothing if clicking between the child list items — unclear which one one intended.
+  // But then the menu won't close, if actually clicks an item inside. ... Fix later somehow.
+  //props:  onClick: (event) => event.stopPropagation() },
+
+  return (
+    r.li({ role: 'presentation', ...props, className },
+      children));
 }
 
 
@@ -181,7 +202,7 @@ export function MenuItem(props, ...children) {
     onClick: props.onClick || props.onSelect, tabIndex: props.tabIndex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
-      r.a.apply(null, [linkProps].concat(children))));
+      r.a.apply(null, [linkProps, ...children])));
 
 }
 

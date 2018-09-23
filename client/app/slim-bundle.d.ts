@@ -307,10 +307,12 @@ declare namespace debiki2 {
   var Button;
   var PrimaryLinkButton;
   var ExtLinkButton;
+  var LinkUnstyled;
   var LinkButton;
   var InputTypeSubmit; // could move to more-bundle.js, but is just 1 line
   var MenuItem;
   var MenuItemLink;
+  var MenuItemsMany;
   var MenuItemDivider;
   var UserName;
 

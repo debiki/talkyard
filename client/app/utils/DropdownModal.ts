@@ -85,6 +85,7 @@ export const ModalDropdownButton = createComponent({
             id: props.dialogId,
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
+            bottomCloseButton: props.bottomCloseButton,
             onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
           props.render ? props.render({ closeDropdown: this.closeDropdown }) : props.children));
     }
@@ -199,6 +200,12 @@ export const DropdownModal = createComponent({
       const closeButton = !this.props.showCloseButton ? null :
         r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
 
+      const bottomCloseButton = undefined;
+      // COULD LATER UX  show extra close button, if small screen, so won't need to scroll up to
+      // the menu top, to find the close button
+      //const bottomCloseButton = !this.props.bottomCloseButton ? null :
+      //  r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
+
       // Try to remove props.atX & .pullLeft, use betweenX everywhere instead. CLEAN_UP
       let atX = this.props.atX;
       let atY = this.props.atY;
@@ -227,7 +234,10 @@ export const DropdownModal = createComponent({
 
       content =
         r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,
-            ref: 'content', onClick: this.props.onContentClick }, closeButton, this.props.children);
+            ref: 'content', onClick: this.props.onContentClick },
+          closeButton,
+          this.props.children,
+          bottomCloseButton);
     }
 
     const backdropStyle: any = { opacity: 0.08 };

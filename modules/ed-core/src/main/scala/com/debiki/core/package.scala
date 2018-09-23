@@ -715,6 +715,7 @@ package object core {
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
+  def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.

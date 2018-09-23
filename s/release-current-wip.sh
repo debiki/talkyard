@@ -63,11 +63,7 @@ git commit -m "Add $release_version_tag = the prev WIP, release tagged."
 git push origin master
 popd
 
-
-echo "Bumping version number..."
-
-git tag $release_version_tag
+git tag $release_version_tag $wip_version_tag
 git push origin $release_version_tag
-s/bump-versions.sh
 
 echo "Done. Bye."

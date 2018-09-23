@@ -345,6 +345,10 @@ html.es-watchbar-open
 .esNotfIcon-reviewOther
   margin: 0 3px 0 0;  // otherwise only margin-left
 
+@media (min-width: 700px)
+  .s_MM
+    max-width: 450px !important;  // instead of 89%, which is a lot, on wide screens [4YK8ST2]
+
 .s_MMB-IsImp
   outline: 3px solid hsl(0, 100%, 60%);
 
@@ -394,6 +398,9 @@ html.es-watchbar-open
 .esMyMenu_admin,
 .esMyMenu_adminHelp
   max-width: 200px;
+
+.s_MM_NotfsBs
+  margin-bottom: 3px !important;
 
 .esTopbar
   position: relative;

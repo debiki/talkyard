@@ -235,8 +235,9 @@ function runAllE2eTests {
 
   # There're email notfs and unsubscription tests for guests, further below, in:
   # embedded-comments-guest-login-email-notf-unsbscribe.test
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only email-notfs-discussion.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only unsubscribe.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-emails-discussion.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-mark-all-read.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only new-user-review-ok.2browsers $args
   #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only new-user-review-bad.2browsers $args

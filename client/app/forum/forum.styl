@@ -246,7 +246,7 @@ html.js:not(.dw-react-started)
 
 $tablePaddingLeftNarrow = 4px
 $tablePaddingLeftWide = 8px
-$tableFontSize = 13.4px;
+//$tableFontSize = 13.4px; too small
 $tableTopicTitleFontSize = 15.3px;
 $tableTopicExcerptFontSize = 14px;
 $tableHeaderFontSize = 14px;
@@ -409,7 +409,7 @@ td.dw-tpc-activity
         padding: 10px $tablePaddingLeftNarrow
         @media (min-width: $isWideMinWidth)
           padding: 10px $tablePaddingLeftWide
-        font-size: $tableFontSize;
+        //font-size: $tableFontSize; — no, don't make it smaller. Harder to read :- /
         &.dw-tpc-title
           font-size: $tableTopicTitleFontSize;
           .s_F_Ts_T_Con-Para

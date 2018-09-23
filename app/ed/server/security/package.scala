@@ -332,7 +332,8 @@ class EdSecurity(globals: Globals) {
     // Note that the xsrf token is created using the non-base64 encoded cookie value.
     val sidOk = createSessionId(siteId, userId)
     val xsrfOk = createXsrfToken()
-    val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value)
+    val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
+      maxAgeSecs = Some(14 * 24 * 3600))
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
@@ -415,8 +416,7 @@ class EdSecurity(globals: Globals) {
   // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
   // So I've modified jquery-cookie.js to remove double quotes when
   // reading cookie values.
-  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
-  Cookie(
+  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) = Cookie(
     name = name,
     value = urlEncode(convertEvil(value)),  // see comment above
     maxAge = maxAgeSecs,

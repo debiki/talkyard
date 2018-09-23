@@ -229,10 +229,12 @@ export const TopBar = createComponent({
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
       utils.ModalDropdownButton({
-          // RENAME 'esAvtrName' + 'esMyMenu' to 's_MMB' (my-menu button).
+          // RENAME 'esMyMenu' to 's_MMB' (my-menu button).
           className: 'esAvtrName esMyMenu' + isImpersonatingClass,  // CLEAN_UP RENAME btn class to ...B
-          dialogClassName: 'esAvtrName esMyMenu',
+          dialogClassName: 's_MM',
           ref: 'myMenuButton',
+          showCloseButton: true,
+          bottomCloseButton: true,
           title: r.span({},
             urgentReviewTasks,
             otherReviewTasks,
