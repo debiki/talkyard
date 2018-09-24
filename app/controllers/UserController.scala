@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
-import debiki.dao.SiteDao
+import debiki.dao.{ReadMoreResult, SiteDao}
 import debiki.EdHttp._
 import debiki.JsX._
 import ed.server.http._
@@ -1043,7 +1043,28 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
         maxBytes = 1000) { request =>
-    trackReadingProgressImpl(request, request.body)
+    import request.{dao, theRequester}
+    val readMoreResult = trackReadingProgressImpl(request, request.body)
+    val result =
+      if (readMoreResult.numMoreNotfsSeen == 0) JsNull
+      else {
+        // Posts related to some notifications were seen. Update the notifications, client side,
+        // so they'll get un-highlighted, since the posts they are about, have now been seen.
+
+        // dupl line [8AKBR0]
+        val notfsAndCounts = dao.loadNotifications(
+          theRequester.id, upToWhen = None, request.who, unseenFirst = true, limit = 20)
+
+        // dupl code [7KABR20]
+        Json.obj(
+          "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
+          "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
+          "numOtherNotfs" -> notfsAndCounts.numOther,
+          "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
+          "notifications" -> notfsAndCounts.notfsJson)
+      }
+
+    OkSafeJson(result)
   }
 
 
@@ -1054,15 +1075,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
     trackReadingProgressImpl(request, json)
+    Ok
   }
 
 
-  private def trackReadingProgressImpl(request: DebikiRequest[_], body: JsValue): mvc.Result = {
+  private def trackReadingProgressImpl(request: DebikiRequest[_], body: JsValue): ReadMoreResult = {
     SECURITY // how prevent an evil js client from saying "I've read everything everywhere",
     // by calling this endpoint many times, and listing all pages + all post nrs.
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
-    import request.{theRequester => requester}
+    import request.{siteId, theRequester => requester}
     import ed.server.{WhenFormat, OptWhenFormat}
 
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
@@ -1074,9 +1096,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
     val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
+    val postNrsReadAsSet = postNrsRead.toSet
+
+    play.api.Logger.trace(
+      s"s$siteId, page $pageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
 
     val now = globals.now()
-    val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ <= ReadingProgress.MaxLowPostNr).toSet
+    val lowPostNrsRead: Set[PostNr] = postNrsReadAsSet.filter(_ <= ReadingProgress.MaxLowPostNr)
     val lastPostNrsReadRecentFirst =
       postNrsRead.filter(_ > ReadingProgress.MaxLowPostNr).reverse.take(
         ReadingProgress.MaxLastPostsToRemember).distinct
@@ -1116,9 +1142,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           throwBadRequest("EdE5FKW02", ex.toString)
       }
 
-    request.dao.trackReadingProgressPerhapsPromote(requester, pageId, readingProgress)
     request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
-    Ok
+
+    request.dao.trackReadingProgressClearNotfsPerhapsPromote(
+        requester, pageId, postNrsReadAsSet, readingProgress)
   }
 
 

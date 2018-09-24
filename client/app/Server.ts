@@ -826,6 +826,7 @@ export function loadNotifications(userId: UserId, upToWhenMs: number,
 
 export function markNotfsRead() {
   postJsonSuccess('/-/mark-all-notfs-as-seen', (notfs) => {
+    // Should be the same as [7KABR20], server side.
     const myselfPatch: MyselfPatch = {
       numTalkToMeNotfs: 0,
       numTalkToOthersNotfs: 0,
@@ -1461,7 +1462,7 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // reported whenever a new long-polling-request is started?
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
-      postNrsRead: PostNr[], success?: () => void) {
+      postNrsRead: PostNr[], anyOnDone?: () => void) {
   if (getPageId() === EmptyPageId)
     return;
 
@@ -1474,7 +1475,14 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     secondsReading: secondsReading,
     postNrsRead: postNrsRead,
   };
-  postJsonSuccess('/-/track-reading', success || UseBeacon, data,
+  const onDone = !anyOnDone? UseBeacon : function(me?: MyselfPatch) {
+    // See [7KABR20] server side.
+    if (me) {
+      ReactActions.patchTheStore({ me });
+    }
+    anyOnDone();
+  };
+  postJsonSuccess('/-/track-reading', onDone, data,
         // Don't popup any error dialog from here. If there's a network error, we'll show a
         // "No internet" non-intrusive message instead [NOINETMSG].
         () => ShowNoErrorDialog, { showLoadingOverlay: false });

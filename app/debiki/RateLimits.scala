@@ -163,7 +163,7 @@ object RateLimits {
 
 
   object TrackReadingActivity extends RateLimits {
-    val IntervalSeconds = 20 // dupl constant, in js too [6AK2WX0G]
+    val IntervalSeconds = 30 // dupl constant, in js too [6AK2WX0G]
     private val MaxReadersPerIp = 100
     private val BurstFactor = 1.5
     val key = "TRA"

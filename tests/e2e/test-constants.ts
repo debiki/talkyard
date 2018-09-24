@@ -48,10 +48,22 @@ const TestDraftStatus = {  // sync with real code [5ABXG20]
   CannotSave: 10,
 };
 
+const TestPostType = {  // sync with real code [26BKA01]
+  Normal: 1,
+  Flat: 2,
+  ChatMessage: 3,
+  BottomComment: 4,
+  StaffWiki: 11,
+  CommunityWiki: 12,
+  CompletedForm: 21,
+  MetaMessage: 31,
+};
+
 export = {
   TestPageRole,
   TestTrustLevel,
   TestDraftStatus,
+  TestPostType,
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]

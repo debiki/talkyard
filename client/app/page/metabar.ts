@@ -259,19 +259,19 @@ const NotfsLevelDropdownModal = createComponent({
       watchingAllListItem = !subject.pageId ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingAll,
-          title: r.span({ className: '' }, t.nl.WatchingAll),
+          title: r.span({ className: 'e_NtfAll' }, t.nl.WatchingAll),
           text: subject.tagLabel ? t.nl.WatchingAllTag : t.nl.WatchingAllTopic,
           onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) });
       watchingFirstListItem = !subject.tagLabel ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingFirst,
-          title: r.span({className: ''}, t.nl.WatchingFirst),
+          title: r.span({ className: 'e_NtfFst' }, t.nl.WatchingFirst),
           text: t.nl.WatchingFirstTag,
           onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst) });
       mutedListItem =
         ExplainingListItem({
           active: currentLevel === NotfLevel.Muted,
-          title: r.span({ className: '' }, t.nl.Muted),
+          title: r.span({ className: 'e_NtfMtd'  }, t.nl.Muted),
           text: t.nl.MutedTopic,
           onSelect: () => this.setNotfLevel(NotfLevel.Muted) });
     }

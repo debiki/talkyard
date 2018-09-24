@@ -625,6 +625,7 @@ class JsonMaker(dao: SiteDao) {
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
       else ReviewTaskCounts(0, 0)
 
+    // dupl line [8AKBR0]
     val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 20)
 
     val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
@@ -688,6 +689,7 @@ class JsonMaker(dao: SiteDao) {
       "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
       "numOtherReviewTasks" -> reviewTasksAndCounts.numOther,
 
+      // dupl code [7KABR20]
       "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
       "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
       "numOtherNotfs" -> notfsAndCounts.numOther,

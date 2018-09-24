@@ -275,7 +275,7 @@ interface Post {
 }
 
 
-enum PostType {
+enum PostType {   // sync with test code [26BKA01]
   Normal = 1,
   Flat = 2,
   ChatMessage = 3,

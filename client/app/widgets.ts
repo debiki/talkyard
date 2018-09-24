@@ -187,7 +187,7 @@ export function MenuItemsMany(props, ...children) {
 
   return (
     r.li({ role: 'presentation', ...props, className },
-      children));
+      ...children));
 }
 
 

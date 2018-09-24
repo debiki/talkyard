@@ -30,8 +30,9 @@
    namespace debiki2.page.PostsReadTracker {
 //------------------------------------------------------------------------------
 
+let debug = false;
 // @ifdef DEBUG
-let debug = location.hash.match("debug=(t|true|all|trackReadingActivity)"); // [2FG6MJ9]
+debug = !!location.hash.match("debug=(t|true|all|trackReadingActivity)"); // [2FG6MJ9]
 // @endif
 
 export let debugIntervalHandler = null;
@@ -51,6 +52,11 @@ let pageId;
 let postNrsJustRead;
 let wentToTopAtMs: number;
 
+// After having read one post, wait a short while before posting to the server, because usually
+// the next few seonds, a bunch of more posts will also get considered read. Better then,
+// to post them all at the same time. Also makes e2e tests run faster (not time out).
+const AfterReadThenWaitMillis = 3000;
+
 // Most people read 200 words per minute with a reading comprehension of 60%.
 // 0.1% read 1 000 wpm with a comprehension of 85%.
 // A speed reading test article was 3692 chars, 597 words (www.readingsoft.com)
@@ -60,24 +66,24 @@ let wentToTopAtMs: number;
 // assuming people read too fast, than too slow, because never-marking-a-post-as-read although
 // the user did read it, seems more annoying, than marking-as-read posts when the user has read
 // parts-of-it or most-of-it-but-not-all.
-let charsReadPerSecond = 40;
-let contextSwitchCostChars = charsReadPerSecond * 0.5;
+const charsReadPerSecond = 40;
+const contextSwitchCostChars = charsReadPerSecond * 0.5;
 
 // People usually (?) don't read everything in a long comment, so mark a comment as read after
 // some seconds.
-let maxCharsReadPerPost = charsReadPerSecond * 5;
+const maxCharsReadPerPost = charsReadPerSecond * 5;
 
-let secondsBetweenTicks = 1;
+const secondsBetweenTicks = 1;
 let secondsSpentReading = 0;
-let secondsLostPerNewPostInViewport = 0.4;
-let maxConfusionSeconds = 1.2;
-let localStorageKey = 'debikiPostNrsReadByPageId';
+const secondsLostPerNewPostInViewport = 0.4;
+const maxConfusionSeconds = 1.2;
+const localStorageKey = 'debikiPostNrsReadByPageId';
 
 const TooFewSeconds = 3;
 
 // Report more frequently, if the browser cannot send a beacon before the page gets closed.
 const ReportToServerIntervalSeconds: number =
-  navigator['sendBeacon'] ? 30 : 10; // dupl constant, in Scala too [6AK2WX0G]
+  debug ? 10 : 30; // dupl constant, in Scala too [6AK2WX0G]
 
 let storeChanged = true;
 
@@ -90,6 +96,7 @@ let lastViewedPostNr: PostNr;
 let currentlyViewingPostNr: PostNr;
 let unreportedSecondsReading: number;
 let unreportedPostNrsRead: PostNr[];
+let firstUnreportedPostReadAtMs: number | undefined;
 let maxSecondsSinceLastScroll: number;
 let talksWithSererAlready: boolean;
 let isOldPageWithRandomPostNrs: boolean;
@@ -107,6 +114,7 @@ export function reset() {
   lastReportedToServerAtMs = Date.now();
   unreportedSecondsReading = 0;
   unreportedPostNrsRead = [];
+  firstUnreportedPostReadAtMs = undefined;
   maxSecondsSinceLastScroll = 3 * 60;
   talksWithSererAlready = false;
   storeChanged = true;
@@ -138,18 +146,27 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 export function sendAnyRemainingData(success?) {
   if (talksWithSererAlready || !unreportedSecondsReading ||
       unreportedSecondsReading <= TooFewSeconds ||
-      // It's undef, if haven't looked at the page for long enough.
-      _.isUndefined(lastViewedPostNr))
+      // It's undef, if haven't looked at the page for long enough. (5AKBR02)
+      _.isUndefined(lastViewedPostNr)) {
+
+    // @ifdef DEBUG
+    if (debug) console.log(`*Not* sending remaining post nrs read via beacon: ${unreportedPostNrsRead},` +
+        ` ${unreportedSecondsReading} seconds reading, lastViewedPostNr: ${lastViewedPostNr}, ` +
+        `talksWithSererAlready: ${talksWithSererAlready}`);
+    // @endif
     return;
+  }
 
   // @ifdef DEBUG
-  !debug || console.log(`Sending remaining data via beacon: ${unreportedPostNrsRead.length} ` +
-      `posts, ${unreportedSecondsReading} seconds reading`);
+  if (debug) console.log(`Sending remaining posts nrs read via beacon: ${unreportedPostNrsRead},` +
+      ` ${unreportedSecondsReading} seconds reading`);
   // @endif
 
   // Don't include any 'success' callback —> sendBeacon will get used.
   Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostNrsRead, success);
   lastReportedToServerAtMs = Date.now();
+
+  // If navigating to new page, it'll reset everything.
 }
 
 
@@ -247,12 +264,25 @@ function trackReadingActivity() {
   // @endif
 
   let millisSinceLastReport = nowMs - lastReportedToServerAtMs;
-  if (!talksWithSererAlready && lastViewedPostNr && unreportedSecondsReading > TooFewSeconds && (
-        hasReadMorePosts || millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
+  let millisSinceFirstNewRead = nowMs - firstUnreportedPostReadAtMs;
+
+  if (!talksWithSererAlready &&
+      // It's undef, if haven't looked at the page for long enough. (5AKBR02)
+      lastViewedPostNr &&
+      // Don't report uninteresting just-a-few-seconds.
+      (unreportedSecondsReading > TooFewSeconds) &&
+      // After has seen a new post, wait a few seconds, because likely sees even more, the
+      // next few seconds.
+      (millisSinceFirstNewRead > AfterReadThenWaitMillis) &&
+      // Only report something, if there's something to report.
+      (unreportedPostNrsRead.length ||
+          millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
+
     // @ifdef DEBUG
     !debug || console.log(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
         `${unreportedSecondsReading} seconds reading, these post nrs: ${unreportedPostNrsRead}`);
     // @endif
+
     talksWithSererAlready = true;
     // BUG this won't retry, if there's a netw disconnection. Instead, somehow merge with
     // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
@@ -264,8 +294,10 @@ function trackReadingActivity() {
       // the done-callback, when the response arrives, rather than when the request is being sent.
       lastReportedToServerAtMs = Date.now();
     });
+
     unreportedSecondsReading = 0;
     unreportedPostNrsRead = [];
+    firstUnreportedPostReadAtMs = undefined;
   }
 
   const hasFocus = document.hasFocus();
@@ -386,6 +418,9 @@ function trackReadingActivity() {
       // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
       postNrsJustRead.push(stats.postNr);
       unreportedPostNrsRead.push(stats.postNr);
+      if (!firstUnreportedPostReadAtMs) {
+        firstUnreportedPostReadAtMs = nowMs;
+      }
     }
   }
 }

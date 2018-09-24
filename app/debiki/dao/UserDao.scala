@@ -36,6 +36,10 @@ case class LoginNotFoundException(siteId: SiteId, userId: UserId)
   extends QuickMessageException(s"User $siteId:$userId not found")
 
 
+case class ReadMoreResult(
+  numMoreNotfsSeen: Int)
+
+
 
 trait UserDao {
   self: SiteDao =>
@@ -968,23 +972,32 @@ trait UserDao {
   /** Promotes a new member to trust levels Basic and Normal member, if hen meets those
     * requirements, after the additional time spent reading has been considered.
     * (Won't promote to trust level Helper and above though.)
+    *
+    * And clear any notifications about posts hen has now seen.
     */
-  def trackReadingProgressPerhapsPromote(user: User, pageId: PageId, newProgress: ReadingProgress) {
+  def trackReadingProgressClearNotfsPerhapsPromote(
+        user: User, pageId: PageId, postNrsSeen: Set[PostNr], newProgress: ReadingProgress)
+        : ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
 
     // Don't track system, superadmins, deleted users — they aren't real members.
     if (MaxGuestId < user.id && user.id < LowestTalkToMemberId)
-      return
+      return ReadMoreResult(0)
 
-    readWriteTransaction { transaction =>
-      val pageMeta = transaction.loadPageMeta(pageId) getOrDie "EdE5JKDYE"
+    COULD_OPTIMIZE // 1) cache post ids by page-post-nr, 2) don't load the whole posts,
+    // instead, add:  loadPostIdsForPagePostNrs(pageId, postNrs) ?
+    val postsSeen = postNrsSeen.flatMap(nr => loadPost(pageId, nr))
+    val postIdsSeen = postsSeen.map(_.id)
+
+    readWriteTransaction { tx =>
+      val pageMeta = tx.loadPageMeta(pageId) getOrDie "EdE5JKDYE"
       if (newProgress.maxPostNr + 1 > pageMeta.numPostsTotal) // post nrs start on TitleNr = 0 so add + 1
         throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
           ${pageMeta.numPostsTotal} posts on page '$pageId'""")
 
-      val oldProgress = transaction.loadReadProgress(userId = user.id, pageId = pageId)
+      val oldProgress = tx.loadReadProgress(userId = user.id, pageId = pageId)
 
       val (numMoreNonOrigPostsRead, numMoreTopicsEntered, resultingProgress) =
         oldProgress match {
@@ -1011,7 +1024,7 @@ trait UserDao {
         else
           (numMoreNonOrigPostsRead, numMoreTopicsEntered, 0, 0)
 
-      val statsBefore = transaction.loadUserStats(user.id) getOrDie "EdE2FPJR9"
+      val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
         userId = user.id,
         lastSeenAt = newProgress.lastVisitedAt,
@@ -1024,17 +1037,20 @@ trait UserDao {
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.
 
-      transaction.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
-      transaction.upsertUserStats(statsAfter)
+      UX; COULD // send a live-update to the browser so it updates it's unread notfs count. [7KWBA02]
+      val numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeenSkipEmail(user.id, postIdsSeen)
+
+      tx.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
+      tx.upsertUserStats(statsAfter)
 
       if (user.canPromoteToBasicMember) {
         if (statsAfter.meetsBasicMemberRequirements) {
-          promoteUser(user.id, TrustLevel.BasicMember, transaction)
+          promoteUser(user.id, TrustLevel.BasicMember, tx)
         }
       }
       else if (user.canPromoteToFullMember) {
         if (statsAfter.meetsFullMemberRequirements) {
-          promoteUser(user.id, TrustLevel.FullMember, transaction)
+          promoteUser(user.id, TrustLevel.FullMember, tx)
         }
       }
       else {
@@ -1042,7 +1058,7 @@ trait UserDao {
         // Instead, will be done once a day in some background job.
       }
 
-      SHOULD // also mark any notfs for the newly read posts, as read.
+      ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen)
     }
   }
 
@@ -1058,14 +1074,16 @@ trait UserDao {
   }
 
 
-  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who): NotfsAndCounts = {
+  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who,
+        unseenFirst: Boolean = false, limit: Int = 100)
+        : NotfsAndCounts = {
     readOnlyTransaction { transaction =>
       if (me.id != userId) {
         if (!transaction.loadUser(me.id).exists(_.isStaff))
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
-      debiki.JsonMaker.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
+      debiki.JsonMaker.loadNotifications(userId, transaction, unseenFirst = unseenFirst, limit = limit,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
   }

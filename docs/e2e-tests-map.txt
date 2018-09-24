@@ -362,6 +362,13 @@ watchbar -
   chat list:
   page highlighted:
 
+track reading progress:
+  posts not/in viewport:
+          - notfs-mark-seen-as-seen  TyT2AKBR0T
+  live updates of notifications seen:
+          - notfs-mark-seen-as-seen  TyT2AKBR0T
+  promote:
+
 live updates -  (4FE2)
   forum latest topic list:
   discussion:
@@ -534,6 +541,8 @@ notifications:
           - notfs-mark-all-as-read  TyT5BKAR24H
   mark all as read:
           - notfs-mark-all-as-read  TyT5BKAR24H
+  mark post one views as seen:
+          - notfs-mark-seen-as-seen  TyT2AKBR0T
 
 live notifications -
   works after many long-polls:

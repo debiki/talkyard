@@ -431,10 +431,17 @@ export const TopBar = createComponent({
 
 
 const MyMenuContentComponent = createFactory({   // dupl code [4WKBTP0]
+  displayName: 'MyMenuContentComponent',
+
   componentDidMount: function() {
     Server.loadMoreScriptsBundle(() => {
+      if (this.isGone) return;
       this.setState({ moreScriptsLoaded: true });
     });
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   render: function() {

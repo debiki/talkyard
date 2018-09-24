@@ -339,6 +339,12 @@ function pagesFor(browser) {
     },
 
 
+    count: (selector: string): number => {
+      const elems = browser.elements(selector).value;
+      return elems.length;
+    },
+
+
     // Make `api.waitForVisible()` work in this file — I'd forget to do: `browser.waitForVisible()`.
     waitForVisible: function(selector: string, timeoutMillis?: number) {
       origWaitForVisible.apply(browser, arguments);
@@ -1043,6 +1049,13 @@ function pagesFor(browser) {
         browser.pause(333);
       },
 
+      closeMyMenuIfOpen: () => {
+        if (browser.isVisible('.s_MM .esDropModal_CloseB')) {
+          api.waitAndClick('.s_MM .esDropModal_CloseB');
+          api.waitForGone('.s_MM .esDropModal_CloseB');
+        }
+      },
+
       clickGoToAdmin: function() {
         api.rememberCurrentUrl();
         api.topbar.openMyMenu();
@@ -1097,6 +1110,41 @@ function pagesFor(browser) {
       waitForNumOtherNotfs: function(numNotfs: IntAtLeastOne) {
         assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
         api.waitUntilTextMatches(api.topbar.otherNotfsClass, '^' + numNotfs + '$');
+      },
+
+      refreshUntilNumOtherNotfs: (desiredNumNotfs: number) => {
+        const millisBetweenRefresh = 15*1000;  // should be > report to server interval [6AK2WX0G]
+        let millisLeftToRefresh = millisBetweenRefresh;
+        while (true) {
+          let isWhat;
+          if (desiredNumNotfs === 0) {
+            if (!browser.isVisible(api.topbar.otherNotfsClass)) {
+              break;
+            }
+            isWhat = '>= 1';
+          }
+          else {
+            const text = api.waitAndGetVisibleText(api.topbar.otherNotfsClass);
+            const actualNumNotfs = parseInt(text);
+            if (actualNumNotfs === desiredNumNotfs) {
+              break;
+            }
+            isWhat = '' + actualNumNotfs;
+          }
+          const pauseMs = 1000;
+          browser.pause(pauseMs);
+
+          // Because of some race condition, in rare cases, notifications won't get marked
+          // as seen. Hard to reproduce, only happens 1 in 10 in invisible e2e tests.
+          // For now, do this:
+          millisLeftToRefresh -= pauseMs;
+          if (millisLeftToRefresh < 0) {
+            logUnusual(`Refreshing page. Num-other-notfs count is currently ${isWhat} ` +
+                `and refuses to become ${desiredNumNotfs}...`);
+            browser.refresh();
+            millisLeftToRefresh = millisBetweenRefresh;
+          }
+        }
       },
 
       waitForNoOtherNotfs: function() {
@@ -1154,7 +1202,15 @@ function pagesFor(browser) {
         markAllNotfsRead: () => {
           api.topbar.openMyMenu();
           api.waitAndClick(api.topbar.myMenu.dismNotfsBtnClass);
-        }
+        },
+
+        isMarkAllNotfsReadVisibleOpenClose: (): boolean => {
+          api.topbar.openMyMenu();
+          api.waitForVisible('.s_MM_NotfsBs');
+          const isVisible = browser.isVisible(api.topbar.myMenu.dismNotfsBtnClass);
+          api.topbar.closeMyMenuIfOpen();
+          return isVisible;
+        },
       },
 
       pageTools: {
@@ -2276,10 +2332,21 @@ function pagesFor(browser) {
 
 
     metabar: {
-      clickLogout: function() {
+      clickLogout: () => {
         api.waitAndClick('.esMetabar .dw-a-logout');
         api.waitUntilGone('.esMetabar .dw-a-logout');
         api.waitForVisible('.esMetabar');
+      },
+
+      openMetabar: () => {
+        api.waitAndClick('.dw-page-notf-level');
+        api.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
+      },
+
+      chooseNotfLevelWatchAll: () => {
+        api.waitAndClick('.dw-notf-level');
+        api.waitAndClick('.e_NtfAll');
+        api.waitForGone('.e_NtfAll');
       }
     },
 
