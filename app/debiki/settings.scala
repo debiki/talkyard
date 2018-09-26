@@ -68,6 +68,13 @@ trait AllSettings {
     */
   def begForEmailAddress: Boolean
 
+  // Single Sign-On
+  def enableSso: Boolean
+  def ssoUrl: String
+  //  If a user logs in via SSO, but admin approval of new users is required, and the user's
+  // account hasn't been approved (or has been rejected), then the user is sent to this page.
+  def ssoNotApprovedUrl: String
+
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
@@ -110,6 +117,8 @@ trait AllSettings {
 
   def showSubCommunities: Boolean  // RENAME to enableSubCommunities? Why "show"?
   def showExperimental: Boolean
+  def featureFlags: String
+
   def allowEmbeddingFrom: String
   def htmlTagCssClasses: String
 
@@ -146,6 +155,9 @@ trait AllSettings {
     doubleTypePassword = Some(self.doubleTypePassword),
     minPasswordLength = Some(self.minPasswordLength),
     begForEmailAddress = Some(self.begForEmailAddress),
+    enableSso = Some(self.enableSso),
+    ssoUrl = Some(self.ssoUrl),
+    ssoNotApprovedUrl = Some(self.ssoNotApprovedUrl),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
     forumCategoryLinks = Some(self.forumCategoryLinks),
@@ -180,6 +192,7 @@ trait AllSettings {
     enableDirectMessages = Some(self.enableDirectMessages),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
+    featureFlags = Some(self.featureFlags),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
     numFlagsToHidePost = Some(self.numFlagsToHidePost),
@@ -223,6 +236,9 @@ object AllSettings {
     val doubleTypePassword = false
     val minPasswordLength: Int = globals.minPasswordLengthAllSites
     val begForEmailAddress = false
+    val enableSso = false
+    val ssoUrl = ""
+    val ssoNotApprovedUrl = ""
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
@@ -261,6 +277,7 @@ object AllSettings {
     val enableDirectMessages = true
     val showSubCommunities = false
     val showExperimental = false
+    val featureFlags = ""
     val allowEmbeddingFrom = ""
     val htmlTagCssClasses = ""
     val numFlagsToHidePost = 3
@@ -307,6 +324,9 @@ case class EffectiveSettings(
   def doubleTypePassword: Boolean = firstInChain(_.doubleTypePassword) getOrElse default.doubleTypePassword
   def minPasswordLength: Int = default.minPasswordLength // cannot change per site, right now
   def begForEmailAddress: Boolean = firstInChain(_.begForEmailAddress) getOrElse default.begForEmailAddress
+  def enableSso: Boolean = firstInChain(_.enableSso) getOrElse default.enableSso
+  def ssoUrl: String = firstInChain(_.ssoUrl) getOrElse default.ssoUrl
+  def ssoNotApprovedUrl: String = firstInChain(_.ssoNotApprovedUrl) getOrElse default.ssoNotApprovedUrl
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
   def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
@@ -341,6 +361,7 @@ case class EffectiveSettings(
   def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
+  def featureFlags: String = firstInChain(_.featureFlags) getOrElse default.featureFlags
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
@@ -368,7 +389,7 @@ case class EffectiveSettings(
 
   def isGuestLoginAllowed: Boolean =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
-      !inviteOnly && allowSignup
+      !inviteOnly && allowSignup && !enableSso
 
   /** Finds any invalid setting value, or invalid settings configurations. */
   def findAnyError: Option[String] = {
@@ -431,6 +452,9 @@ object Settings2 {
       "doubleTypePassword" -> JsBooleanOrNull(s.doubleTypePassword),
       "minPasswordLength" -> JsNumberOrNull(s.minPasswordLength),
       "begForEmailAddress" -> JsBooleanOrNull(s.begForEmailAddress),
+      "enableSso" -> JsBooleanOrNull(s.enableSso),
+      "ssoUrl" -> JsStringOrNull(s.ssoUrl),
+      "ssoNotApprovedUrl" -> JsStringOrNull(s.ssoNotApprovedUrl),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
       "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
@@ -465,6 +489,7 @@ object Settings2 {
       "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
+      "featureFlags" -> JsStringOrNull(s.featureFlags),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
       "numFlagsToHidePost" -> JsNumberOrNull(s.numFlagsToHidePost),
@@ -499,6 +524,9 @@ object Settings2 {
     doubleTypePassword = anyBool(json, "doubleTypePassword", d.doubleTypePassword),
     minPasswordLength = None, // cannot edit right now
     begForEmailAddress = anyBool(json, "begForEmailAddress", d.begForEmailAddress),
+    enableSso = anyBool(json, "enableSso", d.enableSso),
+    ssoUrl = anyString(json, "ssoUrl", d.ssoUrl),
+    ssoNotApprovedUrl = anyString(json, "ssoNotApprovedUrl", d.ssoNotApprovedUrl),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
     forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),
@@ -537,6 +565,7 @@ object Settings2 {
     enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
+    featureFlags = anyString(json, "featureFlags", d.featureFlags),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),
     numFlagsToHidePost = anyInt(json, "numFlagsToHidePost", d.numFlagsToHidePost),
@@ -549,10 +578,12 @@ object Settings2 {
   }
 
 
-  private def anyString(json: JsValue, field: String, default: String): Option[Option[String]] =
+  private def anyString(json: JsValue, field: String, default: String)
+        : Option[Option[String]] =
     (json \ field).toOption.map {
       case s: JsString =>
-        if (s.value == default) None else Some(s.value)
+        val value: String = s.value.trim
+        if (value == default) None else Some(value)
       case JsNull =>
         None
       case bad =>

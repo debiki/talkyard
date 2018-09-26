@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-declare var moment: any;
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="user-invites.more.ts" />
 /// <reference path="user-notifications.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
 /// <reference path="user-summary.more.ts" />
+//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
+declare var moment: any;
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -202,7 +202,7 @@ const UserPageComponent = createReactClass(<any> {
     const preferencesNavItem = !showPrivateStuff ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
-    const invitesNavItem = !showPrivateStuff || !user_maySendInvites(user).value ? null :
+    const invitesNavItem = !showPrivateStuff || !store_maySendInvites(store, user).value ? null :
       LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
     const childProps = {

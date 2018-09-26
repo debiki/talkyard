@@ -25,16 +25,6 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-// Tells if a user may do something, and why s/he may do that, or why not.
-interface MayMayNot {
-  value: boolean;
-  do_: boolean;   // true = may do it, use like so: if (may.do_) ...
-  not: boolean;   // true = may not, use like so:   if (may.not) ...
-  yes: boolean;   // true = may do it  -- try to remove?
-  no: boolean;    // true = may not    -- try to remove?
-  reason?: string;
-}
-
 export function mayMayNot(may: boolean, reason: string): MayMayNot {
   return { value: may, do_: may, not: !may, yes: may, no: !may, reason: reason };
 }
@@ -98,7 +88,10 @@ export function me_isStranger(me: Myself): boolean {
 }
 
 
-export function user_maySendInvites(user: Myself | MemberInclDetails): MayMayNot {
+export function store_maySendInvites(store: Store, user: Myself | MemberInclDetails): MayMayNot {
+  if (store.settings.ssoUrl) {
+    return mayMayNot(false, "SSO enabled");
+  }
   // Currently only staff and core members may send invites. [5WBJAF2]
   if (!user_isStaffOrCoreMember(user) || user.isGroup) {
     return mayMayNot(false, "is not staff or core member");

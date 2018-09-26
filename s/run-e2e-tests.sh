@@ -271,14 +271,20 @@ function runAllE2eTests {
   # settings-allow-signup
 
 
+  # Single Sign-On
+  # ------------
+
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-test.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-member.2browsers $args
+
+
   # Usability Testing Exchange
   # ------------
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only utx-all-logins $args
 
 
-  # Embedded comments
-  # ------------
+  #------------------------------------------------------------
   # Start a http server, for the embedding html pages, if needed.
   server_port_8080=$(netstat -nl | grep ':8080.*LISTEN')
   server_port_8080_pid=''
@@ -289,6 +295,9 @@ function runAllE2eTests {
     server_port_8080_pid=$(jobs -l | grep p8080 | awk '{ printf $2; }')
   fi
   # else: the user has probably started the server henself already, do nothing.
+
+  # Embedded comments
+  # ------------
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-no-verif-email.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-req-verif-email.2browsers $args
@@ -308,6 +317,7 @@ function runAllE2eTests {
     kill $server_port_8080_pid
     echo "Stopped the http server for the embedded comments."
   fi
+  #------------------------------------------------------------
 
 
   #------------------------------------------------------------

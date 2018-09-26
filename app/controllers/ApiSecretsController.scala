@@ -34,6 +34,11 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def listApiSecrets(): Action[Unit] = AdminGetAction { request: GetRequest =>
+    listApiSecretsImpl(request)
+  }
+
+
+  private def listApiSecretsImpl(request: DebikiRequest[_]): Result = {
     val secrets = request.dao.listApiSecrets(limit = 100)
     OkSafeJson(JsArray(secrets map JsApiSecret))
   }
@@ -62,7 +67,7 @@ class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdCont
     import request.{dao, body}
     val secretNrs = (body \ "secretNrs").as[immutable.Seq[ApiSecretNr]]
     dao.deleteApiSecrets(secretNrs)
-    Ok
+    listApiSecretsImpl(request)
   }
 
 }

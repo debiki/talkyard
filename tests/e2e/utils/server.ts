@@ -4,6 +4,7 @@
 
 import _ = require('lodash');
 import utils = require('./utils');
+import c = require('../test-constants');
 import { logMessage, die, dieIf } from './log-and-die';
 
 // Didn't find any Typescript defs.
@@ -40,17 +41,26 @@ function initOrDie(theSettings) {
 }
 
 
-function postOrDie(url, data) {
+function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string } = {}) {
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
-  logMessage('POST ' + url + ' ...  [EsM5JMMK2]');
 
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
 
-  const headers = !xsrfTokenAndCookies ? {} : {
-    'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
-    'Cookie': xsrfTokenAndCookies[1]
-  };
+  // Authentication headers.
+  // Either use Bausic Authentication, if we're doing an API request with an API secret,
+  // or include an xsrf cookie if something else.
+  const headers = opts.apiUserId
+    ? {
+        'Authorization': 'Basic ' +
+            utils.encodeInBase64(`talkyardId=${opts.apiUserId}:${opts.apiSecret}`)
+      }
+    : (!xsrfTokenAndCookies ? {} : {
+        'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
+        'Cookie': xsrfTokenAndCookies[1]
+      });
+
+  logMessage(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
 
   const response = syncRequest('POST', url + passwordParam, { json: data, headers: headers });
 
@@ -312,6 +322,23 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 }
 
 
+
+// ----- API v0
+
+function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, apiSecret: string,
+      externalUser: ExternalUser }): string {
+  const url = ps.origin + '/-/v0/upsert-external-user-generate-login-secret';
+  const responseJson = postOrDie(
+      url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
+  dieIf(!responseJson.loginSecret, "No login secret in API response [TyE4AKBA05]",
+    showResponseBodyJson(responseJson));
+  return responseJson.loginSecret;
+}
+
+
+
+// ----- Export functions
+
 export = {
   initOrDie,
   importSiteData,
@@ -334,5 +361,8 @@ export = {
   waitForUnsubscriptionLinkEmailedTo,
   waitUntilLastEmailMatches,
   lastEmailMatches,
+  apiV0: {
+    upsertUserGetLoginSecret,
+  },
 };
 

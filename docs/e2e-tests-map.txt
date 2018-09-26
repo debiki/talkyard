@@ -46,8 +46,11 @@ create account -
   reserved username:
 
 login -
-  guest:
-  password:  password-login-reset.2browsers.test.ts  TyT5KAES20W
+  guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
+  password:
+          - password-login-reset.2browsers.test.ts  TyT5KAES20W
+    via email verif email:
+          - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
   forgot password -
     reset it:   password-login-reset.2browsers.test.ts  TyT5KAES20W
     forgot email address:
@@ -135,10 +138,8 @@ invites -
 emails -
   send invite:
   accept invite:
-  new reply:
-  mention:
-  watching:
-  unsubscribe:
+  email notifications: (5ABKR024)
+  unsubscribe:  (7ABKR023)
     via email link:
             - unsubscribe.2browsers.test.ts  TyT2ABKG4RUR
             - group-mentions.2browsers.test.ts   TyT7AKWB2LG
@@ -535,6 +536,7 @@ restart server -
     ... same tests as above ...
 
 notifications:
+  via email:  (5ABKR024)
   mute topic:
   mute category:
   watching-all for new topic:
@@ -554,9 +556,16 @@ live notifications -
        — just call onerror in the patch?
     Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
 
-email notifications:
+email notifications:  (5ABKR024)
   watching everything:
-    - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
+          - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
+  new reply:
+  mention:
+  watching:
+  not until after email verified:
+          - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
+  unsubscribe:
+          -  (7ABKR023)
 
 terms and privacy:
   read after have signed up:

@@ -16,9 +16,11 @@
  */
 
 /// <reference path="../links.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
+// or should be ...already-loaded ? (5BKRF020)
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
 const d = { i: debiki.internal };
@@ -41,7 +43,9 @@ export function loginIfNeededReturnToAnchor(
       loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean) {
   const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
   success = success || function() {};
-  if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
+  const store: Store = ReactStore.allData();
+  const me: Myself = store.me;
+  if (me.isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
     success();
   }
   else if (eds.isInIframe) {
@@ -81,8 +85,93 @@ export function loginIfNeededReturnToAnchor(
     }, 1000*60*8)
   }
   else {
-    morebundle.loginIfNeeded(loginReason, returnToUrl, success);
+    loginIfNeeded(loginReason, returnToUrl, success);
   }
+}
+
+
+// Later, merge with loginIfNeededReturnToAnchor() above, and rename to loginIfNeeded, and use only
+// that fn always — then will work also in iframe (will open popup).
+export function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void,
+     willCompose?: boolean) {
+  if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
+    if (onDone) onDone();
+  }
+  else {
+    goToSsoPageOrElse(returnToUrl, function() {
+      Server.loadMoreScriptsBundle(() => {
+        // People with an account, are typically logged in already, and won't get to here often.
+        // Instead, most people here, are new users, so show the signup dialog.
+        // (Why won't this result in a compil err? (5BKRF020))
+        debiki2.login.getLoginDialog().openToSignUp(loginReason, returnToUrl, onDone || function() {});
+      });
+    });
+  }
+}
+
+
+// previously: morebundle.openLoginDialogToSignUp(purpose);
+export function openLoginDialogToSignUp(purpose) {
+  goToSsoPageOrElse(location.toString(), function() {
+    Server.loadMoreScriptsBundle(() => {
+      debiki2.login.getLoginDialog().openToSignUp(purpose);
+    });
+  });
+}
+
+
+// previously: morebundle.openLoginDialog(purpose);
+export function openLoginDialog(purpose) {
+  goToSsoPageOrElse(location.toString(), function() {
+    Server.loadMoreScriptsBundle(() => {
+      debiki2.login.getLoginDialog().openToLogIn(purpose);
+    });
+  });
+}
+
+
+function goToSsoPageOrElse(returnToUrl: string, fn) {
+  const store: Store = ReactStore.allData();
+  const settings: SettingsVisibleClientSide = store.settings;
+  if (settings.enableSso && settings.ssoUrl) {
+    // Should not be allowed to compose before login,
+    // because then text lost, now, when jumping to the SSO login page.
+    const ssoUrl = makeSsoUrl(store, returnToUrl);
+    location.assign(ssoUrl);
+  }
+  else {
+    fn();
+  }
+}
+
+
+export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: string): string {
+  const settings: SettingsVisibleClientSide = store.settings;
+  if (!settings.ssoUrl)
+    return undefined;
+
+  // Remove magic text that tells the Talkyard server to redirect to the return to url,
+  // only if it sends an email address verification email. (Via a link in that email.)
+  const returnToUrl = returnToUrlMaybeMagicRedir.replace('_RedirFromVerifEmailOnly_', '');
+
+  const origin = location.origin;
+  const returnToPathQueryHash = returnToUrl.substr(origin.length, 9999);
+
+  // The SSO endpoint needs to check the return to URL or origin against a white list
+  // to verify that the request isn't a phishing attack — i.e. someone who sets up a site
+  // that looks exactly like the external website where Single Sign-On happens,
+  // or looks exactly like the Talkyard forum, and uses $[returnTo...} to redirect
+  // to those phishing site. — That's why the full url and the origin params have
+  // Dangerous in their names.
+  //   Usually there'd be just one entry in the "white list", namely the address to the
+  // Talkyard forum. However, can be many, if there's also a blog with embedded comments,
+  // or more than one forum (that uses the same SSO login page).
+  const ssoUrlWithReturn = (
+      settings.ssoUrl
+        .replace('${talkyardUrlDangerous}', returnToUrl)
+        .replace('${talkyardOriginDangerous}', origin)
+        .replace('${talkyardPathQueryEscHash}', returnToPathQueryHash));
+  return ssoUrlWithReturn;
 }
 
 

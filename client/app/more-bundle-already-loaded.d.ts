@@ -92,10 +92,6 @@ declare namespace debiki2.edithistory {
 
 declare namespace debiki2.login {
 
-  function loginIfNeeded(
-      loginReason: LoginReason | string, anyReturnToUrl?: string, success?: () => void,
-      willCompose?: boolean);
-
   function getLoginDialog();
 
 }

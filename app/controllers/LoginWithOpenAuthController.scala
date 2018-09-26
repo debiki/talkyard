@@ -130,13 +130,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     */
   private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
 
+    val settings = request.siteSettings
+
+    throwForbiddenIf(settings.enableSso,
+      "TyESSO0OAUTH", "OpenAuth authentication disabled, because SSO enabled")
+
     if (globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
       return loginViaLoginOrigin(providerName, request.underlying)
     }
-    def settings = request.siteSettings
+
     val provider: SocialProvider with CommonSocialProfileBuilder = providerName match {
       case FacebookProvider.ID =>
         throwForbiddenIf(!settings.enableFacebookLogin, "TyE0FBLOGIN", "Facebook login disabled")
@@ -229,6 +234,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private def login(request: GetRequest, oauthDetailsCacheKey: Option[String] = None,
         anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
 
+    val dao = request.dao
+    val siteSettings = dao.getWholeSiteSettings()
+
+    throwForbiddenIf(siteSettings.enableSso,
+      "TyESSO0OAUTHLGI", "OpenAuth login disabled, because SSO enabled")
+
     def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
     val oauthDetails: OpenAuthDetails =
       anyOauthDetails.getOrElse(Option(cache.getIfPresent(cacheKey)) match {
@@ -245,8 +256,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
-
-    val dao = request.dao
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     val result =
@@ -320,7 +329,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 // the old one just because they both claim to use the same email address.
               }
             case None =>
-              if (!dao.getWholeSiteSettings().allowSignup) {
+              if (!siteSettings.allowSignup) {
                 throwForbidden("TyE0SIGNUP02", "Creation of new accounts is disabled")
               }
               else if (mayCreateNewUser) {
@@ -440,7 +449,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // Could set isLogin = true instead, see handleCreateUserDialog(..) in
         // LoginWithPasswordController, + login-dialog.ts [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>
+
     val body = request.body
+    val dao = request.dao
+
+    val siteSettings = dao.getWholeSiteSettings()
+
+    throwForbiddenIf(siteSettings.enableSso,
+      "TyESSO0OAUTHNWUSR", "OpenAuth user creation disabled, because SSO enabled")
+
+    throwForbiddenIf(!siteSettings.allowSignup,
+      "TyE0SIGNUP04", "OpenAuth user creation disabled, because new signups not allowed")
 
     val fullName = (body \ "fullName").asOptStringNoneIfBlank
     val emailAddress = (body \ "email").as[String].trim
@@ -478,9 +497,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case None =>
         None
     }
-
-    val dao = request.dao
-    val siteSettings = dao.getWholeSiteSettings()
 
     // Some dupl code. [2FKD05]
     if (!siteSettings.requireVerifiedEmail && emailAddress.isEmpty) {

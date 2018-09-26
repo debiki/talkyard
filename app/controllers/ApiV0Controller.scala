@@ -73,12 +73,15 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     apiEndpoint match {
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
-      case "sso-login" =>
+      case "sso-login" |  // deprecated name, remove
+           "login-with-secret" =>
         val oneTimeSecret = getOnlyOrThrow("oneTimeSecret", "TyE7AKK25")
         val anyUserId = dao.redisCache.getSsoLoginUserIdDestroySecret(oneTimeSecret)
         val userId = anyUserId getOrElse {
-          throwForbidden("TyE4AKBR02", "Non-existing or expired or already used one time secret")
+          throwForbidden("TyELGISECR_", "Non-existing or expired or already used one time secret")
         }
+        // The System user should only do things based on Talkyard's source code. [SYS0LGI]
+        throwForbiddenIf(userId == SystemUserId, "TyELGISYS", "Cannot login as System.")
         val user = dao.getTheMember(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
         val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
@@ -128,8 +131,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
     apiEndpoint match {
-      case "sso-upsert-user-generate-login-secret" =>
-        val extUser = Try(ExternalUser(
+      case "sso-upsert-user-generate-login-secret" |  // deprecated name, remove
+        "upsert-external-user-generate-login-secret" =>
+        val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y]
           externalId = (body \ "externalUserId").as[String].trim,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
@@ -245,7 +249,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         val secret = nextRandomString()
         dao.redisCache.saveOneTimeSsoLoginSecret(secret, user.id)
         OkApiJson(Json.obj(
-          "ssoLoginSecret" -> secret))
+          "loginSecret" -> secret,
+          "ssoLoginSecret" -> secret))  // REMOVE old name
 
       case _ =>
         throwForbidden("TyEAPIPST404", s"No such API endpoint: $apiEndpoint")

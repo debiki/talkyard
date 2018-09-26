@@ -395,6 +395,19 @@ interface LargeTestForum extends EmptyTestForum {
 }
 
 
+interface ExternalUser {   // sync with Scala [7KBA24Y]
+  externalUserId: string;
+  primaryEmailAddress: string;
+  isEmailAddressVerified: boolean;
+  username?: string;
+  fullName?: string;
+  avatarUrl?: string;
+  aboutUser?: string;
+  isAdmin?: boolean;
+  isModerator?: boolean;
+}
+
+
 // Right now, constraints like >= 1 aren't supported in Typescript, but this works, and, in test
 // cases, probably won't ever need larger numbers?
 type IntAtLeastOne = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19;

@@ -68,6 +68,7 @@ export = {
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
   SystemUserId: 1,
+  SysbotUserId: 2,
   EveryoneId: 10,
   NewMembersId: 11,
   BasicMembersId: 12,
@@ -81,5 +82,7 @@ export = {
   ReviewDecisionUndoTimoutSeconds: 12, // sync with Scala and React component [2PUKQB0]
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
+  SsoTestPath: '/-/sso-test',
+
 };
 

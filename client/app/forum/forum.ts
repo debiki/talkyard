@@ -26,6 +26,7 @@
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
@@ -405,7 +406,7 @@ const ForumButtons = createComponent({
 
   createTopic: function() {
     const anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    morebundle.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       if (this.isGone) return;
       let category: Category = this.props.activeCategory;
       if (category.isForumItself) {

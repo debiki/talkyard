@@ -19,9 +19,10 @@ package controllers
 
 import debiki._
 import ed.server._
+import ed.server.http.ApiRequest
 import ed.server.security.EdSecurity
 import javax.inject.Inject
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result}
 import scala.concurrent.Future
 
 
@@ -50,13 +51,23 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
         returnToUrl = apiReq.uri)) as HTML)
     }
     else {
-      val siteTpi = SiteTpi(apiReq, isAdminArea = true)
-      val adminPageHtmlStr = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
-      ViewPageController.addVolatileJsonAndPreventClickjacking2(adminPageHtmlStr,
-          unapprovedPostAuthorIds = Set.empty, apiReq) map { response =>
-        response withCookies SecureCookie(
-          EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
-      }
+      showAdminApp(apiReq)
+    }
+  }
+
+
+  def testSso(): Action[Unit] = AsyncGetAction { apiReq =>
+    showAdminApp(apiReq)
+  }
+
+
+  def showAdminApp(apiReq: ApiRequest[_]): Future[Result] = {
+    val siteTpi = SiteTpi(apiReq, isAdminArea = true)
+    val adminPageHtmlStr = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
+    ViewPageController.addVolatileJsonAndPreventClickjacking2(adminPageHtmlStr,
+      unapprovedPostAuthorIds = Set.empty, apiReq) map { response =>
+      response withCookies SecureCookie(
+        EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
     }
   }
 

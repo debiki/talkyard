@@ -991,7 +991,8 @@ object JsonMaker {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, globals: Globals): JsObject = {
+  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, globals: Globals)
+        : JsObject = {
     // Only include settings that differ from the default.
 
     var json = Json.obj(
@@ -1027,6 +1028,10 @@ object JsonMaker {
       json += "minPasswordLength" -> JsNumber(settings.minPasswordLength)
     if (settings.begForEmailAddress != D.begForEmailAddress)
       json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
+    if (settings.ssoUrl.nonEmpty)
+      json += "ssoUrl" -> JsString(settings.ssoUrl)
+    if (settings.ssoUrl.nonEmpty && settings.enableSso)
+      json += "enableSso" -> JsTrue
     if (settings.enableChat != D.enableChat)
       json += "enableChat" -> JsBoolean(settings.enableChat)
     if (settings.enableDirectMessages != D.enableDirectMessages)

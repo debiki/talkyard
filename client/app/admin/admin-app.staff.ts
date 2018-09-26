@@ -37,6 +37,7 @@ const Alert = rb.Alert;
 const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
+const SsoTestPath = '/-/sso-test';
 const AdminRoot = '/-/admin/';
 
 export function staffRoutes() {
@@ -47,6 +48,7 @@ export function staffRoutes() {
   const section = isAdmin ? 'settings' : 'review/all';   // [8ABKS2]
   return Switch({},
       Redirect({ from: AdminRoot, to: AdminRoot + section, exact: true }),
+      Route({ path: SsoTestPath, component: SsoTestComponent }),
       Route({ path: AdminRoot, component: AdminAppComponent }));
 }
 
@@ -61,6 +63,93 @@ export const NotYetImplementedComponent = createReactClass(<any> {
 });
 
 
+const SsoTestComponent = createReactClass(<any> {
+  displayName: 'SsoTestComponent',
+  mixins: [debiki2.StoreListenerMixin],
+
+  getInitialState: function() {
+    return {
+      store: debiki2.ReactStore.allData(),
+    };
+  },
+
+  onChange: function() {
+    this.setState({
+      store: debiki2.ReactStore.allData(),
+    });
+  },
+
+  render: function() {
+    const store: Store = this.state.store;
+    const settings = store.settings;
+    const me: Myself = store.me;
+    const ssoUrl = login.makeSsoUrl(store, window.location.toString());
+
+    const noSsoUrlINfo = ssoUrl ? null :
+      rFragment({},
+        r.p({},
+          r.b({}, "You have not configured any Single Sign-On URL.")),
+        r.p({},
+          "Nothing to do, nothing to test."));
+
+    const alreadyLoggedInInfo = !me.isLoggedIn ? null :
+      rFragment({},
+        r.p({},
+          r.b({ className: 'e_SsoTstLgdIn' }, "You are already logged in"),
+          ", as ", r.samp({ className: 'e_LgdInAs' }, '@' + me.username),
+          ". You need to be logged out, to test SSO. (Or did you just login via SSO?)"),
+        r.p({},
+          "So, open another browser, or an Incognito window in this browser: " +
+          "click CTRL + SHIFT + N, typically.", r.br(),
+          "And then try out SSO: Go to this same page, in that other browser or window, " +
+          "and follow the instructions that will then appear (when you're logged out)."));
+
+    const testInfoAndLink = me.isLoggedIn ? null :
+      rFragment({},
+        r.p({},
+          "Here you can test Single Sign-On. You're not logged in", r.br(),
+          "— let's see if you can logni via SSO?"),
+        r.p({},
+          "The SSO URL you've specified is, before replacing variables: ", r.br(),
+          r.samp({ className: 'e_SsoSettingsUrl' }, settings.ssoUrl)),
+        r.p({},
+          "And as a clickable link, after replacing variables: ", r.br(),
+          r.a({ href: ssoUrl, className: 'e_SsoTstLgiLnk' }, ssoUrl)),
+        r.p({},
+          "To test SSO, read the rest of this page, and then click that link." +
+          "It'll redirect you to your own login page at your website, " +
+          "and that's where people will get sent, when they " +
+          "are not logged in, and click things like Reply or Log In."),
+        r.p({},
+          "After you've logged in at your website, your server should " +
+          "send an API request to:", r.br(),
+          r.samp({}, location.origin + '/-/v0/upsert-user-generate-login-secret'), r.br(),
+          "to synchronize your user account with Talkyard's user database, " +
+          "and to get a login secret. " +
+          "Then your server should redirect you to: ", r.br(),
+          r.samp({}, location.origin +
+              '/-/v0/login-with-secret?oneTimeSecret=nnnnn&thenGoTo=/-/sso-test'), r.br(),
+          "which will log you in here (at Talkyard), and redirect you back to this page again " +
+          "— and now you'll be logged in."));
+
+    return (
+      r.div({ className: 'esAdminArea' },
+        //topbar.TopBar({ customTitle: "Single Sign-On Test", showBackToSite: true, extraMargin: true }),
+        r.div({ className: 'container' },
+          r.h1({}, "Single Sign-On Test"),
+          r.br(),
+          r.br(),
+          noSsoUrlINfo || alreadyLoggedInInfo || testInfoAndLink,
+          r.br(),
+          r.p({},
+            r.a({ href: linkToAdminPageLoginSettings(), className: 'e_BkToStngs' },
+              "Back to login settings"),
+            r.br(),
+            r.br(),
+            r.a({ href: '/' }, "Home"))
+          )));
+  }
+});
 
 const AdminAppComponent = createReactClass(<any> {
   displayName: 'AdminAppComponent',
@@ -305,21 +394,27 @@ const LoginAndSignupSettings = createFactory({
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    const enableSso = valueOf(s => s.enableSso);
     const allowSignup = valueOf(s => s.allowSignup);
     const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
+    const featureFlags = valueOf(s => s.featureFlags);
 
     const canEnableGuestLogin =
       !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
-        valueOf(s => s.allowSignup) && !requireVerifiedEmail;  // && !invite-only (6KWU20)
+        valueOf(s => s.allowSignup) && !requireVerifiedEmail && !enableSso;  // && !invite-only (6KWU20)
 
     const missingServerSiteHint = (isConfiguredOnServer: boolean) => isConfiguredOnServer ? '' :
         " Cannot be enabled, because has not been configured server side, " +
         "in /opt/talkyard/conf/app/play.conf.";
 
+    const ssoTestPageLink = r.a({ href: '/-/sso-test', className: 'e_SsoTestL' }, "/-/sso-test");
+    const adminLoginLink = r.a({ href: '/-/admin-login', className: 'e_AdmLgiL' }, "/-/admin-login");
+
     return (
       r.div({},
-        Setting2(props, { type: 'checkbox', label: "Allow signup", id: 'e_AllowSignup',
+        enableSso ? null : Setting2(props, {
+          type: 'checkbox', label: "Allow signup", id: 'e_AllowSignup',
           help: "Uncheck to prevent people from creating new accounts.",
           getter: (s: Settings) => s.allowSignup,
           update: (newSettings: Settings, target) => {
@@ -334,7 +429,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         /*
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Invite only", id: 'e_InviteOnly',
           help: r.span({}, "No one may join, unless they're invited by staff " +
             "(to invite someone, click Users above, then Invite)."),
@@ -349,8 +444,8 @@ const LoginAndSignupSettings = createFactory({
         Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
           className: 'e_A_Ss_S-LoginRequiredCB',
           help: r.span({}, "Require authentication to read content. Users must then login " +
-            "with ", r.i({}, "for example"), " password, or Google or Facebook — but " +
-            "anonymous access is disabled."),
+            "with ", r.i({}, "for example"), " password, or Google or Facebook or Single Sing-On " +
+            "— but anonymous access is disabled."),
           getter: (s: Settings) => s.userMustBeAuthenticated,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeAuthenticated = target.checked;
@@ -377,7 +472,9 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        // If SSO enabled, email addresses must always have been verified, by the external
+        // login provider.
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Require verified email",
           className: 'e_A_Ss_S-RequireVerifiedEmailCB',
           help: "New users must specify an email address, and click an email verification link " +
@@ -398,7 +495,9 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, { type: 'checkbox', label: "May compose before signup",
+        // With SSO, too complicated to let people start typing, and then redir to external site.
+        enableSso || !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "May compose before signup",
           className: 'e_A_Ss_S-MayComposeBeforeSignup',
           help: "People may start writing posts before they have signed up. When they try to " +
               "submit their post, they are asked to sign up. Good, because might result in more " +
@@ -416,7 +515,9 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox', label: "May post before email verified",
+        // With SSO, email must always be verified, when logging in and continuing.
+        enableSso ? null : Setting2(props, {
+          type: 'checkbox', label: "May post before email verified",
           className: 'e_A_Ss_S-MayPostBeforeEmailVerifiedCB',
           help: "New users may login and post messages, before they have clicked an email " +
               "verification link. Good, because then people won't need to check their " +
@@ -436,7 +537,8 @@ const LoginAndSignupSettings = createFactory({
         doubleTypePassword: Option[Boolean]
         begForEmailAddress */
 
-        !allowSignup ? null : Setting2(props, { type: 'checkbox', label: "Allow creating local accounts",
+        enableSso || !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Allow creating local accounts",
           className: 'e_A_Ss_S-AllowLoalSignupCB',
           help: "Uncheck to prevent people from creating email + password accounts at this site.",
           disabled: !valueOf(s => s.allowSignup),
@@ -446,7 +548,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without creating real accounts " +
@@ -462,7 +564,7 @@ const LoginAndSignupSettings = createFactory({
 
         // ---- OpenAuth login
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
           className: 'e_A_Ss_S-EnableGoogleCB',
           help: "Lets people sign up and login with their Gmail account." +
@@ -474,7 +576,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Facebook signup",
           className: 'e_A_Ss_S-EnableFacebookCB',
           help: "Lets people sign up and login with their Facebook account." +
@@ -486,7 +588,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Twitter signup",
           className: 'e_A_Ss_S-EnableTwitterCB',
           help: "Lets people sign up and login with their Twitter account." +
@@ -498,7 +600,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable GitHub signup",
           className: 'e_A_Ss_S-EnableGitHubCB',
           help: "Lets people sign up and login with their GitHub account." +
@@ -510,11 +612,68 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        Setting2(props, {
+          type: 'text', label: "Single Sign-On URL",
+          className: 'e_SsoUrl',
+          help: rFragment({},
+            r.p({},
+              "Where at your website (if any) to redirect a user, for SSO signup or login. Example: "),
+            r.p({},
+              r.samp({}, "https://www.your-website.com/login?returnTo=${talkyardPathQueryEscHash}")),
+            r.p({},
+              "After login at your site, your server should redirect the user back to ", r.br(),
+              r.samp({}, "https://your-talkyard-forum.com/${talkyardPathQueryEscHash}"),
+              ",", r.br(),
+              "for example, ", r.samp({}, "https://your-talkyard-forum.com/a/page"), "."),
+            r.p({},
+              "To start using SSO, fill in this value, save the settings, and go here: ",
+              ssoTestPageLink,
+              " to test if your SSO settings work, " +
+              "especially if you can stil login as admin — give that a try ",
+              r.i({}, "in a different browser"),
+              "."),
+            r.p({},
+              "Later, when all works fine, and you've verified that you can logout, " +
+              "and login as admin via Single Sign-On, then set Enable SSO (below) to true.")),
+          // + "If you want the full URL, use r.samp({}, "${talkyardUrlInclOrigin}") instead —
+          // maybe you have different forums and want to know to which one, to redirect.
+          // However be careful so you don't redirect to a phishing site."
+          getter: (s: Settings) => s.ssoUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.ssoUrl = target.value;
+            if (!target.value || !target.value.trim()) {
+              newSettings.enableSso = false;
+            }
+          }
+        }),
+
+        Setting2(props, {
+          type: 'checkbox', label: "Enable Single Sign-On (SSO)",
+          disabled: !valueOf(s => s.ssoUrl && s.ssoUrl.trim()),
+          className: 'e_EnblSso',
+          help: rFragment({},
+            r.p({},
+              "Lets people use their accounts at your website (if any), to login " +
+              "to this Talkyard community. Before you enable SSO, go to the SSO test page: ",
+              ssoTestPageLink,
+              " and test that you can actually login via SSO."),
+            r.p({},
+              "If you enable SSO and something goes wrong, so you cannot login as admin " +
+              "— then go here: ",
+              adminLoginLink,
+              " and you'll get an email with a one time admin login link.")),
+          getter: (s: Settings) => s.enableSso,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableSso = target.checked;
+          }
+        }),
+
+
         // ---- Email domain blacklist
 
         /* Not impl server side. And UX? Should whitelist domains be shown client side?
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
           help: "People may not sign up with emails from these domains. One domain per row. " +
           "Lines starting with '#' are ignored (so you can add comments).",
@@ -524,7 +683,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        !allowSignup ? null : Setting2(props, {
+        enableSso || !allowSignup ? null : Setting2(props, {
           type: 'textarea', label: "Email domain whitelist", id: 'e_EmailWhitelist',
           help: "People may only sign up with emails from these domains. One domain per row. " +
             "Lines starting with '#' are ignored (so you can add comments).",
@@ -853,6 +1012,8 @@ const EmbeddedCommentsSettings = createFactory({
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
             "You can add many domains — separate them with spaces or newlines."),
           placeholder: "https://www.yourblog.com",
+
+          // Dupl repl-space-w-newlines code (7KABW92)
           getter: (s: Settings) =>
             // Replace spaces with newlines, otherwise hard to read.
             _.isUndefined(s.allowEmbeddingFrom) ? undefined : s.allowEmbeddingFrom.replace(/\s+/g, '\n'),
@@ -1011,6 +1172,20 @@ const AdvancedSettings = createFactory({
           getter: (s: Settings) => s.showExperimental,
           update: (newSettings: Settings, target) => {
             newSettings.showExperimental = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'textarea', label: "Feature flags", id: 'e_FeatFlags',
+          help: r.span({}, "Enables or disables new features. Ignore, unless you know what " +
+              "you're doing."),
+
+          // Dupl repl-space-w-newlines code (7KABW92)
+          getter: (s: Settings) =>
+            // Replace spaces with newlines, otherwise hard to read.
+            _.isUndefined(s.featureFlags) ? undefined : s.featureFlags.replace(/\s+/g, '\n'),
+          update: (newSettings: Settings, target) => {
+            // Change back from \n to space — browsers want spaces in allow-from.
+            newSettings.featureFlags = target.value.replace(/\n+/g, ' ');
           }
         }),
 

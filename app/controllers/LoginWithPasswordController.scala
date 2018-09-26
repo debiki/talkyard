@@ -117,6 +117,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val dao = daoFor(request.request)
     val siteSettings = dao.getWholeSiteSettings()
 
+    throwForbiddenIf(siteSettings.enableSso,
+      "TyESSO0OSIGNUP", "Creation of local password accounts is disabled, because Single Sign-On enabled")
     throwForbiddenIf(!siteSettings.allowSignup, "TyE0SIGNUP01", "Creation of new accounts is disabled")
     throwForbiddenIf(!siteSettings.allowLocalSignup,
       "TyE0LCALSIGNUP", "Creation of local password accounts has been disabled")

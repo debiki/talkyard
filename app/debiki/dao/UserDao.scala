@@ -1037,7 +1037,6 @@ trait UserDao {
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.
 
-      UX; COULD // send a live-update to the browser so it updates it's unread notfs count. [7KWBA02]
       val numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeenSkipEmail(user.id, postIdsSeen)
 
       tx.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)

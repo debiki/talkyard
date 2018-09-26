@@ -242,6 +242,39 @@ package object core {
     object MostRecentFirst extends OrderBy { override def isDescending = true }
   }
 
+
+  // Feature flags
+
+  sealed abstract class FeatureOnOff
+
+  object FeatureOnOff {
+
+    /** Can be used as default settings, in config file, for all sites. And overridden, per site,
+      * in the admin settings area. */
+    case object On extends FeatureOnOff
+    case object Off extends FeatureOnOff
+
+    /** For the Play Framework config file only. Forcibly enables the feature for all sites. */
+    case object Forced extends FeatureOnOff
+
+    /** For the config file only. Forcibly disables the feature for all sites. */
+    case object Forbidden extends FeatureOnOff
+
+    /** For per site configs. Fallbacks to the server side default setting.
+      * (Or to off = disabled, if absent, server side.) */
+    case object Default extends FeatureOnOff
+
+    def fromString(value: String): FeatureOnOff = value match {
+      case "on" => On
+      case "forced" => Forced
+      case "forbidden" => Forbidden
+      case "default" => Default
+      case _ => Off
+    }
+  }
+
+
+
   val HomepageUrlPath = "/"
   val EmptyPageId = "0"  // a.k.a. NoPageId
   val NoPageId: PageId = EmptyPageId
@@ -261,10 +294,12 @@ package object core {
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId: UserId = User.SystemUserId
-  def SysbotUserId: UserId = User.SysbotUserId
   def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
   def SystemUserFullName: String = User.SystemUserFullName
   def SystemUserUsername: String = User.SystemUserUsername
+  def SysbotUserId: UserId = User.SysbotUserId
+  def SysbotUserFullName: String = User.SysbotUserFullName
+  def SysbotUserUsername: String = User.SysbotUserUsername
   def UnknownUserId: UserId = User.UnknownUserId
   def UnknownUserName: String = User.UnknownUserName
   def UnknownUserGuestCookie: String = User.UnknownUserGuestCookie

@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-declare var moment: any;
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
+//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
+declare var moment: any;
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -93,7 +93,7 @@ export const UserInvites = createFactory({
       return r.p({}, t.Loading);
 
     let inviteButton;
-    const mayInvite = user_maySendInvites(user);
+    const mayInvite = store_maySendInvites(store, user);
     let introText: any = r.p({}, t.upp.InvitesIntro + (
         this.state.invites.length
             ? t.upp.InvitesListedBelow

@@ -48,7 +48,7 @@ const EmailInput = util.EmailInput;
 
 let loginDialog;
 
-
+/*
 export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
       success?: () => void) {
   success = success || function() {};
@@ -60,7 +60,7 @@ export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?
     // Instead, most people here, are new users, so show the signup dialog.
     getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
   }
-}
+} */
 
 
 export function getLoginDialog() {   // also called from Scala template
@@ -79,7 +79,7 @@ const LoginDialog = createClassAndFactory({
     return {
       isOpen: false,
       childDialog: null,
-      logInOrSignUp: null,
+      logInOrSignUp: null,  // CLEAN_UP REMOVE
       store: debiki2.ReactStore.allData(),
     };
   },

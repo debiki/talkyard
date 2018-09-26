@@ -55,6 +55,17 @@ interface CheckboxEvent {
 type ErrorPolicy = number | void;
 
 
+// Tells if a user may do something, and why s/he may do that, or why not.
+interface MayMayNot {
+  value: boolean;
+  do_: boolean;   // true = may do it, use like so: if (may.do_) ...
+  not: boolean;   // true = may not, use like so:   if (may.not) ...
+  yes: boolean;   // true = may do it  -- try to remove?
+  no: boolean;    // true = may not    -- try to remove?
+  reason?: string;
+}
+
+
 enum MagicAnchor {
   ScrollToLatest = 1,
 }
@@ -776,6 +787,8 @@ interface SettingsVisibleClientSide {
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
+  ssoUrl?: string;                      // default: undefined
+  enableSso?: boolean;                  // default: undefined —> false
   minPasswordLength?: number;           // default: 10
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
@@ -1276,6 +1289,11 @@ interface Settings {
   doubleTypePassword: boolean;
   begForEmailAddress: boolean;
 
+  // Single Sign-On
+  enableSso: boolean;
+  ssoUrl: string;
+  ssoNotApprovedUrl: string;
+
   // Moderation
   numFirstPostsToAllow: number;
   numFirstPostsToApprove: number;
@@ -1332,6 +1350,8 @@ interface Settings {
   googleUniversalAnalyticsTrackingId: string;
 
   showExperimental: boolean;
+  featureFlags: string;
+
   allowEmbeddingFrom: string;
 }
 

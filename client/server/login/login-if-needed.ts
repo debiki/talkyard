@@ -1,6 +1,6 @@
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
 export function loginIfNeededReturnToPost(
@@ -12,6 +12,13 @@ export function loginIfNeededReturnToAnchor(
       loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean) {
 }
 
+
+export function openLoginDialogToSignUp(purpose) {
+}
+
+
+export function openLoginDialog(purpose) {
+}
 
 //------------------------------------------------------------------------------
    }

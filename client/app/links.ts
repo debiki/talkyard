@@ -51,6 +51,10 @@ export function linkToAdminPage(): string {
   return origin() + '/-/admin/';
 }
 
+export function linkToAdminPageLoginSettings(): string {
+  return linkToAdminPage()+ 'settings/login';
+}
+
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {
   const origin = hostname ? '//' + hostname : '';   // ?? or just reuse 'origin' from above ?
   return origin + '/-/admin/settings/advanced';

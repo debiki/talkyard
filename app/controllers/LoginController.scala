@@ -39,7 +39,6 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def showLoginPage(as: Option[String], to: Option[String]): Action[Unit] = GetActionIsLogin { apiReq =>
-    // `thenGoTo` must be an URL relative the same origin.
     val path = to getOrElse "/"
     val badNextUrl = path.contains("//") || path.contains(':') || path.contains("..") ||
       path.isEmpty || path.charAt(0) != '/'

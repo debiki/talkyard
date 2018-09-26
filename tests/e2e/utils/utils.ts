@@ -1,9 +1,23 @@
+/// <reference path="../test-types.ts"/>
+
+import * as _ from 'lodash';
 import { dieIf } from './log-and-die'
 
 declare const settings;
 
+function firstDefinedOf(x, y, z?) {
+  return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
+}
+
+function encodeInBase64(text: string): string {
+  return Buffer.from(text, 'utf8').toString('base64');
+}
 
 const utils = {
+
+  firstDefinedOf,
+
+  encodeInBase64,
 
   regexEscapeSlashes: function(origin: string): string {
     return origin.replace(/\//g, '\\/');
@@ -53,7 +67,31 @@ const utils = {
     dieIf(mustMatch && !matches,
         `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
     return matches ? matches[1] : undefined;
-  }
+  },
+
+  makeExternalUserFor: (member: Member, opts: {
+    externalId: string,
+    primaryEmailAddress?: string,
+    isEmailAddressVerified?: boolean,
+    username?: string,
+    fullName?: string,
+    avatarUrl?: string,
+    aboutUser?: string,
+    isAdmin?: boolean,
+    isModerator?: boolean,
+  }): ExternalUser => {
+    return {
+      externalUserId: opts.externalId,
+      primaryEmailAddress: firstDefinedOf(opts.primaryEmailAddress, member.emailAddress),
+      isEmailAddressVerified: firstDefinedOf(opts.isEmailAddressVerified, !!member.emailVerifiedAtMs),
+      username: firstDefinedOf(opts.username, member.username),
+      fullName: firstDefinedOf(opts.fullName, member.fullName),
+      avatarUrl: opts.avatarUrl,
+      aboutUser: opts.aboutUser,
+      isAdmin: firstDefinedOf(opts.isAdmin, member.isAdmin),
+      isModerator: firstDefinedOf(opts.isModerator, member.isModerator),
+    };
+  },
 };
 
 

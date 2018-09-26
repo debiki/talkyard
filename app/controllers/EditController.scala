@@ -48,7 +48,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
         pageId: Option[String], postNr: Option[Int]): Action[Unit] =
       GetActionRateLimited(RateLimits.TouchesDbGetRequest) { request =>
 
-    import request.{dao, theRequester => requester}
+    import request.{dao, requester}
 
     val theDraftType = DraftType.fromInt(draftType).getOrThrowBadArgument(
       "TyE5BKW2A0", "draftType")
@@ -78,9 +78,11 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           postNr = postNr))
     }
 
-    val drafts = anyDraftLocator map { draftLocator =>
-      dao.readOnlyTransaction { tx =>
-        tx.loadDraftsByLocator(requester.id, draftLocator)
+    val drafts = requester flatMap { theRequester =>
+      anyDraftLocator map { draftLocator =>
+        dao.readOnlyTransaction { tx =>
+          tx.loadDraftsByLocator(theRequester.id, draftLocator)
+        }
       }
     } getOrElse Nil
 

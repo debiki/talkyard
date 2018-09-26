@@ -43,6 +43,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
     val settings = request.dao.getWholeSiteSettings()
 
+    throwForbiddenIf(settings.enableSso, "TyESSO0GST", "Guest login disabled, when SSO enabled")
     throwForbiddenIf(!settings.allowSignup, "TyE0SIGNUP03", "Creation of new accounts is disabled")
     throwForbiddenIf(!settings.isGuestLoginAllowed,
       "TyE4K5FW2", "Guest login disabled; you cannot login as guest here")

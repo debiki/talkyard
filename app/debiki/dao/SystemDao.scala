@@ -118,6 +118,7 @@ class SystemDao(
       // Don't insert any site host — instead, we use the ed.hostname config value.
 
       CreateSiteDao.createSystemUser(siteTx)
+      CreateSiteDao.createSysbotUser(siteTx)
       CreateSiteDao.createUnknownUser(siteTx)
       CreateSiteDao.createDefaultGroupsAndPermissions(siteTx)
 
@@ -255,6 +256,7 @@ class SystemDao(
       }
 
       CreateSiteDao.createSystemUser(newSiteTx)
+      CreateSiteDao.createSysbotUser(newSiteTx)
       CreateSiteDao.createUnknownUser(newSiteTx)
       CreateSiteDao.createDefaultGroupsAndPermissions(newSiteTx)
 

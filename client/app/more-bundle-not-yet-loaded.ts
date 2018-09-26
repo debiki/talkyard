@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,7 @@
 
 /// <reference path="Server.ts" />
 /// <reference path="more-bundle-already-loaded.d.ts" />
+/// <reference path="utils/react-utils.ts" />
 
 
 //------------------------------------------------------------------------------
@@ -95,19 +96,19 @@ export function openHelpDialogUnlessHidden(message) {
   });
 }
 
-
-export function openLoginDialog(purpose: LoginReason | string) {
+/*
+export function XX openLoginDialog(purpose: LoginReason | string) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.login.getLoginDialog().openToLogIn(purpose);
   });
 }
 
 
-export function openLoginDialogToSignUp(purpose: LoginReason | string) {
+export function XX openLoginDialogToSignUp(purpose: LoginReason | string) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.login.getLoginDialog().openToSignUp(purpose);
   });
-}
+} */
 
 
 export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect) {
@@ -172,14 +173,6 @@ export function joinOrCreateSubCommunity(store: Store) {
    Server.loadMoreScriptsBundle(() => {
      debiki2.subcommunities.joinOrCreateSubCommunity(store);
    });
-}
-
-
-export function loginIfNeeded(loginReason: LoginReason | string,
-      anyReturnToUrl?: string, success?: () => void, willCompose?: boolean) {
-  Server.loadMoreScriptsBundle(() => {
-    debiki2.login.loginIfNeeded(loginReason, anyReturnToUrl, success, willCompose);
-  });
 }
 
 

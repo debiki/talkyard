@@ -19,6 +19,7 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../page-methods.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
@@ -44,10 +45,10 @@ export function activateAnyCustomForm() {
         Server.submitCustomFormAsNewTopic(formData);
       }
       else if (doWhat.value === 'SignUp') {
-        morebundle.loginIfNeeded(LoginReason.SignUp);
+        login.loginIfNeeded(LoginReason.SignUp, location.toString());
       }
       else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
-        morebundle.loginIfNeeded(LoginReason.SignUp, '/-/redir-to-my-last-topic', function() {
+        login.loginIfNeeded(LoginReason.SignUp, '/-/redir-to-my-last-topic', function() {
           Server.submitUsabilityTestingRequest(formData);
         });
       }

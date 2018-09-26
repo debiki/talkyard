@@ -149,8 +149,10 @@ const InvitedUsersPanel = createFactory({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    let invites: Invite[] = this.state.invites;
+    const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const disableInvites = settings.ssoUrl;
+    const invites: Invite[] = this.state.invites;
     let introText;
     let listOfInvites;
     if (!_.isArray(invites)) {
@@ -170,7 +172,9 @@ const InvitedUsersPanel = createFactory({
     // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]
     return (
       r.div({},
-        Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB' }, "Send Invites"),
+        Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB',
+            disabled: disableInvites },
+          "Send Invites" + (disableInvites ? " — disabled, SSO in use" : '')),
         r.div({ className: 'esAdminSectionIntro' },
           r.p({}, introText)),
         // Dupl table headers [3GK0YU2]

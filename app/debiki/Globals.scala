@@ -1012,6 +1012,13 @@ class Config(conf: play.api.Configuration) {
   private def getIntOrDefault(confName: String, default: Int): Int =
     conf.getOptional[Int](confName) getOrElse default
 
+
+  val featureFlags: Map[String, FeatureOnOff] = {
+    val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank
+    Map.empty  // for now
+  }
+
+
   val cnameTargetHost: Option[String] =
     conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 

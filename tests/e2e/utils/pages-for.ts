@@ -432,6 +432,7 @@ function pagesFor(browser) {
     // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
     waitAndClickNth: function(selector, n) {
       assert(n !== 0, "n starts on 1, change from 0 to 1 please");
+      api._waitForClickable(selector);
       const items = browser.elements(selector).value;
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
       let response;
@@ -560,7 +561,8 @@ function pagesFor(browser) {
     },
 
 
-    waitAndSetValue: (selector: string, value: string | number, opts: { maybeMoves?: true } = {}) => {
+    waitAndSetValue: (selector: string, value: string | number,
+        opts: { maybeMoves?: true, checkAndRetry?: true } = {}) => {
       browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
                           // (maybe add waitUntilDoesNotMove ?)
       api.waitForVisible(selector);
@@ -570,7 +572,20 @@ function pagesFor(browser) {
         api.waitUntilDoesNotMove(selector);
       }
       if (value) {
-        browser.setValue(selector, value);
+        // Sometimes, when starting typing, React does a refresh / unmount?
+        // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
+        // so the remaining characters gets lost. Then, try again.
+        while (true) {
+          browser.setValue(selector, value);
+          if (!opts.checkAndRetry) break;
+          browser.pause(200);
+          const valueReadBack = browser.getValue(selector);
+          if (value === valueReadBack) {
+            break;
+          }
+          console.log(`Couldn't set value, got back when reading: """${valueReadBack}""", trying again`);
+          browser.pause(300);
+        }
       }
       else {
         // This is weird, both setValue('') and clearElement() somehow bypasses all React.js
@@ -1154,7 +1169,7 @@ function pagesFor(browser) {
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
         api.topbar.openMyMenu();
         api.rememberCurrentUrl();
-        api.waitAndClickFirst('.esMyMenu .dropdown-menu .esNotf-toMe');
+        api.waitAndClickFirst('.s_MM .dropdown-menu .esNotf-toMe');
         if (options && options.waitForNewUrl !== false) {
           api.waitForNewUrl();
         }
@@ -3374,8 +3389,12 @@ function pagesFor(browser) {
         api.waitForNewUrl();
       },
 
-      goToLoginSettings: function(origin?: string) {
+      goToLoginSettings: function(origin?: string, opts: { loginAs? } = {}) {
         api.go((origin || '') + '/-/admin/settings/login');
+        if (opts.loginAs) {
+          browser.loginDialog.loginWithPassword(opts.loginAs);
+          api.adminArea.waitAssertVisible();
+        }
       },
 
       goToUsersEnabled: function(origin?: string) {
@@ -3393,6 +3412,14 @@ function pagesFor(browser) {
           browser.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.users.invites.waitUntilLoaded();
+      },
+
+      goToApi: function(origin?: string, opts: { loginAs? } = {}) {
+        api.go((origin || '') + '/-/admin/api');
+        if (opts.loginAs) {
+          browser.loginDialog.loginWithPassword(opts.loginAs);
+        }
+        api.adminArea.apiTab.waitUntilLoaded();
       },
 
       goToReview: function(origin?: string, opts: { loginAs? } = {}) {
@@ -3474,6 +3501,24 @@ function pagesFor(browser) {
           clickAllowGuestLogin: function() {
             api.waitAndClick('#e2eAllowGuestsCB');
           },
+
+          typeSsoUrl: (url: string) => {
+            api.scrollIntoViewInPageColumn('.e_SsoUrl input');
+            api.waitUntilDoesNotMove('.e_SsoUrl input');
+            api.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
+          },
+
+          setEnableSso: (enabled: boolean) => {
+            api.scrollIntoViewInPageColumn('.e_EnblSso input');
+            api.waitUntilDoesNotMove('.e_EnblSso input');
+            setCheckbox('.e_EnblSso input', enabled);
+          },
+
+          goToSsoTestPage: () => {
+            api.rememberCurrentUrl();
+            api.waitAndClickFirst('.e_SsoTestL');
+            api.waitForNewUrl();
+          }
         },
 
         advanced: {
@@ -3805,6 +3850,21 @@ function pagesFor(browser) {
         }
       },
 
+      apiTab: {
+        waitUntilLoaded: () => {
+          api.waitForVisible('.s_A_Api');
+        },
+
+        generateSecret: () => {
+          api.waitAndClick('.e_GenSecrB');
+        },
+
+        showAndCopyMostRecentSecret: (): string => {
+          api.waitAndClick('.e_ShowSecrB');
+          return api.waitAndGetVisibleText('.s_ApiSecr-Active .e_SecrVal');
+        },
+      },
+
       review: {
         waitUntilLoaded: function() {
           api.waitForVisible('.s_A_Rvw');
@@ -3962,6 +4022,14 @@ function pagesFor(browser) {
 
       countNumInvited: () => {
         return browser.elements('.s_InvsL_It').value.length;
+      },
+    },
+
+
+    apiV0: {
+      loginWithSecret: (ps: { origin: string, oneTimeSecret: string, thenGoTo: string }): void => {
+        browser.go(ps.origin +
+            `/-/v0/login-with-secret?oneTimeSecret=${ps.oneTimeSecret}&thenGoTo=${ps.thenGoTo}`);
       },
     },
 

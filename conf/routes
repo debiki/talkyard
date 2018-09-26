@@ -80,6 +80,7 @@ POST  /-/delete-test-site                   controllers.CreateSiteController.del
 GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")
 GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatever)
+GET   /-/sso-test               controllers.AdminController.testSso
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings

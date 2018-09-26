@@ -25,13 +25,22 @@ import com.debiki.core._
   */
 object CreateSiteDao {  RENAME // but to what. & move, but to where?
 
-  def createSystemUser(transaction: SiteTransaction) {
+
+  def createSystemUser(tx: SiteTransaction) {
+    createSysUserImpl(SystemUserId, fullName = SystemUserFullName, username = SystemUserUsername, tx)
+  }
+
+  def createSysbotUser(tx: SiteTransaction) {
+    createSysUserImpl(SysbotUserId, fullName = SysbotUserFullName, username = SysbotUserUsername, tx)
+  }
+
+  def createSysUserImpl(id: UserId, fullName: String, username: String, tx: SiteTransaction) {
     val systemUser = MemberInclDetails(
-      id = SystemUserId,
+      id = id,
       externalId = None,
-      fullName = Some(SystemUserFullName),
-      username = SystemUserUsername,
-      createdAt = transaction.now.toJavaDate,
+      fullName = Some(fullName),
+      username = username,
+      createdAt = tx.now.toJavaDate,
       isApproved = None,
       approvedAt = None,
       approvedById = None,
@@ -40,19 +49,19 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       emailVerifiedAt = None,
       summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend),
       isAdmin = true)
-    transaction.insertMember(systemUser)
-    transaction.insertUsernameUsage(UsernameUsage(
+    tx.insertMember(systemUser)
+    tx.insertUsernameUsage(UsernameUsage(
       systemUser.usernameLowercase,  // [CANONUN]
-      inUseFrom = transaction.now, userId = systemUser.id))
-    transaction.upsertUserStats(UserStats.forNewUser(
-      SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
+      inUseFrom = tx.now, userId = systemUser.id))
+    tx.upsertUserStats(UserStats.forNewUser(
+      id, firstSeenAt = tx.now, emailedAt = None))
   }
 
 
-  def createUnknownUser(transaction: SiteTransaction) {
-    transaction.createUnknownUser()
-    transaction.upsertUserStats(UserStats.forNewUser(
-      UnknownUserId, firstSeenAt = transaction.now, emailedAt = None))
+  def createUnknownUser(tx: SiteTransaction) {
+    tx.createUnknownUser()
+    tx.upsertUserStats(UserStats.forNewUser(
+      UnknownUserId, firstSeenAt = tx.now, emailedAt = None))
   }
 
 

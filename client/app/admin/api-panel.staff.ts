@@ -54,6 +54,13 @@ export const ApiPanel = createFactory({
     });
   },
 
+  deleteSecret: function(secretNr: ApiSecretNr) {
+    Server.deleteApiSecrets([secretNr], (secrets) => {
+      if (this.isGone) return;
+      this.setState({ secrets });
+    });
+  },
+
   render: function() {
     if (!this.state.secrets)
       return r.p({}, "Loading...");
@@ -61,7 +68,7 @@ export const ApiPanel = createFactory({
     const store: Store = this.props.store;
 
     let elems = this.state.secrets.map((apiSecret: ApiSecret, index: number) => {
-      return ApiSecretItem({ index, apiSecret });
+      return ApiSecretItem({ index, apiSecret, deleteSecret: this.deleteSecret });
     });
 
     const elemsList = elems.length
@@ -77,7 +84,9 @@ export const ApiPanel = createFactory({
               elems))
         : r.p({ className: 'e_NoApiSecrets' }, "No API secrets.");
 
-    const createSecretButton = Button({ onClick: this.createSecret }, "Create new secret");
+    const createSecretButton =
+        Button({ onClick: this.createSecret, className: 'e_GenSecrB' },
+          "Generate new secret");
 
     return (
       r.div({ className: 's_A_Api' },
@@ -103,24 +112,22 @@ const ApiSecretItem = createComponent({
     this.isGone = true;
   },
 
-  deleteSecret: function() {
-    const secret: ApiSecret = this.props.apiSecret;
-    Server.deleteApiSecrets([secret.nr], () => {
-      // For now: Needs to refresh page to view deleted status.
-    });
-  },
-
   render: function() {
     const secret: ApiSecret = this.props.apiSecret;
     // Don't show secrets that still works, unless one clicks Show — so less risk that they get exposed.
     const shallShow = this.state.showValue || secret.isDeleted;
-    const secretKeyOrShowButton = shallShow ? secret.secretKey :
-        Button({ onClick: () => this.setState({ showValue: true }) }, "Show");
+    const secretKeyOrShowButton = shallShow
+        ? r.span({ className: 'e_SecrVal' }, secret.secretKey)
+        : Button({ onClick: () => this.setState({ showValue: true }), className: 'e_ShowSecrB' },
+          "Show");
 
     const deleteButton = secret.isDeleted ? null :
-      Button({ onClick: this.deleteSecret }, "Delete");
+      Button({ onClick: () => this.props.deleteSecret(secret.nr) }, "Delete");
 
-    return r.tr({ key: this.props.index },
+    const clazz = 's_ApiSecr';
+    const clazzActiveOrDeleted = clazz + (secret.isDeleted ? '-Dd' : '-Active');
+
+    return r.tr({ key: this.props.index, className: clazz + ' ' + clazzActiveOrDeleted },
       r.td({}, secret.nr),
       r.td({}, "Any"),  // currently may call API using any user id
       r.td({}, timeExact(secret.createdAt)),

@@ -264,6 +264,8 @@ case object User {
     * has been emptied.
     */
   val SysbotUserId = 2
+  val SysbotUserUsername = "sysbot"
+  val SysbotUserFullName = "Sysbot"
 
   /** If a superadmin logs in and does something. */
   val SuperAdminId = 3
@@ -659,7 +661,7 @@ trait MemberMaybeDetails {
 }
 
 
-case class ExternalUser(
+case class ExternalUser(   // sync with test code [7KBA24Y]
   externalId: String,
   primaryEmailAddress: String,
   isEmailAddressVerified: Boolean,

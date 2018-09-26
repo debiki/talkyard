@@ -565,7 +565,7 @@ const RootPostAndComments = createComponent({
     const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
         LoginReason.PostEmbeddedComment : 'LoginToComment';
 
-    login.loginIfNeededReturnToPost(loginToWhat, BodyNr, () => {
+    login.loginIfNeededReturnToPost(loginToWhat, BodyNr, () => {    // SSO E2E TESTS_MISSSING
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.

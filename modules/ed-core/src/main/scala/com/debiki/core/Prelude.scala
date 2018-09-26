@@ -215,8 +215,7 @@ object Prelude {
    * was absent, or if there was nothing after the origin.
    */
   def stripOrigin(url: String): Option[String] = url match {
-    // SECURITY use a simpler matches-more-but-still-safe regex, because here we want to excl weird things.
-    case StripOriginRegex(_, _, _, _, path) => Option(path)
+    case StripOriginRegex(_, _, path) => Option(path)
     case _ => None
   }
 
@@ -224,7 +223,10 @@ object Prelude {
     url.replaceFirst("https://", "").replaceFirst("http://", "")
 
 
-  private val StripOriginRegex = s"https?://$ValidHostAndPortRegexStr(/.*)".r
+  // This should match too much, if something is wrong/weird, rather than too little
+  // (so don't use ValidHostAndPortRegexStr).
+  private val StripOriginRegex = "^((https?:)?//[^/]+)?(/.*)$".r
+
 
 
   /** Like {@code safe}, but wraps the string between start and end

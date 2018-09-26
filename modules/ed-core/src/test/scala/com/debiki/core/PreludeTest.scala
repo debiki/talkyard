@@ -69,15 +69,22 @@ class PreludeTest extends Specification {
   }
 
   "stripOrigin" should {
-    "strip '' to None" in { stripOrigin("") must_== None }
-    "strip '/dir/' to None" in { stripOrigin("/dir/") must_== None }
-    "strip '/dir/page' to None" in { stripOrigin("/dir/page/") must_== None }
+    "becomes None: ''" in { stripOrigin("") must_== None }
+    "keep unchanged: '/'" in { stripOrigin("/") must_== Some("/") }
+    "keep unchanged: '/dir/'" in { stripOrigin("/dir/") must_== Some("/dir/") }
+    "keep unchanged: '/dir/page'" in { stripOrigin("/dir/page") must_== Some("/dir/page") }
+
+    val WithQueryHash = "/with?query=yes#hash"
+
+    s"keep unchanged: '$WithQueryHash'" in {
+      stripOrigin(WithQueryHash) must_== Some(WithQueryHash)
+    }
 
     val HttpServer = "http://server"
     val HttpsServer = "https://server"
     val HttpServerPort = "http://server:443"
     val HttpsServerPort = "https://server:443"
-    val SomePath = "/some/path"
+    val SomePath = "/some/path?query=value#hash-frag"
 
     s"strip 'http(s)://server(:port)' to None" in {
       stripOrigin(s"$HttpServer") must_== None
@@ -98,6 +105,11 @@ class PreludeTest extends Specification {
       stripOrigin(s"$HttpsServer$SomePath") must_== Some(SomePath)
       stripOrigin(s"$HttpServerPort$SomePath") must_== Some(SomePath)
       stripOrigin(s"$HttpsServerPort$SomePath") must_== Some(SomePath)
+    }
+
+    s"strip '//server(:port)$SomePath' to Some('$SomePath')" in {
+      stripOrigin(s"//server$SomePath") must_== Some(SomePath)
+      stripOrigin(s"//server:8080$SomePath") must_== Some(SomePath)
     }
 
     s"undersdand das-and-dot host names" in {

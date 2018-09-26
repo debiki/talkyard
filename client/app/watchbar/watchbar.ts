@@ -21,7 +21,7 @@
 /// <reference path="../store-getters.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../sidebar/sidebar.ts" />
-/// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ const ChatChannels = createComponent({
   },
 
   createChatChannel: function() {
-    morebundle.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
+    login.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
       if (this.isGone) return;
       Server.listCategoriesAllSections((categories: Category[]) => {
         if (this.isGone) return;

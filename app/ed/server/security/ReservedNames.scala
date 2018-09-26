@@ -916,6 +916,8 @@ everyone everybody
 anyone anybody
 someone somebody
 noone nobody
+n00b
+noob
 anonymous anon anonym
 whoever whatever whichever
 something nothing
@@ -923,20 +925,39 @@ identity
 role roles
 type types
 class classes
+trait traits
 he she it is hen hens who whom whos whose which that
 rubot
 robot
+robots
+sysbot
+sysbots
 
-administrator
+super
+superuser
+superadm
+superadms
+superadmin
+superadmins
+supermod
+supermods
+supermoderator
+superbot
+superbots
+superstaff
+
 admin
+admins
 administrator
+administrators
 webmaster
 hostmaster
 postmaster
-administrator
 guest
 mod
+mods
 moderator
+moderators
 
 enable
 enabled

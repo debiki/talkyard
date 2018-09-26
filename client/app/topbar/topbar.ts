@@ -25,6 +25,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/avatar.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
@@ -36,7 +37,9 @@ const FixedTopDist = 8;
 
 
 export function getTopbarHeightInclShadow(): number {
-  return $first('.dw-fixed-topbar-wrap').offsetHeight + 4; // shadow size (the '+ X') dupl here: [5YKW25]
+  const topbarElem = $first('.dw-fixed-topbar-wrap');
+  return !topbarElem ? 0 :
+      topbarElem.offsetHeight + 4; // shadow size (the '+ X') dupl here: [5YKW25]
 }
 
 
@@ -132,11 +135,11 @@ export const TopBar = createComponent({
   },
 
   onSignUpClick: function() {
-    morebundle.openLoginDialogToSignUp(this.props.purpose || 'LoginToLogin');
+    login.openLoginDialogToSignUp(this.props.purpose || 'LoginToLogin');
   },
 
   onLoginClick: function() {
-    morebundle.openLoginDialog(this.props.purpose || 'LoginToLogin');
+    login.openLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {

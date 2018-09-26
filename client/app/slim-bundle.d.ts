@@ -168,6 +168,12 @@ declare namespace debiki2 {
         loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean);
     function loginIfNeededReturnToPost(
         loginReason: LoginReason | string, postNr: PostNr, success?: () => void, willCompose?: boolean);
+
+    function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => void);
+    function openLoginDialogToSignUp(purpose);
+    function openLoginDialog(purpose);
+
+    function makeSsoUrl(store: Store, returnToUrl: string): string;
   }
 
   function reactGetRefRect(ref): Rect;
@@ -217,7 +223,7 @@ declare namespace debiki2 {
   var store_thisIsMyPage;
   var hasErrorCode;
   var page_mayChangeRole;
-  var user_maySendInvites;
+  function store_maySendInvites(store: Store, user: Myself | MemberInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
   function store_isNoPage(store: Store): boolean;
@@ -245,6 +251,7 @@ declare namespace debiki2 {
   function linkToInvitesFromUser(userId: UserId): string;
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(): string;
+  function linkToAdminPageLoginSettings(): string;
   function linkToReviewPage(): string;
   function externalLinkToAdminHelp(): string;
   function linkToMyDraftsEtc(store: Store): string;
