@@ -21,25 +21,25 @@ let guest; // should rename to guestsBrowser
 let guestsBrowser;
 
 let idAddress: IdAddress;
-let forumTitle = "Unsubscription Forum";
+const forumTitle = "Unsubscription Forum";
 
-let topicTitle = "Unsub Topic Title";
-let topicBody = "Unsub topic text.";
+const topicTitle = "Unsub Topic Title";
+const topicBody = "Unsub topic text.";
 let topicUrl;
 
-let owensReplyText = "Owen's reply text.";
-let owensReplyText2 = "Owen's reply 2.";
-let owensReplyText3 = "Owen's reply 3.";
+const owensTextMentionsPwdPerson = "@Gestelina owensTextMentionsPwdPerson";
+const owensText2MentionsPwdPerson = "owensText2MentionsPwdPerson @Gestelina";
+const owenMentionsMaria = 'owenMentionsMaria @maria';
 let owensLastUnsubLink: string;
 
-let guestName = "Gestelina";
-let guestEmail = "e2e-test--guestella@example.com";
-let guestReplyText = "Guest's reply text.";
-let guestReplyText2 = "Guest's reply 2: gröt_med_gurka.";
-let guestReplyTextAfterUnsub = "Guest's reply, after unsub.";
+const guestName = "Gestelina";
+const guestEmail = "e2e-test--guestella@example.com";
+const guestReplyText = "Guest's reply text.";
+const guestsText2MentionsOwen = "guestsText2MentionsOwen @owen_owner";
+const guestsTextAfterUnsubMentionsOwen  = "guestsTextAfterUnsubMentionsOwen @owen_owner";
 let guestsUnsubscribeLink: string;
 
-let mariasReplyText = "Maria's reply.";
+const mariaMentionsOwen = "mariaMentionsOwen @owen_owner, hi!";
 
 
 describe("unsubscribe  TyT2ABKG4RUR", () => {
@@ -54,7 +54,7 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('unsub', { title: forumTitle });
+    const site: SiteData = make.forumOwnedByOwen('unsub', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.settings.mayPostBeforeEmailVerified = true;
@@ -75,6 +75,10 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     topicUrl = owen.url().value;
   });
 
+  it("... and goes to the topic list page, so won't see any replies (they'd get marked as seen)", () => {
+    owen.go('/');
+  });
+
   it("A guest logs in, with email, and replies", () => {
     guest.go(topicUrl);
     guest.complex.signUpAsGuestViaTopbar(guestName, guestEmail);
@@ -82,10 +86,8 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     guest.topic.waitUntilPostTextMatches(c.FirstReplyNr, guestReplyText);
   });
 
-  it("Owen replies to the guest", () => {
-    owen.refresh();
-    owen.complex.replyToPostNr(c.FirstReplyNr, owensReplyText);
-    owen.topic.waitUntilPostTextMatches(c.FirstReplyNr + 1, owensReplyText);
+  it("Owen @mentions guest", () => {
+    owen.complex.createAndSaveTopic({ title: "Hello Pwd Person", body: owensTextMentionsPwdPerson });
   });
 
   it("... and logs out", () => {
@@ -106,9 +108,9 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     verifyAddrLink = server.getLastVerifyEmailAddressLinkEmailedTo(idAddress.id, guestEmail);
   });
 
-  it("... instead hen posts another reply to Owen", () => {
-    guest.complex.replyToOrigPost(guestReplyText2);
-    guest.topic.waitUntilPostTextMatches(c.FirstReplyNr + 2, guestReplyText2);
+  it("... instead hen @mention's Owen, in a new topic", () => {
+    guest.go('/');
+    guest.complex.createAndSaveTopic({ title: "Hello Owen", body: guestsText2MentionsOwen });
   });
 
   it("... then hen logs out", () => {
@@ -119,12 +121,12 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
   // So, if Owen gets the notf, but the guest doesn't, then the don't-send-notfs-before-
   // email-verified stuff works.
   it("Owen gets a 2nd reply notf email — it arrives, although ...", () => {
-    server.waitUntilLastEmailMatches(idAddress.id, owen.emailAddress, 'gröt_med_gurka', browser);
+    server.waitUntilLastEmailMatches(idAddress.id, owen.emailAddress, 'guestsText2MentionsOwen', browser);
     owensLastUnsubLink =
         server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
   });
 
-  it("... no reply notf email sent to the guest, because hen hasn't clicked email-verif-link", () => {
+  it("... no reply notf email sent to the guest: hasn't clicked email-verif-link  [TyT2ABKR04]", () => {
     const link = server.getAnyUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail);
     assert(!link);
   });
@@ -134,7 +136,7 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
   });
 
   // Logout, because want to test guest login (not just signup), later.
-  it("... gets logged in; logs out again", () => {
+  it("... gets logged in [TyT2ABK5I0]; logs out again", () => {
     // SECURITY perhaps shouldn't auto-login — instead, only do that if clicking
     // a "Login and continue" btn? To prevent accidentally logging in by just clicking
     // email link & then forgetting about it.
@@ -142,12 +144,12 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     guestsBrowser.topbar.clickLogout();
   });
 
-  it("... after having confirmed the address, hen gets a reply notf email, with unsub link", () => {
+  it("... now after having confirmed the address, hen gets a reply notf email, with unsub link", () => {
     guestsUnsubscribeLink = server.waitForUnsubscriptionLinkEmailedTo(
         idAddress.id, guestEmail, guestsBrowser);
   });
 
-  it("... the guest also got an email, s/he clicks the unsubscribe link too", () => {
+  it("... s/he clicks the unsubscribe link", () => {
     guest.go(guestsUnsubscribeLink);
   });
 
@@ -159,59 +161,51 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     browserB.unsubscribePage.confirmUnsubscription();
   });
 
-  it("The guest replies again to Owen", () => {
-    everyone.go(topicUrl);
+  it("The guest again @mentions Owen, in a new topic", () => {
+    guest.go('/');
     guest.complex.logInAsGuestViaTopbar(guestName, guestEmail);
-    guest.complex.replyToPostNr(c.FirstReplyNr + 1, guestReplyTextAfterUnsub);
-    owen.refresh();
-    browserA.topic.waitUntilPostTextMatches(c.FirstReplyNr + 3, guestReplyTextAfterUnsub);
-    browserB.topic.waitUntilPostTextMatches(c.FirstReplyNr + 3, guestReplyTextAfterUnsub);
+    guest.complex.createAndSaveTopic({ title: "Hello 3 Owen", body: guestsTextAfterUnsubMentionsOwen });
   });
 
-  it("... who replies again to the guest", () => {
-    owen.refresh();
+  it("Owen @mentions the guest, in another new topic", () => {
+    owen.go('/');
     owen.complex.loginWithPasswordViaTopbar(owen);
-    owen.complex.replyToPostNr(c.FirstReplyNr + 3, owensReplyText2);
-    guest.refresh();
-    browserA.topic.waitUntilPostTextMatches(c.FirstReplyNr + 4, owensReplyText2);
-    browserB.topic.waitUntilPostTextMatches(c.FirstReplyNr + 4, owensReplyText2);
+    owen.complex.createAndSaveTopic({ title: "Hello Pwd Person", body: owensText2MentionsPwdPerson });
   });
 
   it("Maria logs in, in the guest's browser", () => {
     assert(guest === maria);
     guest.topbar.clickLogout();
+    maria.go('/');
     maria.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  it("... posts a reply and logs out", () => {
-    maria.complex.replyToPostNr(c.FirstReplyNr + 4, mariasReplyText);
-    maria.topic.waitUntilPostTextMatches(c.FirstReplyNr + 5, mariasReplyText);
-    maria.topbar.clickLogout();
+  it("... @mentions Owen", () => {
+    maria.complex.createAndSaveTopic({ title: "Hello Owen", body: mariaMentionsOwen });
   });
 
-  it("Owen replies to Maria", () => {
-    owen.refresh();
-    owen.complex.replyToPostNr(c.FirstReplyNr + 5, owensReplyText3);
-    owen.topic.waitUntilPostTextMatches(c.FirstReplyNr + 6, owensReplyText3);
+  it("Owen @mentions Maria", () => {
+    owen.go('/');
+    owen.complex.createAndSaveTopic({ title: "Hello Maria", body: owenMentionsMaria });
   });
 
   it("Maria gets a notf email", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, maria.emailAddress, maria);
+    const url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, maria.emailAddress, maria);
     assert(!!url);
   });
 
-  // Maria should get her email after Owen and the guest, if any email is sent to them,
-  // because the replies to Owen and the guest, were posted before the reply to Maria.
+  // Maria should get her email after Owen and the guest, if any email got sent to them,
+  // because the @mentions of Owen and the guest, were posted before the @mention to Maria.
 
   it("Owen gets no more emails", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
+    const url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
     assert(url === owensLastUnsubLink, "Owen got a *new* unsubscription email:\n" +
         `  First unsub url: ${owensLastUnsubLink}\n` +
         `  Last unsub url: ${url}`);
   });
 
   it("The guest also gets no more emails", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail, guest);
+    const url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail, guest);
     assert(url === guestsUnsubscribeLink, "The guest got a *new* unsubscription email");
   });
 
