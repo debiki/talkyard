@@ -208,7 +208,6 @@ describe("usability testing exchange, all logins:", () => {
   });
 
 
-  /*
   describe("signup and submit, with Facebook", () => {
     it("type address and submit", () => {
       utxImpl.goToHomepage(browser, idAddress);
@@ -254,7 +253,7 @@ describe("usability testing exchange, all logins:", () => {
       utxImpl.goToQueue(browser, idAddress);
       browser.topbar.clickLogout();
     });
-  }); */
+  });
 
 
   describe("signup and submit, with password", () => {

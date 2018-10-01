@@ -140,7 +140,7 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createGmailAccount(data, true);
     pages.createSomething.createForum("Gmail Forum Title");
-  }/*
+  }
 
   it('can create a new site as a Facebook user, when not logged in to FB  @login @facebook', () => {
     makeForumWithFacebookAdminAccount();
@@ -167,7 +167,7 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createFacebookAccount(data, true);
     pages.createSomething.createForum("Facebook Forum Title");
-  } */
+  }
 
 });
 
