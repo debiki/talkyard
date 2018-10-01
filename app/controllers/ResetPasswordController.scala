@@ -37,8 +37,6 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   import context.globals
   import context.security.createSessionIdAndXsrfToken
 
-  val MaxResetPasswordEmailAgeInHours = 24
-
 
   def start = mvc.Action { _ =>
     Redirect(routes.ResetPasswordController.showResetPasswordPage().url)
@@ -131,7 +129,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
           userName = user.theUsername,
           emailId = emailId,
           siteAddress = request.host,
-          expirationTimeInHours = MaxResetPasswordEmailAgeInHours,
+          expirationTimeInHours = ed.server.MaxResetPasswordEmailAgeInHours,
           globals = globals).body
       })
     dao.saveUnsentEmail(email)

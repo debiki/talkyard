@@ -237,6 +237,14 @@ function waitAndGetResetPasswordLinkEmailedTo(siteId: SiteId, emailAddress: stri
 }
 
 
+function waitAndGetOneTimeLoginLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  const textToMatch = 'login-with-secret';  // in the url
+  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://[^"\']+/-/v0/login-with-secret', email.bodyHtmlText);
+}
+
+
 const unsubUrlRegexString = 'https?://[^"\']*/-/unsubscribe';
 
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
@@ -356,6 +364,7 @@ export = {
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,
   waitForAlreadyHaveAccountEmailGetResetPasswordLink,
   waitAndGetResetPasswordLinkEmailedTo,
+  waitAndGetOneTimeLoginLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo,
   getAnyUnsubscriptionLinkEmailedTo,
   waitForUnsubscriptionLinkEmailedTo,

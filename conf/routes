@@ -77,10 +77,12 @@ GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.sho
 POST  /-/create-site                        controllers.CreateSiteController.createSite
 POST  /-/delete-test-site                   controllers.CreateSiteController.deleteTestSite
 
+GET   /-/admin-login            controllers.AdminController.showAdminOneTimeLoginPage
+POST  /-/admin-login            controllers.AdminController.handleAdminOneTimeLoginForm
 GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")
 GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatever)
-GET   /-/sso-test               controllers.AdminController.testSso
+GET   /-/sso-test               controllers.AdminController.showTestSsoPage
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings

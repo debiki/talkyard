@@ -17,9 +17,12 @@
 
 package controllers
 
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
+import debiki.EdHttp._
 import ed.server._
-import ed.server.http.ApiRequest
+import ed.server.http.{ApiRequest, JsonOrFormDataBody}
 import ed.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents, Result}
@@ -32,6 +35,7 @@ import scala.concurrent.Future
 class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
+  import context.globals
   import context.security.SecureCookie
 
 
@@ -51,17 +55,17 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
         returnToUrl = apiReq.uri)) as HTML)
     }
     else {
-      showAdminApp(apiReq)
+      showAdminAppPage(apiReq)
     }
   }
 
 
-  def testSso(): Action[Unit] = AsyncGetAction { apiReq =>
-    showAdminApp(apiReq)
+  def showTestSsoPage(): Action[Unit] = AsyncGetAction { apiReq =>
+    showAdminAppPage(apiReq)
   }
 
 
-  def showAdminApp(apiReq: ApiRequest[_]): Future[Result] = {
+  private def showAdminAppPage(apiReq: ApiRequest[_]): Future[Result] = {
     val siteTpi = SiteTpi(apiReq, isAdminArea = true)
     val adminPageHtmlStr = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
     ViewPageController.addVolatileJsonAndPreventClickjacking2(adminPageHtmlStr,
@@ -69,6 +73,74 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       response withCookies SecureCookie(
         EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
     }
+  }
+
+
+
+  def showAdminOneTimeLoginPage: Action[Unit] = GetActionAllowAnyone { request =>
+    Ok(views.html.adminlogin.adminLoginPage(
+        SiteTpi(request), xsrfToken = request.xsrfToken.value))
+  }
+
+
+  def handleAdminOneTimeLoginForm: Action[JsonOrFormDataBody] =
+        JsonOrFormDataPostAction(RateLimits.ResetPassword, maxBytes = 200, allowAnyone = true) {
+          request =>
+
+    import request.dao
+
+    def throwNoSuchAdmin() =
+      throwNotFound("TyE0ADMEML_", "No admin has that primary email address")
+
+    val emailAdress = request.body.getOrThrowBadReq("emailAddress")
+
+    val admin = request.dao.loadMemberByPrimaryEmailAddress(emailAdress) getOrElse {
+      throwNoSuchAdmin()
+    }
+    if (!admin.isAdmin) {
+      throwNoSuchAdmin()
+    }
+
+    throwForbiddenIf(admin.emailVerifiedAt.isEmpty,
+        "TyE3ABK0720", "Email address not verified")
+
+    val oneTimeSecret = nextRandomString()
+
+    dao.redisCache.saveOneTimeSsoLoginSecret(
+      oneTimeSecret, admin.id, expireSeconds = Some(MaxResetPasswordEmailAgeInHours * 3600))
+
+    sendOneTimeLoginEmail(
+        admin, request, emailTitle = "Admin one time login link", secret = oneTimeSecret)
+
+    Ok("Email sent, with a one time login link.") as TEXT
+  }
+
+
+  private def sendOneTimeLoginEmail(user: Member, request: ApiRequest[_],
+      emailTitle: String, secret: String) {
+    import request.dao
+
+    val origin = globals.originOf(request.host)
+    val url = origin +
+      controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +
+      "?oneTimeSecret=" + secret + "&thenGoTo=/-/users/" + user.theUsername
+
+    val email = Email(
+      EmailType.OneTimeLoginLink,
+      createdAt = globals.now(),
+      sendTo = user.email,
+      toUserId = Some(user.id),
+      subject = s"[${dao.theSiteName()}] $emailTitle",
+      bodyHtmlText = (emailId: String) => {
+        views.html.adminlogin.oneTimeLoginLinkEmail(
+          siteAddress = request.host,
+          url = url,
+          member = user,
+          expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
+      })
+
+    dao.saveUnsentEmail(email)
+    globals.sendEmail(email, dao.siteId)
   }
 
 }

@@ -1,0 +1,17 @@
+@(siteAddress: String, url: String, member: com.debiki.core.Member, expirationTimeInHours: Int)
+
+@import org.owasp.encoder.Encode
+
+
+<div>
+<p>Hi @{member.fullName getOrElse member.username},</p>
+
+<p>
+To login at <tt>@siteAddress</tt>, as <tt>@@@{member.username}</tt>, please follow
+<a href="@Html(Encode.forUri(url))">
+  this link</a>.
+It expires in @{expirationTimeInHours} hours, and works just once.
+</p>
+
+<p>Kind regards.</p>
+</div>

@@ -27,6 +27,8 @@ package object server {
 
   val UploadsUrlBasePath = "/-/u/"
 
+  val MaxResetPasswordEmailAgeInHours = 24
+
 
   /** @param html Html for the whole page.
     * @param unapprovedPostAuthorIds Ids of authors who have posted stuff that hasn't yet been

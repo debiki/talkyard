@@ -105,6 +105,7 @@ object EmailType {
   case object InvitePassword extends EmailType(13)
   case object VerifyAddress extends EmailType(21)
   case object ResetPassword extends EmailType(22)
+  case object OneTimeLoginLink extends EmailType(23)
   case object SiteCreatedSuperAdminNotf extends EmailType(41)
   case object HelpExchangeReminder extends EmailType(31)  // [plugin]? Change to 101? but db constraints
 
@@ -116,6 +117,7 @@ object EmailType {
     case InvitePassword.IntVal    => InvitePassword
     case VerifyAddress.IntVal     => VerifyAddress
     case ResetPassword.IntVal     => ResetPassword
+    case OneTimeLoginLink.IntVal  => OneTimeLoginLink
     case SiteCreatedSuperAdminNotf.IntVal => SiteCreatedSuperAdminNotf
     case HelpExchangeReminder.IntVal => HelpExchangeReminder
     case _ =>

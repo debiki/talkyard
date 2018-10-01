@@ -27,30 +27,30 @@ input[type="text"] {
 """)}
 
 
-@* For now only, use `createsite.main`.  [8KABRP02] *@
+@* For now only, use `createsite.main`. [8KABRP02] *@
 @views.html.createsite.main(tpi, css = css) {
 
-<h1>Reset Password</h1>
+<h1>Admin extra login</h1>
 
-  <div class='row'>
-    <div class="col-sm-12">
+<div class='row'>
+<div class="col-sm-12">
+  <br>
+  <p>Type your admin email address, and you'll be emailed a one time login link,
+      via which you can login as admin.
+  </p>
 
-      <br>
-      <p>Please specify the email address or username for which to reset the password:</p>
+  <form action="@controllers.routes.AdminController.handleAdminOneTimeLoginForm"
+    class="form" autocomplete="off" method="POST">
 
-      <form action="@controllers.routes.ResetPasswordController.handleResetPasswordForm"
-          class="form" autocomplete="off" method="POST">
+  <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+  <input type="text" name="emailAddress" value="" class="e_AdmEmI"><br>
 
-        <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+  <br>
+  <button type="submit" class="btn btn-default e_SbmB">Submit</button>
+</form>
 
-        <input type="text" id="e2eRPP_emailI" name="email" value=""><br>
-
-        <br>
-        <button type="submit" class="btn btn-default" id="e2eRPP_SubmitB">Submit</button>
-      </form>
-
-    </div>
-  </div>
+</div>
+</div>
 
 }
 

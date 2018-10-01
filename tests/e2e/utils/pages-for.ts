@@ -3430,6 +3430,10 @@ function pagesFor(browser) {
         api.adminArea.review.waitUntilLoaded();
       },
 
+      goToAdminExtraLogin: (origin?: string) => {
+        api.go((origin || '') + '/-/admin-login');
+      },
+
       isReviewTabVisible: () => {
         return browser.isVisible('.e_RvwB');
       },
@@ -3968,6 +3972,22 @@ function pagesFor(browser) {
           return browser.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
         }
       },
+
+      adminExtraLogin: {
+        submitEmailAddress: (emailAddress: string) => {
+          api.waitAndSetValue('.e_AdmEmI', emailAddress);
+          api.waitAndClick('.e_SbmB');
+          api.waitForGone('.e_SbmB');
+        },
+
+        assertIsBadEmailAddress: () => {
+          api.assertPageHtmlSourceMatches_1('TyE0ADMEML_');
+        },
+
+        assertEmailSentMessage: () => {
+          api.assertPageHtmlSourceMatches_1('Email sent');
+        }
+      }
     },
 
 

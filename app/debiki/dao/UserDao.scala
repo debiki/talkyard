@@ -747,7 +747,13 @@ trait UserDao {
   }
 
 
-  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {
+  def loadMemberByPrimaryEmailAddress(emailAddress: String): Option[Member] = {
+    if (!emailAddress.contains("@"))
+      return None
+    loadMemberByEmailOrUsername(emailAddress)
+  }
+
+  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {  // RENAME to ... PrimaryEmailAddress... ?
     readOnlyTransaction { transaction =>
       // Don't need to cache this? Only called when logging in.
       transaction.loadMemberByPrimaryEmailOrUsername(emailOrUsername)

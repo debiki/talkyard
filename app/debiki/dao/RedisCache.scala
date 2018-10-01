@@ -151,9 +151,9 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   // SSO login
   //-------------
 
-  def saveOneTimeSsoLoginSecret(secretKey: String, userId: UserId) {
+  def saveOneTimeSsoLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None) {
     val key = ssoUserBySecretKey(siteId, secretKey)
-    redis.set(key, userId, exSeconds = Some(SingleSignOnSecretExpireSeconds))
+    redis.set(key, userId, exSeconds = Some(expireSeconds getOrElse SingleSignOnSecretExpireSeconds))
   }
 
   def getSsoLoginUserIdDestroySecret(secretKey: String): Option[UserId] = {
