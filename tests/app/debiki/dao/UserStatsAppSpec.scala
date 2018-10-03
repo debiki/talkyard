@@ -191,7 +191,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... looks at a discourse topic, but doesn't read it" in {
       playTimeMillis(1200)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now(),
         lastVisitedAt = globals.now(),
         lastViewedPostNr = PageParts.BodyNr,
@@ -206,7 +206,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads the orig post" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now(),
         lastVisitedAt = globals.now(),
         lastViewedPostNr = PageParts.BodyNr,
@@ -225,7 +225,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads a discourse topic, with replies, now replies-read gets updated" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 400,
         lastVisitedAt = globals.now() minusMillis 200,
         lastViewedPostNr = 3,
@@ -245,7 +245,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... views even more replies" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 400,
         lastVisitedAt = globals.now(),
         lastViewedPostNr = 33,
@@ -264,7 +264,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... views a chat topic, low post nrs only, stats gets updated" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
         lastViewedPostNr = 10,
@@ -284,7 +284,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads a bit more in the same a chat topic, still low post nrs" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
         lastViewedPostNr = 12055,
@@ -307,7 +307,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... views a chat topic with 2 messages, cannot read more than 2" in {
       playTimeMillis(1000)
       val exception = intercept[Exception] {
-        dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
+        dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, Set.empty, ReadingProgress(
           firstVisitedAt = globals.now(),
           lastVisitedAt = globals.now(),
           lastViewedPostNr = 1,
@@ -321,7 +321,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... but can read 2" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, Set.empty, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
         lastViewedPostNr = 1,
