@@ -96,20 +96,6 @@ export function openHelpDialogUnlessHidden(message) {
   });
 }
 
-/*
-export function XX openLoginDialog(purpose: LoginReason | string) {
-  Server.loadMoreScriptsBundle(() => {
-    debiki2.login.getLoginDialog().openToLogIn(purpose);
-  });
-}
-
-
-export function XX openLoginDialogToSignUp(purpose: LoginReason | string) {
-  Server.loadMoreScriptsBundle(() => {
-    debiki2.login.getLoginDialog().openToSignUp(purpose);
-  });
-} */
-
 
 export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect) {
   Server.loadMoreScriptsBundle(() => {

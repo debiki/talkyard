@@ -76,7 +76,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
       case "sso-login" |  // deprecated name, remove
            "login-with-secret" =>
         val oneTimeSecret = getOnlyOrThrow("oneTimeSecret", "TyE7AKK25")
-        val anyUserId = dao.redisCache.getSsoLoginUserIdDestroySecret(oneTimeSecret)
+        val anyUserId = dao.redisCache.getOneTimeLoginUserIdDestroySecret(oneTimeSecret)
         val userId = anyUserId getOrElse {
           throwForbidden("TyELGISECR_", "Non-existing or expired or already used one time secret")
         }
@@ -247,7 +247,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         }
 
         val secret = nextRandomString()
-        dao.redisCache.saveOneTimeSsoLoginSecret(secret, user.id)
+        dao.redisCache.saveOneTimeLoginSecret(secret, user.id)
         OkApiJson(Json.obj(
           "loginSecret" -> secret,
           "ssoLoginSecret" -> secret))  // REMOVE old name

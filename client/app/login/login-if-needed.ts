@@ -110,7 +110,6 @@ export function loginIfNeeded(loginReason, returnToUrl: string, onDone?: () => v
 }
 
 
-// previously: morebundle.openLoginDialogToSignUp(purpose);
 export function openLoginDialogToSignUp(purpose) {
   goToSsoPageOrElse(location.toString(), function() {
     Server.loadMoreScriptsBundle(() => {
@@ -120,7 +119,6 @@ export function openLoginDialogToSignUp(purpose) {
 }
 
 
-// previously: morebundle.openLoginDialog(purpose);
 export function openLoginDialog(purpose) {
   goToSsoPageOrElse(location.toString(), function() {
     Server.loadMoreScriptsBundle(() => {
@@ -134,8 +132,6 @@ function goToSsoPageOrElse(returnToUrl: string, fn) {
   const store: Store = ReactStore.allData();
   const settings: SettingsVisibleClientSide = store.settings;
   if (settings.enableSso && settings.ssoUrl) {
-    // Should not be allowed to compose before login,
-    // because then text lost, now, when jumping to the SSO login page.
     const ssoUrl = makeSsoUrl(store, returnToUrl);
     location.assign(ssoUrl);
   }
@@ -145,7 +141,7 @@ function goToSsoPageOrElse(returnToUrl: string, fn) {
 }
 
 
-export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: string): string {
+export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: string): string | undefined {
   const settings: SettingsVisibleClientSide = store.settings;
   if (!settings.ssoUrl)
     return undefined;
@@ -157,15 +153,16 @@ export function makeSsoUrl(store: Store, returnToUrlMaybeMagicRedir: string): st
   const origin = location.origin;
   const returnToPathQueryHash = returnToUrl.substr(origin.length, 9999);
 
-  // The SSO endpoint needs to check the return to URL or origin against a white list
+  // The SSO endpoint needs to check the return to full URL or origin against a white list
   // to verify that the request isn't a phishing attack — i.e. someone who sets up a site
   // that looks exactly like the external website where Single Sign-On happens,
   // or looks exactly like the Talkyard forum, and uses $[returnTo...} to redirect
-  // to those phishing site. — That's why the full url and the origin params have
+  // to the phishing site. — That's why the full url and the origin params have
   // Dangerous in their names.
   //   Usually there'd be just one entry in the "white list", namely the address to the
-  // Talkyard forum. However, can be many, if there's also a blog with embedded comments,
-  // or more than one forum (that uses the same SSO login page).
+  // Talkyard forum. And then, better use `${talkyardPathQueryEscHash}` instead. However,
+  // can be many Talkyard origins, if there's also a blog with embedded comments,
+  // or more than one forum, which all use the same SSO login page.
   const ssoUrlWithReturn = (
       settings.ssoUrl
         .replace('${talkyardUrlDangerous}', returnToUrl)

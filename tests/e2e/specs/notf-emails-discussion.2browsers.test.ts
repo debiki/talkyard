@@ -64,6 +64,9 @@ const majasNewTopicTitleTwo = 'majasNewTopicTitleTwo';
 const majasNewTopicBodyTwo = 'majasNewTopicBodyTwo';
 
 
+// LATER TESTS_MISSING *maybe*, if enabling [mark-seen-as-seen]. Review, and ensure no notfs not skipped,
+// just because happened to see them.
+
 describe("email notfs discs TyT4FKA2EQ02", () => {
 
   it("initialize people", () => {

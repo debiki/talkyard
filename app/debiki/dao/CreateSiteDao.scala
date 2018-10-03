@@ -35,7 +35,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
   def createSysUserImpl(id: UserId, fullName: String, username: String, tx: SiteTransaction) {
-    val systemUser = MemberInclDetails(
+    val sysUser = MemberInclDetails(
       id = id,
       externalId = None,
       fullName = Some(fullName),
@@ -49,10 +49,10 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       emailVerifiedAt = None,
       summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend),
       isAdmin = true)
-    tx.insertMember(systemUser)
+    tx.insertMember(sysUser)
     tx.insertUsernameUsage(UsernameUsage(
-      systemUser.usernameLowercase,  // [CANONUN]
-      inUseFrom = tx.now, userId = systemUser.id))
+      sysUser.usernameLowercase,  // [CANONUN]
+      inUseFrom = tx.now, userId = sysUser.id))
     tx.upsertUserStats(UserStats.forNewUser(
       id, firstSeenAt = tx.now, emailedAt = None))
   }

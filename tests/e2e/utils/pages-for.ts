@@ -580,10 +580,10 @@ function pagesFor(browser) {
           if (!opts.checkAndRetry) break;
           browser.pause(200);
           const valueReadBack = browser.getValue(selector);
-          if (value === valueReadBack) {
+          if (('' + value) === valueReadBack) {
             break;
           }
-          console.log(`Couldn't set value, got back when reading: """${valueReadBack}""", trying again`);
+          console.log(`Couldn't set value, got back when reading: '${valueReadBack}', trying again`);
           browser.pause(300);
         }
       }
@@ -1221,7 +1221,7 @@ function pagesFor(browser) {
 
         isMarkAllNotfsReadVisibleOpenClose: (): boolean => {
           api.topbar.openMyMenu();
-          api.waitForVisible('.s_MM_NotfsBs');
+          api.waitForVisible('.s_MM_NotfsBs');  // (test code bug: sometimes absent — if 0 notfs)
           const isVisible = browser.isVisible(api.topbar.myMenu.dismNotfsBtnClass);
           api.topbar.closeMyMenuIfOpen();
           return isVisible;

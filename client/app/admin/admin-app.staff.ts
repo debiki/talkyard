@@ -85,7 +85,7 @@ const SsoTestComponent = createReactClass(<any> {
     const me: Myself = store.me;
     const ssoUrl = login.makeSsoUrl(store, window.location.toString());
 
-    const noSsoUrlINfo = ssoUrl ? null :
+    const noSsoUrlInfo = ssoUrl ? null :
       rFragment({},
         r.p({},
           r.b({}, "You have not configured any Single Sign-On URL.")),
@@ -107,39 +107,41 @@ const SsoTestComponent = createReactClass(<any> {
     const testInfoAndLink = me.isLoggedIn ? null :
       rFragment({},
         r.p({},
-          "Here you can test Single Sign-On. You're not logged in", r.br(),
-          "— let's see if you can logni via SSO?"),
+          "Here you can test Single Sign-On. You're not logged in " +
+          "— let's see if you can log in via SSO?"),
         r.p({},
-          "The SSO URL you've specified is, before replacing variables: ", r.br(),
+          "The SSO URL you've specified is, before replacing variables like ",
+            r.samp({}, '${talkyardPathQueryEscHash}'), " with your current URL path:"),
+        r.p({},
           r.samp({ className: 'e_SsoSettingsUrl' }, settings.ssoUrl)),
         r.p({},
-          "And as a clickable link, after replacing variables: ", r.br(),
+          "And as a clickable link, after replacing variables:"),
+        r.p({},
           r.a({ href: ssoUrl, className: 'e_SsoTstLgiLnk' }, ssoUrl)),
         r.p({},
-          "To test SSO, read the rest of this page, and then click that link." +
+          "To test SSO, read the rest of this page, and then click that link. " +
           "It'll redirect you to your own login page at your website, " +
           "and that's where people will get sent, when they " +
           "are not logged in, and click things like Reply or Log In."),
         r.p({},
-          "After you've logged in at your website, your server should " +
+          "After you have logged in at your website, your server should " +
           "send an API request to:", r.br(),
-          r.samp({}, location.origin + '/-/v0/upsert-user-generate-login-secret'), r.br(),
+          r.samp({}, location.origin + '/-/v0/upsert-external-user-generate-login-secret'), r.br(),
           "to synchronize your user account with Talkyard's user database, " +
-          "and to get a login secret. " +
+          "and get a login secret. " +
           "Then your server should redirect you to: ", r.br(),
           r.samp({}, location.origin +
               '/-/v0/login-with-secret?oneTimeSecret=nnnnn&thenGoTo=/-/sso-test'), r.br(),
           "which will log you in here (at Talkyard), and redirect you back to this page again " +
-          "— and now you'll be logged in."));
+          "— and then you'll be logged in."));
 
     return (
       r.div({ className: 'esAdminArea' },
-        //topbar.TopBar({ customTitle: "Single Sign-On Test", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
           r.h1({}, "Single Sign-On Test"),
           r.br(),
           r.br(),
-          noSsoUrlINfo || alreadyLoggedInInfo || testInfoAndLink,
+          noSsoUrlInfo || alreadyLoggedInInfo || testInfoAndLink,
           r.br(),
           r.p({},
             r.a({ href: linkToAdminPageLoginSettings(), className: 'e_BkToStngs' },
@@ -621,17 +623,12 @@ const LoginAndSignupSettings = createFactory({
             r.p({},
               r.samp({}, "https://www.your-website.com/login?returnTo=${talkyardPathQueryEscHash}")),
             r.p({},
-              "After login at your site, your server should redirect the user back to ", r.br(),
-              r.samp({}, "https://your-talkyard-forum.com/${talkyardPathQueryEscHash}"),
-              ",", r.br(),
-              "for example, ", r.samp({}, "https://your-talkyard-forum.com/a/page"), "."),
-            r.p({},
-              "To start using SSO, fill in this value, save the settings, and go here: ",
+              "To start using SSO, fill in only this SSO URL field (but do ", r.i({}, "not "),
+              "enable SSO below), save the settings, and go here: ",
               ssoTestPageLink,
-              " to test if your SSO settings work, " +
-              "especially if you can stil login as admin — give that a try ",
-              r.i({}, "in a different browser"),
-              "."),
+              ", to test if your SSO settings work. " +
+              "Especially see if you can login as admin — give that a try ",
+              r.i({}, "in a different browser"), " where you are logged out for sure."),
             r.p({},
               "Later, when all works fine, and you've verified that you can logout, " +
               "and login as admin via Single Sign-On, then set Enable SSO (below) to true.")),
@@ -1175,19 +1172,20 @@ const AdvancedSettings = createFactory({
           }
         }),
 
+        /*
         Setting2(props, { type: 'textarea', label: "Feature flags", id: 'e_FeatFlags',
           help: r.span({}, "Enables or disables new features. Ignore, unless you know what " +
               "you're doing."),
 
           // Dupl repl-space-w-newlines code (7KABW92)
           getter: (s: Settings) =>
-            // Replace spaces with newlines, otherwise hard to read.
+            // Replace spaces with newlines, otherwise hard to read.  What? Why? No stop doing that.
             _.isUndefined(s.featureFlags) ? undefined : s.featureFlags.replace(/\s+/g, '\n'),
           update: (newSettings: Settings, target) => {
             // Change back from \n to space — browsers want spaces in allow-from.
             newSettings.featureFlags = target.value.replace(/\n+/g, ' ');
           }
-        }),
+        }), */
 
         r.hr(),
         changeHostnameFormGroup,

@@ -106,7 +106,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val oneTimeSecret = nextRandomString()
 
-    dao.redisCache.saveOneTimeSsoLoginSecret(
+    dao.redisCache.saveOneTimeLoginSecret(
       oneTimeSecret, admin.id, expireSeconds = Some(MaxResetPasswordEmailAgeInHours * 3600))
 
     sendOneTimeLoginEmail(

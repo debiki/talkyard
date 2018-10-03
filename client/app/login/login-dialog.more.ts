@@ -48,20 +48,6 @@ const EmailInput = util.EmailInput;
 
 let loginDialog;
 
-/*
-export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
-      success?: () => void) {
-  success = success || function() {};
-  if (debiki2.ReactStore.getMe().isLoggedIn) {
-    success();
-  }
-  else {
-    // People with an account, are typically logged in already, and won't get to here often.
-    // Instead, most people here, are new users, so show the signup dialog.
-    getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
-  }
-} */
-
 
 export function getLoginDialog() {   // also called from Scala template
   if (!loginDialog) {

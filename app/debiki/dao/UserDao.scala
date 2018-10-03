@@ -994,7 +994,9 @@ trait UserDao {
 
     COULD_OPTIMIZE // 1) cache post ids by page-post-nr, 2) don't load the whole posts,
     // instead, add:  loadPostIdsForPagePostNrs(pageId, postNrs) ?
-    val postsSeen = postNrsSeen.flatMap(nr => loadPost(pageId, nr))
+    // Wait with this — until optimized (see above), ... a tiny bit worried too many  loadPost
+    // could slow down the servers? Also maybe rate limit # posts loaded per user?
+    val postsSeen = Set[Post]() // [mark-seen-as-seen]  postNrsSeen.flatMap(nr => loadPost(pageId, nr))
     val postIdsSeen = postsSeen.map(_.id)
 
     readWriteTransaction { tx =>

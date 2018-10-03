@@ -553,6 +553,7 @@ sealed trait User {
   def anyName: Option[String] = None
   def anyUsername: Option[String] = None
   def usernameOrGuestName: String
+  def nameOrUsername: String
 
   def idSpaceName: String =
     anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
@@ -624,6 +625,7 @@ case class Member(
   def username: Option[String] = Some(theUsername)
   def usernameOrGuestName: String = theUsername
   def usernameHashId: String = s"@$username#$id"
+  def nameOrUsername: String = fullName getOrElse theUsername
 
   def usernameParensFullName: String = fullName match {
     case Some(name) => s"$theUsername ($name)"
@@ -706,6 +708,7 @@ case class Guest(
 
   override def anyName = Some(guestName)
   def usernameOrGuestName: String = guestName
+  def nameOrUsername: String = guestName
 
   require(isOkayGuestId(id), "DwE4GYUK21")
   require(guestName == guestName.trim, "EsE5YGUK3")
@@ -1070,6 +1073,7 @@ object UnknownUser extends User {
   override def isSuperAdmin: Boolean = false
   override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
   override def usernameOrGuestName: String = UnknownUserName
+  override def nameOrUsername: String = UnknownUserName
 }
 
 
@@ -1103,6 +1107,7 @@ case class Group(
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername
+  override def nameOrUsername: String = if (name.isEmpty) theUsername else name
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
 

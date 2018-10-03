@@ -148,15 +148,15 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  // SSO login
+  // One time login with secret
   //-------------
 
-  def saveOneTimeSsoLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None) {
+  def saveOneTimeLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None) {
     val key = ssoUserBySecretKey(siteId, secretKey)
     redis.set(key, userId, exSeconds = Some(expireSeconds getOrElse SingleSignOnSecretExpireSeconds))
   }
 
-  def getSsoLoginUserIdDestroySecret(secretKey: String): Option[UserId] = {
+  def getOneTimeLoginUserIdDestroySecret(secretKey: String): Option[UserId] = {
     val key = ssoUserBySecretKey(siteId, secretKey)
     // Could do this in a transaction? [REDITX]
     val futureString: Future[Option[ByteString]] = redis.get(key)
