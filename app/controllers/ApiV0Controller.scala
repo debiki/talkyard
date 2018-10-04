@@ -75,6 +75,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
       case "sso-login" |  // deprecated name, remove
            "login-with-secret" =>
+
+        // Dupl code? Use this API endpoint also from impersonateWithKey?   [7AKBRW02]
+
         val oneTimeSecret = getOnlyOrThrow("oneTimeSecret", "TyE7AKK25")
         val anyUserId = dao.redisCache.getOneTimeLoginUserIdDestroySecret(oneTimeSecret)
         val userId = anyUserId getOrElse {

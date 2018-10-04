@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2016-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,8 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
+//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
+declare var moment: any;
 
 //------------------------------------------------------------------------------
    namespace debiki2.superadmin {
@@ -66,12 +68,12 @@ const DashboardPanel = createFactory({
   displayName: 'DashboardPanel',
 
   render: function() {
-    var store: Store = this.props.store;
-    var stuff: SuperAdminStuff = store.superadmin;
+    const store: Store = this.props.store;
+    const stuff: SuperAdminStuff = store.superadmin;
     if (!stuff)
       return r.p({}, "Loading ...");
 
-    var sites = stuff.sites.map((site: SASite) =>
+    const sites = stuff.sites.map((site: SASite) =>
         SiteTableRow({ key: site.id, site: site, superAdminStuff: stuff }));
 
     return (
@@ -91,27 +93,20 @@ const DashboardPanel = createFactory({
 });
 
 
-var SiteTableRow = createComponent({
+const SiteTableRow = createComponent({
   displayName: 'SiteTableRow',
 
   changeStatus: function(newStatus: SiteStatus) {
-    var site: SASite = _.clone(this.props.site);
+    const site: SASite = _.clone(this.props.site);
     site.status = newStatus;
     Server.updateSites([site]);
   },
 
-  loginAtSite: function() {
-    var site: SASite = this.props.site;
-    Server.makeImpersionateUserAtOtherSiteUrl(site.id, SystemUserId, (url) => {
-      location.assign(url);
-    });
-  },
-
   render: function() {
-    var stuff: SuperAdminStuff = this.props.superAdminStuff;
-    var site: SASite = this.props.site;
-    var newStatusButtonStatus: SiteStatus;
-    var newStatusButtonText: string;
+    const stuff: SuperAdminStuff = this.props.superAdminStuff;
+    const site: SASite = this.props.site;
+    let newStatusButtonStatus: SiteStatus;
+    let newStatusButtonText: string;
     if (site.status <= SiteStatus.Active) {
       newStatusButtonStatus = SiteStatus.HiddenUnlessStaff;
       newStatusButtonText = "Hide unless staff";
@@ -120,15 +115,19 @@ var SiteTableRow = createComponent({
       newStatusButtonStatus = SiteStatus.Active;
       newStatusButtonText = "Activate again";
     }
-    var hostname = site.canonicalHostname;
+    let hostname = site.canonicalHostname;
     if (!hostname && site.id === FirstSiteId) {
       hostname = stuff.firstSiteHostname;
     }
 
     // (Don't show a login button for the superadmin site itself, because already logged in.)
-    var loginButton = site.id === eds.siteId
+    const loginButton = site.id === eds.siteId
         ? r.span({ className: 'esSA_ThisSite' }, "(this site)")
-        : Button({ className: 'esSA_LoginB', onClick: this.loginAtSite }, "Super admin");
+        : LinkButton({ className: 'esSA_LoginB',
+            // Stop using the System user? It should only do things based on Talkyard's source code,
+            // never be controlled by a human.  But use which other user, instead?  [SYS0LGI]
+              href: Server.makeImpersonateAtOtherSiteUrl(site.id, SystemUserId) },
+            "Super admin");
 
     return (
       r.tr({},

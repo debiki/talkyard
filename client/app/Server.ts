@@ -627,10 +627,8 @@ export function logout(success: () => void) {
 }
 
 
-export function makeImpersionateUserAtOtherSiteUrl(siteId: SiteId, userId: UserId,
-      success: (url: string) => void) {
-  const url = '/-/make-impersonate-other-site-url?siteId=' + siteId + '&userId=' + userId;
-  postJsonSuccess(url, success, null);
+export function makeImpersonateAtOtherSiteUrl(siteId: SiteId, userId: UserId): string {
+  return '/-/impersonate-at-other-site?siteId=' + siteId + '&userId=' + userId;
 }
 
 

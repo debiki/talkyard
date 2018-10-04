@@ -267,19 +267,23 @@ case object User {
   val SysbotUserUsername = "sysbot"
   val SysbotUserFullName = "Sysbot"
 
-  /** If a superadmin logs in and does something. */
+  /** If a superadmin logs in and does something.  COULD start using, instead of System? [SYS0LGI] */
   val SuperAdminId = 3
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
   // val SuperbotId = 4  ?
 
-  // The real ids of deactivated and deleted users, are replaced with these ids, when rendering
-  // pages, so others won't find the real ids of the deactivated/deleted accounts.
-  val DeactivatedUserId = 5
-  val DeletedUserId = 6
+  // val SuperPrivMod = 5 ?
+  // val SuperPupbMod = 6 ?
 
   // ?? If a member chooses to post anonymously:
-  // val AnonymousUserId = 9
+  // val AnonymousUserId = 7
+
+  // The real ids of deactivated and deleted users, could be replaced with these ids, when rendering
+  // pages, so others won't find the real ids of the deactivated/deleted accounts.
+  // val DeactivatedUserId = 8
+  // val DeletedUserId = 9
+  // or just: DeactivatedOrDeletedUserId = 9 ?
 
   /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
   val LowestTalkToMemberId = Group.EveryoneId  // or 9, same as anonymous users?
