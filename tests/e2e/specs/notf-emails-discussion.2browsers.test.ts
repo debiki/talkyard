@@ -123,6 +123,10 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
     majasBrowser.complex.replyToOrigPost(majasOpReply);
   });
 
+  it("... goes to the topic list, so won't see replies", () => {
+    majasBrowser.topbar.clickHome();
+  });
+
   /*
   it("a day elapses", () => {
     server.playTimeHours(24 + 1);
@@ -147,7 +151,6 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
         siteId, maja.emailAddress, [mariasTopicTitle, trilliansReplyToMaja], browser);
   });
 
-  // BUG isn't watching
   it("... and Maria too, it's her topic, she's watching it (by default)", () => {
     server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, [mariasTopicTitle, trilliansReplyToMaja], browser);
@@ -173,7 +176,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
   it("Modya hasn't gotten any emails", () => {
     const numEmails = server.countLastEmailsSentTo(siteId, modya.emailAddress);
-    assert(numEmails === 0);
+    assert.equal(numEmails, 0);
   });
 
   it("... Trillian replies to the orig post again, mentions @modya", () => {
@@ -190,7 +193,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
   it("Mons hasn't gotten any emails", () => {
     const numEmails = server.countLastEmailsSentTo(siteId, mons.emailAddress);
-    assert(numEmails === 0);
+    assert.equal(numEmails, 0);
   });
 
   it("Trillian edits her firs OP reply, mentions @mons", () => {
@@ -232,7 +235,6 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
   it("Maja posts a new topic", () => {
-    majasBrowser.topbar.clickHome();
     majasBrowser.forumTopicList.waitForTopics();
     majasBrowser.complex.createAndSaveTopic({ title: majasNewTopicTitleOne, body: majasNewTopicBodyOne });
   });

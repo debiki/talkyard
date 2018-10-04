@@ -18,6 +18,7 @@
 
 package debiki.dao
 
+import akka.actor.Actor
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.throwForbidden
@@ -194,6 +195,11 @@ class SystemDao(
         if (anyDeletedHostnames.nonEmpty) {
           memCache.clearAllSites()
           // Redis cache cleared below, for the new site only (if overwriting old). (2PKF05Y)
+        }
+
+        if (isTestSiteOkayToDelete) {
+          globals.endToEndTestMailer.tell(
+            "ForgetEndToEndTestEmails" -> anySitesToDelete.map(_.id), Actor.noSender)
         }
       }
 

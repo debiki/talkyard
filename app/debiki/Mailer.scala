@@ -281,6 +281,14 @@ class Mailer(
           e2eTestEmails.put(siteIdColonEmailAddress, newPromise)
           sender() ! newPromise.future
       }
+
+    case ("ForgetEndToEndTestEmails", siteIds: Seq[SiteId]) =>
+      e2eTestEmails retain { case (siteIdColonEmailAddr: String, emailsPromise) =>
+        !siteIds.exists({ siteId =>
+          siteIdColonEmailAddr.startsWith(s"$siteId:")
+        })
+      }
+
     /*
     case Bounce/Rejection/Complaint/Other =>
      */
