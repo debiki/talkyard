@@ -650,3 +650,6 @@ case class PagePostNr(pageId: PageId, postNr: PostNr) {
   def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])
 }
 
+case class PagePostNrId(pageId: PageId, postNr: PostNr, postId: PostId) {
+}
+

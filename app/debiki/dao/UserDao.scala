@@ -982,7 +982,7 @@ trait UserDao {
     * And clear any notifications about posts hen has now seen.
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
-        user: User, pageId: PageId, postNrsSeen: Set[PostNr], newProgress: ReadingProgress)
+        user: User, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress)
         : ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
@@ -991,13 +991,6 @@ trait UserDao {
     // Don't track system, superadmins, deleted users — they aren't real members.
     if (MaxGuestId < user.id && user.id < LowestTalkToMemberId)
       return ReadMoreResult(0)
-
-    COULD_OPTIMIZE // 1) cache post ids by page-post-nr, 2) don't load the whole posts,
-    // instead, add:  loadPostIdsForPagePostNrs(pageId, postNrs) ?
-    // Wait with this — until optimized (see above), ... a tiny bit worried too many  loadPost
-    // could slow down the servers? Also maybe rate limit # posts loaded per user?
-    val postsSeen = Set[Post]() // [mark-seen-as-seen]  postNrsSeen.flatMap(nr => loadPost(pageId, nr))
-    val postIdsSeen = postsSeen.map(_.id)
 
     readWriteTransaction { tx =>
       val pageMeta = tx.loadPageMeta(pageId) getOrDie "EdE5JKDYE"

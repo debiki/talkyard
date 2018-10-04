@@ -1460,18 +1460,23 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // reported whenever a new long-polling-request is started?
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
-      postNrsRead: PostNr[], anyOnDone?: () => void) {
-  if (getPageId() === EmptyPageId)
+      postsRead: Post[], anyOnDone?: () => void) {
+  const pageId = getPageId();
+  if (pageId === EmptyPageId)
     return;
+
+  const pagePostNrIds: PagePostNrId[] = postsRead.map(post => {
+    return { pageId, postNr: post.nr, postId: post.uniqueId }
+  });
 
   let nowMsUtc = Date.now(); // now() returns UTC
   let data = {
-    pageId: getPageId(),
+    pageId,
     visitStartedAt: nowMsUtc,
     lastViewedPostNr: lastViewedPostNr,
     lastReadAt: secondsReading > 0 ? nowMsUtc : null,
     secondsReading: secondsReading,
-    postNrsRead: postNrsRead,
+    pagePostNrIds,
   };
   const onDone = !anyOnDone? UseBeacon : function(me?: MyselfPatch) {
     // See [7KABR20] server side.

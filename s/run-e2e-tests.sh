@@ -239,8 +239,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-emails-discussion.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-mark-all-as-read.2browsers $args
 
-  # [mark-seen-as-seen]
-  #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-mark-seen-as-seen.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-mark-seen-as-seen.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only new-user-review-ok.2browsers $args
   #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only new-user-review-bad.2browsers $args

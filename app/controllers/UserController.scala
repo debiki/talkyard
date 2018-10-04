@@ -1095,7 +1095,18 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
-    val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
+    val pagePostNrIdsReadJsObjs = (body \ "pagePostNrIds").as[Vector[JsObject]]
+      // Cannot read super many posts in just 30 seconds (that's how often this endpoint
+      // gets called [6AK2WX0G]) so ... lets restrict to 100? to prevent maybe-weird-DoS-attacks.
+      .take(100)
+    val pagePostNrIdsRead = pagePostNrIdsReadJsObjs.map(jsObj => {
+      val pageId = (jsObj \ "pageId").as[PageId]
+      val postNr = (jsObj \ "postNr").as[PostNr]
+      val postId = (jsObj \ "postId").as[PostId]
+      PagePostNrId(pageId, postNr, postId)
+    })
+
+    val postNrsRead = pagePostNrIdsRead.map(_.postNr)
     val postNrsReadAsSet = postNrsRead.toSet
 
     play.api.Logger.trace(
@@ -1145,7 +1156,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
 
     request.dao.trackReadingProgressClearNotfsPerhapsPromote(
-        requester, pageId, postNrsReadAsSet, readingProgress)
+        requester, pageId, pagePostNrIdsRead.map(_.postId).toSet, readingProgress)
   }
 
 

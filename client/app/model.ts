@@ -249,10 +249,10 @@ interface Draft {
 
 
 interface Post {
-  uniqueId: number; // CLEAN_UP RENAME to id
-  nr: number;
-  parentNr: number;
-  multireplyPostNrs: number[];
+  uniqueId: PostId; // CLEAN_UP RENAME to id
+  nr: PostNr;
+  parentNr: PostNr;
+  multireplyPostNrs: PostNr[];
   postType?: PostType;
   authorId: UserId;
   createdAtMs: number;
@@ -336,6 +336,13 @@ interface PostRevision {
   approvedBy?: BriefUser;
   hiddenAtMs?: number;
   hiddenBy?: BriefUser;
+}
+
+
+interface PagePostNrId {
+  pageId: PageId;
+  postNr: PostNr;
+  postId: PostId;
 }
 
 

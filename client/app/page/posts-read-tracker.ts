@@ -49,7 +49,7 @@ interface ReadState {
 let readStatesByPostNr: { [postNr: number]: ReadState };
 let postNrsVisibleLastTick: { [postNr: number]: boolean };
 let pageId;
-let postNrsJustRead;
+let postNrsJustRead: PostNr[];
 let wentToTopAtMs: number;
 
 // After having read one post, wait a short while before posting to the server, because usually
@@ -95,7 +95,7 @@ let lastReportedToServerAtMs: number;
 let lastViewedPostNr: PostNr;
 let currentlyViewingPostNr: PostNr;
 let unreportedSecondsReading: number;
-let unreportedPostNrsRead: PostNr[];
+let unreportedPostsRead: Post[];
 let firstUnreportedPostReadAtMs: number | undefined;
 let maxSecondsSinceLastScroll: number;
 let talksWithSererAlready: boolean;
@@ -113,7 +113,7 @@ export function reset() {
   lastScrollTop = -1;
   lastReportedToServerAtMs = Date.now();
   unreportedSecondsReading = 0;
-  unreportedPostNrsRead = [];
+  unreportedPostsRead = [];
   firstUnreportedPostReadAtMs = undefined;
   maxSecondsSinceLastScroll = 3 * 60;
   talksWithSererAlready = false;
@@ -143,6 +143,13 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 }
 
 
+// @ifdef DEBUG
+function toNrs(posts: Post[]): PostNr[] {
+  return posts.map(post => post.nr);
+}
+// @endif
+
+
 export function sendAnyRemainingData(success?) {
   if (talksWithSererAlready || !unreportedSecondsReading ||
       unreportedSecondsReading <= TooFewSeconds ||
@@ -150,7 +157,8 @@ export function sendAnyRemainingData(success?) {
       _.isUndefined(lastViewedPostNr)) {
 
     // @ifdef DEBUG
-    if (debug) console.log(`*Not* sending remaining post nrs read via beacon: ${unreportedPostNrsRead},` +
+    if (debug) console.log(
+        `*Not* sending remaining post nrs read via beacon: ${toNrs(unreportedPostsRead)},` +
         ` ${unreportedSecondsReading} seconds reading, lastViewedPostNr: ${lastViewedPostNr}, ` +
         `talksWithSererAlready: ${talksWithSererAlready}`);
     // @endif
@@ -158,12 +166,12 @@ export function sendAnyRemainingData(success?) {
   }
 
   // @ifdef DEBUG
-  if (debug) console.log(`Sending remaining posts nrs read via beacon: ${unreportedPostNrsRead},` +
+  if (debug) console.log(`Sending remaining posts nrs read via beacon: ${toNrs(unreportedPostsRead)},` +
       ` ${unreportedSecondsReading} seconds reading`);
   // @endif
 
   // Don't include any 'success' callback —> sendBeacon will get used.
-  Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostNrsRead, success);
+  Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostsRead, success);
   lastReportedToServerAtMs = Date.now();
 
   // If navigating to new page, it'll reset everything.
@@ -275,12 +283,12 @@ function trackReadingActivity() {
       // next few seconds.
       (millisSinceFirstNewRead > AfterReadThenWaitMillis) &&
       // Only report something, if there's something to report.
-      (unreportedPostNrsRead.length ||
+      (unreportedPostsRead.length ||
           millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
 
     // @ifdef DEBUG
     !debug || console.log(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
-        `${unreportedSecondsReading} seconds reading, these post nrs: ${unreportedPostNrsRead}`);
+        `${unreportedSecondsReading} seconds reading, these post nrs: ${toNrs(unreportedPostsRead)}`);
     // @endif
 
     talksWithSererAlready = true;
@@ -288,7 +296,7 @@ function trackReadingActivity() {
     // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
     // See subscribeToServerEvents().
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
-        unreportedPostNrsRead, () => {
+        unreportedPostsRead, () => {
       talksWithSererAlready = false;
       // In case the server is slow because under heavy load, better reset this here in
       // the done-callback, when the response arrives, rather than when the request is being sent.
@@ -296,7 +304,7 @@ function trackReadingActivity() {
     });
 
     unreportedSecondsReading = 0;
-    unreportedPostNrsRead = [];
+    unreportedPostsRead = [];
     firstUnreportedPostReadAtMs = undefined;
   }
 
@@ -411,13 +419,17 @@ function trackReadingActivity() {
     if (fractionRead) {
       fadeUnreadMark(stats.postNr, fractionRead);
     }
+
     if (fractionRead >= 1) {
       // @ifdef DEBUG
       !debug || console.log(`Just read post nr ${stats.postNr}`);
       // @endif
       // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
       postNrsJustRead.push(stats.postNr);
-      unreportedPostNrsRead.push(stats.postNr);
+      const post = page.postsByNr[stats.postNr];
+      if (post) {
+        unreportedPostsRead.push(post);
+      }
       if (!firstUnreportedPostReadAtMs) {
         firstUnreportedPostReadAtMs = nowMs;
       }
