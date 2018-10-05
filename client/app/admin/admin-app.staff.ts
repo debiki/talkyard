@@ -126,7 +126,7 @@ const SsoTestComponent = createReactClass(<any> {
         r.p({},
           "After you have logged in at your website, your server should " +
           "send an API request to:", r.br(),
-          r.samp({}, location.origin + '/-/v0/upsert-external-user-generate-login-secret'), r.br(),
+          r.samp({}, location.origin + '/-/v0/sso-upsert-user-generate-login-secret'), r.br(),
           "to synchronize your user account with Talkyard's user database, " +
           "and get a login secret. " +
           "Then your server should redirect you to: ", r.br(),

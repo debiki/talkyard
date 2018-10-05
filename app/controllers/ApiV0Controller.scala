@@ -134,8 +134,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
     apiEndpoint match {
-      case "sso-upsert-user-generate-login-secret" |  // deprecated name, remove
-        "upsert-external-user-generate-login-secret" =>
+      case "sso-upsert-user-generate-login-secret" |
+        "upsert-external-user-generate-login-secret" =>  // deprecated name, remove
         val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y]
           externalId = (body \ "externalUserId").as[String].trim,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
@@ -253,7 +253,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         dao.redisCache.saveOneTimeLoginSecret(secret, user.id)
         OkApiJson(Json.obj(
           "loginSecret" -> secret,
-          "ssoLoginSecret" -> secret))  // REMOVE old name
+          "ssoLoginSecret" -> secret))  // REMOVE deprecated old name
 
       case _ =>
         throwForbidden("TyEAPIPST404", s"No such API endpoint: $apiEndpoint")

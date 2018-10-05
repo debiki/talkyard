@@ -335,7 +335,7 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 
 function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, apiSecret: string,
       externalUser: ExternalUser }): string {
-  const url = ps.origin + '/-/v0/upsert-external-user-generate-login-secret';
+  const url = ps.origin + '/-/v0/sso-upsert-user-generate-login-secret';
   const responseJson = postOrDie(
       url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
   dieIf(!responseJson.loginSecret, "No login secret in API response [TyE4AKBA05]",
