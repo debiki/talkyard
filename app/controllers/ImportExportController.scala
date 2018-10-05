@@ -139,11 +139,16 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
   private def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): ImportSiteData = {
 
+    // When importing API secrets has been impl, then upd this test:
+    // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
+    // an API secret (then, get to test the import-secrets code, + the test gets faster).
+
     val (siteMetaJson, settingsJson, groupsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
         categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
+          // + API secrets [5ABKR2038]
           readJsArray(bodyJson, "groups"),
           readJsArray(bodyJson, "members"),
           readJsArray(bodyJson, "permsOnPages"),

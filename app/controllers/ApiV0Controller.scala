@@ -93,7 +93,13 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         // (if one follows a link with an "evil" go-next url param to the SSO login page,
         // which then redirects to this endpoint with that bad go-next url).
         val thenGoToUnsafe = getOnly("thenGoTo")
-        val thenGoTo = thenGoToUnsafe.flatMap(Prelude.stripOrigin) getOrElse "/"
+        val thenGoToHashEncoded = thenGoToUnsafe.flatMap(Prelude.stripOrigin) getOrElse "/"
+
+        // The hash '#' in any '#post-NN' in the URL has been encoded (since the browser
+        // would otherwise try to jump to the hash fragment, e.g. when going to a SSO login page).
+        // Unencode it back to a hash '#'.
+        CLEAN_UP; RENAME // __dwHash__ with just __hash__ or __tyHash__ ?  'dw' = really old.
+        val thenGoTo = thenGoToHashEncoded.replaceAllLiterally("__dwHash__", "#")
 
         TemporaryRedirect(thenGoTo)
             .withCookies(sidAndXsrfCookies: _*)

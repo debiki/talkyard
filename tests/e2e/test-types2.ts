@@ -45,19 +45,21 @@ interface SiteData {
     // inviteOnly?: boolean;
     allowSignup?: boolean;
     // allowLocalSignup?: boolean;
-    allowGuestLogin?: boolean,
+    allowGuestLogin?: boolean;
     userMustBeAuthenticated?: boolean;
     requireVerifiedEmail?: boolean;
     emailDomainBlacklist?: string;
     emailDomainWhitelist?: string;
     mayComposeBeforeSignup?: boolean;
     mayPostBeforeEmailVerified?: boolean;
-    numFirstPostsToReview?: number,
-    numFirstPostsToApprove?: number,
-    numFirstPostsToAllow?: number,
-    numFlagsToHidePost?: number,
-    numFlagsToBlockNewUser?: number,
-    numFlaggersToBlockNewUser?: number,
+    numFirstPostsToReview?: number;
+    numFirstPostsToApprove?: number;
+    numFirstPostsToAllow?: number;
+    numFlagsToHidePost?: number;
+    numFlagsToBlockNewUser?: number;
+    numFlaggersToBlockNewUser?: number;
+    ssoUrl?: string;
+    enableSso?: boolean;
   };
   groups: GroupInclDetails[];
   members: Member[];

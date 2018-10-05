@@ -281,6 +281,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-test.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-member.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only sso-admin-extra-login $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-all-ways-to-login.2browsers $args
 
 
   # Usability Testing Exchange

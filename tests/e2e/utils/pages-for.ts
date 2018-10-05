@@ -88,6 +88,14 @@ function pagesFor(browser) {
       return matches[1];
     },
 
+    urlPathQueryHash: (): string => {
+      const result = browser.execute(function() {
+        return location.pathname + location.search + location.hash;
+      });
+      dieIf(!result || !result.value, 'TyE5ABKRHNS02');
+      return result.value;
+    },
+
 
     go: (url, opts: { useRateLimits?: boolean } = {}) => {
       let shallDisableRateLimits = false;
@@ -2563,10 +2571,19 @@ function pagesFor(browser) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
       },
 
-      toggleLikeVote: function(postNr: PostNr) {
-        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
-        const isLikedBefore = browser.isVisible(likeVoteSelector + '.dw-my-vote');
+      makeLikeVoteSelector: (postNr: PostNr): string => {
+        return `#post-${postNr} + .esPA .dw-a-like`;
+      },
+
+      clickLikeVote: function(postNr: PostNr) {
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
         api.topic.clickPostActionButton(likeVoteSelector);
+      },
+
+      toggleLikeVote: function(postNr: PostNr) {
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
+        const isLikedBefore = browser.isVisible(likeVoteSelector + '.dw-my-vote');
+        api.topic.clickLikeVote(postNr);
         let delay = 133;
         while (true) {
           // Wait for the server to reply and the page to get updated.
@@ -2579,7 +2596,7 @@ function pagesFor(browser) {
       },
 
       isPostLikedByMe: function(postNr: PostNr) {
-        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
         return browser.isVisible(likeVoteSelector + '.dw-my-vote');
       },
 
@@ -2604,7 +2621,7 @@ function pagesFor(browser) {
       },
 
       canVoteLike: function(postNr: PostNr) {
-        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
         return browser.isVisible(likeVoteSelector);
       },
 

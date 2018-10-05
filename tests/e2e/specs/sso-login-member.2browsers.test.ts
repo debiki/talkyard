@@ -114,7 +114,7 @@ describe("sso-real  TyT5HNATS20P", () => {
   it("... clicks Log In, gets redirected to the SSO page", () => {
     mariasUrlBeforeLogin = mariasBrowser.url().value;
     mariasBrowser.rememberCurrentUrl();
-    mariasBrowser.topbar.clickLogin();
+    mariasBrowser.topbar.clickLogin();   // [TyT2ABKR058TN2]
     mariasBrowser.waitForNewUrl();
   });
 
