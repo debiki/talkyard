@@ -528,14 +528,21 @@ var t_en_US: TalkyardTranslations = t = {
     AboveBestFirst: "Above: Replies, best first.",
     BelowCmtsEvents: "Below: Comments and events.",
 
+    /* Old. When were called "Bottom comments" instead of "Progress comments".
     BottomCmtExpl_1: "You're adding a comment that will stay at the bottom of the page. " +
         "It won't rise to the top even if it gets upvotes.",
     BottomCmtExpl_2: "This is useful for status messages, e.g. to clarify why you close/reopen " +
-        "a topic. Or for suggesting changes to the original post.",
+        "a topic. Or for suggesting changes to the original post.", */
+    // I18N _1 and _2 MISSING, all languages  [BTM2PRGR]
+    BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress" +
+      "towards answering the question / solving the problem / implementing the idea.",
+      //"or maybe why you postpone or close this topic.",
+    BottomCmtExpl_2: "Progress comments are appended at the bottom of the page.",
+      //"sorted by time (not Like votes).",
     BottomCmtExpl_3: "To reply to someone, click Reply instead.",
 
     AddComment: "Add comment",
-    AddBottomComment: "Add bottom comment",
+    AddBottomComment: "Add progress comment", //"Add bottom comment", [BTM2PRGR]  I18N MISSING
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",

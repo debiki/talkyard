@@ -21,6 +21,7 @@
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../topbar/topbar.ts" />
+/// <reference path="metabar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
@@ -759,8 +760,9 @@ const RootPostAndComments = createComponent({
     if (firstAppendedIndex < threadedChildren.length &&
         pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
       const line =
-        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' });
-          /* Don't forget the CSS [5KDWUR].
+        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
+          r.span({}, t.sb.Progr));  // REFACTOR move from t.sb to just t ? or to t.d.Progr?
+          /* CSS here: [5KDWUR].
           r.span({},
             r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
             t.d.AboveBestFirst),
