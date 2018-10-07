@@ -332,6 +332,7 @@ class EdSecurity(globals: Globals) {
     // Note that the xsrf token is created using the non-base64 encoded cookie value.
     val sidOk = createSessionId(siteId, userId)
     val xsrfOk = createXsrfToken()
+    // per site, expiration in minutes?  [sidexpsite]
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
       maxAgeSecs = Some(14 * 24 * 3600))
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
@@ -341,7 +342,7 @@ class EdSecurity(globals: Globals) {
 
   private val sidHashLength = 14
   private def secretSalt = globals.applicationSecret
-  private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
+  private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months  [sidexpsite]
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
 
 

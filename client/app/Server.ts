@@ -194,7 +194,7 @@ function maybeShowServerJustStartedMessage() {
   const overlayElem = $byId('theLoadingOverlay');
   if (!overlayElem) return;
   const messageElem = $h.parseHtml('<div id="theServerJustStarted"></div>')[0];
-  messageElem.textContent = "Sorry that this takes long. Perhaps the server was " +
+  messageElem.textContent = "Sorry that this takes long. Perhaps the server was " + // browser tabs?
       "just started, and is slow right now.";
   $h.addClasses(overlayElem, 'esLoadingSlow');
   overlayElem.appendChild(messageElem);
