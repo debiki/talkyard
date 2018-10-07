@@ -42,6 +42,7 @@ var t_pt_BR: TalkyardTranslations = t = {
   Discussion: "Discussão",
   EditV: "Editar",
   EmailAddress: "Email",
+  EmailAddresses: "Email addresses",  // MISSING
   Forum: "Fórum",
   Hide: "Ocultar",
   Home: "Home",    // MISSING
@@ -65,6 +66,7 @@ var t_pt_BR: TalkyardTranslations = t = {
   Okay: "Ok",
   OkayDots: "Ok ...",
   Online: "Online",
+  onePerLine: "one per line",  // MISSING
   PreviewV: "Prever",
   Problem: "Problema",
   Question: "Pergunta",
@@ -795,10 +797,10 @@ var t_pt_BR: TalkyardTranslations = t = {
         "Vamos enviar um email curto para seu amigo, e a pessoa deve então clicar em um link " +
         "para se associar imediatamente, sem necessidade de login. " +
         "A pessoa vai se tornar um membro comum, não um moderador ou administrador.",
-    EnterEmail: "Digite o email",
+    //EnterEmail: "Digite o email",
     InvDone: "Concluído. Enviando um email para a pessoa.",
-    InvErrJoinedAlready: "A pessoa já se associou a este site",
-    InvErrYouInvAlready: "Você já convidou a pessoa",
+    //InvErrJoinedAlready: "A pessoa já se associou a este site",
+    //InvErrYouInvAlready: "Você já convidou a pessoa",
 
     // ----- Preferences, About
 

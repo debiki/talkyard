@@ -24,9 +24,13 @@ import debiki.EdHttp._
 import debiki.JsX.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
 import ed.server._
+import ed.server.http.DebikiRequest
 import javax.inject.Inject
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 
 /** Invites new users to join the site.
@@ -46,34 +50,106 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.createSessionIdAndXsrfToken
 
 
-  def sendInvite: Action[JsValue] = PostJsonAction(RateLimits.SendInvite, maxBytes = 200) {
+  def sendInvites: Action[JsValue] = PostJsonAction(RateLimits.SendInvite, maxBytes = 10*1000) {
         request =>
     import request.{dao, theRequester => requester}
-    val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
+    val toEmailAddressesRaw = (request.body \ "toEmailAddresses").as[Seq[String]]
+    val reinvite = (request.body \ "reinvite").asOpt[Boolean]
 
-    anyEmailAddressError(toEmailAddress) foreach { errMsg =>
-      throwUnprocessableEntity("TyEBADEMLADR_-INV", s"Bad email address: $errMsg")
+    // If SSO enabled, people should be invited to the external SSO page instead. (4RBKA20).
+    val settings = dao.getWholeSiteSettings()
+    throwForbiddenIf(settings.enableSso,
+      "TyESSOINV", "Cannot invite people, when Single Sing-On enabled")
+
+    val toEmailAddresses = toEmailAddressesRaw.map(_.trim) filter { addr =>
+      // Skip comment lines. People might save their send-invites-to lists in a file with
+      // comments clarifying why someone gets added to a group, or something?
+      addr.nonEmpty && addr.head != '#'
+    } toSet
+
+    // Restrict num invites sent.
+    // Sending too many emails, could be bad, maybe will get blacklisted.
+    // This, combined with  max 10 requests per day, means max 200 invites per day.
+    if (toEmailAddresses.size > 20) {  // sync 20 with test [6ABKR021]
+      throwUnprocessableEntity("TyETOOMANYBULKINV_",
+          s"You can invite at most 20 people at a time, for now (and max 120 per week)")
+    }
+    // Max 120 per week.
+    request.dao.readOnlyTransaction { tx =>
+      COULD_OPTIMIZE // don't need to load all 120 invites
+      val anyOldInviteNo120 = tx.loadAllInvites(120).drop(119).headOption
+      anyOldInviteNo120 foreach { oldInvite =>
+        val daysSince = globals.now().daysSince(oldInvite.createdWhen)
+        throwForbiddenIf(daysSince < 7, "TyINVMANYWEEK_", "You can invite at most 120 people per week")
+      }
+    }
+
+    var index = 0
+    toEmailAddresses foreach { toEmailAddress =>
+      index += 1
+      anyEmailAddressError(toEmailAddress) foreach { errMsg =>
+        throwUnprocessableEntity(
+          "TyEBADEMLADR_-INV", s"Bad email address: '$toEmailAddress' (number $index), problem: $errMsg")
+      }
     }
 
     // Right now, only for staff and core members. [5WBJAF2]
     throwForbiddenIf(!requester.isStaffOrCoreMember,
        "TyE403INA0", "Currently only staff and core members may send invites")
 
-    // Is toEmailAddress already a member or already invited?
-    request.dao.readOnlyTransaction { transaction =>
-      val alreadyExistingUser = transaction.loadMemberByPrimaryEmailOrUsername(toEmailAddress)
-      if (alreadyExistingUser.nonEmpty) {
-        // Maybe check if email verified? [5UKHWQ2]
-        throwForbidden("_EsE403IUAM_", "That person has joined this site already")
-      }
+    val alreadyInvitedAddresses = mutable.Set[String]()
+    val alreadyJoinedAddresses = mutable.Set[String]()
+    val failedAddresses = mutable.Set[String]()
+    val invitesSent = ArrayBuffer[Invite]()
 
-      val invites = transaction.loadInvites(createdById = request.theUserId)
-      for (invite <- invites if invite.emailAddress == toEmailAddress) {
-        if (invite.invalidatedAt.isEmpty && invite.deletedAt.isEmpty)
-          throwForbidden("_EsE403IAAC0_", "You have invited him or her already")
+    var oldInvitesCached: Option[Seq[Invite]] = None
+
+    for (toEmailAddress <- toEmailAddresses) {
+      // Is toEmailAddress already a member or already invited?
+      var skip = false
+      request.dao.readOnlyTransaction { tx =>
+        def oldInvites: Seq[Invite] = oldInvitesCached getOrElse {
+          oldInvitesCached = Some(tx.loadInvitesCreatedBy(createdById = request.theUserId))
+          oldInvitesCached.get
+        }
+
+        val alreadyExistingUser = tx.loadMemberByPrimaryEmailOrUsername(toEmailAddress)
+        if (alreadyExistingUser.nonEmpty) {
+          // Maybe check if email verified? [5UKHWQ2]
+          alreadyJoinedAddresses.add(toEmailAddress)
+          skip = true
+        }
+        else if (reinvite isNot true) {
+          for (invite <- oldInvites if invite.emailAddress == toEmailAddress) {
+            if (invite.invalidatedAt.isEmpty && invite.deletedAt.isEmpty) {
+              alreadyInvitedAddresses.add(toEmailAddress)
+              skip = true
+            }
+          }
+        }
+      }
+      if (!skip) {
+        doSendInvite(toEmailAddress: String, request) match {
+          case Good(invite) =>
+            invitesSent.append(invite)
+          case Bad(errorMessage) =>
+            failedAddresses.add(toEmailAddress)
+        }
       }
     }
 
+    OkSafeJson(
+      Json.obj( // SendInvitesResponse
+        "willSendLater" -> JsFalse,
+        "invitesSent" -> JsArray(invitesSent.map(jsonForInvite(_, isAdminOrSelf = true))),
+        "alreadyInvitedAddresses" -> JsArray(alreadyInvitedAddresses.toSeq map JsString),
+        "alreadyJoinedAddresses" -> JsArray(alreadyJoinedAddresses.toSeq map JsString),
+        "failedAddresses" -> JsArray(failedAddresses.toSeq map JsString)))
+  }
+
+
+  private def doSendInvite(toEmailAddress: String, request: DebikiRequest[_])
+        : Invite Or ErrorMessage = {
     val invite = Invite(
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
@@ -86,29 +162,28 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         tx.isUsernameInUse)
     }
 
-    val probablyUsername = anyProbablyUsername getOrElse throwForbidden(
-      "TyE3ABK5L0", s"I cannot generate a username given email address: $toEmailAddress")
+    val probablyUsername = anyProbablyUsername getOrElse {
+      return Bad(
+        s"I cannot generate a username given email address: $toEmailAddress [TyE2ABKR04]")
+    }
 
-    val email = makeInvitationEmail(invite, request.theMember,
+    val email = makeInvitationEmail(invite, inviterName = request.theMember.usernameParensFullName,
       probablyUsername = probablyUsername, siteHostname = request.host)
 
+    UX // would be nice if the inviter got a message if the email couldn't be sent.
     globals.sendEmail(email, request.siteId)
+    request.dao.insertInvite(invite)
 
-    try {
-      request.dao.insertInvite(invite)
-    }
-    catch {
-      case _: DbDao.DuplicateUserEmail =>
-        // This is a very rare race condition.
-        throwForbidden("DwE403JIU3", "You just invited him or her")
-    }
-    OkSafeJson(jsonForInvite(invite, isAdminOrSelf = true))
+    Good(invite)
   }
 
 
   def acceptInvite(secretKey: String): Action[Unit] = GetActionAllowAnyone { request =>
+    // Maybe accept invites already sent, even if SSO now enabled? However, reject here (4RBKA20).
+
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(
       secretKey, request.theBrowserIdData)
+
     request.dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
     val newSessionCookies = sidAndXsrfCookies
@@ -135,7 +210,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbidden("DwE403INV0", "Any invites are private")
 
     val invites = request.dao.readOnlyTransaction { transaction =>
-      transaction.loadInvites(createdById = sentById)
+      transaction.loadInvitesCreatedBy(createdById = sentById)
     }
     makeInvitesResponse(invites, showFullEmails = isAdminOrSelf, request.dao)
   }
@@ -177,11 +252,11 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def makeInvitationEmail(invite: Invite, inviter: Member,
+  private def makeInvitationEmail(invite: Invite, inviterName: String,
         probablyUsername: String, siteHostname: String): Email = {
 
     val emailBody = views.html.invite.inviteEmail(
-      inviterName = inviter.usernameParensFullName, siteHostname = siteHostname,
+      inviterName = inviterName, siteHostname = siteHostname,
       probablyUsername = probablyUsername, secretKey = invite.secretKey, globals).body
     Email(
       EmailType.Invite,

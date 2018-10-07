@@ -114,24 +114,28 @@ invites -
     logs in:
   accepts, and then: (7JK2)
     clicks create password email link:
-      - invites-by-adm-click-email-set-pwd-link.2browsers.test.ts  TyT45FKAZZ2
+          - invites-by-adm-click-email-set-pwd-link.2browsers.test.ts  TyT45FKAZZ2
     tries to login, but no password:
-       - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
+          - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
     tries to sign up:
-      - invites-by-mod-try-signup-after.2browsers.test.ts  TyT4FGJA20M
+          - invites-by-mod-try-signup-after.2browsers.test.ts  TyT4FGJA20M
   view sent:
     as moderator:
-      - invites-by-mod-try-signup-after TyT4FGJA20M
+          - invites-by-mod-try-signup-after TyT4FGJA20M
     as admin:
-      - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
+          - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
     as core member:
-      - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
+          - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
   core members can send, new users cannot:
-    - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
+          - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
   don't become staff:
-    - invites-by-mod-try-signup-after.2browsers.test.ts  TyT4WK0AQ2
+          - invites-by-mod-try-signup-after.2browsers.test.ts  TyT4WK0AQ2
   don't result in forbidden usernames:
-    - invites-werd-email-addrs.2browsers.test.ts  TyT7KBAJ2AD4
+          - invites-werd-email-addrs.2browsers.test.ts  TyT7KBAJ2AD4
+  invite many:
+          - invites-many-retry.2browsers.test.ts  TyT5BKA2WA30
+  resend invite:
+          - invites-many-retry.2browsers.test.ts  TyT5BKA2WA30
   expires:
 
 

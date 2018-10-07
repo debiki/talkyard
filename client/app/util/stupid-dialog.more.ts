@@ -38,6 +38,7 @@ export interface StupidDialogStuff {
   // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
   onCloseOk?: (number) => void,
   preventClose?: boolean,
+  closeOnClickOutside?: boolean, // default true
 }
 
 
@@ -97,27 +98,37 @@ export const StupidDialog = createComponent({
       r.div({ style: { marginBottom: '2em' }}, stuff.body),
       r.div({ style: { float: 'right' }},
         preventClose ? null : PrimaryButton({ onClick: makeCloseFn(1), className: 'e_SD_CloseB' },
-          stuff.closeButtonTitle || stuff.primaryButtonTitle || "Okay"),
+          // About "Okay" button title: COULD use English, if in admin area / staff-only
+          // functionality — that's supposed to be English only.
+          stuff.closeButtonTitle || stuff.primaryButtonTitle || t.Okay),
         preventClose || !stuff.secondaryButonTitle ? null : Button({
             onClick: makeCloseFn(2), className: 'e_SD_SecB' },
           stuff.secondaryButonTitle)));
-    let result;
+
     const className = 'esStupidDlg ' +
             (stuff.small ? 'esStupidDlg-Small ' : '') +
             (stuff.tiny ? 'esStupidDlg-Tiny ' : '') +
             (stuff.dialogClassName || '');
 
+    const maybeClose =
+      preventClose || (stuff.closeOnClickOutside === false) ? null : makeCloseFn(0);
+
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.
+    let result;
     if (!eds.isInEmbeddedCommentsIframe) {
       result = (
-        Modal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
+        Modal({
+            show: this.state.isOpen,
+            onHide: maybeClose,
             dialogClassName: className },
           body));
     }
     else {
       // Don't use Modal — it could display outside the browser's viewport.
       result = (
-        utils.DropdownModal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
+        utils.DropdownModal({
+            show: this.state.isOpen,
+            onHide: maybeClose,
             showCloseButton: !preventClose, className,
             // For now:
             windowWidth: this.state.winWidth,

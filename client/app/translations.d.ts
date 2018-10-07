@@ -28,6 +28,7 @@ interface TalkyardTranslations {
   Discussion: string;
   EditV: string;
   EmailAddress: string;
+  EmailAddresses: string;
   Forum: string;
   Hide: string;
   Home: string;
@@ -51,6 +52,7 @@ interface TalkyardTranslations {
   Okay: string;
   OkayDots: string;
   Online: string;
+  onePerLine: string;
   PreviewV: string;
   Problem: string;
   Question: string;
@@ -651,10 +653,10 @@ interface TalkyardTranslations {
     SendAnInv: string;
     SendInv: string;
     SendInvExpl: string;
-    EnterEmail: string;
+    //EnterEmail: string;
     InvDone: string;
-    InvErrJoinedAlready: string;
-    InvErrYouInvAlready: string;
+    //InvErrJoinedAlready: string;
+    //InvErrYouInvAlready: string;
 
     // ----- Preferences, About
 

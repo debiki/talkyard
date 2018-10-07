@@ -318,8 +318,9 @@ trait SiteTransaction {
   def insertInvite(invite: Invite)
   def updateInvite(invite: Invite): Boolean
   def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String)
-  def loadInvite(secretKey: String): Option[Invite]
-  def loadInvites(createdById: UserId): immutable.Seq[Invite]
+  def loadInviteBySecretKey(secretKey: String): Option[Invite]
+  def loadInvitesSentTo(emailAddress: String): immutable.Seq[Invite]
+  def loadInvitesCreatedBy(createdById: UserId): immutable.Seq[Invite]
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
   def nextIdentityId: IdentityId

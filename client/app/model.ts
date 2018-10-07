@@ -1443,6 +1443,15 @@ interface LoadCategoryResponse {
 }
 
 
+interface SendInvitesResponse {
+  willSendLater: boolean;
+  invitesSent: Invite[];
+  alreadyInvitedAddresses: string[];
+  alreadyJoinedAddresses: string[];
+  failedAddresses: string[];
+}
+
+
 interface UserAccountResponse {
   emailAddresses: UserAccountEmailAddr[];
   loginMethods: UserAccountLoginMethod[];

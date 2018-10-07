@@ -214,7 +214,7 @@ describe("invites-werd-email-addrs  TyT7KBAJ2AD4", () => {
   });
 
   it("Fido's sibling can post topics", () => {
-    othersBrowser.complex.createAndSaveTopic({ title: "Title Tile", body: "Text. Text." });
+    othersBrowser.complex.createAndSaveTopic({ title: "Title Tile Woff", body: "Woff. Wiff. Oink." });
   });
 
 });

@@ -128,7 +128,7 @@ declare namespace debiki2 {
 
   namespace utils {
     var scrollIntoViewInPageColumn;
-    var makeMountNode;
+    function makeMountNode();
     var DropdownModal;
     var ModalDropdownButton;
     var FadeInOnClick;

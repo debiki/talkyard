@@ -332,7 +332,7 @@ case object User {
     id == UnknownUserId || id <= MaxCustomGuestId
 
   val MinUsernameLength = 3  // must be < 9, search for usages to see why
-  val MaxUsernameLength = 20
+  val MaxUsernameLength = 20 // sync with tests [6AKBR20Q]
 
 
   /**

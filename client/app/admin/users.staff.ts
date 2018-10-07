@@ -142,9 +142,9 @@ const InvitedUsersPanel = createFactory({
     // Don't leave the Admin Area and go to the user's page, to send the invite
     // — usability testing shows that this makes people confused.
     // Instead open the dialog here, in the admin area.
-    users.openInviteSomeoneDialog((invite) => {
+    users.openInviteDialog((invites: Invite[]) => {
       if (this.isGone) return;
-      this.setState({ invites: this.state.invites.concat(invite) });
+      this.setState({ invites: [...this.state.invites, ...invites] });
     });
   },
 
@@ -172,9 +172,8 @@ const InvitedUsersPanel = createFactory({
     // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]
     return (
       r.div({},
-        Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB',
-            disabled: disableInvites },
-          "Send Invites" + (disableInvites ? " — disabled, SSO in use" : '')),
+        Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB', disabled: disableInvites },
+          "Invite people" + (disableInvites ? " — disabled, SSO in use" : '')),
         r.div({ className: 'esAdminSectionIntro' },
           r.p({}, introText)),
         // Dupl table headers [3GK0YU2]

@@ -42,6 +42,7 @@ var t_en_US: TalkyardTranslations = t = {
   Discussion: "Discussion",
   EditV: "Edit",
   EmailAddress: "Email address",
+  EmailAddresses: "Email addresses",
   Forum: "Forum",
   Hide: "Hide",
   Home: "Home",
@@ -65,6 +66,7 @@ var t_en_US: TalkyardTranslations = t = {
   Okay: "Okay",
   OkayDots: "Okay ...",
   Online: "Online",
+  onePerLine: "one per line",
   PreviewV: "Preview",
   Problem: "Problem",
   Question: "Question",
@@ -792,16 +794,16 @@ var t_en_US: TalkyardTranslations = t = {
     InvAccepted: "Invitation accepted",
     InvSent: "Invitation sent",
 
-    SendAnInv: "Send an Invite",
-    SendInv: "Send Invite",
-    SendInvExpl:
-        "We'll send your friend a brief email, and he or she then clicks a link " +
+    SendAnInv: "Invite people", // was: "Send an Invite",   MISSING I18N all other langs
+    SendInv: "Send invites",   // MISSING I18N is just "Send invite" (singularis) in all other langs
+    SendInvExpl:  // MISSING I18N changed to pluralis
+        "We'll send your friends a brief email. They'll click a link " +
         "to join immediately, no login required. " +
-        "He or she will become a normal member, not a moderator or admin.",
-    EnterEmail: "Enter email",
-    InvDone: "Done. I'll send him/her an email.",
-    InvErrJoinedAlready: "He or she has joined this site already",
-    InvErrYouInvAlready: "You have invited him or her already",
+        "They'll become normal members, not moderators or admins.",
+    //EnterEmail: "Enter email(s)",
+    InvDone: "Done. I'll send them an email.",
+    //InvErrJoinedAlready: "He or she has joined this site already",
+    //InvErrYouInvAlready: "You have invited him or her already",
 
     // ----- Preferences, About
 

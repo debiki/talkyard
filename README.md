@@ -455,9 +455,10 @@ everywhere and update some end-to-end tests too.
 
 Some message codes are checked for by production code Typescript, i.e. *front*end code.
 They shall have a `_` at the beginnign (front) of the error code, and here's how they can be used
-client side: `if (hasErrorCode(failedRequest, '_EsE403IUAM_'))`. — So, those two `_` tells you
-that that error code is used both in the real frontend Typescript code, and in end-to-end-tests
-(hmm there's no such e2e test though, but ought to be).
+server side: `throwForbidden("_TyE403BPWD", "Bad username or password")` and
+client side: `if (xhr.responseText.indexOf('_TyE403BPWD') ...`. — So, when you're looking at the
+server side code the `_` tells you that the error code is used in the frontend Typescript code,
+so you cannot just change it.
 
 
 ### Hen and henbirds

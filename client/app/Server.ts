@@ -716,9 +716,9 @@ export function setPrimaryEmailAddresses(userId: UserId, emailAddress: string,
 }
 
 
-export function sendInvite(toEmailAddress: string, success: (invite: Invite) => void,
-      error: (failedRequest: HttpRequest) => ErrorPolicy) {
-  postJsonSuccess('/-/send-invite', success, error, { toEmailAddress: toEmailAddress });
+export function sendInvites(toEmailAddresses: string[], reinvite: boolean,
+      onDone: (invite: Invite) => void, onError: (failedRequest: HttpRequest) => ErrorPolicy) {
+  postJsonSuccess('/-/send-invites', onDone, onError, { toEmailAddresses, reinvite });
 }
 
 

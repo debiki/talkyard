@@ -72,7 +72,6 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       emailOrUsername = emailOrUsername,
       password = password)
 
-    // The browser checks for 'EsE403BPWD' so don't change it.
     def deny(debugCode: String) = throwForbidden(
       "_TyE403BPWD" + (if (globals.isProd) "" else s"-$debugCode"), "Bad username or password")
 

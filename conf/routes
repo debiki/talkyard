@@ -155,7 +155,7 @@ GET   /-/unsub-summaries-done   ed.server.summaryemails.UnsubFromSummariesContro
 
 GET   /-/load-invites           controllers.InviteController.loadInvites(sentById: Int)
 GET   /-/load-all-invites       controllers.InviteController.loadAllInvites
-POST  /-/send-invite            controllers.InviteController.sendInvite
+POST  /-/send-invites           controllers.InviteController.sendInvites
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
 POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.createEmbeddedCommentsForum

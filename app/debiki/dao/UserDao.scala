@@ -73,7 +73,7 @@ trait UserDao {
   def acceptInviteCreateUser(secretKey: String, browserIdData: BrowserIdData)
         : (MemberInclDetails, Invite, Boolean) = {
     readWriteTransaction { tx =>
-      var invite = tx.loadInvite(secretKey) getOrElse throwForbidden(
+      var invite = tx.loadInviteBySecretKey(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
 
       invite.acceptedAt foreach { acceptedAt =>
@@ -110,6 +110,14 @@ trait UserDao {
 
       dieIfBad(Validation.checkUsername(username),
         "TyE4WKBA2", errMsg => s"I generated an invalid username given '$emailAddrBeforeAt': $errMsg")
+
+      // Invalidate other invites to the same user.
+      val otherInvitesSameUser: Seq[Invite] = tx.loadInvitesSentTo(invite.emailAddress)
+      for (otherInvite <- otherInvitesSameUser; if otherInvite.secretKey != invite.secretKey) {
+        tx.updateInvite(
+          otherInvite.copy(
+            invalidatedAt = Some(tx.now.toJavaDate)))
+      }
 
       p.Logger.debug(
         s"s$siteId: Creating invited user @$username, email addr: ${invite.emailAddress} [TyD6KWA02]")

@@ -64,6 +64,7 @@ export = {
   TestTrustLevel,
   TestDraftStatus,
   TestPostType,
+  MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]

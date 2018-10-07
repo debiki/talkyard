@@ -64,7 +64,7 @@ describe("invites-by-adm-click-email-set-pwd-link  TyT45FKAZZ2", () => {
 
   it("He sends an invite to Jane", () => {
     owensBrowser.adminArea.users.invites.clickSendInvite();
-    owensBrowser.inviteDialog.typeAndSubmitInvite(janesEmailAddress);
+    owensBrowser.inviteDialog.typeAndSubmitInvite(janesEmailAddress, { numWillBeSent: 1 });
   });
 
   let inviteLinkJane;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,8 @@
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
+/// <reference path="../util/stupid-dialog.more.ts" />
+/// <reference path="../widgets.more.ts" />
 //xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
 declare var moment: any;
 
@@ -67,11 +69,9 @@ export const UserInvites = createFactory({
     });
   },
 
-  addInvite: function(invite: Invite) {
-    const invites = this.state.invites;
-    invites.unshift(invite);
+  addInvites: function(invites: Invite[]) {
     this.setState({
-      invites: invites
+      invites: [...invites, ...(this.state.invites || [])],
     });
   },
 
@@ -100,8 +100,8 @@ export const UserInvites = createFactory({
             : t.upp.NoInvites));
     if (user.id === me.id && mayInvite.yes) {
       inviteButton =
-          Button({ className: 'e_SndInvB', onClick: () => openInviteSomeoneDialog(this.addInvite) },
-            t.upp.SendAnInv);
+          Button({ className: 'e_SndInvB', onClick: () => openInviteDialog(this.addInvites) },
+            t.upp.SendAnInv);  // I18N SHOULD change to "Invite people"
     }
     else {
       // (This is for staff, need not translate. [5JKBWS2])
@@ -145,17 +145,25 @@ export const UserInvites = createFactory({
 export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: WhenMs, showSender? }) {
     const store: Store = props.store;
     const invite: Invite = props.invite;
-    let invitedEmail;
     let invitedUser;
     let acceptedAt = t.NotYet;
+    let deletedClass = ' s_InvsL_It-Dd';
     if (invite.userId) {
       const user: BriefUser = store_getUserOrMissing(store, invite.userId);
       invitedUser = UserName({ user, store, makeLink: true });
-      invitedEmail = r.samp({}, invite.invitedEmailAddress);
+    }
+    if (invite.acceptedAtEpoch) {
       acceptedAt = moment(invite.acceptedAtEpoch).from(props.nowMs);
+      deletedClass = '';
+    }
+    else if (invite.deletedAtEpoch) {
+      acceptedAt = "Deleted";  // I18N unless is staff
+    }
+    else if (invite.invalidatedAtEpoch) {
+      acceptedAt = "Joined already";  // I18N unless is staff
     }
     else {
-      invitedEmail = invite.invitedEmailAddress;
+      deletedClass = '';
     }
 
     let sentBy;
@@ -164,12 +172,11 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
       sentBy = r.td({ className: 'e_Inv_SentByU' }, UserName({ user: sender, store, makeLink: true }));
     }
 
-    // Invited-email + inviter-id is unique. [5GPJ4A0]
-    const key = invite.invitedEmailAddress + ' ' + invite.createdById;
+    const key = invite.invitedEmailAddress + ' ' + invite.createdById + ' ' + invite.createdAtEpoch;
 
     return (
-      r.tr({ key, className: 's_InvsL_It' },
-        r.td({ className: 'e_Inv_Em' }, invitedEmail),
+      r.tr({ key, className: 's_InvsL_It' + deletedClass },
+        r.td({ className: 'e_Inv_Em' }, invite.invitedEmailAddress),
         r.td({ className: 'e_Inv_U' }, invitedUser),
         r.td({ className: 'e_Inv_AcptAt' }, acceptedAt),
         r.td({ className: 'e_Inv_CrtdAt' }, moment(invite.createdAtEpoch).from(props.nowMs)),
@@ -177,13 +184,13 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
 }
 
 
-let inviteSomeoneDialog;
+let inviteDialog;
 
-export function openInviteSomeoneDialog(addInvite) {
-  if (!inviteSomeoneDialog) {
-    inviteSomeoneDialog = ReactDOM.render(InviteDialog(), utils.makeMountNode());
+export function openInviteDialog(onDone: (invites: Invite[]) => void) {
+  if (!inviteDialog) {
+    inviteDialog = ReactDOM.render(InviteDialog(), utils.makeMountNode());
   }
-  inviteSomeoneDialog.open(addInvite);
+  inviteDialog.open(onDone);
 }
 
 
@@ -194,53 +201,147 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     return { isOpen: false };
   },
 
-  open: function(addInvite) {
-    this.setState({ isOpen: true, addInvite: addInvite, maySubmit: false, error: null });
+  open: function(addInvites) {
+    this.setState({
+      isOpen: true,
+      textareaValue: '',
+      addInvites: addInvites,
+      maySubmit: false,
+      error: null,
+      invitesSent: null,
+      alreadyInvitedAddresses: null,
+      alreadyJoinedAddresses: null,
+    });
   },
 
   close: function() {
     this.setState({ isOpen: false });
   },
 
+  /*
   onEmailChanged: function(value, ok) {
     // `ok` is false if this.state.error, so ignore it.
     this.setState({ error: null, maySubmit: !this.refs.emailInput.findPatternError(value) });
+  },*/
+
+  onEmailChanged: function(event) {
+    this.setState({ error: null, maySubmit: true, textareaValue: event.target.value });
   },
 
   sendInvite: function() {
-    const emailAddress = this.refs.emailInput.getValue();
-    Server.sendInvite(emailAddress, (invite: Invite) => {
-      this.state.addInvite(invite);
-      this.close();
-      util.openDefaultStupidDialog({ body: t.upp.InvDone, dialogClassName: 's_InvSentD' });
-    }, (failedRequest: HttpRequest) => {
-      if (hasErrorCode(failedRequest, '_EsE403IUAM_')) {
-        this.setState({ error: t.upp.InvErrJoinedAlready });
+    const addressesText = this.refs.emailInput.getValue();
+    const addresses: string[] = addressesText.split('\n');
+    const isResend: boolean = !!this.state.alreadyInvitedAddresses;
+    Server.sendInvites(addresses, isResend, (sendInvitesResponse: SendInvitesResponse) => {
+      dieIf(sendInvitesResponse.willSendLater, 'TyE2ABKR03', "Unimpl");
+      const invitesSent: Invite[] = sendInvitesResponse.invitesSent;
+      this.state.addInvites(invitesSent);
+
+      let message;
+      let messageE2eClass = 'e_Invd-' + invitesSent.length;
+
+      if (invitesSent.length >= 1) {
+        message = t.upp.InvDone;
       }
-      else if (hasErrorCode(failedRequest, '_EsE403IAAC0_')) {
-        this.setState({ error: t.upp.InvErrYouInvAlready });
+      else if (!sendInvitesResponse.willSendLater) {
+        message = "No one to invite.";  // I18N
       }
       else {
-        return undefined;
+        messageE2eClass += ' e_SndInvsLtr';
+        message = "I'll notify you later, when I've invited them.";  // I18N
       }
-      this.setState({ maySubmit: false });
-      return IgnoreThisError;
+
+      message = r.p({ className: messageE2eClass }, message);
+
+      const alreadyInvitedAddresses = sendInvitesResponse.alreadyInvitedAddresses;
+      const alreadyJoinedAddresses = sendInvitesResponse.alreadyJoinedAddresses;
+      const failedAddresses = sendInvitesResponse.failedAddresses;
+
+      const numFailed =
+          alreadyInvitedAddresses.length +
+          alreadyJoinedAddresses.length +
+          failedAddresses.length;
+
+      if (numFailed >= 1) {
+        let textareaValue = '';
+        _.each(alreadyInvitedAddresses, addr => {
+          textareaValue += addr + '\n';
+        });
+        this.setState({
+          textareaValue,
+          invitesSent,
+          alreadyInvitedAddresses,
+          alreadyJoinedAddresses,
+          failedAddresses,
+        });
+        const makeAddrListItem = (addr: string) => r.li({ key: addr }, addr);
+        message = rFragment({},
+            message,
+            !alreadyInvitedAddresses.length ? null : r.div({},
+                "These have been invited already — maybe you'd like to invite them again?",
+                r.ul({ className: 'e_InvRtr' },
+                  alreadyInvitedAddresses.map(makeAddrListItem))),
+            !failedAddresses.length ? null : r.div({},
+                "These resulted in ", r.b({}, "errors"), ':',
+                r.ul({ className: 'e_InvErr' },
+                  failedAddresses.map(makeAddrListItem))),
+            !alreadyJoinedAddresses.length ? null : r.div({},
+                "These have joined already, so I didn't invite them:",
+                r.ul({ className: 'e_InvJoind' },
+                  alreadyJoinedAddresses.map(makeAddrListItem))));
+      }
+
+      // If nothing more to do, close.
+      if (!alreadyInvitedAddresses.length) {
+        this.close();
+      }
+
+      util.openDefaultStupidDialog({
+        body: message,
+        dialogClassName: 's_InvSentD',
+        closeButtonTitle: alreadyInvitedAddresses.length === 0 ? t.Okay : "Maybe ...",  // I18N,
+        // Let's force the user to read and click ok, because this is a somewhat
+        // important message, especially if there were any errors.
+        closeOnClickOutside: false,
+      });
     });
   },
 
   render: function() {
     const props: any = _.assign({}, this.props);
     props.title = t.upp.SendAnInv;
+
+    let content;
+    let buttonTitle = t.upp.SendInv;
+    if (!this.state.isOpen) {
+      // No content.
+    }
+    else {
+      const isResend = this.state.alreadyInvitedAddresses;
+      const info = isResend
+          ? "Re-send invitations to these people? They have been invited already."   // I18N
+          : t.upp.SendInvExpl;
+      buttonTitle = isResend
+          ? r.span({ className: 'e_InvAgain' }, "Invite again")  // I18N
+          : t.upp.SendInv;
+      content = rFragment({},
+        r.p({}, info),
+        // UX COULD reuse EmailInput —> PatternInput —> Input({ type: 'input' ... })
+        // and add a multiline: true attr, and use type:textarea instead?
+        Input({ type: 'textarea', label: t.EmailAddresses,
+            placeholder: t.onePerLine,
+            value: this.state.textareaValue,
+            ref: 'emailInput', error: this.state.error, onChange: this.onEmailChanged }));
+                                                    //  onChangeValueOk: this.onEmailChanged }));
+    }
+
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 's_InvD' },
         ModalBody({},
-          r.p({}, t.upp.SendInvExpl),
-          EmailInput({ label: t.EmailAddress, placeholder: t.upp.EnterEmail,
-              ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
+          content),
         ModalFooter({},
-          PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit },
-            t.upp.SendInv),
-          Button({ onClick: this.close }, t.Cancel))));
+          PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit }, buttonTitle),
+          Button({ onClick: this.close, className: 'e_Cncl' }, t.Cancel))));
   }
 });
 

@@ -668,6 +668,7 @@ function pagesFor(browser) {
 
 
     // n starts on 1 not 0.
+    // Also see:  assertNthClassIncludes
     assertNthTextMatches: function(selector, n, regex, regex2?) {
       if (_.isString(regex)) {
         regex = new RegExp(regex);
@@ -689,6 +690,23 @@ function pagesFor(browser) {
         assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
             regex2.toString() + ", actual text: '" + text + "'");
       }
+    },
+
+
+    // n starts on 1 not 0.
+    // Also see:  assertNthTextMatches
+    assertNthClassIncludes: function(selector, n, classToFind) {
+      assert(n >= 1, "n starts on 1, change from 0 to 1 please");
+      const items = browser.elements(selector).value;
+      assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
+      const response = browser.elementIdAttribute(items[n - 1].ELEMENT, 'class');
+      assert(isResponseOk(response), "Bad response._status: " + response._status +
+          ", state: " + response.state);
+      const regex = new RegExp(`\\b${classToFind}\\b`);
+      const actuallClassAttr = response.value;
+      assert(regex.test(actuallClassAttr), "Elem " + n + " selected by '" + selector +
+          "' doesn't have this class: '" + classToFind + "', instead it has: " +
+          actuallClassAttr + "'");
     },
 
 
@@ -3996,19 +4014,51 @@ function pagesFor(browser) {
         api.waitForVisible('.s_InvD');
       },
 
-      typeAndSubmitInvite: (emailAddress: string) => {
+      typeAndSubmitInvite: (emailAddress: string, ps: { numWillBeSent?: number } = {}) => {
         api.inviteDialog.typeInvite(emailAddress);
         api.inviteDialog.clickSubmit();
-        api.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
+        if (ps.numWillBeSent !== undefined) {
+          api.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
+        }
+        api.inviteDialog.closeResultsDialog();
       },
 
       typeInvite: (emailAddress: string) => {
-        api.waitAndSetValue('.s_InvD input', emailAddress, { maybeMoves: true });
+        api.waitAndSetValue('.s_InvD textarea', emailAddress, { maybeMoves: true });
       },
 
       clickSubmit: () => {
         api.waitAndClick('.s_InvD .btn-primary');
       },
+
+      cancel: () => {
+        api.waitAndClick('.s_InvD .e_Cncl');
+      },
+
+      waitForCorrectNumSent: (num: number) => {
+        api.waitForVisible('.e_Invd-' + num);
+      },
+
+      assertAlreadyJoined: (emailAddr: string) => {
+        api.waitForVisible('.e_InvJoind');
+        assert.equal(api.count('.e_InvJoind li'), 1);
+        assert.equal(api.waitAndGetVisibleText('.e_InvJoind li'), emailAddr);
+      },
+
+      assertAlreadyInvited: (emailAddr: string) => {
+        api.waitForVisible('.e_InvRtr');
+        assert.equal(api.count('.e_InvRtr li'), 1);
+        assert.equal(api.waitAndGetVisibleText('.e_InvRtr li'), emailAddr);
+      },
+
+      closeResultsDialog: () => {
+        api.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
+      },
+
+      isInviteAgainVisible: (): boolean => {
+        api.waitForVisible('.s_InvD .btn-primary');
+        return browser.isVisible('.e_InvAgain');
+      }
     },
 
 
@@ -4029,9 +4079,16 @@ function pagesFor(browser) {
       },
 
       waitAssertInviteRowPresent: (index: number, opts: {
-            email: string, acceptedByUsername?: string, sentByUsername?: string }) => {
+            email: string, accepted: boolean, acceptedByUsername?: string, sentByUsername?: string,
+            deleted: boolean }) => {
         api.waitForAtLeast(index, '.s_InvsL_It');
         api.assertNthTextMatches('.e_Inv_Em', index, opts.email);
+        if (opts.accepted === false) {
+          api.assertNthTextMatches('.e_Inv_U', index, /^$/);
+        }
+        if (opts.deleted) {
+          api.assertNthClassIncludes('.s_InvsL_It', index, 's_InvsL_It-Dd');
+        }
         if (opts.acceptedByUsername) {
           api.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
         }
@@ -4098,6 +4155,14 @@ function pagesFor(browser) {
 
       waitForBadEmailAddressError: function() {
         api.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
+      },
+
+      waitForTooManyInvitesError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
+      },
+
+      waitForTooManyInvitesLastWeekError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
       },
 
       close: function() {

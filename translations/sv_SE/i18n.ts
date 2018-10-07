@@ -42,6 +42,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   Discussion: "Discussion",
   EditV: "Edit",
   EmailAddress: "Email address",
+  EmailAddresses: "Email addresses",  // MISSING
   Forum: "Forum",
   Hide: "Göm",
   Home: "Home",
@@ -65,6 +66,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   Okay: "Okay",
   OkayDots: "Okay ...",
   Online: "Online",
+  onePerLine: "one per line",
   PreviewV: "Preview",
   Problem: "Problem",
   Question: "Fråga",
@@ -790,10 +792,10 @@ var t_sv_SE: TalkyardTranslations = t = {
         "We'll send your friend a brief email, and he or she then clicks a link " +
         "to join immediately, no login required. " +
         "He or she will become a normal member, not a moderator or admin.",
-    EnterEmail: "Enter email",
+    //EnterEmail: "Enter email",
     InvDone: "Done. I'll send him/her an email.",
-    InvErrJoinedAlready: "He or she has joined this site already",
-    InvErrYouInvAlready: "You have invited him or her already",
+    //InvErrJoinedAlready: "He or she has joined this site already",
+    //InvErrYouInvAlready: "You have invited him or her already",
 
     // ----- Preferences, About
 
