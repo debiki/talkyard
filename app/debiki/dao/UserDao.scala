@@ -18,7 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.EdHttp.{throwForbidden, throwForbiddenIf, throwBadRequest}
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf, throwBadRequest, throwNotFound}
 import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
@@ -1001,7 +1001,10 @@ trait UserDao {
       return ReadMoreResult(0)
 
     readWriteTransaction { tx =>
-      val pageMeta = tx.loadPageMeta(pageId) getOrDie "EdE5JKDYE"
+      val pageMeta = tx.loadPageMeta(pageId) getOrElse {
+        throwNotFound("TyETRCK0PAGE", s"No page with id '$pageId'")
+      }
+
       if (newProgress.maxPostNr + 1 > pageMeta.numPostsTotal) // post nrs start on TitleNr = 0 so add + 1
         throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
           ${pageMeta.numPostsTotal} posts on page '$pageId'""")
