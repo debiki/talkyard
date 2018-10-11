@@ -31,23 +31,48 @@ const r = ReactDOMFactories;
 //
 export var AdminGuide =
   r.div({ className: 'esAdminGuide' },
-    r.p({}, "Welcome! You're an admin, so you can edit settings, define what this community is about, and invite people."),
-    r.h2({}, "Edit settings"),
-    r.p({}, "Go to the admin area by clicking your name to the upper right, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. To make the forum private, edit settings in the ", r.strong({}, "Login"), " section. You can edit colors and fonts in the ", r.strong({}, "Look and Feel"), " section."),
-    r.h2({}, "Clarify what this community is about"),
-    r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", edit the forum intro text (just below the forum title). And edit the ", r.em({}, "Welcome to this community"), " topic."),
-    r.h2({}, "Create categories"),
-    r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"), ", then ", r.strong({}, "Create Category"), ". Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty)."),
-    r.h2({}, "Build your community"),
-    r.p({}, "Before launching your community:"),
-    r.ul({},
-      r.li({}, "Make sure people will understand what this community is about — see the ", r.em({}, "Clarify what this community is about"), " section above."),
-      r.li({}, "Create some interesting topics, so people won't find an empty forum."),
-      r.li({}, "Set aside time to visit your forum regularly and participate in the discussions."),
-      r.li({}, "Tell a few people to have a look at your forum. Ask if they understand its purpose. Edit the forum intro text and the welcome topic, until everything is clear.")),
-    r.p({}, "Then start promoting your community: link to it on the Internet, and tell people about it. You can invite people via email: go to the Admin Area, click ", r.strong({}, "Users"), ", then ", r.strong({}, "Invite"), "."),
-    r.h2({}, "Need help?"),
-    r.p({}, "For help, go to Talkyard's ", r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' }, "support forum", r.span({ className: 'icon-link-ext' })), ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
+    r.p({},
+      "Welcome! You're an admin, so you can edit settings, define what this community is about, " +
+      "and invite people."),
+    r.h2({},
+      "Edit settings"),
+    r.p({},
+      "Go to the admin area by clicking your name to the upper right, then click ",
+      r.strong({}, "Admin"), ". Look at the ", r.b({}, "Settings"),
+      " tab; maybe there's something you'd like to change? " +
+      "To make the forum private, edit the ", r.strong({}, "Signup and Login"), " settings."),
+    // Not yet implemented:  [2ABKR05L]
+    // "You can edit colors and fonts in the ", r.strong({}, "Look and Feel"), " section."),
+    r.h2({},
+      "Clarify what this community is about"),
+    r.p({},
+      "On ", r.a({ href: "/" }, "the forum main page"),
+      ", edit the forum intro text (just below the forum title). And edit the ",
+      r.em({}, "Welcome to this community"), " topic."),
+    r.h2({},
+      "Create categories"),
+    r.p({},
+      "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"),
+      ", then ", r.strong({}, "Create Category"),
+      ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new categories. " +
+      "Don't create too many categories — if you do, they might look rather empty. " +
+      "Also create some interesting topics, so people won't find an empty forum. "),
+    r.h2({},
+      "Launch your community"),
+    r.p({},
+      "Ask a few people to have a look at your community. " +
+      "See if they understand what it is about and what they can do there."),
+    r.p({},
+      "Then start promoting your community: link to it on the Internet, and tell people about it. " +
+      "You can invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
+      ", then ", r.strong({}, "Invite"), "."),
+    r.h2({},
+      "Need help?"),
+    r.p({},
+      "For help, go to Talkyard's ",
+      r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' },
+        "support forum", r.span({ className: 'icon-link-ext' })),
+      ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
 
 //------------------------------------------------------------------------------
    }

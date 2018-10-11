@@ -1462,6 +1462,8 @@ const CustomizeHtmlPanel = createFactory({
     const props = this.props;
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
+
+        // Add back this: [2ABKR05L]  once this has been implemented.
         Alert({ bsStyle: 'info' },
           r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know HTML."),
           r.p({}, "We'll try to build something for you that's easier to use, later.")),
