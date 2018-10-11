@@ -28,6 +28,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import Nashorn._
 import jdk.nashorn.api.scripting.ScriptObjectMirror
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -188,23 +189,24 @@ class Nashorn(globals: Globals) {
   }
 
 
-  def renderPage(reactStoreJsonString: String): Option[String] = {
+  def renderPage(reactStoreJsonString: String): String Or ErrorMessage = {
     if (isTestSoDisableScripts)
-      return Some("Scripts disabled [EsM6YKW2]")
+      return Good("Scripts disabled [EsM6YKW2]")
     withJavascriptEngine(engine => {
       renderPageImpl(engine, reactStoreJsonString)
     })
   }
 
 
-  private def renderPageImpl[R](engine: js.Invocable, reactStoreJsonString: String): Option[String] = {
+  private def renderPageImpl[R](engine: js.Invocable, reactStoreJsonString: String)
+        : String Or ErrorMessage = {
     val timeBefore = System.currentTimeMillis()
 
-    val pageHtml = engine.invokeFunction(
+    val htmlOrError = engine.invokeFunction(
       "renderReactServerSide", reactStoreJsonString, cdnOrigin.getOrElse("")).asInstanceOf[String]
-    if (pageHtml == ErrorRenderingReact) {
+    if (htmlOrError.startsWith(ErrorRenderingReact)) {
       logger.error(s"Error rendering page with React server side [DwE5KGW2]")
-      return None
+      return Bad(htmlOrError)
     }
 
     def timeElapsed = System.currentTimeMillis() - timeBefore
@@ -212,7 +214,7 @@ class Nashorn(globals: Globals) {
     def threadName = java.lang.Thread.currentThread.getName
     logger.trace(s"Done rendering: $timeElapsed ms, thread $threadName  (id $threadId)")
 
-    Some(pageHtml)
+    Good(htmlOrError)
   }
 
 
@@ -239,9 +241,17 @@ class Nashorn(globals: Globals) {
           oneboxRenderer, uploadsUrlPrefix)
       oneboxRenderer.javascriptEngine = None
 
-      dieIf(!resultObj.isInstanceOf[ScriptObjectMirror],
-          "TyERCMR01", s"Bad class: ${classNameOf(resultObj)}")
-      val result = resultObj.asInstanceOf[ScriptObjectMirror]
+      val result: ScriptObjectMirror = resultObj match {
+        case scriptObjectMirror: ScriptObjectMirror =>
+          scriptObjectMirror
+        case errorDetails: ErrorMessage =>
+          // Don't use Die — the stack trace to here isn't interesting? Instead, it's the
+          // errorDetails from the inside-Nashorn exception that matters.
+          debiki.EdHttp.throwInternalError(
+            "TyERCMEX", "Error rendering CommonMark, server side in Nashorn", errorDetails)
+        case unknown =>
+          die("TyERCMR01", s"Bad class: ${classNameOf(unknown)}, thing as string: ``$unknown''")
+      }
 
       dieIf(!result.isArray, "TyERCMR02", "Not an array")
       dieIf(!result.hasSlot(0), "TyERCMR03A", "No slot 0")
@@ -435,6 +445,7 @@ class Nashorn(globals: Globals) {
         |}
         |
         |function renderReactServerSide(reactStoreJsonString, cdnOriginOrEmpty) {
+        |  var exceptionAsString;
         |  try {
         |    theStore = JSON.parse(reactStoreJsonString);
         |    theStore.currentPage = theStore.pagesById[theStore.currentPageId];
@@ -465,6 +476,7 @@ class Nashorn(globals: Globals) {
         |  }
         |  catch (e) {
         |    printStackTrace(e);
+        |    exceptionAsString = exceptionToString(e);
         |  }
         |  finally {
         |    // Reset things to error codes, to fail fast, if attempts to access these,
@@ -472,7 +484,7 @@ class Nashorn(globals: Globals) {
         |    t = 'TyEBADACCESSLANG';
         |    theStore = 'TyEBADACCESSSTORE';
         |  }
-        |  return '$ErrorRenderingReact';
+        |  return '$ErrorRenderingReact\n\n' + exceptionAsString;
         |}
         |""")
 
@@ -522,7 +534,7 @@ class Nashorn(globals: Globals) {
     // Output the script so we can lookup line numbers if there's an error.
     val script = scriptBuilder.toString()
     if (!Globals.isProd) {
-      val where = "target/nashorn-ok-delete.js"
+      val where = "target/nashorn-ok-delete.js"   // RENAME to -auto-generated.js? sounds more serious
       logger.debug(o"""... Here's the server side Javascript: $where""")
       new jio.PrintWriter(where) {
         write(script)
@@ -601,8 +613,11 @@ object Nashorn {
     |  printStackTrace(e);
     |}
     |
+    |// Returns [html, mentions] if ok, else a string with an error message
+    |// and exception stack trace.
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
     |       instantOneboxRenderer, uploadsUrlPrefixCommonmark) {
+    |  var exceptionAsString;
     |  try {
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
     |    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
@@ -620,10 +635,11 @@ object Nashorn {
     |    return [html, mentionsThisTime];
     |  }
     |  catch (e) {
-    |    console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02]");
+    |    console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02A]");
     |    printStackTrace(e);
+    |    exceptionAsString = exceptionToString(e);
     |  }
-    |  return "Error rendering CommonMark on server [TyERNDRCM02]";
+    |  return "Error in renderAndSanitizeCommonMark: [TyERNDRCM02B]\n\n" + exceptionAsString;
     |}
     |
     |// (Don't name this function 'sanitizeHtml' because it'd then get overwritten by
@@ -682,6 +698,23 @@ object Nashorn {
     |  console.error('Stack trace: ' + exception.stack);
     |  console.error('Exception as is: ' + exception);
     |  console.error('Exception as JSON: ' + JSON.stringify(exception));
+    |}
+    |
+    |// CLEAN_UP DO_AFTER 2018-11-01 use this + console.error(), instead of printStackTrace(exception) ?
+    |// — just wait for a short while, in case there's some surprising problem with this fn:
+    |// Could actually remove printStackTrace() and always log the error from Scala instead? since
+    |// needs to return the error to Scala anyway, so can show in the browser.
+    |function exceptionToString(exception) {
+    |  return (
+    |      'File: nashorn-ok-delete.js\n' +
+    |      'Line: ' + exception.lineNumber  + '\n' +
+    |      'Column: ' + exception.columnNumber  + '\n' +
+    |      'Exception message: ' + exception + '\n' +
+    |      'Exception as JSON: ' + JSON.stringify(exception) + '\n' +
+    |      // It's useful to include the 2 lines above, not only `.stack` below, because
+    |      // sometimes, e.g. if doing `throw 'text'`, then `.stack` will be `undefined`.
+    |      // However, `exception.toString()` will be 'text'.
+    |      'Stack trace: ' + exception.stack  + '\n');
     |}
     |"""
 

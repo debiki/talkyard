@@ -220,7 +220,27 @@ var serverTypescriptSrc = [
     'client/shared/plain-old-javascript.d.ts',
     'client/typedefs/**/*.ts'];
 
-function compileServerTypescript() {
+var serverJavascriptSrc = [
+    // Two different sanitizers. [5FKEW2]
+    // Needs to be first. There's some missing ';' at the start of the script bug?
+    'modules/sanitize-html/dist/sanitize-html.min.js',
+    'client/third-party/html-css-sanitizer-bundle.js',
+    'node_modules/react/umd/react.production.min.js',
+    'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',
+    'node_modules/react-dom-factories/index.js',
+    'node_modules/create-react-class/create-react-class.min.js',
+    // Don't need React CSS transitions server side.
+    'node_modules/react-router-dom/umd/react-router-dom.js',
+    'client/third-party/tiny-querystring.umd.js',
+    'node_modules/markdown-it/dist/markdown-it.min.js',
+    'client/third-party/lodash-custom.js',
+    'client/third-party/non-angular-slugify.js',
+    'client/app/editor/mentions-markdown-it-plugin.js',
+    'client/app/editor/onebox-markdown-it-plugin.js'];
+
+// This one also concatenates Javascript, so it's different from the other
+// 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
+function compileServerTypescriptConcatJavascript() {
   var typescriptStream = gulp.src(serverTypescriptSrc)
     .pipe(wrap(nextFileTemplate))
     .pipe(serverTypescriptProject());
@@ -231,23 +251,7 @@ function compileServerTypescript() {
     });
   }
 
-  var javascriptStream = gulp.src([
-        // Two different sanitizers. [5FKEW2]
-        // Needs to be first. There's some missing ';' at the start of the script bug?
-        'modules/sanitize-html/dist/sanitize-html.min.js',
-        'client/third-party/html-css-sanitizer-bundle.js',
-        'node_modules/react/umd/react.production.min.js',
-        'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',
-        'node_modules/react-dom-factories/index.js',
-        'node_modules/create-react-class/create-react-class.min.js',
-        // Don't need React CSS transitions server side.
-        'node_modules/react-router-dom/umd/react-router-dom.js',
-        'client/third-party/tiny-querystring.umd.js',
-        'node_modules/markdown-it/dist/markdown-it.min.js',
-        'client/third-party/lodash-custom.js',
-        'client/third-party/non-angular-slugify.js',
-        'client/app/editor/mentions-markdown-it-plugin.js',
-        'client/app/editor/onebox-markdown-it-plugin.js'])
+  var javascriptStream = gulp.src(serverJavascriptSrc)
       .pipe(wrap(nextFileTemplate));
 
   return es.merge(typescriptStream, javascriptStream)
@@ -340,8 +344,8 @@ function compileOtherTypescript(what, typescriptProject) {
   return stream.pipe(gulp.dest('target/client/'));
 }
 
-gulp.task('compileServerTypescript', function () {
-  return compileServerTypescript();
+gulp.task('compileServerTypescriptConcatJavascript', function () {
+  return compileServerTypescriptConcatJavascript();
 });
 
 gulp.task('compileSlimTypescript', function () {
@@ -366,7 +370,7 @@ gulp.task('compileEditorTypescript', function () {
 
 gulp.task('compileAllTypescript', function () {
   return es.merge(
-      compileServerTypescript(),
+      compileServerTypescriptConcatJavascript(),
       compileSlimTypescript(),
       compileOtherTypescript('more', moreTypescriptProject),
       compileOtherTypescript('2d', _2dTypescriptProject),
@@ -376,7 +380,7 @@ gulp.task('compileAllTypescript', function () {
 
 
 var compileTsTaskNames = [
-  'compileServerTypescript',
+  'compileServerTypescriptConcatJavascript',
   'compileSlimTypescript',
   'compileMoreTypescript',
   'compile2dTypescript',
@@ -533,7 +537,8 @@ function logChangeFn(fileType) {
 
 gulp.task('watch', ['default'], function() {
   watchAndLiveForever = true;
-  gulp.watch(serverTypescriptSrc, ['compileServerTypescript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
+  var allServerScriptsSrc = serverTypescriptSrc.concat(serverJavascriptSrc);
+  gulp.watch(allServerScriptsSrc, ['compileServerTypescriptConcatJavascript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
   gulp.watch(slimTypescriptSrc, ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('more'), ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('2d'), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript'));

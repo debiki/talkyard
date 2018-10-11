@@ -24,6 +24,7 @@ import debiki.{DatabaseUtils, Globals, Nashorn}
 import play.{api => p}
 import scala.concurrent.duration._
 import RenderContentService._
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.concurrent.ExecutionContext
 
 
@@ -60,6 +61,8 @@ class RenderContentActor(
 
   var pauseUntilNanos: Option[Long] = None
 
+  var numBackgroundRenderErrorsInARow = 0
+
   override def receive: Receive = {
     case PauseThreeSeconds =>
       // Would be better with just [one-db-writer], then woudn't need this.
@@ -90,16 +93,22 @@ class RenderContentActor(
           false
         }
       }
+
       if (shallPause) {
         context.system.scheduler.scheduleOnce(1 second, self, RegenerateStaleHtml)(execCtx)
       }
       else try {
-        findAndUpdateOneOutOfDatePage()
-
-        val nanosAfter = System.nanoTime()
-        val millisElapsedNow: Double = math.max(0, (nanosAfter - nanosBeore) / 1000 / 1000).toDouble
-        val difference = millisElapsedNow - avgMillisToBackgroundRender
-        avgMillisToBackgroundRender = avgMillisToBackgroundRender + difference * 0.15d
+        val anyError = findAndUpdateOneOutOfDatePage()
+        if (anyError.isDefined) {
+          numBackgroundRenderErrorsInARow += 1
+        }
+        else {
+          numBackgroundRenderErrorsInARow = 0
+          val nanosAfter = System.nanoTime()
+          val millisElapsedNow: Double = math.max(0, (nanosAfter - nanosBeore) / 1000 / 1000).toDouble
+          val difference = millisElapsedNow - avgMillisToBackgroundRender
+          avgMillisToBackgroundRender = avgMillisToBackgroundRender + difference * 0.15d
+        }
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -118,28 +127,37 @@ class RenderContentActor(
           // waiting 100ms between each page. Anyway, let's try to not use more than 50% of
           // the CPU by waiting with the next page, for as long as it took to render
           // the last pages, on average?
-          val millisToPause = math.max(50, avgMillisToBackgroundRender.toLong)
-          context.system.scheduler.scheduleOnce(millisToPause millis, self, RegenerateStaleHtml)(execCtx)
+          var millisToPause = math.max(50, avgMillisToBackgroundRender.toLong)
+          if (numBackgroundRenderErrorsInARow > 5) {
+            // This almost certainly isn't recoverable. Source code bug, needs fix & redeployment.
+            p.Logger.warn("Slowing down background rendering: There are errors, and don't want to " +
+              "fill the disks with error log messages. Retrying once every 30 seconds. [TyE5WKBAQ25]")
+            millisToPause = 30 * 1000
+          }
+          context.system.scheduler.scheduleOnce(millisToPause.millis, self, RegenerateStaleHtml)(execCtx)
         }
       }
   }
 
 
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId,
-        customParamsAndHash: Option[PageRenderParamsAndHash]) {
+        customParamsAndHash: Option[PageRenderParamsAndHash]): Boolean Or ErrorMessage = {
     try {
       renderImpl(sitePageId, customParamsAndHash)
     }
     catch {
       case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
         p.Logger.warn("Cannot render page, database connection closed [DwE5YJK1]")
+        Bad("Database connection closed [TyE5YJK2]")
       case ex: Exception =>
         p.Logger.error(s"Error rerendering page $sitePageId [DwE2WKP4]", ex)
+        Bad("Exception [TyE5YJK5KQ3]")
     }
   }
 
 
-  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParamsAndHash]) {
+  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParamsAndHash])
+      : Boolean Or ErrorMessage = {
 
     // COULD add Metrics that times this.
 
@@ -148,9 +166,12 @@ class RenderContentActor(
 
     // If we got custom params, rerender only for those params (maybe other param combos = up-to-date).
     anyCustomParams foreach { paramsHash =>
-      renderIfNeeded(sitePageId, paramsHash.pageRenderParams, dao, Some(paramsHash.reactStoreJsonHash))
-      dao.removePageFromMemCache(sitePageId, Some(paramsHash.pageRenderParams))
-      return
+      val result = renderIfNeeded(
+        sitePageId, paramsHash.pageRenderParams, dao, Some(paramsHash.reactStoreJsonHash))
+      if (result == Good(true)) {
+        dao.removePageFromMemCache(sitePageId, Some(paramsHash.pageRenderParams))
+      }
+      return result
     }
 
     val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageRole == PageRole.EmbeddedComments)
@@ -169,20 +190,30 @@ class RenderContentActor(
       anyPageRoot = None,
       anyPageQuery = None)
 
-    renderIfNeeded(sitePageId, renderParams, dao, freshStoreJsonHash = None)
+    var result = renderIfNeeded(sitePageId, renderParams, dao, freshStoreJsonHash = None)
+    if (result.isBad)
+      return result
 
     // Render for medium width.
     val mediumParams = renderParams.copy(widthLayout = WidthLayout.Medium)
-    renderIfNeeded(sitePageId, mediumParams, dao, freshStoreJsonHash = None)
+    result = renderIfNeeded(sitePageId, mediumParams, dao, freshStoreJsonHash = None)
+    if (result.isBad)
+      return result
 
     // Remove cached whole-page-html, so we'll generate a new page (<html><head> etc) that
     // includes the new content we generated above. [7UWS21]
-    dao.removePageFromMemCache(sitePageId)
+    if (result == Good(true)) {
+      dao.removePageFromMemCache(sitePageId)
+    }
+
+    result
   }
 
 
+  /** Returns Good(true-iff-was-rerendered) or Bad(ErrorMessage).
+    */
   private def renderIfNeeded(sitePageId: SitePageId, renderParams: PageRenderParams, dao: SiteDao,
-      freshStoreJsonHash: Option[String]) {
+      freshStoreJsonHash: Option[String]): Boolean Or ErrorMessage = {
 
     // ----- Is still out-of-date?
 
@@ -204,15 +235,18 @@ class RenderContentActor(
     if (!isOutOfDate) {
       p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
              is up-to-date, ignoring re-render message. [DwE4KPL8]""")
-      return
+      return Good(false)
     }
 
     // ----- Do render page
 
     val toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
-    val newHtml = nashorn.renderPage(toJsonResult.reactStoreJsonString) getOrElse {
+    val newHtml = nashorn.renderPage(toJsonResult.reactStoreJsonString) match {
+      case Good(html) => html
+      case bad @ Bad(errorMessage) =>
+      // The error has been logged already.
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [TyEBGRERR]")
-      return
+      return bad
     }
 
     dao.readWriteTransaction { tx =>
@@ -225,14 +259,19 @@ class RenderContentActor(
     val embedded = if (renderParams.isEmbedded) ", embedded" else ""
     val custom = if (freshStoreJsonHash.isDefined) ", custom" else ""
     p.Logger.debug(o"""Background rendered $whichPage, $width$embedded$custom [TyMBGRDONE]""")
+
+    Good(true)
   }
 
 
-  private def findAndUpdateOneOutOfDatePage() {
+  private def findAndUpdateOneOutOfDatePage(): Option[ErrorMessage] = {
     val pageIdsToRerender = globals.systemDao.loadPageIdsToRerender(1)
     for (toRerender <- pageIdsToRerender) {
-      rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParamsAndHash = None)
+      val result = rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParamsAndHash = None)
+      if (result.isBad)
+        return Some(result.swap.get)
     }
+    None
   }
 
 }

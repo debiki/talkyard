@@ -100,8 +100,8 @@ object EdHttp {
   def UnprocessableEntityResult(errCode: String, message: String): Result =
     R.UnprocessableEntity(s"422 Unprocessable Entity\n$message [$errCode]")
 
-  def InternalErrorResult(errCode: String, message: String): Result =
-    R.InternalServerError(s"500 Internal Server Error\n$message [$errCode]")
+  def InternalErrorResult(errCode: String, message: String, moreDetails: String = ""): Result =
+    R.InternalServerError(s"500 Internal Server Error\n$message [$errCode]\n\n$moreDetails")
 
   def InternalErrorResult2(message: String): Result =
     R.InternalServerError("500 Internal Server Error\n"+ message)
@@ -229,8 +229,8 @@ object EdHttp {
     throwBadReq(errCode, message)
   }
 
-  def throwInternalError(errCode: String, message: String = "") =
-    throw ResultException(InternalErrorResult(errCode, message))
+  def throwInternalError(errCode: String, message: String = "", moreDetails: String = "") =
+    throw ResultException(InternalErrorResult(errCode, message, moreDetails = moreDetails))
 
 
 

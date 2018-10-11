@@ -209,8 +209,11 @@ trait RenderedPageHtmlDao {
     // Now we'll have to render the page contents [5KWC58], so we have some html to send back
     // to the client, in case the client is a search engine bot — I suppose those
     // aren't happy with only up-to-date json (but no html) + running React.js.
-    val newHtml = context.nashorn.renderPage(currentReactStoreJsonString) getOrElse throwInternalError(
-      "TyE500RNDR", "Error rendering page")
+    val newHtml = context.nashorn.renderPage(currentReactStoreJsonString) getOrIfBad { errorMessage =>
+      throwInternalError(
+        "TyE500RNDR", "Error rendering page, with React.js, server side in Nashorn",
+        moreDetails = errorMessage)
+    }
 
     readWriteTransaction { tx =>
       tx.upsertCachedPageContentHtml(
