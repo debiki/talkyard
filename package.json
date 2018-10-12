@@ -71,14 +71,14 @@
     "lodash-cli": "^4.16.1",
     "minimist": "^1.2.0",
     "request": "^2.64.0",
-    "selenium-standalone": "^6.15.1",
+    "selenium-standalone": "^6.15.3",
     "sync-request": "^4.0.1",
     "tape": "^4.6.3",
     "typescript": "^2.6.1",
     "wdio-dot-reporter": "^0.0.9",
     "wdio-mocha-framework": "^0.5.13",
     "wdio-sync": "^0.7.1",
-    "webdriverio": "^4.13.1"
+    "webdriverio": "^4.13.2"
   },
   "greenkeeper": {
     "ignore": [

@@ -277,7 +277,6 @@ describe("sso-real  TyT5HNATS20P", () => {
 
   it("Maria Like-votes Michael's poetic post", () => {
     mariasBrowser.go(discussionPageUrl);
-    mariasBrowser.debug();
     returnToPathQueryEscHash =
         mariasBrowser.urlPathQueryHash() + '__dwHash__post-' + (michaelsLastPostNr - 1);
     mariasBrowser.rememberCurrentUrl();
@@ -286,7 +285,6 @@ describe("sso-real  TyT5HNATS20P", () => {
   });
 
   it("... gets to the dummy login page, with  __dwHash__", () => {
-    mariasBrowser.debug();
     const urlNow = mariasBrowser.url().value;
     console.log(`urlNow should incl __dwHash__: ${urlNow}`);
     assert.equal(urlNow, ssoUrlVarsReplaced(returnToPathQueryEscHash));
