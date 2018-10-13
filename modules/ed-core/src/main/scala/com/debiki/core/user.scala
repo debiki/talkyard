@@ -1351,7 +1351,10 @@ case class OpenAuthDetails(
   avatarUrl: Option[String] = None) {
 
   def providerIdAndKey = OpenAuthProviderIdKey(providerId, providerKey)
-  def displayName: String = firstName.orElse(fullName).getOrElse("(unknown name)")
+  def displayNameOrEmpty: String = fullName.orElse(firstName) getOrElse ""
+
+  // Mixed case email addresses not allowed, for security reasons. See db fn email_seems_ok.
+  def emailLowercasedOrEmpty: String = email.map(_.toLowerCase) getOrElse ""
 }
 
 

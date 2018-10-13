@@ -78,6 +78,9 @@ if (secretsPath) {
     if (settings.include3rdPartyDependentTests) {
       if (!settings.gmailEmail) logWarning("No gmailEmail in " + secretsPath);
       if (!settings.gmailPassword) logWarning("No gmailPassword in " + secretsPath);
+      if (!settings.githubUsernameMixedCase) logWarning("No githubUsernameMixedCase in " + secretsPath);
+      if (!settings.githubPassword) logWarning("No githubPassword in " + secretsPath);
+      if (!settings.githubEmailMixedCase) logWarning("No githubEmailMixedCase in " + secretsPath);
       if (!settings.facebookAdminPassword) logWarning("No facebookAdminPassword in " + secretsPath);
       if (!settings.facebookAdminEmail) logWarning("No facebookAdminEmail in " + secretsPath);
       if (!settings.facebookUserPassword) logWarning("No facebookUserPassword in " + secretsPath);

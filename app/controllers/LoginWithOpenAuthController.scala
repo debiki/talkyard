@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
 import com.mohiva.play.silhouette
+import com.mohiva.play.silhouette.api.AuthInfo
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
@@ -39,6 +40,12 @@ import play.api.Configuration
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+
+case class ExternalEmailAddr(
+  emailAddr: String,
+  isPrimary: Boolean,
+  isVerified: Boolean,
+  isPublic: Boolean)
 
 
 /** OpenAuth 1 and 2 login, provided by Silhouette, e.g. for Google, Facebook and Twitter.
@@ -163,15 +170,86 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         Future.successful(result)
       case Right(authInfo) =>
         val futureProfile: Future[CommonSocialProfile] = provider.retrieveProfile(authInfo)
-        futureProfile flatMap { profile =>
-          handleAuthenticationData(request, profile)
+        futureProfile flatMap { profile: CommonSocialProfile =>
+          // GitHub doesn't include any email, if there's no publicly visibly email configured,
+          // and that might not be a verified email? Let's try to load a verified, and preferably
+          // primary, email address.
+          if (providerName == GitHubProvider.ID) {
+            COULD // make Silhouette incl the GitHub username in the CommonSocialProfile [GTHBUNAME]
+            // — right now it's just forgotten.
+            val futureMaybeEmail = loadVerifiedGitHubEmailAddr(authInfo)
+            futureMaybeEmail flatMap { anyEmailAddr =>
+              val profileWithEmail = profile.copy(email = anyEmailAddr)
+              handleAuthenticationData(request, profileWithEmail)
+            }
+          }
+          else {
+            handleAuthenticationData(request, profile)
+          }
         }
     } recoverWith {
-      case e: silhouette.api.exceptions.ProviderException =>
-        Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
+      case ex: silhouette.api.exceptions.ProviderException =>
+        Future.successful(
+          Results.Forbidden(s"${ex.getMessage} [TyEOAUTH01]"))
+      case ex: Exception =>
+        val message = s"Couldn't sign in with $providerName"
+        play.api.Logger.error(s"Error during OAuth2 authentication: $message [TyEOAUTH02A]", ex)
+        Future.successful(
+          InternalErrorResult("TyEOAUTH02B", message, moreDetails = ex.toString))
     }
   }
 
+
+  private def loadVerifiedGitHubEmailAddr(authInfo: AuthInfo): Future[Option[String]] = {
+    val oauth2AuthInfo = authInfo match {
+      case o2: OAuth2Info => o2
+      case weird => die("TyE2AB5RSS042", s"Unexpected GitHub authInfo class: ${classNameOf(weird)}")
+    }
+
+    import play.api.libs.ws
+    val githubRequest: ws.WSRequest =
+      globals.wsClient.url(s"https://api.github.com/user/emails").withHeaders(
+        // OAuth2 bearer token. GitHub will automatically know which user the request concerns
+        // (although not mentioned in the request URL).
+        "Authorization" -> s"token ${oauth2AuthInfo.accessToken}",
+        // Use version 3 of the API, it's the most recent one (as of 2018-10).
+        // https://developer.github.com/v3/#current-version
+        "Accept" -> "application/vnd.github.v3+json")
+
+    githubRequest.get().map({ response: ws.WSResponse =>
+      // GitHub's response is (as of 2018-10-13) like:
+      // https://developer.github.com/v3/users/emails/#list-email-addresses-for-a-user
+      // [{ "email": "a@b.c", "verified": true, "primary": true, "visibility": "public" }]
+      try {
+        val bodyAsText = response.body
+        val bodyAsJson = Json.parse(bodyAsText)
+        val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
+        val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
+          val emailObj = emailObjUntyped.asInstanceOf[JsObject]
+          ExternalEmailAddr(
+            emailAddr = emailObj.value.get("email").map(_.asInstanceOf[JsString].value)
+              .getOrDie("TyE5RKBW20P", s"Bad JSON from GitHub: $bodyAsText"),
+            isVerified = emailObj.value.get("verified") is JsTrue,
+            isPrimary = emailObj.value.get("primary") is JsTrue,
+            isPublic = emailObj.value.get("visibility") is JsString("public"))
+        })
+
+        val anyPrimaryVerifiedAddr = emails.find(addr => addr.isPrimary && addr.isVerified)
+        def anyVerifiedAddr = emails.find(_.isVerified)
+        val result = anyPrimaryVerifiedAddr.orElse(anyVerifiedAddr).map(_.emailAddr) // [7KRBGQ20]
+        result
+      }
+      catch {
+        case ex: Exception =>
+          play.api.Logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
+          None
+      }
+    }).recoverWith({
+      case ex: Exception =>
+        play.api.Logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
+        Future.successful(None)
+    })
+  }
 
   private def handleAuthenticationData(request: GetRequest, profile: CommonSocialProfile)
         : Future[Result] = {
@@ -421,8 +499,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       Ok(views.html.login.showCreateUserDialog(
         SiteTpi(request),
         serverAddress = s"//${request.host}",
-        newUserName = oauthDetails.displayName,
-        newUserEmail = oauthDetails.email getOrElse "",
+        newUserName = oauthDetails.displayNameOrEmpty,
+        newUserEmail = oauthDetails.emailLowercasedOrEmpty,
         authDataCacheKey = cacheKey,
         anyContinueToUrl = anyReturnToUrlCookieValue))
     }
@@ -432,8 +510,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // window.opener).
       Ok(views.html.login.closePopupShowCreateUserDialog(
         providerId = oauthDetails.providerId,
-        newUserName = oauthDetails.displayName,
-        newUserEmail = oauthDetails.email getOrElse "",
+        newUserName = oauthDetails.displayNameOrEmpty,
+        newUserEmail = oauthDetails.emailLowercasedOrEmpty,
         authDataCacheKey = cacheKey,
         anyContinueToUrl = anyReturnToUrlCookieValue))
     }
@@ -482,12 +560,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val emailVerifiedAt = oauthDetails.email match {
-      case Some(e) if e != emailAddress =>
-        throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+      case Some(e) if e.toLowerCase != emailAddress =>
+        throwForbidden("DwE523FU2", o"""When signing up, currently you cannot change your email address
+          from the one you use at ${oauthDetails.providerId}, namely: ${oauthDetails.email}""")
       case Some(e) =>
-        // Twitter and GitHub provide no email, or I don't know if any email has been verified.
+        // Twitter provides no email, or I don't know if any email has been verified.
+        // We currently use only verified email addresses, from GitHub. [7KRBGQ20]
         // Google and Facebook emails have been verified though.
         if (oauthDetails.providerId == GoogleProvider.ID ||
+            oauthDetails.providerId == GitHubProvider.ID ||
             oauthDetails.providerId == FacebookProvider.ID) {
           Some(request.ctime)
         }

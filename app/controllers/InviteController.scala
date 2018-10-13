@@ -67,6 +67,15 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       addr.nonEmpty && addr.head != '#'
     } toSet
 
+    var index = 0
+    toEmailAddresses foreach { toEmailAddress =>
+      index += 1
+      anyEmailAddressError(toEmailAddress) foreach { errMsg =>
+        throwUnprocessableEntity(
+          "TyEBADEMLADR_-INV", s"Bad email address: '$toEmailAddress' (number $index), problem: $errMsg")
+      }
+    }
+
     // Restrict num invites sent.
     // Sending too many emails, could be bad, maybe will get blacklisted.
     // This, combined with  max 10 requests per day, means max 200 invites per day.
@@ -81,15 +90,6 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       anyOldInviteNo120 foreach { oldInvite =>
         val daysSince = globals.now().daysSince(oldInvite.createdWhen)
         throwForbiddenIf(daysSince < 7, "TyINVMANYWEEK_", "You can invite at most 120 people per week")
-      }
-    }
-
-    var index = 0
-    toEmailAddresses foreach { toEmailAddress =>
-      index += 1
-      anyEmailAddressError(toEmailAddress) foreach { errMsg =>
-        throwUnprocessableEntity(
-          "TyEBADEMLADR_-INV", s"Bad email address: '$toEmailAddress' (number $index), problem: $errMsg")
       }
     }
 

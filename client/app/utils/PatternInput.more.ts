@@ -26,9 +26,13 @@ const r = ReactDOMFactories;
 
 export const PatternInput = createClassAndFactory({
   getInitialState: function() {
+    let value = this.props.value || this.props.defaultValue || "";
+    if (this.props.lowercase) {
+      value = value.toLowerCase();
+    }
     return {
       showErrors: (this.props || <any> {}).showErrors,
-      value: this.props.defaultValue || "",
+      value,
     };
   },
 
@@ -41,10 +45,11 @@ export const PatternInput = createClassAndFactory({
   },
 
   onChange: function(event) {
+    const valueMixedCase = event.target.value;
+    const valueNotTrimmed = this.props.lowercase ? valueMixedCase.toLowerCase() : valueMixedCase;
     // (If should trim value, don't trim the value displayed in the input —
     // feels as if the keyboard is broken, if typing a space and nothing happens.
     // Just trim the leading & trailing spaces, in the value that actually gets used.)
-    const valueNotTrimmed = event.target.value;
     const valueMaybeTrimmed = this.props.trim ? valueNotTrimmed.trim() : valueNotTrimmed;
     const anyError = this.findAnyError(valueMaybeTrimmed);
     this.setState({ value: valueNotTrimmed, hasError: !!anyError });

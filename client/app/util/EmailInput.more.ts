@@ -43,6 +43,7 @@ export var EmailInput = createClassAndFactory({
         className: this.props.className, placeholder: this.props.placeholder,
         required: this.props.required, style: this.props.style,
         help: this.props.help, tabIndex: this.props.tabIndex,
+        lowercase: true,
         regex: /.+/, message: t.inp.EmReq, // "Email required"
         trim: true,
         notRegex: /\s/, notMessage: t.inp.NoSpcs,

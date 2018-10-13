@@ -385,7 +385,7 @@ var t_en_US: TalkyardTranslations = t = {
     UsersInThisChat: "Users in this chat:",
     UsersInThisTopic: "Users in this topic:",
 
-    GettingStartedGuide: "Getting Started Guide",
+    GettingStartedGuide: "Admin Guide", // MISSING in other langs, was: "Getting Started Guide".
     AdminGuide: "Admin Guide",
     Guide: "Guide",
 

@@ -680,6 +680,10 @@ package object core {
     if (!seemsValid)
       return Some("EmailValidator says the email address is not valid")
 
+    // The database doesn't allow uppercase (e.g.: `select email_seems_ok('A@ex.co');`).
+    if (address.toLowerCase != address)
+      return Some("Email address contains uppercase characters")
+
     None
   }
 

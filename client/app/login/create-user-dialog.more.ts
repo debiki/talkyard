@@ -141,19 +141,21 @@ export var CreateUserDialogContent = createClassAndFactory({
     dieIf(this.props.isForGuest && this.props.providerId, 'TyE7UKWQ2');
     dieIf(this.props.isForPasswordUser && this.props.providerId, 'TyE7UKWQ3');
     // @endif
+    // Uppercase letters not allowed, see db constraint check fn email_seems_ok.
+    const emailLowercase = this.props.email ? this.props.email.toLowerCase() : undefined;
     return {
       okayStatuses: {
         // Full name / alias / display name, is required, for guests.
         fullName: !this.props.isForGuest,
         // providerId always missing in emb cmts openauth popup?
-        email: this.props.providerId && this.props.email && this.props.email.length,
+        email: this.props.providerId && emailLowercase && emailLowercase.length,
         // Guests have no username or password.
         username: this.props.isForGuest || false,
         password: !this.props.isForPasswordUser,
       },
       userData: {
         fullName: this.props.name,
-        email: this.props.email,
+        email: emailLowercase,
         username: ''
       },
     };

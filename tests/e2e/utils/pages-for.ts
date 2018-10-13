@@ -1610,6 +1610,7 @@ function pagesFor(browser) {
         }
       },
 
+
       createGmailAccount: function(data: { email: string, password: string, username: string },
             shallBecomeOwner?: boolean, anyWelcomeDialog?: string) {
         api.loginDialog.loginWithGmail(data);
@@ -1717,6 +1718,62 @@ function pagesFor(browser) {
         }
       },
 
+
+      createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
+            anyWelcomeDialog?, alreadyLoggedInAtGitHub: boolean }) => {
+
+        api.loginDialog.logInWithGitHub(ps);
+
+        // Should be pre filled but currently isn't because of Silhouette [GTHBUNAME]
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username.replace(/-/g, '_'));
+
+        api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
+          api.loginDialog.waitAndClickOkInWelcomeDialog();
+        }
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
+      },
+
+      logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
+        api.waitAndClick('#e2eLoginGitHub');
+
+        if (ps.alreadyLoggedInAtGitHub) {
+          // The GitHub login window will auto-log the user in an close directly.
+          api.waitForVisible('.esCreateUserDlg');
+          return;
+        }
+
+        //if (!isInPopupAlready)
+        console.log("Switching to GitHub login window...");
+        api.swithToOtherTabOrWindow();
+
+        browser.waitForVisible('.auth-form-body');
+        api.waitAndSetValue('.auth-form-body #login_field', ps.username);
+        browser.pause(340); // so less risk GitHub think this is a computer?
+        api.waitAndSetValue('.auth-form-body #password', ps.password);
+        browser.pause(340); // so less risk GitHub think this is a computer?
+        api.waitAndClick('.auth-form-body input[type="submit"]');
+        while (true) {
+          browser.pause(200);
+          try {
+            if (browser.isVisible('#js-oauth-authorize-btn')) {
+              console.log("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
+              api.waitAndClick('#js-oauth-authorize-btn');
+            }
+          }
+          catch (ex) {
+            // This error should mean that the login window closed. We've clicked the Authorize
+            // button in the past, already.
+            break;
+          }
+        }
+        console.log("Switching back to first window...");
+        api.switchBackToFirstTabOrWindow();
+      },
+
+
       createFacebookAccount: function(data: { email: string, password: string, username: string },
             shallBecomeOwner?: boolean, anyWelcomeDialog?) {
         api.loginDialog.loginWithFacebook(data);
@@ -1782,6 +1839,7 @@ function pagesFor(browser) {
           api.switchBackToFirstTabOrWindow();
         }
       },
+
 
       loginPopupClosedBecauseAlreadyLoggedIn: () => {
         try {
@@ -3313,6 +3371,13 @@ function pagesFor(browser) {
             const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
               opts.shallBeVerified === false ? '.e_EmNotVerfd' : '');
             api.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
+          },
+
+          waitAndAssertLoginMethodId: (ps: { providerName: string, id: string }) => {
+            const actualName = api.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_How');
+            assert.equal(actualName.toLowerCase(), ps.providerName.toLowerCase());
+            const actualId = api.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Id');
+            assert.equal(actualId, ps.id);  // don't convert to lowercase
           },
 
           addEmailAddress: function(address) {

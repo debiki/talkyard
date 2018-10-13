@@ -29,6 +29,9 @@ interface TestSettings {
   browserName: string;
   gmailEmail?: string;
   gmailPassword?: string;
+  githubUsernameMixedCase?: string;
+  githubEmailMixedCase?: string;
+  githubPassword?: string;
   facebookAdminPassword?: string;
   facebookAdminEmail?: string;
   facebookUserPassword?: string;

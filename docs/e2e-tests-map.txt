@@ -52,14 +52,18 @@ login -
     via email verif email:
           - unsubscribe.2browsers.test.ts  [TyT2ABK5I0]
   forgot password -
-    reset it:   password-login-reset.2browsers.test.ts  TyT5KAES20W
+    reset it:
+          - password-login-reset.2browsers.test.ts  TyT5KAES20W
     forgot email address:
+  mixed case OpenAuth email and username:
+          - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
   providers -
     google:
-      - create-site-all-logins.test.ts  TyT5KBWAZ2
+          - create-site-all-logins.test.ts  TyT5KBWAZ2
     facebook:
-      - create-site-all-logins.test.ts  TyT5KBWAZ2
+          - create-site-all-logins.test.ts  TyT5KBWAZ2
     github:
+          - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
     twitter:
   password user logs in via -
     gmail:
@@ -106,6 +110,9 @@ profile page -
     won't list posts in deleted categories:
     won't list posts from deleted pages:
     won't list posts from pages one may not see:
+
+  list login methods:
+          - create-site-github-oauth-uppercase-email.test.ts  [TyT4AR8GFAH]
 
 
 invites -
