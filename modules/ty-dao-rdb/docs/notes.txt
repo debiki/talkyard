@@ -1,0 +1,78 @@
+
+
+I'll probably *NOT* do as described below.
+--------
+create table DW1_TENANT_OWNERS(
+  OWNED_TENANT_ID varchar(32) not null,
+  OWNER_LOGIN_TENANT_ID varchar(32) not null,
+  OWNER_LOGIN_ROLE_ID varchar(32) not null,
+  CTIME timestamp default now() not null,
+);
+
+-- Perhaps in the future, make it possible with superadmins for a restricted
+-- group of websites:
+--   A superadmin with LOGIN_TENANT_ID = X can manage all tenants owned by
+--   owners with DW1_TENANT_OWNERS.LOGIN_TENANT_ID = X, but no
+--   other tenants. So, for example, if you are a www.example.com superadmin,
+--   you may manage all tenants created from www.ex.com. But not
+--   tenants created from ex2.com (unless ex2.com was created via www.ex.com
+--   "recursively").
+-- But for now: Everything will be created via www.debiki.com, so superadmins
+-- will have access to exactly everything.
+/*
+create table DW1_SUPERADMINS(
+  LOGIN_TENANT_ID varchar(32) not null,
+  LOGIN_ROLE_ID varchar(32) not null,
+  CTIME timestamp default now() not null,
+);
+*/
+--------
+
+
+In case I'd like to recursively select page meta for all parent pages, this
+might/should work: (not tested)
+    /*
+    val MaxDistance = 30
+    val sql = """
+        with recursive req_page_meta (
+          TENANT, GUID, PAGE_ROLE, PARENT_PAGE_ID, distance)
+        as (
+          select
+            TENANT,
+            GUID,
+            PAGE_ROLE,
+            PARENT_PAGE_ID,
+            0 as distance
+          from DW1_PAGES
+          where TENANT = ? and GUID = ?
+          union all
+          select
+            DW1_PAGES.TENANT,
+            DW1_PAGES.GUID,
+            DW1_PAGES.PAGE_ROLE,
+            DW1_PAGES.PARENT_PAGE_ID,
+            req_page_meta.distance + 1 as distance
+          from
+            req_page_meta, DW1_PAGES
+          where
+            req_page_meta.TENANT = DW1_PAGES.TENANT and
+            req_page_meta.GUID = DW1_PAGES.PARENT_PAGE_ID and
+            req_page_meta.distance <= """ +
+              MaxDistance.toString /* in case of cycles */ + """
+        )
+        select GUID ID, PAGE_ROLE, PARENT_PAGE_ID, distance
+        from req_page_meta
+        order by distance desc
+        """
+
+        // This reverses above `order by distance desc`, so the PageMeta
+        // for `pageId` becomes the list head.
+        pageMeta ::= _PageMeta(rs)
+  
+        // Warn for cycles.
+        val distance = rs.getInt("distance")
+        if (distance == MaxDistance) logger.warn(
+          "There seems to be a PARENT_PAGE_ID cycle; it includes page "+ pageId)
+      */
+
+

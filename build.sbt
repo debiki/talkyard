@@ -33,13 +33,13 @@ val appVersion = {
   versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
 }
 
-// Stuff shared between <repo-root>/app/ and <repo-root>/modules/ed-dao-rdb.
+// Stuff shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
 lazy val edCore =
   project in file("modules/ed-core")
 
-// ed = EffectiveDiscussions, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
-lazy val edDaoRdb =
-  (project in file("modules/ed-dao-rdb"))
+// ty = Talkyard, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
+lazy val tyDaoRdb =
+  (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
 // In dev mode, dynamically compiled classes are not available when Logback starts,  [7SBMAQ2P]
@@ -107,7 +107,7 @@ val main = (project in file("."))
   .settings(mainSettings: _*)
   .dependsOn(
     edCore % "test->test;compile->compile",
-    edDaoRdb)
+    tyDaoRdb)
   .aggregate(
     edLogging,
     edCore)

@@ -1,0 +1,73 @@
+
+select * from dw1_tenant_hosts;
+select tenant, count(*) from dw1_page_actions group by tenant order by tenant;
+
+
+-- Delete tenant no. 10, assuming there are no DW1_PAGE_ACTIONS rows.
+
+delete from dw1_logins where tenant = '10';
+delete from dw1_ids_openid where tenant = '10';
+delete from dw1_quotas where tenant = '10';
+delete from dw1_users where tenant = '10';
+delete from dw1_tenant_hosts where tenant = '10';
+delete from dw1_tenants where id = '10';
+
+
+-- Delete tenant 'new-website', assuming there are no DW1_PAGE_ACTIONS rows.
+-- (Uncomment lines to also delete actions!)
+
+\set AUTOCOMMIT 'off'
+do $$
+declare website_id varchar(32);
+begin
+  select id into strict website_id from dw1_tenants where name = 'new-website-2';
+  
+  raise notice 'Deleting website with id %...', website_id;
+
+  -- delete from dw1_page_ratings where tenant = website_id;
+  -- delete from dw1_page_actions where tenant = website_id;
+
+  delete from dw1_page_paths where tenant = website_id;
+  delete from dw1_pages where tenant = website_id;
+
+  delete from dw1_emails_out where tenant = website_id;
+  delete from dw1_notfs_page_actions where tenant = website_id;
+
+  delete from dw1_logins where tenant = website_id;
+  delete from dw1_ids_openid where tenant = website_id;
+  delete from dw1_quotas where tenant = website_id;
+  delete from dw1_users where tenant = website_id;
+  delete from dw1_tenant_hosts where tenant = website_id;
+  delete from dw1_tenants where id = website_id;
+
+  raise notice '...Done. You need to commit manually.';
+end $$;
+
+-- And, optionally:
+-- commit;
+
+
+
+-- Delete single page
+
+\set AUTOCOMMIT 'off'
+do $$
+declare the_site_id varchar(32) = '?';
+declare the_page_id varchar(32) = '??';
+begin
+
+  raise notice 'Deleting page with id %, site id %...', the_page_id, the_site_id;
+
+  delete from dw1_page_ratings where tenant = the_site_id and page_id = the_page_id;
+  delete from dw1_page_actions where tenant = the_site_id and page_id = the_page_id;
+
+  delete from dw1_page_paths where tenant = the_site_id and page_id = the_page_id;
+  delete from dw1_pages where tenant = the_site_id and guid = the_page_id;
+
+  raise notice '...Done. You need to commit manually.';
+end $$;
+
+-- And, optionally:
+-- commit;
+
+

@@ -1,0 +1,80 @@
+How I tested the DW1_IDSOID_TNT_EMAIL__U index.
+It is:
+  create unique index DW1_IDSOID_TNT_EMAIL__U on DW1_IDS_OPENID(TENANT, EMAIL)
+    where OID_ENDPOINT = 'https://www.google.com/accounts/o8/ud';
+
+
+\d dw1_ids_openid
+ sno             | character varying(32)  | not null
+ tenant          | character varying(32)  | not null
+ usr             | character varying(32)  | not null
+ usr_orig        | character varying(32)  | not null
+ oid_claimed_id  | character varying(500) | not null
+ oid_op_local_id | character varying(500) | not null
+ oid_realm       | character varying(100) | not null
+ oid_endpoint    | character varying(100) | not null
+ oid_version     | character varying(100) | not null
+ first_name      | character varying(100) | not null
+ email           | character varying(100) | not null
+ country         | character varying(100) | not null
+
+-- Insert first: (already present in my dev db)
+insert into dw1_ids_openid (
+  sno, tenant, usr, usr_orig,
+  oid_claimed_id, oid_op_local_id,
+  oid_realm, oid_endpoint, oid_version,
+  first_name, email, country )
+values (
+  '22', '1', '13', '13',
+  'https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+      'https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+  'http://localhost:9000',
+      'https://www.google.com/accounts/o8/ud',
+      'http://specs.openid.net/auth/2.0/server',
+  'KajMagnus', 'kajmagnus79d@gmail.com', 'SE'
+);
+
+-- Insert identical row, with other SNO and claimed ID but same **email** and Gmail login:
+insert into dw1_ids_openid (
+  sno, tenant, usr, usr_orig,
+  oid_claimed_id, oid_op_local_id,
+  oid_realm, oid_endpoint, oid_version,
+  first_name, email, country )
+values (
+  '2', '1', '13', '13',
+  '--https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+      'https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+  'http://localhost:9000',
+      'https://www.google.com/accounts/o8/ud',
+      'http://specs.openid.net/auth/2.0/server',
+  'KajMagnus', 'kajmagnus79d@gmail.com', 'SE'
+);
+
+-- Then this constraint should throw error:
+create unique index DW1_IDSOID_TNT_EMAIL__U on DW1_IDS_OPENID(TENANT, EMAIL)
+  where OID_ENDPOINT = 'https://www.google.com/accounts/o8/ud';
+
+-- Like so:
+ERROR:  duplicate key value violates unique constraint "dw1_idsoid_tnt_email__u"
+DETAIL:  Key (tenant, email)=(1, kajmagnus79d@gmail.com) already exists.
+debiki=> 
+
+
+-- But use tenant 18 and user 25. For that row, endpoint is '?', and the unique index has no effect.
+insert into dw1_ids_openid (
+  sno, tenant, usr, usr_orig,
+  oid_claimed_id, oid_op_local_id,
+  oid_realm, oid_endpoint, oid_version,
+  first_name, email, country )
+values (
+  '2', '18', '25', '25',
+  '--https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+      'https://www.google.com/accounts/o8/id?id=AItOawkfQCpb3EP2Rv4Ko3RPz3TQtpxwQ7SynKI',
+  'http://localhost:9000',
+      'https://www.google.com/accounts/o8/ud',
+      'http://specs.openid.net/auth/2.0/server',
+  'KajMagnus', 'kajmagnus79d@gmail.com', 'SE'
+);
+
+--> insert OK :-)
+

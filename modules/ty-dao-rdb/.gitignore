@@ -1,0 +1,20 @@
+scratch.txt
+scratch/
+
+# SBT
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/target/
+
+# Idea
+.idea/
+debiki-dao-oracle.iml
+project/project.iml
+
+# Eclipse
+.cache
+.classpath
+.project
+.settings/

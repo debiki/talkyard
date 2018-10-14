@@ -343,7 +343,7 @@ This project looks like so:
      | +-security/     <-- Security tests
      |
      +-modules/
-     | +-ed-dao-rdb/        <-- A database access object (DAO), for PostgreSQL
+     | +-ty-dao-rdb/        <-- A database access object (DAO), for PostgreSQL
      | +-ed-core/           <-- Code shared by the DAO and by the ./app/ code
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
