@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(providerId: String, newUserName: String, newUserEmail: String,
+@(providerId: String, newUserUsername: String, newUserFullName: String, newUserEmail: String,
     authDataCacheKey: String, anyContinueToUrl: Option[String])
 
 @* Closes the OpenAuth or OpenID login popup window, and opens a create user dialog
@@ -36,26 +36,25 @@
 <script type='text/javascript'>
     window.opener.debiki.internal.showCreateUserDialog({
       providerId: '@providerId',
-      name: '@newUserName',
+      username: '@newUserUsername',
+      fullName: '@newUserFullName',
       email: '@newUserEmail',
       authDataCacheKey: '@authDataCacheKey'
     }, '@continueToUrlOrEmpty');
     window.close();
 </script>
 <p>
-  Google Chrome bug. If this window remains open, you have run into
+  Facebook mobile app problem?
+  Did you go to here, via Facebook's mobile app?
+  Then you're likely using Facebook's built-in browser — which makes things break.
+
+  @* Previously, this was caused by a Chrome v 63 bug, since long fixed (by Google).
   <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=796912">
       a Google Chrome v. 63 bug</a>.<br>@* more about the bug: [4PKGTEW20] *@
 </p>
 <p>
-  <b>Do this:</b><br>
-  Close this window (but read this first),<br>
-  and then type your Gmail address in the email input field,<br>
-  fill in a username and password,<br>
-  and click <b>Create Account</b>.
-</p>
-<p>
-  (Google has fixed this bug in Chrome v. 64, soon to be released.)<br>
+  Copy the login URL, and log in outside Facebook instead.
+  Or outside any other mobile app you might be using, if not Facebook?
 </p>
 </body>
 </html>

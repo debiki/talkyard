@@ -1722,10 +1722,8 @@ function pagesFor(browser) {
       createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
             anyWelcomeDialog?, alreadyLoggedInAtGitHub: boolean }) => {
 
+        // This should fill in email (usually) and usernamea (definitely).
         api.loginDialog.logInWithGitHub(ps);
-
-        // Should be pre filled but currently isn't because of Silhouette [GTHBUNAME]
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username.replace(/-/g, '_'));
 
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(ps.shallBecomeOwner);

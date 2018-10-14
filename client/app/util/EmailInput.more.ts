@@ -38,6 +38,7 @@ export var EmailInput = createClassAndFactory({
   },
 
   render: function() {
+    const defaultValue = this.props.defaultValue ? this.props.defaultValue.toLowerCase() : undefined;
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
@@ -53,7 +54,7 @@ export var EmailInput = createClassAndFactory({
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         onBlur: this.props.onBlur,
-        defaultValue: this.props.defaultValue }));
+        defaultValue }));
   }
 });
 

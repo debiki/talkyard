@@ -45,6 +45,13 @@ export const UsernameInput = createClassAndFactory({
   render: function() {
     const extraHelp = this.props.help ? r.span({}, r.br(), this.props.help) : undefined;
     const username = this.state.username;
+
+    // For now, avoid dots and hyphens in usernames. [CANONUN]
+    let defaultValue = this.props.defaultValue;
+    if (defaultValue) {
+      defaultValue = defaultValue.replace(/[ _.-]+/g, '_');
+    }
+
     const maxLength = username.substr(0, 5) === '__sx_' ? 30 : 20; // [2QWGRC8P]
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
@@ -55,7 +62,8 @@ export const UsernameInput = createClassAndFactory({
         disabled: this.props.disabled,
         addonBefore: '@', // [7RFWUQ2]
         trim: true,
-        minLength: 3, maxLength,
+        minLength: 3,  // [6KKAQDD0]
+        maxLength,
         notRegex: / /, notMessage: t.inp.NoSpcs,               // "No spaces please"
         notRegexTwo: /-/, notMessageTwo: t.inp.NoDash,         // "No dashes please" [CANONUN] allow later
         notRegexThree: /@/, notMessageThree: t.inp.DontInclAt, // "Don't include the @"
@@ -76,7 +84,7 @@ export const UsernameInput = createClassAndFactory({
           this.props.onChangeValueOk(value, ok);
         },
         onBlur: this.props.onBlur,
-        defaultValue: this.props.defaultValue,
+        defaultValue,
         help: r.span({},
           // "Your @username, unique and short"
           t.inp.UnUnqShrt_1, r.code({}, t.inp.UnUnqShrt_2), t.inp.UnUnqShrt_3, extraHelp) }));

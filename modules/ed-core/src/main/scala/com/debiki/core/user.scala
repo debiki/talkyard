@@ -1341,9 +1341,11 @@ case class OpenAuthIdentity(
 }
 
 
+@deprecated("now", "Use ExternalSocialProfile instead")
 case class OpenAuthDetails(
   providerId: String,
   providerKey: String,
+  username: Option[String] = None,
   firstName: Option[String] = None,
   lastName: Option[String] = None,
   fullName: Option[String] = None,

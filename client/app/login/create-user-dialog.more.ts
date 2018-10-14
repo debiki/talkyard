@@ -16,11 +16,13 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../widgets.more.ts" />
 /// <reference path="../util/FullNameInput.more.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
 /// <reference path="./new-password-input.more.ts" />
+/// <reference path="./login-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.login {
@@ -78,15 +80,26 @@ function getAddressVerificationEmailSentDialog() {
 }
 
 
+interface NewUserData {
+  username: string;
+  fullName: string;
+  email: string;
+  authDataCacheKey?: string;
+}
+
+interface CreateUserPostData extends NewUserData {
+  password?: string;
+  returnToUrl: string;
+}
+
+
 // Backwards compatibility, for now:
 /**
  * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that
  * the redirect should happen only if an email address verification email is sent,
  * and via a link in that email.
- *
- * userData: { name, email, authDataCacheKey }
  */
-debiki.internal.showCreateUserDialog = function(userData, anyReturnToUrl) {
+debiki.internal.showCreateUserDialog = function(userData: NewUserData, anyReturnToUrl) {
   getCreateUserDialog().open(userData, anyReturnToUrl);
 };
 
@@ -95,9 +108,10 @@ const CreateUserDialog = createClassAndFactory({
   displayName: 'CreateUserDialog',
 
   getInitialState: function () {
-    return { isOpen: false, userData: {}, store: {} };
+    return { isOpen: false, userData: undefined, store: {} };
   },
-  open: function(userData, anyReturnToUrl: string) {
+
+  open: function(userData: NewUserData, anyReturnToUrl: string) {
     const loginDialog = login.getLoginDialog();
     this.setState({
       isOpen: true,
@@ -109,25 +123,34 @@ const CreateUserDialog = createClassAndFactory({
     // In case any login dialog is still open: (this resets the after-login-callback copied above)
     loginDialog.close();
   },
+
   close: function() {
-    this.setState({ isOpen: false, userData: {} });
+    this.setState({ isOpen: false, userData: undefined });
   },
+
   render: function () {
     const store: Store = this.state.store;
-    const childProps = _.clone(this.state.userData);
-    childProps.afterLoginCallback = this.state.afterLoginCallback;
-    childProps.anyReturnToUrl = this.state.anyReturnToUrl;
-    childProps.store = store;
-    childProps.closeDialog = this.close;
-    childProps.ref = 'content';
-    if (store.siteStatus === SiteStatus.NoAdmin) {
-      childProps.loginReason = LoginReason.BecomeAdmin;
+
+    let content;
+    if (this.state.isOpen) {
+      const childProps = {
+        ...this.state.userData,
+        store,
+        afterLoginCallback: this.state.afterLoginCallback,
+        anyReturnToUrl: this.state.anyReturnToUrl,
+        closeDialog: this.close,
+      };
+      if (store.siteStatus === SiteStatus.NoAdmin) {
+        childProps.loginReason = LoginReason.BecomeAdmin;
+      }
+      content = CreateUserDialogContent(childProps);
     }
+
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
           dialogClassName: 'esCreateUserDlg' },
         ModalHeader({}, ModalTitle({}, t.cud.CreateUser)),
-        ModalBody({}, CreateUserDialogContent(childProps))));
+        ModalBody({}, content)));
   }
 });
 
@@ -141,22 +164,22 @@ export var CreateUserDialogContent = createClassAndFactory({
     dieIf(this.props.isForGuest && this.props.providerId, 'TyE7UKWQ2');
     dieIf(this.props.isForPasswordUser && this.props.providerId, 'TyE7UKWQ3');
     // @endif
-    // Uppercase letters not allowed, see db constraint check fn email_seems_ok.
-    const emailLowercase = this.props.email ? this.props.email.toLowerCase() : undefined;
+
     return {
       okayStatuses: {
         // Full name / alias / display name, is required, for guests.
         fullName: !this.props.isForGuest,
         // providerId always missing in emb cmts openauth popup?
-        email: this.props.providerId && emailLowercase && emailLowercase.length,
+        email: this.props.providerId && !!this.props.email,
         // Guests have no username or password.
-        username: this.props.isForGuest || false,
+        username: this.props.isForGuest || (
+            this.props.username && this.props.username.length >= 3), // [6KKAQDD0]
         password: !this.props.isForPasswordUser,
       },
       userData: {
-        fullName: this.props.name,
-        email: emailLowercase,
-        username: ''
+        fullName: this.props.fullName,
+        email: this.props.email,
+        username: this.props.username || '',
       },
     };
   },
@@ -181,10 +204,9 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   doCreateUser: function() {
-    const data: any = this.state.userData;
+    const data: CreateUserPostData = this.state.userData;
     data.returnToUrl = this.props.anyReturnToUrl;
-    waitUntilAcceptsTerms(
-        this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
+    waitUntilAcceptsTerms(this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
       if (this.props.authDataCacheKey) { // [4WHKTP06]
         data.authDataCacheKey = this.props.authDataCacheKey;
         Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
@@ -290,6 +312,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     const usernameInputMaybe = isForGuest ? null :
         util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 1,
+          defaultValue: props.username,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
@@ -301,7 +324,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     const fullNameInput =
       FullNameInput({ label: isForGuest ? t.NameC : t.cud.FullName, ref: 'fullName',
         minLength: isForGuest ? 2 : undefined, // guests have no username to show instead
-        id: 'e2eFullName', defaultValue: props.name, tabIndex: 1,
+        id: 'e2eFullName', defaultValue: props.fullName, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
     // Show an "Or create a real account with username and password" button.
