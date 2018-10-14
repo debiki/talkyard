@@ -1,6 +1,3 @@
-[submodule "modules/ed-dao-rdb"]
-	path = modules/ed-dao-rdb
-	url = ../ed-dao-rdb.git
 [submodule "modules/ty-media"]
 	path = modules/ty-media
 	url = ../talkyard-media.git
