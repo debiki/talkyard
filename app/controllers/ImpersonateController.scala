@@ -24,8 +24,7 @@ import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api._
-import play.api.libs.json.JsString
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 import redis.RedisClient
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -54,16 +53,23 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   private val ImpersonateRealUser = "IRU"
 
   private def redis: RedisClient = globals.redisClient
-  val RedisTimeout = 5 seconds
+  private val RedisTimeout = 5 seconds
 
 
-  def impersonateAtOtherSite(siteId: SiteId, userId: UserId) = SuperAdminGetAction { request =>
+  def impersonateAtOtherSite(siteId: SiteId, userId: UserId, goToSiteById: Option[Boolean])
+        : Action[Unit] = SuperAdminGetAction { request =>
     // Dupl code? Reuse /-/v0/login-with-secret instead?  [7AKBRW02]
     val secretKey = nextRandomString()
     val value = s"$siteId$FieldSeparator$userId"
     Await.ready(redis.set(secretKey, value, exSeconds = Some(MaxKeyAgeSeconds)), RedisTimeout)
-    val site = globals.systemDao.getSite(siteId)
-    val origin = site.flatMap(globals.originOf) getOrElse globals.siteByIdOrigin(siteId)
+    val origin =
+      if (goToSiteById is true) {
+        globals.siteByIdOrigin(siteId)
+      }
+      else {
+        val site = globals.systemDao.getSite(siteId)
+        site.flatMap(globals.originOf) getOrElse globals.siteByIdOrigin(siteId)
+      }
     val pathAndQuery = routes.ImpersonateController.impersonateWithKey(secretKey).url
     TemporaryRedirect(origin + pathAndQuery)
   }
@@ -77,7 +83,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     * (SECURITY could probably use <form action="other-site/-/impersonate"> with the key in
     * post data instead, then the key wouldn't appear in the URL at all.)
     */
-  def impersonateWithKey(key: String) = GetActionIsLogin { request =>
+  def impersonateWithKey(key: String): Action[Unit] = GetActionIsLogin { request =>
     // Dupl code? Reuse /-/v0/login-with-secret instead?  [7AKBRW02]
 
     // Delete the key so no one else can use it, in case Mallory sees it in a log file.
@@ -109,12 +115,12 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   }
 
 
-  def impersonate(userId: UserId) = AdminGetAction { request =>
+  def impersonate(userId: UserId): Action[Unit] = AdminGetAction { request =>
     impersonateImpl(Some(userId), viewAsOnly = false, request)
   }
 
 
-  def viewAsOther(userId: Int) = StaffGetAction { request =>
+  def viewAsOther(userId: Int): Action[Unit] = StaffGetAction { request =>
     // Ensure userId is a group the requester has access to. Right now, there are no groups,
     // so only allow strangers, that is, the unknown user:
     val anyUserId =
@@ -168,7 +174,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   }
 
 
-  def stopImpersonating = GetAction { request =>
+  def stopImpersonating: Action[Unit] = GetAction { request =>
     urlDecodeCookie(ImpersonationCookieName, request.underlying) match {
       case None =>
         LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)

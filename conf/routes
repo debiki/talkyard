@@ -44,7 +44,7 @@ GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthControll
 GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
 POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
-GET   /-/impersonate-at-other-site  controllers.ImpersonateController.impersonateAtOtherSite(siteId: Int, userId: Int)
+GET   /-/impersonate-at-other-site  controllers.ImpersonateController.impersonateAtOtherSite(siteId: Int, userId: Int, goToSiteById: Option[Boolean])
 GET   /-/impersonate-with-key   controllers.ImpersonateController.impersonateWithKey(key: String)
 POST  /-/impersonate            controllers.ImpersonateController.impersonate(userId: Int)
 POST  /-/view-as-other          controllers.ImpersonateController.viewAsOther(userId: Int)

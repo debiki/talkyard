@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,7 +27,7 @@ const r = ReactDOMFactories;
 // everywhere, and the admin can read & look in the guide at the same time as s/he looks at
 // the admin buttons and settings to the left.
 //
-// Don't add anything more. Because if the text is too long, people won't readit.
+// Don't add anything more. Because if the text is long, people tend to skip it completely.
 //
 export var AdminGuide =
   r.div({ className: 'esAdminGuide' },
@@ -72,7 +72,8 @@ export var AdminGuide =
       "For help, go to Talkyard's ",
       r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' },
         "support forum", r.span({ className: 'icon-link-ext' })),
-      ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
+      ". Over there, there's an ", r.em({}, "Ideas"),
+      " category too, and you're welcome to make suggestions."));
 
 //------------------------------------------------------------------------------
    }
