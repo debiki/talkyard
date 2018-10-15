@@ -168,7 +168,7 @@ trait PostsDao {
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
 
-    val shallBumpPage = shallApprove
+    val shallBumpPage = shallApprove  // (7BMZW24)
     val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
     val newFrequentPosterIds: Seq[UserId] =
       if (shallApprove)
@@ -345,11 +345,13 @@ trait PostsDao {
       }
     }
 
-    if (pageMeta.exists(_.isClosed)) {
+    // Disable this — also closed pages now get bumped, here: (7BMZW24), if there's a new post.
+    // Maybe add back later, if in some cases, a closed page shouldn't get bumped.
+    /*if (pageMeta.exists(_.isClosed)) {
       // The topic won't be bumped, so no one might see this post, so staff should review it.
       // Could skip this if the user is trusted.
       reviewReasons.append(ReviewReason.NoBumpPost)
-    }
+    }*/
 
     (reviewReasons, autoApprove)
   }
