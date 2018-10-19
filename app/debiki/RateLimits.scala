@@ -189,8 +189,8 @@ object RateLimits {
   object Login extends RateLimits {
     val key = "Lgi"
     val what = "logged in too many times"
-    def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerFifteenSeconds = 20
+    def maxPerFifteenMinutes: Int = 150
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }

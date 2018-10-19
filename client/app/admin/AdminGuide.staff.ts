@@ -54,9 +54,9 @@ export var AdminGuide =
     r.p({},
       "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"),
       ", then ", r.strong({}, "Create Category"),
-      ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new categories. " +
+      ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new category. " +
       "Don't create too many categories — if you do, they might look rather empty. " +
-      "Also create some interesting topics, so people won't find an empty forum. "),
+      "Also, create interesting topics, so people won't find an empty forum. "),
     r.h2({},
       "Launch your community"),
     r.p({},

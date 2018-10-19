@@ -152,12 +152,14 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
   it("... so addr2 got a new invite email", () => {
     inviteLinkAddr2RetryB = waitForInviteEmail(siteId, addr2Retry, browserA);
     assert(inviteLinkAddr2RetryB);
+    assert(inviteLinkAddr2RetryB !== inviteLinkAddr2Retry)
   });
 
   let numEmailsToAddr1;
 
   it("Remember num emails to addr1", () => {
     numEmailsToAddr1 = server.countLastEmailsSentTo(siteId, addr1Accepts);
+    assert(numEmailsToAddr1 < 5);  // not sure exactly how many
   });
 
   // ----- All at the same time
@@ -250,11 +252,11 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
   it("Owens refreshes, invites will be sorted by time", () => {
     owensBrowser.refresh();
     // Will be:
-    // Inv to addr 4
-    // Inv to addr 3 = accepted
-    // Inv to addr 2 = accepted
-    // Inv to addr 2 = invalidated
-    // Inv to addr 1 = accepted
+    // Inv to addr 4                  index 1
+    // Inv to addr 3 = accepted       index 2
+    // Inv to addr 2 = accepted       index 3
+    // Inv to addr 2 = invalidated    index 4
+    // Inv to addr 1 = accepted       index 5
   });
 
   it("... in Owens browser, the most recent addr2 invite now appears as accepted", () => {

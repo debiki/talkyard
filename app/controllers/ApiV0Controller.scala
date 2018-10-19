@@ -98,7 +98,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         // The hash '#' in any '#post-NN' in the URL has been encoded (since the browser
         // would otherwise try to jump to the hash fragment, e.g. when going to a SSO login page).
         // Unencode it back to a hash '#'.
-        CLEAN_UP; RENAME // __dwHash__ with just __hash__ or __tyHash__ ?  'dw' = really old.
+        CLEAN_UP; RENAME // __dwHash__ to __escHash__.  'dw' = really old.
         val thenGoTo = thenGoToHashEncoded.replaceAllLiterally("__dwHash__", "#")
 
         TemporaryRedirect(thenGoTo)

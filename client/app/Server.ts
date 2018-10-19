@@ -193,9 +193,12 @@ function showLoadingOverlay() {
 function maybeShowServerJustStartedMessage() {
   const overlayElem = $byId('theLoadingOverlay');
   if (!overlayElem) return;
-  const messageElem = $h.parseHtml('<div id="theServerJustStarted"></div>')[0];
-  messageElem.textContent = "Sorry that this takes long. Perhaps the server was " + // browser tabs?
-      "just started, and is slow right now.";
+  const messageElem =
+      $h.parseHtml('<div id="theServerJustStarted">' +
+      "<p>This takes long ...</p>" +
+      "<p>If many browser tabs are open to this site,<br>close a few.</p>" +
+      "<p>Or maybe the server was just started, and is slow.</p>" +
+      '</div>')[0];
   $h.addClasses(overlayElem, 'esLoadingSlow');
   overlayElem.appendChild(messageElem);
 }
@@ -1465,7 +1468,7 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
   if (pageId === EmptyPageId)
     return;
 
-  const pagePostNrIds: PagePostNrId[] = postsRead.map(post => {
+  const pagePostNrIdsRead: PagePostNrId[] = postsRead.map(post => {
     return { pageId, postNr: post.nr, postId: post.uniqueId }
   });
 
@@ -1476,7 +1479,7 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     lastViewedPostNr: lastViewedPostNr,
     lastReadAt: secondsReading > 0 ? nowMsUtc : null,
     secondsReading: secondsReading,
-    pagePostNrIds,
+    pagePostNrIdsRead,
   };
   const onDone = !anyOnDone? UseBeacon : function(me?: MyselfPatch) {
     // See [7KABR20] server side.

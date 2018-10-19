@@ -134,13 +134,13 @@ describe("sso-real  TyT5HNATS20P", () => {
     owensBrowser.adminArea.goToApi(siteIdAddress.origin, { loginAs: owen });
   });
 
-  it("... generates an API secret, copies it", () => {
+  it("... generates an API secret", () => {
     owensBrowser.adminArea.apiTab.generateSecret();
   });
 
   let apiSecret: string;
 
-  it("... copies the secret key", () => {
+  it("... copies the API secret", () => {
     apiSecret = owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
   });
 
@@ -264,8 +264,7 @@ describe("sso-real  TyT5HNATS20P", () => {
 
   it("... clicks reply again, replies to Michael — without getting redirected to the SSO page", () => {
     urlBeforeLogin = mariasBrowser.url().value;
-    mariasBrowser.complex.replyToPostNr(michaelsLastPostNr,
-        "Fly and sing up in the clouds together with the ducks and penguins");
+    mariasBrowser.complex.replyToPostNr(michaelsLastPostNr, "Fly and sing with the ducks");
   });
 
 

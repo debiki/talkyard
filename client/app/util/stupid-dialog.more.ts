@@ -26,7 +26,7 @@ const Modal = rb.Modal;
 const ModalBody = rb.ModalBody;
 
 
-export interface StupidDialogStuff {
+export interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   dialogClassName?: string;
   body?: any;
   closeButtonTitle?: any;
@@ -98,7 +98,7 @@ export const StupidDialog = createComponent({
       r.div({ style: { marginBottom: '2em' }}, stuff.body),
       r.div({ style: { float: 'right' }},
         preventClose ? null : PrimaryButton({ onClick: makeCloseFn(1), className: 'e_SD_CloseB' },
-          // About "Okay" button title: COULD use English, if in admin area / staff-only
+          // About "Okay" button title: I18N COULD use English, if in admin area / staff-only
           // functionality — that's supposed to be English only.
           stuff.closeButtonTitle || stuff.primaryButtonTitle || t.Okay),
         preventClose || !stuff.secondaryButonTitle ? null : Button({

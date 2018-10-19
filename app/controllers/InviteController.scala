@@ -77,8 +77,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // Restrict num invites sent.
-    // Sending too many emails, could be bad, maybe will get blacklisted.
-    // This, combined with  max 10 requests per day, means max 200 invites per day.
+    // Sending too many emails, could be bad, maybe will get blacklisted by the mail server service.
+    // The following, combined with  max 10 requests per day, means max 200 invites per day.
     if (toEmailAddresses.size > 20) {  // sync 20 with test [6ABKR021]
       throwUnprocessableEntity("TyETOOMANYBULKINV_",
           s"You can invite at most 20 people at a time, for now (and max 120 per week)")
@@ -179,7 +179,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def acceptInvite(secretKey: String): Action[Unit] = GetActionAllowAnyone { request =>
-    // Maybe accept invites already sent, even if SSO now enabled? However, reject here (4RBKA20).
+    // Below, we accept invites already sent, even if SSO now enabled. (Makes sense? Or not?
+    // Or config option?) However, rejected here: (4RBKA20).
 
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(
       secretKey, request.theBrowserIdData)

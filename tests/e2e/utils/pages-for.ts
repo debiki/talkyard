@@ -1759,6 +1759,7 @@ function pagesFor(browser) {
             if (browser.isVisible('#js-oauth-authorize-btn')) {
               console.log("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
               api.waitAndClick('#js-oauth-authorize-btn');
+              break;
             }
           }
           catch (ex) {

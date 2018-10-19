@@ -26,7 +26,7 @@ const r = ReactDOMFactories;
 
 export const PatternInput = createClassAndFactory({
   getInitialState: function() {
-    let value = this.props.value || this.props.defaultValue || "";
+    let value = this.props.value || this.props.defaultValue || '';
     if (this.props.lowercase) {
       value = value.toLowerCase();
     }

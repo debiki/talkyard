@@ -761,7 +761,7 @@ const RootPostAndComments = createComponent({
         pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
-          r.span({}, t.sb.Progr));  // REFACTOR move from t.sb to just t ? or to t.d.Progr?
+          r.span({}, t.sb.Progr));  // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
           /* CSS here: [5KDWUR].
           r.span({},
             r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),

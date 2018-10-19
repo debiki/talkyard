@@ -1,4 +1,5 @@
 
+
 #theLoadingOverlay
   position: fixed;
   top: 0;
@@ -6,11 +7,10 @@
   left: 0;
   right: 0;
   z-index: 1100;
-  background: black;
-  opacity: 0.45;
   animation: fadeInLoadingOverlay 800ms ease-in-out;
+  background: rgba(0,0,0,0.4);
   &.esLoadingSlow
-    opacity: 0.75;
+    background: rgba(0, 0, 0, 0.5);
 
 #theLoadingOverlay .icon-loading
   position: absolute;
@@ -25,20 +25,23 @@
   position: fixed;
   top: 70px;
   left: calc(50% - 250px);
+  padding: 20px 18px 10px;
   max-width: 500px;
-  color: white;
   font-weight: bold;
   text-align: center;
-  font-size: 30px;
   // Z-order above the spinner.
   background: black;
   z-index: 1;
+  p
+    color: white;
+    font-size: 20px;
+    line-height: 32px;
 
 @keyframes fadeInLoadingOverlay
   from
     opacity: 0.0;
   to
-    opacity: 0.45;
+    opacity: 1;
 
 
 @keyframes rotateLoadingIcon

@@ -1095,11 +1095,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
-    val pagePostNrIdsReadJsObjs = (body \ "pagePostNrIds").as[Vector[JsObject]]
+    val pagePostNrIdsReadJsObjs = (body \ "pagePostNrIdsRead").as[Vector[JsObject]]
       // Cannot read super many posts in just 30 seconds (that's how often this endpoint
       // gets called [6AK2WX0G]) so ... lets restrict to 100? to prevent maybe-weird-DoS-attacks.
       .take(100)
     val pagePostNrIdsRead = pagePostNrIdsReadJsObjs.map(jsObj => {
+      // COULD require that jsObj.pageId equals the outer pageId(s)?  So one cannot mark-as-read
+      // posts on pages one didn't visit?
       val pageId = (jsObj \ "pageId").as[PageId]
       val postNr = (jsObj \ "postNr").as[PostNr]
       val postId = (jsObj \ "postId").as[PostId]

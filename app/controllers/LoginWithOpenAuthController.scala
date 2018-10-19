@@ -131,6 +131,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     *                     app/controllers/SocialAuthController.scala#L32
     */
   private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
+    context.rateLimiter.rateLimit(RateLimits.Login, request)
 
     val settings = request.siteSettings
 
@@ -144,7 +145,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       return loginViaLoginOrigin(providerName, request.underlying)
     }
 
-    val provider: SocialProvider = providerName match {
+    val provider: SocialProvider = providerName match {   // with TalkyardSocialProfileBuilder?  (TYSOCPROF)
       case FacebookProvider.ID =>
         throwForbiddenIf(!settings.enableFacebookLogin, "TyE0FBLOGIN", "Facebook login disabled")
         facebookProvider()
@@ -166,7 +167,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         Future.successful(result)
       case Right(authInfo) =>
         val futureProfile: Future[SocialProfile] = provider.retrieveProfile(authInfo)
-        futureProfile flatMap { profile: SocialProfile =>
+        futureProfile flatMap { profile: SocialProfile =>   // TalkyardSocialProfile?  (TYSOCPROF)
           handleAuthenticationData(request, profile)
         }
     } recoverWith {
@@ -215,13 +216,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           DiscardingSecureCookie(ReturnToUrlCookieName)))
     }
 
-    REFACTOR; CLEAN_UP // stop using CommonSocialProfile. Use ExternalSocialProfile always instead,
+    REFACTOR; CLEAN_UP // stop using CommonSocialProfile. Use ExternalSocialProfile instead,  (TYSOCPROF)
     // it has useful things like username, about user text, etc.
     val oauthDetails = profile match {
       case p: CommonSocialProfile =>
         OpenAuthDetails(
           providerId = p.loginInfo.providerID,
           providerKey = p.loginInfo.providerKey,
+          username = None, // not incl in CommonSocialProfile
           firstName = p.firstName,
           fullName = p.fullName,
           email = p.email,
@@ -233,7 +235,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           username = p.username,
           firstName = p.firstName,
           fullName = p.fullName,
-          email = if (p.primaryEmailIsVerified is true) p.primaryEmail else None,
+          email = if (p.primaryEmailIsVerified is true) p.primaryEmail else None,  // [7KRBGQ20]
           avatarUrl = p.avatarUrl)
     }
 
@@ -702,7 +704,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       HttpLayer, new PlayOAuth1Service(settings), OAuth1TokenSecretProvider, settings)
   }
 
-  private def githubProvider(): CustomGitHubProvider =
+  private def githubProvider(): CustomGitHubProvider =   // (TYSOCPROF)
     new CustomGitHubProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.githubOAuthSettings),
       globals.wsClient)
@@ -753,7 +755,7 @@ case class ExternalSocialProfile(
   createdAt: Option[String]) extends SocialProfile {
 
   require(publicEmail.isDefined == publicEmailIsVerified.isDefined, "TyE7KBRAW02")
-  require(primaryEmail.isDefined == primaryEmailIsVerified.isDefined, "TyE7KBRAW02")
+  require(primaryEmail.isDefined == primaryEmailIsVerified.isDefined, "TyE7KBRAW03")
 
   def loginInfo = LoginInfo(providerId, providerUserId)
 
@@ -764,7 +766,7 @@ case class ExternalSocialProfile(
 class CustomGitHubProfileParser(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient)
-  extends SocialProfileParser[JsValue, ExternalSocialProfile,  OAuth2Info] {
+  extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info] {
 
   import play.api.libs.ws
 
@@ -796,7 +798,7 @@ class CustomGitHubProfileParser(
       }
       catch {
         case ex: Exception =>
-          // Add this more detailed exception cause.
+          // Add this more detailed exception cause to the exception chain.
           PRIVACY // Someone's email might end up in the log files.
           throw new RuntimeException(
             s"Unexpected user profile json from GitHub: ${json.toString()} [TyE5ARQ2HE7]", ex)
@@ -842,12 +844,11 @@ class CustomGitHubProfileParser(
           emails.find(e => e.isPublic && e.isVerified) orElse
             emails.find(_.isPublic)
 
-        val anyPrimaryAddr =
+        val anyPrimaryAddr =  // [7KRBGQ20]
           emails.find(e => e.isPrimary && e.isVerified) orElse
             emails.find(e => e.isPublic && e.isVerified) orElse
             emails.find(_.isVerified)
 
-        // val result = anyPrimaryVerifiedAddr.orElse(anyVerifiedAddr).map(_.emailAddr) // [7KRBGQ20]
         (anyPublAddr, anyPrimaryAddr)
       }
       catch {
@@ -870,7 +871,9 @@ class CustomGitHubProvider(
   val settings: OAuth2Settings,
   wsClient: play.api.libs.ws.WSClient) extends BaseGitHubProvider {
                                         // no: with CommonSocialProfileBuilder {
-                                        // — maybe create a TalkyardExtSocialProfileBuilder?
+                                        // — maybe create a TalkyardSocialProfileBuilder?  (TYSOCPROF)
+                                        //  or TyExternalSocialProfileBuilder?
+                                        // "Ty" prefix = clarifies isn't Silhouette's built-in class.
 
   type Self = CustomGitHubProvider
 

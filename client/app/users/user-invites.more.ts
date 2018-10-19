@@ -211,6 +211,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
       invitesSent: null,
       alreadyInvitedAddresses: null,
       alreadyJoinedAddresses: null,
+      failedAddresses: null,
     });
   },
 
@@ -278,15 +279,15 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
         message = rFragment({},
             message,
             !alreadyInvitedAddresses.length ? null : r.div({},
-                "These have been invited already — maybe you'd like to invite them again?",
+                "These have been invited already — maybe you'd like to invite them again?",   // I18N
                 r.ul({ className: 'e_InvRtr' },
                   alreadyInvitedAddresses.map(makeAddrListItem))),
             !failedAddresses.length ? null : r.div({},
-                "These resulted in ", r.b({}, "errors"), ':',
+                "These resulted in ", r.b({}, "errors"), ':',   // I18N
                 r.ul({ className: 'e_InvErr' },
                   failedAddresses.map(makeAddrListItem))),
             !alreadyJoinedAddresses.length ? null : r.div({},
-                "These have joined already, so I didn't invite them:",
+                "These have joined already, so I didn't invite them:",   // I18N
                 r.ul({ className: 'e_InvJoind' },
                   alreadyJoinedAddresses.map(makeAddrListItem))));
       }

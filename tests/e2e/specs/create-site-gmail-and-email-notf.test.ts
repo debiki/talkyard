@@ -41,6 +41,7 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
   // This is for OpenAuth created users. [7LERTA1]
   //describe('owner gets notifications about new topics (because is owner)', () => {  'describe' —> ignored
     it('a new member signs up', () => {
+      pages.disableRateLimits();
       pages.complex.signUpAsMemberViaTopbar({
           emailAddress: newMembersEmail, username: 'Mia', password: 'public1122' });
     });
@@ -75,6 +76,7 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
     browser.disableRateLimits(); // there're signup rate limits
     pages.createSite.fillInFieldsAndSubmit(data);
     pages.createSite.clickOwnerSignupButton();
+    pages.disableRateLimits();  // new domain, disable rate limits again
     pages.loginDialog.createGmailAccount(data, true);
     pages.createSomething.createForum("Gmail Forum Title");
   }

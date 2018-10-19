@@ -386,7 +386,7 @@ var t_en_US: TalkyardTranslations = t = {
     UsersInThisTopic: "Users in this topic:",
 
     GettingStartedGuide: "Admin Guide", // MISSING in other langs, was: "Getting Started Guide".
-    AdminGuide: "Admin Guide",
+    AdminGuide: "Admin Guide",          // ... but what? It's here already, just reuse this transl field
     Guide: "Guide",
 
     // How to hide the sidebar.

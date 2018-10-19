@@ -1000,6 +1000,7 @@ trait UserDao {
     if (MaxGuestId < user.id && user.id < LowestTalkToMemberId)
       return ReadMoreResult(0)
 
+    COULD_OPTIMIZE // use Dao instead, so won't touch db. Also: (5ABKR20L)
     readWriteTransaction { tx =>
       val pageMeta = tx.loadPageMeta(pageId) getOrElse {
         throwNotFound("TyETRCK0PAGE", s"No page with id '$pageId'")
@@ -1047,7 +1048,7 @@ trait UserDao {
         numChatMessagesRead = numMoreChatMessagesRead))
 
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
-      // so won't write to the db so very often.
+      // so won't write to the db so very often.  (5ABKR20L)
 
       val numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeenSkipEmail(user.id, postIdsSeen)
 
