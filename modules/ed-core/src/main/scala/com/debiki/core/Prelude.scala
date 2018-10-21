@@ -682,8 +682,9 @@ object Prelude {
       CollapseSpacesRegex.replaceAllIn(string, " ")
 
     private val TrimLeftRegex = """^\s*""".r
-    private val CollapseSpacesRegex = """\s\s*""".r
   }
+
+  val CollapseSpacesRegex: Regex = """\s\s*""".r
 
 
   implicit class RichLinkedHashMap[A, B](val underlying: mutable.LinkedHashMap[A, B])

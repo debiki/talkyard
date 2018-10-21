@@ -1551,11 +1551,17 @@ object JsonMaker {
         node match {
           case textNode: TextNode =>
             if (!firstLineOnly || isInFirstParagraph) {
-              result.append(textNode.getWholeText.trim)
+              // I think there can be newlines in a text node? When a browser renders html, they
+              // are ignored (unless maybe inside sth like a <pre> tag) — so remove them here too
+              // (don't care about <pre>, for now).
+              val textMaybeNewlines = textNode.getWholeText
+              val text = CollapseSpacesRegex.replaceAllIn(textMaybeNewlines, " ")
+              result.append(text)
             }
           case _ => ()
         }
       }
+
       override def tail(node: Node, depth: Int) {
         node match {
           case element: Element if result.nonEmpty =>
