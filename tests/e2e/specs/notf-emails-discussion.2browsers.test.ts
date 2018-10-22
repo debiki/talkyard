@@ -60,8 +60,12 @@ const trilliansTopicBody = "trilliansTopicBody mentions @maria and @maja";
 
 const majasNewTopicTitleOne = 'majasNewTopicTitleOne';
 const majasNewTopicBodyOne = 'majasNewTopicBodyOne';
+const majasReplyToHerselfOne = 'majasReplyToHerselfOne';
 const majasNewTopicTitleTwo = 'majasNewTopicTitleTwo';
 const majasNewTopicBodyTwo = 'majasNewTopicBodyTwo';
+const majasReplyToHerselfTwo = 'majasReplyToHerselfTwo';
+const majasNewTopicTitleThree = 'majasNewTopicTitleThree';
+const majasNewTopicBodyThree = 'majasNewTopicBodyThree';
 
 
 describe("email notfs discs TyT4FKA2EQ02", () => {
@@ -108,7 +112,9 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
 
+
   // ------- Watching page (Maria watches it)
+
 
   it("Maja logs in", () => {
     majasBrowser.go(mariasTopicUrl);
@@ -135,7 +141,9 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
 
+
   // ------- Direct replies
+
 
   it("Trillian replies to Maja's reply", () => {
     trilliansBrowser.go(mariasTopicUrl);
@@ -169,7 +177,9 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
 
+
   // ------- Mentions
+
 
   it("Modya hasn't gotten any emails", () => {
     const numEmails = server.countLastEmailsSentTo(siteId, modya.emailAddress);
@@ -186,7 +196,9 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
 
+
   // ------- Mentions: Edit a mention, add @username  TyT2WREG78
+
 
   it("Mons hasn't gotten any emails", () => {
     const numEmails = server.countLastEmailsSentTo(siteId, mons.emailAddress);
@@ -204,6 +216,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
 
   // ------- Mentions: New topic, and to @many @people
+
 
   it("Trillian posts a new topic, mentions both @maria and @maja", () => {
     trilliansBrowser.go(idAddress.origin);
@@ -224,7 +237,8 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
   // ------- Watching everything  TyT2AKBEF05
 
-  it("Trillian edits her preferences, so she'll be notified about all new topics", () => {
+
+  it("Trillian edits her preferences, so she'll be notified about every new post", () => {
     trilliansBrowser.topbar.clickGoToProfile();
     trilliansBrowser.userProfilePage.goToPreferences();
     trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewPost(true);
@@ -241,8 +255,17 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
         siteId, trillian.emailAddress, [majasNewTopicTitleOne, majasNewTopicBodyOne], browser);
   });
 
-  it("Trillian cancels notifications about all new topics", () => {
-    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewPost(false);
+  it("Maja posts a reply in her new topic", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyToHerselfOne);
+  });
+
+  it("Trillian gets notified", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, trillian.emailAddress, [majasReplyToHerselfOne], browser);
+  });
+
+  it("Trillian cancels notifications about every new post", () => {
+    trilliansBrowser.userProfilePage.preferences.setNotfsNormal();
     trilliansBrowser.userProfilePage.preferences.save();
   });
 
@@ -262,9 +285,77 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
   it("But Trillian wasn't notified about this new topic", () => {
-    // The last email is still about Maja's *first* new topic, not her 2nd.
-    assert(server.lastEmailMatches(
-        siteId, trillian.emailAddress, [majasNewTopicTitleOne, majasNewTopicBodyOne], browser));
+    // The last email is still from Maja's *first* topic, not her 2nd.
+    server.assertLastEmailMatches(
+        siteId, trillian.emailAddress, [majasReplyToHerselfOne], browser);
+  });
+
+
+
+  // ------- Watching new topics,  and re-mentioning [TyT2ABKS057]
+
+
+  it("Trillian enables notifications about new topics", () => {
+    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
+    trilliansBrowser.userProfilePage.preferences.save();
+  });
+
+  it("Maja posts another reply to herself", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyToHerselfTwo);
+  });
+
+  const mentionMaria = "@maria ";
+  const mentionMons = "@mod_mons ";
+  const carrotCake = "456 carrot cakes";
+  const rareRaindeers = "789 rare raindeers";
+
+  it("... edit it, mentions @maria", () => {
+    majasBrowser.complex.editPostNr(c.FirstReplyNr, mentionMaria + carrotCake);
+  });
+
+  it("... edits the page body too, removes the @maria mention [TyT2ABKS057]", () => {
+    majasBrowser.complex.editPageBody("No mention of Maria any longer.");
+  });
+
+  it("... then adds back the @maria mention — shouldn't generate a new notf [TyT2ABKS057]", () => {
+    majasBrowser.complex.editPageBody(
+        // mentionMaria +   — *does* generate a new mention. Shouldn't do that?
+        mentionMons + rareRaindeers);
+  });
+
+  it("Maria gets a notf about: " + carrotCake, () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [majasNewTopicTitleTwo, carrotCake], browser);
+  });
+
+  it("But Trillian didn't get a notf about the reply", () => {
+    // It would have arrived before the @mention of Maria.
+    server.assertLastEmailMatches(
+        siteId, trillian.emailAddress, [majasReplyToHerselfOne], browser);
+  });
+
+  it("Maja posts a 3rd new topic", () => {
+    majasBrowser.topbar.clickHome();
+    majasBrowser.forumTopicList.waitForTopics();
+    majasBrowser.complex.createAndSaveTopic({
+      title: majasNewTopicTitleThree, body: majasNewTopicBodyThree });
+  });
+
+  it("... now Trillian does get notified about the new topic", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, trillian.emailAddress, [majasNewTopicTitleThree, majasNewTopicBodyThree], browser);
+  });
+
+  it(`But Maria never got notified about: ${rareRaindeers}  [TyT2ABKS057]`, () => {
+    // It would have arrived before the new topic notf to Trillian.
+    server.assertLastEmailMatches(
+        siteId, maria.emailAddress, [majasNewTopicTitleTwo, carrotCake], browser);
+  });
+
+  it(`... Mons, however, got notified about: ${rareRaindeers}`, () => {
+    // Just so we know the test works.
+    server.assertLastEmailMatches(
+        siteId, mons.emailAddress, [majasNewTopicTitleTwo, rareRaindeers], browser);
   });
 
 });

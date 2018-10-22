@@ -299,16 +299,17 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       insert into categories3 (
         site_id, id, page_id, parent_id, default_category_id,
         name, slug, position,
-        description, new_topic_types, unlisted, incl_in_summaries,
+        description, new_topic_types, unlist_category, unlist_topics, incl_in_summaries,
         created_at, updated_at, deleted_at)
       values (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val values = List[AnyRef](
       siteId.asAnyRef, category.id.asAnyRef, category.sectionPageId, category.parentId.orNullInt,
       category.defaultCategoryId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
-      category.unlisted.asAnyRef, category.includeInSummaries.toInt.asAnyRef,
+      category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef,
+      category.includeInSummaries.toInt.asAnyRef,
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
       category.deletedAt.orNullTimestamp)
     runUpdateSingleRow(statement, values)
@@ -322,7 +323,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         page_id = ?, parent_id = ?, default_category_id = ?,
         name = ?, slug = ?, position = ?,
         description = ?, new_topic_types = ?,
-        unlisted = ?, incl_in_summaries = ?,
+        unlist_category = ?, unlist_topics = ?, incl_in_summaries = ?,
         created_at = ?, updated_at = ?,
         deleted_at = ?
       where site_id = ? and id = ?"""
@@ -330,7 +331,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       category.sectionPageId, category.parentId.orNullInt, category.defaultCategoryId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
-      category.unlisted.asAnyRef, category.includeInSummaries.toInt.asAnyRef,
+      category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef, category.includeInSummaries.toInt.asAnyRef,
       category.createdAt.asTimestamp, category.updatedAt.asTimestamp,
       category.deletedAt.orNullTimestamp,
       siteId.asAnyRef, category.id.asAnyRef)
@@ -364,7 +365,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       slug = rs.getString("slug"),
       description = Option(rs.getString("description")),
       newTopicTypes = getNewTopicTypes(rs),
-      unlisted = rs.getBoolean("unlisted"),
+      unlistCategory = rs.getBoolean("unlist_category"),
+      unlistTopics = rs.getBoolean("unlist_topics"),
       includeInSummaries = IncludeInSummaries.fromInt(rs.getInt("incl_in_summaries"))
           .getOrElse(IncludeInSummaries.Default),
       createdAt = getDate(rs, "created_at"),

@@ -144,7 +144,8 @@ trait ForumDao {
       position = 1,
       description = None,
       newTopicTypes = Nil,
-      unlisted = false,
+      unlistCategory = false,
+      unlistTopics = false,
       includeInSummaries = IncludeInSummaries.Default,
       createdAt = tx.now.toJavaDate,
       updatedAt = tx.now.toJavaDate))
@@ -161,11 +162,14 @@ trait ForumDao {
         position = DefaultCategoryPosition + 10,
         description = "Private category for staff discussions.",
         newTopicTypes = immutable.Seq(PageRole.Discussion),
-        unlisted = false,
+        unlistCategory = false,
+        unlistTopics = false,
         includeInSummaries = IncludeInSummaries.Default),
       immutable.Seq[PermsOnPages](
         makeStaffCategoryPerms(staffCategoryId)),
       bySystem)(tx)
+
+    // LATER: sample topics category
 
     if (options.isForEmbeddedComments)
       createEmbeddedCommentsCategory(forumPageId, rootCategoryId, defaultCategoryId,
@@ -196,7 +200,8 @@ trait ForumDao {
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         // Strangers may not list all topics, maybe blog owner wants to keep some of them private?
         // SECURITY [rand-page-id]
-        unlisted = true,
+        unlistCategory = true,
+        unlistTopics = false,
         // The category About page is not needed, because the same info is in the forum
         // intro post anyway and there's only one single category. So create the About topic
         // in a deleted state, so it won't be shown. Can be undeleted later if one wants
@@ -244,7 +249,8 @@ trait ForumDao {
           position = DefaultCategoryPosition - 2,
           description = "Here you can ask questions and report problems.",
           newTopicTypes = immutable.Seq(PageRole.Question),
-          unlisted = false,
+          unlistCategory = false,
+          unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
@@ -266,7 +272,8 @@ trait ForumDao {
           position = DefaultCategoryPosition - 1,
           description = "Here you can suggest new ideas.",
           newTopicTypes = immutable.Seq(PageRole.Idea),
-          unlisted = false,
+          unlistCategory = false,
+          unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
@@ -287,7 +294,8 @@ trait ForumDao {
           position = DefaultCategoryPosition,
           description = "For topics that don't fit in other categories.",
           newTopicTypes = immutable.Seq(PageRole.Discussion),
-          unlisted = false,
+          unlistCategory = false,
+          unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
@@ -405,8 +413,8 @@ object ForumDao {
   private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
   private val RootCategorySlug = "(root-category)"  //
 
-  private val UncategorizedCategoryName = "Uncategorized"
-  private val UncategorizedCategorySlug = "uncategorized"
+  private val UncategorizedCategoryName = "General" // I18N everywhere here
+  private val UncategorizedCategorySlug = "general"
 
   private val EmbCommentsCategoryName = "Blog Comments"
   private val EmbCommentsCategorySlug = "blog-comments"

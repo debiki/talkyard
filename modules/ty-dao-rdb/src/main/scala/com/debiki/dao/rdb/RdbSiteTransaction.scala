@@ -37,6 +37,7 @@ import java.sql.ResultSet
   */
 class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val now: When)
   extends SiteTransaction
+  // SHOULD REFACTOR RENAME all these ...SiteDaoMixin  to SiteTxMixin. The Dao is instead in the main project (!).
   with PagesSiteDaoMixin
   with PostsSiteDaoMixin
   with DraftsSiteDaoMixin
@@ -52,6 +53,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with LoginSiteDaoMixin
   with PostsReadStatsSiteDaoMixin
   with NotificationsSiteDaoMixin
+  with PageNotfPrefsSiteTxMixin
   with SettingsSiteDaoMixin
   with BlocksSiteDaoMixin
   with ReviewTasksSiteDaoMixin

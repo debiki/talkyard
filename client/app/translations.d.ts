@@ -677,6 +677,7 @@ interface TalkyardTranslations {
     ChangeUsername_2: string;
 
     NotfAboutAll: string;
+    NotfAboutNewTopics: string;
 
     ActivitySummaryEmails: string;
 

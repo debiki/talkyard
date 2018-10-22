@@ -37,6 +37,25 @@ object IncludeInSummaries {
 }
 
 
+/**
+  * @param id
+  * @param sectionPageId
+  * @param parentId
+  * @param defaultCategoryId
+  * @param name
+  * @param slug
+  * @param position
+  * @param description
+  * @param newTopicTypes
+  * @param unlistCategory — this category won't be shown on the category page
+  * @param unlistTopics — topics from this category won't be listed in the main topic list
+  * @param includeInSummaries
+  * @param createdAt
+  * @param updatedAt
+  * @param lockedAt
+  * @param frozenAt
+  * @param deletedAt
+  */
 case class Category(
   id: CategoryId,
   sectionPageId: PageId,
@@ -50,7 +69,8 @@ case class Category(
   description: Option[String],
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
-  unlisted: Boolean,  // rename to isUnlisted
+  unlistCategory: Boolean,
+  unlistTopics: Boolean,
   includeInSummaries: IncludeInSummaries = IncludeInSummaries.Default,
   createdAt: ju.Date,
   updatedAt: ju.Date,

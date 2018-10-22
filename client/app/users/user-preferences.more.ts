@@ -18,6 +18,7 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
+/// <reference path="../util/stupid-dialog.more.ts" />
 /// <reference path="./ActivitySummaryEmailsInterval.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -188,6 +189,8 @@ const AboutMember = createComponent({
           !!user.summaryEmailIntervalMins && user.summaryEmailIntervalMins !== DisableSummaryEmails,
       summaryEmailIntervalMins: user.summaryEmailIntervalMins,
       summaryEmailIfActive: user.summaryEmailIfActive,
+      siteNotfLevel: user.emailForEveryNewPost ? NotfLevel.WatchingAll : (
+          user.notfAboutNewTopics ? NotfLevel.WatchingFirst : NotfLevel.Normal),
     };
   },
 
@@ -269,7 +272,9 @@ const AboutMember = createComponent({
       summaryEmailIfActive: this.state.summaryEmailIfActive,
       about: firstDefinedOf(this._about, user.about),
       url: firstDefinedOf(this._url, user.url),
-      emailForEveryNewPost: firstDefinedOf(this._emailForEveryNewPost, user.emailForEveryNewPost),
+      // shouldn't be here: [REFACTORNOTFS] -------
+      siteNotfLevel: this.state.siteNotfLevel,
+      // ------------------------------------------
     };
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
@@ -415,15 +420,22 @@ const AboutMember = createComponent({
 
         // Later: + Location
 
-        // Needs to be >= trusted: [4WKAB02]
-        (isBuiltInUser || !user_isTrustMinNotThreat(me, TrustLevel.Trusted) ? null :
-        r.div({ className: 'form-group' },
-          r.div({ className: 'checkbox' },
-            r.label({},
-              r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
-                onChange: (event) => { this._emailForEveryNewPost = event.target.checked },
-                defaultChecked: user.emailForEveryNewPost }),
-              t.upp.NotfAboutAll)))),
+        // ----- These notf settings shouldn't be here: [REFACTORNOTFS] ----------
+        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfEveryPost',
+          label: t.upp.NotfAboutAll,
+          checked: this.state.siteNotfLevel >= NotfLevel.WatchingAll,
+          onChange: () => this.setState({ siteNotfLevel: NotfLevel.WatchingAll }) }),
+
+        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfNewTopics',
+          label: t.upp.NotfAboutNewTopics,
+          checked: this.state.siteNotfLevel === NotfLevel.WatchingFirst,
+          onChange: () => this.setState({ siteNotfLevel: NotfLevel.WatchingFirst }) }),
+
+        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfNormal',
+          label: "Only get notified when someone talks with you",   // I18N
+          checked: this.state.siteNotfLevel === NotfLevel.Normal,
+          onChange: () => this.setState({ siteNotfLevel: NotfLevel.Normal }) }),
+        // -----------------------------------------------------------------------
 
         isSystemUser ? null :
           InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: t.Save, disabled: this.badPrefs() }),

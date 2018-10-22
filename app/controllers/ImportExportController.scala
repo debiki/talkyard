@@ -287,6 +287,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       siteData.users foreach { user =>
         transaction.insertMember(user)
+        // [readlater] import page notf prefs [2ABKS03R]
         // [readlater] export & import username usages & emails, later. For now, create new here.
         user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
         transaction.insertUsernameUsage(UsernameUsage(
@@ -397,7 +398,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         primaryEmailAddress = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
-        emailForEveryNewPost = readOptBool(jsObj, "emailForEveryNewPost") getOrElse false,
+        mailingListMode = readOptBool(jsObj, "mailingListMode") getOrElse false,
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
         summaryEmailIfActive = readOptBool(jsObj, "summaryEmailIfActive"),
         passwordHash = passwordHash,
@@ -541,7 +542,8 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
         newTopicTypes = Nil, // fix later
-        unlisted = readOptBool(jsObj, "unlisted").getOrElse(false),
+        unlistCategory = readOptBool(jsObj, "unlist_category").getOrElse(false),
+        unlistTopics = readOptBool(jsObj, "unlist_topics").getOrElse(false),
         includeInSummaries = includeInSummaries,
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),

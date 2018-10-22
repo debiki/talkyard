@@ -148,28 +148,113 @@ sealed abstract class NotfLevel(val IntVal: Int) {
   */
 object NotfLevel {
 
-  /** Notified about @mentions and all new posts. */
-  case object WatchingAll extends NotfLevel(1)
 
-  /** Notified about the first new post, plus @mentions. */
-  case object WatchingFirst extends NotfLevel(2)
+  /** Like EveryPost, but also notified about any edits of any post.
+    *
+    * If this is desirable only for, say, the Orig Post (e.g. to get notified if someone
+    * edits one's blog post = the orig post), then don't add more
+    * notification levels here. Instead, make it possible to subscribe for notifications
+    * on individual posts, and sub-threads, rather than on whole pages / categories / tags only.
+    * This could be a power user feature in the More... post action dropdown.
+    */
+  case object EveryPostAllEdits extends NotfLevel(9)
 
-  /** Notified about @mentions and new posts in threads started by the user him/herself.  */
-  case object Tracking extends NotfLevel(3)
+  /** Notified about every new post (topic status changes).
+    */
+  case object WatchingAll extends NotfLevel(8)    ; RENAME // to EveryPost
 
-  /** Notified of @mentions and direct replies. */
-  case object Normal extends NotfLevel(4)
+  /** For questions: Notified about new answers suggestions (that is. orig post replies).
+    * For questions, problems, ideas: Notified about progress posts and status changes,
+    * e.g. status changed from Planned to Doing.
+    */
+  case object TopicProgress extends NotfLevel(7)
 
-  /** No notifications for this page.  */
-  case object Muted extends NotfLevel(5)
+  /** Notified if an answer to a Question topic, is accepted as the correct answer.
+    * Or if a Problem is marked as solved. Or an Idea marked as Implemented.
+    * Or if topic closed (won't get solved / done).
+    */
+  case object TopicSolved extends NotfLevel(6)
+
+  /** Notified about new topics. (For categories.)
+    */
+  case object WatchingFirst extends NotfLevel(5)  ; RENAME // to NewTopics
+
+  /** Like Normal, plus highlights the topic in the topic list, if new posts.
+    */
+  case object Tracking extends NotfLevel(4)  ; RENAME // to Highlight
+
+  /** Notified of @mentions and posts in one's sub threads (incl direct replies).
+    */
+  case object Normal extends NotfLevel(3)
+
+  /** Notified of @mentions and direct replies only.
+    */
+  case object Hushed extends NotfLevel(2)
+
+  /** No notifications for this page.
+    */
+  case object Muted extends NotfLevel(1)
 
   def fromInt(value: Int): Option[NotfLevel] = Some(value match {
+    case EveryPostAllEdits.IntVal => EveryPostAllEdits
     case WatchingAll.IntVal => WatchingAll
+    case TopicProgress.IntVal => TopicProgress
+    case TopicSolved.IntVal => TopicSolved
     case WatchingFirst.IntVal => WatchingFirst
     case Tracking.IntVal => Tracking
     case Normal.IntVal => Normal
+    case Hushed.IntVal => Hushed
     case Muted.IntVal => Muted
     case _ => return None
   })
 
 }
+
+
+/** If page id, category id and tag label id are all unspecified, then, means the default
+  * notf level, for the peopleId, in the whole forum (across all categories and tags).
+  *
+  * @param peopleId — the group or individual these settings concern.
+  * @param notfLevel
+  * @param pageId — if these notification settings are for a single page only.
+  * @param pagesInCategoryId — the settings apply to all pages in this category.
+  */
+case class PageNotfPref(
+  peopleId: UserId,
+  notfLevel: NotfLevel,
+  pageId: Option[PageId] = None,
+  pagesInCategoryId: Option[CategoryId] = None,  // not yet impl [7KBR2AF5]
+  //pagesWithTagLabelId: Option[TagLabelId] = None, — later
+  wholeSite: Boolean = false) {
+
+  require(pageId.isDefined.toZeroOne + pagesInCategoryId.isDefined.toZeroOne +
+    wholeSite.toZeroOne == 1, "TyE2BKP053")
+
+  if (pageId.isDefined) {
+    require(notfLevel != NotfLevel.WatchingFirst)
+  }
+}
+
+
+case class PageNotfLevels(
+  forPage: Option[NotfLevel] = None,
+  forCategory: Option[NotfLevel] = None,
+  forWholeSite: Option[NotfLevel] = None) {
+
+  /** The most specific notf level (per page), overrides the less specific (category, whole site).
+    */
+  def effectiveNotfLevel: NotfLevel =
+    // Tested here: [TyT7KSJQ296]
+    forPage.orElse(forCategory.orElse(forWholeSite)).getOrElse(NotfLevel.Normal)
+
+}
+
+
+/* Later:
+
+case class MembersAllNotfPrefs(
+  peopleId: UserId,
+  pageNotfPrefs: immutable.Seq[PageNotfPref])
+
+Or maybe just:  Set[PageNotfPref]  (Set not Seq)
+  */

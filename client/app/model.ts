@@ -440,11 +440,15 @@ interface PageUserSettings {
 
 
 enum NotfLevel {
-  WatchingAll = 1,
-  WatchingFirst = 2,
-  Tracking = 3,
-  Normal = 4,
-  Muted = 5,
+  EveryPostAllEdits = 9,
+  WatchingAll = 8,
+  TopicProgress = 7,
+  TopicSolved = 6,
+  WatchingFirst = 5,
+  Tracking = 4,
+  Normal = 3,
+  Hushed = 2,
+  Muted = 1,
 }
 
 
@@ -462,11 +466,13 @@ interface Notification {
 
 enum NotificationType {
   DirectReply = 1,
-  Mention = 2,
+  Mention = 2,  // DirectMention
+  // GroupMention =
   // Quote = 3,
-  Message = 4,
+  Message = 4,   // rename to DirectMessage
   NewPost = 5,
-  PostTagged = 6,
+  // NewPage =      // Add
+  PostTagged = 6,   // Change id
 }
 
 
@@ -988,7 +994,11 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   fullName: string;
   email: string;
   emailVerifiedAtMs?: WhenMs;
-  emailForEveryNewPost: boolean;
+  // mailingListMode: undefined | true;  // default false  — later
+  // ----------
+  emailForEveryNewPost: boolean;  // move these two to a single field in a separate pageNotfsPrefs obj,
+  notfAboutNewTopics?: boolean;   // that also incls all category and tags subscriptions?
+  // ----------
   hasPassword?: boolean;
   about?: string;
   country: string;

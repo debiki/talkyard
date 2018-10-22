@@ -91,8 +91,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: MemberInclDetails = memberAndStats._1
         val anyStats: Option[UserStats] = memberAndStats._2
+        val siteNotfLevel = transaction.loadPageNotfLevels(member.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
         jsonForMemberInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
-          callerIsStaff = true, anyStats = anyStats)
+          callerIsStaff = true, anyStats = anyStats, siteNotfLevel = siteNotfLevel)
       }))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
@@ -130,8 +131,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val groups = transaction.loadGroups(memberOrGroup)
           memberOrGroup match {
             case m: MemberInclDetails =>
+              val siteNotfLevel = transaction.loadPageNotfLevels(userId, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
               jsonForMemberInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+                siteNotfLevel = siteNotfLevel)
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff)
@@ -195,9 +198,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val stats = includeStats ? transaction.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
+          val siteNotfLevel = transaction.loadPageNotfLevels(member.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
           val userJson = jsonForMemberInclDetails(
             member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
+            siteNotfLevel = siteNotfLevel)
           (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
         case group: Group =>
           val groupJson = jsonForGroupInclDetails(
@@ -211,7 +216,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
       groups: immutable.Seq[Group],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-      anyStats: Option[UserStats] = None)
+      anyStats: Option[UserStats] = None,
+      siteNotfLevel: Option[NotfLevel])  // [REFACTORNOTFS] remove
         : JsObject = {
     var userJson = Json.obj(  // MemberInclDetails
       "id" -> user.id,
@@ -240,7 +246,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)
-      userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
+      // [REFACTORNOTFS]  shouldn't be here -----------------
+      userJson += "emailForEveryNewPost" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingAll.toInt))   // [REFACTORNOTFS] remove
+      userJson += "notfAboutNewTopics" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingFirst.toInt))   // [REFACTORNOTFS] remove
+      // ----------------------------------------------------
       userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       userJson += "summaryEmailIntervalMins" ->
@@ -1197,8 +1206,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
     val newNotfLevel = NotfLevel.fromInt(newNotfLevelInt) getOrElse throwBadRequest(
       "EsE6JP2SK", s"Bad page notf level: $newNotfLevelInt")
-    request.dao.saveUserPageSettings(userId = request.theRoleId, pageId = pageId,
-      UserPageSettings(newNotfLevel))
+    request.dao.savePageNotfPref(
+        PageNotfPref(request.theMember.id, pageId = Some(pageId), notfLevel = newNotfLevel))
     Ok
   }
 
@@ -1442,7 +1451,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       about = (json \ "about").asOpt[String].trimNoneIfBlank,
       location = (json \ "location").asOpt[String].trimNoneIfBlank,
       url = (json \ "url").asOpt[String].trimNoneIfBlank,
-      emailForEveryNewPost = (json \ "emailForEveryNewPost").as[Boolean])
+      // These shouldn't be here: [REFACTORNOTFS] -----------
+      siteNotfLevel = NotfLevel.fromInt((json \ "siteNotfLevel").as[Int]).getOrElse(NotfLevel.Normal))
+    // ----------------------------------------------------
   }
 
 

@@ -60,7 +60,7 @@ create or replace function is_valid_notf_level(notf_level int) returns boolean
     language plpgsql
     as $_$
 begin
-    return notf_level between 1 and 5;  -- sync with Scala code [7KJE0W3]
+    return notf_level between 1 and 9;  -- sync with Scala code [7KJE0W3]
 end;
 $_$;
 

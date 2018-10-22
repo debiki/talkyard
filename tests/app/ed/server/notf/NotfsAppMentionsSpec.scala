@@ -22,7 +22,7 @@ import debiki.dao._
 import java.{util => ju}
 
 
-class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
+class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
   var dao: SiteDao = _
 
   var createForumResult: CreateForumResult = _
@@ -98,9 +98,7 @@ class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
       // Disable notfs about everything to the owner, other notfs counts will be wrong.
       // Dupl code. [7UJKWRQ2]
       dao.readWriteTransaction { tx =>
-        var ownerInclDetails = tx.loadTheMemberInclDetails(owner.id)
-        ownerInclDetails = ownerInclDetails.copy(emailForEveryNewPost = false)
-        tx.updateMemberInclDetails(ownerInclDetails)
+        tx.deletePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, wholeSite = true))
       }
     }
 
@@ -113,7 +111,7 @@ class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
       expectedTotalNumNotfs += 1
 
       // The rest of the tests don't expect Owner to be notified about everything.
-      dao.saveUserPageSettings(owner.id, withRepliesTopicId, UserPageSettings(NotfLevel.Normal))
+      dao.savePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(withRepliesTopicId)))
 
       // This stuff might be incorrectly matched & break the tests, if there're buggy SQL queries.
       oldChatTopicId = createPage(PageRole.OpenChat,
@@ -121,7 +119,7 @@ class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
         owner.id, browserIdData, dao, Some(categoryId))
       dao.addUsersToPage(Set(owner.id), oldChatTopicId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), oldChatTopicId, byWho = ownerWho)
-      dao.saveUserPageSettings(owner.id, oldChatTopicId, UserPageSettings(NotfLevel.Normal))
+      dao.savePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(oldChatTopicId)))
       chat(owner.id, oldChatTopicId, "chat message 1")(dao)
       // Needs to be a different member, otherwise the prev chat message gets appended to, instead.
       chat(moderator.id, oldChatTopicId, "chat message 2")(dao)
@@ -129,19 +127,20 @@ class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
       chatTopicOneId = createPage(PageRole.OpenChat,
         textAndHtmlMaker.testTitle("chatTopicId"), textAndHtmlMaker.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.saveUserPageSettings(owner.id, chatTopicOneId, UserPageSettings(NotfLevel.Normal))
+      dao.savePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicOneId)))
 
       chatTopicTwoId = createPage(PageRole.OpenChat,
         textAndHtmlMaker.testTitle("chatTopicTwoId"),
         textAndHtmlMaker.testBody("chatTopicTwoId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.saveUserPageSettings(owner.id, chatTopicTwoId, UserPageSettings(NotfLevel.Normal))
+      dao.savePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicTwoId)))
 
       chatTopicManyJoinedId = createPage(PageRole.OpenChat,
         textAndHtmlMaker.testTitle("chatTopicManyJoinedId"),
         textAndHtmlMaker.testBody("chatTopicManyJoinedId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
-      dao.saveUserPageSettings(owner.id, chatTopicManyJoinedId, UserPageSettings(NotfLevel.Normal))
+      dao.savePageNotfPref(PageNotfPref(owner.id, NotfLevel.Normal, pageId = Some(chatTopicManyJoinedId)))
+
       dao.addUsersToPage(Set(owner.id), chatTopicManyJoinedId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), chatTopicManyJoinedId, byWho = ownerWho)
       dao.addUsersToPage(Set(member1.id), chatTopicManyJoinedId, byWho = ownerWho)

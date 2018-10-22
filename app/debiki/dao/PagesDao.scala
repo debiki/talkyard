@@ -285,15 +285,18 @@ trait PagesDao {
     tx.insertPagePath(pagePath)
     tx.insertPost(titlePost)
     tx.insertPost(bodyPost)
+
     // By default, one follows all activity on a page one has created — unless this is some page
     // that gets auto created by System. [EXCLSYS]
-    if (author.id != SystemUserId) {
-      tx.saveUserPageSettings(
-        authorId, pageId = pageId, UserPageSettings(NotfLevel.WatchingAll))
+    if (author.id >= User.LowestNormalMemberId) {
+      tx.upsertPageNotfPref(
+          PageNotfPref(authorId, NotfLevel.WatchingAll, pageId = Some(pageId)))
     }
+
     if (approvedById.isDefined) {
       updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), tx)
     }
+
     uploadPaths foreach { hashPathSuffix =>
       tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }

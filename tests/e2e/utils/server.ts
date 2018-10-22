@@ -3,6 +3,7 @@
 /// <reference path="../test-types2.ts"/>
 
 import _ = require('lodash');
+import assert = require('assert');
 import utils = require('./utils');
 import c = require('../test-constants');
 import { logMessage, die, dieIf } from './log-and-die';
@@ -313,8 +314,14 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
 }
 
 
+function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
+      textOrTextsToMatch: string | string[], browser) {
+  lastEmailMatches(siteId, emailAddress, textOrTextsToMatch, browser, true);
+}
+
+
 function lastEmailMatches(siteId: SiteId, emailAddress: string,
-      textOrTextsToMatch: string | string[], browser): string | false {
+      textOrTextsToMatch: string | string[], browser, assertMatches?: true): string | false {
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
@@ -325,6 +332,12 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
     if (matches) {
       return matches[0];
     }
+  }
+  if (assertMatches) {
+    assert(false, `Email text didn't match regex(s): '${JSON.stringify(textOrTextsToMatch)}',\n` +
+      `email sent to: ${emailAddress},\n` +
+      `email title: ${email.subject},\n` +
+      `email text: ${email.bodyHtmlText}`);
   }
   return false;
 }
@@ -370,6 +383,7 @@ export = {
   waitForUnsubscriptionLinkEmailedTo,
   waitUntilLastEmailMatches,
   lastEmailMatches,
+  assertLastEmailMatches,
   apiV0: {
     upsertUserGetLoginSecret,
   },

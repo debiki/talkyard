@@ -272,6 +272,8 @@ editor -
         - email-notfs-discussion.test.ts  TyT4FKA2EQ02
     edit, add new @username:
         - email-notfs-discussion.test.ts  TyT2WREG78
+    edit, remove @username and add back
+          - notf-emails-discussion.2browsers.test.ts   TyT2ABKS057 (bug?: mention is re-sent)
     unusual chars:
         - weird-usernames.2browsers.test.ts  TyT5ABKPUW2
     group mentinos:
@@ -572,6 +574,7 @@ email notifications:  (5ABKR024)
           - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
   new reply:
   mention:
+          - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
   watching:
   not until after email verified:
           - unsubscribe.2browsers.test.ts  [TyT2ABKR04]

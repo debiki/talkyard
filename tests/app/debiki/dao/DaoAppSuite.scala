@@ -200,7 +200,7 @@ class DaoAppSuite(
   def updateMemberPreferences(dao: SiteDao, memberId: UserId,
         fn: Function1[AboutMemberPrefs, AboutMemberPrefs]) {
     val member = dao.loadTheMemberInclDetailsById(memberId)
-    dao.saveAboutMemberPrefs(fn(member.preferences), Who(memberId, browserIdData))
+    dao.saveAboutMemberPrefs(fn(member.preferences_debugTest), Who(memberId, browserIdData))
   }
 
 

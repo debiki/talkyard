@@ -534,16 +534,12 @@ trait SiteTransaction {
   }
 
 
-  /** Loads users watching the specified page, any parent categories or forums,
-    * and people watching everything on the whole site.
-    */
-  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
-
-  def loadUserPageSettings(userId: UserId, pageId: PageId): Option[UserPageSettings]
-  def loadUserPageSettingsOrDefault(userId: UserId, pageId: PageId): UserPageSettings =
-    loadUserPageSettings(userId, pageId) getOrElse UserPageSettings.Default
-
-  def saveUserPageSettings(userId: UserId, pageId: PageId, settings: UserPageSettings)
+  def upsertPageNotfPref(notfPref: PageNotfPref)
+  def deletePageNotfPref(notfPref: PageNotfPref): Boolean  // notf level ignored
+  def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId]): PageNotfLevels
+  def loadPeopleIdsWatchingPage(pageId: PageId, minNotfLevel: NotfLevel): Set[UserId]
+  def loadPeopleIdsWatchingCategory(categoryId: CategoryId, minNotfLevel: NotfLevel): Set[UserId]
+  def loadPeopleIdsWatchingWholeSite(minNotfLevel: NotfLevel): Set[UserId]
 
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 

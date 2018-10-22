@@ -465,6 +465,12 @@ trait UserDao {
         user.id, firstSeenAt = tx.now, emailedAt = None))
       tx.insertIdentity(identity)
       joinGloballyPinnedChats(user.briefUser, tx)
+
+      // Dupl code [2ABKS03R]
+      if (newUserData.isOwner) {
+        tx.upsertPageNotfPref(PageNotfPref(userId, NotfLevel.WatchingAll, wholeSite = true))
+      }
+
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
       MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
     }
@@ -534,6 +540,14 @@ trait UserDao {
     tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
     joinGloballyPinnedChats(user.briefUser, tx)
+
+    // Dupl code [2ABKS03R]
+    // Initially, when the forum / comments site is tiny, it's good to be notified
+    // about everything. (isOwner —> it's the very first user, so the site is empty.)
+    if (userData.isOwner) {
+      tx.upsertPageNotfPref(PageNotfPref(userId, NotfLevel.WatchingAll, wholeSite = true))
+    }
+
     tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
     user
   }
@@ -1214,21 +1228,8 @@ trait UserDao {
     readOnlyTransaction(_.listUsernames(pageId = pageId, prefix = prefix))
 
 
-  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] =
-    readOnlyTransaction(_.loadUserIdsWatchingPage(pageId))
-
-
-  def loadUserPageSettings(userId: RoleId, pageId: PageId): UserPageSettings =
-    readOnlyTransaction(_.loadUserPageSettings(userId, pageId = pageId)) getOrElse
-      UserPageSettings.Default
-
-
-  def saveUserPageSettings(userId: RoleId, pageId: PageId, settings: UserPageSettings) {
-    throwForbiddenIf(settings.notfLevel == NotfLevel.WatchingFirst,
-      "EsE6SRK02", s"${NotfLevel.WatchingFirst} not supported, for pages")
-    throwForbiddenIf(settings.notfLevel == NotfLevel.Tracking,
-      "EsE7DKS85", s"${NotfLevel.Tracking} not yet implemented")
-    readWriteTransaction(_.saveUserPageSettings(userId = userId, pageId = pageId, settings))
+  def savePageNotfPref(pageNotfPref: PageNotfPref) {
+    readWriteTransaction(_.upsertPageNotfPref(pageNotfPref))
   }
 
 
@@ -1262,10 +1263,10 @@ trait UserDao {
 
       // Perhaps there's some security problem that would results in a non-trusted user
       // getting an email about each and every new post. So, for now:  [4WKAB02]
-      SECURITY // (Later, do some security review, add more tests, and remove this restriction.)
-      if (preferences.emailForEveryNewPost && !user.isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember))
-        throwForbidden("EsE7YKF24", o"""Currently only trusted non-threat members may be notified about
-          every new post""")
+      SECURITY // (Later, do some security review, add more tests, and remove this restriction.)  <——
+      //if (preferences.emailForEvery.exists(_.forEveryPost) && !user.isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember))
+      //  throwForbidden("EsE7YKF24", o"""Currently only trusted non-threat members may be notified about
+      //    every new post""")
 
       if (user.fullName != preferences.fullName) {
         throwForbiddenIfBadFullName(preferences.fullName)
@@ -1318,6 +1319,15 @@ trait UserDao {
       // Changing address is done via UserController.setPrimaryEmailAddresses instead, not here
       if (user.primaryEmailAddress != preferences.emailAddress)
         throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
+
+      REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
+      val oldSiteNotfLevel = transaction.loadPageNotfLevels(
+        preferences.userId, NoPageId, categoryId = None).forWholeSite getOrElse NotfLevel.Normal
+      if (preferences.siteNotfLevel != oldSiteNotfLevel) {
+        transaction.upsertPageNotfPref(
+            PageNotfPref(user.id, preferences.siteNotfLevel, wholeSite = true))
+      }
+      // -- / REFACTOR -------------------------------------------------------------------------------
 
       val userAfter = user.copyWithNewAboutPrefs(preferences)
       try transaction.updateMemberInclDetails(userAfter)

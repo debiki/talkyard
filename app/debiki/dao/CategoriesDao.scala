@@ -50,7 +50,8 @@ case class CategoryToSave(
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
   shallBeDefaultCategory: Boolean,
-  unlisted: Boolean,
+  unlistCategory: Boolean,
+  unlistTopics: Boolean,
   includeInSummaries: IncludeInSummaries,
   description: String,
   createDeletedAboutTopic: Boolean = false,
@@ -75,7 +76,8 @@ case class CategoryToSave(
     position = position,
     description = None,
     newTopicTypes = newTopicTypes,
-    unlisted = unlisted,
+    unlistCategory = unlistCategory,
+    unlistTopics = unlistTopics,
     includeInSummaries = includeInSummaries,
     createdAt = createdAt,
     updatedAt = createdAt)
@@ -384,7 +386,7 @@ trait CategoriesDao {
       return
 
     COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
-    val onlyForStaff = startCategory.unlisted || startCategory.isDeleted  // [5JKWT42]
+    val onlyForStaff = startCategory.unlistCategory || startCategory.isDeleted  // [5JKWT42]
     if (onlyForStaff && !authzCtx.isStaff)
       return
 
@@ -438,7 +440,8 @@ trait CategoriesDao {
         slug = editCategoryData.slug,
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
-        unlisted = editCategoryData.unlisted,
+        unlistCategory = editCategoryData.unlistCategory,
+        unlistTopics = editCategoryData.unlistTopics,
         includeInSummaries = editCategoryData.includeInSummaries,
         updatedAt = tx.now.toJavaDate)
 

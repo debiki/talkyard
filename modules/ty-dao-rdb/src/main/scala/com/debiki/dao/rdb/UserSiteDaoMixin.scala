@@ -238,7 +238,6 @@ trait UserSiteDaoMixin extends SiteTransaction {
     val values = List(
       group.anyName.orNullVarchar,
       group.theUsername,
-      // group.emailForEveryNewPost.asAnyRef,
       group.summaryEmailIntervalMins.orNullInt,
       group.summaryEmailIfActive.orNullBoolean,
       siteId.asAnyRef,
@@ -303,7 +302,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
           user.fullName.orNullVarchar,
           user.username, user.createdAt, user.primaryEmailAddress.trimNullVarcharIfBlank,
           _toFlag(user.emailNotfPrefs), o2ts(user.emailVerifiedAt),
-          user.emailForEveryNewPost.asTrueOrNull,
+          user.mailingListMode.asTrueOrNull,
           user.passwordHash.orNullVarchar,
           user.isApproved.orNullBoolean, user.approvedAt.orNullTimestamp,
           user.approvedById.orNullInt,
@@ -857,7 +856,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       user.username,
       user.primaryEmailAddress.trimNullVarcharIfBlank,
       user.emailVerifiedAt.orNullTimestamp,
-      user.emailForEveryNewPost.asAnyRef,
+      user.mailingListMode.asAnyRef,
       _toFlag(user.emailNotfPrefs),
       user.summaryEmailIntervalMins.orNullInt,
       user.summaryEmailIfActive.orNullBoolean,
@@ -1006,35 +1005,10 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  // COULD move to PageUsersSiteDaoMixin.
-  def loadUserPageSettings(userId: UserId, pageId: PageId): Option[UserPageSettings] = {
-    val query = i"""
-      select notf_level
-      from page_users3
-      where site_id = ? and user_id = ? and page_id = ?
-      """
-    val values = List(siteId.asAnyRef, userId.asAnyRef, pageId)
-    runQueryFindOneOrNone(query, values, rs => {
-      val notfLevel = NotfLevel.fromInt(rs.getInt("notf_level")).getOrElse(NotfLevel.Normal)
-      UserPageSettings(notfLevel)
-    })
-  }
-
-
-  // COULD move to PageUsersSiteDaoMixin.
-  def saveUserPageSettings(userId: UserId, pageId: PageId, settings: UserPageSettings)  {
-    val sql = """
-      insert into page_users3(site_id, user_id, page_id, notf_level)
-      values (?, ?, ?, ?)
-      on conflict (site_id, user_id, page_id) do update set
-        notf_level = excluded.notf_level
-      """
-    val values = List(siteId.asAnyRef, userId.asAnyRef, pageId, settings.notfLevel.toInt.asAnyRef)
-    runUpdate(sql, values)
-  }
-
-
-  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
+  /** Loads users watching the specified page, any parent categories or forums,
+    * and people watching everything on the whole site.
+    */
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {    // rm
     TESTS_MISSING // tested via e2e tests but not via app server tests
     val result = ArrayBuffer[UserId]()
 

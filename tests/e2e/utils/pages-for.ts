@@ -3324,8 +3324,16 @@ function pagesFor(browser) {
           setCheckbox('#sendSummaryEmails', enabled);
         },
 
-        setNotfsForEachNewPost: function(enabled: boolean) {
-          setCheckbox('#emailForEveryNewPost', enabled);
+        setNotfsForEachNewPost: function() {
+          setCheckbox('.e_notfEveryPost input', true);
+        },
+
+        setNotfsForEachNewTopic: function() {
+          setCheckbox('.e_notfNewTopics input', true);
+        },
+
+        setNotfsNormal: function() {
+          setCheckbox('.e_notfNormal input', true);
         },
 
         clickChangePassword: function() {

@@ -116,7 +116,6 @@ sealed abstract class NewUserData {
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt,
-    emailForEveryNewPost = isOwner,  // [7LERTA1]
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -160,9 +159,6 @@ case class NewPasswordUserData(
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt.map(_.toJavaDate),
-    // Initially, when the forum / comments site is tiny, it's good to be notified
-    // about everything. (isOwner —> it's the very first user, so the site is empty.) [7LERTA1]
-    emailForEveryNewPost = isOwner,
     passwordHash = passwordHash,
     isOwner = isOwner,
     isAdmin = isAdmin,
@@ -509,7 +505,10 @@ case object User {
 
 
 // Try to remove all fields unique for only Member and only Guest.
-sealed trait User {
+sealed trait User {   // REFACTOR, RENAME to People? can be either a Guest, OneMember or a Group.
+                      // And rename MemberOrGroup to OneMemberOrGroup.
+                      // Guest and OneMember are both OneUser.
+                      // People could maybe be named  OneUserOrGroup instead? but People sounds better?
   def id: UserId
   def email: String  // COULD rename to emailAddr
   def emailNotfPrefs: EmailNotfPrefs
@@ -723,6 +722,8 @@ case class Guest(
 
 
 sealed trait MemberOrGroupInclDetails {
+  def summaryEmailIntervalMins: Option[Int]
+  def summaryEmailIfActive: Option[Boolean]
   def seeActivityMinTrustLevel: Option[TrustLevel]
 }
 
@@ -739,7 +740,7 @@ case class MemberInclDetails(
   primaryEmailAddress: String,
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
-  emailForEveryNewPost: Boolean = false,
+  mailingListMode: Boolean = false,
   summaryEmailIntervalMins: Option[Int] = None,
   summaryEmailIfActive: Option[Boolean] = None,
   passwordHash: Option[String] = None,
@@ -865,7 +866,7 @@ case class MemberInclDetails(
   }
 
 
-  def preferences = AboutMemberPrefs(
+  def preferences_debugTest = AboutMemberPrefs(
     userId = id,
     fullName = fullName,
     username = username,
@@ -874,8 +875,7 @@ case class MemberInclDetails(
     summaryEmailIfActive = summaryEmailIfActive,
     about = about,
     location = country,
-    url = website,
-    emailForEveryNewPost = emailForEveryNewPost)
+    url = website)
 
 
   def copyWithNewAboutPrefs(preferences: AboutMemberPrefs): MemberInclDetails = {
@@ -889,8 +889,7 @@ case class MemberInclDetails(
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive,
       about = preferences.about,
-      website = preferences.url,
-      emailForEveryNewPost = preferences.emailForEveryNewPost)
+      website = preferences.url)
   }
 
 
@@ -988,12 +987,13 @@ case class AboutMemberPrefs(
   fullName: Option[String],
   username: String,
   emailAddress: String,
-  summaryEmailIntervalMins: Option[Int],
-  summaryEmailIfActive: Option[Boolean],
+  summaryEmailIntervalMins: Option[Int],   // REFACTOR break out to EmailPrefs
+  summaryEmailIfActive: Option[Boolean],   //
   about: Option[String],
   location: Option[String],
   url: Option[String],
-  emailForEveryNewPost: Boolean = false) {
+  // This should be on separate obj / MembersAllNotfsPrefs  [REFACTORNOTFS]
+  siteNotfLevel: NotfLevel = NotfLevel.Normal) {
 
   require(!fullName.exists(_.trim.isEmpty), "DwE4FUKW049")
   require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
@@ -1179,14 +1179,6 @@ object EmailNotfPrefs extends Enumeration {
 
 object SummaryEmails {
   val DoNotSend: Int = -1  // Also in Javascript [5WKIQU2]
-}
-
-
-case class UserPageSettings(
-  notfLevel: NotfLevel)
-
-object UserPageSettings {
-  val Default = UserPageSettings(NotfLevel.Normal)
 }
 
 

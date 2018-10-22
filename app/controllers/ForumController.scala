@@ -117,7 +117,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val permissionsJson = (body \ "permissions").as[JsArray]
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
-    val unlisted = (categoryJson \ "unlisted").asOpt[Boolean] is true
+    val unlistCategory = (categoryJson \ "unlisted").asOpt[Boolean] is true  // rename to unlistCategory client side
+    val unlistTopics = (categoryJson \ "unlistTopics").asOpt[Boolean] is true
     val includeInSummariesInt = (categoryJson \ "includeInSummaries").asOpt[Int]
     val includeInSummaries = includeInSummariesInt.flatMap(IncludeInSummaries.fromInt)
         .getOrElse(IncludeInSummaries.Default)
@@ -140,7 +141,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,
-      unlisted = unlisted,
+      unlistCategory = unlistCategory,
+      unlistTopics = unlistTopics,
       includeInSummaries = includeInSummaries)
 
     import Category._

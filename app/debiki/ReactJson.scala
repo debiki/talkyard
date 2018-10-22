@@ -631,8 +631,10 @@ class JsonMaker(dao: SiteDao) {
     val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>
         val rolePageSettings = user.anyMemberId.map({ userId =>
-          val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
-          rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
+          val notfLevels = transaction.loadPageNotfLevels(userId, pageId = pageId,
+            // Per category notfs not impl [7KBR2AF5]  [REFACTORNOTFS]
+            categoryId = None)
+          pageNotfLevelsToJson(notfLevels)
         }) getOrElse JsEmptyObj
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
@@ -1079,7 +1081,8 @@ object JsonMaker {
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
-      "unlisted" -> category.unlisted)
+      "unlistCategory" -> category.unlistCategory,  // s-a-r  unlisted  browser side
+      "unlistTopics" -> category.unlistTopics)
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
     }
@@ -1339,9 +1342,12 @@ object JsonMaker {
   }
 
 
-  private def rolePageSettingsToJson(settings: UserPageSettings): JsObject = {
+  private def pageNotfLevelsToJson(notfLevels: PageNotfLevels): JsObject = {
     Json.obj(
-      "notfLevel" -> JsNumber(settings.notfLevel.toInt))
+      "notfLevel" -> JsNumber(notfLevels.effectiveNotfLevel.toInt),  // remove?
+      "pageNotfLevel" -> JsNumberOrNull(notfLevels.forPage.map(_.toInt)),
+      "categoryNotfLevel" -> JsNumberOrNull(notfLevels.forCategory.map(_.toInt)),
+      "siteNotfLevel" -> JsNumberOrNull(notfLevels.forWholeSite.map(_.toInt)))
   }
 
 
@@ -1365,7 +1371,8 @@ object JsonMaker {
           category.newTopicTypes.headOption.getOrElse(PageRole.Discussion).toInt),
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
-      "unlisted" -> JsBoolean(category.unlisted),
+      "unlistCategory" -> JsBoolean(category.unlistCategory),  // s-a-r  unlisted
+      "unlistTopics" -> JsBoolean(category.unlistTopics),
       "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))

@@ -1,0 +1,18 @@
+
+
+rename perms_on_pages to  page_perms  ?
+   no ... instead,  perms_on_pages, perms_on_cats, perms_on_tags. ?
+
+
+split  page_users into:
+  - page_members    — maybe  is_assigned?
+  - page_visits
+  - page_notf_prefs
+
+users3 -> people3
+
+
+could have:  category_perms3  and tag_perms3
+but that's overkill.
+Only  tag_label_perms.may_use  makes sense (says who may add/remove a tag with that label)
+

@@ -817,6 +817,7 @@ var t_sv_SE: TalkyardTranslations = t = {
         "they won't know how to @mention you.",
 
     NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
+    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",  // MISSING
 
     ActivitySummaryEmails: "Activity summary emails",
 

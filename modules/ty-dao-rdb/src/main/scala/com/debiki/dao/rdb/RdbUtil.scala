@@ -331,7 +331,7 @@ object RdbUtil {
       primaryEmailAddress = dn2e(rs.getString("primary_email_addr")),
       emailNotfPrefs = _toEmailNotfs(rs.getString("email_notfs")),
       emailVerifiedAt = getOptionalDate(rs, "email_verified_at"),
-      emailForEveryNewPost = rs.getBoolean("email_for_every_new_post"),
+      mailingListMode = false, //rs.getBoolean("email_for_every_new_post"),  // rename column, later
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
       passwordHash = Option(rs.getString("password_hash")),

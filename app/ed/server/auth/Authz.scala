@@ -427,8 +427,9 @@ object Authz {
           return MayWhat.mayNotSee("EdECATDELD")
       }
 
+      // ?? should unlistTopics be consiered here? Oh well
       // [BACKW_COMPAT_PERMS] should remove !isStaff but first need to update some e2e tests.
-      if (!isStaff && !maySeeUnlisted && category.unlisted)
+      if (!isStaff && !maySeeUnlisted && category.unlistCategory)
         return MayWhat.mayNotSee("EdE6WKQ0-Unlisted")
 
       // Abort if we may not see this category, or if we don't know.
