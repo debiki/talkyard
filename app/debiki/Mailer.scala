@@ -89,9 +89,14 @@ object Mailer {
 
     var errorMessage = ""
     if (anySmtpServerName.isEmpty) errorMessage += " No talkyard.smtp.host configured."
-    if (anySmtpUserName.isEmpty) errorMessage += " No talkyard.smtp.user configured."
-    if (anySmtpPassword.isEmpty) errorMessage += " No talkyard.smtp.password configured."
     if (anyFromAddress.isEmpty) errorMessage += " No talkyard.smtp.fromAddress configured."
+
+    if (anySmtpUserName.isDefined && anySmtpPassword.isEmpty) {
+      errorMessage += " A user name, but no talkyard.smtp.password, configured."
+    }
+    if (anySmtpPassword.isDefined && anySmtpUserName.isEmpty) {
+      errorMessage += " A password, but no talkyard.smtp.user, configured."
+    }
 
     if (requireStartTls && !enableStartTls)
       errorMessage += " talkyard.smtp.requireStartTls is true but enableStartTls is false."
@@ -123,13 +128,13 @@ object Mailer {
             daoFactory, now, serverName = "", port = None,
             tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
             checkServerIdentity = false, insecureTrustAllHosts = false,
-            userName = "", password = "", fromAddress = "", debug = debug,
+            userName = None, password = None, fromAddress = "", debug = debug,
             bounceAddress = None, broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
       else {
         val serverName = anySmtpServerName getOrDie "TyE3KPD78"
-        val userName = anySmtpUserName getOrDie "TyE6KTQ20"
+        val userName = anySmtpUserName
         val fromAddress = anyFromAddress getOrDie "TyE2QKJ93"
         p.Logger.info(o"""Will use email server: $serverName as user $userName,
             smtp port: $anySmtpPort,
@@ -153,7 +158,7 @@ object Mailer {
             checkServerIdentity = checkServerIdentity,
             insecureTrustAllHosts = insecureTrustAllHosts,
             userName = userName,
-            password = anySmtpPassword getOrDie "TyE8UKTQ2",
+            password = anySmtpPassword,
             fromAddress = fromAddress,
             debug = debug,
             bounceAddress = anyBounceAddress,
@@ -192,8 +197,8 @@ class Mailer(
   val requireStartTls: Boolean,
   val checkServerIdentity: Boolean,
   val insecureTrustAllHosts: Boolean,
-  val userName: String,
-  val password: String,
+  val userName: Option[String],
+  val password: Option[String],
   val fromAddress: String,
   val bounceAddress: Option[String],
   val debug: Boolean,
@@ -376,7 +381,11 @@ class Mailer(
     apacheCommonsEmail.setHostName(serverName)
     apacheCommonsEmail.setCharset("utf8")
 
-    apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
+    // Authentication not always required — SMTP servers are sometimes configured to
+    // just trust the email sender's IP address instead.
+    if (userName.nonEmpty) {
+      apacheCommonsEmail.setAuthentication(userName.get, password.getOrElse(""))
+    }
 
     port foreach apacheCommonsEmail.setSmtpPort
     tlsPort foreach (p => apacheCommonsEmail.setSslSmtpPort(p.toString))
@@ -404,6 +413,10 @@ class Mailer(
     // This applies all props set above; calling more setNnn(..) below, in most cases will do nothing?
     // (but some setNnn() still works – look at the getMailSession() and buildMimeMessage() source)
     val session = apacheCommonsEmail.getMailSession
+
+    if (userName.isEmpty) {
+      session.getProperties.put("mail.smtp.auth", "false")
+    }
 
     // From https://stackoverflow.com/a/47720397/694469:
     // and https://github.com/square/okhttp/blob/6c3a1607b06cf129c017aa28e6aa3baee1a66745/okhttp/src/main/java/okhttp3/TlsVersion.java#L26:
