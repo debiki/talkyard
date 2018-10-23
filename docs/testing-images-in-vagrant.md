@@ -7,7 +7,7 @@ image repository. To do this, start your own test Docker repository, on localhos
 This starts a container named `myregistry`, which runs Docker's `registry:2` image.
 
 Now, edit the `version.txt` file to indicate it's a test version: append `-test`.
-Then build all Talkyard images: run `s/release.sh`.
+Then build all Talkyard images: run `s/build-and-release.sh`.
 
 (If for some reason you want to skip the end-to-end tests, comment out the `runAllE2eTests`
 line in `s/run-e2e-tests.sh`.)

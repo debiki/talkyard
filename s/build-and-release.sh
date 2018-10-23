@@ -39,6 +39,31 @@ fi
 
 
 
+# Push to which Docker repository?
+# ----------------------
+
+REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
+
+# # The registry is running?
+# nc my.example.com 80 < /dev/null
+#
+# if [ $?  is error status 1,  or if   -z "$REPO" ]; then
+#   echo
+#   echo "To which Docker repository do you want to push?"
+#   echo "Edit the file .env in this directory, and specify a repository."
+#   echo
+#   echo "You can start a test Docker registry at localhost:5000 like so:"
+#   echo
+#   echo "  sudo docker run -d -p 5000:5000 --name myregistry registry:2"
+#   echo
+#   echo "See docs/testing-images-in-vagrant.md, and"
+#   echo "https://docs.docker.com/registry/deploying/ for details."
+#   echo
+#   die_if_in_script
+# fi
+
+
+
 # Start Selenium server
 # ----------------------
 
@@ -128,28 +153,28 @@ echo 'Buid completed.'
 # Publish images to Docker repo
 # ----------------------
 
-echo "Tag images with debiki/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
+echo "Tag images with $REPO/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
 read -s -p ''
 
-sudo docker tag debiki/talkyard-app debiki/talkyard-app:$version_tag
-sudo docker tag debiki/talkyard-web debiki/talkyard-web:$version_tag
-sudo docker tag debiki/talkyard-rdb debiki/talkyard-rdb:$version_tag
-sudo docker tag debiki/talkyard-cache debiki/talkyard-cache:$version_tag
-sudo docker tag debiki/talkyard-search debiki/talkyard-search:$version_tag
-sudo docker tag debiki/talkyard-certgen debiki/talkyard-certgen:$version_tag
+sudo docker tag $REPO/talkyard-app $REPO/talkyard-app:$version_tag
+sudo docker tag $REPO/talkyard-web $REPO/talkyard-web:$version_tag
+sudo docker tag $REPO/talkyard-rdb $REPO/talkyard-rdb:$version_tag
+sudo docker tag $REPO/talkyard-cache $REPO/talkyard-cache:$version_tag
+sudo docker tag $REPO/talkyard-search $REPO/talkyard-search:$version_tag
+sudo docker tag $REPO/talkyard-certgen $REPO/talkyard-certgen:$version_tag
 
 
 echo 'Done. Publish to the official Docker image registry? Press Enter'
 read -s -p ''
 
-echo "Publishing to debiki/talkyard-*:$version_tag..."
+echo "Publishing to $REPO/talkyard-*:$version_tag..."
 
-sudo docker push debiki/talkyard-app:$version_tag
-sudo docker push debiki/talkyard-web:$version_tag
-sudo docker push debiki/talkyard-rdb:$version_tag
-sudo docker push debiki/talkyard-cache:$version_tag
-sudo docker push debiki/talkyard-search:$version_tag
-sudo docker push debiki/talkyard-certgen:$version_tag
+sudo docker push $REPO/talkyard-app:$version_tag
+sudo docker push $REPO/talkyard-web:$version_tag
+sudo docker push $REPO/talkyard-rdb:$version_tag
+sudo docker push $REPO/talkyard-cache:$version_tag
+sudo docker push $REPO/talkyard-search:$version_tag
+sudo docker push $REPO/talkyard-certgen:$version_tag
 
 
 # Bump version number
