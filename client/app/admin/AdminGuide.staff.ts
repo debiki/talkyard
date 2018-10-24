@@ -32,8 +32,8 @@ const r = ReactDOMFactories;
 export var AdminGuide =
   r.div({ className: 'esAdminGuide' },
     r.p({},
-      "Welcome! You're an admin, so you can edit settings, define what this community is about, " +
-      "and invite people."),
+      "You're an admin, so you can edit settings, define what this community is about, " +
+      "and invite people. Welcome!"),
     r.h2({},
       "Edit settings"),
     r.p({},
@@ -56,7 +56,7 @@ export var AdminGuide =
       ", then ", r.strong({}, "Create Category"),
       ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new category. " +
       "Don't create too many categories — if you do, they might look rather empty. " +
-      "Also, create interesting topics, so people won't find an empty forum. "),
+      "Also, create some interesting topics, so people won't find an empty forum. "),
     r.h2({},
       "Launch your community"),
     r.p({},
@@ -71,9 +71,7 @@ export var AdminGuide =
     r.p({},
       "For help, go to Talkyard's ",
       r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' },
-        "support forum", r.span({ className: 'icon-link-ext' })),
-      ". Over there, there's an ", r.em({}, "Ideas"),
-      " category too, and you're welcome to make suggestions."));
+        r.b({}, "support forum"), r.span({ className: 'icon-link-ext' })), '.'));
 
 //------------------------------------------------------------------------------
    }
