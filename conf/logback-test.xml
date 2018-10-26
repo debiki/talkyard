@@ -1,0 +1,42 @@
+<configuration>
+
+  <!-- Generates colored log level names. -->
+  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ed.stackdriver.StackdriverLayout" />
+    </encoder>
+  </appender>
+
+  <!-- https://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy   -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>/var/log/talkyard/talkyard-app.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/talkyard/talkyard-app.%d{yyyy-ww}.log</fileNamePattern>
+      <maxHistory>12</maxHistory>
+      <!-- Maybe otherwise a "log loop bug" could fill up the disk? -->
+      <totalSizeCap>200MB</totalSizeCap>
+    </rollingPolicy>
+    <!--
+    In Play Framework's dev mode, dynamically compiled classes are not available
+    when Logback starts, because of how Play's auto-compile-reload things work.
+    (A work-around is to place the classes in a separate module, and compile separately,
+    and include via sbt-publish-local — but that'd complicate the build process).
+    So don't exclude this logging encoder, in dev-test mode.
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ed.stackdriver.StackdriverLayout" />
+    </encoder>  -->
+  </appender>
+
+  <logger name="play" level="INFO" />
+  <logger name="application" level="TRACE" />
+  <logger name="app" level="TRACE" />
+  <logger name="org.elasticsearch" level="INFO" />
+
+  <root level="WARN">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="FILE" />
+  </root>
+
+</configuration>

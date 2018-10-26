@@ -42,12 +42,6 @@ lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
-// In dev mode, dynamically compiled classes are not available when Logback starts,  [7SBMAQ2P]
-// unless they're compiled first, in a separate step in another project. So place the Logback
-// stuff (custom Logback layout) in this separate project — and you need to do publish-local in it.
-lazy val edLogging =
-  project in file("modules/ed-logging")
-
 
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
@@ -109,7 +103,6 @@ val main = (project in file("."))
     edCore % "test->test;compile->compile",
     tyDaoRdb)
   .aggregate(
-    edLogging,
     edCore)
 
 

@@ -189,13 +189,6 @@ how to use docker-compose already.
 
        sudo sysctl --system
 
-1. Compile and SBT `publishLocal` a logging library. (Search for `[7SBMAQ2P]` in this Git repo, to find out why.)
-
-       sudo s/d-cli
-       project edLogging
-       publishLocal
-       # then CTRL+D to exit
-
 
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
