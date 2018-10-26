@@ -48,7 +48,7 @@ trait UserDao {
 
   def addUserStats(moreStats: UserStats)(transaction: SiteTransaction) {
     // Exclude superadmins. Maybe should incl system? [EXCLSYS]
-    if (moreStats.userId == SystemUserId || moreStats.userId == User.SuperAdminId)
+    if (NoUserId < moreStats.userId && moreStats.userId < User.LowestNormalMemberId)
       return
 
     val anyStats = transaction.loadUserStats(moreStats.userId)

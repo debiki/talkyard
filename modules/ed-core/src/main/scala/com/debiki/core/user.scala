@@ -264,10 +264,20 @@ case object User {
   val SysbotUserFullName = "Sysbot"
 
   /** If a superadmin logs in and does something.  COULD start using, instead of System? [SYS0LGI] */
-  val SuperAdminId = 3
+  val SuperAdminId = 3  // no, 4? or 49?  see below
 
   /** Maintenance tasks by bot(s) that supervise all sites. */
   // val SuperbotId = 4  ?
+
+  // ? rename SuperX to Global Read/Action X,
+  // Hmm these would be useful, for site staff to View As ...
+  // and assign ids 20...29 to GlobalReadStranger, GlobalReadNewMember,  (can only read)
+  // GlobalReadBasicMember, ..., GlobalReadCoreMember, GlobalReadModerator,
+  // and assign ids 30...39 to GlobalHideStranger, ... GlobalHideAdmin?  (can delete/hide things)
+  // and assign ids 40...49 to ... GlobalActionAdmin?  (can do anything, incl edit site settings)
+  // and reassign group ids 10...19  to maybe 50..59?  Then LowestNormalMemberId below would be 50.
+  // 60...68 could be ViewAsStranger, ViewAsNewMember, ... ViewAsCoreMember, ViewAsModerator?
+  // Or  ViewAsStranger/NewMember/... = 20,21 ... 29, + caps=ViewOnly/Delete/Purge/Edit/EditSettings?
 
   // val SuperPrivMod = 5 ?
   // val SuperPupbMod = 6 ?
@@ -281,8 +291,11 @@ case object User {
   // val DeletedUserId = 9
   // or just: DeactivatedOrDeletedUserId = 9 ?
 
+  // Can talk with, and can listen to notifications. But 1..9 = special. And -X = guests.
+  val LowestNormalMemberId: Int = Group.EveryoneId
+
   /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
-  val LowestTalkToMemberId = Group.EveryoneId  // or 9, same as anonymous users?
+  val LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
   assert(LowestTalkToMemberId == 10)
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
