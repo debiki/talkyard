@@ -142,7 +142,8 @@ interface TestCategory {  // try to merge with Category in model.ts?
   lockedAtMs?: number;
   frozenAtMs?: number;
   deletedAtMs?: number;
-  unlisted?: boolean;
+  unlistCategory?: boolean;
+  unlistTopics?: boolean;
 }
 
 
@@ -177,7 +178,8 @@ interface CategoryJustAdded {
   parentId: number;
   name: string;
   slug: string;
-  unlisted?: boolean;
+  unlistCategory?: boolean;
+  unlistTopics?: boolean;
   deletedAtMs?: number;
   aboutPageText?: string;
   aboutPage?: PageJustAdded;

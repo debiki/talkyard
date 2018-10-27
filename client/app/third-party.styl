@@ -168,13 +168,19 @@
   margin: 0 0.5ex;
   padding: 0.55ex 0.5ex;
 
-.icon-unlisted:before
+.icon-unlisted:before,
+.icon-2x-unlisted:before
   content: '\e814';  // same as .icon-menu: '☰' looks like a list.
   // Draw a line through the list, to show the -whatever- is *un*listed.
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M77 0 L23 100 ' stroke='%235a5a5a' stroke-width='12'/></svg>");
   background-repeat: no-repeat;
   background-position: center center;
 
+.icon-2x-unlisted:before
+  // Draw a cross over the list.
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M75 0 L25 100 ' stroke='%235c5c5c' stroke-width='12'/><path d='M25 0 L75 100 ' stroke='%235c5c5c' stroke-width='12'/></svg>");
+  // Draw double lines through the list. No, hard to see the difference between 2 lines and just 1 line.
+  //background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M56 0 L10 100' stroke='%235a5a5a' stroke-width='11'/><path d='M90 0 L44 100' stroke='%235a5a5a' stroke-width='11'/></svg>");
 
 // Twitter Bootstrap
 //===========================

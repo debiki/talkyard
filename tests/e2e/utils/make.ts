@@ -310,7 +310,8 @@ const make = {
       defaultTopicType: c.TestPageRole.Discussion,
       createdAtMs: forumPage.createdAtMs,
       updatedAtMs: forumPage.updatedAtMs,
-      unlisted: false,
+      unlistCategory: false,
+      unlistTopics: false,
     };
   },
 

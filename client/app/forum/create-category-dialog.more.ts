@@ -96,7 +96,8 @@ const EditCategoryDialog = createClassAndFactory({
           isDefaultCategory: false,
           position: DefaultPosition,
           description: '',
-          unlisted: false,
+          unlistCategory: false,
+          unlistTopics: false,
           includeInSummaries: IncludeInSummaries.Default,
         };
         this.setState({
@@ -244,11 +245,6 @@ const CategorySettings = createClassAndFactory({
     this.props.updateCategory({ position: isNaN(newPosition) ? '' : newPosition });
   },
 
-  toggleUnlisted: function() {
-    const category: Category = this.props.category;
-    this.props.updateCategory({ unlisted: !category.unlisted });
-  },
-
   toggleExclFromSummaries: function() {
     const category: Category = this.props.category;
     const newInclInSummaries = category.includeInSummaries === IncludeInSummaries.NoExclude ?
@@ -294,7 +290,9 @@ const CategorySettings = createClassAndFactory({
         help: "Places new topics in this category, if no other category selected." });
 
     const slugInput =
-        utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs",
+        utils.FadeInOnClick({ clickToShowText:
+              rFragment({}, "Click to change how the name looks in URLs: ",
+                r.samp({ style: { marginLeft: '1ex' }}, category.slug)),
             clickToShowId: 'e2eShowCatSlug' },
           Input({ type: 'text', label: "URL slug", id: 'e2eCatSlug',
               ref: 'slugInput', value: category.slug, onChange: this.onSlugChanged,
@@ -306,7 +304,7 @@ const CategorySettings = createClassAndFactory({
 
     let sortPositionText = "Click to set sort position";
     if (category.position !== DefaultPosition) {
-      sortPositionText += " (" + category.position + ")";
+      sortPositionText += ": " + category.position;
     }
     const positionInput =
         utils.FadeInOnClick({ clickToShowText: sortPositionText, clickToShowId: 'e2eShowCatPos' },
@@ -315,19 +313,43 @@ const CategorySettings = createClassAndFactory({
             help: "On the category list page, categories with lower values are listed first. " +
               "Default: " + DefaultPosition }));
 
-    const unlistedTitle = "Unlisted (" + (category.unlisted ?  "yes)" : "no)");
-    const unlistedInput =
-        utils.FadeInOnClick({ clickToShowText: unlistedTitle, clickToShowId: 'e2eShowUnlistedCB' },
-            Input({ type: 'checkbox', label: "Unlisted", id: 'e2eUnlistedCB',
-              checked: category.unlisted, onChange: this.toggleUnlisted,
-              help: "Hides this category and all topics herein, in the forum topic lists — " +
-                  "only staff will see them. However, when accessed directly, the pages " +
-                  "will be visible. This is useful for pages like a homepage or about-this-" +
-                  "website page, which people shouldn't see in the forum topic list." }));
+    const unlistTopicsOnly = category.unlistTopics && !category.unlistCategory;
+    const unlistCategory = category.unlistCategory;
+
+    const setUnlisted = (n) => {
+      this.props.updateCategory({ unlistTopics: n >= 1, unlistCategory: n === 2 });
+    };
+
+    const unlistTitle = unlistCategory
+        ? r.span({ className: 'icon-2x-unlisted' }, "Unlist both category and topics: Yes")
+        : (unlistTopicsOnly
+            ? r.span({ className: 'icon-unlisted' }, "Unlist topics: Yes")
+            : "Unlist topics: No");
+    const unlistCategoryTopicsInput =
+      utils.FadeInOnClick({ clickToShowText: unlistTitle, clickToShowId: 'e_ShowUnlRBs' },
+        r.hr(),
+        r.p({}, "Unlist topics or category?"),
+        r.form({ style: { paddingLeft: 30 }},
+          Input({ type: 'radio', className: 'e_DontUnlRB',
+            label: "No, show them (default)",
+            checked: !unlistTopicsOnly && !unlistCategory, onChange: () => setUnlisted(0) }),
+          Input({ type: 'radio', className: 'e_UnlTpcsRB',
+            label: rFragment({}, "Unlist topics ", r.span({ className: 'icon-unlisted'})),
+            checked: unlistTopicsOnly, onChange: () => setUnlisted(1),
+            help: "Won't show topics from this category, in the main topic list. " +
+              "However, if viewing this category directly, the topics are listed." }),
+          Input({ type: 'radio', className: 'e_UnlCatRB',
+            label: rFragment({}, "Unlist category and topics ", r.span({ className: 'icon-2x-unlisted' })),
+            checked: category.unlistCategory, onChange: () => setUnlisted(2),
+            help: "Hides this category and all pages herein, in the forum topic lists — " +
+              "only staff will see them. However, when accessed directly, the pages " +
+              "will be visible. (This is useful for pages like a homepage or about-this-" +
+              "website page, which people shouldn't see in the forum topic list.)" })),
+        r.hr());
 
     const shallExclude = category.includeInSummaries === IncludeInSummaries.NoExclude;
     const excludeFromSummariesTitle =
-        "Exclude from summary emails (" + (shallExclude ?  "yes, exclude)" : "no)");
+        "Exclude from summary emails: " + (shallExclude ?  "Yes, exclude" : "No");
     const excludeFromSummariesInput =
       utils.FadeInOnClick({ clickToShowText: excludeFromSummariesTitle, clickToShowId: 'e_ShowExclCB' },
         Input({ type: 'checkbox', label: "Exclude from summary emails", id: 'e_ExclCB',
@@ -361,7 +383,7 @@ const CategorySettings = createClassAndFactory({
             isDefaultInput,
             slugInput,
             positionInput,
-            unlistedInput,
+            unlistCategoryTopicsInput,
             excludeFromSummariesInput,
             anyDeleteButton);
   }

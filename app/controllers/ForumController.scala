@@ -117,7 +117,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val permissionsJson = (body \ "permissions").as[JsArray]
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
-    val unlistCategory = (categoryJson \ "unlisted").asOpt[Boolean] is true  // rename to unlistCategory client side
+    val unlistCategory = (categoryJson \ "unlistCategory").asOpt[Boolean] is true
     val unlistTopics = (categoryJson \ "unlistTopics").asOpt[Boolean] is true
     val includeInSummariesInt = (categoryJson \ "includeInSummaries").asOpt[Int]
     val includeInSummaries = includeInSummariesInt.flatMap(IncludeInSummaries.fromInt)

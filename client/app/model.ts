@@ -510,7 +510,8 @@ interface Category {
   position?: number;
   description: string;
   recentTopics?: Topic[];
-  unlisted?: boolean;
+  unlistCategory?: boolean;
+  unlistTopics?: boolean;
   includeInSummaries?: IncludeInSummaries;
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
@@ -872,7 +873,7 @@ interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
   title: string;
   path: string;
-  unlisted?: boolean;
+  unlistCategory?: boolean;
   isDeleted?: boolean;
 }
 

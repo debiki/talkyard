@@ -172,7 +172,7 @@ export const TopBar = createComponent({
     let ancestorCategories;
     const shallShowAncestors = settings_showCategories(store.settings, me);
     const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
-    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlisted);
+    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);
 
     if (isUnlisted || isSection(pageRole)) {
       // Show no ancestors.

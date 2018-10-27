@@ -66,7 +66,8 @@ function buildSite(site?: SiteData) {
       name: string,
       slug: string,
       description: string,
-      unlisted?: boolean,
+      unlistCategory?: boolean,
+      unlistTopics?: boolean,
       deletedAtMs?: number,
     }): CategoryJustAdded {
       assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
@@ -75,7 +76,8 @@ function buildSite(site?: SiteData) {
       category.name = opts.name;
       category.slug = opts.slug;
       category.description = opts.description;
-      category.unlisted = opts.unlisted;
+      category.unlistCategory = opts.unlistCategory;
+      category.unlistTopics = opts.unlistTopics;
       category.deletedAtMs = opts.deletedAtMs;
       site.categories.push(category);
       return <CategoryJustAdded> category;
@@ -87,7 +89,8 @@ function buildSite(site?: SiteData) {
       parentCategoryId: number,
       name: string,
       slug: string,
-      unlisted?: boolean,
+      unlistCategory?: boolean,
+      unlistTopics?: boolean,
       deletedAtMs?: number,
       aboutPageText: string,
     }): CategoryJustAdded {
@@ -245,7 +248,7 @@ function buildSite(site?: SiteData) {
         name: "Unlisted Cat",
         slug: 'unlisted-cat',
         aboutPageText: "Unlisted category description.",
-        unlisted: true,
+        unlistCategory: true,
       });
 
       forum.categories.deletedCategory = api.addCategoryWithAboutPage(forumPage, {

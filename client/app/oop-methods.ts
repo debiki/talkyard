@@ -383,7 +383,7 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
-export function category_isPublic(category: Category, store: Store): boolean {
+export function category_isPublic(category: Category | undefined, store: Store): boolean {
   // REFACTOR? !category happens here: [4JKKQS20], for the root category (looked up by id).
   // Because the root cat isn't included in the store. Maybe should include it? Then 'category'
   // will never be missing here.
@@ -399,13 +399,17 @@ export function category_isPublic(category: Category, store: Store): boolean {
 
 export function category_iconClass(category: Category | CategoryId, store: Store): string {
   // (Deleted and unlisted categories aren't included in the public categories list. [5JKWT42])
-  const theCategory: Category =
+  const anyCategory: Category | undefined =
       _.isNumber(category) ? _.find(store.currentCategories, (c) => c.id === category) : category;
 
-  const isPublic = category_isPublic(theCategory, store);
-  return isPublic ? '' : (
-      theCategory.isDeleted ? 'icon-trash ' : (
-          theCategory.unlisted ? 'icon-unlisted ' : 'icon-lock '));
+  const isPublic = category_isPublic(anyCategory, store);
+  if (!isPublic) return (
+      anyCategory.isDeleted ? 'icon-trash ' : (
+        // Both category and topics unlisted? (Unlisting category means unlisting the topics too)
+        anyCategory.unlistCategory ? 'icon-2x-unlisted ' : 'icon-lock '));
+
+  // Ony topics unlisted?
+  return anyCategory && anyCategory.unlistTopics ? 'icon-unlisted ' : '';
 }
 
 

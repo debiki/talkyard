@@ -126,7 +126,7 @@ trait CategoriesDao {
     // A bit dupl code (7UKWTW1)
     loadRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-        includeDeleted = includeDeleted, authzCtx).sortBy(_.position)
+        includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
       SectionCategories(
         sectionPageId = rootCategory.sectionPageId,
         categories = categories,
@@ -146,7 +146,7 @@ trait CategoriesDao {
 
     for (rootCategory <- rootCategories) {
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-        includeDeleted = includeDeleted, authzCtx).sortBy(_.position)
+        includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
       result.append(SectionCategories(
         sectionPageId = rootCategory.sectionPageId,
         categories = categories,
@@ -172,7 +172,7 @@ trait CategoriesDao {
     // A bit dupl code (7UKWTW1)
     val rootCategory = loadRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      includeDeleted = authzCtx.isStaff, authzCtx).sortBy(_.position)
+      includeDeleted = authzCtx.isStaff, includeUnlistTopics = true, authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
   }
 
@@ -180,10 +180,11 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        includeDeleted: Boolean, authzCtx: ForumAuthzContext): immutable.Seq[Category] = {
+        includeDeleted: Boolean, includeUnlistTopics: Boolean,
+        authzCtx: ForumAuthzContext): immutable.Seq[Category] = {
     val categories = ArrayBuffer[Category]()
     appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDeleted = includeDeleted,
-      authzCtx, categories)
+        includeUnlistTopics = includeUnlistTopics, authzCtx, categories)
     categories.to[immutable.Seq]
   }
 
@@ -208,7 +209,8 @@ trait CategoriesDao {
         // a category in the forum, wich has sub categories). The top root shouldn't
         // contain any pages, but subtree roots usually contain pages.)
         listDescendantMaySeeCategories(categoryId, includeRoot = true,
-            includeDeleted = pageQuery.pageFilter.includeDeleted, authzCtx).map(_.id)
+            includeDeleted = pageQuery.pageFilter.includeDeleted,
+          includeUnlistTopics = false, authzCtx).map(_.id)
       }
       else {
         SECURITY // double-think-through this:
@@ -361,7 +363,8 @@ trait CategoriesDao {
 
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      includeDeleted: Boolean, authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
+      includeDeleted: Boolean, includeUnlistTopics: Boolean,
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -396,9 +399,9 @@ trait CategoriesDao {
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
       return
     })
-    for (childCategory <- childCategories) {
+    for (childCategory <- childCategories; if !childCategory.unlistTopics || includeUnlistTopics) {
       appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDeleted = includeDeleted,
-        authzCtx, categoryList)
+        includeUnlistTopics = includeUnlistTopics, authzCtx, categoryList)
     }
   }
 

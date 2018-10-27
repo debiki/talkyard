@@ -89,7 +89,7 @@ describe("categories", function() {
     //owen.debug();
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
-    owen.categoryDialog.setUnlisted(true);
+    owen.categoryDialog.setCategoryUnlisted();
     owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
@@ -135,7 +135,7 @@ describe("categories", function() {
     owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
-    owen.categoryDialog.setUnlisted(false);
+    owen.categoryDialog.setNotUnlisted();
     owen.categoryDialog.openSecurityTab();
     owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
     owen.categoryDialog.submit();

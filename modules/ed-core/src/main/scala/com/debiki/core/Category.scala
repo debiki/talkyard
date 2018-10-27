@@ -69,8 +69,10 @@ case class Category(
   description: Option[String],
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
-  unlistCategory: Boolean,
+  // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
+  unlistCategory: Boolean,  // also unlists topics
   unlistTopics: Boolean,
+  //  -----------
   includeInSummaries: IncludeInSummaries = IncludeInSummaries.Default,
   createdAt: ju.Date,
   updatedAt: ju.Date,

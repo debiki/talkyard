@@ -2199,10 +2199,19 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      setUnlisted: function(unlisted: boolean) {
-        // for now, ignore 'unlisted == true/false'
-        api.waitAndClick('#e2eShowUnlistedCB');
-        api.waitAndClick('#e2eUnlistedCB');
+      setCategoryUnlisted: function() {
+        api.waitAndClick('#e_ShowUnlRBs');
+        api.waitAndClick('.e_UnlCatRB input');
+      },
+
+      setTopicsUnlisted: function() {
+        api.waitAndClick('#e_ShowUnlRBs');
+        api.waitAndClick('.e_UnlTpcsRB input');
+      },
+
+      setNotUnlisted: function() {
+        api.waitAndClick('#e_ShowUnlRBs');
+        api.waitAndClick('.e_DontUnlRB input');
       },
 
       openSecurityTab: function() {
