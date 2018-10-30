@@ -537,6 +537,7 @@ sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant
         //  Participants = one or many Participant:s   <—  this yes, abbrev pps and ppt in constr names
         //  Participant = Guest or Member
         //  Member = User Or Group
+        //  trait Someone = Guest or User (just 1 person (or bot), not a group)
 
 
   def id: UserId

@@ -311,7 +311,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
     for {
       toUserId <- toUserIds
-      if toUserId >= User.LowestNormalMemberId
+      if toUserId <= MaxGuestId || User.LowestNormalMemberId <= toUserId
       if !sentToUserIds.contains(toUserId)
     } {
       // Generate notifications, regardless of email settings, so they can be shown in the user's inbox.

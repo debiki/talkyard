@@ -990,7 +990,9 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eDoCreateForum');
         const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);
-        browser.go('/'); // leave the categories page; go to the topic list
+
+        // Leave the categories page; go to the topic list.
+        api.forumButtons.viewTopics();
       },
     },
 
@@ -2023,8 +2025,11 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eViewCategoriesB');
       },
 
-      clickViewTopics: function() {
+      viewTopics: function(ps: { waitForTopics?: false } = {}) {
         api.waitAndClick('#e2eViewTopicsB');
+        if (ps.waitForTopics !== false) {
+          api.forumTopicList.waitForTopics();
+        }
       },
 
       clickViewNew: function() {

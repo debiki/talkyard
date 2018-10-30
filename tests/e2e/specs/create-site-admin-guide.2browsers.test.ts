@@ -131,6 +131,7 @@ describe("create site, follow the admin guide", function() {
   });
 
   it("... opens the Welcome topic", function() {
+    owen.forumButtons.viewTopics();
     owen.forumTopicList.goToTopic("Welcome");
   });
 

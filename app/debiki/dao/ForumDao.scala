@@ -316,8 +316,8 @@ trait ForumDao {
           slug = "sample-topics",
           position = DefaultCategoryPosition + 100,
           description =
-            o"""Sample topics of different types. These topics are not listed in the main
-              topic list — you'll see them only if you open this sample topis category.""",
+            o"""Sample topics of different types. They aren't listed in the main
+              topic list — you'll see them only if you open this sample topics category.""",
           newTopicTypes = immutable.Seq(PageRole.Discussion),
           unlistCategory = false,
           unlistTopics = true,  // so won't appear in the main topic list
@@ -360,11 +360,11 @@ trait ForumDao {
 
     if (options.createSampleTopics) {
 
-      // Create example open-ended discussion.
+      // Create a sample open-ended discussion.
       createPageImpl(
         PageRole.Discussion, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
-        anyFolder = None, anySlug = Some("example-discussion"), showId = true,
+        anyFolder = None, anySlug = Some("sample-discussion"), showId = true,
         titleSource = SampleThreadedDiscussionTitle,
         titleHtmlSanitized = SampleThreadedDiscussionTitle,
         bodySource = SampleThreadedDiscussionText,
@@ -379,7 +379,7 @@ trait ForumDao {
       createPageImpl(
         PageRole.Problem, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
-        anyFolder = None, anySlug = Some("example-problem"), showId = true,
+        anyFolder = None, anySlug = Some("sample-problem"), showId = true,
         titleSource = SampleProblemTitle,
         titleHtmlSanitized = SampleProblemTitle,
         bodySource = SampleProblemText.source,
@@ -394,7 +394,7 @@ trait ForumDao {
       createPageImpl(
         PageRole.Idea, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
-        anyFolder = None, anySlug = Some("example-idea"), showId = true,
+        anyFolder = None, anySlug = Some("sample-idea"), showId = true,
         titleSource = SampleIdeaTitle,
         titleHtmlSanitized = SampleIdeaTitle,
         bodySource = SampleIdeaText.source,
@@ -409,7 +409,7 @@ trait ForumDao {
       val questionPagePath = createPageImpl(
         PageRole.Question, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
-        anyFolder = None, anySlug = Some("example-question"), showId = true,
+        anyFolder = None, anySlug = Some("sample-question"), showId = true,
         titleSource = SampleQuestionTitle,
         titleHtmlSanitized = SampleQuestionTitle,
         bodySource = SampleQuestionText.source,
