@@ -977,17 +977,20 @@ function pagesFor(browser) {
                             // create-site-all-logins @facebook test
         api.waitAndSetValue('input[type="text"]', forumTitle);
         // Click Next, Next ... to accept all default choices.
+        /*  [NODEFCATS]
         api.waitAndClick('.e_Next');
         browser.pause(200); // Wait for next button
         api.waitAndClick('.e_Next');
         browser.pause(200);
         api.waitAndClick('.e_Next');
         browser.pause(200);
+        */
         api.waitAndClick('.e_Next');
         browser.pause(200);
         api.waitAndClick('#e2eDoCreateForum');
         const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);
+        browser.go('/'); // leave the categories page; go to the topic list
       },
     },
 

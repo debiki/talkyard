@@ -267,8 +267,8 @@ export var CreateForumPanel = createComponent({
     return {
       title: '',
       useCategories: true,
-      createSupportCategory: true,
-      createIdeasCategory: true,
+      createSupportCategory: false,  // [NODEFCATS]
+      createIdeasCategory: false,    // [NODEFCATS]
       createSampleTopics: true,
       topicListStyle: TopicListLayout.ExcerptBelowTitle,
       nextChoice: 1,
@@ -319,6 +319,7 @@ export var CreateForumPanel = createComponent({
       thisChoiceDone = false;
     }
 
+    /*  [NODEFCATS]
     if (nextChoice >= 2) {
       useCategoriesChoice = Input({ type: 'checkbox',
           label: "Use categories? Probably a good idea, unless the community will be small. " +
@@ -344,7 +345,7 @@ export var CreateForumPanel = createComponent({
     }
     else {
       nextChoice = 5;
-    }
+    } */
 
     if (nextChoice >= 5) {
       const style = this.state.topicListStyle;
@@ -421,7 +422,8 @@ export var CreateForumPanel = createComponent({
 
     if (nextChoice <= 4) {
       const last = nextChoice === 4 ? " (last)" : '';
-      nextButton = PrimaryButton({ onClick: () => this.setState({ nextChoice: nextChoice + 1 }),
+      nextButton = PrimaryButton({
+          onClick: () => this.setState({ nextChoice: nextChoice + 999 }), // was: + 1  [NODEFCATS]
           disabled: !thisChoiceDone, className: 'e_Next' }, "Next" + last);
     }
 

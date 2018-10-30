@@ -62,13 +62,13 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       title = title,
       folder = folder,
       useCategories = useCategories,
-      createSupportCategory = createSupportCategory,
-      createIdeasCategory = createIdeasCategory,
+      createSupportCategory = false, // createSupportCategory,  [NODEFCATS]
+      createIdeasCategory = false, // createIdeasCategory,
       createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 
     val result = request.dao.createForum(options, request.who)
-    OkSafeJson(JsString(result.pagePath.value))
+    OkSafeJson(JsString(result.pagePath.value.dropRightWhile(_ == '/') + "/categories"))
   }
 
 

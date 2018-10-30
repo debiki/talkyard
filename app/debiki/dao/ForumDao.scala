@@ -169,8 +169,6 @@ trait ForumDao {
         makeStaffCategoryPerms(staffCategoryId)),
       bySystem)(tx)
 
-    // LATER: sample topics category
-
     if (options.isForEmbeddedComments)
       createEmbeddedCommentsCategory(forumPageId, rootCategoryId, defaultCategoryId,
         staffCategoryId, options, bySystem, tx)
@@ -231,11 +229,13 @@ trait ForumDao {
       nextCategoryId - 1
     }
 
-    var anySupportCategoryId: Option[CategoryId] = None
-    var anyIdeasCategoryId: Option[CategoryId] = None
+    //var anySupportCategoryId: Option[CategoryId] = None  [NODEFCATS]
+    //var anyIdeasCategoryId: Option[CategoryId] = None
     var uncategorizedCategoryId: CategoryId = -1
+    var anySampleTopicsCategoryId: Option[CategoryId] = None
 
-    if (options.createSupportCategory) {
+    /*
+    if (options.createSupportCategory) {  [NODEFCATS]
       val categoryId = getAndBumpCategoryId()
       anySupportCategoryId = Some(categoryId)
       createCategoryImpl(
@@ -258,7 +258,7 @@ trait ForumDao {
         bySystem)(tx)
     }
 
-    if (options.createIdeasCategory) {
+    if (options.createIdeasCategory) {  [NODEFCATS]
       val categoryId = getAndBumpCategoryId()
       anyIdeasCategoryId = Some(categoryId)
       createCategoryImpl(
@@ -280,8 +280,9 @@ trait ForumDao {
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
     }
+    */
 
-    // Create the Uncategorized category.
+    // Create the General category.
     uncategorizedCategoryId = getAndBumpCategoryId()
     createCategoryImpl(
         CategoryToSave(
@@ -301,6 +302,31 @@ trait ForumDao {
           makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
           makeStaffCategoryPerms(uncategorizedCategoryId)),
         bySystem)(tx)
+
+    if (options.createSampleTopics) {
+      val categoryId = getAndBumpCategoryId()
+      anySampleTopicsCategoryId = Some(categoryId)
+      createCategoryImpl(
+        CategoryToSave(
+          anyId = Some(categoryId),
+          sectionPageId = forumPageId,
+          parentId = rootCategoryId,
+          shallBeDefaultCategory = false,
+          name = "Sample Topics",
+          slug = "sample-topics",
+          position = DefaultCategoryPosition + 100,
+          description =
+            o"""Sample topics of different types. These topics are not listed in the main
+              topic list — you'll see them only if you open this sample topis category.""",
+          newTopicTypes = immutable.Seq(PageRole.Discussion),
+          unlistCategory = false,
+          unlistTopics = true,  // so won't appear in the main topic list
+          includeInSummaries = IncludeInSummaries.NoExclude),
+        immutable.Seq[PermsOnPages](
+          makeEveryonesDefaultCategoryPerms(categoryId),
+          makeStaffCategoryPerms(categoryId)),
+        bySystem)(tx)
+    }
 
     // Create forum welcome topic.
     createPageImpl(
@@ -332,41 +358,57 @@ trait ForumDao {
       spamRelReqStuff = None,
       tx)
 
-    // Create example threaded discussion.
-    if (options.createSampleTopics) createPageImpl(
-      PageRole.Discussion, PageStatus.Published,
-      anyCategoryId = Some(uncategorizedCategoryId),
-      anyFolder = None, anySlug = Some("example-discussion"), showId = true,
-      titleSource = SampleThreadedDiscussionTitle,
-      titleHtmlSanitized = SampleThreadedDiscussionTitle,
-      bodySource = SampleThreadedDiscussionText,
-      bodyHtmlSanitized = s"<p>$SampleThreadedDiscussionText</p>",
-      pinOrder = None,
-      pinWhere = None,
-      bySystem,
-      spamRelReqStuff = None,
-      tx)
-
-    // Create example problem.
-    if (options.createSampleTopics) createPageImpl(
-      PageRole.Problem, PageStatus.Published,
-      anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
-      anyFolder = None, anySlug = Some("example-problem"), showId = true,
-      titleSource = SampleProblemTitle,
-      titleHtmlSanitized = SampleProblemTitle,
-      bodySource = SampleProblemText.source,
-      bodyHtmlSanitized = SampleProblemText.html,
-      pinOrder = None,
-      pinWhere = None,
-      bySystem,
-      spamRelReqStuff = None,
-      tx)
-
-    // Create example question.
     if (options.createSampleTopics) {
+
+      // Create example open-ended discussion.
+      createPageImpl(
+        PageRole.Discussion, PageStatus.Published,
+        anyCategoryId = anySampleTopicsCategoryId,
+        anyFolder = None, anySlug = Some("example-discussion"), showId = true,
+        titleSource = SampleThreadedDiscussionTitle,
+        titleHtmlSanitized = SampleThreadedDiscussionTitle,
+        bodySource = SampleThreadedDiscussionText,
+        bodyHtmlSanitized = s"<p>$SampleThreadedDiscussionText</p>",
+        pinOrder = None,
+        pinWhere = None,
+        bySystem,
+        spamRelReqStuff = None,
+        tx)
+
+      // Create sample problem.
+      createPageImpl(
+        PageRole.Problem, PageStatus.Published,
+        anyCategoryId = anySampleTopicsCategoryId,
+        anyFolder = None, anySlug = Some("example-problem"), showId = true,
+        titleSource = SampleProblemTitle,
+        titleHtmlSanitized = SampleProblemTitle,
+        bodySource = SampleProblemText.source,
+        bodyHtmlSanitized = SampleProblemText.html,
+        pinOrder = None,
+        pinWhere = None,
+        bySystem,
+        spamRelReqStuff = None,
+        tx)
+
+      // Create sample idea.
+      createPageImpl(
+        PageRole.Idea, PageStatus.Published,
+        anyCategoryId = anySampleTopicsCategoryId,
+        anyFolder = None, anySlug = Some("example-idea"), showId = true,
+        titleSource = SampleIdeaTitle,
+        titleHtmlSanitized = SampleIdeaTitle,
+        bodySource = SampleIdeaText.source,
+        bodyHtmlSanitized = SampleIdeaText.html,
+        pinOrder = None,
+        pinWhere = None,
+        bySystem,
+        spamRelReqStuff = None,
+        tx)
+
+      // Create sample question.
       val questionPagePath = createPageImpl(
         PageRole.Question, PageStatus.Published,
-        anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
+        anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("example-question"), showId = true,
         titleSource = SampleQuestionTitle,
         titleHtmlSanitized = SampleQuestionTitle,
@@ -377,26 +419,14 @@ trait ForumDao {
         bySystem,
         spamRelReqStuff = None,
         tx)._1
+      // ... with two sample replies:
       insertReplyImpl(textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(SampleAnswerText, isTitle = false),
         questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(SampleAnswerText2, isTitle = false),
+        questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
     }
-
-    // Create example idea.
-    if (options.createSampleTopics) createPageImpl(
-      PageRole.Idea, PageStatus.Published,
-      anyCategoryId = anyIdeasCategoryId orElse anySupportCategoryId orElse Some(
-        uncategorizedCategoryId),
-      anyFolder = None, anySlug = Some("example-idea"), showId = true,
-      titleSource = SampleIdeaTitle,
-      titleHtmlSanitized = SampleIdeaTitle,
-      bodySource = SampleIdeaText.source,
-      bodyHtmlSanitized = SampleIdeaText.html,
-      pinOrder = None,
-      pinWhere = None,
-      bySystem,
-      spamRelReqStuff = None,
-      tx)
 
     CreateForumResult(null, defaultCategoryId = defaultCategoryId,
       staffCategoryId = staffCategoryId)
@@ -561,6 +591,11 @@ object ForumDao {
   private val SampleAnswerText = o"""Sample answer. The one who posted the question,
     and the staff (you?), can click Solution below, to accept this answer and mark
     the question as solved."""
+
+  private val SampleAnswerText2 = o"""Another sample answer. Lorem ipsum dolor sit amet,
+    consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
+    ea commodo consequat"""
 
   // SHOULD separate layout: chat/flat/threaded/2d, from
   // topic type: idea/question/discussion/wiki/etc ?

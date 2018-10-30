@@ -536,7 +536,7 @@ var t_en_US: TalkyardTranslations = t = {
     BottomCmtExpl_2: "This is useful for status messages, e.g. to clarify why you close/reopen " +
         "a topic. Or for suggesting changes to the original post.", */
     // I18N _1 and _2 MISSING, all languages  [BTM2PRGR]
-    BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress" +
+    BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress " +
       "towards answering the question / solving the problem / implementing the idea.",
       //"or maybe why you postpone or close this topic.",
     BottomCmtExpl_2: "Progress comments are appended at the bottom of the page.",
