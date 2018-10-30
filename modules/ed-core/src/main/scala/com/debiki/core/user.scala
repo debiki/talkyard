@@ -1046,7 +1046,9 @@ case class AboutGroupPrefs(
   fullName: Option[String],
   username: String,
   summaryEmailIntervalMins: Option[Int],
-  summaryEmailIfActive: Option[Boolean]) {
+  summaryEmailIfActive: Option[Boolean],
+  // This should be on separate obj / MembersAllNotfsPrefs  [REFACTORNOTFS]
+  siteNotfLevel: NotfLevel = NotfLevel.Normal) {
 
   require(!fullName.exists(_.trim.isEmpty), "EdE05KFB521")
   require(groupId >= User.LowestNonGuestId, "DwE56KX2")

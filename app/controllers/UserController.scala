@@ -136,8 +136,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
                 siteNotfLevel = siteNotfLevel)
             case g: Group =>
+              val siteNotfLevel = transaction.loadPageNotfLevels(g.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff)
+                callerIsStaff = callerIsStaff, siteNotfLevel)
           }
         }
         else {
@@ -205,8 +206,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             siteNotfLevel = siteNotfLevel)
           (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
         case group: Group =>
+          val siteNotfLevel = transaction.loadPageNotfLevels(group.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
           val groupJson = jsonForGroupInclDetails(
-            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
+            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff, siteNotfLevel)
           (groupJson, JsNull, group.id)
       }
     }
@@ -285,7 +287,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Boolean,
-      callerIsStaff: Boolean = false): JsObject = {
+      callerIsStaff: Boolean = false,
+      siteNotfLevel: Option[NotfLevel]): JsObject = {  // [REFACTORNOTFS] remove
     var json = Json.obj(
       "id" -> group.id,
       "isGroup" -> JsTrue,
@@ -295,6 +298,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+      // [REFACTORNOTFS]  shouldn't be here -----------------
+      json += "emailForEveryNewPost" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingAll.toInt))   // [REFACTORNOTFS] remove
+      json += "notfAboutNewTopics" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingFirst.toInt))   // [REFACTORNOTFS] remove
+      // ----------------------------------------------------
     }
     json
   }
@@ -1466,8 +1473,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       groupId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
+      // This one shouldn't be here: [REFACTORNOTFS] -----------
+      siteNotfLevel = NotfLevel.fromInt((json \ "siteNotfLevel").as[Int]).getOrElse(NotfLevel.Normal),
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
+    // ----------------------------------------------------
   }
 
 

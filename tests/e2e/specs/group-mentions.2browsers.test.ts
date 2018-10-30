@@ -329,6 +329,9 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   });
 
 
+  /*  [REFACTORNOTFS]  new_members —> all_members, notifies all members.
+      Maybe sth like a mentions- alias that notifies only trust level new-memebers?
+
   // ----- @basic_members
 
   it("Maria mentions @basic_members", () => {
@@ -367,7 +370,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   it("... and no one else (right now, @new_members doesn't incl @basic_members ... hmm)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
-  });
+  });  */
 
 });
 

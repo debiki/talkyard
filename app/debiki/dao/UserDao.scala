@@ -1391,6 +1391,15 @@ trait UserDao {
         transaction.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
       }
 
+      REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
+      val oldSiteNotfLevel = transaction.loadPageNotfLevels(
+        preferences.groupId, NoPageId, categoryId = None).forWholeSite getOrElse NotfLevel.Normal
+      if (preferences.siteNotfLevel != oldSiteNotfLevel) {
+        transaction.upsertPageNotfPref(
+          PageNotfPref(group.id, preferences.siteNotfLevel, wholeSite = true))
+      }
+      // ---/ REFACTOR -------------------------------------------------------------------------------
+
       removeUserFromMemCache(group.id)
 
       // Group names aren't shown everywhere. So need not empty cache (as is however

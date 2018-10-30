@@ -284,13 +284,19 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
         // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
 
-        val groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
+        var groupMembers = tx.loadGroupMembers(groupId).filter(_.id != newPost.createdById)
 
         dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
 
+        // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
+        // because they're members of the AllMembers group, hmm, maybe shouldn't be?
+        groupMembers = groupMembers.filterNot(_.isGroup)
+        // Alternatively:
+        /*
         groupMembers.find(_.isGroup).foreach(group =>
           throwForbidden("TyERECGRPMNT", o"""s$siteId: Notifications to groups in groups not implemented:
               user ${group.idSpaceName} is a group."""))
+         */
 
         UX; COULD // add text: "@the_mention (not notified: too many people in group)"; throw no error.
         val maxMentions = config.maxGroupMentionNotfs

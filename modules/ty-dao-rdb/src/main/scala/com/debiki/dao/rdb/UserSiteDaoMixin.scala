@@ -206,6 +206,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       select $UserSelectListItemsNoGuests
       from users3 u
       where u.site_id = ?
+        and user_id >= ${User.LowestNormalMemberId}
         and ($conditions)"""
 
     runQueryFindMany(query, values.toList, rs => {

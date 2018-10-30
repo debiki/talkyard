@@ -536,6 +536,7 @@ trait SiteTransaction {
 
   def upsertPageNotfPref(notfPref: PageNotfPref)
   def deletePageNotfPref(notfPref: PageNotfPref): Boolean  // notf level ignored
+  // [REFACTORNOTFS] break out to a Dao, and load just for this member, but also all groups it's in?
   def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId]): PageNotfLevels
   def loadPeopleIdsWatchingPage(pageId: PageId, minNotfLevel: NotfLevel): Set[UserId]
   def loadPeopleIdsWatchingCategory(categoryId: CategoryId, minNotfLevel: NotfLevel): Set[UserId]
