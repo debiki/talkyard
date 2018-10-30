@@ -298,12 +298,16 @@ case object User {
   val LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
   assert(LowestTalkToMemberId == 10)
 
+  // ?? val UnknownBotId = -2  // bots that accesses any public api endpoints, no api secret
+
+
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId: UserId = -3
   val UnknownUserName = "Unknown"
   val UnknownUserGuestCookie = "UU"
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
+  // Change to <= -1001?  [UID1001]
   val MaxCustomGuestId: UserId = -10
 
   val MaxGuestId: UserId = -1
@@ -313,7 +317,7 @@ case object User {
   /** Ids 1 .. 99 are reserved in case in the future I want to combine users and groups,
     * and then there'll be a few groups with hardcoded ids in the range 1..99.
     */
-  val LowestAuthenticatedUserId = 100   // also in js  [8PWK1Q2W]
+  val LowestAuthenticatedUserId = 100   // also in js  [8PWK1Q2W]   Change to 1001?  [UID1001]
 
   val LowestMemberId: UserId = SystemUserId
   val LowestNonGuestId = 1  // CLEAN_UP RENAME to LowestMemberId?
@@ -518,10 +522,23 @@ case object User {
 
 
 // Try to remove all fields unique for only Member and only Guest.
-sealed trait User {   // REFACTOR, RENAME to People? can be either a Guest, OneMember or a Group.
+sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant = better.]] can be either a Guest, OneMember or a Group.
                       // And rename MemberOrGroup to OneMemberOrGroup.
                       // Guest and OneMember are both OneUser.
                       // People could maybe be named  OneUserOrGroup instead? but People sounds better?
+        // Even better?
+        //  People = one or many User:s
+        //  User = Guest or Member,
+        //  Member = Group or Fellow
+        //  Fellow = one single member (ok for both men and women, esp. in the context of membership)
+        // So, rename e.g. MemberOrGroup to GroupOrFellow, and ... many many other things.
+
+        // Even even better?
+        //  Participants = one or many Participant:s   <—  this yes, abbrev pps and ppt in constr names
+        //  Participant = Guest or Member
+        //  Member = User Or Group
+
+
   def id: UserId
   def email: String  // COULD rename to emailAddr
   def emailNotfPrefs: EmailNotfPrefs
@@ -1153,15 +1170,21 @@ case class Group(
 
 
 object Group {
+  REFACTOR // move to object User, rename User to Participant?
 
-  /** Includes not-logged-in people and guests. */
+  /** Includes not-logged-in people (a.k.a. strangers) and guests, and all members. */
   val EveryoneId = 10
+
 
   /** All higher trust level members are members of this group too. And so on:
     * members >= Basic are all members of Basic, too. So this group includes all
     * people who have created an account at the website.
+    *
+    * RENAME the NewMembers group to AllMembers, because totally sounds as if "new members"
+    *     does *not* include full members and core members — but it does.
+    *     "All members" obviously includes those other trust levels too.
     */
-  val NewMembersId = 11
+  val NewMembersId = 11  ; RENAME // to AllMembersId [ALLMEMBS]
 
   val BasicMembersId = 12
   val FullMembersId = 13

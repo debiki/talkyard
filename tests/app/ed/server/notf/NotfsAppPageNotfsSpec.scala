@@ -18,6 +18,7 @@
 package ed.server.notf
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.dao._
 import java.{util => ju}
 
@@ -30,7 +31,6 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
 
   var owner: Member = _
   var ownerWho: Who = _
-  var moderator: Member = _
   var member1: Member = _
   var member2: Member = _
   var member3: Member = _
@@ -40,6 +40,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
   var owensTopicIdOne: PageId = _
   var owensTopicIdTwo: PageId = _
   var member1sPageOne: PageId = _
+  var everyoneNotfdTopicId: PageId = _
 
   var oldChatTopicId: PageId = _
   var chatTopicOneId: PageId = _
@@ -58,16 +59,6 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
   }
 
 
-  def edit(post: Post, editorId: UserId, newText: String)(dao: SiteDao) : Unit =
-    super.edit(post, editorId, newText, skipNashorn = false)(dao)
-
-  def chat(memberId: UserId, pageId: PageId, text: String)(dao: SiteDao): Post =
-    super.chat(memberId, pageId, text, skipNashorn = false)(dao)
-
-  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr])(
-        dao: SiteDao): Post =
-    super.reply(memberId, pageId, text, parentNr = parentNr, skipNashorn = false)(dao)
-
 
   "NotificationGenerator can create and remove notifications" - {
     val now = new ju.Date()
@@ -78,9 +69,8 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
       dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("ntf_ownr", dao)
       ownerWho = Who(owner.id, browserIdData)
-      createForumResult = dao.createForum("Forum", "/notf-test-forum/", isForEmbCmts = false, ownerWho)
+      createForumResult = dao.createForum("Forum", "/notf-test-frm/", isForEmbCmts = false, ownerWho)
       categoryId = createForumResult.defaultCategoryId
-      moderator = createPasswordModerator("ntf_mod", dao)
 
       member1 = createPasswordUser("ntf_mem1", dao)
       member2 = createPasswordUser("ntf_mem2", dao)
@@ -108,26 +98,26 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
         owner.id, browserIdData, dao, Some(categoryId))
 
       // Both member 1 and 2 want to know about new topics.
-      expectedTotalNumNotfs += 2
-      countTotalNumNotfs() mustBe expectedTotalNumNotfs
       val origPost = dao.loadPost(owensTopicIdOne, PageParts.BodyNr).get
       listUsersNotifiedAbout(origPost.id) mustBe Set(member1.id, member2.id)
+      expectedTotalNumNotfs += 2
+      countTotalNumNotfs() mustBe expectedTotalNumNotfs
     }
 
     "...  replies to himself" in {
       val aReply = reply(owner.id, owensTopicIdOne, "aReply", parentNr = None)(dao)
 
       // Only member 1 want to know about every post.
+      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id)
       expectedTotalNumNotfs += 1
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
-      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id)
     }
 
 
     // ----- Edit whole site notfs
 
 
-    "member 1 now wants only new topic notfs, member 2 nothing, and member 3 every post" in {
+    "member 1 now wants only new topics, member 2 normal, and member 3 every post" in {
       dao.readWriteTransaction { tx =>
         tx.upsertPageNotfPref(PageNotfPref(member1.id, NotfLevel.WatchingFirst, wholeSite = true))
         tx.upsertPageNotfPref(PageNotfPref(member2.id, NotfLevel.Normal, wholeSite = true))
@@ -141,24 +131,24 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
         textAndHtmlMaker.testBody("owensTopicIdTwo bd"),
         owner.id, browserIdData, dao, Some(categoryId))
 
-      // Now member 1 and 3 want to know about new topics.
-      expectedTotalNumNotfs += 2
-      countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      // Now member 1 and 3 got notified about this new topic.
       val origPost = dao.loadPost(owensTopicIdTwo, PageParts.BodyNr).get
       listUsersNotifiedAbout(origPost.id) mustBe Set(member1.id, member3.id)
+      expectedTotalNumNotfs += 2
+      countTotalNumNotfs() mustBe expectedTotalNumNotfs
     }
 
     "...  replies to himself again" in {
       val aReply = reply(owner.id, owensTopicIdTwo, "aReply", parentNr = None)(dao)
 
       // Only member 3 want to know about every post.
+      listUsersNotifiedAbout(aReply.id) mustBe Set(member3.id)
       expectedTotalNumNotfs += 1
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
-      listUsersNotifiedAbout(aReply.id) mustBe Set(member3.id)
     }
 
 
-    "Member 1 mutes the site. Member 2 and 3 now wants normal notfs" in {
+    "Member 1 and 2 mute the site. Member 3 now wants normal notfs" in {
       dao.readWriteTransaction { tx =>
         tx.upsertPageNotfPref(PageNotfPref(member1.id, NotfLevel.Muted, wholeSite = true))
         tx.upsertPageNotfPref(PageNotfPref(member2.id, NotfLevel.Muted, wholeSite = true))
@@ -182,10 +172,10 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     }
 
     "Owen gets notified — he listens to everything, since is owner" in {
-      expectedTotalNumNotfs += 1
-      countTotalNumNotfs() mustBe expectedTotalNumNotfs
       val origPost = dao.loadPost(member1sPageOne, PageParts.BodyNr).get
       listUsersNotifiedAbout(origPost.id) mustBe Set(owner.id)
+      expectedTotalNumNotfs += 1
+      countTotalNumNotfs() mustBe expectedTotalNumNotfs
     }
 
 
@@ -196,9 +186,9 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
       val aReply = reply(member2.id, member1sPageOne, "aReply", parentNr = None)(dao)
 
       // Member 1, and Owen.
+      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id, owner.id)
       expectedTotalNumNotfs += 2
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
-      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id, owner.id)
     }
 
     "... Member 2 starts Tracking the page, since posted on the page  *not impl* [REFACTORNOTFS]" in {
@@ -219,10 +209,102 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
         parentNr = Some(PageParts.FirstReplyNr))(dao)
 
       // Member 1 (watches page), member 2 (direct reply), and Owen.
+      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id, member2.id, owner.id)
       expectedTotalNumNotfs += 3
       countTotalNumNotfs() mustBe expectedTotalNumNotfs
-      listUsersNotifiedAbout(aReply.id) mustBe Set(member1.id, member2.id, owner.id)
     }
+
+
+    // ----- Group notfs
+
+    "Notification settings for the AllMembers group work, and can be overridden by each member" - {
+
+      "All members listens for new topics. Except for member 1: Normal, member 2: Muted" in {
+        dao.readWriteTransaction { tx =>
+          tx.upsertPageNotfPref(
+            PageNotfPref(Group.NewMembersId, NotfLevel.WatchingFirst, wholeSite = true))
+
+          tx.upsertPageNotfPref(PageNotfPref(member1.id, NotfLevel.Normal, wholeSite = true))
+          tx.upsertPageNotfPref(PageNotfPref(member2.id, NotfLevel.Muted, wholeSite = true))
+
+          // Delete this pref.
+          tx.deletePageNotfPref(PageNotfPref(member3.id, NotfLevel.Normal, wholeSite = true))
+        }
+      }
+
+      var memberIdsNotified: Set[UserId] = null
+
+      "Owen creates a topic, people get notified" in {
+        everyoneNotfdTopicId = createPage(PageRole.Discussion,
+          textAndHtmlMaker.testTitle("owensTopicIdOne"),
+          textAndHtmlMaker.testBody("owensTopicIdOne bd"),
+          owner.id, browserIdData, dao, Some(categoryId))
+
+        val origPost = dao.loadPost(everyoneNotfdTopicId, PageParts.BodyNr).get
+        memberIdsNotified = listUsersNotifiedAbout(origPost.id)
+      }
+
+      o"""The AllMembers group, and members 3, 4, memberNoNotfsConfigd
+            (notf of new topics, whole site), get notified""" in {
+        // Member 2 has muted the site, and
+        // member 1 has set site notfs to Normal — that overrides AllMember's notf setting.
+        memberIdsNotified  mustBe Set(
+            Group.NewMembersId, member3.id, member4.id, memberNoNotfsConfigd.id)
+      }
+
+      "In total, 4 peoples got notified" in {
+        expectedTotalNumNotfs += 4
+        countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      }
+
+      "Owen posts a reply, to member 2 on Mebmer 1's page, and member 1 and 2 get notified" in {
+        val aReply = reply(owner.id, member1sPageOne, "everyoneNotfdTopicId",
+          parentNr = Some(PageParts.FirstReplyNr) // that's member 2's reply to member 1
+          )(dao)
+        memberIdsNotified = listUsersNotifiedAbout(aReply.id)
+      }
+
+      "... member 1 (created the page) and member 2 (direct reply) get notified" in {
+        memberIdsNotified mustBe Set(member1.id, member2.id)
+        expectedTotalNumNotfs += 2
+        countTotalNumNotfs() mustBe expectedTotalNumNotfs
+      }
+    }
+
+
+
+    // More later?:
+
+    //  member watches page
+    //  member watches category
+    //  member watches whole site
+
+    //  event on other page —> nothing
+
+    //  group watches page
+    //  group watches category
+    //  group watches whole site
+
+    //  group watches page,           member has muted
+    //  group watches category,       member has muted
+    //  group watches whole site,     member has muted
+
+    //  group has muted page,      member watches all posts
+    //  group has muted category,  member watches page, all posts
+    //  group has muted category,  member watches category, new topics
+
+    //  group watches new-topics category,    member watches all, page
+    //  group watches new-topics category,    member watches all, category
+    //  group watches new-topics category,    member watches all, whole site
+
+    //  group watches new-topics whole-site,    member watches all, page
+    //  group watches new-topics whole-site,    member watches all, category
+    //  group watches new-topics whole-site,    member watches all, whole site
+
+    //  group A watches page, every post
+    //  group B watches page, muted
+    //    —> max notf level
+    //  swap A <–> B, try again, should be max notf level again
 
   }
 }

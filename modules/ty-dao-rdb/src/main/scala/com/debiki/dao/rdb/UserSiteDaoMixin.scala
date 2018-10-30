@@ -185,6 +185,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
           return Nil
         }
         values.append(trustLevel.toInt.asAnyRef)
+        // OLD COMMENT, find newer thoughts if you search for [ALLMEMBS]:
         // This:  "Hello @new_members"  and "Hi @basic_members" sounds as if full members
         // and trusted members and higher, are *not* supposed to be included.
         // A 'trusted member' or a 'core member' is not a 'new member'. Instead, it's
@@ -194,7 +195,10 @@ trait UserSiteDaoMixin extends SiteTransaction {
         // So, for new and basic members, load only exactly those trust levels.
         // And for full member and higher, load that trust level, and all higher trust levels.
         // This is the least confusing behavior, for people who don't know what trust levels are?
-        val eqOrGte = if (groupId <= Group.BasicMembersId) "=" else ">="
+        val eqOrGte = ">="  // NO:  if (groupId <= Group.BasicMembersId) "=" else ">="
+                            // Instead, rename New Members to All Members [ALLMEMBS]  [MENTIONALIAS]
+                            // Then it's obvious that it incls all higher levels.
+                            // And somewhat ok that a "Full member" is also a "Basic member", right.
         s"coalesce(u.locked_trust_level, u.trust_level) $eqOrGte ?"
       }
 
@@ -1002,40 +1006,6 @@ trait UserSiteDaoMixin extends SiteTransaction {
           """,
           List(siteId.asAnyRef, d2ts(ctime), emailAddr, _toFlag(emailNotfPrefs)))
     }
-  }
-
-
-  /** Loads users watching the specified page, any parent categories or forums,
-    * and people watching everything on the whole site.
-    */
-  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {    // rm
-    TESTS_MISSING // tested via e2e tests but not via app server tests
-    val result = ArrayBuffer[UserId]()
-
-    // Load people watching pageId only.
-    // For now, ignore users watching any parent categories, consider `pageId` itself only.
-    // COULD move this query only to PageUsersSiteDaoMixin.
-    val sql = s"""
-      select user_id from page_users3
-      where site_id = ?
-        and page_id = ?
-        and notf_level = ${NotfLevel.WatchingAll.toInt}
-      """
-    runQuery(sql, List(siteId.asAnyRef, pageId), rs => {
-      while (rs.next()) {
-        result += rs.getInt("user_id")
-      }
-    })
-
-    // Load people watching the whole site.
-    val sqlWholeSite = """
-      select USER_ID from users3 where SITE_ID = ? and EMAIL_FOR_EVERY_NEW_POST = true"""
-    runQuery(sqlWholeSite, List(siteId.asAnyRef), rs => {
-      while (rs.next()) {
-        result += rs.getInt("USER_ID")
-      }
-    })
-    result.distinct.to[immutable.Seq]
   }
 
 }

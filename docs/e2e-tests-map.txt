@@ -267,19 +267,24 @@ editor -
   maximize editor:
   preview:
   upload things:  (7KFC2)
-  @mentions:
-    simple:
-        - email-notfs-discussion.test.ts  TyT4FKA2EQ02
-    edit, add new @username:
-        - email-notfs-discussion.test.ts  TyT2WREG78
-    edit, remove @username and add back
-          - notf-emails-discussion.2browsers.test.ts   TyT2ABKS057 (bug?: mention is re-sent)
-    unusual chars:
-        - weird-usernames.2browsers.test.ts  TyT5ABKPUW2
-    group mentinos:
-        - group-mentions.2browsers  TyT4AWJL208R
   other buttons -
     ...
+
+
+mentions:
+  simple:
+          - email-notfs-discussion.test.ts  TyT4FKA2EQ02
+  edit, add new @username:
+          - email-notfs-discussion.test.ts  TyT2WREG78
+  edit, remove @username and add back
+          - notf-emails-discussion.2browsers.test.ts   TyT2ABKS057 (bug?: mention is re-sent)
+  unusual chars:
+          - weird-usernames.2browsers.test.ts  TyT5ABKPUW2
+  group mentions:
+          - group-mentions.2browsers  TyT4AWJL208R
+  channel mentions:
+  no dupl mentions when combining @channel, @member, @group:
+
 
 discussion -
   users on page:

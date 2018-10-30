@@ -43,7 +43,7 @@ case class SectionCategories(
   */
 case class CategoryToSave(
   sectionPageId: PageId,
-  parentId: CategoryId,
+  parentId: CategoryId,   // RENAME to parentCategoryId ?
   name: String,
   slug: String,
   position: Int,

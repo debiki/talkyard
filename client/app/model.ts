@@ -996,7 +996,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   email: string;
   emailVerifiedAtMs?: WhenMs;
   // mailingListMode: undefined | true;  // default false  — later
-  // ----------
+  // ----------  [REFACTORNOTFS]
   emailForEveryNewPost: boolean;  // move these two to a single field in a separate pageNotfsPrefs obj,
   notfAboutNewTopics?: boolean;   // that also incls all category and tags subscriptions?
   // ----------

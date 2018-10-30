@@ -38,13 +38,22 @@ object Notifications {
 
 sealed abstract class NotificationType(val IntValue: Int) { def toInt: Int = IntValue }
 
+// Could:  enum / 1000 = notification type, enum % 1000 = how many got notified?
+// No, instead, case class:  NotfTypeNumNotified(notfType, numNotified: Int)
 object NotificationType {
   case object DirectReply extends NotificationType(1)
-  case object Mention extends NotificationType(2)
-  // Quote 3
+  case object Mention extends NotificationType(2)  // –> 1000, group mention 1001 ...
+  // + Quote
   case object Message extends NotificationType(4)
   case object NewPost extends NotificationType(5)
+  // + NewTopic  [REFACTORNOTFS]
+  // + TopicProgress
+  // + QuestionAnswered
+  // + TopicDone
+  // + TopicClosed
   case object PostTagged extends NotificationType(6)
+
+  // + GoupMention: 1001 ... 1999 = group size + 1000
 
   def fromInt(value: Int): Option[NotificationType] = Some(value match {
     case DirectReply.IntValue => DirectReply
@@ -149,17 +158,17 @@ sealed abstract class NotfLevel(val IntVal: Int) {
 object NotfLevel {
 
 
-  /** Like EveryPost, but also notified about any edits of any post.
+  /** Like EveryPost, but also notified of edits.
     *
     * If this is desirable only for, say, the Orig Post (e.g. to get notified if someone
     * edits one's blog post = the orig post), then don't add more
     * notification levels here. Instead, make it possible to subscribe for notifications
-    * on individual posts, and sub-threads, rather than on whole pages / categories / tags only.
+    * on individual posts, and sub-threads, in addition to on whole pages / categories / tags.
     * This could be a power user feature in the More... post action dropdown.
     */
   case object EveryPostAllEdits extends NotfLevel(9)
 
-  /** Notified about every new post (topic status changes).
+  /** Notified about every new post (incl topic status changes).
     */
   case object WatchingAll extends NotfLevel(8)    ; RENAME // to EveryPost
 
@@ -181,7 +190,7 @@ object NotfLevel {
 
   /** Like Normal, plus highlights the topic in the topic list, if new posts.
     */
-  case object Tracking extends NotfLevel(4)  ; RENAME // to Highlight
+  case object Tracking extends NotfLevel(4)  ; RENAME // to Highlight ?
 
   /** Notified of @mentions and posts in one's sub threads (incl direct replies).
     */
@@ -211,13 +220,12 @@ object NotfLevel {
 }
 
 
-/** If page id, category id and tag label id are all unspecified, then, means the default
-  * notf level, for the peopleId, in the whole forum (across all categories and tags).
-  *
+/**
   * @param peopleId — the group or individual these settings concern.
   * @param notfLevel
   * @param pageId — if these notification settings are for a single page only.
   * @param pagesInCategoryId — the settings apply to all pages in this category.
+  * @param wholeSite — the group's or member's default settings for pages across the whole site
   */
 case class PageNotfPref(
   peopleId: UserId,
@@ -243,9 +251,9 @@ case class PageNotfLevels(
 
   /** The most specific notf level (per page), overrides the less specific (category, whole site).
     */
-  def effectiveNotfLevel: NotfLevel =
+  def effectiveNotfLevel: Option[NotfLevel] =
     // Tested here: [TyT7KSJQ296]
-    forPage.orElse(forCategory.orElse(forWholeSite)).getOrElse(NotfLevel.Normal)
+    forPage.orElse(forCategory.orElse(forWholeSite))
 
 }
 

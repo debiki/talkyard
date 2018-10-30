@@ -26,6 +26,27 @@ import scala.collection.{immutable, mutable}
 import scala.util.matching.Regex
 
 
+/** A user's notification settings for something more specific, e.g. for a specific page,
+  * overrides more general notification settings, e.g. notification prefs for new topics
+  * in a category.
+  *
+  * Example: A user gets notifications about every post in a category Bugs, because
+  * hen is member of the Developers group. However hen mutes a topic The-Bug-Of-All-Bugs,
+  * and this topic specific notf pref, overrides the group notf pref
+  * — that is, hen won't get notified any more about The-Bug-Of-All-Bugs.
+  */
+sealed abstract class PageNotfSpecificity(val IntVal: Int) { def toInt: Int = IntVal }
+object PageNotfSpecificity {
+  case object Page extends PageNotfSpecificity(1)
+  //case object CategoryAndTag extends NotfSpecificity(2)
+  case object Category extends PageNotfSpecificity(3)
+  //case object Tag extends NotfSpecificity(4)
+  case object WholeSite extends PageNotfSpecificity(5)
+  case object Default extends PageNotfSpecificity(6)
+}
+
+
+
 /** Finds out what notifications to send when e.g. a new post is created.
   * Also finds out what not-yet-sent notifications to delete if a post is deleted, or if
   * the post is edited and a @mention removed.
@@ -76,7 +97,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
       // do about that.)
       makeNewPostNotf(
-          NotificationType.DirectReply, newPost, page.categoryId, replyingToUser)
+          NotificationType.DirectReply, newPost, page.categoryId, replyingToUser,
+          PageNotfSpecificity.Default)
     }
 
     // Later: Indirect rely notifications.
@@ -95,8 +117,10 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       val mentionedUsernames = anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(
         newPost.approvedSource getOrDie "DwE82FK4", nashorn)
 
-      var mentionedMembersOrGroups: Set[User] = mentionedUsernames.flatMap(tx.loadMemberOrGroupByUsername)
+      var mentionedPeoples: Set[User] = mentionedUsernames.flatMap(tx.loadMemberOrGroupByUsername)
 
+      // [MENTIONALIAS] can create more mention aliases, like @new-members (= trust levels new & basic),
+      // and @guests and @here-now and @everyone (= all members)
       val allMentioned = mentionsAllInChannel(mentionedUsernames)
       if (allMentioned) {
         if (mayMentionGroups(author)) {
@@ -104,13 +128,13 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           // then, removing G.id here, won't remove U from moreToAdd.
           // Instead, U is added to moreToAdd, and will be @channel mentioned,
           // instead of @group_name mentioned. Doesn't matter?))
-          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedMembersOrGroups.map(_.id)
-          mentionedMembersOrGroups ++= tx.loadMembersAsMap(moreToAdd).values.toSet
+          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedPeoples.map(_.id)
+          mentionedPeoples ++= tx.loadMembersAsMap(moreToAdd).values.toSet
         }
       }
 
       for {
-        memberOrGroup <- mentionedMembersOrGroups
+        memberOrGroup <- mentionedPeoples
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
@@ -119,46 +143,44 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         if !notfCreatedAlreadyTo(memberOrGroup.id)
       } {
         makeNewPostNotf(
-            NotificationType.Mention, newPost, page.categoryId, memberOrGroup)
+            NotificationType.Mention, newPost, page.categoryId, memberOrGroup,
+            PageNotfSpecificity.Default)
       }
     }
 
     // People watching this topic or category
-    // rm xx = tx.loadUserIdsWatchingPage(page.id).toSet  ; REFACTOR ; REMOVE // old
-    var moreIds: Set[UserId] = Set.empty
 
     val minNotfLevel =
       if (newPost.isOrigPost) {
         // Everyone with a notf level for this page / category / whole-site, at or above
         // WatchingFirst, want to know about this.
         NotfLevel.WatchingFirst
+        // Later: NotificationType = new topic
       }
       // Later:
-      // else if is Answer ... or if is Progress post ... or status change ...
+      // else if is Answer, NotificationType.Solved ... or if is Progress,
+      // NotificationType.Progress, post ... or status change ...
+      // or if closed, NotificationType.TopicClosed
+      // etc
       else {
         // Just an ordinary reply. Only people with this high notf level, want to know about it.
         NotfLevel.WatchingAll
       }
 
-    moreIds ++= tx.loadPeopleIdsWatchingPage(page.id, minNotfLevel)
-    moreIds ++= page.categoryId.map(
-      c => tx.loadPeopleIdsWatchingCategory(c, minNotfLevel)) getOrElse Set.empty
-    moreIds ++= tx.loadPeopleIdsWatchingWholeSite(minNotfLevel)
-
-    /* if (newPost.isOrigPost) {
-      moreIds ++= page.categoryId.map(tx.loadPeopleIdsWatchingNewTopicsInCategory) getOrElse Set.empty
-      moreIds ++= tx.loadPeopleIdsWatchingNewTopicsWholeSite()
-    }
-    else {
-      moreIds ++= tx.loadPeopleIdsWatchingEveryPostOnPage(page.id)
-      moreIds ++= page.categoryId.map(tx.loadPeopleIdsWatchingEveryPostInCategory) getOrElse Set.empty
-      moreIds ++= tx.loadPeopleIdsWatchingEveryPostWholeSite()
-    }*/
+    var idsWatchingPage: Set[UserId] = tx.loadPeopleIdsWatchingPage(page.id, minNotfLevel)
 
     // Direct message? Notify everyone in the topic. For now, they're always watching.
     if (page.role == PageRole.FormalMessage) {
-      moreIds ++= pageMemberIds
+      idsWatchingPage ++= pageMemberIds
+      // Later: change NotificationType to Message, mail envelope icon
     }
+
+    val idsWatchingCat = page.categoryId.map(
+      c => tx.loadPeopleIdsWatchingCategory(c, minNotfLevel)) getOrElse Set.empty
+
+    val idsWatchingSite = tx.loadPeopleIdsWatchingWholeSite(minNotfLevel)
+
+    val moreIds: Set[UserId] = idsWatchingPage ++ idsWatchingCat ++ idsWatchingSite
 
     for {
       peopleId <- moreIds
@@ -166,9 +188,20 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       if !notfCreatedAlreadyTo(peopleId)
       userOrGroup <- tx.loadUser(peopleId)
     } {
+      val specificity =
+        if (idsWatchingPage contains peopleId) PageNotfSpecificity.Page
+        else if (idsWatchingCat contains peopleId) PageNotfSpecificity.Category
+        else if (idsWatchingSite contains peopleId) PageNotfSpecificity.WholeSite
+        else die("TyE3@KABS05")
       makeNewPostNotf(
-          NotificationType.NewPost, newPost, page.categoryId, userOrGroup)
+          NotificationType.NewPost, newPost, page.categoryId, userOrGroup,
+          specificity, minNotfLevel)
     }
+
+    // Later:
+    // moreIdsViaTags ++= tx.loadPeopleIdsWatchingTagsMaybeInCategory(minNotfLevel, postTags, categoryId)
+    //makeNewPostNotf(
+    //  NotificationType.PostTagged, newPost, page.categoryId, userOrGroup)
 
     generatedNotifications
   }
@@ -192,14 +225,16 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     anyAuthor = Some(tx.loadTheUser(pageBody.createdById))
     tx.loadUsers(toUserIds) foreach { user =>
       makeNewPostNotf(
-          NotificationType.Message, pageBody, categoryId = None, user)
+          NotificationType.Message, pageBody, categoryId = None, user, PageNotfSpecificity.Default)
     }
     generatedNotifications
   }
 
 
   private def makeNewPostNotf(notfType: NotificationType, newPost: Post,
-      categoryId: Option[CategoryId], toUserMaybeGroup: User) {
+        categoryId: Option[CategoryId], toUserMaybeGroup: User,
+        pageNotfSpecificity: PageNotfSpecificity,
+        minNotfLevel: NotfLevel = NotfLevel.Hushed) {
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
 
@@ -217,24 +252,24 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       }
       else {
         val isMention = notfType == NotificationType.Mention
+        val groupId = toUserMaybeGroup.id
 
-        throwForbiddenIf(isMention && toUserMaybeGroup.id == Group.EveryoneId,
+        throwForbiddenIf(isMention && groupId == Group.EveryoneId,
           "TyEBDGRPMT01", s"May not mention ${toUserMaybeGroup.idSpaceName}")
 
         // Later, when there're custom groups, allow other ids (> AdminsId). [custom-groups]
         if (isMention) throwForbiddenIf(
-          toUserMaybeGroup.id < Group.EveryoneId || Group.AdminsId < toUserMaybeGroup.id,
+          groupId < Group.EveryoneId || Group.AdminsId < groupId,
           "TyEBDGRPMT02", s"Weird group mention: ${toUserMaybeGroup.idSpaceName}")
 
         if (isMention && !mayMentionGroups(author)) {
           // For now, may still mention core members, staff and admins, so can ask how the site works.
           throwForbiddenIf(
-            toUserMaybeGroup.id < Group.CoreMembersId || Group.AdminsId < toUserMaybeGroup.id,
+            groupId < Group.CoreMembersId || Group.AdminsId < groupId,
               "TyEM0MNTNGRPS", s"You may not metion groups: ${toUserMaybeGroup.idSpaceName}")
         }
 
         // Generate a notf to the group, so will appear in its user profile.
-        val groupId = toUserMaybeGroup.id
         if (!sentToUserIds.contains(groupId)) {
           sentToUserIds += groupId
           notfsToCreate += Notification.NewPost(
@@ -268,11 +303,69 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         (memberIds, notfType)
       }
 
-    for (toUserId <- toUserIds ; if toUserId != SystemUserId && !sentToUserIds.contains(toUserId)) {
+    for {
+      toUserId <- toUserIds
+      if toUserId >= User.LowestNormalMemberId
+      if !sentToUserIds.contains(toUserId)
+    } {
       // Generate notifications, regardless of email settings, so they can be shown in the user's inbox.
       // We won't send any *email* though, if the user has unsubscribed from such emails.
+
+      //------------------------
+      // Look at the user's notf level, and ancestor group notf levels,
+      // and find out if the notf should really be sent, or if it's
+      // muted / too-low-notf-level, somehow.
+
+      // Hmm, this is more tricky than what it seems.
+      // The most specific notf settings should be considered, and, tricky:
+      // A group's notf level, is more specific, if it's for a particular page,
+      // whilst a group member's setting is for the category or the whole site?
+      // So need to know, if a group notf, is because of a page, category,
+      // tag, or whole site PageNotfPref.
+
+      // And if one mutes the whole site,
+      // but a group one is in, EveryPost-subscribes to a topic,
+      // then one will get notified? Because is every post, via group.
+      // Or not? Because one muted the whole site.
+
+      // Or maybe this could be a group priority?  > 0  = overrides a member's settings,
+      // if the group's thing is more specific than the member's thing,
+      // (e.g. group has notf pref for a page, but member for the whole site).
+      // < 0, then the member's setting overrides the group settings, even if group is for the
+      // more specific thing (e.g. grop notf pref = for page, member's = for site)
+      // For now, as long as Muted works, all is probably mostly okay.
+
+      // By default, group settings should override, if for more specific thing.
+      // And one can leave the group, if don't want to be notified via the group. ?
+
+      // For now.
+      // Should also consider the type of notf: is it a direct message? (then send also
+      // if >= Hushed) or a subthread indirect reply? (then send only if >= Normal).
       val notfLevels = tx.loadPageNotfLevels(toUserId, newPost.pageId, categoryId)
-      if (notfLevels.effectiveNotfLevel != NotfLevel.Muted) {
+      val usersMoreSpecificLevel =
+        // If this notification is being generated because the user, or a group it is in,
+        // has configured notfs for every post, the whole site — but the user
+        // has also configured a more specific and more silent notification level —
+        // then don't notify.
+        if (pageNotfSpecificity.toInt >= PageNotfSpecificity.WholeSite.toInt) {
+          notfLevels.forPage.orElse(notfLevels.forCategory).orElse(notfLevels.forWholeSite)
+        }
+        // If this notification is because the user, or a group hen is in, has subscribed
+        // to a category — but the user has configured a more specific and more silent
+        // notification level henself, then don't notify.
+        else if (pageNotfSpecificity.toInt >= PageNotfSpecificity.Category.toInt) {
+          notfLevels.forPage.orElse(notfLevels.forCategory)
+        }
+        // If this notification is because a group the user is in, follows
+        // a page, but the user has Hushed or Muted that page, then don't notify.
+        else if (pageNotfSpecificity.toInt >= PageNotfSpecificity.Page.toInt) {
+          notfLevels.forPage
+        }
+        else None
+      val shallNotify = !usersMoreSpecificLevel.exists(_.toInt < minNotfLevel.toInt)
+      //------------------------
+
+      if (shallNotify) {
         sentToUserIds += toUserId
         notfsToCreate += Notification.NewPost(
           notfType,
@@ -347,7 +440,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
     if (mentionsForAllDeleted) {
       // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.
-      var usersMentionedAfter = newMentions.flatMap(tx.loadMemberByPrimaryEmailOrUsername)
+      val usersMentionedAfter = newMentions.flatMap(tx.loadMemberByPrimaryEmailOrUsername)
       val toDelete: Set[UserId] = previouslyMentionedUserIds -- usersMentionedAfter.map(_.id)
       // (COULD_OPTIMIZE: needn't load anything here — we have the user ids already.)
       mentionsDeletedForUsers = tx.loadMembersAsMap(toDelete).values.toSet
@@ -381,7 +474,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       BUG // harmless. might mention people again, if previously mentioned directly,
       // and now again via a @group_mention. See REFACTOR above.
       makeNewPostNotf(
-          NotificationType.Mention, newPost, categoryId = pageMeta.flatMap(_.categoryId), user)
+          NotificationType.Mention, newPost, categoryId = pageMeta.flatMap(_.categoryId), user,
+          PageNotfSpecificity.Default)
     }
 
     generatedNotifications
@@ -400,7 +494,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       if user.id != post.createdById
     } {
       makeNewPostNotf(
-          NotificationType.PostTagged, post, categoryId = pageMeta.flatMap(_.categoryId), user)
+          NotificationType.PostTagged, post, categoryId = pageMeta.flatMap(_.categoryId), user,
+          PageNotfSpecificity.Default)
     }
     generatedNotifications
   }

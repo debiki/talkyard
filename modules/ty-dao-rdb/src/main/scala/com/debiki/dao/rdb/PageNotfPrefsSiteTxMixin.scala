@@ -66,7 +66,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
         -- pages_with_tag_label_id,
       values (?, ?, ?, ?, ?, ?)
       -- There can be only one on-conflict clause.
-      on conflict (site_id, people_id, $thingColumnName)
+      on conflict (site_id, $thingColumnName, people_id)
       do update set
         notf_level = excluded.notf_level
       """
@@ -172,9 +172,10 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
   private def readNotfPref(rs: js.ResultSet): PageNotfPref = {
     PageNotfPref(
       peopleId = getInt(rs, "people_id"),
+      notfLevel = NotfLevel.fromInt(getInt(rs, "notf_level")).getOrElse(NotfLevel.Normal),
       pageId = getOptString(rs, "page_id"),
-      pagesInCategoryId = getOptInt(rs, ""),
-      notfLevel = NotfLevel.fromInt(getInt(rs, "")).getOrElse(NotfLevel.Normal))
+      wholeSite = getOptBool(rs, "pages_in_whole_site").getOrElse(false),
+      pagesInCategoryId = getOptInt(rs, "pages_in_category_id"))
   }
 
 }

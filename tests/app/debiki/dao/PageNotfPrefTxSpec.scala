@@ -18,11 +18,9 @@
 package debiki.dao
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import org.scalatest._
 import NotfLevel._
 
-class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
+class PageNotfPrefTxSpec extends DaoAppSuite() {
   var dao: SiteDao = _
   var owner: User = _
   var userOne: User = _
@@ -45,22 +43,22 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
       PageNotfLevels(
         forPage = Some(Hushed),
         forCategory = Some(WatchingFirst),
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Hushed
+        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(Hushed)
 
       PageNotfLevels(
         forPage = None,
         forCategory = Some(WatchingFirst),
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe WatchingFirst
+        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(WatchingFirst)
 
       PageNotfLevels(
         forPage = None,
         forCategory = None,
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe WatchingAll
+        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(WatchingAll)
 
       PageNotfLevels(
         forPage = None,
         forCategory = None,
-        forWholeSite = None).effectiveNotfLevel mustBe Normal
+        forWholeSite = None).effectiveNotfLevel mustBe None
     }
 
 
@@ -72,7 +70,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
       userTwo = createPasswordUser("jjyyzz55", dao, trustLevel = TrustLevel.BasicMember)
 
       val createForumResult =
-          dao.createForum("Forum", s"/drafts-forum/", isForEmbCmts = false,
+          dao.createForum("Forum", s"/notfs-tx-forum/", isForEmbCmts = false,
             Who(owner.id, browserIdData))
 
       defCatId = createForumResult.defaultCategoryId
@@ -84,9 +82,9 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
           anyId = Some(otherCatId),
           sectionPageId = createForumResult.pagePath.pageId.get,
           parentId = createForumResult.staffCategoryId,
-          name = "Category Id Two",
-          slug = "categoryIdTwo",
-          description = "Descr, cat two",
+          name = "Other Category",
+          slug = "otherCategory",
+          description = "Descr, other cat",
           position = 11,
           newTopicTypes = List(PageRole.Discussion),
           shallBeDefaultCategory = false,
@@ -117,7 +115,12 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
       dao.readOnlyTransaction { tx =>
         tx.loadPeopleIdsWatchingPage(pageIdOne, minNotfLevel = Muted) mustBe Set.empty
         tx.loadPeopleIdsWatchingCategory(defCatId, minNotfLevel = Muted) mustBe Set.empty
-        tx.loadPeopleIdsWatchingWholeSite(minNotfLevel = Muted) mustBe Set.empty
+      }
+    }
+
+    "... except for the owner, who watches the whole site by default" in {
+      dao.readOnlyTransaction { tx =>
+        tx.loadPeopleIdsWatchingWholeSite(minNotfLevel = Muted) mustBe Set(owner.id)
       }
     }
 
@@ -131,7 +134,6 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
           tx.upsertPageNotfPref(PageNotfPref(
             userOne.id,
             pageId = Some(pageIdOne),
-            pagesInCategoryId = None,
             notfLevel = EveryPostAllEdits))
         }
       }
@@ -171,7 +173,6 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
           tx.upsertPageNotfPref(PageNotfPref(
             userOne.id,
             pageId = Some(pageIdTwo),
-            pagesInCategoryId = None,
             notfLevel = WatchingAll))
         }
       }
@@ -235,7 +236,6 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dao.readWriteTransaction { tx =>
           tx.upsertPageNotfPref(PageNotfPref(
             userOne.id,
-            pageId = None,
             pagesInCategoryId = Some(defCatId),
             notfLevel = TopicProgress))
         }
@@ -286,7 +286,6 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dao.readWriteTransaction { tx =>
           tx.upsertPageNotfPref(PageNotfPref(
             userOne.id,
-            pageId = None,
             pagesInCategoryId = Some(otherCatId),
             notfLevel = TopicSolved))
         }
@@ -396,7 +395,8 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
     "can edit site notf prefs" - {
       "update notf prefs, for the whole site" in {
         dao.readWriteTransaction { tx =>
-          tx.upsertPageNotfPref(PageNotfPref(userOne.id, wholeSite = true, notfLevel = WatchingAll))
+          tx.upsertPageNotfPref(
+              PageNotfPref(userOne.id, wholeSite = true, notfLevel = WatchingAll))
         }
       }
 
@@ -434,39 +434,24 @@ class PageNotfPrefTxSpec extends DaoAppSuite(disableScripts = true, disableBackg
     }
 
 
+    // ----- Delete a notf pref
 
 
-    // move to notf-dao-spec_for-watch-settings:
-    //  member watches page
-    //  member watches category
-    //  member watches whole site
+    "can delete a notf pref" in {
+      dao.readWriteTransaction { tx =>
+        tx.deletePageNotfPref(
+          PageNotfPref(userOne.id, pagesInCategoryId = Some(defCatId),
+            // The level doesn't matter.
+            notfLevel = Muted))
 
-    //  event on other page —> nothing
+        info("It's gone, when loading levels")
+        tx.loadPageNotfLevels(userOne.id, pageIdOne, Some(defCatId)) mustBe PageNotfLevels(
+          forPage = Some(Hushed),
+          forCategory = None,   // was WatchingFirst, see above
+          forWholeSite = Some(WatchingAll))
+      }
+    }
 
-    //  group watches page
-    //  group watches category
-    //  group watches whole site
-
-    //  group watches page,           member has muted
-    //  group watches category,       member has muted
-    //  group watches whole site,     member has muted
-
-    //  group has muted page,      member watches all posts
-    //  group has muted category,  member watches page, all posts
-    //  group has muted category,  member watches category, new topics
-
-    //  group watches new-topics category,    member watches all, page
-    //  group watches new-topics category,    member watches all, category
-    //  group watches new-topics category,    member watches all, whole site
-
-    //  group watches new-topics whole-site,    member watches all, page
-    //  group watches new-topics whole-site,    member watches all, category
-    //  group watches new-topics whole-site,    member watches all, whole site
-
-    //  group A watches page, every post
-    //  group B watches page, muted
-    //    —> max notf level
-    //  swap A <–> B, try again, should be max notf level again
   }
 
 }

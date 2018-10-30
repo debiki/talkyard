@@ -177,7 +177,7 @@ const PinPageDialog = createComponent({
           r.form({},
             Input({ type: 'radio', name: 'pinWhere', label: "In this category only",
                 checked: !pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.InCategory) }),
-            Input({ type: 'radio', name: 'pinWhere', label: "The wole forum, all categories",
+            Input({ type: 'radio', name: 'pinWhere', label: "The whole forum, all categories",
                 checked: pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.Globally) })),
           r.br(),
           Input({ type: 'number', label: "Pin order (you can ignore this)", ref: 'pinOrderInput',

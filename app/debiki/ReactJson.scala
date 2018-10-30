@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -659,7 +659,7 @@ class JsonMaker(dao: SiteDao) {
       case Some(pageId) =>
         Json.obj(pageId ->
           Json.obj(
-            "rolePageSettings" -> rolePageSettings,
+            "rolePageSettings" -> rolePageSettings,  // [REFACTORNOTFS] rename to pageNotfSettings?
             "readingProgress" -> anyReadingProgressJson,
             "votes" -> votes,
             // later: "flags" -> JsArray(...) [7KW20WY1]
@@ -1081,7 +1081,7 @@ object JsonMaker {
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
-      "unlistCategory" -> category.unlistCategory,  // s-a-r  unlisted  browser side
+      "unlistCategory" -> category.unlistCategory,
       "unlistTopics" -> category.unlistTopics)
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
@@ -1344,7 +1344,7 @@ object JsonMaker {
 
   private def pageNotfLevelsToJson(notfLevels: PageNotfLevels): JsObject = {
     Json.obj(
-      "notfLevel" -> JsNumber(notfLevels.effectiveNotfLevel.toInt),  // remove?
+      "notfLevel" -> JsNumber(notfLevels.effectiveNotfLevel.getOrElse(NotfLevel.Normal).toInt), // remove?
       "pageNotfLevel" -> JsNumberOrNull(notfLevels.forPage.map(_.toInt)),
       "categoryNotfLevel" -> JsNumberOrNull(notfLevels.forCategory.map(_.toInt)),
       "siteNotfLevel" -> JsNumberOrNull(notfLevels.forWholeSite.map(_.toInt)))
@@ -1371,7 +1371,7 @@ object JsonMaker {
           category.newTopicTypes.headOption.getOrElse(PageRole.Discussion).toInt),
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
-      "unlistCategory" -> JsBoolean(category.unlistCategory),  // s-a-r  unlisted
+      "unlistCategory" -> JsBoolean(category.unlistCategory),
       "unlistTopics" -> JsBoolean(category.unlistTopics),
       "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
       "position" -> category.position,
