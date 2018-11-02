@@ -1,21 +1,32 @@
+# (args: https://stackoverflow.com/questions/2214575/passing-arguments-to-make-run   )
 
 # E.g.  make watch what=target
-watch:
-	while true; do \
-	  make $(what); \
-	  inotifywait -qre close_write . ; \
-	done
+# watch:
+# 	while true; do \
+# 	  make $(what); \
+# 	  inotifywait -qre close_write . ; \
+# 	done
 
 .PHONY: \
   clean \
   build-images \
-  up \
-  down \
   git-subm-init-upd \
   minified-asset-bundles \
   play-framework-package \
   docker-images
 
+
+#uplogsf0:
+#	sudo s/d up -d ; \
+#	sudo s/d-logs -f --tail 0
+#
+#killdown:
+#	sudo s/d-killdown
+#
+#restartwebapp:
+#	sudo s/d kill web app ; \
+#	sudo s/d start web app ; \
+#	sudo s/d-logs -f --tail 0
 
 
 
@@ -67,8 +78,8 @@ clean:
 # ----- Production images (wip)
 
 docker-images: \
-		minified-asset-bundles \
-		play-framework-package
+			minified-asset-bundles \
+			play-framework-package
 	sudo s/d build
 
 
@@ -80,18 +91,6 @@ docker-images: \
 #modules/ed-prod-one-test \
 #modules/ed-versions/version-tags.log: $@
 #	git submodule update --init
-
-
-
-
-up:
-	sudo s/d up -d
-
-down:
-	sudo s/d down
-
-
-
 
 
 
@@ -107,17 +106,17 @@ test: bin/test
 	  exit $$status
 
 
-# https://serversforhackers.com/c/dckr-dev-workflow
-log:
-	tail -f $(PWD)storage/logs/laravel.log | awk '\
-	    {matched=0}\
-	    /INFO:/    {matched=1; print "\033[0;37m" $$0 "\033[0m"}\
-	    /WARNING:/ {matched=1; print "\033[0;34m" $$0 "\033[0m"}\
-	    /ERROR:/   {matched=1; print "\033[0;31m" $$0 "\033[0m"}\
-	    /Next/     {matched=1; print "\033[0;31m" $$0 "\033[0m"}\
-	    /ALERT:/   {matched=1; print "\033[0;35m" $$0 "\033[0m"}\
-	    /Stack trace:/ {matched=1; print "\033[0;35m" $$0 "\033[0m"}\
-	    matched==0            {print "\033[0;33m" $$0 "\033[0m"}\
+# # https://serversforhackers.com/c/dckr-dev-workflow
+# log:
+# 	tail -f $(PWD)storage/logs/laravel.log | awk '\
+# 	    {matched=0}\
+# 	    /INFO:/    {matched=1; print "\033[0;37m" $$0 "\033[0m"}\
+# 	    /WARNING:/ {matched=1; print "\033[0;34m" $$0 "\033[0m"}\
+# 	    /ERROR:/   {matched=1; print "\033[0;31m" $$0 "\033[0m"}\
+# 	    /Next/     {matched=1; print "\033[0;31m" $$0 "\033[0m"}\
+# 	    /ALERT:/   {matched=1; print "\033[0;35m" $$0 "\033[0m"}\
+# 	    /Stack trace:/ {matched=1; print "\033[0;35m" $$0 "\033[0m"}\
+# 	    matched==0            {print "\033[0;33m" $$0 "\033[0m"}\
 
 
 # maybe read:

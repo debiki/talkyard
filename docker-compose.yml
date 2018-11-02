@@ -26,6 +26,7 @@ services:
     environment:
       CDN_PULL_KEY: "public"
 
+  # rename to app-dev?
   app:
     build: docker/app-dev/
     # (Image $DOCKER_REPOSITORY/talkyard-app is for production, and gets created by
@@ -76,6 +77,17 @@ services:
       # JAEGER_USER: ""
       # JAEGER_PASSWORD: ""
       # JAEGER_AUTH_TOKEN: ""
+
+  #app-prod:
+  #  image: $DOCKER_REPOSITORY/talkyard-app-prod
+  #  build:
+  #    context: ./dir
+  #    dockerfile: Dockerfile-prod
+  #    args:
+  #      buildno: 1
+  #      version: nnnn
+  #      git_revision:   # from the environment where Compose is running
+
 
   cache:
     build: docker/cache/

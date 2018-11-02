@@ -1198,6 +1198,8 @@ trait PostsDao {
       }
     }
 
+    // TODO delete any notifications, if post deleted.
+
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.

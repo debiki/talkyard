@@ -12,7 +12,8 @@ if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
   exit 1
 fi
 
-
+# Ask for password.
+sudo echo
 
 echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
 sudo docker pull debiki/talkyard-app:$wip_version_tag
