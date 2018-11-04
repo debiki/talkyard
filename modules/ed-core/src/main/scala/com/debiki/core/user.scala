@@ -304,7 +304,7 @@ case object User {
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId: UserId = -3
   val UnknownUserName = "Unknown"
-  val UnknownUserGuestCookie = "UU"
+  val UnknownUserBrowserId = "UU"
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   // Change to <= -1001?  [UID1001]
@@ -393,7 +393,7 @@ case object User {
   }
 
 
-  def isOkayGuestCookie(anyValue: Option[String]): Boolean = anyValue match {
+  def isOkayGuestBrowserdId(anyValue: Option[String]): Boolean = anyValue match {
     case None => false
     case Some(value) => value.nonEmpty && value.trim == value
   }
@@ -720,7 +720,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 case class Guest(
   id: UserId,
   guestName: String,
-  guestCookie: Option[String], // COULD rename to browserIdCookie, right
+  guestBrowserId: Option[String],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: Option[String] = None,  // COULD rename to Location
@@ -744,11 +744,11 @@ case class Guest(
   def usernameOrGuestName: String = guestName
   def nameOrUsername: String = guestName
 
-  require(isOkayGuestId(id), "DwE4GYUK21")
-  require(guestName == guestName.trim, "EsE5YGUK3")
-  require(guestName.nonEmpty, "DwE4KEPF8")
-  require(User.isOkayGuestCookie(guestCookie), "DwE5QF7")
-  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
+  require(isOkayGuestId(id), "TyE4GYUK21")
+  require(guestName == guestName.trim, "TyE5YGUK3")
+  require(guestName.nonEmpty, "TyEJ4KEPF8")
+  require(User.isOkayGuestBrowserdId(guestBrowserId), "TyE5W5QF7")
+  require(!isEmailLocalPartHidden(email), "TyE826kJ23")
 }
 
 
@@ -1232,16 +1232,16 @@ case class GuestLoginAttempt(
   date: ju.Date,
   name: String,
   email: String = "",
-  guestCookie: String) { // COULD rename to browserIdCookie
+  guestBrowserId: String) {
 
   require(ip == ip.trim, "TyEBDGSTIP")
   require(name == name.trim, "TyEBDGSTN1")
   require(name.trim.nonEmpty, "TyEBDGSTN2")
   require(email == email.trim, "TyEBDGSTEM1")
   require(email.isEmpty || email.count(_ == '@') == 1, s"Bad email: $email [TyEBDGSTEM2]")
-  require(guestCookie == guestCookie.trim, "TyEBDGSTCO1")
-  require(guestCookie.nonEmpty, "TyEBDGSTCO2")
-  require(guestCookie != "-", "TyEBDGSTCO3")
+  require(guestBrowserId == guestBrowserId.trim, "TyEBDGSTCO1")
+  require(guestBrowserId.nonEmpty, "TyEBDGSTCO2")
+  require(guestBrowserId != "-", "TyEBDGSTCO3")
 }
 
 case class GuestLoginResult(guest: Guest, isNewUser: Boolean)

@@ -338,9 +338,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         userA = createPasswordUser(s"prs_u_a", dao)
         userB = createPasswordUser(s"prs_u_b", dao)
         guestA = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", globals.now().toJavaDate,
-          name = "Guestellina", guestCookie = "guestellinacookie"))
+          name = "Guestellina", guestBrowserId = "guestellinacookie"))
         guestB = dao.loginAsGuest(GuestLoginAttempt(ip = "3.3.3.3", globals.now().toJavaDate,
-          name = "Gunnar", guestCookie = "gunnarcookie"))
+          name = "Gunnar", guestBrowserId = "gunnarcookie"))
       }
 
       "prepare: create pages" in {

@@ -361,16 +361,16 @@ object ViewPageController {
 
 
   def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_],
-        skipUsersOnline: Boolean = false, noCookieXsrfToken: Option[String] = None): Future[Result] = {
+        skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     val pageHtml = renderedPage.html
     addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request,
-      skipUsersOnline = skipUsersOnline, noCookieXsrfToken = noCookieXsrfToken)
+      skipUsersOnline = skipUsersOnline, xsrfTokenIfNoCookies = xsrfTokenIfNoCookies)
   }
 
 
   def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
         unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_],
-        skipUsersOnline: Boolean = false, noCookieXsrfToken: Option[String] = None): Future[Result] = {
+        skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
 
     // Could do asynchronously later. COULD avoid sending back those json fields (4WAKB82)
@@ -393,8 +393,8 @@ object ViewPageController {
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
       "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 
-    noCookieXsrfToken foreach { token =>
-      volatileJson = volatileJson + ("noCookiesXsrfToken" -> JsString(token))   // [NOCOOKIES]
+    xsrfTokenIfNoCookies foreach { token =>
+      volatileJson = volatileJson + ("xsrfTokenIfNoCookies" -> JsString(token))   // [NOCOOKIES]
     }
 
     // Insert volatile and user specific data into the HTML.

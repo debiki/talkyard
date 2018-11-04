@@ -42,7 +42,8 @@ function initOrDie(theSettings) {
 }
 
 
-function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string } = {}) {
+function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
+      retryIfXsrfTokenExpired?: Boolean } = {}): { statusCode: number, headers, bodyJson } {
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
 
   const passwordParam =
@@ -64,14 +65,26 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string } =
   logMessage(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
 
   const response = syncRequest('POST', url + passwordParam, { json: data, headers: headers });
+  const responseBody = getResponseBodyString(response);
+
+  //console.log('\n\n' + url + '  ——>\n' + responseBody + '\n\n');
+  if (response.statusCode !== 200 && responseBody.indexOf('TyEXSRFEXP_') >= 0 &&
+      opts.retryIfXsrfTokenExpired !== false) {
+    // The xsrf token expires, if we playTime...() too much.
+    logMessage("Getting a new xsrf token; the old one has expired ...");
+    initOrDie(settings);
+    logMessage("... Done getting new xsrf token.");
+    return postOrDie(url, data, { ...opts, retryIfXsrfTokenExpired: false });
+  }
 
   dieIf(response.statusCode !== 200, "POST request failed to " + url + " [EsE5GPK02]",
       showResponse(response));
+
   return {
     statusCode: response.statusCode,
     headers: response.headers,
     bodyJson: function() {
-      return JSON.parse(response.getBody('utf8'));
+      return JSON.parse(responseBody);
     }
   };
 }
@@ -97,7 +110,7 @@ function getOrDie(url) {
 }
 
 
-function showResponse(response) {
+function getResponseBodyString(response): string {
   let bodyString = response.body;
   if (!_.isString(bodyString) && bodyString.toString) {
     bodyString = bodyString.toString('utf8');
@@ -106,6 +119,12 @@ function showResponse(response) {
     bodyString = "(The response body is not a string, and has no toString function. " +
         "Don't know how to show it. [EdE7BXE2I])"
   }
+  return bodyString;
+}
+
+
+function showResponse(response) {
+  const bodyString = getResponseBodyString(response);
   return (
       "Response status code: " + response.statusCode + " (should have been 200)\n" +
       showResponseBodyJson(bodyString));

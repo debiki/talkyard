@@ -45,8 +45,14 @@ function handleLoginInOtherBrowserTab() {
       }
     }
     else {
-      // We've logged out in another browser tab. The server should already know about this.
-      debiki2.ReactActions.logoutClientSideOnly();
+      const mainWin = debiki2.getMainWin();
+      if (mainWin.typs.currentPageSessionId) {
+        // We're logged in, cookieless. Fine. [NOCOOKIES]
+      }
+      else {
+        // We've logged out in another browser tab. The server should already know about this.
+        debiki2.ReactActions.logoutClientSideOnly();
+      }
     }
   }
   else if (sessionId) {

@@ -2404,6 +2404,12 @@ function pagesFor(browser) {
         api.helpDialog.waitForThenClose();
       },
 
+      closeIfOpen: function() {
+        if (browser.isVisible('#debiki-editor-controller .e_EdCancelB')) {
+          api.editor.cancel();
+        }
+      },
+
       switchToSimpleEditor: function() {
         api.waitAndClick('.e_EdCancelB'); // could use different class, weird name
         api.waitForVisible('.esC_Edtr');
@@ -4269,6 +4275,10 @@ function pagesFor(browser) {
 
       waitForTooManyInvitesLastWeekError: function() {
         api.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
+      },
+
+      waitForXsrfTokenExpiredError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
       },
 
       close: function() {

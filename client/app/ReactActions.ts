@@ -76,7 +76,9 @@ export function loadMyself(afterwardsCallback?) {
   Server.loadMyself((user) => {
     if (eds.isInIframe) {
       // Tell the embedded comments or embedded editor iframe that we just logged in.
-      window.parent.postMessage(JSON.stringify(['justLoggedIn', user]), eds.embeddingOrigin);
+      window.parent.postMessage(JSON.stringify([
+        'justLoggedIn', { user }]),  // [JLGDIN]
+        eds.embeddingOrigin);
     }
     setNewMe(user);
     if (afterwardsCallback) {

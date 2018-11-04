@@ -206,6 +206,35 @@ export function scrollToBottom(node) {
 }
 
 
+
+/**
+ * Finds the main embedded comments window, where the per page temporary xsrf token
+ * and sesion id are kept, when logging in without cookies. So they'll be accessible
+ * everywhere — because http requests that need the xsrf token or session id,
+ * are made from the editor iframe and login popup wins too, not just the main
+ * comments win.
+ */
+export function getMainWin(): any {
+  const lookingForName = 'edComments';
+  if (window.name === lookingForName)
+    return window;
+
+  let win = window;
+  if (win.opener && win.opener.typs) {
+    win = win.opener;
+  }
+
+  if (win.name === 'edEditor') {
+    // @ifdef DEBUG
+    dieIf(!win.parent, 'TyE7KKWGCE2');
+    // @endif
+    win = win.parent[lookingForName];
+  }
+
+  return win;
+}
+
+
 export function anyE2eTestPassword() {
   return (window.location.search.match(/e2eTestPassword=([^&#]+)/) || [])[1];
 }

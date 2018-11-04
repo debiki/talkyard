@@ -63,9 +63,9 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           where u.SITE_ID = ?
             and u.full_name = ?
             and u.guest_email_addr = ?
-            and u.GUEST_COOKIE = ?
+            and u.guest_browser_id = ?
           """,
-          List(siteId.asAnyRef, e2d(loginAttempt.name), e2d(loginAttempt.email), loginAttempt.guestCookie),
+          List(siteId.asAnyRef, e2d(loginAttempt.name), e2d(loginAttempt.email), loginAttempt.guestBrowserId),
           rs => {
             if (rs.next) {
               userId = rs.getInt("USER_ID")
@@ -83,14 +83,14 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           isNewGuest = true
           runUpdate(i"""
             insert into users3(
-              site_id, user_id, created_at, full_name, guest_email_addr, guest_cookie)
+              site_id, user_id, created_at, full_name, guest_email_addr, guest_browser_id)
             select
               ?, least(min(user_id) - 1, $MaxCustomGuestId), now_utc(), ?, ?, ?
             from
               users3 where site_id = ?
             """,
             List(siteId.asAnyRef, loginAttempt.name.trim, e2d(loginAttempt.email),
-              loginAttempt.guestCookie, siteId.asAnyRef))
+              loginAttempt.guestBrowserId, siteId.asAnyRef))
           // (Could fix: `returning ID into ?`, saves 1 roundtrip.)
           // Loop one more lap to read ID.
         }
@@ -100,7 +100,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       val user = Guest(
         id = userId,
         guestName = loginAttempt.name,
-        guestCookie = Some(loginAttempt.guestCookie),
+        guestBrowserId = Some(loginAttempt.guestBrowserId),
         email = loginAttempt.email,
         emailNotfPrefs = _toEmailNotfs(emailNotfsStr),
         country = None)

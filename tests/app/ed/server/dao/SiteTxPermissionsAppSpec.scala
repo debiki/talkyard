@@ -58,7 +58,7 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
         userA = createPasswordUser(s"poc_u_a", dao)
         userB = createPasswordUser(s"poc_u_b", dao)
         guest = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", globals.now().toJavaDate,
-          name = "Guestellina", guestCookie = "guestellinacookie"))
+          name = "Guestellina", guestBrowserId = "guestellinacookie"))
       }
 
 

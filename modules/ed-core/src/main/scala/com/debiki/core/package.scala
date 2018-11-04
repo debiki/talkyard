@@ -302,7 +302,7 @@ package object core {
   def SysbotUserUsername: String = User.SysbotUserUsername
   def UnknownUserId: UserId = User.UnknownUserId
   def UnknownUserName: String = User.UnknownUserName
-  def UnknownUserGuestCookie: String = User.UnknownUserGuestCookie
+  def UnknownUserBrowserId: String = User.UnknownUserBrowserId
   def MaxGuestId: UserId = User.MaxGuestId
   def LowestNonGuestId: UserId = User.LowestNonGuestId
   def LowestTalkToMemberId: UserId = User.LowestTalkToMemberId

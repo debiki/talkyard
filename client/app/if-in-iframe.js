@@ -22,7 +22,11 @@ if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
 
 addEventListener('message', onMessage, false);
 
-window.parent.postMessage('["iframeInited", {}]', eds.embeddingOrigin);
+window.parent.postMessage(
+    JSON.stringify(['iframeInited', {
+      xsrfTokenIfNoCookies: eds.volatileDataFromServer.xsrfTokenIfNoCookies
+    }]),
+    eds.embeddingOrigin);
 
 if (eds.isInEmbeddedCommentsIframe)
   syncDocSizeWithIframeSize();
@@ -48,7 +52,8 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'justLoggedIn':
-      debiki2.ReactActions.setNewMe(eventData);
+      debiki2.ReactActions.setNewMe(eventData.user);
+      typs.currentPageSessionId = eventData.currentPageSessionId;
       break;
     case 'logoutClientSideOnly':
       // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
@@ -98,7 +103,7 @@ function onMessage(event) {
       debiki2.iframeOffsetWinSize = eventData;
       break;
   }
-};
+}
 
 
 /**

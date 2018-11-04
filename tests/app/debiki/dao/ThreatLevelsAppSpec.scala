@@ -73,7 +73,7 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
       "guest, mild and moderate threat level: comments are added to the moderation queue" in {
         val guest = dao.loginAsGuest(GuestLoginAttempt(ip = "3.4.5.6",
           date = globals.now().toJavaDate, name = "A Guest", email = "aguest@email.co",
-          "guestCookie-2480437"))
+          "guestBrId-2480437"))
 
         info("guests may post replies, the first 2 are always queued for review") // [4JKFWP4]
         var post = reply(guest.id, "reply_63502_a_1").post

@@ -47,10 +47,9 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId],
-        avoidCookies: Option[Boolean]): Action[Unit] =
-      AsyncGetActionMaybeSkipCookies(avoidCookies = avoidCookies.isNot(false)) {
-        request =>
+  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId])
+        : Action[Unit] =
+      AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
     import request.dao
 
@@ -121,13 +120,16 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     }
 
     // Privacy tools and settings might break cookies. If we may not use cookies,  [NOCOOKIES]
-    // then incl an xsrf token in the html instead.
+    // then include a xsrf token in the html instead.
     // (Cannot use a response header for this, because client side, one cannot access
     // the current page headers, see e.g.:  https://stackoverflow.com/a/4881836/694469 )
-    val noCookieXsrfToken: Option[String] =
-      if (avoidCookies is false) None   // ... hmm. Instead, check if has cookie already? Then use.
-                                        // else always create?
-      else Some(security.createXsrfToken().value)
+    val hasXsrfTokenAlready = request.xsrfToken.value.nonEmpty
+    val newXsrfToken: Option[String] =
+      if (hasXsrfTokenAlready) None
+      else {
+        // request.xsrfToken.value is empty, because no xsrf cookie, so create new.
+        Some(security.createXsrfToken().value)
+      }
 
     val futureResponse = ViewPageController.addVolatileJsonAndPreventClickjacking(
       renderedPage,
@@ -136,7 +138,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
       skipUsersOnline = true,
       // This'll insert a noCookieXsrfToken JSON field, so the browser will remember
       // to not use cookies.
-      noCookieXsrfToken = noCookieXsrfToken)
+      xsrfTokenIfNoCookies = newXsrfToken)
 
     futureResponse
   }

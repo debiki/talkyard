@@ -659,7 +659,7 @@ interface VolatileDataFromServer {
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
   // Then we try to include an xsrf token in the page html instead. Any session id is then
   // saved in window.tyCurrentPageSessionId.
-  noCookiesXsrfToken?: string;
+  xsrfTokenIfNoCookies?: string;
 }
 
 
@@ -1098,7 +1098,7 @@ enum LoginReason {
   BecomeAdmin = 12, // COULD rename to BecomeOwner
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
-  PostEmbeddedComment = 16,
+  PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
 }
 
 
@@ -1449,6 +1449,13 @@ interface Rect {
 
 
 // ----- Server responses
+
+
+interface GuestLoginResponse {
+  userCreatedAndLoggedIn: boolean;
+  emailVerifiedAndLoggedIn: boolean;
+  currentPageSessionId?: string;
+}
 
 
 interface LoadCategoryResponse {

@@ -31,6 +31,8 @@ const gillansCommentOne = 'gillansCommentOne';
 const gillansCommentTwo = 'gillansCommentTwo';
 const fidosAnswer = "Woff! Woff! Bark-bark-baba-wo-ba-ff-rkrk-ff-ffow-w-ow! Woff! Woff.";
 const theCleverAndFunnyJoke = "Yaffle yaffle yawp yawp - yaffapw, bark, ba-woff woff. ...   .... Wiff!";
+const fidoCannotStopTyping = "fidoCannotStopTyping";
+const owenCanReplyAlreadyLoggedIn = "owenCanReplyAlreadyLoggedIn";
 
 const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
 const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
@@ -152,6 +154,15 @@ describe("emb cmts guest login", () => {
     guestsBrowser.editor.editText(gillansCommentTwo);
     guestsBrowser.editor.save();
     // (now no login dialog appears — Gillan is already logged in)
+    //   YES login dialog appears, see below...
+  });
+
+  it("Gillan needs to login again: guest sessions are forgotten on page reload, so tracker blockers " +
+    "(PrivacyBadger, iOS built-in, etc) won't mistake Talkyard for being a tracker", () => {
+    guestsBrowser.swithToOtherTabOrWindow();
+    guestsBrowser.disableRateLimits();
+    guestsBrowser.loginDialog.signUpLogInAs_Real_Guest("Gillan Again");
+    guestsBrowser.switchBackToFirstTabOrWindow();
   });
 
   it("... her 2nd comment appears", () => {
@@ -209,6 +220,15 @@ describe("emb cmts guest login", () => {
     fidosBrowser.complex.replyToEmbeddingBlogPost(theCleverAndFunnyJoke);
   });
 
+  it("Fido refreshes the page", () => {
+    fidosBrowser.refresh();
+  });
+
+  it("... and he cannot stop typing. He doesn't need to login, since now cookies in use, " +
+      "because per-page-load login is for guests only", () => {
+    fidosBrowser.complex.replyToEmbeddingBlogPost(fidoCannotStopTyping);
+  });
+
   it("Owen goes to the admin area and logs in", () => {
     owensBrowser.go(idAddress.origin + '/-/admin/review/all');
     owensBrowser.loginDialog.loginWithPassword(owen);
@@ -228,6 +248,14 @@ describe("emb cmts guest login", () => {
     owensBrowser.adminArea.review.waitForTextToReview(fidosAnswer);        // 5
     const num = owensBrowser.adminArea.review.countThingsToReview();
     logAndDie.dieIf(num !== 5, 'TyEJKUF6', `There are ${num} things to review, !== 5`);
+  });
+
+  it("When Owen goes back to the dicussion, he is logged in", () => {
+    owensBrowser.go(pageUrl);
+  });
+
+  it("... and can post a comment", () => {
+    owensBrowser.complex.replyToEmbeddingBlogPost(owenCanReplyAlreadyLoggedIn);
   });
 
 });

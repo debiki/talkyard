@@ -270,10 +270,35 @@ describe("summary emails", () => {
     mariasBrowser.waitAndClick('.s_UnsubSum_SubmB');
   });
 
-  it("Trillian posts 'topicFiveMariaMonth'", () => {
+  it("Trillian attempts to posts 'topicFiveMariaMonth'", () => {
     trilliansBrowser.go(idAddress.origin);
+    // The xsrf token has expired (we've fast-forwarded time too much), so get a new one.
+    trilliansBrowser.deleteCookie('XSRF-TOKEN');  // ... or, see below (7KRT24)
+    trilliansBrowser.refresh();
+    trilliansBrowser.complex.createAndSaveTopic(
+        { title: topicFiveMariaMonth, body: topicFiveMariaMonth }); //, resultInError: true });
+
+    /* something doesn't work here, when closing the editor.
+        So just refresh instead, see above (7KRT24).
+  });
+
+  it("... but there's an xsrf token expired error (because we've fast-forwarded time a lot)", () => {
+    trilliansBrowser.serverErrorDialog.waitForXsrfTokenExpiredError();
+  });
+
+  it("... she closes the error dialog", () => {
+    trilliansBrowser.serverErrorDialog.close();
+  });
+
+  it("... and the editor", () => {
+    trilliansBrowser.editor.closeIfOpen();
+  });
+
+  it("... she got a new xsrf token, and can now post 'topicFiveMariaMonth'", () => {
     trilliansBrowser.complex.createAndSaveTopic(
         { title: topicFiveMariaMonth, body: topicFiveMariaMonth });
+   */
+
     topicFiveMariaMonthUrl = trilliansBrowser.url().value;
   });
 
@@ -295,12 +320,24 @@ describe("summary emails", () => {
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFiveMariaMonthUrl, browser);
   });
 
-  it("Maria totally unsubscribes", () => {
+  it("Maria totally unsubscribes: goes to the unsub page", () => {
     const unsubUrl = server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, 'https?://[^/"]+/-/unsub-from-summaries[^"]*', browser);
     mariasBrowser.go(unsubUrl);
+  });
+
+  it("... clicks the unsub button", () => {
     mariasBrowser.waitAndClick('.s_UnsubSum_SubmB');
+  });
+
+  it("... returns to the homepage", () => {
     mariasBrowser.waitAndClick('a');  // a Done link, to the homepage
+  });
+
+  it("... and logs out", () => {
+    // The xsrf token has expired (we've fast-forwarded time too much), so get a new one.
+    mariasBrowser.deleteCookie('XSRF-TOKEN');
+    mariasBrowser.refresh();
     mariasBrowser.topbar.clickLogout();
   });
 

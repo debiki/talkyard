@@ -225,7 +225,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     });
   },
 
-  handleCreateUserResponse: function(response) {
+  handleCreateUserResponse: function(response: GuestLoginResponse) {
     if (!response.userCreatedAndLoggedIn) {
       dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
@@ -258,10 +258,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       }
     }
     else {
-      const isPage = $$byClass('dw-page').length;
-      if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
-
-      // We should be on some kind of a discussion page (assuming isPage is true).
+      // We're on a discussion page, or in a login popup.
       // Continue whatever the user attempted to do, before hen was asked to sign up.
       login.continueAfterLogin();
 

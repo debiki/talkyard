@@ -175,7 +175,7 @@ object RdbUtil {
   val UserSelectListItemsWithGuests: String =
     s"""$UserSelectListItemsNoGuests,
      |u.guest_email_addr u_guest_email_addr,
-     |u.guest_cookie u_guest_cookie,
+     |u.guest_browser_id u_guest_browser_id,
      |e.email_notfs g_email_notfs""".stripMargin
 
 
@@ -204,7 +204,7 @@ object RdbUtil {
       Guest(
         id = userId,
         guestName = dn2e(name.orNull),
-        guestCookie = Option(rs.getString("u_guest_cookie")),
+        guestBrowserId = Option(rs.getString("u_guest_browser_id")),
         email = dn2e(rs.getString("u_guest_email_addr")),
         emailNotfPrefs = emailNotfPrefs,
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,

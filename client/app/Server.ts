@@ -35,7 +35,7 @@ const NoPasswordErrorCode = '_TyMCHOOSEPWD';
 
 const XsrfTokenHeaderName = 'X-XSRF-TOKEN'; // CLEAN_UP rename to X-Ty-Xsrf-Token
 const SessionIdHeaderName = 'X-Ty-Sid';
-const NoCookiesHeaderName = 'X-Ty-NoCookies';
+const AvoidCookiesHeaderName = 'X-Ty-Avoid-Cookies';
 
 function getPageId(): PageId {
   return eds.embeddedPageId || // [4HKW28]
@@ -323,41 +323,33 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
 }
 
 
-/** Sends xsrf token and sid in headers, instead of cookies, because sometimes
+/**
+ * Sends xsrf token and sid in headers, instead of cookies, because sometimes
  * the browsers refuse to use cookies.
  */
 function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // [NOCOOKIES]
-  console.log('Has window.opener: ' + !!window.opener);
-  if (window.opener) {
-    console.log('Any window.opener.eds: ' + JSON.stringify(window.opener.eds));
-  }
+  const win = getMainWin();
 
-  let noCookiesXsrfToken = eds.volatileDataFromServer.noCookiesXsrfToken;
-  let tempSid = (<any> window).tyCurrentPageSessionId;
+  // @ifdef DEBUG
+  console.log('Window name: ' + window.name);
+  console.log('Window.opener.typs: ' + (window.opener && JSON.stringify(window.opener.typs)));
+  console.log('Main win: ' + win.name);
+  // @endif
 
-  // If we're in a login popup window, there's no xsrf token or sid in the html source for
-  // this popup win. Instead we should find an xsrf token in the parent window:
-  if (window.opener) {
-    if (!noCookiesXsrfToken && window.opener.eds) {
-      const volData: VolatileDataFromServer = window.opener.eds.volatileDataFromServer;
-      noCookiesXsrfToken = volData.noCookiesXsrfToken;
-    }
-    if (!tempSid) {
-      tempSid = window.opener.tyCurrentPageSessionId;
-    }
-  }
+  const currentPageXsrfToken = win.typs.xsrfTokenIfNoCookies;
+  const currentPageSid = win.typs.currentPageSessionId;
 
-  if (noCookiesXsrfToken) {
-    headers[NoCookiesHeaderName] = 'true';
+  if (currentPageXsrfToken) {
+    headers[AvoidCookiesHeaderName] = 'Avoid';
     if (!headers[XsrfTokenHeaderName]) {
       // Needed also for GET requests, so the server can incl any token, if it pops up
       // a login popup window.
-      headers[XsrfTokenHeaderName] = noCookiesXsrfToken;
+      headers[XsrfTokenHeaderName] = currentPageXsrfToken;
     }
   }
 
-  if (tempSid) {
-    headers[SessionIdHeaderName] = tempSid;
+  if (currentPageSid) {
+    headers[SessionIdHeaderName] = currentPageSid;
   }
 }
 
@@ -656,8 +648,21 @@ export function loginWithPassword(emailOrUsername: string, password: string, suc
 }
 
 
-export function loginAsGuest(name: string, email: string, onDone: () => void, onError: () => void) {
-  postJsonSuccess('/-/login-guest', onDone, onError, {
+export function loginAsGuest(name: string, email: string,
+      onDone: (response: GuestLoginResponse) => void, onError: () => void) {
+  postJsonSuccess('/-/login-guest', (response: GuestLoginResponse) => {
+    // Update the current page session id, so we'll remember the current session  [NOCOOKIES]
+    // until the page closes / reloads — so we stay logged in (until page closes) also if
+    // we avoid cookies. Update also if the new value is `undefined` — should forget
+    // any old session.
+    // If we're in a login popup window opened from an embedded comments iframe, then we
+    // should set the session id in the main embedded window, that is, the one with all comments.
+    const mainWin = getMainWin();
+    const typs: PageSession = mainWin.typs;
+    typs.currentPageSessionId = response.currentPageSessionId;
+    // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
+    onDone(response);
+  }, onError, {
     name: name,
     email: email
   });

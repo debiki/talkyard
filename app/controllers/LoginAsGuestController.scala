@@ -38,12 +38,14 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
   import context.security
 
 
-  def loginGuest: Action[JsValue] = AsyncPostJsonAction(RateLimits.Login, maxBytes = 1000) { request =>
+  def loginGuest: Action[JsValue] = AsyncPostJsonAction(
+        RateLimits.Login, maxBytes = 1000, avoidCookies = true) { request =>
+
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String].trim
     val email = (json \ "email").as[String].trim
 
-    val canUseCookies = request.headers.get(EdSecurity.NoCookiesHeaderName) isNot "true"
+    val canUseCookies = request.headers.get(EdSecurity.AvoidCookiesHeaderName) isNot "Avoid"
 
     val settings = request.dao.getWholeSiteSettings()
 
@@ -70,13 +72,13 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
         date = globals.now().toJavaDate,
         name = name,
         email = email,
-        guestCookie = theBrowserId)
+        guestBrowserId = theBrowserId)
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
       val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
-      var responseJson = Json.obj(
+      var responseJson = Json.obj(  // GuestLoginResponse
         "userCreatedAndLoggedIn" -> JsTrue,
         "emailVerifiedAndLoggedIn" -> JsFalse)
 

@@ -27,7 +27,7 @@ class EdController(cc: ControllerComponents, val context: EdContext)
 
   def AsyncGetActionMaybeSkipCookies(avoidCookies: Boolean)(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =
-    PlainApiAction(cc.parsers.empty, NoRateLimits, isAvoidCookiesEndpoint = avoidCookies).async(f)
+    PlainApiAction(cc.parsers.empty, NoRateLimits, avoidCookies = avoidCookies).async(f)
 
   def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, allowAnyone = true).async(f)
@@ -45,8 +45,9 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def GetActionAllowAnyone(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, allowAnyone = true)(f)
 
-  def GetActionAllowAnyoneRateLimited(rateLimits: RateLimits)(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(cc.parsers.empty, rateLimits, allowAnyone = true)(f)
+  def GetActionAllowAnyoneRateLimited(rateLimits: RateLimits, avoidCookies: Boolean = false)
+        (f: GetRequest => Result): Action[Unit] =
+    PlainApiAction(cc.parsers.empty, rateLimits, allowAnyone = true, avoidCookies = avoidCookies)(f)
 
   def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, isLogin = true)(f)
@@ -74,10 +75,11 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(new JsonOrFormDataBodyParser(executionContext).parser(maxBytes = maxBytes),
       rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
-  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
+  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
+        avoidCookies: Boolean = false)(
         f: JsonPostRequest => Future[Result]): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, allowAnyone = allowAnyone).async(f)
+      rateLimits, allowAnyone = allowAnyone, avoidCookies = avoidCookies).async(f)
 
   def PostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
