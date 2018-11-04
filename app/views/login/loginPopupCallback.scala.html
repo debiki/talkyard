@@ -21,29 +21,12 @@
 <html>
 <head>
 <script type='text/javascript'>
-@* FIXED Chrome 64, Jan 2018. DO_AFTER 2018-08-12 remove this workaround
-This fails in Chrome 63, although the opener's origin is the same,
-because of this Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
-- In an embedded discussion iframe,
-- click Reply or Flag, so login popup opens,
-- in the popup, login with Gmail *when you're not logged in already in Gmail* so that
-    you need to type your email & password in the Gmail login dialogs.
-- then, after you're done logging in to Gmail, and the popup redirects back to the html here,
-   we won't be allowed to access window.opener. Although we're back on the original domain (!),
-   same as the iframe (the iframe is window.opener). Work around: [4PKGTEW20]
-*@
 function returnToOpener() {
-  try { // try = because the Chrome bug, see above [4PKGTEW20].
-    window.opener.debiki.internal.handleLoginResponse({
-      queryString: (window.location+'').split('?')[1],
-      status: 'LoginOk'
-    });
-  }
-  catch (err) {
-    if (console && console.error) {
-      console.error(err.toString() + ' [EdEXORIG01]');
-    }
-  }
+  // A Chrome 63 bug previously required a try-catch workaround here. [4PKGTEW20].
+  window.opener.debiki.internal.handleLoginResponse({
+    queryString: (window.location+'').split('?')[1],
+    status: 'LoginOk'
+  });
   window.close();
 }
 </script>

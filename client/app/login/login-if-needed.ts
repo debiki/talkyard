@@ -49,12 +49,10 @@ export function loginIfNeededReturnToAnchor(
     success();
   }
   else if (eds.isInIframe) {
-    // A Chrome 63 bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
-    // (fixed in Chrome 64) causes a cross-origin-error when the popup, from the *same* origin,
-    // attempts to call the callback. So poll for a login cookie instead a bit below,
-    // and call `success` there. :- (  // [4PKGTEW20]
-    // DO_AFTER 2019-01-01, remove this Chrome 63 bug workaround? Maybe check browser usage stats first?
-    //anyContinueAfterLoginCallback = success;
+    // (Previously, a Chrome 63 bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
+    // required an ugly workaround here: to poll and see if a session cookie suddenly appeared.
+    // Remove this comment 2019-06-01? [4PKGTEW20])
+    anyContinueAfterLoginCallback = success;
 
     // Don't open a dialog inside the iframe; open a popup instead.
     // Need to open the popup here immediately, before loading any scripts, because if
@@ -63,26 +61,6 @@ export function loginIfNeededReturnToAnchor(
     const url = origin() + '/-/login-popup?mode=' + loginReason +   // [2ABKW24T]
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
     d.i.createLoginPopup(url);
-
-    let checkLoggedInHandle = setInterval(function() {
-      const sessionId = getSetCookie('dwCoSid');
-      if (sessionId && checkLoggedInHandle) {
-        console.log("Logged in (login-if-needed.ts, isInIframe)");
-        clearInterval(checkLoggedInHandle);
-        checkLoggedInHandle = null;
-        success();  // [4PKGTEW20]
-      }
-    }, 1000);
-    // If the user hasn't logged in within 8 minutes, skip the after-login stuff. The user
-    // likely doesn't remember anyway, what hen was trying to do. And might login in another
-    // tab instead, when so much time has passed, and just gets confused if something then auto-
-    // happens here? (So don't call `success()`.)
-    setTimeout(function() {
-      // TESTS_MISSING
-      if (!checkLoggedInHandle) return;
-      clearInterval(checkLoggedInHandle);
-      checkLoggedInHandle = null;
-    }, 1000*60*8)
   }
   else {
     loginIfNeeded(loginReason, returnToUrl, success);
