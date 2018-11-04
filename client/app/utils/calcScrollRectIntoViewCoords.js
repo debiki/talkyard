@@ -27,7 +27,9 @@ d.i.calcScrollRectIntoViewCoords = function(rect, options) {
   var winHeight = window.innerHeight;
   var winWidth = window.innerWidth;
 
-  var anyEditors = debiki2.$bySelector('.s_E-E');
+  // Don't use $all, because this code runs also in the iframe-parent.js, which hasn't loaded prelude.ts.
+  // CLEAN_UP break out functions needed by iframe-parent.js too, into a shared file?
+  var anyEditors = document.querySelectorAll('.s_E-E');
   if (anyEditors && anyEditors.length) {
     winHeight -= anyEditors[0].clientHeight;
   }
