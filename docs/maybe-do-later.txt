@@ -23,6 +23,9 @@ Change layout of problem type topics to traditional forum flat comments layout.
 & use for formal messages too, or maybe repl w chat?
 
 
+[sidexpsite]:
+Add session expiration time config value.
+
 [relfollow]:
 Add a 'rel=follow links to domains: ...' config value,
 so peope can follow links to their own domains.

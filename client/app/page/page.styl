@@ -106,7 +106,7 @@ html.esSidebarsOverlayPage
     max-width: calc(100% - 25px);
 
 // Dims the page if any sidebar open, and screen small. Closes the sidebar on click.
-html.esSidebarsOverlayPage
+html.esSidebarsOverlayPage:not(.s_InIframe)
   &.es-pagebar-open,
   &.es-watchbar-open
     #theSidebarPageOverlay
@@ -124,6 +124,7 @@ html.esSidebarsOverlayPage
   display: none;
 
 
+html.s_InIframe,
 html:not(.es-pagebar-open)
   #esThisbarColumn
     display: none;
@@ -132,6 +133,7 @@ html:not(.es-pagebar-open)
   #esPageColumn
     right: 0;
 
+html.s_InIframe,
 html:not(.es-watchbar-open)
   #esWatchbarColumn
     display: none;
