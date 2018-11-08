@@ -46,24 +46,24 @@ trait UserDao {
 
   import self.context.security
 
-  def addUserStats(moreStats: UserStats)(transaction: SiteTransaction) {
+  def addUserStats(moreStats: UserStats)(tx: SiteTransaction) {
     // Exclude superadmins. Maybe should incl system? [EXCLSYS]
     if (NoUserId < moreStats.userId && moreStats.userId < User.LowestNormalMemberId)
       return
 
-    val anyStats = transaction.loadUserStats(moreStats.userId)
+    val anyStats = tx.loadUserStats(moreStats.userId)
     val stats = anyStats.getOrDie("EdE2WKZ8A4", s"No stats for user $siteId:${moreStats.userId}")
     val newStats = stats.addMoreStats(moreStats)
     SHOULD // if moreStats replies to chat message or discourse topic, then update
     // num-chat/discourse-topics-replied-in.
     SHOULD // update num-topics-entered too
-    transaction.upsertUserStats(newStats)
+    tx.upsertUserStats(newStats)
   }
 
 
   def insertInvite(invite: Invite) {
-    readWriteTransaction { transaction =>
-      transaction.insertInvite(invite)
+    readWriteTransaction { tx =>
+      tx.insertInvite(invite)
     }
   }
 
@@ -256,28 +256,28 @@ trait UserDao {
 
 
   def lockMemberTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]) {
-    readWriteTransaction { transaction =>
-      val member = transaction.loadTheMemberInclDetails(memberId)
+    readWriteTransaction { tx =>
+      val member = tx.loadTheMemberInclDetails(memberId)
       val memberAfter = member.copy(lockedTrustLevel = newTrustLevel)
-      transaction.updateMemberInclDetails(memberAfter)
+      tx.updateMemberInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
   }
 
 
   def lockMemberThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
-    readWriteTransaction { transaction =>
-      val member: MemberInclDetails = transaction.loadTheMemberInclDetails(memberId)
+    readWriteTransaction { tx =>
+      val member: MemberInclDetails = tx.loadTheMemberInclDetails(memberId)
       val memberAfter = member.copy(lockedThreatLevel = newThreatLevel)
-      transaction.updateMemberInclDetails(memberAfter)
+      tx.updateMemberInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
   }
 
 
   def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]) {
-    readWriteTransaction { transaction =>
-      val guest = transaction.loadTheGuest(guestId)
+    readWriteTransaction { tx =>
+      val guest = tx.loadTheGuest(guestId)
       ??? // lock both ips and guest cookie
     }
     removeUserFromMemCache(guestId)
@@ -292,8 +292,8 @@ trait UserDao {
     val cappedDays = math.min(numDays, 365 * 110)
     val now = globals.now()
 
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
+    readWriteTransaction { tx =>
+      var user = tx.loadTheMemberInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
@@ -303,37 +303,37 @@ trait UserDao {
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
-      transaction.updateMemberInclDetails(user)
+      tx.updateMemberInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
 
 
   def unsuspendUser(userId: UserId) {
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
+    readWriteTransaction { tx =>
+      var user = tx.loadTheMemberInclDetails(userId)
       user = user.copy(suspendedAt = None, suspendedTill = None, suspendedById = None,
         suspendedReason = None)
-      transaction.updateMemberInclDetails(user)
+      tx.updateMemberInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
 
 
   def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
-    readWriteTransaction { transaction =>
-      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
+    readWriteTransaction { tx =>
+      val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
       }
 
       blockGuestImpl(auditLogEntry.browserIdData, auditLogEntry.doerId,
-          numDays, threatLevel, blockerId)(transaction)
+          numDays, threatLevel, blockerId)(tx)
     }
   }
 
 
   def blockGuestImpl(browserIdData: BrowserIdData, guestId: UserId, numDays: Int,
-        threatLevel: ThreatLevel, blockerId: UserId)(transaction: SiteTransaction) {
+        threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTransaction) {
 
       if (!User.isGuestId(guestId))
         throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
@@ -342,17 +342,17 @@ trait UserDao {
       // to think about. Block the ip for a little bit shorter time, because might affect
       // "innocent" people.
       val ipBlockedTill =
-        Some(new ju.Date(transaction.now.millis + OneWeekInMillis * 2))
+        Some(new ju.Date(tx.now.millis + OneWeekInMillis * 2))
 
       val cookieBlockedTill =
-        Some(new ju.Date(transaction.now.millis + OneWeekInMillis * 6))
+        Some(new ju.Date(tx.now.millis + OneWeekInMillis * 6))
 
       val ipBlock = Block(
         threatLevel = threatLevel,
         ip = Some(browserIdData.inetAddress),  // include ip
         browserIdCookie = None,                // skip cookie
         blockedById = blockerId,
-        blockedAt = transaction.now.toJavaDate,
+        blockedAt = tx.now.toJavaDate,
         blockedTill = ipBlockedTill)
 
       val browserIdCookieBlock = browserIdData.idCookie map { idCookie =>
@@ -361,20 +361,20 @@ trait UserDao {
           ip = None,                        // skip ip
           browserIdCookie = Some(idCookie), // include cookie
           blockedById = blockerId,
-          blockedAt = transaction.now.toJavaDate,
+          blockedAt = tx.now.toJavaDate,
           blockedTill = cookieBlockedTill)
       }
 
       // COULD catch dupl key error when inserting IP block, and update it instead, if new
       // threat level is *worse* [6YF42]. Aand continue anyway with inserting browser id
       // cookie block.
-      transaction.insertBlock(ipBlock)
-      browserIdCookieBlock foreach transaction.insertBlock
+      tx.insertBlock(ipBlock)
+      browserIdCookieBlock foreach tx.insertBlock
 
       // Also set the user's threat level, if the new level is worse.
-      transaction.loadGuest(guestId) foreach { guest =>
+      tx.loadGuest(guestId) foreach { guest =>
         if (!guest.lockedThreatLevel.exists(_.toInt > threatLevel.toInt)) {
-          transaction.updateGuest(
+          tx.updateGuest(
             guest.copy(lockedThreatLevel = Some(threatLevel)))
         }
       }
@@ -382,15 +382,15 @@ trait UserDao {
 
 
   def unblockGuest(postNr: PostNr, unblockerId: UserId) {
-    readWriteTransaction { transaction =>
-      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postNr) getOrElse {
+    readWriteTransaction { tx =>
+      val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postNr) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
-      transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
-      auditLogEntry.browserIdData.idCookie foreach transaction.unblockBrowser
-      transaction.loadGuest(auditLogEntry.doerId) foreach { guest =>
+      tx.unblockIp(auditLogEntry.browserIdData.inetAddress)
+      auditLogEntry.browserIdData.idCookie foreach tx.unblockBrowser
+      tx.loadGuest(auditLogEntry.doerId) foreach { guest =>
         if (guest.lockedThreatLevel.isDefined) {
-          transaction.updateGuest(guest.copy(lockedThreatLevel = None))
+          tx.updateGuest(guest.copy(lockedThreatLevel = None))
         }
       }
     }
@@ -398,31 +398,31 @@ trait UserDao {
 
 
   def loadAuthorBlocks(postId: PostId): immutable.Seq[Block] = {
-    readOnlyTransaction { transaction =>
-      val auditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
+    readOnlyTransaction { tx =>
+      val auditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
         return Nil
       }
       val browserIdData = auditLogEntry.browserIdData
-      transaction.loadBlocks(ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
+      tx.loadBlocks(ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
     }
   }
 
 
   def loadBlocks(ip: String, browserIdCookie: Option[String]): immutable.Seq[Block] = {
-    readOnlyTransactionNotSerializable { transaction =>
-      transaction.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
+    readOnlyTransactionNotSerializable { tx =>
+      tx.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
     }
   }
 
 
-  def loadUserAndLevels(who: Who, transaction: SiteTransaction): UserAndLevels = {
-    val user = transaction.loadTheUser(who.id)
+  def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
+    val user = tx.loadTheUser(who.id)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: Member => member.effectiveThreatLevel
       case guest: Guest =>
         // Somewhat dupl code [2WKPU08], see a bit below.
-        val blocks = transaction.loadBlocks(ip = who.ip, browserIdCookie = who.idCookie)
+        val blocks = tx.loadBlocks(ip = who.ip, browserIdCookie = who.idCookie)
         val baseThreatLevel = guest.lockedThreatLevel getOrElse ThreatLevel.HopefullySafe
         val levelInt = blocks.foldLeft(baseThreatLevel.toInt) { (maxSoFar, block) =>
           math.max(maxSoFar, block.threatLevel.toInt)
@@ -435,10 +435,10 @@ trait UserDao {
   }
 
 
-  def loadThreatLevelNoUser(browserIdData: BrowserIdData, transaction: SiteTransaction)
+  def loadThreatLevelNoUser(browserIdData: BrowserIdData, tx: SiteTransaction)
         : ThreatLevel = {
     // Somewhat dupl code [2WKPU08], see just above.
-    val blocks = transaction.loadBlocks(
+    val blocks = tx.loadBlocks(
       ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
     val levelInt = blocks.foldLeft(ThreatLevel.HopefullySafe.toInt) { (maxSoFar, block) =>
       math.max(maxSoFar, block.threatLevel.toInt)
@@ -490,11 +490,11 @@ trait UserDao {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
     require(user.isAuthenticated, "DwE4KEF8")
-    readWriteTransaction { transaction =>
-      val identityId = transaction.nextIdentityId
+    readWriteTransaction { tx =>
+      val identityId = tx.nextIdentityId
       val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)
-      transaction.insertIdentity(identity)
-      addUserStats(UserStats(user.id, lastSeenAt = transaction.now))(transaction)
+      tx.insertIdentity(identity)
+      addUserStats(UserStats(user.id, lastSeenAt = tx.now))(tx)
       MemberLoginGrant(Some(identity), user, isNewIdentity = true, isNewMember = false)
     }
   }
@@ -568,26 +568,26 @@ trait UserDao {
 
   def changePasswordCheckStrongEnough(userId: UserId, newPassword: String): Boolean = {
     val newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword)
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
+    readWriteTransaction { tx =>
+      var user = tx.loadTheMemberInclDetails(userId)
       security.throwErrorIfPasswordBad(
         password = newPassword, username = user.username,
         fullName = user.fullName, email = user.primaryEmailAddress,
         minPasswordLength = globals.minPasswordLengthAllSites, isForOwner = user.isOwner)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
-      transaction.updateMemberInclDetails(user)
+      tx.updateMemberInclDetails(user)
     }
   }
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
-    val user = readWriteTransaction { transaction =>
-      val guest = transaction.loginAsGuest(loginAttempt).guest
+    val user = readWriteTransaction { tx =>
+      val guest = tx.loginAsGuest(loginAttempt).guest
       // We don't know if this guest user is being created now, or if it already exists
       // — so upsert (rather than insert? or update?) stats about this guest user.
       // (Currently this upsert keeps the earliest/oldest first/latest dates, see [7FKTU02].)
-      transaction.upsertUserStats(UserStats(
-        guest.id, firstSeenAtOr0 = transaction.now, lastSeenAt = transaction.now))
+      tx.upsertUserStats(UserStats(
+        guest.id, firstSeenAtOr0 = tx.now, lastSeenAt = tx.now))
       guest
     }
     memCache.put(
@@ -642,23 +642,23 @@ trait UserDao {
 
 
   def logout(userId: UserId) {
-    readWriteTransaction { transaction =>
-      addUserStats(UserStats(userId, lastSeenAt = transaction.now))(transaction)
+    readWriteTransaction { tx =>
+      addUserStats(UserStats(userId, lastSeenAt = tx.now))(tx)
     }
     memCache.remove(key(userId))
   }
 
 
   def loadUsers(): immutable.Seq[User] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadUsers()
+    readOnlyTransaction { tx =>
+      tx.loadUsers()
     }
   }
 
 
   def loadSiteOwner(): Option[MemberInclDetails] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadOwner()
+    readOnlyTransaction { tx =>
+      tx.loadOwner()
     }
   }
 
@@ -682,8 +682,8 @@ trait UserDao {
 
 
   def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadMemberInclDetails(userId)
+    readOnlyTransaction { tx =>
+      tx.loadMemberInclDetails(userId)
     }
   }
 
@@ -731,8 +731,8 @@ trait UserDao {
     memCache.lookup[User](
       key(userId),
       orCacheAndReturn = {
-        readOnlyTransaction { transaction =>
-          transaction.loadUser(userId)
+        readOnlyTransaction { tx =>
+          tx.loadUser(userId)
         }
       },
       ignoreSiteCacheVersion = true)
@@ -776,9 +776,9 @@ trait UserDao {
   }
 
   def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {  // RENAME to ... PrimaryEmailAddress... ?
-    readOnlyTransaction { transaction =>
+    readOnlyTransaction { tx =>
       // Don't need to cache this? Only called when logging in.
-      transaction.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
+      tx.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
     }
   }
 
@@ -804,8 +804,8 @@ trait UserDao {
     user match {
       case _: Guest | UnknownUser => Vector(Group.EveryoneId)
       case _: Member | _: Group =>
-        readOnlyTransaction { transaction =>
-          transaction.loadGroupIds(user)
+        readOnlyTransaction { tx =>
+          tx.loadGroupIds(user)
         }
     }
   }
@@ -899,8 +899,8 @@ trait UserDao {
 
 
   private def joinLeavePageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
-    byWho: Who, couldntAdd: mutable.Set[UserId], transaction: SiteTransaction): PageMeta = {
-    val pageMeta = transaction.loadPageMeta(pageId) getOrElse
+    byWho: Who, couldntAdd: mutable.Set[UserId], tx: SiteTransaction): PageMeta = {
+    val pageMeta = tx.loadPageMeta(pageId) getOrElse
       security.throwIndistinguishableNotFound("42PKD0")
 
     // Right now, to join a forum page = sub community, one just adds it to one's watchbar.
@@ -908,11 +908,11 @@ trait UserDao {
     if (pageMeta.pageRole == PageRole.Forum)
       return pageMeta
 
-    val usersById = transaction.loadMembersAsMap(userIds + byWho.id)
+    val usersById = tx.loadMembersAsMap(userIds + byWho.id)
     val me = usersById.getOrElse(byWho.id, throwForbidden(
       "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
-    lazy val numMembersAlready = transaction.loadMessageMembers(pageId).size
+    lazy val numMembersAlready = tx.loadMessageMembers(pageId).size
     if (add && numMembersAlready + userIds.size > 400) {
       // I guess something, not sure what?, would break if too many people join
       // the same page.
@@ -920,7 +920,7 @@ trait UserDao {
             isn't allowed. There are $numMembersAlready page members already""")
     }
 
-    throwIfMayNotSeePage(pageMeta, Some(me))(transaction)
+    throwIfMayNotSeePage(pageMeta, Some(me))(tx)
 
     val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == me.id
 
@@ -938,7 +938,7 @@ trait UserDao {
 
       userIds foreach { id =>
         COULD_OPTIMIZE // batch insert all users at once (would slightly speed up imports)
-        val wasAdded = transaction.insertMessageMember(pageId, userId = id, addedById = me.id)
+        val wasAdded = tx.insertMessageMember(pageId, userId = id, addedById = me.id)
         if (!wasAdded) {
           // Someone else has added that user already. Could happen e.g. if someone adds you
           // to a chat channel, and you attempt to join it yourself at the same time.
@@ -948,7 +948,7 @@ trait UserDao {
     }
     else {
       userIds foreach { id =>
-        transaction.removePageMember(pageId, userId = id, removedById = byWho.id)
+        tx.removePageMember(pageId, userId = id, removedById = byWho.id)
       }
     }
 
@@ -958,7 +958,7 @@ trait UserDao {
     // for chat topics, in the forum topic list? (because # comments in a chat channel is
     // rather pointless, instead, # new comments per time unit matters more, but then it's
     // simpler to instead show # users?)
-    transaction.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
+    tx.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
     pageMeta
   }
 
@@ -1089,27 +1089,27 @@ trait UserDao {
   }
 
 
-  def promoteUser(userId: UserId, newTrustLevel: TrustLevel, transaction: SiteTransaction) {
+  def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction) {
     // If trust level locked, we'll promote the member anyway — but member.effectiveTrustLevel
     // won't change, because it considers the locked trust level first.
-    val member = transaction.loadTheMemberInclDetails(userId)
+    val member = tx.loadTheMemberInclDetails(userId)
     val promoted = member.copy(trustLevel = newTrustLevel)
-    transaction.updateMemberInclDetails(promoted)
+    tx.updateMemberInclDetails(promoted)
     TESTS_MISSING // Perhaps now new chat channels are available to the member.
-    joinGloballyPinnedChats(member.briefUser, transaction)
+    joinGloballyPinnedChats(member.briefUser, tx)
   }
 
 
   def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who,
         unseenFirst: Boolean = false, limit: Int = 100)
         : NotfsAndCounts = {
-    readOnlyTransaction { transaction =>
+    readOnlyTransaction { tx =>
       if (me.id != userId) {
-        if (!transaction.loadUser(me.id).exists(_.isStaff))
+        if (!tx.loadUser(me.id).exists(_.isStaff))
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
-      debiki.JsonMaker.loadNotifications(userId, transaction, unseenFirst = unseenFirst, limit = limit,
+      debiki.JsonMaker.loadNotifications(userId, tx, unseenFirst = unseenFirst, limit = limit,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
   }
@@ -1117,15 +1117,15 @@ trait UserDao {
 
   REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date) {
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
+    readWriteTransaction { tx =>
+      var user = tx.loadTheMemberInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
       val userEmailAddress = user.primaryEmailInfo getOrDie "EdE4JKA2S"
       dieUnless(userEmailAddress.isVerified, "EdE7UNHR4")
-      transaction.updateMemberInclDetails(user)
-      transaction.updateUserEmailAddress(userEmailAddress)
+      tx.updateMemberInclDetails(user)
+      tx.updateUserEmailAddress(userEmailAddress)
       // Now, when email verified, perhaps time to start sending summary emails.
-      transaction.reconsiderSendingSummaryEmailsTo(user.id)
+      tx.reconsiderSendingSummaryEmailsTo(user.id)
     }
     removeUserFromMemCache(userId)
   }
@@ -1136,18 +1136,18 @@ trait UserDao {
         mediumAvatar: Option[UploadRef], browserIdData: BrowserIdData) {
     require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")
     require(smallAvatar.isDefined == mediumAvatar.isDefined, "EsE8YFM2")
-    readWriteTransaction { transaction =>
+    readWriteTransaction { tx =>
       setUserAvatarImpl(userId, tinyAvatar = tinyAvatar,
-        smallAvatar = smallAvatar, mediumAvatar = mediumAvatar, browserIdData, transaction)
+        smallAvatar = smallAvatar, mediumAvatar = mediumAvatar, browserIdData, tx)
     }
   }
 
 
   private def setUserAvatarImpl(userId: UserId, tinyAvatar: Option[UploadRef],
         smallAvatar: Option[UploadRef], mediumAvatar: Option[UploadRef],
-        browserIdData: BrowserIdData, transaction: SiteTransaction) {
+        browserIdData: BrowserIdData, tx: SiteTransaction) {
 
-      val userBefore = transaction.loadTheMemberInclDetails(userId)
+      val userBefore = tx.loadTheMemberInclDetails(userId)
       val userAfter = userBefore.copy(
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
@@ -1164,24 +1164,24 @@ trait UserDao {
           userBefore.tinyAvatar.toSet ++ userBefore.smallAvatar.toSet ++
             userBefore.mediumAvatar.toSet ++ userAfter.tinyAvatar.toSet ++
             userAfter.smallAvatar.toSet ++ userAfter.mediumAvatar.toSet
-      val refsInUseBefore = transaction.filterUploadRefsInUse(relevantRefs)
+      val refsInUseBefore = tx.filterUploadRefsInUse(relevantRefs)
 
-      transaction.updateMemberInclDetails(userAfter)
+      tx.updateMemberInclDetails(userAfter)
 
       if (hasNewAvatar) {
-        val refsInUseAfter = transaction.filterUploadRefsInUse(relevantRefs)
+        val refsInUseAfter = tx.filterUploadRefsInUse(relevantRefs)
         val refsAdded = refsInUseAfter -- refsInUseBefore
         val refsRemoved = refsInUseBefore -- refsInUseAfter
-        refsAdded.foreach(transaction.updateUploadQuotaUse(_, wasAdded = true))
-        refsRemoved.foreach(transaction.updateUploadQuotaUse(_, wasAdded = false))
+        refsAdded.foreach(tx.updateUploadQuotaUse(_, wasAdded = true))
+        refsRemoved.foreach(tx.updateUploadQuotaUse(_, wasAdded = false))
 
-        userBefore.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        userBefore.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        userBefore.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        userAfter.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        userAfter.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-        transaction.markPagesWithUserAvatarAsStale(userId)
+        userBefore.tinyAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        userBefore.smallAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        userBefore.mediumAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        userAfter.tinyAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        userAfter.smallAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        userAfter.mediumAvatar.foreach(tx.updateUploadedFileReferenceCount)
+        tx.markPagesWithUserAvatarAsStale(userId)
       }
       removeUserFromMemCache(userId)
 
@@ -1189,7 +1189,7 @@ trait UserDao {
       // PageStuff includes avatar urls.
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
-      emptyCacheImpl(transaction)
+      emptyCacheImpl(tx)
   }
 
 
@@ -1197,23 +1197,23 @@ trait UserDao {
         emailNotfPrefs: Option[EmailNotfPrefs] = None,
         activitySummaryEmailsIntervalMins: Option[Int] = None) {
     // Don't specify emailVerifiedAt — use verifyPrimaryEmailAddress() instead; it refreshes the cache.
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
+    readWriteTransaction { tx =>
+      var user = tx.loadTheMemberInclDetails(userId)
       emailNotfPrefs foreach { prefs =>
         user = user.copy(emailNotfPrefs = prefs)
       }
       activitySummaryEmailsIntervalMins foreach { mins =>
         user = user.copy(summaryEmailIntervalMins = Some(mins))
       }
-      transaction.updateMemberInclDetails(user)
+      tx.updateMemberInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
 
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
-    readWriteTransaction { transaction =>
-      transaction.configIdtySimple(ctime = ctime,
+    readWriteTransaction { tx =>
+      tx.configIdtySimple(ctime = ctime,
         emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
       // COULD refresh guest in cache: new email prefs --> perhaps show "??" not "?" after name.
     }
@@ -1252,9 +1252,9 @@ trait UserDao {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
-    readWriteTransaction { transaction =>
-      val user = transaction.loadTheMemberInclDetails(preferences.userId)
-      val me = transaction.loadTheMember(byWho.id)
+    readWriteTransaction { tx =>
+      val user = tx.loadTheMemberInclDetails(preferences.userId)
+      val me = tx.loadTheMember(byWho.id)
 
       require(me.isStaff || me.id == user.id, "TyE2WK7G4")
 
@@ -1276,10 +1276,10 @@ trait UserDao {
       if (user.username != preferences.username) {
         throwForbiddenIfBadUsername(preferences.username)
 
-        val usersOldUsernames: Seq[UsernameUsage] = transaction.loadUsersOldUsernames(user.id)
+        val usersOldUsernames: Seq[UsernameUsage] = tx.loadUsersOldUsernames(user.id)
 
         // [CANONUN] load both exact & canonical username, any match —> not allowed (unless one's own).
-        val previousUsages = transaction.loadUsernameUsages(preferences.username)
+        val previousUsages = tx.loadUsernameUsages(preferences.username)
 
         // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
         val usagesByOthers = previousUsages.filter(_.userId != user.id)
@@ -1291,7 +1291,7 @@ trait UserDao {
         val maxPerYearDistinct = me.isStaff ? 8 | 3
 
         val recentUsernames = usersOldUsernames.filter(
-            _.inUseFrom.daysBetween(transaction.now) < 365)
+            _.inUseFrom.daysBetween(tx.now) < 365)
         if (recentUsernames.length >= maxPerYearTotal)
           throwForbidden("DwE5FKW02",
             "You have changed your username too many times the past year")
@@ -1304,13 +1304,13 @@ trait UserDao {
 
         val anyUsernamesToStopUsingNow = usersOldUsernames.filter(_.inUseTo.isEmpty)
         anyUsernamesToStopUsingNow foreach { usage: UsernameUsage =>
-          val usageStopped = usage.copy(inUseTo = Some(transaction.now))
-          transaction.updateUsernameUsage(usageStopped)
+          val usageStopped = usage.copy(inUseTo = Some(tx.now))
+          tx.updateUsernameUsage(usageStopped)
         }
 
-        transaction.insertUsernameUsage(UsernameUsage(
+        tx.insertUsernameUsage(UsernameUsage(
           usernameLowercase = preferences.username.toLowerCase, // [CANONUN]
-          inUseFrom = transaction.now,
+          inUseFrom = tx.now,
           inUseTo = None,
           userId = user.id,
           firstMentionAt = None))
@@ -1321,16 +1321,18 @@ trait UserDao {
         throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
 
       REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
-      val oldSiteNotfLevel = transaction.loadPageNotfLevels(
-        preferences.userId, NoPageId, categoryId = None).forWholeSite getOrElse NotfLevel.Normal
+      // BUG need to first change to sth else, before set-Normal has any effect. [7KASDSRF20]
+      val oldNotfLevels = tx.loadPageNotfLevels(
+         preferences.userId, NoPageId, categoryId = None)
+      val oldSiteNotfLevel = oldNotfLevels.forWholeSite getOrElse NotfLevel.Normal
       if (preferences.siteNotfLevel != oldSiteNotfLevel) {
-        transaction.upsertPageNotfPref(
+        tx.upsertPageNotfPref(
             PageNotfPref(user.id, preferences.siteNotfLevel, wholeSite = true))
       }
       // -- / REFACTOR -------------------------------------------------------------------------------
 
       val userAfter = user.copyWithNewAboutPrefs(preferences)
-      try transaction.updateMemberInclDetails(userAfter)
+      try tx.updateMemberInclDetails(userAfter)
       catch {
         case _: DuplicateUsernameException =>
           throwForbidden("EdE2WK8Y4_", "Username already in use")
@@ -1338,7 +1340,7 @@ trait UserDao {
 
       if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins ||
           userAfter.summaryEmailIfActive != user.summaryEmailIfActive) {
-        transaction.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
+        tx.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
       }
 
       removeUserFromMemCache(preferences.userId)
@@ -1348,7 +1350,7 @@ trait UserDao {
       if (preferences.changesStuffIncludedEverywhere(user)) {
         // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
         // Use markPagesWithUserAvatarAsStale ?
-        emptyCacheImpl(transaction)
+        emptyCacheImpl(tx)
       }
     }
   }
@@ -1359,9 +1361,9 @@ trait UserDao {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
-    readWriteTransaction { transaction =>
-      val group = transaction.loadTheGroupInclDetails(preferences.groupId)
-      val me = transaction.loadTheMember(byWho.id)
+    readWriteTransaction { tx =>
+      val group = tx.loadTheGroupInclDetails(preferences.groupId)
+      val me = tx.loadTheMember(byWho.id)
       require(me.isStaff, "EdE5LKWV0")
 
       val groupAfter = group.copyWithNewAboutPrefs(preferences)
@@ -1373,12 +1375,12 @@ trait UserDao {
       if (groupAfter.theUsername != group.theUsername) {
         throwForbiddenIfBadUsername(preferences.username)
         unimplemented("Changing a group's username", "TyE2KBFU50")
-        // Need to: transaction.updateUsernameUsage(usageStopped) — stop using current
-        // And: transaction.insertUsernameUsage(UsernameUsage(   [CANONUN]
+        // Need to: tx.updateUsernameUsage(usageStopped) — stop using current
+        // And: tx.insertUsernameUsage(UsernameUsage(   [CANONUN]
         // See saveAboutMemberPrefs.
       }
 
-      try transaction.updateGroup(groupAfter)
+      try tx.updateGroup(groupAfter)
       catch {
         case _: DuplicateUsernameException =>
           throwForbidden("EdE2WK8Y4_", "Username already in use")
@@ -1388,14 +1390,15 @@ trait UserDao {
       // So let the summary-emails module reconsider all members at this site.
       if (groupAfter.summaryEmailIntervalMins != group.summaryEmailIntervalMins ||
           groupAfter.summaryEmailIfActive != group.summaryEmailIfActive) {
-        transaction.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
+        tx.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
       }
 
       REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
-      val oldSiteNotfLevel = transaction.loadPageNotfLevels(
+      // BUG need to first change to sth else, before set-Normal has any effect. [7KASDSRF20]
+      val oldSiteNotfLevel = tx.loadPageNotfLevels(
         preferences.groupId, NoPageId, categoryId = None).forWholeSite getOrElse NotfLevel.Normal
       if (preferences.siteNotfLevel != oldSiteNotfLevel) {
-        transaction.upsertPageNotfPref(
+        tx.upsertPageNotfPref(
           PageNotfPref(group.id, preferences.siteNotfLevel, wholeSite = true))
       }
       // ---/ REFACTOR -------------------------------------------------------------------------------
@@ -1428,10 +1431,10 @@ trait UserDao {
 
   def saveGuest(guestId: UserId, name: String) {
     // BUG: the lost update bug.
-    readWriteTransaction { transaction =>
-      var guest = transaction.loadTheGuest(guestId)
+    readWriteTransaction { tx =>
+      var guest = tx.loadTheGuest(guestId)
       guest = guest.copy(guestName = name)
-      transaction.updateGuest(guest)
+      tx.updateGuest(guest)
     }
     removeUserFromMemCache(guestId)
   }
@@ -1484,7 +1487,7 @@ trait UserDao {
 
       // Use this fn so uploads ref counts get decremented.
       setUserAvatarImpl(userId: UserId, tinyAvatar = None, smallAvatar = None, mediumAvatar = None,
-        browserIdData = byWho.browserIdData, transaction = tx)
+        browserIdData = byWho.browserIdData, tx = tx)
 
       // Load member after having forgotten avatar images (above).
       val memberBefore = tx.loadTheMemberInclDetails(userId)
@@ -1580,8 +1583,8 @@ trait UserDao {
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
         val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == User.SuperAdminId)
-        val users = readOnlyTransaction { transaction =>
-          transaction.loadUsers(userIds)
+        val users = readOnlyTransaction { tx =>
+          tx.loadUsers(userIds)
         }
         UsersOnlineStuff(
           users,
