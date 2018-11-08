@@ -51,7 +51,7 @@ export function loginIfNeededReturnToAnchor(
   else if (eds.isInIframe) {
     // (Previously, a Chrome 63 bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
     // required an ugly workaround here: to poll and see if a session cookie suddenly appeared.
-    // Remove this comment 2019-06-01? [4PKGTEW20])
+    // DO_AFTER Remove this comment 2019-06-01? [4PKGTEW20])
     anyContinueAfterLoginCallback = success;
 
     // Don't open a dialog inside the iframe; open a popup instead.
