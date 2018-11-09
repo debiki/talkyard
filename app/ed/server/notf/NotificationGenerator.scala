@@ -180,17 +180,24 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
     val idsWatchingSite = tx.loadPeopleIdsWatchingWholeSite(minNotfLevel)
 
+    // Should expand all groups to indie id?
     val moreIds: Set[UserId] = idsWatchingPage ++ idsWatchingCat ++ idsWatchingSite
 
     for {
       peopleId <- moreIds
-      if peopleId != newPost.createdById
-      if !notfCreatedAlreadyTo(peopleId)
+      if peopleId != newPost.createdById  // BUG? doesn't work if peopleId = group that incl createdById
+      if !notfCreatedAlreadyTo(peopleId)  // BUG? doesn't work if peopleId = group that incl hen
       userOrGroup <- tx.loadUser(peopleId)
     } {
       val specificity =
         if (idsWatchingPage contains peopleId) PageNotfSpecificity.Page
+        // but what if an id in idsWatchingCat is a group that contains user id X...
         else if (idsWatchingCat contains peopleId) PageNotfSpecificity.Category
+        // and idsWatchingSite contains user id X directly,
+        // then specificity will be set to WholeSite,
+        // although should be group.
+        // So need to expand all groups, to individual members,
+        // instead.  ?
         else if (idsWatchingSite contains peopleId) PageNotfSpecificity.WholeSite
         else die("TyE3@KABS05")
       makeNewPostNotf(
