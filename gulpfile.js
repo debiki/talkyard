@@ -82,6 +82,10 @@ var thisIsAConcatenationMessage =
   ' */\n';
 
 
+var swJsFiles = [
+  'target/client/ty-sw-typescript.js'];
+
+
 // What about using a CDN for jQuery + Modernizr + React? Perhaps, but:
 // - jQuery + Modernizr + React is only 33K + 5K + 49K in addition to 160K
 //   for everything else, so it's just 90K ~= 50% extra stuff, doesn't matter much?
@@ -217,8 +221,7 @@ var serverTypescriptProject = typeScript.createProject({
 
 var serverTypescriptSrc = [
     'client/server/**/*.ts',
-    'client/shared/plain-old-javascript.d.ts',
-    'client/typedefs/**/*.ts'];
+    'client/shared/plain-old-javascript.d.ts'];
 
 var serverJavascriptSrc = [
     // Two different sanitizers. [5FKEW2]
@@ -259,6 +262,14 @@ function compileServerTypescriptConcatJavascript() {
       .pipe(gulp.dest('public/res/'));
 }
 
+var swTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  outFile: 'ty-sw-typescript.js',
+  lib: ['es5', 'es2015', 'dom'],  // dom: fetch() API related types
+  types: ['core-js'],
+  sourceMap: true,     // ??
+  inlineSources: true  // include source code in mapping file
+});
 
 var slimTypescriptProject = typeScript.createProject({
   target: 'ES5',
@@ -298,6 +309,23 @@ var editorTypescriptProject = typeScript.createProject({
 });
 
 
+var swTypescriptSrc = [
+  'client/app/model.ts',
+  'client/serviceworker/*.ts'];
+
+function compileSwTypescript() {
+  var stream = gulp.src(swTypescriptSrc)
+    .pipe(wrap(nextFileTemplate))
+    .pipe(swTypescriptProject());
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling service worker TypeScript [TyE5BJW4N] !!!\n');
+    });
+  }
+  return stream.pipe(gulp.dest('target/client/'));
+}
+
+
 var slimTypescriptSrc = [
     'client/shared/plain-old-javascript.d.ts',
     'client/app/**/*.ts',
@@ -305,8 +333,7 @@ var slimTypescriptSrc = [
     '!client/app/**/*.2d.ts',
     '!client/app/**/*.editor.ts',
     '!client/app/**/*.staff.ts',
-    '!client/app/slim-bundle.d.ts',
-    'client/typedefs/**/*.ts'];
+    '!client/app/slim-bundle.d.ts'];
 
 function compileSlimTypescript() {
   var stream = gulp.src(slimTypescriptSrc)
@@ -314,7 +341,7 @@ function compileSlimTypescript() {
     .pipe(slimTypescriptProject());
   if (watchAndLiveForever) {
     stream.on('error', function() {
-      console.log('\n!!! Error compiling slim TypeScript [EsE4GDTX8]!!!\n');
+      console.log('\n!!! Error compiling slim TypeScript [TyE4GDTX8] !!!\n');
     });
   }
   return stream.pipe(gulp.dest('target/client/'));
@@ -328,8 +355,7 @@ function makeOtherTypescriptSrc(what) {
     '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
     'client/shared/plain-old-javascript.d.ts',
     'client/app/model.ts',
-    'client/app/**/*.' + what + '.ts',
-    'client/typedefs/**/*.ts'];
+    'client/app/**/*.' + what + '.ts'];
 }
 
 function compileOtherTypescript(what, typescriptProject) {
@@ -346,6 +372,10 @@ function compileOtherTypescript(what, typescriptProject) {
 
 gulp.task('compileServerTypescriptConcatJavascript', function () {
   return compileServerTypescriptConcatJavascript();
+});
+
+gulp.task('compileSwTypescript', function () {
+  return compileSwTypescript();
 });
 
 gulp.task('compileSlimTypescript', function () {
@@ -371,6 +401,7 @@ gulp.task('compileEditorTypescript', function () {
 gulp.task('compileAllTypescript', function () {
   return es.merge(
       compileServerTypescriptConcatJavascript(),
+      compileSwTypescript(),
       compileSlimTypescript(),
       compileOtherTypescript('more', moreTypescriptProject),
       compileOtherTypescript('2d', _2dTypescriptProject),
@@ -381,11 +412,13 @@ gulp.task('compileAllTypescript', function () {
 
 var compileTsTaskNames = [
   'compileServerTypescriptConcatJavascript',
+  'compileSwTypescript',
   'compileSlimTypescript',
   'compileMoreTypescript',
   'compile2dTypescript',
   'compileStaffTypescript',
   'compileEditorTypescript'];
+
 for (var i = 0; i < compileTsTaskNames.length; ++i) {
   var compileTaskName = compileTsTaskNames[i];
   gulp.task(compileTaskName + '-concatScripts', [compileTaskName], function() {
@@ -416,6 +449,7 @@ function makeConcatAllScriptsStream() {
   }
 
   return es.merge(
+      makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer'),
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
       makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'),
@@ -539,6 +573,7 @@ gulp.task('watch', ['default'], function() {
   watchAndLiveForever = true;
   var allServerScriptsSrc = serverTypescriptSrc.concat(serverJavascriptSrc);
   gulp.watch(allServerScriptsSrc, ['compileServerTypescriptConcatJavascript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
+  gulp.watch(swTypescriptSrc, ['compileSwTypescript-concatScripts']).on('change', logChangeFn('Service worker TypeScript'));
   gulp.watch(slimTypescriptSrc, ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('more'), ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('2d'), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript'));

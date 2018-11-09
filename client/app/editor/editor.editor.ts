@@ -399,6 +399,9 @@ export const Editor = createComponent({
   },
 
   editPost: function(postNr: PostNr, onDone?) {
+    // [editor-drafts] UX COULD somehow give the user the option to cancel & close, without
+    // loading? saving? any draft.
+
     if (this.alertBadState())
       return;
     Server.loadDraftAndText(postNr, (response: LoadDraftAndTextResponse) => {
@@ -1299,7 +1302,7 @@ export const Editor = createComponent({
     }
 
     let saveButtonTitle = t.Save;
-    let cancelButtonTitle = t.Cancel;
+    let cancelButtonTitle = t.Cancel;  // UX should be entitled  t.SaveDraft  instead?  I18N
     if (_.isNumber(this.state.editingPostNr)) {
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }

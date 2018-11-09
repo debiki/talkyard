@@ -1,1 +1,0 @@
-../../../modules/definitely-typed/types/jquery/index.d.ts

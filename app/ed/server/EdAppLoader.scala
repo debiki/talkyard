@@ -45,7 +45,16 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   SECURITY // it adds some maybe-useful security related filters too, investigate if should use them.
   override def httpFilters: Seq[EssentialFilter] = Seq(EdFilters.makeGzipFilter(materializer))
 
-  val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem)
+  // Jaeger docs: https://github.com/yurishkuro/opentracing-tutorial/tree/master/java
+  val tracer: io.jaegertracing.internal.JaegerTracer = {
+    import io.jaegertracing.Configuration.JAEGER_SERVICE_NAME
+    val tracerServiceName =
+      Option(System.getProperty(JAEGER_SERVICE_NAME, System.getenv(JAEGER_SERVICE_NAME)))
+        .getOrElse("ty-app")
+    io.jaegertracing.Configuration.fromEnv(tracerServiceName).getTracer
+  }
+
+  val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem, tracer)
   val security = new ed.server.security.EdSecurity(globals)
   val rateLimiter = new RateLimiter(globals, security)
   val safeActions = new SafeActions(globals, security, controllerComponents.parsers)
@@ -65,6 +74,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   applicationLifecycle.addStopHook { () =>
     Future.successful {
       p.Logger.info("Shutting down... [EsMBYESOON]")
+      tracer.close()
       globals.stopStuff()
       p.Logger.info("Done shutting down. [EsMBYE]")
     }

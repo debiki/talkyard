@@ -43,15 +43,15 @@ export function cloneEventTargetRect(event): Rect {
   throw new Error('cloneEventTargetRect called server side [TyE4UKWQ2]');
 }
 
-export function event_isEnter(event) {
+export function event_isEnter(event): boolean {
   throw new Error('event_isEnter called server side [DwE5KYF204]');
 }
 
-export function event_isCtrlEnter(event) {
+export function event_isCtrlEnter(event): boolean {
   throw new Error('event_isCtrlEnter called server side [DwE3U83Y2]');
 }
 
-export function event_isShiftEnter(event) {
+export function event_isShiftEnter(event): boolean {
   throw new Error('event_isShiftEnter called server side [DwE5YU80]');
 }
 

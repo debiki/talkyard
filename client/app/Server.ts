@@ -1584,7 +1584,7 @@ export function testGetLongPollingNr() {
  * COULD How avoid "nchan client prematurely closed connection" info message in the Nginx logs?
  * I asked: https://github.com/slact/nchan/issues/466
  */
-export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
+export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,  // dupl [7KVAWBY0]
       errorFn: ErrorStatusHandler, resendIfNeeded: () => void) {
 
   if (longPollingState.ongoingRequest) {
@@ -1600,7 +1600,9 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
   const reqNr = longPollingState.nextReqNr;
   longPollingState.nextReqNr = reqNr + 1;
 
-  console.debug(`Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
+  console.debug(
+      `Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
+
 
   const options: GetOptions = {
     dataType: 'json',

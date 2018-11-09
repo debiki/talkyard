@@ -27,7 +27,7 @@ const newWelcomeTopicTitle = "New Welcome Title Title Title";
 const newCategoryName = "Wasteland";
 const newTopicTitle = "Total Desert";
 const newTopicText = "No water here text text text";
-let siteId: string;
+let siteId: SiteId;
 let siteUrl: string;
 
 const mariasTopicTitle = "mariasTopicTitle";

@@ -80,6 +80,7 @@ val appDependencies = Seq(
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
   //"org.apache.tika" % "tika-core" % "1.18",               // newest as of 18-07-17  sync w core [5ZBW49]
   "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
+  "io.jaegertracing" % "jaeger-client" % "0.32.0",
   "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
   // so it won't be included in the JAR), or there's this weird error: """

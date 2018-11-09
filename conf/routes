@@ -293,6 +293,8 @@ GET   /robots.txt               controllers.Assets.at(path = "/public", file = "
 
 # These endpoints are linked from embedded comments HTML:  [2WPGKS04]
 # Ensure they aren't cached for too long. [2WBKP46]
+# Also, use a descriptive name that includes "Talkyard", because people see these names when
+# they copy-paste embedded comments html tags.
 GET   /-/talkyard-comments.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
 GET   /-/talkyard-comments.min.js controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
 # Old names: [2EBG05]
@@ -303,6 +305,12 @@ GET   /-/ed-comments.v0.min.js  controllers.Assets.at(path = "/public/res", file
 
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
+
+# Prefix with 'talkyard-' so one quickly sees if it's Talkyards service worker, when debugging on localhost.
+# (There might be old other localhost service workers, from unrelated open source projects.) [sw]
+#GET   /talkyard-service-worker.js     controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.js")
+#GET   /talkyard-service-worker.min.js controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.min.js")
+#GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

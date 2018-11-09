@@ -29,7 +29,9 @@
  */
 
 /// <reference path="../prelude.ts" />
+/// <reference path="../ReactActions.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
+/// <reference path="../page/scroll-buttons.ts" />
 
 
 //------------------------------------------------------------------------------

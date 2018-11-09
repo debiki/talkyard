@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-declare var moment: any;
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
 

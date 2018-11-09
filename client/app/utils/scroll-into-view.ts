@@ -54,7 +54,7 @@ export function scrollIntoViewInPageColumn(what, options?) {
 }
 
 
-export function elemIsVisible(elem) {
+export function elemIsVisible(elem): boolean {
   const coords = d.i.calcScrollIntoViewCoords(elem, {
     marginTop: 0,
     marginBottom: 0,

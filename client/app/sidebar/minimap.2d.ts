@@ -21,6 +21,8 @@
  */
 
 /// <reference path="../utils/page-scroll-mixin.ts" />
+/// <reference path="../../../node_modules/@types/jquery/index.d.ts" />
+
 
 //------------------------------------------------------------------------------
    namespace debiki2.sidebar {
