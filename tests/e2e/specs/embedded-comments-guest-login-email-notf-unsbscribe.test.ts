@@ -40,7 +40,7 @@ const pageSlug = 'emb-cmts-guest.html';
 const pageUrl = embeddingOrigin + '/' + pageSlug;
 
 
-describe("emb cmts guest login", () => {
+describe("emb cmts guest login  TyT8FUKB2T4", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
@@ -158,7 +158,7 @@ describe("emb cmts guest login", () => {
   });
 
   it("Gillan needs to login again: guest sessions are forgotten on page reload, so tracker blockers " +
-    "(PrivacyBadger, iOS built-in, etc) won't mistake Talkyard for being a tracker", () => {
+    "(PrivacyBadger, iOS built-in, etc) won't think is a tracker  TyT5WBK0267 [NOCOOKIES]", () => {
     guestsBrowser.swithToOtherTabOrWindow();
     guestsBrowser.disableRateLimits();
     guestsBrowser.loginDialog.signUpLogInAs_Real_Guest("Gillan Again");

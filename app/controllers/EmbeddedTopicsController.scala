@@ -121,13 +121,12 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
     // Privacy tools and settings might break cookies. If we may not use cookies,  [NOCOOKIES]
     // then include a xsrf token in the html instead.
-    // (Cannot use a response header for this, because client side, one cannot access
-    // the current page headers, see e.g.:  https://stackoverflow.com/a/4881836/694469 )
+    // (Cannot use a response header for this, because in the browser, one cannot access
+    // the current page's headers, see e.g.:  https://stackoverflow.com/a/4881836/694469 )
     val hasXsrfTokenAlready = request.xsrfToken.value.nonEmpty
     val newXsrfToken: Option[String] =
       if (hasXsrfTokenAlready) None
       else {
-        // request.xsrfToken.value is empty, because no xsrf cookie, so create new.
         Some(security.createXsrfToken().value)
       }
 

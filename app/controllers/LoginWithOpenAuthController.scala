@@ -93,6 +93,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
         : Future[Result] = {
+    // [NOCOOKIES] use what, instead of cookies here, to make OAuth login work witout cookies?
+
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
@@ -103,7 +105,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
       }
     }
-    if (request.rawQueryString.contains("isInLoginPopup")) {  // ??
+    if (request.rawQueryString.contains("isInLoginPopup")) {
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = IsInLoginPopupCookieName, value = "true", httpOnly = false))
@@ -404,7 +406,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined)))
       }
       else {
-        // ?? use header instead?  Check window opener & set header if present?   [NOCOOKIES]
+        // If should avoid cookies: Use header instead? If window.opener?   [NOCOOKIES]
         // (+ maybe return-to-url can incl &is-login-popup query param = true?
         //  — but opener = same-origin, can access. Google Chrome 63 bug since long fixed.)
         // What! This isn't an Ajax request, it's a page load. Need to incl is-in-popup info
@@ -422,7 +424,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               loginPopupCallback
             }
             else if (isInLoginPopup) {
-              // Javascript in the popup, will call handleLoginResponse() which calls
+              // Javascript in the popup will call handleLoginResponse() which calls
               // continueAfterLogin().
               loginPopupCallback
             }

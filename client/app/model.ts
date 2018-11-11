@@ -657,8 +657,7 @@ interface VolatileDataFromServer {
   numStrangersOnline: number;
   me?: Myself;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
-  // Then we try to include an xsrf token in the page html instead. Any session id is then
-  // saved in window.tyCurrentPageSessionId.
+  // Then we include an xsrf token in the page json instead.
   xsrfTokenIfNoCookies?: string;
 }
 

@@ -373,7 +373,7 @@ object ViewPageController {
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
 
-    // Could do asynchronously later. COULD avoid sending back those json fields (4WAKB82)
+    // Could do asynchronously later. COULD avoid sending back empty json fields
     // — first verify that then nothing will break though.
     val usersOnlineStuff =
       if (skipUsersOnline) UsersOnlineStuff(users = Nil, usersJson = JsArray(), numStrangers = 0)
@@ -387,9 +387,8 @@ object ViewPageController {
           Some(dao.jsonMaker.userNoPageToJson(request))
       }
 
-    // Typescript interface VolatileDataFromServer, in model.ts.
-    var volatileJson = Json.obj(
-      "usersOnline" -> usersOnlineStuff.usersJson,  // (4WAKB82)
+    var volatileJson = Json.obj(  // VolatileDataFromServer
+      "usersOnline" -> usersOnlineStuff.usersJson,
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
       "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 

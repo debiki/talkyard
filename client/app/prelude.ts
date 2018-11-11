@@ -210,7 +210,7 @@ export function scrollToBottom(node) {
 /**
  * Finds the main embedded comments window, where the per page temporary xsrf token
  * and sesion id are kept, when logging in without cookies. So they'll be accessible
- * everywhere — because http requests that need the xsrf token or session id,
+ * everywhere: http requests that need the xsrf token or session id,
  * are made from the editor iframe and login popup wins too, not just the main
  * comments win.
  */
@@ -219,12 +219,19 @@ export function getMainWin(): any {
   if (window.name === lookingForName)
     return window;
 
+  // This is the main window already, unless we're on an embedded comments page or in a login popup.
   let win = window;
+
+  // If we're in a login popup window, switch to the opener, which should be either the
+  // main win (with all comments and discussions), or the embedded editor 'edEditor' in an iframe.
   if (win.opener && win.opener.typs) {
     win = win.opener;
   }
 
   if (win.name === 'edEditor') {
+    // We're in the embedded editor iframe window. The parent window is the embedding window,
+    // e.g. a blog post with comments embedded. And it should have another child window, namely
+    // the main window, with all embedded comments.
     // @ifdef DEBUG
     dieIf(!win.parent, 'TyE7KKWGCE2');
     // @endif

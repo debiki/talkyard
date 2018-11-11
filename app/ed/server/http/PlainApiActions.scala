@@ -165,10 +165,10 @@ class PlainApiActions(
 
       // Why avoid cookies? In an embedded comments iframe, cookies frequently get blocked
       // by Privacy Badger or iOS or browser settings for 3rd-party-cookies.
-      // The embedded comments show-page endpoint sets isAvoidCookiesEndpoint to true,
+      // The embedded comments show-page etc endpoints sets avoidCookies,
       // so we know, here, that we should avoid setting any cookies.  [NOCOOKIES]
-      // And, for subsequent requests — to *other* endpoints — the browser Javascript code
-      // sets the NoCookiesHeaderName header, so we'll know, here, that we should avoid cookies.
+      // And, for subsequent requests — to *other* endpoints — the browser Javascript code sets
+      // the AvoidCookiesHeaderName header, so we won't froget that we should avoid cookies here.
       val hasCookiesAlready = request.cookies.exists(_.name != "esCoE2eTestPassword")
       val maySetCookies = hasCookiesAlready || {
         val shallAvoid = avoidCookies || {
@@ -193,8 +193,8 @@ class PlainApiActions(
           security.getBrowserIdCookieMaybeCreate(request)
         }
         else {
-          // Then use any xsrf token, if present. It stays the same at least until page reload,
-          // and has the same format as any id cookie anyway, see timeDotRandomHashHash() [2AB85F2].
+          // Then use any xsrf token, if present. It stays the same until page reload,
+          // and has the same format as any id cookie anyway, see timeDotRandomDotHash() [2AB85F2].
           // The token can be missing (empty) for GET requests [2WKA40].
           if (xsrfOk.value.nonEmpty)
             (Some(BrowserId(xsrfOk.value, isNew = false)), Nil)

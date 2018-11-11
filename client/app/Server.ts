@@ -325,7 +325,8 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
 
 /**
  * Sends xsrf token and sid in headers, instead of cookies, because sometimes
- * the browsers refuse to use cookies.
+ * the browsers refuse to use cookies, e.g. Privacy Badger blocks cookies or iOS
+ * incorrectly thinks we're doing some kind of cross site tracking.
  */
 function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // [NOCOOKIES]
   const win = getMainWin();
@@ -341,9 +342,8 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
 
   if (currentPageXsrfToken) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
+    // Not sure if can have been set to xsrf cookie value already? So skip if set.
     if (!headers[XsrfTokenHeaderName]) {
-      // Needed also for GET requests, so the server can incl any token, if it pops up
-      // a login popup window.
       headers[XsrfTokenHeaderName] = currentPageXsrfToken;
     }
   }

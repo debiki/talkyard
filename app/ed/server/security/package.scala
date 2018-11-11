@@ -165,7 +165,10 @@ class EdSecurity(globals: Globals) {
           }
           else if (!maySetCookies) {
             // No XSRF token available, and none needed, since this a GET request. [2WKA40]
-            // Also, this makes [privacy-badger] happy.
+            // Also, this makes [privacy-badger] happy. [NOCOOKIES]
+            // Could set the xsrf token to any xsrf header value? But then ought to check if
+            // it's been properly crypto hash signed — would be better to avoid (don't want to
+            // compute hashes if not needed anyway).
             (XsrfOk(""), Nil)
           }
           else {
@@ -262,6 +265,7 @@ class EdSecurity(globals: Globals) {
             throw ResultException(ForbiddenResult(
               errorCode, helpText(theProblem, "now have")).withCookies(newXsrfCookie))
           }
+
           xsrfStatus.asInstanceOf[XsrfOk]
         }
 
@@ -531,7 +535,7 @@ class EdSecurity(globals: Globals) {
     request.cookies.get(BrowserIdCookieName).map(_.value)
 
 
-  private def createBrowserIdCookie(): (Some[BrowserId], List[Cookie]) = {  // Priv bdgr doesn't like
+  private def createBrowserIdCookie(): (Some[BrowserId], List[Cookie]) = {
     val cookieValue = timeDotRandomDotHash()  // [2AB85F2]
     val newCookie = SecureCookie(
       name = BrowserIdCookieName,

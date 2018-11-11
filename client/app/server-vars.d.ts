@@ -63,7 +63,7 @@ interface ServerVars {
   baseDomain: string | undefined;
 }
 
-declare const eds: ServerVars;  // RENAME to tyss  ?
+declare const eds: ServerVars;  // RENAME to tys  ?  And is there any way to make all fields 'const' ?
 
 // Old:
 declare const debiki: any;
