@@ -47,7 +47,7 @@
 	path = modules/gatsby-starter-blog-ed-comments-0.4.4
 	url = https://github.com/debiki/gatsby-starter-blog.git
 [submodule "docker/fakemail/mailslurper"]
-	path = docker/fakemail/mailslurper
+	path = images/fakemail/mailslurper
 	url = https://github.com/mailslurper/mailslurper.git
 [submodule "to-talkyard"]
 	path = to-talkyard

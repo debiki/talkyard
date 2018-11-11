@@ -78,7 +78,7 @@ services:
       # JAEGER_AUTH_TOKEN: ""
 
   cache:
-    build: docker/cache/
+    build: images/cache/
     image: $DOCKER_REPOSITORY/talkyard-cache
     volumes:
       - ./docker/data/cache/:/data/
@@ -88,7 +88,7 @@ services:
       net.core.somaxconn: 511
 
   search:
-    build: docker/search/
+    build: images/search/
     image: $DOCKER_REPOSITORY/talkyard-search
     # If too low, the 'search' container will suddenly exit with code 137. No error message
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
@@ -103,7 +103,7 @@ services:
       ES_JAVA_OPTS: '-Xms384m -Xmx384m'
 
   rdb:
-    build: docker/rdb/
+    build: images/rdb/
     image: $DOCKER_REPOSITORY/talkyard-rdb
     volumes:
       - ./docker/data/rdb/:/var/lib/postgresql/data/
@@ -131,7 +131,7 @@ services:
   #    PEER_PASSWORD: 'public'
 
   test:
-    build: docker/gulp/
+    build: images/gulp/
     image: $DOCKER_REPOSITORY/talkyard-test
     volumes:
       - ./:/opt/talkyard/server/
@@ -152,7 +152,7 @@ services:
 
   # Dummy SMTP server, for testing.
   fakemail:
-    build: docker/fakemail/mailslurper
+    build: images/fakemail/mailslurper
     image: $DOCKER_REPOSITORY/fakemail
     volumes:
       - ./docker/fakemail/mailslurper-config.json:/config.json
@@ -178,14 +178,14 @@ services:
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
   gulp:
-    build: docker/gulp/
+    build: images/gulp/
     image: $DOCKER_REPOSITORY/talkyard-gulp
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
 
   certgen:
-    build: docker/certgen/
+    build: images/certgen/
     image: $DOCKER_REPOSITORY/talkyard-certgen
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
