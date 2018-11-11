@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../../node_modules/@types/jquery/index.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------

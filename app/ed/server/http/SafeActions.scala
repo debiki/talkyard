@@ -92,6 +92,9 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         val path = requestNoTracing.path
         val traceOpName =
           if (path.startsWith("/-/v0/") ||
+            path == "/talkyard-service-worker.js" ||
+            path == "/talkyard-service-worker.min.js" ||
+            path == "/manifest.webmanifest" ||
             path == "/favicon.ico" ||
             path == "/robots.txt") {
             path
