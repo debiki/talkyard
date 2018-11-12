@@ -1,1 +1,1 @@
-v0.6.16-WIP-1
+images/app/version.txt

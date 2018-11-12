@@ -50,7 +50,7 @@ var versionFilePath = 'version.txt';
 
 function getVersionTag() {
   var version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
-  var gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  var gitHash = 'GITFILESYSERR'; // Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set)'; //execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
   return version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
 }
 
@@ -158,7 +158,7 @@ var staffJsFiles = [
 var editorJsFiles = [
       // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
       // Find the code that "combines" them here: googleCajaSanitizeHtml [6FKP40]
-      'modules/sanitize-html/dist/sanitize-html.js',     // 1
+      'sanitize-html/dist/sanitize-html.js',             // 1
       'client/third-party/html-css-sanitizer-bundle.js', // 2
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/blacklist/dist/blacklist.js',  // needed by what?
@@ -226,7 +226,7 @@ var serverTypescriptSrc = [
 var serverJavascriptSrc = [
     // Two different sanitizers. [5FKEW2]
     // Needs to be first. There's some missing ';' at the start of the script bug?
-    'modules/sanitize-html/dist/sanitize-html.min.js',
+    'sanitize-html/dist/sanitize-html.min.js',
     'client/third-party/html-css-sanitizer-bundle.js',
     'node_modules/react/umd/react.production.min.js',
     'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',

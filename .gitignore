@@ -9,7 +9,9 @@ tmp
 .idea_modules/
 RUNNING_PID
 downloads/
-modules/local/
+
+# One's local dev-test config.
+images/app/conf/my.conf
 
 # TypeScript: grunt-ts cache, and HTML files compiled to .ts by grunt-ts.
 #.tscache/
@@ -35,6 +37,8 @@ docker/gulp-home/
 
 # Docker volume contents:
 docker/data/
+# Container columes:
+volumes/
 
 # When running Chrome browser tests, ChromeDriver generates this file and it
 # seems it's location is hardcoded,

@@ -21,13 +21,9 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 
 val versionFileContents = {
-  // For now, after moved to images/app/, making version.txt inaccessible,
-  // just copy-paste the current version number here. Doesn't matter anyway
-  "v0.6.16-WIP-1"
-  /* Previously:
   val source = scala.io.Source.fromFile("version.txt")
   try source.mkString.trim
-  finally source.close() */
+  finally source.close()
 }
 
 val appName = "talkyard-server"
@@ -148,13 +144,18 @@ def mainSettings = List(
     sbtVersion,
     BuildInfoKey.action("dockerTag") {
       // Also in release.sh: [8GKB4W2]
-      versionFileContents + '-' + "git rev-parse --short HEAD".!!.trim
+      versionFileContents  + "GITFILESYSERR" // Error: Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set)."
+          // Calling Git currently doesn't work, after having moved to ./images/app/
+          // and mounting that dir in the Docker container — but Git is still in ./.
+          // + '-' + "git rev-parse --short HEAD".!!.trim
     },
     BuildInfoKey.action("gitRevision") {
-      "git rev-parse HEAD".!!.trim
+      "GITFILESYSERR" // Error: Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set)."
+          // "git rev-parse HEAD".!!.trim
     },
     BuildInfoKey.action("gitBranch") {
-      "git rev-parse --abbrev-ref HEAD".!!.trim
+      "GITFILESYSERR" // Error: Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set)."
+          // git rev-parse --abbrev-ref HEAD".!!.trim
     }),
     // But this results in:java.io.IOException: Cannot run program "TZ=UTC"
     /*
