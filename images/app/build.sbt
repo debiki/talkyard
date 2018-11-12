@@ -21,9 +21,13 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 
 val versionFileContents = {
+  // For now, after moved to images/app/, making version.txt inaccessible,
+  // just copy-paste the current version number here. Doesn't matter anyway
+  "v0.6.16-WIP-1"
+  /* Previously:
   val source = scala.io.Source.fromFile("version.txt")
   try source.mkString.trim
-  finally source.close()
+  finally source.close() */
 }
 
 val appName = "talkyard-server"
@@ -34,13 +38,13 @@ val appVersion = {
 }
 
 // Stuff shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
-lazy val edCore =
-  project in file("modules/ed-core")
+lazy val tyCore =
+  project in file("ty-core")
 
 // ty = Talkyard, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
 lazy val tyDaoRdb =
-  (project in file("modules/ty-dao-rdb"))
-    .dependsOn(edCore)
+  (project in file("ty-dao-rdb"))
+    .dependsOn(tyCore)
 
 
 val appDependencies = Seq(
@@ -101,10 +105,10 @@ val main = (project in file("."))
   .enablePlugins(play.sbt.Play, BuildInfoPlugin)
   .settings(mainSettings: _*)
   .dependsOn(
-    edCore % "test->test;compile->compile",
+    tyCore % "test->test;compile->compile",
     tyDaoRdb)
   .aggregate(
-    edCore)
+    tyCore)
 
 
 def mainSettings = List(

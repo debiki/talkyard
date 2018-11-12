@@ -1,4 +1,4 @@
-name := "ed-core"
+name := "ty-core"
 
 organization := "com.debiki"
 
