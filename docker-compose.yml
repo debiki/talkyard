@@ -183,6 +183,8 @@ services:
     image: $DOCKER_REPOSITORY/talkyard-gulp
     volumes:
       - ./images/app/:/opt/talkyard/server/
+      - ./tests/e2e/:/opt/talkyard/server/tests/e2e/        # for now
+      - ./gulp-build/e2e/:/opt/talkyard/server/target/e2e/  # for now
       - ./translations/:/opt/talkyard/server/translations/:ro
       - ./modules/ty-cla/translations/pl_PL/i18n.ts:/opt/talkyard/server/translations/pl_PL/i18n.ts:ro
       - ./volumes/gulp-home/:/opt/gulp-home/   # [NODEHOME]
