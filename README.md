@@ -190,6 +190,14 @@ how to use docker-compose already.
        sudo sysctl --system
 
 
+1. Install Node.js modules: (using Yarn, which, when given no args, installs everything in `package.json`)
+
+       sudo s/d run --rm gulp yarn
+
+       sudo s/d-gulp release
+       sudo s/d-gulp minifyTranslations
+
+
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
        sudo s/d up -d   # s/d = shortcut for docker-compose, so long to type.

@@ -179,6 +179,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
         subject = "Dummy email", bodyHtmlText = (emailId: String) => "Text text")
       dao.saveUnsentEmail(email)
       globals.sendEmail(email, dao.siteId)
+      // Reload stats, until the email has been sent and it's been updated.
       val startMs = System.currentTimeMillis()
       var newStats = loadUserStats(member1.id)(dao)
       newStats.lastEmailedAt mustBe empty

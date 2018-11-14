@@ -160,7 +160,7 @@ services:
     volumes:
       - ./images/fakemail/mailslurper-config.json:/config.json
       - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
-      - ./images/app-dev/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
+      - ./images/app/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
     ports:
      - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
      - '8026:8026'  # admin interface,  '80' + 25 + 1
