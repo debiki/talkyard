@@ -49,7 +49,7 @@ RUN cd $JAVA_HOME/jre/lib/security && \
 
 WORKDIR /opt/talkyard/app/
 
-COPY entrypoint.sh /docker-entrypoint.sh
+COPY entrypoint.dev.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 

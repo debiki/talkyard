@@ -19,7 +19,7 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # Docker host, so they'll persist across container recreations. [NODEHOME])
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
-  adduser -u $file_owner_id -h /opt/talkyard/server/docker/gulp-home -D owner   # [5RZ4HA9]
+  adduser -u $file_owner_id -h /opt/talkyard/server/volumes/gulp-home -D owner   # [5RZ4HA9]
 fi
 
 if [ -z "$*" ] ; then
@@ -47,6 +47,6 @@ else
   # so using `su` here although we're root already.
   # Specify HOME so files that Node.js caches will persist across container recreations. [NODEHOME])
   set -x
-  exec su -c "HOME=/opt/talkyard/server/docker/gulp-home $*" root
+  exec su -c "HOME=/opt/talkyard/server/volumes/gulp-home $*" root
 fi
 

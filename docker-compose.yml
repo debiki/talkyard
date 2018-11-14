@@ -6,13 +6,13 @@ services:
     # so can specify core dump path [NGXCORED]
     #privileged: true
     volumes:
-      - ./docker/data/uploads/:/opt/talkyard/uploads/:ro
-      - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
       # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
       # auto reload them after edits. (We COPY them too, so will work in Prod.)
-      - ./docker/web/ed-lua/:/opt/talkyard/lua/:ro
-      - ./docker/data/nginx-logs/:/var/log/nginx/
-      - ./docker/data/nginx-core-dumps/:/tmp/cores/
+      - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
+      - ./volumes/uploads/:/opt/talkyard/uploads/:ro
+      - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
+      - ./volumes/nginx-logs/:/var/log/nginx/
+      - ./volumes/nginx-core-dumps/:/tmp/cores/
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.
@@ -27,15 +27,17 @@ services:
       CDN_PULL_KEY: "public"
 
   app:
-    build: docker/app-dev/
+    build:
+      context: images/app/
+      dockerfile: Dockerfile.dev
     # (Image $DOCKER_REPOSITORY/talkyard-app is for production, and gets created by
     # ./docker/build-app-prod.sh.)
     image: $DOCKER_REPOSITORY/talkyard-app-dev
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/talkyard/app/
-      - ./docker/data/uploads/:/opt/talkyard/uploads/
-      - ./docker/data/app-logs/:/var/log/talkyard/
+      - ./volumes/uploads/:/opt/talkyard/uploads/
+      - ./volumes/app-logs/:/var/log/talkyard/
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
@@ -81,7 +83,7 @@ services:
     build: images/cache/
     image: $DOCKER_REPOSITORY/talkyard-cache
     volumes:
-      - ./docker/data/cache/:/data/
+      - ./volumes/cache-data/:/data/
     ports:
       - '6379:6379'
     sysctls:
@@ -94,8 +96,8 @@ services:
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
     #mem_limit: 800M
     volumes:
-      - ./docker/data/search/:/usr/share/elasticsearch/data/
-      - ./docker/data/search-logs/:/usr/share/elasticsearch/logs/
+      - ./volumes/search-data/:/usr/share/elasticsearch/data/
+      - ./volumes/search-logs/:/usr/share/elasticsearch/logs/
     ports:
       - '9200:9200'
       - '9300:9300'
@@ -106,8 +108,8 @@ services:
     build: images/rdb/
     image: $DOCKER_REPOSITORY/talkyard-rdb
     volumes:
-      - ./docker/data/rdb/:/var/lib/postgresql/data/
-      - ./docker/data/rdb-logs/:/var/log/postgresql/
+      - ./volumes/rdb-data/:/var/lib/postgresql/data/
+      - ./volumes/rdb-logs/:/var/log/postgresql/
     ports:
       - '5432:5432'
     environment:
@@ -121,9 +123,10 @@ services:
   # You don't need to start it.
   #rdb2:
   #  mem_limit: 30M
-  #  build: docker/rdb/
+  #  build: images/rdb/
   #  volumes:
-  #    - ./docker/data/rdb2/:/var/lib/postgresql/data/
+  #    - ./volumes/rdb2-data/:/var/lib/postgresql/data/
+  #    - ./volumes/rdb2-logs/:/var/log/postgresql/
   #  environment:
   #    POSTGRES_PASSWORD: 'public2'
   #    PEER_HOST: 'rdb'
@@ -155,9 +158,9 @@ services:
     build: images/fakemail/mailslurper
     image: $DOCKER_REPOSITORY/fakemail
     volumes:
-      - ./docker/fakemail/mailslurper-config.json:/config.json
-      - ./docker/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
-      - ./docker/app-dev/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
+      - ./images/fakemail/mailslurper-config.json:/config.json
+      - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
+      - ./images/app/fakemail-publ-test-self-signed.crt:/smtp-server.crt  # yes, in app-dev [26UKWD2]
     ports:
      - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
      - '8026:8026'  # admin interface,  '80' + 25 + 1
@@ -184,6 +187,10 @@ services:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
 
+  # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
+  # and would cause errors, if removed here, and people then upgrade? (because new version
+  # couldn't be downloaded). Remove, when releasing the next major talkyard-prod-one version
+  # and peopl have upgraded?
   certgen:
     build: images/certgen/
     image: $DOCKER_REPOSITORY/talkyard-certgen

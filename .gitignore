@@ -1,4 +1,3 @@
-conf/prod-password.conf
 scratch.txt
 scratch.json
 scratch/
@@ -13,7 +12,9 @@ tmp
 .idea_modules/
 RUNNING_PID
 downloads/
-modules/local/
+volumes/
+
+
 
 # TypeScript: grunt-ts cache, and HTML files compiled to .ts by grunt-ts.
 .tscache/
@@ -71,5 +72,8 @@ public/res/translations/
 # Failed e2e tests, not kept in target/ so won't get removed when doing 'clean'.
 tests/e2e-failures.txt
 
+conf/prod-password.conf
+# One's local dev-test config.
+conf/my.conf
 # Play's auto generated self signed cert.
 conf/generated.keystore
