@@ -17,7 +17,7 @@ watch:
   git-subm-init-upd \
   minified-asset-bundles \
   play-framework-package \
-  docker-images
+  prod-images
 
 
 
@@ -68,9 +68,6 @@ $(zipped_bundles): $@
 	sudo s/d-gulp release
 
 
-play-framework-package:
-	sudo s/d-cli dist
-
 
 # ----- Clean (wip)
 
@@ -79,14 +76,6 @@ clean:
 	rm -fr public/res/translations \
 	rm -fr target
 
-
-
-# ----- Production images (wip)
-
-docker-images: \
-		minified-asset-bundles \
-		play-framework-package
-	sudo s/d build
 
 
 # ----- Run targets
@@ -117,11 +106,75 @@ selenium-standalone := \
 $(selenium-standalone): $@
 	s/selenium-install
 
+selenium_line := $(shell netstat -tlpn | grep '4444')
+
+selenium-server-ifeq-bad: $(selenium-standalone)
+ifeq ($(selenium_line),)
+	selenium_line=`netstat -tlpn | grep '4444'` \
+	echo $$selenium_line \
+	if [ -z "xx $$selenium_line" ]; then \
+	  s/selenium-start ; \
+	fi
+endif
+
+
 selenium-server: $(selenium-standalone)
-	s/selenium-start
+	echo ;\
+	selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
+	if [ -z "x $$selenium_line" ]; then \
+	  echo "Starting Selenium, in visible mode." ;\
+	  s/selenium-start ;\
+	else \
+	  echo "Selenium already running. Not starting it." ;\
+	  echo "Look, from netstat, port 4444 is in use:" ;\
+	  echo "  $$selenium_line" ;\
+	fi
+
 
 invisible-selenium-server: $(selenium-standalone)
+ifeq ($(selenium_line),)
 	s/selenium-start-invisible
+endif
+
+
+
+
+# ----- Images (wip)
+
+
+apa:
+	REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env` ;\
+	echo $$REPO ;\
+	if [ -z "$$REPO" ]; then \
+	  echo "EMPTY: $$REPO" ;\
+	else \
+	  echo "DEFIND: $$REPO" ;\
+	fi
+
+
+# Not like this. Need to run like in  build-and-release.sh
+prod-images: \
+			invisible-selenium-server
+	sudo s/d build \
+	\
+	# Optimize assets, run unit & integration tests and build the Play Framework image
+	# (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
+	sudo s/d-gulp release \
+	\
+	# Delete unminified files, so Docker diffs a few MB smaller.
+	find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'ed-comments\.js' -not -name 'zxcvbn\.js' | xargs rm \
+	find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm \
+	# COULD add tests that verifies the wrong css & js haven't been deleted?
+	\
+	# Test and build prod dist of the Play app. Do this one at a time, or out-of-memory:
+	sudo s/d-cli clean compile \
+	sudo s/d-cli test dist \
+	\
+	sudo s/d kill web app \
+	sudo s/d down \
+	\
+	# Build app image that uses the production version of the app, built with 'dist' above:
+	sudo docker/build-app-prod.sh
 
 
 
