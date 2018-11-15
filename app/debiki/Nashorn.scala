@@ -501,7 +501,7 @@ class Nashorn(globals: Globals) {
         scriptBuilder.append(translScript)
       }
 
-      // Sync with the languages in the /translations/ dir, and the admin UI language selector. [5JUKQR2]
+      // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
       addTranslation("en_US")
       addTranslation("sv_SE")
       addTranslation("pt_BR")

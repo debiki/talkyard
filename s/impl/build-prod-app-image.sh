@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Run from the docker/ parent dir.
+# Run from the project root directory.
 
 set -e # exit on any error.
 set -x
@@ -8,7 +8,7 @@ set -x
 version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 
 rm -fr target/docker-app-prod
-cp -a docker/app-prod target/docker-app-prod
+cp -a docker/app/Dockerfile.prod target/docker-app-prod/
 cd target/docker-app-prod
 cp ../universal/talkyard-server-$version.zip ./
 unzip -q talkyard-server-$version.zip
@@ -39,6 +39,6 @@ mv app/conf app-conf
 # This readme is for the development repo. Create another one, if any, for prod.
 rm app/README.md
 
-docker build --tag=debiki/talkyard-app:latest .
+docker build --tag=debiki/talkyard-app:latest --file Dockerfile.prod .
 
 echo "Image tag: debiki/talkyard-app:latest"
