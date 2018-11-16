@@ -84,8 +84,10 @@ clean:
 	rm -fr public/res/*.js
 	rm -fr public/res/*.js.gz
 	rm -fr public/res/*.css
-	rm -fr public/res/translations
-	rm -fr target
+	rm -fr public/res/translations/
+	rm -fr target/
+	rm -fr project/target/
+	rm -fr project/project/
 	rm -f tests/e2e-failures.txt
 	rm -f ensime-langserver.log
 	rm -f chromedriver.log
@@ -96,14 +98,17 @@ pristine: clean
 	@echo "the SBT and Node.js cache, and IDE project files,"
 	@echo "by copy-pasting (some of) this:"
 	@echo
-	@echo "    rm -rf volumes/"
+	@echo "    sudo rm -rf volumes/"
 	@echo "    rm -fr conf/my.conf"
+	@echo
 	@echo "    rm -fr .idea"
 	@echo "    rm -fr .ensime"
 	@echo "    rm -fr .ensime_cache/"
+	@echo
+	@echo "    rm -rf node_modules/"
+	@echo
 	@echo "    rm -rf ~/.ivy2"
 	@echo "    rm -rf ~/.sbt"
-	@echo "    rm -rf node_modules/"
 	@echo
 	@echo
 
