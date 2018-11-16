@@ -16,7 +16,7 @@ watch:
   invisible-selenium-server \
   git-subm-init-upd \
   minified-asset-bundles \
-  play-framework-package \
+  play-cli \
   prod-images
 
 DOCKER_REPOSITORY := \
@@ -46,9 +46,9 @@ $(git_modules): $@
 
 # If these are present, probably all js modules have been installed?
 node_modules: \
-			node_modules/.bin/gulp
-			#node_modules/react/umd/react.development.js \
-			#node_modules/zxcvbn/dist/zxcvbn.js
+            node_modules/.bin/gulp
+            #node_modules/react/umd/react.development.js \
+            #node_modules/zxcvbn/dist/zxcvbn.js
 
 node_modules/.bin/gulp:
 	sudo s/d run --rm gulp yarn
@@ -81,16 +81,16 @@ $(zipped_bundles): $@
 
 clean:
 	@echo Delting:
-	rm -fr public/res/*.js
-	rm -fr public/res/*.js.gz
-	rm -fr public/res/*.css
+	rm -f  public/res/*.js
+	rm -f  public/res/*.js.gz
+	rm -f  public/res/*.css
 	rm -fr public/res/translations/
 	rm -fr target/
 	rm -fr project/target/
 	rm -fr project/project/
-	rm -f tests/e2e-failures.txt
-	rm -f ensime-langserver.log
-	rm -f chromedriver.log
+	rm -f  tests/e2e-failures.txt
+	rm -f  ensime-langserver.log
+	rm -f  chromedriver.log
 
 pristine: clean
 	@echo
@@ -105,10 +105,11 @@ pristine: clean
 	@echo "    rm -fr .ensime"
 	@echo "    rm -fr .ensime_cache/"
 	@echo
-	@echo "    rm -rf node_modules/"
+	@echo "    rm -fr node_modules/"
+	@echo "    rm -fr modules/*/node_modules/"
 	@echo
-	@echo "    rm -rf ~/.ivy2"
-	@echo "    rm -rf ~/.sbt"
+	@echo "    rm -fr ~/.ivy2"
+	@echo "    rm -fr ~/.sbt"
 	@echo
 	@echo
 
@@ -118,11 +119,14 @@ pristine: clean
 # Starts an SBT shell where you can run unit tests by typing 'test'. These test require
 # the minified asset bundles, to run (because the app server loads and execs React Javascript
 # server side.)
-sbt: minified-asset-bundles
+play-cli: minified-asset-bundles
 	sudo s/d-cli
 
 up: minified-asset-bundles
-	sudo s/d-up-d-logsf0
+	sudo s/d up -d
+	@echo
+	@echo "To tail logs, you can:  sudo s/d-logsf0"
+	@echo
 
 down:
 	sudo s/d down
@@ -138,16 +142,24 @@ dead:
 
 # ----- Starting Selenium
 
+_selenium_standalone_files := \
+  node_modules/selenium-standalone/bin/selenium-standalone  \
+  node_modules/selenium-standalone/.selenium/chromedriver/ \
+  node_modules/selenium-standalone/.selenium/geckodriver/
+
+$(_selenium_standalone_files): $@
+	s/selenium-install
+
 selenium-server: node_modules $(_selenium_standalone_files)
 	@$(call if_selenium_not_running, s/selenium-start)
 
 
-invisible-selenium-server: $(selenium-standalone)
+invisible-selenium-server: node_modules $(_selenium_standalone_files)
 	@$(call if_selenium_not_running, s/selenium-start-invisible)
 
 define if_selenium_not_running
   selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
-  if [ -z "x $$selenium_line" ]; then \
+  if [ -z "$$selenium_line" ]; then \
     echo "Starting Selenium, in visible mode." ;\
     $(1) ;\
   else \
@@ -160,14 +172,6 @@ define if_selenium_not_running
   fi
 endef
 
-_selenium_standalone_files := \
-  node_modules/selenium-standalone/bin/selenium-standalone  \
-  node_modules/selenium-standalone/.selenium/chromedriver/2.41-x64-chromedriver \
-  node_modules/selenium-standalone/.selenium/geckodriver/0.20.1-x64-geckodriver
-
-$(_selenium_standalone_files): $@
-	s/selenium-install
-
 
 
 
@@ -175,8 +179,13 @@ $(_selenium_standalone_files): $@
 # ========================================
 
 
+dev-images: minified-asset-bundles
+	sudo docker-compose build
+
+
 prod-images: \
 			invisible-selenium-server
+	@# This does minified-asset-bundles
 	s/build-prod-images.sh
 
 
