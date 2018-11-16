@@ -86,7 +86,7 @@ s/d kill web app
 s/d down
 
 # Build app image that uses the production version of the app, built with 'dist' above:
-docker/build-app-prod.sh
+s/impl/build-prod-app-image.sh
 
 
 

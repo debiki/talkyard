@@ -190,6 +190,14 @@ how to use docker-compose already.
        sudo sysctl --system
 
 
+1. Install Node.js modules: (using Yarn, which, when given no args, installs everything in `package.json`)
+
+       sudo s/d run --rm gulp yarn
+
+       sudo s/d-gulp release
+       sudo s/d-gulp minifyTranslations
+
+
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
        sudo s/d up -d   # s/d = shortcut for docker-compose, so long to type.
@@ -322,12 +330,15 @@ This project looks like so:
 
     server/
      |
-     +-docker-compose.yml   <-- tells Docker how to run Talkyard
+     +-Makefile             <-- You can build Talkyard, using GNU Make
+     |                          (work in progress, as of Nov 2018)
+     |
+     +-docker-compose.yml   <-- Tells Docker how to run Talkyard
      |
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
-     | +-server/       <-- React.js components rendered server side
-     | :
+     | +-server/       <-- React.js components rendered server side,
+     | :                   usually softlinks to ../app/
      | :
      |
      +-app/            <-- Scala code — a Play Framework 2 application
@@ -342,16 +353,12 @@ This project looks like so:
      | +-ed-core/           <-- Code shared by the DAO and by the ./app/ code
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
-     | +-local/        <-- Ignored by .gitignore. Here you can override the
-     | |                   default config values. If you want to, turn it into
-     | |                   a Git repo.
-     | |
      | ...Third party modules
      |
      +-public/         <-- Some images and libs, plus JS and CSS that Gulp
      |                     has bundled and minified from the client/ dir above.
      |
-     +-docker/         <-- Dockerfiles for all docker-compose containers
+     +-images/         <-- Dockerfiles for all docker-compose containers
      | +-web/          <-- Docker build stuff for the Nginx container
      | | +-modules/
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
@@ -359,21 +366,21 @@ This project looks like so:
      | |   ...
      | |
      | +-gulp/         <-- Container that runs Node.js and bundles JS and CSS
-     | +-gulp-home/    <-- Mounted as Gulp container home-dir = disk cache
      | |
      | +-...           <-- More containers...
-     | |
-     | +-data/
-     |   +-rdb         <-- Mounted as a volume in the Postgres container
-     |   +-cache       <-- Mounted in the Redis container
-     |   +-uploads     <-- Mounted read-write in the Play container, but
-     |   |                 read-only in Nginx (to serve static files)
-     |   ...
+     |
+     +-volumes/
+     | +-rdb-data      <-- Mounted as a volume in the Postgres container
+     | +-gulp-home/    <-- Gulp container home-dir = disk cache
+     | +-uploads       <-- Mounted read-write in the Play container, but
+     | |                 read-only in Nginx (to serve static files)
+     | ...
      |
      +-s/         <-- Utility scripts (typing "scripts/" is so long)
      |
-     +-conf/      <-- Default config files that assume everything
-                      is installed on localohost, and dev mode
+     +-conf/      <-- App server (Play Framework) config files
+     | +-my.conf  <-- You can add your localhost config here. Ignored by Git.
+
 
 
 Naming style, tags and a new word
