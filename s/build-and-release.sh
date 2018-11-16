@@ -128,7 +128,7 @@ sudo -i bash << EOF_SUDO
 cd $current_dir
 rm -f ./target/build-exit-status
 
-./s/impl/release-as-root.sh $my_username $version_tag $@
+./s/impl/build-prod-images.sh $my_username $version_tag $@
 echo "\$?" | tee ./target/build-exit-code
 
 EOF_SUDO

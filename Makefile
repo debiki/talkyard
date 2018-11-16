@@ -79,11 +79,33 @@ $(zipped_bundles): $@
 
 # ----- Clean (wip)
 
-clean: dead
-	rm -f $(zipped_bundles) \
-	rm -fr public/res/translations \
+clean:
+	@echo Delting:
+	rm -fr public/res/*.js
+	rm -fr public/res/*.js.gz
+	rm -fr public/res/*.css
+	rm -fr public/res/translations
 	rm -fr target
+	rm -f tests/e2e-failures.txt
+	rm -f ensime-langserver.log
+	rm -f chromedriver.log
 
+pristine: clean
+	@echo
+	@echo "If you want to, delete Docker volumes, your local config,"
+	@echo "the SBT and Node.js cache, and IDE project files,"
+	@echo "by copy-pasting (some of) this:"
+	@echo
+	@echo "    rm -rf volumes/"
+	@echo "    rm -fr conf/my.conf"
+	@echo "    rm -fr .idea"
+	@echo "    rm -fr .ensime"
+	@echo "    rm -fr .ensime_cache/"
+	@echo "    rm -rf ~/.ivy2"
+	@echo "    rm -rf ~/.sbt"
+	@echo "    rm -rf node_modules/"
+	@echo
+	@echo
 
 
 # ----- Run targets
