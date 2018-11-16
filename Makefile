@@ -19,13 +19,21 @@ watch:
   play-framework-package \
   prod-images
 
+DOCKER_REPOSITORY := \
+  $(shell sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
+
+
+define ask_for_root_password
+  sudo echo
+endef
 
 
 
 # ----- Git submodules
 
 # This'll be all Git submodule directories. If some are missing, need to git-clone them.
-git_modules:=$(shell grep submodule .gitmodules | sed -r 's/^.submodule "([^"]+).*$$/\1/')
+git_modules := \
+  $(shell grep submodule .gitmodules | sed -r 's/^.submodule "([^"]+).*$$/\1/')
 
 git-subm-init-upd: $(git_modules)
 
@@ -71,7 +79,7 @@ $(zipped_bundles): $@
 
 # ----- Clean (wip)
 
-clean:
+clean: dead
 	rm -f $(zipped_bundles) \
 	rm -fr public/res/translations \
 	rm -fr target
@@ -96,85 +104,122 @@ dead:
 	sudo s/d-killdown
 
 
-# ----- E2E tests
 
-selenium-standalone := \
-			node_modules/selenium-standalone/bin/selenium-standalone  \
-			node_modules/selenium-standalone/.selenium/chromedriver/2.41-x64-chromedriver \
-			node_modules/selenium-standalone/.selenium/geckodriver/0.20.1-x64-geckodriver
-
-$(selenium-standalone): $@
-	s/selenium-install
-
-selenium_line := $(shell netstat -tlpn | grep '4444')
-
-selenium-server-ifeq-bad: $(selenium-standalone)
-ifeq ($(selenium_line),)
-	selenium_line=`netstat -tlpn | grep '4444'` \
-	echo $$selenium_line \
-	if [ -z "xx $$selenium_line" ]; then \
-	  s/selenium-start ; \
-	fi
-endif
+# E2E tests
+# ========================================
 
 
-selenium-server: $(selenium-standalone)
-	echo ;\
-	selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
-	if [ -z "x $$selenium_line" ]; then \
-	  echo "Starting Selenium, in visible mode." ;\
-	  s/selenium-start ;\
-	else \
-	  echo "Selenium already running. Not starting it." ;\
-	  echo "Look, from netstat, port 4444 is in use:" ;\
-	  echo "  $$selenium_line" ;\
-	fi
+# ----- Starting Selenium
+
+selenium-server: node_modules $(_selenium_standalone_files)
+	@$(call if_selenium_not_running, s/selenium-start)
 
 
 invisible-selenium-server: $(selenium-standalone)
-ifeq ($(selenium_line),)
-	s/selenium-start-invisible
-endif
+	@$(call if_selenium_not_running, s/selenium-start-invisible)
+
+define if_selenium_not_running
+  selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
+  if [ -z "x $$selenium_line" ]; then \
+    echo "Starting Selenium, in visible mode." ;\
+    $(1) ;\
+  else \
+    echo ;\
+    echo "Selenium already running. Not starting it." ;\
+    echo ;\
+    echo "Look, from netstat, port 4444 is in use:" ;\
+    echo "  $$selenium_line" ;\
+    echo ;\
+  fi
+endef
+
+_selenium_standalone_files := \
+  node_modules/selenium-standalone/bin/selenium-standalone  \
+  node_modules/selenium-standalone/.selenium/chromedriver/2.41-x64-chromedriver \
+  node_modules/selenium-standalone/.selenium/geckodriver/0.20.1-x64-geckodriver
+
+$(_selenium_standalone_files): $@
+	s/selenium-install
 
 
 
 
-# ----- Images (wip)
+# Images (wip)
+# ========================================
 
 
-apa:
-	REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env` ;\
-	echo $$REPO ;\
-	if [ -z "$$REPO" ]; then \
-	  echo "EMPTY: $$REPO" ;\
-	else \
-	  echo "DEFIND: $$REPO" ;\
-	fi
-
-
-# Not like this. Need to run like in  build-and-release.sh
 prod-images: \
 			invisible-selenium-server
-	sudo s/d build \
-	\
-	# Optimize assets, run unit & integration tests and build the Play Framework image
-	# (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
-	sudo s/d-gulp release \
-	\
-	# Delete unminified files, so Docker diffs a few MB smaller.
-	find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'ed-comments\.js' -not -name 'zxcvbn\.js' | xargs rm \
-	find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm \
-	# COULD add tests that verifies the wrong css & js haven't been deleted?
-	\
-	# Test and build prod dist of the Play app. Do this one at a time, or out-of-memory:
-	sudo s/d-cli clean compile \
-	sudo s/d-cli test dist \
-	\
-	sudo s/d kill web app \
-	sudo s/d down \
-	\
-	# Build app image that uses the production version of the app, built with 'dist' above:
-	sudo docker/build-app-prod.sh
+	s/build-prod-images.sh
+
+
+tag-and-push-prod-images:  tag-prod-images  push-prod-images
+
+
+tag-prod-images:
+	@$(call die_unless_tag_specified, Tag with)
+	@$(call ask_for_root_password)
+	@REPO=$(DOCKER_REPOSITORY)  ;\
+	echo  sudo docker tag $$REPO/talkyard-app $$REPO/talkyard-app:$(tag)  ;\
+	echo  sudo docker tag $$REPO/talkyard-web $$REPO/talkyard-web:$(tag)  ;\
+	echo  sudo docker tag $$REPO/talkyard-rdb $$REPO/talkyard-rdb:$(tag)  ;\
+	echo  sudo docker tag $$REPO/talkyard-cache $$REPO/talkyard-cache:$(tag)  ;\
+	echo  sudo docker tag $$REPO/talkyard-search $$REPO/talkyard-search:$(tag)  ;\
+	echo  sudo docker tag $$REPO/talkyard-certgen $$REPO/talkyard-certgen:$(tag)
+	@echo
+
+
+push-prod-images:
+	@$(call die_unless_tag_specified, Push)
+	@$(call ask_for_root_password)
+	@REPO=$(DOCKER_REPOSITORY)  ;\
+	echo  sudo docker push $$REPO/talkyard-app:$(tag)  ;\
+	echo  sudo docker push $$REPO/talkyard-web:$(tag)  ;\
+	echo  sudo docker push $$REPO/talkyard-rdb:$(tag)  ;\
+	echo  sudo docker push $$REPO/talkyard-cache:$(tag)  ;\
+	echo  sudo docker push $$REPO/talkyard-search:$(tag)  ;\
+	echo  sudo docker push $$REPO/talkyard-certgen:$(tag)
+	@echo
+
+
+push-tag-to-git:
+	@$(call die_unless_tag_specified, Push) ;\
+	
+	@echo
+	@echo Untested. Bye.
+	@echo
+	@exit 1
+	
+	@echo "Publishing version tag $(tag) to GitHub..."
+	 
+	@pushd .  ;\
+	cd modules/ed-versions/  ;\
+	git fetch  ;\
+	git checkout master  ;\
+	git merge --ff-only origin master  ;\
+	echo $(tag) >> version-tags.log  ;\
+	git add version-tags.log  ;\
+	git commit -m "Add $(tag)."  ;\
+	git push origin master  ;\
+	popd
+	
+	@echo "Bumping version number..."
+	
+	@git tag $(tag)
+	@git push origin $(tag)
+	
+	@echo "Done. Bye."
+	@echo "You might want to bump the version number:  s/bump-versions.sh"
+
+
+define die_unless_tag_specified
+  if [ -z "$(tag)" ]; then \
+    echo ;\
+    echo "Error: $(1) which Docker image tag? Specify   tag=...  please."  ;\
+    echo ;\
+    exit 1  ;\
+  fi
+endef
 
 
 
@@ -203,6 +248,10 @@ prod-images: \
 
 # Bazel? No? Then everyone incl I need to spend time learning how it works:
 #  https://github.com/bazelbuild/rules_k8s  and need to install Java.
+
+
+# looks nice:
+#   https://github.com/casey/just
 
 
 

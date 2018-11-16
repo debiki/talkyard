@@ -153,8 +153,23 @@ echo 'Buid completed.'
 # Publish images to Docker repo
 # ----------------------
 
+
+echo "You can now tag and publish the images:"
+echo
+echo "make  tag-and-push-prod-images  tag=$version_tag"
+echo "make  push-tag-to-git  tag=$version_tag"
+echo "s/bump-versions.sh"
+echo
+
+
+
+
 echo "Tag images with $REPO/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
 read -s -p ''
+
+echo "Really? Then press Enter again. Don't want to try the Makefile script? CTRL+C."
+read -s -p ''
+
 
 sudo docker tag $REPO/talkyard-app $REPO/talkyard-app:$version_tag
 sudo docker tag $REPO/talkyard-web $REPO/talkyard-web:$version_tag
