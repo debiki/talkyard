@@ -30,6 +30,8 @@ const UsersPathSlash = UsersRoot;
 const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
 
 import EmailInput = debiki2.util.EmailInput;
+const aboutPathSeg = 'about';
+const notfsPathSeg = 'notifications';
 const privacyPathSeg = 'privacy';
 const accountPathSeg = 'account';  // [4JKT28TS]
 
@@ -39,7 +41,7 @@ export const UserPreferences = createFactory({
 
   render: function() {
     const prefsPathSlash = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
-    const aboutPath = prefsPathSlash + 'about';
+    const aboutPath = prefsPathSlash + aboutPathSeg;
     const privacyPath = prefsPathSlash + privacyPathSeg;
     const emailsLoginsPath = prefsPathSlash + accountPathSeg;
     const user: User = this.props.user;
@@ -61,12 +63,14 @@ export const UserPreferences = createFactory({
     const childRoute = Switch({},
       Route({ path: prefsPathSlash, exact: true, render: ({ match }) =>
           Redirect({ to: aboutPath + location.search + location.hash })}),
-      Route({ path: '(.*)/about', exact: true, render: () => AboutUser(childProps) }),
-      Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => Privacy(childProps) }),
+      Route({ path: '(.*)/' + aboutPathSeg, exact: true, render: () => AboutTab(childProps) }),
+      Route({ path: '(.*)/' + notfsPathSeg, exact: true, render: () => NotfPrefsTab(childProps) }),
+      Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => PrivacyPrefsTab(childProps) }),
       Route({ path: '(.*)/' + accountPathSeg, exact: true, render: (ps) =>
-          Account({ ...childProps, ...ps }) }));
+          AccountTab({ ...childProps, ...ps }) }));
 
     const isGuest = user_isGuest(user);
+    const isNormalMember = user.id >= LowestNormalMemberId;
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
 
     return (
@@ -77,6 +81,8 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
+              isGuest || !isNormalMember ? null: LiNavLink({
+                  to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
               isGuest || isBuiltInUser ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGuest || isBuiltInUser ? null : LiNavLink({
@@ -88,8 +94,8 @@ export const UserPreferences = createFactory({
 
 
 
-export const AboutUser = createFactory({
-  displayName: 'AboutUser',
+export const AboutTab = createFactory({
+  displayName: 'AboutTab',
 
   render: function() {
     const store: Store = this.props.store;
@@ -189,8 +195,6 @@ const AboutMember = createComponent({
           !!user.summaryEmailIntervalMins && user.summaryEmailIntervalMins !== DisableSummaryEmails,
       summaryEmailIntervalMins: user.summaryEmailIntervalMins,
       summaryEmailIfActive: user.summaryEmailIfActive,
-      siteNotfLevel: user.emailForEveryNewPost ? NotfLevel.WatchingAll : (
-          user.notfAboutNewTopics ? NotfLevel.WatchingFirst : NotfLevel.Normal),
     };
   },
 
@@ -268,13 +272,12 @@ const AboutMember = createComponent({
       emailAddress: firstDefinedOf(this._email, user.email),
       // BUG SHOULD not save these, if the user didn't change them and they're still the
       // default values.
+      // shouldn't be here: [REFACTORNOTFS] -------
       summaryEmailIntervalMins: summaryEmailIntervalMins,
       summaryEmailIfActive: this.state.summaryEmailIfActive,
+      // ------------------------------------------
       about: firstDefinedOf(this._about, user.about),
       url: firstDefinedOf(this._url, user.url),
-      // shouldn't be here: [REFACTORNOTFS] -------
-      siteNotfLevel: this.state.siteNotfLevel,
-      // ------------------------------------------
     };
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
@@ -420,27 +423,82 @@ const AboutMember = createComponent({
 
         // Later: + Location
 
-        // ----- These notf settings shouldn't be here: [REFACTORNOTFS] ----------
-        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfEveryPost',
-          label: t.upp.NotfAboutAll,
-          checked: this.state.siteNotfLevel >= NotfLevel.WatchingAll,
-          onChange: () => this.setState({ siteNotfLevel: NotfLevel.WatchingAll }) }),
-
-        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfNewTopics',
-          label: t.upp.NotfAboutNewTopics,
-          checked: this.state.siteNotfLevel === NotfLevel.WatchingFirst,
-          onChange: () => this.setState({ siteNotfLevel: NotfLevel.WatchingFirst }) }),
-
-        Input({ type: 'radio', name: 'ExtraNotfs', className: 'e_notfNormal',
-          label: "Only get notified when someone talks with you",   // I18N
-          checked: this.state.siteNotfLevel === NotfLevel.Normal,
-          onChange: () => this.setState({ siteNotfLevel: NotfLevel.Normal }) }),
-        // -----------------------------------------------------------------------
-
         isSystemUser ? null :
           InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: t.Save, disabled: this.badPrefs() }),
 
         savingInfo));
+  }
+});
+
+
+
+const NotfPrefsTab = createFactory({
+  displayName: 'NotfPrefsTab',
+
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidMount: function() {
+    this.loadNotfPrefs();
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
+  loadNotfPrefs: function() {
+    const member: MemberInclDetails = this.props.user;
+    Server.loadCatsTagsSiteNotfPrefs(member.id, (response: PageNotfPrefsResponse) => {
+      if (this.isGone) return;
+      const ownPrefs: OwnPageNotfPrefs = response;
+      const memberNow: MemberInclDetails = this.props.user;
+      if (ownPrefs.id === memberNow.id) {
+        this.setState({ ownPrefs });
+      }
+      else {
+        // The data we got from the server, is old: we have since updated the UI
+        // to show info about a different user, apparently.
+        console.log("Race condition. [2C80BX]");
+      }
+    });
+  },
+
+  render: function() {
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const user: MemberInclDetails = this.props.user;
+    const isOkUser = user.id >= Groups.EveryoneId;
+    const ownPrefs = this.state.ownPrefs;
+
+    if (!ownPrefs)
+      return r.p({}, t.Loading);
+
+    if (!isOkUser)
+      return r.p({}, 'Built-in special user, or guest. [TyE2PKT0684]');
+
+    const forWho = me.id === user.id ? '' : rFragment({}, ", for ", r.b({}, user.username));
+    const target = { wholeSite: true };
+
+    return (
+      r.div({},
+
+        r.p({}, "Default notifications, site wide", forWho, ':'),   // I18N
+
+        notfs.PageNotfPrefButton({ target, store, ownPrefs, saveFn: (notfLevel: PageNotfLevel) => {
+              Server.savePageNotfPrefUpdStore(user.id, target, notfLevel, () => {
+                if (this.isGone) return;
+                this.loadNotfPrefs();
+              });
+            } }),
+
+        // @ifdef DEBUG
+        r.br(),
+        r.br(),
+        r.pre({}, "(In debug builds only) ownPrefs:\n" + JSON.stringify(ownPrefs, undefined, 2)),
+        // @endif
+        null,
+        ));
 
     /* Discoruse's email options:
     'When you do not visit the site, send an email digest of what is new:'
@@ -454,8 +512,8 @@ const AboutMember = createComponent({
 
 
 
-export const Privacy = createFactory({
-  displayName: 'Privacy',
+const PrivacyPrefsTab = createFactory({
+  displayName: 'PrivacyPrefsTab',
 
   getInitialState: function() {
     const user: MemberInclDetails = this.props.user;
@@ -531,8 +589,8 @@ export const Privacy = createFactory({
 
 
 
-export const Account = createFactory({
-  displayName: 'Account',
+const AccountTab = createFactory({
+  displayName: 'AccountTab',
 
   getInitialState: function() {
     return {

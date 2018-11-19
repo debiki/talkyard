@@ -848,17 +848,32 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 }
 
 
-export function savePageNoftLevel(newNotfLevel) {
-  postJsonSuccess('/-/set-page-notf-level', () => {
+export function savePageNotfPrefUpdStore(memberId: UserId, target: PageNotfPrefTarget,
+      notfLevel: PageNotfLevel, onDone?: () => void) {
+  const notfPref: PageNotfPref = { ...target, memberId, notfLevel };
+  postJsonSuccess('/-/save-content-notf-pref', () => {
+    // If one saved one's own prefs (rather than if one is staff, and changed someone
+    // else's prefs), then, update store.me to reflect the changes.
     const store: Store = ReactStore.allData();
     const me: Myself = store.me;
-    const myPageData: MyPageData = me.myCurrentPageData;
-    myPageData.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
-    ReactActions.patchTheStore({ me: me });
-  }, {
-    pageId: getPageId(),
-    pageNotfLevel: newNotfLevel
-  });
+    if (memberId === me.id) {
+      const pageData: MyPageData = me.myDataByPageId[target.pageId];
+      let newMe: Myself;
+      if (pageData) {
+        newMe = me_copyWithNewPageData(me, { ...pageData, myPageNotfPref: notfPref })
+      }
+      else {
+        const updPrefs = pageNotfPrefs_copyWithUpdatedPref(me.myCatsTagsSiteNotfPrefs, notfPref);
+        newMe = { ...me, myCatsTagsSiteNotfPrefs: updPrefs };
+      }
+      if (newMe) {
+        ReactActions.patchTheStore({ me: newMe });
+      }
+    }
+    if (onDone) {
+      onDone();
+    }
+  }, notfPref);
 }
 
 
@@ -900,7 +915,8 @@ export function markNotificationAsSeen(notfId: number, onDone?: () => void, onEr
 }
 
 
-export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
+/*
+export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: PageNotfLevel) {
   postJsonSuccess('/-/set-tag-notf-level', () => {
     const store: Store = ReactStore.allData();
     const newLevels = _.clone(store.tagsStuff.myTagNotfLevels);
@@ -912,12 +928,18 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
     tagLabel: tagLabel,
     notfLevel: newNotfLevel
   });
-}
+} */
 
 
 export function saveAboutUserPrefs(prefs, isGroup: boolean, success: () => void) {
-  const what = isGroup ? 'group' : 'member';
-  postJsonSuccess(`/-/save-about-${what}-prefs`, success, prefs);
+  const url = isGroup ? '/-/save-about-group-prefs' : '/-/save-about-member-prefs';
+  postJsonSuccess(url, success, prefs);
+}
+
+
+export function loadCatsTagsSiteNotfPrefs(memberId: UserId,
+      onDone: (response: PageNotfPrefsResponse) => void) {
+  get(`/-/load-cats-tags-site-notf-prefs?memberId=${memberId}`, onDone);
 }
 
 

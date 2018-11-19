@@ -114,12 +114,13 @@ POST  /-/track-reading-text     controllers.UserController.trackReadingProgressT
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
-POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
+POST  /-/save-content-notf-pref controllers.UserController.saveContentNotfPref
 GET   /-/load-groups            controllers.UserController.loadGroups()
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 POST  /-/save-about-member-prefs controllers.UserController.saveAboutMemberPrefs
 POST  /-/save-about-group-prefs controllers.UserController.saveGroupPreferences
+GET   /-/load-cats-tags-site-notf-prefs  controllers.UserController.loadMembersCatsTagsSiteNotfPrefs(memberId: Int)
 POST  /-/save-privacy-prefs     controllers.UserController.saveMemberPrivacyPrefs
 POST  /-/save-guest             controllers.UserController.saveGuest
 POST  /-/delete-user            controllers.UserController.deleteUser

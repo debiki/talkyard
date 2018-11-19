@@ -161,6 +161,12 @@ class SiteDao(
   def readOnlyTransaction[R](fn: SiteTransaction => R): R =
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
 
+  def readOnlyTransactionTryReuse[R](anyTx: Option[SiteTransaction])(fn: SiteTransaction => R): R =
+    anyTx match {
+      case Some(tx) => fn(tx)
+      case None => readOnlyTransaction(fn)
+    }
+
   def readOnlyTransactionNotSerializable[R](fn: SiteTransaction => R): R =
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 

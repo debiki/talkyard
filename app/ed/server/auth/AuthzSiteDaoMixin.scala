@@ -112,7 +112,7 @@ trait AuthzSiteDaoMixin {
       return (true, "")
 
     val groupIds: immutable.Seq[UserId] =
-      anyTransaction.map(_.loadGroupIds(user)) getOrElse {
+      anyTransaction.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
         getGroupIds(user)
       }
 

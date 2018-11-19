@@ -109,7 +109,7 @@ trait PostsDao {
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
 
-    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIds(author),
+    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIdsMemberIdFirst(author),
       postType, page.meta, replyToPosts, tx.loadAnyPrivateGroupTalkMembers(page.meta),
       tx.loadCategoryPathRootLast(page.meta.categoryId),
       tx.loadPermsOnPages()), "EdEMAY0RE")
@@ -378,7 +378,7 @@ trait PostsDao {
       val page = PageDao(pageId, tx)
       val replyToPosts = Nil // currently cannot reply to specific posts, in the chat. [7YKDW3]
 
-      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIds(author),
+      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIdsMemberIdFirst(author),
         PostType.ChatMessage, page.meta, Nil, tx.loadAnyPrivateGroupTalkMembers(page.meta),
         tx.loadCategoryPathRootLast(page.meta.categoryId),
         tx.loadPermsOnPages()), "EdEMAY0CHAT")
@@ -615,7 +615,7 @@ trait PostsDao {
         return
 
       dieOrThrowNoUnless(Authz.mayEditPost(
-        editorAndLevels, tx.loadGroupIds(editor),
+        editorAndLevels, tx.loadGroupIdsMemberIdFirst(editor),
         postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
         inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId),
         permissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
@@ -1700,7 +1700,7 @@ trait PostsDao {
       val settings = loadWholeSiteSettings(tx)
 
       dieOrThrowNoUnless(Authz.mayFlagPost(
-        flagger, tx.loadGroupIds(flagger),
+        flagger, tx.loadGroupIdsMemberIdFirst(flagger),
         postBefore, pageMeta, tx.loadAnyPrivateGroupTalkMembers(pageMeta),
         inCategoriesRootLast = categories,
         permissions = tx.loadPermsOnPages()), "EdEZBXKSM2")

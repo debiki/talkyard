@@ -122,17 +122,42 @@ pristine: clean
 play-cli: minified-asset-bundles
 	sudo s/d-cli
 
+db-cli:
+	@# Find out which database is currently being used, by looking at my.conf.
+	@# Because I sometimes connect as the wrong user, and feel confused for quite a while.
+	@def_user=`sed -nr 's/^talkyard.postgresql.user="([a-zA-Z0-9\._-]+)".*/\1/p' conf/my.conf`  ;\
+	  def_user="$${def_user:-talkyard}" ;\
+	  read -p "Connect to the PostgreSQL database as which user? [$$def_user] " db_user ;\
+	  db_user="$${db_user:-$$def_user}" ;\
+	  sudo s/d-psql "$$db_user" "$$db_user"
+
 up: minified-asset-bundles
 	sudo s/d up -d
 	@echo
 	@echo "To tail logs, you can:  sudo s/d-logsf0"
 	@echo
 
+tails: tail
+tail: up
+	sudo s/d-logsf0
+
+restart:
+	sudo s/d-restart
+
+restart-web-app:
+	sudo s/d-restart-web-app
+
+restart-gulp:
+	sudo s/d kill gulp ; sudo s/d start gulp ; sudo s/d-logsf0
+
 down:
 	sudo s/d down
 
 dead:
 	sudo s/d-killdown
+
+dead-app:
+	sudo s/d kill web app
 
 
 
@@ -160,7 +185,7 @@ invisible-selenium-server: node_modules $(_selenium_standalone_files)
 define if_selenium_not_running
   selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
   if [ -z "$$selenium_line" ]; then \
-    echo "Starting Selenium, in visible mode." ;\
+    echo "Starting Selenium." ;\
     $(1) ;\
   else \
     echo ;\
@@ -172,6 +197,11 @@ define if_selenium_not_running
   fi
 endef
 
+e2e-tests: invisible-selenium-server
+	s/run-e2e-tests.sh
+
+visible-e2e-tests: selenium-server
+	s/run-e2e-tests.sh
 
 
 

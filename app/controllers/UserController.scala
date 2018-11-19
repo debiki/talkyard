@@ -35,7 +35,6 @@ import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
-import org.owasp.encoder.Encode
 
 
 /** Handles requests related to users.
@@ -91,9 +90,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: MemberInclDetails = memberAndStats._1
         val anyStats: Option[UserStats] = memberAndStats._2
-        val siteNotfLevel = transaction.loadPageNotfLevels(member.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
         jsonForMemberInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
-          callerIsStaff = true, anyStats = anyStats, siteNotfLevel = siteNotfLevel)
+          callerIsStaff = true, anyStats = anyStats)
       }))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
@@ -131,14 +129,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val groups = transaction.loadGroups(memberOrGroup)
           memberOrGroup match {
             case m: MemberInclDetails =>
-              val siteNotfLevel = transaction.loadPageNotfLevels(userId, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
               jsonForMemberInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
-                siteNotfLevel = siteNotfLevel)
+                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
             case g: Group =>
-              val siteNotfLevel = transaction.loadPageNotfLevels(g.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
-                callerIsStaff = callerIsStaff, siteNotfLevel)
+                callerIsStaff = callerIsStaff)
           }
         }
         else {
@@ -199,16 +194,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val stats = includeStats ? transaction.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
-          val siteNotfLevel = transaction.loadPageNotfLevels(member.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
           val userJson = jsonForMemberInclDetails(
             member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
-            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself,
-            siteNotfLevel = siteNotfLevel)
+            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
           (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
         case group: Group =>
-          val siteNotfLevel = transaction.loadPageNotfLevels(group.id, NoPageId, categoryId = None).forWholeSite  // [REFACTORNOTFS]
           val groupJson = jsonForGroupInclDetails(
-            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff, siteNotfLevel)
+            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
           (groupJson, JsNull, group.id)
       }
     }
@@ -218,8 +210,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
       groups: immutable.Seq[Group],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-      anyStats: Option[UserStats] = None,
-      siteNotfLevel: Option[NotfLevel])  // [REFACTORNOTFS] remove
+      anyStats: Option[UserStats] = None)
         : JsObject = {
     var userJson = Json.obj(  // MemberInclDetails
       "id" -> user.id,
@@ -248,10 +239,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)
-      // [REFACTORNOTFS]  shouldn't be here -----------------
-      userJson += "emailForEveryNewPost" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingAll.toInt))   // [REFACTORNOTFS] remove
-      userJson += "notfAboutNewTopics" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingFirst.toInt))   // [REFACTORNOTFS] remove
-      // ----------------------------------------------------
       userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       userJson += "summaryEmailIntervalMins" ->
@@ -287,8 +274,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Boolean,
-      callerIsStaff: Boolean = false,
-      siteNotfLevel: Option[NotfLevel]): JsObject = {  // [REFACTORNOTFS] remove
+      callerIsStaff: Boolean = false): JsObject = {
     var json = Json.obj(
       "id" -> group.id,
       "isGroup" -> JsTrue,
@@ -298,10 +284,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
-      // [REFACTORNOTFS]  shouldn't be here -----------------
-      json += "emailForEveryNewPost" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingAll.toInt))   // [REFACTORNOTFS] remove
-      json += "notfAboutNewTopics" -> JsBoolean(siteNotfLevel.exists(_.toInt >= NotfLevel.WatchingFirst.toInt))   // [REFACTORNOTFS] remove
-      // ----------------------------------------------------
     }
     json
   }
@@ -1206,15 +1188,36 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def savePageNotfLevel: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) {
+  def saveContentNotfPref: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) {
         request =>
+    import request.{dao, theRequester => requester}
     val body = request.body
-    val pageId = (body \ "pageId").as[PageId]
-    val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
-    val newNotfLevel = NotfLevel.fromInt(newNotfLevelInt) getOrElse throwBadRequest(
-      "EsE6JP2SK", s"Bad page notf level: $newNotfLevelInt")
-    request.dao.savePageNotfPref(
-        PageNotfPref(request.theMember.id, pageId = Some(pageId), notfLevel = newNotfLevel))
+    val memberId = (body \ "memberId").as[MemberId]
+    val pageId = (body \ "pageId").asOpt[PageId]
+    val pagesInCategoryId = (body \ "pagesInCategoryId").asOpt[CategoryId]
+    val wholeSite = (body \ "wholeSite").asOpt[Boolean]
+    val newNotfLevelInt = (body \ "notfLevel").asOpt[Int]
+    val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
+
+    throwForbiddenIf(memberId != requester.id && !requester.isStaff, "TyE5HKG205",
+      "May not change other members notf prefs")
+    throwForbiddenIf(memberId == Group.AdminsId && !requester.isAdmin, "TyE4HKW2R7",
+      "May not change admins notf prefs")
+
+    val newPref = Try(
+      PageNotfPref(
+        memberId, pageId = pageId, wholeSite = wholeSite.getOrElse(false),
+        pagesInCategoryId = pagesInCategoryId,
+        notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
+          .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
+
+    if (newNotfLevel.isDefined) {
+      dao.savePageNotfPref(newPref, request.who)
+    }
+    else {
+      dao.deletePageNotfPref(newPref, request.who)
+    }
+
     Ok
   }
 
@@ -1292,6 +1295,34 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbidden("EdE5PYKW0", "Only admins may change group prefs, right now")
     dao.saveAboutGroupPrefs(prefs, request.who)
     Ok
+  }
+
+
+  def loadMembersCatsTagsSiteNotfPrefs(memberId: Int): Action[Unit] = GetAction { request =>
+    loadMembersCatsTagsSiteNotfPrefsImpl(memberId, request)
+  }
+
+
+  def loadMembersCatsTagsSiteNotfPrefsImpl(memberId: Int, request: ApiRequest[_]): mvc.Result = {
+    import request.{dao, theRequester => requester}
+    throwForbiddenIf(memberId != requester.id && !requester.isAdmin,
+        "TyE4RBSK8FG", "May not view someone elses notf prefs")
+    throwForbiddenIf(memberId <= MaxGuestId,
+        "TyE7WRG04RS2", "Guests cannot have notf prefs")
+    throwForbiddenIf(memberId < User.LowestNormalMemberId,
+      "TyE4RKTRE9", "Special built-in users cannot have notf prefs")
+    val member = dao.getTheUser(memberId)
+    val prefs = dao.loadMembersCatsTagsSiteNotfPrefs(member)
+    val myCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId == memberId)
+    val groupsCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId != memberId)
+    OkSafeJson(Json.obj(  // OwnPageNotfPrefs
+      "id" -> memberId,
+      "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
+      "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref))
+      //later:
+      // "categoryNamesById" -> ...,
+      // "groupNamesById" ->  ..., needed for rendering prefs
+      ))
   }
 
 
@@ -1396,41 +1427,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "user_badges" : [ ]
      */
   }
-
-
-  private def actionToJson(actionInfo: UserActionInfo): JsObject = {
-    Json.obj(
-      "pageUrl" -> s"/-${actionInfo.pageId}", // redirects to the page
-      "pageTitle" -> JsString(actionInfo.pageTitle),
-      "postId" -> JsNumber(actionInfo.postId), & nr ?
-      "actionId" -> JsNumber(actionInfo.actionId),
-      "actingUserId" -> JsNumber(actionInfo.actingUserId),
-      "actingUserDisplayName" -> JsString(actionInfo.actingUserDisplayName),
-      "targetUserId" -> JsNumber(actionInfo.targetUserId),
-      "targetUserDisplayName" -> JsString(actionInfo.targetUserDisplayName),
-      "createdAtEpoch" -> JsNumber(actionInfo.createdAt.getTime),
-      "excerpt" -> JsString(actionInfo.postExcerpt),
-      "repliedToPostId" -> actionInfo.repliedToPostNr.map(JsNumber(_)),
-      "editedPostId" -> actionInfo.editedPostNr.map(JsNumber(_)),
-      "approved" -> JsBoolean(actionInfo.approved),
-      "deleted" -> JsBoolean(actionInfo.deleted),
-      "pinned" -> JsBoolean(actionInfo.pinned),
-      "collapsed" -> JsBoolean(actionInfo.collapsed),
-      "closed" -> JsBoolean(actionInfo.closed),
-      "votedLike" -> JsBoolean(actionInfo.votedLike),
-      "votedWrong" -> JsBoolean(actionInfo.votedWrong),
-      "votedBury" -> JsBoolean(actionInfo.votedBury))
-    /* Discourse also includes:
-      - usernames
-      - the user that wrote the relevant post (avatar, display name, username, id)
-      - action type (instead of votedLike, repliedTo...)
-      - avatars: "//www.gravatar.com/avatar/....png?s={size}&r=pg&d=identicon",
-      - deleted : false,
-      - edit_reason : null,
-      - hidden : false,
-      - moderator_action : false,
-     */
-  }
   */
 
 
@@ -1453,14 +1449,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       emailAddress = (json \ "emailAddress").as[String],
+      // This one shouldn't be here: [REFACTORNOTFS] -----------
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean],
+      // ----------------------------------------------------
       about = (json \ "about").asOpt[String].trimNoneIfBlank,
       location = (json \ "location").asOpt[String].trimNoneIfBlank,
-      url = (json \ "url").asOpt[String].trimNoneIfBlank,
-      // These shouldn't be here: [REFACTORNOTFS] -----------
-      siteNotfLevel = NotfLevel.fromInt((json \ "siteNotfLevel").as[Int]).getOrElse(NotfLevel.Normal))
-    // ----------------------------------------------------
+      url = (json \ "url").asOpt[String].trimNoneIfBlank)
   }
 
 
@@ -1474,7 +1469,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       // This one shouldn't be here: [REFACTORNOTFS] -----------
-      siteNotfLevel = NotfLevel.fromInt((json \ "siteNotfLevel").as[Int]).getOrElse(NotfLevel.Normal),
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
     // ----------------------------------------------------

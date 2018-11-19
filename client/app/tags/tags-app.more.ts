@@ -107,7 +107,7 @@ var TagTableRow = createComponent({
     var me: Myself = store.me;
     var tagAndStats: TagAndStats = this.props.tagAndStats;
     var myTagNotfLevels = this.props.myTagNotfLevels;
-    var tagNotfLevel = (myTagNotfLevels || {})[tagAndStats.label] || NotfLevel.Normal;
+    var tagNotfLevel = (myTagNotfLevels || {})[tagAndStats.label] || PageNotfLevel.Normal;
     var subscribersColumn = isStaff(me) ? r.td({}, tagAndStats.numSubscribers) : null;
     var mutedColumn = isStaff(me) ? r.td({}, tagAndStats.numMuted) : null;
     return (
@@ -121,8 +121,11 @@ var TagTableRow = createComponent({
         subscribersColumn,
         mutedColumn,
         r.td({},
-          notification.NotfLevelButton({ subject: { tagLabel: tagAndStats.label },
+          "Unimplemented [2ABRP05F]")));
+          /*notfs.PageNotfPrefButton({ pref, me: Myself }),
+          notification.NotfLe  velButton_oldForTags({ subject: { tagLabel: tagAndStats.label },
               notfLevel: tagNotfLevel }))));
+              */
   }
 });
 

@@ -18,6 +18,10 @@ Privacy Badger doesn't like transient session cookies, currently.
 So maybe change from csrf Double Submit Cookie, to Encrypted Token Pattern?
 https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Encrypted_Token_Patternp
 
+[pps]
+Rename User to Participant and User to Member.  Participant = Guest or Member, Member = User or Group.
+Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
+Rename "indie" to user" and "people" to "members"
 
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.

@@ -365,7 +365,7 @@ trait SiteTransaction {
 
   def loadGroups(memberOrGroup: MemberOrGroupInclDetails): immutable.Seq[Group] = {
     val allGroups = loadGroupsAsMap()
-    val groupIds = loadGroupIds(memberOrGroup)
+    val groupIds = loadGroupIdsMemberIdFirst(memberOrGroup)
     groupIds.flatMap(allGroups.get)
   }
 
@@ -406,7 +406,7 @@ trait SiteTransaction {
 
   def isAdmin(userId: UserId): Boolean = loadMember(userId).exists(_.isAdmin)
 
-  def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]
+  def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]  // [pps] RENAME to loadParticipants
   def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
     val usersById = loadUsersAsMap(userIds)
     userIds.to[immutable.Seq] map { id =>
@@ -450,19 +450,22 @@ trait SiteTransaction {
   def loadGroupsAsSeq(): immutable.Seq[Group]
   def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
 
-  def loadGroupIds(anyUser: Option[User]): Vector[UserId] = {
-    anyUser.map(loadGroupIds) getOrElse Vector(Group.EveryoneId)
+  def loadGroupIdsMemberIdFirst(anyUser: Option[User]): Vector[UserId] = {
+    anyUser.map(loadGroupIdsMemberIdFirst) getOrElse Vector(Group.EveryoneId)
   }
 
-  def loadGroupIds(memberOrGroupInclDetails: MemberOrGroupInclDetails): Vector[UserId] = {
+  def loadGroupIdsMemberIdFirst(memberOrGroupInclDetails: MemberOrGroupInclDetails): Vector[UserId] = {
     val user = memberOrGroupInclDetails match {
       case m: MemberInclDetails => m.briefUser
       case g: Group => g
     }
-    loadGroupIds(user)
+    loadGroupIdsMemberIdFirst(user)
   }
 
-  def loadGroupIds(user: User): Vector[UserId] = {
+  /** Loads ids of groups the member is in. Returns them, prefixed with
+    * the members own id, first.
+    */
+  def loadGroupIdsMemberIdFirst(user: User): Vector[UserId] = {
     val G = Group
 
     val member = user match {
@@ -538,9 +541,12 @@ trait SiteTransaction {
   def deletePageNotfPref(notfPref: PageNotfPref): Boolean  // notf level ignored
   // [REFACTORNOTFS] break out to a Dao, and load just for this member, but also all groups it's in?
   def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId]): PageNotfLevels
-  def loadPeopleIdsWatchingPage(pageId: PageId, minNotfLevel: NotfLevel): Set[UserId]
-  def loadPeopleIdsWatchingCategory(categoryId: CategoryId, minNotfLevel: NotfLevel): Set[UserId]
-  def loadPeopleIdsWatchingWholeSite(minNotfLevel: NotfLevel): Set[UserId]
+
+  def loadPageNotfPrefsOnPage(pageId: PageId): Seq[PageNotfPref]
+  def loadPageNotfPrefsOnCategory(categoryId: CategoryId): Seq[PageNotfPref]
+  def loadPageNotfPrefsOnSite(): Seq[PageNotfPref]
+  def loadNotfPrefsForMemberAboutPage(pageId: PageId, memberIds: Seq[MemberId]): Seq[PageNotfPref]
+  def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref]
 
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 

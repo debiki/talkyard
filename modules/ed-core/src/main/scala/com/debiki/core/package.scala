@@ -61,12 +61,14 @@ package object core {
 
   type LoginId = String
 
-  type UserId = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
+  type ParticipantId = Int
+  type GuestId = ParticipantId
+  type MemberId = ParticipantId
+  type UserId = ParticipantId
+  type GroupId = ParticipantId
 
-  // rename to MemberId? Or remove, use UserId instead.
-  type RoleId = UserId
-
-  type GroupId = UserId
+  // Use MemberId instead.
+  type RoleId = UserId   ; CLEAN_UP ; REMOVE
 
   type NotificationId = Int
 
@@ -743,6 +745,7 @@ package object core {
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
   def SECURITY = ()       // Some security issue, not necessarily so very important
+  def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people
   def PRIVACY = ()        // Could make things a bit more private
   def BUG = ()            // Need not be a terribly important bug.
   def RACE = ()           // A race condition bug / situation.
@@ -780,5 +783,7 @@ package object core {
   def I18N = ()           // Translation missing
   def READ = ()           // Something that could be good to read, before continuing coding.
 
+  def GRAPH_DATABASE = () // Some queries are inefficient and require lots of code, when using a
+                          // relational database — but are simple and fast, with a graph database.
 }
 

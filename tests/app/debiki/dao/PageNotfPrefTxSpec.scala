@@ -34,33 +34,12 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
   var pageIdTwo: PageId = _
   var pageIdThree: PageId = _
 
+  var ownersSitePref: PageNotfPref = _
+
   lazy val now: When = globals.now()
 
 
   "PageNotPref SiteTransaction fns can  TyT8MKRD25" - {
-
-    "quick notf level tests  TyT7KSJQ296" in {
-      PageNotfLevels(
-        forPage = Some(Hushed),
-        forCategory = Some(WatchingFirst),
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(Hushed)
-
-      PageNotfLevels(
-        forPage = None,
-        forCategory = Some(WatchingFirst),
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(WatchingFirst)
-
-      PageNotfLevels(
-        forPage = None,
-        forCategory = None,
-        forWholeSite = Some(WatchingAll)).effectiveNotfLevel mustBe Some(WatchingAll)
-
-      PageNotfLevels(
-        forPage = None,
-        forCategory = None,
-        forWholeSite = None).effectiveNotfLevel mustBe None
-    }
-
 
     "prepare" in {
       globals.systemDao.getOrCreateFirstSite()
@@ -108,19 +87,21 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text three."),
         authorId = SystemUserId, browserIdData, dao,
         anyCategoryId = Some(defCatId))
+
+      ownersSitePref = PageNotfPref(owner.id, NotfLevel.WatchingAll, wholeSite = true)
     }
 
 
     "find no people watching" in {
       dao.readOnlyTransaction { tx =>
-        tx.loadPeopleIdsWatchingPage(pageIdOne, minNotfLevel = Muted) mustBe Set.empty
-        tx.loadPeopleIdsWatchingCategory(defCatId, minNotfLevel = Muted) mustBe Set.empty
+        tx.loadPageNotfPrefsOnPage(pageIdOne) mustBe Seq.empty
+        tx.loadPageNotfPrefsOnCategory(defCatId) mustBe Seq.empty
       }
     }
 
     "... except for the owner, who watches the whole site by default" in {
       dao.readOnlyTransaction { tx =>
-        tx.loadPeopleIdsWatchingWholeSite(minNotfLevel = Muted) mustBe Set(owner.id)
+        tx.loadPageNotfPrefsOnSite() mustBe Seq(ownersSitePref)
       }
     }
 
@@ -129,12 +110,15 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
 
 
     "can config page notf prefs" - {
+      var pref: PageNotfPref = null
+
       "insert notf prefs, for page" in {
         dao.readWriteTransaction { tx =>
-          tx.upsertPageNotfPref(PageNotfPref(
+          pref = PageNotfPref(
             userOne.id,
             pageId = Some(pageIdOne),
-            notfLevel = EveryPostAllEdits))
+            notfLevel = EveryPostAllEdits)
+          tx.upsertPageNotfPref(pref)
         }
       }
 
@@ -144,6 +128,9 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
             forPage = Some(EveryPostAllEdits),
             forCategory = None,
             forWholeSite = None)
+
+          tx.loadPageNotfPrefsOnPage(pageIdOne) mustBe Seq(pref)
+          tx.loadPageNotfPrefsOnCategory(defCatId) mustBe Seq.empty
         }
       }
 
@@ -162,6 +149,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
             forPage = None,
             forCategory = None,
             forWholeSite = None)
+          tx.loadPageNotfPrefsOnPage(pageIdTwo) mustBe Seq.empty
         }
       }
     }
@@ -232,12 +220,12 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
 
 
     "can config category notf prefs" - {
+      var pref: PageNotfPref = null
+
       "insert notf prefs, for a category" in {
         dao.readWriteTransaction { tx =>
-          tx.upsertPageNotfPref(PageNotfPref(
-            userOne.id,
-            pagesInCategoryId = Some(defCatId),
-            notfLevel = TopicProgress))
+          pref = PageNotfPref(userOne.id, pagesInCategoryId = Some(defCatId), notfLevel = TopicProgress)
+          tx.upsertPageNotfPref(pref)
         }
       }
 
@@ -247,6 +235,13 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
             forPage = None,
             forCategory = Some(TopicProgress),
             forWholeSite = None)
+          tx.loadPageNotfPrefsOnCategory(defCatId) mustBe Seq(pref)
+        }
+      }
+
+      "... not for a page id" in {
+        dao.readOnlyTransaction { tx =>
+          tx.loadPageNotfPrefsOnPage(pageIdThree) mustBe Seq.empty
         }
       }
 
@@ -267,6 +262,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
               forPage = None,
               forCategory = None,
               forWholeSite = None)
+          tx.loadPageNotfPrefsOnCategory(otherCatId) mustBe Seq.empty
         }
       }
 
@@ -346,12 +342,12 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
 
 
     "can config notf prefs, for whole site" - {
+      var pref: PageNotfPref = null
+
       "insert notf prefs, for the whole site" in {
         dao.readWriteTransaction { tx =>
-          tx.upsertPageNotfPref(PageNotfPref(
-            userOne.id,
-            wholeSite = true,
-            notfLevel = Muted))
+          pref = PageNotfPref(userOne.id, wholeSite = true, notfLevel = Muted)
+          tx.upsertPageNotfPref(pref)
         }
       }
 
@@ -361,6 +357,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
             forPage = None,
             forCategory = None,
             forWholeSite = Some(Muted))
+          tx.loadPageNotfPrefsOnSite().toSet mustBe Set(ownersSitePref, pref)
         }
       }
 

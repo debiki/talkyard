@@ -19,6 +19,7 @@
 /// <reference path="../react-elements/name-login-btns.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
+/// <reference path="../notification/notf-prefs-button.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../oop-methods.ts" />
 
@@ -29,17 +30,6 @@
 const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
-
-
-let notfsLevelDropdownModal;
-
-// CLEAN_UP move to separate file [5WKBQAA0]
-export function openNotfsLevelDropdown(openButton, subject: NotfSubject, currentLevel: NotfLevel) {
-  if (!notfsLevelDropdownModal) {
-    notfsLevelDropdownModal = ReactDOM.render(NotfsLevelDropdownModal(), utils.makeMountNode());
-  }
-  notfsLevelDropdownModal.openAtForSubject(openButton, subject, currentLevel);
-}
 
 
 /**
@@ -98,11 +88,11 @@ export var Metabar = createComponent({
     const page: Page = store.currentPage;
     const ui = this.state.ui;
     const me: Myself = store.me;
-    const myPageData: MyPageData = me.myCurrentPageData;
+    const effPageNotfPref = pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me);
 
     const notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          t.Notifications + ': ' + notfLevel_title(myPageData.rolePageSettings.notfLevel))
+          t.Notifications + ': ' + notfPref_title(effPageNotfPref))
       : null;
 
     const toggleDetailsBtn = !me.isLoggedIn ? null :
@@ -177,17 +167,12 @@ const MetabarDetails = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const myPageData: MyPageData = me.myCurrentPageData;
     const userAuthenticated = me && me.isAuthenticated;
-    const notfLevel: NotfLevel = myPageData.rolePageSettings.notfLevel;
 
     const notificationsElem = !userAuthenticated ? null :
       r.div({},
         r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
-        Button({ id: '7bw3gz5', className: 'dw-notf-level', onClick: event => {
-              openNotfsLevelDropdown(event.target, { pageId: store.currentPageId }, notfLevel)
-            }},
-          r.span({}, notfLevel_title(notfLevel) + ' ', r.span({ className: 'caret' }))));
+        notfs.PageNotfPrefButton({ target: { pageId: store.currentPageId }, store, ownPrefs: me }));
 
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },
@@ -195,107 +180,6 @@ const MetabarDetails = createComponent({
   }
 });
 
-
-// some dupl code [6KUW24]
-// CLEAN_UP move to separate file [5WKBQAA0]
-const NotfsLevelDropdownModal = createComponent({
-  displayName: 'NotfsLevelDropdownModal',
-
-  mixins: [StoreListenerMixin],
-
-  getInitialState: function () {
-    return {
-      isOpen: false,
-      store: debiki2.ReactStore.allData(),
-    };
-  },
-
-  onChange: function() {
-    this.setState({ store: debiki2.ReactStore.allData() });
-  },
-
-  // dupl code [6KUW24]
-  openAtForSubject: function(at, subject: NotfSubject, currentLevel: NotfLevel) {
-    const rect = at.getBoundingClientRect();
-    this.setState({
-      isOpen: true,
-      atX: rect.left,
-      atY: rect.bottom,
-      subject: subject,
-      currentLevel: currentLevel,
-    });
-  },
-
-  close: function() {
-    this.setState({ isOpen: false });
-  },
-
-  setNotfLevel: function(newLevel) {
-    const subject: NotfSubject = this.state.subject;
-    if (subject.pageId) {
-      ReactActions.setPageNoftLevel(newLevel);
-    }
-    else if (subject.tagLabel) {
-      Server.setTagNotfLevel(subject.tagLabel, newLevel);
-    }
-    else {
-      die('EsE4KG8F2');
-    }
-    this.close();
-  },
-
-  render: function() {
-    const state = this.state;
-    const store: Store = this.state.store;
-    const subject: NotfSubject = this.state.subject;
-    const currentLevel: NotfLevel = this.state.currentLevel || NotfLevel.Normal;
-    let watchingAllListItem;
-    let watchingFirstListItem;
-    let mutedListItem;
-
-    if (state.isOpen) {
-      dieIf(!subject.pageId && !subject.tagLabel, 'EsE4GK02');
-
-      watchingAllListItem = !subject.pageId ? null :
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.WatchingAll,
-          title: r.span({ className: 'e_NtfAll' }, t.nl.WatchingAll),
-          text: subject.tagLabel ? t.nl.WatchingAllTag : t.nl.WatchingAllTopic,
-          onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) });
-      watchingFirstListItem = !subject.tagLabel ? null :
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.WatchingFirst,
-          title: r.span({ className: 'e_NtfFst' }, t.nl.WatchingFirst),
-          text: t.nl.WatchingFirstTag,
-          onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst) });
-      mutedListItem =
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.Muted,
-          title: r.span({ className: 'e_NtfMtd'  }, t.nl.Muted),
-          text: t.nl.MutedTopic,
-          onSelect: () => this.setNotfLevel(NotfLevel.Muted) });
-    }
-
-    return (
-      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true },
-        watchingAllListItem,
-        watchingFirstListItem,
-        /*
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.Tracking,
-          title: r.span({ className: '' }, t.nl.Tracking),
-          text: r.span({}, t.nl.TrackingTopic),
-          onSelect: () => this.setNotfLevel(NotfLevel.Tracking) }),
-          */
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.Normal,
-          title: r.span({ className: '' }, t.nl.Normal),
-          text: r.span({}, t.nl.NormalTopic_1, r.samp({}, t.nl.NormalTopic_2), '.'),
-          onSelect: () => this.setNotfLevel(NotfLevel.Normal) }),
-        mutedListItem));
-  }
-});
 
 
 function estimateReadingTimeMinutesSkipOrigPost(posts: Post[]): number {

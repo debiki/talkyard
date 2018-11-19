@@ -74,7 +74,11 @@ case class CategoryToSave(
     name = name,
     slug = slug,
     position = position,
-    description = None,
+    description = {
+      val untilNewline = description.trim.takeWhile(_ != '\n').trim
+      if (untilNewline.isEmpty) None
+      else Some(untilNewline)
+    },
     newTopicTypes = newTopicTypes,
     unlistCategory = unlistCategory,
     unlistTopics = unlistTopics,

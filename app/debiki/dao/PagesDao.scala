@@ -144,7 +144,7 @@ trait PagesDao {
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId)
-    val groupIds = tx.loadGroupIds(author)
+    val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
 

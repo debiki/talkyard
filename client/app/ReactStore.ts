@@ -78,7 +78,9 @@ export function makeAutoPage(): Page {
 export function makeNoPageData(): MyPageData {
   return {
     dbgSrc: 'MyNP',
-    rolePageSettings: { notfLevel: NotfLevel.Normal },
+    pageId: EmptyPageId,
+    myPageNotfPref: <PageNotfPref> undefined,
+    groupsPageNotfPrefs: <PageNotfPref[]> [],
     votes: {},
     unapprovedPosts: {},
     unapprovedPostAuthors: [],
@@ -152,10 +154,6 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.UnpinPage:
       currentPage.pinOrder = undefined;
       currentPage.pinWhere = undefined;
-      break;
-
-    case ReactActions.actionTypes.SetPageNotfLevel:
-      store.me.myCurrentPageData.rolePageSettings.notfLevel = action.newLevel;
       break;
 
     case ReactActions.actionTypes.AcceptAnswer:
@@ -1479,6 +1477,8 @@ function makeStranger(store: Store): Myself {
 
     closedHelpMessages: <any> {},
 
+    myCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],
+    groupsCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],
     myDataByPageId: <any> {},
     myCurrentPageData: makeNoPageData(),
 

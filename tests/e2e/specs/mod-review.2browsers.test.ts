@@ -142,11 +142,12 @@ describe("mod-review  TyT5WB2R0", () => {
     mariasBrowser.topbar.myMenu.goToAdminReview();
   });
 
-  it("... and sees only the Users and Review tabs", () => {
+  it("... and sees only the Users, Groups and Review tabs", () => {
     mariasBrowser.adminArea.waitAssertVisible();
     assert(mariasBrowser.adminArea.isReviewTabVisible());
     assert(mariasBrowser.adminArea.isUsersTabVisible());
-    assert(mariasBrowser.adminArea.numTabsVisible() === 2);
+    assert(mariasBrowser.adminArea.isGroupsTabVisible());
+    assert.equal(mariasBrowser.adminArea.numTabsVisible(), 3);
   });
 
   it("There's a review task for each one of Mallory's replies One and Two", () => {

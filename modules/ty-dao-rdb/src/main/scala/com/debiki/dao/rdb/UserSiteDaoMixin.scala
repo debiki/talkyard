@@ -158,7 +158,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
                               && trustLevelGroupId <= Group.CoreMembersId =>
         loadGroupMembersImpl(builtInGroup = Some(trustLevelGroupId))
       case _ =>
-        die("TyE2AKB7WU4", s"Bad group id: $groupId")
+        Nil
     }
   }
 
@@ -638,7 +638,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
 
 
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
-    val usersBySiteAndId = asSystem.loadUsers(Map(siteId -> userIds.toList))
+    val usersBySiteAndId = asSystem.loadUsers(Map(siteId -> userIds.toSet.toVector))
     usersBySiteAndId map { case (siteAndUserId, user) =>
       siteAndUserId._2 -> user
     }

@@ -39,6 +39,7 @@ declare let NoUserId;
 declare const SystemUserId;
 declare const MinMemberId;
 declare const LowestAuthenticatedUserId;
+declare const LowestNormalMemberId;
 
 declare const MaxGuestId;
 declare const UnknownUserId;
@@ -101,6 +102,8 @@ declare namespace debiki2 {
 
   let iframeOffsetWinSize;
 
+  function oneIfDef(x: any): number;
+
   function $first(selector: string): HTMLElement;
   function $all(selector: string): HTMLCollectionOf<HTMLElement>;
   function $byId(elemId: string): HTMLElement;
@@ -125,6 +128,12 @@ declare namespace debiki2 {
 
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
+
+  namespace notfs {
+    function PageNotfPrefButton(props: {
+        target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs,
+        saveFn?: (notfLevel: PageNotfLevel) => void });
+  }
 
   namespace utils {
     var scrollIntoViewInPageColumn;
@@ -231,7 +240,7 @@ declare namespace debiki2 {
   function store_canDeletePage(store: Store): boolean;
   function store_canUndeletePage(store: Store): boolean;
   function store_canPinPage(store: Store): boolean;
-  var siteStatusToString;
+  function siteStatusToString(siteStatus: SiteStatus);
   var cloneRect;
   var cloneEventTargetRect;
 
@@ -276,8 +285,9 @@ declare namespace debiki2 {
     var Avatar;
   }
 
-  // should move to more-bundle.js.
-  var notfLevel_title;
+  function pageNotfPrefTarget_findEffPref(target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs): EffPageNotfPref;
+  function notfPref_title(notfPref: EffPageNotfPref): string;
+  function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, store: Store): any;
 
   namespace edithistory {
 
@@ -291,7 +301,6 @@ declare namespace debiki2 {
   }
 
   namespace page {
-    var openNotfsLevelDropdown;
     var Post;
     namespace Hacks {
       function processPosts(startElemId?: string);

@@ -58,20 +58,6 @@ export const Notification = createComponent({
 });
 
 
-
-export var NotfLevelButton = createComponent({
-  render: function() {
-    var subject: NotfSubject = this.props.subject;
-    var notfLevel: NotfLevel = this.props.notfLevel;
-    return (
-      Button({ id: '7bw3gz5', className: 'dw-notf-level',
-          onClick: event => page.openNotfsLevelDropdown(event.target, subject, notfLevel ) },
-        r.span({}, notfLevel_title(notfLevel) + ' ', r.span({className: 'caret'}))));
-  }
-});
-
-
-
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

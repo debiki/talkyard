@@ -38,6 +38,8 @@ export function resetAvatars() {
 
 
 export const Avatar = createComponent({
+  displayName: 'Avatar',
+
   onClick: function(event) {
     if (this.props.ignoreClicks)
       return;

@@ -3323,6 +3323,11 @@ function pagesFor(browser) {
           api.waitForVisible('.e_UP_Prefs_FN');
         },
 
+        switchToNotifications: function() {
+          api.waitAndClick('.s_UP_Prf_Nav_NtfsL');
+          api.waitForVisible('.dw-notf-level.btn');
+        },
+
         switchToPrivacy: function() {
           api.waitAndClick('.e_UP_Prf_Nav_PrivL');
           api.waitForVisible('.e_HideActivityAllCB');
@@ -3348,15 +3353,21 @@ function pagesFor(browser) {
         },
 
         setNotfsForEachNewPost: function() {
-          setCheckbox('.e_notfEveryPost input', true);
+          api.waitAndClick('.dw-notf-level');
+          api.waitAndClick('.e_NtfAll');
+          api.waitForGone('.e_NtfAll');
         },
 
         setNotfsForEachNewTopic: function() {
-          setCheckbox('.e_notfNewTopics input', true);
+          api.waitAndClick('.dw-notf-level');
+          api.waitAndClick('.e_NtfFst');
+          api.waitForGone('.e_NtfFst');
         },
 
         setNotfsNormal: function() {
-          setCheckbox('.e_notfNormal input', true);
+          api.waitAndClick('.dw-notf-level');
+          api.waitAndClick('.e_NtfNml');
+          api.waitForGone('.e_NtfNml');
         },
 
         clickChangePassword: function() {
@@ -3570,6 +3581,10 @@ function pagesFor(browser) {
 
       isUsersTabVisible: () => {
         return browser.isVisible('.e_UsrsB');
+      },
+
+      isGroupsTabVisible: () => {
+        return browser.isVisible('.e_GrpsB');
       },
 
       numTabsVisible: () => {

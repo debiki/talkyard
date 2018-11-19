@@ -87,37 +87,33 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   it("Owen goes to All Members' prefs page", () => {
     owensBrowser.go(idAddress.origin);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.go('/-/users/new_members/preferences');
+    owensBrowser.go('/-/users/new_members/preferences/notifications');
   });
 
   it("... and configures All Members to get notified about new topics", () => {
     owensBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
-    owensBrowser.userProfilePage.preferences.save();
   });
 
   it("Maria goes to her notfs prefs page", () => {
     mariasBrowser.go(idAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.userProfilePage.openPreferencesFor(maria.username);
+    mariasBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
   it("... and overrides the All Members group prefs: She wants to be notfd about every post ", () => {
-    // BUG need to first change to sth else, before set-Normal has any effect. [7KASDSRF20]
-    mariasBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
-    mariasBrowser.userProfilePage.preferences.save();
     mariasBrowser.userProfilePage.preferences.setNotfsNormal();
-    mariasBrowser.userProfilePage.preferences.save();
   });
 
   it("Maja goes to her notfs prefs page", () => {
     mariasBrowser.topbar.clickLogout();
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
     majasBrowser.userProfilePage.openPreferencesFor(maja.username);
+    majasBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
   it("... and overrides the All Members group prefs, to get notified about every post", () => {
     majasBrowser.userProfilePage.preferences.setNotfsForEachNewPost();
-    majasBrowser.userProfilePage.preferences.save();
   });
 
   it("Owen posts a topic", () => {
@@ -165,12 +161,11 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
   it("Owen goes to All Members' prefs page again", () => {
     owensTopicUrl = owensBrowser.url().value;
-    owensBrowser.go('/-/users/new_members/preferences');
+    owensBrowser.go('/-/users/new_members/preferences/notifications');
   });
 
   it("... configs prefs for every post, for everyone", () => {
     owensBrowser.userProfilePage.preferences.setNotfsForEachNewPost();
-    owensBrowser.userProfilePage.preferences.save();
   });
 
   it("Owen returns to his topic", () => {
@@ -201,7 +196,6 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
   it("Maja changes her prefs, to new topics only", () => {
     majasBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
-    majasBrowser.userProfilePage.preferences.save();
   });
 
 

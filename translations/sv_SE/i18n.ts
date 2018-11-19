@@ -167,20 +167,27 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Notification levels.
 
   nl: {
-    WatchingAll: "Watching All",
-    WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
-    WatchingAllTopic: "You'll be notified of all new replies in this topic.",
+    EveryPost: "Every Post",
+    EveryPostInTopic: "You'll be notified of all new replies in this topic.",
+    EveryPostInCat: "You'll be notified of all new topics and replies, in this category",
+    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and every post in those topics",
+    EveryPostWholeSite: "You'll be notified of all new topics and replies, anywhere",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
-    WatchingFirst: "Watching First",
-    WatchingFirstTag: "You'll be notified of new topics with this tag",
+    NewTopics: "New Topics",
+    NewTopicsInCat: "You'll be notified of new topics in this category.",
+    NewTopicsWithTag: "You'll be notified of new topics with this tag.",
+    NewTopicsWholeSite: "You'll be notified of new topics, anywhere.",
 
     Tracking: "Tracking",
 
     Normal: "Normal",
-    NormalTopic_1: "You'll be notified if someone replies to you or mentions your ",
-    NormalTopic_2: "@name",
+    NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +
+      "reply to a reply to you.",
+
+    Hushed: "Hushed",
+    HushedDescr: "You'll be notified only if someone talks directly to you.",
 
     Muted: "Muted",
     MutedTopic: "No notifications about this topic.",

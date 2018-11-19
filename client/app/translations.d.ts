@@ -142,15 +142,20 @@ interface TalkyardTranslations {
 
   // Notification levels.
   nl: {
-    WatchingAll: string;
-    WatchingAllTag: string;
-    WatchingAllTopic: string;
-    WatchingFirst: string;
-    WatchingFirstTag: string;
+    EveryPost: string;
+    EveryPostInTopic: string;
+    EveryPostInCat: string;
+    EveryPostInTopicsWithTag: string;
+    EveryPostWholeSite: string;
+    NewTopics: string;
+    NewTopicsInCat: string;
+    NewTopicsWithTag: string;
+    NewTopicsWholeSite: string;
     Tracking: string;
     Normal: string;
-    NormalTopic_1: string;
-    NormalTopic_2: string;
+    NormalDescr: string;
+    Hushed: string;
+    HushedDescr: string;
     Muted: string;
     MutedTopic: string;
   }

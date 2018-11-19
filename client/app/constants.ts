@@ -39,6 +39,7 @@ const SystemUserId = 1;
 const SysbotUserId = 2;
 const MinMemberId = SystemUserId;
 const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
+const LowestNormalMemberId = 10;         // also in scala  [S7KPWG42]
 
 const MaxGuestId = -2;
 const UnknownUserId = -3;

@@ -17,9 +17,6 @@ resolvers ++= Seq(
   // For SBT BuildInfo:
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
-// Ensime, for VSCode.
-addSbtPlugin("org.ensime" % "sbt-ensime" % "2.5.1")
-
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.16")    // newest, as of 18-07-17
 

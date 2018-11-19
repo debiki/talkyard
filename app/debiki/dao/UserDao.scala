@@ -805,7 +805,7 @@ trait UserDao {
       case _: Guest | UnknownUser => Vector(Group.EveryoneId)
       case _: Member | _: Group =>
         readOnlyTransaction { tx =>
-          tx.loadGroupIds(user)
+          tx.loadGroupIdsMemberIdFirst(user)
         }
     }
   }
@@ -1147,7 +1147,7 @@ trait UserDao {
         smallAvatar: Option[UploadRef], mediumAvatar: Option[UploadRef],
         browserIdData: BrowserIdData, tx: SiteTransaction) {
 
-      val userBefore = tx.loadTheMemberInclDetails(userId)
+      val userBefore = tx.loadTheMemberInclDetails(userId)  ; SECURITY ; COULD // loadTheUserOrThrowForbidden, else logs really long exception
       val userAfter = userBefore.copy(
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
@@ -1228,16 +1228,23 @@ trait UserDao {
     readOnlyTransaction(_.listUsernames(pageId = pageId, prefix = prefix))
 
 
-  def savePageNotfPref(pageNotfPref: PageNotfPref) {
-    readWriteTransaction(_.upsertPageNotfPref(pageNotfPref))
+  def savePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who) {
+    editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") { tx =>
+      tx.upsertPageNotfPref(pageNotfPref)
+    }
+  }
+
+
+  def deletePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who) {
+    editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") { tx =>
+      tx.deletePageNotfPref(pageNotfPref)
+    }
   }
 
 
   def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who) {
-    readWriteTransaction { tx =>
-      val memberBefore = tx.loadTheMemberInclDetails(preferences.userId)
-      val me = tx.loadTheMember(byWho.id)
-      require(me.isStaff || me.id == memberBefore.id, "TyE2GKKW4")
+    editMemberThrowUnlessSelfStaff(preferences.userId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
+      val memberBefore = tx.loadTheMemberInclDetails(preferences.userId)  // [7FKFA20]
       val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
       tx.updateMemberInclDetails(memberAfter)
 
@@ -1252,14 +1259,10 @@ trait UserDao {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
-    readWriteTransaction { tx =>
-      val user = tx.loadTheMemberInclDetails(preferences.userId)
-      val me = tx.loadTheMember(byWho.id)
+    editMemberThrowUnlessSelfStaff2(preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
+        (tx, _, me) =>
 
-      require(me.isStaff || me.id == user.id, "TyE2WK7G4")
-
-      throwForbiddenIf(user.isAdmin && !me.isAdmin,
-          "TyE2WKA75J", "Moderators may not reconfigure preferences for admins")
+      val user = tx.loadTheMemberInclDetails(preferences.userId)  // [7FKFA20]
 
       // Perhaps there's some security problem that would results in a non-trusted user
       // getting an email about each and every new post. So, for now:  [4WKAB02]
@@ -1320,17 +1323,6 @@ trait UserDao {
       if (user.primaryEmailAddress != preferences.emailAddress)
         throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
 
-      REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
-      // BUG need to first change to sth else, before set-Normal has any effect. [7KASDSRF20]
-      val oldNotfLevels = tx.loadPageNotfLevels(
-         preferences.userId, NoPageId, categoryId = None)
-      val oldSiteNotfLevel = oldNotfLevels.forWholeSite getOrElse NotfLevel.Normal
-      if (preferences.siteNotfLevel != oldSiteNotfLevel) {
-        tx.upsertPageNotfPref(
-            PageNotfPref(user.id, preferences.siteNotfLevel, wholeSite = true))
-      }
-      // -- / REFACTOR -------------------------------------------------------------------------------
-
       val userAfter = user.copyWithNewAboutPrefs(preferences)
       try tx.updateMemberInclDetails(userAfter)
       catch {
@@ -1356,7 +1348,7 @@ trait UserDao {
   }
 
 
-  def saveAboutGroupPrefs(preferences: AboutGroupPrefs, byWho: Who): Unit = {
+  def saveAboutGroupPrefs(preferences: AboutGroupPrefs, byWho: Who) {
     // Similar to saveAboutMemberPrefs above. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
@@ -1393,20 +1385,21 @@ trait UserDao {
         tx.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
       }
 
-      REFACTOR // notf prefs should be a separate tab in the UI, and a separate api endpoint [REFACTORNOTFS]
-      // BUG need to first change to sth else, before set-Normal has any effect. [7KASDSRF20]
-      val oldSiteNotfLevel = tx.loadPageNotfLevels(
-        preferences.groupId, NoPageId, categoryId = None).forWholeSite getOrElse NotfLevel.Normal
-      if (preferences.siteNotfLevel != oldSiteNotfLevel) {
-        tx.upsertPageNotfPref(
-          PageNotfPref(group.id, preferences.siteNotfLevel, wholeSite = true))
-      }
-      // ---/ REFACTOR -------------------------------------------------------------------------------
-
       removeUserFromMemCache(group.id)
 
       // Group names aren't shown everywhere. So need not empty cache (as is however
       // done here [2WBU0R1]).
+    }
+  }
+
+
+  def loadMembersCatsTagsSiteNotfPrefs(member: User, anyTx: Option[SiteTransaction] = None)
+        : Seq[PageNotfPref] = {
+    readOnlyTransactionTryReuse(anyTx) { tx =>
+      // Related code: [6RBRQ204]
+      val ownIdAndGroupIds = tx.loadGroupIdsMemberIdFirst(member)
+      val prefs = tx.loadNotfPrefsForMemberAboutCatsTagsSite(ownIdAndGroupIds)
+      prefs
     }
   }
 
@@ -1592,6 +1585,46 @@ trait UserDao {
           numStrangers = numStrangers)
       }
     })
+  }
+
+
+  def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: String,
+        mayNotWhat: String)(block: SiteTransaction => R): R = {
+    editMemberThrowUnlessSelfStaff2[R](userId, byWho, errorCode, mayNotWhat) { (tx, _, _) =>
+      block(tx)
+    }
+  }
+
+
+  /** Loads useId and byWho in a read-write transaction, and checks if they are
+    * the same person (that is, one edits one's own settings) or if byWho is staff.
+    * If isn't the same preson, or isn't staff, then, throws 403 Forbidden.
+    * Plus, staff users who are moderators only, may not edit admin users — that also
+    * results in 403 Forbidden.
+    */
+  def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
+        mayNotWhat: String)(block: (SiteTransaction, User, User) => R): R = {
+    SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
+    // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
+
+    throwForbiddenIf(userId <= MaxGuestId,
+      errorCode + "-ISGST", s"May not $mayNotWhat for guests")
+    throwForbiddenIf(userId < User.LowestNormalMemberId,
+      errorCode + "-ISBTI", s"May not $mayNotWhat for special built-in users")
+
+    readWriteTransaction { tx =>
+      val me = tx.loadTheMember(byWho.id)
+      throwForbiddenIf(me.id != userId && !me.isStaff,
+          errorCode + "-ISOTR", s"May not $mayNotWhat for others")
+
+      // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)
+      // Would be more usable; sometimes loaded anyway [7FKFA20]
+      val user = tx.loadTheUser(userId)
+      throwForbiddenIf(user.isAdmin && !me.isAdmin,
+          errorCode + "-ISADM", s"May not $mayNotWhat for admins")
+
+      block(tx, user, me)
+    }
   }
 
 

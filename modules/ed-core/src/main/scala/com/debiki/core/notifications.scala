@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.debiki.core.Prelude._
 import java.{util => ju}
 
 
@@ -196,6 +197,9 @@ object NotfLevel {
     */
   case object Normal extends NotfLevel(3)
 
+  // If doesn't matter.
+  val DoesNotMatterHere: Normal.type = Normal
+
   /** Notified of @mentions and direct replies only.
     */
   case object Hushed extends NotfLevel(2)
@@ -220,7 +224,14 @@ object NotfLevel {
 }
 
 
-/**
+/** Notification levels for pages in certain categories, or the whole site,
+  * or specific pages.
+  *
+  * (Later on, maybe can be CatNotfPrefs, if one wants to be notified about
+  * changes made to a category? Otherwise, maybe should
+  * RENAME pageId to forPageId, and pagesInCategoryId to forCategoryId, and
+  * wholeSite to forWholeSite. Hmm.)
+  *
   * @param peopleId — the group or individual these settings concern.
   * @param notfLevel
   * @param pageId — if these notification settings are for a single page only.
@@ -228,10 +239,10 @@ object NotfLevel {
   * @param wholeSite — the group's or member's default settings for pages across the whole site
   */
 case class PageNotfPref(
-  peopleId: UserId,
+  peopleId: UserId,  // RENAME to memberId, + db column.  [pps]
   notfLevel: NotfLevel,
   pageId: Option[PageId] = None,
-  pagesInCategoryId: Option[CategoryId] = None,  // not yet impl [7KBR2AF5]
+  pagesInCategoryId: Option[CategoryId] = None,
   //pagesWithTagLabelId: Option[TagLabelId] = None, — later
   wholeSite: Boolean = false) {
 
@@ -244,25 +255,9 @@ case class PageNotfPref(
 }
 
 
-case class PageNotfLevels(
+case class PageNotfLevels(   // try to remove, not really in use [2RJW0047]
   forPage: Option[NotfLevel] = None,
   forCategory: Option[NotfLevel] = None,
   forWholeSite: Option[NotfLevel] = None) {
-
-  /** The most specific notf level (per page), overrides the less specific (category, whole site).
-    */
-  def effectiveNotfLevel: Option[NotfLevel] =
-    // Tested here: [TyT7KSJQ296]
-    forPage.orElse(forCategory.orElse(forWholeSite))
-
 }
 
-
-/* Later:
-
-case class MembersAllNotfPrefs(
-  peopleId: UserId,
-  pageNotfPrefs: immutable.Seq[PageNotfPref])
-
-Or maybe just:  Set[PageNotfPref]  (Set not Seq)
-  */

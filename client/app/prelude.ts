@@ -162,6 +162,11 @@ if (!isServerSide()) {
 export let iframeOffsetWinSize: { top: number, height: number } | undefined;
 
 
+export function oneIfDef(x: any): number {
+  return x ? 1 : 0;
+}
+
+
 export function die(errorMessage: string) {
   const dialogs: any = debiki2['pagedialogs'];
   // I don't remember why I added setTimeout() but there was a good reason.

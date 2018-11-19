@@ -21,6 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{sql => js}
 import Rdb._
+import RdbUtil.makeInListFor
+import scala.collection.mutable.ArrayBuffer
 
 
 /** Loads and saves PageNotfPref:s.
@@ -97,7 +99,7 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
   }
 
 
-  def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId])
+  def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId])  // [2RJW0047]
         : PageNotfLevels = {
     def selectNotfLevelWhere(what: Int) = s"""
       select notf_level, $what as what
@@ -136,36 +138,61 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
   }
 
 
-  def loadPeopleIdsWatchingPage(pageId: PageId, minNotfLevel: NotfLevel): Set[UserId] = {
-    loadPeopleIdsImpl("page_id", pageId, minNotfLevel)
+  def loadPageNotfPrefsOnPage(pageId: PageId): Seq[PageNotfPref] = {
+    loadPageNotfPrefsOnSth("page_id", pageId)
   }
 
-  def loadPeopleIdsWatchingCategory(categoryId: CategoryId, minNotfLevel: NotfLevel): Set[UserId] = {
-    loadPeopleIdsImpl("pages_in_category_id", categoryId.asAnyRef, minNotfLevel)
+  def loadPageNotfPrefsOnCategory(categoryId: CategoryId): Seq[PageNotfPref] = {
+    loadPageNotfPrefsOnSth("pages_in_category_id", categoryId.asAnyRef)
   }
 
-  def loadPeopleIdsWatchingWholeSite(minNotfLevel: NotfLevel): Set[UserId] = {
-    loadPeopleIdsImpl("pages_in_whole_site", true.asAnyRef, minNotfLevel)
+  def loadPageNotfPrefsOnSite(): Seq[PageNotfPref] = {
+    loadPageNotfPrefsOnSth("pages_in_whole_site", true.asAnyRef)
   }
 
-
-  def loadPeopleIdsImpl(thingColumnName: String, thingColumnValue: AnyRef, minNotfLevel: NotfLevel)
-        : Set[UserId] = {
+  private def loadPageNotfPrefsOnSth(thingColumnName: String, thingColumnValue: AnyRef)
+      : Seq[PageNotfPref] = {
     val query = s"""
-      select people_id from page_notf_prefs3
+      select * from page_notf_prefs3
       where site_id = ?
         and $thingColumnName = ?
-        and notf_level >= ?
       """
+    val values = List(siteId.asAnyRef, thingColumnValue)
+    runQueryFindMany(query, values, readNotfPref)
+  }
 
-    val values = List(
-      siteId.asAnyRef,
-      thingColumnValue,
-      minNotfLevel.toInt.asAnyRef)
 
-    runQueryFindMany(query, values, rs => {
-      rs.getInt("people_id")
-    }).toSet
+  def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref] = {
+    loadContentNotfPrefsForMemberImpl(pageId = None, memberIds)
+  }
+
+
+  def loadNotfPrefsForMemberAboutPage(pageId: PageId, memberIds: Seq[MemberId]): Seq[PageNotfPref] = {
+    loadContentNotfPrefsForMemberImpl(pageId = Some(pageId), memberIds)
+  }
+
+
+  private def loadContentNotfPrefsForMemberImpl(pageId: Option[PageId], memberIds: Seq[MemberId])
+        : Seq[PageNotfPref] = {
+    if (memberIds.isEmpty)
+      return Nil
+
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+    values.appendAll(memberIds.map(_.asAnyRef))
+    val andPageIdClause = pageId match {
+      case None =>
+        "and page_id is null"
+      case Some(id) =>
+        values.append(id)
+        "and page_id = ?"
+    }
+    val query = s"""
+      select * from page_notf_prefs3
+      where site_id = ?
+        and people_id in (${makeInListFor(memberIds)})
+        $andPageIdClause
+      """
+    runQueryFindMany(query, values.toList, readNotfPref)
   }
 
 

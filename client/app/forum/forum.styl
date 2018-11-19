@@ -653,15 +653,23 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
 
 .esForum_cats_cat .forum-description
   word-break: break-word;
+  color: hsl(0, 0%, 40%);
+  margin-bottom: 3px; /* to the notfs settings dropdown below */
 
 .forum-table
   & > tbody > tr > td:first-child
     width: 45%; // or sometimes 80-90% wide
+    // This looks more balanced — but line-breaks topic titles slightly more often, on small screens.
+    @media (min-width: 1200px)
+      width: 50%;
 
   .topic-title.icon-pin:before
     margin: 0 4px 0 0;
 
   .topic-title
+    color: hsl(0, 0%, 25%);
+    font-size: 15px;
+
     [class^="icon-"]:before, [class*=" icon-"]:before
       margin: 0 4px 0 0;
       font-size: 95%;
@@ -676,10 +684,15 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
       margin: 0 6px 0 0;
       padding-left: 2px;
       font-weight: bold;
+      top: 1px;
+      position: relative;
 
     .icon-check-empty:before
       position: relative;
       top: 1px;
+
+    .icon-idea:before
+      font-size: 106%;
 
     .icon-pin:before,
     .icon-ok-circled-empty:before
@@ -693,14 +706,27 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
       font-size: 105%;
 
 
+.s_F_Cs_C_Ntfs
+  $color = hsl(0, 0%, 57%);
+  color: $color;
+  font-style: italic;
+  .dw-notf-level
+    border: none;
+    padding: 0;
+    vertical-align: baseline;
+    color: $color;
+
+
 .forum-table > tbody > tr > td {
-  padding: 15px 5px 10px 8px; /* 8x paddin-left aligns w/ row header */
+  padding: 15px 20px 16px 8px; /* 8x paddin-left aligns w/ row header */
 }
 
-.forum-table .forum-title-wrap {
-  font-size: 17px;
-  margin: 5px 10px 9px 0;
-}
+.forum-table .forum-title-wrap
+  font-size: 19px;
+  margin: 3px 10px 5px 0;
+  .forum-title
+    font-weight: bold;
+    color: hsl(0, 0%, 23%);
 
 .DW.DW .forum-table td {
   background: none; /* cancel Twitter Bootstrap */

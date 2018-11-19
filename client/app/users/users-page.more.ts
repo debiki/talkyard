@@ -382,7 +382,7 @@ const AvatarAboutAndButtons = createComponent({
     const uploadAvatarBtnText = user.avatarMediumHashPath ? t.upp.ChangePhoto : t.upp.UploadPhoto;
     const avatarMissingClass = user.avatarMediumHashPath ? '' : ' esMedAvtr-missing';
 
-    const anyUploadPhotoBtn = isGone || isGuest(user) || !isMe && !isStaff(me) ? null :
+    const anyUploadPhotoBtn = isGone || user.isGroup || isGuest(user) || !isMe && !isStaff(me) ? null :
         r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:

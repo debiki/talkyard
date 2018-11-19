@@ -348,7 +348,12 @@ interface PagePostNrId {
 
 interface MyPageData {
   dbgSrc?: string;
-  rolePageSettings: PageUserSettings;
+  pageId: PageId;
+  // The user's own notification preference, for this page. Hen can change this setting.
+  myPageNotfPref?: PageNotfPref;
+  // Notification preferences, for the groups one is a member of, for this page. The user cannot change
+  // these prefs. Only staff or a group manager, can do that.
+  groupsPageNotfPrefs: PageNotfPref[];
   readingProgress?: ReadingProgress;
   votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
   unapprovedPosts: { [id: number]: Post };
@@ -361,7 +366,15 @@ interface MyPageData {
 }
 
 
-interface Myself {
+interface OwnPageNotfPrefs {
+  id?: UserId;
+  myDataByPageId?: { [id: string]: MyPageData };
+  myCatsTagsSiteNotfPrefs: PageNotfPref[];
+  groupsCatsTagsSiteNotfPrefs: PageNotfPref[];
+}
+
+
+interface Myself extends OwnPageNotfPrefs {
   dbgSrc?: string;
   id?: UserId;
   isGroup?: boolean; // currently always undefined (i.e. false)
@@ -434,17 +447,31 @@ interface PermsOnPage {
 }
 
 
-interface PageUserSettings {
-  notfLevel: NotfLevel;
+interface PageNotfPrefTarget {
+  pageId?: PageId;
+  pagesInCategoryId?: CategoryId;
+  wholeSite?: boolean;
 }
 
 
-enum NotfLevel {
+interface EffPageNotfPref extends PageNotfPrefTarget {
+  notfLevel?: PageNotfLevel;
+  inheritedNotfPref?: PageNotfPref;
+}
+
+
+interface PageNotfPref extends PageNotfPrefTarget {
+  memberId: UserId;
+  notfLevel: PageNotfLevel;
+}
+
+
+enum PageNotfLevel {
   EveryPostAllEdits = 9,
-  WatchingAll = 8,
+  EveryPost = 8,
   TopicProgress = 7,
   TopicSolved = 6,
-  WatchingFirst = 5,
+  NewTopics = 5,
   Tracking = 4,
   Normal = 3,
   Hushed = 2,
@@ -475,11 +502,6 @@ enum NotificationType {
   PostTagged = 6,   // Change id
 }
 
-
-interface NotfSubject {
-  tagLabel?: string;
-  pageId?: PageId;
-}
 
 
 interface ReadingProgress {
@@ -999,10 +1021,6 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   email: string;
   emailVerifiedAtMs?: WhenMs;
   // mailingListMode: undefined | true;  // default false  — later
-  // ----------  [REFACTORNOTFS]
-  emailForEveryNewPost: boolean;  // move these two to a single field in a separate pageNotfsPrefs obj,
-  notfAboutNewTopics?: boolean;   // that also incls all category and tags subscriptions?
-  // ----------
   hasPassword?: boolean;
   about?: string;
   country: string;
@@ -1379,7 +1397,7 @@ interface Settings {
 
 interface TagsStuff {
   tagsAndStats?: TagAndStats[];
-  myTagNotfLevels?: { [tagLabel: string]: NotfLevel };
+  myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
 }
 
 
@@ -1508,6 +1526,9 @@ interface ListDraftsResponse {
   pageTitlesById: { [pageId: string]: string };
 }
 
+interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
+  // Later: Category and group names, so can lookup ther names, for display.
+}
 
 
 // ----- Service worker messages  [sw]

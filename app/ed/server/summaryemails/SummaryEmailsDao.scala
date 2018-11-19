@@ -74,7 +74,7 @@ trait SummaryEmailsDao {
 
       COULD_OPTIMIZE // load all groups only once. Batch load perms. Use same tx as a bit below.
       val (authzCtx, groups) = readOnlyTransaction { tx =>
-        val groupIds = tx.loadGroupIds(member.briefUser)
+        val groupIds = tx.loadGroupIdsMemberIdFirst(member.briefUser)
         val permissions = tx.loadPermsOnPages()
         val authCtx = ForumAuthzContext(Some(member.briefUser), groupIds, permissions)
         val groups = groupIds.flatMap(allGroups.get)

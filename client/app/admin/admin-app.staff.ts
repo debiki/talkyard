@@ -303,11 +303,13 @@ const AdminAppComponent = createReactClass(<any> {
 
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
+        RedirAppend({ path: ar + 'groups', append: '/built-in' }),
         RedirAppend({ path: ar + 'review', append: '/all' }),
         RedirAppend({ path: ar + 'settings', append: '/legal' }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
+        Route({ path: ar + 'groups', render: () => GroupsTab(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
         Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
@@ -319,6 +321,7 @@ const AdminAppComponent = createReactClass(<any> {
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             settingsLink,
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
+            LiNavLink({ to: ar + 'groups', className: 'e_GrpsB' }, "Groups"),
             customizeLink,
             apiLink,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
@@ -327,6 +330,85 @@ const AdminAppComponent = createReactClass(<any> {
   }
 });
 
+
+
+function GroupsTab(childProps) {
+  const bp = '/-/admin/groups/';  // groups base path
+  return (
+      r.div({},
+        r.div({ className: 'dw-sub-nav' },
+          r.ul({ className: 'nav nav-pills' },
+            LiNavLink({ to: bp + 'built-in', className: 'e_BltInL' }, "Built-In"))),
+        r.div({ className: 's_A_Gs' },
+          Switch({},
+            Route({ path: bp + 'built-in', render: () => BuiltInGroupsPanel(childProps) }),
+            ))));
+}
+
+
+function BuiltInGroupsPanel(childProps) {
+  const currentSettings: Settings = childProps.currentSettings;
+  return (
+    r.div({},
+      r.h2({}, "Built-in trust level groups"),
+      r.p({}, "Members of your community start with trust level New Member, " +
+        "in the All Members group. " +
+        "Then, when they spend more and more time in this community, and write things others like, " +
+        "they advance to higher trust levels: first to Basic Member, then to Full Member, " +
+        "Trusted Member, and so on."),
+      r.p({}, "Lower trust levels are a bit restricted in what they're allowed to do. " +
+        "For example, new members may not post so many posts per day. These restrictions " +
+        "are lifted, for a member, when s/he advances to higher trust levels."),
+      r.p({}, "The groups below listed first, e.g. All Members and Full Members, include " +
+        "the groups listed further below. For example, the Basic Members " +
+        "group includes people in the Full Members and Trusted Members groups, too."
+        /*
+        "So, if you configure category notifciation preferences for Basic Members, " +
+        "that affects, among others, members of the Full Members and Trusted Members groups, " +
+        "and all other groups below, too."*/ ),
+      r.br(),
+      r.ul({},
+        r.li({},
+          r.a({ href: '/-/users/new_members' }, "All members"),
+          r.p({}, "Everyone with a user account here." + (
+            currentSettings.allowGuestLogin
+                ? " (Not guests though; guests don't have real accounts.)"
+                : ''))),
+        r.li({},
+          r.a({ href: '/-/users/basic_members' }, "Basic members"),  // [TLVLBSC]
+          r.p({}, "People who have spent a minimum amount of time, about ten minutes, " +
+              "reading different topics here.")),
+        r.li({},
+          r.a({ href: '/-/users/full_members' }, "Full members"),
+          r.p({},
+            "People who have posted something that another member liked; " +
+            "liked something themselves; and " +
+            "have spent one hour reading."))),
+      r.p({}, "Currently, there's no automatic promotion to these higher trust levels:"),
+      r.ul({},
+        r.li({},
+          r.a({ href: '/-/users/trusted_members' }, "Trusted members"),
+          r.p({}, "People who have posted many things others like, over a long period of time, " +
+            "like, half a year. And haven't done anything bad.")),
+        r.li({},
+          r.a({ href: '/-/users/regular_members' }, "Regular members"),
+          r.p({}, "Trusted members who visit often, like, many times per week. To some degree, " +
+            "you can rely on them to find and report inappropriate things new members might post.")),
+        r.li({},
+          r.a({ href: '/-/users/core_members' }, "Core members"),
+          r.p({}, "Manually appointed by admins. They, together with the staff, can shape the nature " +
+            "of the community, via Like and Unwanted votes. " +
+            "Will have limited moderation capabilities.")),
+        r.li({},
+          r.a({ href: '/-/users/moderators' }, "Staff"),
+          r.p({}, "Moderators and admins. Moderators can moderate posts and help people " +
+            "configure their settings properly. (But they cannot edit admin users' settings.)")),
+        r.li({},
+          r.a({ href: '/-/users/admins' }, "Admins"),
+          r.p({}, "Can do anything, including edit site settings, " +
+            "and add more admins and moderators.")),
+        )));
+}
 
 
 function OnlyForAdmins() {

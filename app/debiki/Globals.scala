@@ -80,6 +80,8 @@ object Globals {
 
   def isProd: Boolean = _isProd
 
+  def isDevOrTest: Boolean = !isProd
+
   /** One never changes from Prod to Dev or Test, or from Dev or Test to Prod, so we can safely
     * remember isProd, forever. (However, is-Dev and is-Test might change, depending on which
     * commands one types in the cli.)

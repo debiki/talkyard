@@ -618,30 +618,39 @@ class JsonMaker(dao: SiteDao) {
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
         restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
         permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
-        transaction: SiteTransaction): JsObject = {
+        tx: SiteTransaction): JsObject = {
 
     // Bug: If !isAdmin, might count [review tasks one cannot see on the review page]. [5FSLW20]
     val reviewTasksAndCounts =
-      if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
+      if (user.isStaff) tx.loadReviewTaskCounts(user.isAdmin)
       else ReviewTaskCounts(0, 0)
 
     // dupl line [8AKBR0]
-    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 20)
+    val notfsAndCounts = loadNotifications(user.id, tx, unseenFirst = true, limit = 20)
 
-    val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
+    val ownIdAndGroupIds = tx.loadGroupIdsMemberIdFirst(user)
+
+    COULD_OPTIMIZE // could cache this, unless on the user's profile page (then want up-to-date info)?
+    // Related code: [6RBRQ204]
+    val ownCatsTagsSiteNotfPrefs = tx.loadNotfPrefsForMemberAboutCatsTagsSite(ownIdAndGroupIds)
+    val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == user.id)
+    val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != user.id)
+
+    val (pageNotfPrefs: Seq[PageNotfPref], votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>
-        val rolePageSettings = user.anyMemberId.map({ userId =>
-          val notfLevels = transaction.loadPageNotfLevels(userId, pageId = pageId,
-            // Per category notfs not impl [7KBR2AF5]  [REFACTORNOTFS]
-            categoryId = None)
-          pageNotfLevelsToJson(notfLevels)
-        }) getOrElse JsEmptyObj
-        val votes = votesJson(user.id, pageId, transaction)
+        COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
+        val pageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, ownIdAndGroupIds)
+        SECURITY // minor: filter out prefs for cats one may not access...  [7RKBGW02]
+        SECURITY // Ensure done when generating notfs.
+
+        val votes = votesJson(user.id, pageId, tx)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
-          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
-        (rolePageSettings, votes, postsJson, postAuthorsJson)
-      } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
+          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, tx)
+
+        (pageNotfPrefs, votes, postsJson, postAuthorsJson)
+      } getOrElse (
+          Nil, JsEmptyObj, JsEmptyObj, JsArray())
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
@@ -651,15 +660,17 @@ class JsonMaker(dao: SiteDao) {
         ThreatLevel.HopefullySafe
     }
 
-    val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
+    val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(user.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
-    val userDataByPageId = anyPageId match {
+    val ownDataByPageId = anyPageId match {
       case None => Json.obj()
       case Some(pageId) =>
         Json.obj(pageId ->
-          Json.obj(
-            "rolePageSettings" -> rolePageSettings,  // [REFACTORNOTFS] rename to pageNotfSettings?
+          Json.obj(  // MyPageData
+            "pageId" -> pageId,
+            "myPageNotfPref" -> pageNotfPrefs.find(_.peopleId == user.id).map(JsPageNotfPref),
+            "groupsPageNotfPrefs" -> pageNotfPrefs.filter(_.peopleId != user.id).map(JsPageNotfPref),
             "readingProgress" -> anyReadingProgressJson,
             "votes" -> votes,
             // later: "flags" -> JsArray(...) [7KW20WY1]
@@ -708,11 +719,13 @@ class JsonMaker(dao: SiteDao) {
       "restrictedTopicsUsers" -> restrictedTopicsUsers,
       "restrictedCategories" -> restrictedCategories,
       "closedHelpMessages" -> JsObject(Nil),
-      "myDataByPageId" -> userDataByPageId,
+      "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
+      "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
+      "myDataByPageId" -> ownDataByPageId,
       "marksByPostId" -> JsObject(Nil))
 
     if (user.isAdmin) {
-      val siteSettings = transaction.loadSiteSettings()
+      val siteSettings = tx.loadSiteSettings()
       json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
     }
 
@@ -1342,15 +1355,6 @@ object JsonMaker {
   }
 
 
-  private def pageNotfLevelsToJson(notfLevels: PageNotfLevels): JsObject = {
-    Json.obj(
-      "notfLevel" -> JsNumber(notfLevels.effectiveNotfLevel.getOrElse(NotfLevel.Normal).toInt), // remove?
-      "pageNotfLevel" -> JsNumberOrNull(notfLevels.forPage.map(_.toInt)),
-      "categoryNotfLevel" -> JsNumberOrNull(notfLevels.forCategory.map(_.toInt)),
-      "siteNotfLevel" -> JsNumberOrNull(notfLevels.forWholeSite.map(_.toInt)))
-  }
-
-
   def makeReadingProgressJson(readingProgress: ReadingProgress): JsValue = {
     Json.obj(
       "lastViewedPostNr" -> readingProgress.lastViewedPostNr,
@@ -1830,6 +1834,17 @@ object JsX {
       "title" -> JsString(draft.title),
       "text" -> JsString(draft.text))
   }
+
+
+  def JsPageNotfPref(notfPref: PageNotfPref): JsObject = {
+    Json.obj(  // PageNotfPref
+      "memberId" -> notfPref.peopleId,
+      "notfLevel" -> notfPref.notfLevel.toInt,
+      "pageId" -> notfPref.pageId,
+      "pagesInCategoryId" -> notfPref.pagesInCategoryId,
+      "wholeSite" -> notfPref.wholeSite)
+  }
+
 
   def JsApiSecret(apiSecret: ApiSecret): JsObject = {
     Json.obj(

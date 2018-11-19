@@ -292,7 +292,7 @@ case object User {
   // or just: DeactivatedOrDeletedUserId = 9 ?
 
   // Can talk with, and can listen to notifications. But 1..9 = special. And -X = guests.
-  val LowestNormalMemberId: Int = Group.EveryoneId
+  val LowestNormalMemberId: Int = Group.EveryoneId  // [S7KPWG42]
 
   /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
   val LowestTalkToMemberId: Int = Group.EveryoneId  // or 9, same as anonymous users?
@@ -533,7 +533,7 @@ sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant
         //  Fellow = one single member (ok for both men and women, esp. in the context of membership)
         // So, rename e.g. MemberOrGroup to GroupOrFellow, and ... many many other things.
 
-        // Even even better?
+        // Even even better? [pps]
         //  Participants = one or many Participant:s   <—  this yes, abbrev pps and ppt in constr names
         //  Participant = Guest or Member
         //  Member = User Or Group
@@ -1018,13 +1018,11 @@ case class AboutMemberPrefs(
   fullName: Option[String],
   username: String,
   emailAddress: String,
-  summaryEmailIntervalMins: Option[Int],   // REFACTOR break out to EmailPrefs
+  summaryEmailIntervalMins: Option[Int],   // REFACTOR break out to EmailPrefs [REFACTORNOTFS]
   summaryEmailIfActive: Option[Boolean],   //
   about: Option[String],
   location: Option[String],
-  url: Option[String],
-  // This should be on separate obj / MembersAllNotfsPrefs  [REFACTORNOTFS]
-  siteNotfLevel: NotfLevel = NotfLevel.Normal) {
+  url: Option[String]) {
 
   require(!fullName.exists(_.trim.isEmpty), "DwE4FUKW049")
   require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
@@ -1047,9 +1045,7 @@ case class AboutGroupPrefs(
   fullName: Option[String],
   username: String,
   summaryEmailIntervalMins: Option[Int],
-  summaryEmailIfActive: Option[Boolean],
-  // This should be on separate obj / MembersAllNotfsPrefs  [REFACTORNOTFS]
-  siteNotfLevel: NotfLevel = NotfLevel.Normal) {
+  summaryEmailIfActive: Option[Boolean]) {
 
   require(!fullName.exists(_.trim.isEmpty), "EdE05KFB521")
   require(groupId >= User.LowestNonGuestId, "DwE56KX2")
@@ -1173,7 +1169,7 @@ case class Group(
 
 
 object Group {
-  REFACTOR // move to object User, rename User to Participant?
+  REFACTOR // move to object User, rename User to Participant? [pps]
 
   /** Includes not-logged-in people (a.k.a. strangers) and guests, and all members. */
   val EveryoneId = 10
@@ -1597,7 +1593,7 @@ case class UserStats(
     }
 
 
-  def meetsBasicMemberRequirements: Boolean = {
+  def meetsBasicMemberRequirements: Boolean = {   // [TLVLBSC]
     // For now. Later, add a site-settings param, and compare with its config values.
     COULD // break out constants
     numDiscourseTopicsEntered >= 4 &&
@@ -1609,6 +1605,11 @@ case class UserStats(
   def meetsFullMemberRequirements: Boolean = {
     // Based on Discourse, https://meta.discourse.org/t/what-do-user-trust-levels-do/4924/5.
     COULD // break out constants
+    ASTROTURFING // only count Likes from full members. Not from other New or Basic members.
+    // But how do that, in a code wise simple, and performance effective way? Because might
+    // need to review and update the like counts, when another member advances to Full Member.
+    // Or would need to lookup and investigate all likes this member has gotten, every now and when.
+    // A GRAPH_DATABASE would do that easily, right.
     numDiscourseTopicsEntered >= 20 &&
       numDiscourseRepliesRead >= 100 &&
       numSecondsReading >= 3600 &&

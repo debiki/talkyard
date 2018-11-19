@@ -169,22 +169,27 @@ var t_pt_BR: TalkyardTranslations = t = {
   // Notification levels.
 
   nl: {
-    WatchingAll: "Observando Tudo",
-    // MISSING:
-    WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
-    // MISSING:
-    WatchingAllTopic: "You'll be notified of all new replies in this topic.",
+    EveryPost: "Observando Tudo",   // MISSING renamed from "Watching All" to "Every Post"
+    EveryPostInTopic: "You'll be notified of all new replies in this topic.",  // MISSING
+    EveryPostInCat: "You'll be notified of all new topics and replies, in this category",  // MISSING
+    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and every post in those topics",  // MISSING
+    EveryPostWholeSite: "You'll be notified of all new topics and replies, anywhere",  // MISSING
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
-    WatchingFirst: "Observando o Primeiro",
-    WatchingFirstTag: "You'll be notified of new topics with this tag",  // MISSING
+    NewTopics: "Observando o Primeiro",   // MISSING renamed "Watching First" to "New Topics"
+    NewTopicsInCat: "You'll be notified of new topics in this category.",  // MISSING
+    NewTopicsWithTag: "You'll be notified of new topics with this tag",  // MISSING
+    NewTopicsWholeSite: "You'll be notified of new topics, anywhere.",  // MISSING
 
     Tracking: "Rastreando",
 
     Normal: "Normal",
-    NormalTopic_1: "You'll be notified if someone replies to you or mentions your ",  // MISSING
-    NormalTopic_2: "@name",  // MISSING
+    NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +   // MISSING
+      "reply to a reply to you.",
+
+    Hushed: "Hushed",  // MISSING
+    HushedDescr: "You'll be notified only if someone talks directly to you.",  // MISSING
 
     Muted: "Silenciado",
     MutedTopic: "No notifications about this topic.",  // MISSING
