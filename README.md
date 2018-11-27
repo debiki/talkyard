@@ -358,16 +358,17 @@ This project looks like so:
      +-public/         <-- Some images and libs, plus JS and CSS that Gulp
      |                     has bundled and minified from the client/ dir above.
      |
-     +-images/         <-- Dockerfiles for all docker-compose containers
-     | +-web/          <-- Docker build stuff for the Nginx container
-     | | +-modules/
+     +-images/
+     | +-web/          <-- For building the 'web' Docker image, runs Nginx
+     | | +-Dockerfile
+     | | +-modules/    <-- Nginx modules
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
      | |   +-luajit/   <-- Lua
      | |   ...
      | |
-     | +-gulp/         <-- Container that runs Node.js and bundles JS and CSS
+     | +-gulp/         <-- An image that runs Node.js and bundles JS and CSS
      | |
-     | +-...           <-- More containers...
+     | +-...           <-- More images...
      |
      +-volumes/
      | +-rdb-data      <-- Mounted as a volume in the Postgres container

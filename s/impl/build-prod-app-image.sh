@@ -6,6 +6,7 @@ set -e # exit on any error.
 set -x
 
 version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
+repo=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 rm -fr target/docker-app-prod
 cp -a docker/app/Dockerfile.prod target/docker-app-prod/
@@ -39,6 +40,6 @@ mv app/conf app-conf
 # This readme is for the development repo. Create another one, if any, for prod.
 rm app/README.md
 
-docker build --tag=debiki/talkyard-app:latest --file Dockerfile.prod .
+docker build --tag=$repo/talkyard-app:latest --file Dockerfile.prod .
 
-echo "Image tag: debiki/talkyard-app:latest"
+echo "Image tag: $repo/talkyard-app:latest"
