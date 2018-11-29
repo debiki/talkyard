@@ -61,7 +61,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(settings.enableSso,
       "TyESSOINV", "Cannot invite people, when Single Sing-On enabled")
 
-    val toEmailAddresses = toEmailAddressesRaw.map(_.trim) filter { addr =>
+    val toEmailAddresses = toEmailAddressesRaw.map(_.trim.dropRightWhile(",;" contains _)) filter { addr =>
       // Skip comment lines. People might save their send-invites-to lists in a file with
       // comments clarifying why someone gets added to a group, or something?
       addr.nonEmpty && addr.head != '#'
