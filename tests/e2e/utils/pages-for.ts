@@ -1123,7 +1123,9 @@ function pagesFor(browser) {
         let newName;
         api.topbar.openMyMenu();
         api.waitAndClick('.s_MM_StopImpB');
-        api.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
+        // Wait for page to reload:
+        api.waitForGone('.s_MMB-IsImp');  // first, page reloads: the is-impersonating mark, disappears
+        api.waitForVisible('.esMyMenu');  // then the page reappears
         do {
           newName = api.topbar.getMyUsername();
         }
@@ -1197,11 +1199,15 @@ function pagesFor(browser) {
         api.waitForGone(api.topbar.otherNotfsClass);
       },
 
-      openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
+      openNotfToMe: function(options: { waitForNewUrl?: boolean } = {}) {
+        api.topbar.openLatestNotf(options);
+      },
+
+      openLatestNotf: function(options: { waitForNewUrl?: boolean, toMe?: true } = {}) {
         api.topbar.openMyMenu();
         api.rememberCurrentUrl();
-        api.waitAndClickFirst('.s_MM .dropdown-menu .esNotf-toMe');
-        if (options && options.waitForNewUrl !== false) {
+        api.waitAndClickFirst('.s_MM .dropdown-menu ' + (options.toMe ? '.esNotf-toMe' : '.esNotf'));
+        if (options.waitForNewUrl !== false) {
           api.waitForNewUrl();
         }
       },
@@ -2187,6 +2193,11 @@ function pagesFor(browser) {
         api.assertTextMatches('.esForum_catsDrop', categoryName);
       },
 
+      setCatNrNotfLevel: (categoryNr: number, notfLevel: PageNotfLevel) => {
+        api.waitAndClickNth('.dw-notf-level', categoryNr);
+        api.notfLevelDropdown.clickNotfLevel(notfLevel);
+      },
+
       assertCategoryNotFoundOrMayNotAccess: function() {
         api.assertAnyTextMatches('.dw-forum', 'EdE0CAT');
       }
@@ -2464,11 +2475,23 @@ function pagesFor(browser) {
         api.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
       },
 
+      openMetabarIfNeeded: () => {
+        if (!browser.isVisible('.esMB_Dtls_Ntfs_Lbl')) {
+          api.metabar.openMetabar();
+        }
+      },
+
       chooseNotfLevelWatchAll: () => {
         api.waitAndClick('.dw-notf-level');
         api.waitAndClick('.e_NtfAll');
         api.waitForGone('.e_NtfAll');
-      }
+      },
+
+      setPageNotfLevel: (notfLevel: PageNotfLevel) => {
+        api.metabar.openMetabarIfNeeded();
+        api.waitAndClick('.dw-notf-level');
+        api.notfLevelDropdown.clickNotfLevel(notfLevel);
+      },
     },
 
 
@@ -3087,6 +3110,11 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
+      openNotfPrefsFor: function(who: string, origin?: string) {
+        api.go((origin || '') + `/-/users/${who}/preferences/notifications`);
+        api.waitUntilLoadingOverlayGone();
+      },
+
       openDraftsEtcFor: function(who: string, origin?: string) {
         api.go((origin || '') + `/-/users/${who}/drafts-etc`);
         api.waitUntilLoadingOverlayGone();
@@ -3311,7 +3339,7 @@ function pagesFor(browser) {
         }
       },
 
-      preferences: {
+      preferences: {  // RENAME to prefs
         switchToEmailsLogins: function() {
           api.waitAndClick('.s_UP_Prf_Nav_EmLgL');
           api.waitForVisible('.s_UP_EmLg_EmL');
@@ -3352,6 +3380,7 @@ function pagesFor(browser) {
           setCheckbox('#sendSummaryEmails', enabled);
         },
 
+        // ---  Shuld use notifications.setSiteNotfLevel instead
         setNotfsForEachNewPost: function() {
           api.waitAndClick('.dw-notf-level');
           api.waitAndClick('.e_NtfAll');
@@ -3369,6 +3398,7 @@ function pagesFor(browser) {
           api.waitAndClick('.e_NtfNml');
           api.waitForGone('.e_NtfNml');
         },
+        // ---  / Shuld use notifications.setSiteNotfLevel instead
 
         clickChangePassword: function() {
           api.waitAndClick('.s_UP_Prefs_ChangePwB');
@@ -3384,6 +3414,13 @@ function pagesFor(browser) {
           api.waitAndClick('#e2eUP_Prefs_SaveB');
         },
         // ---- /END should be wrapped in `about { .. }`.
+
+        notfs: {
+          setSiteNotfLevel: (notfLevel: PageNotfLevel) => {
+            api.waitAndClick('.dw-notf-level');
+            api.notfLevelDropdown.clickNotfLevel(notfLevel);
+          }
+        },
 
         privacy: {
           setHideActivityForStrangers: function(enabled: boolean) {
@@ -3545,6 +3582,14 @@ function pagesFor(browser) {
       goToUser: function(member: Member | UserId, origin?: string) {
         const userId = _.isNumber(member) ? member : member.id;
         api.go((origin || '') + `/-/admin/users/id/${userId}`);
+      },
+
+      goToGroupsBuiltIn: function(origin?: string) {
+        api.go((origin || '') + '/-/admin/groups');
+      },
+
+      switchToGroupsBuiltIn: function(origin?: string) {
+        api.waitAndClick('.e_GrpsB');
       },
 
       goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
@@ -3869,6 +3914,10 @@ function pagesFor(browser) {
           api.waitAndClick('.e_ToggleModB');
           api.waitForVisible('.e_Mod-No');
         },
+
+        startImpersonating: function() {
+          api.waitAndClick('#e2eA_Us_U_ImpersonateB');
+        },
       },
 
       users: {
@@ -3997,6 +4046,13 @@ function pagesFor(browser) {
             api.waitAndClick('.s_AA_Us_Inv_SendB');
           },
         }
+      },
+
+      groups: {
+        openTrustedMembersGroup: () => {
+          api.waitAndClick('.e_TrstdMbsL');
+          api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
+        },
       },
 
       apiTab: {
@@ -4255,6 +4311,45 @@ function pagesFor(browser) {
     },
 
 
+    notfLevelDropdown: {
+      clickNotfLevel: (notfLevel: PageNotfLevel) => {
+        switch (notfLevel) {
+          case c.TestPageNotfLevel.EveryPost:
+            api.waitAndClick('.e_NtfAll');
+            api.waitForGone('.e_NtfAll');
+            break;
+          case c.TestPageNotfLevel.TopicProgress:
+            die('unimpl');
+            break;
+          case c.TestPageNotfLevel.TopicSolved:
+            die('unimpl');
+            break;
+          case c.TestPageNotfLevel.NewTopics:
+            api.waitAndClick('.e_NtfFst');
+            api.waitForGone('.e_NtfFst');
+            break;
+          case c.TestPageNotfLevel.Tracking:
+            die('unimpl');
+            break;
+          case c.TestPageNotfLevel.Normal:
+            api.waitAndClick('.e_NtfNml');
+            api.waitForGone('.e_NtfNml');
+            break;
+          case c.TestPageNotfLevel.Hushed:
+            api.waitAndClick('.e_NtfHsh');
+            api.waitForGone('.e_NtfHsh');
+            break;
+          case c.TestPageNotfLevel.Muted:
+            api.waitAndClick('.e_NtfMtd');
+            api.waitForGone('.e_NtfMtd');
+            break;
+          default:
+            die('e2e bug');
+        }
+      },
+    },
+
+
     serverErrorDialog: {
       waitForJustGotSuspendedError: function() {
         api.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
@@ -4368,6 +4463,12 @@ function pagesFor(browser) {
         if (browser.isVisible('#esThisbarColumn')) {
           api.contextbar.close();
         }
+      },
+
+      createCategory: (ps: { name: string }) => {
+        api.forumButtons.clickCreateCategory();
+        api.categoryDialog.fillInFields({ name: ps.name });
+        api.categoryDialog.submit();
       },
 
       createAndSaveTopic: function(data: { title: string, body: string, type?: PageRole,

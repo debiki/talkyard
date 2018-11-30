@@ -186,12 +186,13 @@ function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubject
 }
 
 
-/** Doesn't count all emails, only the last 10? so after many emails sent, becomes useless.
+/** Doesn't count all emails, only the last 15? so after many emails sent, becomes useless.
  */
 function countLastEmailsSentTo(siteId: SiteId, email: string): number {
   const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
     '&siteId=' + siteId + '&timeoutMs=1000');
   const lastEmails = JSON.parse(response.body);
+  dieIf(lastEmails.length >= 14, 'TyE2ABKT0', "Too many emails, e2e test won't work  [R2AB067]");
   return lastEmails.length;
 }
 

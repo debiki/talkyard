@@ -64,7 +64,7 @@ describe("impersonate", () => {
   it("... and clicks Impersonate", () => {
     owen.topbar.assertMyUsernameMatches(owen.username);
     owen.rememberCurrentUrl();
-    owen.waitAndClick('#e2eA_Us_U_ImpersonateB');
+    owen.adminArea.user.startImpersonating();
     owen.waitForNewUrl();
   });
 

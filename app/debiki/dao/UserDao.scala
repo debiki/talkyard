@@ -1613,7 +1613,7 @@ trait UserDao {
       errorCode + "-ISBTI", s"May not $mayNotWhat for special built-in users")
 
     readWriteTransaction { tx =>
-      val me = tx.loadTheMember(byWho.id)
+      val me = tx.loadTheUser(byWho.id) // [2ABKF057]  later: tx.loadTheMember(byWho.id)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
 

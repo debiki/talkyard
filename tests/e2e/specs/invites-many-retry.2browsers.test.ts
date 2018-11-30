@@ -86,8 +86,9 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
 
   it("He sends invites to addr1 and addr2, and spaces trimmed and #comments skipped [TyT2BR057]", () => {
     owensBrowser.adminArea.users.invites.clickSendInvite();
+    // Trailing comma and ; should be ignored.
     owensBrowser.inviteDialog.typeAndSubmitInvite(
-        `\n${addr1Accepts}\n\n   ${addr2Retry}  \n#ignored\n  # also ignored  \n\n`,
+        `\n${addr1Accepts}\n\n   ${addr2Retry},;  \n#ignored\n  # also ignored  \n\n`,
         { numWillBeSent: 2 });
   });
 

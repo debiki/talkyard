@@ -308,7 +308,8 @@ export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPr
       // This notf level is inherited from a parent category, or from a group one is in.
       // Add a bit text that explains this — so people understand why this setting
       // is in use, or has the text "Default", although they didn't do anything themselves.
-      explainWhyInherited = r.p({}, makeWhyInheritedExpl(notfLevel, effPref, store));
+      explainWhyInherited = r.div({ className: 's_NotfPrefDD_WhyInh' },
+          makeWhyInheritedExpl(notfLevel, effPref, store));
     }
   }
 

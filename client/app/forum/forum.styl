@@ -45,11 +45,10 @@ html.js:not(.dw-react-started)
 .esForumIntro_edit,
 .esForumIntro_close
   display: inline-block;
-  padding: 2px 0 8px 12px;
+  padding: 2px 0 8px;
   position: relative;
   left: -3px;
   color: hsl($uiHue, 77%, 42%);
-  font-weight: bold;
   font-size: 14px;
   .icon-cancel:before
     opacity: 0.8;
@@ -70,7 +69,9 @@ html.js:not(.dw-react-started)
   font-size: $postFontSize;
 
 .esForumIntro_edit
+  font-weight: bold;
   padding-left: 4px;
+  margin-right: 15px;
 
 .dw-hide-forum-intro .esForumIntro
   display: none;

@@ -59,11 +59,25 @@ const TestPostType = {  // sync with real code [26BKA01]
   MetaMessage: 31,
 };
 
+const TestPageNotfLevel = {
+  EveryPostAllEdits: 9,
+  EveryPost: 8,
+  TopicProgress: 7,
+  TopicSolved: 6,
+  NewTopics: 5,
+  Tracking: 4,
+  Normal: 3,
+  Hushed: 2,
+  Muted: 1,
+}
+
+
 export = {
   TestPageRole,
+  TestPageNotfLevel,
+  TestPostType,
   TestTrustLevel,
   TestDraftStatus,
-  TestPostType,
   MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]
   TitleNr: 0,
   BodyNr: 1,

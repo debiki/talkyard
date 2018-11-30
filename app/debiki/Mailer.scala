@@ -459,8 +459,8 @@ class Mailer(
               s"Appending e2e test email to: ${email.sentTo}, subject: ${email.subject} [DwM2PK3]")
           val oldEmails = promise.future.value.get.toOption getOrDie "EdE4FSBBK2"
           val moreEmails = oldEmails :+ email
-          val lastTen = moreEmails.takeRight(10)
-          e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(lastTen))
+          val last15 = moreEmails.takeRight(15)  // [R2AB067]
+          e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(last15))
         }
         else {
           promise.success(Vector(email))

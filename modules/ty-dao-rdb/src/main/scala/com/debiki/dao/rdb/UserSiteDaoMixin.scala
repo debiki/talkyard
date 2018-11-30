@@ -167,24 +167,31 @@ trait UserSiteDaoMixin extends SiteTransaction {
         adminsOnly: Boolean = false, modsOnly: Boolean = false, staffOnly: Boolean = false,
         builtInGroup: Option[UserId] = None): Seq[User] = {
 
+    import Group.{AdminsId, ModeratorsId => ModsId}
+
     // Currently no good reason to load everyone incl *guests*.
     unimplementedIf(builtInGroup is Group.EveryoneId,
       "Loading Everyone group members [TyE2ABKR05]")
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+    val isStaffTest = s"(u.is_admin or u.is_moderator) and u.user_id not in ($AdminsId, $ModsId)"
 
-    import Group.{AdminsId, ModeratorsId => ModsId}
     val conditions =
       // <> AdminsId means don't-load-the-Admins-*group*.
       if (adminsOnly) s"u.is_admin and u.user_id <> $AdminsId"
       else if (modsOnly)  s"u.is_moderator and u.user_id <> $ModsId"
-      else if (staffOnly) s"(u.is_admin or u.is_moderator) and u.user_id not in ($AdminsId, $ModsId)"
+      else if (staffOnly) isStaffTest
       else {
         val groupId = builtInGroup getOrDie "TyE3QKB05W"
         val trustLevel = TrustLevel.fromBuiltInGroupId(groupId) getOrElse {
           return Nil
         }
         values.append(trustLevel.toInt.asAnyRef)
+        // Trust level NewMembers means the All Members group, which includes all members,
+        // also basic members, full members, ect, and staff. The group has a different name
+        // ("All Members") from the trust level ("New Members"), because it'd be confusing
+        // if a group named New Members also included e.g. long time full members.
+        // no
         // OLD COMMENT, find newer thoughts if you search for [ALLMEMBS]:
         // This:  "Hello @new_members"  and "Hi @basic_members" sounds as if full members
         // and trusted members and higher, are *not* supposed to be included.
@@ -199,7 +206,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
                             // Instead, rename New Members to All Members [ALLMEMBS]  [MENTIONALIAS]
                             // Then it's obvious that it incls all higher levels.
                             // And somewhat ok that a "Full member" is also a "Basic member", right.
-        s"coalesce(u.locked_trust_level, u.trust_level) $eqOrGte ?"
+        s"coalesce(u.locked_trust_level, u.trust_level) $eqOrGte ?  or  ($isStaffTest)"
       }
 
     val query = s"""

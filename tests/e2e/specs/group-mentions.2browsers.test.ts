@@ -233,14 +233,20 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   // ----- @core_members
 
   it("Maria mentions @core_members (which doesn't include @staff)", () => {
-    lastComment = "Hi @core_members: Corax";
-    numExpectedEmailsTotal += 1;
+    lastComment = "Hi @core_members: Corax and the-2-staff-still-subscribed";
+    numExpectedEmailsTotal += 1 + 2;
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
   it("... Corax get notified via email", () => {
-    server.waitUntilLastEmailMatches(
-      siteId, corax.emailAddress, [topicTitle, lastComment], browser);
+    const titleAndComment = [topicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, corax.emailAddress, titleAndComment, browser);
+  });
+
+  it("... and the staff members — they're incl in the Core Members group (but Mons unsubd)", () => {
+    const titleAndComment = [topicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
   });
 
   it("... and no one else", () => {
@@ -251,15 +257,21 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
 
   // ----- @regular_members
 
-  it("Maria mentions @regular_members (which includes @core_members)", () => {
+  it("Maria mentions @regular_members (which includes @core_members and staff)", () => {
     lastComment = "Hi @regular_members: Regina and Corax";
-    numExpectedEmailsTotal += 2;
+    numExpectedEmailsTotal += 2 + 2;
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
   it("... Regina and Corax get notified via email", () => {
     server.waitUntilLastEmailMatches(siteId, regina.emailAddress, [topicTitle, lastComment], browser);
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
+  });
+
+  it("... and the three staff members", () => {
+    const titleAndComment = [topicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
   });
 
   it("... and no one else", () => {
@@ -271,8 +283,8 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   // ----- @trusted_members
 
   it("Maria mentions @trusted_members (which includes @regular_members and @core_members)", () => {
-    lastComment = "Hi @trusted_members: Trillian, Regina and Corax";
-    numExpectedEmailsTotal += 3;
+    lastComment = "Hi @trusted_members: Trillian, Regina and Corax, and staff";
+    numExpectedEmailsTotal += 3 + 2;
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
@@ -280,6 +292,12 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, [topicTitle, lastComment], browser);
     server.waitUntilLastEmailMatches(siteId, regina.emailAddress, [topicTitle, lastComment], browser);
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
+  });
+
+  it("... and the three staff members, as usual", () => {
+    const titleAndComment = [topicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
   });
 
   it("... and no one else", () => {
@@ -292,7 +310,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
 
   it("Maria mentions @full_members (which includes higher trust levels)", () => {
     lastComment = "Hi all @full_members, wow so many";
-    numExpectedEmailsTotal += 4;  // three trusted members (Mons = no email) and Michael
+    numExpectedEmailsTotal += 4 + 2;  // three trusted members and Michael, + 3-1 staff
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
@@ -303,29 +321,46 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
   });
 
+  it("... and the staff except for Mons", () => {
+    const titleAndComment = [topicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
+  });
+
   it("... and no one else — not Maria, although she's in @full_members: she's the poster", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  const monsTopicTitle = 'monsTopicTitle';
+  const modyasTopicTitle = 'modyasTopicTitle';
   const monsFullMemberstMention = 'Very much hello all @full_members';
 
-  it("Mons mentions full members", () => {
+  it("Mons leaves, Modya logs in", () => {
+    monsBrowser.topbar.clickLogout();
+    modyasBrowser.complex.loginWithPasswordViaTopbar(modya);
+  });
+
+  it("Modya mentions full members", () => {
     lastComment = monsFullMemberstMention;
-    numExpectedEmailsTotal += 5;
-    monsBrowser.complex.createAndSaveTopic({ title: monsTopicTitle, body: lastComment })
+    numExpectedEmailsTotal += 5   + 3 - 2;  // -2 = mons and modya
+    modyasBrowser.complex.createAndSaveTopic({ title: modyasTopicTitle, body: lastComment })
   });
 
   it("... now also Maria gets notified via email", () => {
-    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, [monsTopicTitle, lastComment], browser);
+    server.waitUntilLastEmailMatches(siteId, maria.emailAddress, [modyasTopicTitle, lastComment], browser);
   });
 
   it("... plus the other full members and up", () => {
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, [monsTopicTitle, lastComment], browser);
-    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, [monsTopicTitle, lastComment], browser);
-    server.waitUntilLastEmailMatches(siteId, regina.emailAddress, [monsTopicTitle, lastComment], browser);
-    server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [monsTopicTitle, lastComment], browser);
+    const titleAndComment = [modyasTopicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, regina.emailAddress, titleAndComment, browser);
+    server.waitUntilLastEmailMatches(siteId, corax.emailAddress, titleAndComment, browser);
+  });
+
+  it("... and one staff member: only Owen, because Mons unsubd, and Modya sent the message", () => {
+    const titleAndComment = [modyasTopicTitle, lastComment];
+    server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
   });
 
 

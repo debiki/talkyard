@@ -387,7 +387,7 @@ function BuiltInGroupsPanel(childProps) {
       r.p({}, "Currently, there's no automatic promotion to these higher trust levels:"),
       r.ul({},
         r.li({},
-          r.a({ href: '/-/users/trusted_members' }, "Trusted members"),
+          r.a({ href: '/-/users/trusted_members', className: 'e_TrstdMbsL' }, "Trusted members"),
           r.p({}, "People who have posted many things others like, over a long period of time, " +
             "like, half a year. And haven't done anything bad.")),
         r.li({},
