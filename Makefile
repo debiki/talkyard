@@ -33,7 +33,7 @@ endef
 
 # This'll be all Git submodule directories. If some are missing, need to git-clone them.
 git_modules := \
-  $(shell grep submodule .gitmodules | sed -r 's/^.submodule "([^"]+).*$$/\1/')
+  $(shell grep submodule .gitmodules | sed -r 's/^.submodule "([^"]+).*$$/\1\/.git/')
 
 git-subm-init-upd: $(git_modules)
 
@@ -50,7 +50,7 @@ node_modules: \
             #node_modules/react/umd/react.development.js \
             #node_modules/zxcvbn/dist/zxcvbn.js
 
-node_modules/.bin/gulp:
+node_modules/.bin/gulp: git-subm-init-upd
 	sudo s/d run --rm gulp yarn
 
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build?
@@ -134,15 +134,19 @@ db-cli:
 up: minified-asset-bundles
 	sudo s/d up -d
 	@echo
-	@echo "To tail logs, you can:  sudo s/d-logsf0"
+	@echo "Started. Now, tailing logs..."
 	@echo
+	@sudo s/d-logsf0
 
 tails: tail
-tail: up
+tail:
 	sudo s/d-logsf0
 
 restart:
 	sudo s/d-restart
+
+restart-web:
+	sudo s/d kill web ; sudo s/d start web ; sudo s/d-logsf0
 
 restart-web-app:
 	sudo s/d-restart-web-app
