@@ -1,5 +1,5 @@
 /* Makes Debiki's <iframe> behave like seamless=seamless iframes.
- * Copyright (c) 2013, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2013, 2017-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,20 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var d = { i: debiki.internal };
+/// <reference path="prelude.ts" />
 
 if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+  addEventListener('message', onMessage, false);
 
+  window.parent.postMessage(
+      JSON.stringify(['iframeInited', {}]),
+      eds.embeddingOrigin);
 
-addEventListener('message', onMessage, false);
-
-window.parent.postMessage(
-    JSON.stringify(['iframeInited', {}]),
-    eds.embeddingOrigin);
-
-if (eds.isInEmbeddedCommentsIframe)
-  syncDocSizeWithIframeSize();
-
+  if (eds.isInEmbeddedCommentsIframe)
+    syncDocSizeWithIframeSize();
+}
 
 function onMessage(event) {
   if (event.origin !== eds.embeddingOrigin)
@@ -135,6 +133,4 @@ function syncDocSizeWithIframeSize() {
   }
 }
 
-
-}
 // vim: fdm=marker et ts=2 sw=2 list

@@ -66,7 +66,7 @@ interface MayMayNot {
 }
 
 
-enum MagicAnchor {
+const enum MagicAnchor {
   ScrollToLatest = 1,
 }
 
@@ -100,7 +100,7 @@ interface FragAction {
 }
 
 
-enum FragActionType {
+const enum FragActionType {
   ScrollToPost = 11,
   ScrollToLatestPost = 12,
   ReplyToPost = 21,
@@ -172,7 +172,7 @@ interface PostToReview {
 }
 
 
-enum ReviewDecision {
+const enum ReviewDecision {
   // 1nnn = Accept.
   Accept = 1001,
   // 3nnn = Request changes.
@@ -193,14 +193,14 @@ interface Flag {
 }
 
 
-enum FlagType {
+const enum FlagType {
   Spam = 51,
   Inapt = 52,
   Other = 53,
 }
 
 
-enum DraftStatus {  // sync with test code [5ABXG20]
+const enum DraftStatus {  // sync with test code [5ABXG20]
   NotLoaded = 0,
   NothingHappened = 1,
   EditsUndone = 2,
@@ -215,7 +215,7 @@ enum DraftStatus {  // sync with test code [5ABXG20]
 }
 
 
-enum DraftType {
+const enum DraftType {
   Scratch = 1,
   Topic = 2,
   DirectMessage = 3,
@@ -286,7 +286,7 @@ interface Post {
 }
 
 
-enum PostType {   // sync with test code [26BKA01]
+const enum PostType {   // sync with test code [26BKA01]
   Normal = 1,
   Flat = 2,
   ChatMessage = 3,
@@ -298,7 +298,7 @@ enum PostType {   // sync with test code [26BKA01]
 }
 
 
-enum PostVoteType {
+const enum PostVoteType {
   Like = 41,
   Disagree = 42,
   Bury = 43,
@@ -307,7 +307,7 @@ enum PostVoteType {
 
 
 // Determines which write-post guidelines will be shown in the editor.
-enum WritingWhat {
+const enum WritingWhat {
   NewPage = 1,
   ReplyToOriginalPost = 2,
   ReplyToNotOriginalPost = 3,
@@ -466,7 +466,7 @@ interface PageNotfPref extends PageNotfPrefTarget {
 }
 
 
-enum PageNotfLevel {
+const enum PageNotfLevel {
   EveryPostAllEdits = 9,
   EveryPost = 8,
   TopicProgress = 7,
@@ -491,7 +491,7 @@ interface Notification {
 }
 
 
-enum NotificationType {
+const enum NotificationType {
   DirectReply = 1,
   Mention = 2,  // DirectMention
   // GroupMention =
@@ -541,14 +541,14 @@ interface Category {
 }
 
 
-enum IncludeInSummaries {
+const enum IncludeInSummaries {
   Default = 0,
   YesFeatured = 1,
   NoExclude = 3
 }
 
 
-enum TopicListLayout {
+const enum TopicListLayout {
   Default = 0,
   TitleOnly = 1,
   TitleExcerptSameLine = 2,
@@ -559,12 +559,12 @@ enum TopicListLayout {
 }
 
 
-enum CategoriesLayout {
+const enum CategoriesLayout {
   Default = 0,
 }
 
 
-enum ShowAuthorHow {
+const enum ShowAuthorHow {
   UsernameOnly = 1,
   UsernameThenFullName = 2,
   FullNameThenUsername = 3,  // the default
@@ -607,7 +607,7 @@ interface Topic {
 }
 
 
-enum TopicSortOrder {
+const enum TopicSortOrder {
   BumpTime = 1,
   CreatedAt = 2,
   ScoreAndBumpTime = 3,
@@ -615,7 +615,7 @@ enum TopicSortOrder {
 }
 
 
-enum TopTopicsPeriod {
+const enum TopTopicsPeriod {
   Day = 1,
   Week = 2,
   Month = 3,
@@ -651,7 +651,7 @@ interface Watchbar {
 }
 
 
-enum WatchbarSection {
+const enum WatchbarSection {
   SubCommunities = 1,
   RecentTopics = 2,
   ChatChannels = 3,
@@ -849,7 +849,7 @@ interface SettingsVisibleClientSide {
 }
 
 
-enum WidthLayout {
+const enum WidthLayout {
   Tiny = 1,
   Medium = 3,
 }
@@ -863,7 +863,7 @@ interface PagePath {
 }
 
 
-enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
+const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
   CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,
@@ -888,7 +888,7 @@ enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
 }
 
 
-enum PinPageWhere {
+const enum PinPageWhere {
   InCategory = 1,
   Globally = 3,
 }
@@ -918,7 +918,7 @@ interface SiteSection {
 }
 
 
-enum SiteStatus {
+const enum SiteStatus {
   NoAdmin = 1,
   Active = 2,
   ReadAndCleanOnly = 3,
@@ -982,7 +982,7 @@ interface BriefUser extends User {
 }
 
 
-enum AvatarSize {
+const enum AvatarSize {
   Tiny = 1, // the default
   Small = 2,
   Medium = 3,
@@ -1055,7 +1055,7 @@ interface MemberInclDetailsWithStats extends MemberInclDetails {
 }
 
 
-enum EditMemberAction {
+const enum EditMemberAction {
   SetEmailVerified = 1,
   SetEmailUnverified = 2,
 
@@ -1086,7 +1086,7 @@ interface UserLoginMethods {
 }
 
 
-enum TrustLevel {
+const enum TrustLevel {
   Stranger = 0,
   New = 1,
   Basic = 2,
@@ -1097,7 +1097,7 @@ enum TrustLevel {
 }
 
 
-enum ThreatLevel {
+const enum ThreatLevel {
   SuperSafe = 1,
   SeemsSafe = 2,
   HopefullySafe = 3,
@@ -1108,7 +1108,7 @@ enum ThreatLevel {
 
 
 
-enum LoginReason {
+const enum LoginReason {
   SignUp = 13,
   LoginToChat = 10,
   LoginToLike = 11,
@@ -1119,7 +1119,7 @@ enum LoginReason {
 }
 
 
-enum Presence {
+const enum Presence {
   Active = 1,
   Away = 2,
 }
@@ -1134,7 +1134,7 @@ interface Group {
 }
 
 
-enum Groups {
+const enum Groups {
   NoUserId = 0,
   EveryoneId = 10,
   NewMembersId = 11,
@@ -1293,14 +1293,14 @@ interface StorePatch {
 }
 
 
-enum ContribAgreement {
+const enum ContribAgreement {
   CcBy3And4 = 10,
   CcBySa3And4 = 40,
   CcByNcSa3And4 = 70,
   UseOnThisSiteOnly = 100
 }
 
-enum ContentLicense {
+const enum ContentLicense {
   CcBy4 = 10,
   CcBySa4 = 40,
   CcByNcSa4 = 70,
@@ -1414,7 +1414,7 @@ interface Host {
 }
 
 
-enum HostRole {
+const enum HostRole {
   Canonical = 1,
   Redirect = 2,
   Link = 3,
@@ -1422,7 +1422,7 @@ enum HostRole {
 }
 
 
-enum PricePlan {  // [4GKU024S]
+const enum PricePlan {  // [4GKU024S]
   Unknown = 0,
   NonCommercial = 1,
   Business = 2,
@@ -1534,7 +1534,7 @@ interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
 // ----- Service worker messages  [sw]
 
 
-enum SwDo {  // Service worker, do: ....
+const enum SwDo {  // Service worker, do: ....
   SubscribeToEvents = 1,
 }
 

@@ -33,7 +33,7 @@ var uploadsLinkRegex = /\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+)/;
 var uploadsRegexInTag = /(\<[^\<\>]+\s[a-z]+=['"])\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+['"][^\<\>]*\>)/;
 
 
-export function replaceLinks(md: any) {
+export function replaceLinks(md: any): void {
   // (Don't exit here if !eds.uploadsUrlPrefixCommonmark, because it changes "suddenly"
   // when rendering server side. [5YKF02])
 

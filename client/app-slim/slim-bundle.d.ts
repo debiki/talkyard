@@ -96,7 +96,9 @@ declare const FragActionHashScrollLatest;
 
 declare namespace ed {
   namespace editor {
-    var CdnLinkifyer;
+    namespace CdnLinkifyer {
+      function replaceLinks(md: any): void;
+    }
   }
 }
 

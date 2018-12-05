@@ -124,7 +124,6 @@ var slimJsFiles = [
       'client/third-party/get-set-cookie.js',
       'target/client/app-slim/actions/edit/edit.js',
       'target/client/app-slim/actions/reply.js',
-      'target/client/app-slim/if-in-iframe.js',
       //'target/client/app-slim/posts/monitor-reading-progress-unused.js',
       'target/client/app-slim/posts/resize.js',
       //'target/client/app-slim/posts/unread-unused.js',
