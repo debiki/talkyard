@@ -1,1 +1,1 @@
-../app/oop-methods.ts
+../app-slim/oop-methods.ts

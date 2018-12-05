@@ -1,1 +1,1 @@
-../app/rules.ts
+../app-slim/rules.ts

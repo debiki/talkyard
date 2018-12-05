@@ -1,1 +1,1 @@
-../app/widgets.ts
+../app-slim/widgets.ts

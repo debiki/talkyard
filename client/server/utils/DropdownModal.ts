@@ -1,1 +1,1 @@
-../../app/utils/DropdownModal.ts
+../../app-slim/utils/DropdownModal.ts

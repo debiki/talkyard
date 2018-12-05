@@ -1,1 +1,1 @@
-../../app/help/help.ts
+../../app-slim/help/help.ts

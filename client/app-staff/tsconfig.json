@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "removeComments": false,
+        "lib": ["es5", "es2015", "dom"],
+        "types": ["react", "react-dom", "lodash", "core-js"],
+        "outFile": "staff-typescript.js",
+        "sourceMap": true,
+        "inlineSources": true  // include source code in mapping file
+    },
+    "include": [
+        "**/*.ts",
+        "../app-slim/slim-bundle.d.ts",
+    ],
+    "exclude": [
+        "staff-bundle-already-loaded.d.ts",
+        "**/*.spec.ts",
+        "**/*.test.ts",
+    ]
+}

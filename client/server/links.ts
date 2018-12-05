@@ -1,1 +1,1 @@
-../app/links.ts
+../app-slim/links.ts

@@ -1,1 +1,1 @@
-../../app/page/page.ts
+../../app-slim/page/page.ts

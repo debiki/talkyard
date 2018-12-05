@@ -1,4 +1,4 @@
-/// <reference path="../../client/app/constants.ts" />
+/// <reference path="../../client/app-slim/constants.ts" />
 
 type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
 

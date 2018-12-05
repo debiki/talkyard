@@ -1,1 +1,1 @@
-../../app/page/metabar.ts
+../../app-slim/page/metabar.ts

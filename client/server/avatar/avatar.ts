@@ -1,1 +1,1 @@
-../../app/avatar/avatar.ts
+../../app-slim/avatar/avatar.ts

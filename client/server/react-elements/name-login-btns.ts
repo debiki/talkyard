@@ -1,1 +1,1 @@
-../../app/react-elements/name-login-btns.ts
+../../app-slim/react-elements/name-login-btns.ts

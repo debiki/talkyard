@@ -1,1 +1,1 @@
-../../app/topbar/topbar.ts
+../../app-slim/topbar/topbar.ts

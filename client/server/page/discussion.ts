@@ -1,1 +1,1 @@
-../../app/page/discussion.ts
+../../app-slim/page/discussion.ts

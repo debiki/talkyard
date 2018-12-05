@@ -55,8 +55,8 @@ node_modules/.bin/gulp: git-subm-init-upd
 
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build?
 # Sync with the languages in the /translations/ dir. [5JUKQR2]
+#  public/res/2d-bundle.min.js.gz // [SLIMTYPE]
 zipped_bundles:=\
-  public/res/2d-bundle.min.js.gz \
   public/res/ed-comments.min.js.gz \
   public/res/editor-bundle.min.js.gz \
   public/res/jquery-bundle.min.js.gz \
@@ -79,12 +79,15 @@ $(zipped_bundles): $@
 
 # ----- Clean (wip)
 
-clean:
-	@echo Delting:
+clean-bundles:
+	@echo Delting script and style bundles:
 	rm -f  public/res/*.js
 	rm -f  public/res/*.js.gz
 	rm -f  public/res/*.css
 	rm -fr public/res/translations/
+
+clean: clean-bundles
+	@echo Delting Scala things and other things:
 	rm -fr target/
 	rm -fr project/target/
 	rm -fr project/project/

@@ -1,1 +1,1 @@
-../../app/page/social-buttons.ts
+../../app-slim/page/social-buttons.ts

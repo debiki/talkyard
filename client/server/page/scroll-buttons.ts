@@ -1,1 +1,1 @@
-../../app/page/scroll-buttons.ts
+../../app-slim/page/scroll-buttons.ts

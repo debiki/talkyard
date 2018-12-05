@@ -1,4 +1,4 @@
-/// <reference path="../../client/app/translations.d.ts"/>
+/// <reference path="../../client/app-slim/translations.d.ts"/>
 
 // Note:
 // - If the first char in the field name is Uppercase, then the

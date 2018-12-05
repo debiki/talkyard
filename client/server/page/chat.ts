@@ -1,1 +1,1 @@
-../../app/page/chat.ts
+../../app-slim/page/chat.ts

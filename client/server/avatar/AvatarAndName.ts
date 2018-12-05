@@ -1,1 +1,1 @@
-../../app/avatar/AvatarAndName.ts
+../../app-slim/avatar/AvatarAndName.ts

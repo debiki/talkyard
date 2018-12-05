@@ -1,4 +1,7 @@
-/// <reference path="../app/model.ts" />
+/// <reference path="../app-slim/model.ts" />
+
+// This file isn't currently in use (2018-12-05). There is no service worker.  [sw]
+
 
 // Docs: https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
 // Read?: https://www.kollegorna.se/en/2017/06/service-worker-gotchas/

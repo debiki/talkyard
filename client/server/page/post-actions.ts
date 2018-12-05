@@ -1,1 +1,1 @@
-../../app/page/post-actions.ts
+../../app-slim/page/post-actions.ts

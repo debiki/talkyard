@@ -1,1 +1,1 @@
-../app/store-getters.ts
+../app-slim/store-getters.ts

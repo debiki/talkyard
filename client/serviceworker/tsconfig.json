@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "removeComments": false,
+        "lib": ["es5", "es2015", "dom"],  // dom: fetch() API related types
+        "types": ["core-js"],
+        "outFile": "ty-sw-typescript.js",
+        "sourceMap": true,
+        "inlineSources": true,  // include source code in mapping file
+    },
+    "include": [
+        "**/*.ts",
+    ],
+    "exclude": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+    ]
+}

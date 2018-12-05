@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "removeComments": false,
+        "lib": ["es5", "es2015", "dom"],
+        "types": ["react", "react-dom", "lodash", "core-js"],
+        "outFile": "more-typescript.js",
+        "sourceMap": true,
+        "inlineSources": true  // include source code in mapping file
+    },
+    "include": [
+        "**/*.ts",
+    ],
+    "exclude": [
+        "more-bundle-already-loaded.d.ts",
+        "**/*.spec.ts",
+        "**/*.test.ts"
+    ]
+}

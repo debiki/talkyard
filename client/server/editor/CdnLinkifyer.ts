@@ -1,1 +1,1 @@
-../../app/editor/CdnLinkifyer.ts
+../../app-slim/editor/CdnLinkifyer.ts

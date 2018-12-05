@@ -1,1 +1,1 @@
-../../app/page/arrows.ts
+../../app-slim/page/arrows.ts

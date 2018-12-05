@@ -1,1 +1,1 @@
-../../app/util/ExplainingDropdown.ts
+../../app-slim/util/ExplainingDropdown.ts

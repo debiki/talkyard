@@ -1,1 +1,1 @@
-../../app/utils/react-utils.ts
+../../app-slim/utils/react-utils.ts

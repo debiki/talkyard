@@ -1,1 +1,1 @@
-../app/me-getters.ts
+../app-slim/me-getters.ts

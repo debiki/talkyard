@@ -108,10 +108,10 @@ var slimJsFiles = [
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
       'node_modules/react-dom-factories/index.js',
-      'target/client/app/utils/calcScrollRectIntoViewCoords.js',
+      'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
       'client/third-party/bliss.shy.js',
-      'client/app/util/stupid-lightbox.js',
+      'client/app-slim/util/stupid-lightbox.js',
       'node_modules/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
@@ -122,18 +122,18 @@ var slimJsFiles = [
       'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
-      'target/client/app/actions/edit/edit.js',
-      'target/client/app/actions/reply.js',
-      'target/client/app/if-in-iframe.js',
-      //'target/client/app/posts/monitor-reading-progress-unused.js',
-      'target/client/app/posts/resize.js',
-      //'target/client/app/posts/unread-unused.js',
-      'target/client/app/utils/util.js',
-      'target/client/app/utils/util-browser.js',
+      'target/client/app-slim/actions/edit/edit.js',
+      'target/client/app-slim/actions/reply.js',
+      'target/client/app-slim/if-in-iframe.js',
+      //'target/client/app-slim/posts/monitor-reading-progress-unused.js',
+      'target/client/app-slim/posts/resize.js',
+      //'target/client/app-slim/posts/unread-unused.js',
+      'target/client/app-slim/utils/util.js',
+      'target/client/app-slim/utils/util-browser.js',
       'client/third-party/popuplib.js',
-      'target/client/app/login/login-popup.js',
+      'target/client/app-slim/login/login-popup.js',
       'target/client/slim-typescript.js',
-      'target/client/app/start-stuff.js'];
+      'target/client/app-slim/start-stuff.js'];
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
@@ -143,14 +143,15 @@ var moreJsFiles = [
       'node_modules/moment/min/moment.min.js',
       'target/client/more-typescript.js'];
 
-var _2dJsFiles = [
+/*
+var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]
   'client/third-party/jquery-scrollable.js',
   'client/third-party/jquery.browser.js',
-  'target/client/app/page/layout-threads.2d.js',
-  'target/client/app/page/resize-threads.2d.js',
-  'target/client/app/utterscroll/utterscroll-init-tips.js',
-  'client/app/utterscroll/utterscroll.js',
-  'target/client/2d-typescript.js'];
+  'target/client/app-slim/page/layout-threads.2d.js',
+  'target/client/app-slim/page/resize-threads.2d.js',
+  'target/client/app-slim/utterscroll/utterscroll-init-tips.js',
+  'client/app-slim/utterscroll/utterscroll.js',
+  'target/client/2d-typescript.js']; */
 
 var staffJsFiles = [
       'target/client/staff-typescript.js'];
@@ -166,8 +167,8 @@ var editorJsFiles = [
       'node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
-      'target/client/app/editor/mentions-markdown-it-plugin.js',
-      'target/client/app/editor/onebox-markdown-it-plugin.js',
+      'target/client/app-slim/editor/mentions-markdown-it-plugin.js',
+      'target/client/app-slim/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
 var jqueryJsFiles = [
@@ -188,8 +189,8 @@ var embeddedJsFiles = [
       //'client/third-party/jquery-scrollable.js',
       //'client/third-party/jquery.browser.js',
       //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
-      //'target/client/app/utterscroll/utterscroll-init-tips.js',
-      'target/client/app/utils/calcScrollRectIntoViewCoords.js',
+      //'target/client/app-slim/utterscroll/utterscroll-init-tips.js',
+      'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
@@ -210,18 +211,8 @@ gulp.task('wrapJavascript', function () {
 });
 
 
-var serverTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'server-bundle.js',
-  lib: ['es5', 'es2015', 'dom'],
-  // react-dom needed to compile, but isn't actually used, server side.
-  types: ['react', 'react-dom', 'lodash', 'core-js'],
-});
+var serverTypescriptProject = typeScript.createProject("client/server/tsconfig.json");
 
-
-var serverTypescriptSrc = [
-    'client/server/**/*.ts',
-    'client/shared/plain-old-javascript.d.ts'];
 
 var serverJavascriptSrc = [
     // Two different sanitizers. [5FKEW2]
@@ -238,19 +229,19 @@ var serverJavascriptSrc = [
     'node_modules/markdown-it/dist/markdown-it.min.js',
     'client/third-party/lodash-custom.js',
     'client/third-party/non-angular-slugify.js',
-    'client/app/editor/mentions-markdown-it-plugin.js',
-    'client/app/editor/onebox-markdown-it-plugin.js'];
+    'client/app-slim/editor/mentions-markdown-it-plugin.js',
+    'client/app-slim/editor/onebox-markdown-it-plugin.js'];
 
 // This one also concatenates Javascript, so it's different from the other
 // 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
 function compileServerTypescriptConcatJavascript() {
-  var typescriptStream = gulp.src(serverTypescriptSrc)
+  var typescriptStream = serverTypescriptProject.src()
     .pipe(wrap(nextFileTemplate))
     .pipe(serverTypescriptProject());
 
   if (watchAndLiveForever) {
     typescriptStream.on('error', function() {
-      console.log('\n!!! Error compiling server side TypeScript !!!\n');
+      console.log('\n!!! Error compiling server side TypeScript [TyESSTS] !!!\n');
     });
   }
 
@@ -262,59 +253,22 @@ function compileServerTypescriptConcatJavascript() {
       .pipe(gulp.dest('public/res/'));
 }
 
-var swTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'ty-sw-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],  // dom: fetch() API related types
-  types: ['core-js'],
-  sourceMap: true,     // ??
-  inlineSources: true  // include source code in mapping file
-});
-
-var slimTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'slim-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],
-  types: ['react', 'react-dom', 'lodash', 'core-js'],
-  sourceMap: true,     // ??
-  inlineSources: true  // include source code in mapping file
-});
-
-var moreTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'more-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],
-  types: ['react', 'react-dom', 'lodash', 'core-js']
-});
-
-var _2dTypescriptProject = typeScript.createProject({
+var swTypescriptProject = typeScript.createProject("client/serviceworker/tsconfig.json");
+var slimTypescriptProject = typeScript.createProject("client/app-slim/tsconfig.json");
+var moreTypescriptProject = typeScript.createProject("client/app-more/tsconfig.json");
+var staffTypescriptProject = typeScript.createProject("client/app-staff/tsconfig.json");
+var editorTypescriptProject = typeScript.createProject("client/app-editor/tsconfig.json");
+/*
+var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
   target: 'ES5',
   outFile: '2d-typescript.js',
   lib: ['es5', 'es2015', 'dom'],
   types: ['react', 'react-dom', 'lodash', 'core-js']
-});
+}); */
 
-var staffTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'staff-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],
-  types: ['react', 'react-dom', 'lodash', 'core-js']
-});
-
-var editorTypescriptProject = typeScript.createProject({
-  target: 'ES5',
-  outFile: 'editor-typescript.js',
-  lib: ['es5', 'es2015', 'dom'],
-  types: ['react', 'react-dom', 'lodash', 'core-js']
-});
-
-
-var swTypescriptSrc = [
-  'client/app/model.ts',
-  'client/serviceworker/*.ts'];
 
 function compileSwTypescript() {
-  var stream = gulp.src(swTypescriptSrc)
+  var stream = swTypescriptProject.src()
     .pipe(wrap(nextFileTemplate))
     .pipe(swTypescriptProject());
   if (watchAndLiveForever) {
@@ -326,17 +280,8 @@ function compileSwTypescript() {
 }
 
 
-var slimTypescriptSrc = [
-    'client/shared/plain-old-javascript.d.ts',
-    'client/app/**/*.ts',
-    '!client/app/**/*.more.ts',
-    '!client/app/**/*.2d.ts',
-    '!client/app/**/*.editor.ts',
-    '!client/app/**/*.staff.ts',
-    '!client/app/slim-bundle.d.ts'];
-
 function compileSlimTypescript() {
-  var stream = gulp.src(slimTypescriptSrc)
+  var stream = slimTypescriptProject.src()
     .pipe(wrap(nextFileTemplate))
     .pipe(slimTypescriptProject());
   if (watchAndLiveForever) {
@@ -348,23 +293,14 @@ function compileSlimTypescript() {
 }
 
 
-function makeOtherTypescriptSrc(what) {
-  return [
-    'client/app/**/*.d.ts',
-    '!client/app/**/*.' + what + '.d.ts',
-    '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
-    'client/shared/plain-old-javascript.d.ts',
-    'client/app/model.ts',
-    'client/app/**/*.' + what + '.ts'];
-}
-
-function compileOtherTypescript(what, typescriptProject) {
-  var stream = gulp.src(makeOtherTypescriptSrc(what))
+function compileOtherTypescript(typescriptProject) {
+  var stream = typescriptProject.src()
     .pipe(wrap(nextFileTemplate))
     .pipe(typescriptProject());
   if (watchAndLiveForever) {
     stream.on('error', function() {
-      console.log('\n!!! Error compiling ' + what + ' TypeScript [EsE3G6P8S]!!!\n');
+      console.log('\n!!! Error transpiling Typescript for ' +
+          typescriptProject.compilerOptions.outFile + ' [TyETSTRANSPL] !!!\n');
     });
   }
   return stream.pipe(gulp.dest('target/client/'));
@@ -383,19 +319,20 @@ gulp.task('compileSlimTypescript', function () {
 });
 
 gulp.task('compileMoreTypescript', function () {
-  return compileOtherTypescript('more', moreTypescriptProject);
+  return compileOtherTypescript(moreTypescriptProject);
 });
 
-gulp.task('compile2dTypescript', function () {
-  return compileOtherTypescript('2d', _2dTypescriptProject);
-});
+/*
+gulp.task('compile2dTypescript', function () { // [SLIMTYPE]
+  return compileOtherTypescript(_2dTypescriptProject);
+}); */
 
 gulp.task('compileStaffTypescript', function () {
-  return compileOtherTypescript('staff', staffTypescriptProject);
+  return compileOtherTypescript(staffTypescriptProject);
 });
 
 gulp.task('compileEditorTypescript', function () {
-  return compileOtherTypescript('editor', editorTypescriptProject);
+  return compileOtherTypescript(editorTypescriptProject);
 });
 
 gulp.task('compileAllTypescript', function () {
@@ -403,10 +340,10 @@ gulp.task('compileAllTypescript', function () {
       compileServerTypescriptConcatJavascript(),
       compileSwTypescript(),
       compileSlimTypescript(),
-      compileOtherTypescript('more', moreTypescriptProject),
-      compileOtherTypescript('2d', _2dTypescriptProject),
-      compileOtherTypescript('staff', staffTypescriptProject),
-      compileOtherTypescript('editor', editorTypescriptProject));
+      compileOtherTypescript(moreTypescriptProject),
+      //compileOtherTypescript(_2dTypescriptProject), // [SLIMTYPE]
+      compileOtherTypescript(staffTypescriptProject),
+      compileOtherTypescript(editorTypescriptProject));
 });
 
 
@@ -415,7 +352,7 @@ var compileTsTaskNames = [
   'compileSwTypescript',
   'compileSlimTypescript',
   'compileMoreTypescript',
-  'compile2dTypescript',
+  //'compile2dTypescript', [SLIMTYPE]
   'compileStaffTypescript',
   'compileEditorTypescript'];
 
@@ -452,7 +389,7 @@ function makeConcatAllScriptsStream() {
       makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer'),
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
-      makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'),
+      //makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'), [SLIMTYPE]
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
       makeConcatStream('jquery-bundle.js', jqueryJsFiles),
@@ -518,8 +455,8 @@ gulp.task('compile-stylus', function () {
   var stylusOpts = {
     linenos: true,
     import: [
-      currentDirectorySlash + 'client/app/mixins.styl',
-      currentDirectorySlash + 'client/app/variables.styl']
+      currentDirectorySlash + 'client/app-slim/mixins.styl',
+      currentDirectorySlash + 'client/app-slim/variables.styl']
   };
 
   function makeStyleStream(destDir, destFile, sourceFiles) {
@@ -551,14 +488,17 @@ gulp.task('compile-stylus', function () {
         'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',
-        'client/app/theme.styl',
-        'client/app/third-party.styl',
-        'client/app/page/page.styl',
-        'client/app/page/threads.styl',
-        'client/app/page/posts.styl',
-        'client/app/page/arrows.styl',
-        'client/app/page/action-links.styl',
-        'client/app/**/*.styl']));
+        'client/app-slim/theme.styl',
+        'client/app-slim/third-party.styl',
+        'client/app-slim/page/page.styl',
+        'client/app-slim/page/threads.styl',
+        'client/app-slim/page/posts.styl',
+        'client/app-slim/page/arrows.styl',
+        'client/app-slim/page/action-links.styl',
+        'client/app-slim/**/*.styl',
+        'client/app-more/**/*.styl',
+        'client/app-editor/**/*.styl',
+        'client/app-staff/**/*.styl']));
 });
 
 
@@ -571,14 +511,14 @@ function logChangeFn(fileType) {
 
 gulp.task('watch', ['default'], function() {
   watchAndLiveForever = true;
-  var allServerScriptsSrc = serverTypescriptSrc.concat(serverJavascriptSrc);
+  var allServerScriptsSrc = ['client/server/**/*.ts', ...serverJavascriptSrc];
   gulp.watch(allServerScriptsSrc, ['compileServerTypescriptConcatJavascript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
-  gulp.watch(swTypescriptSrc, ['compileSwTypescript-concatScripts']).on('change', logChangeFn('Service worker TypeScript'));
-  gulp.watch(slimTypescriptSrc, ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
-  gulp.watch(makeOtherTypescriptSrc('more'), ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
-  gulp.watch(makeOtherTypescriptSrc('2d'), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript'));
-  gulp.watch(makeOtherTypescriptSrc('staff'), ['compileStaffTypescript-concatScripts']).on('change', logChangeFn('Staff TypeScript'));
-  gulp.watch(makeOtherTypescriptSrc('editor'), ['compileEditorTypescript-concatScripts']).on('change', logChangeFn('Editor TypeScript'));
+  gulp.watch(['client/serviceworker/**/*.ts'], ['compileSwTypescript-concatScripts']).on('change', logChangeFn('Service worker TypeScript'));
+  gulp.watch(['client/app-slim/**/*.ts'], ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
+  gulp.watch(['client/app-more/**/*.ts'], ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
+  //gulp.watch(_2dTsProj.src(), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript')); [SLIMTYPE]
+  gulp.watch(['client/app-staff/**/*.ts'], ['compileStaffTypescript-concatScripts']).on('change', logChangeFn('Staff TypeScript'));
+  gulp.watch(['client/app-editor/**/*.ts'], ['compileEditorTypescript-concatScripts']).on('change', logChangeFn('Editor TypeScript'));
 
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
@@ -607,8 +547,8 @@ gulp.task('clean-e2e', function () {
 
 gulp.task('compile-e2e-scripts', function() {
   var stream = gulp.src([
-        'client/app/constants.ts',
-        'client/app/model.ts',
+        'client/app-slim/constants.ts',
+        'client/app-slim/model.ts',
         'tests/e2e/**/*ts'])
       .pipe(typeScript({
         declarationFiles: true,

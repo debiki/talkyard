@@ -1,1 +1,1 @@
-../app/page-methods.ts
+../app-slim/page-methods.ts

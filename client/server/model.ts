@@ -1,1 +1,1 @@
-../app/model.ts
+../app-slim/model.ts

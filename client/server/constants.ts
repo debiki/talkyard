@@ -1,1 +1,1 @@
-../app/constants.ts
+../app-slim/constants.ts

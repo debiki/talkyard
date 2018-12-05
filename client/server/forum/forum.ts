@@ -1,1 +1,1 @@
-../../app/forum/forum.ts
+../../app-slim/forum/forum.ts

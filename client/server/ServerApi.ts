@@ -1,1 +1,1 @@
-../app/ServerApi.ts
+../app-slim/ServerApi.ts

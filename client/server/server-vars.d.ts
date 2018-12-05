@@ -1,1 +1,1 @@
-../app/server-vars.d.ts
+../app-slim/server-vars.d.ts

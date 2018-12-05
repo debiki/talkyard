@@ -1,1 +1,1 @@
-../app/prelude.ts
+../app-slim/prelude.ts
