@@ -163,7 +163,7 @@ fi
 # All done
 # ----------------------
 
-$test_containers kill web app certgen
+$test_containers kill web app
 $test_containers down
 
 # If any Docker container is running now, something is amiss.
