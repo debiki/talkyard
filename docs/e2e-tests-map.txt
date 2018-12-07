@@ -577,6 +577,12 @@ live notifications -
        — just call onerror in the patch?
     Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
 
+notf prefs inherited:
+  one's own, from site, to cat, to topic:
+          - notfs-prefs-inherit-own.2browsers.test.ts  TyT4RKK7Q2J
+  inherits from groups and cats:
+          - notfs-prefs-inherit-group.2browsers.test.ts  TyT5RKT2WJ04
+
 email notifications:  (5ABKR024)
   watching everything:
           - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05

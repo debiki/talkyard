@@ -44,6 +44,7 @@ const TopicTwoReplyTwoMuted = 'TopicTwoReplyTwoMuted';
 const TopicTitleThree = 'TopicTitleThree';
 const TopicBodyThree = 'TopicBodyThree';
 
+let numExpectedEmailsTotal = 0;
 
 describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
@@ -94,11 +95,13 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
   it("Owen posts a topic", () => {
     owensBrowser.complex.createAndSaveTopic({ title: TopicTitleOne, body: TopicBodyOne });
+    numExpectedEmailsTotal += 1;  // notf to Maria
   });
 
   it("Maria get notified", () => {
     const titleBody = [TopicTitleOne, TopicBodyOne];
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody, browser);
+    // BUG LIVE_NOTF  no MyMenu notf icon appears, althoug email sent  [NOTFTPCS]
   });
 
   it("... once, exactly", () => {
@@ -107,10 +110,13 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
   it("... but not Modya", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), 0);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   it("Owen posts a reply", () => {
     owensBrowser.complex.replyToOrigPost(RelyOneTriggersNotf);
+    numExpectedEmailsTotal += 1;  // notf to Maria
   });
 
   it("... Maria get notified", () => {
@@ -119,7 +125,8 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
   });
 
   it("... but not Modya", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), 0);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -136,11 +143,13 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
   it("Owen posts a 2nd reply", () => {
     owensBrowser.complex.replyToOrigPost(ReplyTwoNoNotf);
+    numExpectedEmailsTotal += 0;  // Maria no longer listens to EveryPost. So zero.
   });
 
   it("... and then a new topic", () => {
     owensBrowser.topbar.clickAncestor(SpecificCatName);
     owensBrowser.complex.createAndSaveTopic({ title: TopicTitleTwo, body: TopicBodyTwo });
+    numExpectedEmailsTotal += 1;  // Maria does listens for new topics.
   });
 
   it("... Maria get notified about the new topic only — her cat prefs says topics only", () => {
@@ -151,13 +160,21 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
   it("... but not Modya", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), 0);
+    // Double check:
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
+
+
+  // TESTS_MISSING: Owen could post something in a different category,
+  // and then Maria's whole site settings, would apply.
+  // But not the Specific category settings.
 
 
   // ------ Page prefs override category prefs
 
   it("Maria goes to the page", () => {
-    mariasBrowser.refresh();  // BUG no live notf for new topics?
+    mariasBrowser.refresh();  // BUG no live notf for new topics?  [NOTFTPCS]
     mariasBrowser.topbar.openLatestNotf();
   });
 

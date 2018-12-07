@@ -35,6 +35,7 @@ let url;
 let numEmailsToTrillian = 0;
 let numEmailsToMaria = 0;
 let numEmailsToModya = 0;
+let numEmailsTotal = 0;
 
 const forumTitle = "Notf Pref Inh Grps Content";
 const SpecificCatName = 'SpecificCatName';
@@ -134,6 +135,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
         title: TitleOneTrilliianNotfd, body: BodyOneTrilliianNotfd });
     numEmailsToTrillian += 1;  // trusted member
     numEmailsToModya += 1;     // is staff, incl in the trusted members group
+    numEmailsTotal += 2;
   });
 
   it("Trillian get notified", () => {
@@ -151,6 +153,11 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("... and yes, Modya, because is staff", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
+  });
+
+  it("... num emails sent is correct", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- All members group subscribes to New Topics
@@ -171,6 +178,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     numEmailsToTrillian += 1;
     numEmailsToMaria += 1;
     numEmailsToModya += 1;
+    numEmailsTotal += 3;
   });
 
   it("Trillian get notified, once", () => {
@@ -191,6 +199,11 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
+  it("... num emails sent is correct now too", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  });
+
   // ----- No one notfd about a reply
 
   it("Owen posts a reply", () => {
@@ -201,6 +214,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost("Hi @mod_modya");
     url = owensBrowser.url().value;
     numEmailsToModya += 1;
+    numEmailsTotal += 1;
   });
 
   it("Modya gets notified about the mention, only", () => {
@@ -209,9 +223,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("The others didn't get notfd about anything", () => {
-    // Email counts unchanged.
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Trusted members subscribes to Every Post, notfd about a reply
@@ -230,6 +243,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost(TopicTwoReplyTrillianEveryPost);
     numEmailsToTrillian += 1;
     numEmailsToModya += 1;    // staff incl in Trusted Members group
+    numEmailsTotal += 2;
   });
 
   it("Trillian gets notified", () => {
@@ -245,8 +259,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... Maria didn't get notfd about anything", () => {
-    // Email counts unchanged.
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Trillian mutes site; Mara subscrs to Every Post
@@ -258,7 +272,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     trilliansBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... mutes the whole site", () => {
+  it("... mutes the whole site (12564)", () => {
     trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Muted);
   });
 
@@ -277,6 +291,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost(TopicTwoReplyMariaEveryPost);
     numEmailsToMaria += 1;
     numEmailsToModya += 1;
+    numEmailsTotal += 2;
   });
 
   it("... this time, Maria gets notified", () => {
@@ -292,7 +307,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... not Trillian", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   it("Maria mutes the whole site", () => {
@@ -302,6 +318,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   it("Owen posts yet another reply, mentions Modya again", () => {
     owensBrowser.complex.replyToOrigPost("Hi again @mod_modya");
     numEmailsToModya += 1;
+    numEmailsTotal += 1;
   });
 
   it("... Modya gets notified, again", () => {
@@ -310,8 +327,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("The others didn't get notfd: both Maria and Trillian have muted the site", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -346,9 +363,11 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
         title: TitleThreeNotfsTrillian, body: BodyThreeNotfsTrillian });
     numEmailsToTrillian += 1;
     numEmailsToModya += 1;
+    numEmailsTotal += 2;
   });
 
-  it("... Trillian gets notified: the Trusted group is subscr to the cat, New Topics", () => {
+  it("... Trillian gets notified: the Trusted group is subscr to the cat, New Topics, " +
+       "and that's more specific than Trillian's mute-whole-site setting (12564)", () => {
     const titleBody = [TitleThreeNotfsTrillian, BodyThreeNotfsTrillian];
     server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, titleBody, browser);
     assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
@@ -361,6 +380,9 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... not Maria", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+    // Double check:
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
@@ -390,6 +412,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     numEmailsToTrillian += 1;
     numEmailsToMaria += 1;
     numEmailsToModya += 1;
+    numEmailsTotal += 3;
   });
 
   it("... Trillian gets notified", () => {
@@ -410,10 +433,16 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
+  it("... and num emails sent is correct", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+  });
+
   it("Owen posts a reply, mentions Modya for the 3rd time", () => {
     owensBrowser.complex.replyToOrigPost("Hi 3rd time @mod_modya");
     url = owensBrowser.url().value;
     numEmailsToModya += 1;
+    numEmailsTotal += 1;
   });
 
   it("... Modya gets notified, for the 3rd time", () => {
@@ -422,6 +451,9 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... but no one else — they only get notfd about new topics", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
+    // Double check:
     assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
@@ -439,7 +471,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.EveryPost);
   });
 
-  it("... stops impersonating, agan ...", () => {
+  it("... stops impersonating, again ...", () => {
     owensBrowser.topbar.clickStopImpersonating();
   });
 
@@ -448,6 +480,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost(TopicFourReplyTrillianModyaNotfd);
     numEmailsToTrillian += 1;   // Trusted member, incl in Full Members group
     numEmailsToModya += 1;      // Staff, also included
+    numEmailsTotal += 2;
   });
 
   it("... Trillian gets notified", () => {
@@ -463,7 +496,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... not Maria — she's a Basic member only, not in the Full Members group", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   // ----- Members override per cat nots
@@ -483,6 +517,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost(TopicFourReplyThreeMariaModya);
     numEmailsToMaria += 1;   // Has subsribed to Every post
     numEmailsToModya += 1;   // Staff, incl in Full Members, which is cat-subscr
+    numEmailsTotal += 2;
   });
 
   it("... Maria gets notified", () => {
@@ -498,7 +533,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... not Trillian — she muted the category", () => {
-    assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -524,6 +560,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     owensBrowser.complex.replyToOrigPost(TopicFourReplyFourTrillanModya);
     numEmailsToTrillian += 1;  // Has subsribed to Every post on the page
     numEmailsToModya += 1;     // Staff, incl in Full Members, which is cat-subscr
+    numEmailsTotal += 2;
   });
 
   it("... Trillian gets notified", () => {
@@ -540,6 +577,11 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("... not Maria — she muted the page", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
+  });
+
+  it("... lastly, num emails sent is correct", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 });

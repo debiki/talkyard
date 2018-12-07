@@ -1607,6 +1607,8 @@ trait UserDao {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
+    throwForbiddenIf(byWho.id <= MaxGuestId,
+      errorCode + "-MEGST", s"Guests may not $mayNotWhat")
     throwForbiddenIf(userId <= MaxGuestId,
       errorCode + "-ISGST", s"May not $mayNotWhat for guests")
     throwForbiddenIf(userId < User.LowestNormalMemberId,

@@ -268,7 +268,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
   });
 
-  it("... and the three staff members", () => {
+  it("... and staff ", () => {
     const titleAndComment = [topicTitle, lastComment];
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
     server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
@@ -294,7 +294,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
   });
 
-  it("... and the three staff members, as usual", () => {
+  it("... and staff, as usual", () => {
     const titleAndComment = [topicTitle, lastComment];
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, titleAndComment, browser);
     server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
@@ -310,7 +310,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
 
   it("Maria mentions @full_members (which includes higher trust levels)", () => {
     lastComment = "Hi all @full_members, wow so many";
-    numExpectedEmailsTotal += 4 + 2;  // three trusted members and Michael, + 3-1 staff
+    numExpectedEmailsTotal += 3 + 1  + 2;  // three trusted members and Michael,  + 3-1 staff
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
@@ -361,6 +361,11 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   it("... and one staff member: only Owen, because Mons unsubd, and Modya sent the message", () => {
     const titleAndComment = [modyasTopicTitle, lastComment];
     server.waitUntilLastEmailMatches(siteId, owen.emailAddress, titleAndComment, browser);
+  });
+
+  it("... no one else", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 

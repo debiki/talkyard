@@ -3588,7 +3588,7 @@ function pagesFor(browser) {
         api.go((origin || '') + '/-/admin/groups');
       },
 
-      switchToGroupsBuiltIn: function(origin?: string) {
+      switchToGroupsBuiltIn: function() {
         api.waitAndClick('.e_GrpsB');
       },
 
