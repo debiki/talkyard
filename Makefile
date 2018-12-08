@@ -219,27 +219,27 @@ dev-images: minified-asset-bundles
 
 prod-images: \
 			invisible-selenium-server
-	@# This does minified-asset-bundles
+	@# This builds minified-asset-bundles.
 	s/build-prod-images.sh
 
 
-tag-and-push-prod-images:  tag-prod-images  push-prod-images
+tag-and-push-latest-images:  tag-latest-images  push-latest-images  _print_push_tag_command
 
 
-tag-prod-images:
+tag-latest-images:
 	@$(call die_unless_tag_specified, Tag with)
 	@$(call ask_for_root_password)
-	@REPO=$(DOCKER_REPOSITORY)  ;\
-	echo  sudo docker tag $$REPO/talkyard-app $$REPO/talkyard-app:$(tag)  ;\
-	echo  sudo docker tag $$REPO/talkyard-web $$REPO/talkyard-web:$(tag)  ;\
-	echo  sudo docker tag $$REPO/talkyard-rdb $$REPO/talkyard-rdb:$(tag)  ;\
-	echo  sudo docker tag $$REPO/talkyard-cache $$REPO/talkyard-cache:$(tag)  ;\
-	echo  sudo docker tag $$REPO/talkyard-search $$REPO/talkyard-search:$(tag)  ;\
-	echo  sudo docker tag $$REPO/talkyard-certgen $$REPO/talkyard-certgen:$(tag)
+	REPO=$(DOCKER_REPOSITORY)  ;\
+	sudo docker tag $$REPO/talkyard-app $$REPO/talkyard-app:$(tag)  ;\
+	sudo docker tag $$REPO/talkyard-web $$REPO/talkyard-web:$(tag)  ;\
+	sudo docker tag $$REPO/talkyard-rdb $$REPO/talkyard-rdb:$(tag)  ;\
+	sudo docker tag $$REPO/talkyard-cache $$REPO/talkyard-cache:$(tag)  ;\
+	sudo docker tag $$REPO/talkyard-search $$REPO/talkyard-search:$(tag)  ;\
+	sudo docker tag $$REPO/talkyard-certgen $$REPO/talkyard-certgen:$(tag)
 	@echo
 
 
-push-prod-images:
+push-latest-images:
 	@$(call die_unless_tag_specified, Push)
 	@$(call ask_for_root_password)
 	@REPO=$(DOCKER_REPOSITORY)  ;\
@@ -252,34 +252,40 @@ push-prod-images:
 	@echo
 
 
+_print_push_tag_command:
+	@echo "Next:"
+	@echo ""
+	@echo "    make push-tag-to-git tag=$(tag)"
+	@echo ""
+
+
 push-tag-to-git:
 	@$(call die_unless_tag_specified, Push) ;\
 	
 	@echo
-	@echo Untested. Bye.
-	@echo
-	@exit 1
-	
 	@echo "Publishing version tag $(tag) to GitHub..."
 	 
-	@pushd .  ;\
-	cd modules/ed-versions/  ;\
+	@cd modules/ed-versions/  ;\
 	git fetch  ;\
 	git checkout master  ;\
 	git merge --ff-only origin master  ;\
 	echo $(tag) >> version-tags.log  ;\
 	git add version-tags.log  ;\
 	git commit -m "Add $(tag)."  ;\
-	git push origin master  ;\
-	popd
+	git push origin master
 	
-	@echo "Bumping version number..."
+	# (Now back in the project root dir.)
+	
+	@echo "Tagging the current Git revision with $(tag) ..."
 	
 	@git tag $(tag)
 	@git push origin $(tag)
 	
-	@echo "Done. Bye."
-	@echo "You might want to bump the version number:  s/bump-versions.sh"
+	@echo "Done."
+	@echo "Now, you can bump the version number:"
+	@echo ""
+	@echo "    s/bump-versions.sh"
+	@echo ""
 
 
 define die_unless_tag_specified

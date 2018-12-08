@@ -229,6 +229,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-change-email $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-change-password $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-cannot-delete-openauth-email $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-activity-private.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only custom-forms.3browsers $args
 
@@ -237,7 +238,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only impersonate.2browsers $args
 
   # There're email notfs and unsubscription tests for guests, further below, in:
-  # embedded-comments-guest-login-email-notf-unsbscribe.test
+  # embedded-comments-guest-login-email-notf-unsbscribe
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only unsubscribe.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-emails-discussion.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-mark-all-as-read.2browsers $args
@@ -321,16 +322,16 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-no-verif-email.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-req-verif-email.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll.test $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id.test $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id-old-name $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-guest-login-email-notf-unsbscribe.test $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins.test $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-guest-login-email-notf-unsbscribe $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins-old-name $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote.test $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-short-script-cache-time.test $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)
 
   if [ -n "$server_port_8080_pid" ]; then

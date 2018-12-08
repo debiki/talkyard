@@ -289,7 +289,7 @@ GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: 
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/273/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/274/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 
 # These endpoints are linked from embedded comments HTML:  [2WPGKS04]

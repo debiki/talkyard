@@ -108,7 +108,6 @@ fi
 
 version="`cat version.txt`"
 version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and gulpfile.js [8GKB4W2]
-echo "Building and releasing $version_tag"
 
 # COULD: verify version nr changed since last time
 # COULD: verify version nr matches vX.YY.ZZ
@@ -116,6 +115,19 @@ echo "Building and releasing $version_tag"
 # COULD: verify is master branch?
 # COULD ask confirm if major or minor bumped (but not if patch bumped)
 # COULD ask confirm if version nr less than previous nr
+
+
+
+# Check version number and repo
+# ----------------------
+
+echo
+echo "About to build version:  $version_tag   (see version.txt),"
+echo "for pushing to Docker repository:  $REPO  (see .env)."
+echo
+echo "Press Enter to continue, or CTRL+C to exit."
+read -s -p ''
+exit
 
 
 # Build and run tests
@@ -154,67 +166,12 @@ echo 'Buid completed.'
 # ----------------------
 
 
-echo "You can now tag and publish the images:"
-echo
-echo "make  tag-and-push-prod-images  tag=$version_tag"
-echo "make  push-tag-to-git  tag=$version_tag"
-echo "s/bump-versions.sh"
-echo
-
-
-
-
-echo "Tag images with $REPO/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
-read -s -p ''
-
-echo "Really? Then press Enter again. Don't want to try the Makefile script? CTRL+C."
-read -s -p ''
-
-
-sudo docker tag $REPO/talkyard-app $REPO/talkyard-app:$version_tag
-sudo docker tag $REPO/talkyard-web $REPO/talkyard-web:$version_tag
-sudo docker tag $REPO/talkyard-rdb $REPO/talkyard-rdb:$version_tag
-sudo docker tag $REPO/talkyard-cache $REPO/talkyard-cache:$version_tag
-sudo docker tag $REPO/talkyard-search $REPO/talkyard-search:$version_tag
-sudo docker tag $REPO/talkyard-certgen $REPO/talkyard-certgen:$version_tag
-
-
-echo 'Done. Publish to the official Docker image registry? Press Enter'
-read -s -p ''
-
-echo "Publishing to $REPO/talkyard-*:$version_tag..."
-
-sudo docker push $REPO/talkyard-app:$version_tag
-sudo docker push $REPO/talkyard-web:$version_tag
-sudo docker push $REPO/talkyard-rdb:$version_tag
-sudo docker push $REPO/talkyard-cache:$version_tag
-sudo docker push $REPO/talkyard-search:$version_tag
-sudo docker push $REPO/talkyard-certgen:$version_tag
-
-
-# Bump version number
-# ----------------------
-
-echo "Publishing version tag $version_tag to GitHub..."
-
-pushd .
-cd modules/ed-versions/
-git fetch
-git checkout master
-git merge --ff-only origin master
-echo $version_tag >> version-tags.log
-git add version-tags.log
-git commit -m "Add $version_tag."
-git push origin master
-popd
-
-echo "Bumping version number..."
-
-git tag $version_tag
-git push origin $version_tag
-s/bump-versions.sh
-
-echo "Done. Bye."
+echo "You can now tag and publish the images to the '$REPO' Docker repository:"
+echo ""
+echo "    make  tag-and-push-latest-images  tag=$version_tag"
+echo "    make  push-tag-to-git  tag=$version_tag"
+echo "    s/bump-versions.sh"
+echo ""
 
 
 # vim: et ts=2 sw=2 tw=0 list
