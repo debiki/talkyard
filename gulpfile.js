@@ -147,10 +147,10 @@ var moreJsFiles = [
 var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]
   'client/third-party/jquery-scrollable.js',
   'client/third-party/jquery.browser.js',
-  'target/client/app-slim/page/layout-threads.2d.js',
-  'target/client/app-slim/page/resize-threads.2d.js',
-  'target/client/app-slim/utterscroll/utterscroll-init-tips.js',
-  'client/app-slim/utterscroll/utterscroll.js',
+  'target/client/app-2d/page/layout-threads.2d.js',
+  'target/client/app-2d/page/resize-threads.2d.js',
+  'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
+  'client/app-2d/utterscroll/utterscroll.js',
   'target/client/2d-typescript.js']; */
 
 var staffJsFiles = [
@@ -167,8 +167,8 @@ var editorJsFiles = [
       'node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
-      'target/client/app-slim/editor/mentions-markdown-it-plugin.js',
-      'target/client/app-slim/editor/onebox-markdown-it-plugin.js',
+      'target/client/app-editor/editor/mentions-markdown-it-plugin.js',
+      'target/client/app-editor/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
 var jqueryJsFiles = [
@@ -189,7 +189,7 @@ var embeddedJsFiles = [
       //'client/third-party/jquery-scrollable.js',
       //'client/third-party/jquery.browser.js',
       //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
-      //'target/client/app-slim/utterscroll/utterscroll-init-tips.js',
+      //'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
       'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
@@ -229,8 +229,8 @@ var serverJavascriptSrc = [
     'node_modules/markdown-it/dist/markdown-it.min.js',
     'client/third-party/lodash-custom.js',
     'client/third-party/non-angular-slugify.js',
-    'client/app-slim/editor/mentions-markdown-it-plugin.js',
-    'client/app-slim/editor/onebox-markdown-it-plugin.js'];
+    'client/app-editor/editor/mentions-markdown-it-plugin.js',
+    'client/app-editor/editor/onebox-markdown-it-plugin.js'];
 
 // This one also concatenates Javascript, so it's different from the other
 // 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
