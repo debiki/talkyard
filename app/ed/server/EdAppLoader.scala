@@ -24,9 +24,9 @@ class EdAppLoader extends ApplicationLoader {
     val isProd = context.environment.mode == play.api.Mode.Prod
     Globals.setIsProdForever(isProd)
 
-    p.Logger.info("Starting... [EsMHELLO]")
+    p.Logger.info("Starting... [TyMHELLO]")
     val app = new EdAppComponents(context).application
-    p.Logger.info("Started. [EsMSTARTED]")
+    p.Logger.info("Started. [TyMSTARTED]")
     app
   }
 

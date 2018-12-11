@@ -16,17 +16,16 @@ Talkyard
 =============================
 
 Create a place to talk,
-where your users find answers to their questions, and can suggest ideas.<br>
-Place it at `community.your-website.org`.
+where your audience find answers to their questions, and discuss ideas.<br>
+Place it at `talkyard.Your-Website.org`.
 
-<!-- People in your community need different types of discussions for different things?
-Talkyard has: -->
-
- - **Find answers** in Question-Answers topics, like StackOverflow.
- - **Gather ideas** in open-ended topics, like at Reddit and Hacker News.
- - **Get work done** in team chat, like Slack.
- - **Solve problems** step by step, in flat by-time topics (coming soon).
+ - **Get unstuck** by finding solutions in Question-Answers topics, like at StackOverflow.
+ - **Discuss ideas** in open-ended topics, like at Reddit and Hacker News.
+ - **Collaborate** in real time chat, like Slack. <small>(There's a live updates bug though `[NGXSEGFBUG]`)</small>
  - **Talk with your blog visitors** in embedded comments, like Disqus.
+ <!-- Don't mention until is actually available?
+      Maybe not mention at all — 'collaborate' above, is perhaps enough?
+ - **Solve problems** step by step, in flat by-time topics, coming soon.    -->
 
 <!--
  - **Improve your API docs**, by embedding comments at the end of each docs page, to make it easy for people to ask and tell you if something is unclear.
@@ -36,10 +35,14 @@ Talkyard has: -->
 
 [**Support forum here**](https://www.talkyard.io/forum/latest/support), at Talkyard<i></i>.io — and report bugs there too.
 
-Our vision is to build a tool that [people who change the world or their neighborood] can use
-to find answers and pick the right things to do. That's why we have
-Q&A (question-answers) and HackerNews & Reddit type topics,
-where good answers and ideas rise to the top.
+We'd like to build a tool that *people who change the world or their neighborhood* can use
+to solve problems and pick the right things to do. That's why we have
+find-solutions Question-Answers topics, and HackerNews & Reddit type topics
+where good ideas rise to the top.<!-- — And you can use this tool,
+for your workplace and your colleagues & customers,
+or your non-profit and its volunteers,
+or an open source project and its users,
+or a school and its students, etc.  -->
 
 <!--
 Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat and question-answers features.
@@ -54,7 +57,7 @@ Read about it, and demo forums: https://www.talkyard.io
 ### How install?
 
 _This_ repository is for writing Talkyard source code, and building Docker images (docker build
-files are in <code>./docker/<i>image-name</i>/</code>).
+files are in <code>./images/<i>image-name</i>/</code>).
 To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
 ("-prod-one" means "production installation on one server").
 
@@ -164,11 +167,6 @@ how to use docker-compose already.
 
 #### The instructions
 
-1. Clone this repository, `cd` into it. Then update submodules:
-
-       git clone https://github.com/debiki/talkyard.git talkyard
-       cd talkyard
-       git submodule update --init
 
 1. Append some settings to the system config so that ElasticSearch will work:
    (run this as one single command, not one line at a time)
@@ -190,28 +188,23 @@ how to use docker-compose already.
        sudo sysctl --system
 
 
-1. Install Node.js modules: (using Yarn, which, when given no args, installs everything in `package.json`)
+1. Clone the repository, and type `make up`:  (you need GNU Make installed)
 
-       sudo s/d run --rm gulp yarn
+       git clone https://github.com/debiki/talkyard.git talkyard
+       cd talkyard
+       make up  # GNU Make
 
-       sudo s/d-gulp release
-       sudo s/d-gulp minifyTranslations
 
+1. Wait. `make up` takes a while: Git submodules and Node.js packages will get downloaded,
+   Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built. 
+   You can tail the log messages, by typing `make tail`,
+   or `sudo s/d logs -f`.  (s/d means "scripts" and "docker-compose")
 
-1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
-
-       sudo s/d up -d   # s/d = shortcut for docker-compose, so long to type.
-                        # The 's' means "scripts" and 'd' means "docker-compose".
-
-       # And tail the logs:
-       sudo s/d logs -f
-
-   This log message might take 10 - 20 minutes: (lots of stuff is being downloaded — we'll try to
-   include all that in the Docker image directly instead, later)
+   The following log message might take 10 - 20 minutes: (to download things)
 
        Loading project definition from /opt/talkyard/app/project
 
-   Wait until this appears in the logs:
+   Wait for these "Server started" log messages to appear:
 
        app_1     |
        app_1     | --- (Running the application, auto-reloading is enabled) ---
@@ -223,29 +216,30 @@ how to use docker-compose already.
        app_1     |
 
 
-1. Compile all Scala files, start the server, as follows:
-
-   Point your browser to http://localhost/. This sends a request to the Docker container
+1. Point your browser to http://localhost/. This sends a request to the Docker container
    named 'web', in which Nginx listens on port 80. Nginx sends the request to Play Framework
-   in the 'app' container, port 9000. Play Framework then starts compiling Scala files; this
-   takes a while — so the browser will show a 502 Bad Gateway error message (because Play
-   didn't reply because it's busy compiling stuff).
+   in the 'app' container, port 9000. Play Framework then starts compiling more Scala files — this
+   take a little while; the browser might show a 502 Bad Gateway error message.
 
-   Eventually, when done compiling, Play Framework will start. Then this message will get logged:
+   Soon, when done compiling, Play Framework will start. Then this gets logged:
 
-       app_1  | [info] application - Starting... [EsM200HELLO]
+       app_1  | [info] application - Starting... [TyMHELLO]
+       ...
+       ...
+       app_1  | [info] application - Started. [TyMSTARTED]
 
-   But it's easy to miss, because after that, the server logs even more messages. You can
+   If you don't see these messages (maybe they scroll past too fast), you can
    continue with the next step just below anyway — just keep reloading the browser page until
-   any "is starting" message disappears.
+   any "is starting" message in the browser window disappears.
 
 
 1. Create a forum
 
-   Reload the browser at http://localhost/. Now eventually a page should be shown.
+   Reload the browser at http://localhost/. A page with a button should appear.
    Sign up as admin with this email: `admin@example.com` (must be that email).
    As username and password you can type `admin` and `public1234`.
 
+<!-- Not needed any longer.
    You'll be asked to confirm your email address, by clicking a link in an email
    that was sent to you — but in fact the email couldn't be sent, because you haven't configured
    any email server, and `admin@example.com` isn't your address anyway.
@@ -254,17 +248,35 @@ how to use docker-compose already.
    the terminal with log messages.) There you'll find
    the email — it's written to the log files, in development mode. Copy the
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
+   -->
 
-You can shutdown everything like so: `sudo s/d-killdown`, and if Play Framework runs out of memory
-(it'll do, if it recompiles Scala files and reloads the app many many times),
-you can restart it like so: `sudo s/d-restart-web-app`.
+Shut down everything like so: `make dead`.
+
+
+
+Editing source code
+-----------------------------
+
+If you edit some code and reload the page in the browser, your changes will
+appear automatically: there's a Docker container, named Gulp, with Node.js
+installed, which recompile Typescript and Stylus CSS. And a container,
+named App, which runs the Play Framework application server, and looks
+for changes to Scala files, recompiles and reloads.
+
+If you edit Typescript, wait two seconds before you reload the page in
+the browser, otherwise the Typescript code might not yet have been transpiled.
+It might take 5 or 10 seconds for the page to reload, once you've changed
+something.
+
+If you keep editing and reloading Scala files many many times, then eventually
+Play Framework runs out of memory. Restart it like so: `make restart`.
 
 
 
 Troubleshooting
 -----------------------------
 
-See [tips.mnd](./docs/tips.md).
+See [tips.md](./docs/tips.md).
 
 
 
@@ -440,7 +452,7 @@ And copy-paste it to where the related code is.
 ### Message codes and magic underscores
 
 Log messages, and plain text messages sent back to the browser, start with `TyM` if it's
-an info message, and `TyE` if it's an error. Like, `"Server starting... [TyMHELLO]"` (a log message).
+an info message, and `TyE` if it's an error. Like, `"Started. [TyMSTARTED]"` (a log message).
 
 These messsage codes helps you instantly find the relevat source code, if there's
 an error message anywhere. Otherwise, it can be terribly annoying,

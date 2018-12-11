@@ -1198,6 +1198,9 @@ trait PostsDao {
       }
     }
 
+    BUG ; SHOULD // delete any notifications, if post deleted. Otherwise people click the notf
+    // icon, and then won't see the linked post, or maybe they'll get to a 404 Not Found page.
+
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.
