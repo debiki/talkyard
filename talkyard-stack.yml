@@ -1,0 +1,190 @@
+# check what's not supported for docker stack deploy
+# https://docs.docker.com/compose/compose-file/#not-supported-for-docker-stack-deploy
+
+# läs:  https://docs.traefik.io/basics/#basics
+
+# add a custom bridge network, so won't need to export any ports but 80 and 443.
+# read:  https://github.com/docker/labs/tree/master/12factor
+#
+# look at:
+#   https://github.com/dockersamples/example-voting-app/blob/master/docker-stack.yml
+#   https://github.com/dockersamples/example-voting-app/blob/master/docker-compose.yml
+#
+# cmp w:
+#   https://github.com/docker/labs/blob/master/beginner/chapters/votingapp.md
+# maybe:
+#   https://github.com/docker/labs/blob/master/swarm-mode/beginner-tutorial/README.md
+
+# ? backup
+#  https://github.com/blacklabelops/volumerize
+
+
+# maybe a docker-stack.yml  file?:  docker stack deploy --compose-file docker-stack.yml vote
+
+# volumes, create:
+#  https://docs.docker.com/engine/reference/commandline/volume_create/#driver-specific-options
+
+# quick look?:  https://github.com/docker/labs/blob/master/security/README.md
+
+
+
+# Traefik:
+#   https://stackoverflow.com/questions/49711605/docker-traefik-and-letsencrypt-wildcard
+# wow!
+#   https://docs.traefik.io/configuration/backends/docker/#on-containers
+
+# Read:
+#  https://stackoverflow.com/a/42589922/694469
+
+# deploy like so:
+#  docker stack deploy --compose-file docker-swarm.yml talkyard
+
+# Nice!
+#  https://github.com/containous/traefik/issues/3500
+
+#  https://docs.traefik.io/basics/#matchers
+
+# Nice (has read most)
+#   https://www.digitalocean.com/community/tutorials/how-to-use-traefik-as-a-reverse-proxy-for-docker-containers-on-ubuntu-16-04
+#
+# read?:
+#   https://blog.ssdnodes.com/blog/tutorial-installing-traefik-for-microservices-load-balancing-and-ssl/
+
+
+# test: Funky Penguin
+#   https://geek-cookbook.funkypenguin.co.nz/ha-docker-swarm/docker-swarm-mode/
+
+
+# https://aboullaite.me/multi-stage-docker-java/
+
+
+version: "3.7"
+
+volumes:
+  talkyard-backups:
+  talkyard-uploads:
+  talkyard-nginx-sites-enabled-manual:
+  talkyard-nginx-sites-enabled-auto-gen:
+  talkyard-nginx-logs:
+  talkyard-cache-data:
+  talkyard-cache-logs:
+  talkyard-app-conf:
+  talkyard-app-logs:
+  talkyard-pg10-data:
+  talkyard-pg10-logs:
+  talkyard-search-data:
+  talkyard-search-logs:
+
+networks:
+  talkyard-backend:
+  talkyard-web:
+
+services:
+  web:
+    #build: docker/web/
+    image: $DOCKER_REPOSITORY/talkyard-web:$VERSION_TAG
+    restart: always   # if you use Docker Compose
+    restart-policy:   # if you use Docker Swarm
+      #always
+    volumes:
+      - talkyard-nginx-sites-enabled-manual/:/etc/nginx/sites-enabled-manual/:ro
+      - talkyard-nginx-sites-enabled-auto-gen/:/etc/nginx/sites-enabled-auto-gen/:ro
+      - talkyard-nginx-logs/:/var/log/nginx/
+      - talkyard-uploads/:/opt/talkyard/uploads/:ro
+    #ports:
+    #  # You're supposed to provide your own reverse proxy with HTTPS in front of Talkyard,
+    #  # and connect it to 8080.
+    #  - '8080:80'
+    networks:
+      - talkyard-web
+      - talkyard-backend
+    depends_on:
+      - app
+    environment:
+      #  X_PULL_KEY: "..."
+      # CDN_PULL_KEY: "public"
+
+    # For Docker-Compose:
+    labels:
+      - "traefik.frontend.rule=Host:whoami.docker.localhost"
+    # For Docker-Stack:
+    deploy:
+      labels:
+        - "traefik.frontend.rule=Host:whoami.docker.localhost"
+
+  app:
+    #build: docker/app-prod/
+    restart: always
+    # (Image $DOCKER_REPOSITORY/talkyard-app is for production, and gets created by
+    # ./docker/build-app-prod.sh.)
+    image: $DOCKER_REPOSITORY/talkyard-app-dev:$VERSION_TAG
+    stdin_open: true  # otherwise Play exits
+    volumes:
+      - talkyard-app-conf/:/var/log/talkyard/conf/:ro
+      - talkyard-app-logs/:/var/log/talkyard/
+      - talkyard-uploads/:/opt/talkyard/uploads/
+      - talkyard-backups/:/opt/talkyard-backups/:ro
+      # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
+      - $HOME/.ivy2/:/home/owner/.ivy2/
+      - $HOME/.sbt/:/home/owner/.sbt/
+    networks:
+      - talkyard-backend
+    links:
+      - cache
+      - search
+      - rdb
+      - fakemail
+    environment:
+      PLAY_HEAP_MEMORY_MB: 2800
+      HOSTNAME: "localhost"
+      CREATE_SITE_HOSTNAME: "localhost"
+      BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
+
+  cache:
+    build: docker/cache/
+    image: $DOCKER_REPOSITORY/talkyard-cache:$VERSION_TAG
+    volumes:
+      - talkyard-cache-data:/data/
+      - talkyard-cache-log:/var/log/redis/
+    networks:
+      - talkyard-backend
+    ports:
+      - '6379:6379'
+    sysctls:
+      net.core.somaxconn: 511
+
+  search:
+    build: docker/search/
+    image: $DOCKER_REPOSITORY/talkyard-search:$VERSION_TAG
+    # If too low, the 'search' container will suddenly exit with code 137. No error message
+    # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
+    #mem_limit: 800M
+    volumes:
+      - talkyard-search-data/:/usr/share/elasticsearch/data/
+      - talkyard-search-logs/:/usr/share/elasticsearch/logs/
+    networks:
+      - talkyard-backend
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      ES_JAVA_OPTS: '-Xms384m -Xmx384m'
+
+  rdb:
+    build: docker/rdb/
+    image: $DOCKER_REPOSITORY/talkyard-rdb:$VERSION_TAG
+    volumes:
+      - talkyard-pg10-data/:/var/lib/postgresql/data/
+      - talkyard-pg10-logs/:/var/log/postgresql/
+    networks:
+      - talkyard-backend
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: 'public'
+      PEER_HOST: 'rdb2'
+      PEER_PORT: '5432'
+      PEER_PASSWORD: 'public2'
+      CREATE_TEST_USER: 'yes'
+
+# vim: et ts=2 sw=2

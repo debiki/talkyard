@@ -1,0 +1,21 @@
+# https://docs.traefik.io/#1-launch-traefik-tell-it-to-listen-to-docker
+
+version: '3'
+
+services:
+  traefik:
+    image: traefik
+    # Enable the web UI and tell Traefik to listen to docker.
+    command: --api --docker
+    ports:
+      - "80:80"
+      - "443:443"
+      # The Web UI, enabled by --api. Don't expose publicly.
+      - "8080:8080"
+    volumes:
+      # Let Traefik listen to Docker events, so it can reconfigure itself.
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      # You can create it like so:
+      #   docker network create talkyard-web
+      - talkyard-web
