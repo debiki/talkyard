@@ -152,7 +152,10 @@ restart-web:
 	sudo s/d kill web ; sudo s/d start web ; sudo s/d-logsf0
 
 restart-web-app:
-	sudo s/d-restart-web-app
+	sudo  s/d kill web app ; s/d start web app ; s/d-logs -f --tail 0
+
+restart-app:
+	sudo  s/d kill app ; s/d start app ; s/d-logs -f --tail 0
 
 restart-gulp:
 	sudo s/d kill gulp ; sudo s/d start gulp ; sudo s/d-logsf0

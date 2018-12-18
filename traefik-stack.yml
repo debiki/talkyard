@@ -1,21 +1,73 @@
-# https://docs.traefik.io/#1-launch-traefik-tell-it-to-listen-to-docker
-
 version: '3'
 
 services:
   traefik:
-    image: traefik
-    # Enable the web UI and tell Traefik to listen to docker.
-    command: --api --docker
+    image: traefik:1.7.6
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
       # The Web UI, enabled by --api. Don't expose publicly.
       - "8080:8080"
-    volumes:
-      # Let Traefik listen to Docker events, so it can reconfigure itself.
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      # You can create it like so:
-      #   docker network create talkyard-web
       - talkyard-web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./conf/traefik.toml:/traefik.toml
+      # mkdir -p data/traefik
+      #touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
+      #touch /opt/traefik/traefik.toml
+      - ./data/traefik/acme.json:/acme.json
+    container_name: traefik
+    # For Docker-Compose.
+    restart: always
+
+networks:
+  # docker network create talkyard-web
+  talkyard-web:
+    external: true
+
+## https://docs.traefik.io/#1-launch-traefik-tell-it-to-listen-to-docker
+#
+#version: '3'
+#
+#services:
+#  traefik:
+#    image: traefik
+#    # Enable the web UI and tell Traefik to listen to docker.
+#    command: --api --docker
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#      # The Web UI, enabled by --api. Don't expose publicly.
+#      - "8080:8080"
+#    volumes:
+#      # Let Traefik listen to Docker events, so it can reconfigure itself.
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    networks:
+#      # You can create it like so:
+#      #   docker network create talkyard-web
+#      - talkyard-web
+#
+##--
+## https://docs.traefik.io/user-guide/docker-and-lets-encrypt/#networking
+#version: '2'
+#
+#services:
+#  traefik:
+#    image: traefik:1.5.4
+#    restart: always
+#    ports:
+#      - 80:80
+#      - 443:443
+#    networks:
+#      - web
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - /opt/traefik/traefik.toml:/traefik.toml
+#      - /opt/traefik/acme.json:/acme.json
+#    container_name: traefik
+#
+#networks:
+#  web:
+#    external: true
+#

@@ -1,3 +1,6 @@
+#VERSION_TAG=`tail -n1 modules/ed-versions/version-tags.log`  DOCKER_REPOSITORY=debiki  envsubst < talkyard-stack.yml  > talkyard-stack.latest-version.yml
+
+
 # check what's not supported for docker stack deploy
 # https://docs.docker.com/compose/compose-file/#not-supported-for-docker-stack-deploy
 
@@ -58,7 +61,8 @@
 # https://aboullaite.me/multi-stage-docker-java/
 
 
-version: "3.7"
+#version: "3.7"
+version: "3"
 
 volumes:
   talkyard-backups:
@@ -78,13 +82,14 @@ volumes:
 networks:
   talkyard-backend:
   talkyard-web:
+    external: true
 
 services:
   web:
     #build: docker/web/
     image: $DOCKER_REPOSITORY/talkyard-web:$VERSION_TAG
     restart: always   # if you use Docker Compose
-    restart-policy:   # if you use Docker Swarm
+    #restart-policy:   # if you use Docker Swarm
       #always
     volumes:
       - talkyard-nginx-sites-enabled-manual/:/etc/nginx/sites-enabled-manual/:ro
@@ -94,23 +99,32 @@ services:
     #ports:
     #  # You're supposed to provide your own reverse proxy with HTTPS in front of Talkyard,
     #  # and connect it to 8080.
-    #  - '8080:80'
+    #  # no: - '8080:80'
     networks:
       - talkyard-web
       - talkyard-backend
     depends_on:
       - app
-    environment:
+    #environment:
       #  X_PULL_KEY: "..."
       # CDN_PULL_KEY: "public"
 
     # For Docker-Compose:
     labels:
-      - "traefik.frontend.rule=Host:whoami.docker.localhost"
+      #- "traefik.frontend.rule=PathPrefix:/"
+      - "traefik.docker.network=talkyard-web"
+      - "traefik.enable=true"
+      # Send everything to this server.
+      - "traefik.web.frontend.rule=PathPrefix:/"
+      - "traefik.web.port=80"
+      - "traefik.web.protocol=http"
+      #- "traefik.admin.frontend.rule=Host:admin-app.my-awesome-app.org"
+      #- "traefik.admin.protocol=https"
+      #- "traefik.admin.port=9443"
     # For Docker-Stack:
-    deploy:
-      labels:
-        - "traefik.frontend.rule=Host:whoami.docker.localhost"
+    #deploy:
+      #labels:
+        # ...
 
   app:
     #build: docker/app-prod/
@@ -120,10 +134,14 @@ services:
     image: $DOCKER_REPOSITORY/talkyard-app-dev:$VERSION_TAG
     stdin_open: true  # otherwise Play exits
     volumes:
-      - talkyard-app-conf/:/var/log/talkyard/conf/:ro
-      - talkyard-app-logs/:/var/log/talkyard/
-      - talkyard-uploads/:/opt/talkyard/uploads/
-      - talkyard-backups/:/opt/talkyard-backups/:ro
+      - ./:/opt/talkyard/app/
+      - ./volumes/uploads/:/opt/talkyard/uploads/
+      - ./volumes/app-logs/:/var/log/talkyard/
+      #- talkyard-app-conf/:/var/log/talkyard/conf/:ro
+      #- talkyard-app-logs/:/var/log/talkyard/
+      #- talkyard-uploads/:/opt/talkyard/uploads/
+      #- talkyard-backups/:/opt/talkyard-backups/:ro
+
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
@@ -133,7 +151,7 @@ services:
       - cache
       - search
       - rdb
-      - fakemail
+      #- fakemail
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
@@ -141,11 +159,11 @@ services:
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
 
   cache:
-    build: docker/cache/
+    #build: docker/cache/
     image: $DOCKER_REPOSITORY/talkyard-cache:$VERSION_TAG
     volumes:
       - talkyard-cache-data:/data/
-      - talkyard-cache-log:/var/log/redis/
+      - talkyard-cache-logs:/var/log/redis/
     networks:
       - talkyard-backend
     ports:
@@ -154,7 +172,7 @@ services:
       net.core.somaxconn: 511
 
   search:
-    build: docker/search/
+    #build: docker/search/
     image: $DOCKER_REPOSITORY/talkyard-search:$VERSION_TAG
     # If too low, the 'search' container will suddenly exit with code 137. No error message
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
@@ -171,7 +189,7 @@ services:
       ES_JAVA_OPTS: '-Xms384m -Xmx384m'
 
   rdb:
-    build: docker/rdb/
+    #build: docker/rdb/
     image: $DOCKER_REPOSITORY/talkyard-rdb:$VERSION_TAG
     volumes:
       - talkyard-pg10-data/:/var/lib/postgresql/data/
