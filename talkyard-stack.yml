@@ -80,7 +80,7 @@ volumes:
   talkyard-search-logs:
 
 networks:
-  talkyard-backend:
+  talkyard-internal:
   talkyard-web:
     external: true
 
@@ -102,7 +102,7 @@ services:
     #  # no: - '8080:80'
     networks:
       - talkyard-web
-      - talkyard-backend
+      - talkyard-internal
     depends_on:
       - app
     #environment:
@@ -146,7 +146,7 @@ services:
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
     networks:
-      - talkyard-backend
+      - talkyard-internal
     links:
       - cache
       - search
@@ -165,7 +165,7 @@ services:
       - talkyard-cache-data:/data/
       - talkyard-cache-logs:/var/log/redis/
     networks:
-      - talkyard-backend
+      - talkyard-internal
     ports:
       - '6379:6379'
     sysctls:
@@ -181,7 +181,7 @@ services:
       - talkyard-search-data/:/usr/share/elasticsearch/data/
       - talkyard-search-logs/:/usr/share/elasticsearch/logs/
     networks:
-      - talkyard-backend
+      - talkyard-internal
     ports:
       - '9200:9200'
       - '9300:9300'
@@ -195,7 +195,7 @@ services:
       - talkyard-pg10-data/:/var/lib/postgresql/data/
       - talkyard-pg10-logs/:/var/log/postgresql/
     networks:
-      - talkyard-backend
+      - talkyard-internal
     ports:
       - '5432:5432'
     environment:

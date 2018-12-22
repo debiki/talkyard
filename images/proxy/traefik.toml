@@ -1,0 +1,15 @@
+# Traefik config for a development server on localhost.
+# No HTTPS (Let'sEncrypt cannot generate certs for localhos).
+
+debug = false
+
+logLevel = "INFO"
+defaultEntryPoints = ["https","http"]
+
+[retry]
+
+[docker]
+endpoint = "unix:///var/run/docker.sock"
+watch = true
+exposedByDefault = false
+
