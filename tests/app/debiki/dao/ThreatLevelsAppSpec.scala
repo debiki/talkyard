@@ -46,25 +46,25 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
         checkNoReviewTask(post)
 
         info("mild threat –> reviewed afterwards")
-        dao.lockMemberThreatLevel(member.id, Some(ThreatLevel.MildThreat))
+        dao.lockUserThreatLevel(member.id, Some(ThreatLevel.MildThreat))
         post = reply(member.id, "reply_02844_a").post
         post.approvedById mustBe Some(SystemUserId)
         checkReviewTaskGenerated(post, Seq(ReviewReason.IsByThreatUser))
 
         info("moderate threat –> need approve before shown")
-        dao.lockMemberThreatLevel(member.id, Some(ThreatLevel.ModerateThreat))
+        dao.lockUserThreatLevel(member.id, Some(ThreatLevel.ModerateThreat))
         post = reply(member.id, "reply_02844_b").post
         post.approvedById mustBe None
         checkReviewTaskGenerated(post, Seq(ReviewReason.IsByThreatUser))
 
         info("severe threat –> forbidden")
-        dao.lockMemberThreatLevel(member.id, Some(ThreatLevel.SevereThreat))
+        dao.lockUserThreatLevel(member.id, Some(ThreatLevel.SevereThreat))
         intercept[Exception]{
           reply(member.id, "reply_02844_b").post
         }.getMessage must include("EsE5Y80G2_")
 
         info("can clear threat level")
-        dao.lockMemberThreatLevel(member.id, None)
+        dao.lockUserThreatLevel(member.id, None)
         post = reply(member.id, "reply_02844_c").post
         post.approvedById mustBe Some(SystemUserId)
         checkNoReviewTask(post)

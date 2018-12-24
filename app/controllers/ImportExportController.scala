@@ -129,7 +129,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
     settings: SettingsToSave,
     summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
     summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
-    users: Seq[MemberInclDetails],
+    users: Seq[UserInclDetails],
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
     categories: Seq[Category],
@@ -181,7 +181,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       summaryEmailIfActive = (json \ "summaryEmailIfActive").as[Boolean]
     }
 
-    val users: Seq[MemberInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
+    val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "EsE0GY72", s"""Invalid user json at index $index in the 'users' list: $errorMessage,
@@ -367,7 +367,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
   }
 
 
-  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): MemberInclDetails Or ErrorMessage = {
+  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): UserInclDetails Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -386,7 +386,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
-      Good(MemberInclDetails(
+      Good(UserInclDetails(
         id = id,
         externalId = readOptString(jsObj, "externalId"),
         username = username,

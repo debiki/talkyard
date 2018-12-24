@@ -59,7 +59,7 @@ object DbDao {
   case class BadEmailTypeException(emailId: String)
     extends RuntimeException(s"Email with id $emailId has no recipient user id")
 
-  case class EmailAddressChangedException(email: Email, user: User)
+  case class EmailAddressChangedException(email: Email, user: Participant)
     extends QuickException
 
   case class DuplicateUsername(username: String) extends RuntimeException(s"Duplicate username: $username")

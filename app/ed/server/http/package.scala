@@ -35,7 +35,7 @@ package object http {
     sid: SidStatus,
     xsrfToken: XsrfOk,
     browserId: Option[BrowserId],
-    user: Option[User],
+    user: Option[Participant],
     dao: SiteDao,
     request: Request[A]) extends DebikiRequest[A] {
   }

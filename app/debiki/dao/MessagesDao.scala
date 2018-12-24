@@ -65,7 +65,7 @@ trait MessagesDao {
       // let them start sending PMs directly.
       if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
           sender.trustLevel == TrustLevel.NewMember) && !sender.isStaff) {
-        val toUsers = tx.loadUsers(toUserIds)
+        val toUsers = tx.loadParticipants(toUserIds)
         if (toUsers.exists(!_.isStaff))
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
       }

@@ -279,7 +279,7 @@ class JsonMaker(dao: SiteDao) {
       posts.find(_.id == postId).map(_.nr)
     }
 
-    val usersById = transaction.loadUsersAsMap(userIdsToLoad)
+    val usersById = transaction.loadParticipantsAsMap(userIdsToLoad)
     val usersByIdJson = JsObject(usersById map { idAndUser =>
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
@@ -614,7 +614,7 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
+  private def userDataJsonImpl(user: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
         restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
         permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
@@ -653,7 +653,7 @@ class JsonMaker(dao: SiteDao) {
           Nil, JsEmptyObj, JsEmptyObj, JsArray())
 
     val threatLevel = user match {
-      case member: Member => member.threatLevel
+      case member: User => member.threatLevel
       case _ =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
         // correct threat level. However, for now, since this is for the browser only, this'll do:
@@ -803,7 +803,7 @@ class JsonMaker(dao: SiteDao) {
       includeAboutCategoryPages = siteSettings.showCategories)
 
 
-  private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
+  private def unapprovedPostsAndAuthorsJson(user: Participant, pageId: PageId,
         unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
           JsObject /* why object? try to change to JsArray instead */, JsArray) = {
 
@@ -844,7 +844,7 @@ class JsonMaker(dao: SiteDao) {
             Nil), renderer)
     }
 
-    val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
+    val authors = transaction.loadParticipants(posts.map(_.createdById).toSet)
     val authorsJson = JsArray(authors map JsUser)
     (JsObject(postIdsAndJson), authorsJson)
   }
@@ -877,9 +877,9 @@ class JsonMaker(dao: SiteDao) {
     val post = dao.loadPost(pageId, postNr) getOrElse {
       return None
     }
-    val author = dao.getUser(post.createdById) getOrElse {
+    val author = dao.getParticipant(post.createdById) getOrElse {
       // User was just deleted? Race condition.
-      UnknownUser
+      UnknownParticipant
     }
     Some(makeStorePatch(post, author, showHidden = showHidden))
   }
@@ -901,13 +901,13 @@ class JsonMaker(dao: SiteDao) {
     val pageIds = posts.map(_.pageId).toSet
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
     val authorIds = posts.map(_.createdById).toSet
-    val authors = transaction.loadUsers(authorIds)
+    val authors = transaction.loadParticipants(authorIds)
     makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors, appVersion = appVersion)(
       transaction)
   }
 
 
-  def makeStorePatch(post: Post, author: User, showHidden: Boolean): JsObject = {
+  def makeStorePatch(post: Post, author: Participant, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
     val (postJson, pageVersion) = postToJson(
@@ -927,7 +927,7 @@ class JsonMaker(dao: SiteDao) {
     dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
         just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
     val tags = transaction.loadTagsForPost(post.id)
-    val author = transaction.loadTheUser(post.createdById)
+    val author = transaction.loadTheParticipant(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")
     val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
     makeStorePatch(PageIdVersion(post.pageId, page.version), appVersion = appVersion,
@@ -948,7 +948,7 @@ class JsonMaker(dao: SiteDao) {
 
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
-    tagsByPostId: Map[PostId, Set[String]], users: Iterable[User], appVersion: String)(
+     tagsByPostId: Map[PostId, Set[String]], users: Iterable[Participant], appVersion: String)(
     transaction: SiteTransaction): JsValue = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     val pageVersionsByPageIdJson =
@@ -1242,7 +1242,7 @@ object JsonMaker {
     // Unseen notfs are sorted first, so if the last one is unseen, there might be more unseen.
     val thereAreMoreUnseen = notfs.lastOption.exists(_.seenAt.isEmpty)
 
-    val usersById = transaction.loadUsersAsMap(userIds)
+    val usersById = transaction.loadParticipantsAsMap(userIds)
 
     NotfsAndCounts(
       numTalkToMe = numTalkToMe,
@@ -1255,7 +1255,7 @@ object JsonMaker {
 
 
   private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
-    postsById: Map[PostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
+    postsById: Map[PostId, Post], usersById: Map[UserId, Participant]): Option[JsObject] = {
     Some(notf match {
       case notf: Notification.NewPost =>
         val post = postsById.getOrElse(notf.uniquePostId, {
@@ -1499,8 +1499,8 @@ object JsonMaker {
   }
 
 
-  def postRevisionToJson(revision: PostRevision, usersById: Map[UserId, User],
-    maySeeHidden: Boolean): JsValue = {
+  def postRevisionToJson(revision: PostRevision, usersById: Map[UserId, Participant],
+                         maySeeHidden: Boolean): JsValue = {
     val source =
       if (revision.isHidden && !maySeeHidden) JsNull
       else JsString(revision.fullSource.getOrDie("DwE7GUY2"))
@@ -1687,10 +1687,10 @@ object JsonMaker {
 
 object JsX {
 
-  def JsUserOrNull(user: Option[User]): JsValue =
+  def JsUserOrNull(user: Option[Participant]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: User): JsObject = {
+  def JsUser(user: Participant): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),

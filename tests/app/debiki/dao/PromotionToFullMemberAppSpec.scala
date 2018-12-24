@@ -32,12 +32,12 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false,
       Who(owner.id, browserIdData)).defaultCategoryId
 
-  lazy val owner: Member = createPasswordOwner("tag_adm", dao)
-  lazy val moderator: Member = createPasswordModerator("tag_mod", dao)
-  lazy val member1: Member = createPasswordUser("tag_mb1", dao)
-  lazy val member2: Member = createPasswordUser("tag_mb2", dao)
-  lazy val member3: Member = createPasswordUser("tag_mb3", dao)
-  lazy val wrongMember: Member = createPasswordUser("wr_tg_mbr", dao)
+  lazy val owner: User = createPasswordOwner("tag_adm", dao)
+  lazy val moderator: User = createPasswordModerator("tag_mod", dao)
+  lazy val member1: User = createPasswordUser("tag_mb1", dao)
+  lazy val member2: User = createPasswordUser("tag_mb2", dao)
+  lazy val member3: User = createPasswordUser("tag_mb3", dao)
+  lazy val wrongMember: User = createPasswordUser("wr_tg_mbr", dao)
 
   val pageIds = new mutable.HashMap[Int, PageId]()
 

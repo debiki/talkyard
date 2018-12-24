@@ -79,11 +79,11 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       val badUser = createPasswordUser("btk3rr40", dao, trustLevel = TrustLevel.BasicMember)
       val otherUser = createPasswordUser("r90t4gdf", dao, trustLevel = TrustLevel.BasicMember)
 
-      dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.ModerateThreat))
+      dao.lockUserThreatLevel(badUser.id, Some(ThreatLevel.ModerateThreat))
       testMayNotMessage(dao, admin, sender = badUser, otherUser = otherUser)
 
       info("but a mild threat may message non-staff users"); {
-        dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.MildThreat))
+        dao.lockUserThreatLevel(badUser.id, Some(ThreatLevel.MildThreat))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = badUser.id, dao)
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
         pageMeta.pageRole mustBe PageRole.FormalMessage
@@ -99,7 +99,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       testMayNotMessage(dao, admin, sender = newUser, otherUser = otherUser)
 
       info("but a Basic user may message non-staff users"); {
-        dao.lockMemberTrustLevel(newUser.id, Some(TrustLevel.BasicMember))
+        dao.lockUserTrustLevel(newUser.id, Some(TrustLevel.BasicMember))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = newUser.id, dao)
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
         pageMeta.pageRole mustBe PageRole.FormalMessage
@@ -107,7 +107,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
     }
 
 
-    def testMayNotMessage(dao: SiteDao, admin: User, sender: User, otherUser: User) {
+    def testMayNotMessage(dao: SiteDao, admin: Participant, sender: Participant, otherUser: Participant) {
       info("a moderate threat can message admin"); {
         val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
           body = textAndHtmlMaker.testBody("body_0482745"), PageRole.FormalMessage,

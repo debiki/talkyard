@@ -28,9 +28,9 @@ class LoginAppSpec extends DaoAppSuite() {
   val Member1PasswordEnd = "lg_mb1"
   val Member1Password: String = "public-" + Member1PasswordEnd
 
-  lazy val moderator: Member = createPasswordModerator("lg_mod", dao)
-  lazy val member1: Member = createPasswordUser(Member1PasswordEnd, dao)
-  lazy val wrongMember: Member = createPasswordUser("lg_wr_mb", dao)
+  lazy val moderator: User = createPasswordModerator("lg_mod", dao)
+  lazy val member1: User = createPasswordUser(Member1PasswordEnd, dao)
+  lazy val wrongMember: User = createPasswordUser("lg_wr_mb", dao)
 
 
   "Members can login with password" - {
@@ -83,10 +83,10 @@ class LoginAppSpec extends DaoAppSuite() {
     }
 
     "cannot login after account deleted" - {
-      var anonNNN: MemberInclDetails = null
+      var anonNNN: UserInclDetails = null
 
       "mem cache says user *not* deleted" in {
-        val user = dao.getTheUser(member1.id)
+        val user = dao.getTheParticipant(member1.id)
         user.isDeleted mustBe false
       }
 
@@ -98,7 +98,7 @@ class LoginAppSpec extends DaoAppSuite() {
       }
 
       "mem cache now says user *is* deleted" in {
-        val user = dao.getTheUser(member1.id)
+        val user = dao.getTheParticipant(member1.id)
         user.isDeleted mustBe true
       }
 

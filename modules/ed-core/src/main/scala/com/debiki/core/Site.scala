@@ -232,4 +232,4 @@ case class NewSiteOwnerData(
   ownerIp: String,
   ownerLoginId: String,
   ownerIdentity: IdentityOpenId,
-  ownerRole: User)
+  ownerRole: Participant)

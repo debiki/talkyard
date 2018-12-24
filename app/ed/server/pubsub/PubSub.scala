@@ -97,12 +97,12 @@ class PubSubApi(private val actorRef: ActorRef) {
 
   SHOULD; PRIVACY // change from site id to publ site id [5UKFBQW2].
 
-  def userSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData,
-        watchedPageIds: Set[PageId]) {
+  def userSubscribed(siteId: SiteId, user: Participant, browserIdData: BrowserIdData,
+                     watchedPageIds: Set[PageId]) {
     actorRef ! UserSubscribed(siteId, user, browserIdData, watchedPageIds)
   }
 
-  def unsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+  def unsubscribeUser(siteId: SiteId, user: Participant, browserIdData: BrowserIdData) {
     actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
 
@@ -110,7 +110,7 @@ class PubSubApi(private val actorRef: ActorRef) {
     actorRef ! UserWatchesPages(siteId, userId, pageIds)
   }
 
-  def userIsActive(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+  def userIsActive(siteId: SiteId, user: Participant, browserIdData: BrowserIdData) {
     actorRef ! UserIsActive(siteId, user, browserIdData)
   }
 
@@ -142,18 +142,18 @@ private case class PublishMessage(message: Message, byId: UserId)
 private case class UserWatchesPages(
   siteId: SiteId, userId: UserId, pageIds: Set[PageId])
 private case class UserIsActive(
-  siteId: SiteId, user: User, browserIdData: BrowserIdData)
+  siteId: SiteId, user: Participant, browserIdData: BrowserIdData)
 private case class UserSubscribed(
-  siteId: SiteId, user: User, browserIdData: BrowserIdData, watchedPageIds: Set[PageId])
+  siteId: SiteId, user: Participant, browserIdData: BrowserIdData, watchedPageIds: Set[PageId])
 private case class UnsubscribeUser(
-  siteId: SiteId, user: User, browserIdData: BrowserIdData)
+  siteId: SiteId, user: Participant, browserIdData: BrowserIdData)
 private case object DeleteInactiveSubscriptions
 private case class DebugGetSubscribers(siteId: SiteId)
 
 private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
 
 
-case class UserWhenPages(user: User, when: When, watchingPageIds: Set[PageId]) {
+case class UserWhenPages(user: Participant, when: When, watchingPageIds: Set[PageId]) {
   override def toString: String =
     o"""(@${user.anyUsername getOrElse "-"}:${user.id} at ${toIso8601T(when.toJavaDate)}
         watches: ${ watchingPageIds.mkString(",") })"""
@@ -207,7 +207,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
-      val user = globals.siteDao(siteId).getUser(userId) getOrElse { return }
+      val user = globals.siteDao(siteId).getParticipant(userId) getOrElse { return }
       updateWatchedPages(siteId, userId, pageIds)
       publishPresenceIfChanged(siteId, Some(user), Presence.Active)
       redisCacheForSite(siteId).markUserOnline(user.id)
@@ -261,7 +261,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def addOrUpdateSubscriber(siteId: SiteId, user: User, watchedPageIds: Set[PageId])
+  private def addOrUpdateSubscriber(siteId: SiteId, user: Participant, watchedPageIds: Set[PageId])
         : Option[Set[PageId]] = {
     traceLog(siteId, s"Adding/updating subscriber ${prettyUser(user)} [TyDADUPSUBSC]")
     val subscribersById = subscribersByIdForSite(siteId)
@@ -272,7 +272,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def removeSubscriber(siteId: SiteId, user: User): Set[PageId] = {
+  private def removeSubscriber(siteId: SiteId, user: Participant): Set[PageId] = {
     // COULD tell Nchan about this too
     traceLog(siteId, s"Removing subscriber ${prettyUser(user)} [TyDRMSUBSC]")
     val oldEntry = subscribersByIdForSite(siteId).remove(user.id)
@@ -280,7 +280,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def publishPresenceIfChanged(siteId: SiteId, users: Iterable[User], newPresence: Presence) {
+  private def publishPresenceIfChanged(siteId: SiteId, users: Iterable[Participant], newPresence: Presence) {
     COULD_OPTIMIZE // send just 1 request, list many users. (5JKWQU01)
     users foreach { user =>
       val isActive = redisCacheForSite(siteId).isUserActive(user.id)
@@ -291,7 +291,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def publishPresenceAlways(siteId: SiteId, users: Iterable[User], newPresence: Presence) {
+  private def publishPresenceAlways(siteId: SiteId, users: Iterable[Participant], newPresence: Presence) {
     COULD_OPTIMIZE // send just 1 request, list many users. (5JKWQU01)
     users foreach { user =>
       publishPresenceImpl(siteId, user, newPresence)
@@ -299,7 +299,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def publishPresenceImpl(siteId: SiteId, user: User, presence: Presence) {
+  private def publishPresenceImpl(siteId: SiteId, user: Participant, presence: Presence) {
     // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
     // other people won't know if a user that logged out, stays online or not.
     // No. *Do* send num-strangers-online. Otherwise I get confused and think here's some bug :-/.
@@ -329,7 +329,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
       }
 
       def lazyMessage = s"Publ notifications to $lazyPrettyUser [TyDPUBLNTFS]"
-      def lazyPrettyUser = anyPrettyUser(siteDao.getUser(notf.toUserId), notf.toUserId)
+      def lazyPrettyUser = anyPrettyUser(siteDao.getParticipant(notf.toUserId), notf.toUserId)
       traceLog(message.siteId, lazyMessage)
 
       sendPublishRequest(message.siteId, Set(notf.toUserId), "notifications", notfsJson)
@@ -342,7 +342,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
 
         def lazyMessage = s"Publ storePatch to ${lazyPrettyUsers.mkString(", ")} [TyDPUBLPTCH]"
-        def lazyPrettyUsers: Iterable[String] = userIds.map(id => anyPrettyUser(siteDao.getUser(id), id))
+        def lazyPrettyUsers: Iterable[String] = userIds.map(id => anyPrettyUser(siteDao.getParticipant(id), id))
         traceLog(message.siteId, lazyMessage)
 
         sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
@@ -358,7 +358,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     val pageIdsAdded = newPageIds -- oldPageIds
     val pageIdsRemoved = oldPageIds -- newPageIds
 
-    def lazyPrettyUser: String = anyPrettyUser(globals.siteDao(siteId).getUser(userId), userId)
+    def lazyPrettyUser: String = anyPrettyUser(globals.siteDao(siteId).getParticipant(userId), userId)
     traceLog(siteId,
         s"$lazyPrettyUser starts watching pages: $pageIdsAdded, stopped: $pageIdsRemoved [TyDWTCHPGS]")
 
@@ -473,12 +473,12 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   def traceLog(siteId: SiteId, message: => String): Unit =
     p.Logger.trace(s"s$siteId: PubSub: $message")
 
-  private def anyPrettyUser(anyUser: Option[User], userId: UserId) = anyUser match {
+  private def anyPrettyUser(anyUser: Option[Participant], userId: UserId) = anyUser match {
     case Some(user) => prettyUser(user)
     case None => s"missing user $userId"
   }
 
-  private def prettyUser(user: User) =
+  private def prettyUser(user: Participant) =
     s"user ${user.id} " + user.anyUsername.map("@" + _).getOrElse("(a guest)")
 
 }

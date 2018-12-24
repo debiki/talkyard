@@ -44,7 +44,7 @@ trait SearchDao {
   implicit def executionContext: ExecutionContext = context.executionContext
 
 
-  def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId], user: Option[User])
+  def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId], user: Option[Participant])
         : Future[Seq[PageAndHits]] = {
     searchEngine.search(searchQuery, anyRootPageId, user) map { hits: Seq[SearchHit] =>
       groupByPageFilterAndSort(hits, user)
@@ -52,7 +52,7 @@ trait SearchDao {
   }
 
 
-  private def groupByPageFilterAndSort(searchHits: Seq[SearchHit], user: Option[User])
+  private def groupByPageFilterAndSort(searchHits: Seq[SearchHit], user: Option[Participant])
         : Seq[PageAndHits] = {
     val hitsByPageId: Map[PageId, Seq[SearchHit]] =
       searchHits.groupBy(hit => hit.pageId)

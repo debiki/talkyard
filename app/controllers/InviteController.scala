@@ -113,7 +113,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
           oldInvitesCached.get
         }
 
-        val alreadyExistingUser = tx.loadMemberByPrimaryEmailOrUsername(toEmailAddress)
+        val alreadyExistingUser = tx.loadUserByPrimaryEmailOrUsername(toEmailAddress)
         if (alreadyExistingUser.nonEmpty) {
           // Maybe check if email verified? [5UKHWQ2]
           alreadyJoinedAddresses.add(toEmailAddress)
@@ -157,7 +157,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createdAt = globals.now().toJavaDate)
 
     val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>
-      User.makeOkayUsername(
+      Participant.makeOkayUsername(
         invite.emailAddress.takeWhile(_ != '@'), allowDotDash = false,  // [CANONUN]
         tx.isUsernameInUse)
     }
@@ -197,7 +197,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
       globals.sendEmail(welcomeEmail, request.siteId)
 
-      val inviter = request.dao.getUser(invite.createdById) getOrDie "DwE4KDEP0"
+      val inviter = request.dao.getParticipant(invite.createdById) getOrDie "DwE4KDEP0"
       val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
       globals.sendEmail(inviteAcceptedEmail, request.siteId)
       // COULD create a notification instead / too.
@@ -271,7 +271,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def makeWelcomeSetPasswordEmail(newUser: MemberInclDetails, siteHostname: String) = {
+  private def makeWelcomeSetPasswordEmail(newUser: UserInclDetails, siteHostname: String) = {
     Email(
       EmailType.InvitePassword,
       createdAt = globals.now(),
@@ -283,7 +283,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: MemberInclDetails, inviter: User)
+  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: UserInclDetails, inviter: Participant)
         : Email = {
     Email(
       EmailType.InviteAccepted,

@@ -37,7 +37,7 @@ class SearchEngine(
   private val siteId: SiteId,
   private val elasticSearchClient: Client) {
 
-  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[User])
+  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[Participant])
         : Future[immutable.Seq[SearchHit]] = {
 
     if (searchQuery.isEmpty)

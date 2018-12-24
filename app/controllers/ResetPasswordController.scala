@@ -96,7 +96,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 10) {
         request =>
     import request.{dao, siteId, theRequester => requester}
-    val member = dao.loadTheMemberInclDetailsById(requester.id)
+    val member = dao.loadTheUserInclDetailsById(requester.id)
 
     // Later, ask for current pwd, if no email addr available. [7B4W20]
     throwForbiddenIf(member.primaryEmailAddress.isEmpty, "TyE5KBRE20", "No primary email address")
@@ -113,7 +113,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   }
 
 
-  private def sendChangePasswordEmailTo(user: Member, request: ApiRequest[_], isCreating: Boolean) {
+  private def sendChangePasswordEmailTo(user: User, request: ApiRequest[_], isCreating: Boolean) {
     import request.dao
 
     val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N

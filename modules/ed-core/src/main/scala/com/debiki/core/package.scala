@@ -224,19 +224,19 @@ package object core {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
-    def isGuest: Boolean = User.isGuestId(id)
+    def isGuest: Boolean = Participant.isGuestId(id)
   }
 
   object Who {
     val System = Who(SystemUserId, BrowserIdData.System)
   }
 
-  case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
+  case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
   }
 
-  case class AnyUserAndThreatLevel(user: Option[User], threatLevel: ThreatLevel)
+  case class AnyUserAndThreatLevel(user: Option[Participant], threatLevel: ThreatLevel)
 
 
   sealed trait OrderBy { def isDescending: Boolean = false }
@@ -297,19 +297,19 @@ package object core {
   def MaxTestSiteId: SiteId = Site.MaxTestSiteId
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
-  def SystemUserId: UserId = User.SystemUserId
+  def SystemUserId: UserId = Participant.SystemUserId
   def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
-  def SystemUserFullName: String = User.SystemUserFullName
-  def SystemUserUsername: String = User.SystemUserUsername
-  def SysbotUserId: UserId = User.SysbotUserId
-  def SysbotUserFullName: String = User.SysbotUserFullName
-  def SysbotUserUsername: String = User.SysbotUserUsername
-  def UnknownUserId: UserId = User.UnknownUserId
-  def UnknownUserName: String = User.UnknownUserName
-  def UnknownUserBrowserId: String = User.UnknownUserBrowserId
-  def MaxGuestId: UserId = User.MaxGuestId
-  def LowestNonGuestId: UserId = User.LowestNonGuestId
-  def LowestTalkToMemberId: UserId = User.LowestTalkToMemberId
+  def SystemUserFullName: String = Participant.SystemUserFullName
+  def SystemUserUsername: String = Participant.SystemUserUsername
+  def SysbotUserId: UserId = Participant.SysbotUserId
+  def SysbotUserFullName: String = Participant.SysbotUserFullName
+  def SysbotUserUsername: String = Participant.SysbotUserUsername
+  def UnknownUserId: UserId = Participant.UnknownUserId
+  def UnknownUserName: String = Participant.UnknownUserName
+  def UnknownUserBrowserId: String = Participant.UnknownUserBrowserId
+  def MaxGuestId: UserId = Participant.MaxGuestId
+  def LowestNonGuestId: UserId = Participant.LowestNonGuestId
+  def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
 
   val FirstRevisionNr: Int = PostRevision.FirstRevisionNr
 
@@ -436,13 +436,13 @@ package object core {
 
   case class StuffToSpamCheck(
     postsBySite: Map[SiteId, immutable.Seq[Post]],
-    usersBySite: Map[SiteId, Map[UserId, User]],
+    usersBySite: Map[SiteId, Map[UserId, Participant]],
     spamCheckTasks: Seq[SpamCheckTask]) {
 
     def getPost(sitePostId: SitePostId): Option[Post] =
       postsBySite.get(sitePostId.siteId).flatMap(_.find(_.id == sitePostId.postId))
 
-    def getUser(siteUserId: SiteUserId): Option[User] =
+    def getUser(siteUserId: SiteUserId): Option[Participant] =
       usersBySite.get(siteUserId.siteId).flatMap(_.get(siteUserId.userId))
   }
 

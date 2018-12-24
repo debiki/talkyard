@@ -85,7 +85,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         }
         // The System user should only do things based on Talkyard's source code. [SYS0LGI]
         throwForbiddenIf(userId == SystemUserId, "TyELGISYS", "Cannot login as System.")
-        val user = dao.getTheMember(userId)
+        val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
         val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
 
@@ -164,7 +164,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
           // Look up by email. If found, reuse account, set external id, and login.
           // Else, create new user with specified external id and email.
 
-          tx.loadMemberInclDetailsByExternalId(extUser.externalId).map({ user =>  // (7KAB2BA)
+          tx.loadUserInclDetailsByExternalId(extUser.externalId).map({ user =>  // (7KAB2BA)
             dieIf(user.externalId isNot extUser.externalId, "TyE5KR02A")
             // TODO update fields, if different.
             if (extUser.primaryEmailAddress != user.primaryEmailAddress) {
@@ -172,7 +172,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
               // user's email address too, then.  —  However, would be weird,
               // if there already is another Talkyard account that mirrors [*another* external user
               // with that email]?
-              val anyUser2 = tx.loadMemberByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
+              val anyUser2 = tx.loadUserByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
               anyUser2 foreach { user2 =>
                 throwForbidden("TyE2ABK40", o"""s$siteId: Cannot update the email address of
                     Talkyard user ${user.usernameHashId} with external id
@@ -192,7 +192,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
               // TODO what about looking up by secondary email addresses, or not?
               // Don't do that? They aren't supposed to be used for login. And do require
               // that there isn't any clash here: (5BK02A5)?
-              tx.loadMemberInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
+              tx.loadUserInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
 
             dieIf(user.externalId is extUser.externalId, "TyE7AKBR2") // ought to have been found by id
             dieIf(user.primaryEmailAddress != extUser.primaryEmailAddress, "TyE7AKBR8")
@@ -220,7 +220,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
 
             val updatedUser = user.copyWithExternalData(extUser)
             dieIf(updatedUser == user, "TyE4AKBRE2")
-            tx.updateMemberInclDetails(updatedUser)
+            tx.updateUserInclDetails(updatedUser)
             updatedUser
           }) getOrElse {
             // Create a new Talkyard user account, for this external user.
@@ -228,7 +228,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
 
             def makeName(): String = "unnamed_" + (nextRandomLong() % 1000)
             val usernameToTry = extUser.username.orElse(extUser.fullName).getOrElse(makeName())
-            val okayUsername = User.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
+            val okayUsername = Participant.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
               tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
 
             Logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,

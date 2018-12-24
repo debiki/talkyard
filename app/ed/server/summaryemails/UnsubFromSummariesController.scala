@@ -81,7 +81,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
     val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE8YEM2Q", "Bad email id")
 
-    if (!email.toUserId.exists(User.isMember))
+    if (!email.toUserId.exists(Participant.isMember))
       throwForbidden("EdEZ5JKW30", "Not a member")
 
     if (email.tyype != EmailType.ActivitySummary)

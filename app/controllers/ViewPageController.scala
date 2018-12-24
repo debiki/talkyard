@@ -264,7 +264,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         var logout = false
         val (message, code) = request.theUser match {
           case _: Guest => ("Guest login not allowed", "TyE0GUESTS")
-          case member: Member =>
+          case member: User =>
             member.isApproved match {
               case None =>
                 // Logout, because maybe there're other people who use the same computer,

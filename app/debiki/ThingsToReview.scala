@@ -26,16 +26,16 @@ import scala.collection.immutable
 case class ThingsToReview(
   posts: immutable.Seq[Post],
   pageMetas: immutable.Seq[PageMeta],
-  people: Seq[User],
+  people: Seq[Participant],
   flags: immutable.Seq[PostFlag]) {
 
   private val postsByNr: Map[PostNr, Post] = Map(posts.map(post => post.nr -> post): _*)
   private val pagesById: Map[PageId, PageMeta] = Map(pageMetas.map(meta => meta.pageId -> meta): _*)
-  private val peopleById: Map[UserId, User] = Map(people.map(user => user.id -> user): _*)
+  private val peopleById: Map[UserId, Participant] = Map(people.map(user => user.id -> user): _*)
   private val flagsByPostNr: Map[PostNr, immutable.Seq[PostFlag]] = flags.groupBy(_.postNr)
 
   def thePost(id: PostNr): Post = postsByNr.get(id) getOrDie "DwE8F0Be2"
   def thePage(id: PageId): PageMeta = pagesById.get(id) getOrDie "DwE6PKJ5"
-  def theUser(id: UserId): User = peopleById.get(id) getOrDie "DwE2dKG8"
+  def theUser(id: UserId): Participant = peopleById.get(id) getOrDie "DwE2dKG8"
   def theFlagsFor(id: PostNr): immutable.Seq[PostFlag] = flagsByPostNr.getOrElse(id, Nil)
 }

@@ -71,7 +71,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
         val ip = rs.getString("IP")
         val anyUserId = getOptionalIntNoneNot0(rs, "USER_ID")
         anyUserId match {
-          case Some(id) if User.isRoleId(id) =>
+          case Some(id) if Participant.isRoleId(id) =>
             val buffer = roleIdsByPostNr.getOrElseUpdate(postNr, new ArrayBuffer[RoleId])
             buffer += id
           case _ =>

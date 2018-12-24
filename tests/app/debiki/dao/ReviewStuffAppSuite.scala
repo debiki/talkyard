@@ -30,7 +30,7 @@ class ReviewStuffAppSuite(randomString: String)
 
   class NestedPostsSuite extends FreeSpec with MustMatchers with BeforeAndAfterAll {
     var thePageId: PageId = _
-    lazy val theAdmin: User =  createPasswordOwner(s"aaddmm_${nextNameNr}_$r", dao)
+    lazy val theAdmin: Participant =  createPasswordOwner(s"aaddmm_${nextNameNr}_$r", dao)
     lazy val dao: SiteDao = {
       globals.systemDao.getOrCreateFirstSite()
       globals.siteDao(Site.FirstSiteId)

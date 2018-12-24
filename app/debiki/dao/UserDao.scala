@@ -48,7 +48,7 @@ trait UserDao {
 
   def addUserStats(moreStats: UserStats)(tx: SiteTransaction) {
     // Exclude superadmins. Maybe should incl system? [EXCLSYS]
-    if (NoUserId < moreStats.userId && moreStats.userId < User.LowestNormalMemberId)
+    if (NoUserId < moreStats.userId && moreStats.userId < Participant.LowestNormalMemberId)
       return
 
     val anyStats = tx.loadUserStats(moreStats.userId)
@@ -71,7 +71,7 @@ trait UserDao {
   /** Returns: (CompleteUser, Invite, hasBeenAcceptedAlready: Boolean)
     */
   def acceptInviteCreateUser(secretKey: String, browserIdData: BrowserIdData)
-        : (MemberInclDetails, Invite, Boolean) = {
+        : (UserInclDetails, Invite, Boolean) = {
     readWriteTransaction { tx =>
       var invite = tx.loadInviteBySecretKey(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
@@ -81,7 +81,7 @@ trait UserDao {
         // For now: If the invitation is < 1 day old, allow the user to log in
         // again via the invitation link. In Discourse, this timeout is configurable.
         if (millisAgo < 24 * 3600 * 1000) {
-          val user = loadMemberInclDetailsById(invite.userId getOrDie "DwE6FKEW2") getOrDie "DwE8KES2"
+          val user = tx.loadTheUserInclDetails(invite.userId getOrDie "TyE6FKEW2")
           return (user, invite, true)
         }
 
@@ -91,7 +91,7 @@ trait UserDao {
       SECURITY // Rather harmless. What if Mallory signed up with the same email, but it's not his email?
       // He couldn't verify the email address, but can block the real user from accepting
       // the invite? [5UKHWQ2])
-      if (tx.loadMemberByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
+      if (tx.loadUserByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
@@ -100,7 +100,7 @@ trait UserDao {
         "TyE500IIEA5", "Invalid invite email address")
 
       // Wait with allowing [.-] until canonical usernames implemented. [CANONUN]
-      val username = User.makeOkayUsername(
+      val username = Participant.makeOkayUsername(
           emailAddrBeforeAt, allowDotDash = false, tx.isUsernameInUse) getOrElse {
         // This means couldn't generate a username. That'd be impossibly bad luck, since we
         // try with random numbers of size up to 10^19 many times.
@@ -123,7 +123,7 @@ trait UserDao {
         s"s$siteId: Creating invited user @$username, email addr: ${invite.emailAddress} [TyD6KWA02]")
 
       var newUser = invite.makeUser(userId, username = username, tx.now.toJavaDate)
-      val inviter = tx.loadUser(invite.createdById) getOrDie "DwE5FKG4"
+      val inviter = tx.loadParticipant(invite.createdById) getOrDie "DwE5FKG4"
       if (inviter.isStaff) {
         newUser = newUser.copy(
           isApproved = Some(true),
@@ -150,29 +150,29 @@ trait UserDao {
   }
 
 
-  def editMember(memberId: UserId, doWhat: EditMemberAction, byWho: Who) {
+  def editUser(memberId: UserId, doWhat: EditUserAction, byWho: Who) {
     // E2e tested here: [5RBKWEF8]
     val now = globals.now()
 
     readWriteTransaction { tx =>
-      val byMember = tx.loadTheMember(byWho.id)
-      val memberBefore = tx.loadTheMemberInclDetails(memberId)
+      val byMember = tx.loadTheUser(byWho.id)
+      val memberBefore = tx.loadTheUserInclDetails(memberId)
 
       throwForbiddenIf(memberBefore.isAdmin && !byMember.isAdmin,
         "TyENADM0246", "Non-admins cannot reconfigure admins")
 
-      val memberAfter = copyEditMember(memberBefore, doWhat, byMember, now) getOrIfBad { errorMessage =>
+      val memberAfter = copyEditUser(memberBefore, doWhat, byMember, now) getOrIfBad { errorMessage =>
         throwForbidden("TyE4KBRW2", errorMessage)
       }
 
       // Sometimes need to do some more things. [2BRUI8]
       doWhat match {
-        case EditMemberAction.SetEmailVerified | EditMemberAction.SetEmailUnverified =>
+        case EditUserAction.SetEmailVerified | EditUserAction.SetEmailUnverified =>
           val userEmailAddrs = tx.loadUserEmailAddresses(memberId)
           val addr = userEmailAddrs.find(_.emailAddress == memberBefore.primaryEmailAddress) getOrDie(
               "TyE2FKJ6W", s"s$siteId: No primary email addr, user id $memberId")
           val addrUpdated = addr.copy(
-            verifiedAt = if (doWhat == EditMemberAction.SetEmailVerified) Some(now) else None)
+            verifiedAt = if (doWhat == EditUserAction.SetEmailVerified) Some(now) else None)
           tx.updateUserEmailAddress(addrUpdated)
         case _ =>
           // Noop.
@@ -188,7 +188,7 @@ trait UserDao {
         browserIdData = byWho.browserIdData,
         browserLocation = None)*/
 
-      tx.updateMemberInclDetails(memberAfter)
+      tx.updateUserInclDetails(memberAfter)
       //tx.insertAuditLogEntry(auditLogEntry)
     }
 
@@ -203,9 +203,9 @@ trait UserDao {
     * the other things in editMember() above [2BRUI8], the database will be left in an
     * inconsistent state. So, this fn should be accessible only to editMember() above.
     */
-  private def copyEditMember(member: MemberInclDetails, doWhat: EditMemberAction,
-        byMember: Member, now: When): MemberInclDetails Or ErrorMessage = {
-    import EditMemberAction._
+  private def copyEditUser(member: UserInclDetails, doWhat: EditUserAction,
+        byMember: User, now: When): UserInclDetails Or ErrorMessage = {
+    import EditUserAction._
     def someNow = Some(now.toJavaDate)
     def someById = Some(byMember.id)
 
@@ -255,21 +255,21 @@ trait UserDao {
   }
 
 
-  def lockMemberTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]) {
+  def lockUserTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]) {
     readWriteTransaction { tx =>
-      val member = tx.loadTheMemberInclDetails(memberId)
+      val member = tx.loadTheUserInclDetails(memberId)
       val memberAfter = member.copy(lockedTrustLevel = newTrustLevel)
-      tx.updateMemberInclDetails(memberAfter)
+      tx.updateUserInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
   }
 
 
-  def lockMemberThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
+  def lockUserThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
     readWriteTransaction { tx =>
-      val member: MemberInclDetails = tx.loadTheMemberInclDetails(memberId)
+      val member: UserInclDetails = tx.loadTheUserInclDetails(memberId)
       val memberAfter = member.copy(lockedThreatLevel = newThreatLevel)
-      tx.updateMemberInclDetails(memberAfter)
+      tx.updateUserInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
   }
@@ -293,7 +293,7 @@ trait UserDao {
     val now = globals.now()
 
     readWriteTransaction { tx =>
-      var user = tx.loadTheMemberInclDetails(userId)
+      var user = tx.loadTheUserInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
@@ -303,7 +303,7 @@ trait UserDao {
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
-      tx.updateMemberInclDetails(user)
+      tx.updateUserInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
@@ -311,10 +311,10 @@ trait UserDao {
 
   def unsuspendUser(userId: UserId) {
     readWriteTransaction { tx =>
-      var user = tx.loadTheMemberInclDetails(userId)
+      var user = tx.loadTheUserInclDetails(userId)
       user = user.copy(suspendedAt = None, suspendedTill = None, suspendedById = None,
         suspendedReason = None)
-      tx.updateMemberInclDetails(user)
+      tx.updateUserInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
@@ -335,7 +335,7 @@ trait UserDao {
   def blockGuestImpl(browserIdData: BrowserIdData, guestId: UserId, numDays: Int,
         threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTransaction) {
 
-      if (!User.isGuestId(guestId))
+      if (!Participant.isGuestId(guestId))
         throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
 
       // Hardcode 2 & 6 weeks for now. Asking the user to choose # days –> too much for him/her
@@ -416,10 +416,10 @@ trait UserDao {
 
 
   def loadUserAndLevels(who: Who, tx: SiteTransaction): UserAndLevels = {
-    val user = tx.loadTheUser(who.id)
+    val user = tx.loadTheParticipant(who.id)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
-      case member: Member => member.effectiveThreatLevel
+      case member: User => member.effectiveThreatLevel
       case guest: Guest =>
         // Somewhat dupl code [2WKPU08], see a bit below.
         val blocks = tx.loadBlocks(ip = who.ip, browserIdCookie = who.idCookie)
@@ -451,7 +451,7 @@ trait UserDao {
         : MemberLoginGrant = {
     val loginGrant = readWriteTransaction { tx =>
       val userId = tx.nextMemberId
-      val user: MemberInclDetails = newUserData.makeUser(userId, tx.now.toJavaDate)
+      val user: UserInclDetails = newUserData.makeUser(userId, tx.now.toJavaDate)
       val identityId = tx.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       ensureSiteActiveOrThrow(user, tx)
@@ -485,7 +485,7 @@ trait UserDao {
     * Then we want to create a Gmail OpenAuth identity and connect it to the user
     * in the database.
     */
-  def createIdentityConnectToUserAndLogin(user: Member, oauthDetails: OpenAuthDetails)
+  def createIdentityConnectToUserAndLogin(user: User, oauthDetails: OpenAuthDetails)
         : MemberLoginGrant = {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
@@ -501,7 +501,7 @@ trait UserDao {
 
 
   def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData, browserIdData: BrowserIdData)
-        : Member = {
+        : User = {
     dieIf(userData.externalId.isDefined, "TyE5BKW02QX")
     security.throwErrorIfPasswordBad(
       password = userData.password.getOrDie("TyE2AKB84"), username = userData.username,
@@ -517,7 +517,7 @@ trait UserDao {
 
 
   def createUserForExternalSsoUser(userData: NewPasswordUserData, botIdData: BrowserIdData,
-        tx: SiteTransaction): MemberInclDetails = {
+        tx: SiteTransaction): UserInclDetails = {
     dieIf(userData.password.isDefined, "TyE7KHW2G")
     val member = createPasswordUserImpl(userData, botIdData, tx)
     memCache.fireUserCreated(member.briefUser)
@@ -526,7 +526,7 @@ trait UserDao {
 
 
   private def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
-        tx: SiteTransaction): MemberInclDetails = {
+        tx: SiteTransaction): UserInclDetails = {
     val now = userData.createdAt
     val userId = tx.nextMemberId
     val user = userData.makeUser(userId)
@@ -553,8 +553,8 @@ trait UserDao {
   }
 
 
-  private def makeCreateUserAuditEntry(member: MemberInclDetails, browserIdData: BrowserIdData,
-        now: When): AuditLogEntry = {
+  private def makeCreateUserAuditEntry(member: UserInclDetails, browserIdData: BrowserIdData,
+                                       now: When): AuditLogEntry = {
     AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
@@ -569,13 +569,13 @@ trait UserDao {
   def changePasswordCheckStrongEnough(userId: UserId, newPassword: String): Boolean = {
     val newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword)
     readWriteTransaction { tx =>
-      var user = tx.loadTheMemberInclDetails(userId)
+      var user = tx.loadTheUserInclDetails(userId)
       security.throwErrorIfPasswordBad(
         password = newPassword, username = user.username,
         fullName = user.fullName, email = user.primaryEmailAddress,
         minPasswordLength = globals.minPasswordLengthAllSites, isForOwner = user.isOwner)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
-      tx.updateMemberInclDetails(user)
+      tx.updateUserInclDetails(user)
     }
   }
 
@@ -615,7 +615,7 @@ trait UserDao {
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant
 
-      val user = tx.loadMemberInclDetails(loginGrant.user.id) getOrElse throwForbidden(
+      val user = tx.loadUserInclDetails(loginGrant.user.id) getOrElse throwForbidden(
         "DwE05KW2", "User not found, id: " + loginGrant.user.id)
       // Still suspended?
       if (user.suspendedAt.isDefined) {
@@ -649,51 +649,37 @@ trait UserDao {
   }
 
 
-  def loadUsers(): immutable.Seq[User] = {
-    readOnlyTransaction { tx =>
-      tx.loadUsers()
-    }
-  }
-
-
-  def loadSiteOwner(): Option[MemberInclDetails] = {
+  def loadSiteOwner(): Option[UserInclDetails] = {
     readOnlyTransaction { tx =>
       tx.loadOwner()
     }
   }
 
 
-  def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[User] = {
+  def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[Participant] = {
     // Somewhat dupl code [5KWE02]. Break out helper function getManyById[K, V](keys) ?
-    val usersFound = ArrayBuffer[User]()
+    val usersFound = ArrayBuffer[Participant]()
     val missingIds = ArrayBuffer[UserId]()
     userIds foreach { id =>
-      memCache.lookup[User](key(id)) match {
+      memCache.lookup[Participant](key(id)) match {
         case Some(user) => usersFound.append(user)
         case None => missingIds.append(id)
       }
     }
     if (missingIds.nonEmpty) {
-      val moreUsers = readOnlyTransaction(_.loadUsers(missingIds))
+      val moreUsers = readOnlyTransaction(_.loadParticipants(missingIds))
       usersFound.appendAll(moreUsers)
     }
     usersFound.toVector
   }
 
 
-  def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails] = {
-    readOnlyTransaction { tx =>
-      tx.loadMemberInclDetails(userId)
-    }
-  }
-
-
-  def loadTheMemberOrGroupInclDetailsById(memberOrGroupId: UserId): MemberOrGroupInclDetails =
-    readOnlyTransaction(_.loadTheMemberOrGroupInclDetails(memberOrGroupId))
-
-
   def loadTheMemberInclDetailsById(memberId: UserId): MemberInclDetails =
     readOnlyTransaction(_.loadTheMemberInclDetails(memberId))
+
+
+  def loadTheUserInclDetailsById(userId: UserId): UserInclDetails =
+    readOnlyTransaction(_.loadTheUserInclDetails(userId))
 
 
   def loadTheGroupInclDetailsById(groupId: UserId): Group =
@@ -701,38 +687,42 @@ trait UserDao {
       "EdE2WKBG0", s"Group $groupId@$siteId not found")
 
 
-  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] = {
-    readOnlyTransaction(_.loadMembersInclDetailsById(userIds))
+  def loadUsersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[UserInclDetails] = {
+    readOnlyTransaction(_.loadUsersInclDetailsById(userIds))
   }
 
 
-  def loadMembersWithPrefix(prefix: String): immutable.Seq[Member] = {
-    readOnlyTransaction(_.loadMembersWithPrefix(prefix))
+  def loadUsersWithPrefix(prefix: String): immutable.Seq[User] = {
+    readOnlyTransaction(_.loadUsersWithPrefix(prefix))
   }
 
 
-  def getTheMember(userId: UserId): User = {
-    getMember(userId).getOrElse(throw UserNotFoundException(userId))
-  }
-
-
-  def getMember(userId: UserId): Option[Member] = {
-    require(userId >= User.LowestMemberId, "EsE4GKX24")
-    getUser(userId).map(_.asInstanceOf[Member])
-  }
-
-
-  def getTheUser(userId: UserId): User = {
+  def getTheUser(userId: UserId): Participant = {
     getUser(userId).getOrElse(throw UserNotFoundException(userId))
   }
 
 
   def getUser(userId: UserId): Option[User] = {
-    memCache.lookup[User](
+    require(userId >= Participant.LowestMemberId, "EsE4GKX24")
+    getParticipant(userId).map(_ match {
+      case user: User => user
+      case _: Group => throw GotAGroupException(userId)
+      case _: Guest => die("TyE2AKBP067")
+    })
+  }
+
+
+  def getTheParticipant(userId: UserId): Participant = {
+    getParticipant(userId).getOrElse(throw UserNotFoundException(userId))
+  }
+
+
+  def getParticipant(userId: UserId): Option[Participant] = {
+    memCache.lookup[Participant](
       key(userId),
       orCacheAndReturn = {
         readOnlyTransaction { tx =>
-          tx.loadUser(userId)
+          tx.loadParticipant(userId)
         }
       },
       ignoreSiteCacheVersion = true)
@@ -746,9 +736,9 @@ trait UserDao {
     * I've connected the server to another backend, or access many backends
     * via the same hostname but different ports).
     */
-  def getUserBySessionId(sid: SidStatus): Option[User] = {
+  def getUserBySessionId(sid: SidStatus): Option[Participant] = {
     sid.userId map { sidUserId =>
-      val user = getUser(sidUserId) getOrElse {
+      val user = getParticipant(sidUserId) getOrElse {
         // This might happen 1) if the server connected to a new database
         // (e.g. a standby where the login entry hasn't yet been
         // created), or 2) during testing, when I sometimes manually
@@ -769,41 +759,41 @@ trait UserDao {
   }
 
 
-  def loadMemberByPrimaryEmailAddress(emailAddress: String): Option[Member] = {
+  def loadMemberByPrimaryEmailAddress(emailAddress: String): Option[User] = {
     if (!emailAddress.contains("@"))
       return None
     loadMemberByEmailOrUsername(emailAddress)
   }
 
-  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {  // RENAME to ... PrimaryEmailAddress... ?
+  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[User] = {  // RENAME to ... PrimaryEmailAddress... ?
     readOnlyTransaction { tx =>
       // Don't need to cache this? Only called when logging in.
-      tx.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
+      tx.loadUserByPrimaryEmailOrUsername(emailOrUsername)
     }
   }
 
 
-  def getMemberByExternalId(externalId: String): Option[User] = {
+  def getMemberByExternalId(externalId: String): Option[Participant] = {
     COULD_OPTIMIZE // can in-mem cache
     loadMemberInclDetailsByExternalId(externalId).map(_.briefUser)
   }
 
 
-  def loadMemberInclDetailsByExternalId(externalId: String): Option[MemberInclDetails] = {
-    readOnlyTransaction(_.loadMemberInclDetailsByExternalId(externalId))
+  def loadMemberInclDetailsByExternalId(externalId: String): Option[UserInclDetails] = {
+    readOnlyTransaction(_.loadUserInclDetailsByExternalId(externalId))
   }
 
 
-  def getGroupIds(user: Option[User]): Vector[UserId] = {
+  def getGroupIds(user: Option[Participant]): Vector[UserId] = {
     user.map(getGroupIds) getOrElse Vector(Group.EveryoneId)
   }
 
 
-  def getGroupIds(user: User): Vector[UserId] = {
+  def getGroupIds(user: Participant): Vector[UserId] = {
     COULD_OPTIMIZE // For now. Later, cache.
     user match {
-      case _: Guest | UnknownUser => Vector(Group.EveryoneId)
-      case _: Member | _: Group =>
+      case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
+      case _: User | _: Group =>
         readOnlyTransaction { tx =>
           tx.loadGroupIdsMemberIdFirst(user)
         }
@@ -812,7 +802,7 @@ trait UserDao {
 
 
   def joinOrLeavePageIfAuth(pageId: PageId, join: Boolean, who: Who): Option[BareWatchbar] = {
-    if (User.isGuestId(who.id))
+    if (Participant.isGuestId(who.id))
       throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
 
     val watchbarsByUserId = joinLeavePageUpdateWatchbar(Set(who.id), pageId, add = join, who)
@@ -826,7 +816,7 @@ trait UserDao {
     * might become visible to hen (e.g. visible only to Trusted users) — and then hen auto-joins
     * those too.
     */
-  def joinGloballyPinnedChats(user: User, tx: SiteTransaction) {
+  def joinGloballyPinnedChats(user: Participant, tx: SiteTransaction) {
     val chatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
     BUG // Don't join a chat again, if has left it. Needn't fix now, barely matters.
     val joinedChats = ArrayBuffer[PageMeta]()
@@ -864,7 +854,7 @@ trait UserDao {
     if (userIds.size > 50)
       throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
 
-    if (userIds.exists(User.isGuestId) && add)
+    if (userIds.exists(Participant.isGuestId) && add)
       throwForbidden("EsE5PKW1", "Cannot add guests to a page")
 
     val couldntAdd = mutable.Set[UserId]()
@@ -908,7 +898,7 @@ trait UserDao {
     if (pageMeta.pageRole == PageRole.Forum)
       return pageMeta
 
-    val usersById = tx.loadMembersAsMap(userIds + byWho.id)
+    val usersById = tx.loadUsersAsMap(userIds + byWho.id)
     val me = usersById.getOrElse(byWho.id, throwForbidden(
       "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
@@ -1004,7 +994,7 @@ trait UserDao {
     * And clear any notifications about posts hen has now seen.
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
-        user: User, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress)
+        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress)
         : ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
@@ -1092,9 +1082,9 @@ trait UserDao {
   def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction) {
     // If trust level locked, we'll promote the member anyway — but member.effectiveTrustLevel
     // won't change, because it considers the locked trust level first.
-    val member = tx.loadTheMemberInclDetails(userId)
+    val member = tx.loadTheUserInclDetails(userId)
     val promoted = member.copy(trustLevel = newTrustLevel)
-    tx.updateMemberInclDetails(promoted)
+    tx.updateUserInclDetails(promoted)
     TESTS_MISSING // Perhaps now new chat channels are available to the member.
     joinGloballyPinnedChats(member.briefUser, tx)
   }
@@ -1105,7 +1095,7 @@ trait UserDao {
         : NotfsAndCounts = {
     readOnlyTransaction { tx =>
       if (me.id != userId) {
-        if (!tx.loadUser(me.id).exists(_.isStaff))
+        if (!tx.loadParticipant(me.id).exists(_.isStaff))
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
@@ -1118,11 +1108,11 @@ trait UserDao {
   REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { tx =>
-      var user = tx.loadTheMemberInclDetails(userId)
+      var user = tx.loadTheUserInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
       val userEmailAddress = user.primaryEmailInfo getOrDie "EdE4JKA2S"
       dieUnless(userEmailAddress.isVerified, "EdE7UNHR4")
-      tx.updateMemberInclDetails(user)
+      tx.updateUserInclDetails(user)
       tx.updateUserEmailAddress(userEmailAddress)
       // Now, when email verified, perhaps time to start sending summary emails.
       tx.reconsiderSendingSummaryEmailsTo(user.id)
@@ -1147,7 +1137,7 @@ trait UserDao {
         smallAvatar: Option[UploadRef], mediumAvatar: Option[UploadRef],
         browserIdData: BrowserIdData, tx: SiteTransaction) {
 
-      val userBefore = tx.loadTheMemberInclDetails(userId)  ; SECURITY ; COULD // loadTheUserOrThrowForbidden, else logs really long exception
+      val userBefore = tx.loadTheUserInclDetails(userId)  ; SECURITY ; COULD // loadTheUserOrThrowForbidden, else logs really long exception
       val userAfter = userBefore.copy(
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
@@ -1166,7 +1156,7 @@ trait UserDao {
             userAfter.smallAvatar.toSet ++ userAfter.mediumAvatar.toSet
       val refsInUseBefore = tx.filterUploadRefsInUse(relevantRefs)
 
-      tx.updateMemberInclDetails(userAfter)
+      tx.updateUserInclDetails(userAfter)
 
       if (hasNewAvatar) {
         val refsInUseAfter = tx.filterUploadRefsInUse(relevantRefs)
@@ -1198,14 +1188,14 @@ trait UserDao {
         activitySummaryEmailsIntervalMins: Option[Int] = None) {
     // Don't specify emailVerifiedAt — use verifyPrimaryEmailAddress() instead; it refreshes the cache.
     readWriteTransaction { tx =>
-      var user = tx.loadTheMemberInclDetails(userId)
+      var user = tx.loadTheUserInclDetails(userId)
       emailNotfPrefs foreach { prefs =>
         user = user.copy(emailNotfPrefs = prefs)
       }
       activitySummaryEmailsIntervalMins foreach { mins =>
         user = user.copy(summaryEmailIntervalMins = Some(mins))
       }
-      tx.updateMemberInclDetails(user)
+      tx.updateUserInclDetails(user)
     }
     removeUserFromMemCache(userId)
   }
@@ -1244,9 +1234,9 @@ trait UserDao {
 
   def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who) {
     editMemberThrowUnlessSelfStaff(preferences.userId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
-      val memberBefore = tx.loadTheMemberInclDetails(preferences.userId)  // [7FKFA20]
+      val memberBefore = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
       val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
-      tx.updateMemberInclDetails(memberAfter)
+      tx.updateUserInclDetails(memberAfter)
 
       // Privacy preferences aren't cached, currently need not:
       //removeUserFromMemCache(memberAfter.id)
@@ -1254,7 +1244,7 @@ trait UserDao {
   }
 
 
-  def saveAboutMemberPrefs(preferences: AboutMemberPrefs, byWho: Who) {
+  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who) {
     // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
@@ -1262,7 +1252,7 @@ trait UserDao {
     editMemberThrowUnlessSelfStaff2(preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
         (tx, _, me) =>
 
-      val user = tx.loadTheMemberInclDetails(preferences.userId)  // [7FKFA20]
+      val user = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
 
       // Perhaps there's some security problem that would results in a non-trusted user
       // getting an email about each and every new post. So, for now:  [4WKAB02]
@@ -1324,7 +1314,7 @@ trait UserDao {
         throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
 
       val userAfter = user.copyWithNewAboutPrefs(preferences)
-      try tx.updateMemberInclDetails(userAfter)
+      try tx.updateUserInclDetails(userAfter)
       catch {
         case _: DuplicateUsernameException =>
           throwForbidden("EdE2WK8Y4_", "Username already in use")
@@ -1355,7 +1345,7 @@ trait UserDao {
 
     readWriteTransaction { tx =>
       val group = tx.loadTheGroupInclDetails(preferences.groupId)
-      val me = tx.loadTheMember(byWho.id)
+      val me = tx.loadTheUser(byWho.id)
       require(me.isStaff, "EdE5LKWV0")
 
       val groupAfter = group.copyWithNewAboutPrefs(preferences)
@@ -1393,7 +1383,7 @@ trait UserDao {
   }
 
 
-  def loadMembersCatsTagsSiteNotfPrefs(member: User, anyTx: Option[SiteTransaction] = None)
+  def loadMembersCatsTagsSiteNotfPrefs(member: Participant, anyTx: Option[SiteTransaction] = None)
         : Seq[PageNotfPref] = {
     readOnlyTransactionTryReuse(anyTx) { tx =>
       // Related code: [6RBRQ204]
@@ -1439,7 +1429,7 @@ trait UserDao {
       return
 
     // Authenticated users are ignored here. Suspend them instead.
-    if (sidStatus.userId.exists(User.isRoleId))
+    if (sidStatus.userId.exists(Participant.isRoleId))
       return
 
     // Ignore not-logged-in people, unless they attempt to login as guests.
@@ -1468,11 +1458,11 @@ trait UserDao {
     * Tested here:
     * - EdT5WKBWQ2
     */
-  def deleteUser(userId: UserId, byWho: Who): MemberInclDetails = {
+  def deleteUser(userId: UserId, byWho: Who): UserInclDetails = {
     readWriteTransaction { tx =>
       tx.deferConstraints()
 
-      val deleter = tx.loadTheUser(byWho.id)
+      val deleter = tx.loadTheParticipant(byWho.id)
       require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
 
       val anonUsername = "anon" + nextRandomLong().toString.take(10)
@@ -1483,12 +1473,12 @@ trait UserDao {
         browserIdData = byWho.browserIdData, tx = tx)
 
       // Load member after having forgotten avatar images (above).
-      val memberBefore = tx.loadTheMemberInclDetails(userId)
+      val memberBefore = tx.loadTheUserInclDetails(userId)
 
       throwForbiddenIf(memberBefore.isDeleted, "TyE0ALRDYDLD", "User already deleted")
 
       // This resets the not-mentioned-here fields to default values.
-      val memberDeleted = MemberInclDetails(
+      val memberDeleted = UserInclDetails(
         id = memberBefore.id,
         // Reset the external id, so the external user will be able to sign up again. (Not our
         // choice to prevent that? That'd be the external login system's responsibility, right.)
@@ -1555,7 +1545,7 @@ trait UserDao {
       tx.insertUsernameUsage(UsernameUsage(
         anonUsername, inUseFrom = tx.now, userId = userId))
 
-      tx.updateMemberInclDetails(memberDeleted)
+      tx.updateUserInclDetails(memberDeleted)
       tx.insertAuditLogEntry(auditLogEntry)
 
       tx.removeDeletedMemberFromAllPages(userId)
@@ -1575,9 +1565,9 @@ trait UserDao {
         val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
         // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
         // show hen in the online list — hen isn't a real member.
-        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == User.SuperAdminId)
+        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == Participant.SuperAdminId)
         val users = readOnlyTransaction { tx =>
-          tx.loadUsers(userIds)
+          tx.loadParticipants(userIds)
         }
         UsersOnlineStuff(
           users,
@@ -1603,7 +1593,7 @@ trait UserDao {
     * results in 403 Forbidden.
     */
   def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
-        mayNotWhat: String)(block: (SiteTransaction, User, User) => R): R = {
+        mayNotWhat: String)(block: (SiteTransaction, Participant, Participant) => R): R = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -1611,17 +1601,17 @@ trait UserDao {
       errorCode + "-MEGST", s"Guests may not $mayNotWhat")
     throwForbiddenIf(userId <= MaxGuestId,
       errorCode + "-ISGST", s"May not $mayNotWhat for guests")
-    throwForbiddenIf(userId < User.LowestNormalMemberId,
+    throwForbiddenIf(userId < Participant.LowestNormalMemberId,
       errorCode + "-ISBTI", s"May not $mayNotWhat for special built-in users")
 
     readWriteTransaction { tx =>
-      val me = tx.loadTheUser(byWho.id) // [2ABKF057]  later: tx.loadTheMember(byWho.id)
+      val me = tx.loadTheParticipant(byWho.id) // [2ABKF057]  later: tx.loadTheMember(byWho.id)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
 
       // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)
       // Would be more usable; sometimes loaded anyway [7FKFA20]
-      val user = tx.loadTheUser(userId)
+      val user = tx.loadTheParticipant(userId)
       throwForbiddenIf(user.isAdmin && !me.isAdmin,
           errorCode + "-ISADM", s"May not $mayNotWhat for admins")
 

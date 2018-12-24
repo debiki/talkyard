@@ -44,7 +44,7 @@ abstract class DebikiRequest[A] {
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: Option[BrowserId]
-  def user: Option[User] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
+  def user: Option[Participant] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
                         // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
   def request: Request[A]
@@ -73,8 +73,8 @@ abstract class DebikiRequest[A] {
   // Use instead of 'user', because 'user' is confusing when the requester asks for info
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
-  def requester: Option[User] = user
-  def theRequester: User = theUser
+  def requester: Option[Participant] = user
+  def theRequester: Participant = theUser
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
@@ -100,7 +100,7 @@ abstract class DebikiRequest[A] {
     referer = request.headers.get("referer"),
     uri = uri)
 
-  def theUser: User = user_!
+  def theUser: Participant = user_!
   def theUserId: UserId = theUser.id
 
   def userAndLevels: AnyUserAndThreatLevel = {
@@ -120,11 +120,11 @@ abstract class DebikiRequest[A] {
     dao.readOnlyTransaction(dao.loadUserAndLevels(who, _))
   }
 
-  def user_! : User =
+  def user_! : Participant =
     user getOrElse throwForbidden("TyE0LGDIN_", "Not logged in")
 
-  def theMember: Member = theUser match {
-    case m: Member => m
+  def theMember: User = theUser match {
+    case m: User => m
     case g: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
   }
 

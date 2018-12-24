@@ -62,8 +62,8 @@ class RateLimiterSpec extends DaoAppSuite with MockitoSugar {
   }
 
 
-  def mockUser(roleId: RoleId): User = {
-    val userMock = mock[User]
+  def mockUser(roleId: RoleId): Participant = {
+    val userMock = mock[Participant]
     when(userMock.anyMemberId).thenReturn(Some(roleId))
     userMock
   }

@@ -40,7 +40,7 @@ class PageRequest[A](
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
   val browserId: Option[BrowserId],
-  val user: Option[User],
+  val user: Option[Participant],
   val pageExists: Boolean,
   /** Ids of groups to which the requester belongs. */
   // userMemships: List[String],
@@ -143,7 +143,7 @@ class DummyPageRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: Option[BrowserId],
-  user: Option[User],
+  user: Option[Participant],
   pageExists: Boolean,
   pagePath: PagePath,
   pageMeta: PageMeta,

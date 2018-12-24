@@ -610,7 +610,7 @@ class SpamChecker(
 
 
   private def makeAkismetRequestBody(tyype: String, spamRelatedStuff: SpamRelReqStuff,
-      pageId: Option[PageId] = None, text: Option[String] = None, user: Option[User],
+      pageId: Option[PageId] = None, text: Option[String] = None, user: Option[Participant],
       anyName: Option[String] = None, anyEmail: Option[String] = None): String = {
 
     // Either 1) the user is known, or 2) we're creating a new site or user — then

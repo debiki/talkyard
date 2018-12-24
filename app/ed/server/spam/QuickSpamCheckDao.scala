@@ -33,7 +33,7 @@ trait QuickSpamCheckDao {
   def quickCheckIfSpamThenThrow(who: Who, textAndHtml: TextAndHtml,
         spamRelReqStuff: SpamRelReqStuff) {
 
-    val user = getUser(who.id) getOrElse {
+    val user = getParticipant(who.id) getOrElse {
       throwForbidden("EdE5FK7X2", s"Unknown user: $siteId:${who.id}")
     }
 
@@ -47,7 +47,7 @@ object QuickSpamCheckDao {
 
   /** Does some simple tests to try to fend off spam.
     */
-  def throwForbiddenIfLooksSpammy(user: User, textAndHtml: TextAndHtml) {
+  def throwForbiddenIfLooksSpammy(user: Participant, textAndHtml: TextAndHtml) {
     def throwIfTooManyLinks(maxNumLinks: Int) {
       if (textAndHtml.links.length > maxNumLinks)
         throwForbidden("EdE4KFY2_", o"""Your text includes more than $maxNumLinks links —

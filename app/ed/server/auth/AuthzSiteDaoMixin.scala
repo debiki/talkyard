@@ -42,7 +42,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
+  def getForumAuthzContext(user: Option[Participant]): ForumAuthzContext = {
     val groupIds = getGroupIds(user)
     val permissions = getPermsForPeople(groupIds)
     ForumAuthzContext(user, groupIds, permissions)
@@ -51,7 +51,7 @@ trait AuthzSiteDaoMixin {
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
-  def maySeePageUseCache(pageMeta: PageMeta, user: Option[User], maySeeUnlisted: Boolean = true)
+  def maySeePageUseCache(pageMeta: PageMeta, user: Option[Participant], maySeeUnlisted: Boolean = true)
         : (Boolean, String) = {
     maySeePageImpl(pageMeta, user, anyTransaction = None, maySeeUnlisted = maySeeUnlisted)
   }
@@ -93,20 +93,20 @@ trait AuthzSiteDaoMixin {
 
 
   @deprecated("now", "use Authz instead and dieOrDenyIf")
-  def throwIfMayNotSeePage(page: Page, user: Option[User])(transaction: SiteTransaction) {
+  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(transaction: SiteTransaction) {
     throwIfMayNotSeePage(page.meta, user)(transaction)
   }
 
 
-  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[User])(transaction: SiteTransaction) {
+  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(transaction: SiteTransaction) {
     val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(transaction))
     if (!may)
       throwIndistinguishableNotFound(s"EdE5FKAW0-$debugCode")
   }
 
 
-  private def maySeePageImpl(pageMeta: PageMeta, user: Option[User],
-        anyTransaction: Option[SiteTransaction], maySeeUnlisted: Boolean = true)
+  private def maySeePageImpl(pageMeta: PageMeta, user: Option[Participant],
+                             anyTransaction: Option[SiteTransaction], maySeeUnlisted: Boolean = true)
         : (Boolean, String) = {
     if (user.exists(_.isAdmin))
       return (true, "")
@@ -161,20 +161,20 @@ trait AuthzSiteDaoMixin {
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
-  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[User]): (Boolean, String) = {
+  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[Participant]): (Boolean, String) = {
     maySeePostImpl(pageId, postNr, user, anyPost = None, anyTransaction = None)
   }
 
 
-  def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[User],
-        maySeeUnlistedPages: Boolean): (Boolean, String) = {
+  def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[Participant],
+                         maySeeUnlistedPages: Boolean): (Boolean, String) = {
     maySeePostImpl(pageId = null, postNr = PageParts.NoNr, user, anyPost = Some(post),
       anyPageMeta = Some(pageMeta), maySeeUnlistedPages = maySeeUnlistedPages,
       anyTransaction = None)
   }
 
 
-  def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
+  def throwIfMayNotSeePost(post: Post, author: Option[Participant])(transaction: SiteTransaction) {
     val (may, debugCode) =
       maySeePostImpl(post.pageId, postNr = PageParts.NoNr, author, anyPost = Some(post),
         anyTransaction = Some(transaction))
@@ -183,9 +183,9 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  private def maySeePostImpl(pageId: PageId, postNr: PostNr, user: Option[User],
-        anyPost: Option[Post], anyPageMeta: Option[PageMeta] = None,
-        maySeeUnlistedPages: Boolean = true, anyTransaction: Option[SiteTransaction])
+  private def maySeePostImpl(pageId: PageId, postNr: PostNr, user: Option[Participant],
+                             anyPost: Option[Post], anyPageMeta: Option[PageMeta] = None,
+                             maySeeUnlistedPages: Boolean = true, anyTransaction: Option[SiteTransaction])
         : (Boolean, String) = {
 
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
@@ -228,7 +228,7 @@ trait AuthzSiteDaoMixin {
     TESTS_MISSING // add security test, not e2e test?
     val postId = task.postId getOrElse { return }
     val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
-    val requester = getTheUser(forWho.id)
+    val requester = getTheParticipant(forWho.id)
     val (may, debugCode) =
       maySeePostImpl(post.pageId, postNr = PageParts.NoNr, Some(requester), anyPost = Some(post),
         anyTransaction = None)

@@ -22,9 +22,9 @@ import NotfLevel._
 
 class PageNotfPrefTxSpec extends DaoAppSuite() {
   var dao: SiteDao = _
-  var owner: User = _
-  var userOne: User = _
-  var userTwo: User = _
+  var owner: Participant = _
+  var userOne: Participant = _
+  var userTwo: Participant = _
 
   var forumPageId: PageId = _
   var defCatId: CategoryId = _

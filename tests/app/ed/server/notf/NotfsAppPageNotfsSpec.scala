@@ -29,13 +29,13 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
   var createForumResult: CreateForumResult = _
   var categoryId: CategoryId = _
 
-  var owner: Member = _
+  var owner: User = _
   var ownerWho: Who = _
-  var member1: Member = _
-  var member2: Member = _
-  var member3: Member = _
-  var member4: Member = _
-  var memberNoNotfsConfigd: Member = _
+  var member1: User = _
+  var member2: User = _
+  var member3: User = _
+  var member4: User = _
+  var memberNoNotfsConfigd: User = _
 
   var owensTopicIdOne: PageId = _
   var owensTopicIdTwo: PageId = _

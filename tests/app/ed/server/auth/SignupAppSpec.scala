@@ -51,7 +51,7 @@ class SignupAppSpecDefaultSettings extends DaoAppSuite() {
       // Could check some more things, like not username in password.
     }
 
-    var owner: Member = null
+    var owner: User = null
 
     "the owner signs up with an ok password" in {
       owner = createPasswordOwner("lg_adm", dao)
@@ -114,7 +114,7 @@ class SignupAppSpecCustomSettings extends DaoAppSuite(
       // Could check some more things, like not username in password.
     }
 
-    var owner: Member = null
+    var owner: User = null
 
     "the owner signs up with an ok password" in {
       owner = createPasswordOwner("lg_adm", dao)

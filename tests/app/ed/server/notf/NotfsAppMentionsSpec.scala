@@ -28,19 +28,19 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
   var createForumResult: CreateForumResult = _
   var categoryId: CategoryId = _
 
-  var owner: Member = _
+  var owner: User = _
   var ownerWho: Who = _
-  var moderator: Member = _
-  var member1: Member = _
-  var member2: Member = _
-  var member3: Member = _
-  var member4: Member = _
-  var member5NotInAnyChat: Member = _
-  var member6NotInAnyChat: Member = _
-  var member7NotInAnyChat: Member = _
-  var member8Dot: Member = _
-  var member9Dash: Member = _
-  var memberNeverMentioned: Member = _
+  var moderator: User = _
+  var member1: User = _
+  var member2: User = _
+  var member3: User = _
+  var member4: User = _
+  var member5NotInAnyChat: User = _
+  var member6NotInAnyChat: User = _
+  var member7NotInAnyChat: User = _
+  var member8Dot: User = _
+  var member9Dash: User = _
+  var memberNeverMentioned: User = _
 
   var withRepliesTopicId: PageId = _
 

@@ -350,7 +350,7 @@ class Mailer(
     logger.debug(s"s$siteId: Sending email [TyMEMLSENDNG]: $emailToSend")
 
     // Reload the user and his/her email address in case it's been changed recently.
-    val address = emailToSend.toUserId.flatMap(siteDao.getUser).map(_.email) getOrElse
+    val address = emailToSend.toUserId.flatMap(siteDao.getParticipant).map(_.email) getOrElse
       emailToSend.sentTo
 
     val emailWithAddress = emailToSend.copy(

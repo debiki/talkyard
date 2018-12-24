@@ -68,7 +68,7 @@ trait ForumDao {
 
       // The forum page points to the root category, which points back.
       tx.deferConstraints()
-      val creator = tx.loadTheMember(byWho.id)
+      val creator = tx.loadTheUser(byWho.id)
 
       AuditDao.insertAuditLogEntry(AuditLogEntry(
         siteId,

@@ -391,7 +391,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: Member)
+  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: User)
         : Result = {
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)

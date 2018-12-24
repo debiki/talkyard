@@ -23,7 +23,7 @@ import com.debiki.core._
 
 class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
-  private def createOneSite(user: Member, prefix: Int, number: Int,
+  private def createOneSite(user: User, prefix: Int, number: Int,
         ip: String = null, browserIdCookie: String = null,
         browserFingerprint: Int = -1,
         localHostname: Option[String] = None, hostname: Option[String] = None,

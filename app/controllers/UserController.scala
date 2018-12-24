@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.{MinUsernameLength, isGuestId}
+import com.debiki.core.Participant.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.dao.{ReadMoreResult, SiteDao}
 import debiki.EdHttp._
@@ -81,14 +81,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     request.dao.readOnlyTransaction { transaction =>
       // Ok to load also deactivated users — the requester is staff.
-      val membersAndStats = transaction.loadMembersInclDetailsAndStats(peopleQuery)
+      val membersAndStats = transaction.loadUsersInclDetailsAndStats(peopleQuery)
       val members = membersAndStats.map(_._1)
       val approverIds = members.flatMap(_.approvedById)
       val suspenderIds = members.flatMap(_.suspendedById)
-      val usersById = transaction.loadMembersAsMap(approverIds ++ suspenderIds)
+      val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
       COULD // later load all groups too, for each user. Not needed now though. [2WHK7PU0]
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
-        val member: MemberInclDetails = memberAndStats._1
+        val member: UserInclDetails = memberAndStats._1
         val anyStats: Option[UserStats] = memberAndStats._2
         jsonForMemberInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true, anyStats = anyStats)
@@ -124,11 +124,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.dao.readOnlyTransaction { transaction =>
       val stats = includeStats ? transaction.loadUserStats(userId) | None
       val usersJson =
-        if (User.isRoleId(userId)) {
-          val memberOrGroup = transaction.loadTheMemberOrGroupInclDetails(userId)
+        if (Participant.isRoleId(userId)) {
+          val memberOrGroup = transaction.loadTheMemberInclDetails(userId)
           val groups = transaction.loadGroups(memberOrGroup)
           memberOrGroup match {
-            case m: MemberInclDetails =>
+            case m: UserInclDetails =>
               jsonForMemberInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
             case g: Group =>
@@ -164,7 +164,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     request.dao.readOnlyTransaction { transaction =>
       val memberOrGroup =
-            transaction.loadMemberOrGroupInclDetailsByUsername(emailOrUsername) getOrElse {
+            transaction.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
@@ -181,8 +181,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // If the user has been deleted, don't allow looking up the anonymized profile,
         // via the old username. (This !isGone test won't be needed, if old usernames are
         // replaced with hashes. [6UKBWTA2])
-        transaction.loadMemberOrGroupInclDetails(userId).filter(_ match {
-          case member: MemberInclDetails => !member.isGone || callerIsStaff
+        transaction.loadMemberInclDetailsById(userId).filter(_ match {
+          case member: UserInclDetails => !member.isGone || callerIsStaff
           case _ => true
         }) getOrElse throwNotFound("EsE8PKU02", "User not found")
       }
@@ -190,7 +190,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val groups = transaction.loadGroups(memberOrGroup)
 
       memberOrGroup match {
-        case member: MemberInclDetails =>
+        case member: UserInclDetails =>
           val stats = includeStats ? transaction.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
@@ -207,10 +207,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
-      groups: immutable.Seq[Group],
-      callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-      anyStats: Option[UserStats] = None)
+  private def jsonForMemberInclDetails(user: UserInclDetails, usersById: Map[UserId, User],
+                                       groups: immutable.Seq[Group],
+                                       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
+                                       anyStats: Option[UserStats] = None)
         : JsObject = {
     var userJson = Json.obj(  // MemberInclDetails
       "id" -> user.id,
@@ -289,8 +289,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def jsonForGuest(user: Guest, usersById: Map[UserId, User],
-        callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
+  private def jsonForGuest(user: Guest, usersById: Map[UserId, Participant],
+                           callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
     val safeEmail = callerIsAdmin ? user.email | hideEmailLocalPart(user.email)
     var userJson = Json.obj(
       "id" -> user.id,
@@ -348,7 +348,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val isStaff = requester.exists(_.isStaff)
     val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
-    val user = dao.getTheUser(userId)
+    val user = dao.getTheParticipant(userId)
 
     throwForbiddenIfActivityPrivate(userId, requester, dao)
 
@@ -373,7 +373,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val requesterIsStaff = requester.exists(_.isStaff)
     val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
-    val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
+    val author = dao.getParticipant(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
     throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
@@ -438,7 +438,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "TyE2PKAQX8", "Cannot download someone else's data")
 
     val result = dao.readOnlyTransaction { tx =>
-      val member: MemberInclDetails = tx.loadTheMemberInclDetails(userId)
+      val member: UserInclDetails = tx.loadTheUserInclDetails(userId)
 
       // Later: Include current ip and cookie etc, if starts remembering for each request [6LKKEZW2]
       // (It'd be found in anyStats below, not in the audit log.)
@@ -509,22 +509,22 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[User], dao: SiteDao) {
+  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[Participant], dao: SiteDao) {
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
       "TyE4JKKQX3", "Not allowed to list activity for this user")
   }
 
 
-  private def maySeeActivity(userId: UserId, requester: Option[User], dao: SiteDao): Boolean = {
+  private def maySeeActivity(userId: UserId, requester: Option[Participant], dao: SiteDao): Boolean = {
     // Guests cannot hide their activity. One needs to create a real account.
-    if (!User.isMember(userId))
+    if (!Participant.isMember(userId))
       return true
 
     // Staff and the user henself can view hens activity.
     if (requester.exists(r => r.isStaff || r.id == userId))
       return true
 
-    val memberInclDetails = dao.loadTheMemberOrGroupInclDetailsById(userId)
+    val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
     memberInclDetails.seeActivityMinTrustLevel match {
       case None => true
       case Some(minLevel) =>
@@ -546,7 +546,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdE5JKWTDY2", "You may not see someone elses email addresses")
 
     val (memberInclDetails, emails, identities) = dao.readOnlyTransaction { tx =>
-      (tx.loadTheMemberInclDetails(userId),
+      (tx.loadTheUserInclDetails(userId),
         tx.loadUserEmailAddresses(userId),
         tx.loadIdentities(userId))
     }
@@ -608,7 +608,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdE4JTA2F0", "You may not add an email address to someone elses account")
 
     dao.readWriteTransaction { tx =>
-      val member = tx.loadTheMemberInclDetails(userId)
+      val member = tx.loadTheUserInclDetails(userId)
       throwBadRequestIf(member.primaryEmailAddress == emailAddress,
         "EdE5GPTVXZ", "Already your primary address")
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
@@ -617,7 +617,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbiddenIf(
         address.flatMap(_.verifiedAt).isEmpty, "EdE5AA20I", "Address not verified") // [7GUKRWJ]
 
-      tx.updateMemberInclDetails(member.copy(primaryEmailAddress = emailAddress))
+      tx.updateUserInclDetails(member.copy(primaryEmailAddress = emailAddress))
     }
 
     dao.removeUserFromMemCache(userId)
@@ -637,13 +637,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(userId < LowestTalkToMemberId,
       "TyE2GKD052", "Cannot add email addresses to built-in users")
 
-    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
+    val member: UserInclDetails = dao.readWriteTransaction { tx =>
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
       throwForbiddenIf(userEmailAddrs.exists(_.emailAddress == emailAddress),
         "EdE5AVH20", "You've added that email already")
       throwForbiddenIf(userEmailAddrs.length >= MaxEmailsPerUser,
         "EdE2QDS0H", "You've added too many email addresses")
-      val member = tx.loadTheMemberInclDetails(userId) // also ensures the user exists
+      val member = tx.loadTheUserInclDetails(userId) // also ensures the user exists
       val newAddress = UserEmailAddress(
         userId, emailAddress = emailAddress, addedAt = tx.now, verifiedAt = None)
       tx.insertUserEmailAddress(newAddress)
@@ -675,11 +675,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(userId < LowestTalkToMemberId,
       "TyE5GUK10", "Cannot send email address verification email to built-in user")
 
-    val member: MemberInclDetails = dao.readOnlyTransaction { tx =>
+    val member: UserInclDetails = dao.readOnlyTransaction { tx =>
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
       throwForbiddenUnless(userEmailAddrs.exists(_.emailAddress == emailAddress),
         "TyE6UKBQ2", "The user doesn't have that email address")
-      tx.loadTheMemberInclDetails(userId)
+      tx.loadTheUserInclDetails(userId)
     }
 
     val email = createEmailAddrVerifEmailDontSend(member, request, emailAddress, isNewAddr = false)
@@ -692,8 +692,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  private def createEmailAddrVerifEmailDontSend(user: MemberInclDetails, request: DebikiRequest[_],
-        newEmailAddress: String, isNewAddr: Boolean): Email = {
+  private def createEmailAddrVerifEmailDontSend(user: UserInclDetails, request: DebikiRequest[_],
+                                                newEmailAddress: String, isNewAddr: Boolean): Email = {
 
     import context.globals, request.dao
     val (siteName, origin) = dao.theSiteNameAndOrigin()
@@ -750,8 +750,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val now = globals.now()
 
-    val (member: MemberInclDetails, verifiedPrimary) = dao.readWriteTransaction { tx =>
-      var member = dao.loadTheMemberInclDetailsById(toUserId)
+    val (member: UserInclDetails, verifiedPrimary) = dao.readWriteTransaction { tx =>
+      var member = dao.loadTheUserInclDetailsById(toUserId)
       val userEmailAddrs = tx.loadUserEmailAddresses(toUserId)
       val userEmailAddr = userEmailAddrs.find(_.emailAddress == email.sentTo) getOrElse {
         // This might happen if a user removes hens address, and clicks the verif link afterwards?
@@ -768,7 +768,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
       if (verifiedPrimary) {
         member = member.copy(emailVerifiedAt = Some(now.toJavaDate))
-        tx.updateMemberInclDetails(member)
+        tx.updateUserInclDetails(member)
         // Now, with the primary email verified, can start sending summary emails.
         tx.reconsiderSendingSummaryEmailsTo(member.id)
       }
@@ -805,7 +805,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdE6LTMQR20", "You may not remove an email address from someone else's account")
 
     dao.readWriteTransaction { tx =>
-      val member = tx.loadTheMemberInclDetails(userId) // ensures user exists
+      val member = tx.loadTheUserInclDetails(userId) // ensures user exists
       throwForbiddenIf(member.primaryEmailAddress == emailAddress,
         "EdET7UKW2", s"Cannot remove the primary email address: $emailAddress")
 
@@ -829,8 +829,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def editMember: Action[JsValue] = StaffPostJsonAction(maxBytes = 500) { request =>
     val memberId = (request.body \ "userId").as[UserId]
     val doWhatInt = (request.body \ "doWhat").as[Int]
-    val doWhat = EditMemberAction.fromInt(doWhatInt).getOrThrowBadArgument("TyE4BKQR28", "doWhat")
-    request.dao.editMember(memberId, doWhat, request.who)
+    val doWhat = EditUserAction.fromInt(doWhatInt).getOrThrowBadArgument("TyE4BKQR28", "doWhat")
+    request.dao.editUser(memberId, doWhat, request.who)
     Ok
   }
 
@@ -840,14 +840,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val trustLevelInt = (request.body \ "trustLevel").as[Int]
     val trustLevel = TrustLevel.fromInt(trustLevelInt) getOrElse throwBadRequest(
       "EsE4JYW0", s"Bad trust level: $trustLevelInt")
-    request.dao.lockMemberTrustLevel(userId, Some(trustLevel))
+    request.dao.lockUserTrustLevel(userId, Some(trustLevel))
     Ok
   }
 
 
   def unlockTrustLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
-    request.dao.lockMemberTrustLevel(userId, None)
+    request.dao.lockUserTrustLevel(userId, None)
     Ok
   }
 
@@ -857,8 +857,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val threatLevelInt = (request.body \ "threatLevel").as[Int]
     val threatLevel = ThreatLevel.fromInt(threatLevelInt) getOrElse throwBadRequest(
         "EsE2FW40C", s"Bad threat level: $threatLevelInt")
-    if (User.isMember(userId)) {
-      request.dao.lockMemberThreatLevel(userId, Some(threatLevel))
+    if (Participant.isMember(userId)) {
+      request.dao.lockUserThreatLevel(userId, Some(threatLevel))
     }
     else {
       request.dao.lockGuestThreatLevel(userId, Some(threatLevel))
@@ -869,8 +869,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def unlockThreatLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
-    if (User.isMember(userId)) {
-      request.dao.lockMemberThreatLevel(userId, None)
+    if (Participant.isMember(userId)) {
+      request.dao.lockUserThreatLevel(userId, None)
     }
     else {
       request.dao.lockGuestThreatLevel(userId, None)
@@ -1236,7 +1236,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.theMember
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
-    val members = request.dao.loadMembersWithPrefix(usernamePrefix)
+    val members = request.dao.loadUsersWithPrefix(usernamePrefix)
     val json = JsArray(
       members map { member =>
         Json.obj(
@@ -1309,9 +1309,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "TyE4RBSK8FG", "May not view someone elses notf prefs")
     throwForbiddenIf(memberId <= MaxGuestId,
         "TyE7WRG04RS2", "Guests cannot have notf prefs")
-    throwForbiddenIf(memberId < User.LowestNormalMemberId,
+    throwForbiddenIf(memberId < Participant.LowestNormalMemberId,
       "TyE4RKTRE9", "Special built-in users cannot have notf prefs")
-    val member = dao.getTheUser(memberId)
+    val member = dao.getTheParticipant(memberId)
     val prefs = dao.loadMembersCatsTagsSiteNotfPrefs(member)
     val myCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId == memberId)
     val groupsCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId != memberId)
@@ -1335,7 +1335,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def throwUnlessMayEditPrefs(userId: UserId, requester: User) {
+  private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant) {
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,
@@ -1431,7 +1431,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  private def aboutMemberPrefsFromJson(json: JsValue): AboutMemberPrefs = {
+  private def aboutMemberPrefsFromJson(json: JsValue): AboutUserPrefs = {
     val username = (json \ "username").as[String]
     Validation.checkUsername(username) badMap { errorMessage =>
       throwBadReq("TyE44KUY0", s"Bad username: $errorMessage")
@@ -1444,7 +1444,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (about.exists(_.length > 1500))
       throwForbidden("EdE2QRRD40", "Too long about text, max is 1500 chars")  // db: max = 2000
 
-    AboutMemberPrefs(
+    AboutUserPrefs(
       userId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,

@@ -35,10 +35,10 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
 
   "SiteTransaction can handle PermsOnPages" - {
       var dao: SiteDao = null
-      var admin: User = null
-      var userA: User = null
-      var userB: User = null
-      var guest: User = null
+      var admin: Participant = null
+      var userA: Participant = null
+      var userB: Participant = null
+      var guest: Participant = null
       var pageAId: PageId = null
       var pageBId: PageId = null
       var pageAPost2: Post = null

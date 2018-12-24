@@ -35,7 +35,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
   def createSysUserImpl(id: UserId, fullName: String, username: String, tx: SiteTransaction) {
-    val sysUser = MemberInclDetails(
+    val sysUser = UserInclDetails(
       id = id,
       externalId = None,
       fullName = Some(fullName),

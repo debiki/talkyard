@@ -100,7 +100,7 @@ trait PostsDao {
   def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
         now: When, authorId: UserId, tx: SiteTransaction, skipNotifications: Boolean = false)
-        : (Post, User, Notifications, Option[ReviewTask]) = {
+        : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
@@ -450,7 +450,7 @@ trait PostsDao {
       throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
 
     // This is better than some database foreign key error.
-    tx.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
+    tx.loadParticipant(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -889,13 +889,13 @@ trait PostsDao {
 
 
   def loadSomeRevisionsRecentFirst(postId: PostId, revisionNr: Int, atLeast: Int,
-        userId: Option[UserId]): (Seq[PostRevision], Map[UserId, User]) = {
+        userId: Option[UserId]): (Seq[PostRevision], Map[UserId, Participant]) = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
-    var usersById: Map[UserId, User] = null
+    var usersById: Map[UserId, Participant] = null
     readOnlyTransaction { tx =>
       val post = tx.loadThePost(postId)
       val page = PageDao(post.pageId, tx)
-      val user = userId.flatMap(tx.loadUser)
+      val user = userId.flatMap(tx.loadParticipant)
 
       throwIfMayNotSeePost(post, user)(tx)
 
@@ -912,7 +912,7 @@ trait PostsDao {
         revision.approvedById foreach userIds.add
         revision.hiddenById foreach userIds.add
       }
-      usersById = tx.loadUsersAsMap(userIds)
+      usersById = tx.loadParticipantsAsMap(userIds)
     }
     (revisionsRecentFirst.toSeq, usersById)
   }
@@ -1006,7 +1006,7 @@ trait PostsDao {
     readWriteTransaction { tx =>
       val page = PageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
-      val Seq(author, changer) = tx.loadTheUsers(postBefore.createdById, changerId)
+      val Seq(author, changer) = tx.loadTheParticipants(postBefore.createdById, changerId)
       throwIfMayNotSeePage(page, Some(changer))(tx)
 
       val postAfter = postBefore.copy(tyype = newType)
@@ -1076,7 +1076,7 @@ trait PostsDao {
     import com.debiki.core.{PostStatusAction => PSA}
 
     val page = PageDao(pageId, tx)
-    val user = tx.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+    val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
@@ -1250,7 +1250,7 @@ trait PostsDao {
     if (postBefore.isCurrentVersionApproved)
       throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
 
-    val approver = tx.loadTheUser(approverId)
+    val approver = tx.loadTheParticipant(approverId)
 
     // For now. Later, let core members approve posts too.
     if (!approver.isStaff)
@@ -1444,7 +1444,7 @@ trait PostsDao {
 
     readWriteTransaction { tx =>
       val post = tx.loadThePost(pageId, postNr = postNr)
-      val voter = tx.loadTheUser(voterId)
+      val voter = tx.loadTheParticipant(voterId)
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
       tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
@@ -1477,7 +1477,7 @@ trait PostsDao {
 
     readWriteTransaction { tx =>
       val page = PageDao(pageId, tx)
-      val voter = tx.loadTheUser(voterId)
+      val voter = tx.loadTheParticipant(voterId)
       SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
       throwIfMayNotSeePage(page, Some(voter))(tx)
 
@@ -1540,7 +1540,7 @@ trait PostsDao {
     val now = globals.now()
 
     val (postBefore, postAfter, storePatch) = readWriteTransaction { tx =>
-      val mover = tx.loadTheMember(moverId)
+      val mover = tx.loadTheUser(moverId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
 
@@ -1673,7 +1673,7 @@ trait PostsDao {
       userIds ++= posts.map(_.createdById)
       userIds ++= posts.map(_.currentRevisionById)
       userIds ++= flags.map(_.flaggerId)
-      val users = tx.loadUsers(userIds.toSeq)
+      val users = tx.loadParticipants(userIds.toSeq)
       ThingsToReview(posts, pageMetas, users, flags)
     }
   }
@@ -1696,7 +1696,7 @@ trait PostsDao {
   private def doFlagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType,
         flaggerId: UserId): (Post, Boolean) = {
     readWriteTransaction { tx =>
-      val flagger = tx.loadTheMember(flaggerId)
+      val flagger = tx.loadTheUser(flaggerId)
       val postBefore = tx.loadThePost(pageId, postNr)
       val pageMeta = tx.loadThePageMeta(pageId)
       val categories = tx.loadCategoryPathRootLast(pageMeta.categoryId)
@@ -1739,7 +1739,7 @@ trait PostsDao {
     val userId = post.createdById
     val pageIdsToRefresh = mutable.Set[PageId]()
     val postsHidden = readWriteTransaction { tx =>
-      val user = tx.loadUser(userId) getOrDie "EdE6FKW02"
+      val user = tx.loadParticipant(userId) getOrDie "EdE6FKW02"
       if (user.effectiveTrustLevel != TrustLevel.NewMember)
         return Nil
 
@@ -1788,9 +1788,9 @@ trait PostsDao {
       // Block the user.
       if (user.isMember) {
         COULD_OPTIMIZE // edit & save the user directly [6DCU0WYX2]
-        val member = tx.loadMemberInclDetails(user.id) getOrDie "EdE5KW0U4"
+        val member = tx.loadUserInclDetails(user.id) getOrDie "EdE5KW0U4"
         val memberAfter = member.copyWithMaxThreatLevel(ThreatLevel.ModerateThreat)
-        tx.updateMemberInclDetails(memberAfter)
+        tx.updateUserInclDetails(memberAfter)
       }
       else {
         blockGuestImpl(theBrowserIdData, user.id, numDays = 31,
@@ -1841,7 +1841,7 @@ trait PostsDao {
     val manyEntries = tx.loadCreatePostAuditLogEntriesBy(
       browserIdData, limit = limit, orderBy)
     val fewerEntries = manyEntries filter { entry =>
-      User.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
+      Participant.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
     }
     fewerEntries.flatMap(_.uniquePostId).toSet
   }
@@ -1904,7 +1904,7 @@ trait PostsDao {
 
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit = {
     readWriteTransaction { tx =>
-      val clearer = tx.loadTheUser(clearedById)
+      val clearer = tx.loadTheParticipant(clearedById)
       if (!clearer.isStaff)
         throwForbidden("EsE7YKG59", "Only staff may clear flags")
 

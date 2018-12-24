@@ -24,9 +24,9 @@ import org.scalatest._
 
 class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
   var dao: SiteDao = _
-  var owner: User = _
-  var userOne: User = _
-  var userTwo: User = _
+  var owner: Participant = _
+  var userOne: Participant = _
+  var userTwo: Participant = _
 
   var forumPageId: PageId = _
   var categoryId: CategoryId = _

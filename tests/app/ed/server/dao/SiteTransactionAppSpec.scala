@@ -39,8 +39,8 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
       Who(SystemUserId, browserIdData)).pagePath.thePageId
 
-    var admin: User = null
-    var other: User = null
+    var admin: Participant = null
+    var other: Participant = null
     var pageId: PageId = null
     var otherPageId: PageId = null
     var thirdPageId: PageId = null
@@ -69,21 +69,21 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     "find users by username prefix" in {
       dao.readWriteTransaction { tx =>
         info("no members")
-        tx.loadMembersWithPrefix("zzz") mustBe Nil
+        tx.loadUsersWithPrefix("zzz") mustBe Nil
 
         info("all members")
-        var allMembers = tx.loadMembersWithPrefix("")
+        var allMembers = tx.loadUsersWithPrefix("")
         allMembers.length mustBe 2
-        allMembers = tx.loadMembersWithPrefix("t")
+        allMembers = tx.loadUsersWithPrefix("t")
         allMembers.length mustBe 2
-        allMembers = tx.loadMembersWithPrefix("txt_")
+        allMembers = tx.loadUsersWithPrefix("txt_")
         allMembers.length mustBe 2
 
         info("specific member")
-        var admin = tx.loadMembersWithPrefix("txt_a")
+        var admin = tx.loadUsersWithPrefix("txt_a")
         admin.length mustBe 1
         admin.head.username mustBe Some("txt_adm")
-        admin = tx.loadMembersWithPrefix("txt_adm")
+        admin = tx.loadUsersWithPrefix("txt_adm")
         admin.length mustBe 1
         admin.head.username mustBe Some("txt_adm")
       }
@@ -325,11 +325,11 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
         Who(SystemUserId, browserIdData)).pagePath.thePageId
 
-      var admin: User = null
-      var userA: User = null
-      var userB: User = null
-      var guestA: User = null
-      var guestB: User = null
+      var admin: Participant = null
+      var userA: Participant = null
+      var userB: Participant = null
+      var guestA: Participant = null
+      var guestB: Participant = null
       var pageAId: PageId = null
       var pageBId: PageId = null
 

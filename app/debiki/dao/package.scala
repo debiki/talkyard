@@ -41,7 +41,7 @@ package object dao {
 
   type UsersOnlineCache = caffeine.cache.Cache[SiteId, UsersOnlineStuff]
 
-  case class UsersOnlineStuff(users: Seq[User], usersJson: JsArray, numStrangers: Int)
+  case class UsersOnlineStuff(users: Seq[Participant], usersJson: JsArray, numStrangers: Int)
 
 }
 

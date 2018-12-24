@@ -20,7 +20,7 @@ package com.debiki.dao.rdb
 import com.debiki.core._
 import com.debiki.core.DbDao._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.MaxCustomGuestId
+import com.debiki.core.Participant.MaxCustomGuestId
 import java.{sql => js, util => ju}
 import Rdb._
 import RdbUtil._
@@ -111,7 +111,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
   private def loginWithPassword(loginAttempt: PasswordLoginAttempt, requireVerifiedEmail: Boolean)
         : MemberLoginGrant = {
-    val anyUser = loadMemberByPrimaryEmailOrUsername(loginAttempt.emailOrUsername)
+    val anyUser = loadUserByPrimaryEmailOrUsername(loginAttempt.emailOrUsername)
     val user = anyUser getOrElse {
       throw NoSuchEmailOrUsernameException
     }
@@ -144,7 +144,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
     if (email.toUserId.isEmpty)
       throw BadEmailTypeException(emailId)
 
-    val user = loadMember(email.toUserId.get) getOrElse {
+    val user = loadUser(email.toUserId.get) getOrElse {
       die("TyEZ2XKW5", o"""s$siteId: User `${email.toUserId}"' not found
            when logging in with email id `$emailId'.""")
     }
@@ -236,7 +236,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       throw IdentityNotFoundException
     }
 
-    val user: Member = loadMember(identityInDb.userId) getOrElse {
+    val user: User = loadUser(identityInDb.userId) getOrElse {
       // There's a foreign key, so this cannot happen.
       die(o"""s$siteId: User ${identityInDb.userId} missing for OpenAuth
           identity ${identityInDb.id}""", "TyE4WKBQR")

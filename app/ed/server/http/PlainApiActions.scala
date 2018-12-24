@@ -125,11 +125,11 @@ class PlainApiActions(
       }
       val talkyardIdPrefix = "talkyardId="
       val externalIdPrefix = "externalId="
-      val anyUser: Option[User] =
+      val anyUser: Option[Participant] =
         if (username.startsWith(talkyardIdPrefix)) {
           val userIdStr = username.drop(talkyardIdPrefix.length)
           val userId = userIdStr.toIntOrThrow("TyEAPIUSERID", s"Talkyard user id is not a number: $userIdStr")
-          dao.getUser(userId)
+          dao.getParticipant(userId)
         }
         else if (username.startsWith(externalIdPrefix)) {
           val externalId = username.drop(externalIdPrefix.length)
@@ -250,7 +250,7 @@ class PlainApiActions(
 
 
     private def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, dao: SiteDao,
-          anyUserMaybeSuspended: Option[User], sidStatus: SidStatus,
+          anyUserMaybeSuspended: Option[Participant], sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
 

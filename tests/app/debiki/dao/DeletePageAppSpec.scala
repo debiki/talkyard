@@ -26,7 +26,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
   "PagesDao can delete pages" - {
     var dao: SiteDao = null
-    var admin: User = null
+    var admin: Participant = null
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
       Who(SystemUserId, browserIdData)).pagePath.thePageId

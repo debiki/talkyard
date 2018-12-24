@@ -120,7 +120,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val theVoteType = PostVoteType.fromInt(voteType) getOrElse throwBadArgument("EdE2QTKB40", "voteType")
     val voters = dao.readOnlyTransaction { tx =>
       val ids = tx.loadVoterIds(postId, theVoteType)
-      tx.loadUsers(ids)
+      tx.loadParticipants(ids)
     }
     val json = Json.obj(
       "numVoters" -> voters.size, // currently all voters always loaded [1WVKPW02]

@@ -70,11 +70,6 @@ trait SystemTransaction {
   def deleteSiteByName(name: String): Option[Site]
   def deleteSiteById(siteId: SiteId): Boolean
 
-  //def deleteSite(siteId: SiteId)
-
-  // ----- Users
-
-  def loadUser(siteId: SiteId, userId: UserId): Option[User]
 
   // ----- Summary emails, and notifications
 
@@ -83,6 +78,7 @@ trait SystemTransaction {
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
         : Map[SiteId, Seq[Notification]]
+
 
   // ----- Pages
 

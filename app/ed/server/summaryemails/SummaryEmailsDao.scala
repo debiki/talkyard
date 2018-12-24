@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import SummaryEmailsDao._
 
 
-case class ActivitySummary(toMember: MemberInclDetails, topTopics: immutable.Seq[PagePathAndMeta]) {
+case class ActivitySummary(toMember: UserInclDetails, topTopics: immutable.Seq[PagePathAndMeta]) {
 }
 
 
@@ -68,7 +68,7 @@ trait SummaryEmailsDao {
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
     val settings = getWholeSiteSettings()
 
-    val members = loadMembersInclDetailsById(userStats.map(_.userId))
+    val members = loadUsersInclDetailsById(userStats.map(_.userId))
     for (member <- members) {
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
 
@@ -190,7 +190,7 @@ trait SummaryEmailsDao {
   }
 
 
-  private def createActivitySummaryEmail(member: MemberInclDetails, now: When,
+  private def createActivitySummaryEmail(member: UserInclDetails, now: When,
         unreadTopTopics: Iterable[PagePathAndMeta]): Email = {
     TESTS_MISSING
 

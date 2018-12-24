@@ -88,10 +88,10 @@ object Validation {
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
       return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums)
 
-    if (username.length < User.MinUsernameLength)
+    if (username.length < Participant.MinUsernameLength)
       return Bad(TooShortErrorMessage)
 
-    if (username.length > User.MaxUsernameLength)
+    if (username.length > Participant.MaxUsernameLength)
       return Bad(TooLongErrorMessage)
 
     if (!charIsAzNumOrUnderscore(username.head))
@@ -109,7 +109,7 @@ object Validation {
       return Bad(TwoSpecialCharsErrorMessage)
 
     // If the username needs to be changed somehow, to become okay — then reject it.
-    val okayUsername = User.makeOkayUsername(username, allowDotDash = true, _ => false)
+    val okayUsername = Participant.makeOkayUsername(username, allowDotDash = true, _ => false)
     if (okayUsername isNot username)
       return Bad(justWeird(username, okayUsername))
 

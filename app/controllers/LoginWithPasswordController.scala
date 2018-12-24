@@ -217,8 +217,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def sendEmailAddressVerificationEmail(user: Member, anyReturnToUrl: Option[String],
-        host: String, dao: SiteDao) {
+  def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
+                                        host: String, dao: SiteDao) {
     val email = createEmailAddrVerifEmailLogDontSend(user, anyReturnToUrl, host, dao)
     globals.sendEmail(email, dao.siteId)
   }
@@ -229,7 +229,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     import request.dao
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
-    val user = dao.getUser(userId) getOrElse {
+    val user = dao.getParticipant(userId) getOrElse {
       throwInternalError("DwE7GJ0", "I've deleted the account")
     }
 
@@ -290,8 +290,8 @@ object LoginWithPasswordController {
   private val MaxAddressVerificationEmailAgeInHours = 25
 
 
-  def createEmailAddrVerifEmailLogDontSend(user: Member, anyReturnToUrl: Option[String],
-    host: String, dao: SiteDao): Email = {
+  def createEmailAddrVerifEmailLogDontSend(user: User, anyReturnToUrl: Option[String],
+                                           host: String, dao: SiteDao): Email = {
 
     import dao.context.globals
     val (siteName, origin) = dao.theSiteNameAndOrigin()

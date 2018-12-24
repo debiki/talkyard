@@ -100,10 +100,10 @@ class TagsAppSpec extends DaoAppSuite() {
     dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false,
       Who(theOwner.id, browserIdData)).defaultCategoryId
 
-  lazy val theOwner: User = createPasswordOwner("tag_adm", dao)
-  lazy val theModerator: User = createPasswordModerator("tag_mod", dao)
-  lazy val theMember: User = createPasswordUser("tag_mbr", dao)
-  lazy val theWrongMember: User = createPasswordUser("wr_tg_mbr", dao)
+  lazy val theOwner: Participant = createPasswordOwner("tag_adm", dao)
+  lazy val theModerator: Participant = createPasswordModerator("tag_mod", dao)
+  lazy val theMember: Participant = createPasswordUser("tag_mbr", dao)
+  lazy val theWrongMember: Participant = createPasswordUser("wr_tg_mbr", dao)
   var thePageId: PageId = _
 
   def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId) {

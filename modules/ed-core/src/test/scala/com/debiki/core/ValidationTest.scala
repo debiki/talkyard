@@ -37,7 +37,7 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
     }
 
     "reject too short usernames" in {
-      User.MinUsernameLength mustBe 3
+      Participant.MinUsernameLength mustBe 3
       Validation.checkUsername("a").isBad mustBe true
       Validation.checkUsername("ab").isBad mustBe true
       Validation.checkUsername("ab").swap.get mustBe Validation.TooShortErrorMessage
@@ -45,7 +45,7 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
     }
 
     "reject too long usernames" in {
-      User.MaxUsernameLength mustBe 20
+      Participant.MaxUsernameLength mustBe 20
       Validation.checkUsername("a234567890_234567890").isGood mustBe true  // 20 chars = ok
       Validation.checkUsername("a234567890_2345678901").isBad mustBe true  // 21 chars = too long
       Validation.checkUsername("a234567890_2345678901").swap.get mustBe Validation.TooLongErrorMessage
@@ -119,7 +119,7 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
     "reject misc bad usernames" in {
       Validation.checkUsername("spa ce").isBad mustBe true
       Validation.checkUsername("fůňķŷdiacritics").isBad mustBe true
-      Validation.checkUsername("z" * User.MaxUsernameLength + "x").isBad mustBe true
+      Validation.checkUsername("z" * Participant.MaxUsernameLength + "x").isBad mustBe true
       Validation.checkUsername("x").isBad mustBe true  // too short
       Validation.checkUsername("unicode漢語").isBad mustBe true
       Validation.checkUsername("_badstart").isBad mustBe true  // starts with _

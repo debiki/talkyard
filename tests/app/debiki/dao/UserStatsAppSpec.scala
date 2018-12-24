@@ -24,15 +24,15 @@ import java.{util => ju}
 class UserStatsAppSpec extends DaoAppSuite() {
   var dao: SiteDao = _
 
-  var owner: Member = _
+  var owner: User = _
   var ownerWho: Who = _
 
   var createForumResult: CreateForumResult = _
   var categoryId: CategoryId = _
 
-  var moderator: Member = _
-  var member1: Member = _
-  var wrongMember: Member = _
+  var moderator: User = _
+  var member1: User = _
+  var wrongMember: User = _
 
   var noRepliesTopicId: PageId = _
   var withRepliesTopicId: PageId = _

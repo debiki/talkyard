@@ -95,7 +95,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
       case _ => die("DwE82WM91")
     }
 
-    if (email.toUserId.exists(User.isMember)) {
+    if (email.toUserId.exists(Participant.isMember)) {
       dao.configRole(userId = email.toUserId.get, emailNotfPrefs = Some(emailNotfPrefs))
     }
     else {

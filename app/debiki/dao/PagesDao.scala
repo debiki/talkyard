@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.PageParts.FirstReplyNr
-import com.debiki.core.User.SystemUserId
+import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
 import ed.server.auth.{Authz, ForumAuthzContext}
@@ -288,7 +288,7 @@ trait PagesDao {
 
     // By default, one follows all activity on a page one has created — unless this is some page
     // that gets auto created by System. [EXCLSYS]
-    if (author.id >= User.LowestNormalMemberId) {
+    if (author.id >= Participant.LowestNormalMemberId) {
       tx.upsertPageNotfPref(
           PageNotfPref(authorId, NotfLevel.WatchingAll, pageId = Some(pageId)))
     }
@@ -330,18 +330,18 @@ trait PagesDao {
   }
 
 
-  def unpinPage(pageId: PageId, requester: User) {
+  def unpinPage(pageId: PageId, requester: Participant) {
     pinOrUnpin(pageId, pinWhere = None, pinOrder = None, requester)
   }
 
 
-  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int, requester: User): Unit = {
+  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int, requester: Participant): Unit = {
     pinOrUnpin(pageId, Some(pinWhere), Some(pinOrder), requester)
   }
 
 
   private def pinOrUnpin(pageId: PageId, pinWhere: Option[PinPageWhere], pinOrder: Option[Int],
-        requester: User) {
+        requester: Participant) {
     require(pinWhere.isDefined == pinOrder.isDefined, "EdE2WRT5")
     val didWhat = pinWhere match {
       case None => "unpinned this topic"
@@ -373,7 +373,7 @@ trait PagesDao {
   def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
     val answeredAt = readWriteTransaction { tx =>
-      val user = tx.loadTheUser(userId)
+      val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
       if (oldMeta.pageRole != PageRole.Question)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
@@ -411,7 +411,7 @@ trait PagesDao {
 
   def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData) {
     readWriteTransaction { tx =>
-      val user = tx.loadTheUser(userId)
+      val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
@@ -433,7 +433,7 @@ trait PagesDao {
         : PageMeta = {
     val now = globals.now()
     val newMeta = readWriteTransaction { tx =>
-      val user = tx.loadTheUser(userId)
+      val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
@@ -502,7 +502,7 @@ trait PagesDao {
         : Option[ju.Date] = {
     val now = globals.now()
     val newClosedAt = readWriteTransaction { tx =>
-      val user = tx.loadTheUser(userId)
+      val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
       throwIfMayNotSeePage(oldMeta, Some(user))(tx)
 
@@ -552,7 +552,7 @@ trait PagesDao {
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(tx: SiteTransaction) {
 
-    val deleter = tx.loadTheUser(deleterId)
+    val deleter = tx.loadTheParticipant(deleterId)
     if (!deleter.isStaff)
       throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
 
@@ -616,7 +616,7 @@ trait PagesDao {
   }
 
 
-  def addMetaMessage(doer: User, message: String, pageId: PageId, tx: SiteTransaction) {
+  def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction) {
     // Some dupl code [3GTKYA02]
     val page = PageDao(pageId, tx)
     val postId = tx.nextPostId()

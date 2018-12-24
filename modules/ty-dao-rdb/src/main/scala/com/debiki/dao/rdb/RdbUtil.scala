@@ -20,7 +20,7 @@ package com.debiki.dao.rdb
 import com.debiki.core._
 import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import com.debiki.core.Prelude._
-import com.debiki.core.User.isGuestId
+import com.debiki.core.Participant.isGuestId
 import java.{sql => js, util => ju}
 import scala.collection.immutable
 import Rdb._
@@ -179,11 +179,11 @@ object RdbUtil {
      |e.email_notfs g_email_notfs""".stripMargin
 
 
-  def readMember(rs: js.ResultSet): Member =
-    _User(rs).toMemberOrThrow
+  def getUser(rs: js.ResultSet): User =
+    getParticipant(rs).toUserOrThrow
 
 
-  def _User(rs: js.ResultSet): User = {
+  def getParticipant(rs: js.ResultSet): Participant = {
     val userId = rs.getInt("u_id")
     val emailNotfPrefs = {
       if (isGuestId(userId))
@@ -219,7 +219,7 @@ object RdbUtil {
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
         grantsTrustLevel = None)
-    else Member(
+    else User(
       id = userId,
       fullName = name,
       theUsername = theUsername,
@@ -300,29 +300,29 @@ object RdbUtil {
     s"user_id, $CompleteUserSelectListItemsNoUserId"
 
 
-  def readMemberInclDetails(rs: js.ResultSet): MemberInclDetails = {
-    getCompleteUser(rs) match {
-      case m: MemberInclDetails => m
+  def getUserInclDetails(rs: js.ResultSet): UserInclDetails = {
+    getMemberInclDetails(rs) match {
+      case m: UserInclDetails => m
       case g: Group => throw GotAGroupException(g.id)
     }
   }
 
 
-  def getCompleteUser(rs: js.ResultSet, userId: Option[UserId] = None): MemberOrGroupInclDetails = {
+  def getMemberInclDetails(rs: js.ResultSet, userId: Option[UserId] = None): MemberInclDetails = {
     val theUserId = userId getOrElse rs.getInt("user_id")
-    dieIf(User.isGuestId(theUserId), "DwE6P4K3")
+    dieIf(Participant.isGuestId(theUserId), "DwE6P4K3")
 
     // Right now, groups never have any trust level, but single persons always do. [1WBK5JZ0]
     TrustLevel.fromInt(rs.getInt("trust_level")) match {
-      case Some(trustLevel) => getMemberInclDetails(rs, theUserId, trustLevel)
+      case Some(trustLevel) => getUserInclDetails(rs, theUserId, trustLevel)
       case None => getGroup(rs)
     }
   }
 
 
-  private def getMemberInclDetails(rs: js.ResultSet, theUserId: UserId,
-        trustLevel: TrustLevel): MemberInclDetails = {
-    MemberInclDetails(
+  private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId,
+        trustLevel: TrustLevel): UserInclDetails = {
+    UserInclDetails(
       id = theUserId,
       externalId = getOptString(rs, "external_id"),
       fullName = Option(rs.getString("full_name")),

@@ -134,7 +134,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val aDayAgo = now.minusDays(1)
     val aWeekAgo = now.minusDays(7)
     val dao = siteDaoFactory.newSiteDao(UtxSiteId)
-    var usersById: Map[UserId, User] = null
+    var usersById: Map[UserId, Participant] = null
     val userIdsNoReminder = dao.readOnlyTransaction { tx =>
       val topics: Seq[PagePathAndMeta] =
         tx.loadPagesInCategories(
@@ -145,7 +145,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
             includeAboutCategoryPages = false),
           limit = 100)
       val createdByUserIds = topics.map(_.meta.authorId).toSet
-      usersById = tx.loadUsersAsMap(createdByUserIds)
+      usersById = tx.loadParticipantsAsMap(createdByUserIds)
       val emailsSentToAuthors: Map[UserId, Seq[Email]] = tx.loadEmailsSentTo(
         createdByUserIds, after = aWeekAgo, emailType = EmailType.HelpExchangeReminder)
       createdByUserIds filterNot { userId =>
@@ -243,7 +243,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val userIdsBySiteId: Map[String, List[SiteId]] =
         notfsBySiteId.mapValues(_.map(_.recipientUserId))
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
-      val anyUser = siteDao.getUser(userId)
+      val anyUser = siteDao.getParticipant(userId)
 
       // Send email, or remember why we didn't and don't try again.
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
@@ -259,7 +259,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   /** Tries to send an email with one or many notifications to a single user.
     * Returns any issue that prevented the email from being sent.
     */
-  private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
+  private def trySendToSingleUser(userId: UserId, anyUser: Option[Participant],
         notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
 
     def logWarning(message: String): Unit =
@@ -289,7 +289,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def constructAndSendEmail(siteDao: SiteDao, site: Site,
-        user: User, userNotfs: Seq[Notification]) {
+        user: Participant, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
@@ -309,7 +309,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   }
 
 
-  private def constructEmail(dao: SiteDao, anyOrigin: Option[String], user: User,
+  private def constructEmail(dao: SiteDao, anyOrigin: Option[String], user: Participant,
         notfs: Seq[Notification]): Option[Email] = {
 
     val (siteName, origin) = dao.theSiteNameAndOrigin()

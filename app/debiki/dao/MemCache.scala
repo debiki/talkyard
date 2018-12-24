@@ -45,7 +45,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   private var pageCreatedListeners = List[(PagePath => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()
-  private var userCreatedListeners = List[(User => Unit)]()
+  private var userCreatedListeners = List[(Participant => Unit)]()
 
 
   def onPageCreated(callback: (PagePath => Unit)) {
@@ -78,12 +78,12 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   }
 
 
-  def onUserCreated(callback: (User => Unit)) {
+  def onUserCreated(callback: (Participant => Unit)) {
     userCreatedListeners ::= callback
   }
 
 
-  def fireUserCreated(user: User) {
+  def fireUserCreated(user: Participant) {
     userCreatedListeners foreach (_(user))
   }
 

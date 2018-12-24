@@ -65,7 +65,7 @@ class UserSpec extends FreeSpec with MustMatchers {
 
     "derive usernames from email addresses" - {
       def derive(text: String ) =
-        User.makeOkayUsername(text, allowDotDash = false, _ => false)
+        Participant.makeOkayUsername(text, allowDotDash = false, _ => false)
 
       "simple cases" in {
         derive("abcd").get mustBe "abcd"
@@ -73,7 +73,7 @@ class UserSpec extends FreeSpec with MustMatchers {
       }
 
       "pad with digits if too short" in {
-        User.MinUsernameLength mustBe 3
+        Participant.MinUsernameLength mustBe 3
         derive("ab").get mustBe "ab2"
         derive("a").get mustBe "a23"
         derive("") mustBe None
@@ -92,13 +92,13 @@ class UserSpec extends FreeSpec with MustMatchers {
       "drop chars if too long" in {
         val result = derive("a234567890a234567890a23").get
         result mustBe "a234567890a234567890"
-        result.length mustBe User.MaxUsernameLength
+        result.length mustBe Participant.MaxUsernameLength
       }
 
       "prefixes with 'n' before trims to length, if numeric 'name'" in {
         val result = derive("12345678901234567890123").get
         result mustBe "n1234567890123456789"
-        result.length mustBe User.MaxUsernameLength
+        result.length mustBe Participant.MaxUsernameLength
       }
 
       "UPPERcase is okay" in {
@@ -124,24 +124,24 @@ class UserSpec extends FreeSpec with MustMatchers {
       }
 
       "allows dots and dashes, if told" in {
-        User.makeOkayUsername("dot.ty", allowDotDash = true, _ => false).get mustBe "dot.ty"
-        User.makeOkayUsername("das-hy", allowDotDash = true, _ => false).get mustBe "das-hy"
-        User.makeOkayUsername("d.o.t-d-a-sh", allowDotDash = true, _ => false
+        Participant.makeOkayUsername("dot.ty", allowDotDash = true, _ => false).get mustBe "dot.ty"
+        Participant.makeOkayUsername("das-hy", allowDotDash = true, _ => false).get mustBe "das-hy"
+        Participant.makeOkayUsername("d.o.t-d-a-sh", allowDotDash = true, _ => false
             ).get mustBe "d.o.t-d-a-sh"
       }
 
       "but not two adjacent dots or two dashes" in {
-        User.makeOkayUsername("too..dotty", allowDotDash = true, _ => false).get mustBe "too_dotty"
-        User.makeOkayUsername("too--dashy", allowDotDash = true, _ => false).get mustBe "too_dashy"
-        User.makeOkayUsername("s-.o.-das-.-.hy", allowDotDash = true, _ => false).get mustBe "s_o_das_hy"
+        Participant.makeOkayUsername("too..dotty", allowDotDash = true, _ => false).get mustBe "too_dotty"
+        Participant.makeOkayUsername("too--dashy", allowDotDash = true, _ => false).get mustBe "too_dashy"
+        Participant.makeOkayUsername("s-.o.-das-.-.hy", allowDotDash = true, _ => false).get mustBe "s_o_das_hy"
       }
 
       "and not starting or ending with dot or dash" in {
-        User.makeOkayUsername(".hippo.", allowDotDash = true, _ => false).get mustBe "hippo"
-        User.makeOkayUsername("-happy-", allowDotDash = true, _ => false).get mustBe "happy"
-        User.makeOkayUsername("..donky..", allowDotDash = true, _ => false).get mustBe "donky"
-        User.makeOkayUsername("--monkey--", allowDotDash = true, _ => false).get mustBe "monkey"
-        User.makeOkayUsername("-.-mu..--_.-_.cho.al-l.-.", allowDotDash = true, _ => false)
+        Participant.makeOkayUsername(".hippo.", allowDotDash = true, _ => false).get mustBe "hippo"
+        Participant.makeOkayUsername("-happy-", allowDotDash = true, _ => false).get mustBe "happy"
+        Participant.makeOkayUsername("..donky..", allowDotDash = true, _ => false).get mustBe "donky"
+        Participant.makeOkayUsername("--monkey--", allowDotDash = true, _ => false).get mustBe "monkey"
+        Participant.makeOkayUsername("-.-mu..--_.-_.cho.al-l.-.", allowDotDash = true, _ => false)
             .get mustBe "mu_cho.al-l"
       }
 
@@ -151,13 +151,13 @@ class UserSpec extends FreeSpec with MustMatchers {
             "mpeg", "mpg", "mp4", "mp4", "m4u", "ogg", "ogx", "svg", "tif", "tiff",
             "webp", "wma", "woff", "xml", "zip")) {
 
-          User.makeOkayUsername(s"fil-en.ame.$suffix", allowDotDash = true, _ => false)
+          Participant.makeOkayUsername(s"fil-en.ame.$suffix", allowDotDash = true, _ => false)
             .get mustBe s"fil_en_ame_$suffix"
 
-          User.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = true, _ => false)
+          Participant.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = true, _ => false)
             .get mustBe s"fil-en.ame-$suffix"
 
-          User.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = false, _ => false)
+          Participant.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = false, _ => false)
             .get mustBe s"fil_en_ame_$suffix"
         }
       }
@@ -180,13 +180,13 @@ class UserSpec extends FreeSpec with MustMatchers {
           "Tĥïŝ ĩš â fůňķŷ Šťŕĭńġ 2dot..2dash--2underscore__ arabic:العربية chinese:汉语 漢語 !?#+,*"
           ).get mustBe (
             "This_is_a_funky_String_2dot_2dash_2underscore_arabiczzzzzzz_chinesezz_zz"
-                take User.MaxUsernameLength)
+                take Participant.MaxUsernameLength)
       }
 
       def deriveFailN(username: String, failNumTimes: Int): Option[String] = {
         var i = 0
         def isInUse = (dummy: String) => { i += 1 ; i <= failNumTimes }
-        User.makeOkayUsername(username, allowDotDash = false, isInUse)
+        Participant.makeOkayUsername(username, allowDotDash = false, isInUse)
       }
 
       "tries again if username taken" in {
@@ -199,22 +199,22 @@ class UserSpec extends FreeSpec with MustMatchers {
         val start = "a234567890a234abcxyz"
 
         "1 collision" in {
-          User.MaxUsernameLength mustBe 20
+          Participant.MaxUsernameLength mustBe 20
 
           val result = deriveFailN(start, 1).get
-          result.length mustBe User.MaxUsernameLength
+          result.length mustBe Participant.MaxUsernameLength
           (start.dropRight(1) + "[0-9]").r.findFirstIn(result) mustBe Some(result)
         }
 
         "2 collisions" in {
           val result = deriveFailN(start, 2).get
-          result.length mustBe User.MaxUsernameLength
+          result.length mustBe Participant.MaxUsernameLength
           result.matches(start.dropRight(2) + "[0-9]{2}") mustBe true
         }
 
         "5 collisions" in {
           val result = deriveFailN(start, 5).get
-          result.length mustBe User.MaxUsernameLength
+          result.length mustBe Participant.MaxUsernameLength
           result.matches(start.dropRight(5) + "[0-9]{5}") mustBe true
         }
       }
@@ -223,7 +223,7 @@ class UserSpec extends FreeSpec with MustMatchers {
         val start = "a234567890a234abcd"
 
         "1 collision" in {
-          User.MaxUsernameLength mustBe 20
+          Participant.MaxUsernameLength mustBe 20
 
           val result = deriveFailN(start, 1).get
           result.length mustBe (18 + 1)
@@ -238,13 +238,13 @@ class UserSpec extends FreeSpec with MustMatchers {
 
         "3 collisions" in {
           val result = deriveFailN(start, 3).get
-          result.length mustBe User.MaxUsernameLength
+          result.length mustBe Participant.MaxUsernameLength
           result.matches(start.dropRight(1) + "[0-9]{3}") mustBe true
         }
 
         "5 collisions" in {
           val result = deriveFailN(start, 5).get
-          result.length mustBe User.MaxUsernameLength
+          result.length mustBe Participant.MaxUsernameLength
           result.matches(start.dropRight(3) + "[0-9]{5}") mustBe true
         }
       }

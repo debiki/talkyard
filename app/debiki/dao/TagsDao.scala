@@ -100,10 +100,10 @@ trait TagsDao {
     })
 
     val (post, notifications, postAuthor) = readWriteTransaction { tx =>
-      val me = tx.loadTheUser(who.id)
+      val me = tx.loadTheParticipant(who.id)
       val pageMeta = tx.loadThePageMeta(pageId)
       val post = tx.loadThePost(postId)
-      val postAuthor = tx.loadTheUser(post.createdById)
+      val postAuthor = tx.loadTheParticipant(post.createdById)
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
@@ -148,7 +148,7 @@ trait TagsDao {
     throwForbiddenIf(notfLevel != NotfLevel.WatchingFirst && notfLevel != NotfLevel.Normal,
       "EsE5GK02", s"Only ${NotfLevel.WatchingFirst} and ${NotfLevel.Normal} supported, for tags")
     readWriteTransaction { transaction =>
-      val me = transaction.loadTheMember(byWho.id)
+      val me = transaction.loadTheUser(byWho.id)
       if (me.id != userId && !me.isStaff)
         throwForbidden("EsE4GK9F7", "You may not change someone else's notification settings")
 
@@ -159,7 +159,7 @@ trait TagsDao {
 
   def loadTagNotfLevels(userId: UserId, byWho: Who): Map[TagLabel, NotfLevel] = {
     readOnlyTransaction { transaction =>
-      val me = transaction.loadTheMember(byWho.id)
+      val me = transaction.loadTheUser(byWho.id)
       if (me.id != userId && !me.isStaff)
         throwForbidden("EsE8YHKP03", "You may not see someone else's notification settings")
 

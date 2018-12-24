@@ -101,7 +101,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       return Nil
     }
     SECURITY ; SHOULD // indicate if is guest's name, so cannot pretend to be any @username.
-    val byUserName = transaction.loadUser(notf.byUserId).map(_.usernameOrGuestName) getOrElse
+    val byUserName = transaction.loadParticipant(notf.byUserId).map(_.usernameOrGuestName) getOrElse
       "(unknown user name)"
 
     val date = toIso8601Day(post.createdAt)

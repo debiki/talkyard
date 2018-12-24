@@ -257,7 +257,7 @@ class SiteDao(
     }) toSet
   }
 
-  def ensureSiteActiveOrThrow(newMember: MemberInclDetails, transaction: SiteTransaction) {
+  def ensureSiteActiveOrThrow(newMember: UserInclDetails, transaction: SiteTransaction) {
     // The throwForbidden exceptions can be triggered for example if someone starts signing up,
     // then the site gets deleted, and then the person clicks the submit button in
     // the signup form. (I.e. a race condition, and that's fine.)

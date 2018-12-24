@@ -133,7 +133,7 @@ class DaoAppSuite(
 
   def createPasswordOwner(username: String, dao: SiteDao,
         createdAt: Option[When] = None, firstSeenAt: Option[When] = None,
-        emailVerified: Boolean = false): Member = {
+        emailVerified: Boolean = false): User = {
     createPasswordAdminOrOwner(username, dao, createdAt = createdAt,
         firstSeenAt = firstSeenAt, isOwner = true, emailVerified = emailVerified)
   }
@@ -142,14 +142,14 @@ class DaoAppSuite(
     * "admin-$username@x.co",
     */
   def createPasswordAdmin(username: String, dao: SiteDao, createdAt: Option[When] = None,
-        firstSeenAt: Option[When] = None, emailVerified: Boolean = false): Member = {
+        firstSeenAt: Option[When] = None, emailVerified: Boolean = false): User = {
     createPasswordAdminOrOwner(username, dao, createdAt = createdAt,
       firstSeenAt = firstSeenAt, isOwner = false, emailVerified = emailVerified)
   }
 
   private def createPasswordAdminOrOwner(username: String, dao: SiteDao, isOwner: Boolean,
       createdAt: Option[When], firstSeenAt: Option[When] = None, emailVerified: Boolean = false)
-      : Member = {
+      : User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val password = s"public-${username take 2}-x-${username drop 2}"
     val adm = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
@@ -165,7 +165,7 @@ class DaoAppSuite(
 
 
   def createPasswordModerator(username: String, dao: SiteDao, createdAt: Option[When] = None,
-        emailVerified: Boolean = false): Member = {
+        emailVerified: Boolean = false): User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val mod = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $username"), username = username, email = s"$username@x.co",
@@ -183,7 +183,7 @@ class DaoAppSuite(
   def createPasswordUser(username: String, dao: SiteDao,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
-        createdAt: Option[When] = None, emailVerified: Boolean = false): Member = {
+        createdAt: Option[When] = None, emailVerified: Boolean = false): User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $username"), username = username, email = s"$username@x.co",
@@ -198,8 +198,8 @@ class DaoAppSuite(
 
 
   def updateMemberPreferences(dao: SiteDao, memberId: UserId,
-        fn: Function1[AboutMemberPrefs, AboutMemberPrefs]) {
-    val member = dao.loadTheMemberInclDetailsById(memberId)
+        fn: Function1[AboutUserPrefs, AboutUserPrefs]) {
+    val member = dao.loadTheUserInclDetailsById(memberId)
     dao.saveAboutMemberPrefs(fn(member.preferences_debugTest), Who(memberId, browserIdData))
   }
 
@@ -288,9 +288,9 @@ class DaoAppSuite(
   }
 
 
-  def loadTheMemberAndStats(userId: UserId)(dao: SiteDao): (Member, UserStats) = {
+  def loadTheMemberAndStats(userId: UserId)(dao: SiteDao): (User, UserStats) = {
     dao.readOnlyTransaction { transaction =>
-      val member = transaction.loadTheMember(userId)
+      val member = transaction.loadTheUser(userId)
       val stats = transaction.loadUserStats(userId) getOrDie "EdE2FK4GS"
       (member, stats)
     }

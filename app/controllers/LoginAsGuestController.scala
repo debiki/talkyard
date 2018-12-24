@@ -54,9 +54,9 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     throwForbiddenIf(!settings.isGuestLoginAllowed,
       "TyE4K5FW2", "Guest login disabled; you cannot login as guest here")
 
-    throwForbiddenIf(User nameIsWeird name, "TyE82CW19", "Weird name. Please use no weird characters")
+    throwForbiddenIf(Participant nameIsWeird name, "TyE82CW19", "Weird name. Please use no weird characters")
     throwForbiddenIf(name.isEmpty, "TyE872Y90", "Please fill in your name")
-    throwForbiddenIf(email.nonEmpty && User.emailIsWeird(email),
+    throwForbiddenIf(email.nonEmpty && Participant.emailIsWeird(email),
       "TyE04HK83", "Weird email. Please use a real email address")
 
     // A browser id should be set, at the start of all POST requests. [5JKWQ21]

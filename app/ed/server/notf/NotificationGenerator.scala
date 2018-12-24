@@ -37,8 +37,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
-  private var anyAuthor: Option[User] = None
-  private def author: User = anyAuthor getOrDie "TyE5RK2WAG8"
+  private var anyAuthor: Option[Participant] = None
+  private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
 
   private def generatedNotifications =
@@ -57,7 +57,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
-    anyAuthor = Some(tx.loadTheUser(newPost.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -71,7 +71,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       replyingToPost <- newPost.parent(page.parts)
       if replyingToPost.createdById != newPost.createdById // not replying to oneself
       if approverId != replyingToPost.createdById // the approver has already read newPost
-      replyingToUser <- tx.loadUser(replyingToPost.createdById)
+      replyingToUser <- tx.loadParticipant(replyingToPost.createdById)
     } {
       // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
       // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
@@ -96,7 +96,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       val mentionedUsernames = anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(
         newPost.approvedSource getOrDie "DwE82FK4", nashorn)
 
-      var mentionedPeoples: Set[User] = mentionedUsernames.flatMap(tx.loadMemberOrGroupByUsername)
+      var mentionedMembers: Set[Participant] = mentionedUsernames.flatMap(tx.loadMemberByUsername)
 
       // [MENTIONALIAS] can create more mention aliases, like @new-members (= trust levels new & basic),
       // and @guests and @here-now and @everyone (= all members)
@@ -107,13 +107,13 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           // then, removing G.id here, won't remove U from moreToAdd.
           // Instead, U is added to moreToAdd, and will be @channel mentioned,
           // instead of @group_name mentioned. Doesn't matter?))
-          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedPeoples.map(_.id)
-          mentionedPeoples ++= tx.loadMembersAsMap(moreToAdd).values.toSet
+          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedMembers.map(_.id)
+          mentionedMembers ++= tx.loadUsersAsMap(moreToAdd).values.toSet
         }
       }
 
       for {
-        memberOrGroup <- mentionedPeoples
+        memberOrGroup <- mentionedMembers
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
@@ -192,11 +192,11 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   /** Private messages are sent to all toUserIds, but not to any user mentioned in the
     * message.
     */
-  def generateForMessage(sender: User, pageBody: Post, toUserIds: Set[UserId])
+  def generateForMessage(sender: Participant, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
-    anyAuthor = Some(tx.loadTheUser(pageBody.createdById))
-    tx.loadUsers(toUserIds) foreach { user =>
+    anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
+    tx.loadParticipants(toUserIds) foreach { user =>
       makeNewPostNotf(
           NotificationType.Message, pageBody, categoryId = None, user)
     }
@@ -205,7 +205,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
 
   private def makeNewPostNotf(notfType: NotificationType, newPost: Post,
-        categoryId: Option[CategoryId], toUserMaybeGroup: User,
+        categoryId: Option[CategoryId], toUserMaybeGroup: Participant,
         minNotfLevel: NotfLevel = NotfLevel.Hushed) {
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
@@ -283,7 +283,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
     for {
       toUserId <- toUserIds
-      if toUserId <= MaxGuestId || User.LowestNormalMemberId <= toUserId
+      if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
       if !sentToUserIds.contains(toUserId)
     } {
       // Generate notifications, regardless of email settings, so they can be shown in the user's inbox.
@@ -323,7 +323,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   private def makeNewPostSubscrNotfFor(notfPrefs: Seq[PageNotfPref], newPost: Post,
       minNotfLevel: NotfLevel, memberIdsHandled: mutable.Set[UserId]) {
 
-    val membersById = tx.loadUsersAsMap(notfPrefs.map(_.peopleId))
+    val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
 
     // Individual users' preferences override group preferences, on the same
@@ -355,7 +355,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       maybeMakeNotfs(member, notfPref)
     }
 
-    def maybeMakeNotfs(member: User, notfPref: PageNotfPref) {
+    def maybeMakeNotfs(member: Participant, notfPref: PageNotfPref) {
       // If the member has already been considered, at a more specific content structure specificity,
       // then skip it here. For example, if it has configured a per page notf pref, then, skip it,
       // when considering categories and tags — because per page prefs are more specific.
@@ -422,7 +422,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
-    anyAuthor = Some(tx.loadTheUser(newPost.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -438,8 +438,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
 
-    var mentionsDeletedForUsers = deletedMentions.flatMap(tx.loadMemberOrGroupByUsername)
-    var mentionsCreatedForUsers = createdMentions.flatMap(tx.loadMemberOrGroupByUsername)
+    var mentionsDeletedForUsers = deletedMentions.flatMap(tx.loadMemberByUsername)
+    var mentionsCreatedForUsers = createdMentions.flatMap(tx.loadMemberByUsername)
 
     val newMentionsIncludesAll = mentionsAllInChannel(newMentions)
     val oldMentionsIncludesAll = mentionsAllInChannel(oldMentions)
@@ -456,10 +456,10 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
     if (mentionsForAllDeleted) {
       // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.
-      val usersMentionedAfter = newMentions.flatMap(tx.loadMemberByPrimaryEmailOrUsername)
+      val usersMentionedAfter = newMentions.flatMap(tx.loadUserByPrimaryEmailOrUsername)
       val toDelete: Set[UserId] = previouslyMentionedUserIds -- usersMentionedAfter.map(_.id)
       // (COULD_OPTIMIZE: needn't load anything here — we have the user ids already.)
-      mentionsDeletedForUsers = tx.loadMembersAsMap(toDelete).values.toSet
+      mentionsDeletedForUsers = tx.loadUsersAsMap(toDelete).values.toSet
     }
 
     if (mentionsForAllCreated) {
@@ -469,7 +469,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       // and also if they're in a group that gets @group_mentioned now, when editing.
       val moreToAdd: Set[UserId] =
         pageMemberIds -- previouslyMentionedUserIds -- mentionsCreatedForUsers.map(_.id)
-      mentionsCreatedForUsers ++= tx.loadMembersAsMap(moreToAdd).values.toSet
+      mentionsCreatedForUsers ++= tx.loadUsersAsMap(moreToAdd).values.toSet
     }
 
     // Delete mentions.
@@ -501,9 +501,9 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val userIdsWatching = tx.listUsersWatchingTags(tagsAdded)
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
-    val usersToNotify = tx.loadUsers(userIdsToNotify.to[immutable.Seq])
+    val usersToNotify = tx.loadParticipants(userIdsToNotify.to[immutable.Seq])
     val pageMeta = tx.loadPageMeta(post.pageId)
-    anyAuthor = Some(tx.loadTheUser(post.createdById))
+    anyAuthor = Some(tx.loadTheParticipant(post.createdById))
     for {
       user <- usersToNotify
       if user.id != post.createdById
@@ -534,7 +534,7 @@ object NotificationGenerator {
     mentions.contains("all") || mentions.contains("channel")
 
 
-  def mayMentionGroups(user: User): Boolean = {
+  def mayMentionGroups(user: Participant): Boolean = {
     user.isStaffOrMinTrustNotThreat(TrustLevel.BasicMember)
   }
 

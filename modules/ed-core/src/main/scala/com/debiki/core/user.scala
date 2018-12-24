@@ -24,7 +24,7 @@ import org.scalactic.{ErrorMessage, Or}
 import scala.collection.{immutable, mutable}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
-import User._
+import Participant._
 import java.text.Normalizer
 import java.util.Date
 
@@ -65,7 +65,7 @@ case class Invite(
   COULD; REFACTOR // createdAt to ... what? and createdWhen to createdAt. Or change datatype.
   def createdWhen: When = When.fromDate(createdAt)
 
-  def makeUser(userId: UserId, username: String, currentTime: ju.Date) = MemberInclDetails(
+  def makeUser(userId: UserId, username: String, currentTime: ju.Date) = UserInclDetails(
     id = userId,
     externalId = None,
     fullName = None,
@@ -104,7 +104,7 @@ sealed abstract class NewUserData {
   def isAdmin: Boolean
   def isOwner: Boolean
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
+  def makeUser(userId: UserId, createdAt: ju.Date) = UserInclDetails(
     id = userId,
     externalId = None,
     fullName = name,
@@ -147,7 +147,7 @@ case class NewPasswordUserData(
   val passwordHash: Option[String] =
     password.map(DbDao.saltAndHashPassword)
 
-  def makeUser(userId: UserId) = MemberInclDetails(
+  def makeUser(userId: UserId) = UserInclDetails(
     id = userId,
     externalId = externalId,
     fullName = name,
@@ -247,7 +247,7 @@ case class NameAndUsername(id: UserId, fullName: String, username: String)
 
 
 
-case object User {
+case object Participant {
 
   /** Used when things are inserted or updated automatically in the database. */
   val SystemUserId = 1
@@ -477,8 +477,8 @@ case object User {
       else usernameOkChars
 
     var usernameOkCharsLen =
-      (if (usernameNotOnlyDigits.length >= User.MinUsernameLength) usernameNotOnlyDigits
-      else (usernameNotOnlyDigits + "23456789") take User.MinUsernameLength) take User.MaxUsernameLength
+      (if (usernameNotOnlyDigits.length >= Participant.MinUsernameLength) usernameNotOnlyDigits
+      else (usernameNotOnlyDigits + "23456789") take Participant.MinUsernameLength) take Participant.MaxUsernameLength
 
 
     // Not a file extension suffix? like .png or .jpg or .js?  Tested here: [5WKAJH20]
@@ -493,10 +493,10 @@ case object User {
     }
 
     var nextToTry = usernameOkCharsLen
-    val numCharsFree = User.MaxUsernameLength - usernameOkCharsLen.length
+    val numCharsFree = Participant.MaxUsernameLength - usernameOkCharsLen.length
 
     // `until` means up to length - 1 — so won't drop all chars here: (5WKBA2)
-    for (i <- 1 until User.MaxUsernameLength) {
+    for (i <- 1 until Participant.MaxUsernameLength) {
       val isInUse = isUsernameInUse(nextToTry)
       if (!isInUse)
         return Some(nextToTry)
@@ -522,23 +522,11 @@ case object User {
 
 
 // Try to remove all fields unique for only Member and only Guest.
-sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant = better.]] can be either a Guest, OneMember or a Group.
-                      // And rename MemberOrGroup to OneMemberOrGroup.
-                      // Guest and OneMember are both OneUser.
-                      // People could maybe be named  OneUserOrGroup instead? but People sounds better?
-        // Even better?
-        //  People = one or many User:s
-        //  User = Guest or Member,
-        //  Member = Group or Fellow
-        //  Fellow = one single member (ok for both men and women, esp. in the context of membership)
-        // So, rename e.g. MemberOrGroup to GroupOrFellow, and ... many many other things.
-
-        // Even even better? [pps]
-        //  Participants = one or many Participant:s   <—  this yes, abbrev pps and ppt in constr names
-        //  Participant = Guest or Member
-        //  Member = User Or Group
-        //  trait Someone = Guest or User (just 1 person (or bot), not a group)
-
+// Participant = Guest or Member
+// Member = User Or Group
+// trait Someone = Guest or User  = just 1 person (or bot), not a group.
+// Abbreviate 'ppts' and 'ppt' in db constr names.
+sealed trait Participant {
 
   def id: UserId
   def email: String  // COULD rename to emailAddr
@@ -572,13 +560,13 @@ sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant
   /** Guests have no trust level, so default = false */
   def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel) = false
 
-  def isMember: Boolean = User.isMember(id)
-  def isGuest: Boolean = User.isGuestId(id)
+  def isMember: Boolean = Participant.isMember(id)
+  def isGuest: Boolean = Participant.isGuestId(id)
   def isGroup: Boolean = false
   def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date): Boolean =
-    User.isSuspendedAt(when, suspendedTill = suspendedTill)
+    Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def effectiveTrustLevel: TrustLevel
   def canPromoteToBasicMember: Boolean = false
@@ -592,14 +580,20 @@ sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant
   def idSpaceName: String =
     anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
 
-  def toMemberOrThrow: Member = {
+  def toUserOrThrow: User = {
     this match {
-      case m: Member => m
+      case m: User => m
       case g: Guest => throw GotAGuestException(g.id)
       case g: Group => throw GotAGroupException(g.id)
-      case UnknownUser => throw GotUnknownUserException
+      case UnknownParticipant => throw GotUnknownUserException
     }
   }
+}
+
+
+trait Member extends Participant {
+  def theUsername: String
+  //def fullName: String
 }
 
 
@@ -629,7 +623,7 @@ sealed trait User {   // REFACTOR, RENAME to People? [[NO see below, Participant
   * @param isDeactivated
   * @param isDeleted
   */
-case class Member(
+case class User(
   id: UserId,
   fullName: Option[String],
   theUsername: String,
@@ -650,7 +644,7 @@ case class Member(
   isModerator: Boolean = false,
   isSuperAdmin: Boolean = false,
   override val isDeactivated: Boolean = false,
-  override val isDeleted: Boolean = false) extends User with MemberMaybeDetails {
+  override val isDeleted: Boolean = false) extends Member with MemberMaybeDetails {
 
   def primaryEmailAddress: String = email
 
@@ -684,7 +678,7 @@ case class Member(
     trustLevel == TrustLevel.BasicMember
 
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
-  require(User.isOkayUserId(id), "DwE02k12R5")
+  require(Participant.isOkayUserId(id), "DwE02k12R5")
   require(theUsername.length >= 2, "EsE7YKW3")
   require(!isEmailLocalPartHidden(email), "DwE6kJ23")
   require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
@@ -724,7 +718,7 @@ case class Guest(
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: Option[String] = None,  // COULD rename to Location
-  lockedThreatLevel: Option[ThreatLevel] = None) extends User {
+  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant {
 
   def theUsername: Nothing = die("EsE7YKWP4")
   def username: Option[String] = None
@@ -747,19 +741,19 @@ case class Guest(
   require(isOkayGuestId(id), "TyE4GYUK21")
   require(guestName == guestName.trim, "TyE5YGUK3")
   require(guestName.nonEmpty, "TyEJ4KEPF8")
-  require(User.isOkayGuestBrowserdId(guestBrowserId), "TyE5W5QF7")
+  require(Participant.isOkayGuestBrowserdId(guestBrowserId), "TyE5W5QF7")
   require(!isEmailLocalPartHidden(email), "TyE826kJ23")
 }
 
 
-sealed trait MemberOrGroupInclDetails {
+sealed trait MemberInclDetails {
   def summaryEmailIntervalMins: Option[Int]
   def summaryEmailIfActive: Option[Boolean]
   def seeActivityMinTrustLevel: Option[TrustLevel]
 }
 
 
-case class MemberInclDetails(
+case class UserInclDetails(
   id: UserId,
   externalId: Option[String],
   fullName: Option[String],
@@ -794,9 +788,9 @@ case class MemberInclDetails(
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,  // RENAME to autoThreatLevel?
   lockedThreatLevel: Option[ThreatLevel] = None,
   deactivatedAt: Option[When] = None,
-  deletedAt: Option[When] = None) extends MemberOrGroupInclDetails with MemberMaybeDetails {
+  deletedAt: Option[When] = None) extends MemberInclDetails with MemberMaybeDetails {
 
-  require(User.isOkayUserId(id), "DwE077KF2")
+  require(Participant.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
   require(externalId.forall(_.isTrimmedNonEmpty), "TyE5KBW0Z")
   require(externalId.forall(extId => 1 <= extId.length), "TyE5AKBR20")
@@ -826,10 +820,10 @@ case class MemberInclDetails(
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
 
-  def isGuest: Boolean = User.isGuestId(id)
+  def isGuest: Boolean = Participant.isGuestId(id)
 
   def isSuspendedAt(when: ju.Date): Boolean =
-    User.isSuspendedAt(when, suspendedTill = suspendedTill)
+    Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def isDeactivated: Boolean = deactivatedAt.isDefined
   def isDeleted: Boolean = deletedAt.isDefined
@@ -897,7 +891,7 @@ case class MemberInclDetails(
   }
 
 
-  def preferences_debugTest = AboutMemberPrefs(
+  def preferences_debugTest = AboutUserPrefs(
     userId = id,
     fullName = fullName,
     username = username,
@@ -909,7 +903,7 @@ case class MemberInclDetails(
     url = website)
 
 
-  def copyWithNewAboutPrefs(preferences: AboutMemberPrefs): MemberInclDetails = {
+  def copyWithNewAboutPrefs(preferences: AboutUserPrefs): UserInclDetails = {
     val newEmailAddress =
       if (isEmailLocalPartHidden(preferences.emailAddress)) this.primaryEmailAddress
       else preferences.emailAddress
@@ -924,18 +918,18 @@ case class MemberInclDetails(
   }
 
 
-  def copyWithNewPrivacyPrefs(preferences: MemberPrivacyPrefs): MemberInclDetails = {
+  def copyWithNewPrivacyPrefs(preferences: MemberPrivacyPrefs): UserInclDetails = {
     copy(
       seeActivityMinTrustLevel = preferences.seeActivityMinTrustLevel)
   }
 
 
-  def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel): MemberInclDetails =
+  def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel): UserInclDetails =
     if (this.threatLevel.toInt >= newThreatLevel.toInt) this
     else copy(threatLevel = newThreatLevel)
 
 
-  def copyWithExternalData(externalUser: ExternalUser): MemberInclDetails = {
+  def copyWithExternalData(externalUser: ExternalUser): UserInclDetails = {
     unimplementedIf(primaryEmailAddress != externalUser.primaryEmailAddress,
       "Diffferent primaryEmailAddress not yet impl [TyE2BKRP0]")
     unimplementedIf(emailVerifiedAt.isDefined != externalUser.isEmailAddressVerified,
@@ -953,7 +947,7 @@ case class MemberInclDetails(
       )
   }
 
-  def briefUser = Member(
+  def briefUser = User(
     id = id,
     fullName = fullName,
     theUsername = username,
@@ -977,23 +971,23 @@ case class MemberInclDetails(
 
 
 
-sealed abstract class EditMemberAction(val IntVal: Int) { def toInt: Int = IntVal }
+sealed abstract class EditUserAction(val IntVal: Int) { def toInt: Int = IntVal }
 
-object EditMemberAction {
-  case object SetEmailVerified extends EditMemberAction(1)
-  case object SetEmailUnverified extends EditMemberAction(2)
+object EditUserAction {
+  case object SetEmailVerified extends EditUserAction(1)
+  case object SetEmailUnverified extends EditUserAction(2)
 
-  case object SetApproved extends EditMemberAction(3)
-  case object SetUnapproved extends EditMemberAction(4)
-  case object ClearApproved extends EditMemberAction(5)
+  case object SetApproved extends EditUserAction(3)
+  case object SetUnapproved extends EditUserAction(4)
+  case object ClearApproved extends EditUserAction(5)
 
-  case object SetIsAdmin extends EditMemberAction(6)
-  case object SetNotAdmin extends EditMemberAction(7)
+  case object SetIsAdmin extends EditUserAction(6)
+  case object SetNotAdmin extends EditUserAction(7)
 
-  case object SetIsModerator extends EditMemberAction(8)
-  case object SetNotModerator extends EditMemberAction(9)
+  case object SetIsModerator extends EditUserAction(8)
+  case object SetNotModerator extends EditUserAction(9)
 
-  def fromInt(value: Int): Option[EditMemberAction] = Some(value match {
+  def fromInt(value: Int): Option[EditUserAction] = Some(value match {
     case SetEmailVerified.IntVal => SetEmailVerified
     case SetEmailUnverified.IntVal => SetEmailUnverified
 
@@ -1013,7 +1007,7 @@ object EditMemberAction {
 
 
 
-case class AboutMemberPrefs(
+case class AboutUserPrefs(
   userId: UserId,
   fullName: Option[String],
   username: String,
@@ -1026,12 +1020,12 @@ case class AboutMemberPrefs(
 
   require(!fullName.exists(_.trim.isEmpty), "DwE4FUKW049")
   require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
-  require(userId >= User.LowestNonGuestId, "DwE56KX2")
+  require(userId >= Participant.LowestNonGuestId, "DwE56KX2")
 
   /** Tells if these new member preferences might force us to rerender all HTML,
     * because the changes affect just about any page.
     */
-  def changesStuffIncludedEverywhere(member: MemberInclDetails): Boolean = {
+  def changesStuffIncludedEverywhere(member: UserInclDetails): Boolean = {
     // Email is shown to admins only, not cached anywhere. Url shown on profile page only.
     username != member.username || fullName != member.fullName
   }
@@ -1048,7 +1042,7 @@ case class AboutGroupPrefs(
   summaryEmailIfActive: Option[Boolean]) {
 
   require(!fullName.exists(_.trim.isEmpty), "EdE05KFB521")
-  require(groupId >= User.LowestNonGuestId, "DwE56KX2")
+  require(groupId >= Participant.LowestNonGuestId, "DwE56KX2")
 
 }
 
@@ -1093,7 +1087,7 @@ case class UsernameUsage(
 
 
 
-object UnknownUser extends User {
+object UnknownParticipant extends Participant {
   override def id: UserId = UnknownUserId
   override def email: String = ""
   override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
@@ -1122,7 +1116,7 @@ case class Group(
   summaryEmailIntervalMins: Option[Int] = None,
   summaryEmailIfActive: Option[Boolean] = None,
   grantsTrustLevel: Option[TrustLevel] = None)
-  extends User with MemberOrGroupInclDetails {  // COULD split into two? One without, one with details
+  extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
 
   def email: String = ""
   def passwordHash: Option[String] = None
@@ -1391,10 +1385,10 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class MemberLoginGrant(
-   identity: Option[Identity],
-   user: Member,
-   isNewIdentity: Boolean,
-   isNewMember: Boolean) {
+  identity: Option[Identity],
+  user: User,
+  isNewIdentity: Boolean,
+  isNewMember: Boolean) {
 
   require(!identity.exists(_.id.contains('?')), "EdE7KP4Y1")
   require(identity.forall(_.userId == user.id), "EdE2KVB04")

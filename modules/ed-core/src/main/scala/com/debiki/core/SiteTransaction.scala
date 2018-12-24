@@ -332,45 +332,46 @@ trait SiteTransaction {
   def deleteAllUsersIdentities(userId: UserId)
 
   def nextMemberId: UserId
-  def insertMember(user: MemberInclDetails)
+  def insertMember(user: UserInclDetails)
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
         : MemberLoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
-  def loadMemberInclDetails(userId: UserId): Option[MemberInclDetails] =
-    loadMemberOrGroupInclDetails(userId) map {
-      case member: MemberInclDetails => member
+  def loadUserInclDetails(userId: UserId): Option[UserInclDetails] =
+    loadMemberInclDetailsById(userId) map {
+      case user: UserInclDetails => user
       case group: Group => throw GotAGroupException(group.id)
     }
 
   def loadGroupInclDetails(groupId: UserId): Option[Group] =
     loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
-      case m: MemberInclDetails => throw GotANotGroupException(m.id)
+      case m: UserInclDetails => throw GotANotGroupException(m.id)
       case g: Group => g
     }
 
-  def loadMemberOrGroupInclDetails(userId: UserId): Option[MemberOrGroupInclDetails]
-  def loadMemberOrGroupInclDetailsByUsername(username: String): Option[MemberOrGroupInclDetails]
+  def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails]
 
-  def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
-    loadMemberInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails]
+
+  def loadTheUserInclDetails(userId: UserId): UserInclDetails =
+    loadUserInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadTheGroupInclDetails(userId: UserId): Group =
     loadGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
-  def loadTheMemberOrGroupInclDetails(userId: UserId): MemberOrGroupInclDetails =
-    loadMemberOrGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
+    loadMemberInclDetailsById(userId).getOrElse(throw UserNotFoundException(userId))
 
-  def loadGroups(memberOrGroup: MemberOrGroupInclDetails): immutable.Seq[Group] = {
+  def loadGroups(memberOrGroup: MemberInclDetails): immutable.Seq[Group] = {
     val allGroups = loadGroupsAsMap()
     val groupIds = loadGroupIdsMemberIdFirst(memberOrGroup)
     groupIds.flatMap(allGroups.get)
   }
 
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
-  def updateMemberInclDetails(user: MemberInclDetails): Boolean
+  def updateUserInclDetails(user: UserInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
 
   def insertUserEmailAddress(userEmailAddress: UserEmailAddress)
@@ -385,78 +386,78 @@ trait SiteTransaction {
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
   def isUsernameInUse(username: String): Boolean = loadUsernameUsages(username).nonEmpty
 
-  def loadUser(userId: UserId): Option[User]
-  def loadTheUser(userId: UserId): User =
-    loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadParticipant(userId: UserId): Option[Participant]
+  def loadTheParticipant(userId: UserId): Participant =
+    loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadGuest(userId: UserId): Option[Guest] = {
-    dieIf(userId > User.MaxGuestId, "EsE8FY032")
-    loadUser(userId).map(_.asInstanceOf[Guest])
+    dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
+    loadParticipant(userId).map(_.asInstanceOf[Guest])
   }
   def loadTheGuest(userId: UserId): Guest = {
-    dieIf(userId > User.MaxGuestId, "EsE6YKWU2", userId)
-    loadTheUser(userId).asInstanceOf[Guest]
+    dieIf(userId > Participant.MaxGuestId, "EsE6YKWU2", userId)
+    loadTheParticipant(userId).asInstanceOf[Guest]
   }
-  def loadMember(userId: UserId): Option[Member] = {
-    dieIf(userId <= User.MaxGuestId, "EsE2A8ERB3", userId)
-    loadUser(userId).map(_.toMemberOrThrow)
+  def loadUser(userId: UserId): Option[User] = {
+    dieIf(userId <= Participant.MaxGuestId, "EsE2A8ERB3", userId)
+    loadParticipant(userId).map(_.toUserOrThrow)
   }
-  def loadTheMember(userId: UserId): Member = loadMember(userId).getOrDie(
+  def loadTheUser(userId: UserId): User = loadUser(userId).getOrDie(
     "EsEFK320FG", s"Member $userId missing")
 
-  def isAdmin(userId: UserId): Boolean = loadMember(userId).exists(_.isAdmin)
+  def isAdmin(userId: UserId): Boolean = loadUser(userId).exists(_.isAdmin)
 
-  def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]  // [pps] RENAME to loadParticipants
-  def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
-    val usersById = loadUsersAsMap(userIds)
+  def loadParticipants(userIds: Iterable[UserId]): immutable.Seq[Participant]
+
+  def loadTheParticipants(userIds: UserId*): immutable.Seq[Participant] = {
+    val usersById = loadParticipantsAsMap(userIds)
     userIds.to[immutable.Seq] map { id =>
       usersById.getOrElse(id, throw UserNotFoundException(id))
     }
   }
 
-  def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
+  def loadParticipantsAsMap(userIds: Iterable[UserId]): Map[UserId, Participant]
 
-  def loadMembersAsMap(userIds: Iterable[UserId]): Map[UserId, Member] = {
-    dieIf(userIds.exists(_ <= User.MaxGuestId), "EsE5YKG2")
-    loadUsersAsMap(userIds).mapValues(_.asInstanceOf[Member])
+  def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User] = {
+    dieIf(userIds.exists(_ <= Participant.MaxGuestId), "EsE5YKG2")
+    loadParticipantsAsMap(userIds).mapValues(_.asInstanceOf[User])
   }
 
-  def loadMemberByPrimaryEmailOrUsername(emailOrUsername: String): Option[Member]
-  def loadMemberOrGroupByUsername(username: String): Option[User]
-  def loadMemberInclDetailsByExternalId(externalId: String): Option[MemberInclDetails]
-  def loadMemberInclDetailsByEmailAddr(email: String): Option[MemberInclDetails]
+  def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]
+  def loadMemberByUsername(username: String): Option[Member]
+  def loadUserInclDetailsByExternalId(externalId: String): Option[UserInclDetails]
+  def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
 
-  def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
+  def loadUsersWithPrefix(usernamePrefix: String): immutable.Seq[User]
 
-  def loadUsers(): immutable.Seq[User]
-  def loadMembersInclDetailsAndStats(peopleQuery: PeopleQuery)
-    : immutable.Seq[(MemberInclDetails, Option[UserStats])]
+  def loadUsersInclDetailsAndStats(peopleQuery: PeopleQuery)
+    : immutable.Seq[(UserInclDetails, Option[UserStats])]
 
-  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] =
+  def loadUsersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[UserInclDetails] =
     loadMembersAndGroupsInclDetailsById(userIds) map {
-      case member: MemberInclDetails => member
+      case user: UserInclDetails => user
       case group: Group => throw GotAGroupException(group.id)
     }
 
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
-        : immutable.Seq[MemberOrGroupInclDetails]
+        : immutable.Seq[MemberInclDetails]
 
-  def loadOwner(): Option[MemberInclDetails]
+  def loadOwner(): Option[UserInclDetails]
 
-  def loadGroupMembers(groupId: UserId): Seq[User]
+  def loadGroupMembers(groupId: UserId): Seq[Participant]
 
   def insertGroup(group: Group)
   def updateGroup(group: Group)
   def loadGroupsAsSeq(): immutable.Seq[Group]
   def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
 
-  def loadGroupIdsMemberIdFirst(anyUser: Option[User]): Vector[UserId] = {
+  def loadGroupIdsMemberIdFirst(anyUser: Option[Participant]): Vector[UserId] = {
     anyUser.map(loadGroupIdsMemberIdFirst) getOrElse Vector(Group.EveryoneId)
   }
 
-  def loadGroupIdsMemberIdFirst(memberOrGroupInclDetails: MemberOrGroupInclDetails): Vector[UserId] = {
+  def loadGroupIdsMemberIdFirst(memberOrGroupInclDetails: MemberInclDetails): Vector[UserId] = {
     val user = memberOrGroupInclDetails match {
-      case m: MemberInclDetails => m.briefUser
+      case m: UserInclDetails => m.briefUser
       case g: Group => g
     }
     loadGroupIdsMemberIdFirst(user)
@@ -465,12 +466,12 @@ trait SiteTransaction {
   /** Loads ids of groups the member is in. Returns them, prefixed with
     * the members own id, first.
     */
-  def loadGroupIdsMemberIdFirst(user: User): Vector[UserId] = {
+  def loadGroupIdsMemberIdFirst(user: Participant): Vector[UserId] = {
     val G = Group
 
     val member = user match {
-      case _: Guest | UnknownUser => return Vector(G.EveryoneId)
-      case m: Member => m
+      case _: Guest | UnknownParticipant => return Vector(G.EveryoneId)
+      case m: User => m
       case g: Group => return makeGroupIdsForGroup(g)
     }
 

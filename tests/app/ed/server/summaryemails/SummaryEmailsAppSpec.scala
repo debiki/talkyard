@@ -99,12 +99,12 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
   var everyoneTestPageId3ByAdm: PageId = null
   var everyoneTestPageId4ByAdm: PageId = null
 
-  var adm: User = null
-  var mia: User = null
-  var mod: User = null
-  var max: User = null
-  var ign: User = null
-  var defa: User = null
+  var adm: Participant = null
+  var mia: Participant = null
+  var mod: Participant = null
+  var max: Participant = null
+  var ign: Participant = null
+  var defa: Participant = null
 
   def makeStats(userId: UserId, now: When,
         nextSummaryEmailAt: Option[When]): UserStats = {

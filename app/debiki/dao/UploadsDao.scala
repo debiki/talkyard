@@ -226,7 +226,7 @@ trait UploadsDao {
 
   private def throwIfUploadedTooMuchRecently(uploaderId: UserId, sizeBytes: Int) {
     readOnlyTransaction { transaction =>
-      val user = transaction.loadUser(uploaderId) getOrElse throwForbidden(
+      val user = transaction.loadParticipant(uploaderId) getOrElse throwForbidden(
         "EsE7KMW2", "Strangely enough, your user account just disappeared")
 
       // God mode.

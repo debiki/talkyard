@@ -164,13 +164,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
-  def loadUser(siteId: SiteId, userId: UserId): Option[User] = {
-    val userBySiteUserId = loadUsers(Map(siteId -> List(userId)))
-    userBySiteUserId.get((siteId, userId))
-  }
-
-
-  def loadUsers(userIdsByTenant: Map[SiteId, immutable.Seq[UserId]]): Map[(SiteId, UserId), User] = {
+  def loadUsers(userIdsByTenant: Map[SiteId, immutable.Seq[UserId]]): Map[(SiteId, UserId), Participant] = {
     var idCount = 0
 
     def incIdCount(ids: List[UserId]) {
@@ -210,12 +204,12 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     if (idCount == 0)
       return Map.empty
 
-    var usersByTenantAndId = Map[(SiteId, UserId), User]()
+    var usersByTenantAndId = Map[(SiteId, UserId), Participant]()
 
     runQuery(totalQuery.toString, allValsReversed.reverse, rs => {
       while (rs.next) {
         val siteId = rs.getInt("SITE_ID")
-        val user = _User(rs)
+        val user = getParticipant(rs)
         usersByTenantAndId = usersByTenantAndId + ((siteId, user.id) -> user)
       }
     })
@@ -701,11 +695,11 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         (siteId, posts)
       }): _*)
 
-    val usersBySite = Map[SiteId, Map[UserId, User]](
+    val usersBySite = Map[SiteId, Map[UserId, Participant]](
       userIdsBySite.toSeq.map(siteAndUserIds => {
         val siteId = siteAndUserIds._1
         val siteTrans = siteTransaction(siteId)
-        val users = siteTrans.loadUsersAsMap(siteAndUserIds._2)
+        val users = siteTrans.loadParticipantsAsMap(siteAndUserIds._2)
         (siteId, users)
       }): _*)
 

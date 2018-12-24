@@ -34,7 +34,7 @@ object MayMaybe {
 
 
 sealed abstract class AuthzContext {
-  def requester: Option[User]
+  def requester: Option[Participant]
   def groupIds: immutable.Seq[GroupId]
   def permissions: immutable.Seq[PermsOnPages]
   def isStaff: Boolean = requester.exists(_.isStaff)
@@ -50,7 +50,7 @@ sealed abstract class AuthzContext {
 }
 
 case class ForumAuthzContext(
-  requester: Option[User],
+  requester: Option[Participant],
   groupIds: immutable.Seq[GroupId],
   permissions: immutable.Seq[PermsOnPages]) extends AuthzContext
 
@@ -136,7 +136,7 @@ object Authz {
   SECURITY // not important for the moment, but should be a maySeePost also?
   def maySeePage(
     pageMeta: PageMeta,
-    user: Option[User],
+    user: Option[Participant],
     groupIds: immutable.Seq[GroupId],
     pageMembers: Set[UserId],
     categoriesRootLast: immutable.Seq[Category],
@@ -253,7 +253,7 @@ object Authz {
 
 
   def mayFlagPost(
-    member: Member,
+    member: User,
     groupIds: immutable.Seq[GroupId],
     post: Post,
     pageMeta: PageMeta,
@@ -327,7 +327,7 @@ object Authz {
     * as Some(false), so don't-know-if-may-see = may-Not-see.
     */
   private def checkPermsOnPages(
-    user: Option[User],
+    user: Option[Participant],
     groupIds: immutable.Seq[GroupId],
     pageMeta: Option[PageMeta],
     pageMembers: Option[Set[UserId]],

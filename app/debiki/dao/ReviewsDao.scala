@@ -33,14 +33,14 @@ case class ReviewStuff(
   id: ReviewTaskId,
   reasons: immutable.Seq[ReviewReason],
   createdAt: ju.Date,
-  createdBy: User,
+  createdBy: Participant,
   moreReasonsAt: Option[ju.Date],
   completedAt: Option[ju.Date],
-  decidedBy: Option[User],
+  decidedBy: Option[Participant],
   invalidatedAt: Option[ju.Date],
   decidedAt: Option[When],
   decision: Option[ReviewDecision],
-  maybeBadUser: User, // remove? or change to a list, the most recent editors?
+  maybeBadUser: Participant, // remove? or change to a list, the most recent editors?
   pageId: Option[PageId],
   pageTitle: Option[String],
   post: Option[Post],
@@ -351,15 +351,15 @@ trait ReviewsDao {
 
 
   def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int, forWho: Who)
-        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) =
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) =
     readOnlyTransaction { tx =>
-      val requester = tx.loadTheUser(forWho.id)
+      val requester = tx.loadTheParticipant(forWho.id)
       loadStuffImpl(olderOrEqualTo, limit, requester, tx)
     }
 
 
-  private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, requester: User, tx: SiteTransaction)
-        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) = {
+  private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, requester: Participant, tx: SiteTransaction)
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) = {
     val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
     val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
 
@@ -419,7 +419,7 @@ trait ReviewsDao {
       userIds.add(flag.flaggerId)
     }
 
-    val usersById = tx.loadUsersAsMap(userIds)
+    val usersById = tx.loadParticipantsAsMap(userIds)
 
     val titlesByPageId = tx.loadTitlesPreferApproved(pageIds)
 

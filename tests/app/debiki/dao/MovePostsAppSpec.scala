@@ -26,8 +26,8 @@ import java.{util => ju}
 
 class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
   var dao: SiteDao = _
-  var theModerator: User = _
-  var theMember: User = _
+  var theModerator: Participant = _
+  var theMember: Participant = _
 
   "The Dao can move posts" - {
     val now = new ju.Date()
