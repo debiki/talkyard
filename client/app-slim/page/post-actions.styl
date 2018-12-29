@@ -57,6 +57,8 @@
 
 .DW.DW .dw-ar-t > .dw-p-as
   float: right; // leave space for social Like buttons to the left
+                // COULD remove — now those buttons are gone.
+                // Breaks the metabar's margin-top. [MTBMGTP]
   .dw-a-close,
   .dw-a-reopen
     margin-left: 10px;
@@ -67,6 +69,7 @@
   top: 1px;  // v-align with Close/Reopen text
   color: white;
   background-color: hsl($uiHue, 80%, 54%);
+  margin-bottom: 18px;  // instead of metabar's margin-top  [MTBMGTP]
   &:hover
     color: white;
     background-color: hsl($uiHue, 80%, 62%);

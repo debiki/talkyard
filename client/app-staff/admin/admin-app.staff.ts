@@ -1080,7 +1080,7 @@ const EmbeddedCommentsSettings = createFactory({
                 "these instructions"), '.'),
             r.li({},
               r.b({}, "Hexo"), " — see ",
-              r.a({ href: 'https://hexo-comments.demo.ed.community/2018/01/04/demo-and-instructions/' },
+              r.a({ href: 'https://hexo-demo.talkyard.io/2018/01/04/demo-and-instructions/' },
                 "these instructions"), '.'),
             ));
 
