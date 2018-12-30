@@ -1,0 +1,8 @@
+
+#comments_regex='s#^GET.*/-/assets/([0-9]+)/\*file\s+controllers.Assets.at.*$#\1#p'
+#current_version=`sed -nr "$find_version_regex" < conf/routes`
+
+
+sed -r 's,^\s*(#|//)(.*)$,,' < package.json
+
+

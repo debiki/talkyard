@@ -1,0 +1,56 @@
+{
+  "name": "to-talkyard",
+  "version": "0.1.0",
+  "description": "Converts phpBB, Disqus, WordPress etc export files to JSON for importing to Talkyard.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/debiki/to-talkyard/"
+  },
+  "author": "Debiki AB and Kaj Magnus Lindberg",
+  "license": "GPLv2",
+  "scripts": {
+    "start": "npm run serve",
+    "build": "npm run build-ts && npm run tslint",
+    "serve": "node dist/server.js",
+    "watch-node": "nodemon dist/server.js",
+    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-ts\"",
+    "test": "jest --forceExit --coverage --verbose",
+    "watch-test": "npm run test -- --watchAll",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "debug": "npm run build && npm run watch-debug",
+    "serve-debug": "nodemon --inspect dist/server.js",
+    "watch-debug": "concurrently -k -p \"[{name}]\" -n \"TypeScript\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-ts\""
+  },
+  "dependencies": {
+    "async": "^2.6.0",
+    "chalk": "^2.2.0",
+    "lodash": "^4.17.4",
+    "minimist": "^1.2.0",
+    "sax": "^1.2.4"
+  },
+  "devDependencies": {
+    "@types/async": "^2.0.45",
+    "@types/bluebird": "^3.5.20",
+    "@types/jest": "^22.1.3",
+    "@types/lodash": "^4.14.91",
+    "@types/lusca": "^1.5.0",
+    "@types/minimist": "^1.2.0",
+    "@types/node": "^9.4.6",
+    "@types/sax": "^1.0.1",
+    "@types/shelljs": "^0.7.8",
+    "@types/supertest": "^2.0.4",
+    "@types/winston": "^2.3.7",
+    "chai": "^4.1.2",
+    "concurrently": "^3.5.1",
+    "jest": "^22.0.4",
+    "nodemon": "^1.13.0",
+    "shelljs": "^0.8.1",
+    "supertest": "^3.0.0",
+    "ts-jest": "^22.0.4",
+    "ts-node": "^5.0.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2"
+  }
+}

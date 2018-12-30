@@ -49,6 +49,3 @@
 [submodule "images/fakemail/mailslurper"]
 	path = images/fakemail/mailslurper
 	url = https://github.com/mailslurper/mailslurper.git
-[submodule "to-talkyard"]
-	path = to-talkyard
-	url = ../to-talkyard.git
