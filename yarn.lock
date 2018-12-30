@@ -419,7 +419,7 @@ buffer-alloc-unsafe@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/buffer-alloc-unsafe/-/buffer-alloc-unsafe-1.1.0.tgz#bd7dc26ae2972d0eda253be061dba992349c19f0"
 
-buffer-alloc@^1.1.0:
+buffer-alloc@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/buffer-alloc/-/buffer-alloc-1.2.0.tgz#890dd90d923a873e08e10e5fd51a57e5b7cce0ec"
   dependencies:
@@ -3306,9 +3306,9 @@ process-nextick-args@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-2.0.0.tgz#a37d732f4271b4ab1ad070d35508e8290788ffaa"
 
-progress@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.0.tgz#8a1be366bf8fc23db2bd23f10c6fe920b4389d1f"
+progress@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.1.tgz#c9242169342b1c29d275889c95734621b1952e31"
 
 promise@^7.1.1:
   version "7.3.1"
@@ -3752,9 +3752,9 @@ sax@0.5.x:
   version "0.5.8"
   resolved "https://registry.yarnpkg.com/sax/-/sax-0.5.8.tgz#d472db228eb331c2506b0e8c15524adb939d12c1"
 
-selenium-standalone@^6.15.3:
-  version "6.15.3"
-  resolved "https://registry.yarnpkg.com/selenium-standalone/-/selenium-standalone-6.15.3.tgz#c89e676f6e5acf54a212bcea985d02880564b008"
+selenium-standalone@^6.15.4:
+  version "6.15.4"
+  resolved "https://registry.yarnpkg.com/selenium-standalone/-/selenium-standalone-6.15.4.tgz#9f9056f625bd7d2558483562b3e8be80947e9faf"
   dependencies:
     async "^2.1.4"
     commander "^2.9.0"
@@ -3763,9 +3763,9 @@ selenium-standalone@^6.15.3:
     lodash "^4.17.4"
     minimist "^1.2.0"
     mkdirp "^0.5.1"
-    progress "2.0.0"
+    progress "2.0.1"
     request "2.88.0"
-    tar-stream "1.6.1"
+    tar-stream "1.6.2"
     urijs "^1.18.4"
     which "^1.2.12"
     yauzl "^2.5.0"
@@ -4128,16 +4128,16 @@ tape@^4.6.3:
     string.prototype.trim "~1.1.2"
     through "~2.3.8"
 
-tar-stream@1.6.1:
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/tar-stream/-/tar-stream-1.6.1.tgz#f84ef1696269d6223ca48f6e1eeede3f7e81f395"
+tar-stream@1.6.2:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/tar-stream/-/tar-stream-1.6.2.tgz#8ea55dab37972253d9a9af90fdcd559ae435c555"
   dependencies:
     bl "^1.0.0"
-    buffer-alloc "^1.1.0"
+    buffer-alloc "^1.2.0"
     end-of-stream "^1.0.0"
     fs-constants "^1.0.0"
     readable-stream "^2.3.0"
-    to-buffer "^1.1.0"
+    to-buffer "^1.1.1"
     xtend "^4.0.0"
 
 tar-stream@^1.5.0:
@@ -4225,7 +4225,7 @@ to-absolute-glob@^0.1.1:
   dependencies:
     extend-shallow "^2.0.1"
 
-to-buffer@^1.1.0:
+to-buffer@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/to-buffer/-/to-buffer-1.1.1.tgz#493bd48f62d7c43fcded313a03dcadb2e1213a80"
 
@@ -4570,9 +4570,9 @@ wdio-sync@0.7.1, wdio-sync@^0.7.1:
     fibers "~2.0.0"
     object.assign "^4.0.3"
 
-webdriverio@^4.13.2:
-  version "4.13.2"
-  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.13.2.tgz#1feafe0ebd0e3e03a7c7f89417e437d3f6a5a5a6"
+webdriverio@^4.14.1:
+  version "4.14.1"
+  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.14.1.tgz#50fdb010d37233c77c48e5f0497a63ab875cdfc1"
   dependencies:
     archiver "~2.1.0"
     babel-runtime "^6.26.0"

@@ -44,6 +44,7 @@ $(git_modules): $@
 
 # ----- Javascript and CSS bundles
 
+
 # If these are present, probably all js modules have been installed?
 node_modules: \
             node_modules/.bin/gulp
@@ -51,7 +52,7 @@ node_modules: \
             #node_modules/zxcvbn/dist/zxcvbn.js
 
 node_modules/.bin/gulp: git-subm-init-upd
-	sudo s/d run --rm gulp yarn
+	s/yarn
 
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build?
 # Sync with the languages in the /translations/ dir. [5JUKQR2]
