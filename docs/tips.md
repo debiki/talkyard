@@ -1,4 +1,11 @@
 
+### Debugging mobile phones you don't have
+
+Use SauceLabs (free for open source, for short 11 minutes sessions), and Weinre,
+see  [debug-ios-safari-without-iphone.md](./debug-ios-safari-without-iphone.md)
+in this directory.
+
+
 ### Docker:
 
 Login as root to a running container, without knowing the root password:

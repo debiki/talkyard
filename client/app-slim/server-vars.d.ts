@@ -45,6 +45,7 @@ interface ServerVars {
   pageDataFromServer: any;
   volatileDataFromServer: VolatileDataFromServer;
 
+  isIos: boolean;
   isInLoginWindow: boolean;
   isInLoginPopup: boolean;
   isInIframe: boolean;

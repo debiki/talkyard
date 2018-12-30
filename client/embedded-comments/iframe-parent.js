@@ -70,6 +70,12 @@ function loadCommentsCreateEditor() {
 
   var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
+  var loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
+  if (loadWeinre) {
+    // Let's append the whole hash fragment — nice to see any client "name"
+    // you can debug-include in the hash, in Weinre's debug targets list.
+    commentsIframeUrl += location.hash;
+  }
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
@@ -126,6 +132,10 @@ function loadCommentsCreateEditor() {
   debugLog("iframe-parent: inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
+  if (loadWeinre) {
+    editorIframeUrl += location.hash;
+  }
+
   editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     name: 'edEditor',

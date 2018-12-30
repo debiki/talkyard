@@ -273,6 +273,8 @@ function renderPageInBrowser() {
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });
     debiki2.page.PostsReadTracker.start();
 
+    debiki2.page.Hacks.maybeStartIosBugfix();
+
     /* [sw] Wait with the service worker, in case is an underpowered mobile phone
     // that's 100% busy downloading things and rendering the page — then don't want the service
     // worker to start before it's probably done. Maybe in the future, it'll download

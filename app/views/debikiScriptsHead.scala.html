@@ -201,6 +201,7 @@ var eds = {
   debugOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',@* [INLTAGORIG] *@
   cdnOriginOrEmpty: '@{tpi.cdnOrigin getOrElse ""}',
   cdnOrServerOrigin: '@tpi.cdnOrServerOrigin',@* for admin page embedded comments code *@
+  isIos: _ios,
   isInLoginWindow: @isInLoginWindowBoolStr,
   isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,
   isInIframe: _isInIframe,
