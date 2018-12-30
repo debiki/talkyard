@@ -50,7 +50,7 @@ elseif used_ip_bw > 100e6 then  -- or 50e6?
     ngx.log(ngx.WARN, "Per ip bandwidth exceeded, replying Forbidden, ip: " ..
             ip .. ", server: " .. server_name .. " [EdE5GUK20]")
     forbiddenMessage = "You, or someone at your Internet address, " ..
-            "have downloaded too much data from this server. [EdsEBWXIP]"
+            "have downloaded too much data from this server. [TyEBWXIP]"
 end
 
 if used_server_bw > 500e6 then
@@ -60,7 +60,7 @@ elseif used_server_bw > 3e9 then
 elseif used_server_bw > 5e9 then
     ngx.log(ngx.WARN, "Per server bandwidth exceeded, replying Forbidden, server: " ..
             server_name .. " [EdE2GK47R]")
-    forbiddenMessage = "People have downloaded too much data from " .. server_name .. " [EdEBWXSRV]"
+    forbiddenMessage = "People have downloaded too much data from " .. server_name .. " [TyEBWXSRV]"
 end
 
 if used_total_bw > 100e9 then
@@ -69,7 +69,7 @@ elseif used_total_bw > 300e9 then
     slow_down(slow_speed)
 elseif used_total_bw > 500e9 then
     ngx.log(ngx.ERR, "Total bandwidth exceeded, replying Forbidden [EdE5TBW5]")
-    forbiddenMessage = "People have downloaded too much data from this server. [EdEBWXALL]"
+    forbiddenMessage = "People have downloaded too much data from this server. [TyEBWXALL]"
 end
 
 -- ngx.log(ngx.DEBUG, "ip: " .. ip .. ", ip bw: " .. used_ip_bw ..
@@ -79,9 +79,9 @@ end
 ngx.var.limit_rate = speed
 
 if forbiddenMessage then
-    ngx.status = 503
+    ngx.status = 429
     ngx.header.content_type = 'text/plain'
-    ngx.say("403 Forbidden\n\nBandwidth exceeded. " .. forbiddenMessage)
+    ngx.say("429 Too Many Requests [TyE429BWE]\n\nBandwidth exceeded. " .. forbiddenMessage)
     return ngx.exit(ngx.HTTP_OK)
 end
 

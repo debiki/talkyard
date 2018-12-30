@@ -228,6 +228,9 @@ object Prelude {
   private val StripOriginRegex = "^((https?:)?//[^/]+)?(/.*)$".r
 
 
+  // For now, IPv4 only.
+  val IsIpAddrRegex: Regex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
+
 
   /** Like {@code safe}, but wraps the string between start and end
    * *d*elimiters "`" and "'", like so: <i>`the-dangerous-string'</i>

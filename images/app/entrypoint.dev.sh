@@ -37,8 +37,10 @@ if [ $file_owner_id -ne 0 ] ; then
   # (/home/owner/.ivy2 and .sbt are mounted in docker-compose.yml)
   chown owner /home/owner/.ivy2
   chown owner /home/owner/.sbt
-  # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
+  # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root),
+  # and editing the Traefik frontend rules config.
   chown owner /opt/talkyard/uploads/
+  chown owner /opt/talkyard/traefik-rules/  # [5FJKS20]
   chown owner /var/log/talkyard/
 
   # Here, 'exec gosu owner $*' will:

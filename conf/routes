@@ -248,7 +248,11 @@ GET  /-/build-info              controllers.DebugTestController.showBuildInfo
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction
 GET  /-/ping-cache              controllers.DebugTestController.pingCache
-GET  /-/ping-database-and-cache controllers.DebugTestController.pingDatabaseAndCache
+GET  /-/ping-cache-10           controllers.DebugTestController.pingCacheTenTimes
+GET  /-/ping-db                 controllers.DebugTestController.pingDatabase
+GET  /-/ping-db-10              controllers.DebugTestController.pingDatabaseTenTimes
+GET  /-/ping-cache-db           controllers.DebugTestController.pingCacheAndDatabase
+GET  /-/ping-cache-db-10        controllers.DebugTestController.pingCacheAndDatabaseTenTimes
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock

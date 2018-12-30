@@ -1,0 +1,35 @@
+# Traefik config for a development server on localhost.
+# No real HTTPS cert — cannot generate real certs for localhost.
+
+debug = false
+
+logLevel = "INFO"
+defaultEntryPoints = ["https","http"]
+
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+  [entryPoints.https]
+  address = ":443"
+    # This'll make use of a dummy default cert; the browser will warn you.
+    [entryPoints.https.tls]
+    minVersion = "VersionTLS12"
+  [entryPoints.api]
+  address = ":8070"
+
+# Show Traefik's dashboard at localhost:8070.
+[api]
+entryPoint = "api"
+  # Expose more statistics: localhost:8070/metrics — no. Where is it?
+  [api.statistics]
+
+[retry]
+
+#[docker]
+#endpoint = "unix:///var/run/docker.sock"
+#watch = true
+#exposedByDefault = false
+
+[file]
+  directory = "/traefik-rules/"
+  watch = true

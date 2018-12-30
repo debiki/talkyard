@@ -685,6 +685,9 @@ class Globals(
 
     createStateFuture foreach { _ =>
       p.Logger.info("State created. [EsMSTATEREADY]")
+
+      // In case there's not yet any file with Traefik frontend rules, create it.
+      systemDao.maybeUpdateTraefikRulesFile()
     }
 
     // When testing, never proceed before the server has started properly, or tests will fail (I think).
