@@ -370,6 +370,10 @@ This project looks like so:
      +-public/         <-- Some images and libs, plus JS and CSS that Gulp
      |                     has bundled and minified from the client/ dir above.
      |
+     +-to-talkyard/    <-- For converting e.g. phpBB or Disqus export files
+     |                     to Talkyard's JSON format, so they can be imported
+     |                     into Talkyard. This is a stand-alone Node.js app.
+     |
      +-images/
      | +-web/          <-- For building the 'web' Docker image, runs Nginx
      | | +-Dockerfile

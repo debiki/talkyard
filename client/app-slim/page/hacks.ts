@@ -183,18 +183,25 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
 }
 
 
-let iosBugFixCounter = 0;
-
 /**
  * Safari in iOS 12 hides, and doesn't show again, the contents in an iframe, if one scrolls.
- * However, if some rendering setting changes, then Safari does repaint. Needs to be something
- * that for real changes how things look, so cannot just do a no-op. Let's change the opacity
- * — no human will notice this, but iOS will rerender.
+ * However, if some rendering setting changes, then Safari does repaint so the iframe
+ * becomes visible again. The setting needs to be something that for real changes
+ * how things look, so cannot just do a no-op. Let's change the opacity — no human will
+ * notice this, but iOS will rerender.
  *
- * If doing this only after scrolling (from client/app-slim/if-in-iframe.ts, the 'iframeOffsetWinSize'
- * event) then in some cases this bug workaround won't work — the iframe contents becomes
- * invisible in some other cases too, e.g. if one clicks the Safari address bar.
- * (At least in the SauceLabs emulator.) So let's do once per second, always, instead.
+ * If doing this only after scrolling (from client/app-slim/if-in-iframe.ts,
+ * the 'iframeOffsetWinSize' event) then in some cases this bug workaround
+ * won't work — the iframe contents becomes invisible in some other cases too,
+ * e.g. if one clicks the Safari address bar. (At least in the SauceLabs emulator.)
+ * So let's do once per second, always, instead.
+ *
+ * DO_AFTER 2019-06-01 see if Apple has fixed this iOS Safari bug; then add a do-after
+ * comment to remove this workaround 3 months later (when most people have upgraded?).
+ *
+ * This happens only with iOS 12 not iOS 11, but let's do for all iOS versions,
+ * for simplicity. (iOS 11 has a jump-to-scroll-bottom-if-opens-any-dialog
+ * bug instead :-P  only iOS 11)
  */
 export function maybeStartIosBugfix() {
   if (eds.isIos && eds.isInIframe) {
@@ -207,25 +214,30 @@ export function maybeStartIosBugfix() {
   }
 }
 
+let iosBugFixCounter = 0;
+
 
 /**
- * This is for debugging emulated browsers with Weinre, on localhost.
- * E.g. iOS Safari, in a SauceLabs emulated iPhone, connected to localhost via a tunnel (see below).
+ * This is for debugging emulated browsers with Weinre, on localhost. E.g. iOS Safari,
+ * in a SauceLabs emulated iPhone, connected to localhost via a tunnel (see below).
  * Assume Weinre runs on port 8090 on localhost because Node.js' http-server listens on 8080
  * when testing embedded comments. 8080 is otherwise Weinre's default port.
  * Start like so:  node_modules/.bin/weinre --boundHost -all-  --httpPort 8090
  * Info about Weinre and how to install it:  http://people.apache.org/~pmuellr/weinre/
- * And you also need to work around a Weinre bug, and maybe a SauceLabs tunnel, see:
+ * And you also need to work around a Weinre bug, and maybe add a SauceLabs tunnel, see:
  * docs/debugging-ios-safari-without-iphone.md
  *
- * Wrap in try-catch so any uninteresting bug here, just for enabling debug, won't break everything.
+ * Wrap in try-catch so any uninteresting bug here, just for enabling debug,
+ * won't break everything.
  */
 try {
   if (debiki2.getMainWin().location.hash.indexOf('&loadWeinre') >= 0) {  // [WEINRE]
     console.info("Lazy loading Weinre [TyMWEINRE]");
     // 127.0.0.1 doesn't work in SauceLab's iPhone emulator — but 'localhost' works.
     debiki2.Server.loadJs('http://localhost:8090/target/target-script-min.js#anonymous');
-    // This might be needed for Android — then, 10.0.2.2 resolves to localhost, at least in the past.
+    // This might be needed for Android — then, 10.0.2.2 resolves to localhost, at least
+    // in the past. If needed, just load the Weinre script from both these locations
+    // (above and below), one will fail, one will work.
     //debiki2.Server.loadJs('http://10.0.2.2:8090/target/target-script-min.js#anonymous');
   }
 }
