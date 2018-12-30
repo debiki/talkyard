@@ -152,6 +152,9 @@ restart:
 restart-web:
 	sudo s/d kill web ; sudo s/d start web ; sudo s/d-logsf0
 
+restart-app:
+	sudo s/d kill app ; sudo s/d start app ; sudo s/d-logsf0
+
 restart-web-app:
 	sudo s/d-restart-web-app
 

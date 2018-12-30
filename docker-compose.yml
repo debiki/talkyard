@@ -1,5 +1,25 @@
 version: '3.1'
+
+networks:
+  # These netw names get prefixed with 'tyd_', by Docker (see .env [7RJPW2]).
+  web_net:
+  internal_net:
+
 services:
+  proxy:
+    build: images/proxy/
+    image: $DOCKER_REPOSITORY/talkyard-proxy
+    ports:
+      - '80:80'     # localhost:80 —> the Traefik http entrypoint
+      - '443:443'   # there's no real cert though (dev env on localhost)
+      - '8070:8070' # Traefik's web UI
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./images/proxy/traefik.dev.toml:/traefik.toml
+    networks:
+      - web_net
+      - internal_net
+
   web:
     build: images/web/
     image: $DOCKER_REPOSITORY/talkyard-web
@@ -13,16 +33,19 @@ services:
       - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
       - ./volumes/nginx-logs/:/var/log/nginx/
       - ./volumes/nginx-core-dumps/:/tmp/cores/
-    ports:
-      # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
-      # from inside the Docker network.
-      - '80:80'
-      # Well this is a dev server, ok to expose here.
-      - '81:81'
-      - '443:443'
+    networks:
+      - internal_net
     depends_on:
       - app
       #- cache [NCHANREDIS]
+    labels:
+      # The network name got prefixed with 'tyd_', by Docker [7RJPW2].
+      - "traefik.docker.network=tyd_web_net"
+      - "traefik.enable=true"
+      # Have Traefik send everything to here.
+      - "traefik.web.frontend.rule=PathPrefix:/"
+      - "traefik.web.port=80"
+      - "traefik.web.protocol=http"
     environment:
       CDN_PULL_KEY: "public"
 
@@ -41,7 +64,10 @@ services:
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
+    networks:
+      - internal_net
     ports:
+      # Let's expose these, for debugging and troubleshooting.
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
@@ -84,8 +110,11 @@ services:
     image: $DOCKER_REPOSITORY/talkyard-cache
     volumes:
       - ./volumes/cache-data/:/data/
+    # Expose, so can troubleshoot-query Redis.
     ports:
       - '6379:6379'
+    networks:
+      - internal_net
     sysctls:
       net.core.somaxconn: 511
 
@@ -99,8 +128,11 @@ services:
       - ./volumes/search-data/:/usr/share/elasticsearch/data/
       - ./volumes/search-logs/:/usr/share/elasticsearch/logs/
     ports:
+      # Expose, for troubleshooting.
       - '9200:9200'
       - '9300:9300'
+    networks:
+      - internal_net
     environment:
       ES_JAVA_OPTS: '-Xms384m -Xmx384m'
 
@@ -110,8 +142,8 @@ services:
     volumes:
       - ./volumes/rdb-data/:/var/lib/postgresql/data/
       - ./volumes/rdb-logs/:/var/log/postgresql/
-    ports:
-      - '5432:5432'
+    networks:
+      - internal_net
     environment:
       POSTGRES_PASSWORD: 'public'
       PEER_HOST: 'rdb2'
@@ -127,6 +159,8 @@ services:
   #  volumes:
   #    - ./volumes/rdb2-data/:/var/lib/postgresql/data/
   #    - ./volumes/rdb2-logs/:/var/log/postgresql/
+  #  networks:
+  #    - internal_net
   #  environment:
   #    POSTGRES_PASSWORD: 'public2'
   #    PEER_HOST: 'rdb'
@@ -142,6 +176,8 @@ services:
       # This is for debugging tests running in Node.js in this container, and started
       # via `node --debug-brk --inspect=9229`. [8EA02R4]
       - '9229:9229'
+    networks:
+      - internal_net
     links:
       # Links for security tests, so the Typescript test code running in this Node.js container can
       # send HTTP request to the ED tech stack, if it's running in Docker-Compose on localhost.
@@ -165,6 +201,8 @@ services:
      - '8025:8025'  # smtp, '80' + 25 (25 = old standard port, 587 = new for STARTTLS)
      - '8026:8026'  # admin interface,  '80' + 25 + 1
      - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
+    networks:
+      - internal_net
 
   # Jaeger Tracing. Access at http://localhost:16686.
   tracer:
@@ -177,6 +215,8 @@ services:
       - '16686:16686'    # Query. Web interface + find traces.
       - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
       #- '9411:9411'     # Collector. Zipkin compatible endpoint
+    networks:
+      - internal_net
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
