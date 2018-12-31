@@ -615,7 +615,17 @@ function pagesFor(browser) {
 
     waitForThenClickText: function(selector, regex) {
       const elemId = api.waitAndGetElemIdWithText(selector, regex);
-      browser.elementIdClick(elemId);
+      // In FF, the click sometimes fails, the first time before pause(), with
+      // this error message:  "Error: Remote end send an unknown status code."
+      // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
+      try {
+        browser.elementIdClick(elemId);
+      }
+      catch (ex) {
+        console.log(`First click of elem '${elemId}' failed. Retrying. Wait until clickable?`);
+        browser.pause(250);
+        browser.elementIdClick(elemId);
+      }
     },
 
 
