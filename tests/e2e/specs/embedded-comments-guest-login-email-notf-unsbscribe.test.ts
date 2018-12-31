@@ -213,11 +213,18 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
     fidosBrowser.switchBackToFirstTabOrWindow();
   });
 
-  it("... and posts one more comment: a clever and funny joke, this time", () => {
-    fidosBrowser.pause(1500);  // [E2EBUG] otherwise the editor iframe replies-to and the
-    // comments iframe reply button states, get out of sync. Why? A race?: one iframe maybe
-    // runs a login callback before the other, and the post-reply click happens in between?
-    fidosBrowser.complex.replyToEmbeddingBlogPost(theCleverAndFunnyJoke);
+  it("... then posts one more comment: a clever and funny joke, this time", () => {
+    // Wait until both iframes have noticed we've logged in. Otherwise, without this,
+    // they sometimes got out of sync: ? One iframe ran a login callback before the other,
+    // and the post-reply click happened in between ?
+    fidosBrowser.complex.waitForLoggedInInEmbeddedCommentsIrames();
+    // Without this, in FF, the click just never happens, because the Reply button isn't in
+    // the viewport. And there's no error message — the test just silently hangs until timeout.
+    // Also, sometimes won't work the first time, in FF. [4RDEDA0]
+    utils.tryManyTimes('FidoScrollTopReply', 3, () => {
+      fidosBrowser.scrollToTop();
+      fidosBrowser.complex.replyToEmbeddingBlogPost(theCleverAndFunnyJoke);
+    });
   });
 
   it("Fido refreshes the page", () => {

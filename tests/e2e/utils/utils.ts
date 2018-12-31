@@ -92,6 +92,19 @@ const utils = {
       isModerator: firstDefinedOf(opts.isModerator, member.isModerator),
     };
   },
+
+  tryManyTimes: (what, maxNumTimes, fn) => {
+    for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
+      try {
+        fn();
+        return;
+      }
+      catch (error) {
+        console.log(`RETRYING: ${what}  [TyME2ERETRY]`);
+      }
+    }
+    fn();
+  },
 };
 
 

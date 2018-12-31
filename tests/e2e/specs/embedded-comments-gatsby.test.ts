@@ -109,11 +109,24 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     owensBrowser.waitAndClick('a[href*="hi-folks"]');
   });
 
-  it("... posts a comment", () => {
+  // Small steps here — was an e2e bug here before, without scrollToBottom() just below.
+
+  it("... switches to the comments iframe", () => {
+    owensBrowser.waitForEmbeddedCommentsIframe();
+    owensBrowser.scrollToBottom();
     owensBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... clicks Reply to post a comment", () => {
     owensBrowser.topic.clickReplyToEmbeddingBlogPost();
     // (Alredy logged in.)
+  });
+
+  it("... switches to the editor iframe", () => {
     owensBrowser.switchToEmbeddedEditorIrame();
+  });
+
+  it("... composes a comment", () => {
     owensBrowser.editor.editText(owensHiFolksComment);
     owensBrowser.editor.save();
     owensBrowser.switchToEmbeddedCommentsIrame();
@@ -129,6 +142,8 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   });
 
   it("... posts a second comment", () => {
+    owensBrowser.waitForEmbeddedCommentsIframe();
+    owensBrowser.scrollToBottom();
     owensBrowser.complex.replyToEmbeddingBlogPost(owens2ndPostComment);
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
