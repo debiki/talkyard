@@ -1,0 +1,34 @@
+# Traefik config for a single server with Docker-Compose.
+
+debug = false
+
+logLevel = "INFO"
+defaultEntryPoints = ["https","http"]
+
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+  [entryPoints.http.redirect]
+    entryPoint = "https"
+  [entryPoints.https]
+    address = ":443"
+    [entryPoints.https.tls]
+      minVersion = "VersionTLS12"
+
+[retry]
+
+[acme]
+  #email via --acme.email command line arg, so can be customized in .env Docker-Compose file.
+  storage = "/acme.json"
+  entryPoint = "https"
+  onHostRule = true
+  [acme.httpChallenge]
+    entryPoint = "http"
+
+
+# The Talkyard app server keeps up-to-date a file with one frontend and Host: rule  [5FJKS20]
+# per site and custom domain. This, together with the onHostRule above, makes Traefik
+# provision HTTPS LetsEncrypt certificates.
+[file]
+  directory = "/traefik-rules/"
+  watch = true
