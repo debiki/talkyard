@@ -2,13 +2,22 @@ version: '3.1'
 
 networks:
   # These netw names get prefixed with 'tyd_', by Docker (see .env [7RJPW2]).
+  # They will form bridged networks, that's the default.
   web_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${WEB_NET_SUBNTET}
   internal_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${INTERNAL_NET_SUBNTET}
 
 services:
   proxy:
     build: images/proxy/
-    image: $DOCKER_REPOSITORY/talkyard-proxy
+    image: ${DOCKER_REPOSITORY}/talkyard-proxy
     ports:
       - '80:80'     # localhost:80 —> the Traefik http entrypoint
       - '443:443'   # there's no real cert though (dev env on localhost)
@@ -24,12 +33,12 @@ services:
       #   the roadmap #18)"  —> https://github.com/fsnotify/fsnotify/issues/18)
       - ./volumes/traefik-rules/:/traefik-rules/:ro
     networks:
-      - web_net
-      - internal_net
+      web_net:
+        ipv4_address: ${WEB_NET_PROXY_IP}
 
   web:
     build: images/web/
-    image: $DOCKER_REPOSITORY/talkyard-web
+    image: ${DOCKER_REPOSITORY}/talkyard-web
     # so can specify core dump path [NGXCORED]
     #privileged: true
     volumes:
@@ -44,18 +53,27 @@ services:
       #- '80:80'     # localhost:80 —> the Traefik http entrypoint
       #- '443:443'   # there's no real cert though (dev env on localhost)
     networks:
-      - internal_net
+      web_net:
+        ipv4_address: ${WEB_NET_WEB_IP}
+      internal_net:
+        # Use the same static ip always, so won't get a new dynamic ip, and then
+        # Traefik attempts to connect to the old ip (we're using the File provider so
+        # Traefik won't automatically notice if an ip changes).
+        ipv4_address: ${INTERNAL_NET_WEB_IP}
     depends_on:
       - app
       #- cache [NCHANREDIS]
-    labels:
-      # The network name got prefixed with 'tyd_', by Docker [7RJPW2].
-      - "traefik.docker.network=tyd_web_net"
-      - "traefik.enable=true"
-      # Have Traefik send everything to here.
-      - "traefik.web.frontend.rule=PathPrefix:/"
-      - "traefik.web.port=80"
-      - "traefik.web.protocol=http"
+    # Would want to declare this as a Docker Provider Traefkik backend, but  [5BSRQ01]
+    # Traefik doesn't support more than one provider. And need to use the
+    # File provider, so can add custom Host: rules for people's custom domains.
+    #labels:
+    #  # The network name got prefixed with 'tyd_', by Docker [7RJPW2].
+    #  - "traefik.docker.network=tyd_web_net"
+    #  - "traefik.enable=true"
+    #  # Have Traefik send everything to here.
+    #  - "traefik.web.frontend.rule=PathPrefix:/"
+    #  - "traefik.web.port=80"
+    #  - "traefik.web.protocol=http"
     environment:
       CDN_PULL_KEY: "public"
 
@@ -65,7 +83,7 @@ services:
       dockerfile: Dockerfile.dev
     # (Image $DOCKER_REPOSITORY/talkyard-app is for production, and gets created by
     # ./docker/build-app-prod.sh.)
-    image: $DOCKER_REPOSITORY/talkyard-app-dev
+    image: ${DOCKER_REPOSITORY}/talkyard-app-dev
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/talkyard/app/
@@ -76,17 +94,13 @@ services:
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_APP_IP}
     ports:
       # Let's expose these, for debugging and troubleshooting.
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
-    links:
-      - cache
-      - search
-      - rdb
-      - fakemail
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
@@ -119,20 +133,21 @@ services:
 
   cache:
     build: images/cache/
-    image: $DOCKER_REPOSITORY/talkyard-cache
+    image: ${DOCKER_REPOSITORY}/talkyard-cache
     volumes:
       - ./volumes/cache-data/:/data/
     # Expose, so can troubleshoot-query Redis.
     ports:
       - '6379:6379'
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_CACHE_IP}
     sysctls:
       net.core.somaxconn: 511
 
   search:
     build: images/search/
-    image: $DOCKER_REPOSITORY/talkyard-search
+    image: ${DOCKER_REPOSITORY}/talkyard-search
     # If too low, the 'search' container will suddenly exit with code 137. No error message
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
     #mem_limit: 800M
@@ -144,18 +159,20 @@ services:
       - '9200:9200'
       - '9300:9300'
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_SEARCH_IP}
     environment:
       ES_JAVA_OPTS: '-Xms384m -Xmx384m'
 
   rdb:
     build: images/rdb/
-    image: $DOCKER_REPOSITORY/talkyard-rdb
+    image: ${DOCKER_REPOSITORY}/talkyard-rdb
     volumes:
       - ./volumes/rdb-data/:/var/lib/postgresql/data/
       - ./volumes/rdb-logs/:/var/log/postgresql/
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_RDB_IP}
     environment:
       POSTGRES_PASSWORD: 'public'
       PEER_HOST: 'rdb2'
@@ -181,7 +198,7 @@ services:
 
   test:
     build: images/gulp/
-    image: $DOCKER_REPOSITORY/talkyard-test
+    image: ${DOCKER_REPOSITORY}/talkyard-test
     volumes:
       - ./:/opt/talkyard/server/
     ports:
@@ -189,22 +206,15 @@ services:
       # via `node --debug-brk --inspect=9229`. [8EA02R4]
       - '9229:9229'
     networks:
-      - internal_net
-    links:
-      # Links for security tests, so the Typescript test code running in this Node.js container can
-      # send HTTP request to the ED tech stack, if it's running in Docker-Compose on localhost.
-      # See tests/security/settings.ts [7PKW4R2]
-      - web
-      - web:test-site-1.web
-      - web:test-site-2.web
-      - web:test-site-3.web
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TEST_IP}
     # Don't want this container to start at all by default.
     command: 'exit 0'
 
   # Dummy SMTP server, for testing.
   fakemail:
     build: images/fakemail/mailslurper
-    image: $DOCKER_REPOSITORY/fakemail
+    image: ${DOCKER_REPOSITORY}/fakemail
     volumes:
       - ./images/fakemail/mailslurper-config.json:/config.json
       - ./images/fakemail/fakemail-publ-test-self-signed.key:/smtp-server.key
@@ -214,7 +224,8 @@ services:
      - '8026:8026'  # admin interface,  '80' + 25 + 1
      - '8027:8027'  # service port = api requests or what? '80' + 25 + 2
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
 
   # Jaeger Tracing. Access at http://localhost:16686.
   tracer:
@@ -228,13 +239,14 @@ services:
       - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
       #- '9411:9411'     # Collector. Zipkin compatible endpoint
     networks:
-      - internal_net
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_TRACER_IP}
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
   gulp:
     build: images/gulp/
-    image: $DOCKER_REPOSITORY/talkyard-gulp
+    image: ${DOCKER_REPOSITORY}/talkyard-gulp
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
@@ -245,7 +257,7 @@ services:
   # and peopl have upgraded?
   certgen:
     build: images/certgen/
-    image: $DOCKER_REPOSITORY/talkyard-certgen
+    image: ${DOCKER_REPOSITORY}/talkyard-certgen
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
 

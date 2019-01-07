@@ -306,7 +306,7 @@ class SystemDao(
       tx.loadSites()
     }
 
-    p.Logger.info(s"Updating Traefik frontend rules for ${sites.length} sites.. [TyMTRAEFIK01]")
+    p.Logger.info(s"Writing Traefik rules for ${sites.length} sites to temp file... [TyMTRAEFIK01]")
     val (config, numHostnames) = generateTraefikRules(sites, globals.baseDomainNoPort, globals.now())
     val rulesDirNoSlash = traefikRulesDir.dropRightWhile(_ == '/')
 
@@ -322,18 +322,17 @@ class SystemDao(
     // proxy_1 | time="2019-01-03T15:27:25Z" level=info msg="Server configuration reloaded on :443"
     // proxy_1 | time="2019-01-03T15:27:25Z" level=info msg="Server configuration reloaded on :8070"
 
-    val tempPathStr = rulesDirNoSlash + "/talkyard-traefik.toml.writing-to"
+    val tempPathStr = rulesDirNoSlash + "/.custom-hostname-frontends-writing-to"
     new java.io.PrintWriter(tempPathStr) {
-      try {
-        write(config)
-        val tempPath = new java.io.File(tempPathStr).toPath
-        val realPath = new java.io.File(rulesDirNoSlash + "/talkyard-traefik.toml").toPath
-        java.nio.file.Files.move(tempPath, realPath, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
-        p.Logger.info(o"""Done updating Traefik rules: $numHostnames hostnames,
-          for ${sites.length} sites [TyMTRAEFIK02]""")
-      }
+      try write(config)
       finally close()
     }
+    p.Logger.info(s"Renaming Traefik rules temp file to real name ... [TyMTRAEFIK02]")
+    val tempPath = new java.io.File(tempPathStr).toPath
+    val realPath = new java.io.File(rulesDirNoSlash + "/custom-hostname-frontends.toml").toPath
+    java.nio.file.Files.move(tempPath, realPath, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+    p.Logger.info(o"""Done updating Traefik rules: $numHostnames hostnames,
+      for ${sites.length} sites [TyMTRAEFIK03]""")
   }
 
 
@@ -550,7 +549,8 @@ object SystemDao {
   }
 
 
-  def generateTraefikRules(sites: immutable.Seq[Site], baseDomain: String, now: When): (String, Int) = {
+  def generateTraefikRules(sites: immutable.Seq[Site], baseDomain: String, now: When)
+        : (String, Int) = {
     val dotBaseDomain = "." + baseDomain
     var numHostnames = 0
 
@@ -609,48 +609,22 @@ object SystemDao {
       }
     }
 
-    // Instead of `PathPrefix:/` below, could also use:
-    //  `HostRegexp: {subdomain:[a-z]+}.main.domain.com`,
-    // however that's more complicated, and wouldn't work with ip addresses, in case
-    // one wants to access one's site, before there's a hostname pointing to it?
-    val defaultFrontendConfig = i"""
-      |  [frontends.talkyard_default]
-      |    entryPoints = ["http", "https"]
-      |    backend = "talkyard_web"
-      |    passHostHeader = true
-      |    # Set lowest priority, so Host: rules will have precedence, so Traefik's
-      |    # onHostRule will cause LetsEncrypt certs to get generated.
-      |    priority = 1
-      |    [frontends.talkyard_default.routes.rule_1]
-      |      # Send all traffic that's not handled by a Host: specific rule, to here, e.g.
-      |      # any main wildcard domain.
-      |      rule = "PathPrefix:/"
-      |"""
-
     val nowStr = toIso8601(now.toJavaDate)
 
     val config = i"""# Auto generated file, created by the Talkyard app server, at $nowStr. [ATOGTRFK]
        |#
-       |# There are $numHostnames frontends with a Host:(some-hostname) rule, + 1 default frontend,
-       |# for ${sites.length} sites.
+       |# There are $numHostnames frontends with a Host:(some-hostname) rule, for ${sites.length} sites.
        |#
        |# Traefik will provision a LetsEncrypt HTTPS certificate, for all those hostnames.
        |# *.$baseDomain hostnames were excluded — because that's your talkyard.baseDomain setting,
        |# and you're supposed to provide a wildcard cert for any such domain of yours.
        |# Localhost and localdomain hostnames were also excluded.
        |
-       |[backends]
-       |  [backends.talkyard_web]
-       |    [backends.talkyard_web.servers]
-       |      [backends.talkyard_web.servers.server_1]
-       |        url = "http://web:80"
-       |        weight = 1
-       |
        |[frontends]
-       |$defaultFrontendConfig
        |${perSiteFrontendConfigs.mkString}
        |${/*
           // This is for testing if having 1 000 or 10 000 frontends affects Traefik's performance.
+          // 50 000 frontends —> Traefik becomes 98 - 99% slower, even if using only 1 of the frontends.
           val numDummyFrontends = 50*1000 - numHostnames
           ((1 to numDummyFrontends) map { dummyIx => i"""
             |  [frontends.dummy_$dummyIx]
