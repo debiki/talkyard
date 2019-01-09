@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker-compose logs --no-color $@ | s/impl/unjson.sh
+sudo docker-compose logs --no-color $@ | s/impl/unjson.sh
 

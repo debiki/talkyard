@@ -290,15 +290,6 @@ function runAllE2eTests {
   # settings-disable-openauth
 
 
-  # Single Sign-On
-  # ------------
-
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-test.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-member.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only sso-admin-extra-login $args
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-all-ways-to-login.2browsers $args
-
-
   # Usability Testing Exchange
   # ------------
 
@@ -316,6 +307,16 @@ function runAllE2eTests {
     server_port_8080_pid=$(jobs -l | grep p8080 | awk '{ printf $2; }')
   fi
   # else: the user has probably started the server henself already, do nothing.
+
+
+  # Single Sign-On
+  # ------------
+
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-test.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-member.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only sso-admin-extra-login $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-all-ways-to-login.2browsers $args
+
 
   # Embedded comments
   # ------------

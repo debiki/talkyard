@@ -194,7 +194,10 @@ object SiteHost {
 
 case class SiteHost(
   hostname: String,
-  role: SiteHost.Role)
+  role: SiteHost.Role) {
+  require(!hostname.contains("\""), "TyE6FK20R")
+  require(!hostname.contains("'"), "TyE8FSW24")
+}
 
 
 case class SiteHostInclDetails(

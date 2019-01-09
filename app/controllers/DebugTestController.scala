@@ -136,21 +136,53 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   /** For performance tests. */
   def pingCache: Action[Unit] = GetAction { _ =>
+    pingCacheImpl()
+    Ok("pong pong, from Play and Redis")
+  }
+
+
+  /** For performance tests. */
+  def pingCacheTenTimes: Action[Unit] = GetAction { _ =>
+    for (x <- 1 to 10) pingCacheImpl(x)
+    Ok("pong pong, from Play and Redis, ten times")
+  }
+
+
+  /** For performance tests. */
+  def pingCacheImpl(x: Int = 1) {
     val redis: RedisClient = globals.redisClient
-    val futureGetResult = redis.get("missing_value")
-    Await.result(futureGetResult, 5 seconds)
-    Ok("pong, from Play and Redis")
+    val futureGetResult = redis.get("missing_value_" + x)
+    Await.result(futureGetResult, 5.seconds)
+  }
+
+
+  /** For performance tests. */
+  def pingDatabase: Action[Unit] = GetAction { request =>
+    val systemUser = request.dao.readOnlyTransaction(_.loadUser(SystemUserId))
+    Ok("pong pong, from Play and Postgres. Found system user: " + systemUser.isDefined)
+  }
+
+
+  /** For performance tests. */
+  def pingDatabaseTenTimes: Action[Unit] = GetAction { request =>
+    val users = (1 to 10).flatMap(x => request.dao.readOnlyTransaction(_.loadMemberInclDetailsById(x)))
+    Ok("pong pong, from Play and Postgres. Found num built-in users: " + users.length)
   }
 
 
   /** For load balancers (and performance tests too) */
-  def pingDatabaseAndCache: Action[Unit] = GetAction { request =>
-    throwForbidden("EdE2wKFUG8", "Not impl")
-    request.dao.readOnlyTransaction { _ =>
-      // tx.pingDatabase()
-      // ping Redis too
-    }
-    Ok("pong, from Play, Postgres and Redis")
+  def pingCacheAndDatabase: Action[Unit] = GetAction { request =>
+    pingCacheImpl()
+    val systemUser = request.dao.readOnlyTransaction(_.loadUser(SystemUserId))
+    Ok("pong pong pong, from Play, Redis and Postgres. Found system user: " + systemUser.isDefined)
+  }
+
+
+  /** For performance tests */
+  def pingCacheAndDatabaseTenTimes: Action[Unit] = GetAction { request =>
+    for (x <- 1 to 10) pingCacheImpl(x)
+    val users = (1 to 10).flatMap(x => request.dao.readOnlyTransaction(_.loadMemberInclDetailsById(x)))
+    Ok("pong pong pong, from Play, Redis and Postgres. Found num built-in users: " + users.length)
   }
 
 

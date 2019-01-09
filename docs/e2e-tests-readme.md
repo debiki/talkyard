@@ -1,7 +1,7 @@
 End-to-End tests Readme
 ===================
 
-We use Webdriver.io and write the tests in Typescript.
+We use Webdriver.io and write the tests in Typescript. API for v4 (haven't upgraded to v5): http://v4.webdriver.io/api.html
 
 To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:
 
@@ -37,6 +37,7 @@ Run tests like so:
         
         s/selenium-install # do this whenever Yarn has deleted everything
         s/selenium-start
+        # If you need a specific Chromedriver version:  --drivers.chrome.version=X.Y
 
     Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
     Yarn removes them. See https://github.com/yarnpkg/yarn/issues/1955

@@ -118,7 +118,7 @@ object LoginWithOpenIdController extends mvc.Controller {
    *   https://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
    */
   private def _wildcardRealmFor(host: String): String = {
-    val isIpNo = _IpRegex matches host
+    val isIpNo = IsIpAddrRegex matches host
     val hostNameSpecified = !isIpNo && host.count(_ == '.') >= 2
     val realm = Globals.scheme "://" + (if (hostNameSpecified) {
       // The host is like "hostname.example.com". Replace "hostname" with "*"
@@ -133,10 +133,6 @@ object LoginWithOpenIdController extends mvc.Controller {
     })
     realm
   }
-
-
-  // For now, IPv4 only [IPv6 todo]
-  private val _IpRegex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
 
 
   def loginCallback(returnToUrl: String) = mvc.Action.async { request =>

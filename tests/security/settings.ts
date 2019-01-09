@@ -16,8 +16,9 @@ settings.scheme = settings.secure ? 'https' : 'http';
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
-// (These local hostnames are declared here: [7PKW4R2] if you're running everything in
-// Docker-Compose.)
+// (These local hostnames are declared here: [EDIT: was a links: list in docker-compose.yml,
+// for the test container — but now I removed it.  links = deprecated /EDIT]
+// if you're running everything in Docker-Compose.)
 settings.testSiteOrigin1 = settings.scheme + '://test-site-1.' + settings.host;
 settings.testSiteOrigin2 = settings.scheme + '://test-site-2.' + settings.host;
 settings.testSiteOrigin3 = settings.scheme + '://test-site-3.' + settings.host;

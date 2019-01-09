@@ -3,6 +3,7 @@ import assert = require('assert');
 import logAndDie = require('./log-and-die');
 import settings = require('./settings');
 import server = require('./server');
+import utils = require('../utils/utils');
 import c = require('../test-constants');
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logError = logAndDie.logError;
@@ -12,6 +13,9 @@ const logMessage = logAndDie.logMessage;
 let ca = 0;
 let cb = 0;
 let cc = 0;
+
+
+type ElemRect = { x: number, y: number, width: number, height: number };
 
 
 function count(elems): number {
@@ -220,28 +224,75 @@ function pagesFor(browser) {
     },
 
 
+    isInIframe: (): boolean => {
+      const result = browser.execute(function() {
+        return window['eds'] && window['eds'].isInIframe;
+      });
+      return result.value;
+    },
+
+
+    switchToAnyParentFrame: () => {
+      if (api.isInIframe()) {
+        browser.frameParent();
+        console.log("Switched to parent frame.");
+      }
+    },
+
 
     switchToFrame: function(selector) {
-      console.log(`switching to frame ${selector}...`);
+      process.stdout.write(`Switching to frame ${selector}...`);
       api.waitForExist(selector);
       const iframe = browser.element(selector).value;
       browser.frame(iframe);
+      process.stdout.write(` done, now in frame  ${selector}.\n`);
+    },
+
+
+    waitForEmbeddedCommentsIframe: function() {
+      api.waitForExist('iframe#ed-embedded-comments');
     },
 
 
     switchToEmbeddedCommentsIrame: function() {
+      api.switchToAnyParentFrame();
       // These pause() avoids: "FAIL: Error: Remote end send an unknown status code", in Chrome, [E2EBUG]
-      // here: [6UKB2FQ]
-      browser.pause(75);
-      browser.frameParent();
-      browser.pause(75);
+      // here: [6UKB2FQ]  — not needed any longer? afer I stated using
+      //                                             waitForLoggedInInEmbeddedCommentsIrames elsewhere?
+      //browser.pause(75);
+      //browser.frameParent();
+      //browser.pause(75);
+      // Let's wait for the editor iframe, so Reply buttons etc will work.
+      api.waitForExist('iframe#ed-embedded-editor');
       api.switchToFrame('iframe#ed-embedded-comments');
     },
 
 
     switchToEmbeddedEditorIrame: function() {
-      browser.frameParent();
+      api.switchToAnyParentFrame();
+      // Let's wait for the comments iframe, so it can receive any messages from the editor iframe.
+      api.waitForExist('iframe#ed-embedded-comments');
       api.switchToFrame('iframe#ed-embedded-editor');
+    },
+
+
+    getRectOfFirst: (selector): ElemRect => {
+      const items = browser.elements(selector).value;
+      assert(items.length >= 1, `${items.length} elems matches ${selector}, should be at least one`);
+      const elemId = items[0].ELEMENT;
+      const rect = browser.elementIdRect(elemId).value;   // or getElementRect? Webdriver v5?
+      console.log(`getRect('${selector}') —> ${JSON.stringify(rect)}`);
+      return rect;
+    },
+
+
+    getWindowHeight: (): number => {
+       // Webdriver.io v5, just this?: return browser.getWindowRect().height
+      const result = browser.execute(function() {
+        return window.innerHeight;
+      });
+      dieIf(!result || !result.value, 'TyE7WKJP42');
+      return result.value;
     },
 
 
@@ -275,22 +326,34 @@ function pagesFor(browser) {
 
 
     scrollToTop: function() {
-      // I think some browsers wants to scroll <body> others want to scroll <html>, so do both.
-      // And if we're viewing a topic, need to scroll the page column insetad.  (4ABKW20)
-      browser.scroll('body', 0, 0);
-      browser.scroll('html', 0, 0);
-      if (browser.isVisible('#esPageColumn')) {
-        // Doesn't work: browser.scroll('#esPageColumn', 0, 0);
-        // Instead:
-        browser.execute(function() {
-          document.getElementById('esPageColumn').scrollTop = 0;
-        });
-      }
-      // Apparently takes a short while for the scroll to happen. I couldn't find any getScroll
-      // function to poll and test when the scrolling is done, so just do this:
-      // (200 ms is too short; then sometimes the stuff at the top won't be visible, when this
-      // function returns.)
-      browser.pause(500);
+      // Sometimes, the browser won't scroll to the top. Who knows why. So try twice.
+      utils.tryManyTimes('ScrollTop', 2, () => {
+        // I think some browsers wants to scroll <body> others want to scroll <html>, so do both.
+        // And if we're viewing a topic, need to scroll the page column insetad.  (4ABKW20)
+        browser.scroll('body', 0, 0);
+        browser.scroll('html', 0, 0);
+        if (browser.isVisible('#esPageColumn')) {
+          // Doesn't work: browser.scroll('#esPageColumn', 0, 0);
+          // Instead:
+          browser.execute(function() {
+            document.getElementById('esPageColumn').scrollTop = 0;
+          });
+        }
+        // Need to wait for the scroll to actually happen, otherwise Selenium/Webdriver
+        // continues running subsequent test steps, without being at the top.
+        let scrollTops;
+        browser.waitUntil(() => {
+          const result = browser.execute(function() {
+            return ('' +
+                document.body.scrollTop + ',' +
+                document.documentElement.scrollTop + ',' + (
+                  document.getElementById('esPageColumn') ?
+                    document.getElementById('esPageColumn').scrollTop : 0));
+          });
+          scrollTops = result.value;
+          return scrollTops === '0,0,0';
+        }, 1000, `Couldn't scroll to top, scrollTops: ${scrollTops}`);
+      });
     },
 
 
@@ -302,6 +365,9 @@ function pagesFor(browser) {
           document.getElementById('esPageColumn').scrollTop = 999*1000;
         });
       }
+      // Need to wait for the scroll to actually happen. COULD instead maybe
+      // waitUntil scrollTop = document height - viewport height?  but will probably be
+      // one-pixel-too-litle-too-much errors? For now:
       browser.pause(500);
     },
 
@@ -561,7 +627,7 @@ function pagesFor(browser) {
       let resultsByBrowser = byBrowser(browser.elements(selector));
       _.forOwn(resultsByBrowser, (result, browserName) => {
         if (result.value.length !== num) {
-          errorString +=browserNamePrefix(browserName) + "Selector '" + selector + "' matches " +
+          errorString += browserNamePrefix(browserName) + "Selector '" + selector + "' matches " +
               result.value.length + " elems, but there should be exactly " + num + "\n";
         }
       });
@@ -570,10 +636,10 @@ function pagesFor(browser) {
 
 
     waitAndSetValue: (selector: string, value: string | number,
-        opts: { maybeMoves?: true, checkAndRetry?: true } = {}) => {
+        opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number } = {}) => {
       browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
                           // (maybe add waitUntilDoesNotMove ?)
-      api.waitForVisible(selector);
+      api.waitForVisible(selector, opts.timeoutMs);
       api.waitForEnabled(selector);
       api.waitUntilLoadingOverlayGone();
       if (opts.maybeMoves) {
@@ -615,7 +681,17 @@ function pagesFor(browser) {
 
     waitForThenClickText: function(selector, regex) {
       const elemId = api.waitAndGetElemIdWithText(selector, regex);
-      browser.elementIdClick(elemId);
+      // In FF, the click sometimes fails, the first time before pause(), with
+      // this error message:  "Error: Remote end send an unknown status code."
+      // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
+      try {
+        browser.elementIdClick(elemId);
+      }
+      catch (ex) {
+        console.log(`First click of elem '${elemId}' failed. Retrying. Wait until clickable?`);
+        browser.pause(250);
+        browser.elementIdClick(elemId);
+      }
     },
 
 
@@ -998,6 +1074,10 @@ function pagesFor(browser) {
 
 
     topbar: {
+      isVisible: (): boolean => {
+        return browser.isVisible('.esTopbar');
+      },
+
       waitForVisible: function() {  // old name? use waitForMyMenuVisible instead only?
         api.topbar.waitForMyMenuVisible();
       },
@@ -2375,8 +2455,8 @@ function pagesFor(browser) {
         return browser.getText('.editor-area .esEdtr_titleEtc_title');
       },
 
-      editText: function(text) {
-        api.waitAndSetValue('.esEdtr_textarea', text);
+      editText: function(text, opts: { timeoutMs?: number } = {}) {
+        api.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 
       getText: function() {
@@ -2464,6 +2544,14 @@ function pagesFor(browser) {
 
 
     metabar: {
+      isVisible: (): boolean => {
+        return browser.isVisible('.dw-cmts-tlbr-summary');
+      },
+
+      waitUntilLoggedIn: () => {
+        api.waitForVisible('.dw-a-logout');
+      },
+
       clickLogout: () => {
         api.waitAndClick('.esMetabar .dw-a-logout');
         api.waitUntilGone('.esMetabar .dw-a-logout');
@@ -2863,16 +2951,19 @@ function pagesFor(browser) {
         api.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
           for (let i = 0; i < 20; ++i) {  // because FF sometimes won't realize it's done scrolling
-            const buttonLocation = browser.getLocationInView(buttonSelector);
+            //OLD: const buttonLocation = browser.getLocationInView(buttonSelector);
+            //  for unknown reasons, scrolls back to the top, at least in FF. Weird. Breaks everything.
 
             // If is array, could use [0] — but apparently the button locations are returned
             // in random order, with incorrect positions that never change regardless of how
             // one scrolls, and is sometimes 0 = obviously wrong. So, don't try to
             // pick [0] to click the first = topmost elem.
             // Chrome? Chromedriver? Webdriver? Selenium? buggy (as of June 29 2018).
-            dieIf(_.isArray(buttonLocation) && !opts.clickFirst, 'TyEISARRAYBKF');
+            //OLD: dieIf(_.isArray(buttonLocation) && !opts.clickFirst, 'TyEISARRAYBKF');
             if (opts.clickFirst)
               break; // cannot scroll, see above. Currently the tests don't need to scroll (good luck)
+
+            const buttonRect = api.getRectOfFirst(buttonSelector);
 
             // E.g. the admin area, /-/admin.
             const isOnAutoPage = browser.url().value.indexOf('/-/') >= 0;
@@ -2886,40 +2977,37 @@ function pagesFor(browser) {
             if (!canScroll)
               break;
 
-            let bottomY: number;
+            let bottomY = api.getWindowHeight();
             if (hasScrollBtns) {
-              bottomY = browser.getLocationInView(api.scrollButtons.fixedBarSelector).y;
-            }
-            else {
-              // browser.windowHandleSize().value.height;  = (sometimes) too tall size
-              const result = browser.execute(function() {
-                return window['debiki2'].$$bySelector('#esPageColumn')[0].getBoundingClientRect().height;
-              });
-              dieIf(!result, "Error getting page height, result: " + JSON.stringify(result));
-              bottomY = parseInt(result.value);
-              dieIf(_.isNaN(bottomY), "Page height result is NaN: " + JSON.stringify(result));
+              // Need to place the button we want to click, above the scroll bar — otherwise,
+              // the scroll buttons can be on top of the button, and steal the click.
+              bottomY -= 35;  // scroll button height [6WRD25]
+              // Or could:
+              //   bottomY = api.getRectOfFirst(api.scrollButtons.fixedBarSelector).y;
             }
 
-            // fixedBarLocation gets too small in ff, resulting in `< fixedBarLocation.y` below false,
-            // so changed from `44 < ..` to `30 < ...`
-            //console.log(`clickPostActionButton: is > ${buttonLocation.y > 60}`);
-            //console.log(`clickPostActionButton: is < ${buttonLocation.y + 70 < fixedBarLocation.y}`);
             const topY = isOnAutoPage
                 ? 100 // fixed topbar, some float drop —> 90 px tall
                 : 60; // fixed topbar, about 40px tall
-            if (buttonLocation.y > topY &&
-                buttonLocation.y + 30 < bottomY)  // scroll button about 40 px tall, [7UKDWQ2]
-                                                  // 30 visible = enough to click in middle
+
+            // The browser clicks in the middle of the button?
+            const buttonMiddleY = buttonRect.y + buttonRect.height / 2;
+            const clickMargin = 5;
+            if (buttonMiddleY > topY + clickMargin && buttonMiddleY < bottomY - clickMargin)
               break;
 
             console.log(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
-                `buttonLocation.y = ${buttonLocation.y}, +30 = ${buttonLocation.y + 30}, ` +
+                `buttonRect.y = ${buttonRect.y}, buttonMiddleY = ${buttonMiddleY}, ` +
                 `bottomY: ${bottomY}`);
-            browser.execute(function(selector, topY) {
-              window['debiki2'].utils.scrollIntoViewInPageColumn(
-                  selector, { marginTop: topY + 20, marginBottom: 70 + 20, duration: 200 });
-            }, buttonSelector, topY);
-            browser.pause(200 + 50);
+            const scrollMargin = clickMargin + 10;
+            browser.execute(function(selector, topY, scrollMargin) {
+              window['debiki2'].utils.scrollIntoViewInPageColumn(selector, {
+                marginTop: topY + scrollMargin,
+                marginBottom: 70 + scrollMargin,   // 70 > scroll button heights
+                duration: 150,
+              });
+            }, buttonSelector, topY, scrollMargin);
+            browser.pause(150 + 100);
           }
           try {
             console.log(`clickPostActionButton: CLICK ${buttonSelector} [TyME2ECLICK]`);
@@ -4405,6 +4493,42 @@ function pagesFor(browser) {
     },
 
     complex: {
+      waitUntilLoggedIn: () => {
+        browser.waitUntil(function () {
+          const result = browser.execute(function() {
+            try {
+              return window['debiki2'].ReactStore.getMe().isLoggedIn;
+            }
+            catch {
+              return false;
+            }
+          });
+          return result.value;
+        });
+
+        if (api.metabar.isVisible()) {
+          // Extra test, if in embedded comments iframe:
+          api.metabar.waitUntilLoggedIn();
+        }
+        else if (api.topbar.isVisible()) {
+          // Extra test, if on topic list pages or discussion pages, but not comments iframes:
+          api.topbar.waitForMyMenuVisible();
+        }
+        else if (false) {  // if is in editor iframe
+          // then what?
+        }
+      },
+
+
+      waitForLoggedInInEmbeddedCommentsIrames: function() {
+        api.switchToEmbeddedCommentsIrame();
+        api.complex.waitUntilLoggedIn();
+        api.switchToEmbeddedEditorIrame();
+        api.complex.waitUntilLoggedIn();
+        api.switchToAnyParentFrame();
+      },
+
+
       loginWithPasswordViaTopbar: function(username, password?: string, opts?: { resultInError?: boolean }) {
         if (!opts && password && _.isObject(password)) {
           opts = <any> password;
@@ -4522,11 +4646,22 @@ function pagesFor(browser) {
       },
 
       replyToEmbeddingBlogPost: function(text: string) {
+        // Apparently, if FF cannot click the Reply button, now when in an iframe,
+        // then FF says "all fine I clicked the button", but in fact does nothing,
+        // also won't log any error or anything, so that later on, we'll block
+        // forever when waiting for the editor.
+        // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
         api.switchToEmbeddedCommentsIrame();
+        console.log("comments iframe: Clicking Reply ...");
         api.topic.clickReplyToEmbeddingBlogPost();
         api.switchToEmbeddedEditorIrame();
-        api.editor.editText(text);
+        console.log("editor iframe: Composing a reply ...");
+        // Previously, before retrying scroll-to-top, this could hang forever in FF.
+        // Add a timeout here so the retry (see comment above) will work.
+        api.editor.editText(text, { timeoutMs: 2000 });
+        console.log("editor iframe: Saving ...");
         api.editor.save();
+        console.log("editor iframe: Done.");
         api.switchToEmbeddedCommentsIrame();
       },
 
