@@ -1,3 +1,4 @@
+#!/bin/bash
 # ideas about what to do:  https://github.com/sbt/sbt-release
 
 # Abort on any error
@@ -86,20 +87,22 @@ if [ -z "$chromedrivers" ]; then
 fi
 
 
-test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
-if $($test_selenium_up) ; then
-  echo 'Selenium already running, fine.'
-else
-  echo 'Do in another shell: (so I can run end-to-end tests)
-
-  s/selenium-start-invisible
-'
-  printf 'Waiting for you'
-  until $($test_selenium_up); do
-    printf '.'
-    sleep 2
-  done
-fi
+# No longer works, a new version of Selenium suddenly fails with an internal
+# server error, so this if-else never thinks Selenium is running.
+#test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
+#if $($test_selenium_up) ; then
+#  echo 'Selenium already running, fine.'
+#else
+#  echo 'Do in another shell: (so I can run end-to-end tests)
+#
+#  s/selenium-start-invisible
+#'
+#  printf 'Waiting for you'
+#  until $($test_selenium_up); do
+#    printf '.'
+#    sleep 2
+#  done
+#fi
 
 
 
@@ -125,9 +128,9 @@ echo
 echo "About to build version:  $version_tag   (see version.txt),"
 echo "for pushing to Docker repository:  $REPO  (see .env)."
 echo
-echo "Press Enter to continue, or CTRL+C to exit."
+echo "Press Enter to continue, or CTRL+C to exit"
 read -s -p ''
-exit
+
 
 
 # Build and run tests
