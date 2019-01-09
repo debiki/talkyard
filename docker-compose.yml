@@ -37,7 +37,7 @@ services:
     build:
       context: images/app/
       dockerfile: Dockerfile.dev
-    # (Image $DOCKER_REPOSITORY/talkyard-app is for production, and gets created by
+    # (Image ${DOCKER_REPOSITORY}/talkyard-app is for production, and gets created by
     # ./docker/build-app-prod.sh.)
     image: ${DOCKER_REPOSITORY}/talkyard-app-dev
     stdin_open: true  # otherwise Play exits
@@ -46,8 +46,8 @@ services:
       - ./volumes/uploads/:/opt/talkyard/uploads/
       - ./volumes/app-logs/:/var/log/talkyard/
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
-      - $HOME/.ivy2/:/home/owner/.ivy2/
-      - $HOME/.sbt/:/home/owner/.sbt/
+      - ${HOME}/.ivy2/:/home/owner/.ivy2/
+      - ${HOME}/.sbt/:/home/owner/.sbt/
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_APP_IP}
@@ -148,7 +148,8 @@ services:
   #    - ./volumes/rdb2-data/:/var/lib/postgresql/data/
   #    - ./volumes/rdb2-logs/:/var/log/postgresql/
   #  networks:
-  #    - internal_net
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_RDB2_IP}
   #  environment:
   #    POSTGRES_PASSWORD: 'public2'
   #    PEER_HOST: 'rdb'
@@ -167,6 +168,9 @@ services:
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_TEST_IP}
+    # So can send HTTP request to the web container. See tests/security/settings.ts [7PKW4R2]
+    depends_on:
+      - web
     # Don't want this container to start at all by default.
     command: 'exit 0'
 

@@ -144,7 +144,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   /** For performance tests. */
   def pingCacheTenTimes: Action[Unit] = GetAction { _ =>
     for (x <- 1 to 10) pingCacheImpl(x)
-    Ok("pong pong, from Play and Redis, ten times")
+    Ok("pong pong, from Play and Redis, x 10")
   }
 
 
@@ -166,7 +166,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   /** For performance tests. */
   def pingDatabaseTenTimes: Action[Unit] = GetAction { request =>
     val users = (1 to 10).flatMap(x => request.dao.readOnlyTransaction(_.loadMemberInclDetailsById(x)))
-    Ok("pong pong, from Play and Postgres. Found num built-in users: " + users.length)
+    Ok("pong pong, from Play and Postgres, x 10. Found num built-in users: " + users.length)
   }
 
 
@@ -182,7 +182,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   def pingCacheAndDatabaseTenTimes: Action[Unit] = GetAction { request =>
     for (x <- 1 to 10) pingCacheImpl(x)
     val users = (1 to 10).flatMap(x => request.dao.readOnlyTransaction(_.loadMemberInclDetailsById(x)))
-    Ok("pong pong pong, from Play, Redis and Postgres. Found num built-in users: " + users.length)
+    Ok("pong pong pong, from Play, Redis and Postgres, x 10. Found num built-in users: " + users.length)
   }
 
 

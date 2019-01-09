@@ -138,7 +138,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
     assert.equal(ssoLinkText, ssoUrlVarsReplaced);
   });
 
-  it("... which points to the correct URL", () => {
+  it("... clicks it the SSO link", () => {
     owensBrowser.rememberCurrentUrl();
     owensBrowser.waitAndClick('.e_SsoTstLgiLnk');
     owensBrowser.waitForNewUrl();

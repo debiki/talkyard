@@ -224,6 +224,7 @@ function pagesFor(browser) {
     },
 
 
+    // Could rename to isInTalkyardIframe.
     isInIframe: (): boolean => {
       const result = browser.execute(function() {
         return window['eds'] && window['eds'].isInIframe;
@@ -256,12 +257,14 @@ function pagesFor(browser) {
 
     switchToEmbeddedCommentsIrame: function() {
       api.switchToAnyParentFrame();
+      // Remove these out commented lines, after 2019-07-01?:
       // These pause() avoids: "FAIL: Error: Remote end send an unknown status code", in Chrome, [E2EBUG]
       // here: [6UKB2FQ]  — not needed any longer? afer I stated using
       //                                             waitForLoggedInInEmbeddedCommentsIrames elsewhere?
       //browser.pause(75);
       //browser.frameParent();
       //browser.pause(75);
+
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       api.waitForExist('iframe#ed-embedded-editor');
       api.switchToFrame('iframe#ed-embedded-comments');
