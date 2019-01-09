@@ -1,13 +1,6 @@
 version: '3.1'
 
 networks:
-  # These netw names get prefixed with 'tyd_', by Docker (see .env [7RJPW2]).
-  # They will form bridged networks, that's the default.
-  web_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: ${WEB_NET_SUBNTET}
   internal_net:
     driver: bridge
     ipam:
@@ -15,27 +8,6 @@ networks:
         - subnet: ${INTERNAL_NET_SUBNTET}
 
 services:
-  proxy:
-    build: images/proxy/
-    image: ${DOCKER_REPOSITORY}/talkyard-proxy
-    ports:
-      - '80:80'     # localhost:80 —> the Traefik http entrypoint
-      - '443:443'   # there's no real cert though (dev env on localhost)
-      - '8070:8070' # Traefik's web UI
-    volumes:
-      #- /var/run/docker.sock:/var/run/docker.sock
-      - ./images/proxy/traefik.dev.toml:/traefik.toml:ro
-      # Config files need to be directly in this dir, for Traefik's file.watch = true to work
-      # (Traefik's golang file notify lib doesn't seem to work in nested directories,
-      # https://github.com/containous/traefik/issues/595
-      #   —>  https://github.com/fsnotify/fsnotify#faq:
-      #   "you must add watches for any directory you want to watch (a recursive watcher is on
-      #   the roadmap #18)"  —> https://github.com/fsnotify/fsnotify/issues/18)
-      - ./volumes/traefik-rules/:/traefik-rules/:ro
-    networks:
-      web_net:
-        ipv4_address: ${WEB_NET_PROXY_IP}
-
   web:
     build: images/web/
     image: ${DOCKER_REPOSITORY}/talkyard-web
@@ -49,31 +21,15 @@ services:
       - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
       - ./volumes/nginx-logs/:/var/log/nginx/
       - ./volumes/nginx-core-dumps/:/tmp/cores/
-    #ports:
-      #- '80:80'     # localhost:80 —> the Traefik http entrypoint
-      #- '443:443'   # there's no real cert though (dev env on localhost)
+    ports:
+      - '80:80'
+      - '443:443'
     networks:
-      web_net:
-        ipv4_address: ${WEB_NET_WEB_IP}
       internal_net:
-        # Use the same static ip always, so won't get a new dynamic ip, and then
-        # Traefik attempts to connect to the old ip (we're using the File provider so
-        # Traefik won't automatically notice if an ip changes).
         ipv4_address: ${INTERNAL_NET_WEB_IP}
     depends_on:
       - app
       #- cache [NCHANREDIS]
-    # Would want to declare this as a Docker Provider Traefkik backend, but  [5BSRQ01]
-    # Traefik doesn't support more than one provider. And need to use the
-    # File provider, so can add custom Host: rules for people's custom domains.
-    #labels:
-    #  # The network name got prefixed with 'tyd_', by Docker [7RJPW2].
-    #  - "traefik.docker.network=tyd_web_net"
-    #  - "traefik.enable=true"
-    #  # Have Traefik send everything to here.
-    #  - "traefik.web.frontend.rule=PathPrefix:/"
-    #  - "traefik.web.port=80"
-    #  - "traefik.web.protocol=http"
     environment:
       CDN_PULL_KEY: "public"
 
@@ -88,7 +44,6 @@ services:
     volumes:
       - ./:/opt/talkyard/app/
       - ./volumes/uploads/:/opt/talkyard/uploads/
-      - ./volumes/traefik-rules/:/opt/talkyard/traefik-rules/   # [5FJKS20]
       - ./volumes/app-logs/:/var/log/talkyard/
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - $HOME/.ivy2/:/home/owner/.ivy2/
@@ -101,6 +56,11 @@ services:
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
+    depends_on:
+      - cache
+      - rdb
+      - search
+      - fakemail
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
@@ -108,7 +68,6 @@ services:
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
       E2E_TEST_PASSWORD: "public"
       FORBIDDEN_PASSWORD: "public"
-      TRAEFIK_RULES_DIR: "/opt/talkyard/traefik-rules/"   # [5FJKS20]
 
       # ----- Tracing
       # See: https://github.com/jaegertracing/legacy-client-java/blob/master/jaeger-core/README.md

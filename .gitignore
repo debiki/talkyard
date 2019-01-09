@@ -17,7 +17,6 @@ downloads/
 volumes/
 # The npm-gulp Docker container creates some cache dirs in its home dir:
 !volumes/gulp-home/.gitkeep
-!volumes/traefik-rules/default-frontend-backend.toml
 
 
 

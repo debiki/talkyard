@@ -25,7 +25,6 @@ import debiki.EdHttp.throwForbidden
 import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.Globals
-import play.{api => p}
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -297,45 +296,6 @@ class SystemDao(
   }
 
 
-  def maybeUpdateTraefikRulesFile() {
-    val traefikRulesDir = sys.env.getOrElse("TRAEFIK_RULES_DIR", {   // [5FJKS20]
-      return
-    })
-
-    val sites = readOnlyTransaction { tx =>
-      tx.loadSites()
-    }
-
-    p.Logger.info(s"Writing Traefik rules for ${sites.length} sites to temp file... [TyMTRAEFIK01]")
-    val (config, numHostnames) = generateTraefikRules(sites, globals.baseDomainNoPort, globals.now())
-    val rulesDirNoSlash = traefikRulesDir.dropRightWhile(_ == '/')
-
-    // First save the file to a temporary location — because if updating the file
-    // directly in the directory that Traefik watches, then Traefik can reload it,
-    // whilst we're still writing to it (especially if it's large) and then logs error
-    // about the file being corrupt, and fails to load lots of rules — some hostnames
-    // can then become broken.
-    // Here're the error messages:
-    // proxy_1 | time="2019-01-03T15:27:24Z" level=error msg="Error occurred during watcher callback: Near line 668 (last key parsed 'frontends.dummy_81.entryPoints'): expected value but found '\\x00' instead"
-    // proxy_1 | time="2019-01-03T15:27:24Z" level=error msg="Error occurred during watcher callback: Near line 25232 (last key parsed 'frontends.dummy_3151.routes.rule_1.rule'): unexpected EOF"
-    // proxy_1 | time="2019-01-03T15:27:25Z" level=info msg="Server configuration reloaded on :80"
-    // proxy_1 | time="2019-01-03T15:27:25Z" level=info msg="Server configuration reloaded on :443"
-    // proxy_1 | time="2019-01-03T15:27:25Z" level=info msg="Server configuration reloaded on :8070"
-
-    val tempPathStr = rulesDirNoSlash + "/.custom-hostname-frontends-writing-to"
-    new java.io.PrintWriter(tempPathStr) {
-      try write(config)
-      finally close()
-    }
-    p.Logger.info(s"Renaming Traefik rules temp file to real name ... [TyMTRAEFIK02]")
-    val tempPath = new java.io.File(tempPathStr).toPath
-    val realPath = new java.io.File(rulesDirNoSlash + "/custom-hostname-frontends.toml").toPath
-    java.nio.file.Files.move(tempPath, realPath, java.nio.file.StandardCopyOption.ATOMIC_MOVE)
-    p.Logger.info(o"""Done updating Traefik rules: $numHostnames hostnames,
-      for ${sites.length} sites [TyMTRAEFIK03]""")
-  }
-
-
   // ----- Pages
 
   def refreshPageInMemCache(sitePageId: SitePageId) {
@@ -546,98 +506,6 @@ object SystemDao {
     site.hosts foreach { host =>
       memCache.remove(canonicalHostKey(host.hostname))
     }
-  }
-
-
-  def generateTraefikRules(sites: immutable.Seq[Site], baseDomain: String, now: When)
-        : (String, Int) = {
-    val dotBaseDomain = "." + baseDomain
-    var numHostnames = 0
-
-    // Sort everything so one can find the differences between two files, in a diff.
-    val sitesSortedOldRealFirst = sites.sortBy(s =>
-      // Test site ids increase downwards.
-      if (s.isTestSite) - s.id + 100*1000*1000 else s.id )
-
-    val perSiteFrontendConfigs: Seq[String] = sitesSortedOldRealFirst flatMap { site =>
-      // Create one frontend per hostname, so that failing to renew a cert for one hostname,
-      // won't prevent the others from getting renewed. — If all hostnames were placed in
-      // the same cert, then, LetsEncrypt would reject the cert, which means all of them,
-      // if any old domain has expired and fails to renew. Which could break the whole site.
-      val hostnames: Seq[String] = site.hosts.map(_.hostname.takeWhile(_ != ':')).sorted.distinct
-      var index = 0
-      val hostnamesThatNeedHttpsCert = hostnames.filter(h =>
-        !IsIpAddrRegex.matches(h) &&
-        !h.endsWith(".localhost") && h != "localhost" &&
-        !h.endsWith(".localdomain") && h != "localdomain" && {
-          // You're supposed to get your own wildcard cert, if you specify a base domain.
-          // Exclude hostnames covered by that cert.
-          if (!h.endsWith(dotBaseDomain)) {
-            // Not covered by wildcard cert. Tell Traefik to generate a cert.
-            true
-          }
-          else {
-            val localHostname = h.dropRight(dotBaseDomain.length)
-            // Wildcard certs don't work for sub sub domains. So, if this is a
-            // sub subdomain, need to include in the list so that Traefik will generate a cert.
-            // Example:  sub.subdomain.base-domain.com — yes, include.
-            // But not:  subdomain.base-domain.com — covered by *.base-domain.com wildcard cert.
-            localHostname.contains(".")
-          }
-        })
-      hostnamesThatNeedHttpsCert map { hostname =>
-        index += 1
-        numHostnames += 1
-        // Better avoid '-' (for negative site ids) in key names: instead of site_-123, use site_m123,
-        // where 'm' means 'minus'.
-        val idWithMNotMinus = site.id.toString.replace('-', 'm')
-        val frontendName = s"talkyard_site_${idWithMNotMinus}_hostname_$index"
-        i"""
-           |  [frontends.$frontendName]
-           |    entryPoints = ["http", "https"]
-           |    backend = "talkyard_web"
-           |    passHostHeader = true
-           |    [frontends.$frontendName.routes.rule_1]
-           |      rule = "Host:$hostname"
-           |"""
-
-        // Later, could, per site, based on which plan it has subscribed for:
-        //    [frontends.$frontendName.ratelimit.rateset.rateset_1]
-        //      period = "15s"
-        //      average = 100
-        //      burst = 200
-      }
-    }
-
-    val nowStr = toIso8601(now.toJavaDate)
-
-    val config = i"""# Auto generated file, created by the Talkyard app server, at $nowStr. [ATOGTRFK]
-       |#
-       |# There are $numHostnames frontends with a Host:(some-hostname) rule, for ${sites.length} sites.
-       |#
-       |# Traefik will provision a LetsEncrypt HTTPS certificate, for all those hostnames.
-       |# *.$baseDomain hostnames were excluded — because that's your talkyard.baseDomain setting,
-       |# and you're supposed to provide a wildcard cert for any such domain of yours.
-       |# Localhost and localdomain hostnames were also excluded.
-       |
-       |[frontends]
-       |${perSiteFrontendConfigs.mkString}
-       |${/*
-          // This is for testing if having 1 000 or 10 000 frontends affects Traefik's performance.
-          // 50 000 frontends —> Traefik becomes 98 - 99% slower, even if using only 1 of the frontends.
-          val numDummyFrontends = 50*1000 - numHostnames
-          ((1 to numDummyFrontends) map { dummyIx => i"""
-            |  [frontends.dummy_$dummyIx]
-            |    entryPoints = ["http", "https"]
-            |    backend = "talkyard_web"
-            |    passHostHeader = true
-            |    [frontends.dummy_$dummyIx.routes.rule_1]
-            |      rule = "Host:dummy-server-$dummyIx.example.com"
-            |"""
-          }).mkString("\n") */ ""
-        }
-       |"""
-    (config, numHostnames)
   }
 
 }

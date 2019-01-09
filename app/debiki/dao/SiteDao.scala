@@ -294,7 +294,6 @@ class SiteDao(
   }
 
   def changeSiteHostname(newHostname: String) {
-    var addedNewHostname = false
     readWriteTransaction { tx =>
       val hostsNewestFirst = tx.loadHostsInclDetails().sortBy(-_.addedAt.millis)
       if (hostsNewestFirst.length > SoftMaxOldHostnames) {
@@ -311,18 +310,12 @@ class SiteDao(
           tx.updateHost(hostAsCanonical.noDetails)
         case None =>
           // This is a new hostname.
-          try {
-            tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
-            addedNewHostname = true
-          }
+          try tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
           catch {
             case _: DuplicateHostnameException =>
               throwForbidden("TyE7FKW20", s"There's already a site with hostname '$newHostname'")
           }
       }
-    }
-    if (addedNewHostname) {
-      context.globals.systemDao.maybeUpdateTraefikRulesFile()
     }
     uncacheSiteFromMemCache()
   }
