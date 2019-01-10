@@ -230,7 +230,7 @@ prod-images: \
 	s/build-prod-images.sh
 
 
-tag-and-push-latest-images:  tag-latest-images  push-latest-images  _print_push_tag_command
+tag-and-push-latest-images:  tag-latest-images  push-tagged-images  _print_pus_git_tag_command
 
 
 tag-latest-images:
@@ -246,20 +246,20 @@ tag-latest-images:
 	@echo
 
 
-push-latest-images:
+push-tagged-images:
 	@$(call die_unless_tag_specified, Push)
 	@$(call ask_for_root_password)
-	@REPO=$(DOCKER_REPOSITORY)  ;\
-	echo  sudo docker push $$REPO/talkyard-app:$(tag)  ;\
-	echo  sudo docker push $$REPO/talkyard-web:$(tag)  ;\
-	echo  sudo docker push $$REPO/talkyard-rdb:$(tag)  ;\
-	echo  sudo docker push $$REPO/talkyard-cache:$(tag)  ;\
-	echo  sudo docker push $$REPO/talkyard-search:$(tag)  ;\
-	echo  sudo docker push $$REPO/talkyard-certgen:$(tag)
+	REPO=$(DOCKER_REPOSITORY)  ;\
+	sudo docker push $$REPO/talkyard-app:$(tag)  ;\
+	sudo docker push $$REPO/talkyard-web:$(tag)  ;\
+	sudo docker push $$REPO/talkyard-rdb:$(tag)  ;\
+	sudo docker push $$REPO/talkyard-cache:$(tag)  ;\
+	sudo docker push $$REPO/talkyard-search:$(tag)  ;\
+	sudo docker push $$REPO/talkyard-certgen:$(tag)
 	@echo
 
 
-_print_push_tag_command:
+_print_pus_git_tag_command:
 	@echo "Next:"
 	@echo ""
 	@echo "    make push-tag-to-git tag=$(tag)"
