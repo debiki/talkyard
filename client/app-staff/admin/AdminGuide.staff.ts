@@ -34,29 +34,28 @@ export var AdminGuide =
     r.p({},
       "You're an admin, so you can edit settings, define what this community is about, " +
       "and invite people. Welcome!"),
-    r.h2({},
-      "Edit settings"),
-    r.p({},
-      "Go to the admin area by clicking your name to the upper right, then click ",
-      r.strong({}, "Admin"), ". Look at the ", r.b({}, "Settings"),
-      " tab; maybe there's something you'd like to change? " +
-      "To make the forum private, edit the ", r.strong({}, "Signup and Login"), " settings."),
     // Not yet implemented:  [2ABKR05L]
     // "You can edit colors and fonts in the ", r.strong({}, "Look and Feel"), " section."),
     r.h2({},
-      "Clarify what this community is about"),
+      "Welcome your future members"),
     r.p({},
-      "On ", r.a({ href: "/" }, "the forum main page"),
-      ", edit the forum intro text (just below the forum title). And edit the ",
+      "Edit the forum intro text, just below the forum title. And edit the ",
       r.em({}, "Welcome to this community"), " topic."),
     r.h2({},
       "Create categories"),
     r.p({},
-      "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"),
+      "Click ", r.strong({}, "Categories"), " to the left",
       ", then ", r.strong({}, "Create Category"),
       ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new category. " +
       "Don't create too many categories — if you do, they might look rather empty. " +
       "Also, create some interesting topics, so people won't find an empty forum. "),
+    r.h2({},
+      "Edit settings"),
+    r.p({},
+      "Go to the admin area by clicking your name at the top of the page, then click ",
+      r.strong({}, "Admin"), ". Look at the ", r.b({}, "Settings"),
+      " tab; maybe there's something you'd like to change? " +
+      "To make the forum private, edit the ", r.strong({}, "Signup and Login"), " settings."),
     r.h2({},
       "Launch your community"),
     r.p({},
@@ -64,7 +63,7 @@ export var AdminGuide =
       "See if they understand what it is about and what they can do there."),
     r.p({},
       "Then start promoting your community: link to it on the Internet, and tell people about it. " +
-      "You can invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
+      "Invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
       ", then ", r.strong({}, "Invite"), "."),
     r.h2({},
       "Need help?"),
