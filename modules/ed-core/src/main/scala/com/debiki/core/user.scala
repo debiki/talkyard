@@ -1495,7 +1495,8 @@ case class UserStats(
   numLikesGiven: Int = 0,
   numLikesReceived: Int = 0,
   numSolutionsProvided: Int = 0,
-  mayBeNegative: Boolean = false) {
+  mayBeNegative: Boolean = false,
+  tourStates: TourStates) {
 
   require(lastSeenAt.millis >= firstSeenAtOr0.millis, "EdE6BMLA09")
   lastPostedAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA01") }
@@ -1583,7 +1584,9 @@ case class UserStats(
       numChatTopicsCreated = numChatTopicsCreated + moreStats.numChatTopicsCreated,
       numLikesGiven = numLikesGiven + moreStats.numLikesGiven,
       numLikesReceived = numLikesReceived + moreStats.numLikesReceived,
-      numSolutionsProvided = numSolutionsProvided + moreStats.numSolutionsProvided)
+      numSolutionsProvided = numSolutionsProvided + moreStats.numSolutionsProvided,
+      // COULD merge and keep highest states.
+      tourStates = moreStats.tourStates)
     }
 
 

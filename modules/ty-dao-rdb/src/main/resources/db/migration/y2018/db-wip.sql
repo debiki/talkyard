@@ -1,3 +1,10 @@
+alter table users3 add column tour_states jsonb;
+alter table users3 add constraint pps_c_tour_len check (pg_column_size(tour_states) between 2 and 100);
+alter table users3 add constraint pps_c_guest_tour_null check (user_id > 0 or tour_states is null);
+-- Right now, groups have no trust level. [1WBK5JZ0]
+alter table users3 add constraint pps_c_group_tour_null check (trust_level is not null or tour_states is null);
+
+
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?
 alter page user_pages3 drop column notf_level;

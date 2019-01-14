@@ -994,8 +994,8 @@ trait UserDao {
     * And clear any notifications about posts hen has now seen.
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
-        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress)
-        : ReadMoreResult = {
+        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress,
+        tourStates: TourStates): ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
@@ -1049,7 +1049,8 @@ trait UserDao {
         numDiscourseTopicsEntered = numMoreDiscourseTopicsEntered,
         numDiscourseRepliesRead = numMoreDiscourseRepliesRead,
         numChatTopicsEntered = numMoreChatTopicsEntered,
-        numChatMessagesRead = numMoreChatMessagesRead))
+        numChatMessagesRead = numMoreChatMessagesRead,
+        tourStates = tourStates))
 
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.  (5ABKR20L)

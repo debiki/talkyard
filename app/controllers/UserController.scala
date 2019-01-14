@@ -1093,6 +1093,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
+
     val pagePostNrIdsReadJsObjs = (body \ "pagePostNrIdsRead").as[Vector[JsObject]]
       // Cannot read super many posts in just 30 seconds (that's how often this endpoint
       // gets called [6AK2WX0G]) so ... lets restrict to 100? to prevent maybe-weird-DoS-attacks.
@@ -1108,6 +1109,18 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val postNrsRead = pagePostNrIdsRead.map(_.postNr)
     val postNrsReadAsSet = postNrsRead.toSet
+
+    val tourStatesObj = (body \ "tourStates").as[JsObject]
+    // Check if is ok json.  COULD break out function? Or TourStates class?
+    tourStatesObj.fields.foreach(tourNameAndState => {
+      throwBadRequestIf(!tourNameAndState._1.isEmpty,
+        "TyE4ABKR0", "Bad tour name: Empty string")
+      throwBadRequestIf(!tourNameAndState._1.isAToZUnderscoreOnly,
+        "TyE4ABKR1", "Bad tour name: not A-Z a-z or underscore")
+      throwBadRequestIf(!tourNameAndState._2.isInstanceOf[JsNumber],
+        "TyE4ABKR2", "Bad tour state, not a number")
+    })
+    val anyTourStates = tourStatesObj.toString.trimNoneIfEmpty
 
     play.api.Logger.trace(
       s"s$siteId, page $pageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
@@ -1156,7 +1169,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
 
     request.dao.trackReadingProgressClearNotfsPerhapsPromote(
-        requester, pageId, pagePostNrIdsRead.map(_.postId).toSet, readingProgress)
+        requester, pageId, pagePostNrIdsRead.map(_.postId).toSet, readingProgress, anyTourStates)
   }
 
 

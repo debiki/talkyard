@@ -164,8 +164,9 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
         num_chat_topics_created,
         num_likes_given,
         num_likes_received,
-        num_solutions_provided)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        num_solutions_provided,
+        tourStates)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, user_id) do update set
         last_seen_at =
             greatest(user_stats3.last_seen_at, excluded.last_seen_at),
@@ -205,7 +206,8 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
         num_chat_topics_created = excluded.num_chat_topics_created,
         num_likes_given = excluded.num_likes_given,
         num_likes_received = excluded.num_likes_received,
-        num_solutions_provided = excluded.num_solutions_provided
+        num_solutions_provided = excluded.num_solutions_provided,
+        tour_states = excluded.tour_states
       """
 
     val values = List(
@@ -237,7 +239,8 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
       userStats.numChatTopicsCreated.asAnyRef,
       userStats.numLikesGiven.asAnyRef,
       userStats.numLikesReceived.asAnyRef,
-      userStats.numSolutionsProvided.asAnyRef)
+      userStats.numSolutionsProvided.asAnyRef,
+      userStats.tourStates)
 
     runUpdateExactlyOneRow(statement, values)
   }

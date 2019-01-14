@@ -108,6 +108,9 @@ package object core {
 
   type SettingNameValue[A] = (String, Option[A])
 
+  // For now
+  type TourStates = Option[String]
+
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis
   type UnixMillis = Long // this is millis :-)
@@ -504,7 +507,7 @@ package object core {
     * @param secondsReading Also includes time the user spends re-reading old posts hen has
     *   read already.
     */
-  case class ReadingProgress(
+  case class ReadingProgress(  // RENAME to PageReadingProgress
     firstVisitedAt: When,
     lastVisitedAt: When,
     lastViewedPostNr: PostNr,
@@ -560,7 +563,10 @@ package object core {
           else if (moreProgress.lastReadAt.get isAfter lastReadAt.get)
             moreProgress.lastPostNrsReadRecentFirst ++ lastPostNrsReadRecentFirst
           else
-            lastPostNrsReadRecentFirst ++ moreProgress.lastPostNrsReadRecentFirst).distinct take MaxLastPostsToRemember)
+            lastPostNrsReadRecentFirst ++ moreProgress.lastPostNrsReadRecentFirst
+          ).distinct take MaxLastPostsToRemember,
+        // COULD merge tour states instead, so works also if doing tours in different tabs.
+        tourStates = tourStates)
     }
 
 
