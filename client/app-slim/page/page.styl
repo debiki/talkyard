@@ -63,7 +63,7 @@ html:not(.s_InIframe) #esPageColumn
     right: $contextbarMinWidth;
   &.dw-fixed-topbar-wrap
     bottom: auto;
-html.esSidebarsOverlayPage:not(.s_InIframe)
+html:not(.s_InIframe).esSidebarsOverlayPage
   .dw-fixed-topbar-wrap,
   .esScrollBtns_fixedBar,
   #esPageColumn
@@ -80,7 +80,6 @@ html.esSidebarsOverlayPage:not(.s_InIframe)
   overflow-x: visible;
 
 // Enables momentum based scrolling, on iPhone, which is otherwise only enabled for <body>.
-//html.ios:not(.xx-s_InIframe) #esPageColumn
 html.ios:not(.s_InIframe) #esPageColumn
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
@@ -107,7 +106,7 @@ html.esSidebarsOverlayPage
     max-width: calc(100% - 25px);
 
 // Dims the page if any sidebar open, and screen small. Closes the sidebar on click.
-html.esSidebarsOverlayPage
+html:not(.s_InIframe).esSidebarsOverlayPage
   &.es-pagebar-open,
   &.es-watchbar-open
     #theSidebarPageOverlay
