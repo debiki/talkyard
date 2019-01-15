@@ -203,7 +203,7 @@ function messageCommentsIframeNewWinTopSize() {
   if (!commentsIframe) return;
   var rect = commentsIframe.getBoundingClientRect();
   // We're interested in the height part of the viewport that is used for the iframe.
-  var height = Math.min(window.innerHeight, rect.bottom) + 99999;
+  var height = Math.min(window.innerHeight, rect.bottom);
   sendToComments('["iframeOffsetWinSize", {' +
       '"top":' + (-rect.top) + ', "height":' + height + '}]');
 }
