@@ -281,15 +281,14 @@ push-tag-to-git:
 	git commit -m "Add $(tag)."  ;\
 	git push origin master
 	
-	# (Now back in the project root dir.)
-	
+	@echo ""
 	@echo "Tagging the current Git revision with $(tag) ..."
 	
 	@git tag $(tag)
 	@git push origin $(tag)
 	
-	@echo "Done."
-	@echo "Now, you can bump the version number:"
+	@echo ""
+	@echo "Done. Now, bump the version number:"
 	@echo ""
 	@echo "    s/bump-versions.sh"
 	@echo ""
