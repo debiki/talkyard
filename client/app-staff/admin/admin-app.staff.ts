@@ -390,7 +390,7 @@ function BuiltInGroupsPanel(childProps) {
           r.p({}, "People who have posted many things others like, over a long period of time, " +
             "like, half a year. And haven't done anything bad.")),
         r.li({},
-          r.a({ href: '/-/users/regular_members' }, "Regular members"),
+          r.a({ href: '/-/users/regular_members' }, "Trusted regulars"),
           r.p({}, "Trusted members who visit often, like, many times per week. To some degree, " +
             "you can rely on them to find and report inappropriate things new members might post.")),
         r.li({},

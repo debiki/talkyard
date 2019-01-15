@@ -117,6 +117,7 @@ var slimJsFiles = [
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
+      'modules/tiny-tour/dist/tour.min.js',
       'node_modules/eventemitter3/umd/eventemitter3.min.js',
       'node_modules/react-router-dom/umd/react-router-dom.js',
       'client/third-party/tiny-querystring.umd.js',
@@ -486,6 +487,7 @@ gulp.task('compile-stylus', function () {
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
+        'modules/tiny-tour/dist/tour.min.css',
         'client/third-party/stupid-lightbox.css',
         'client/app-slim/theme.styl',
         'client/app-slim/third-party.styl',
