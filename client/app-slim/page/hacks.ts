@@ -204,6 +204,7 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
  * bug instead :-P  only iOS 11)
  */
 export function maybeStartIosBugfix() {
+  return; /*
   if (eds.isIos && eds.isInIframe) {
     console.info("Starting iOS 12 Safari invisible iframe bug workaround. [TyMAPLBUG]");
     setInterval(function() {
@@ -211,7 +212,7 @@ export function maybeStartIosBugfix() {
       document.getElementById('esPageColumn').style.opacity =
           iosBugFixCounter % 2 === 0 ? '1' : '0.99';
     }, 1000);
-  }
+  } */
 }
 
 let iosBugFixCounter = 0;

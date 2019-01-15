@@ -17,16 +17,22 @@
 
 /// <reference path="prelude.ts" />
 
-if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
-  addEventListener('message', onMessage, false);
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
+
+
+export function startIframeMessages() {
+  //addEventListener('message', onMessage, false);
 
   window.parent.postMessage(
       JSON.stringify(['iframeInited', {}]),
       eds.embeddingOrigin);
 
-  if (eds.isInEmbeddedCommentsIframe)
-    syncDocSizeWithIframeSize();
+  //if (eds.isInEmbeddedCommentsIframe)
+    //syncDocSizeWithIframeSize();
 }
+
 
 function onMessage(event) {
   if (event.origin !== eds.embeddingOrigin)
@@ -114,8 +120,8 @@ function syncDocSizeWithIframeSize() {
     // Don't use window.innerHeight — that'd be the size of the parent window, outside the iframe.
     // Don't use document.body.clientHeight — it might be too small, before iframe resized.
     var discussion = debiki2.$byId('dwPosts');
-    var currentWidth = discussion.clientWidth;
-    var currentHeight = discussion.clientHeight;
+    var currentWidth = 1000;//discussion.clientWidth;
+    var currentHeight = 2000;//discussion.clientHeight;
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;
 
@@ -132,5 +138,9 @@ function syncDocSizeWithIframeSize() {
     window.parent.postMessage(message, eds.embeddingOrigin);
   }
 }
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 list

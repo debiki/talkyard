@@ -17,10 +17,10 @@
 
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
 
-
+<!--
 <script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs}"></script>
 <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
-<script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
+<script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}?cachebreak=5")"></script>
 @* If in the admin area or about user section, then load more scripts directly, [5WKE24]
 since we need it directly, anyway. *@
 @if(tpi.anyCurrentPageRole.isEmpty) {
@@ -37,10 +37,10 @@ but pre*load* requests do get cancelled, see:
 }
 <link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
 
-
 @if(loadStaffBundle) {
 <script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>
 }
 <script>
 @startupCode
 </script>
+-->

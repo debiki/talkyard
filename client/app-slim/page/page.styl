@@ -48,11 +48,12 @@ $contextbarHasMinWidthMaxWinWidth = $contextbarMinWidth * 4;
 // The page column has its own scrollbar, and the watchbar and contextbar too, so the window
 // doesn't need any scrollbar. (Some js code knows about this [6GKF0WZ])
 body
-  overflow: hidden;
+  xx-overflow: hidden;
+  overflow: visible;
 
 .dw-fixed-topbar-wrap,
 .esScrollBtns_fixedBar,
-#esPageColumn
+.xx #esPageColumn
   top: 0;
   bottom: 0;
   position: fixed;
@@ -63,7 +64,7 @@ body
     right: $contextbarMinWidth;
   &.dw-fixed-topbar-wrap
     bottom: auto;
-html.esSidebarsOverlayPage
+.xx html.esSidebarsOverlayPage
   .dw-fixed-topbar-wrap,
   .esScrollBtns_fixedBar,
   #esPageColumn
@@ -76,11 +77,14 @@ html.esSidebarsOverlayPage
   // E.g.: http://stackoverflow.com/a/25480648/694469
   // or http://jscrollpane.kelvinluck.com/index.html
   // — but fixed now? I added -webkit-scrollbar-... styles a bit below.
-  overflow-y: auto;
+  //overflow-y: auto;
   overflow-x: visible;
 
+  overflow-y: visible;  // ios??
+
 // Enables momentum based scrolling, on iPhone, which is otherwise only enabled for <body>.
-html.ios #esPageColumn
+//html.ios:not(.xx-s_InIframe) #esPageColumn
+xx-html.ios #esPageColumn
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
 
@@ -332,7 +336,7 @@ h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
 
 // Make the footer stick to the bottom.
 // See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
-html:not(.ios) #esPageScrollable // not iOS: see [5YKJ24] above
+xx-html:not(.ios) #esPageScrollable // not iOS: see [5YKJ24] above
   display: flex;
   flex-direction: column;
   height: 100%; // supposedly avoid some IE 10-11 min-height bug
@@ -366,7 +370,7 @@ footer
 //==============================
 // They'd otherwise be hidden in Safari (shown only if the user scrolls).
 
-.es-pagebar-open #esPageColumn
+.xxxx-es-pagebar-open #esPageColumn
   $scrollbarTrackColor = hsl(0, 0%, 93%);
   $scrollbarThumbColor = hsl(0, 0%, 79%);
   $scrollbarThumbHoverColor = hsl(0, 0%, 66%);
