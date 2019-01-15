@@ -101,7 +101,7 @@ var swJsFiles = [
 //   block Google's CDN.
 var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
-      'node_modules/react/umd/react.development.js'];/*,,
+      'node_modules/react/umd/react.development.js',
       'node_modules/react-dom/umd/react-dom.development.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
@@ -133,7 +133,7 @@ var slimJsFiles = [
       'client/third-party/popuplib.js',
       'target/client/app-slim/login/login-popup.js',
       'target/client/slim-typescript.js',
-      'target/client/app-slim/start-stuff.js']; */
+      'target/client/app-slim/start-stuff.js'];
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',

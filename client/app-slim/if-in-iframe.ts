@@ -23,14 +23,14 @@
 
 
 export function startIframeMessages() {
-  //addEventListener('message', onMessage, false);
+  addEventListener('message', onMessage, false);
 
   window.parent.postMessage(
       JSON.stringify(['iframeInited', {}]),
       eds.embeddingOrigin);
 
-  //if (eds.isInEmbeddedCommentsIframe)
-    //syncDocSizeWithIframeSize();
+  if (eds.isInEmbeddedCommentsIframe)
+    syncDocSizeWithIframeSize();
 }
 
 
@@ -114,14 +114,14 @@ function onMessage(event) {
 function syncDocSizeWithIframeSize() {
   var lastWidth = 0;
   var lastHeight = 0;
-  setInterval(pollAndSyncSize, 100);
+  setInterval(pollAndSyncSize, 150);
 
   function pollAndSyncSize() {
     // Don't use window.innerHeight — that'd be the size of the parent window, outside the iframe.
     // Don't use document.body.clientHeight — it might be too small, before iframe resized.
     var discussion = debiki2.$byId('dwPosts');
-    var currentWidth = 1000;//discussion.clientWidth;
-    var currentHeight = 2000;//discussion.clientHeight;
+    var currentWidth = discussion.clientWidth;
+    var currentHeight = discussion.clientHeight;
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;
 

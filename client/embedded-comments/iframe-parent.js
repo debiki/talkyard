@@ -82,76 +82,21 @@ function loadCommentsCreateEditor() {
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
-    //height: 0, // don't `hide()` (see comment just above)
-    height: 3000,
-    //width: '100%',
+    src: commentsIframeUrl,
+    height: 0, // don't `hide()` (see comment just above)
     style: {
       padding: 0,
       margin: 0,
-      background: 'hsl(0, 0%, 98%)',
       width: '100%',
-      //height: 1000,
-      border: 'none'
-      //overflow: 'visible'
+      border: 'none',
+      overflow: 'hidden'
     },
     allowtransparency: 'true',
     frameborder: 0,
     scrolling: 'no',
-    tabindex: 0,
     horizontalscrolling: 'no',
-    verticalscrolling: 'no',
-    src: commentsIframeUrl
+    verticalscrolling: 'no'
   });
-
-  /*
-Ty;
-
-<iframe
-id="ed-embedded-comments"
-name="edComments"
-height="0"
-seamless="seamless"
-src="https://bakadataforum.talkyard.net/-/embedded-comments?embeddingUrl=https://bakadata.com/spoiler/go-toubun-no-hanayome-69-spoiler/"
-style="
-  padding: 0px;
-	margin: 0px;
-	width: 100%;
-	border: none;
-	height: 142px;"
-></iframe>
-
-? +=
-overflow: hidden !important,  everything += !important?
-allowtransparency="true"
-scrolling="no"
-horizontalscrolling="no"
-verticalscrolling="no"
-
-
-Disqus:
-
-<iframe
-id="dsq-app6268"
-name="dsq-app6268"
-allowtransparency="true"
-frameborder="0"
-scrolling="no"
-tabindex="0"
-title="Disqus"
-width="100%"
-src="https://disqus.com/embed/comments/?base=default&amp;f=ikrominblog&amp;t_i=entry190113-030739&amp;t_u=https%3A%2F%2Fwww.igorkromin.net%2Findex.php%2F2019%2F01%2F13%2Fgodaddy-is-sneakily-injecting-javascript-into-your-website-and-how-to-stop-it%2F&amp;t_e=&amp;t_d=GoDaddy%20is%20sneakily%20injecting%20JavaScript%20into%20your%20website%20and%20how%20to%20stop%20it%20%7C%20Igor%20Kromin&amp;t_t=GoDaddy%20is%20sneakily%20injecting%20JavaScript%20into%20your%20website%20and%20how%20to%20stop%20it%20%7C%20Igor%20Kromin&amp;s_o=default#version=d04f93dc375a0935c9e6950f74ee858f"
-style="
-  width: 1px !important;
-	min-width: 100% !important;
-	border: none !important;
-	overflow: hidden !important;
-	height: 3654px !important;"
-
-horizontalscrolling="no"
-verticalscrolling="no"
-
-></iframe>
-  */
 
   Bliss.start(commentsIframe, commentsElem);
   debugLog("iframe-parent: inserted commentsIframe");
@@ -403,7 +348,7 @@ function setIframeSize(iframe, dimensions) {
   iframe.style.height = dimensions.height + 'px';
   // Without min height, an annoying scrollbar might appear if opening the More menu.
   // Or sometimes directly, also without opening the More menu.
-  iframe.style.minHeight = 270;
+  iframe.style.minHeight = 280;
 }
 
 
