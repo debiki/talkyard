@@ -17,7 +17,12 @@
 
 /// <reference path="prelude.ts" />
 
-if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
+
+
+export function startIframeMessages() {
   addEventListener('message', onMessage, false);
 
   window.parent.postMessage(
@@ -27,6 +32,7 @@ if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
   if (eds.isInEmbeddedCommentsIframe)
     syncDocSizeWithIframeSize();
 }
+
 
 function onMessage(event) {
   if (event.origin !== eds.embeddingOrigin)
@@ -108,7 +114,7 @@ function onMessage(event) {
 function syncDocSizeWithIframeSize() {
   var lastWidth = 0;
   var lastHeight = 0;
-  setInterval(pollAndSyncSize, 100);
+  setInterval(pollAndSyncSize, 150);
 
   function pollAndSyncSize() {
     // Don't use window.innerHeight — that'd be the size of the parent window, outside the iframe.
@@ -132,5 +138,9 @@ function syncDocSizeWithIframeSize() {
     window.parent.postMessage(message, eds.embeddingOrigin);
   }
 }
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 list

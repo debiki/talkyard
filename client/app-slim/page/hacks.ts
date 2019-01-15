@@ -183,39 +183,6 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
 }
 
 
-/**
- * Safari in iOS 12 hides, and doesn't show again, the contents in an iframe, if one scrolls.
- * However, if some rendering setting changes, then Safari does repaint so the iframe
- * becomes visible again. The setting needs to be something that for real changes
- * how things look, so cannot just do a no-op. Let's change the opacity — no human will
- * notice this, but iOS will rerender.
- *
- * If doing this only after scrolling (from client/app-slim/if-in-iframe.ts,
- * the 'iframeOffsetWinSize' event) then in some cases this bug workaround
- * won't work — the iframe contents becomes invisible in some other cases too,
- * e.g. if one clicks the Safari address bar. (At least in the SauceLabs emulator.)
- * So let's do once per second, always, instead.
- *
- * DO_AFTER 2019-06-01 see if Apple has fixed this iOS Safari bug; then add a do-after
- * comment to remove this workaround 3 months later (when most people have upgraded?).
- *
- * This happens only with iOS 12 not iOS 11, but let's do for all iOS versions,
- * for simplicity. (iOS 11 has a jump-to-scroll-bottom-if-opens-any-dialog
- * bug instead :-P  only iOS 11)
- */
-export function maybeStartIosBugfix() {
-  if (eds.isIos && eds.isInIframe) {
-    console.info("Starting iOS 12 Safari invisible iframe bug workaround. [TyMAPLBUG]");
-    setInterval(function() {
-      iosBugFixCounter += 1;
-      document.getElementById('esPageColumn').style.opacity =
-          iosBugFixCounter % 2 === 0 ? '1' : '0.99';
-    }, 1000);
-  }
-}
-
-let iosBugFixCounter = 0;
-
 
 /**
  * This is for debugging emulated browsers with Weinre, on localhost. E.g. iOS Safari,

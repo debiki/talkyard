@@ -82,15 +82,20 @@ function loadCommentsCreateEditor() {
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
+    src: commentsIframeUrl,
     height: 0, // don't `hide()` (see comment just above)
     style: {
       padding: 0,
       margin: 0,
       width: '100%',
-      border: 'none'
+      border: 'none',
+      overflow: 'hidden'
     },
-    seamless: 'seamless',
-    src: commentsIframeUrl
+    allowtransparency: 'true',
+    frameborder: 0,
+    scrolling: 'no',
+    horizontalscrolling: 'no',
+    verticalscrolling: 'no'
   });
 
   Bliss.start(commentsIframe, commentsElem);
@@ -198,7 +203,7 @@ function messageCommentsIframeNewWinTopSize() {
   if (!commentsIframe) return;
   var rect = commentsIframe.getBoundingClientRect();
   // We're interested in the height part of the viewport that is used for the iframe.
-  var height = Math.min(window.innerHeight, rect.bottom);
+  var height = Math.min(window.innerHeight, rect.bottom) + 99999;
   sendToComments('["iframeOffsetWinSize", {' +
       '"top":' + (-rect.top) + ', "height":' + height + '}]');
 }
@@ -342,7 +347,8 @@ function setIframeSize(iframe, dimensions) {
   // Previously: iframe.style.width = dimensions.width + 'px'; — but now 2d scrolling disabled.
   iframe.style.height = dimensions.height + 'px';
   // Without min height, an annoying scrollbar might appear if opening the More menu.
-  iframe.style.minHeight = 220;
+  // Or sometimes directly, also without opening the More menu.
+  iframe.style.minHeight = 280;
 }
 
 

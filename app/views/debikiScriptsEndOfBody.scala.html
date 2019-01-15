@@ -17,7 +17,6 @@
 
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
 
-
 <script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs}"></script>
 <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
 <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
@@ -36,7 +35,6 @@ but pre*load* requests do get cancelled, see:
 <link rel="prefetch" href="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")" as="script">
 }
 <link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
-
 
 @if(loadStaffBundle) {
 <script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>

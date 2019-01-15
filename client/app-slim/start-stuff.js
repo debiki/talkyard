@@ -20,6 +20,10 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 debiki.FirstSiteId = '1';
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 
+if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
+  debiki2.startIframeMessages();
+}
+
 var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
