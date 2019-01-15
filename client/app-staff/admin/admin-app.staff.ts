@@ -390,7 +390,7 @@ function BuiltInGroupsPanel(childProps) {
           r.p({}, "People who have posted many things others like, over a long period of time, " +
             "like, half a year. And haven't done anything bad.")),
         r.li({},
-          r.a({ href: '/-/users/regular_members' }, "Regular members"),
+          r.a({ href: '/-/users/regular_members' }, "Trusted regulars"),
           r.p({}, "Trusted members who visit often, like, many times per week. To some degree, " +
             "you can rely on them to find and report inappropriate things new members might post.")),
         r.li({},
@@ -938,7 +938,7 @@ const SpamFlagsSettings = createFactory({
         }),
 
         Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
-          label: "Regular member flag weight",
+          label: "Trusted member flag weight",
           help: r.span({},
             "How much more should I care about flags from members who visit " +
             "often and behave well? In comparison to people who visit " +

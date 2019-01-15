@@ -102,7 +102,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   BasicMember: "Basic member",
   FullMember: "Full member",
   TrustedMember: "Trusted member",
-  RegularMember: "Regular member",
+  RegularMember: "Trusted regular",
   CoreMember: "Core member",
 
   // Periods.

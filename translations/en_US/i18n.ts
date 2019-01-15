@@ -102,7 +102,7 @@ var t_en_US: TalkyardTranslations = t = {
   BasicMember: "Basic member",
   FullMember: "Full member",
   TrustedMember: "Trusted member",
-  RegularMember: "Regular member",
+  RegularMember: "Trusted regular",  // MISSING renamed Regular Member —> Trusted Regular [RENREGLS]
   CoreMember: "Core member",
 
   // Periods.

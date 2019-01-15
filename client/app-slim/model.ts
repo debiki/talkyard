@@ -1359,7 +1359,7 @@ interface Settings {
   numFlagsToBlockNewUser: number;
   numFlaggersToBlockNewUser: number;
   notifyModsIfUserBlocked: boolean;
-  regularMemberFlagWeight: number;
+  regularMemberFlagWeight: number;  // RENAME to trustedMemberFlagWeight [RENREGLS]
   coreMemberFlagWeight: number;
 
   enableChat: boolean;

@@ -79,6 +79,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
     val Trusted = Group(
       TrustedMembersId, "trusted_members", "Trusted Members", grantsTrustLevel = Some(TrustLevel.TrustedMember))
     val Regular = Group(
+      // RENAME to  "Trusted Regulars"  [RENREGLS]
       RegularMembersId, "regular_members", "Regular Members", grantsTrustLevel = Some(TrustLevel.RegularMember))
     val Core = Group(
       CoreMembersId, "core_members", "Core Members", grantsTrustLevel = Some(TrustLevel.CoreMember))

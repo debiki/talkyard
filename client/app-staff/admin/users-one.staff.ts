@@ -463,7 +463,7 @@ const MemberTrustLevelDialog = createComponent({
               "Trusted member")),
           r.li({},
             Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Regular) },
-              "Regular member")),
+              "Trusted regular")),
           r.li({},
             Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.CoreMember), },
               "Core member")));
