@@ -360,7 +360,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               }
             case None =>
               if (!siteSettings.allowSignup) {
-                throwForbidden("TyE0SIGNUP02", "Creation of new accounts is disabled")
+                throwForbidden("TyE0SIGNUP02A", "Creation of new accounts is disabled")
+              }
+              else if (!siteSettings.isEmailAddressAllowed(oauthDetails.emailLowercasedOrEmpty)) {
+                throwForbidden(
+                  "TyE0SIGNUP02B", "You cannot sign up using that email address")
               }
               else if (mayCreateNewUser) {
                 showCreateUserDialog(request, oauthDetails)
@@ -505,6 +509,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val emailAddress = (body \ "email").as[String].trim
     val username = (body \ "username").as[String].trim
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
+
+    throwForbiddenIf(!siteSettings.isEmailAddressAllowed(emailAddress),
+      "TyE0SIGNUP05", "You cannot sign up using that email address")
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
       throwBadReq("DwE08GM6", "Auth data cache key missing")

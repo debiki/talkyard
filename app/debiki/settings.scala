@@ -391,6 +391,12 @@ case class EffectiveSettings(
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
       !inviteOnly && allowSignup && !enableSso
 
+  def isEmailAddressAllowed(address: String): Boolean =
+    // If SSO enabled, the remote SSO system determines what's allowed and what's not. [7AKBR25]
+    if (enableSso) true
+    else EffectiveSettings.isEmailAddressAllowed(
+      address, domainWhiteListText = emailDomainWhitelist, domainBlackListText = emailDomainBlacklist)
+
   /** Finds any invalid setting value, or invalid settings configurations. */
   def findAnyError: Option[String] = {
     // Hmm ...
@@ -423,6 +429,37 @@ object EffectiveSettings {
       }
     }
     okSources.mkString(" ")
+  }
+
+  def isEmailAddressAllowed(address: String, domainWhiteListText: String, domainBlackListText: String)
+        : Boolean = {
+    def canBeDomain(line: String) = line.nonEmpty && line.headOption.isNot('#')
+    val whiteDomains = domainWhiteListText.lines.map(_.trim).filter(canBeDomain)
+    val blackDomains = domainBlackListText.lines.map(_.trim).filter(canBeDomain)
+    def addrEndsWith(domain: String) =
+      if (domain.contains("@") && domain.head != '@') {
+        // Is an email address, not a domain. Fine — let people specify full addresses. And
+        // then require an exact match, so another.jane.doe@ex.com won't match jane.doe@ex.com.
+        address == domain
+      }
+      else if (domain.head == '.' || domain.head == '@') {
+        // For whatever reason, the admin prepended a '.' or '@' although not needed.
+        address.endsWith(domain)
+      }
+      else {
+        // Match only on domain boundaries = '.'. E.g.  let hacker.bad.com match bad.com,
+        // but don't let  someone.goodbad.com match bad.com.
+        address.endsWith(s".$domain") || address.endsWith(s"@$domain")
+      }
+    for (blackDomain <- blackDomains) {
+      if (addrEndsWith(blackDomain))
+        return false
+    }
+    for (whiteDomain <- whiteDomains) {
+      if (addrEndsWith(whiteDomain))
+        return true
+    }
+    whiteDomains.isEmpty
   }
 }
 

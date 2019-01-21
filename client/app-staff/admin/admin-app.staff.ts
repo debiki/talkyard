@@ -695,6 +695,38 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+
+        // ---- Email domain whitelist and blacklist
+
+        // Hide, if SSO enabled — then, the SSO system determines if allowed or not. [7AKBR25]
+
+        enableSso || !allowSignup ? null : Setting2(props, {
+          type: 'textarea', label: "Email domain whitelist", id: 'e_EmailWhitelist',
+          help: rFragment({},
+            "People may ", r.i({}, "only "),
+            "sign up with emails from these domains. One domain per row. " +
+            "Lines starting with '#' are ignored (so you can add comments)."),
+          getter: (s: Settings) => s.emailDomainWhitelist,
+          update: (newSettings: Settings, target) => {
+            newSettings.emailDomainWhitelist = target.value;
+          }
+        }),
+
+        enableSso || !allowSignup ? null : Setting2(props, {
+          type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
+          help: rFragment({},
+            "People may ", r.i({}, "not "),
+            "sign up with emails from these domains. One domain per row. " +
+            "Lines starting with '#' are ignored (so you can add comments)."),
+          getter: (s: Settings) => s.emailDomainBlacklist,
+          update: (newSettings: Settings, target) => {
+            newSettings.emailDomainBlacklist = target.value;
+          }
+        }),
+
+
+        // ---- Single Sign-On
+
         Setting2(props, {
           type: 'text', label: "Single Sign-On URL",
           className: 'e_SsoUrl',
@@ -704,8 +736,8 @@ const LoginAndSignupSettings = createFactory({
             r.p({},
               r.samp({}, "https://www.your-website.com/login?returnTo=${talkyardPathQueryEscHash}")),
             r.p({},
-              "To start using SSO, fill in only this SSO URL field (but do ", r.i({}, "not "),
-              "enable SSO below), save the settings, and go here: ",
+              "To start using SSO, fill in this SSO URL field, but do ", r.i({}, "not "),
+              "enable SSO below. Save the settings, and go here: ",
               ssoTestPageLink,
               ", to test if your SSO settings work. " +
               "Especially see if you can login as admin — give that a try ",
@@ -745,31 +777,6 @@ const LoginAndSignupSettings = createFactory({
             newSettings.enableSso = target.checked;
           }
         }),
-
-
-        // ---- Email domain blacklist
-
-        /* Not impl server side. And UX? Should whitelist domains be shown client side?
-
-        enableSso || !allowSignup ? null : Setting2(props, {
-          type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
-          help: "People may not sign up with emails from these domains. One domain per row. " +
-          "Lines starting with '#' are ignored (so you can add comments).",
-          getter: (s: Settings) => s.emailDomainBlacklist,
-          update: (newSettings: Settings, target) => {
-            newSettings.emailDomainBlacklist = target.value;
-          }
-        }),
-
-        enableSso || !allowSignup ? null : Setting2(props, {
-          type: 'textarea', label: "Email domain whitelist", id: 'e_EmailWhitelist',
-          help: "People may only sign up with emails from these domains. One domain per row. " +
-            "Lines starting with '#' are ignored (so you can add comments).",
-          getter: (s: Settings) => s.emailDomainWhitelist,
-          update: (newSettings: Settings, target) => {
-            newSettings.emailDomainWhitelist = target.value;
-          }
-        }),  */
         ));
   }
 });

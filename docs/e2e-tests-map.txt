@@ -413,6 +413,8 @@ links -
 
 site settings:
   login -
+    allowed email domains:
+      - settings-allowed-email-domains.2browsers.test.ts  TyT5AKRD04
     login required:
       - settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
       - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]

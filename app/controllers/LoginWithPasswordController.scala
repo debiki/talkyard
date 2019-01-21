@@ -121,6 +121,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(!siteSettings.allowSignup, "TyE0SIGNUP01", "Creation of new accounts is disabled")
     throwForbiddenIf(!siteSettings.allowLocalSignup,
       "TyE0LCALSIGNUP", "Creation of local password accounts has been disabled")
+    throwForbiddenIf(!siteSettings.isEmailAddressAllowed(emailAddress),
+      "TyEBADEMLDMN", "You cannot sign up using that email address")
 
     val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
