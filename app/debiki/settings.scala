@@ -395,7 +395,7 @@ case class EffectiveSettings(
     // If SSO enabled, the remote SSO system determines what's allowed and what's not. [7AKBR25]
     if (enableSso) true
     else EffectiveSettings.isEmailAddressAllowed(
-      address, domainWhiteListText = emailDomainWhitelist, domainBlackListText = emailDomainBlacklist)
+      address, whiteListText = emailDomainWhitelist, blackListText = emailDomainBlacklist)
 
   /** Finds any invalid setting value, or invalid settings configurations. */
   def findAnyError: Option[String] = {
@@ -431,11 +431,11 @@ object EffectiveSettings {
     okSources.mkString(" ")
   }
 
-  def isEmailAddressAllowed(address: String, domainWhiteListText: String, domainBlackListText: String)
+  def isEmailAddressAllowed(address: String, whiteListText: String, blackListText: String)
         : Boolean = {
     def canBeDomain(line: String) = line.nonEmpty && line.headOption.isNot('#')
-    val whiteDomains = domainWhiteListText.lines.map(_.trim).filter(canBeDomain)
-    val blackDomains = domainBlackListText.lines.map(_.trim).filter(canBeDomain)
+    val whiteDomainsIterator = whiteListText.lines.map(_.trim).filter(canBeDomain)
+    val blackDomainsIterator = blackListText.lines.map(_.trim).filter(canBeDomain)
     def addrEndsWith(domain: String) =
       if (domain.contains("@") && domain.head != '@') {
         // Is an email address, not a domain. Fine — let people specify full addresses. And
@@ -449,17 +449,21 @@ object EffectiveSettings {
       else {
         // Match only on domain boundaries = '.'. E.g.  let hacker.bad.com match bad.com,
         // but don't let  someone.goodbad.com match bad.com.
-        address.endsWith(s".$domain") || address.endsWith(s"@$domain")
+        // For now, don't allow sub domains — maybe somehow that could be a security risk
+        // So, don't:  address.endsWith(s".$domain") ||  instead, only:
+        address.endsWith(s"@$domain")
       }
-    for (blackDomain <- blackDomains) {
+    for (blackDomain <- blackDomainsIterator) {
       if (addrEndsWith(blackDomain))
         return false
     }
-    for (whiteDomain <- whiteDomains) {
+    if (whiteDomainsIterator.isEmpty)
+      return true
+    for (whiteDomain <- whiteDomainsIterator) {
       if (addrEndsWith(whiteDomain))
         return true
     }
-    whiteDomains.isEmpty
+    false
   }
 }
 

@@ -19,20 +19,6 @@ let richBrowserA;
 let richBrowserB;
 let owen: Member;
 let owensBrowser;
-let mons: Member;
-let monsBrowser;
-let modya: Member;
-let modyasBrowser;
-let corax: Member;
-let coraxBrowser;
-let regina: Member;
-let reginasBrowser;
-let maria: Member;
-let mariasBrowser;
-let michael: Member;
-let michaelsBrowser;
-let mallory: Member;
-let mallorysBrowser;
 let strangersBrowser;
 
 let siteIdAddress: IdAddress;
@@ -40,7 +26,20 @@ let siteId;
 
 let forum: EmptyTestForum;
 
-let discussionPageUrl: string;
+const evilOrgDomain = 'evil.org';
+const evilOrgUserOne =
+    { emailAddress: 'e2e-test-one@evil.org', username: "Evl_1", password: "I shall p4ss" };
+
+const okayOrgDomain = 'okay.org';
+const okayOrgUserOne =
+    { emailAddress: 'e2e-test-one@okay.org', username: "Ok_1", password: "Cats c4n climb" };
+
+const otherOrgUser =
+    { emailAddress: 'e2e-test-one@other.org', username: "Otr_1", password: "1 cat is 1 pet" };
+
+const notOkayOrgDomain = 'not.' + okayOrgDomain;
+const notOkayOrgUser =
+    { emailAddress: 'e2e-test-a@' + notOkayOrgDomain, username: "NOk", password: "1 pet is 1 cat" };
 
 
 describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
@@ -63,65 +62,137 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
-    mons = forum.members.mons;
-    monsBrowser = richBrowserA;
-    modya = forum.members.modya;
-    modyasBrowser = richBrowserA;
-    corax = forum.members.corax;
-    coraxBrowser = richBrowserA;
 
-    regina = forum.members.regina;
-    reginasBrowser = richBrowserB;
-    maria = forum.members.maria;
-    mariasBrowser = richBrowserB;
-    michael = forum.members.michael;
-    michaelsBrowser = richBrowserB;
-    mallory = forum.members.mallory;
-    mallorysBrowser = richBrowserB;
     strangersBrowser = richBrowserB;
   });
 
   it("Owen logs in to admin area, ... ", () => {
-    owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
+    owensBrowser.adminArea.goToLoginSettings(siteIdAddress.origin);
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
+
+  // ----- Blacklist
+
   it("Owen blacklists the domains 'very.bad.com' and 'evil.org'", () => {
-    owensBrowser.debug();
+    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(
+      'very.bad.com\n' +
+      'oh.so.not.not\n' +
+      '# A comment and blank line and a whitespace line\n' +
+      '\n' +
+      '   \n' +
+      '   ' + evilOrgDomain + '  ');
+    owensBrowser.adminArea.settings.clickSaveAll();
   });
 
-  it("A stranger attempts to sign up with those blacklisted email domains", () => {
+  it("A stranger, evilOrgUserOne, arrives", () => {
     strangersBrowser.go(siteIdAddress.origin);
-    strangersBrowser.debug();
-    //strangersBrowser.complex.loginWithPasswordViaTopbar(maria);
+  });
+
+  it("... attempts to sign up with a blacklisted domains", () => {
+    strangersBrowser.complex.signUpAsMemberViaTopbar(evilOrgUserOne);
+  });
+
+  it("... and gets a bad domain error message 1", () => {
+    strangersBrowser.serverErrorDialog.waitForBadEmailDomainError();
+  });
+
+  it("... closes the error message dialog", () => {
+    strangersBrowser.serverErrorDialog.close();
   });
 
   it("Owen clears the blacklist", () => {
-    owensBrowser.debug();
+    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(' ');
+    owensBrowser.adminArea.settings.clickSaveAll();
   });
 
-  it("... Now the stranger can sign up", () => {
-    strangersBrowser.debug();
+  it("... Now evilOrgUserOne can sign up", () => {
+    // --- Currently needed because Chrome won't clear email input field  [E2EBUG]
+    strangersBrowser.loginDialog.clickCancel();
+    strangersBrowser.topbar.clickSignUp();
+    // -----------------------------------------------------------------
+    strangersBrowser.loginDialog.createPasswordAccount(evilOrgUserOne);
   });
+
+  it("... and gets an email addr verif email", () => {
+    server.getLastVerifyEmailAddressLinkEmailedTo(
+        siteIdAddress.id, evilOrgUserOne.emailAddress, strangersBrowser);
+  });
+
+
+  // ----- Whithelist
 
   it("Owen adds an email domain whitelist, good.org", () => {
-    owensBrowser.debug();
+    owensBrowser.adminArea.settings.login.setEmailDomainWhitelist(
+      'okay.domain.com\n' +
+      '# Another comment and blank line and a whitespace line\n' +
+      '\n' +
+      '   \n' +
+      '   ' + okayOrgDomain + '  ');
+    owensBrowser.adminArea.settings.clickSaveAll();
   });
 
   it("A stranger attempts to sign up with a non white listed domain", () => {
+    strangersBrowser.refresh();
+    strangersBrowser.complex.signUpAsMemberViaTopbar(otherOrgUser);
   });
 
-  it("... that doesn't work", () => {
+  it("... and gets a bad domain error message 2", () => {
+    strangersBrowser.serverErrorDialog.waitForBadEmailDomainError();
   });
 
-  it("But hen *can* sign up with an email addr on the white listed domain", () => {
+  it("Another user *can* sign up with an email addr on the white listed domain", () => {
+    strangersBrowser.refresh();
+    strangersBrowser.complex.signUpAsMemberViaTopbar(okayOrgUserOne);
   });
 
-  it("Owen black lists a sub domain of the whitelist, not.good.org", () => {
+  it("... and gets an email addr verif email", () => {
+    server.getLastVerifyEmailAddressLinkEmailedTo(
+        siteIdAddress.id, okayOrgUserOne.emailAddress, strangersBrowser);
   });
 
-  it("A stranger cannot sign up via this bad sub domain", () => {
+
+  // ----- Whithelist with blacklisted sub domains
+
+  it("Owen black lists a sub domain of the whitelist: " + notOkayOrgDomain, () => {
+    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(notOkayOrgDomain);
+    owensBrowser.adminArea.settings.clickSaveAll();
   });
+
+  it("A stranger attempts to sign up via this bad sub domain", () => {
+    strangersBrowser.refresh();
+    strangersBrowser.complex.signUpAsMemberViaTopbar(notOkayOrgUser);
+  });
+
+  it("... and gets a bad domain error message 3", () => {
+    strangersBrowser.serverErrorDialog.waitForBadEmailDomainError();
+  });
+
+  it("And signing up with other domains", () => {
+    strangersBrowser.refresh();
+    strangersBrowser.complex.signUpAsMemberViaTopbar(otherOrgUser);
+  });
+
+  it("... still doesn't work", () => {
+    strangersBrowser.serverErrorDialog.waitForBadEmailDomainError();
+  });
+
+
+  // ----- OpenAuth rejected (not white listed)
+
+  if (settings.include3rdPartyDependentTests && settings.gmailEmail) {
+    it("A Gmail user arrives", () => {
+      strangersBrowser.refresh();
+      strangersBrowser.topbar.clickSignUp();
+      strangersBrowser.loginDialog.loginWithGmail(
+          { email: settings.gmailEmail, password: settings.gmailPassword },
+          false, { stayInPopup: true });
+    });
+
+    it("... but gmail.com isn't white listed, signup rejected", () => {
+        strangersBrowser.waitUntilPageHtmlSourceMatches_1('TyEBADEMLDMN_-OAUTH_');
+    });
+  }
 
 });
 

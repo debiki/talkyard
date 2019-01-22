@@ -701,7 +701,7 @@ const LoginAndSignupSettings = createFactory({
         // Hide, if SSO enabled — then, the SSO system determines if allowed or not. [7AKBR25]
 
         enableSso || !allowSignup ? null : Setting2(props, {
-          type: 'textarea', label: "Email domain whitelist", id: 'e_EmailWhitelist',
+          type: 'textarea', label: "Email domain whitelist", className: 'e_EmailWhitelist',
           help: rFragment({},
             "People may ", r.i({}, "only "),
             "sign up with emails from these domains. One domain per row. " +
@@ -713,7 +713,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         enableSso || !allowSignup ? null : Setting2(props, {
-          type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
+          type: 'textarea', label: "Email domain blacklist", className: 'e_EmailBlacklist',
           help: rFragment({},
             "People may ", r.i({}, "not "),
             "sign up with emails from these domains. One domain per row. " +

@@ -364,7 +364,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               }
               else if (!siteSettings.isEmailAddressAllowed(oauthDetails.emailLowercasedOrEmpty)) {
                 throwForbidden(
-                  "TyE0SIGNUP02B", "You cannot sign up using that email address")
+                  "TyEBADEMLDMN_-OAUTH_", "You cannot sign up using that email address")
               }
               else if (mayCreateNewUser) {
                 showCreateUserDialog(request, oauthDetails)

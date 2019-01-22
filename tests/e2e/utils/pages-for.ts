@@ -911,6 +911,22 @@ function pagesFor(browser) {
     },
 
 
+    /**
+     * Useful if navigating to a new page, but don't know exactly when will have done that.
+     */
+    waitUntilPageHtmlSourceMatches_1: function(toMatch) {
+      // _1 = only for 1 browser
+      let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
+      while (true) {
+        const source = browser.getSource();
+        const matches = regex.test(source);
+        if (matches)
+          return;
+        browser.pause(200);
+      }
+    },
+
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
@@ -1512,6 +1528,8 @@ function pagesFor(browser) {
           api.waitForVisible('#e2ePassword');
         }
 
+        // Dupl code (035BKAS20)
+
         console.log('createPasswordAccount: fillInFullName...');
         if (data.fullName) api.loginDialog.fillInFullName(data.fullName);
         console.log('fillInUsername...');
@@ -1722,7 +1740,8 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      loginWithGmail: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
+      loginWithGmail: function(data: { email: string, password: string },
+            isInPopupAlready?: boolean, ps?: { stayInPopup: boolean }) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(150);
         api.waitAndClick('#e2eLoginGoogle');
@@ -1806,7 +1825,7 @@ function pagesFor(browser) {
         api.waitForEnabled('#submit_approve_access');
         browser.click('#submit_approve_access'); */
 
-        if (!isInPopupAlready) {
+        if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {
           console.log("switching back to first tab...");
           api.switchBackToFirstTabOrWindow();
         }
@@ -3787,6 +3806,16 @@ function pagesFor(browser) {
             api.waitAndClick('#e2eAllowGuestsCB');
           },
 
+          setEmailDomainWhitelist: (text: string) => {
+            api.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
+            api.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
+          },
+
+          setEmailDomainBlacklist: (text: string) => {
+            api.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
+            api.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
+          },
+
           typeSsoUrl: (url: string) => {
             api.scrollIntoViewInPageColumn('.e_SsoUrl input');
             api.waitUntilDoesNotMove('.e_SsoUrl input');
@@ -4470,6 +4499,16 @@ function pagesFor(browser) {
         api.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
       },
 
+      waitForBadEmailDomainError: function() {
+        // Sometimes there's this error:
+        //   stale element reference: element is not attached to the page document
+        // Why? Maybe there's another dialog .modal-body that fades away and disappears
+        // before the server error dialog's .modal-body appears?
+        utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
+          api.waitUntilTextMatches('.modal-body', 'TyEBADEMLDMN_');
+        });
+      },
+
       waitForTooManyInvitesError: function() {
         api.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
       },
@@ -4546,6 +4585,7 @@ function pagesFor(browser) {
       signUpAsMemberViaTopbar: function(
             member: { emailAddress: string, username: string, password: string }) {
         api.topbar.clickSignUp();
+        // Dupl code (035BKAS20)
         api.loginDialog.fillInEmail(member.emailAddress);
         api.loginDialog.fillInUsername(member.username);
         api.loginDialog.fillInPassword(member.password);
