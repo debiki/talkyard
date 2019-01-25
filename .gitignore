@@ -68,6 +68,7 @@ public/res/translations/
 # Failed e2e tests, not kept in target/ so won't get removed when doing 'clean'.
 tests/e2e-failures.txt
 e2e.log
+.selenium.pid
 
 conf/prod-password.conf
 # One's local dev-test config.

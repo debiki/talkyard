@@ -46,7 +46,14 @@ print_help:
 	@echo "Running tests"
 	@echo "--------------------------"
 	@echo
-	@echo "  Run end-to-end tests:     make e2e-tests
+	@echo "End-to-End tests:"
+	@echo "  First, start Selenium:    make invisible-selenium-server"
+	@echo "  Then run the tests:       make e2e-tests"
+	@echo "  Stop Selenium:            make selenium-dead"
+	@echo
+	@echo "Unit tests:"
+	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
+	@echo "  Run tests:                test  # in the CLI"
 	@echo
 	@echo "What more do you want to know? Talk with us at"
 	@echo "https://www.talkyard.io/forum/."
@@ -220,6 +227,9 @@ _selenium_standalone_files := \
 $(_selenium_standalone_files): $@
 	s/selenium-install
 
+selenium-dead:
+	kill $$(ps aux | grep selenium | grep -v 'xvfb-run' | awk '{ print $$2 }')
+
 selenium-server: node_modules $(_selenium_standalone_files)
 	@$(call if_selenium_not_running, s/selenium-start)
 
@@ -231,7 +241,7 @@ define if_selenium_not_running
   selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
   if [ -z "$$selenium_line" ]; then \
     echo "Starting Selenium." ;\
-    $(1) ;\
+    $(1) & echo $$! > .selenium.pid ;\
   else \
     echo ;\
     echo "Selenium already running. Not starting it." ;\
@@ -244,10 +254,19 @@ endef
 
 e2e-tests: invisible-selenium-server
 	s/run-e2e-tests.sh
+	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
 
 visible-e2e-tests: selenium-server
 	s/run-e2e-tests.sh
+	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
 
+# Alternative to above if-then-fi for the PID file;
+# start: server.PID
+# server.PID:
+#     cd bin && { s/selenium-start-invisible & echo $$! > $@; }
+# stop: server.PID
+#     kill `cat $<` && rm $<
+# see: https://stackoverflow.com/a/23366404/694469
 
 
 # Images (wip)

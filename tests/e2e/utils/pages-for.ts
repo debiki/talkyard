@@ -656,7 +656,16 @@ function pagesFor(browser) {
         // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
         // so the remaining characters gets lost. Then, try again.
         while (true) {
-          browser.setValue(selector, value);
+          // This used to work, and still works in FF, but Chrome nowadays (2018-12)
+          // just appends instead:
+          //browser.setValue(selector, value);
+          // This does nothing, in Chrome:
+          //browser.clearElement(selector);
+          // Instead, delete any previous text (hit backspace 9999 times), before typing
+          // the new value.
+          const oldValue = browser.getValue(selector);
+          browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
+
           if (!opts.checkAndRetry) break;
           browser.pause(200);
           const valueReadBack = browser.getValue(selector);
@@ -1054,9 +1063,9 @@ function pagesFor(browser) {
         else {
           api.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
-        browser.click('#e2eNext3');
-        browser.setValue('#e2eOrgName', data.orgName || data.localHostname);
-        browser.click('input[type=submit]');
+        api.waitAndClick('#e2eNext3');
+        api.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+        api.waitAndClick('input[type=submit]');
         api.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, api.origin());
       },
@@ -2487,7 +2496,7 @@ function pagesFor(browser) {
         return browser.getText('.editor-area .esEdtr_titleEtc_title');
       },
 
-      editText: function(text, opts: { timeoutMs?: number } = {}) {
+      editText: function(text, opts: { timeoutMs?: number, checkAndRetry?: true } = {}) {
         api.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 
@@ -3168,7 +3177,7 @@ function pagesFor(browser) {
       },
 
       searchForWaitForResults: function(phrase: string) {
-        browser.setValue('.s_SP_QueryTI', phrase);
+        api.waitAndSetValue('.s_SP_QueryTI', phrase);
         api.searchResultsPage.clickSearchButton();
         // Later, with Nginx 1.11.0+, wait until a $request_id in the page has changed [5FK02FP]
         api.searchResultsPage.waitForResults(phrase);
@@ -4334,6 +4343,7 @@ function pagesFor(browser) {
           api.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
         }
         api.inviteDialog.closeResultsDialog();
+        api.waitUntilModalGone();
       },
 
       typeInvite: (emailAddress: string) => {

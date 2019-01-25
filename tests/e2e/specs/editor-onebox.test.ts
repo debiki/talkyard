@@ -98,7 +98,7 @@ describe("editor onebox:", () => {
 
   it("Owen edits the page, adds a video url", () => {
     owensBrowser.topic.clickEditOrigPost();
-    owensBrowser.editor.editText(videoMp4Url);
+    owensBrowser.editor.editText(videoMp4Url, { checkAndRetry: true });
   });
 
   it("It appears as a onebox <video> tag in the preview", () => {

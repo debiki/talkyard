@@ -107,21 +107,37 @@ function runE2eTest {
       log_message "Test failed twice, aborting." >> $failfile
       cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
       echo
-      echo "*** ERROR [EsE5KPY02] ***"
       echo
-      echo "This end-to-end test failed twice: (The next line. You can copy-paste it and run it.)"
+      echo "*** ERROR [TyEE2E] ***"
+      echo
+      echo "This end-to-end test failed twice:"
+      echo
+      echo "  $cmd"
+      echo
+      echo "Run it with debug flags, and try to fix it:"
+      echo
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
       # (But first add a cname entry for -manual.)
       cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
       # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
       # root first su:s to another user. Check the --is-root command line flag instead.
-      if [ -z "$is_root" ]; then
+      #if [ -z "$is_root" ]; then
         echo "  $cmd_with_debug"
-      else
-        echo "  su $my_username -c '$cmd_with_debug'"
-        echo
-        echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
-      fi
+      #else
+      #  echo "  su $my_username -c '$cmd_with_debug'"
+      #  echo
+      #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
+      #fi
+      echo
+      echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
+      echo "(Because the likelihood that a tests fails twice, is then 1/33/33 ~= 1/1000,"
+      echo "so, with 100 such e2e tests, it's 90% probability of no double failures.)"
+      echo
+      echo "  rm e2e.log"
+      echo "  for x in {1..33}; do echo \$x: ; $cmd |& tee -a e2e.log ; done"
+      echo "  egrep -i -C10 '^error' e2e.log | gvim -"
+      echo
+      echo
       echo
       exit 1
     else
