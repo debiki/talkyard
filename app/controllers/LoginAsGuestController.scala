@@ -59,7 +59,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     throwForbiddenIf(email.nonEmpty && Participant.emailIsWeird(email),
       "TyE04HK83", "Weird email. Please use a real email address")
     throwForbiddenIf(!settings.isEmailAddressAllowed(email),
-      "TyE7WKBRA2", "You cannot sign up using that email address")
+      "TyEBADEMLDMN_-GST", "You cannot sign up using that email address")
 
     // A browser id should be set, at the start of all POST requests. [5JKWQ21]
     val theBrowserId: String = request.theBrowserIdData.idCookie getOrElse throwForbidden(

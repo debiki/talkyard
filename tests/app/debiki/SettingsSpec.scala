@@ -179,6 +179,7 @@ class SettingsSpec extends FreeSpec with MustMatchers {
       "many lines whitelist with comments and whitespace" in {
         isEmailAddressAllowed("ok@domain.one.com", whiteListText = whitelist, "") mustBe true
         isEmailAddressAllowed("ok@domain.three.here.io", whiteListText = whitelist, "") mustBe true
+        isEmailAddressAllowed("ko@other.domain", whiteListText = whitelist, "") mustBe false
       }
 
       "@ prefixed domain" in {
@@ -203,6 +204,7 @@ class SettingsSpec extends FreeSpec with MustMatchers {
         isEmailAddressAllowed("no@two.com", "", blackListText = blacklist) mustBe false
         isEmailAddressAllowed("no@domain.three.here.io", "", blackListText = blacklist
             ) mustBe false
+        isEmailAddressAllowed("ok@other.com", "", blackListText = blacklist) mustBe true
       }
 
       "commented out domain" in {

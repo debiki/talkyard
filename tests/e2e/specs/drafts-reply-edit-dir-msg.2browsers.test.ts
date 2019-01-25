@@ -151,7 +151,15 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   it("Maria starts typing a direct message to Michael", () => {
     mariasBrowser.pageTitle.openAboutAuthorDialog();
     mariasBrowser.aboutUserDialog.clickSendMessage();
+  });
+
+  it("... types title", () => {
+    // This previously failed in FF, because FF is "too fast", it triggers some race
+    // condition that Chrome doesn't.  [6AKBR45]
     mariasBrowser.editor.editTitle(mariasDirectMessageTitle);
+  });
+
+  it("... types text", () => {
     mariasBrowser.editor.editText(mariasDirectMessageText);
   });
 

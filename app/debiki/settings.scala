@@ -442,8 +442,8 @@ object EffectiveSettings {
         // then require an exact match, so another.jane.doe@ex.com won't match jane.doe@ex.com.
         address == domain
       }
-      else if (domain.head == '.' || domain.head == '@') {
-        // For whatever reason, the admin prepended a '.' or '@' although not needed.
+      else if (domain.head == '@') {
+        // The admin prepended an '@' although not needed.
         address.endsWith(domain)
       }
       else {

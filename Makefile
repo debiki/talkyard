@@ -19,6 +19,40 @@ watch:
   play-cli \
   prod-images
 
+.DEFAULT_GOAL := print_help
+
+print_help:
+	@echo
+	@echo "This is Talkyard's Makefile. Usage:"
+	@echo
+	@echo "Building production images"
+	@echo "--------------------------"
+	@echo
+	@echo "Edit version.txt and commit. Edit DOCKER_REPOSITORY in .env."
+	@echo "Then:"
+	@echo
+	@echo "  Build production images:  make prod-images"
+	@echo "  Push to your repo:        make tag-and-push-latest-images"
+	@echo
+	@echo "Running a development server"
+	@echo "--------------------------"
+	@echo
+	@echo "  Start a dev server:       make up"
+	@echo "  Stop the dev server:      make dead"
+	@echo
+	@echo "  Open PostgreSQL prompt:   make db-cli"
+	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
+	@echo
+	@echo "Running tests"
+	@echo "--------------------------"
+	@echo
+	@echo "  Run end-to-end tests:     make e2e-tests
+	@echo
+	@echo "What more do you want to know? Talk with us at"
+	@echo "https://www.talkyard.io/forum/."
+	@echo
+
+
 DOCKER_REPOSITORY := \
   $(shell sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env)
 

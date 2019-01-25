@@ -511,7 +511,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
     throwForbiddenIf(!siteSettings.isEmailAddressAllowed(emailAddress),
-      "TyE0SIGNUP05", "You cannot sign up using that email address")
+      "TyEBADEMLDMN_-OAUTHB", "You cannot sign up using that email address")
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
       throwBadReq("DwE08GM6", "Auth data cache key missing")

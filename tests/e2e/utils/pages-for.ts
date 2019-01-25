@@ -527,7 +527,7 @@ function pagesFor(browser) {
     _waitForClickable: function(selector, opts: { maybeMoves?: boolean } = {}) {
       // Without pause(..), the tests often break when run in an *invisible* browser, but works
       // just fine when run in a *visible* browser. Meaning, it's very hard to fix any race
-      // conditions, because only fails when I cannot see. So for now, pause(100).
+      // conditions, because only fails when I cannot see. So for now, pause(100).  [E2EBUG]
       browser.pause(100);
       api.waitForVisible(selector);
       api.waitForEnabled(selector);
@@ -642,6 +642,9 @@ function pagesFor(browser) {
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number } = {}) => {
       browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
                           // (maybe add waitUntilDoesNotMove ?)
+      // Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
+      // How is that possible? What more to check for?
+      // Results in an "<element> is not reachable by keyboard" error.
       api.waitForVisible(selector, opts.timeoutMs);
       api.waitForEnabled(selector);
       api.waitUntilLoadingOverlayGone();
@@ -2383,6 +2386,13 @@ function pagesFor(browser) {
         api.rememberCurrentUrl();
         api.waitAndClick('#e2eUD_MessageB');
         api.waitForNewUrl();
+        // Wait until new-message title can be edited.
+        // For some reason, FF is so fast, so typing the title now after new page load, fails
+        // the first time  [6AKBR45] [E2EBUG] — but only in an invisible browser, and within
+        // fractions of a second after page load, so hard to fix. As of 2019-01.
+        utils.tryManyTimes("Type direct message title", 2, () => {
+          api.editor.editTitle(' ');
+        });
       },
 
       clickViewProfile: () => {
