@@ -100,7 +100,7 @@ const utils = {
         return;
       }
       catch (error) {
-        console.log(`RETRYING: ${what}  [TyME2ERETRY]`);
+        console.log(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
       }
     }
     fn();

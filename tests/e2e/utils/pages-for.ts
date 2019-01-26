@@ -14,8 +14,16 @@ let ca = 0;
 let cb = 0;
 let cc = 0;
 
+const PollMs = 100;
+const PollExpBackoff = 1.33;
+const PollMaxMs = 5000;
+
 
 type ElemRect = { x: number, y: number, width: number, height: number };
+
+// [E2EBUG] Stop using browser.waitUntil — it crashes, on any exception inside,
+// instead of propagating to caller. E.g. a harmless & ok stale elem ref error,
+// crashes the test, instead of propagating to the util.tryManyTimes retry loop.
 
 
 function count(elems): number {
@@ -305,12 +313,11 @@ function pagesFor(browser) {
         if (!pageColumn) throw Error("No #esPageColumn on this page [TyE7KBAQ2]");
         return pageColumn.scrollTop;
       });
-      console.log(`Page scroll: ${result.value}`);
       return parseInt(result.value);
     },
 
 
-    scrollIntoViewInPageColumn: (selector: string) => {
+    scrollIntoViewInPageColumn: (selector: string) => {   // RENAME to  scrollIntoView
       const isInPageColResult = browser.execute(function(selector) {
         var pageColumn = document.getElementById('esPageColumn');
         if (!pageColumn)
@@ -331,7 +338,7 @@ function pagesFor(browser) {
     },
 
 
-    _real_scrollIntoViewInPageColumn: (selector: string) => {
+    _real_scrollIntoViewInPageColumn: (selector: string) => { // RENAME to _scrollIntoViewInPageColumn
       api.waitForVisible(selector);
       let lastScrollY = api.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
@@ -345,6 +352,7 @@ function pagesFor(browser) {
           // Done scrolling;
           return;
         }
+        console.log(`Scrolling <${selector}> into view in page column, scroll y: ${curScrollY} ...`);
         lastScrollY = curScrollY;
       }
       assert.fail(`Cannot scroll to: ${selector}`);
@@ -659,6 +667,8 @@ function pagesFor(browser) {
           var middleX = rect.left + rect.width / 2;
           var middleY = rect.top + rect.height / 2;
           var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
+          if (!elemAtTopOfCenter)
+            return false;
           if (elem == elemAtTopOfCenter || elem.contains(elemAtTopOfCenter))
             return true;
           var elemIdClass =
@@ -799,25 +809,28 @@ function pagesFor(browser) {
       if (_.isString(regex)) {
         regex = new RegExp(regex);
       }
-      let elemIdFound;
-      browser.waitUntil(() => {
+      // Don't use browser.waitUntil(..) — exceptions in waitUntil apparently don't
+      // propagade to the caller, and instead always break the test. E.g. using
+      // a stale elem ref in an ok harmless way, apparently breaks the test.
+      for (let pauseMs = PollMs; true; pauseMs *= PollExpBackoff) {
         const elemsWrap = browser.elements(selector);
-        if (!elemsWrap.value) {
-          die("No value. Many browsers specified? Like 'everyone.sth(..)'? Not implemented. [TyE5KJ7W1]");
-        }
+        dieIf(!elemsWrap.value,
+            "No value. Many browsers specified? Like 'everyone.sth(..)'? Not implemented. [TyE5KJ7W1]");
         const elems = elemsWrap.value;
+        let texts = '';
         for (let i = 0; i < elems.length; ++i) {
           const elem = elems[i];
           const text = browser.elementIdText(elem.ELEMENT).value;
           const matches = regex.test(text);
-          if (matches) {
-            elemIdFound = elem.ELEMENT;
-            return true;
-          }
+          if (matches)
+            return elem.ELEMENT;
+
+          texts += `"${text}", `;
         }
-        return false;
-      });
-      return elemIdFound;
+        console.log(`Waiting for <${selector}> to match: ${regex}, ` +
+            `but the ${elems.length} selector matching texts are: ${texts}.`)
+        browser.pause(Math.min(pauseMs, PollMaxMs));
+      }
     },
 
 
@@ -4606,7 +4619,7 @@ function pagesFor(browser) {
         // Why? Maybe there's another dialog .modal-body that fades away and disappears
         // before the server error dialog's .modal-body appears?
         utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
-          api.waitUntilTextMatches('.modal-body', 'TyEBADEMLDMN_');
+          api.waitUntilTextMatches('.s_SED_Wrap .modal-body', 'TyEBADEMLDMN_');
         });
       },
 

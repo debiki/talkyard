@@ -135,8 +135,7 @@ function runE2eTest {
       echo "(Because the likelihood that a tests fails twice, is then 1/33/33 ~= 1/1000,"
       echo "so, with 100 such e2e tests, it's 90% probability of no double failures.)"
       echo
-      echo "  rm e2e.log"
-      echo "  for x in {1..33}; do echo \$x: ; $cmd |& tee -a e2e.log ; done"
+      echo "  rm e2e.log ;  for x in {1..33}; do echo \$x: ; $cmd |& tee -a e2e.log ; done"
       echo "  egrep -i -C10 '^error' e2e.log | gvim -"
       echo
       echo

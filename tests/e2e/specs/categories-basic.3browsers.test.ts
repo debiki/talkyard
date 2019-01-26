@@ -89,11 +89,23 @@ describe("categories", function() {
     owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
   });
 
-  it("Owen renames and unlists the category", function() {
+  it("Owen starts editing the category", function() {
     owen.forumButtons.clickEditCategory();
+  });
+
+  it("... renames it", function() {
     owen.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
+  });
+
+  it("... and unlists it", function() {
     owen.categoryDialog.setCategoryUnlisted();
+  });
+
+  it("... saves the changes", function() {
     owen.categoryDialog.submit();
+  });
+
+  it("... now he sees its name got updated", function() {
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
   });
@@ -114,8 +126,11 @@ describe("categories", function() {
   var urlToMonsPage2;
   var urlToMonsPage3;
 
-  it("Mons can create a Wasteland topic", function() {
+  it("Mons goes to the Wasteland topic", function() {
     mons.forumCategoryList.openCategory(WastelandCategoryName);
+  });
+
+  it("... he can create a new topic in Wasteland", function() {
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage = mons.url().value;
   });
