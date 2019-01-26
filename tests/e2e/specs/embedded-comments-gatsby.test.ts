@@ -163,8 +163,10 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   it("... the last blog post is still empty", () => {
     owensBrowser.frameParent();
     owensBrowser.scrollToTop();
-    owensBrowser.click('a[href="/"]');
-    owensBrowser.waitAndClick('a[href*="hello-world"]');
+    owensBrowser.waitAndClick('a[href="/"]');
+    // This *= selector causes an error in waitUntilElementNotOccluded().
+    // There's nothing that can occlude this link, so just skip the check.
+    owensBrowser.waitAndClick('a[href*="hello-world"]', { waitUntilNotOccluded: false });
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.waitForVisible('.dw-a-logout'); // then comments have loaded
     owensBrowser.topic.assertNumRepliesVisible(0); // no replies on this page

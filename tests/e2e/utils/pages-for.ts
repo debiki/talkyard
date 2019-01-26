@@ -301,7 +301,9 @@ function pagesFor(browser) {
 
     getPageScrollY: (): number => {
       const result = browser.execute(function() {
-        return document.getElementById('esPageColumn').scrollTop;
+        var pageColumn = document.getElementById('esPageColumn');
+        if (!pageColumn) throw Error("No #esPageColumn on this page [TyE7KBAQ2]");
+        return pageColumn.scrollTop;
       });
       console.log(`Page scroll: ${result.value}`);
       return parseInt(result.value);
@@ -309,6 +311,27 @@ function pagesFor(browser) {
 
 
     scrollIntoViewInPageColumn: (selector: string) => {
+      const isInPageColResult = browser.execute(function(selector) {
+        var pageColumn = document.getElementById('esPageColumn');
+        if (!pageColumn)
+          return false;
+        var elem = document.querySelector(selector);
+        return pageColumn.contains(elem);
+      }, selector);
+      if (isInPageColResult.value) {
+        api._real_scrollIntoViewInPageColumn(selector);
+      }
+      else {
+        // Elem outside page column (e.g. modal dialog), or there is no page column.
+        browser.execute(function(selector) {
+          var elem = document.querySelector(selector);
+          elem.scrollIntoView({ behavior: 'smooth' });
+        }, selector);
+      }
+    },
+
+
+    _real_scrollIntoViewInPageColumn: (selector: string) => {
       api.waitForVisible(selector);
       let lastScrollY = api.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
@@ -462,7 +485,9 @@ function pagesFor(browser) {
       origWaitForExist.call(browser, selector, timeoutMillis, true);
     },
 
-    waitAndClick: function(selector: string, opts: { maybeMoves?: boolean, clickFirst?: boolean } = {}) {
+    waitAndClick: function(selector: string,
+          opts: { maybeMoves?: boolean, clickFirst?: boolean, mayScroll?: boolean,
+            waitUntilNotOccluded?: boolean } = {}) {
       api._waitAndClickImpl(selector, opts);
     },
 
@@ -478,7 +503,9 @@ function pagesFor(browser) {
 
 
     // Works with many browsers at the same time.
-    _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean, maybeMoves?: boolean } = {}) {
+    _waitAndClickImpl: function(selector: string,
+          opts: { clickFirst?: boolean, maybeMoves?: boolean, mayScroll?: boolean,
+            waitUntilNotOccluded?: boolean } = {}) {
       selector = selector.trim(); // so selector[0] below, works
       api._waitForClickable(selector, opts);
       if (selector[0] !== '#' && !opts.clickFirst) {
@@ -496,11 +523,14 @@ function pagesFor(browser) {
         });
         assert.equal(length, 1, errors);
       }
+      /*
+      // DO_AFTER 2019-07-01 remove this out commented code.
       // Oddly enough, sometimes the overlay covers the page here, although
       // we just waited for it to go away.  [7UKDWP2] [7JUKDQ4].
       // Happens in FF only (May 2018) — maybe FF is so fast so the first test
       // somehow happens before it has been created?
       api.waitUntilLoadingOverlayGone();
+      */
       browser.click(selector);
     },
 
@@ -524,16 +554,27 @@ function pagesFor(browser) {
     },
 
 
-    _waitForClickable: function(selector, opts: { maybeMoves?: boolean } = {}) {
-      // Without pause(..), the tests often break when run in an *invisible* browser, but works
-      // just fine when run in a *visible* browser. Meaning, it's very hard to fix any race
-      // conditions, because only fails when I cannot see. So for now, pause(100).  [E2EBUG]
-      browser.pause(100);
-      api.waitForVisible(selector);
+    _waitForClickable: function(selector,
+          opts: { maybeMoves?: boolean, timeoutMs?: number, mayScroll?: boolean,
+              okayOccluders?: string, waitUntilNotOccluded?: boolean } = {}) {
+      api.waitForVisible(selector, opts.timeoutMs);
       api.waitForEnabled(selector);
-      api.waitUntilLoadingOverlayGone();
+      if (opts.mayScroll !== false) {
+        api.scrollIntoViewInPageColumn(selector);
+      }
       if (opts.maybeMoves) {
         api.waitUntilDoesNotMove(selector);
+      }
+
+      // Sometimes, a not-yet-done-loading-data-from-server overlays the element and steals
+      // any click. Or a modal dialog, or nested modal dialog, that is fading away, steals
+      // the click. Unless:
+      if (opts.waitUntilNotOccluded !== false) {
+        api.waitUntilElementNotOccluded(selector, { okayOccluders: opts.okayOccluders });
+      }
+      else {
+        // We can at least do this — until then, nothing is clickable.
+        api.waitUntilLoadingOverlayGone();
       }
     },
 
@@ -607,6 +648,35 @@ function pagesFor(browser) {
         anyVisible = _.some(values, x => x);
         return !anyVisible;
       });
+      api.waitUntilGone('.fade.modal');
+    },
+
+    waitUntilElementNotOccluded: (selector: string, opts: { okayOccluders?: string } = {}) => {
+      for (let i = 0; i < 9999; ++i) {
+        const result = browser.execute(function(selector, okayOccluders) {
+          var elem = document.querySelector(selector);
+          var rect = elem.getBoundingClientRect();
+          var middleX = rect.left + rect.width / 2;
+          var middleY = rect.top + rect.height / 2;
+          var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
+          if (elem == elemAtTopOfCenter || elem.contains(elemAtTopOfCenter))
+            return true;
+          var elemIdClass =
+              (elemAtTopOfCenter.id ? '#' + elemAtTopOfCenter.id : '') +
+              (elemAtTopOfCenter.className ? '.' + elemAtTopOfCenter.className : '');
+          return elemIdClass === okayOccluders;
+        }, selector, opts.okayOccluders);
+
+        dieIf(!result, "Error checking if elem interactable, result: " + JSON.stringify(result));
+        if (result.value === true) {
+          if (i >= 1) {
+            console.log(`Fine, elem [ ${selector} ] no longer occluded. Continuing`)
+          }
+          break;
+        }
+        browser.pause(200);
+        console.log(`Waiting for elem [ ${selector} ] to not be occluded by [ ${result.value} ]...`)
+      }
     },
 
     waitForAtLeast: function(num, selector) {
@@ -639,18 +709,20 @@ function pagesFor(browser) {
 
 
     waitAndSetValue: (selector: string, value: string | number,
-        opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number } = {}) => {
-      browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
-                          // (maybe add waitUntilDoesNotMove ?)
-      // Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
-      // How is that possible? What more to check for?
-      // Results in an "<element> is not reachable by keyboard" error.
-      api.waitForVisible(selector, opts.timeoutMs);
-      api.waitForEnabled(selector);
-      api.waitUntilLoadingOverlayGone();
-      if (opts.maybeMoves) {
-        api.waitUntilDoesNotMove(selector);
-      }
+        opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
+            okayOccluders?: string } = {}) => {
+      //browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
+      //                    // (maybe add waitUntilDoesNotMove ?)
+      //// Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
+      //// How is that possible? What more to check for?
+      //// Results in an "<element> is not reachable by keyboard" error.
+      //api.waitForVisible(selector, opts.timeoutMs);
+      //api.waitForEnabled(selector);
+      //api.waitUntilLoadingOverlayGone();
+      //if (opts.maybeMoves) {
+      //  api.waitUntilDoesNotMove(selector);
+      //}
+      api._waitForClickable(selector, opts);
       if (value) {
         // Sometimes, when starting typing, React does a refresh / unmount?
         // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
@@ -2209,8 +2281,8 @@ function pagesFor(browser) {
         process.stdout.write('/waitForTopics>');
       },
 
-      clickLoadMore: () => {
-        api.waitAndClick('.load-more');
+      clickLoadMore: (opts: { mayScroll?: boolean } = {}) => {
+        api.waitAndClick('.load-more', opts);
       },
 
       clickViewLatest: function() {
@@ -2427,7 +2499,9 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eAddUsD .Select-placeholder');
 
         // Clicking Return = complicated!  Only + \n  works in FF:
-        api.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n');
+        // The Select input is special: the <input> is occluded, but still works fine.
+        api.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n',
+            { okayOccluders: '.Select-placeholder' });
 
         // Works in Chrome but not FF:
         // api.keys(['Return']);  — so we append \n above, work as a Return press.
@@ -3001,25 +3075,29 @@ function pagesFor(browser) {
             // pick [0] to click the first = topmost elem.
             // Chrome? Chromedriver? Webdriver? Selenium? buggy (as of June 29 2018).
             //OLD: dieIf(_.isArray(buttonLocation) && !opts.clickFirst, 'TyEISARRAYBKF');
-            if (opts.clickFirst)
-              break; // cannot scroll, see above. Currently the tests don't need to scroll (good luck)
+            //if (opts.clickFirst)
+            //  break; // cannot scroll, see above. Currently the tests don't need to scroll (good luck)
 
             const buttonRect = api.getRectOfFirst(buttonSelector);
 
             // E.g. the admin area, /-/admin.
             const isOnAutoPage = browser.url().value.indexOf('/-/') >= 0;
 
+            /*
             // ? Why did I add this can-scroll test ? Maybe, if can *not* scroll, this loop never got
             // happy with the current scroll position (0, 0?) and continued trying-to-scroll forever?
             let hasScrollBtns = browser.isVisible(api.scrollButtons.fixedBarSelector);
             // If in admin area or user's profile, there're no scroll buttons, but can maybe
             // scroll anyway.
             const canScroll = hasScrollBtns || isOnAutoPage;
-            if (!canScroll)
+            if (!canScroll) {
+              console.log(`Cannot scroll: ${hasScrollBtns} ${isOnAutoPage},` +
+                  ` won't try to scroll to: ${buttonSelector}`);
               break;
+            } */
 
             let bottomY = api.getWindowHeight();
-            if (hasScrollBtns) {
+            if (true) { // hasScrollBtns) {
               // Need to place the button we want to click, above the scroll bar — otherwise,
               // the scroll buttons can be on top of the button, and steal the click.
               bottomY -= 35;  // scroll button height [6WRD25]
@@ -3027,9 +3105,12 @@ function pagesFor(browser) {
               //   bottomY = api.getRectOfFirst(api.scrollButtons.fixedBarSelector).y;
             }
 
-            const topY = isOnAutoPage
-                ? 100 // fixed topbar, some float drop —> 90 px tall
-                : 60; // fixed topbar, about 40px tall
+            const isInIframe = api.isInIframe();
+            const topY = isInIframe
+                ? 0 : (    // no topbar
+                  isOnAutoPage
+                    ? 100  // fixed topbar, might float drop —> 90 px tall
+                    : 60); // fixed topbar, about 40px tall
 
             // The browser clicks in the middle of the button?
             const buttonMiddleY = buttonRect.y + buttonRect.height / 2;
@@ -3038,7 +3119,7 @@ function pagesFor(browser) {
               break;
 
             console.log(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
-                `buttonRect.y = ${buttonRect.y}, buttonMiddleY = ${buttonMiddleY}, ` +
+                `buttonRect = ${JSON.stringify(buttonRect)}, buttonMiddleY = ${buttonMiddleY}, ` +
                 `bottomY: ${bottomY}`);
             const scrollMargin = clickMargin + 10;
             browser.execute(function(selector, topY, scrollMargin) {
@@ -3724,7 +3805,7 @@ function pagesFor(browser) {
       goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
         api.go((origin || '') + '/-/admin/users/invited');
         if (opts.loginAs) {
-          browser.loginDialog.loginWithPassword(opts.loginAs);
+          api.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.users.invites.waitUntilLoaded();
       },
@@ -3732,7 +3813,7 @@ function pagesFor(browser) {
       goToApi: function(origin?: string, opts: { loginAs? } = {}) {
         api.go((origin || '') + '/-/admin/api');
         if (opts.loginAs) {
-          browser.loginDialog.loginWithPassword(opts.loginAs);
+          api.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.apiTab.waitUntilLoaded();
       },
@@ -3740,7 +3821,7 @@ function pagesFor(browser) {
       goToReview: function(origin?: string, opts: { loginAs? } = {}) {
         api.go((origin || '') + '/-/admin/review/all');
         if (opts.loginAs) {
-          browser.loginDialog.loginWithPassword(opts.loginAs);
+          api.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.review.waitUntilLoaded();
       },
@@ -3768,6 +3849,7 @@ function pagesFor(browser) {
 
       settings: {
         clickSaveAll: function() {
+          api.scrollToBottom();
           api.waitAndClick('.esA_SaveBar_SaveAllB');
           api.waitUntilLoadingOverlayGone();
         },
@@ -4343,7 +4425,6 @@ function pagesFor(browser) {
           api.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
         }
         api.inviteDialog.closeResultsDialog();
-        api.waitUntilModalGone();
       },
 
       typeInvite: (emailAddress: string) => {

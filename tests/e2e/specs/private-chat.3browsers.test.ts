@@ -28,7 +28,7 @@ var chatPurpose = "Chat purpose";
 var chatUrl;
 
 
-describe("private chat", function() {
+describe("private chat  TyT2ABKR045", function() {
 
   it("initialize people", function() {
     everyone = _.assign(browser, pagesFor(browser));
@@ -83,8 +83,11 @@ describe("private chat", function() {
     maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("Owen adds Maria to the chat", function() {
+  it("Owen adds Maria to the chat: clicks View People ...", function() {
     owen.watchbar.clickViewPeople();
+  });
+
+  it("Owen adds Maria to the chat: ... and adds Maria", function() {
     owen.complex.addPeopleToPageViaContextbar(['maria']);
   });
 

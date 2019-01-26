@@ -15,14 +15,17 @@ declare var browserA: any;
 declare var browserB: any;
 declare var browserC: any;
 
-var everyone;
-var owen;
-var mons;
-var maria;
+let everyone;
+let owen;
+let mons;
+let maria;
 
-var idAddress;
-var WastelandCategorySelector = 'a*=Wasteland';
-var DefaultCategorySelector = 'a*=Uncategorized';
+let idAddress;
+const WastelandCategoryName = 'Wasteland';
+const WastelandCategoryNameOnlyStaffCreate = 'Wasteland Only Staff Create';
+const WastelandCategoryNameStaffOnly = "Wasteland Staff Only";
+const WastelandCategorySelector = 'a*=Wasteland';
+const DefaultCategorySelector = 'a*=Uncategorized';
 
 
 describe("categories", function() {
@@ -58,7 +61,7 @@ describe("categories", function() {
 
   it("Maria logs in, sees the new category", function() {
     maria.go(idAddress.origin + '/categories');
-    maria.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
+    maria.forumCategoryList.openCategory(WastelandCategoryName);
     maria.topbar.clickLogin();
     maria.loginDialog.loginWithPassword(maria);
     maria.assertTextMatches('.e2eF_T', /About/, /Wasteland/);
@@ -74,19 +77,19 @@ describe("categories", function() {
     maria.rememberCurrentUrl();
     maria.editor.save();
     maria.waitForNewUrl();
-    // ensure ancestor Wasteland visible
+    // Ensure ancestor Wasteland visible.
     maria.assertPageTitleMatches(mariasFirstTopicTitle);
     maria.assertPageBodyMatches(mariasFirstTopicText);
   });
 
   it("Owen sees Marias' topic", function() {
     owen.refresh();
-    owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true); // [7JUKDQ4]
+    owen.forumCategoryList.openCategory(WastelandCategoryName);
+    //owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true); // [7JUKDQ4]
     owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
   });
 
   it("Owen renames and unlists the category", function() {
-    //owen.debug();
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
     owen.categoryDialog.setCategoryUnlisted();
@@ -112,7 +115,7 @@ describe("categories", function() {
   var urlToMonsPage3;
 
   it("Mons can create a Wasteland topic", function() {
-    mons.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
+    mons.forumCategoryList.openCategory(WastelandCategoryName);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage = mons.url().value;
   });
@@ -162,7 +165,7 @@ describe("categories", function() {
   });
 
   it("... but cannot create new topics", function() {
-    maria.waitAndClick(WastelandCategorySelector);
+    maria.forumCategoryList.openCategory(WastelandCategoryNameOnlyStaffCreate);
     maria.forumButtons.assertNoCreateTopicButton();
   });
 
@@ -174,7 +177,7 @@ describe("categories", function() {
   it("Owen sets the category to staff only", function() {
     owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
-    owen.categoryDialog.fillInFields({ name: "Wasteland Staff Only" });
+    owen.categoryDialog.fillInFields({ name: WastelandCategoryNameStaffOnly });
     owen.categoryDialog.openSecurityTab();
     owen.categoryDialog.securityTab.setMayReply(c.EveryoneId, false);
     owen.categoryDialog.securityTab.setMaySee(c.EveryoneId, false);
@@ -186,7 +189,9 @@ describe("categories", function() {
 
   it("Mons sees it and can create a 2nd topic", function() {
     mons.go(idAddress.origin + '/categories');
-    mons.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
+    mons.waitForVisible(DefaultCategorySelector);
+    assert(mons.isVisible(WastelandCategorySelector));   // cmp w (410RKE5) below
+    mons.forumCategoryList.openCategory(WastelandCategoryNameStaffOnly);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage3 = mons.url().value;
   });
@@ -194,7 +199,7 @@ describe("categories", function() {
   it("Maria doesn't see the category", function() {
     maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
-    assert(!maria.isVisible(WastelandCategorySelector));
+    assert(!maria.isVisible(WastelandCategorySelector));   // cmp w (410RKE5) above
   });
 
   it("... and cannot access pages in it", function() {

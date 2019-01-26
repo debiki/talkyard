@@ -221,13 +221,16 @@ describe("sso-real  TyT5HNATS20P", () => {
     mariasBrowser.topbar.clickLogout();
   });
 
-  it("Maria clicks reply, gets redirected to the SSO page", () => {
+  it("Maria clicks reply ...", () => {
     urlBeforeLogin = mariasBrowser.url().value;
     returnToPathQueryEscHash =
         mariasBrowser.urlPathQueryHash() + '__dwHash__post-' + michaelsLastPostNr;
 
     mariasBrowser.rememberCurrentUrl();
     mariasBrowser.topic.clickReplyToPostNr(michaelsLastPostNr);
+  });
+
+  it("... gets redirected to the SSO page", () => {
     mariasBrowser.waitForNewUrl();
   });
 

@@ -108,7 +108,9 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
   it("Clicks 'Load more ...'", () => {
     scrollPosAtBottom = strangersBrowser.getPageScrollY();
     assert(scrollPosAtBottom > 1000); // else test broken
-    strangersBrowser.forumTopicList.clickLoadMore();
+    // The scroll button is already visible, thanks to scrollToBottom() above. Don't
+    // scroll it even more into view — that'd break the scroll position test below (2AD4J0).
+    strangersBrowser.forumTopicList.clickLoadMore({ mayScroll: false });
   });
 
   it("... More topics appear, 1041", () => {
@@ -125,7 +127,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
 
   it("... The scroll position didn't change, 1", () => {
     const scrollPosAfterMoreTopics = strangersBrowser.getPageScrollY();
-    assert.equal(scrollPosAfterMoreTopics, scrollPosAtBottom);
+    assert.equal(scrollPosAfterMoreTopics, scrollPosAtBottom);  // (2AD4J0)
   });
 
   it("Hen scrolls up to topic 1015", () => {

@@ -114,6 +114,7 @@ function runE2eTest {
       echo
       echo "  $cmd"
       echo
+      echo
       echo "Run it with debug flags, and try to fix it:"
       echo
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
@@ -128,6 +129,7 @@ function runE2eTest {
       #  echo
       #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
       #fi
+      echo
       echo
       echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
       echo "(Because the likelihood that a tests fails twice, is then 1/33/33 ~= 1/1000,"
