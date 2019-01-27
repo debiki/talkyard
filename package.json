@@ -67,7 +67,6 @@
     "gulp-typescript": "^3.2.3",
     "gulp-uglify": "3.0.0",
     "gulp-util": "^3.0.8",
-    "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.13.0",
     "http-server": "^0.11.1",
     "lodash": "^4.16.1",
