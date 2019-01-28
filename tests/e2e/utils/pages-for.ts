@@ -332,6 +332,7 @@ function pagesFor(browser) {
         // Elem outside page column (e.g. modal dialog), or there is no page column.
         browser.execute(function(selector) {
           var elem = document.querySelector(selector);
+          // Edge and Safari don't suppor 'smooth' though (as of 2019-01).
           elem.scrollIntoView({ behavior: 'smooth' });
         }, selector);
       }
@@ -537,7 +538,7 @@ function pagesFor(browser) {
       // we just waited for it to go away.  [7UKDWP2] [7JUKDQ4].
       // Happens in FF only (May 2018) — maybe FF is so fast so the first test
       // somehow happens before it has been created?
-      api.waitUntilLoadingOverlayGone();
+      api.waitUntilLoadingOverlayGone();  — maybe remove this fn too?
       */
       browser.click(selector);
     },
@@ -562,7 +563,7 @@ function pagesFor(browser) {
     },
 
 
-    _waitForClickable: function(selector,
+    _waitForClickable: function(selector,  // RENAME? to scrollToAndWaitUntilCanInteract
           opts: { maybeMoves?: boolean, timeoutMs?: number, mayScroll?: boolean,
               okayOccluders?: string, waitUntilNotOccluded?: boolean } = {}) {
       api.waitForVisible(selector, opts.timeoutMs);
@@ -667,14 +668,21 @@ function pagesFor(browser) {
           var middleX = rect.left + rect.width / 2;
           var middleY = rect.top + rect.height / 2;
           var elemAtTopOfCenter = document.elementFromPoint(middleX, middleY);
-          if (!elemAtTopOfCenter)
+          if (!elemAtTopOfCenter) {
+            // Can this happen? Perhaps if elem not on screen?
             return false;
-          if (elem == elemAtTopOfCenter || elem.contains(elemAtTopOfCenter))
+          }
+          if (elem == elemAtTopOfCenter || elem.contains(elemAtTopOfCenter)) {
             return true;
+          }
           var elemIdClass =
               (elemAtTopOfCenter.id ? '#' + elemAtTopOfCenter.id : '') +
               (elemAtTopOfCenter.className ? '.' + elemAtTopOfCenter.className : '');
-          return elemIdClass === okayOccluders;
+          if (elemIdClass === okayOccluders) {
+            return true;
+          }
+          // Return the id/class of the thing that occludes 'elem'.
+          return elemIdClass;
         }, selector, opts.okayOccluders);
 
         dieIf(!result, "Error checking if elem interactable, result: " + JSON.stringify(result));
@@ -684,8 +692,8 @@ function pagesFor(browser) {
           }
           break;
         }
-        browser.pause(200);
         console.log(`Waiting for elem [ ${selector} ] to not be occluded by [ ${result.value} ]...`)
+        browser.pause(200);
       }
     },
 
@@ -746,6 +754,7 @@ function pagesFor(browser) {
           // Instead, delete any previous text (hit backspace 9999 times), before typing
           // the new value.
           const oldValue = browser.getValue(selector);
+          // DO_AFTER 2019-07-01 see if this Chrome weirdness workaround is still needed.
           browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
 
           if (!opts.checkAndRetry) break;
@@ -805,7 +814,7 @@ function pagesFor(browser) {
     },
 
 
-    waitAndGetElemIdWithText: function(selector, regex) {
+    waitAndGetElemIdWithText: (selector, regex): string => {
       if (_.isString(regex)) {
         regex = new RegExp(regex);
       }

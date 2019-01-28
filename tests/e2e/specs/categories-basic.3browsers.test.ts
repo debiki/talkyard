@@ -119,7 +119,9 @@ describe("categories", function() {
   it("Mons logs in, sees the unlisted Wasteland category because he's a moderator", function() {
     mons.topbar.clickLogin();
     mons.loginDialog.loginWithPassword(mons);
-    mons.waitForVisible(WastelandCategorySelector);
+    mons.waitForVisible(DefaultCategorySelector);
+    mons.waitForMyDataAdded();
+    assert(mons.isVisible(WastelandCategorySelector));  // cmp w (27KAK6) below
   });
 
   var urlToMonsPage;
@@ -139,7 +141,7 @@ describe("categories", function() {
     maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
     maria.waitForMyDataAdded();
-    assert(!maria.isVisible(WastelandCategorySelector));
+    assert(!maria.isVisible(WastelandCategorySelector));  // cmp w (27KAK6) above
   });
 
   it("Maria can access pages in the category via direct links though", function() {
@@ -152,7 +154,7 @@ describe("categories", function() {
   it("Owen re-lists the category, sets only-staff-may-post", function() {
     owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
-    owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
+    owen.categoryDialog.fillInFields({ name: WastelandCategoryNameOnlyStaffCreate });
     owen.categoryDialog.setNotUnlisted();
     owen.categoryDialog.openSecurityTab();
     owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
@@ -205,6 +207,7 @@ describe("categories", function() {
   it("Mons sees it and can create a 2nd topic", function() {
     mons.go(idAddress.origin + '/categories');
     mons.waitForVisible(DefaultCategorySelector);
+    mons.waitForMyDataAdded();
     assert(mons.isVisible(WastelandCategorySelector));   // cmp w (410RKE5) below
     mons.forumCategoryList.openCategory(WastelandCategoryNameStaffOnly);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
@@ -214,6 +217,7 @@ describe("categories", function() {
   it("Maria doesn't see the category", function() {
     maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
+    maria.waitForMyDataAdded();
     assert(!maria.isVisible(WastelandCategorySelector));   // cmp w (410RKE5) above
   });
 
