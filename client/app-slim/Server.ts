@@ -1540,7 +1540,7 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // reported whenever a new long-polling-request is started?
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
-      postsRead: Post[], anyOnDone?: () => void) {
+      postsRead: Post[], tourTipsSeen: TourTipsSeen | undefined, anyOnDone?: () => void) {
   const pageId = getPageId();
   if (pageId === EmptyPageId)
     return;
@@ -1557,6 +1557,7 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     lastReadAt: secondsReading > 0 ? nowMsUtc : null,
     secondsReading: secondsReading,
     pagePostNrIdsRead,
+    tourTipsSeen,
   };
   const onDone = !anyOnDone? UseBeacon : function(me?: MyselfPatch) {
     // See [7KABR20] server side.

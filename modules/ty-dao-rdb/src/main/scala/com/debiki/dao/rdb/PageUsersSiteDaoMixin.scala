@@ -104,13 +104,13 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress] = {
+  def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress] = {
     loadReadProgressAndIfHasSummaryEmailed(userId, pageId = pageId)._1
   }
 
 
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
-        : (Option[ReadingProgress], Boolean) = {
+        : (Option[PageReadingProgress], Boolean) = {
     val query = """
       select
         num_seconds_reading,
@@ -151,9 +151,9 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
 
       val lowPostNrsReadBytes: Array[Byte] =
         Option(rs.getBytes("low_post_nrs_read")) getOrElse Array.empty
-      val lowPostNrsRead = ReadingProgress.parseLowPostNrsReadBitsetBytes(lowPostNrsReadBytes)
+      val lowPostNrsRead = PageReadingProgress.parseLowPostNrsReadBitsetBytes(lowPostNrsReadBytes)
 
-      (Some(ReadingProgress(
+      (Some(PageReadingProgress(
         firstVisitedAt = firstVisitedAt,
         lastVisitedAt = getWhenMinutes(rs, "last_visited_at_mins"),
         lastViewedPostNr = rs.getInt("last_viewed_post_nr"),
@@ -166,7 +166,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def upsertReadProgress(userId: UserId, pageId: PageId, progress: ReadingProgress) {
+  def upsertReadProgress(userId: UserId, pageId: PageId, progress: PageReadingProgress) {
     val statement = """
       insert into page_users3 (
         site_id,

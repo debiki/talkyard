@@ -53,7 +53,7 @@ val appDependencies = Seq(
   "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.5",   // newest, as of 18-07-17
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
-  "org.postgresql" % "postgresql" % "42.2.2",
+  "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
   // HikariCP — "A solid high-performance JDBC connection pool at last"
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:

@@ -25,6 +25,7 @@ import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import com.debiki.core.PageParts.BodyNr
 import scala.util.{Failure, Success, Try}
+import play.api.libs.json.JsValue
 
 
 package object core {
@@ -503,8 +504,10 @@ package object core {
     *   would be stored in lastPostNrsRead instead, and only like the 100 most recent.)
     * @param secondsReading Also includes time the user spends re-reading old posts hen has
     *   read already.
+    * @param tourTipsStates Tells how far in each intro tour, the user has clicked. And which
+    *   tips hen has read already.
     */
-  case class ReadingProgress(
+  case class PageReadingProgress(
     firstVisitedAt: When,
     lastVisitedAt: When,
     lastViewedPostNr: PostNr,
@@ -513,7 +516,7 @@ package object core {
     lowPostNrsRead: immutable.Set[PostNr],
     secondsReading: Int) {
 
-    import ReadingProgress._
+    import PageReadingProgress._
 
     require(secondsReading >= 0, "EdE26SRY8")
     require(firstVisitedAt.millis <= lastVisitedAt.millis, "EdE3WKB4U0")
@@ -544,7 +547,7 @@ package object core {
          (if (lowPostNrsRead.contains(BodyNr)) 1 else 0)
 
 
-    def addMore(moreProgress: ReadingProgress): ReadingProgress = {
+    def addMore(moreProgress: PageReadingProgress): PageReadingProgress = {
       copy(
         secondsReading = secondsReading + moreProgress.secondsReading,
         firstVisitedAt = When.earliestOf(firstVisitedAt, moreProgress.firstVisitedAt),
@@ -604,7 +607,7 @@ package object core {
   }
 
 
-  object ReadingProgress {
+  object PageReadingProgress {
     val MaxLastPostsToRemember = 100
     val MaxLowPostNr = 512  // 8 Longs = 8 * 8 bytes * 8 bits/byte = 512 bits = post nrs 1...512
 
@@ -632,6 +635,10 @@ package object core {
       immutable.Set[PostNr](postNrs: _*)
     }
   }
+
+
+  type TourTipsId = String
+  type TourTipsSeen = immutable.Seq[TourTipsId]
 
 
   /** Lets one do requests via the API.

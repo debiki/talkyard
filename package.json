@@ -13,7 +13,7 @@
     "node": ">= 8.0.0"
   },
   "dependencies": {
-    "@types/core-js": "^0.9.43",
+    "@types/core-js": "^2.5.0",
     "@types/jquery": "^3.3.9",
     "@types/keymaster": "^1.6.28",
     "@types/lodash": "^4.14.68",
@@ -31,7 +31,7 @@
     "jquery-resizable": "=1.0.6",
     "keymaster": "^1.6.2",
     "markdown-it": "^8.4.2",
-    "moment": "^2.22.2",
+    "moment": "^2.24.0",
     "react": "^16.8",
     "react-bootstrap": "^0.32.3",
     "react-dom": "^16.8",

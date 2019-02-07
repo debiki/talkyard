@@ -23,7 +23,7 @@ import org.scalatest._
 import java.{util => ju}
 
 
-class ReadingProgressTest extends FreeSpec with MustMatchers {
+class PageReadingProgressTest extends FreeSpec with MustMatchers {
 
 
   "ReadingProgress can" - {
@@ -128,7 +128,7 @@ class ReadingProgressTest extends FreeSpec with MustMatchers {
 
     "convert bits to low-post-nrs-read" - {
       def parse(bytes: Array[Byte]): Set[PostNr] =
-        ReadingProgress.parseLowPostNrsReadBitsetBytes(bytes)
+        PageReadingProgress.parseLowPostNrsReadBitsetBytes(bytes)
 
       "nothing as empty array" in {
         parse(Array.empty) mustBe Set.empty

@@ -1082,15 +1082,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // by calling this endpoint many times, and listing all pages + all post nrs.
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
-    import request.{siteId, theRequester => requester}
+    import request.{siteId, dao, theRequester => requester}
     import ed.server.{WhenFormat, OptWhenFormat}
 
     throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
     throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")
 
-    val pageId = (body \ "pageId").as[PageId]
+    val anyPageId = (body \ "pageId").asOpt[PageId]
     var visitStartedAt = (body \ "visitStartedAt").as[When]
-    val lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
+    val anyLastViewedPostNr = (body \ "lastViewedPostNr").asOpt[PostNr]
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
     val pagePostNrIdsReadJsObjs = (body \ "pagePostNrIdsRead").as[Vector[JsObject]]
@@ -1109,14 +1109,26 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postNrsRead = pagePostNrIdsRead.map(_.postNr)
     val postNrsReadAsSet = postNrsRead.toSet
 
+    val tourTipsSeenJson = (body \ "tourTipsSeen").asOpt[Vector[JsString]]
+    val tourTipsSeen: Option[immutable.Seq[TourTipsId]] = tourTipsSeenJson.map(_.map(_.value))
+    tourTipsSeen.foreach(_ foreach((id: TourTipsId) => {
+      // Check if is ok json.  COULD break out function? Or TourStates class?
+      throwBadRequestIf(id.isEmpty, "TyE4ABKR0", "Bad tour or tips id: Empty string")
+      throwBadRequestIf(!id.isOkVariableName, "TyE4ABKR2", s"Bad tour or tips id: `$id'")
+    }))
+
+    throwForbiddenIf(anyLastViewedPostNr.isDefined && anyPageId.isEmpty,
+      "TyE2AKBF58", "Got a last viewed post nr, but no page id")
+
     play.api.Logger.trace(
-      s"s$siteId, page $pageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
+      o"""s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading,
+        tour and tips seen: $tourTipsSeen""")
 
     val now = globals.now()
-    val lowPostNrsRead: Set[PostNr] = postNrsReadAsSet.filter(_ <= ReadingProgress.MaxLowPostNr)
+    val lowPostNrsRead: Set[PostNr] = postNrsReadAsSet.filter(_ <= PageReadingProgress.MaxLowPostNr)
     val lastPostNrsReadRecentFirst =
-      postNrsRead.filter(_ > ReadingProgress.MaxLowPostNr).reverse.take(
-        ReadingProgress.MaxLastPostsToRemember).distinct
+      postNrsRead.filter(_ > PageReadingProgress.MaxLowPostNr).reverse.take(
+        PageReadingProgress.MaxLastPostsToRemember).distinct
 
     if (visitStartedAt.isAfter(now)) {
       // Bad browser date-time setting?
@@ -1139,8 +1151,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
     }
 
-    val readingProgress =
-      try ReadingProgress(
+    val anyPageReadingProgress = anyLastViewedPostNr map { lastViewedPostNr =>
+      try PageReadingProgress(
         firstVisitedAt = visitStartedAt,
         lastVisitedAt = now,
         lastViewedPostNr = lastViewedPostNr,
@@ -1152,11 +1164,21 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         case ex: Exception =>
           throwBadRequest("EdE5FKW02", ex.toString)
       }
+    }
 
     request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
 
-    request.dao.trackReadingProgressClearNotfsPerhapsPromote(
-        requester, pageId, pagePostNrIdsRead.map(_.postId).toSet, readingProgress)
+    if (anyPageReadingProgress.isDefined) {
+      // This visit happened on an article / discussion page.
+      dieIf(anyPageId.isEmpty, "TyE7KAKR25")
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        requester, anyPageId.get, pagePostNrIdsRead.map(_.postId).toSet, anyPageReadingProgress.get,
+        tourTipsSeen)
+    }
+    else {
+      // This visit happened on an admin page or user profile page.
+      dao.rememberVisitAndTourTipsSeen(requester, lastVisitedAt = now, tourTipsSeen)
+    }
   }
 
 

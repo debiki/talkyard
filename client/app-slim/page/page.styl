@@ -49,6 +49,10 @@ $contextbarHasMinWidthMaxWinWidth = $contextbarMinWidth * 4;
 // doesn't need any scrollbar. (Some js code knows about this [6GKF0WZ])
 body
   overflow: hidden;
+  // Withouth height: 100vh, the heiht is 0, and TalkyardTour is then unable to place things
+  // in the middle of document.body. [27KAH5]
+  width: 100vw;
+  height: 100vh;
 
 .dw-fixed-topbar-wrap,
 .esScrollBtns_fixedBar,

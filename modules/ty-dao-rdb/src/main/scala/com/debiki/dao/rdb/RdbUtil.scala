@@ -387,7 +387,8 @@ object RdbUtil {
     |num_chat_topics_created,
     |num_likes_given,
     |num_likes_received,
-    |num_solutions_provided"""
+    |num_solutions_provided,
+    |tour_tips_seen"""
 
 
   def getUserStats(rs: js.ResultSet): UserStats = {
@@ -419,7 +420,8 @@ object RdbUtil {
       numChatTopicsCreated = rs.getInt("num_chat_topics_created"),
       numLikesGiven = rs.getInt("num_likes_given"),
       numLikesReceived = rs.getInt("num_likes_received"),
-      numSolutionsProvided = rs.getInt("num_solutions_provided"))
+      numSolutionsProvided = rs.getInt("num_solutions_provided"),
+      tourTipsSeen = getOptArrayOfStrings(rs, "tour_tips_seen"))
   }
 
 

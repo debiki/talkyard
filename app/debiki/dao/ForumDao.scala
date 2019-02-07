@@ -457,8 +457,7 @@ object ForumDao {
 
 
   private val ForumIntroText: CommonMarkSourceAndHtml = {
-    val source = o"""Edit this to tell people what this community is about.
-        You can link back to your main website, if any."""
+    val source = o"""[ Edit this to tell people what they can do here. ]"""
     CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
   }
 
@@ -473,8 +472,8 @@ object ForumDao {
   private val WelcomeTopicTitle = "Welcome to this community"
 
   private val welcomeTopic: CommonMarkSourceAndHtml = {
-    val para1Line1 = "Edit this to clarify what this community is about. This first paragraph"
-    val para1Line2 = "is shown to everyone, on the forum homepage."
+    val para1Line1 = "[ Edit this to clarify what this community is about. This first paragraph"
+    val para1Line2 = "is shown to everyone, on the forum homepage. ]"
     val para2Line1 = "Here, below the first paragraph, add details like:"
     val listItem1 = "Who is this community for?"
     val listItem2 = "What can they do or find here?"

@@ -1476,6 +1476,7 @@ function makeStranger(store: Store): Myself {
     restrictedCategories: <Category[]> [],
 
     closedHelpMessages: <any> {},
+    tourTipsSeen: <TourTipsSeen> [],
 
     myCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],
     groupsCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],

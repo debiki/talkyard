@@ -5,9 +5,13 @@
 // so unless they're declared here the TypeScript compiler complains.
 
 
-declare module debiki2 {
-    var ReactActions: any;
-    var ReactStore: any;
-    var StoreListenerMixin: any;
+declare namespace debiki2 {
+  var ReactActions: any;
+  var ReactStore: any;
+  var StoreListenerMixin: any;
+
+  namespace utils {
+    export const maybeRunTour: any;
+  }
 }
 

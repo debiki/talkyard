@@ -292,14 +292,14 @@ class UserStatsAppSpec extends DaoAppSuite() {
         lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         // Posts 5..10 already read, won't be counted again.
-        lowPostNrsRead = Set(5 to ReadingProgress.MaxLowPostNr: _*),
+        lowPostNrsRead = Set(5 to PageReadingProgress.MaxLowPostNr: _*),
         secondsReading = 1000))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 2238,  // 1238 + 1000
         // 1..10 had been read earlier.  -1 because orig-post isn't a chat message (it instead
         // contains the purpose of the chat).
-        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1)
+        numChatMessagesRead = PageReadingProgress.MaxLowPostNr - 1)
 
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe correctStats
@@ -334,7 +334,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
         lastSeenAt = currentTime,
         numSecondsReading = 2438,  // 2238 + 200
         numChatTopicsEntered = 2,
-        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1 + 2)
+        numChatMessagesRead = PageReadingProgress.MaxLowPostNr - 1 + 2)
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe correctStats
     }

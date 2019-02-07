@@ -149,6 +149,8 @@ declare namespace debiki2 {
     var DropdownModal;
     var ModalDropdownButton;
     var FadeInOnClick;
+
+    function maybeRunTour(tour: TalkyardTour);
   }
 
   namespace util {
@@ -163,6 +165,14 @@ declare namespace debiki2 {
   namespace topbar {
     function getTopbarHeightInclShadow(): number;
     const TopBar: any;
+  }
+
+  namespace sidebar {
+    const contextBar: {
+      closeSidebar: () => void;
+      openSidebar: () => void;
+      showAdminGuide: () => void;
+    }
   }
 
   // should be moved to inside the editor bundle

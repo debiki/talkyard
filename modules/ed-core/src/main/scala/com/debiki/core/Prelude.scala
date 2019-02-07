@@ -535,6 +535,7 @@ object Prelude {
 
 
   private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
+  private val VariableNameRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
 
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
@@ -581,6 +582,8 @@ object Prelude {
     def isAToZUnderscoreOnly: Boolean =
       AToZUnderscoreRegex.pattern.matcher(underlying).matches
 
+    def isOkVariableName: Boolean =
+      VariableNameRegex.pattern.matcher(underlying).matches
   }
 
   def charIsAzNumOrUnderscore(c: Char): Boolean =

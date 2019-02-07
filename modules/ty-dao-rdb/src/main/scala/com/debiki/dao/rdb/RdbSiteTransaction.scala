@@ -163,6 +163,12 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def makeSqlArrayOfStringsUnique(values: Iterable[String]): js.Array = {
+    val distinctValues = values.toVector.sorted.distinct
+    theOneAndOnlyConnection.createArrayOf("varchar", distinctValues.toArray[Object])
+  }
+
+
   // COULD move to new superclass?
   def runQuery[R](query: String, values: List[AnyRef], resultSetHandler: js.ResultSet => R): R = {
     db.query(query, values, resultSetHandler)(theOneAndOnlyConnection)

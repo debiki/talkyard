@@ -1288,6 +1288,11 @@ const AdvancedSettings = createFactory({
 const LegalSettings = createFactory({
   displayName: 'LegalSettings',
 
+  componentDidMount: function() {
+    const store: Store = this.props.store;
+    utils.maybeRunTour(staffTours.adminArea(store.me));
+  },
+
   render: function() {
     const props = this.props;
     const currentSettings: Settings = props.currentSettings;

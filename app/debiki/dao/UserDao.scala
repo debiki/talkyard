@@ -18,12 +18,12 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.EdHttp.{throwForbidden, throwForbiddenIf, throwBadRequest, throwNotFound}
+import debiki.EdHttp.{throwBadRequest, throwForbidden, throwForbiddenIf, throwNotFound}
 import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
-import play.api.libs.json.JsArray
+import play.api.libs.json.{JsArray, JsObject}
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
@@ -994,8 +994,8 @@ trait UserDao {
     * And clear any notifications about posts hen has now seen.
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
-        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: ReadingProgress)
-        : ReadMoreResult = {
+        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: PageReadingProgress,
+        anyTourTipsSeen: Option[TourTipsSeen]): ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
@@ -1049,7 +1049,8 @@ trait UserDao {
         numDiscourseTopicsEntered = numMoreDiscourseTopicsEntered,
         numDiscourseRepliesRead = numMoreDiscourseRepliesRead,
         numChatTopicsEntered = numMoreChatTopicsEntered,
-        numChatMessagesRead = numMoreChatMessagesRead))
+        numChatMessagesRead = numMoreChatMessagesRead,
+        tourTipsSeen = anyTourTipsSeen))
 
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.  (5ABKR20L)
@@ -1076,6 +1077,21 @@ trait UserDao {
 
       ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen)
     }
+  }
+
+
+  def rememberVisitAndTourTipsSeen(user: Participant, lastVisitedAt: When,
+        anyTourTipsSeen: Option[TourTipsSeen]): ReadMoreResult = {
+    require(user.isMember, "EdE8KFUW2") // see above [8PLKW46]
+    readWriteTransaction { tx =>
+      val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
+      val statsAfter = statsBefore.addMoreStats(UserStats(
+        userId = user.id,
+        lastSeenAt = lastVisitedAt,
+        tourTipsSeen = anyTourTipsSeen))
+      tx.upsertUserStats(statsAfter)
+    }
+    ReadMoreResult(numMoreNotfsSeen = 0)
   }
 
 

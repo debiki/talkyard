@@ -114,7 +114,7 @@ trait SummaryEmailsDao {
           stats.lastSummaryEmailAt.exists(_.millis > topic.meta.createdAt.getTime)
         }
 
-        val readingProgresses: Seq[(PagePathAndMeta, (Option[ReadingProgress], Boolean))] =
+        val readingProgresses: Seq[(PagePathAndMeta, (Option[PageReadingProgress], Boolean))] =
           readOnlyTransaction { tx =>
             COULD_OPTIMIZE // batch load all at once, not one at a time
             topTopics map { topic =>

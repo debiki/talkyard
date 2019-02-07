@@ -246,8 +246,8 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
     "load and save ReadingProgress" - {
 
-      var progressLowNrs: ReadingProgress = null
-      var progressHighNrs: ReadingProgress = null
+      var progressLowNrs: PageReadingProgress = null
+      var progressHighNrs: PageReadingProgress = null
 
       "empty ReadingProgress" in {
         dao.readWriteTransaction { transaction =>

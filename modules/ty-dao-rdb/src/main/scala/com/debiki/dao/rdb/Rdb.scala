@@ -17,10 +17,11 @@
 
 package com.debiki.dao.rdb
 
-import _root_.java.{util => ju, io => jio}
+import _root_.java.{io => jio, util => ju}
 import _root_.com.debiki.core._
 import _root_.com.debiki.core.Prelude._
-import java.{sql => js, lang => jl}
+import _root_.scala.collection.immutable
+import java.{lang => jl, sql => js}
 import javax.{sql => jxs}
 
 
@@ -94,6 +95,15 @@ object Rdb {
       d2ts(new ju.Date(when.unixMillis))
     }).getOrElse(NullTimestamp)
   }
+
+  implicit class PimpOptionWithNullJsValue(opt: Option[play.api.libs.json.JsValue]) {
+    def orNullJson: AnyRef = opt.getOrElse(Null(js.Types.OTHER))
+  }
+
+  /*
+  implicit class PimpOptionWithNullArray(opt: Option[ ? ]) {
+    def orNullArray: AnyRef = opt.getOrElse(Null(js.Types.ARRAY))
+  }*/
 
   implicit class PimpStringWithNullIfBlank(string: String) {
     def trimNullVarcharIfBlank: AnyRef = {
@@ -265,6 +275,13 @@ object Rdb {
     val timestamp = rs.getTimestamp(column, calendarUtcTimeZone)
     if (timestamp eq null) None
     else Some(When.fromMillis(timestamp.getTime))
+  }
+
+  def getOptArrayOfStrings(rs: js.ResultSet, column: String): Option[immutable.Seq[String]] = {
+    val sqlArray: js.Array = rs.getArray(column)
+    if (sqlArray eq null) return None
+    val javaArray = sqlArray.getArray.asInstanceOf[Array[String]]
+    Some(javaArray.to[Vector])
   }
 
   def isUniqueConstrViolation(sqlException: js.SQLException): Boolean = {
@@ -581,6 +598,13 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
         case l: jl.Double => pstmt.setDouble(bindPos, l.doubleValue)
         case b: jl.Boolean => pstmt.setBoolean(bindPos, b.booleanValue)
         case s: String => pstmt.setString(bindPos, s)
+        case a: org.postgresql.jdbc.PgArray =>
+          pstmt.setArray(bindPos, a)
+        case j: play.api.libs.json.JsValue =>
+          val jsonObj = new org.postgresql.util.PGobject
+          jsonObj.setType("jsonb")
+          jsonObj.setValue(j.toString)
+          pstmt.setObject(bindPos, jsonObj)
         case t: js.Time =>
           die("DwE96SK3X8", "Use Timestamp not Time")
         case t: js.Timestamp =>
