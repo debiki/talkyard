@@ -283,7 +283,7 @@ prod-images: \
 	s/build-prod-images.sh
 
 
-tag-and-push-latest-images:  tag-latest-images  push-tagged-images  _print_pus_git_tag_command
+tag-and-push-latest-images:  tag-latest-images  push-tagged-images  _print_push_git_tag_command
 
 
 tag-latest-images:
@@ -312,7 +312,7 @@ push-tagged-images:
 	@echo
 
 
-_print_pus_git_tag_command:
+_print_push_git_tag_command:
 	@echo "Next:"
 	@echo ""
 	@echo "    make push-tag-to-git tag=$(tag)"
