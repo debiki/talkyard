@@ -80,7 +80,7 @@ export const TopBar = createComponent({
   },
 
   getThisRect: function() {
-    return ReactDOM.findDOMNode(this).getBoundingClientRect();
+    return (<HTMLElement> ReactDOM.findDOMNode(this)).getBoundingClientRect();
   },
 
   onChange: function() {

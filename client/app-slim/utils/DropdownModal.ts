@@ -51,7 +51,7 @@ export const ModalDropdownButton = createComponent({
   },
 
   openDropdown: function() {
-    var rect = ReactDOM.findDOMNode(this.refs.openButton).getBoundingClientRect();
+    var rect = (<HTMLElement> ReactDOM.findDOMNode(this.refs.openButton)).getBoundingClientRect();
     this.setState({ modalCreated: true, isOpen: true,
       buttonX: this.props.pullLeft ? rect.left : rect.right, buttonY: rect.bottom });
   },

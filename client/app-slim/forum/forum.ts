@@ -768,7 +768,7 @@ const LoadAndListTopics = createFactory({
     orderOffset.topicFilter = nextProps.queryParams.filter;
     if (isNewView) {
       this.setState({
-        minHeight: ReactDOM.findDOMNode(this).clientHeight,
+        minHeight: (<HTMLElement> ReactDOM.findDOMNode(this)).clientHeight,
         topics: null,
         showLoadMoreButton: false
       });

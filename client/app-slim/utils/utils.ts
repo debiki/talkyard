@@ -182,7 +182,7 @@ export function getPageRect(): ClientRect {
 
 
 export function reactGetRefRect(reactRef): Rect {
-  return cloneRect(ReactDOM.findDOMNode(reactRef).getBoundingClientRect());
+  return cloneRect((<HTMLElement> ReactDOM.findDOMNode(reactRef)).getBoundingClientRect());
 }
 
 
