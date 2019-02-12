@@ -4770,6 +4770,12 @@ function pagesFor(browser) {
         if (data.type) {
           api.editor.setTopicType(data.type);
         }
+        api.complex.saveTopic(data);
+      },
+
+      saveTopic: function(data: { title: string, body: string,
+            matchAfter?: boolean, titleMatchAfter?: String | boolean,
+            bodyMatchAfter?: String | boolean, resultInError?: boolean }) {
         api.rememberCurrentUrl();
         api.editor.save();
         if (!data.resultInError) {

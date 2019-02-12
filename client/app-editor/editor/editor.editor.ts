@@ -613,6 +613,7 @@ export const Editor = createComponent({
           hidden: isHidden,
         };
       }
+      draft = draft || getFromSessionStorage(draftLocator),
       this.setState({
         draft,
         draftStatus: DraftStatus.NothingHappened,
@@ -878,12 +879,25 @@ export const Editor = createComponent({
       return;
     }
 
-    const draftToSave = { ...draftOldOrEmpty, text, title };
+    const draftToSave: Draft = { ...draftOldOrEmpty, text, title };
+
+    const saveInSessionStorage = !(<Store> this.state.store).me.isLoggedIn;
+
+    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
+        saveInSessionStorage ? "temp in browser" : "server side"));
+
+    if (saveInSessionStorage) {
+      putInSessionStorage(draftToSave.forWhat, draftToSave);
+      if (callbackThatClosesEditor) {
+        callbackThatClosesEditor();
+      }
+      return;
+    }
+
     this.setState({
       draftStatus: callbackThatClosesEditor ? DraftStatus.SavingBig : DraftStatus.SavingSmall,
     });
 
-    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
     this.isSavingDraft = true;
     Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
       this.isSavingDraft = false;
@@ -1066,10 +1080,16 @@ export const Editor = createComponent({
   },
 
   saveDraftClearAndClose: function() {
-    this.saveDraftNow(this.clearAndClose);
+    this.saveDraftNow(() => this.clearAndClose({ keepDraft: true }));
   },
 
-  clearAndClose: function() {
+  clearAndClose: function(ps: { keepDraft?: true } = {}) {
+    if (!ps.keepDraft) {
+      const anyDraft: Draft = this.state.draft;
+      if (anyDraft)
+        removeFromSessionStorage(anyDraft.forWhat);
+    }
+
     this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,

@@ -40,7 +40,7 @@ interface TestSettings {
 
 
 /*
-interface SiteData {
+interface SiteData {   [3SD5PB7]
   meta: SiteMeta;
   settings: {
     companyFullName: string,

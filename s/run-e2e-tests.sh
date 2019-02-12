@@ -222,6 +222,7 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only private-chat.3browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-not-logged-in $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-new-topic.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-reply-edit-dir-msg.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-chat-adv-ed.2browsers $args

@@ -24,7 +24,43 @@ const stupidLocalStorage = {};
 const stupidSessionStorage = {};
 
 
+/**
+ * JSON.stringify saves keys in the order they were added, which tends to be rather
+ * random, breaking lookup when getting something from session or local storage
+ * (if the key is a stringified object).
+ */
+export function stableStringify(obj: any): string {
+  return stableStringifySkipNulls(obj, false);
+}
+
+
+function stableStringifySkipNulls(obj: any, skipNulls: boolean): string {
+  // @ifdef DEBUG
+  dieIf(!obj, "TyE7AKBR02")
+  // @endif
+  if (!_.isObject(obj)) return obj;
+  const keys = Object.keys(obj);
+  let okayKeys;
+  if (skipNulls) {
+    okayKeys = [];
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      const value = obj[key];
+      if (value === undefined || value === null)
+        continue;
+      okayKeys.push(key);
+    }
+  }
+  else {
+    okayKeys = keys;
+  }
+  const keysSorted = okayKeys.sort();
+  return JSON.stringify(obj, keysSorted);
+}
+
+
 export function putInLocalStorage(key, value) {
+  key = stableStringifySkipNulls(key, true);
   // In Safari, private browsing mode, there's no local storage, so setItem() throws an error.
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -37,6 +73,7 @@ export function putInLocalStorage(key, value) {
 
 
 export function putInSessionStorage(key, value) {
+  key = stableStringifySkipNulls(key, true);
   // In Safari, private browsing mode, there's no session storage, so setItem() throws an error.
   try {
     sessionStorage.setItem(key, JSON.stringify(value));
@@ -49,11 +86,13 @@ export function putInSessionStorage(key, value) {
 
 
 export function getFromLocalStorage(key) {
+  key = stableStringifySkipNulls(key, true);
   return getFromStorage(true, stupidLocalStorage, key);
 }
 
 
 export function getFromSessionStorage(key) {
+  key = stableStringifySkipNulls(key, true);
   return getFromStorage(false, stupidSessionStorage, key);
 }
 
@@ -96,9 +135,18 @@ function getFromStorage(useLocal: boolean, stupidStorage, key) {
 
 // There's a server side version (in ../../server/) that throws a helpful error.
 export function removeFromLocalStorage(key) {
-  try { localStorage.removeItem(key); }
+  removeFromStorage(key, true);
+}
+
+export function removeFromSessionStorage(key) {
+  removeFromStorage(key, false);
+}
+
+function removeFromStorage(key, useLocal: boolean) {
+  key = stableStringifySkipNulls(key, true);
+  try { (useLocal ? localStorage : sessionStorage).removeItem(key); }
   catch (ignored) {}
-  delete stupidLocalStorage[key];
+  delete ( useLocal ? stupidLocalStorage : stupidSessionStorage)[key];
 }
 
 // From here: http://stackoverflow.com/a/7616484/694469

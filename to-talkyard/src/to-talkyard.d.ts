@@ -1,7 +1,7 @@
 /// <reference path="../../client/app-slim/constants.ts" />
 
 
-type SiteData = any;
+type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
 
 
 interface PageToAdd {
