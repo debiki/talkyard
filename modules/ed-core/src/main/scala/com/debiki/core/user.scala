@@ -1553,6 +1553,13 @@ case class UserStats(
 
     import When.{latestOf, anyLatestOf, earliestNot0, anyEarliestNot0}
 
+    // Don't let the newer tourTipsSeen overwrite the old one; instead, merge them together.
+    val allTourTipsSeenVec =
+      moreStats.tourTipsSeen.getOrElse(Vector.empty) ++ this.tourTipsSeen.getOrElse(Vector.empty)
+    val allTourTipsSeenVecOpt =
+      if (allTourTipsSeenVec.isEmpty) None
+      else Some(allTourTipsSeenVec.sorted.distinct)
+
     // Dupl code, also in SQL [7FKTU02], perhaps add param `addToOldstat: Boolean` to SQL fn?
     copy(
       lastSeenAt = latestOf(lastSeenAt, moreStats.lastSeenAt),
@@ -1585,7 +1592,7 @@ case class UserStats(
       numLikesGiven = numLikesGiven + moreStats.numLikesGiven,
       numLikesReceived = numLikesReceived + moreStats.numLikesReceived,
       numSolutionsProvided = numSolutionsProvided + moreStats.numSolutionsProvided,
-      tourTipsSeen = moreStats.tourTipsSeen orElse this.tourTipsSeen)
+      tourTipsSeen = allTourTipsSeenVecOpt)
     }
 
 

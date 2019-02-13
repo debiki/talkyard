@@ -50,6 +50,7 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
   });
 
   it("the forum admin tour works", () => {
+    assertTourSoonAppears(browser, true);
     console.log('Step 1');
     browser.waitAndClick('.s_Tour-Step-1 .s_Tour_D_Bs_NextB');
     console.log('Step 2');
@@ -117,12 +118,27 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser.waitForNewUrl();
     browser.assertTextMatches('h1', /New tpc ttl/);
     browser.assertTextMatches('#post-1', /New tpc txt/);
-
-    // Logout, to delete cookies, so subsequent create-site-at-same-URL tests won't fail
-    // because of them.  (6HRWJ3)
-    pages.topbar.clickLogout();
   });
 
+
+  it("the forum intro tour is shown just once", () => {
+    browser.go('/');
+    assertTourSoonAppears(browser, false);
+  });
+
+  it("... and the admin area tour, just once, it too", () => {
+    browser.topbar.clickGoToAdmin();
+    assertTourSoonAppears(browser, false);
+  });
+
+  function assertTourSoonAppears(browser, shoulBeVisible: boolean) {
+    // Wait for the tour to appear. (There's no other way to do that right now,
+    // than just waiting for a while. It appears within about a second.
+    // Note that this is also used to test that the tour *does* appear fast enough,
+    // not only that it does *not* appear — to test, that this test, works.)
+    browser.pause(3000);
+    assert.equal(browser.isVisible('.s_Tour'), shoulBeVisible);
+  }
 
 });
 
