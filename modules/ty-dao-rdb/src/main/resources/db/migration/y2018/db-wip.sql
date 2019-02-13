@@ -1,3 +1,25 @@
+-- Ooops, don't run tours for old users:
+update user_stats3 us
+  set tour_tips_seen ='{"fa", "aa"}'
+  where us.user_id >= 100
+    and exists (
+    select 1 from users3 u
+    where u.site_id = us.site_id and u.user_id = us.user_id and u.is_admin);
+
+UPDATE 639
+edm=> select site_id, user_id, tour_tips_seen from user_stats3 where site_id = 3 and user_id = 226;
+ site_id | user_id | tour_tips_seen
+---------+---------+----------------
+       3 |     226 | {fa,aa}
+
+-- Looks ok?:
+select u.site_id, u.user_id, us.tour_tips_seen
+from users3 u left join user_stats3 us
+  on u.site_id = us.site_id
+  and u.user_id = us.user_id
+where u.user_id > -13 and u.user_id < 109 and u.site_id > 0;
+---------------------
+
 
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?
