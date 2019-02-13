@@ -39,6 +39,11 @@ let tourElem;
 let startTour;
 
 export function maybeRunTour(tour: TalkyardTour) {
+  // Currently the e2e tests don't expect any tours to start, so skip them, if is test site.
+  if (location.hostname.startsWith('e2e-test-') &&
+      !getFromLocalStorage('runToursAlthoughE2eTest'))
+    return;
+
   const tourIdsSeen = tour.forWho.tourTipsSeen;
   const thisTourSeen = tourIdsSeen.indexOf(tour.id) >= 0;
   if (thisTourSeen)
@@ -259,7 +264,7 @@ function TalkyardTour() {
   const prevStep = tour.steps[stepIx - 1];
   const canGoBack = prevStep && !prevStep.waitForClick;
 
-  return r.div({ className: 's_Tour' },
+  return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
     r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
         onClick: maybeGoNextOnElemClick }),  //, style: highlightStyle }),
     r.div({ className: 's_Tour_ClickBlocker-Left-All' }),

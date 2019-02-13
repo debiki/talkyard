@@ -41,11 +41,64 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     browser.go(link);
     browser.waitAndClick('#e2eContinue');
+
+    browser.execute(function() {
+      localStorage.setItem('runToursAlthoughE2eTest', 'true');
+    });
+
     pages.createSomething.createForum("Password Forum Title");
+  });
+
+  it("the forum admin tour works", () => {
+    console.log('Step 1');
+    browser.waitAndClick('.s_Tour-Step-1 .s_Tour_D_Bs_NextB');
+    console.log('Step 2');
+    browser.waitAndClick('.s_Tour-Step-2 .s_Tour_D_Bs_NextB');
+    console.log('Step 3');
+    browser.waitAndClick('.s_Tour-Step-3 .s_Tour_D_Bs_NextB');
+    console.log('Step 4');
+    browser.waitAndClick('.s_Tour-Step-4 .s_Tour_D_Bs_NextB');
+    console.log('Step 5');
+    browser.waitAndClick('#e2eViewCategoriesB');
+    console.log('Step 6');
+    browser.waitAndClick('.s_Tour-Step-6 .s_Tour_D_Bs_NextB');
+    console.log('Step 7');
+    browser.waitAndClick('.s_Tour-Step-7 .s_Tour_D_Bs_NextB');
+    console.log('Step 8');
+    browser.waitAndClick('.esAvtrName_name');
+    console.log('Step 9');
+    browser.waitAndClick('.esMyMenu_admin [href]');
+  });
+
+  it("the admin area admin tour works", () => {
+    console.log('Step 1');
+    browser.waitAndClick('.s_Tour-Step-1 .s_Tour_D_Bs_NextB');
+    console.log('Step 2');
+    browser.waitAndClick('#e2eAA_Ss_LoginL');
+    console.log('Step 3');
+    browser.waitAndClick('.s_Tour-Step-3 .s_Tour_D_Bs_NextB');
+    console.log('Step 4');
+    browser.waitAndClick('.e_RvwB');
+    console.log('Step 5');
+    browser.waitAndClick('.s_Tour-Step-5 .s_Tour_D_Bs_NextB');
+    console.log('Step 6');
+    browser.waitAndClick('.e_UsrsB');
+    console.log('Step 7');
+    browser.waitAndClick('.e_InvitedUsB');
+    console.log('Step 8');
+    browser.waitAndClick('.s_Tour-Step-8 .s_Tour_D_Bs_NextB');
+    console.log('Step 9');
+    browser.waitAndClick('.s_Tour-Step-9 .s_Tour_D_Bs_NextB');
+    console.log('Step 10');
+    browser.waitAndClick('.s_Tour-Step-10 .s_Tour_D_Bs_NextB');
   });
 
   // Done with create site stuff. But let's test a little bit more, so we know the forum can
   // actually be used, once it's been created: Edit forum title and post a topic.
+
+  it("goes back to the topic list", () => {
+    browser.go('/');
+  });
 
   it("the forum works: can edit forum title", () => {
     // --- Edit title

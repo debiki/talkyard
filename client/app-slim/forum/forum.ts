@@ -672,21 +672,14 @@ const LoadAndListTopics = createFactory({
       return;
     }
 
-    const store: Store = this.props.store;
-    const me: Myself = store.me;
-    if (me.isAdmin && !this.forumTourStarted) {
-      this.forumTourStarted = true;
-      debiki2.staffbundle.loadStaffTours((tours) => {
-        if (this.isGone) return;
-        debiki2.utils.maybeRunTour(tours.forum(me));
-      });
-    }
+    this.maybeRunTour();
 
     if (!this.canUseTopicsInScriptTag())
       return;
 
     // We're still using a copy of the topics list in the store, so update the copy,
     // maybe new user-specific data has been added.
+    const store: Store = this.props.store;
     const category: Category = this.props.activeCategory;
     let topics: Topic[];
     if (category) {
@@ -718,6 +711,19 @@ const LoadAndListTopics = createFactory({
     // This happens when navigating back to the lates-topics list after having shown
     // all categories (plus on initial page load).
     this.loadTopics(this.props, false);
+    this.maybeRunTour();
+  },
+
+  maybeRunTour: function() {
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    if (me.isAdmin && !this.tourMaybeStarted) {
+      this.tourMaybeStarted = true;
+      debiki2.staffbundle.loadStaffTours((tours) => {
+        if (this.isGone) return;
+        debiki2.utils.maybeRunTour(tours.forum(me));
+      });
+    }
   },
 
   componentWillReceiveProps: function(nextProps) {
