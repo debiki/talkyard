@@ -195,7 +195,7 @@ function runAllE2eTests {
   echo "Running all end-to-end tests..."
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only all-links $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-password $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-password-run-admin-intro-tours $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-gmail-and-email-notf $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-facebook $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-github-oauth-uppercase-email $args

@@ -439,6 +439,8 @@ site settings:
     num to allow:
 
 admin -
+  new admin intro tours:
+    - create-site-password-run-admin-intro-tours  TyT7BAWFPK9
   user page:  [5RBKWEF8]
     - admin-user-approve-reject.2browsers.test.ts  [TyT5KHEWQ2]
     - admin-user-staff.2browsers.test.ts  [TyT2GKFI594]
