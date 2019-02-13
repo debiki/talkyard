@@ -1,12 +1,3 @@
-alter table user_stats3 add column tour_tips_seen varchar[];
-alter table user_stats3 add constraint userstats_c_tourtipsseen_len check (
-    pg_column_size(tour_tips_seen) <= 400);
-
---alter table user_stats3 add constraint userstats_c_guest_tour_null check (user_id > 0 or tour_tips_states is null);
--- Right now, groups have no trust level. [1WBK5JZ0]
---alter table user_stats3 add constraint userstats_c_group_tour_null check (trust_level is not null or tour_tips_states is null);
-
-
 
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?

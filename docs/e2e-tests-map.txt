@@ -525,7 +525,7 @@ draft: [7WKABZP2]
   delete:
           - drafts-delete.test.ts  TyT5BKRQ0
   works also if not logged in:
-          - drafts-guest-reply.2browsers.test.ts  TyT2ABSD73
+          - drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
 
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit

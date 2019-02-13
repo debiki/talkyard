@@ -1001,7 +1001,7 @@ trait UserDao {
     require(user.isMember, "EdE8KFUW2")
 
     // Don't track system, superadmins, deleted users — they aren't real members.
-    if (MaxGuestId < user.id && user.id < LowestTalkToMemberId)
+    if (user.id < LowestTalkToMemberId)
       return ReadMoreResult(0)
 
     COULD_OPTIMIZE // use Dao instead, so won't touch db. Also: (5ABKR20L)
@@ -1083,6 +1083,8 @@ trait UserDao {
   def rememberVisitAndTourTipsSeen(user: Participant, lastVisitedAt: When,
         anyTourTipsSeen: Option[TourTipsSeen]): ReadMoreResult = {
     require(user.isMember, "EdE8KFUW2") // see above [8PLKW46]
+    if (user.id < LowestTalkToMemberId)
+      return ReadMoreResult(0)
     readWriteTransaction { tx =>
       val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
