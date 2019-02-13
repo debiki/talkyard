@@ -1,6 +1,6 @@
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 export function putInLocalStorage(key, value) {
@@ -21,6 +21,10 @@ export function getFromSessionStorage(key): string {
 
 export function removeFromLocalStorage(key) {
   throw new Error('removeFromLocalStorage called server side [DwE8PUMK2]');
+}
+
+export function removeFromSessionStorage(key) {
+  throw new Error('removeFromSessionStorage called server side [TyE8PM26B]');
 }
 
 export function getPageScrollableRect(): ClientRect {

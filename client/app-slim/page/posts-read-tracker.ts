@@ -327,7 +327,8 @@ function trackReadingActivity() {
       lastReportedToServerAtMs = Date.now();
     });
 
-    // (Don't do this inside the callback — that could overwrite values set while req in-flight.)
+    // (Don't do this inside the callback above — that could overwrite values
+    // that got set while the request was in-flight.)
     unreportedSecondsReading = 0;
     unreportedPostsRead = [];
     firstUnreportedPostReadAtMs = undefined;

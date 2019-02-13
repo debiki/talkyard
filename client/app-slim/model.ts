@@ -536,7 +536,7 @@ interface TalkyardTourStep {
   doBefore?: () => void;
   pauseBeforeMs?: number;
   title: string;
-  text: string;
+  text: string;  // or React element also fine
   nextTitle?: string;
   placeAt: string;
   placeHow?: PlaceHow,

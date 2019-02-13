@@ -27,7 +27,7 @@ const r = ReactDOMFactories;
 
 export const staffTours: StaffTours = {
   adminArea: function(me: Myself) { return {
-    id: 'aa',  // for Admins, the Admin area
+    id: 'aa',  // 'a'dmin area intro, for 'a'dmins
     forWho: me,
     steps: [{
       doBefore: () => {
@@ -100,7 +100,7 @@ export const staffTours: StaffTours = {
     }],
   }},
   forum: function(me: Myself) { return {
-    id: 'af',  // for Admins, the Forum section
+    id: 'fa',  // 'f'orum intro tour, for 'a'dmins
     forWho: me,
     steps: [{
       doBefore: () => {
@@ -156,7 +156,7 @@ export const staffTours: StaffTours = {
     }, {
       pauseBeforeMs: 200,
       title: "Admin area link",
-      text: "Click now, to go to the admin area.",
+      text: "Click now — let's go to the admin area.",
       placeAt: '.esMyMenu_admin',
       placeHow: PlaceHow.ToTheLeft,
       waitForClick: true,

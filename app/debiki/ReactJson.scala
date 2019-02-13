@@ -660,6 +660,7 @@ class JsonMaker(dao: SiteDao) {
         ThreatLevel.HopefullySafe
     }
 
+    COULD_OPTIMIZE // load stats together with other user fields, in the same db request
     val anyStats = tx.loadUserStats(user.id)
     val tourTipsSeenJson: Seq[JsString] = anyStats flatMap { stats: UserStats =>
       stats.tourTipsSeen.map((theTourTipsSeen: TourTipsSeen) =>

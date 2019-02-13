@@ -5,7 +5,9 @@
 
 .s_Tour_Highlight
   position: fixed;
-  border: 200vmax solid rgba(0,0,0,0.4);
+  // This, together with some padding, paints a transparent circle at
+  // position left,top, surrounded by a trasnparent dark background.
+  border: 200vmax solid rgba(0, 0, 0, 0.4);
   border-radius: 50%;
   transform: translate(-50%, -50%);
 
@@ -36,14 +38,13 @@
   position: fixed;
   padding: 17px;  // [4BQWTJ0]
   width: 360px;
-  max-width: 80vw;
-  background: hsl(0,0%,98%);
+  max-width: 90vw;
+  background: hsl(0, 0%, 98%);
   z-index: 1;
 
 .s_Tour_D_Ttl
   margin: 0 0 10px;
   font-size: 19px;
-
 
 .s_Tour_D_Txt
   font-size: 15px;

@@ -25,7 +25,6 @@ import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import com.debiki.core.PageParts.BodyNr
 import scala.util.{Failure, Success, Try}
-import play.api.libs.json.JsValue
 
 
 package object core {
@@ -504,8 +503,6 @@ package object core {
     *   would be stored in lastPostNrsRead instead, and only like the 100 most recent.)
     * @param secondsReading Also includes time the user spends re-reading old posts hen has
     *   read already.
-    * @param tourTipsStates Tells how far in each intro tour, the user has clicked. And which
-    *   tips hen has read already.
     */
   case class PageReadingProgress(
     firstVisitedAt: When,
@@ -640,6 +637,19 @@ package object core {
   type TourTipsId = String
   type TourTipsSeen = immutable.Seq[TourTipsId]
 
+  def anyOkTourTipsIdError(id: TourTipsId): Option[ErrorMessageCode] = {
+    // Better require ids to be variable names, to avoid any surprises later.
+    // The ids are incl in each user info response, so should be short, like 2 or 3 chars.
+    // Maybe later there'll be plugins with their own tours? It'd be good if they can have
+    // longer names, so there won't be name clashes.
+    val MaxLength = 30
+    def EMC = ErrorMessageCode
+    Some(
+      if (id.isEmpty) EMC("TyE4ABKR0", "Bad tour or tips id: Empty string")
+      else if (!id.isOkVariableName) EMC("TyE4ABKR2", s"Bad tour or tips id: `$id'")
+      else if (id.length > MaxLength) EMC("TyE3ABKS52", s"Tour/tips id longer than $MaxLength: `$id'")
+      else return None)
+  }
 
   /** Lets one do requests via the API.
     *

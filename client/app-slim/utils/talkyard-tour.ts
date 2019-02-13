@@ -61,12 +61,11 @@ export function maybeRunTour(tour: TalkyardTour) {
 function TalkyardTour() {
   const [tour, setTour] = React.useState<TalkyardTour>(null);
   const [stepIx, setStepIx] = React.useState(0);
-  //const [elemVisible, setElemVisible] = React.useState(false);
   const tourHighlightRef = React.useRef(null);
   const tourDialogRef = React.useRef(null);
-  let beforeThingDone = false;
-
   React.useEffect(waitForAndScrollToElemThenShowDialog);
+
+  let beforeThingDone = false;
 
   if (!startTour) startTour = (tour: TalkyardTour) => {
     setTour(tour);
@@ -84,25 +83,21 @@ function TalkyardTour() {
     if (!tour) return;
     if (!step) return;
     if (step.doBefore && !beforeThingDone) {
-      step.doBefore();
       beforeThingDone = true;
+      step.doBefore();
     }
-
-    /*
-    if (step.pauseBeforeMs) {
-      setPauseDone(stepIx);
-      setTimeout(goToNextStep, anyPauseMs);
-      return;
-    } */
-    const placeAtElem: HTMLElement = $first(step.placeAt);  // [27KAH5]
 
     // Remove highlighting, until new elem appears and done scrolling.
     const highlightElem: HTMLElement = tourHighlightRef.current;
-    const dialogElem: HTMLElement = tourDialogRef.current;
     highlightElem.style.padding = '0px';
-    dialogElem.style.visibility = 'hidden';  // not display:none — that'd mess up the dialog's
-                                             // positioning, which needs its size.
 
+    // Hide the dialog, until the elem to place it at, appears, and any pause is over.
+    // Don't use display:none — that'd mess up the position calc code, which needs
+    // the dialog size.
+    const dialogElem: HTMLElement = tourDialogRef.current;
+    dialogElem.style.visibility = 'hidden';
+
+    const placeAtElem: HTMLElement = $first(step.placeAt);  // [27KAH5]
     if (!placeAtElem) {
       setTimeout(waitForAndScrollToElemThenShowDialog, 100);
       return;
@@ -110,27 +105,18 @@ function TalkyardTour() {
 
     const isScrolling = utils.scrollIntoViewInPageColumn(
         placeAtElem, { marginTop: 90, marginBottom: 250 });
-    //if (isScrolling) {
-      // Sometimes the first scroll somehow doesn't scroll all the way.
-      //setTimeout(waitForAndScrollToElemThenShowDialog, 500);
-      // For now. Currently there's no scroll-done event.
-      //utils.scrollIntoViewInPageColumn(placeAtElem, { marginTop: 140, marginBottom: 500 });
-      const delayMs = (step.pauseBeforeMs || 0) + (isScrolling ? 500 : 0);
-      setTimeout(showDialog, delayMs);
-    //}
-    //else {
-      //showDialog();
-    //}
+    // For now. Currently there's no scroll-done event.
+    const delayMs = (step.pauseBeforeMs || 0) + (isScrolling ? 500 : 0);
+    setTimeout(showDialog, delayMs);
   }
 
   function showDialog() {
     const placeAtElem: HTMLElement = $first(step.placeAt);  // [27KAH5]
     const highlightElem: HTMLElement = tourHighlightRef.current;
 
-    // Does nothing if already visible.
-    //setElemVisible(true);
     if (step.waitForClick) {
-      tourHighlightRef.current.style.pointerEvents = 'none';
+      // Let clicks pass through the highlight overlay, so the elem can be clicked.
+      highlightElem.style.pointerEvents = 'none';
     }
 
     const placeAtRect = placeAtElem.getBoundingClientRect();
@@ -223,14 +209,10 @@ function TalkyardTour() {
       placeAtElem.removeEventListener('click', callNextAndUnregister);
       goToNextStep();
     }
-
-    //highlightElem.scrollIntoView({ behavior: 'smooth' });
-    //dialogElem.scrollIntoView({ behavior: 'smooth' });
   }
 
   function goToNextStep() {
     tourHighlightRef.current.style.pointerEvents = 'auto';
-    //setElemVisible(false);
     const nextStepIx = stepIx + 1;
     setStepIx(nextStepIx);
     const isLastStep = nextStepIx === tour.steps.length - 1;
@@ -242,7 +224,6 @@ function TalkyardTour() {
   }
 
   function goToPrevStep() {
-    //setElemVisible(false);
     setStepIx(stepIx - 1);
   }
 
@@ -250,13 +231,11 @@ function TalkyardTour() {
     setTour(null);
   }
 
-  function maybeGoNextOnElemClick(event: Event) {
+  function maybeGoNextOnElemClick() {
     if (!step.waitForClick) return;
     goToNextStep();
   }
 
-  //const highlightStyle = step.waitForClick && elemVisible ? { pointerEvents: 'none' } : null;
-  //const dialogVisiblilityStyle = { visibility: (elemVisible ? null : 'hidden') };
   const nextDisabled = step.waitForClick;
   const isLastStep = stepIx === tour.steps.length - 1;
   // If we're at the first step, or the previous step involved clicking a button,
@@ -266,12 +245,12 @@ function TalkyardTour() {
 
   return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
     r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
-        onClick: maybeGoNextOnElemClick }),  //, style: highlightStyle }),
+        onClick: maybeGoNextOnElemClick }),
     r.div({ className: 's_Tour_ClickBlocker-Left-All' }),
     r.div({ className: 's_Tour_ClickBlocker-Right' }),
     r.div({ className: 's_Tour_ClickBlocker-Above' }),
     r.div({ className: 's_Tour_ClickBlocker-Below' }),
-    r.div({ className: 's_Tour_D', ref: tourDialogRef },  //, style: dialogVisiblilityStyle },
+    r.div({ className: 's_Tour_D', ref: tourDialogRef },
       r.h3({ className: 's_Tour_D_Ttl' }, step.title),
       r.p({ className: 's_Tour_D_Txt' }, step.text),
       r.div({ className: 's_Tour_D_Bs' },

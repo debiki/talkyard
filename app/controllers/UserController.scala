@@ -1112,9 +1112,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val tourTipsSeenJson = (body \ "tourTipsSeen").asOpt[Vector[JsString]]
     val tourTipsSeen: Option[immutable.Seq[TourTipsId]] = tourTipsSeenJson.map(_.map(_.value))
     tourTipsSeen.foreach(_ foreach((id: TourTipsId) => {
-      // Check if is ok json.  COULD break out function? Or TourStates class?
-      throwBadRequestIf(id.isEmpty, "TyE4ABKR0", "Bad tour or tips id: Empty string")
-      throwBadRequestIf(!id.isOkVariableName, "TyE4ABKR2", s"Bad tour or tips id: `$id'")
+      anyOkTourTipsIdError(id) foreach EdHttp.throwBadRequest
     }))
 
     throwForbiddenIf(anyLastViewedPostNr.isDefined && anyPageId.isEmpty,

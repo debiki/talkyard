@@ -23,7 +23,7 @@ import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
-import play.api.libs.json.{JsArray, JsObject}
+import play.api.libs.json.JsArray
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
