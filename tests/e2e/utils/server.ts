@@ -6,7 +6,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import utils = require('./utils');
 import c = require('../test-constants');
-import { logMessage, die, dieIf } from './log-and-die';
+import { logMessage, logWarning, die, dieIf } from './log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -172,8 +172,16 @@ function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubject
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
     const lastEmails = JSON.parse(response.body);
-    if (lastEmails.length)
-      return lastEmails[lastEmails.length - 1];
+    if (lastEmails.length) {
+      logMessage(`${email} has gotten ${lastEmails.length} emails:`);
+      for (let i = 0; i < lastEmails.length; ++i) {
+        const oneLastEmail = lastEmails[i];
+        logMessage(`  subject: "${oneLastEmail.subject}" ` + (
+            i === lastEmails.length - 1 ? " <— the last one, returning it" : ''));
+      }
+      const lastEmail = lastEmails[lastEmails.length - 1];
+      return lastEmail;
+    }
     // Internal functions can pass null, if they pause themselves.
     if (browser) {
       browser.pause(500 - 100); // 100 ms for a request, perhaps?
@@ -317,17 +325,19 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
     if (!misses.length)
       return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
 
-    // Debug log last email if seems the test will soon break (in 2 seconds).
-    if (!hasDebugLoggedLastEmail &&  startMs + settings.waitforTimeout * 1000 - 2000 < Date.now()) {
-      hasDebugLoggedLastEmail = true;
-      console.log(
-        '\n\n' +
-        "This test will fail?\n" + (!email ? `No email sent to ${emailAddress}` :
+    // Debug log last email if after a while there're no matching email.
+    const tenSecondsPassed = Date.now() > startMs + 10*1000;
+    const testEndsSoon = Date.now() > startMs + settings.waitforTimeout*1000 - 3000;
+    if (!hasDebugLoggedLastEmail && (tenSecondsPassed || testEndsSoon)) {
+      //hasDebugLoggedLastEmail = true;
+      logWarning(
+        '\n' +
+        "This test will fail? " + (!email ? `No email sent to ${emailAddress}` :
             `Last email to ${emailAddress} is still:\n${email.subject}\n${email.bodyHtmlText}`) +
-        '\n\n');
+        '\n');
     }
 
-    browser.pause(500 - 100);
+    browser.pause(500 - 50);
   }
   const missesString = misses.join(', ');
   die(`Never got any email to ${emailAddress} matching ${missesString} [EdE5JGK2Q1]`);

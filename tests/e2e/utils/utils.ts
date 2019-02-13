@@ -1,7 +1,8 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import { dieIf } from './log-and-die'
+import { logUnusual, dieIf } from './log-and-die';
+
 
 declare const settings;
 
@@ -100,7 +101,7 @@ const utils = {
         return;
       }
       catch (error) {
-        console.log(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
       }
     }
     fn();

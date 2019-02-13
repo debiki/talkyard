@@ -143,7 +143,8 @@ describe("private chat", () => {
     owen.topic.waitForPostNrVisible(4);
   });
 
-  it("... he also got an email about Maria's reply", () => {
+  it("... he also got an email about Maria's reply", () => {   // [E2EBUG] fails ~ 20% of the time:
+                                                               // no email sent to Owen
     // This tests notfs when one clicks Reply for a particular post.
     server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);

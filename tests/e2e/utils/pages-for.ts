@@ -5,9 +5,7 @@ import settings = require('./settings');
 import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
-const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-const logError = logAndDie.logError;
-const logMessage = logAndDie.logMessage;
+import { logUnusual, logError, logWarning, logMessage, die, dieIf } from './log-and-die';
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -244,7 +242,7 @@ function pagesFor(browser) {
     switchToAnyParentFrame: () => {
       if (api.isInIframe()) {
         browser.frameParent();
-        console.log("Switched to parent frame.");
+        logMessage("Switched to parent frame.");
       }
     },
 
@@ -292,7 +290,7 @@ function pagesFor(browser) {
       assert(items.length >= 1, `${items.length} elems matches ${selector}, should be at least one`);
       const elemId = items[0].ELEMENT;
       const rect = browser.elementIdRect(elemId).value;   // or getElementRect? Webdriver v5?
-      console.log(`getRect('${selector}') —> ${JSON.stringify(rect)}`);
+      logMessage(`getRect('${selector}') —> ${JSON.stringify(rect)}`);
       return rect;
     },
 
@@ -353,7 +351,7 @@ function pagesFor(browser) {
           // Done scrolling;
           return;
         }
-        console.log(`Scrolling <${selector}> into view in page column, scroll y: ${curScrollY} ...`);
+        logMessage(`Scrolling <${selector}> into view in page column, scroll y: ${curScrollY} ...`);
         lastScrollY = curScrollY;
       }
       assert.fail(`Cannot scroll to: ${selector}`);
@@ -422,6 +420,7 @@ function pagesFor(browser) {
 
     playTimeSeconds: function(seconds: number) {  // [4WKBISQ2]
       browser.execute(function (seconds) {
+        // Don't use  logMessage in here; this is in the browser (!).
         console.log("Playing time, seconds: " + seconds);
         window['debiki2'].testExtraMillis = window['debiki2'].testExtraMillis + seconds * 1000;
         console.log("Time now: " + window['debiki2'].testExtraMillis);
@@ -461,8 +460,8 @@ function pagesFor(browser) {
 
     waitForNotVisible: function(selector: string, timeoutMillis?: number) {
       // API is: browser.waitForVisible(selector[,ms][,reverse])
-      console.log(`browser.waitForVisible('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
-      console.log(`BUG just waits forever [2ABKRP83]`);
+      logMessage(`browser.waitForVisible('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
+      logWarning(`BUG just waits forever [2ABKRP83]`);
       assert(false);
       browser.waitForVisible(selector, timeoutMillis || true, timeoutMillis ? true : undefined);
     },
@@ -592,20 +591,20 @@ function pagesFor(browser) {
       // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
       let delay = 30;
       //let count = 0;
-      //console.log(`waitAndClickLinkToNewPage ${selector} ...`);
+      //logMessage(`waitAndClickLinkToNewPage ${selector} ...`);
       api.waitUntilLoadingOverlayGone();
       while (true) {
         api.waitForMyDataAdded();
         browser.pause(delay);
-        //console.log(`waitAndClickLinkToNewPage ${selector} testing:`);
+        //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
         if (browser.isVisible(selector) && browser.isEnabled(selector)) {
-          //console.log(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
+          //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
           // count += 1;
           // if (count >= 6)
           break;
         }
         else {
-          //console.log(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
+          //logMessage(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
           if (refreshBetweenTests) browser.refresh();
           delay *= 1.67;
         }
@@ -688,11 +687,11 @@ function pagesFor(browser) {
         dieIf(!result, "Error checking if elem interactable, result: " + JSON.stringify(result));
         if (result.value === true) {
           if (i >= 1) {
-            console.log(`Fine, elem [ ${selector} ] no longer occluded. Continuing`)
+            logMessage(`Fine, elem [ ${selector} ] no longer occluded. Continuing`)
           }
           break;
         }
-        console.log(`Waiting for elem [ ${selector} ] to not be occluded by [ ${result.value} ]...`)
+        logMessage(`Waiting for elem [ ${selector} ] to not be occluded by [ ${result.value} ]...`)
         browser.pause(200);
       }
     },
@@ -763,7 +762,7 @@ function pagesFor(browser) {
           if (('' + value) === valueReadBack) {
             break;
           }
-          console.log(`Couldn't set value, got back when reading: '${valueReadBack}', trying again`);
+          logMessage(`Couldn't set value, got back when reading: '${valueReadBack}', trying again`);
           browser.pause(300);
         }
       }
@@ -794,7 +793,7 @@ function pagesFor(browser) {
         browser.elementIdClick(elemId);
       }
       catch (ex) {
-        console.log(`First click of elem '${elemId}' failed. Retrying. Wait until clickable?`);
+        logMessage(`First click of elem '${elemId}' failed. Retrying. Wait until clickable?`);
         browser.pause(250);
         browser.elementIdClick(elemId);
       }
@@ -836,7 +835,7 @@ function pagesFor(browser) {
 
           texts += `"${text}", `;
         }
-        console.log(`Waiting for <${selector}> to match: ${regex}, ` +
+        logMessage(`Waiting for <${selector}> to match: ${regex}, ` +
             `but the ${elems.length} selector matching texts are: ${texts}.`)
         browser.pause(Math.min(pauseMs, PollMaxMs));
       }
@@ -1121,11 +1120,11 @@ function pagesFor(browser) {
     dismissAcceptAnyAlert: (howMany: number, accept: boolean): boolean => {
       let numLeft = howMany;
       for (let i = 0; i < 20; ++i) {
-        if (i % 10 === 0) console.log(`Waiting for ${howMany} alert(s) to dismiss ... [TyM74AKRWJ]`);
+        if (i % 10 === 0) logMessage(`Waiting for ${howMany} alert(s) to dismiss ... [TyM74AKRWJ]`);
         try {
           if (accept) browser.alertAccept();
           else browser.alertDismiss();
-          console.log(accept ? "Accepted." : "Dismissed.");
+          logMessage(accept ? "Accepted." : "Dismissed.");
           numLeft -= 1;
           if (numLeft === 0)
             return true;
@@ -1135,7 +1134,7 @@ function pagesFor(browser) {
           browser.pause(50);
         }
       }
-      console.log("No alert found.");
+      logMessage("No alert found.");
       return false;
     },
 
@@ -1636,24 +1635,24 @@ function pagesFor(browser) {
 
         // Dupl code (035BKAS20)
 
-        console.log('createPasswordAccount: fillInFullName...');
+        logMessage('createPasswordAccount: fillInFullName...');
         if (data.fullName) api.loginDialog.fillInFullName(data.fullName);
-        console.log('fillInUsername...');
+        logMessage('fillInUsername...');
         api.loginDialog.fillInUsername(data.username);
-        console.log('fillInEmail...');
+        logMessage('fillInEmail...');
         const theEmail = data.email || data.emailAddress;
         if (theEmail) api.loginDialog.fillInEmail(theEmail);
-        console.log('fillInPassword...');
+        logMessage('fillInPassword...');
         api.loginDialog.fillInPassword(data.password);
-        console.log('clickSubmit...');
+        logMessage('clickSubmit...');
         api.loginDialog.clickSubmit();
-        console.log('acceptTerms...');
+        logMessage('acceptTerms...');
         api.loginDialog.acceptTerms(shallBecomeOwner);
-        console.log('waitForNeedVerifyEmailDialog...');
+        logMessage('waitForNeedVerifyEmailDialog...');
         if (anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
           api.loginDialog.waitForNeedVerifyEmailDialog();
         }
-        console.log('createPasswordAccount: done');
+        logMessage('createPasswordAccount: done');
       },
 
       fillInFullName: function(fullName) {
@@ -1756,28 +1755,28 @@ function pagesFor(browser) {
       },
 
       signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
-        console.log('createPasswordAccount with no email: fillInFullName...');
+        logMessage('createPasswordAccount with no email: fillInFullName...');
         api.loginDialog.fillInFullName(name);
-        console.log('fillInUsername...');
+        logMessage('fillInUsername...');
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
         api.loginDialog.fillInUsername(username);
         if (email) {
-          console.log('fillInEmail...');
+          logMessage('fillInEmail...');
           api.loginDialog.fillInEmail(email);
         }
         else {
-          console.log('fillInEmail anyway, because for now, always require email [0KPS2J]');
+          logMessage('fillInEmail anyway, because for now, always require email [0KPS2J]');
           api.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
         }
-        console.log('fillInPassword...');
+        logMessage('fillInPassword...');
         api.loginDialog.fillInPassword("public1234");
-        console.log('clickSubmit...');
+        logMessage('clickSubmit...');
         api.loginDialog.clickSubmit();
-        console.log('acceptTerms...');
+        logMessage('acceptTerms...');
         api.loginDialog.acceptTerms();
-        console.log('waitForWelcomeLoggedInDialog...');
+        logMessage('waitForWelcomeLoggedInDialog...');
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
-        console.log('createPasswordAccount with no email: done');
+        logMessage('createPasswordAccount with no email: done');
         // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]?
         api.waitForVisible('.esTopbar .esAvtrName_name');
         const nameInHtml = browser.getText('.esTopbar .esAvtrName_name');
@@ -1786,13 +1785,13 @@ function pagesFor(browser) {
 
       logInAsGuest: function(name: string, email_noLongerNeeded?: string) { // CLEAN_UP [8JTW4] is just pwd login?
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
-        console.log('logInAsGuest: fillInFullName...');
+        logMessage('logInAsGuest: fillInFullName...');
         api.loginDialog.fillInUsername(name);
-        console.log('fillInPassword...');
+        logMessage('fillInPassword...');
         api.loginDialog.fillInPassword("public1234");
-        console.log('clickSubmit...');
+        logMessage('clickSubmit...');
         api.loginDialog.clickSubmit();
-        console.log('logInAsGuest with no email: done');
+        logMessage('logInAsGuest with no email: done');
         const nameInHtml = api.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
@@ -1874,7 +1873,7 @@ function pagesFor(browser) {
               break;
           }
           catch (dummy) {
-            console.log(`didn't find ${emailInputSelector}, ` +
+            logMessage(`didn't find ${emailInputSelector}, ` +
                 "tab closed? already logged in? [EdM5PKWT0B]");
           }
           browser.pause(500);
@@ -1885,7 +1884,7 @@ function pagesFor(browser) {
         while (true) {
           try {
             browser.pause(250);
-            console.log(`typing Gmail email: ${data.email}...`);
+            logMessage(`typing Gmail email: ${data.email}...`);
             api.waitAndSetValue(emailInputSelector, data.email);
             break;
           }
@@ -1897,7 +1896,7 @@ function pagesFor(browser) {
 
         browser.pause(500);
         if (browser.isExisting(emailNext)) {
-          console.log(`clicking ${emailNext}...`);
+          logMessage(`clicking ${emailNext}...`);
           api.waitAndClick(emailNext);
         }
 
@@ -1906,7 +1905,7 @@ function pagesFor(browser) {
         while (true) {
           try {
             browser.pause(250);
-            console.log("typing Gmail password...");
+            logMessage("typing Gmail password...");
             api.waitAndSetValue(passwordInputSelector, data.password);
             break;
           }
@@ -1922,7 +1921,7 @@ function pagesFor(browser) {
 
         browser.pause(500);
         if (browser.isExisting(passwordNext)) {
-          console.log(`clicking ${passwordNext}...`);
+          logMessage(`clicking ${passwordNext}...`);
           api.waitAndClick(passwordNext);
         }
 
@@ -1932,7 +1931,7 @@ function pagesFor(browser) {
         browser.click('#submit_approve_access'); */
 
         if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {
-          console.log("switching back to first tab...");
+          logMessage("switching back to first tab...");
           api.switchBackToFirstTabOrWindow();
         }
       },
@@ -1963,7 +1962,7 @@ function pagesFor(browser) {
         }
 
         //if (!isInPopupAlready)
-        console.log("Switching to GitHub login window...");
+        logMessage("Switching to GitHub login window...");
         api.swithToOtherTabOrWindow();
 
         browser.waitForVisible('.auth-form-body');
@@ -1976,7 +1975,7 @@ function pagesFor(browser) {
           browser.pause(200);
           try {
             if (browser.isVisible('#js-oauth-authorize-btn')) {
-              console.log("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
+              logMessage("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
               api.waitAndClick('#js-oauth-authorize-btn');
               break;
             }
@@ -1987,7 +1986,7 @@ function pagesFor(browser) {
             break;
           }
         }
-        console.log("Switching back to first window...");
+        logMessage("Switching back to first window...");
         api.switchBackToFirstTabOrWindow();
       },
 
@@ -1999,7 +1998,7 @@ function pagesFor(browser) {
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
-        console.log("typing Facebook user's new username...");
+        logMessage("typing Facebook user's new username...");
         api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(shallBecomeOwner);
@@ -2031,12 +2030,12 @@ function pagesFor(browser) {
               break;
           }
           catch (dummy) {
-            console.log("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
+            logMessage("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
           }
           browser.pause(300);
         }
 
-        console.log("typing Facebook user's email and password...");
+        logMessage("typing Facebook user's email and password...");
         browser.pause(340); // so less risk Facebook think this is a computer?
         api.waitAndSetValue('#email', data.email);
         browser.pause(380);
@@ -2044,7 +2043,7 @@ function pagesFor(browser) {
         browser.pause(280);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
-        console.log("submitting Facebook login dialog...");
+        logMessage("submitting Facebook login dialog...");
         api.waitAndClick('#loginbutton'); // or: [type=submit]');
 
         // Facebook somehow auto accepts the confirmation dialog, perhaps because
@@ -2053,7 +2052,7 @@ function pagesFor(browser) {
         //b.click('[name=__CONFIRM__]');
 
         if (!isInPopupAlready) {
-          console.log("switching back to first tab...");
+          logMessage("switching back to first tab...");
           api.switchBackToFirstTabOrWindow();
         }
       },
@@ -2061,18 +2060,18 @@ function pagesFor(browser) {
 
       loginPopupClosedBecauseAlreadyLoggedIn: () => {
         try {
-          console.log("checking if we got logged in instantly... [EdM2PG44Y0]");
+          logMessage("checking if we got logged in instantly... [EdM2PG44Y0]");
           const yes = browser.getTabIds().length === 1;// ||  // login tab was auto closed
               //browser.isExisting('.e_AlreadyLoggedIn');    // server shows logged-in-already page
               //  ^--- sometimes blocks forever, how is that possible?
-          console.log(yes ? "yes seems so" : "no don't think so");
+          logMessage(yes ? "yes seems so" : "no don't think so");
           return yes;
         }
         catch (dummy) {
           // This is usually/always (?) a """org.openqa.selenium.NoSuchWindowException:
           // no such window: target window already closed""" exception, which means we're
           // logged in already and the OAuth provider (Google/Facebook/etc) closed the login tab.
-          console.log("apparently we got logged in directly [EdM2GJGQ03]");
+          logMessage("apparently we got logged in directly [EdM2GJGQ03]");
           return true;
         }
       },
@@ -3113,7 +3112,7 @@ function pagesFor(browser) {
             // scroll anyway.
             const canScroll = hasScrollBtns || isOnAutoPage;
             if (!canScroll) {
-              console.log(`Cannot scroll: ${hasScrollBtns} ${isOnAutoPage},` +
+              logMessage(`Cannot scroll: ${hasScrollBtns} ${isOnAutoPage},` +
                   ` won't try to scroll to: ${buttonSelector}`);
               break;
             } */
@@ -3140,7 +3139,7 @@ function pagesFor(browser) {
             if (buttonMiddleY > topY + clickMargin && buttonMiddleY < bottomY - clickMargin)
               break;
 
-            console.log(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
+            logMessage(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
                 `buttonRect = ${JSON.stringify(buttonRect)}, buttonMiddleY = ${buttonMiddleY}, ` +
                 `bottomY: ${bottomY}`);
             const scrollMargin = clickMargin + 10;
@@ -3154,7 +3153,7 @@ function pagesFor(browser) {
             browser.pause(150 + 100);
           }
           try {
-            console.log(`clickPostActionButton: CLICK ${buttonSelector} [TyME2ECLICK]`);
+            logMessage(`clickPostActionButton: CLICK ${buttonSelector} [TyME2ECLICK]`);
             api._waitAndClickImpl(buttonSelector, opts);
             break;
           }
@@ -3166,7 +3165,7 @@ function pagesFor(browser) {
               throw exception;
             }
           }
-          console.log(`clickPostActionButton: attempt 2...`);
+          logMessage(`clickPostActionButton: attempt 2...`);
         }
       },
 
@@ -4394,7 +4393,7 @@ function pagesFor(browser) {
           const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
           const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
           const elems = browser.elements(selector).value;
-          console.log(`Counted to ${elems.length} of these: ${selector}`);
+          logMessage(`Counted to ${elems.length} of these: ${selector}`);
           return elems.length;
         },
 
@@ -4607,11 +4606,11 @@ function pagesFor(browser) {
           browser.click('.modal-body');
           const gotDismissed = api.dismissAnyAlert();
           if (gotDismissed) {
-            console.log("Dismissed got-logged-out but-had-started-writing related alert.");
+            logMessage("Dismissed got-logged-out but-had-started-writing related alert.");
             return;
           }
         }
-        console.log("Didn't get any got-logged-out but-had-started-writing related alert.");
+        logMessage("Didn't get any got-logged-out but-had-started-writing related alert.");
       },
 
       waitAndAssertTextMatches: function(regex) {
@@ -4824,16 +4823,16 @@ function pagesFor(browser) {
         // forever when waiting for the editor.
         // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
         api.switchToEmbeddedCommentsIrame();
-        console.log("comments iframe: Clicking Reply ...");
+        logMessage("comments iframe: Clicking Reply ...");
         api.topic.clickReplyToEmbeddingBlogPost();
         api.switchToEmbeddedEditorIrame();
-        console.log("editor iframe: Composing a reply ...");
+        logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
         api.editor.editText(text, { timeoutMs: 2000 });
-        console.log("editor iframe: Saving ...");
+        logMessage("editor iframe: Saving ...");
         api.editor.save();
-        console.log("editor iframe: Done.");
+        logMessage("editor iframe: Done.");
         api.switchToEmbeddedCommentsIrame();
       },
 
@@ -4937,38 +4936,38 @@ function pagesFor(browser) {
     let bugRetry = 0;
     const maxBugRetry = 2;
     for (; bugRetry <= maxBugRetry; ++bugRetry) {
-      console.log(selector + ' is visible, should be checked: ' + checked);
+      logMessage(selector + ' is visible, should be checked: ' + checked);
       for (let i = 0; i < 99; ++i) {
         let isChecked = browser.isSelected(selector);
-        console.log(selector + ' is checked: ' + isChecked);
+        logMessage(selector + ' is checked: ' + isChecked);
         if (isChecked === checked)
           break;
         api.waitAndClick(selector);
-        console.log(selector + ' **click**');
+        logMessage(selector + ' **click**');
       }
       // Somehow once this function exited with isChecked !== isRequired. Race condition?
       // Let's find out:
       let isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
+      logMessage(selector + ' is checked: ' + isChecked);
       browser.pause(300);
       isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
+      logMessage(selector + ' is checked: ' + isChecked);
       browser.pause(400);
       isChecked = browser.isSelected(selector);
       /* maybe works better now? (many months later)
-      console.log(selector + ' is checked: ' + isChecked);
+      logMessage(selector + ' is checked: ' + isChecked);
       browser.pause(500);
       isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
+      logMessage(selector + ' is checked: ' + isChecked);
       browser.pause(600);
       isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
+      logMessage(selector + ' is checked: ' + isChecked);
       browser.pause(700);
       isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked); */
+      logMessage(selector + ' is checked: ' + isChecked); */
       if (isChecked === checked)
         break;
-      console.log("Checkbox refuses to change state. Clicking it again.");
+      logUnusual("Checkbox refuses to change state. Clicking it again.");
     }
     assert(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
   }
