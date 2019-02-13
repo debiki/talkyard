@@ -1112,7 +1112,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val tourTipsSeenJson = (body \ "tourTipsSeen").asOpt[Vector[JsString]]
     val tourTipsSeen: Option[immutable.Seq[TourTipsId]] = tourTipsSeenJson.map(_.map(_.value))
     tourTipsSeen.foreach(_ foreach((id: TourTipsId) => {
-      anyOkTourTipsIdError(id) foreach EdHttp.throwBadRequest
+      anyTourTipsIdError(id) foreach EdHttp.throwBadRequest
     }))
 
     throwForbiddenIf(anyLastViewedPostNr.isDefined && anyPageId.isEmpty,

@@ -637,7 +637,7 @@ package object core {
   type TourTipsId = String
   type TourTipsSeen = immutable.Seq[TourTipsId]
 
-  def anyOkTourTipsIdError(id: TourTipsId): Option[ErrorMessageCode] = {
+  def anyTourTipsIdError(id: TourTipsId): Option[ErrorMessageCode] = {
     // Better require ids to be variable names, to avoid any surprises later.
     // The ids are incl in each user info response, so should be short, like 2 or 3 chars.
     // Maybe later there'll be plugins with their own tours? It'd be good if they can have
