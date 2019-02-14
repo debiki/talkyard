@@ -69,6 +69,11 @@ export function linkToUserInAdminArea(user: Myself | MemberInclDetails | User | 
   return origin() + '/-/admin/users/id/' + userId;
 }
 
+export function linkToEmbeddedDiscussions(): string {
+  // Later: link to the correct category, when emb comments topics have their own category.
+  return origin();
+}
+
 export function linkToReviewPage(): string {
   return origin() + '/-/admin/review/all';
 }

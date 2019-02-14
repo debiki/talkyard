@@ -357,9 +357,11 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
-    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null :
+    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFragment({},
+      r.a({ className: 'dw-a dw-a-other-topics icon-link-ext', href: linkToEmbeddedDiscussions(),
+        target: '_blank' }, "Discussions index"),  // I18N
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
-        target: '_blank' }, t.pa.Admin);
+        target: '_blank' }, t.pa.Admin));
 
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },

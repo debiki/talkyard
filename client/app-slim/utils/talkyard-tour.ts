@@ -61,11 +61,13 @@ export function maybeRunTour(tour: TalkyardTour) {
 function TalkyardTour() {
   const [tour, setTour] = React.useState<TalkyardTour>(null);
   const [stepIx, setStepIx] = React.useState(0);
+  const [showExitButton, setShowExitButton] = React.useState(false);
   const tourHighlightRef = React.useRef(null);
   const tourDialogRef = React.useRef(null);
-  React.useEffect(waitForAndScrollToElemThenShowDialog);
+  React.useLayoutEffect(waitForAndScrollToElemThenShowDialog);
 
   let beforeThingDone = false;
+  let showExitTimeoutHandle;
 
   if (!startTour) startTour = (tour: TalkyardTour) => {
     setTour(tour);
@@ -100,8 +102,17 @@ function TalkyardTour() {
     const placeAtElem: HTMLElement = $first(step.placeAt);  // [27KAH5]
     if (!placeAtElem) {
       setTimeout(waitForAndScrollToElemThenShowDialog, 100);
+      if (!showExitTimeoutHandle) {
+        showExitTimeoutHandle = setTimeout(() => setShowExitButton(true), 1500);
+      }
       return;
     }
+
+    if (showExitTimeoutHandle) {
+      clearTimeout(showExitTimeoutHandle);
+      showExitTimeoutHandle = null;
+    }
+    setShowExitButton(false);
 
     const isScrolling = utils.scrollIntoViewInPageColumn(
         placeAtElem, { marginTop: 90, marginBottom: 250 });
@@ -237,19 +248,24 @@ function TalkyardTour() {
   }
 
   const nextDisabled = step.waitForClick;
+  const isFirstStep = stepIx === 0;
   const isLastStep = stepIx === tour.steps.length - 1;
   // If we're at the first step, or the previous step involved clicking a button,
   // then we cannot go back (because don't know how to reverse the button click).
   const prevStep = tour.steps[stepIx - 1];
   const canGoBack = prevStep && !prevStep.waitForClick;
 
-  return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
-    r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
-        onClick: maybeGoNextOnElemClick }),
-    r.div({ className: 's_Tour_ClickBlocker-Left-All' }),
-    r.div({ className: 's_Tour_ClickBlocker-Right' }),
-    r.div({ className: 's_Tour_ClickBlocker-Above' }),
-    r.div({ className: 's_Tour_ClickBlocker-Below' }),
+  // If the elem the dialog should be placed at won't appear (maybe a tour
+  // starts in the wrong situation, where it won't work), then after a while,
+  // show an exit-tour button, so the tour won't block the screen forever.
+  const anyExitButton = !showExitButton ? null :
+    r.div({ className: 's_Tour_D s_Tour_D-Exit' },
+      r.h3({ className: 's_Tour_D_Ttl' }, "Loading ..."),                   // I18N
+      r.p({ className: 's_Tour_D_Txt' }, "The next step in the tour ..."),  // I18N
+      r.div({ className: 's_Tour_D_Bs' },
+        Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  }, "Exit tour")));  // I18N
+
+  const tourDialogAndNextButton =
     r.div({ className: 's_Tour_D', ref: tourDialogRef },
       r.h3({ className: 's_Tour_D_Ttl' }, step.title),
       r.p({ className: 's_Tour_D_Txt' }, step.text),
@@ -260,8 +276,19 @@ function TalkyardTour() {
             Button({ onClick: goToPrevStep, className: 's_Tour_D_Bs_PrevB'  }, "Prev"),   // I18N
         r.div({ className: 's_Tour_D_Bs_Ix' }, `${stepIx + 1}/${tour.steps.length}`),
         isLastStep ? null :
-            Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  }, "Goodbye"),  // I18N
-        )));
+            Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  },
+              isFirstStep ? "Exit tour" : "Exit")));  // I18N
+
+  return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
+    r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
+        onClick: maybeGoNextOnElemClick }),
+    r.div({ className: 's_Tour_ClickBlocker-Left-All' }),
+    r.div({ className: 's_Tour_ClickBlocker-Right' }),
+    r.div({ className: 's_Tour_ClickBlocker-Above' }),
+    r.div({ className: 's_Tour_ClickBlocker-Below' }),
+    anyExitButton,
+    // Show always, needed for size calculations also before shown for real.
+    tourDialogAndNextButton);
 }
 
 
