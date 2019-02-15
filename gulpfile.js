@@ -37,7 +37,7 @@ var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
-var es = require('event-stream');
+var merge2 = require('merge2');
 var fs = require("fs");
 var execSync = require('child_process').execSync;
 var preprocess = require('gulp-preprocess');
@@ -156,10 +156,8 @@ var slimJsFiles = [
       'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
-      'target/client/app-slim/actions/edit/edit.js',
       'target/client/app-slim/actions/reply.js',
       //'target/client/app-slim/posts/monitor-reading-progress-unused.js',
-      'target/client/app-slim/posts/resize.js',
       //'target/client/app-slim/posts/unread-unused.js',
       'target/client/app-slim/utils/util.js',
       'target/client/app-slim/utils/util-browser.js',
@@ -236,7 +234,75 @@ var nextFileTemplate =
     '<%= contents %>\n';
 
 
-gulp.task('wrapJavascript', function () {
+
+// ========================================================================
+//  End-to-end Tests
+// ========================================================================
+
+
+gulp.task('clean-e2e', () => {
+  return del(['target/e2e/**/*']);
+});
+
+gulp.task('compile-e2e-scripts', () => {
+  var stream = gulp.src([
+        'client/app-slim/constants.ts',
+        'client/app-slim/model.ts',
+        'tests/e2e/**/*ts'])
+      .pipe(plumber())
+      .pipe(typeScript({
+        declarationFiles: true,
+        module: 'commonjs',
+        lib: ['es5', 'es2015', 'dom'],
+        types: ['lodash', 'core-js', 'assert', 'node']
+      }));
+  // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
+
+  return stream.js
+      // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
+      .pipe(gulp.dest('target/e2e'));
+});
+
+// Compiles TypeScript code in test/e2e/ and places it in target/e2e/transpiled/,
+//
+gulp.task('build-e2e', gulp.series('clean-e2e', 'compile-e2e-scripts'));
+
+
+
+// ========================================================================
+//  Translations
+// ========================================================================
+
+
+gulp.task('cleanTranslations', () => {
+  return del(['public/res/translations/**/*']);
+});
+
+// Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
+// in public/res/translations/... .
+gulp.task('compileTranslations', () => {
+  var stream = gulp.src(['translations/**/*.ts'])
+      .pipe(plumber())
+      .pipe(typeScript({
+        declarationFiles: true,
+        lib: ['es5', 'es2015', 'dom'],
+        types: ['core-js']
+      }));
+
+  return stream.js
+    .pipe(gulp.dest('public/res/translations'));
+});
+
+gulp.task('buildTranslations', gulp.series('cleanTranslations', 'compileTranslations'));
+
+
+
+// ========================================================================
+//  Runtime bundles
+// ========================================================================
+
+
+gulp.task('wrapJavascript', () => {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
     .pipe(plumber())
@@ -278,7 +344,7 @@ function compileServerTypescriptConcatJavascript() {
       .pipe(plumber())
       .pipe(wrap(nextFileTemplate));
 
-  return es.merge(typescriptStream, javascriptStream)
+  return merge2(typescriptStream, javascriptStream)
       .pipe(concat('server-bundle.js'))
       .pipe(gulp.dest('public/res/'));
 }
@@ -324,37 +390,37 @@ function compileOtherTypescript(typescriptProject) {
     .pipe(gulp.dest('target/client/'));
 }
 
-gulp.task('compileServerTypescriptConcatJavascript', function () {
+gulp.task('compileServerTypescriptConcatJavascript', () => {
   return compileServerTypescriptConcatJavascript();
 });
 
-gulp.task('compileSwTypescript', function () {
+gulp.task('compileSwTypescript', () => {
   return compileSwTypescript();
 });
 
-gulp.task('compileSlimTypescript', function () {
+gulp.task('compileSlimTypescript', () => {
   return compileSlimTypescript();
 });
 
-gulp.task('compileMoreTypescript', function () {
+gulp.task('compileMoreTypescript', () => {
   return compileOtherTypescript(moreTypescriptProject);
 });
 
 /*
-gulp.task('compile2dTypescript', function () { // [SLIMTYPE]
+gulp.task('compile2dTypescript', () => { // [SLIMTYPE]
   return compileOtherTypescript(_2dTypescriptProject);
 }); */
 
-gulp.task('compileStaffTypescript', function () {
+gulp.task('compileStaffTypescript', () => {
   return compileOtherTypescript(staffTypescriptProject);
 });
 
-gulp.task('compileEditorTypescript', function () {
+gulp.task('compileEditorTypescript', () => {
   return compileOtherTypescript(editorTypescriptProject);
 });
 
-gulp.task('compileAllTypescript', function () {
-  return es.merge(
+gulp.task('compileAllTypescript', () => {
+  return merge2(
       compileServerTypescriptConcatJavascript(),
       compileSwTypescript(),
       compileSlimTypescript(),
@@ -376,16 +442,16 @@ var compileTsTaskNames = [
 
 for (var i = 0; i < compileTsTaskNames.length; ++i) {
   var compileTaskName = compileTsTaskNames[i];
-  gulp.task(compileTaskName + '-concatScripts', [compileTaskName], function() {
+  gulp.task(compileTaskName + '-concatScripts', gulp.series(compileTaskName, () => {
     return makeConcatAllScriptsStream();
-  });
+  }));
 }
 
 
 
-gulp.task('compileConcatAllScripts', ['wrapJavascript', 'compileAllTypescript'], function() {
+gulp.task('compileConcatAllScripts', gulp.series('wrapJavascript', 'compileAllTypescript', () => {
   return makeConcatAllScriptsStream();
-});
+}));
 
 
 
@@ -403,7 +469,7 @@ function makeConcatAllScriptsStream() {
         .pipe(gulp.dest('public/res/'));
   }
 
-  return es.merge(
+  return merge2(
       makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer'),
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
@@ -417,13 +483,13 @@ function makeConcatAllScriptsStream() {
 
 
 
-gulp.task('wrap-javascript-concat-scripts', ['wrapJavascript'], function () {
+gulp.task('wrap-javascript-concat-scripts', gulp.series('wrapJavascript', () => {
   return makeConcatAllScriptsStream();
-});
+}));
 
 
 
-gulp.task('enable-prod-stuff', function() {
+gulp.task('enable-prod-stuff', (done) => {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
   slimJsFiles[0] = 'node_modules/react/umd/react.production.min.js';
@@ -431,11 +497,12 @@ gulp.task('enable-prod-stuff', function() {
   slimJsFiles[2] = 'node_modules/prop-types/prop-types.min.js';
   slimJsFiles[3] = 'node_modules/create-react-class/create-react-class.min.js';
   slimJsFiles[4] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';
+  done();
 });
 
 
 // Similar to 'minifyScripts', but a different copyright header.
-gulp.task('minifyTranslations', ['buildTranslations'], function() {
+gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
   return gulp.src(['public/res/translations/**/*.js'])
       .pipe(plumber())
       .pipe(uglify())
@@ -444,10 +511,10 @@ gulp.task('minifyTranslations', ['buildTranslations'], function() {
       .pipe(gulp.dest('public/res/translations/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/translations/'));
-});
+}));
 
 
-gulp.task('minifyScripts', ['compileConcatAllScripts', 'minifyTranslations'], function() {
+gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTranslations', () => {
   // preprocess() removes all @ifdef DEBUG — however (!) be sure to not place '// @endif'
   // on the very last line in a {} block, because it would get removed, by... by what? the
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
@@ -461,11 +528,11 @@ gulp.task('minifyScripts', ['compileConcatAllScripts', 'minifyTranslations'], fu
       .pipe(gulp.dest('public/res/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/'));
-});
+}));
 
 
 
-gulp.task('compile-stylus', function () {
+gulp.task('compile-stylus', () => {
   var stylusOpts = {
     linenos: true,
     import: [
@@ -500,7 +567,6 @@ gulp.task('compile-stylus', function () {
         'client/app-slim/page/threads.styl',
         'client/app-slim/page/posts.styl',
         'client/app-slim/page/arrows.styl',
-        'client/app-slim/page/action-links.styl',
         'client/app-slim/**/*.styl',
         'client/app-more/**/*.styl',
         'client/app-editor/**/*.styl',
@@ -509,113 +575,82 @@ gulp.task('compile-stylus', function () {
 
 
 function logChangeFn(fileType) {
-  return function(event) {
+  return function(filePath) {
     // This logs messages like:
-    //  "Staff TypeScript file changed: /opt/talkyard/[..]/staff-tours.staff.ts"
-    console.log(`${fileType} file ${event.type}: ${event.path}`);
+    //  "Slim typescript file changed: client/app-slim/utils/talkyard-tour.ts"
+    console.log(`${fileType} file changed: ${filePath}`);
   };
 }
 
 
-gulp.task('watch', ['default'], function() {
-  var allServerScriptsSrc = ['client/server/**/*.ts', ...serverJavascriptSrc];
-  gulp.watch(allServerScriptsSrc, ['compileServerTypescriptConcatJavascript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
-  gulp.watch(['client/serviceworker/**/*.ts'], ['compileSwTypescript-concatScripts']).on('change', logChangeFn('Service worker TypeScript'));
-  gulp.watch(['client/app-slim/**/*.ts'], ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
-  gulp.watch(['client/app-more/**/*.ts'], ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
-  //gulp.watch(_2dTsProj.src(), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript')); [SLIMTYPE]
-  gulp.watch(['client/app-staff/**/*.ts'], ['compileStaffTypescript-concatScripts']).on('change', logChangeFn('Staff TypeScript'));
-  gulp.watch(['client/app-editor/**/*.ts'], ['compileEditorTypescript-concatScripts']).on('change', logChangeFn('Editor TypeScript'));
-
-  gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
-  gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch('tests/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
-  //gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
-});
-
-gulp.task('default', [
+gulp.task('default', gulp.series(
   'compileConcatAllScripts',
   'compile-stylus',
   'minifyTranslations',
   'build-e2e',
   //'build-security-tests',
-  ], () => {
-});
+  ));
 
 
-gulp.task('release', ['enable-prod-stuff', 'minifyScripts', 'compile-stylus'], function() {
-});
+gulp.task('watch', gulp.series('default', (done) => {
+  gulp.watch(
+      ['client/server/**/*.ts', ...serverJavascriptSrc],
+      gulp.series('compileServerTypescriptConcatJavascript-concatScripts'))
+    .on('change', logChangeFn('Server typescript'));
+
+  gulp.watch(
+      ['client/serviceworker/**/*.ts'],
+      gulp.series('compileSwTypescript-concatScripts'))
+    .on('change', logChangeFn('Service worker typescript'));
+
+  gulp.watch(
+      ['client/app-slim/**/*.ts'],
+      gulp.series('compileSlimTypescript-concatScripts'))
+    .on('change', logChangeFn('Slim typescript'));
+
+  gulp.watch(
+      ['client/app-more/**/*.ts'],
+      gulp.series('compileMoreTypescript-concatScripts'))
+    .on('change', logChangeFn('More typescript'));
+
+  gulp.watch(
+      ['client/app-staff/**/*.ts'],
+      gulp.series('compileStaffTypescript-concatScripts'))
+    .on('change', logChangeFn('Staff typescript'));
+
+  gulp.watch(['client/app-editor/**/*.ts'],
+      gulp.series('compileEditorTypescript-concatScripts'))
+    .on('change', logChangeFn('Editor typescript'));
+
+  gulp.watch('client/**/*.js',
+      gulp.series('wrap-javascript-concat-scripts'))
+    .on('change', logChangeFn('Javascript'));
+
+  gulp.watch(
+      'client/**/*.styl',
+      gulp.series('compile-stylus'))
+    .on('change', logChangeFn('Stylus'));
+
+  gulp.watch('tests/e2e/**/*.ts',
+      gulp.series('build-e2e'))
+    .on('change', logChangeFn('End-to-End test files'));
+
+  //gulp.watch(_2dTsProj.src(), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript')); [SLIMTYPE]
+
+  //gulp.watch('tests/security/**/*.ts',
+  //    gulp.series('build-security-tests'))
+  //  .on('change', logChangeFn('security test files'));
+
+  done();
+}));
 
 
-
-// ------------------------------------------------------------------------
-//  End-to-end Tests
-// ------------------------------------------------------------------------
+gulp.task('release', gulp.series('enable-prod-stuff', 'minifyScripts', 'compile-stylus'));
 
 
-gulp.task('clean-e2e', function () {
-  return del([
-    'target/e2e/**/*']);
-});
-
-gulp.task('compile-e2e-scripts', function() {
-  var stream = gulp.src([
-        'client/app-slim/constants.ts',
-        'client/app-slim/model.ts',
-        'tests/e2e/**/*ts'])
-      .pipe(plumber())
-      .pipe(typeScript({
-        declarationFiles: true,
-        module: 'commonjs',
-        lib: ['es5', 'es2015', 'dom'],
-        types: ['lodash', 'core-js', 'assert', 'node']
-      }));
-  // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
-
-  return stream.js
-      // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
-      .pipe(gulp.dest('target/e2e'));
-});
-
-
-// Compiles TypeScript code in test/e2e/ and places it in target/e2e/transpiled/,
-//
-gulp.task('build-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
-});
-
-
-// ------------------------------------------------------------------------
-//  Translations
-// ------------------------------------------------------------------------
-
-gulp.task('cleanTranslations', function () {
-  return del([
-    'public/res/translations/**/*']);
-});
-
-// Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
-// in public/res/translations/... .
-gulp.task('compileTranslations', function() {
-  var stream = gulp.src(['translations/**/*.ts'])
-      .pipe(plumber())
-      .pipe(typeScript({
-        declarationFiles: true,
-        lib: ['es5', 'es2015', 'dom'],
-        types: ['core-js']
-      }));
-
-  return stream.js
-    .pipe(gulp.dest('public/res/translations'));
-});
-
-
-gulp.task('buildTranslations', ['cleanTranslations', 'compileTranslations'], function() {
-});
-
-
-// ------------------------------------------------------------------------
+// ========================================================================
 //  Security tests
-// ------------------------------------------------------------------------
+// ========================================================================
 
 //gulp.task('clean-security-tests', function () {
 //  return del([
@@ -639,7 +674,7 @@ gulp.task('buildTranslations', ['cleanTranslations', 'compileTranslations'], fun
 //});
 //
 //
-//gulp.task('build-security-tests', ['clean-security-tests', 'compile-security-tests'], function() {
+//gulp.task('build-security-tests', gulp.series('clean-security-tests', 'compile-security-tests', () => {
 //});
 
 
