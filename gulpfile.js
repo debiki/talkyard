@@ -1,6 +1,6 @@
 /**
  * Build file for client scripts and styles.
- * Copyright (c) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@
  */
 
 var gulp = require('gulp');
+var plumber = require('gulp-plumber');
 var newer = require('gulp-newer');
 var typeScript = require('gulp-typescript');
 var stylus = require('gulp-stylus');
@@ -36,16 +37,50 @@ var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
-var gulpUtil = require('gulp-util');
 var es = require('event-stream');
 var fs = require("fs");
 var execSync = require('child_process').execSync;
-var path = require("path");
 var preprocess = require('gulp-preprocess');
 
 var watchAndLiveForever = false;
 var currentDirectorySlash = __dirname + '/';
 var versionFilePath = 'version.txt';
+
+
+
+/*
+const chalk = require('chalk');
+function logError(message) {
+  // Doesn't work:
+  // const errorColor = chalk.bold.rgb(255, 255, 100).bgRgb(100, 0, 0);
+  // Changes the color to white and gray instead. Apparently the terminal "rounds" the colors
+  // to something different :- (
+  // Try this instead:  (so errors easy to notice! They can otherwise waste lots of time)
+  // — this makes the error text look underlined, easier to notice.
+  var starredMessage = '*** ' + message + ' ***';
+  var spaces = ' '.repeat(starredMessage.length);
+  console.log('');
+  console.log(chalk.red(starredMessage));
+  console.log(chalk.bgRed(spaces));
+  console.log('');
+}
+
+// This would be nice, but has no effect, since Gulp runs in a Doker container.
+// see: https://scotch.io/tutorials/prevent-errors-from-crashing-gulp-watch
+// "beeper": "^1.1.1",
+// "gulp-notify": "^3.2.0",
+// const beeper = require('beeper');
+// const notify = require('gulp-notify');
+const plumberOpts = {
+  errorHandler: function(err) {
+    notify.onError({
+      title: "Gulp error in " + err.plugin,
+      message:  err.toString()
+    })(err);
+    // Beep (play sound)
+    beeper();
+  }
+} */
 
 
 function getVersionTag() {
@@ -205,6 +240,7 @@ var nextFileTemplate =
 gulp.task('wrapJavascript', function () {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
+    .pipe(plumber())
     .pipe(wrap('(function() {\n<%= contents %>\n}).call(this);'))
     .pipe(gulp.dest('./target/client/'));
 });
@@ -235,16 +271,12 @@ var serverJavascriptSrc = [
 // 'compile(Sth)Typescript' functions — so let's append 'ConcatJavascript' to the name.
 function compileServerTypescriptConcatJavascript() {
   var typescriptStream = serverTypescriptProject.src()
-    .pipe(wrap(nextFileTemplate))
-    .pipe(serverTypescriptProject());
-
-  if (watchAndLiveForever) {
-    typescriptStream.on('error', function() {
-      console.log('\n!!! Error compiling server side TypeScript [TyESSTS] !!!\n');
-    });
-  }
+      .pipe(plumber())
+      .pipe(wrap(nextFileTemplate))
+      .pipe(serverTypescriptProject());
 
   var javascriptStream = gulp.src(serverJavascriptSrc)
+      .pipe(plumber())
       .pipe(wrap(nextFileTemplate));
 
   return es.merge(typescriptStream, javascriptStream)
@@ -267,42 +299,30 @@ var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
 
 
 function compileSwTypescript() {
-  var stream = swTypescriptProject.src()
+  return swTypescriptProject.src()
+    .pipe(plumber())
     .pipe(wrap(nextFileTemplate))
-    .pipe(swTypescriptProject());
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error compiling service worker TypeScript [TyE5BJW4N] !!!\n');
-    });
-  }
-  return stream.pipe(gulp.dest('target/client/'));
+    .pipe(swTypescriptProject())
+    .pipe(gulp.dest('target/client/'));
 }
 
 
 function compileSlimTypescript() {
-  var stream = slimTypescriptProject.src()
+  return slimTypescriptProject.src()
+    .pipe(plumber())
     .pipe(wrap(nextFileTemplate))
-    .pipe(slimTypescriptProject());
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error compiling slim TypeScript [TyE4GDTX8] !!!\n');
-    });
-  }
-  return stream.pipe(gulp.dest('target/client/'));
+    .pipe(slimTypescriptProject())
+    .pipe(gulp.dest('target/client/'));
 }
 
 
 function compileOtherTypescript(typescriptProject) {
-  var stream = typescriptProject.src()
+  //var bundleName = typescriptProject.config.compilerOptions.outFile;
+  return typescriptProject.src()
+    .pipe(plumber())
     .pipe(wrap(nextFileTemplate))
-    .pipe(typescriptProject());
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error transpiling Typescript for ' +
-          typescriptProject.compilerOptions.outFile + ' [TyETSTRANSPL] !!!\n');
-    });
-  }
-  return stream.pipe(gulp.dest('target/client/'));
+    .pipe(typescriptProject())
+    .pipe(gulp.dest('target/client/'));
 }
 
 gulp.task('compileServerTypescriptConcatJavascript', function () {
@@ -372,7 +392,7 @@ gulp.task('compileConcatAllScripts', ['wrapJavascript', 'compileAllTypescript'],
 
 function makeConcatAllScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat, checkIfNewer) {
-    var stream = gulp.src(filesToConcat);
+    var stream = gulp.src(filesToConcat).pipe(plumber());
     if (checkIfNewer) {
       stream = stream.pipe(newer('public/res/' + outputFileName));
     }
@@ -418,10 +438,8 @@ gulp.task('enable-prod-stuff', function() {
 // Similar to 'minifyScripts', but a different copyright header.
 gulp.task('minifyTranslations', ['buildTranslations'], function() {
   return gulp.src(['public/res/translations/**/*.js'])
-      .pipe(uglify().on('error', function(err) {
-        gulpUtil.log(gulpUtil.colors.red("*** Error ***"), err.toString());
-        this.emit('end');
-      }))
+      .pipe(plumber())
+      .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(makeTranslationsCopyrightAndLicenseBanner()))
       .pipe(gulp.dest('public/res/translations/'))
@@ -436,11 +454,9 @@ gulp.task('minifyScripts', ['compileConcatAllScripts', 'minifyTranslations'], fu
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
   // found in string" error with a meaningless stacktrace, in preprocess().
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
+      .pipe(plumber())
       .pipe(preprocess({ context: {} })) // see comment above
-      .pipe(uglify().on('error', function(err) {
-        gulpUtil.log(gulpUtil.colors.red("*** Error ***"), err.toString());
-        this.emit('end');
-      }))
+      .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(makeCopyrightAndLicenseBanner()))
       .pipe(gulp.dest('public/res/'))
@@ -459,17 +475,9 @@ gulp.task('compile-stylus', function () {
   };
 
   function makeStyleStream(destDir, destFile, sourceFiles) {
-    var stream = gulp.src(sourceFiles)
-      .pipe(stylus(stylusOpts));
-
-    if (watchAndLiveForever) {
-      // This has no effect, why not?
-      stream.on('error', function() {
-        console.log('\n!!! Error compiling Stylus !!!\n');
-      });
-    }
-
-    return stream
+    return gulp.src(sourceFiles)
+      .pipe(plumber())
+      .pipe(stylus(stylusOpts))
       .pipe(concat(destFile))
       .pipe(gulp.dest(destDir))
       .pipe(cleanCSS())
@@ -480,7 +488,7 @@ gulp.task('compile-stylus', function () {
       .pipe(gulp.dest(destDir));
   }
 
-  return es.merge(
+  return (
     makeStyleStream('public/res/', 'styles-bundle.css', [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
@@ -503,7 +511,9 @@ gulp.task('compile-stylus', function () {
 
 function logChangeFn(fileType) {
   return function(event) {
-    console.log(fileType + ' file '+ event.path +' was '+ event.type +', running tasks...');
+    // This logs messages like:
+    //  "Staff TypeScript file changed: /opt/talkyard/[..]/staff-tours.staff.ts"
+    console.log(`${fileType} file ${event.type}: ${event.path}`);
   };
 }
 
@@ -549,6 +559,7 @@ gulp.task('compile-e2e-scripts', function() {
         'client/app-slim/constants.ts',
         'client/app-slim/model.ts',
         'tests/e2e/**/*ts'])
+      .pipe(plumber())
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
@@ -556,11 +567,7 @@ gulp.task('compile-e2e-scripts', function() {
         types: ['lodash', 'core-js', 'assert', 'node']
       }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error compiling End-to-End tests TypeScript !!!\n');
-    });
-  }
+
   return stream.js
       // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
       .pipe(gulp.dest('target/e2e'));
@@ -585,19 +592,14 @@ gulp.task('cleanTranslations', function () {
 // Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
 // in public/res/translations/... .
 gulp.task('compileTranslations', function() {
-  var stream = gulp.src([
-    'translations/**/*.ts'])
-    .pipe(typeScript({
-      declarationFiles: true,
-      lib: ['es5', 'es2015', 'dom'],
-      types: ['core-js']
-    }));
+  var stream = gulp.src(['translations/**/*.ts'])
+      .pipe(plumber())
+      .pipe(typeScript({
+        declarationFiles: true,
+        lib: ['es5', 'es2015', 'dom'],
+        types: ['core-js']
+      }));
 
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error compiling translations TypeScript !!!\n');
-    });
-  }
   return stream.js
     .pipe(gulp.dest('public/res/translations'));
 });
@@ -620,18 +622,13 @@ gulp.task('compile-security-tests', function() {
   var stream = gulp.src([
     //'tests/sync-tape.ts',
     'tests/security/**/*.ts'])
+    .pipe(plumber())
     .pipe(typeScript({
       declarationFiles: true,
       module: 'commonjs',
       lib: ['es5', 'es2015', 'dom'],
       types: ['lodash', 'core-js', 'assert', 'node']
     }));
-  // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
-  if (watchAndLiveForever) {
-    stream.on('error', function() {
-      console.log('\n!!! Error compiling security tests TypeScript !!!\n');
-    });
-  }
   return stream.js
   // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
     .pipe(gulp.dest('target/security-tests'));

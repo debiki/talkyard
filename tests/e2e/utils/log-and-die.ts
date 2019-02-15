@@ -1,9 +1,9 @@
-const chalk = require('chalk');
+const ansiColors = require('ansi-colors');
 
-const boringColor = chalk.gray;
-const errorColor = chalk.bold.yellow.bgRed;
-const warningColor = chalk.bold.red;
-const unusualColor = chalk.black.bgGreen;
+const boringColor = ansiColors.gray;
+const errorColor = ansiColors.bold.yellow.bgRed;
+const warningColor = ansiColors.bold.red;
+const unusualColor = ansiColors.black.bgGreen;
 
 
 const api = {

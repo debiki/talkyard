@@ -41,6 +41,7 @@ services:
     # ./docker/build-app-prod.sh.)
     image: ${DOCKER_REPOSITORY}/talkyard-app-dev
     stdin_open: true  # otherwise Play exits
+    tty: true  # colored logs
     volumes:
       - ./:/opt/talkyard/app/
       - ./volumes/uploads/:/opt/talkyard/uploads/
@@ -210,6 +211,7 @@ services:
   gulp:
     build: images/gulp/
     image: ${DOCKER_REPOSITORY}/talkyard-gulp
+    tty: true  # colored logs
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
