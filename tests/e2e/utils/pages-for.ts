@@ -106,6 +106,14 @@ function pagesFor(browser) {
       return result.value;
     },
 
+    urlPath: (): string => {
+      const result = browser.execute(function() {
+        return location.pathname;
+      });
+      dieIf(!result || !result.value, 'TyE4RHKS0295');
+      return result.value;
+    },
+
 
     go: (url, opts: { useRateLimits?: boolean } = {}) => {
       let shallDisableRateLimits = false;
@@ -132,7 +140,7 @@ function pagesFor(browser) {
       browser.url(url);
 
       if (shallDisableRateLimits) {
-        browser.disableRateLimits();
+        api.disableRateLimits();
       }
     },
 
@@ -1929,6 +1937,9 @@ function pagesFor(browser) {
         browser.click('#signIn');
         api.waitForEnabled('#submit_approve_access');
         browser.click('#submit_approve_access'); */
+
+        // If you need to verify you're a human:
+        // browser.deb ug();
 
         if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {
           logMessage("switching back to first tab...");
@@ -4647,6 +4658,32 @@ function pagesFor(browser) {
         api.waitAndClick('.e_SED_CloseB');
         api.waitUntilGone('.modal-dialog.dw-server-error');
       }
+    },
+
+    tour: {
+      runToursAlthoughE2eTest: () => {
+        browser.execute(function() {
+          localStorage.setItem('runToursAlthoughE2eTest', 'true');
+        });
+      },
+
+      assertTourStarts: (shallStart: boolean) => {
+        // Wait for the tour to appear. (There's no other way to do that right now,
+        // than just waiting for a while. It appears within about a second.
+        // Note that this is also used to test that the tour *does* appear fast enough,
+        // not only that it does *not* appear — to test, that this test, works.)
+        browser.pause(3000);
+        assert.equal(browser.isVisible('.s_Tour'), shallStart);
+      },
+
+      clickNextForStepNr: (stepNr: number) => {
+        // Don't scroll — the tour will scroll for us.
+        api.waitAndClick(`.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
+      },
+
+      exitTour: () => {
+        api.waitAndClick(`.s_Tour_D_Bs_ExitB`, { mayScroll: false });
+      },
     },
 
     helpDialog: {

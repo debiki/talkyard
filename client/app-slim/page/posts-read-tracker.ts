@@ -189,8 +189,10 @@ export function sendAnyRemainingData(success: () => void | null) {
   }
 
   // @ifdef DEBUG
-  if (debug) console.log(`Sending remaining posts nrs read via beacon: ${toNrs(unreportedPostsRead)},` +
-      ` ${unreportedSecondsReading} seconds reading`);
+  const viaWhat = success === null ? "via beacon" : "via normal request";
+  if (debug) console.log(
+      `Sending remaining posts nrs read ${viaWhat}: ${toNrs(unreportedPostsRead)}, ` +
+      `${unreportedSecondsReading} seconds reading`);
   // @endif
 
   // Don't include any 'success' callback —> sendBeacon will get used.

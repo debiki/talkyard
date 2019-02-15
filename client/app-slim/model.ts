@@ -555,8 +555,10 @@ const enum PlaceHow {
 }
 
 interface StaffTours {
-  forum: (me: Myself) => TalkyardTour;
-  adminArea: (me: Myself) => TalkyardTour;
+  forumIntroForBlogComments: (me: Myself) => TalkyardTour;
+  forumIntroForCommunity: (me: Myself) => TalkyardTour;
+  adminAreaIntroForBlogComments: (me: Myself) => TalkyardTour;
+  adminAreaIntroForCommunity: (me: Myself) => TalkyardTour;
 }
 
 

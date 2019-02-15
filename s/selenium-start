@@ -1,6 +1,13 @@
 #!/bin/bash
 
 # Prefix with: DEBUG=selenium-standalone:* to tell Selenium to debug log more.
+# And optionally, append: --javaArgs="-Dwebdriver.chrome.logfile=chromedriver.log
+# to get a little bit Chromedriver log messages in ./chromedriver.log.
+#
+# However, the most interesting log messages, are when you invoke wdio,
+# that is, not this script, but s/wdio. Append --logLevel=verbose,
+# for example:
+#   s/wdio target/e2e/wdio.conf.js --only some-test --logLevel=verbose
 
 node_modules/selenium-standalone/bin/selenium-standalone start $@
 

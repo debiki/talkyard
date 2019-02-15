@@ -42,15 +42,13 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser.go(link);
     browser.waitAndClick('#e2eContinue');
 
-    browser.execute(function() {
-      localStorage.setItem('runToursAlthoughE2eTest', 'true');
-    });
+    browser.tour.runToursAlthoughE2eTest();
 
     pages.createSomething.createForum("Password Forum Title");
   });
 
   it("the forum admin tour works", () => {
-    assertTourSoonAppears(browser, true);
+    browser.tour.assertTourStarts(true);
     console.log('Step 1');
     browser.waitAndClick('.s_Tour-Step-1 .s_Tour_D_Bs_NextB');
     console.log('Step 2');
@@ -123,22 +121,13 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
 
   it("the forum intro tour is shown just once", () => {
     browser.go('/');
-    assertTourSoonAppears(browser, false);
+    browser.tour.assertTourStarts(false);
   });
 
   it("... and the admin area tour, just once, it too", () => {
     browser.topbar.clickGoToAdmin();
-    assertTourSoonAppears(browser, false);
+    browser.tour.assertTourStarts(false);
   });
-
-  function assertTourSoonAppears(browser, shoulBeVisible: boolean) {
-    // Wait for the tour to appear. (There's no other way to do that right now,
-    // than just waiting for a while. It appears within about a second.
-    // Note that this is also used to test that the tour *does* appear fast enough,
-    // not only that it does *not* appear — to test, that this test, works.)
-    browser.pause(3000);
-    assert.equal(browser.isVisible('.s_Tour'), shoulBeVisible);
-  }
 
 });
 

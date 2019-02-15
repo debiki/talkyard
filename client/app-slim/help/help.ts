@@ -24,7 +24,7 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-  namespace debiki2.help {
+  namespace debiki2.help {  // RENAME to  talkyard.tips
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
@@ -41,7 +41,7 @@ export function isHelpMessageClosed(store: Store, message: HelpMessage) {
 }
 
 
-export var HelpMessageBox = createComponent({
+export var HelpMessageBox = createComponent({   // RENAME to TipsBox
   mixins: [StoreListenerMixin],
 
   getInitialState: function() {

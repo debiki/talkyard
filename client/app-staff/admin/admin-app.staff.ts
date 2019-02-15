@@ -300,11 +300,15 @@ const AdminAppComponent = createReactClass(<any> {
       setEditedSettings: this.setEditedSettings,
     };
 
+    // Make it simpler for people to find the blog comments settings,  [5RKTF29]
+    // if the site is for blog comments.
+    const defaultSettingsPath = isBlogCommentsSite() ? '/embedded-comments' : '/legal';
+
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
         RedirAppend({ path: ar + 'groups', append: '/built-in' }),
         RedirAppend({ path: ar + 'review', append: '/all' }),
-        RedirAppend({ path: ar + 'settings', append: '/legal' }),
+        RedirAppend({ path: ar + 'settings', append: defaultSettingsPath }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
@@ -1040,6 +1044,13 @@ const FeatureSettings = createFactory({
 const EmbeddedCommentsSettings = createFactory({
   displayName: 'EmbeddedCommentsSettings',
 
+  componentDidMount: function() {
+    if (isBlogCommentsSite()) {
+      const store: Store = this.props.store;
+      utils.maybeRunTour(staffTours.adminAreaIntroForBlogComments(store.me));
+    }
+  },
+
   render: function() {
     const props = this.props;
     const settings: Settings = props.currentSettings;
@@ -1289,8 +1300,10 @@ const LegalSettings = createFactory({
   displayName: 'LegalSettings',
 
   componentDidMount: function() {
-    const store: Store = this.props.store;
-    utils.maybeRunTour(staffTours.adminArea(store.me));
+    if (isCommunitySite()) {
+      const store: Store = this.props.store;
+      utils.maybeRunTour(staffTours.adminAreaIntroForCommunity(store.me));
+    }
   },
 
   render: function() {

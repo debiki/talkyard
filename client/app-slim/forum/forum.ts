@@ -721,7 +721,9 @@ const LoadAndListTopics = createFactory({
       this.tourMaybeStarted = true;
       debiki2.staffbundle.loadStaffTours((tours) => {
         if (this.isGone) return;
-        debiki2.utils.maybeRunTour(tours.forum(me));
+        const tour = isBlogCommentsSite() ?
+            tours.forumIntroForBlogComments(me) : tours.forumIntroForCommunity(me);
+        debiki2.utils.maybeRunTour(tour);
       });
     }
   },
@@ -911,7 +913,7 @@ export const TopicsList = createComponent({
     }
 
     if (!topics.length)
-      return r.p({ id: 'e2eF_NoTopics' }, t.NoTopics);
+      return r.p({ className: 's_F_Ts', id: 'e2eF_NoTopics' }, t.NoTopics);
 
     const useTable = this.props.useTable;
     const orderOffset: OrderOffset = this.props.orderOffset;
@@ -1018,10 +1020,11 @@ export const TopicsList = createComponent({
           topicElems);
 
     return (
-      r.div({ className: 'e_SrtOrdr-' + orderOffset.sortOrder },
+      r.div({ className: 's_F_Ts e_SrtOrdr-' + orderOffset.sortOrder },
         categoryDeletedInfo,
         topTopicsPeriodButton,
-        r.div({ style: { position: 'relative' }}, anyDeletedCross,
+        r.div({ style: { position: 'relative' }},
+          anyDeletedCross,
           topicsTable || topicRows),
         loadMoreTopicsBtn));
   }

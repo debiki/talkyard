@@ -212,6 +212,17 @@ export function scrollToBottom(node) {
 
 
 
+export function isBlogCommentsSite(): boolean {
+  return location.hostname.startsWith('comments-for-'); // or how know? [7PLBKA24]
+}
+
+
+export function isCommunitySite(): boolean {
+  return !isBlogCommentsSite();
+}
+
+
+
 /**
  * Finds the main embedded comments window, where the per page temporary xsrf token
  * and sesion id are kept, when logging in without cookies. So they'll be accessible

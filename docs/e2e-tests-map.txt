@@ -438,6 +438,18 @@ site settings:
     num to approve,
     num to allow:
 
+intro tours:
+  admin area, community, admin tour:
+          - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
+  admin area, blog comments, admin tour:
+  forum section, community, admin tour:
+          - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
+  forum section, blog comments, admin tour:
+          - embedded-comments-forum-intro-tour.test.ts  TyT6AKBR2044
+  exit tour:
+          - embedded-comments-create-site-req-verif-email.2browsers.test.ts [Ty7ABKR024]
+  restart tour:  [TyT2ABKRT05]
+
 admin -
   new admin intro tours:
     - create-site-password-run-admin-intro-tours  TyT7BAWFPK9

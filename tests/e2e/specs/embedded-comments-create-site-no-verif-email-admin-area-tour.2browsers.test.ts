@@ -68,9 +68,8 @@ describe("embedded comments, new site", () => {
       orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
-      // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
-      username: 'e2e_test_z' + testId,
-      password: 'pub5KFV2FY8C',
+      username: 'owen_owner',
+      password: 'publ-ow020',
     }
   }
 
@@ -81,6 +80,9 @@ describe("embedded comments, new site", () => {
     owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     owensBrowser.disableRateLimits();
+
+    owensBrowser.tour.runToursAlthoughE2eTest();
+
     owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
@@ -92,7 +94,49 @@ describe("embedded comments, new site", () => {
   });
 
 
-  it("... and creates an embedding page", () => {
+  it("An intro guide appears", () => {
+    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    owensBrowser.tour.assertTourStarts(true);
+    console.log('Step 1');
+    owensBrowser.tour.clickNextForStepNr(1);
+    console.log('Step 2');
+    owensBrowser.waitAndClick('#e2eAA_Ss_LoginL', { mayScroll: false });
+    console.log('Step 3');
+    // wait for a tour scroll animation to complete, which otherwise makes the next
+    // tour scroll fail.
+    owensBrowser.tour.clickNextForStepNr(3);
+    console.log('Step 4');
+    owensBrowser.waitAndClick('.e_RvwB', { mayScroll: false });
+    console.log('Step 5');
+    owensBrowser.tour.clickNextForStepNr(5);
+    console.log('Step 6');
+    owensBrowser.waitAndClick('.e_StngsB', { mayScroll: false });
+    console.log('Step 7');
+    owensBrowser.tour.clickNextForStepNr(7);
+    console.log('Step 8');
+    owensBrowser.tour.clickNextForStepNr(8);
+    console.log('Step 9');
+    owensBrowser.tour.clickNextForStepNr(9);
+    console.log('Step 10');
+    owensBrowser.tour.clickNextForStepNr(10);
+  });
+
+
+  it("Owen is back on the embedded comments page", () => {
+    assert.equal(owensBrowser.urlPath(), '/-/admin/settings/embedded-comments');
+  });
+
+
+  it("The tour is done, won't restart", () => {
+    owensBrowser.refresh(); // this beacon-saves  UX COULD save explicitly? when exiting tour
+    owensBrowser.pause(100);
+    owensBrowser.refresh(); // this reloads new tourTipsSeen
+    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    owensBrowser.tour.assertTourStarts(false);
+  });
+
+
+  it("He creates an embedding page", () => {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     console.log('htmlToPaste: ' + htmlToPaste);

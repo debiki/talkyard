@@ -250,6 +250,10 @@ class SystemDao(
         requireVerifiedEmail = notIfEmbedded,
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
+        // Features intended for forums — like chat and direct messages — just make people
+        // confused, in a blog comments site, right.
+        enableChat = notIfEmbedded,
+        enableDirectMessages = notIfEmbedded,
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)

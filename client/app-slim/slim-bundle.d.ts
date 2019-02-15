@@ -246,6 +246,9 @@ declare namespace debiki2 {
 
   function whenMsToIsoDate(whenMs: number): string;
 
+  function isBlogCommentsSite(): boolean;
+  function isCommunitySite(): boolean;
+
   var isWikiPost;
   var isStaff;
   function user_isTrustMinNotThreat(me: MemberInclDetails | Myself, trustLevel: TrustLevel): boolean;

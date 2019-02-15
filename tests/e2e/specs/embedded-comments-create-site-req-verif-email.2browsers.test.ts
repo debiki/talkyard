@@ -92,6 +92,11 @@ describe("embedded comments, new site", () => {
   });
 
 
+  it("Owen exits the intro tour  [Ty7ABKR024]", () => {
+    owensBrowser.tour.exitTour();
+  });
+
+
   it("... and creates an embedding page", () => {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');

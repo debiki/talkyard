@@ -37,16 +37,18 @@
 
 let tourElem;
 let startTour;
+let tourRunning = false;
 
 export function maybeRunTour(tour: TalkyardTour) {
   // Currently the e2e tests don't expect any tours to start, so skip them, if is test site.
-  if (location.hostname.startsWith('e2e-test-') &&
+  const hostname = location.hostname;
+  if ((hostname.startsWith('e2e-test-') || hostname.startsWith('comments-for-e2e-test-')) &&
       !getFromLocalStorage('runToursAlthoughE2eTest'))
     return;
 
   const tourIdsSeen = tour.forWho.tourTipsSeen;
   const thisTourSeen = tourIdsSeen.indexOf(tour.id) >= 0;
-  if (thisTourSeen)
+  if (thisTourSeen || tourRunning)
     return;
 
   if (!tourElem) {
@@ -70,6 +72,7 @@ function TalkyardTour() {
   let showExitTimeoutHandle;
 
   if (!startTour) startTour = (tour: TalkyardTour) => {
+    tourRunning = true;
     setTour(tour);
     setStepIx(0);
   }
@@ -117,7 +120,7 @@ function TalkyardTour() {
     const isScrolling = utils.scrollIntoViewInPageColumn(
         placeAtElem, { marginTop: 90, marginBottom: 250 });
     // For now. Currently there's no scroll-done event.
-    const delayMs = (step.pauseBeforeMs || 0) + (isScrolling ? 500 : 0);
+    const delayMs = (step.pauseBeforeMs || 0) + (isScrolling ? 700 : 0);
     setTimeout(showDialog, delayMs);
   }
 
@@ -240,6 +243,7 @@ function TalkyardTour() {
 
   function exitTour() {
     setTour(null);
+    tourRunning = false;
   }
 
   function maybeGoNextOnElemClick() {

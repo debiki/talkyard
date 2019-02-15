@@ -25,15 +25,22 @@
 const r = ReactDOMFactories;
 
 
+function closeSidebarFn() {
+  // The sidebar can occlude things, if screen narrow.
+  debiki2.sidebar.contextBar.closeSidebar();
+}
+
+function displayName(me: Myself): string {
+  return me.fullName || me.username;
+}
+
+
 export const staffTours: StaffTours = {
-  adminArea: function(me: Myself) { return {
-    id: 'aa',  // 'a'dmin area intro, for 'a'dmins
+  adminAreaIntroForCommunity: function(me: Myself) { return {
+    id: 'a_c_a',  // 'a'dmin area intro, for a 'c'ommunity, for 'a'dmins
     forWho: me,
     steps: [{
-      doBefore: () => {
-        // The sidebar can occlude things, if screen narrow.
-        debiki2.sidebar.contextBar.closeSidebar();
-      },
+      doBefore: closeSidebarFn,
       pauseBeforeMs: 1000,
       title: "This is the Admin Area",
       text: "It's for staff only",
@@ -99,16 +106,95 @@ export const staffTours: StaffTours = {
       placeAt: 'body',
     }],
   }},
-  forum: function(me: Myself) { return {
-    id: 'fa',  // 'f'orum intro tour, for 'a'dmins
+
+  adminAreaIntroForBlogComments: function(me: Myself) { return {
+    id: 'a_b_a',  // 'a'dmin area intro, for 'b'log comments, for 'a'dmins
     forWho: me,
     steps: [{
-      doBefore: () => {
-        // The sidebar can occlude things, if screen narrow.
-        debiki2.sidebar.contextBar.closeSidebar();
-      },
+      doBefore: closeSidebarFn,
+      pauseBeforeMs: 700,
+      title: `Welcome, ${displayName(me)}`,
+      text: "Let me show you around",
+      placeAt: 'body',
+    }, {
+      title: "Let's view login settings",
+      text: r.span({}, "Click ", r.b({}, "Signup and Login")),
+      placeAt: '#e2eAA_Ss_LoginL',
+      placeHow: PlaceHow.ToTheRight,
+      waitForClick: true,
+    }, {
+      pauseBeforeMs: 500, /*
+      title: "These are the",
+      text: rFragment({}, r.b({}, "login and sign up"), " settings."),
+      placeAt: 'body',
+    }, {
+      pauseBeforeMs: 500, */
+      title: "Here you can ...",
+      text: r.span({}, "... enable or disable anonymous Guest login "),
+      placeAt: '.e_A_Ss_S-AllowGuestsCB',
+      placeHow: PlaceHow.Below,
+      highlightOffsetY: -12,
+    }, {
+      title: "Let's go here",
+      text: r.span({}, "Click the ", r.b({}, "Review"), " tab"),
+      placeAt: '.e_RvwB',
+      placeHow: PlaceHow.Below,
+      waitForClick: true,
+    }, {
       pauseBeforeMs: 500,
-      title: `Welcome, ${me.fullName || me.username}!`,
+      title: "People's blog comments ...",
+      text: "... will appear here. For you to review and approve.",
+      placeAt: 'body',
+    }, {
+      title: "Let's go back",
+      text: r.span({}, "to the embedded comments settings. Click ", r.b({}, "Settings")),
+      placeAt: '.e_StngsB',
+      placeHow: PlaceHow.Below,
+      waitForClick: true,
+    }, {  /*
+      // This opens automatically now [5RKTF29]
+      title: "Then click Embedded Comments",
+      text: '',
+      placeAt: '#e2eAA_Ss_EmbCmtsL',
+      placeHow: PlaceHow.ToTheRight,
+      waitForClick: true,
+    }, { */
+      pauseBeforeMs: 500,
+      title: "For you to do:",
+      text: "Check that your blog address is correct",
+      placeAt: '#e_AllowEmbFrom',
+      placeHow: PlaceHow.Below,
+      highlightOffsetX: -90,
+      highlightOffsetY: -20,
+      highlightPadding: 20,
+    }, {
+      title: "Thereafter:",
+      text: "Follow these instructions",
+      placeAt: '.s_A_Ss_EmbCmts h2',
+      placeHow: PlaceHow.ToTheLeft,
+      highlightOffsetX: -30,
+      highlightPadding: 20,
+    }, {
+      title: "And look here",
+      text: "for any special instructions, for your blog.",
+      placeAt: '.s_A_Ss_EmbCmts ul',
+      placeHow: PlaceHow.Above,
+      highlightOffsetX: -110,
+      highlightPadding: 7,
+    }, {
+      title: "That's it, for now",
+      text: "Have a nice day",
+      placeAt: 'body',
+    }],
+  }},
+
+  forumIntroForCommunity: function(me: Myself) { return {
+    id: 'f_c_a',  // 'f'orum intro tour, for a 'c'ommuntiy, for 'a'dmins
+    forWho: me,
+    steps: [{
+      doBefore: closeSidebarFn,
+      pauseBeforeMs: 500,
+      title: `Welcome, ${displayName(me)}`,
       text: "Let me show you around",
       nextTitle: "Okay",
       placeAt: 'body',
@@ -162,6 +248,57 @@ export const staffTours: StaffTours = {
       waitForClick: true,
     }],
   }},
+
+  forumIntroForBlogComments: function(me: Myself) { return {
+    id: 'f_b_a',  // 'f'orum intro tour, for 'b'log comments, for the 'a'dmin
+    forWho: me,
+    steps: [{
+      doBefore: closeSidebarFn,
+      pauseBeforeMs: 700,
+      title: "Welcome! To the discussions list",
+      text: "Let me show you around",
+      placeAt: 'body',
+    }, {
+      title: "Here, there'll be one topic",
+      text: "... for each blog post that got one or more comments",
+      placeAt: '.s_F_Ts',
+      placeHow: PlaceHow.ToTheRight,
+      highlightOffsetX: -30,
+    }, {
+      title: "This button ...",
+      text: "shows blog posts with recent comments, first",
+      placeAt: '#e2eSortLatestB',
+      placeHow: PlaceHow.Below,
+    }, {
+      title: "And this ...",
+      text: "shows blog posts with many upvoted comments, first",
+      placeAt: '#e2eSortTopB',
+      placeHow: PlaceHow.Below,
+    }, {
+      title: "You can create new topics",
+      text: "outside any blog post, if you want to use this like a forum",
+      placeAt: '#e2eCreateSth',
+      placeHow: PlaceHow.ToTheLeft,
+      highlightPadding: 17,
+    }, {
+      title: "Your menu",
+      text: r.span({}, "Click your name, ", r.b({}, me.username), ", to open. Now"),
+      placeAt: '.esMyMenu',
+      placeHow: PlaceHow.ToTheLeft,
+      waitForClick: true,
+    }, {
+      pauseBeforeMs: 300,
+      title: "Admin area link",
+      text: "If you click it, you'll go to the admin area.",
+      placeAt: '.esMyMenu_admin',
+      placeHow: PlaceHow.ToTheLeft,
+    }, {
+      title: "That's it, for now",
+      text: "Bye and have a nice day",
+      placeAt: 'body',
+    }],
+  }},
+
 };
 
 
