@@ -1,3 +1,7 @@
+// Was using:
+// "@types/tape": "^4.2.28",
+// "tape": "^4.6.3",
+
 // Synchronous tape tests.
 
 import tape = require("tape");

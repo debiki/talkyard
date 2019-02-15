@@ -1,3 +1,11 @@
+// Was using:
+// "cheerio": "^0.22.0",
+// "@types/tape": "^4.2.28",
+// "tape": "^4.6.3",
+
+
+
+
 /// <reference path="../e2e/test-types.ts"/>
 
 import * as tape from 'tape';

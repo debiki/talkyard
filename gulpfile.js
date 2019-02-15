@@ -42,7 +42,6 @@ var fs = require("fs");
 var execSync = require('child_process').execSync;
 var preprocess = require('gulp-preprocess');
 
-var watchAndLiveForever = false;
 var currentDirectorySlash = __dirname + '/';
 var versionFilePath = 'version.txt';
 
@@ -519,7 +518,6 @@ function logChangeFn(fileType) {
 
 
 gulp.task('watch', ['default'], function() {
-  watchAndLiveForever = true;
   var allServerScriptsSrc = ['client/server/**/*.ts', ...serverJavascriptSrc];
   gulp.watch(allServerScriptsSrc, ['compileServerTypescriptConcatJavascript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
   gulp.watch(['client/serviceworker/**/*.ts'], ['compileSwTypescript-concatScripts']).on('change', logChangeFn('Service worker TypeScript'));
@@ -532,10 +530,16 @@ gulp.task('watch', ['default'], function() {
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
   gulp.watch('tests/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
-  gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
+  //gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
 });
 
-gulp.task('default', ['compileConcatAllScripts', 'compile-stylus', 'minifyTranslations', 'build-e2e', 'build-security-tests'], function () {
+gulp.task('default', [
+  'compileConcatAllScripts',
+  'compile-stylus',
+  'minifyTranslations',
+  'build-e2e',
+  //'build-security-tests',
+  ], () => {
 });
 
 
@@ -613,30 +617,30 @@ gulp.task('buildTranslations', ['cleanTranslations', 'compileTranslations'], fun
 //  Security tests
 // ------------------------------------------------------------------------
 
-gulp.task('clean-security-tests', function () {
-  return del([
-    'target/security-tests/**/*']);
-});
-
-gulp.task('compile-security-tests', function() {
-  var stream = gulp.src([
-    //'tests/sync-tape.ts',
-    'tests/security/**/*.ts'])
-    .pipe(plumber())
-    .pipe(typeScript({
-      declarationFiles: true,
-      module: 'commonjs',
-      lib: ['es5', 'es2015', 'dom'],
-      types: ['lodash', 'core-js', 'assert', 'node']
-    }));
-  return stream.js
-  // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
-    .pipe(gulp.dest('target/security-tests'));
-});
-
-
-gulp.task('build-security-tests', ['clean-security-tests', 'compile-security-tests'], function() {
-});
+//gulp.task('clean-security-tests', function () {
+//  return del([
+//    'target/security-tests/**/*']);
+//});
+//
+//gulp.task('compile-security-tests', function() {
+//  var stream = gulp.src([
+//    //'tests/sync-tape.ts',
+//    'tests/security/**/*.ts'])
+//    .pipe(plumber())
+//    .pipe(typeScript({
+//      declarationFiles: true,
+//      module: 'commonjs',
+//      lib: ['es5', 'es2015', 'dom'],
+//      types: ['lodash', 'core-js', 'assert', 'node']
+//    }));
+//  return stream.js
+//  // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
+//    .pipe(gulp.dest('target/security-tests'));
+//});
+//
+//
+//gulp.task('build-security-tests', ['clean-security-tests', 'compile-security-tests'], function() {
+//});
 
 
 // vim: et ts=2 sw=2 tw=0 list
