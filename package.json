@@ -10,7 +10,7 @@
     "url": ""
   },
   "engines": {
-    "node": ">= 8.0.0"
+    "node": ">= 10.0.0"
   },
   "dependencies": {
     "@types/core-js": "^2.5.0",
@@ -48,6 +48,7 @@
     "ansi-colors": "^3.2.3",
     "del": "^2.0.2",
     "gulp": "^4.0.0",
+    "gulp-cli": "^2.0.1",
     "gulp-clean-css": "^4.0.0",
     "gulp-concat": "^2.6.1",
     "gulp-gzip": "^1.4.2",

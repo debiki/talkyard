@@ -1561,7 +1561,7 @@ gulp-clean-css@^4.0.0:
     through2 "3.0.0"
     vinyl-sourcemaps-apply "0.2.1"
 
-gulp-cli@^2.0.0:
+gulp-cli@^2.0.0, gulp-cli@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/gulp-cli/-/gulp-cli-2.0.1.tgz#7847e220cb3662f2be8a6d572bf14e17be5a994b"
   dependencies:
