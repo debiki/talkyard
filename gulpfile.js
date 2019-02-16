@@ -356,7 +356,7 @@ function compileServerTypescriptConcatJavascript() {
       .pipe(plumber())
       .pipe(insert.transform(nextFileTemplate));
 
-  return merge2(typescriptStream, javascriptStream)
+  return merge2(javascriptStream, typescriptStream)
       .pipe(concat('server-bundle.js'))
       .pipe(gulp.dest('public/res/'));
 }
@@ -604,7 +604,7 @@ gulp.task('default', gulp.series(
   ));
 
 
-gulp.task('watch', (done) => {
+gulp.task('watch', gulp.series('default', (done) => {
   gulp.watch(
       ['client/server/**/*.ts', ...serverJavascriptSrc],
       gulp.series('compileServerTypescriptConcatJavascript-concatScripts'))
@@ -654,7 +654,7 @@ gulp.task('watch', (done) => {
   //  .on('change', logChangeFn('security test files'));
 
   done();
-});
+}));
 
 
 gulp.task('release', gulp.series('enable-prod-stuff', 'minifyScripts', 'compile-stylus'));
