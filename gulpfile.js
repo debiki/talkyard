@@ -31,10 +31,9 @@ var typeScript = require('gulp-typescript');
 var stylus = require('gulp-stylus');
 var cleanCSS = require('gulp-clean-css');
 var concat = require('gulp-concat');
+var insert = require('gulp-insert');
 var del = require('del');
 var rename = require("gulp-rename");
-var header = require('gulp-header');
-var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
 var merge2 = require('merge2');
@@ -230,14 +229,19 @@ var embeddedJsFiles = [
 // simplifies reading the generated bundles, and debugging.
 // Don't insert any newline before the contents — that'd result in incorrect line numbers reported,
 // in compilation error messages.
-const nextFileTemplate =
-    '/* Next file: <%= file.path.replace(file._cwd + "/", "") %>   */ <%= contents %>\n' +
-                                                                        // no newline before contents
+//
+const nextFileTemplate = function(contents, file) {
+  return (
+    // Don't use file.relative (https://github.com/gulpjs/vinyl#filerelative),
+    // it doesn't inc 'client/app-*/'.
+    `/* Next file: ${file.path.replace(file.cwd + '/', '')}  */ ${contents}\n` +
+                                                                      // no newline before contents
     '\n' +
     '//=====================================================================================\n' +
     '//=====================================================================================\n' +
     '//=====================================================================================\n' +
-    '\n\n';
+    '\n\n');
+}
 
 
 
@@ -314,7 +318,7 @@ gulp.task('wrapJavascript', () => {
     .pipe(plumber())
     // Avoid any line breaks before 'contents', so any error will be reported
     // with the correct line number.
-    .pipe(wrap('(function() { <%= contents %>\n}).call(this);'))
+    .pipe(insert.wrap('(function() {', '\n}).call(this);'))
     .pipe(gulp.dest('./target/client/'));
 });
 
@@ -345,12 +349,12 @@ var serverJavascriptSrc = [
 function compileServerTypescriptConcatJavascript() {
   var typescriptStream = serverTypescriptProject.src()
       .pipe(plumber())
-      .pipe(wrap(nextFileTemplate))
+      .pipe(insert.transform(nextFileTemplate))
       .pipe(serverTypescriptProject());
 
   var javascriptStream = gulp.src(serverJavascriptSrc)
       .pipe(plumber())
-      .pipe(wrap(nextFileTemplate));
+      .pipe(insert.transform(nextFileTemplate));
 
   return merge2(typescriptStream, javascriptStream)
       .pipe(concat('server-bundle.js'))
@@ -374,7 +378,7 @@ var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
 function compileSwTypescript() {
   return swTypescriptProject.src()
     .pipe(plumber())
-    .pipe(wrap(nextFileTemplate))
+    .pipe(insert.transform(nextFileTemplate))
     .pipe(swTypescriptProject())
     .pipe(gulp.dest('target/client/'));
 }
@@ -383,7 +387,7 @@ function compileSwTypescript() {
 function compileSlimTypescript() {
   return slimTypescriptProject.src()
     .pipe(plumber())
-    .pipe(wrap(nextFileTemplate))
+    .pipe(insert.transform(nextFileTemplate))
     .pipe(slimTypescriptProject())
     .pipe(gulp.dest('target/client/'));
 }
@@ -393,7 +397,7 @@ function compileOtherTypescript(typescriptProject) {
   //var bundleName = typescriptProject.config.compilerOptions.outFile;
   return typescriptProject.src()
     .pipe(plumber())
-    .pipe(wrap(nextFileTemplate))
+    .pipe(insert.transform(nextFileTemplate))
     .pipe(typescriptProject())
     .pipe(gulp.dest('target/client/'));
 }
@@ -470,10 +474,10 @@ function makeConcatAllScriptsStream() {
       stream = stream.pipe(newer('public/res/' + outputFileName));
     }
     return stream
-        .pipe(wrap(nextFileTemplate))
+        .pipe(insert.transform(nextFileTemplate))
         .pipe(concat(outputFileName))
-        .pipe(header(thisIsAConcatenationMessage))
-        .pipe(header(makeCopyrightAndLicenseBanner()))
+        .pipe(insert.prepend(thisIsAConcatenationMessage))
+        .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
         .pipe(gulp.dest('public/res/'));
   }
 
@@ -515,7 +519,7 @@ gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
       .pipe(plumber())
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
-      .pipe(header(makeTranslationsCopyrightAndLicenseBanner()))
+      .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
       .pipe(gulp.dest('public/res/translations/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/translations/'));
@@ -532,7 +536,7 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
       .pipe(preprocess({ context: {} })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
-      .pipe(header(makeCopyrightAndLicenseBanner()))
+      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
       .pipe(gulp.dest('public/res/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/'));
@@ -555,7 +559,7 @@ gulp.task('compile-stylus', () => {
       .pipe(concat(destFile))
       .pipe(gulp.dest(destDir))
       .pipe(cleanCSS())
-      .pipe(header(makeCopyrightAndLicenseBanner()))
+      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
       .pipe(rename({ extname: '.min.css' }))
       .pipe(gulp.dest(destDir))
       .pipe(gzip())
