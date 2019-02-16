@@ -226,12 +226,18 @@ var embeddedJsFiles = [
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
 
-var nextFileTemplate =
-    '\n\n' +
-    '//=====================================================================================\n\n' +
-    '// Next file: <%= file.path %>\n' +
-    '//=====================================================================================\n\n' +
-    '<%= contents %>\n';
+// Separating different source files with ==== and including the file name at the top,
+// simplifies reading the generated bundles, and debugging.
+// Don't insert any newline before the contents — that'd result in incorrect line numbers reported,
+// in compilation error messages.
+const nextFileTemplate =
+    '/* Next file: <%= file.path.replace(file._cwd + "/", "") %>   */ <%= contents %>\n' +
+                                                                        // no newline before contents
+    '\n' +
+    '//=====================================================================================\n' +
+    '//=====================================================================================\n' +
+    '//=====================================================================================\n' +
+    '\n\n';
 
 
 
@@ -306,7 +312,9 @@ gulp.task('wrapJavascript', () => {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
     .pipe(plumber())
-    .pipe(wrap('(function() {\n<%= contents %>\n}).call(this);'))
+    // Avoid any line breaks before 'contents', so any error will be reported
+    // with the correct line number.
+    .pipe(wrap('(function() { <%= contents %>\n}).call(this);'))
     .pipe(gulp.dest('./target/client/'));
 });
 
@@ -592,7 +600,7 @@ gulp.task('default', gulp.series(
   ));
 
 
-gulp.task('watch', gulp.series('default', (done) => {
+gulp.task('watch', (done) => {
   gulp.watch(
       ['client/server/**/*.ts', ...serverJavascriptSrc],
       gulp.series('compileServerTypescriptConcatJavascript-concatScripts'))
@@ -642,7 +650,7 @@ gulp.task('watch', gulp.series('default', (done) => {
   //  .on('change', logChangeFn('security test files'));
 
   done();
-}));
+});
 
 
 gulp.task('release', gulp.series('enable-prod-stuff', 'minifyScripts', 'compile-stylus'));
