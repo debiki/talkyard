@@ -36,6 +36,7 @@ trait AllSettings {
       // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true  [2KZMQ5]
       // if must-be-approved = true.
 
+  def expireIdleAfterMins: Int
   // def approveInvitesHow: HowApproveInvites.BeforeTheyAreSent/AfterSignup/AlwaysAllow
   def inviteOnly: Boolean
   def allowSignup: Boolean
@@ -75,6 +76,7 @@ trait AllSettings {
   // account hasn't been approved (or has been rejected), then the user is sent to this page.
   def ssoNotApprovedUrl: String
 
+  // --- These could be moved to per member uiVariants fields. ------------
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
@@ -86,6 +88,8 @@ trait AllSettings {
   def selectTopicType: Boolean
   def showAuthorHow: ShowAuthorHow
   def watchbarStartsOpen: Boolean
+  // ----------------------------------------------------------------------
+
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
   def numFirstPostsToAllow: Int
@@ -138,6 +142,7 @@ trait AllSettings {
   private def toEditedSettings = EditedSettings(
     userMustBeAuthenticated = Some(self.userMustBeAuthenticated),
     userMustBeApproved = Some(self.userMustBeApproved),
+    expireIdleAfterMins = Some(self.expireIdleAfterMins),
     inviteOnly = Some(self.inviteOnly),
     allowSignup = Some(self.allowSignup),
     allowLocalSignup = Some(self.allowLocalSignup),
@@ -219,6 +224,7 @@ object AllSettings {
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
+    val expireIdleAfterMins = 60 * 24 * 14  // two weeks per default, for now
     val inviteOnly = false
     val allowSignup = true
     val allowLocalSignup = true
@@ -307,6 +313,7 @@ case class EffectiveSettings(
 
   def userMustBeAuthenticated: Boolean = firstInChain(_.userMustBeAuthenticated) getOrElse default.userMustBeAuthenticated
   def userMustBeApproved: Boolean = firstInChain(_.userMustBeApproved) getOrElse default.userMustBeApproved
+  def expireIdleAfterMins: Int = firstInChain(_.expireIdleAfterMins) getOrElse default.expireIdleAfterMins
   def inviteOnly: Boolean = firstInChain(_.inviteOnly) getOrElse default.inviteOnly
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
@@ -476,6 +483,7 @@ object Settings2 {
     Json.obj(
       "userMustBeAuthenticated" -> JsBooleanOrNull(s.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBooleanOrNull(s.userMustBeApproved),
+      "expireIdleAfterMins" -> JsNumberOrNull(s.expireIdleAfterMins),
       "inviteOnly" -> JsBooleanOrNull(s.inviteOnly),
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
@@ -548,6 +556,7 @@ object Settings2 {
     SettingsToSave(
     userMustBeAuthenticated = anyBool(json, "userMustBeAuthenticated", d.userMustBeAuthenticated),
     userMustBeApproved = anyBool(json, "userMustBeApproved", d.userMustBeApproved),
+    expireIdleAfterMins = anyInt(json, "expireIdleAfterMins", d.expireIdleAfterMins),
     inviteOnly = anyBool(json, "inviteOnly", d.inviteOnly),
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),

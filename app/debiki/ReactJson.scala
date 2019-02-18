@@ -570,13 +570,13 @@ class JsonMaker(dao: SiteDao) {
   def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
         : Option[JsObject] = {
     require(pageRequest.dao == dao, "TyE4GKVRY3")
-    val user = pageRequest.user getOrElse {
+    val requester = pageRequest.user getOrElse {
       return None
     }
 
     val permissions = pageRequest.authzContext.permissions
 
-    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
       RACE // if the user opens a page, and someone adds her to a chat at the same time.
@@ -584,16 +584,19 @@ class JsonMaker(dao: SiteDao) {
         case None => // watchbar wasn't modified
         case Some(modifiedWatchbar) =>
           watchbar = modifiedWatchbar
-          dao.saveWatchbar(user.id, watchbar)
-          dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds) ;RACE
+          dao.saveWatchbar(requester.id, watchbar)
+          dao.pubSub.userWatchesPages(pageRequest.siteId, requester.id, watchbar.watchedPageIds) ;RACE
       }
     }
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val (restrCategories, restrTopics, users) = listRestrictedCategoriesAndTopics(pageRequest)
-    dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrCategories,
-        restrictedTopics = restrTopics, restrictedTopicsUsers = users, permissions, unapprovedPostAuthorIds,
-        transaction))
+    val (restrCategories, restrTopics, restrTopicUsers) = listRestrictedCategoriesAndTopics(pageRequest)
+    val myGroupsEveryoneLast: Seq[Group] =
+      pageRequest.authzContext.groupIdsOwnFirst map dao.getTheGroup
+
+    dao.readOnlyTransaction { tx =>
+      Some(requestersJsonImpl(requester, pageRequest.pageId, watchbarWithTitles, restrCategories,
+        restrictedTopics = restrTopics, restrictedTopicsUsers = restrTopicUsers, permissions,
+        unapprovedPostAuthorIds, myGroupsEveryoneLast, tx))
     }
   }
 
@@ -601,40 +604,48 @@ class JsonMaker(dao: SiteDao) {
   def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
     import request.authzContext
     require(request.dao == dao, "TyE4JK5WS2")
-    val user = request.user getOrElse {
+    val requester = request.user getOrElse {
       return JsNull
     }
     val permissions = authzContext.permissions
-    val watchbar = dao.getOrCreateWatchbar(user.id)
+    val watchbar = dao.getOrCreateWatchbar(requester.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val restrictedCategories = JsArray()
-    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
-      permissions, unapprovedPostAuthorIds = Set.empty, _))
+    val myGroupsEveryoneLast: Seq[Group] =
+      request.authzContext.groupIdsEveryoneLast map dao.getTheGroup
+
+    dao.readOnlyTransaction { tx =>
+      requestersJsonImpl(requester, anyPageId = None, watchbarWithTitles,
+        restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
+        permissions, unapprovedPostAuthorIds = Set.empty, myGroupsEveryoneLast, tx)
+    }
   }
 
 
-  private def userDataJsonImpl(user: Participant, anyPageId: Option[PageId],
+  private def requestersJsonImpl(requester: Participant, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
         restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
         permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
-        tx: SiteTransaction): JsObject = {
+        myGroupsEveryoneLast: Seq[Group], tx: SiteTransaction): JsObject = {
 
     // Bug: If !isAdmin, might count [review tasks one cannot see on the review page]. [5FSLW20]
     val reviewTasksAndCounts =
-      if (user.isStaff) tx.loadReviewTaskCounts(user.isAdmin)
+      if (requester.isStaff) tx.loadReviewTaskCounts(requester.isAdmin)
       else ReviewTaskCounts(0, 0)
 
     // dupl line [8AKBR0]
-    val notfsAndCounts = loadNotifications(user.id, tx, unseenFirst = true, limit = 20)
+    val notfsAndCounts = loadNotifications(requester.id, tx, unseenFirst = true, limit = 20)
 
-    val ownIdAndGroupIds = tx.loadGroupIdsMemberIdFirst(user)
+    // Hmm not needed? Group ids already incl in myGroupsEveryoneLast above —
+    // if user = requester.
+    COULD_OPTIMIZE // use:  requester.id +: myGroupsEveryoneLast.map(_.id)  instead of db request.
+    val ownIdAndGroupIds = tx.loadGroupIdsMemberIdFirst(requester)
 
     COULD_OPTIMIZE // could cache this, unless on the user's profile page (then want up-to-date info)?
     // Related code: [6RBRQ204]
     val ownCatsTagsSiteNotfPrefs = tx.loadNotfPrefsForMemberAboutCatsTagsSite(ownIdAndGroupIds)
-    val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == user.id)
-    val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != user.id)
+    val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == requester.id)
+    val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != requester.id)
 
     val (pageNotfPrefs: Seq[PageNotfPref], votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>
@@ -643,16 +654,16 @@ class JsonMaker(dao: SiteDao) {
         SECURITY // minor: filter out prefs for cats one may not access...  [7RKBGW02]
         SECURITY // Ensure done when generating notfs.
 
-        val votes = votesJson(user.id, pageId, tx)
+        val votes = votesJson(requester.id, pageId, tx)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
-          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, tx)
+          unapprovedPostsAndAuthorsJson(requester, pageId, unapprovedPostAuthorIds, tx)
 
         (pageNotfPrefs, votes, postsJson, postAuthorsJson)
       } getOrElse (
           Nil, JsEmptyObj, JsEmptyObj, JsArray())
 
-    val threatLevel = user match {
+    val threatLevel = requester match {
       case member: User => member.threatLevel
       case _ =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
@@ -661,13 +672,20 @@ class JsonMaker(dao: SiteDao) {
     }
 
     COULD_OPTIMIZE // load stats together with other user fields, in the same db request
-    val anyStats = tx.loadUserStats(user.id)
+    val anyStats = tx.loadUserStats(requester.id)
     val tourTipsSeenJson: Seq[JsString] = anyStats flatMap { stats: UserStats =>
       stats.tourTipsSeen.map((theTourTipsSeen: TourTipsSeen) =>
         theTourTipsSeen.map(JsString): Seq[JsString])
     } getOrElse Nil
 
-    val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(user.id, _))
+    val groupsUiPrefsJson: Seq[JsValue] = myGroupsEveryoneLast.flatMap(_.uiVariants)
+    val ownUiPrefsJson = requester match {
+      case m: MemberInclDetails => m.uiVariants getOrElse JsNull
+      case _ => JsNull
+    }
+    val uiPrefsOwnFirstJsonSeq: Seq[JsValue] = ownUiPrefsJson +: groupsUiPrefsJson
+
+    val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(requester.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
     val ownDataByPageId = anyPageId match {
@@ -676,8 +694,8 @@ class JsonMaker(dao: SiteDao) {
         Json.obj(pageId ->
           Json.obj(  // MyPageData
             "pageId" -> pageId,
-            "myPageNotfPref" -> pageNotfPrefs.find(_.peopleId == user.id).map(JsPageNotfPref),
-            "groupsPageNotfPrefs" -> pageNotfPrefs.filter(_.peopleId != user.id).map(JsPageNotfPref),
+            "myPageNotfPref" -> pageNotfPrefs.find(_.peopleId == requester.id).map(JsPageNotfPref),
+            "groupsPageNotfPrefs" -> pageNotfPrefs.filter(_.peopleId != requester.id).map(JsPageNotfPref),
             "readingProgress" -> anyReadingProgressJson,
             "votes" -> votes,
             // later: "flags" -> JsArray(...) [7KW20WY1]
@@ -691,19 +709,19 @@ class JsonMaker(dao: SiteDao) {
     // Somewhat dupl code, (2WB4G7) and [B28JG4].
     var json = Json.obj(
       "dbgSrc" -> "4JKW7A0",
-      "id" -> JsNumber(user.id),
-      "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
-      "username" -> JsStringOrNull(user.anyUsername),
-      "fullName" -> JsStringOrNull(user.anyName),
+      "id" -> JsNumber(requester.id),
+      "userId" -> JsNumber(requester.id), // try to remove, use 'id' instead
+      "username" -> JsStringOrNull(requester.anyUsername),
+      "fullName" -> JsStringOrNull(requester.anyName),
       "isLoggedIn" -> JsBoolean(true),
-      "isAdmin" -> JsBoolean(user.isAdmin),
-      "isModerator" -> JsBoolean(user.isModerator),
-      "isDeactivated" -> JsBoolean(user.isDeactivated),
-      "isDeleted" -> JsBoolean(user.isDeleted),
-      "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
-      "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
-      "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
+      "isAdmin" -> JsBoolean(requester.isAdmin),
+      "isModerator" -> JsBoolean(requester.isModerator),
+      "isDeactivated" -> JsBoolean(requester.isDeactivated),
+      "isDeleted" -> JsBoolean(requester.isDeleted),
+      "avatarSmallHashPath" -> JsStringOrNull(requester.smallAvatar.map(_.hashPath)),
+      "isEmailKnown" -> JsBoolean(requester.email.nonEmpty),
+      "isAuthenticated" -> JsBoolean(requester.isAuthenticated),
+      "trustLevel" -> JsNumber(requester.effectiveTrustLevel.toInt),
       "threatLevel" -> JsNumber(threatLevel.toInt),
 
       "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
@@ -727,12 +745,13 @@ class JsonMaker(dao: SiteDao) {
       "restrictedCategories" -> restrictedCategories,
       "closedHelpMessages" -> JsObject(Nil),
       "tourTipsSeen" -> tourTipsSeenJson,
+      "uiPrefsOwnFirst" -> JsArray(uiPrefsOwnFirstJsonSeq),
       "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "myDataByPageId" -> ownDataByPageId,
       "marksByPostId" -> JsObject(Nil))
 
-    if (user.isAdmin) {
+    if (requester.isAdmin) {
       val siteSettings = tx.loadSiteSettings()
       json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
     }

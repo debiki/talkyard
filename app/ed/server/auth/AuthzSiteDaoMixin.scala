@@ -43,7 +43,7 @@ trait AuthzSiteDaoMixin {
 
 
   def getForumAuthzContext(user: Option[Participant]): ForumAuthzContext = {
-    val groupIds = getGroupIds(user)
+    val groupIds = getGroupIdsOwnFirst(user)
     val permissions = getPermsForPeople(groupIds)
     ForumAuthzContext(user, groupIds, permissions)
   }
@@ -113,7 +113,7 @@ trait AuthzSiteDaoMixin {
 
     val groupIds: immutable.Seq[UserId] =
       anyTransaction.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
-        getGroupIds(user)
+        getGroupIdsOwnFirst(user)
       }
 
     // Even if we load all perms here, we only use the ones for groupIds later. [7RBBRY2].
@@ -150,7 +150,7 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIds, memberIds,
+    Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIdsOwnFirst, memberIds,
         categories, authzContext.permissions, maySeeUnlisted) match {
       case Yes => (true, "")
       case mayNot: NoMayNot => (false, mayNot.code)

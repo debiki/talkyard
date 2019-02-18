@@ -937,6 +937,11 @@ export function saveAboutUserPrefs(prefs, isGroup: boolean, success: () => void)
 }
 
 
+export function saveUiPrefs(memberId: UserId, prefs, onDone: () => void) {
+  postJsonSuccess('/-/save-ui-prefs', onDone, { memberId, prefs });
+}
+
+
 export function loadCatsTagsSiteNotfPrefs(memberId: UserId,
       onDone: (response: PageNotfPrefsResponse) => void) {
   get(`/-/load-cats-tags-site-notf-prefs?memberId=${memberId}`, onDone);

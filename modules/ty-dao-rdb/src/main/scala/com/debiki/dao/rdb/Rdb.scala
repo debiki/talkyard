@@ -23,6 +23,7 @@ import _root_.com.debiki.core.Prelude._
 import _root_.scala.collection.immutable
 import java.{lang => jl, sql => js}
 import javax.{sql => jxs}
+import play.api.libs.json.{JsObject, Json}
 
 
 object Rdb {
@@ -147,6 +148,11 @@ object Rdb {
   def getOptionalStringNotEmpty(rs: js.ResultSet, column: String): Option[String] = {
     val value = Option(rs.getString(column))
     if (value.contains("")) None else value
+  }
+
+  def getOptJsObject(rs: js.ResultSet, column: String): Option[JsObject] = {
+    val anyString = getOptString(rs, column)
+    anyString.map(s => Json.parse(s).asInstanceOf[JsObject])
   }
 
   /** Converts null to 0 (zero). */

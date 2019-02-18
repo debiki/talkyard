@@ -544,6 +544,17 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
+          label: "Logout idle user after",
+          help: "After how long a user who is away, will get logged out. Default: 2 weeks = 20160",
+          getter: (s: Settings) => s.expireIdleAfterMins,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (num < 0) num = 0;
+            newSettings.expireIdleAfterMins = num;
+          }
+        }),
+
         Setting2(props, { type: 'checkbox', label: "Approve users", id: 'e_ApproveUsersCB',
           className: 'e_A_Ss_S-ApproveUsersCB',
           help: "New users need to be approved by staff before they can do anything more " +

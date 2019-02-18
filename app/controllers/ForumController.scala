@@ -205,7 +205,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
         (editedCategory, permissions)
       }
 
-    val callersGroupIds = request.authzContext.groupIds
+    val callersGroupIds = request.authzContext.groupIdsOwnFirst
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
     val mkJson = dao.jsonMaker.makeCategoriesJson _
 
@@ -353,6 +353,7 @@ object ForumController {
     val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj(
+      "aboutCategory" -> "Here you can ask about Talkyard, and tell us about problems",
       "topics" -> topicsJson,
       "users" -> users.map(JsUser))
     OkSafeJson(json)

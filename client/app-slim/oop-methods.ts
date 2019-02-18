@@ -377,6 +377,9 @@ export function me_copyWithNewPageData(me: Myself, newPageData: MyPageData): Mys
   return newMe;
 }
 
+export function me_uiPrefs(me: Myself): UiPrefs {
+  return shallowMergeFirstItemLast(me.uiPrefsOwnFirst);
+}
 
 
 // Users

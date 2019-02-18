@@ -411,6 +411,7 @@ interface Myself extends OwnPageNotfPrefs {
   pageHelpMessage?: HelpMessage;
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
   tourTipsSeen: TourTipsSeen;
+  uiPrefsOwnFirst: UiPrefs[];
 
   myDataByPageId: { [id: string]: MyPageData };
   myCurrentPageData: MyPageData;
@@ -1070,6 +1071,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   url: string;
   seeActivityMinTrustLevel?: TrustLevel;
   avatarMediumHashPath?: string;
+  uiPrefs: UiPrefs;
   isAdmin: boolean;
   isModerator: boolean;
   isApproved: boolean;
@@ -1095,6 +1097,22 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
 interface MemberInclDetailsWithStats extends MemberInclDetails {
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
+}
+
+
+interface UiPrefs {
+  fbs?: UiPrefsForumButtons;
+  xls?: UiPrefsExternaLInks;
+}
+
+const enum UiPrefsForumButtons {
+  ChooseCategoryFirst = 1,
+  ChooseTopicsFirst = 2,
+}
+
+const enum UiPrefsExternaLInks {
+  OpenInSameTab = 1,
+  OpenInNewTab = 2,
 }
 
 
@@ -1352,6 +1370,7 @@ const enum ContentLicense {
 
 interface Settings {
   // Signup and Login
+  expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   inviteOnly: boolean;

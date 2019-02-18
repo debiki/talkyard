@@ -643,6 +643,11 @@ gulp.task('watch', gulp.series('default', (done) => {
       gulp.series('compile-stylus'))
     .on('change', logChangeFn('Stylus'));
 
+  gulp.watch(
+      ['translations/**/*.ts'],
+      gulp.series('minifyTranslations'))
+    .on('change', logChangeFn('Translations typescript'));
+
   gulp.watch('tests/e2e/**/*.ts',
       gulp.series('build-e2e'))
     .on('change', logChangeFn('End-to-End test files'));

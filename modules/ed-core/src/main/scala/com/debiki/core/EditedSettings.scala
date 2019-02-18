@@ -61,6 +61,7 @@ object ContentLicense {
 case class EditedSettings(
   userMustBeAuthenticated: Option[Boolean],
   userMustBeApproved: Option[Boolean],
+  expireIdleAfterMins: Option[Int],
   inviteOnly: Option[Boolean],
   allowSignup: Option[Boolean],
   allowLocalSignup: Option[Boolean],
@@ -151,6 +152,7 @@ object EditedSettings {
   val empty = EditedSettings(
     userMustBeAuthenticated = None,
     userMustBeApproved = None,
+    expireIdleAfterMins = None,
     inviteOnly = None,
     allowSignup = None,
     allowLocalSignup = None,
@@ -228,6 +230,7 @@ object EditedSettings {
 case class SettingsToSave(
   userMustBeAuthenticated: Option[Option[Boolean]] = None,
   userMustBeApproved: Option[Option[Boolean]] = None,
+  expireIdleAfterMins: Option[Option[Int]] = None,
   inviteOnly: Option[Option[Boolean]] = None,
   allowSignup: Option[Option[Boolean]] = None,
   allowLocalSignup: Option[Option[Boolean]] = None,

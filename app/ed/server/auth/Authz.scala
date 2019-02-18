@@ -35,7 +35,7 @@ object MayMaybe {
 
 sealed abstract class AuthzContext {
   def requester: Option[Participant]
-  def groupIds: immutable.Seq[GroupId]
+  def groupIdsOwnFirst: immutable.Seq[GroupId]
   def permissions: immutable.Seq[PermsOnPages]
   def isStaff: Boolean = requester.exists(_.isStaff)
   def isAdmin: Boolean = requester.exists(_.isAdmin)
@@ -51,8 +51,21 @@ sealed abstract class AuthzContext {
 
 case class ForumAuthzContext(
   requester: Option[Participant],
-  groupIds: immutable.Seq[GroupId],
-  permissions: immutable.Seq[PermsOnPages]) extends AuthzContext
+  groupIdsOwnFirst: immutable.Seq[GroupId],
+  permissions: immutable.Seq[PermsOnPages]) extends AuthzContext {
+
+  def groupIdsEveryoneLast: immutable.Seq[GroupId] = {
+    if (groupIdsOwnFirst.length >= 2) {
+      dieIf(requester.map(_.id) isNot groupIdsOwnFirst(1), "TyE2AKBR05")
+      groupIdsOwnFirst.tail
+    }
+    else {
+      dieIf(requester.isDefined, "TyE5HNKTSF2")
+      groupIdsOwnFirst
+    }
+  }
+}
+
 
 /*
 case class CategoryAuthzContext(
@@ -155,7 +168,7 @@ object Authz {
 
   def maySeeCategory(authzCtx: AuthzContext, categoriesRootLast: immutable.Seq[Category])
         : MayWhat = {
-    checkPermsOnPages(authzCtx.requester, authzCtx.groupIds,
+    checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsOwnFirst,
       pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.permissions,
       maySeeUnlisted = false)
   }

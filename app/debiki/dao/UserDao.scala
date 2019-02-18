@@ -23,7 +23,7 @@ import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
-import play.api.libs.json.JsArray
+import play.api.libs.json.{JsArray, JsObject}
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
@@ -697,7 +697,7 @@ trait UserDao {
   }
 
 
-  def getTheUser(userId: UserId): Participant = {
+  def getTheUser(userId: UserId): User = {
     getUser(userId).getOrElse(throw UserNotFoundException(userId))
   }
 
@@ -709,6 +709,21 @@ trait UserDao {
       case _: Group => throw GotAGroupException(userId)
       case _: Guest => die("TyE2AKBP067")
     })
+  }
+
+
+  def getTheGroup(groupId: UserId): Group = {
+    getGroup(groupId).getOrElse(throw UserNotFoundException(groupId))
+  }
+
+
+  def getGroup(groupId: UserId): Option[Group] = {
+    require(groupId >= Participant.LowestMemberId, "EsE4GKX24")
+    getParticipant(groupId) map {
+      case _: User => throw GotANotGroupException(groupId)
+      case g: Group => g
+      case _: Guest => die("TyE2AKBP068")
+    }
   }
 
 
@@ -784,7 +799,7 @@ trait UserDao {
   }
 
 
-  def getGroupIds(user: Option[Participant]): Vector[UserId] = {
+  def getGroupIdsOwnFirst(user: Option[Participant]): Vector[UserId] = {
     user.map(getGroupIds) getOrElse Vector(Group.EveryoneId)
   }
 
@@ -1401,6 +1416,14 @@ trait UserDao {
   }
 
 
+  def saveUiPrefs(memberId: UserId, prefs: JsObject, me: Who) {
+    editMemberThrowUnlessSelfStaff2(memberId, me, "TyE3ASHW67", "change UI prefs") {
+        (tx, memberInclDetails, me) =>
+      tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiVariants = Some(prefs)))
+    }
+  }
+
+
   def loadMembersCatsTagsSiteNotfPrefs(member: Participant, anyTx: Option[SiteTransaction] = None)
         : Seq[PageNotfPref] = {
     readOnlyTransactionTryReuse(anyTx) { tx =>
@@ -1611,7 +1634,7 @@ trait UserDao {
     * results in 403 Forbidden.
     */
   def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
-        mayNotWhat: String)(block: (SiteTransaction, Participant, Participant) => R): R = {
+        mayNotWhat: String)(block: (SiteTransaction, MemberInclDetails, Participant) => R): R = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -1629,11 +1652,11 @@ trait UserDao {
 
       // [pps] load MemberInclDetails instead, and hand to the caller? (user or group incl details)
       // Would be more usable; sometimes loaded anyway [7FKFA20]
-      val user = tx.loadTheParticipant(userId)
-      throwForbiddenIf(user.isAdmin && !me.isAdmin,
+      val member = tx.loadTheMemberInclDetails(userId)
+      throwForbiddenIf(member.isAdmin && !me.isAdmin,
           errorCode + "-ISADM", s"May not $mayNotWhat for admins")
 
-      block(tx, user, me)
+      block(tx, member, me)
     }
   }
 
@@ -1642,7 +1665,7 @@ trait UserDao {
     memCache.remove(key(userId))
   }
 
-  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|UserById")
+  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById")
 
 }
 

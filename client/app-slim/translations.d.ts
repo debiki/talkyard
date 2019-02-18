@@ -173,6 +173,8 @@ interface TalkyardTranslations {
   // Forum buttons
   fb: {
     TopicList: string;
+    from: String;
+    in: String;
     AllCats: string;
     Active: string;
     ActiveTopics: string;
@@ -186,12 +188,14 @@ interface TalkyardTranslations {
     AllTopics: string;
     ShowAllTopics: string;
     ShowAllTopicsDescr: string;
+    ShowWaitingTopics: string;
     OnlyWaiting: string;
     OnlyWaitingDescr_1: string;
     OnlyWaitingDescr_2: string;
     OnlyWaitingDescr_3: string;
     ShowDeleted: string;
     ShowDeletedDescr: string;
+    ViewCategories: string;
     EditCat: string;
     CreateCat: string;
     CreateTopic: string;

@@ -119,7 +119,8 @@ GET   /-/load-groups            controllers.UserController.loadGroups()
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 POST  /-/save-about-member-prefs controllers.UserController.saveAboutMemberPrefs
-POST  /-/save-about-group-prefs controllers.UserController.saveGroupPreferences
+POST  /-/save-about-group-prefs controllers.UserController.saveAboutGroupPreferences
+POST  /-/save-ui-prefs          controllers.UserController.saveUiPreferences
 GET   /-/load-cats-tags-site-notf-prefs  controllers.UserController.loadMembersCatsTagsSiteNotfPrefs(memberId: Int)
 POST  /-/save-privacy-prefs     controllers.UserController.saveMemberPrivacyPrefs
 POST  /-/save-guest             controllers.UserController.saveGuest

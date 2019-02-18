@@ -137,7 +137,8 @@ object RdbUtil {
       avatar_tiny_base_url,
       avatar_tiny_hash_path,
       avatar_small_base_url,
-      avatar_small_hash_path
+      avatar_small_hash_path,
+      ui_variants
       """
 
 
@@ -164,12 +165,14 @@ object RdbUtil {
       |u.avatar_tiny_hash_path,
       |u.avatar_small_base_url,
       |u.avatar_small_hash_path,
+      |u.ui_variants,
       |u.is_owner u_is_owner,
       |u.is_admin u_is_admin,
       |u.is_moderator u_is_moderator,
       |u.deactivated_at is not null u_is_deactivated,
       |u.deleted_at is not null u_is_deleted
       |""".stripMargin
+  // ui_variants shouldn't be needed here !!!!!!
 
 
   val UserSelectListItemsWithGuests: String =
@@ -216,6 +219,7 @@ object RdbUtil {
         name = name getOrElse "Unnamed group [EdE21QKS0]",
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
+        uiVariants = None,  // not loaded here
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
         grantsTrustLevel = None)
@@ -250,6 +254,7 @@ object RdbUtil {
       name = rs.getString("full_name"),
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
+      uiVariants = getOptJsObject(rs, "ui_variants"),
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
       grantsTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt))
@@ -283,6 +288,7 @@ object RdbUtil {
     |avatar_small_hash_path,
     |avatar_medium_base_url,
     |avatar_medium_hash_path,
+    |ui_variants,
     |is_approved,
     |approved_at,
     |approved_by_id,
@@ -320,7 +326,7 @@ object RdbUtil {
   }
 
 
-  private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId,
+  private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId,  // load  ui_variants
         trustLevel: TrustLevel): UserInclDetails = {
     UserInclDetails(
       id = theUserId,
@@ -338,6 +344,7 @@ object RdbUtil {
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
       mediumAvatar = getAnyUploadRef(rs, "avatar_medium_base_url", "avatar_medium_hash_path"),
+      uiVariants = getOptJsObject(rs, "ui_variants"),
       country = getOptString(rs, "country"),
       website = getOptString(rs, "website"),
       about = getOptString(rs, "about"),

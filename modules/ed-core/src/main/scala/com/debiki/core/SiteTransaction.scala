@@ -371,6 +371,14 @@ trait SiteTransaction {
   }
 
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
+
+  def updateMemberInclDetails(member: MemberInclDetails) {
+    member match {
+      case g: Group => updateGroup(g)
+      case u: UserInclDetails => updateUserInclDetails(u)
+    }
+  }
+
   def updateUserInclDetails(user: UserInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
 
@@ -629,7 +637,7 @@ case class GotAGuestException(groupId: UserId) extends Exception(
 case object GotUnknownUserException extends Exception
 
 case class UserNotFoundException(userId: UserId) extends QuickMessageException(
-  s"User found by id: $userId")
+  s"User or group found by id: $userId")
 case class PageNotFoundException(pageId: PageId) extends QuickMessageException(
   s"Page found by id: $pageId")
 case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickMessageException(
