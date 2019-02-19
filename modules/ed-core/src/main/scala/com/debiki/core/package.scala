@@ -159,6 +159,7 @@ package object core {
   }
 
   object When {
+    /** The world came into existence, on Jan 1, 1970, midnight (just after midnight right?) */
     val Genesis = new When(0)
 
     /** Long.MaxValue is too large for PostgreSQL timestamps.
@@ -284,7 +285,8 @@ package object core {
   val NoPageId: PageId = EmptyPageId
 
   val MillisPerSecond: Int = 1000
-  val OneMinuteInMillis: Long = 60 * 1000
+  val MillisPerMinute: Long = 60 * 1000
+  val OneMinuteInMillis: Long = 60 * 1000  // REMOVE use above instead
   val OneHourInMillis: Long = 3600 * 1000
   val MillisPerDay: Long = 24 * OneHourInMillis
   val OneDayInMillis: Long = MillisPerDay

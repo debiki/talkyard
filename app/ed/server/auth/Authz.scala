@@ -60,7 +60,10 @@ case class ForumAuthzContext(
       groupIdsUserIdFirst.tail
     }
     else {
-      dieIf(requester.isDefined, "TyE5HNKTSF2")
+      // This must be a guest — otherwise, there'd be a user id, and the Everyone group, at least.
+      // Guests are in just one group: the Everyone group.
+      dieIf(requester.map(_.isGuest).isSomethingButNot(true), "TyE5HNKTSF2")
+      dieIf(groupIdsUserIdFirst.headOption.isSomethingButNot(Group.EveryoneId), "TyE4ABFK02")
       groupIdsUserIdFirst
     }
   }

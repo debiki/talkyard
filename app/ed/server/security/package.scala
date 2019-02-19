@@ -44,14 +44,18 @@ case class XsrfOk(value: String) extends XsrfStatus {
 // RENAME to AuthnMethod,
 // and AuthnMethod.ApiSecret [5BKRH02], SidOk –> SessionId, None, BadSessionIdFormat, BadSessionIdHash?
 sealed abstract class SidStatus {
-  def isOk = false
+  def canUse = false
   def userId: Option[UserId] = None
 }
 
-case object SidAbsent extends SidStatus { override def isOk = true }
+case object SidAbsent extends SidStatus {
+  // It's ok to do a request as a not-logged-in someone, without a session id.
+  override def canUse = true
+}
+
 case object SidBadFormat extends SidStatus
 case object SidBadHash extends SidStatus
-case class SidExpired(minutesOld: Long, maxAgeMinutes: Long) extends SidStatus
+case class SidExpired(minutesOld: Long, maxAgeMins: Long) extends SidStatus
 
 
 case class SidOk(
@@ -59,7 +63,7 @@ case class SidOk(
   ageInMillis: Long,
   override val userId: Option[UserId]) extends SidStatus {
 
-  override def isOk = true
+  override def canUse = true
 }
 
 
@@ -137,10 +141,10 @@ class EdSecurity(globals: Globals) {
    * server.)
    */
   def checkSidAndXsrfToken(request: play.api.mvc.Request[_], siteId: SiteId,
-        expireIdleAfterMins: Int, maySetCookies: Boolean)
+        expireIdleAfterMins: Long, maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val expireIdleAfterMillis = expireIdleAfterMins * 60 * 1000
+    val expireIdleAfterMillis: Long = expireIdleAfterMins * 60L * 1000L
 
     // If we cannot use cookies, then the sid is sent in a header. [NOCOOKIES]
     val anySessionIdCookieValue =
@@ -161,7 +165,7 @@ class EdSecurity(globals: Globals) {
       if (request.method == "GET") {
         // Accept this request, and create new XSRF token if needed.
 
-        if (!sessionIdStatus.isOk)
+        if (!sessionIdStatus.canUse && !sessionIdStatus.isInstanceOf[SidExpired])
           Logger.warn(s"Bad SID: $sessionIdStatus, from IP: ${realOrFakeIpOf(request)}")
 
         val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
@@ -277,8 +281,9 @@ class EdSecurity(globals: Globals) {
         }
 
         sessionIdStatus match {
-          case sidOk: SidOk => (sidOk, xsrfOk, Nil)
+          case s: SidOk => (s, xsrfOk, Nil)
           case SidAbsent => (SidAbsent, xsrfOk, Nil)
+          case s: SidExpired => (s, xsrfOk, Nil)
           case _ => throwForbidden("TyEBADSID", "Bad SID")
         }
       }
@@ -395,7 +400,7 @@ class EdSecurity(globals: Globals) {
 
     // Check isn't too old.
     val unixSeconds = xsrfOk.unixSeconds
-    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * 1000))
+    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * 1000L))
     if (millisAgo > expireIdleAfterMillis)
       return XsrfExpired
 
@@ -461,8 +466,8 @@ class EdSecurity(globals: Globals) {
         // Not urgent though — no one will notice: by default, one stays logged in 1 year [7AKR04].
         if (ageMillis > expireIdleAfterMillis)
           return SidExpired(
-            minutesOld = ageMillis / 1000 / 60,
-            maxAgeMinutes = expireIdleAfterMillis / 1000 / 60)
+            minutesOld = ageMillis / MillisPerMinute,
+            maxAgeMins = expireIdleAfterMillis / MillisPerMinute)
         SidOk(
           value = value,
           ageInMillis = ageMillis,

@@ -187,9 +187,9 @@ class PlainApiActions(
         security.checkSidAndXsrfToken(
           request, siteId = site.id, expireIdleAfterMins, maySetCookies = maySetCookies)
 
-      // Ignore and delete any broken session id cookie.
+      // Ignore and delete any broken or expired session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
-        if (actualSidStatus.isOk) (actualSidStatus, false)
+        if (actualSidStatus.canUse) (actualSidStatus, false)
         else (SidAbsent, true)
 
       val (browserId, newBrowserIdCookie) =  // [5JKWQ21]
