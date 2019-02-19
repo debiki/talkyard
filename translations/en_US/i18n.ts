@@ -243,14 +243,18 @@ var t_en_US: TalkyardTranslations = t = {
     OnlyWaiting: "Only waiting",
     OnlyWaitingDescr_1: "Shows only topics ", // MISSING changed "questions" to "topics"
     OnlyWaitingDescr_2: "waiting ",
-    OnlyWaitingDescr_3: "for a solution or to be implemented and done",
+    OnlyWaitingDescr_3: "for a solution or to be implemented and done",  // MISSING rewrote
 
+    YourTopics: "Your topics",       // MISSING
+    AssignedToYou: "Assigned to you", // MISSING
+
+    DeletedTopics: "Show deleted",   // MISSING
     ShowDeleted: "Show deleted",
     ShowDeletedDescr: "Shows all topics, including deleted topics",
 
     // Rightmost buttons
 
-    ViewCategories: "View categories",
+    ViewCategories: "View categories",  // MISSING
     EditCat: "Edit Category",
     CreateCat: "Create Category",
     CreateTopic: "Create Topic",

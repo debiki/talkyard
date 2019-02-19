@@ -193,6 +193,9 @@ interface TalkyardTranslations {
     OnlyWaitingDescr_1: string;
     OnlyWaitingDescr_2: string;
     OnlyWaitingDescr_3: string;
+    YourTopics: string;
+    AssignedToYou: string;
+    DeletedTopics: string;
     ShowDeleted: string;
     ShowDeletedDescr: string;
     ViewCategories: string;

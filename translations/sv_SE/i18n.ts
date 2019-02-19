@@ -212,11 +212,13 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     // Select category dropdown
 
+    from: "från",
+    in: "i",
     AllCats: "Alla kategorier",
 
     // Topic sort order
 
-    Active: "Aktiva",
+    Active: "Aktiva först",
     ActiveTopics: "Aktiva ämnen",
     ActiveDescr: "Visar nyligen aktiva samtalsämnen först",
 
@@ -224,35 +226,41 @@ var t_sv_SE: TalkyardTranslations = t = {
     NewTopics: "Nya ämnen",
     NewDescr: "Visar nyligen skapade ämnen först",
 
-    Top: "Topp",
+    Top: "Populära",
     TopTopics: "Populara ämnen",
-    TopDescr: "Shows popular topics first",
+    TopDescr: "Visar populära ämnen först",
 
     // Topic filter dropdown
 
-    AllTopics: "All topics",
+    AllTopics: "Alla ämnen",
 
-    ShowAllTopics: "Show all topics",
-    ShowAllTopicsDescr: "Not deleted topics though",
+    ShowAllTopics: "Visa alla ämnen",
+    ShowAllTopicsDescr: "Dock inte raderade ämnen",
 
-    OnlyWaiting: "Only waiting",
-    OnlyWaitingDescr_1: "Shows only questions ",
-    OnlyWaitingDescr_2: "waiting ",
-    OnlyWaitingDescr_3: "for a solution, plus ideas and problems not yet handled",
+    WaitingTopics: "Väntande ämnen",
+    OnlyWaiting: "Bara väntante",
+    OnlyWaitingDescr_1: "Visar bara ämnen som ",
+    OnlyWaitingDescr_2: "väntar ",
+    OnlyWaitingDescr_3: "på ett svar eller på att bli implementerade och gjorda",
 
+    YourTopics: "Dina ämnen",
+    AssignedToYou: "Tilldelade till dig",
+
+    DeletedTopics: "Raderade ämnen",
     ShowDeleted: "Show deleted",
     ShowDeletedDescr: "Shows all topics, including deleted topics",
 
     // Rightmost buttons
 
-    EditCat: "Edit Category",
-    CreateCat: "Create Category",
-    CreateTopic: "Create Topic",
-    PostIdea: "Post an Idea",
-    AskQuestion: "Ask a Question",
-    ReportProblem: "Report a Problem",
-    CreateMindMap: "Create Mind Map",
-    CreatePage: "Create Page",
+    ViewCategories: "Visa kategorier",
+    EditCat: "Editera Kategori",
+    CreateCat: "Skapa Kategori",
+    CreateTopic: "Skapa Ämne",
+    PostIdea: "Posta en idé",
+    AskQuestion: "Fråga en fråga",
+    ReportProblem: "Rapportera ett problem",
+    CreateMindMap: "Skapa en Mind Map",
+    CreatePage: "Skapa en sida",
 
   },
 
