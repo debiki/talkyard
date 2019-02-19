@@ -409,6 +409,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]
+        uiPrefs = None,   // [readlater]
         isOwner = readOptBool(jsObj, "isOwner") getOrElse false,
         isAdmin = readOptBool(jsObj, "isAdmin") getOrElse false,
         isModerator = readOptBool(jsObj, "isModerator") getOrElse false,

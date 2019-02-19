@@ -55,7 +55,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
     // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
     throwNoUnless(Authz.maySubmitCustomForm(
-      request.userAndLevels, dao.getGroupIds(request.user),
+      request.userAndLevels, dao.getGroupIdsOwnFirst(request.user),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")

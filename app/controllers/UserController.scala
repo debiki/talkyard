@@ -212,7 +212,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
                                        callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
                                        anyStats: Option[UserStats] = None)
         : JsObject = {
-    var userJson = Json.obj(  // MemberInclDetails
+    var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
       "externalId" -> JsStringOrNull(user.externalId),
       "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
@@ -246,6 +246,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
       userJson += "summaryEmailIfActive" ->
           JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
+      userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsNull)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtMs" -> JsDateMsOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
@@ -275,7 +276,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Boolean,
       callerIsStaff: Boolean = false): JsObject = {
-    var json = Json.obj(
+    var json = Json.obj(   //  [B28JG4]
       "id" -> group.id,
       "isGroup" -> JsTrue,
       //"createdAtEpoch" -> JsWhen(group.createdAt),
@@ -284,6 +285,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+      json += "uiPrefs" -> group.uiPrefs.getOrElse(JsNull)
     }
     json
   }
@@ -1279,7 +1281,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
     throwNoUnless(Authz.maySeePage(
-      pageMeta, request.user, dao.getGroupIds(request.user),
+      pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
@@ -1307,13 +1309,27 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def saveGroupPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+  def saveAboutGroupPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 3000) { request =>
     import request.{dao, theRequester => requester}
     val prefs = aboutGroupPrefsFromJson(request.body)
     if (!requester.isAdmin)
       throwForbidden("EdE5PYKW0", "Only admins may change group prefs, right now")
     dao.saveAboutGroupPrefs(prefs, request.who)
+    Ok
+  }
+
+
+  def saveUiPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 3000) { request =>
+    import request.{body, dao, theRequester => requester}
+    val memberId = (body \ "memberId").as[UserId]
+    val prefs = (body \ "prefs").as[JsObject]
+    throwForbiddenIf(prefs.fields.length > 10, "TyE7ABKSG2", "Too many UI prefs fields")
+    anyWeirdJsObjField(prefs, maxLength = 10) foreach { problemMessage =>
+      throwBadRequest("TyE5AKBR024", s"Weird UI prefs: $problemMessage")
+    }
+    dao.saveUiPrefs(memberId, prefs, request.who)
     Ok
   }
 

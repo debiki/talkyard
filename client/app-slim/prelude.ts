@@ -357,6 +357,21 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function shallowMergeFirstItemLast(items: any[]): any {
+  let result = {};
+  if (items) {
+    for (let i = items.length - 1; i >= 0; --i) {
+      console.log(`shallowMergeFirstItemLast: ${i}`)
+      const item = items[i];
+      if (item) {
+        result = { ...result, ...item };
+      }
+    }
+  }
+  return result;
+}
+
+
 export function parsePostNr(postElem: HTMLElement): number {
   // 5 = drop 'post-' from 'post-123'.
   return parseInt(postElem.id && postElem.id.substr(5, 9));

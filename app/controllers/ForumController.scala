@@ -205,7 +205,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
         (editedCategory, permissions)
       }
 
-    val callersGroupIds = request.authzContext.groupIds
+    val callersGroupIds = request.authzContext.groupIdsUserIdFirst
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
     val mkJson = dao.jsonMaker.makeCategoriesJson _
 

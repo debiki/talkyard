@@ -242,7 +242,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
         full_name = ?,
         username = ?,
         summary_email_interval_mins = ?,
-        summary_email_if_active = ?
+        summary_email_if_active = ?,
+        ui_prefs = ?
       where site_id = ?
         and user_id = ?
       """
@@ -252,6 +253,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       group.theUsername,
       group.summaryEmailIntervalMins.orNullInt,
       group.summaryEmailIfActive.orNullBoolean,
+      group.uiPrefs.orNullJson,
       siteId.asAnyRef,
       group.id.asAnyRef)
 
@@ -843,6 +845,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
         avatar_small_hash_path = ?,
         avatar_medium_base_url = ?,
         avatar_medium_hash_path = ?,
+        ui_prefs = ?,
         is_approved = ?,
         approved_at = ?,
         approved_by_id = ?,
@@ -883,6 +886,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       user.smallAvatar.map(_.hashPath).orNullVarchar,
       user.mediumAvatar.map(_.baseUrl).orNullVarchar,
       user.mediumAvatar.map(_.hashPath).orNullVarchar,
+      user.uiPrefs.orNullJson,
       user.isApproved.orNullBoolean,
       user.approvedAt.orNullTimestamp,
       user.approvedById.orNullInt,

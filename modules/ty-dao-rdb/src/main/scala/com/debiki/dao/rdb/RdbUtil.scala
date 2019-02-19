@@ -137,12 +137,13 @@ object RdbUtil {
       avatar_tiny_base_url,
       avatar_tiny_hash_path,
       avatar_small_base_url,
-      avatar_small_hash_path
+      avatar_small_hash_path,
+      ui_prefs
       """
 
 
   val UserSelectListItemsNoGuests: String =
-    """u.USER_ID u_id,
+    s"""u.USER_ID u_id,
       |u.full_name u_full_name,
       |u.USERNAME u_username,
       |u.external_id u_external_id,
@@ -164,6 +165,7 @@ object RdbUtil {
       |u.avatar_tiny_hash_path,
       |u.avatar_small_base_url,
       |u.avatar_small_hash_path,
+      |u.ui_prefs, ${"" /* WOULD exclude here, if had time to micro optimize */}
       |u.is_owner u_is_owner,
       |u.is_admin u_is_admin,
       |u.is_moderator u_is_moderator,
@@ -216,6 +218,7 @@ object RdbUtil {
         name = name getOrElse "Unnamed group [EdE21QKS0]",
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
+        uiPrefs = None,  // not loaded here
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
         grantsTrustLevel = None)
@@ -250,6 +253,7 @@ object RdbUtil {
       name = rs.getString("full_name"),
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
+      uiPrefs = getOptJsObject(rs, "ui_prefs"),
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
       grantsTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt))
@@ -283,6 +287,7 @@ object RdbUtil {
     |avatar_small_hash_path,
     |avatar_medium_base_url,
     |avatar_medium_hash_path,
+    |ui_prefs,
     |is_approved,
     |approved_at,
     |approved_by_id,
@@ -338,6 +343,7 @@ object RdbUtil {
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
       mediumAvatar = getAnyUploadRef(rs, "avatar_medium_base_url", "avatar_medium_hash_path"),
+      uiPrefs = getOptJsObject(rs, "ui_prefs"),
       country = getOptString(rs, "country"),
       website = getOptString(rs, "website"),
       about = getOptString(rs, "about"),

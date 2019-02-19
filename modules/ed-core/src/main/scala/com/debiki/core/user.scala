@@ -27,6 +27,7 @@ import Prelude._
 import Participant._
 import java.text.Normalizer
 import java.util.Date
+import play.api.libs.json.JsObject
 
 
 
@@ -747,9 +748,30 @@ case class Guest(
 
 
 sealed trait MemberInclDetails {
+  def isAdmin: Boolean
+  def isModerator: Boolean
+  def isStaff: Boolean
+
   def summaryEmailIntervalMins: Option[Int]
   def summaryEmailIfActive: Option[Boolean]
   def seeActivityMinTrustLevel: Option[TrustLevel]
+
+  /** UI features to enable or disable, or which UI variant to use. For A/B testing and
+    * also in some cases for letting admins or indie users override the default settings
+    * and make things look like they look for their community, or themselves.
+    */
+  def uiPrefs: Option[JsObject]
+
+  def copyTrait(uiPrefs: Option[JsObject] = null): MemberInclDetails = {
+    this match {
+      case g: Group =>
+        g.copy(
+          uiPrefs = if (uiPrefs ne null) uiPrefs else g.uiPrefs)
+      case u: UserInclDetails =>
+        u.copy(
+          uiPrefs = if (uiPrefs ne null) uiPrefs else u.uiPrefs)
+    }
+  }
 }
 
 
@@ -776,6 +798,7 @@ case class UserInclDetails(
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   mediumAvatar: Option[UploadRef] = None,
+  uiPrefs: Option[JsObject] = None,
   isOwner: Boolean = false,
   isAdmin: Boolean = false,
   isModerator: Boolean = false,
@@ -814,8 +837,11 @@ case class UserInclDetails(
   require(!isEmailLocalPartHidden(primaryEmailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
+  uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
+    die("TyE2AKBS04", s"User with weird uiPrefs JSON field: $problemMessage")
   require(!deactivatedAt.exists(_.isBefore(createdWhen)), "TyE2GKDU0")
   require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
+  }
 
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
@@ -1115,8 +1141,13 @@ case class Group(
   smallAvatar: Option[UploadRef] = None,
   summaryEmailIntervalMins: Option[Int] = None,
   summaryEmailIfActive: Option[Boolean] = None,
-  grantsTrustLevel: Option[TrustLevel] = None)
+  grantsTrustLevel: Option[TrustLevel] = None,
+  uiPrefs: Option[JsObject] = None)
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
+
+  uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
+    die("TyE2AKBS05", s"Group with weird uiPrefs JSON field: $problemMessage")
+  }
 
   def email: String = ""
   def passwordHash: Option[String] = None

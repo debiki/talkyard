@@ -111,7 +111,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, requester,
-      dao.getGroupIds(requester),
+      dao.getGroupIdsOwnFirst(requester),
       dao.getAnyPrivateGroupTalkMembers(pageMeta),
       categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),

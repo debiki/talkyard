@@ -156,7 +156,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageRole = PageRole.EmbeddedComments
 
     throwNoUnless(Authz.mayCreatePage(
-      request.theUserAndLevels, dao.getGroupIds(requester),
+      request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),
       pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categories = categoriesRootLast)),

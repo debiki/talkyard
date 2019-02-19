@@ -463,10 +463,14 @@ const ForumButtons = createComponent({
     const queryParams = this.props.queryParams;
     const showsTopicList = !showsCategoryTree;
 
+    const showFilterButton = settings_showFilterButton(settings, me);
+    const topicFilterFirst = me_uiPrefs(me).fbs !== UiPrefsForumButtons.CategoryDropdownFirst;
+
     // A tester got a little bit confused in the categories view, because it starts with
     // the filter-*topics* button. So insert this title, before, instead.
-    const anyPageTitle = showsCategoryTree ?
-        r.div({ className: 'esF_BB_PageTitle' }, t.Categories) : null;
+    const anyPageTitle = showsCategoryTree || (topicFilterFirst && !showFilterButton) ?
+        r.div({ className: 'esF_BB_PageTitle' },
+          showsCategoryTree ? t.Categories : t.Topics) : null;
 
     const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
       to: { pathname: this.props.forumPath + where, search: this.props.location.search },
@@ -504,7 +508,8 @@ const ForumButtons = createComponent({
     let categoriesDropdownButton = omitCategoryStuff ? null :
         ModalDropdownButton({ className: 'esForum_catsNav_btn esForum_catsDrop active', pullLeft: true,
             title: r.span({ className: activeCategoryIcon },
-                activeCategory.name + ' ', r.span({ className: 'caret' })) },
+                (topicFilterFirst ? t.fb.from + ' ' : '') +
+                  activeCategory.name + ' ', r.span({ className: 'caret' })) },
           r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
               categoryMenuItems));
 
@@ -519,18 +524,20 @@ const ForumButtons = createComponent({
           ModalDropdownButton({ className: 'esForum_catsNav_btn esF_BB_SortBtn', pullLeft: true,
             title: rFragment({}, this.getSortOrderName() + ' ', r.span({ className: 'caret' })) },
           r.ul({},
+            // Active topics, followed by Popular, are the most useful buttons I think.
+            // Mainly staff are interested in new topics? — so place the New button last.
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
                 active: currentSortOrderPath === RoutePathLatest,
                 title: this.getSortOrderName(RoutePathLatest),
                 text: t.fb.ActiveDescr }),
-            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathNew),
-              active: currentSortOrderPath === RoutePathNew,
-              title: this.getSortOrderName(RoutePathNew),
-              text: t.fb.NewDescr }),
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathTop),
                 active: currentSortOrderPath === RoutePathTop,
                 title: this.getSortOrderName(RoutePathTop),
-                text: t.fb.TopDescr })));
+                text: t.fb.TopDescr }),
+            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathNew),
+              active: currentSortOrderPath === RoutePathNew,
+              title: this.getSortOrderName(RoutePathNew),
+              text: t.fb.NewDescr })));
     }
     else {
       const slashSlug = this.slashCategorySlug();
@@ -538,21 +545,19 @@ const ForumButtons = createComponent({
           r.ul({ className: 'nav esForum_catsNav_sort' },
             makeCategoryLink(RoutePathLatest + slashSlug, this.getSortOrderName(RoutePathLatest),
                 'e2eSortLatestB'),
-            makeCategoryLink(RoutePathNew + slashSlug, this.getSortOrderName(RoutePathNew),
-                'e_SortNewB'),
             makeCategoryLink(RoutePathTop + slashSlug, this.getSortOrderName(RoutePathTop),
-                'e2eSortTopB'));
+                'e2eSortTopB'),
+            makeCategoryLink(RoutePathNew + slashSlug, this.getSortOrderName(RoutePathNew),
+                'e_SortNewB'));
     }
 
     // ------ The filter topics select.
-
-    const showFilterButton = settings_showFilterButton(settings, me);
 
     const topicFilterValue = queryParams.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
         case FilterShowAll: return t.fb.AllTopics;
-        case FilterShowWaiting: return t.fb.OnlyWaiting;
+        case FilterShowWaiting: return t.fb.WaitingTopics;
         case FilterShowDeleted: return t.fb.ShowDeleted;
       }
       die('EsE4JK85');
@@ -624,15 +629,25 @@ const ForumButtons = createComponent({
 
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
 
-    return (
-        r.div({ className: 'dw-forum-actionbar clearfix ' + whatClass },
-          r.div({ className: 'esForum_catsNav' },
+    const filterAndSortButtons = topicFilterFirst
+        ? r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
+            anyPageTitle,
+            topicFilterButton,
+            latestNewTopButton,
+            categoriesDropdownButton,
+            categoryTreeLink,
+            topicListLink)
+        : r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
             anyPageTitle,
             categoriesDropdownButton,
-            latestNewTopButton,
             topicFilterButton,
+            latestNewTopButton,
             categoryTreeLink,
-            topicListLink),
+            topicListLink);
+
+    return (
+        r.div({ className: 'dw-forum-actionbar clearfix ' + whatClass },
+          filterAndSortButtons,
           createTopicBtn,
           createCategoryBtn,
           editCategoryBtn));

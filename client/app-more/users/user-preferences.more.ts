@@ -33,6 +33,7 @@ import EmailInput = debiki2.util.EmailInput;
 const aboutPathSeg = 'about';
 const notfsPathSeg = 'notifications';
 const privacyPathSeg = 'privacy';
+const uiPathSeg = 'ui';
 const accountPathSeg = 'account';  // [4JKT28TS]
 
 
@@ -43,8 +44,9 @@ export const UserPreferences = createFactory({
     const prefsPathSlash = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
     const aboutPath = prefsPathSlash + aboutPathSeg;
     const privacyPath = prefsPathSlash + privacyPathSeg;
+    const uiPath = prefsPathSlash + uiPathSeg;
     const emailsLoginsPath = prefsPathSlash + accountPathSeg;
-    const user: User = this.props.user;
+    const user: MemberInclDetails = this.props.user;
     const location = this.props.location;
     const store: Store = this.props.store;
     const me: Myself = store.me;
@@ -67,7 +69,9 @@ export const UserPreferences = createFactory({
       Route({ path: '(.*)/' + notfsPathSeg, exact: true, render: () => NotfPrefsTab(childProps) }),
       Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => PrivacyPrefsTab(childProps) }),
       Route({ path: '(.*)/' + accountPathSeg, exact: true, render: (ps) =>
-          AccountTab({ ...childProps, ...ps }) }));
+          AccountTab({ ...childProps, ...ps }) }),
+      Route({ path: '(.*)/' + uiPathSeg, exact: true, render: () => UiPrefsTab(childProps) }),
+          );
 
     const isGuest = user_isGuest(user);
     const isNormalMember = user.id >= LowestNormalMemberId;
@@ -86,7 +90,9 @@ export const UserPreferences = createFactory({
               isGuest || isBuiltInUser ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account))),
+                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
+              isGuest || isBuiltInUser ? null : LiNavLink({
+                  to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, "UI"))), // I18N
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -834,6 +840,62 @@ const AccountTab = createFactory({
         dangerZone,
       ));
   }
+});
+
+
+
+
+const UiPrefsTab = React.createFactory(
+      function (props: { store: Store, user: MemberInclDetails }) {
+
+  const me: Myself = props.store.me;
+  const user: MemberInclDetails = props.user;
+
+  if (user_isGuest(user))
+    return r.p({}, "Cannot set UI preferences for guests.");
+
+  const [prefsText, setPrefsText] = React.useState(JSON.stringify(user.uiPrefs));
+  const [jsonError, setBadJsonError] = React.useState(false);
+
+  // Dupl Saving... code [7UKBQT2]
+  const [savingStatus, setSavingStatus] = React.useState(0);
+  let savingInfo = null;
+  if (savingStatus === 1) {
+    savingInfo = r.i({}, ' ' + t.SavingDots);
+  }
+  else if (savingStatus === 2) {
+    savingInfo = r.i({ className: 'e_Saved' }, ' ' + t.SavedDot);
+  }
+
+  function saveUiPrefs(event) {
+    event.preventDefault();
+    let prefsJson;
+    try {
+      prefsJson = JSON.parse(prefsText)
+      setSavingStatus(1);
+      Server.saveUiPrefs(user.id, prefsJson, () => setSavingStatus(2));
+    }
+    catch (ex) {
+      setBadJsonError(true);
+    }
+  }
+
+  return r.div({},
+    r.p({}, "User interface (UI) preferences:"),
+    r.form({ role: 'form', onSubmit: saveUiPrefs },
+      Input({ type: 'textarea',
+          label: rFragment({}, "UI preferences"),
+          onChange: (event) => {
+            setBadJsonError(false);
+            setPrefsText(event.target.value);
+          },
+          value: prefsText }),
+
+      jsonError ?
+          r.p({ style: { color: 'red', fontWeight: 'bold' }}, "ERROR: Bad JSON") : null,
+
+      InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' }, value: t.Save }),
+      savingInfo));
 });
 
 

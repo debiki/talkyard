@@ -16,7 +16,6 @@
  */
 
 
-$forumNavBtnGroupLeft = 8px;
 $isWideMinWidth = 900px;
 
 // Avoid a flash of the-wrong-layout (e.g. table layout, before noticing that the screen
@@ -92,7 +91,6 @@ html.js:not(.dw-react-started)
 .esForum_filterBtn,
 .esF_BB_CreateBtn
   font-size: 15px;
-  margin-bottom: 7px; // place here (but not on .esF_BB) in case btns line wrap
 
 .esF_BB_PageTitle
   display: inline-block;
@@ -119,12 +117,15 @@ html.js:not(.dw-react-started)
   [class*=" icon-"]:before
     opacity: 0.5;
 
+.s_F_BB-Topics_Filter >
+  .esForum_catsNav_btn,
+  .esForum_catsNav_sort
+    margin: 0 8px 7px 0;  // the margin-bottom adds some vertical space, if float drops
+
 .esF_BB_SortBtn
-  margin-left: $forumNavBtnGroupLeft !important;
   border: none !important;
 
 .esForum_catsNav_sort
-  margin-left: $forumNavBtnGroupLeft;
   &:first-child
     margin-left: 0;
   float: left;
@@ -194,10 +195,6 @@ html.js:not(.dw-react-started)
 .DW.DW.DW .esForum_filterBtn
   float: left;
   border: none;
-  margin-left: $forumNavBtnGroupLeft;
-  margin-right: $forumNavBtnGroupLeft;
-  &:first-child
-    margin-left: 0;
 
 .dw-forum-actionbar
   clear: both

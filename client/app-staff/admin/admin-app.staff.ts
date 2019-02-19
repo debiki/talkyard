@@ -649,6 +649,20 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
+          label: "Logout idle user after minutes",
+          help: "After how long a user who is away, gets logged out. " +
+            "Default: one year (525600 minutes). " +
+            "This currently does log out also *active* users. " + // [EXPIREIDLE]
+            "Will fix this later (so only users who are away get logged out).",
+          getter: (s: Settings) => s.expireIdleAfterMins,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (num < 0) num = 0;
+            newSettings.expireIdleAfterMins = num;
+          }
+        }),
+
         // ---- OpenAuth login
 
         enableSso || !allowSignup ? null : Setting2(props, {

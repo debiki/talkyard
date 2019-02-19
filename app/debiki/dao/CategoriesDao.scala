@@ -243,7 +243,7 @@ trait CategoriesDao {
       val may = ed.server.auth.Authz.maySeePage(
         page.meta,
         user = authzCtx.requester,
-        groupIds = authzCtx.groupIds,
+        groupIds = authzCtx.groupIdsUserIdFirst,
         pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
         categoriesRootLast = categories,
         permissions = authzCtx.permissions,

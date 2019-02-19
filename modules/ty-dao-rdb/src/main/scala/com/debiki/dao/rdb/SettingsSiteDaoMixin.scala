@@ -61,6 +61,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         page_id,
         user_must_be_auth,
         user_must_be_approved,
+        expire_idle_after_mins,
         invite_only,
         allow_signup,
         allow_local_signup,
@@ -119,7 +120,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?)
+          ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -127,6 +128,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       NullVarchar,
       editedSettings2.userMustBeAuthenticated.getOrElse(None).orNullBoolean,
       editedSettings2.userMustBeApproved.getOrElse(None).orNullBoolean,
+      editedSettings2.expireIdleAfterMins.getOrElse(None).orNullInt,
       editedSettings2.inviteOnly.getOrElse(None).orNullBoolean,
       editedSettings2.allowSignup.getOrElse(None).orNullBoolean,
       editedSettings2.allowLocalSignup.getOrElse(None).orNullBoolean,
@@ -206,6 +208,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     val s = editedSettings2
     maybeSet("user_must_be_auth", s.userMustBeAuthenticated.map(_.orNullBoolean))
     maybeSet("user_must_be_approved", s.userMustBeApproved.map(_.orNullBoolean))
+    maybeSet("expire_idle_after_mins", s.expireIdleAfterMins.map(_.orNullInt))
     maybeSet("invite_only", s.inviteOnly.map(_.orNullBoolean))
     maybeSet("allow_signup", s.allowSignup.map(_.orNullBoolean))
     maybeSet("allow_local_signup", s.allowLocalSignup.map(_.orNullBoolean))
@@ -284,6 +287,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     EditedSettings(
       userMustBeAuthenticated = getOptBoolean(rs, "user_must_be_auth"),
       userMustBeApproved = getOptBoolean(rs, "user_must_be_approved"),
+      expireIdleAfterMins = getOptInt(rs, "expire_idle_after_mins"),
       inviteOnly = getOptBoolean(rs, "invite_only"),
       allowSignup = getOptBoolean(rs, "allow_signup"),
       allowLocalSignup = getOptBoolean(rs, "allow_local_signup"),

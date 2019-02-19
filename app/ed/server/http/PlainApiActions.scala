@@ -180,8 +180,12 @@ class PlainApiActions(
         !shallAvoid
       }
 
+      val dao = globals.siteDao(site.id)
+      val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
+
       val (actualSidStatus, xsrfOk, newCookies) =
-        security.checkSidAndXsrfToken(request, site.id, maySetCookies = maySetCookies)
+        security.checkSidAndXsrfToken(
+          request, siteId = site.id, expireIdleAfterMins, maySetCookies = maySetCookies)
 
       // Ignore and delete any broken session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
@@ -208,7 +212,6 @@ class PlainApiActions(
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          val dao = globals.siteDao(site.id)
           dao.perhapsBlockRequest(request, mendedSidStatus, browserId)
           val anyUserMaybeSuspended = dao.getUserBySessionId(mendedSidStatus)
           runBlockIfAuthOk(request, site, dao, anyUserMaybeSuspended,

@@ -214,20 +214,23 @@ var t_en_US: TalkyardTranslations = t = {
 
     // Select category dropdown
 
+    from: "from",  // MISSING used like so:  "From <Category Name>" or "From All Categories"
+    in: "in",      // MISSING used like so:  "in <Category Name>" or "in All Categories"
     AllCats: "All categories",
 
     // Topic sort order
 
-    Active: "Active",
-    ActiveTopics: "Active topics",
+    Active: "Active first",      // MISSING didn't add "first" yet to transls
+    ActiveTopics: "Active topics", // REMOVE use "Active first" instead
     ActiveDescr: "Shows recently active topics first",
 
+    Newest: "Newest",            // MISSING
     New: "New",
-    NewTopics: "New topics",
+    NewTopics: "New topics",     // REMOVE no longer needed, after forum btns redone
     NewDescr: "Shows newest topics first",
 
-    Top: "Top",
-    TopTopics: "Popular topics",
+    Top: "Popular",              // MISSING didn't rename from Top to Popular in transls
+    TopTopics: "Popular topics", // REMOVE not needed, after forum btns redone
     TopDescr: "Shows popular topics first",
 
     // Topic filter dropdown
@@ -237,16 +240,18 @@ var t_en_US: TalkyardTranslations = t = {
     ShowAllTopics: "Show all topics",
     ShowAllTopicsDescr: "Not deleted topics though",
 
+    WaitingTopics: "Waiting topics",          // MISSING
     OnlyWaiting: "Only waiting",
-    OnlyWaitingDescr_1: "Shows only questions ",
+    OnlyWaitingDescr_1: "Shows only topics ", // MISSING changed "questions" to "topics"
     OnlyWaitingDescr_2: "waiting ",
-    OnlyWaitingDescr_3: "for a solution, plus ideas and problems not yet handled",
+    OnlyWaitingDescr_3: "for a solution or to be implemented and done",
 
     ShowDeleted: "Show deleted",
     ShowDeletedDescr: "Shows all topics, including deleted topics",
 
     // Rightmost buttons
 
+    ViewCategories: "View categories",
     EditCat: "Edit Category",
     CreateCat: "Create Category",
     CreateTopic: "Create Topic",

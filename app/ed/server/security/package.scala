@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{EdHttp, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
-import java.{util => ju}
 import play.api.mvc.{Cookie, DiscardingCookie, Request}
 import play.api.Logger
 import scala.util.Try
@@ -52,7 +51,7 @@ sealed abstract class SidStatus {
 case object SidAbsent extends SidStatus { override def isOk = true }
 case object SidBadFormat extends SidStatus
 case object SidBadHash extends SidStatus
-//case class SidExpired(millisAgo: Long) extends SidStatus
+case class SidExpired(minutesOld: Long, maxAgeMinutes: Long) extends SidStatus
 
 
 case class SidOk(
@@ -138,15 +137,21 @@ class EdSecurity(globals: Globals) {
    * server.)
    */
   def checkSidAndXsrfToken(request: play.api.mvc.Request[_], siteId: SiteId,
-        maySetCookies: Boolean)
+        expireIdleAfterMins: Int, maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
+
+    val expireIdleAfterMillis = expireIdleAfterMins * 60 * 1000
 
     // If we cannot use cookies, then the sid is sent in a header. [NOCOOKIES]
     val anySessionIdCookieValue =
       urlDecodeCookie(SessionIdCookieName, request) orElse request.headers.get(SessionIdHeaderName)
 
+    val now = globals.now()
+
     val sessionIdStatus: SidStatus =
-      anySessionIdCookieValue.map(checkSessionId(siteId, _)) getOrElse SidAbsent
+      anySessionIdCookieValue.map(
+        checkSessionId(
+          siteId, _, now, expireIdleAfterMillis = expireIdleAfterMillis)) getOrElse SidAbsent
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -206,7 +211,9 @@ class EdSecurity(globals: Globals) {
             throwForbidden("TyE0XSRFTKN", "No xsrf token")
 
         val xsrfOk = {
-          val xsrfStatus = checkXsrfToken(xsrfToken, anyXsrfCookieValue)
+          val xsrfStatus =
+            checkXsrfToken(
+              xsrfToken, anyXsrfCookieValue, now, expireIdleAfterMillis = expireIdleAfterMillis)
 
           def helpText(theProblem: String, nowHaveOrWillGet: String): String = i"""
             |Security issue: $theProblem. Please try again:
@@ -354,7 +361,8 @@ class EdSecurity(globals: Globals) {
 
 
 
-  private def checkXsrfToken(xsrfToken: String, anyXsrfCookieValue: Option[String]): XsrfStatus = {
+  private def checkXsrfToken(xsrfToken: String, anyXsrfCookieValue: Option[String],
+      now: When, expireIdleAfterMillis: Long): XsrfStatus = {
     SECURITY; TESTS_MISSING // that tests if the wrong hashes are rejected
 
     // Check matches cookie, or that there's an ok crypto hash.
@@ -387,14 +395,9 @@ class EdSecurity(globals: Globals) {
 
     // Check isn't too old.
     val unixSeconds = xsrfOk.unixSeconds
-    val millisAgo = globals.now().millisSince(When.fromMillis(unixSeconds * 1000))
-    // People leave their browsers open for fairly long? Previously, there wasn't any
-    // has-expired check at all, ... Probably would be a user hostile error message if expired.
-    // So keep for fairly long, for now.
-    SECURITY; UX; COULD // do sth user friendly, if has expired, & change to 1 day only?
-    if (millisAgo > SidMaxAgeMillis) {  // might as well use the session id's timeout?
+    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * 1000))
+    if (millisAgo > expireIdleAfterMillis)
       return XsrfExpired
-    }
 
     xsrfOk
   }
@@ -415,12 +418,17 @@ class EdSecurity(globals: Globals) {
 
 
   def createSessionIdAndXsrfToken(siteId: SiteId, userId: UserId): (SidOk, XsrfOk, List[Cookie]) = {
+    COULD_OPTIMIZE // pass settings or a dao to here instead? so won't need to create this 2nd one.
+                    // (the caller always already has one)
+    val dao = globals.siteDao(siteId)
+    val settings = dao.getWholeSiteSettings()
+    val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
+
     // Note that the xsrf token is created using the non-base64 encoded cookie value.
     val sidOk = createSessionId(siteId, userId)
     val xsrfOk = createXsrfToken()
-    // per site, expiration in minutes?  [sidexpsite]
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
-      maxAgeSecs = Some(14 * 24 * 3600))
+      maxAgeSecs = Some(expireIdleAfterSecs))
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
@@ -428,10 +436,10 @@ class EdSecurity(globals: Globals) {
 
   private val HashLength: Int = 15
   private def secretSalt = globals.applicationSecret
-  private val SidMaxAgeMillis = 2 * 31 * 24 * 3600 * 1000  // two months  [sidexpsite]
 
 
-  def checkSessionId(siteId: SiteId, value: String): SidStatus = {
+  private def checkSessionId(siteId: SiteId, value: String, now: When, expireIdleAfterMillis: Long)
+      : SidStatus = {
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
     if (value.length <= HashLength) return SidBadFormat
     val (hash, dotUseridDateRandom) = value splitAt HashLength
@@ -445,9 +453,16 @@ class EdSecurity(globals: Globals) {
           else Try(userIdString.toInt).toOption orElse {
             return SidBadFormat
           }
-        val ageMillis = (new ju.Date).getTime - dateStr.toLong
-        SECURITY //if (ageMillis > _sidMaxMillis)  SHOULD expire the sid
-        //  return SidExpired(ageMillis - _sidMaxMillis)
+        val ageMillis = now.millis - dateStr.toLong
+        UX; BUG; COULD; // [EXPIREIDLE] this also expires *active* sessions. Instead,
+        // lookup the user, and consider only time elapsed, since hens last visit.
+        // ... Need to have a SiteDao here then. And pass the Participant back to the
+        // caller, so it won't have to look it up again.
+        // Not urgent though — no one will notice: by default, one stays logged in 1 year [7AKR04].
+        if (ageMillis > expireIdleAfterMillis)
+          return SidExpired(
+            minutesOld = ageMillis / 1000 / 60,
+            maxAgeMinutes = expireIdleAfterMillis / 1000 / 60)
         SidOk(
           value = value,
           ageInMillis = ageMillis,
@@ -457,13 +472,14 @@ class EdSecurity(globals: Globals) {
   }
 
 
-  def createSessionId(siteId: SiteId, userId: UserId): SidOk = {
+  private def createSessionId(siteId: SiteId, userId: UserId): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
+    val now = globals.now()
     val uid = "" // for now
     val useridDateRandom =
          userId +"."+
-         (new ju.Date).getTime +"."+
+         now.millis +"."+
          (nextRandomString() take 10)
     // If the site id wasn't included in the hash, then an admin from site A would   [4WKRQ1A]
     // be able to login as admin at site B (if they have the same user id and username).
@@ -471,7 +487,7 @@ class EdSecurity(globals: Globals) {
       s"$secretSalt.$siteId.$useridDateRandom") take HashLength
     val value = s"$saltedHash.$useridDateRandom"
 
-    checkSessionId(siteId, value).asInstanceOf[SidOk]
+    checkSessionId(siteId, value, now, expireIdleAfterMillis = Long.MaxValue).asInstanceOf[SidOk]
   }
 
 

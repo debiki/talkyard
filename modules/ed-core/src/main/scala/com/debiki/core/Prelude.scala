@@ -21,6 +21,7 @@ import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
 import org.scalactic.{ErrorMessage, Or}
+import play.api.libs.json.{JsNumber, JsObject, JsString}
 import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
@@ -536,6 +537,35 @@ object Prelude {
 
   private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
   private val VariableNameRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$".r
+
+  /** Checks that all fields names are okay variable names,
+    * and that all values are numbers, or also okay variable names.
+    * Just to avoid any unexpected things like some kind of injection.
+    */
+  def anyWeirdJsObjField(obj: JsObject, maxLength: Int): Option[String] = {
+    for ((fieldName, fieldValue) <- obj.fields) {
+      if (fieldName.isEmpty) return Some("Empty field name")
+      if (!fieldName.isOkVariableName) return Some(s"Weird field name: $fieldName")
+      if (fieldName.length > maxLength) return Some(s"Too long field name: $fieldName")
+      fieldValue match {
+        case _: JsNumber =>
+          // Fine
+        case s: JsString =>
+          if (s.value.isEmpty) return Some(s"Empty value for field $fieldName")
+          if (!s.value.isOkVariableName) return Some(s"Bad value for field $fieldName: $fieldValue")
+          if (s.value.length > maxLength) return Some(s"Too long field value, $fieldName: $fieldValue")
+        case _ =>
+          return Some(s"Value of field $fieldName is weird")
+      }
+    }
+    None
+  }
+
+  /** Default value doesn't work with anyJsonObj.flatMap(anyWeirdJsObjField)
+    */
+  def anyWeirdJsObjField(obj: JsObject): Option[String] =
+    anyWeirdJsObjField(obj, maxLength = 100)
+
 
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
