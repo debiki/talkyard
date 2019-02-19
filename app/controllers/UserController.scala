@@ -359,7 +359,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
     }
-    ForumController.makeTopicsResponse(topics, dao)
+    ForumController.makeTopicsResponse(categoryId = None, topics, dao)
   }
 
 

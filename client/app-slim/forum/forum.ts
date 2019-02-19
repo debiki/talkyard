@@ -810,15 +810,20 @@ const LoadAndListTopics = createFactory({
     const categoryId = nextProps.activeCategory.id;
 
     this.isLoading = true;
-    Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => { // (4AB2D)
+    Server.loadForumTopics(categoryId, orderOffset, (response: LoadTopicsResponse) => { // (4AB2D)
       if (this.isGone) return;
       let topics: any = isNewView ? [] : (this.state.topics || []);
+      const newlyLoadedTopics: Topic[] = response.topics;
       topics = topics.concat(newlyLoadedTopics);
       // `topics` includes at least the last old topic twice.
       topics = _.uniqBy(topics, 'pageId');
       this.isLoading = false;
       this.setState({
         minHeight: null,
+        categoryId: response.categoryId,
+        categoryParentId: response.categoryParentId,
+        categoryName: response.categoryName,
+        categoryDescr: response.categoryDescr,
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
@@ -863,6 +868,10 @@ const LoadAndListTopics = createFactory({
 
   render: function() {
     return TopicsList({
+      categoryId: this.state.categoryId,
+      categoryParentId: this.state.categoryParentId,
+      categoryName: this.state.categoryName,
+      categoryDescr: this.state.categoryDescr,
       topics: this.state.topics,
       store: this.props.store,
       forumPath: this.props.forumPath,
@@ -1034,12 +1043,26 @@ export const TopicsList = createComponent({
         r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
           topicElems);
 
+    // Show a category title and description. Otherwise people tend to not
+    // notice that they are inside a category. And they typically do *not* see
+    // any about-category pinned topic (like Discourse does — don't do that).
+    const categoryId = this.props.categoryId;
+    const categoryParentId = this.props.categoryParentId;
+    const categoryName = this.props.categoryName;
+    const categoryDescr = this.props.categoryDescr;
+    const missingOrIsRootCategory = !categoryId || !categoryParentId;
+    const categoryNameDescr = missingOrIsRootCategory ? null :
+      r.div({ className: 's_F_Ts_Cat' },
+        r.h2({ className: 's_F_Ts_Cat_Ttl' }, categoryName),
+        r.p({ className: 's_F_Ts_Cat_Abt' }, categoryDescr));
+
     return (
       r.div({ className: 's_F_Ts e_SrtOrdr-' + orderOffset.sortOrder },
         categoryDeletedInfo,
         topTopicsPeriodButton,
         r.div({ style: { position: 'relative' }},
           anyDeletedCross,
+          categoryNameDescr,
           topicsTable || topicRows),
         loadMoreTopicsBtn));
   }

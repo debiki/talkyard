@@ -274,7 +274,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val topics = dao.listMaySeeTopicsInclPinned(categoryId, pageQuery,
       includeDescendantCategories = true, authzCtx, limit = NumTopicsToList)
-    makeTopicsResponse(topics, dao)
+
+    makeTopicsResponse(Some(categoryId), topics, dao)
   }
 
 
@@ -348,11 +349,16 @@ object ForumController {
   }
 
 
-  def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+  def makeTopicsResponse(categoryId: Option[CategoryId], topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+    val category: Option[Category] = categoryId.flatMap(dao.getCategory)
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
-    val json = Json.obj(
+    val json = Json.obj(   // LoadTopicsResponse
+      "categoryId" -> JsNumberOrNull(categoryId),
+      "categoryParentId" -> JsNumberOrNull(category.flatMap(_.parentId)),
+      "categoryName" -> JsStringOrNull(category.map(_.name)),
+      "categoryDescr" -> JsStringOrNull(category.flatMap(_.description)),
       "topics" -> topicsJson,
       "users" -> users.map(JsUser))
     OkSafeJson(json)

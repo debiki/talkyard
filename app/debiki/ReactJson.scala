@@ -1719,7 +1719,7 @@ object JsX {
   def JsUserOrNull(user: Option[Participant]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: Participant): JsObject = {
+  def JsUser(user: Participant): JsObject = {  // Typescript: BriefUser, right?
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),

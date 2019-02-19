@@ -179,7 +179,6 @@ interface TalkyardTranslations {
     Active: string;
     ActiveTopics: string;
     ActiveDescr: string;
-    Newest: string;
     New: string;
     NewTopics: string;
     NewDescr: string;

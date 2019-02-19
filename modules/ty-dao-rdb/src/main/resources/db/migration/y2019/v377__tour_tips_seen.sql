@@ -17,6 +17,9 @@ alter table users3 add column ui_prefs jsonb;
 alter table users3 add constraint users_c_uiprefs_len check (
     pg_column_size(ui_prefs) <= 400);
 
+
 alter table settings3 add column expire_idle_after_mins int;
 
 
+-- Unpin about category topics.
+update pages3 set pin_order = null, pin_where = null where page_role = 9;

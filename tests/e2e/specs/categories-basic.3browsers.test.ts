@@ -64,7 +64,7 @@ describe("categories", function() {
     maria.forumCategoryList.openCategory(WastelandCategoryName);
     maria.topbar.clickLogin();
     maria.loginDialog.loginWithPassword(maria);
-    maria.assertTextMatches('.e2eF_T', /About/, /Wasteland/);
+    maria.assertTextMatches('.e2eF_T', /Description of/, /Wasteland/);
   });
 
   var mariasFirstTopicTitle = "Marias topic";
@@ -86,7 +86,7 @@ describe("categories", function() {
     owen.refresh();
     owen.forumCategoryList.openCategory(WastelandCategoryName);
     //owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true); // [7JUKDQ4]
-    owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
+    owen.forumTopicList.assertTopicNrVisible(1, mariasFirstTopicTitle);
   });
 
   it("Owen starts editing the category", function() {

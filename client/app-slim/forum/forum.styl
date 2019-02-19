@@ -266,6 +266,20 @@ $tableHeaderFontSize = 14px;
 // Topics
 //===========================
 
+// First, any category title and about-text (shown above the topics).
+.s_F_Ts_Cat_Ttl
+  margin: 5px 0 9px;
+  text-align: center;
+  font-size: 20px;
+  color: hsl(0, 0%, 33%);
+.s_F_Ts_Cat_Abt
+  text-align: center;
+  font-size: 14px;
+  max-width: 670px;
+  margin: 0 auto 22px;
+  line-height: 150%;
+  color: hsl(0, 0%, 18%);
+
 // Avoid undesired flash-of-the-wrong-topic-list before we know if the topic list included
 // by the server is the one we want to show. (The server doesn't know which #/client-route
 // we're using, we don't yet use real URLS, only hash fragment client side router urls.)

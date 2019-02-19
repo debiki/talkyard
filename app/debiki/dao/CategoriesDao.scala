@@ -61,7 +61,7 @@ case class CategoryToSave(
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
-    textAndHtmlMaker.forTitle(s"About the $name category")
+    textAndHtmlMaker.forTitle(s"Description of the $name category")
 
   def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
     textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
@@ -119,6 +119,14 @@ trait CategoriesDao {
     }
     dieIf(rootCategories.isEmpty, "TyE2FWBK5")
     rootCategories.head.defaultCategoryId getOrDie "TyE2KQBP6"
+  }
+
+
+  def getCategory(categoryId: CategoryId): Option[Category] = {
+    COULD_OPTIMIZE // cache category, don't forget to clear when editing any About page,
+                    // or editing any category (then, clear all cats, in case later on will
+                    // cache parent—>child-cat relationships.
+    loadCategory(categoryId).map(_._1)
   }
 
 
@@ -524,8 +532,8 @@ trait CategoriesDao {
         titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text,
         bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
-        pinWhere = Some(PinPageWhere.InCategory),
+        pinOrder = None,
+        pinWhere = None,
         byWho, spamRelReqStuff = None, tx,
         // if createDeletedAboutTopic, then TESTS_MISSING [5WAKR02], e2e test won't get created.
         createAsDeleted = newCategoryData.createDeletedAboutTopic)
@@ -618,11 +626,7 @@ trait CategoriesDao {
 object CategoriesDao {
 
   val CategoryDescriptionSource =  // [i18n]
-    i"""[Replace this paragraph with a description of the category. Keep it short;
-       |the description will be shown on the category list page.]
-       |
-       |Here, after the first paragraph, you can add more details about the category.
-       |"""
+    "[Replace this with a short description of the category.]"
 
 }
 

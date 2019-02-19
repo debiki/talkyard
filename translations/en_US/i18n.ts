@@ -224,7 +224,6 @@ var t_en_US: TalkyardTranslations = t = {
     ActiveTopics: "Active topics", // REMOVE use "Active first" instead
     ActiveDescr: "Shows recently active topics first",
 
-    Newest: "Newest",            // MISSING
     New: "New",
     NewTopics: "New topics",     // REMOVE no longer needed, after forum btns redone
     NewDescr: "Shows newest topics first",

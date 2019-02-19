@@ -1011,12 +1011,12 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 
 
 export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
-      doneCallback: (topics: Topic[]) => void) {
+    doneCallback: (response: LoadTopicsResponse) => void) {
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  get(url, (response: any) => {
+  get(url, (response: LoadTopicsResponse) => {
     ReactActions.patchTheStore({ usersBrief: response.users });  // [2WKB04R]
-    doneCallback(response.topics);
+    doneCallback(response);
   });
 }
 

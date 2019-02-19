@@ -1536,6 +1536,15 @@ interface GuestLoginResponse {
   currentPageSessionId?: string;
 }
 
+interface LoadTopicsResponse {
+  categoryId?: CategoryId;
+  categoryParentId?: CategoryId;
+  categoryName?: string;
+  categoryDescr?: string;
+  topics: Topic[];
+  users: BriefUser[];
+}
+
 
 interface LoadCategoryResponse {
   category: Category;

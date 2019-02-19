@@ -442,7 +442,6 @@ trait ForumDao {
 object ForumDao {
 
   private val WelcomeToForumTopicPinOrder = 5
-  val AboutCategoryTopicPinOrder = 10
 
   private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
   private val RootCategorySlug = "(root-category)"  //
