@@ -4,7 +4,7 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.8"
 
 resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-releases"
 
