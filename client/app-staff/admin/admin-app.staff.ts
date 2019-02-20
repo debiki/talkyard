@@ -658,7 +658,7 @@ const LoginAndSignupSettings = createFactory({
           getter: (s: Settings) => s.expireIdleAfterMins,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
-            if (num < 0) num = 0;
+            if (num < 1) num = 1;
             newSettings.expireIdleAfterMins = num;
           }
         }),

@@ -76,7 +76,7 @@ trait AllSettings {
   // account hasn't been approved (or has been rejected), then the user is sent to this page.
   def ssoNotApprovedUrl: String
 
-  // --- These could be moved to per member uiPrefs fields. ------------
+  REFACTOR // ----- These could be moved to per member uiPrefs fields. ------------
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
@@ -88,7 +88,7 @@ trait AllSettings {
   def selectTopicType: Boolean
   def showAuthorHow: ShowAuthorHow
   def watchbarStartsOpen: Boolean
-  // ----------------------------------------------------------------------
+  // -------------------------------------------------------------------------------
 
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
@@ -224,8 +224,9 @@ object AllSettings {
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
-    // One year. Like Gmail and Facebook (well, they have forever, instead). Apparently people
-    // tend to think their accounts have been hacked, if they've suddenly been logged out.
+    // One year. Like Gmail and Facebook (well, they have forever, instead). A Talkyard
+    // community admin says his members tend to think their accounts have been hacked,
+    // if they've suddenly been logged out.
     val expireIdleAfterMins: Int = 60 * 24 * 365  // [7AKR04]
     val inviteOnly = false
     val allowSignup = true

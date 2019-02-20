@@ -361,7 +361,6 @@ export function shallowMergeFirstItemLast(items: any[]): any {
   let result = {};
   if (items) {
     for (let i = items.length - 1; i >= 0; --i) {
-      console.log(`shallowMergeFirstItemLast: ${i}`)
       const item = items[i];
       if (item) {
         result = { ...result, ...item };

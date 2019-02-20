@@ -37,7 +37,7 @@ const owensCommentText = 'owensCommentText';
 // This test embedded comments site creation, with the default settings.
 // Then, people who post comments are not required to verify their email.
 
-describe("embedded comments, new site", () => {
+describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));

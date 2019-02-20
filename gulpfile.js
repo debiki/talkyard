@@ -318,7 +318,7 @@ gulp.task('wrapJavascript', () => {
     .pipe(plumber())
     // Avoid any line breaks before 'contents', so any error will be reported
     // with the correct line number.
-    .pipe(insert.wrap('(function() {', '\n}).call(this);'))
+    .pipe(insert.wrap('(function() { ', '\n}).call(this);'))
     .pipe(gulp.dest('./target/client/'));
 });
 
@@ -394,7 +394,6 @@ function compileSlimTypescript() {
 
 
 function compileOtherTypescript(typescriptProject) {
-  //var bundleName = typescriptProject.config.compilerOptions.outFile;
   return typescriptProject.src()
     .pipe(plumber())
     .pipe(insert.transform(nextFileTemplate))
@@ -684,7 +683,8 @@ gulp.task('release', gulp.series('enable-prod-stuff', 'minifyScripts', 'compile-
 //      module: 'commonjs',
 //      lib: ['es5', 'es2015', 'dom'],
 //      types: ['lodash', 'core-js', 'assert', 'node']
-//    }));
+//    })
+//    .pipe(plumber()));
 //  return stream.js
 //  // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
 //    .pipe(gulp.dest('target/security-tests'));

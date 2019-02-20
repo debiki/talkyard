@@ -4677,7 +4677,8 @@ function pagesFor(browser) {
       },
 
       clickNextForStepNr: (stepNr: number) => {
-        // Don't scroll — the tour will scroll for us.
+        // Don't scroll — the tour will scroll for us. (Scrolling here too, could scroll
+        // too much, and the click might fail.)
         api.waitAndClick(`.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
       },
 

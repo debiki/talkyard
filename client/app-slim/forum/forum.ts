@@ -508,7 +508,7 @@ const ForumButtons = createComponent({
     let categoriesDropdownButton = omitCategoryStuff ? null :
         ModalDropdownButton({ className: 'esForum_catsNav_btn esForum_catsDrop active', pullLeft: true,
             title: r.span({ className: activeCategoryIcon },
-                (topicFilterFirst ? t.fb.from + ' ' : '') +
+                (topicFilterFirst ? t.fb.in + ' ' : '') +
                   activeCategory.name + ' ', r.span({ className: 'caret' })) },
           r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
               categoryMenuItems));

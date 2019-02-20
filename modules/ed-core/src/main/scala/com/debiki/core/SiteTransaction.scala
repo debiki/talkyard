@@ -442,7 +442,7 @@ trait SiteTransaction {
     : immutable.Seq[(UserInclDetails, Option[UserStats])]
 
   def loadTheUserInclDetailsAndStatsById(userId: UserId): (UserInclDetails, Option[UserStats]) = {
-    // For now
+    COULD_OPTIMIZE // Could write a query that loads both. Reuse loadUsersInclDetailsAndStats?
     val user = loadTheUserInclDetails(userId)
     (user, loadUserStats(user.id))
   }

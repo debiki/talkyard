@@ -127,6 +127,12 @@ class EdSecurity(globals: Globals) {
 
   private val XsrfTokenInputName = "dw-fi-xsrf"
 
+  /** Let the xsrf token one gets when logging in, expire a bit after the session,
+    * so there won't be any weird xsrf error, before one gets logged out
+    * because the sid expired. Hmm?
+    */
+  private val XsrfAliveExtraSeconds = 3600
+
   /**
    * Finds the session id and any xsrf token in the specified request;
    * throws an error if this is not a GET request and the xsrf token is bad.
@@ -144,7 +150,7 @@ class EdSecurity(globals: Globals) {
         expireIdleAfterMins: Long, maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val expireIdleAfterMillis: Long = expireIdleAfterMins * 60L * 1000L
+    val expireIdleAfterMillis: Long = expireIdleAfterMins * MillisPerMinute
 
     // If we cannot use cookies, then the sid is sent in a header. [NOCOOKIES]
     val anySessionIdCookieValue =
@@ -399,9 +405,9 @@ class EdSecurity(globals: Globals) {
     }
 
     // Check isn't too old.
-    val unixSeconds = xsrfOk.unixSeconds
-    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * 1000L))
-    if (millisAgo > expireIdleAfterMillis)
+    val unixSeconds: Long = xsrfOk.unixSeconds
+    val millisAgo = now.millisSince(When.fromMillis(unixSeconds * MillisPerSecond))
+    if (millisAgo > expireIdleAfterMillis + XsrfAliveExtraSeconds * MillisPerSecond)
       return XsrfExpired
 
     xsrfOk
@@ -434,7 +440,8 @@ class EdSecurity(globals: Globals) {
     val xsrfOk = createXsrfToken()
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
       maxAgeSecs = Some(expireIdleAfterSecs))
-    val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
+    val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
+      maxAgeSecs = Some(expireIdleAfterSecs + XsrfAliveExtraSeconds))
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
 

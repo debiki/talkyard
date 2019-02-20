@@ -92,7 +92,7 @@ export const UserPreferences = createFactory({
               isGuest || isBuiltInUser ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, "UI"))), // I18N
+                  to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, "Interface"))), // I18N
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -894,7 +894,7 @@ const UiPrefsTab = React.createFactory(
       jsonError ?
           r.p({ style: { color: 'red', fontWeight: 'bold' }}, "ERROR: Bad JSON") : null,
 
-      InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' }, value: t.Save }),
+      InputTypeSubmit({ className: 'e_SaveUiPrefs', style: { marginTop: '11px' }, value: t.Save }),
       savingInfo));
 });
 

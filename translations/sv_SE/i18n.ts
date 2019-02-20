@@ -238,7 +238,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     ShowAllTopicsDescr: "Dock inte raderade ämnen",
 
     WaitingTopics: "Väntande ämnen",
-    OnlyWaiting: "Bara väntante",
+    OnlyWaiting: "Bara väntande",
     OnlyWaitingDescr_1: "Visar bara ämnen som ",
     OnlyWaitingDescr_2: "väntar ",
     OnlyWaitingDescr_3: "på ett svar eller på att bli implementerade och gjorda",

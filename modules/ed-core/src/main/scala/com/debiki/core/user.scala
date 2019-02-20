@@ -757,7 +757,7 @@ sealed trait MemberInclDetails {
   def seeActivityMinTrustLevel: Option[TrustLevel]
 
   /** UI features to enable or disable, or which UI variant to use. For A/B testing and
-    * also in some cases for letting admins or indie users override the default settings
+    * also in some cases for letting admins or users override the default settings
     * and make things look like they look for their community, or themselves.
     */
   def uiPrefs: Option[JsObject]
@@ -839,9 +839,9 @@ case class UserInclDetails(
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
   uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
     die("TyE2AKBS04", s"User with weird uiPrefs JSON field: $problemMessage")
+  }
   require(!deactivatedAt.exists(_.isBefore(createdWhen)), "TyE2GKDU0")
   require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
-  }
 
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff

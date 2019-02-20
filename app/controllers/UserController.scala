@@ -246,7 +246,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
       userJson += "summaryEmailIfActive" ->
           JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
-      userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsNull)
+      userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsEmptyObj)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtMs" -> JsDateMsOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
@@ -285,7 +285,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
-      json += "uiPrefs" -> group.uiPrefs.getOrElse(JsNull)
+      json += "uiPrefs" -> group.uiPrefs.getOrElse(JsEmptyObj)
     }
     json
   }

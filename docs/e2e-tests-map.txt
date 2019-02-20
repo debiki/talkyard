@@ -442,6 +442,7 @@ intro tours:
   admin area, community, admin tour:
           - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
   admin area, blog comments, admin tour:
+          - embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts  TyT6KRKV20
   forum section, community, admin tour:
           - create-site-password-run-admin-intro-tours.test.ts  TyT7BAWFPK9
   forum section, blog comments, admin tour:
