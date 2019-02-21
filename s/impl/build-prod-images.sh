@@ -95,6 +95,12 @@ s/impl/build-prod-app-image.sh
 
 s/d-gulp build-e2e
 
+# If there's a development Docker network, there'll be an IP address space clash
+# when creating a prodution test network later below. Delete any dev network.
+set +e
+docker network rm tyd_internal_net
+set -e
+
 # Run the 'latest' tag — it's for the images we just built above.
 # '-p edt' = EffectiveDiscussions Test project.
 # Use the -no-limits.yml file, because we'll run performance tests.
