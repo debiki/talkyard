@@ -76,6 +76,7 @@ export const UserPreferences = createFactory({
     const isGuest = user_isGuest(user);
     const isNormalMember = user.id >= LowestNormalMemberId;
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+    const isGuestOrBuiltIn = isGuest || isBuiltInUser;
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -85,13 +86,13 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
-              isGuest || !isNormalMember ? null: LiNavLink({
+              !isNormalMember ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
-              isGuest || isBuiltInUser ? null : LiNavLink({
+              isGuestOrBuiltIn ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
-              isGuest || isBuiltInUser ? null : LiNavLink({
+              isGuestOrBuiltIn ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
-              isGuest || isBuiltInUser ? null : LiNavLink({
+              !isNormalMember ? null : LiNavLink({
                   to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, "Interface"))), // I18N
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
@@ -884,7 +885,7 @@ const UiPrefsTab = React.createFactory(
     r.p({}, "User interface (UI) preferences:"),
     r.form({ role: 'form', onSubmit: saveUiPrefs },
       Input({ type: 'textarea',
-          label: rFragment({}, "UI preferences"),
+          label: "JSON config (ignore this for now; we'll add nice buttons later)",
           onChange: (event) => {
             setBadJsonError(false);
             setPrefsText(event.target.value);

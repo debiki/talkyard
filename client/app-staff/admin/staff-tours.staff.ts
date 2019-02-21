@@ -114,7 +114,7 @@ export const staffTours: StaffTours = {
       doBefore: closeSidebarFn,
       pauseBeforeMs: 700,
       title: `Welcome, ${displayName(me)}`,
-      text: "Let me show you around",
+      text: "Let me show you around?",
       placeAt: 'body',
     }, {
       title: "Let's view login settings",
@@ -195,7 +195,7 @@ export const staffTours: StaffTours = {
       doBefore: closeSidebarFn,
       pauseBeforeMs: 500,
       title: `Welcome, ${displayName(me)}`,
-      text: "Let me show you around",
+      text: "Let me show you around?",
       nextTitle: "Okay",
       placeAt: 'body',
     }, {
@@ -256,7 +256,7 @@ export const staffTours: StaffTours = {
       doBefore: closeSidebarFn,
       pauseBeforeMs: 700,
       title: "Welcome! To the discussions list",
-      text: "Let me show you around",
+      text: "Let me show you around?",
       placeAt: 'body',
     }, {
       title: "Here, there'll be one topic",

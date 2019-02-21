@@ -218,7 +218,7 @@ object RdbUtil {
         name = name getOrElse "Unnamed group [EdE21QKS0]",
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
-        uiPrefs = None,  // not loaded here
+        uiPrefs = getOptJsObject(rs, "ui_prefs"),
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
         grantsTrustLevel = None)

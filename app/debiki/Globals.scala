@@ -203,7 +203,7 @@ class Globals(
 
 
   // Could rename to "rendererVersion".
-  val applicationVersion = "0.00.51"  // later, read from some build config file
+  val applicationVersion = "0.00.52"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 

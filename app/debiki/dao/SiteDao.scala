@@ -184,8 +184,15 @@ class SiteDao(
     memCache.clearSingleSite(siteId)
   }
 
+  def emptyDatabaseCache(tx: SiteTransaction) {
+    tx.bumpSiteVersion()
+  }
 
-  def emptyCacheImpl(transaction: SiteTransaction) {
+  def emptyInMemoryCache() {
+    memCache.clearSingleSite(siteId)
+  }
+
+  def emptyCacheImpl(transaction: SiteTransaction) {  BUG; RACE; // if mem cache refilled before tx ends
     transaction.bumpSiteVersion()
     memCache.clearSingleSite(siteId)
   }

@@ -1408,19 +1408,20 @@ trait UserDao {
         tx.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
       }
 
-      removeUserFromMemCache(group.id)
-
       // Group names aren't shown everywhere. So need not empty cache (as is however
       // done here [2WBU0R1]).
     }
+
+    removeUserFromMemCache(preferences.groupId)
   }
 
 
-  def saveUiPrefs(memberId: UserId, prefs: JsObject, me: Who) {
-    editMemberThrowUnlessSelfStaff2(memberId, me, "TyE3ASHW67", "change UI prefs") {
-        (tx, memberInclDetails, me) =>
+  def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who) {
+    editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHW67", "change UI prefs") {
+        (tx, memberInclDetails, byWho) =>
       tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
     }
+    removeUserFromMemCache(memberId)
   }
 
 
