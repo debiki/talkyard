@@ -414,14 +414,16 @@ links -
 site settings:
   login -
     allowed email domains:
-      - settings-allowed-email-domains.2browsers.test.ts  TyT5AKRD04
+          - settings-allowed-email-domains.2browsers.test.ts  TyT5AKRD04
     login required:
-      - settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
-      - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+          - settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
+          - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
     invites only:
     approve members:
-      - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
-      - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+          - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
+          - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+    expire idle session:
+          - login-expire-idle-after.2browsers.test.ts  TyT7RBKTJ25
     allow signup:
     allow local signup:
     guest login allowed:

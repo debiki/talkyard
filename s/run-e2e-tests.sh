@@ -201,6 +201,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only create-site-github-oauth-uppercase-email $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only create-site-admin-guide.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only oauth-signup-login $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only login-expire-idle-after.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only forum-sort-and-scroll.2browsers $args
 

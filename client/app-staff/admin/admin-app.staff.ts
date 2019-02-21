@@ -650,7 +650,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
-          label: "Logout idle user after minutes",
+          label: "Logout idle user after minutes", className: 'e_LgoIdlAftMins',
           help: "After how long a user who is away, gets logged out. " +
             "Default: one year (525600 minutes). " +
             "This currently does log out also *active* users. " + // [EXPIREIDLE]

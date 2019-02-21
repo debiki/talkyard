@@ -337,6 +337,8 @@ function pagesFor(browser) {
       else {
         // Elem outside page column (e.g. modal dialog), or there is no page column.
         browser.execute(function(selector) {
+          // Not logMessage — we're in the browser.
+          console.log(`Scrolling into view in window: ${selector}`);
           var elem = document.querySelector(selector);
           // Edge and Safari don't suppor 'smooth' though (as of 2019-01).
           elem.scrollIntoView({ behavior: 'smooth' });
@@ -350,6 +352,8 @@ function pagesFor(browser) {
       let lastScrollY = api.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
         browser.execute(function(selector) {
+          // Not logMessage — we're in the browser.
+          console.log(`Scrolling into view in page column: ${selector}`);
           window['debiki2'].utils.scrollIntoViewInPageColumn(
             selector, { marginTop: 100, marginBottom: 100, duration: 100 });
         }, selector);
@@ -3939,6 +3943,11 @@ function pagesFor(browser) {
             api.waitAndClick('#e2eAllowGuestsCB');
           },
 
+          setExpireIdleAfterMinutes: (minutes: number) => {
+            api.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
+            api.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
+          },
+
           setEmailDomainWhitelist: (text: string) => {
             api.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
             api.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
@@ -4604,6 +4613,14 @@ function pagesFor(browser) {
 
 
     serverErrorDialog: {
+      waitForNotLoggedInError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyE0LGDIN_');
+      },
+
+      waitForNotLoggedInAsAdminError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyE0LGIADM_');
+      },
+
       waitForJustGotSuspendedError: function() {
         api.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
       },

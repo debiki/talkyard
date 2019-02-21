@@ -253,7 +253,7 @@ object EdHttp {
 
 
   def throwLoginAsAdmin(request: Request[_]): Nothing =
-    if (isAjax(request)) throwForbidden2("EsE6GP21", "Not admin")
+    if (isAjax(request)) throwForbidden2("TyE0LGIADM_", "You need to be logged in as an admin, for this")
     else throwLoginAsAdminTo(request.uri)
 
   def throwLoginAsAdminTo(path: String): Nothing =
