@@ -81,6 +81,13 @@ function openScrollButtonsDialog(openButton) {
 }
 
 
+export function closeAnyScrollButtons() {
+  if (scrollButtonsDialog) {
+    scrollButtonsDialog.close();
+  }
+}
+
+
 export var ScrollButtons = createClassAndFactory({
   getInitialState: function() {
     return {

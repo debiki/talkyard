@@ -134,6 +134,13 @@ export const PageWithStateComponent = createReactClass(<any> {
   },
 
 
+  componentWillUnmount: function() {
+    // Close any [scroll locally on the current page] scroll dialog the user might
+    // have opened — we're leaving the current page.
+    page.closeAnyScrollButtons();
+  },
+
+
   render: function() {
     // 1. What does isMaybeWrongPage mean? Let's say we're in the forum. Then we click a link
     // to /some-page. The URL will update immediately to /some-page, and React will activate
