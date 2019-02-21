@@ -1830,12 +1830,13 @@ function pagesFor(browser) {
         while (true) {
           if (browser.isVisible('.esCreateUser')) {
             api.waitAndClick('.esLD_Switch_L');
-            api.waitForVisible('.dw-reset-pswd');
+            // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
           else if (browser.isVisible('.dw-reset-pswd')) {
+            // Then the login form is shown, fine.
             break;
           }
-          browser.pause(100);
+          browser.pause(PollMs);
         }
       },
 
