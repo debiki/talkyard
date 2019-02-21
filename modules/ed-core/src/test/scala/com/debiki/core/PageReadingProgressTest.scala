@@ -26,10 +26,10 @@ import java.{util => ju}
 class PageReadingProgressTest extends FreeSpec with MustMatchers {
 
 
-  "ReadingProgress can" - {
+  "PageReadingProgress can" - {
 
     "convert low-post-nrs-read to bits" - {
-      def bitsFor(postNrs: Set[PostNr]): Array[Byte] = ReadingProgress(
+      def bitsFor(postNrs: Set[PostNr]): Array[Byte] = PageReadingProgress(
         firstVisitedAt = When.fromMillis(0),
         lastVisitedAt = When.fromMillis(0),
         lastViewedPostNr = 1,
@@ -39,7 +39,7 @@ class PageReadingProgressTest extends FreeSpec with MustMatchers {
         secondsReading = 1234).lowPostNrsReadAsBitsetBytes
 
       "nothing read" in {
-        ReadingProgress(
+        PageReadingProgress(
           firstVisitedAt = When.fromMillis(0),
           lastVisitedAt = When.fromMillis(0),
           lastViewedPostNr = 1,

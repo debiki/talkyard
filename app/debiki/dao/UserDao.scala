@@ -1010,7 +1010,7 @@ trait UserDao {
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
         user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: PageReadingProgress,
-        anyTourTipsSeen: Option[TourTipsSeen]): ReadMoreResult = {
+        anyTourTipsSeen: Option[TourTipsSeen] = None): ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")

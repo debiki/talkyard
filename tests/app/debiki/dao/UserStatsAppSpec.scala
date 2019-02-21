@@ -111,6 +111,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     lazy val initialStats =
       UserStats.forNewUser(member1.id, firstSeenAt = startTime, emailedAt = None)
+        // [7AKBR24] change Null in db and None here, to empty array? Sow won't need to:
+        .copy(tourTipsSeen = Some(Vector.empty)) // ... then Vector.empty instead of Some(Vector.empty)
 
     "a member starts with blank stats" in {
       val (mem, stats) = loadTheMemberAndStats(member1.id)(dao)
@@ -192,14 +194,15 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... looks at a discourse topic, but doesn't read it" in {
       playTimeMillis(1200)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now(),
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = PageParts.BodyNr,
-        lastReadAt = None,
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set.empty,
-        secondsReading = 0))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, noRepliesTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now(),
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = PageParts.BodyNr,
+          lastReadAt = None,
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set.empty,
+          secondsReading = 0))
       val correctStats = currentStats.copy(lastSeenAt = currentTime, numDiscourseTopicsEntered = 1)
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe correctStats
@@ -207,14 +210,15 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads the orig post" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, noRepliesTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now(),
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = PageParts.BodyNr,
-        lastReadAt = Some(globals.now()),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(PageParts.BodyNr),
-        secondsReading = 12))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, noRepliesTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now(),
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = PageParts.BodyNr,
+          lastReadAt = Some(globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(PageParts.BodyNr),
+          secondsReading = 12))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 12)
@@ -226,14 +230,15 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads a discourse topic, with replies, now replies-read gets updated" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now() minusMillis 400,
-        lastVisitedAt = globals.now() minusMillis 200,
-        lastViewedPostNr = 3,
-        lastReadAt = Some(globals.now() minusMillis 300),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(3, 4, 17),
-        secondsReading = 111))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, withRepliesTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now() minusMillis 400,
+          lastVisitedAt = globals.now() minusMillis 200,
+          lastViewedPostNr = 3,
+          lastReadAt = Some(globals.now() minusMillis 300),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(3, 4, 17),
+          secondsReading = 111))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime minusMillis 200,
         numSecondsReading = 123,  // 111 + 12
@@ -246,14 +251,15 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... views even more replies" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withRepliesTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now() minusMillis 400,
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = 33,
-        lastReadAt = Some(globals.now()),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(PageParts.BodyNr, 24, 32, 33, 34),
-        secondsReading = 1111))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, withRepliesTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now() minusMillis 400,
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = 33,
+          lastReadAt = Some(globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(PageParts.BodyNr, 24, 32, 33, 34),
+          secondsReading = 1111))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 1234,  // 1111 + 111 + 12
@@ -265,14 +271,15 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... views a chat topic, low post nrs only, stats gets updated" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now() minusMillis 500,
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = 10,
-        lastReadAt = Some(globals.now()),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(1 to 10: _*),
-        secondsReading = 4))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, withMessagesChatTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now() minusMillis 500,
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = 10,
+          lastReadAt = Some(globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(1 to 10: _*),
+          secondsReading = 4))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 1238,  // 1234 + 4
@@ -285,15 +292,16 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... reads a bit more in the same a chat topic, still low post nrs" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, withMessagesChatTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now() minusMillis 500,
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = 12055,
-        lastReadAt = Some(globals.now()),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        // Posts 5..10 already read, won't be counted again.
-        lowPostNrsRead = Set(5 to PageReadingProgress.MaxLowPostNr: _*),
-        secondsReading = 1000))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, withMessagesChatTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now() minusMillis 500,
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = 12055,
+          lastReadAt = Some(globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          // Posts 5..10 already read, won't be counted again.
+          lowPostNrsRead = Set(5 to PageReadingProgress.MaxLowPostNr: _*),
+          secondsReading = 1000))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 2238,  // 1238 + 1000
@@ -308,28 +316,30 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... views a chat topic with 2 messages, cannot read more than 2" in {
       playTimeMillis(1000)
       val exception = intercept[Exception] {
-        dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, Set.empty, ReadingProgress(
-          firstVisitedAt = globals.now(),
-          lastVisitedAt = globals.now(),
-          lastViewedPostNr = 1,
-          lastReadAt = Some(globals.now()),
-          lastPostNrsReadRecentFirst = Vector.empty,
-          lowPostNrsRead = Set(2, 3, 4),  // nr 4 doesn't exist
-          secondsReading = 1))
+        dao.trackReadingProgressClearNotfsPerhapsPromote(
+          member1, twoMessagesChatTopicId, Set.empty, PageReadingProgress(
+            firstVisitedAt = globals.now(),
+            lastVisitedAt = globals.now(),
+            lastViewedPostNr = 1,
+            lastReadAt = Some(globals.now()),
+            lastPostNrsReadRecentFirst = Vector.empty,
+            lowPostNrsRead = Set(2, 3, 4),  // nr 4 doesn't exist
+            secondsReading = 1))
       }
       exception.getMessage must include("EdE7UKW25_")
     }
 
     "... but can read 2" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, twoMessagesChatTopicId, Set.empty, ReadingProgress(
-        firstVisitedAt = globals.now() minusMillis 500,
-        lastVisitedAt = globals.now(),
-        lastViewedPostNr = 1,
-        lastReadAt = Some(globals.now()),
-        lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(1, 2, 3),  // nr 1 = the orig post, won't count, so +2 below (not +3)
-        secondsReading = 200))
+      dao.trackReadingProgressClearNotfsPerhapsPromote(
+        member1, twoMessagesChatTopicId, Set.empty, PageReadingProgress(
+          firstVisitedAt = globals.now() minusMillis 500,
+          lastVisitedAt = globals.now(),
+          lastViewedPostNr = 1,
+          lastReadAt = Some(globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(1, 2, 3),  // nr 1 = the orig post, won't count, so +2 below (not +3)
+          secondsReading = 200))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 2438,  // 2238 + 200

@@ -327,7 +327,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       playTimeMillis(OneHourInMillis)
       dao.readWriteTransaction { tx =>
         // Mod reads the new page.
-        tx.upsertReadProgress(mod.id, pageId = page3IdByMia, ReadingProgress(
+        tx.upsertReadProgress(mod.id, pageId = page3IdByMia, PageReadingProgress(
           firstVisitedAt = currentTime minusMinutes 10,
           lastVisitedAt = currentTime,
           lastViewedPostNr = PageParts.BodyNr,
@@ -337,7 +337,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
           secondsReading = 60 * 10))
 
         // Max reads another page.
-        tx.upsertReadProgress(max.id, pageId = page1IdByAdm, ReadingProgress(
+        tx.upsertReadProgress(max.id, pageId = page1IdByAdm, PageReadingProgress(
           firstVisitedAt = currentTime minusMinutes 10,
           lastVisitedAt = currentTime,
           lastViewedPostNr = PageParts.BodyNr,

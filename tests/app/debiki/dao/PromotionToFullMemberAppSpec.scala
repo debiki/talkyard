@@ -73,7 +73,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     }
 
     "a member reads a tiny bit, won't get promoted yet" in {
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(1), Set.empty, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(1), Set.empty, PageReadingProgress(
         firstVisitedAt = startTime.minusSeconds(10),
         lastVisitedAt = startTime,
         lastViewedPostNr = 1,
@@ -91,7 +91,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
     "a member reads a bit more, almost gets promoted" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(2), Set.empty, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(2), Set.empty, PageReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
         lastViewedPostNr = 1,
@@ -101,7 +101,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
         secondsReading = 6*60))
 
       // Entering the 3rd topic, entering 4 = the limit
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(3), Set.empty, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(3), Set.empty, PageReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
         lastViewedPostNr = 1,
@@ -122,7 +122,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
     "reads a tiny bit more, finally gets promoted to Basic" in {
       playTimeMillis(1000)
-      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(4), Set.empty, ReadingProgress(
+      dao.trackReadingProgressClearNotfsPerhapsPromote(member1, pageIds(4), Set.empty, PageReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
         lastViewedPostNr = 1,

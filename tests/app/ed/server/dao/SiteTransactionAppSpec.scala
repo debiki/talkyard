@@ -195,7 +195,8 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         numChatTopicsRepliedIn = firstNumber + 33,
         numChatTopicsCreated = firstNumber + 34,
         numLikesGiven = firstNumber + 40,
-        numLikesReceived = firstNumber + 41)
+        numLikesReceived = firstNumber + 41,
+        tourTipsSeen = Some(Vector()))   // [7AKBR24] change Null in db and None here, to empty array?
     }
 
 
@@ -244,14 +245,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     }
 
 
-    "load and save ReadingProgress" - {
+    "load and save PageReadingProgress" - {
 
       var progressLowNrs: PageReadingProgress = null
       var progressHighNrs: PageReadingProgress = null
 
-      "empty ReadingProgress" in {
+      "empty PageReadingProgress" in {
         dao.readWriteTransaction { transaction =>
-          val progress = ReadingProgress(
+          val progress = PageReadingProgress(
             firstVisitedAt = When.fromMinutes(1000),
             lastVisitedAt = When.fromMinutes(1010),
             lastViewedPostNr = 1020,
@@ -268,9 +269,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         }
       }
 
-      "ReadingProgress with low post nrs only" in {
+      "PageReadingProgress with low post nrs only" in {
         dao.readWriteTransaction { transaction =>
-          progressLowNrs = ReadingProgress(
+          progressLowNrs = PageReadingProgress(
             firstVisitedAt = When.fromMinutes(2000),
             lastVisitedAt = When.fromMinutes(2010),
             lastViewedPostNr = 2020,
@@ -284,9 +285,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         }
       }
 
-      "ReadingProgress with high post nr" in {
+      "PageReadingProgress with high post nr" in {
         dao.readWriteTransaction { transaction =>
-          progressHighNrs = ReadingProgress(
+          progressHighNrs = PageReadingProgress(
             firstVisitedAt = When.fromMinutes(3000),
             lastVisitedAt = When.fromMinutes(3010),
             lastViewedPostNr = 3020,
@@ -300,9 +301,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         }
       }
 
-      "overwrite ReadingProgress" in {
+      "overwrite PageReadingProgress" in {
         dao.readWriteTransaction { transaction =>
-          val progress = ReadingProgress(
+          val progress = PageReadingProgress(
             firstVisitedAt = When.fromMinutes(4000),
             lastVisitedAt = When.fromMinutes(4040),
             lastViewedPostNr = 4020,

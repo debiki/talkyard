@@ -68,7 +68,8 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
       lastSeenAt = when,
       firstSeenAtOr0 = when minusDays 10,
       topicsNewSince = when,
-      nextSummaryEmailAt = Some(when plusMinutes minutes))
+      nextSummaryEmailAt = Some(when plusMinutes minutes),
+      tourTipsSeen = Some(Vector.empty))  // [7AKBR24] change Null in db and None here, to empty array?
     dao.readWriteTransaction(_.upsertUserStats(stats))
     stats
   }
