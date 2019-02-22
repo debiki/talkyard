@@ -62,6 +62,10 @@ interface ServerVars {
 
   // When creating new site.
   baseDomain: string | undefined;
+
+  // Is non-zero, if the server is read-only, because of maintenance work. The value
+  // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.
+  mainWorkUntilSecs?: number;
 }
 
 declare const eds: ServerVars;  // RENAME to tys  ?  And is there any way to make all fields 'const' ?

@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2013-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -215,7 +215,8 @@ var eds = {
   uploadsUrlPrefixCommonmark: '@tpi.uploadsUrlPrefix',
   isTestSite: @{ tpi.site.isTestSite.toString },
   loadGlobalAdminTestScript: @{ tpi.globals.loadGlobalAdminTestScript.toString },
-  loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString }
+  loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString },
+  mainWorkUntilSecs: @{ tpi.globals.mainWorkUntilSecs getOrElse 0 }
 };
 
 @* Backw compat CLEAN_UP convert old js code in these 'namespaces' to Typescript instead [4KSWPY]

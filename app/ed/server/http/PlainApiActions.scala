@@ -103,6 +103,19 @@ class PlainApiActions(
 
       val site = globals.lookupSiteOrThrow(request)
 
+      // Under maintenance?
+      // Throw if the server is under maintenance, and the request tries to do anything
+      // but reading, e.g. saving a reply. That is, throw for all POST request. Except for
+      // logout or login, so people can login and read (OpenAuth login is GET only).
+      def logoutPath: String = controllers.routes.LoginController.logout(None).url
+      def loginPasswordPath: String = controllers.routes.LoginWithPasswordController.login().url
+      if (globals.mainWorkUntilSecs.isDefined && request.method == "POST"
+          && request.path != logoutPath
+          && request.path != loginPasswordPath) {
+        throwServiceUnavailable("TyMMAINTWORK", o"""The server is under maintenance:
+            You cannot do anything, except for reading.""")
+      }
+
       request.headers.get("Authorization") match {
         case Some(authHeaderValue) =>
           invokeBlockAuthViaApiSecret(request, site, authHeaderValue, block)

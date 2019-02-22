@@ -388,6 +388,15 @@ export const TopBar = createComponent({
 
     const extraMarginClass = extraMargin ? ' esTopbar-extraMargin' : '';
 
+    const anyMaintWorkMessage = !eds.mainWorkUntilSecs || isServerSide() ? null :
+        r.div({ className: 's_MaintWorkM' },
+          r.b({}, "Under maintenance"),
+          ", everyting is read-only." ); /* + (
+            eds.mainWorkUntilSecs === 1 ? '' : (
+              " Time left: " +
+              Math.max(0, Math.ceil((eds.mainWorkUntilSecs * 1000 - Date.now()) / 3600/1000)) + " hours")));
+              */
+
     const topbar =
       r.div({ className: 'esTopbar' + extraMarginClass },
         r.div({ className: 'esTopbar_right' },
@@ -401,6 +410,7 @@ export const TopBar = createComponent({
           // UX REFACTOR break out to its own widget, incl a retry-timeout countdown?
           r.div({ className: 's_NoInetM' }, "No internet connection"), // I18N   [NOINETMSG]
           // "Will retry in X seconds"  I18N  seconds for live notfs retry, not reading progr
+          anyMaintWorkMessage,
           backToSiteButton),
         pageTitle,
         ancestorCategories);

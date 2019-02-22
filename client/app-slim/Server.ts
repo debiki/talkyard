@@ -1546,6 +1546,9 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
       postsRead: Post[], tourTipsSeen: TourTipsSeen | undefined, anyOnDone?: () => void) {
+  if (eds.mainWorkUntilSecs)
+    return;
+
   const pageId = getPageId();
   if (pageId === EmptyPageId)
     return;
