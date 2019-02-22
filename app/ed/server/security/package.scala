@@ -438,6 +438,12 @@ class EdSecurity(globals: Globals) {
     // Note that the xsrf token is created using the non-base64 encoded cookie value.
     val sidOk = createSessionId(siteId, userId)
     val xsrfOk = createXsrfToken()
+    UX; SECURITY; SHOULD // use HttpOnly cookies — otherwise Safari will delete the cookie
+    // after 7 days. See: https://webkit.org/blog/8613/intelligent-tracking-prevention-2-1/
+    // the "Client-Side Cookies Capped to 7 Days of Storage", section, and sub section
+    // "Will This Change Log Users Out?" — cookies that are Secure and HttpOnly aren't deleted.
+    // This means the client can no longer look at the session cookie, to find out if one is
+    // logged in? Could add JS variables instead.
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
       maxAgeSecs = Some(expireIdleAfterSecs))
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,
