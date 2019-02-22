@@ -540,7 +540,8 @@ draft: [7WKABZP2]
   delete:
           - drafts-delete.test.ts  TyT5BKRQ0
   works also if not logged in:
-          - drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
+          - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
+          - embedded-comments-drafts-not-logged-in.test.ts  TyT2ZBKPW048
 
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit

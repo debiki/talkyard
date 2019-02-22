@@ -389,6 +389,9 @@ export const Editor = createComponent({
       pageId: store.currentPageId,
       postNr: postNrs[0], // for now
     };
+    if (eds.embeddingUrl) {
+      draftLocator.embeddingUrl = eds.embeddingUrl;
+    }
 
     let writingWhat = WritingWhat.ReplyToNotOriginalPost;
     if (_.isEqual([BodyNr], postNrs)) writingWhat = WritingWhat.ReplyToOriginalPost;
@@ -579,15 +582,27 @@ export const Editor = createComponent({
 
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
         pageRole?: PageRole) {
-    const store: Store = ReactStore.allData();
-    if (shallSkipDraft(this.state)) {
-      this.setState({ draftStatus: DraftStatus.NothingHappened });
+
+    if (isEmbeddedNotYetCreatedPage(this.state)) {
+      // Cannot currently load draft & guidelines (below) for a not-yet-created page.
+      // Instead: [BLGCMNT1]
+      const draft = getFromSessionStorage(draftLocator);
+      this.setState({   // dupl code (2ABR703)
+        draft,
+        draftStatus: DraftStatus.NothingHappened,
+        text: draft ? draft.text : '',
+        title: draft ? draft.title : '',
+      });
       return;
     }
 
+    const store: Store = ReactStore.allData();
     const page: Page = store.currentPage;
     const theCategoryId = draftLocator.categoryId || page.categoryId;
     const thePageRole = pageRole || page.pageRole;
+
+    // What's this? why? I should have added a comment. The code seems to say that
+    // if *guidelines* have been loaded, then any *draft* has also been loaded.
     const currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&
         currentGuidelines.categoryId === theCategoryId &&
@@ -597,7 +612,6 @@ export const Editor = createComponent({
       return;
     }
 
-    // Currently there are no drafts, only guidelines.
     Server.loadDraftAndGuidelines(draftLocator, writingWhat, theCategoryId, thePageRole,
         (guidelinesSafeHtml, draft?: Draft) => {
       let guidelines = undefined;
@@ -613,8 +627,8 @@ export const Editor = createComponent({
           hidden: isHidden,
         };
       }
-      draft = draft || getFromSessionStorage(draftLocator),
-      this.setState({
+      draft = draft || getFromSessionStorage(draftLocator);
+      this.setState({   // dupl code (2ABR703)
         draft,
         draftStatus: DraftStatus.NothingHappened,
         text: draft ? draft.text : '',
@@ -779,6 +793,10 @@ export const Editor = createComponent({
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
       postType = PostType.Normal;
+      // This is needed for embedded comments, if the discussion page hasn't yet been created.
+      if (eds.embeddingUrl) {
+        locator.embeddingUrl = eds.embeddingUrl;
+      }
     }
     else if (this.state.isWritingChatMessage) {
       locator.draftType = DraftType.Reply;
@@ -833,9 +851,8 @@ export const Editor = createComponent({
     const oldDraft: Draft | undefined = this.state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
     const draftStatus: DraftStatus = this.state.draftStatus;
-    const skipDraft = !draftOldOrEmpty || shallSkipDraft(this.state);
 
-    if (skipDraft || draftStatus <= DraftStatus.NeedNotSave) {
+    if (!draftOldOrEmpty || draftStatus <= DraftStatus.NeedNotSave) {
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
       }
@@ -879,9 +896,16 @@ export const Editor = createComponent({
       return;
     }
 
+    const store: Store = this.state.store;
     const draftToSave: Draft = { ...draftOldOrEmpty, text, title };
 
-    const saveInSessionStorage = !(<Store> this.state.store).me.isLoggedIn;
+    // If this is an embedded comments discussion, and the discussion page hasn't
+    // yet been created, there's no page id to use as draft locator key. Then,
+    // save the draft in the session storage only, for now.
+    // UX COULD save server side, with url as key  [BLGCMNT1]
+    // — it's the key already, in the sesison cache.
+    const saveInSessionStorage =
+        !store.me.isLoggedIn || isEmbeddedNotYetCreatedPage(this.state);
 
     console.debug(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
         saveInSessionStorage ? "temp in browser" : "server side"));
@@ -1436,9 +1460,8 @@ export const Editor = createComponent({
 
     const draft: Draft = this.state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
-    const skipDraft = shallSkipDraft(this.state);
 
-    const draftStatusText = skipDraft ? null :
+    const draftStatusText =
         DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
 
     return (
@@ -1587,12 +1610,18 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
 
 
 
-// We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
-// because the page doesn't yet exist; there's no page id to use in the draft locator.
-function shallSkipDraft(props: { store: Store, messageToUserIds }): boolean {
+// We currently don't save any draft server side, for the 1st embedded comment  [BLGCMNT1]
+// on a new blog post, because the embedded page hasn't yet been created (it gets created
+// lazily when the 1st reply is posted [4AMJX7]); there's no page id to use in the
+// draft locator. Could use the embedding URL though.
+function isEmbeddedNotYetCreatedPage(props: { store: Store, messageToUserIds }): boolean {
   // If is-no-page, then the page doesn't exist. However, we might be in the user
   // profile section, writing a direct message to someone — then we do save drafts.
-  return store_isNoPage(props.store) && !props.messageToUserIds.length;
+  const result = store_isNoPage(props.store) && !props.messageToUserIds.length;
+  // @ifdef DEBUG
+  dieIf(result && !eds.isInEmbeddedEditor, 'TyE7KBTF32');
+  // @endif
+  return result;
 }
 
 const previewHelpMessage = {

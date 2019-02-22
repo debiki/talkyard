@@ -391,7 +391,7 @@ export const TopBar = createComponent({
     const anyMaintWorkMessage = !eds.mainWorkUntilSecs || isServerSide() ? null :
         r.div({ className: 's_MaintWorkM' },
           r.b({}, "Under maintenance"),
-          ", everyting is read-only." ); /* + (
+          ", everything is read-only." ); /* + (
             eds.mainWorkUntilSecs === 1 ? '' : (
               " Time left: " +
               Math.max(0, Math.ceil((eds.mainWorkUntilSecs * 1000 - Date.now()) / 3600/1000)) + " hours")));
