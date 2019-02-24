@@ -79,6 +79,7 @@ find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
 
 # Test and build prod dist of the Play app. Do this one at a time, or out-of-memory:
+# Clean is required, otherwise Play/SBT might use old out-of-date Typescript code. [5ARS024]
 s/d-cli clean compile
 s/d-cli test dist
 

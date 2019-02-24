@@ -555,17 +555,36 @@ class Nashorn(globals: Globals) {
 
 
   private def loadFileAsString(path: String, isTranslation: Boolean): String = {
+    def whatFile = if (isTranslation) "Language" else "Script"
+    def gulpTarget = if (isTranslation) "minifyTranslations" else "build"
+    def makeMissingMessage =
+        s"$whatFile file not found: $path, 'gulp $gulpTarget' not run or isn't done?"
+
+    // If dev mode, load file directly from disk — otherwise, Play Framework for some reason
+    // won't pick it up until after 'sbt clean'.  [5ARS024]
+    if (globals.isDev)
+      try {
+        return scala.io.Source.fromFile(
+          "/opt/talkyard/app" + path)(scala.io.Codec.UTF8).mkString
+      }
+      catch {
+        case ex: Exception =>
+          val message = makeMissingMessage
+          logger.error(message + " [TyELOADJS1]")
+          throw new DebikiException("TyELOADJS2", message)
+      }
+
     val javascriptStream = getClass.getResourceAsStream(path)
     if (javascriptStream eq null) {
       if (isTranslation) {
-        val message = s"Language file not found: $path, 'gulp minifyTranslations' not run or isn't done?"
-        logger.error(message + " [TyE47UKDW2]")
-        throw new DebikiException("TyE47UKDW3", message)
+        val message = makeMissingMessage
+        logger.error(message + " [TyELOADJS3]")
+        throw new DebikiException("TyELOADJS4", message)
       }
       else {
-        val message = s"Script not found: $path, 'gulp build' has not been run or isn't done?"
-        logger.error(message + " [TyE7JKV2]")
-        throw new DebikiException("TyE7JKV3", message)
+        val message = makeMissingMessage
+        logger.error(message + " [TyELOADJS5]")
+        throw new DebikiException("TyELOADJS6", message)
       }
     }
     scala.io.Source.fromInputStream(
