@@ -292,9 +292,11 @@ POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoin
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
 
-# Don't change the URL on the next line. The /-/assets/<version-number>/ is
-# updated by the deployment script (asset fingerprinting).
-GET   /-/assets/279/*file       controllers.Assets.at(path = "/public/res", file)
+# -------------------------------------------------------------------------------------------
+# These are in fact served directly by Nginx, from the file system [NGXSTC].
+# They're here, too, so Play knows how to generate links.
+
+GET   /-/assets/*file           controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 
 # These endpoints are linked from embedded comments HTML:  [2WPGKS04]
@@ -309,13 +311,14 @@ GET   /-/ed-comments.v0.js      controllers.Assets.at(path = "/public/res", file
 GET   /-/ed-comments.min.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
 GET   /-/ed-comments.v0.min.js  controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
 
-GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
 # Prefix with 'talkyard-' so one quickly sees if it's Talkyards service worker, when debugging on localhost.
 # (There might be old other localhost service workers, from unrelated open source projects.) [sw]
 #GET   /talkyard-service-worker.js     controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.js")
 #GET   /talkyard-service-worker.min.js controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.min.js")
+# -------------------------------------------------------------------------------------------
+
 #GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
 
 # COULD remove? use only /-/track-reading-activity ?

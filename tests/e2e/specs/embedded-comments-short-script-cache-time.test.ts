@@ -3,14 +3,18 @@
 import * as _ from 'lodash';
 import assert = require('assert');
 import pagesFor = require('../utils/pages-for');
+import settings = require('../utils/settings');
 const syncRequest = require('sync-request');
 
-declare let browser: any;
+declare const browser: any;
 let everyonesBrowsers;
 
 const scriptUrl = 'http://localhost/-/ed-comments.min.js';
 const scriptUrl2 = 'http://localhost/-/ed-comments.v0.min.js';
 const scriptUrl3 = 'http://localhost/-/talkyard-comments.min.js';
+
+const desiredCacheHeader = settings.prod ?
+    'max-age=86400, s-maxage=86400, public' : 'no-cache';
 
 describe("the embedded comments script is cached for a day only", () => {
 
@@ -29,7 +33,7 @@ describe("the embedded comments script is cached for a day only", () => {
     for (let i = 0; i < 3; ++i) {
       const response = syncRequest('GET', theUrl);
       const headers = response.headers;
-      if (headers['cache-control'] !== "max-age=86400, s-maxage=86400, public") {  // [2WBKP46]
+      if (headers['cache-control'] !== desiredCacheHeader) {  // [2WBKP46]
         console.log("Bad es-comments.min.js cache time, look at the cache header:\n" +
             JSON.stringify(headers));
         assert(false);

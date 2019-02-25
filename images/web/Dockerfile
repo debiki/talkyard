@@ -305,10 +305,16 @@ ENV \
     ED_NGX_LIMIT_REQ_PER_SERVER=200 \
     ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
     ED_NGX_LIMIT_RATE=50k \
-    ED_NGX_LIMIT_RATE_AFTER=5m
+    ED_NGX_LIMIT_RATE_AFTER=5m \
+    # Wait with setting this to actually a year, until things have been a bit more tested.
+    TY_MAX_AGE_YEAR="max-age=2592000, s-maxage=2592000, public" \
+    TY_MAX_AGE_MONTH="max-age=2592000, s-maxage=2592000, public" \
+    TY_MAX_AGE_DAY="max-age=86400, s-maxage=86400, public"
 
 # Frequently edited, so do last.
-COPY ed-lua /opt/talkyard/lua/
+COPY ty-media /opt/talkyard/ty-media
+COPY ed-lua   /opt/talkyard/lua/
+COPY assets   /opt/talkyard/assets
 
 
 # Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from

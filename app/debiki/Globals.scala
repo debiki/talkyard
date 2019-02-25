@@ -202,6 +202,8 @@ class Globals(
   val mostMetrics = new MostMetrics(metricRegistry)
 
 
+  val talkyardVersion = "v0.6.22-WIP-1"  // TODO read from conf/version.txt
+
   // Could rename to "rendererVersion".
   val applicationVersion = "0.00.52"  // later, read from some build config file
 

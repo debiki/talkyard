@@ -246,7 +246,7 @@ class SiteTpi protected (
   def assetUrl(fileName: String): String = assetUrlPrefix + fileName
 
   def assetUrlPrefix: String =
-    cdnOrServerOrigin + routes.Assets.at(path = "/public/res", "")
+    s"$cdnOrServerOrigin/-/assets/${globals.talkyardVersion}/"   // sync with Nginx [NGXSTC]
 
   def uploadsUrlPrefix: String =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'

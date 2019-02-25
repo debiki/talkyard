@@ -67,26 +67,19 @@ fi
 # Build Docker images
 # ----------------------
 
-s/d build
-
-# Optimize assets, run unit & integration tests and build the Play Framework image
-# (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
+# Build minified script bundles; will be included in the web and app images.
 s/d-gulp release
 
-# Delete unminified files, so Docker diffs a few MB smaller.
-find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'ed-comments\.js' -not -name 'zxcvbn\.js' | xargs rm
-find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
-# COULD add tests that verifies the wrong css & js haven't been deleted?
+## Build images, except for the app server prod image.
+s/d build
 
-# Test and build prod dist of the Play app. Do this one at a time, or out-of-memory:
-# Clean is required, otherwise Play/SBT might use old out-of-date Typescript code. [5ARS024]
+## Build the app server prod image.
+## First run tests though. Do this one at a time, or out-of-memory.
 s/d-cli clean compile
 s/d-cli test dist
-
 s/d kill web app
 s/d down
-
-# Build app image that uses the production version of the app, built with 'dist' above:
+# This will use the prod env package built with 'dist' above.
 s/impl/build-prod-app-image.sh
 
 

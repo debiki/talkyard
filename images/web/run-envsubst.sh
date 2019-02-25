@@ -12,7 +12,10 @@ vars='
   \${ED_NGX_LIMIT_REQ_PER_SERVER}
   \${ED_NGX_LIMIT_REQ_PER_SERVER_BURST}
   \${ED_NGX_LIMIT_RATE}
-  \${ED_NGX_LIMIT_RATE_AFTER}'
+  \${ED_NGX_LIMIT_RATE_AFTER}
+  \${TY_MAX_AGE_YEAR}
+  \${TY_MAX_AGE_MONTH}
+  \${TY_MAX_AGE_DAY}'
 
 envsubst "$vars" < /etc/nginx/nginx.conf.template             > /etc/nginx/nginx.conf
 envsubst "$vars" < /etc/nginx/http-limits.conf.template       > /etc/nginx/http-limits.conf

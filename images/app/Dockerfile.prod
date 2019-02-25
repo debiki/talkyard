@@ -26,6 +26,10 @@ COPY app-conf/app-prod.conf  /opt/talkyard/app/conf/
 COPY app-conf/logback.xml    /opt/talkyard/app/conf/
 COPY build-info      /opt/talkyard/build-info/
 
+# The Scala code loads Javascript for server side rendering, from here. [APPJSPATH]
+COPY assets /opt/talkyard/app/assets
+
+
 ENV PLAY_HEAP_MEMORY_MB 1000
 
 # Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in talkyard-prod-one.

@@ -17,17 +17,13 @@
 
 @(tpi: debiki.SiteTpi, serverAddress: String)(content: Html)
 
-@asset(file: String) = @{
-  controllers.routes.Assets.at(path = "/public/res", file)
-}
-
 <!DOCTYPE html>
 <html class="DW dw-pri">
 <head>
   <meta name="viewport" content="width=device-width">
   <meta charset="utf-8"/>
-  <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-  <link rel="stylesheet" href="@asset(s"styles-bundle.${tpi.minMaxCss}")"/>
+  <link rel="stylesheet" href="/-/fontello/css/fontello-embedded.css"/>@* sync with Nginx [NGXSTC] *@
+  <link rel="stylesheet" href="@tpi.assetUrl(s"styles-bundle.${tpi.minMaxCss}")"/>
   @tpi.debikiScriptsInHead(isInLoginWindow = true)
   <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
   <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>

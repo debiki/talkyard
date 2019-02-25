@@ -10,7 +10,7 @@ repo=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 
 rm -fr target/docker-app-prod
 mkdir -p target/docker-app-prod
-cp -a images/app/Dockerfile.prod target/docker-app-prod/
+cp -a images/app/{Dockerfile.prod,assets} target/docker-app-prod/
 cd target/docker-app-prod
 cp ../universal/talkyard-server-$version.zip ./
 unzip -q talkyard-server-$version.zip

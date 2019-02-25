@@ -37,11 +37,12 @@ package object controllers {
     * "invisible" 404 script-not-found errors in the dev console.
     */
   def dieIfAssetsMissingIfDevTest() {
+    /*
     if (Globals.isProd) return
 
     val serverJavascriptPath = "/public/res/server-bundle.js"
-    val clientJavascriptPath = "/public/res/slim-bundle.js"
-    val stylesPath = "/public/res/styles-bundle.css"
+    //val clientJavascriptPath = "/public/res/slim-bundle.js"
+    //val stylesPath = "/public/res/styles-bundle.css"
 
     val tips = o"""If you ran 'docker-compose up' then this bundle should be
       created automatically, but it might take a minute. You can:""" + i"""
@@ -57,13 +58,14 @@ package object controllers {
       throw new QuickMessageException(
         s"Javascript bundle not found: ${fileName(serverJavascriptPath)} [EsE6GKW2]\n\n$tips")
 
-    if (getClass.getResourceAsStream(clientJavascriptPath) eq null)
-      throw new QuickMessageException(
-        s"Javascript bundle not found: ${fileName(clientJavascriptPath)} [EsE6GKW2]\n\n$tips")
+    //if (getClass.getResourceAsStream(clientJavascriptPath) eq null)
+    //  throw new QuickMessageException(
+    //    s"Javascript bundle not found: ${fileName(clientJavascriptPath)} [EsE6GKW2]\n\n$tips")
 
-    if (getClass.getResourceAsStream(stylesPath) eq null)
-      throw new QuickMessageException(
-        s"CSS bundle not found: ${fileName(stylesPath)} [EsE2GPU0]\n\n$tips")
+    //if (getClass.getResourceAsStream(stylesPath) eq null)
+    //  throw new QuickMessageException(
+    //    s"CSS bundle not found: ${fileName(stylesPath)} [EsE2GPU0]\n\n$tips")
+    */
   }
 
 }

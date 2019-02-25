@@ -14,9 +14,12 @@ services:
     # so can specify core dump path [NGXCORED]
     #privileged: true
     volumes:
-      # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
-      # auto reload them after edits. (We COPY them too, so will work in Prod.)
+      # Mount the Lua and JS and CSS scripts, rather than relying on Docker's COPY,
+      # so Nginx can auto reload them after edits, without rebuilding the image.
+      # (The files are COPY:d too, so will work in Prod.)
       - ./images/web/ed-lua/:/opt/talkyard/lua/:ro
+      - ./images/web/assets/:/opt/talkyard/assets/:ro   # [NGXSTC]
+      - ./images/web/ty-media/:/opt/talkyard/ty-media/:ro
       - ./volumes/uploads/:/opt/talkyard/uploads/:ro
       - ./volumes/letsencrypt/:/etc/letsencrypt/:ro
       - ./volumes/nginx-logs/:/var/log/nginx/
@@ -32,6 +35,10 @@ services:
       #- cache [NCHANREDIS]
     environment:
       CDN_PULL_KEY: "public"
+      # This is dev mode; tell the browser to refresh its cache each request. [2WBKP46]
+      TY_MAX_AGE_YEAR: "no-cache"
+      TY_MAX_AGE_MONTH: "no-cache"
+      TY_MAX_AGE_DAY: "no-cache"
 
   app:
     build:
@@ -46,6 +53,8 @@ services:
       - ./:/opt/talkyard/app/
       - ./volumes/uploads/:/opt/talkyard/uploads/
       - ./volumes/app-logs/:/var/log/talkyard/
+      # So assets get refreshed on restart, in dev mode, without rebuilding imaage. [APPJSPATH]
+      - ./images/app/assets/:/opt/talkyard/app/assets/:ro
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - ${HOME}/.ivy2/:/home/owner/.ivy2/
       - ${HOME}/.sbt/:/home/owner/.sbt/

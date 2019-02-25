@@ -499,7 +499,7 @@ class Nashorn(globals: Globals) {
       // Add translations, required by the render-page-code later when it runs.
       def addTranslation(langCode: String) {
         val translScript = loadFileAsString(
-          s"/public/res/translations/$langCode/i18n$min.js", isTranslation = true)
+          s"translations/$langCode/i18n$min.js", isTranslation = true)
         scriptBuilder.append(translScript)
       }
 
@@ -510,7 +510,7 @@ class Nashorn(globals: Globals) {
       addTranslation("pl_PL")
 
       // Add render page code.
-      val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)
+      val rendererScript = loadFileAsString(s"server-bundle$min.js", isTranslation = false)
       scriptBuilder.append(rendererScript)
     }
     finally {
@@ -560,35 +560,19 @@ class Nashorn(globals: Globals) {
     def makeMissingMessage =
         s"$whatFile file not found: $path, 'gulp $gulpTarget' not run or isn't done?"
 
-    // If dev mode, load file directly from disk — otherwise, Play Framework for some reason
-    // won't pick it up until after 'sbt clean'.  [5ARS024]
-    if (globals.isDev)
-      try {
-        return scala.io.Source.fromFile(
-          "/opt/talkyard/app" + path)(scala.io.Codec.UTF8).mkString
-      }
-      catch {
-        case ex: Exception =>
-          val message = makeMissingMessage
-          logger.error(message + " [TyELOADJS1]")
-          throw new DebikiException("TyELOADJS2", message)
-      }
-
-    val javascriptStream = getClass.getResourceAsStream(path)
-    if (javascriptStream eq null) {
-      if (isTranslation) {
-        val message = makeMissingMessage
-        logger.error(message + " [TyELOADJS3]")
-        throw new DebikiException("TyELOADJS4", message)
-      }
-      else {
-        val message = makeMissingMessage
-        logger.error(message + " [TyELOADJS5]")
-        throw new DebikiException("TyELOADJS6", message)
-      }
+    // Load file directly from disk — otherwise, if using getClass.getResourceAsStream(path),
+    // Play Framework for some reason won't pick it up any changes, until after
+    // 'sbt clean', which can be confusing and waste time.
+    try {
+      scala.io.Source.fromFile(
+        "/opt/talkyard/app/assets/" + path)(scala.io.Codec.UTF8).mkString  // [APPJSPATH]
     }
-    scala.io.Source.fromInputStream(
-      javascriptStream)(scala.io.Codec.UTF8).mkString
+    catch {
+      case ex: Exception =>
+        val message = makeMissingMessage
+        logger.error(message + " [TyELOADJS1]")
+        throw new DebikiException("TyELOADJS2", message)
+    }
   }
 
 

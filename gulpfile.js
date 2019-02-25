@@ -24,26 +24,47 @@
  *   gulp watch    - continuously rebuild things that change
  */
 
-var gulp = require('gulp');
-var plumber = require('gulp-plumber');
-var newer = require('gulp-newer');
-var typeScript = require('gulp-typescript');
-var stylus = require('gulp-stylus');
-var cleanCSS = require('gulp-clean-css');
-var concat = require('gulp-concat');
-var insert = require('gulp-insert');
-var del = require('del');
-var rename = require("gulp-rename");
-var uglify = require('gulp-uglify');
-var gzip = require('gulp-gzip');
-var merge2 = require('merge2');
-var fs = require("fs");
-var execSync = require('child_process').execSync;
-var preprocess = require('gulp-preprocess');
+const gulp = require('gulp');
+const plumber = require('gulp-plumber');
+const newer = require('gulp-newer');
+const typeScript = require('gulp-typescript');
+const stylus = require('gulp-stylus');
+const cleanCSS = require('gulp-clean-css');
+const concat = require('gulp-concat');
+const insert = require('gulp-insert');
+const del = require('del');
+const rename = require("gulp-rename");
+const uglify = require('gulp-uglify');
+const gzip = require('gulp-gzip');
+const merge2 = require('merge2');
+const fs = require("fs");
+const save = require('gulp-save');
+const execSync = require('child_process').execSync;
+const preprocess = require('gulp-preprocess');
 
-var currentDirectorySlash = __dirname + '/';
-var versionFilePath = 'version.txt';
+const currentDirectorySlash = __dirname + '/';
+const versionFilePath = 'version.txt';
 
+
+function readGitHash() {
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  }
+  catch (ex) {
+    return 'bad_git_repo';
+  }
+}
+
+
+const version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
+const versionTag = version + '-' + readGitHash();  // also in Bash and Scala [8GKB4W2]
+
+// Here we'll place the generated js, min.js and min.js.gz files. [GZPATHS]
+const webDest = 'images/web/assets';
+const webDestVersioned = `${webDest}/${version}`;
+const webDestTranslations = `${webDestVersioned}/translations`;
+const serverDest = 'images/app/assets';
+const serverDestTranslations = `${serverDest}/translations`;
 
 
 /*
@@ -81,17 +102,11 @@ const plumberOpts = {
 } */
 
 
-function getVersionTag() {
-  var version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
-  var gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-  return version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
-}
-
 
 function makeCopyrightAndLicenseBanner() {
   return (
   '/*!\n' +
-  ' * Talkyard ' + getVersionTag() + '\n' +
+  ' * Talkyard ' + versionTag + '\n' +
   ' *\n' +
   ' * This file is copyrighted and licensed under the AGPL license.\n' +
   ' * Some parts of it might be licensed under more permissive\n' +
@@ -102,7 +117,7 @@ function makeCopyrightAndLicenseBanner() {
 }
 
 function makeTranslationsCopyrightAndLicenseBanner() {
-  return '/*! Talkyard ' + getVersionTag() + ', license: AGPL. */\n';
+  return '/*! Talkyard ' + versionTag + ', license: AGPL. */\n';
 }
 
 
@@ -111,7 +126,7 @@ var thisIsAConcatenationMessage =
   ' * This file is a concatenation of many different files.\n' +
   ' * Each such file has its own copyright notices. Some parts\n' +
   ' * are released under other more permissive licenses\n' +
-  ' * than the AGPL. Files are separated by a "======" line.\n' +
+  ' * than the AGPL. Files are separated by "======" lines.\n' +
   ' */\n';
 
 
@@ -260,6 +275,7 @@ gulp.task('compile-e2e-scripts', () => {
         'client/app-slim/model.ts',
         'tests/e2e/**/*ts'])
       .pipe(plumber())
+      //.pipe(chmod(ownerWriteAllRead))
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
@@ -285,22 +301,26 @@ gulp.task('build-e2e', gulp.series('clean-e2e', 'compile-e2e-scripts'));
 
 
 gulp.task('cleanTranslations', () => {
-  return del(['public/res/translations/**/*']);
+  return del([
+      `${serverDestTranslations}/**/*`,
+      `${webDestTranslations}/**/*`]);
 });
 
 // Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
 // in public/res/translations/... .
 gulp.task('compileTranslations', () => {
-  var stream = gulp.src(['translations/**/*.ts'])
+  const stream = gulp.src(['translations/**/*.ts'])
       .pipe(plumber())
       .pipe(typeScript({
         declarationFiles: true,
         lib: ['es5', 'es2015', 'dom'],
         types: ['core-js']
       }));
-
   return stream.js
-    .pipe(gulp.dest('public/res/translations'));
+      .pipe(gulp.dest(webDestTranslations))
+      .pipe(gulp.dest(serverDestTranslations))
+      .pipe(gzip())
+      .pipe(gulp.dest(webDestTranslations));
 });
 
 gulp.task('buildTranslations', gulp.series('cleanTranslations', 'compileTranslations'));
@@ -358,7 +378,7 @@ function compileServerTypescriptConcatJavascript() {
 
   return merge2(javascriptStream, typescriptStream)
       .pipe(concat('server-bundle.js'))
-      .pipe(gulp.dest('public/res/'));
+      .pipe(gulp.dest(serverDest));
 }
 
 var swTypescriptProject = typeScript.createProject("client/serviceworker/tsconfig.json");
@@ -383,7 +403,6 @@ function compileSwTypescript() {
     .pipe(gulp.dest('target/client/'));
 }
 
-
 function compileSlimTypescript() {
   return slimTypescriptProject.src()
     .pipe(plumber())
@@ -391,7 +410,6 @@ function compileSlimTypescript() {
     .pipe(slimTypescriptProject())
     .pipe(gulp.dest('target/client/'));
 }
-
 
 function compileOtherTypescript(typescriptProject) {
   return typescriptProject.src()
@@ -431,7 +449,7 @@ gulp.task('compileEditorTypescript', () => {
 });
 
 gulp.task('compileAllTypescript', () => {
-  return merge2(
+  return merge2(  // can speed up with gulp.parallel?  (GLPPPRL)
       compileServerTypescriptConcatJavascript(),
       compileSwTypescript(),
       compileSlimTypescript(),
@@ -454,48 +472,56 @@ var compileTsTaskNames = [
 for (var i = 0; i < compileTsTaskNames.length; ++i) {
   var compileTaskName = compileTsTaskNames[i];
   gulp.task(compileTaskName + '-concatScripts', gulp.series(compileTaskName, () => {
-    return makeConcatAllScriptsStream();
+    // Don't need to do this for more than the relevant bundle, but simpler to do for
+    // all. Talkes almost no time.
+    return makeConcatWebScriptsStream();
   }));
 }
 
 
 
 gulp.task('compileConcatAllScripts', gulp.series('wrapJavascript', 'compileAllTypescript', () => {
-  return makeConcatAllScriptsStream();
+  return makeConcatWebScriptsStream();
 }));
 
 
 
-function makeConcatAllScriptsStream() {
-  function makeConcatStream(outputFileName, filesToConcat, checkIfNewer) {
-    var stream = gulp.src(filesToConcat).pipe(plumber());
+function makeConcatWebScriptsStream() {
+  function makeConcatStream(outputFileName, filesToConcat, checkIfNewer, versioned) {
+    let stream = gulp.src(filesToConcat).pipe(plumber());
+    const dest = versioned === false ? webDest : webDestVersioned;
     if (checkIfNewer) {
-      stream = stream.pipe(newer('public/res/' + outputFileName));
+      stream = stream.pipe(newer(webDestVersioned + '/' + outputFileName));
     }
     return stream
         .pipe(insert.transform(nextFileTemplate))
         .pipe(concat(outputFileName))
         .pipe(insert.prepend(thisIsAConcatenationMessage))
         .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
-        .pipe(gulp.dest('public/res/'));
+        .pipe(gulp.dest(dest))
+        .pipe(gzip())
+        .pipe(gulp.dest(dest));
   }
 
   return merge2(
-      makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer'),
+      makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer', false),
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
       //makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'), [SLIMTYPE]
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
-      makeConcatStream('jquery-bundle.js', jqueryJsFiles),
-      makeConcatStream('ed-comments.js', embeddedJsFiles),
-      gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
+      makeConcatStream('jquery-bundle.js', jqueryJsFiles, 'DoCheckNewer'),
+      makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false),
+      gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
+          .pipe(gulp.dest(webDestVersioned))
+          .pipe(gzip())
+          .pipe(gulp.dest(webDestVersioned)));
 }
 
 
 
 gulp.task('wrap-javascript-concat-scripts', gulp.series('wrapJavascript', () => {
-  return makeConcatAllScriptsStream();
+  return makeConcatWebScriptsStream();
 }));
 
 
@@ -512,16 +538,17 @@ gulp.task('enable-prod-stuff', (done) => {
 });
 
 
-// Similar to 'minifyScripts', but a different copyright header.
 gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
-  return gulp.src(['public/res/translations/**/*.js'])
+  return gulp.src([`${serverDestTranslations}/**/*.js`, `!${serverDestTranslations}/**/*.min.js`])
       .pipe(plumber())
+      .pipe(preprocess({ context: {} }))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
-      .pipe(gulp.dest('public/res/translations/'))
+      // The Scala app server code wants non-gz files. Nginx wants gz.
+      .pipe(gulp.dest(serverDestTranslations))
       .pipe(gzip())
-      .pipe(gulp.dest('public/res/translations/'));
+      .pipe(gulp.dest(webDestTranslations));
 }));
 
 
@@ -530,15 +557,24 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
   // on the very last line in a {} block, because it would get removed, by... by what? the
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
   // found in string" error with a meaningless stacktrace, in preprocess().
-  return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
+  function makeMinJsGzStream(sourceAndDest, gzipped) {
+    let stream = gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
       .pipe(plumber())
       .pipe(preprocess({ context: {} })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
-      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
-      .pipe(gulp.dest('public/res/'))
-      .pipe(gzip())
-      .pipe(gulp.dest('public/res/'));
+      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()));
+    if (gzipped) {
+      stream = stream.pipe(gzip());
+    }
+    return stream.pipe(gulp.dest(sourceAndDest));
+  }
+  return merge2(  // can speed up with gulp.parallel? (GLPPPRL)
+      // The Scala app server wants non-gzipped files.
+      makeMinJsGzStream(serverDest, false),
+      // Nginx wants gzipped files.
+      makeMinJsGzStream(webDest, true),
+      makeMinJsGzStream(webDestVersioned, true));
 }));
 
 
@@ -551,22 +587,24 @@ gulp.task('compile-stylus', () => {
       currentDirectorySlash + 'client/app-slim/variables.styl']
   };
 
-  function makeStyleStream(destDir, destFile, sourceFiles) {
+  function makeStyleStream(sourceFiles) {
     return gulp.src(sourceFiles)
       .pipe(plumber())
       .pipe(stylus(stylusOpts))
-      .pipe(concat(destFile))
-      .pipe(gulp.dest(destDir))
+      .pipe(concat('styles-bundle.css'))
+      .pipe(save('111'))
+        .pipe(gzip())
+        .pipe(gulp.dest(webDestVersioned))
+      .pipe(save.restore('111'))
       .pipe(cleanCSS())
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
       .pipe(rename({ extname: '.min.css' }))
-      .pipe(gulp.dest(destDir))
       .pipe(gzip())
-      .pipe(gulp.dest(destDir));
+      .pipe(gulp.dest(webDestVersioned));
   }
 
   return (
-    makeStyleStream('public/res/', 'styles-bundle.css', [
+    makeStyleStream([
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
@@ -661,7 +699,33 @@ gulp.task('watch', gulp.series('default', (done) => {
 }));
 
 
-gulp.task('release', gulp.series('enable-prod-stuff', 'minifyScripts', 'compile-stylus'));
+gulp.task('delete-non-gzipped', () => {
+  return del([
+      `${webDest}/**/*.js`,
+      `${webDest}/**/*.css`,
+      // Needed in dev mode:
+      //`${serverDest}/**/*.js`,
+      //`!${serverDest}/**/*.min.js`,
+      ]);
+});
+
+
+gulp.task('clean', () => {
+  return del([
+      `${webDest}/**/*.js*`,
+      `${webDest}/**/*.css*`,
+      `${webDestVersioned}`,
+      `${serverDest}/**/*.js*`,
+      `${serverDestTranslations}`]);
+});
+
+
+gulp.task('release', gulp.series(
+    'clean',
+    'enable-prod-stuff',
+    'minifyScripts',
+    'compile-stylus',
+    'delete-non-gzipped'));
 
 
 // ========================================================================
