@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../more-prelude.more.ts" />
+/// <reference path="user-summary.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -31,32 +32,26 @@ export const UsersActivity = createFactory({
   displayName: 'UsersActivity',
 
   render: function() {
+    const store: Store = this.props.store;
     const user: MemberInclDetails = this.props.user;
-    const me: Myself = this.props.store.me;
-    const isStaffOrSelf = isStaff(me) || user.id === me.id;
-    const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
-
-    const hiddenForSomeText = !isStaffOrSelf ? null : (
-        user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
-          t.upp.OnlyStaffCanSee : (
-            user.seeActivityMinTrustLevel >= TrustLevel.FullMember ?
-              t.upp.OnlyMbrsCanSee : null));
-
-    const hiddenForSomeElem = hiddenForSomeText ?
-        r.p({ className: 's_UP_Act_Hdn' }, hiddenForSomeText) : null;
-
-    // Instead of "No posts" or "No topics", write "Nothing to show" — because maybe
-    // there *are* posts and topics, it's just that the activity is hidden.
-    const nothingToShow = !hiddenForMe ? null :
-      r.p({ className: 'e_NothingToShow' }, t.upp.Nothing);
+    const me: Myself = store.me;
 
     const childProps = {
-      store: this.props.store,
-      user: this.props.user,
+      store,
+      user,
+      me,
+      stats: this.props.stats, // for the Summary page
       reloadUser: this.props.loadCompleteUser,
     };
 
-    const childRoute = hiddenForMe ? null : Switch({},
+    const childRoute = Switch({},
+      // Why Summary here, in 2nd level nav? Not in 1st level nav like Discourse does?
+      // The user summary is really an acctivity summary, and should be here.
+      // It's about as easy to find here, because Activity|Posts is the default tab,
+      // meaning, Summary will be visible just above.
+      // And having it here, means there'll be fewer 1st level navs, which is
+      // good in Talkyards case, since Ty has the Drafts 1st level tab.
+      Route({ path: '(.*)/summary', exact: true, render: () => UserSummary(childProps) }),
       Route({ path: '(.*)/posts', exact: true, render: () => UsersPosts(childProps) }),
       Route({ path: '(.*)/topics', exact: true, render: () => UsersTopics(childProps) }));
       // (.*)/mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
@@ -73,6 +68,8 @@ export const UsersActivity = createFactory({
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav-stacked nav nav-pills' },
+              user.isGroup ? null :
+                  LiNavLink({ to: uap + 'summary', className: 'e_ActSmryB' }, t.Summary),
               LiNavLink({ to: uap + 'posts', className: 's_UP_Act_Nav_PostsB' },
                 t.upp.Posts),
               LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' },
@@ -80,11 +77,38 @@ export const UsersActivity = createFactory({
               //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
               //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List', id: 't_UP_Act_List' },
-            hiddenForSomeElem,
-            nothingToShow,
             childRoute))));
   }
 });
+
+
+
+function isHiddenForMe(me: Myself, user: MemberInclDetails): boolean[] {
+  const isStaffOrSelf = isStaff(me) || user.id === me.id;
+  const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
+  return [isStaffOrSelf, hiddenForMe];
+}
+
+
+
+function makeMaybeHiddenInfo(me: Myself, user: MemberInclDetails) {
+  const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
+  const hiddenForSomeText = !isStaffOrSelf ? null : (
+      user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
+        t.upp.OnlyStaffCanSee : (
+          user.seeActivityMinTrustLevel >= TrustLevel.FullMember ?
+            t.upp.OnlyMbrsCanSee : null));
+
+  const hiddenForSomeElem = hiddenForSomeText ?
+      r.p({ className: 's_UP_Act_Hdn' }, hiddenForSomeText) : null;
+
+  // Instead of "No posts" or "No topics", write "Nothing to show" — because maybe
+  // there *are* posts and topics, it's just that the activity is hidden.
+  const nothingToShow = !hiddenForMe ? null :
+    r.p({ className: 'e_NothingToShow' }, t.upp.Nothing);
+
+  return rFragment({}, hiddenForSomeElem, nothingToShow);
+}
 
 
 
@@ -96,8 +120,9 @@ const UsersPosts = createFactory({
   },
 
   componentDidMount: function() {
-    let user: MemberInclDetails = this.props.user;
-    this.loadPosts(user.id);
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    this.loadPosts(me, user);
   },
 
   componentWillUnmount: function() {
@@ -108,20 +133,26 @@ const UsersPosts = createFactory({
     // a bit dupl code [5AWS2E9]
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
-    let me: Myself = store.me;
-    let user: MemberInclDetails = this.props.user;
-    let nextMe: Myself = nextStore.me;
-    let nextUser: MemberInclDetails = nextProps.user;
+    const me: Myself = this.props.me;  // not store.me, it's been modif in-place [redux]
+    const user: MemberInclDetails = this.props.user;
+    const nextMe: Myself = nextStore.me;
+    const nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
-      this.loadPosts(nextUser.id);
+      this.loadPosts(nextMe, nextUser);
     }
   },
 
-  loadPosts: function(userId: UserId) {
-    if (this.nowLoading === userId) return;
-    this.nowLoading = userId;
-    Server.loadPostsByAuthor(userId, (response: any) => {
+  loadPosts: function(me: Myself, user: MemberInclDetails) {
+    // a bit dupl code [5AWS2E8]
+    const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
+    if (hiddenForMe) {
+      this.setState({ posts: [], author: null });
+      return;
+    }
+    if (this.nowLoading === user.id) return;
+    this.nowLoading = user.id;
+    Server.loadPostsByAuthor(user.id, (response: any) => {
       this.nowLoading = null;
       if (this.isGone) return;
       this.setState({
@@ -140,18 +171,18 @@ const UsersPosts = createFactory({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    let posts: PostWithPage[] = this.state.posts;
-    let author: BriefUser = this.state.author;
+    const store: Store = this.props.store;
+    const me: Myself = this.props.me;
+    const user: MemberInclDetails = this.props.user;
+    const posts: PostWithPage[] = this.state.posts;
+    const author: BriefUser = this.state.author;
     if (!_.isArray(posts))
       return (
         r.p({}, t.Loading));
 
-    if (_.isEmpty(posts))
-      return (
-        r.p({ className: 'e_NoPosts' }, t.upp.NoPosts));
+    const noPostsClass = _.isEmpty(posts) ? ' e_NoPosts' : '';
 
-    let postElems = posts.map((post: PostWithPage) => {
+    const postElems = posts.map((post: PostWithPage) => {
       return (
         r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
           Link({ to: linkToPostNr(post.pageId, post.nr),
@@ -161,8 +192,9 @@ const UsersPosts = createFactory({
           Post({ post, store, author }))); // author: [4WKA8YB]
     });
 
-    return (
-      r.ol({ className: 's_UP_Act_Ps' }, postElems));
+    return rFragment({},
+      makeMaybeHiddenInfo(me, user),
+      r.ol({ className: 's_UP_Act_Ps' + noPostsClass }, postElems));
   }
 });
 
@@ -176,8 +208,9 @@ const UsersTopics = createFactory({
   },
 
   componentDidMount: function() {
-    let user: MemberInclDetails = this.props.user;
-    this.loadTopics(user.id);
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    this.loadTopics(me, user);
   },
 
   componentWillUnmount: function() {
@@ -188,20 +221,26 @@ const UsersTopics = createFactory({
     // a bit dupl code [5AWS2E9]
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
-    let me: Myself = store.me;
-    let user: MemberInclDetails = this.props.user;
-    let nextMe: Myself = nextStore.me;
-    let nextUser: MemberInclDetails = nextProps.user;
+    const me: Myself = this.props.me;  // not store.me, it's been modif in-place [redux]
+    const user: MemberInclDetails = this.props.user;
+    const nextMe: Myself = nextStore.me;
+    const nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which topics we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
-      this.loadTopics(nextUser.id);
+      this.loadTopics(nextMe, nextUser);
     }
   },
 
-  loadTopics: function(userId: UserId) {
-    if (this.nowLoading === userId) return;
-    this.nowLoading = userId;
-    Server.loadTopicsByUser(userId, (topics: Topic[]) => {
+  loadTopics: function(me: Myself, user: MemberInclDetails) {
+    // a bit dupl code [5AWS2E8]
+    const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
+    if (hiddenForMe) {
+      this.setState({ topics: [] });
+      return;
+    }
+    if (this.nowLoading === user.id) return;
+    this.nowLoading = user.id;
+    Server.loadTopicsByUser(user.id, (topics: Topic[]) => {
       this.nowLoading = null;
       if (this.isGone) return;
       this.setState({ topics: topics });
@@ -209,18 +248,17 @@ const UsersTopics = createFactory({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    let me: Myself = store.me;
-    let topics: Topic[] = this.state.topics;
+    const store: Store = this.props.store;
+    const user: MemberInclDetails = this.props.user;
+    const me: Myself = store.me;
+    const topics: Topic[] = this.state.topics;
     if (!_.isArray(topics))
       return (
         r.p({}, t.Loading));
 
-    if (_.isEmpty(topics))
-      return (
-        r.p({ className: 'e_NoTopics' }, t.upp.NoTopics));
+    const noTopicsClass = _.isEmpty(topics) ? ' e_NoTopics' : '';
 
-    let topicsElems = forum.TopicsList({
+    const topicsElems = forum.TopicsList({
       topics: this.state.topics,
       store: this.props.store,
       useTable: true,
@@ -231,15 +269,16 @@ const UsersTopics = createFactory({
       linkCategories: false,
     });
 
-    return (
-      r.ol({ className: 's_UP_Act_Ts' },
+    return rFragment({},
+      makeMaybeHiddenInfo(me, user),
+      r.ol({ className: 's_UP_Act_Ts' + noTopicsClass },
         topicsElems));
   }
 });
 
 
 
-export let LikesGivenComponent = createReactClass(<any> {
+export const LikesGivenComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not impl 4"));
@@ -248,7 +287,7 @@ export let LikesGivenComponent = createReactClass(<any> {
 
 
 
-export let LikesReceivedComponent = createReactClass(<any> {
+export const LikesReceivedComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not impl 5"));

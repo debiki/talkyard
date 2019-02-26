@@ -35,7 +35,7 @@ export const UserSummary = createFactory({
       return r.p({}, "This user's statistics is not publicly visible.");
 
     return (
-     r.div({ className: 's_UP_Stats' },
+     r.div({ className: 's_UP_Act_Stats' },
        r.h2({}, "Statistics"),
        r.ul({},
          r.li({ className: 's_UP_Stats_Stat' },

@@ -22,7 +22,6 @@
 /// <reference path="user-drafts-etc.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
-/// <reference path="user-summary.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -189,9 +188,6 @@ const UserPageComponent = createReactClass(<any> {
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
-    const summaryNavItem = user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, t.Summary);
-
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
@@ -222,7 +218,6 @@ const UserPageComponent = createReactClass(<any> {
         return Redirect({ to: UsersRoot + match.params.usernameOrId + '/activity/posts' + hash });
       }}),
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
-      Route({ path: u + 'summary', render: () => UserSummary(childProps) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
       Route({ path: u + 'preferences', render: (ps) => UserPreferences({ ...childProps, ...ps }) }),
@@ -233,7 +228,6 @@ const UserPageComponent = createReactClass(<any> {
         AvatarAboutAndButtons(childProps),
         r.ul({ className: 'dw-sub-nav nav nav-pills' },
           activityNavItem,
-          summaryNavItem,
           notificationsNavItem,
           draftsEtcNavItem,
           invitesNavItem,
