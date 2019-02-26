@@ -348,7 +348,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-drafts-not-logged-in $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-different-disc-ids-same-page $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id.test $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-guest-login-email-notf-unsbscribe $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins $args
