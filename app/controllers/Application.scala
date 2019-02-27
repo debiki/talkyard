@@ -45,6 +45,9 @@ class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
     // But:  Use `display: browser` in webmanifest for iOS devices
     //       https://meta.discourse.org/t/back-button-in-responsive-app/93909/5
     //       Otherwise, will be no Back button in iOS.
+    //
+    // Also compare with: (root)/images/web/ty-media/favicon/site.webmanifest.
+    //
     Ok(s"""
       |{
       |  "name": "The Most Awesome Dragon Site",

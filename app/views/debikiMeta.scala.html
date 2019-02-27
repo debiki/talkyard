@@ -29,11 +29,20 @@
 @faviconType = @{
   val suffix = faviconUrl.takeRightWhile(_ != '.')
   // If too long, probably there is no real suffix. Then assume it's an icon? 'jpeg' = 4 chars.
-  if (suffix == "ico" || suffix.length > 4) "image/x-icon"
+  if (suffix == "ico" || suffix.length > 4 || suffix.isEmpty) "image/x-icon"
   else "image/" + suffix
 }
 @if(faviconUrl.nonEmpty) {
 <link rel="icon" type="@faviconType" href="@faviconUrl">
+}
+@* Else, use Talkyard's own favicon. Sync with Nginx location directive [FAVICOLOC] *@
+@if(faviconUrl.isEmpty) {
+<link rel="apple-touch-icon" sizes="180x180" href="/-/favicon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/-/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/-/favicon/favicon-16x16.png">
+<link rel="mask-icon" href="/-/favicon/safari-pinned-tab.svg" color="#0060ad">
+<meta name="msapplication-TileColor" content="#b91d47">
+<meta name="theme-color" content="#ffffff">
 }
 
 @* Some other viewport values, and the absence of a value,
