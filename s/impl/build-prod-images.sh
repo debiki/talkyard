@@ -70,16 +70,16 @@ fi
 # Build minified script bundles; will be included in the web and app images.
 s/d-gulp release
 
-## Build images, except for the app server prod image.
+# Build images, except for the app server prod image.
 s/d build
 
-## Build the app server prod image.
-## First run tests though. Do this one at a time, or out-of-memory.
+# Build the app server prod image.
+# First run tests though. Do this one at a time, or out-of-memory.
 s/d-cli clean compile
 s/d-cli test dist
 s/d kill web app
 s/d down
-# This will use the prod env package built with 'dist' above.
+# This will use the prod package built with 'dist' above.
 s/impl/build-prod-app-image.sh
 
 

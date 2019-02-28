@@ -46,11 +46,11 @@ export const UsersActivity = createFactory({
 
     const childRoute = Switch({},
       // Why Summary here, in 2nd level nav? Not in 1st level nav like Discourse does?
-      // The user summary is really an acctivity summary, and should be here.
-      // It's about as easy to find here, because Activity|Posts is the default tab,
-      // meaning, Summary will be visible just above.
+      // Because: The user summary is sort of an activity summary, and should be here.
+      // It's also easy to find here, because Activity|Posts is the default tab,
+      // meaning, the Summary is visible just above.
       // And having it here, means there'll be fewer 1st level navs, which is
-      // good in Talkyards case, since Ty has the Drafts 1st level tab.
+      // good in Talkyard's case, since Ty has an "extra" 1st level tab: "Drafts etc".
       Route({ path: '(.*)/summary', exact: true, render: () => UserSummary(childProps) }),
       Route({ path: '(.*)/posts', exact: true, render: () => UsersPosts(childProps) }),
       Route({ path: '(.*)/topics', exact: true, render: () => UsersTopics(childProps) }));

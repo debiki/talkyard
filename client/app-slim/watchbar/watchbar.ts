@@ -101,8 +101,12 @@ const SubCommunities = createComponent({
     const settings: SettingsVisibleClientSide = store.settings;
     const showSubCommunities = settings.showSubCommunities;
 
+    // If sub communities disabled, there's just one single main community.
+    // Show a "Home" link, to it.
     if (!showSubCommunities) {
       const forumWrongTitle: WatchbarTopic = watchbar[WatchbarSection.SubCommunities][0];
+      if (!forumWrongTitle)
+        return null;
       const forum = { ...forumWrongTitle, title: t.Home };
       return (
           r.ul({},
@@ -344,8 +348,9 @@ const SingleTopic = createComponent({
       // title = r.span({ className: 'icon-menu' }, title);
     }
 
-    // Unset, if is current page, so can click and open its current-page-menu, without
-    // navigating to the page again and in that way accidentally clearing the query string.
+    // Un-linkify, if is current page, so can click and open the current-page-menu, without
+    // navigating to the page itself again and in that way accidentally clearing
+    // any query string.
     const href = isCurrent ? null : this._url;
 
     // Could show num unread posts / chat messages. But would be rather complicated:

@@ -9,11 +9,6 @@
 # which is helpful when understanding what the url path does, and someone else
 # didn't tell you which method hen had in mind.
 
-# API calls
-# Would be nice to change to <path>?login-simple / ?logout / etcetera,
-# so the actual page will be included in the request. Then one would know
-# on which page did the user start/end the session. But for now:
-
 # Rare compilation problem tips:
 # If there's ever again any impossibly weird error like:
 #   [error] /home/kajmagnus/me-dev/debiki/all/debiki-server/conf/routes:14:
@@ -291,33 +286,6 @@ GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoi
 POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
-
-# -------------------------------------------------------------------------------------------
-# These are in fact served directly by Nginx, from the file system [NGXSTC].
-# They're here, too, so Play knows how to generate links.
-
-GET   /-/assets/*file           controllers.Assets.at(path = "/public/res", file)
-GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
-
-# These endpoints are linked from embedded comments HTML:  [2WPGKS04]
-# Ensure they aren't cached for too long. [2WBKP46]
-# Also, use a descriptive name that includes "Talkyard", because people see these names when
-# they copy-paste embedded comments html tags.
-GET   /-/talkyard-comments.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
-GET   /-/talkyard-comments.min.js controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
-# Old names: [2EBG05]
-GET   /-/ed-comments.js         controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
-GET   /-/ed-comments.v0.js      controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
-GET   /-/ed-comments.min.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
-GET   /-/ed-comments.v0.min.js  controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
-
-GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
-
-# Prefix with 'talkyard-' so one quickly sees if it's Talkyards service worker, when debugging on localhost.
-# (There might be old other localhost service workers, from unrelated open source projects.) [sw]
-#GET   /talkyard-service-worker.js     controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.js")
-#GET   /talkyard-service-worker.min.js controllers.Assets.at(path = "/public/res", file = "talkyard-service-worker.min.js")
-# -------------------------------------------------------------------------------------------
 
 #GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
 

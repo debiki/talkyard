@@ -398,9 +398,6 @@ This project looks like so:
      | |
      | ...Third party modules
      |
-     +-public/         <-- Some images and libs, plus JS and CSS that Gulp
-     |                     has bundled and minified from the client/ dir above.
-     |
      +-to-talkyard/    <-- For converting e.g. phpBB or Disqus export files
      |                     to Talkyard's JSON format, so they can be imported
      |                     into Talkyard. This is a stand-alone Node.js app.
@@ -408,6 +405,7 @@ This project looks like so:
      +-images/
      | +-web/          <-- For building the 'web' Docker image, runs Nginx
      | | +-Dockerfile
+     | | +-assets/     <-- Typescript and Stylus compiled to JS and CSS
      | | +-modules/    <-- Nginx modules
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
      | |   +-luajit/   <-- Lua
@@ -415,7 +413,7 @@ This project looks like so:
      | |
      | +-gulp/         <-- An image that runs Node.js and bundles JS and CSS
      | |
-     | +-...           <-- More images...
+     | +-...           <-- More images, see: docs/about-the-talkyard-images.md
      |
      +-volumes/
      | +-rdb-data      <-- Mounted as a volume in the Postgres container

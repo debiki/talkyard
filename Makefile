@@ -39,6 +39,7 @@ print_help:
 	@echo
 	@echo "  Start a dev server:       make up"
 	@echo "  Stop the dev server:      make dead"
+	@echo "  View logs:                make logs"
 	@echo
 	@echo "  Open PostgreSQL prompt:   make db-cli"
 	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
@@ -198,6 +199,8 @@ up: minified-asset-bundles
 	@echo
 	@sudo s/d-logsf0
 
+log: tail
+logs: tail
 tails: tail
 tail:
 	sudo s/d-logsf0

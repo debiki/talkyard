@@ -24,6 +24,7 @@ COPY app-bin          /opt/talkyard/app/bin/
 # contain test suite OpenAuth credentials.
 COPY app-conf/app-prod.conf  /opt/talkyard/app/conf/
 COPY app-conf/logback.xml    /opt/talkyard/app/conf/
+COPY version.txt     /opt/talkyard/app/
 COPY build-info      /opt/talkyard/build-info/
 
 # The Scala code loads Javascript for server side rendering, from here. [APPJSPATH]

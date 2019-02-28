@@ -38,6 +38,7 @@ services:
       # This is dev mode; tell the browser to refresh its cache each request. [2WBKP46]
       TY_MAX_AGE_YEAR: "no-cache"
       TY_MAX_AGE_MONTH: "no-cache"
+      TY_MAX_AGE_WEEK: "no-cache"
       TY_MAX_AGE_DAY: "no-cache"
 
   app:
@@ -53,8 +54,9 @@ services:
       - ./:/opt/talkyard/app/
       - ./volumes/uploads/:/opt/talkyard/uploads/
       - ./volumes/app-logs/:/var/log/talkyard/
-      # So assets get refreshed on restart, in dev mode, without rebuilding imaage. [APPJSPATH]
+      # So assets get refreshed on restart, in dev mode, without rebuilding image. [APPJSPATH]
       - ./images/app/assets/:/opt/talkyard/app/assets/:ro
+      - ./version.txt:/opt/talkyard/app/version.txt:ro
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - ${HOME}/.ivy2/:/home/owner/.ivy2/
       - ${HOME}/.sbt/:/home/owner/.sbt/

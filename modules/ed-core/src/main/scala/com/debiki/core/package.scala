@@ -755,6 +755,10 @@ package object core {
   }
 
 
+  def fileExists(path: String): Boolean =
+    java.nio.file.Files.exists(java.nio.file.Paths.get(path))
+
+
   /** If you're short of time, add e.g. an UNTESTED statement. The compiler
     * ensures you don't do a typo. Then, before a release:
     *   egrep -Ir 'UNTESTED|SECURITY|MUST|TODO' app/ test/ client/ modules/ *

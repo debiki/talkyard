@@ -38,6 +38,7 @@ const uglify = require('gulp-uglify');
 const gzip = require('gulp-gzip');
 const merge2 = require('merge2');
 const fs = require("fs");
+// COULD remove, uses old gulp-util, deprecated and pulls in old cruft.
 const save = require('gulp-save');
 const execSync = require('child_process').execSync;
 const preprocess = require('gulp-preprocess');
@@ -275,7 +276,6 @@ gulp.task('compile-e2e-scripts', () => {
         'client/app-slim/model.ts',
         'tests/e2e/**/*ts'])
       .pipe(plumber())
-      //.pipe(chmod(ownerWriteAllRead))
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
@@ -491,7 +491,7 @@ function makeConcatWebScriptsStream() {
     let stream = gulp.src(filesToConcat).pipe(plumber());
     const dest = versioned === false ? webDest : webDestVersioned;
     if (checkIfNewer) {
-      stream = stream.pipe(newer(webDestVersioned + '/' + outputFileName));
+      stream = stream.pipe(newer(dest + '/' + outputFileName));
     }
     return stream
         .pipe(insert.transform(nextFileTemplate))
@@ -714,7 +714,9 @@ gulp.task('clean', () => {
   return del([
       `${webDest}/**/*.js*`,
       `${webDest}/**/*.css*`,
-      `${webDestVersioned}`,
+      //`${webDestVersioned}`, — won't remove previous versions. If fixing: [4R02J5],
+      // (moving arrow images to ty-media), then, can remove the whole webDest dir instead.
+      `${webDest}/v*`,
       `${serverDest}/**/*.js*`,
       `${serverDestTranslations}`]);
 });

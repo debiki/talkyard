@@ -32,18 +32,6 @@ import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.mutable.ArrayBuffer
 
 
-// COULD move elsewhere. Placed here only because the pwd strength function is
-// zxcvbn implemented in Javascript, which is what this file deals with.
-case class PasswordStrength(
-  entropyBits: Float,
-  crackTimeSeconds: Float,
-  crackTimeDisplay: String,
-  score: Int) {
-
-  /** zxcvbn score 4 is the highest score, see https://github.com/dropbox/zxcvbn. */
-  //def isStrongEnough = score >= 4
-}
-
 
 case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
 
@@ -91,12 +79,6 @@ class Nashorn(globals: Globals) {
     this.oneboxes = Some(oneboxes)
   }
 
-
-  CLEAN_UP // remove server side pwd strength check.
-  // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
-  // a minute in dev mode. So enable server side password strength checks in prod mode only.
-  // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
-  private val passwordStrengthCheckEnabled = false // Globals.isProd — no, disable for now, toooooo slow
 
   /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
     * called from inside the JS code. This results in weird impossible things like
@@ -321,33 +303,6 @@ class Nashorn(globals: Globals) {
   }
 
 
-  CLEAN_UP /* delete all server side pwd strength stuff?
-  def calcPasswordStrength(password: String, username: String, fullName: Option[String],
-        email: String)
-        : PasswordStrength = {
-    if (!passwordStrengthCheckEnabled) {
-      return PasswordStrength(entropyBits = 0, crackTimeSeconds = 0,
-        crackTimeDisplay = "unknown", score = (password.length >= 8) ? 999 | 0)
-    }
-
-    CLEAN_UP // remove this server-side JS check of pwd strength — too complicated. Do sth
-    // simple in Scala code instead, in app/ed/server/security.scala.
-    withJavascriptEngine(engine => {
-      val resultAsAny = engine.invokeFunction(
-        "checkPasswordStrength", password, username, fullName.getOrElse(""), email)
-      val resultString = resultAsAny.asInstanceOf[String]
-      val parts = resultString.split('|')
-      dieIf(parts.length != 4, "DwE4KEJ72")
-      val result = PasswordStrength(
-        entropyBits = Try { parts(0).toFloat } getOrElse die("DwE4KEP78"),
-        crackTimeSeconds = Try { parts(1).toFloat } getOrElse die("DwE5KEP2"),
-        crackTimeDisplay = parts(2),
-        score = Try { parts(3).toInt } getOrElse die("DwE6KEF28"))
-      result
-    })
-  } */
-
-
   private def withJavascriptEngine[R](fn: (js.Invocable) => R): R = {
     dieIf(isTestSoDisableScripts, "EsE4YUGw")
 
@@ -498,7 +453,7 @@ class Nashorn(globals: Globals) {
     try {
       // Add translations, required by the render-page-code later when it runs.
       def addTranslation(langCode: String) {
-        val translScript = loadFileAsString(
+        val translScript = loadAssetAsString(
           s"translations/$langCode/i18n$min.js", isTranslation = true)
         scriptBuilder.append(translScript)
       }
@@ -510,27 +465,15 @@ class Nashorn(globals: Globals) {
       addTranslation("pl_PL")
 
       // Add render page code.
-      val rendererScript = loadFileAsString(s"server-bundle$min.js", isTranslation = false)
+      val rendererScript = loadAssetAsString(s"server-bundle$min.js", isTranslation = false)
       scriptBuilder.append(rendererScript)
     }
     finally {
       IOUtils.closeWhileHandlingException(javascriptStream)
     }
 
-    if (passwordStrengthCheckEnabled) {
-      try {
-        javascriptStream = getClass.getResourceAsStream("/public/res/zxcvbn.min.js")
-        val zxcvbnScript = scala.io.Source.fromInputStream(javascriptStream).mkString
-        scriptBuilder.append(zxcvbnScript)
-      }
-      finally {
-        IOUtils.closeWhileHandlingException(javascriptStream)
-      }
-    }
-
     scriptBuilder.append(i"""
         |$RenderAndSanitizeCommonMark
-        |$CheckPasswordStrength
         |""")
 
     // Output the script so we can lookup line numbers if there's an error.
@@ -554,7 +497,7 @@ class Nashorn(globals: Globals) {
   }
 
 
-  private def loadFileAsString(path: String, isTranslation: Boolean): String = {
+  private def loadAssetAsString(path: String, isTranslation: Boolean): String = {
     def whatFile = if (isTranslation) "Language" else "Script"
     def gulpTarget = if (isTranslation) "minifyTranslations" else "build"
     def makeMissingMessage =
@@ -658,19 +601,6 @@ object Nashorn {
     |    printStackTrace(e);
     |  }
     |  return "Error sanitizing HTML on server [DwE5GBCU6]";
-    |}
-    |"""
-
-
-  private val CheckPasswordStrength = i"""
-    |function checkPasswordStrength(password, username, userFullName, email) {
-    |  var passwordStrength = zxcvbn(password, [
-    |      userFullName, email, username, 'debiki', 'talkyard']);
-    |  return '' +
-    |      passwordStrength.entropy + '|' +
-    |      passwordStrength.crack_time + '|' +
-    |      passwordStrength.crack_time_display + '|' +
-    |      passwordStrength.score;
     |}
     |"""
 

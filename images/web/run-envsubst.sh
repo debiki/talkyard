@@ -15,6 +15,7 @@ vars='
   \${ED_NGX_LIMIT_RATE_AFTER}
   \${TY_MAX_AGE_YEAR}
   \${TY_MAX_AGE_MONTH}
+  \${TY_MAX_AGE_WEEK}
   \${TY_MAX_AGE_DAY}'
 
 envsubst "$vars" < /etc/nginx/nginx.conf.template             > /etc/nginx/nginx.conf

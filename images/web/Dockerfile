@@ -306,9 +306,11 @@ ENV \
     ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
     ED_NGX_LIMIT_RATE=50k \
     ED_NGX_LIMIT_RATE_AFTER=5m \
-    # Wait with setting this to actually a year, until things have been a bit more tested.
+    # Wait with setting this to a year (31536000), until things more tested.
+		# ('s-maxage = ...' and 'public' are for shared proxies and CDNs)
     TY_MAX_AGE_YEAR="max-age=2592000, s-maxage=2592000, public" \
     TY_MAX_AGE_MONTH="max-age=2592000, s-maxage=2592000, public" \
+    TY_MAX_AGE_WEEK="max-age=604800, s-maxage=604800, public" \
     TY_MAX_AGE_DAY="max-age=86400, s-maxage=86400, public"
 
 # Frequently edited, so do last.
