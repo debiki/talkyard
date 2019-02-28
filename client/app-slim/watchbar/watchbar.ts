@@ -74,13 +74,12 @@ export const Watchbar = createComponent({
     const settings: SettingsVisibleClientSide = store.settings;
     const me = store.me;
 
-    const showSubCommunities = settings.showSubCommunities;
-    const communities = showSubCommunities ? SubCommunities({ store: store }) : null;
-    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, showSubCommunities });
-    const chatChannels = settings.enableChat !== false ? ChatChannels({ store: store }) : null;
+    const communities = SubCommunities({ store });
+    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store });
+    const chatChannels = settings.enableChat !== false ? ChatChannels({ store }) : null;
     const directMessages =
         me.isLoggedIn && settings.enableDirectMessages !== false ?
-          DirectMessages({ store: store }) : null;
+          DirectMessages({ store }) : null;
 
     return (
       r.div({ className: 'esWB', ref: 'watchbar' },
@@ -99,6 +98,18 @@ const SubCommunities = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const watchbar: Watchbar = store.me.watchbar;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const showSubCommunities = settings.showSubCommunities;
+
+    if (!showSubCommunities) {
+      const forumWrongTitle: WatchbarTopic = watchbar[WatchbarSection.SubCommunities][0];
+      const forum = { ...forumWrongTitle, title: t.Home };
+      return (
+          r.ul({},
+            SingleTopic({ store, topic: forum, flavor: 'Home',
+              isCurrent: forum.pageId === store.currentPageId, homeIcon: true })));
+    }
+
     const subCommunities: WatchbarTopic[] = watchbar[WatchbarSection.SubCommunities];
     const subCommunitiesElems = [];
 
@@ -143,18 +154,6 @@ const RecentTopicsAndNotfs = createComponent({
     const chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
     const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
     const topicElems = [];
-
-    // If there's just a single forum (no other forums = sub communities) then always show
-    // it first in the Recent list (instead of in a separate 'Communities' watchbar section).
-    if (!this.props.showSubCommunities) {
-      const forum = watchbar[WatchbarSection.SubCommunities][0];
-      if (forum) {
-        topicElems.push(
-            SingleTopic({ key: forum.pageId, store: store, topic: forum, flavor: 'recent',
-              isCurrent: forum.pageId === store.currentPageId, forumIcon: true }));
-      }
-    }
-
     const recentTopicsSorted = cloneAndSort(recentTopics);
 
     _.each(recentTopicsSorted, (topic: WatchbarTopic) => {
@@ -298,7 +297,8 @@ const SingleTopic = createComponent({
     const isSubCommunity = flavor === 'SubCom';
     const isChat = flavor === 'chat';
     const isRecent = flavor === 'recent';
-    const isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
+    const isCurrent = this.props.isCurrent;
+    const isCurrentTopicClass = isCurrent ? ' esWB_T-Current' : '';
     const unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     let title = topic.title || this._url;
 
@@ -314,7 +314,7 @@ const SingleTopic = createComponent({
         isAuthorOrStaff ? t.wb.ViewAddRemoveMembers : t.wb.ViewChatMembers);
 
     // UX COULD check role? and make it possible to edit title etc, without having to join.
-    const editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
+    const editChatInfoButton = !isChat || !isAuthorOrStaff || !isCurrent ? null :
         MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
           t.wb.EditChat);
 
@@ -327,7 +327,7 @@ const SingleTopic = createComponent({
       MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
         t.wb.JoinThisCommunity);
 
-    const topicActionsButton = !this.props.isCurrent ? null :
+    const topicActionsButton = !isCurrent ? null :
       ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: t.wb.TopicActions }),
           className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'actionsDropdown', pullLeft: true,
           dialogClassName: 'esWB_T_D' },
@@ -339,15 +339,20 @@ const SingleTopic = createComponent({
           joinButton,
         ));
 
-    if (this.props.forumIcon) {
-      title = r.span({ className: 'icon-menu' }, title);
+    if (this.props.homeIcon) {
+      // No, don't use icon-menu: people think it's a dropdown menu. Use a house instead?
+      // title = r.span({ className: 'icon-menu' }, title);
     }
+
+    // Unset, if is current page, so can click and open its current-page-menu, without
+    // navigating to the page again and in that way accidentally clearing the query string.
+    const href = isCurrent ? null : this._url;
 
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
         r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onListItemClick },
-          LinkUnstyled({ className: 'esWB_T_Link', href: this._url, title: tooltip },
+          LinkUnstyled({ className: 'esWB_T_Link', href, title: tooltip },
             r.span({ className: 'esWB_T_Title' }, title)),
           topicActionsButton));
   }

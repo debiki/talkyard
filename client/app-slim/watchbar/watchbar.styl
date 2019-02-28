@@ -1,6 +1,6 @@
 $watchbarHue = $uiHue; // or 0 (red) looks ok too;
 $sectionMarginTop = 2rem;
-$buttonColor = #919191;
+$buttonColor = hsl(0, 0%, 57%);
 $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
 
 
@@ -25,7 +25,7 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
   h3,
   .esWB_T_None,
   .esWB_T_Title
-    color: hsl(0, 0%, 57%);
+    color: $buttonColor;
 
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -44,7 +44,7 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
     cursor: default;
     word-spacing: 1px;
 
-  .esWB_LI
+.esWB_LI
     line-height: normal;
     list-style: none;
     margin: 0 0 2px;
@@ -111,6 +111,11 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
 .esWB_CreateB
   &:hover
     box-shadow: 0 0 0 8px hsl(207, 85%, 22%);
+
+.esWB_T-Home
+  margin: 5px 0 0 -5px;
+  width: calc(100% - 45px);
+  font-weight: bold;
 
 .esWB_T_B
   float: right;  // [4WKE2R]
