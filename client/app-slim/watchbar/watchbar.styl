@@ -1,7 +1,10 @@
 $watchbarHue = $uiHue; // or 0 (red) looks ok too;
 $sectionMarginTop = 2rem;
 $buttonColor = hsl(0, 0%, 57%);
+$titleColor = hsl(0, 0%, 64%);  // brighter = more noticeable
 $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
+$fontSize = 14px;
+$highlightPaddingLeft = 6px;
 
 
 // Left align the icon with other topic titles.
@@ -14,38 +17,39 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
 
 .esWB
   height: 100%;
-  padding: 10px 17px 10px 10px
+  padding: 10px 17px 10px 4px;
   overflow-y: auto;
 
   .esWB_T_Link
     display: inline-block;
     width: 100%; // or nothing happens when clicks right part of hover-highlighted <li>
-    padding: 3px 0 1px 6px;
+    padding: 3px 0 1px $highlightPaddingLeft;
 
   h3,
   .esWB_T_None,
   .esWB_T_Title
     color: $buttonColor;
-
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: 100%;
     overflow: hidden;
     display: inline-block;
-    font-size: 14px;
+    font-size: $fontSize;
 
   .esWB_T_None
     color: hsl(0, 0%, 43%);
 
   h3
+    color: $titleColor;
     text-transform: uppercase;
     font-size: 1.4rem;
-    margin: $sectionMarginTop 0 0.2rem;
+    margin: $sectionMarginTop 0 0.2rem $highlightPaddingLeft;
     cursor: default;
     word-spacing: 1px;
 
-.esWB_LI
+.DW .esWB_LI
     line-height: normal;
+    font-size: $fontSize; // otherwise line-height: normal can vary, on pages with custom html
     list-style: none;
     margin: 0 0 2px;
     cursor: pointer;
@@ -112,8 +116,8 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
   &:hover
     box-shadow: 0 0 0 8px hsl(207, 85%, 22%);
 
-.esWB_T-Home
-  margin: 5px 0 0 -5px;
+.DW .esWB_T-Home
+  margin: 5px 0 0;
   width: calc(100% - 45px);
   font-weight: bold;
 
