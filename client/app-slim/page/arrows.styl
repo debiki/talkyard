@@ -1,5 +1,5 @@
 /*!
- * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -53,6 +53,7 @@
 // PNG arrows
 //===========================
 
+// The arrow images are in (root)/images/web/ty-media/arrows/. [NGXMEDIA]
 
 .dw-arw-hz-line-to-this,
 .dw-arw-hz-line-to-sibling,
@@ -91,7 +92,7 @@
 .dw-arw-vt-curve-to-last-sibling-indented
   position: absolute
   background-color: transparent
-  background: url(img/arrows-etcetera-gray.png) no-repeat -33px -228px
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat -33px -228px
   width: 33px
   left: 1px
   top: -24px
@@ -104,7 +105,7 @@
   width: 18px
   height: 53px
   padding-bottom: 10px; // or vertical line would be visible below
-  background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat -57px -79px
 
 // Same as above, but when the last sibling is indented.
 .dw-arw-vt-curve-to-last-sibling-indented
@@ -120,7 +121,7 @@ li:only-child > .dw-arw-vt-curve-to-this
   width: 15px;
   height: 23px;
   left: -1px !important;
-  background: url("img/arrows-etcetera-gray.png") no-repeat -59px -146px;
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat -59px -146px;
 
 html.touch
   .dw-arw-vt-curve-to-this-first-unindented,
@@ -129,13 +130,13 @@ html.touch
     width: 15px;
     height: 30px;
     left: -2px !important;
-    background: url("img/arrows-etcetera-gray.png") no-repeat -59px -141px;
+    background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat -59px -141px;
 
 // Sometimes the last/only child is indented: in single column layout, replies
 // to article replies are always indented. Then we need an arrow for indented
 // comments:
 .dw-depth-0:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-single-and-multireplies > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
-  background: url("img/arrows-etcetera-gray.png") no-repeat -33px -228px
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat -33px -228px
   left: 1px
   top: -25px
   width: 25px;
@@ -163,7 +164,7 @@ html.touch
 
 .dw-arw-hz-curve-to-this,
 .dw-arw-hz-branch-to-reply-btn
-  background: transparent url(img/arrows-etcetera-gray.png) no-repeat 0 0
+  background: transparent url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat 0 0
   position: absolute
   top: -63px
   left: -61px
@@ -172,7 +173,7 @@ html.touch
 
 .dw-arw-hz-branch-to-reply-btn,
 .dw-arw-hz-curve-to-reply-btn
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -79px
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat 0 -79px
   position: absolute
   top: 7px
   left: 0px
@@ -181,7 +182,7 @@ html.touch
   z-index: 2
 
 .dw-arw-hz-curve-to-reply-btn
-  background: url(img/arrows-etcetera-gray.png) no-repeat 0 -152px
+  background: url("/-/media/arrows/arrows-etcetera-gray.png") no-repeat 0 -152px
   height: 72px
   width: 38px
 

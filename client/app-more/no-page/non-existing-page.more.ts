@@ -359,7 +359,7 @@ export var CreateForumPanel = createComponent({
       // topic-list-excerpts-and-thumbnails.jpg: 1112 pixels  * 0.6295 = 700
       // topic-list-news-feed.jpg: 810 pixels                 * 0.6295 = 510
 
-      const prefix = `${eds.cdnOriginOrEmpty}/-/img/create-site/`;
+      const prefix = `${eds.cdnOriginOrEmpty}/-/media/create-site/`;  // [NGXMEDIA]
       switch (style) {
         case TopicListLayout.TitleOnly:
           topicListPreviewImgSrc = prefix + 'topic-list-titles-only.jpg';

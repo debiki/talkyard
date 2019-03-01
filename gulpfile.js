@@ -712,13 +712,10 @@ gulp.task('delete-non-gzipped', () => {
 
 gulp.task('clean', () => {
   return del([
-      `${webDest}/**/*.js*`,
-      `${webDest}/**/*.css*`,
-      //`${webDestVersioned}`, — won't remove previous versions. If fixing: [4R02J5],
-      // (moving arrow images to ty-media), then, can remove the whole webDest dir instead.
-      `${webDest}/v*`,
-      `${serverDest}/**/*.js*`,
-      `${serverDestTranslations}`]);
+    `${webDest}/*`,
+    `!${webDest}/.gitkeep`,
+    `${serverDest}/*`,
+    `!${serverDest}/.gitkeep`]);
 });
 
 

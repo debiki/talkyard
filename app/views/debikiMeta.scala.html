@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2013-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -35,12 +35,12 @@
 @if(faviconUrl.nonEmpty) {
 <link rel="icon" type="@faviconType" href="@faviconUrl">
 }
-@* Else, use Talkyard's own favicon. Sync with Nginx location directive [FAVICOLOC] *@
+@* Else, use Talkyard's own favicon. Sync with Nginx location directive [NGXMEDIA] *@
 @if(faviconUrl.isEmpty) {
-<link rel="apple-touch-icon" sizes="180x180" href="/-/favicon/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/-/favicon/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/-/favicon/favicon-16x16.png">
-<link rel="mask-icon" href="/-/favicon/safari-pinned-tab.svg" color="#0060ad">
+<link rel="apple-touch-icon" sizes="180x180" href="/-/media/favicon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/-/media/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/-/media/favicon/favicon-16x16.png">
+<link rel="mask-icon" href="/-/media/favicon/safari-pinned-tab.svg" color="#0060ad">
 <meta name="msapplication-TileColor" content="#b91d47">
 <meta name="theme-color" content="#ffffff">
 }
