@@ -9,5 +9,5 @@
 # for example:
 #   s/wdio target/e2e/wdio.conf.js --only some-test --logLevel=verbose
 
-node_modules/selenium-standalone/bin/selenium-standalone start $@
+node_modules/selenium-standalone/bin/selenium-standalone start --config=s/selenium-config.js $@
 

@@ -8,6 +8,7 @@ import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
 
 declare var browser: any;
 declare var browserA: any;
@@ -142,7 +143,7 @@ describe("private chat  TyT2ABKR045", function() {
     maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
     maria.watchbar.assertTopicAbsent(chatNameEdited);
-    maria.watchbar.assertTopicVisible(forumTitle);
+    maria.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     maria.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
@@ -182,7 +183,7 @@ describe("private chat  TyT2ABKR045", function() {
 
   it("... and doesn't see it in the watchbar", function() {
     michael.watchbar.assertTopicAbsent(chatNameEdited);
-    michael.watchbar.assertTopicVisible(forumTitle);
+    michael.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     michael.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
@@ -204,7 +205,7 @@ describe("private chat  TyT2ABKR045", function() {
 
   it("... and it won't appear in the watchbar", function() {
     guest.watchbar.assertTopicAbsent(chatNameEdited);
-    guest.watchbar.assertTopicVisible(forumTitle);
+    guest.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     guest.watchbar.asserExactlyNumTopics(1); // the forum
   });
 

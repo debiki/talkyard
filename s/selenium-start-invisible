@@ -3,5 +3,5 @@
 # Prefix the selenium-standalone command with: DEBUG=selenium-standalone:*
 # to tell Selenium to debug log more.
 
-xvfb-run -s '-screen 0 1280x1024x8' node_modules/selenium-standalone/bin/selenium-standalone start $@
+xvfb-run -s '-screen 0 1280x1024x8' node_modules/selenium-standalone/bin/selenium-standalone start --config=s/selenium-config.js $@
 

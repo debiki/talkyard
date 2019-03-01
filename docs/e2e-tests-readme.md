@@ -6,8 +6,8 @@ We use Webdriver.io and write the tests in Typescript. API for v4 (haven't upgra
 To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:
 
     java -version  # the Java version should be >= 1.8, I have never tested Java 1.9
-    node -v   # v4.2.6 works for me, and more recent versions too I would think
-    npm -v    #  3.5.2 works for me, and more recent versions too I would think
+    node -v   # v8.15.0 works for me, and more recent versions too I would think
+    npm -v    #  6.4.1 works for me, and more recent versions too I would think
 
 And you need Yarn: https://yarnpkg.com/en/docs/install
 And a compiler so you can build Fibers:
@@ -18,11 +18,12 @@ Run tests like so:
 
 1. In one shell, start the server and database and everything:
 
-        docker-compose start
+        make up
 
 1. In another shell, build a certain Fibers Node.js module, and start Selenium: (on the host,
    not in any Docker container)
    
+   [Old problems, gone now?]
    Problems! Whenver Yarn gets the chance, it deletes all Selenium binaries, and
    any Fibers module you've compiled. So whenever you've done any Yarn stuff, like
    adding a new lib, you need to build Fibers again. But Yarn will try to build the

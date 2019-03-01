@@ -1538,9 +1538,10 @@ function pagesFor(browser) {
         api.assertExactly(num, api.watchbar.titleSelector);
       },
 
-      goToTopic: function(title: string) {
+      goToTopic: function(title: string, opts: { isHome?: true } = {}) {
         api.rememberCurrentUrl();
-        api.waitForThenClickText(api.watchbar.titleSelector, title);
+        api.waitForThenClickText(
+            api.watchbar.titleSelector, opts.isHome ? c.WatchbarHomeLinkTitle : title);
         api.waitForNewUrl();
         api.assertPageTitleMatches(title);
       },

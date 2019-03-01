@@ -571,7 +571,7 @@ object ForumDao {
       the <span class="icon-ok-circled-empty"></span> icon)."""
     val para2 = o"""In the topic list: To see all unanswered questions, click "All topic"
       and then choose "Only waiting", look:"""
-    // (You'll find /-/media/ in the Nginx config [NGXMEDIA].)
+    // (You'll find /-/media/ in the Nginx config [NGXMEDIA] and submodule ty-media.)
     val para3 = """<img class="no-lightbox" src="/-/media/tips/how-click-show-waiting-680px.jpg">"""
     CommonMarkSourceAndHtml(
       source = i"""

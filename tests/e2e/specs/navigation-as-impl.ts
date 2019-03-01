@@ -121,7 +121,7 @@ function makeWholeSpec(initFn) {
           usersBrowser.adminArea.goToLoginSettings();
           usersBrowser.adminArea.waitAssertVisible();
           usersBrowser.watchbar.openIfNeeded();
-          usersBrowser.watchbar.goToTopic(forumTitle);
+          usersBrowser.watchbar.goToTopic(forumTitle, { isHome: true });
         });
         addForumTests("5: ");
       }

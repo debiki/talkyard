@@ -98,6 +98,7 @@ export = {
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
   SsoTestPath: '/-/sso-test',
+  WatchbarHomeLinkTitle: 'Home',
 
 };
 
