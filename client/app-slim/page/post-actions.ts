@@ -500,9 +500,10 @@ const MoreVotesDropdownModal = createComponent({
 });
 
 
+// CLEAN_UP use enum PostVoteType for voteType, instead of string.
 function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolean) {
   const page: Page = store.currentPage;
-  let action: string;
+  let action: 'DeleteVote' | 'CreateVote';
   let postNrsRead: PostNr[];
   if (!toggleOn) {
     action = 'DeleteVote';

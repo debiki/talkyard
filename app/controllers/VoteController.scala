@@ -49,7 +49,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost, maxBytes = 500) {
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
-    val pageId = (body \ "pageId").as[PageId]
+    val anyPageId = (body \ "pageId").asOpt[PageId]
+    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
@@ -89,6 +91,10 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
     }
 
+    val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+      anyPageId = anyPageId, anyAltPageId = anyAltPageId,
+      anyEmbeddingUrl = anyEmbeddingUrl, request)
+
     if (delete) {
       dao.deleteVote(pageId, postNr, voteType, voterId = request.theUser.id)
     }
@@ -97,9 +103,12 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
     }
 
-    val json = dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
+    val postJson = dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = false, showHidden = true)
-    OkSafeJson(json)
+
+    OkSafeJson(Json.obj(
+      "newlyCreatedPageId" -> JsX.JsStringOrNull(anyNewPagePath.flatMap(_.pageId)),
+      "updatedPost" -> postJson))
   }
 
 

@@ -37,6 +37,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
+
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
@@ -57,17 +58,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
-    var newPagePath: PagePath = null
-    val pageId = anyPageId.orElse({
-      (anyAltPageId orElse anyEmbeddingUrl).flatMap(request.dao.getRealPageId)
-    }) getOrElse {
-      // No page id. Maybe create a new embedded discussion?
-      val embeddingUrl = anyEmbeddingUrl getOrElse {
-        throwNotFound("EdE404NOEMBURL", "Page not found and no embedding url specified")
-      }
-      newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
-      newPagePath.thePageId
-    }
+    val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+      anyPageId = anyPageId, anyAltPageId = anyAltPageId,
+      anyEmbeddingUrl = anyEmbeddingUrl, request)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
@@ -93,7 +86,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       postType, deleteDraftNr, request.who, request.spamRelatedStuff)
 
     var patchWithNewPageId: JsObject = result.storePatchJson
-    if (newPagePath ne null) {
+    if (anyNewPagePath.isDefined) {
       patchWithNewPageId = patchWithNewPageId + ("newlyCreatedPageId" -> JsString(pageId))
     }
     OkSafeJson(patchWithNewPageId)
@@ -132,9 +125,39 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String, // [4AMJX7]
-        altPageId: Option[String]): PagePath = {
-    import request.{dao, requester}
+}
+
+
+
+object EmbeddedCommentsPageCreator {
+
+
+  def getOrCreatePageId(  // [4AMJX7]
+        anyPageId: Option[PageId],
+        anyAltPageId: Option[String],
+        anyEmbeddingUrl: Option[String],
+        request: DebikiRequest[_]): (PageId, Option[PagePath]) = {
+    anyPageId foreach { pageId =>
+      if (pageId != NoPageId)
+        return (pageId, None)
+    }
+    (anyAltPageId orElse anyEmbeddingUrl).flatMap(request.dao.getRealPageId) foreach { pageId =>
+      return (pageId, None)
+    }
+    // Create a new embedded discussion page.
+    // It hasn't yet been created, and is needed, so we can associate the thing
+    // we're currently saving (e.g. a reply) with a page.
+    val embeddingUrl = anyEmbeddingUrl getOrElse {
+      throwNotFound("TyE0ID0EMBURL", "Page not found and no embedding url specified")
+    }
+    val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
+    (newPagePath.thePageId, Some(newPagePath))
+  }
+
+
+  private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String,
+        anyAltPageId: Option[String]): PagePath = {
+    import request.{dao, requester, context}
 
     // (Security, fine: I don't think we need to verify that there is actually a page at
     // the embedding url. Theoretically it's possible for Mallory to post comments to an url,
@@ -143,7 +166,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // But he might as well write a bot that posts the comments, the moments the page gets published?
     // The real solution to this, is instead to moderate new users' first comments, right?)
 
-    val siteSettings = request.dao.getWholeSiteSettings()
+    val siteSettings = dao.getWholeSiteSettings()
     if (siteSettings.allowEmbeddingFrom.isEmpty) {
       SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
       throwForbidden2("EdE2WTKG8", "Embedded comments allow-from origin not configured")
@@ -155,7 +178,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
     val pageRole = PageRole.EmbeddedComments
 
-    throwNoUnless(Authz.mayCreatePage(
+    context.security.throwNoUnless(Authz.mayCreatePage(
       request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),
       pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
       inCategoriesRootLast = categoriesRootLast,
@@ -167,7 +190,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
       showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
-      Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
+      Who.System, request.spamRelatedStuff, altPageId = anyAltPageId, embeddingUrl = Some(embeddingUrl))
   }
 
 }

@@ -1111,8 +1111,30 @@ export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => v
 }
 
 
-export function saveVote(data, success: (updatedPost) => void) {
-  postJsonSuccess('/-/vote', success, data);
+export function saveVote(data: {
+    pageId: PageId,
+    postNr: PostNr,
+    vote: string,
+    action: 'DeleteVote' | 'CreateVote',
+    postNrsRead: PostNr[]
+}, onDone: (updatedPost) => void) {
+  // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
+  // @ifdef DEBUG
+  dieIf(data.pageId && data.pageId !== EmptyPageId && data.pageId !== getPageId(), 'TyE2ABKSY7');
+  // @endif
+  const dataWithEmbeddingUrl = {
+    ...data,
+    pageId: getPageId() || undefined,
+    altPageId: eds.embeddedPageAltId || undefined,
+    embeddingUrl: eds.embeddingUrl || undefined,
+  }
+  postJsonSuccess('/-/vote', (response) => {
+    if (response.newlyCreatedPageId) {
+      // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+      eds.embeddedPageId = response.newlyCreatedPageId;
+    }
+    onDone(response.updatedPost);
+  }, dataWithEmbeddingUrl);
 }
 
 
@@ -1194,6 +1216,7 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
       deleteDraftNr: DraftNr | undefined, success: () => void) {
   postJson('/-/reply', {
     data: {
+      // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
       pageId: getPageId() || undefined,
       altPageId: eds.embeddedPageAltId || undefined,
       embeddingUrl: eds.embeddingUrl || undefined,

@@ -2701,6 +2701,10 @@ function pagesFor(browser) {
         return browser.isVisible('.dw-cmts-tlbr-summary');
       },
 
+      clickLogin: () => {
+        api.waitAndClick('.esMetabar .dw-a-login');
+      },
+
       waitUntilLoggedIn: () => {
         api.waitForVisible('.dw-a-logout');
       },
@@ -2922,6 +2926,10 @@ function pagesFor(browser) {
       clickLikeVote: function(postNr: PostNr) {
         const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
         api.topic.clickPostActionButton(likeVoteSelector);
+      },
+
+      clickLikeVoteForBlogPost: function() {
+        api.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
       },
 
       toggleLikeVote: function(postNr: PostNr) {
@@ -4800,6 +4808,11 @@ function pagesFor(browser) {
           email = nameOrObj.emailAddress;
         }
         api.loginDialog.logInAsGuest(name, email);
+      },
+
+      loginWithPasswordViaMetabar: (ps: { username: string, password: string }) => {
+        api.metabar.clickLogin();
+        api.loginDialog.loginWithPasswordInPopup(ps);
       },
 
       closeSidebars: function() {
