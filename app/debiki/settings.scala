@@ -394,8 +394,12 @@ case class EffectiveSettings(
     *   — is CSP2 (the first link above) something newer & that supports /a/path/too/  ? )
     * and http:// origins duplicated to https://, so https works too.
     */
-  val allowEmbeddingFromBetter: String =
+  lazy val allowEmbeddingFromBetter: Seq[String] =
     EffectiveSettings.improveAllowEmbeddingFrom(allowEmbeddingFrom)
+
+  def anyMainEmbeddingDomain: Option[String] =
+    allowEmbeddingFromBetter.find(!_.contains("localhost")) orElse
+      allowEmbeddingFromBetter.headOption
 
   def isGuestLoginAllowed: Boolean =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
@@ -420,9 +424,19 @@ case class EffectiveSettings(
 object EffectiveSettings {
   val UrlPathRegex: Regex = """^(https?:\/\/)?([^\/]+)(\/.*)?$""".r
 
-  def improveAllowEmbeddingFrom(allowEmbeddingFrom: String): String = {
+  /** Removes comment '#' lines, removes URL paths (Chrome doesn't like), adds https
+    * if only http specified. Returns a list of allowed embedding origins.
+    */
+  def improveAllowEmbeddingFrom(allowEmbeddingFrom: String): Seq[String] = {
     val okSources = ArrayBuffer[String]()
-    val ancestorSourcesMaybePath = allowEmbeddingFrom.split(' ').filterNot(_.isEmpty)
+
+    val ancestorSourcesMaybePath =
+      allowEmbeddingFrom.split("\n").map(_.trim).filterNot(
+        line => line.isEmpty || line.startsWith("#"))
+        // Previously, origins were separated by ' ' instead of '\n', so split on ' ' too.
+        .flatMap(_.split(" "))
+        .filterNot(word => word.isEmpty)
+
     // Exclude the url path = $3.
     val sourcesNoPath = ancestorSourcesMaybePath.map(UrlPathRegex.replaceAllIn(_, "$1$2"))
     sourcesNoPath foreach { source =>
@@ -438,7 +452,8 @@ object EffectiveSettings {
         }
       }
     }
-    okSources.mkString(" ")
+
+    okSources.toSeq
   }
 
   def isEmailAddressAllowed(address: String, whiteListText: String, blackListText: String)

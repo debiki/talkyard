@@ -242,7 +242,7 @@ class SystemDao(
       val yesIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(true)) else None
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
-        allowEmbeddingFrom = Some(embeddingSiteUrl),
+        allowEmbeddingFrom = Some(Some(makeEmbeddingOriginTipsText(embeddingSiteUrl))),
         // Blogs barely get any comments nowadays (instead, everyone uses Facebook/Reddit/etc),
         // so, by default, make it easy to post a blog comment: don't require people to create
         // real accounts. Guest comments always get queued for moderation anyway. [4JKFWP4]
@@ -500,6 +500,15 @@ class SystemDao(
 
 
 object SystemDao {
+
+  def makeEmbeddingOriginTipsText(anyBlogOrigin: Option[String]): String = i"""
+    |${ anyBlogOrigin getOrElse "# https://blog.your-website.com" }
+    |
+    |# To test on localhost, remove '#' on the next line:
+    |# http://localhost
+    |# Or, to use a non-standard port, say, 8080:
+    |# http://localhost:8080
+    |""".trim
 
   private def canonicalHostKey(host: String) =
     // Site id unknown, that's what we're about to lookup.

@@ -882,7 +882,7 @@ const UiPrefsTab = React.createFactory(
   }
 
   return r.div({},
-    r.p({}, "User interface (UI) preferences:"),
+    r.p({}, "User interface (UI) preferences:"),    // [6KXTEI]
     r.form({ role: 'form', onSubmit: saveUiPrefs },
       Input({ type: 'textarea',
           label: "JSON config (ignore this for now; we'll add nice buttons later)",

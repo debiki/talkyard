@@ -409,7 +409,7 @@ object ViewPageController {
     var response = play.api.mvc.Results.Ok(pageHtml)
 
     // Prevent clickjacking or embedding & "stealing" content. Previously done in Nginx [7ACKRQ20].
-    val allowEmbeddingFrom = request.siteSettings.allowEmbeddingFromBetter
+    val allowEmbeddingFrom: String = request.siteSettings.allowEmbeddingFromBetter.mkString(" ")
     SECURITY // should one check for more weird chars? If evil admin attacks hens own site?
     // "':/*" are ok, because one may include protocol and/or port, in CSP frame-ancestors,
     // and "'self'", and wildcar '*'.

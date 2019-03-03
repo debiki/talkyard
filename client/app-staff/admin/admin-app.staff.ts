@@ -1119,17 +1119,13 @@ const EmbeddedCommentsSettings = createFactory({
     return (
       r.div({},
         Setting2(props, { type: 'textarea', label: "Allow embedding from", id: 'e_AllowEmbFrom',
+          className: 's_A_Ss_EmbOrig',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
-            "You can add many domains — separate them with spaces or newlines."),
-          placeholder: "https://www.yourblog.com",
-
-          // Dupl repl-space-w-newlines code (7KABW92)
-          getter: (s: Settings) =>
-            // Replace spaces with newlines, otherwise hard to read.
-            _.isUndefined(s.allowEmbeddingFrom) ? undefined : s.allowEmbeddingFrom.replace(/\s+/g, '\n'),
+            "You can add many websites, one per line. Lines starting with # are ignored."),
+          placeholder: "https://www.your-blog.com",
+          getter: (s: Settings) => s.allowEmbeddingFrom,
           update: (newSettings: Settings, target) => {
-            // Change back from \n to space — browsers want spaces in allow-from.
-            newSettings.allowEmbeddingFrom = target.value.replace(/\n+/g, ' ');
+            newSettings.allowEmbeddingFrom = target.value;
           }
         }),
         anyInstructions));
@@ -1286,11 +1282,11 @@ const AdvancedSettings = createFactory({
         }),
 
         /*
+        // Don't do this. Use JSON instead? Then, can include feature flag values too.
+        // Reuse the UI settings approach? [6KXTEI]
         Setting2(props, { type: 'textarea', label: "Feature flags", id: 'e_FeatFlags',
           help: r.span({}, "Enables or disables new features. Ignore, unless you know what " +
               "you're doing."),
-
-          // Dupl repl-space-w-newlines code (7KABW92)
           getter: (s: Settings) =>
             // Replace spaces with newlines, otherwise hard to read.  What? Why? No stop doing that.
             _.isUndefined(s.featureFlags) ? undefined : s.featureFlags.replace(/\s+/g, '\n'),

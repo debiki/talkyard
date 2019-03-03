@@ -119,6 +119,8 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
     owensBrowser.tour.clickNextForStepNr(9);
     console.log('Step 10');
     owensBrowser.tour.clickNextForStepNr(10);
+    console.log('Step 11');
+    owensBrowser.tour.clickNextForStepNr(11);
   });
 
 
