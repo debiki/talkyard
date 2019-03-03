@@ -102,7 +102,7 @@ class SiteTpi protected (
       if (anyCustomMetaTags.includesDescription) None
       else anyCurrentPageMeta.map(_.htmlHeadDescription)
     xml.Unparsed(views.html.debikiMeta(
-      thePageTitle, description = theDescription, faviconUrl = siteSettings.faviconUrl).body)
+      this, thePageTitle, description = theDescription, faviconUrl = siteSettings.faviconUrl).body)
   }
 
 
@@ -247,6 +247,12 @@ class SiteTpi protected (
 
   def assetUrlPrefix: String =
     s"$cdnOrServerOrigin/-/assets/${globals.talkyardVersion}/"   // sync with Nginx [NGXSTC]
+
+
+  def mediaUrl(fileName: String): String = mediaUrlPrefix + fileName
+
+  def mediaUrlPrefix: String =
+    s"$cdnOrServerOrigin/-/media/"   // sync with Nginx [NGXSTC]
 
   def uploadsUrlPrefix: String =
     cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
