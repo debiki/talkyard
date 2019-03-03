@@ -28,6 +28,7 @@ var serverOrigin = d.i.commentsServerOrigin;
 var postNrToFocus;
 
 var commentsIframe;
+var commentsIframeInited;
 var editorIframe;
 var editorWrapper;
 var editorPlaceholder;
@@ -79,6 +80,7 @@ function loadCommentsCreateEditor() {
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
+  commentsIframeInited = false;
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
@@ -169,6 +171,7 @@ function removeCommentsAndEditor() {
   if (commentsIframe) {
     commentsIframe.remove();
     commentsIframe = null;
+    commentsIframeInited = false;
   }
   if (editorIframe) {
     editorIframe.remove();
@@ -200,7 +203,34 @@ jQuery(function($) {   // xx
 
 
 function messageCommentsIframeNewWinTopSize() {
-  if (!commentsIframe) return;
+  if (!commentsIframe) {
+    // Not yet created, or maybe got deleted by some other Javascript.
+    return;
+  }
+
+  // Wait until the <iframe> is "alive".
+  // Posting a message when the html <iframe> has been created but before it's been fully
+  // loaded, as of 2019-03 makes Chrome send the message to this parent frame instead,
+  // resulting in errors like these in the dev console:
+  //
+  //   Failed to execute 'postMessage' on 'DOMWindow': The target origin
+  //   provided ('https://comments-for-the-blog-address.talkyard.net') does not match
+  //   the recipient window's origin ('https://the-blog-address.com').
+  //
+  // Explanation: postMessage tried to send to https://comments-for... (the target origin) but
+  // instead Chrome sent the message to the main window https://the-blog-address
+  // (the recipient origin).
+  //
+  // This error typically does not happen on localhost, because then the iframe loads
+  // quickly. Instead, it happens in production, sometimes only. To reproduce, on localhost,
+  // set a breakpoint in the app server, in EmbeddedTopicsController.showTopic [5BRW02],
+  // to block the iframe from loading, and then you can reproduce this error.
+  //
+  if (!commentsIframeInited) {
+    setTimeout(messageCommentsIframeNewWinTopSize, 1000);
+    return;
+  }
+
   var rect = commentsIframe.getBoundingClientRect();
   // We're interested in the height part of the viewport that is used for the iframe.
   var height = Math.min(window.innerHeight, rect.bottom);
@@ -253,6 +283,7 @@ function onMessage(event) {
       debugLog("iframe-parent: got 'iframeInited' message");
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
+        commentsIframeInited = true;
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
         // know where. So tell the iframe to send back a 'scrollComments' message to us,
         // with info about how to scroll.

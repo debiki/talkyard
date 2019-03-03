@@ -123,6 +123,16 @@ function subscribeToServerEventsDirectly(me: Myself) {
   if (!me || !me.id)
     return;
 
+  // If in embedded comments iframe, also don't poll. Because 1) the likelihood that
+  // a comment gets posted whilst someone is actually reading the comments, is so low,
+  // so it's not worth the additional server load. However, polling just once,
+  // if the reader is away for 10 minutes, and then back — could implement that.
+  // Or maybe server-sent-events [sse].
+  // And because 2) the aborted poll requests, result in error messages in the dev
+  // console, possibly making technical blog writers confused.
+  if (eds.isInIframe)
+    return;
+
   Server.sendLongPollingRequest(me.id, (response) => {
     console.debug("Long polling request done, sending another...");
     subscribeToServerEventsDirectly(me);

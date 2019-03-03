@@ -47,8 +47,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId])
-        : Action[Unit] =
+  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId],   // [5BRW02]
+        edPageId: Option[PageId]): Action[Unit] =
       AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
     import request.dao

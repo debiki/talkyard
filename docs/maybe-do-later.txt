@@ -9,8 +9,8 @@ Instead of this file, maybe use a combination of:
 [subcats]
 Implement sub categories.
 
-[sw]
-Service worker.
+[sw] [sse]
+Service worker. Server sent events.
 
 [privacy-badger]:
 Privacy Badger doesn't like transient session cookies, currently.
