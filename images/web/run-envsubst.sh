@@ -23,4 +23,8 @@ envsubst "$vars" < /etc/nginx/http-limits.conf.template       > /etc/nginx/http-
 envsubst "$vars" < /etc/nginx/server-limits.conf.template     > /etc/nginx/server-limits.conf
 envsubst "$vars" < /etc/nginx/server-locations.conf.template  > /etc/nginx/server-locations.conf
 
+# Old, can remove? See comments in Dockerfile.
+envsubst "$vars" < /etc/nginx/vhost.conf.template  > /etc/nginx/vhost.conf
+envsubst "$vars" < /etc/nginx/server.conf.template > /etc/nginx/server.conf
+
 

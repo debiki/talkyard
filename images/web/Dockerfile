@@ -283,10 +283,10 @@ COPY http-redirect-to-https.conf /etc/nginx/
 COPY server-limits.conf   /etc/nginx/server-limits.conf.template
 
 # old, remove once I've edited edm & edc
-COPY server-locations.conf /etc/nginx/vhost.conf
+COPY server-locations.conf /etc/nginx/vhost.conf.template
 
 # old, too, remove, when?
-COPY server-locations.conf /etc/nginx/server.conf
+COPY server-locations.conf /etc/nginx/server.conf.template
 
 COPY server-locations.conf /etc/nginx/server-locations.conf.template
 COPY nginx.conf           /etc/nginx/nginx.conf.template
