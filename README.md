@@ -15,17 +15,25 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
+A place to talk.
+
+<!--
 Create a place to talk,
 where your audience find answers to their questions, and discuss ideas.<br>
 Place it at `talkyard.Your-Website.org`.
+-->
 
  - **Get unstuck** by finding solutions in Question-Answers topics, like at StackOverflow.
  - **Discuss ideas** in open-ended topics, like at Reddit and Hacker News.
- - **Collaborate** in real time chat, like Slack. <small>(There's a live updates bug though `[NGXSEGFBUG]`)</small>
+ - **Collaborate** in real time chat, like Slack.
  - **Talk with your blog visitors** in embedded comments, like Disqus.
  <!-- Don't mention until is actually available?
       Maybe not mention at all — 'collaborate' above, is perhaps enough?
  - **Solve problems** step by step, in flat by-time topics, coming soon.    -->
+
+For your students / volunteers / colleagues / customers / donors /
+open source users / city / community.
+
 
 <!--
  - **Improve your API docs**, by embedding comments at the end of each docs page, to make it easy for people to ask and tell you if something is unclear.
@@ -35,10 +43,14 @@ Place it at `talkyard.Your-Website.org`.
 
 [**Support forum here**](https://www.talkyard.io/forum/latest/support), at Talkyard<i></i>.io — and report bugs there too.
 
-We'd like to build a tool that *people who change the world or their neighborhood* can use
+<!--
+Use Talkyard for your workplace, as a self building FAQ. Or for customer support.
+Or for your teachers and students, to help each other. Or your non-profit volunteers.
+Or an open source project and its users.
+We'd like to build a tool tha *people who change the world or their neighborhood* can use
 to solve problems and pick the right things to do. That's why we have
 find-solutions Question-Answers topics, and HackerNews & Reddit type topics
-where good ideas rise to the top.<!-- — And you can use this tool,
+where good ideas rise to the top.<! - — And you can use this tool,
 for your workplace and your colleagues & customers,
 or your non-profit and its volunteers,
 or an open source project and its users,
@@ -63,7 +75,7 @@ To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-on
 
 Docker based installation. Automatic upgrades.
 One installation can host many sites.
-There's [hosting](https://www.talkyard.io/pricing), if you don't want to install it yourself.
+There's [hosting](https://www.talkyard.io/plans), if you don't want to install it yourself.
 
 This is beta software; there might be bugs.
 
