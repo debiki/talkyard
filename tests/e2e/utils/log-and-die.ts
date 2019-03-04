@@ -21,6 +21,9 @@ const api = {
   logError: function (message: string) {
     console.log(errorColor(message));
   },
+  printBoringToStdout: function(message: string) {
+    process.stdout.write(boringColor(message));
+  },
   die: function(message: string, details?: string) {
     api.logError('\n' + message + (details ? '\n' + details : ''));
     throw Error(message);

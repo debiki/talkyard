@@ -5,7 +5,7 @@ import settings = require('./settings');
 import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
-import { logUnusual, logError, logWarning, logMessage, die, dieIf } from './log-and-die';
+import { logUnusual, logError, logWarning, logMessage, printBoringToStdout, die, dieIf } from './log-and-die';
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -256,11 +256,11 @@ function pagesFor(browser) {
 
 
     switchToFrame: function(selector) {
-      process.stdout.write(`Switching to frame ${selector}...`);
+      printBoringToStdout(`Switching to frame ${selector}...`);
       api.waitForExist(selector);
       const iframe = browser.element(selector).value;
       browser.frame(iframe);
-      process.stdout.write(` done, now in frame  ${selector}.\n`);
+      printBoringToStdout(` done, now in frame  ${selector}.\n`);
     },
 
 
