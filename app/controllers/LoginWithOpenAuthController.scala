@@ -724,6 +724,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def githubProvider(): CustomGitHubProvider =   // (TYSOCPROF)
     new CustomGitHubProvider(HttpLayer, socialStateHandler,
+      githubApiUrl = globals.config.githubApiUrl,
       getOrThrowDisabled(globals.socialLogin.githubOAuthSettings),
       globals.wsClient)
 
@@ -783,7 +784,8 @@ case class ExternalSocialProfile(
 
 class CustomGitHubProfileParser(
   val executionContext: ExecutionContext,
-  val wsClient: play.api.libs.ws.WSClient)
+  val wsClient: play.api.libs.ws.WSClient,
+  val githubApiUrl: Option[String])
   extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info] {
 
   import play.api.libs.ws
@@ -831,8 +833,9 @@ class CustomGitHubProfileParser(
     */
   private def loadPublicAndVerifiedEmailAddrs(oauth2AuthInfo: OAuth2Info)
         : Future[(Option[ExternalEmailAddr], Option[ExternalEmailAddr])] = {
+    val apiUrl = githubApiUrl.map(_.dropRightWhile(_ == '/')) getOrElse "https://api.github.com"
     val githubRequest: ws.WSRequest =
-      wsClient.url(s"https://api.github.com/user/emails").withHeaders(
+      wsClient.url(s"$apiUrl/user/emails").withHeaders(
         // OAuth2 bearer token. GitHub will automatically know which user the request concerns
         // (although not mentioned in the request URL).
         "Authorization" -> s"token ${oauth2AuthInfo.accessToken}",
@@ -886,6 +889,7 @@ class CustomGitHubProfileParser(
 class CustomGitHubProvider(
   protected val httpLayer: HTTPLayer,
   protected val stateHandler: SocialStateHandler,
+  val githubApiUrl: Option[String],
   val settings: OAuth2Settings,
   wsClient: play.api.libs.ws.WSClient) extends BaseGitHubProvider {
                                         // no: with CommonSocialProfileBuilder {
@@ -897,9 +901,9 @@ class CustomGitHubProvider(
 
   override type Profile = ExternalSocialProfile
 
-  val profileParser = new CustomGitHubProfileParser(executionContext, wsClient)
+  val profileParser = new CustomGitHubProfileParser(executionContext, wsClient, githubApiUrl)
 
   def withSettings(fn: Settings => Settings): CustomGitHubProvider = {
-    new CustomGitHubProvider(httpLayer, stateHandler, fn(settings), wsClient)
+    new CustomGitHubProvider(httpLayer, stateHandler, githubApiUrl, fn(settings), wsClient)
   }
 }
