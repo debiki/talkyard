@@ -797,18 +797,13 @@ function pagesFor(browser) {
 
 
     waitForThenClickText: function(selector, regex) {
-      const elemId = api.waitAndGetElemIdWithText(selector, regex);
       // In FF, the click sometimes fails, the first time before pause(), with
       // this error message:  "Error: Remote end send an unknown status code."
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
-      try {
+      utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
+        const elemId = api.waitAndGetElemIdWithText(selector, regex);
         browser.elementIdClick(elemId);
-      }
-      catch (ex) {
-        logMessage(`First click of elem '${elemId}' failed. Retrying. Wait until clickable?`);
-        browser.pause(250);
-        browser.elementIdClick(elemId);
-      }
+      });
     },
 
 
@@ -1202,9 +1197,6 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eDoCreateForum');
         const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);
-
-        // Leave the categories page; go to the topic list.
-        api.forumButtons.viewTopics();
       },
     },
 
@@ -1957,7 +1949,7 @@ function pagesFor(browser) {
       createGitHubAccount: (ps: { username: string, password: string, shallBecomeOwner: boolean,
             anyWelcomeDialog?, alreadyLoggedInAtGitHub: boolean }) => {
 
-        // This should fill in email (usually) and usernamea (definitely).
+        // This should fill in email (usually) and username (definitely).
         api.loginDialog.logInWithGitHub(ps);
 
         api.loginDialog.clickSubmit();

@@ -53,14 +53,15 @@ export var AdminGuide =
     r.p({},
       "Click ", r.strong({}, "Categories"),
       ", then ", r.strong({}, "Create Category"),
-      ". Edit the ", r.i({}, "about-this-category"), " topic that you'll find in your new category. " +
+      ". Edit the ", r.i({}, "description-of-this-category"),
+      " topic you'll find in your new category. " +
       "Don't create too many categories — if you do, they might look rather empty. " +
       "Also, create some interesting topics, so people won't find an empty forum. "),
     r.h2({},
       "Launch your community"),
     r.p({},
       "Ask some people to have a look at your community. " +
-      "See if they understand what it is about and what they can do there."),
+      "See if they understand what it is about and what they can do here."),
     r.p({},
       "Then start promoting your community: link to it on the Internet, and tell people about it. " +
       "Invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
