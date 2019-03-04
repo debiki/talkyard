@@ -251,6 +251,9 @@ class SiteTpi protected (
 
   def mediaUrl(fileName: String): String = mediaUrlPrefix + fileName
 
+  // (No automatic asset versioning here — instead, do manually: append a digit,
+  // like 2, 3, 4..., to the sub folders in module ty-media, if modifying
+  // images etc there, to change the URL. Only needed every few years? anyway.)
   def mediaUrlPrefix: String =
     s"$cdnOrServerOrigin/-/media/"   // sync with Nginx [NGXSTC]
 

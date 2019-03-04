@@ -11,8 +11,6 @@ import make = require('../utils/make');
 declare let browser: any;
 
 let everyonesBrowsers;
-let maja;
-let majasBrowser;
 let michael;
 let michaelsBrowser;
 
@@ -29,13 +27,11 @@ const pageName = "The Page Name";
 const bgColor = "#550";
 
 
-describe("emb cmts edit and vote", () => {
+describe("emb cmts vote first  TyT2AKBS056", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    majasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;
-    maja = make.memberMaja();
     michael = make.memberMichael();
   });
 

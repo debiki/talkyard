@@ -349,6 +349,10 @@ embedded comments:
   no about page created:  [5WAKR02]
   post comment:
           - "all" e2e emb cmts tests
+  start with Like vote:
+          - embedded-comments-vote-first.test.ts  TyT2AKBS056
+  login via metabar:
+          - embedded-comments-vote-first.test.ts  TyT2AKBS056
   click login:
           - embedded-comments-scroll  TyT2K4DHR49-02   MISSING
   scroll to #comment-nnn:

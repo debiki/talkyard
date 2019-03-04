@@ -428,8 +428,15 @@ object ViewPageController {
       // without updating the allow-embedding-from setting. [5RTCN2]
       val embeddingHostname = embeddingUrl.flatMap(GetHostnameRegex.findGroupIn)
       val allowIfLocalhost = if (embeddingHostname isNot "localhost") "" else {
-        val embeddingOrigin = embeddingUrl.flatMap(GetOriginRegex.findGroupIn)
-        " " + embeddingOrigin.getOrElse("")
+        // Don't:  " localhost:*" without specifying protocol — that would require
+        // the embedding page to be HTTPS, if testing on localhost against a Talkyard
+        // server over HTTPS. However, when testing on localhost, one typically
+        // wants to use HTTP (even if Talkyard is HTTPS).
+        // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+        // """If no URL scheme is specified for a host-source and the iframe is
+        // loaded from an https URL, the URL for the page loading the iframe must
+        // also be https"""
+        " http://localhost:* https://localhost:*"
       }
       val framePolicy = frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
       SECURITY; COULD // +=

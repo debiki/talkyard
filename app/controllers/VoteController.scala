@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.JsUser
+import debiki.JsX.{JsUser, JsStringOrNull}
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
@@ -107,7 +107,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       includeUnapproved = false, showHidden = true)
 
     OkSafeJson(Json.obj(
-      "newlyCreatedPageId" -> JsX.JsStringOrNull(anyNewPagePath.flatMap(_.pageId)),
+      "newlyCreatedPageId" -> JsStringOrNull(anyNewPagePath.flatMap(_.pageId)),
       "updatedPost" -> postJson))
   }
 
