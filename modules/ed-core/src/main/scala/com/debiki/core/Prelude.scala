@@ -226,7 +226,10 @@ object Prelude {
 
   // This should match too much, if something is wrong/weird, rather than too little
   // (so don't use ValidHostAndPortRegexStr).
-  private val StripOriginRegex = "^((https?:)?//[^/]+)?(/.*)$".r
+  private val StripOriginRegex: Regex = "^((https?:)?//[^/]+)?(/.*)$".r
+
+  val GetOriginRegex: Regex = "^(https?://[^/]+).*$".r
+  val GetHostnameRegex: Regex = "^https?://([^/:]+)?.*$".r
 
 
   // For now, IPv4 only.

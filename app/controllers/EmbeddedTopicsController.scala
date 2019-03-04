@@ -134,6 +134,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     val futureResponse = ViewPageController.addVolatileJsonAndPreventClickjacking(
       renderedPage,
       pageRequest,
+      embeddingUrl = Some(embeddingUrl),
       // Users online not shown anywhere anyway, for embedded comments.
       skipUsersOnline = true,
       // This'll insert a noCookieXsrfToken JSON field, so the browser will remember
@@ -152,7 +153,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
       anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
     val htmlStr = views.html.embeddedEditor(tpi).body
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
-      unapprovedPostAuthorIds = Set.empty, request)
+      unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
   }
 
 

@@ -168,14 +168,6 @@ export const staffTours: StaffTours = {
       highlightOffsetY: -20,
       highlightPadding: 20,
     }, {
-      title: "And remove '#'",
-      text: "... to test from your laptop",
-      placeAt: '#e_AllowEmbFrom',
-      placeHow: PlaceHow.Below,
-      highlightOffsetX: -95,
-      highlightOffsetY: -10,
-      highlightPadding: 20,
-    }, {
       title: "Thereafter:",
       text: "Follow these instructions",
       placeAt: '.s_A_Ss_EmbCmts h2',

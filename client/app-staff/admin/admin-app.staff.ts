@@ -1122,6 +1122,7 @@ const EmbeddedCommentsSettings = createFactory({
           className: 's_A_Ss_EmbOrig',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
             "You can add many websites, one per line. Lines starting with # are ignored."),
+            // Accessing via a blog running on localhost, is always allowed. [5RTCN2]
           placeholder: "https://www.your-blog.com",
           getter: (s: Settings) => s.allowEmbeddingFrom,
           update: (newSettings: Settings, target) => {

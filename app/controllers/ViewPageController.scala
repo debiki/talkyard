@@ -361,15 +361,18 @@ object ViewPageController {
 
 
   def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_],
+        embeddingUrl: Option[String] = None,
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     val pageHtml = renderedPage.html
     addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request,
-      skipUsersOnline = skipUsersOnline, xsrfTokenIfNoCookies = xsrfTokenIfNoCookies)
+      embeddingUrl = embeddingUrl, skipUsersOnline = skipUsersOnline,
+      xsrfTokenIfNoCookies = xsrfTokenIfNoCookies)
   }
 
 
   def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
         unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_],
+        embeddingUrl: Option[String] = None,
         skipUsersOnline: Boolean = false, xsrfTokenIfNoCookies: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
 
@@ -421,7 +424,14 @@ object ViewPageController {
           XContSecPolHeaderName -> frameAncestorsNone) // IE11
     }
     else {
-      val framePolicy = frameAncestorsSpace + allowEmbeddingFrom
+      // People sometimes try out the blog comments, on localhost; let them do that,
+      // without updating the allow-embedding-from setting. [5RTCN2]
+      val embeddingHostname = embeddingUrl.flatMap(GetHostnameRegex.findGroupIn)
+      val allowIfLocalhost = if (embeddingHostname isNot "localhost") "" else {
+        val embeddingOrigin = embeddingUrl.flatMap(GetOriginRegex.findGroupIn)
+        " " + embeddingOrigin.getOrElse("")
+      }
+      val framePolicy = frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
       response = response.withHeaders(
           ContSecPolHeaderName -> framePolicy,  // [7ACKRQ20]
           XContSecPolHeaderName -> framePolicy) // IE11
