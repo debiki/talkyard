@@ -432,6 +432,11 @@ object ViewPageController {
         " " + embeddingOrigin.getOrElse("")
       }
       val framePolicy = frameAncestorsSpace + allowEmbeddingFrom + allowIfLocalhost
+      SECURITY; COULD // +=
+      //  "; object-src 'none'; script-src 'self' https://cdn.polyfill.io"
+      // See: https://csp-evaluator.withgoogle.com/
+      // Need to add a feature flag, so can disable if accidentally breaks sth.
+      // Also, how backw compat is this? with older browsers? Ask at SO?
       response = response.withHeaders(
           ContSecPolHeaderName -> framePolicy,  // [7ACKRQ20]
           XContSecPolHeaderName -> framePolicy) // IE11
