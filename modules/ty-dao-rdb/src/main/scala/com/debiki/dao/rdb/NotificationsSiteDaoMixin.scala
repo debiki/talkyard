@@ -257,7 +257,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
           end,
         email_status =
           case
-            when email_status = ${Undecided.toInt} then ${Skipped.toInt}
+            when email_status = ${Undecided.toInt} then ${Skipped.toInt /* [notf-email-if-active] */}
             else email_status
           end
       where site_id = ?

@@ -507,6 +507,10 @@ const NotfPrefsTab = createFactory({
         null,
         ));
 
+      // +  [ ] Send me email notifications, also when I'm here and reading already
+      //    By default, we don't, to avoid double notifying you, both via the browser and via emails.
+      // [notf-email-if-active]
+
     /* Discoruse's email options:
     'When you do not visit the site, send an email digest of what is new:'
     'daily/weekly/every two weeks'

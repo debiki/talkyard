@@ -144,7 +144,13 @@ describe("private chat", () => {
   });
 
   it("... he also got an email about Maria's reply", () => {   // [E2EBUG] fails ~ 20% of the time:
-                                                               // no email sent to Owen
+          // no email sent to Owen
+          // ... because emails don't get sent, if one has seen the notification
+          // in the top bar already.
+          // See  [notf-email-if-active] in the Scala code, and NotfEmailStatus.Skipped.
+          // Fix, by adding a "Send email notifications also when I'm here and reading"
+          // setting, and enable for both Owen and Maria (she also sometimes won't get the email)
+          // in this e2e test.
     // This tests notfs when one clicks Reply for a particular post.
     server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);
