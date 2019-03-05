@@ -28,7 +28,8 @@ class SettingsSpec extends FreeSpec with MustMatchers {
 
   "EffectiveSettings.improveAllowEmbeddingFrom can" - {
 
-    import EffectiveSettings.{improveAllowEmbeddingFrom => improve}
+    def improve(allowText: String): String =
+      EffectiveSettings.improveAllowEmbeddingFrom(allowText).mkString(" ")
 
     "improve allow-from, simple origins" in {
       improve("") mustBe ""
