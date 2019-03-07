@@ -438,6 +438,7 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * If #post-X is specified in the URL, ensures all posts leading up to
  * and including X have been loaded. Then scrolls to X, and maybe opens the editor
  * to edit it or to reply (depending on other hash fragment parts).
+ * [7WKBQ28]
  */
 export function doUrlFragmentAction(newHashFragment?: string) {
   // How we'll interpret a hash fragment action, might depend on what type of page we're at.

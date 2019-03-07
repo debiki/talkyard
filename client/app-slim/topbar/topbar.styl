@@ -15,6 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+// If auto scrolling to a https://server/page#element-id, then, add some
+// ::before padding above that #element-id = ::target, so the browser will
+// places its upper edge a bit above the elem, so the topbar won't occlude it.
+// Idea from: https://stackoverflow.com/a/28824157/694469
+:target::before {
+  content: '';
+  display: block;
+  height: 90px;      // approx topbar max height, incl float drop 2 lines?
+  margin-top: -90px; // negative height
+  pointer-events: none;
+}
+
+
 $topbarButtonPaddingTop = 7px
 $gotoButtonSidePadding = 8px;
 $gotoButtonSidePaddingNarrow = 3px;
