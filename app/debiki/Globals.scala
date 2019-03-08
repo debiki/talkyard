@@ -387,6 +387,7 @@ class Globals(
         authorizationURL = conf.getString("silhouette.github.authorizationURL"),
         accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
         redirectURL = makeRedirectUrl("github"),
+        apiURL = conf.getString("silhouette.github.apiURL"),
         clientID = getGitHub("silhouette.github.clientID"),
         clientSecret = getGitHub("silhouette.github.clientSecret"),
         scope = conf.getString("silhouette.github.scope"))
@@ -1029,15 +1030,6 @@ class Config(conf: play.api.Configuration) {
     val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank
     Map.empty  // for now
   }
-
-  /** GitHub Enterprise users point this to their own GitHub Enterprise server.
-    *
-    * (It's scoped in 'silhouette' just so it'll appear next to the other GitHub
-    * OAuth related conf vals. And named apiURL (uppercase) not apiUrl so it'll
-    * look like those other conf vals. Otherwise would have been:  "github.apiUrl")
-    */
-  val githubApiUrl: Option[String] =
-    conf.getOptional[String]("silhouette.github.apiURL")
 
   val cnameTargetHost: Option[String] =
     conf.getString(Config.CnameTargetHostConfValName).noneIfBlank

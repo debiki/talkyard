@@ -724,7 +724,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def githubProvider(): CustomGitHubProvider =   // (TYSOCPROF)
     new CustomGitHubProvider(HttpLayer, socialStateHandler,
-      githubApiUrl = globals.config.githubApiUrl,
       getOrThrowDisabled(globals.socialLogin.githubOAuthSettings),
       globals.wsClient)
 
@@ -785,7 +784,7 @@ case class ExternalSocialProfile(
 class CustomGitHubProfileParser(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient,
-  val githubApiUrl: Option[String])
+  val githubApiBaseUrl: String)
   extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info] {
 
   import play.api.libs.ws
@@ -833,13 +832,12 @@ class CustomGitHubProfileParser(
     */
   private def loadPublicAndVerifiedEmailAddrs(oauth2AuthInfo: OAuth2Info)
         : Future[(Option[ExternalEmailAddr], Option[ExternalEmailAddr])] = {
-    val apiUrl = githubApiUrl.map(_.dropRightWhile(_ == '/')) getOrElse "https://api.github.com"
     val githubRequest: ws.WSRequest =
-      wsClient.url(s"$apiUrl/user/emails").withHeaders(
+      wsClient.url(s"$githubApiBaseUrl/user/emails").withHeaders(
         // OAuth2 bearer token. GitHub will automatically know which user the request concerns
         // (although not mentioned in the request URL).
         "Authorization" -> s"token ${oauth2AuthInfo.accessToken}",
-        // Use version 3 of the API, it's the most recent one (as of 2018-10).
+        // Use version 3 of the API, it's the most recent one (as of 2019-03).
         // https://developer.github.com/v3/#current-version
         "Accept" -> "application/vnd.github.v3+json")
 
@@ -889,7 +887,6 @@ class CustomGitHubProfileParser(
 class CustomGitHubProvider(
   protected val httpLayer: HTTPLayer,
   protected val stateHandler: SocialStateHandler,
-  val githubApiUrl: Option[String],
   val settings: OAuth2Settings,
   wsClient: play.api.libs.ws.WSClient) extends BaseGitHubProvider {
                                         // no: with CommonSocialProfileBuilder {
@@ -897,13 +894,24 @@ class CustomGitHubProvider(
                                         //  or TyExternalSocialProfileBuilder?
                                         // "Ty" prefix = clarifies isn't Silhouette's built-in class.
 
+  // This is the base api url, used to construct requests to the GitHub server.
+  val apiBaseUrl: String = apiUserUrl.dropRightWhile(_ != '/').dropRight(1)
+
+  // The url to fetch the user's profile, from the GitHub server.
+  // For GitHub.com, it's GitHubProvider.API = "https://api.github.com/user?access_token=%s".
+  // And for GitHub Enterprise, it's "https://own.github/api/v3/user?access_token=%s".
+  // Dropping-right up to and incl the rightmost '/' results in the api base url,
+  // which can be used to construct other requests to GitHub.
+  def apiUserUrl: String = settings.apiURL.getOrElse(
+    com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider.API)
+
   type Self = CustomGitHubProvider
 
   override type Profile = ExternalSocialProfile
 
-  val profileParser = new CustomGitHubProfileParser(executionContext, wsClient, githubApiUrl)
+  val profileParser = new CustomGitHubProfileParser(executionContext, wsClient, apiBaseUrl)
 
   def withSettings(fn: Settings => Settings): CustomGitHubProvider = {
-    new CustomGitHubProvider(httpLayer, stateHandler, githubApiUrl, fn(settings), wsClient)
+    new CustomGitHubProvider(httpLayer, stateHandler, fn(settings), wsClient)
   }
 }
