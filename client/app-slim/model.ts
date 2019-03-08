@@ -105,7 +105,7 @@ const enum FragActionType {
   ScrollToLatestPost = 12,
   ReplyToPost = 21,
   EditPost = 22,
-  ComposeForumTopic = 31,
+  ComposeTopic = 31,
   ComposeDirectMessage = 32,
 }
 

@@ -108,7 +108,7 @@ const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use eve
 
 const FragActionAndReplyToPost = '&replyToPost';
 const FragActionAndEditPost = '&editPost';
-const FragActionHashComposeTopic = '#composeForumTopic';
+const FragActionHashComposeTopic = '#composeTopic';
 const FragActionHashComposeMessage = '#composeDirectMessage';
 const FragActionHashScrollLatest = '#scrollToLatestPost';
 

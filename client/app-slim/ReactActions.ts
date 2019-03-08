@@ -466,7 +466,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
       case FragActionType.ComposeDirectMessage:
         // For now, instead handled in  maybeOpenMessageEditor() in users-page.more.ts [4JABRF0].
         break;
-      case FragActionType.ComposeForumTopic:
+      case FragActionType.ComposeTopic:
         editor.editNewForumPage(fragAction.categoryId, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
         location.hash = '';
@@ -556,7 +556,7 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
   if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0) {
     const categoryId = findIntInHashFrag(FragParamCategoryId, theHashFrag);
     return {
-      type: FragActionType.ComposeForumTopic,
+      type: FragActionType.ComposeTopic,
       draftNr,
       categoryId,
       topicType,
