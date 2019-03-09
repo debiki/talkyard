@@ -20,8 +20,9 @@ interface ServerVars {
   isDev: boolean;
   isTestSite: boolean;
   testNowMs: WhenMs | undefined;
-  loadGlobalAdminTestScript: boolean;
+  loadGlobalAdminScript: boolean;
   loadGlobalStaffScript: boolean;
+  loadGlobalAllScript: boolean;
 
   minMaxJs: boolean;
 

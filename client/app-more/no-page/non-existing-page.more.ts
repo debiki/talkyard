@@ -44,10 +44,8 @@ export var NonExistingPage = createComponent({
   },
 
   componentDidMount: function() {
+    Server.maybeLoadGlobalAdminScript();
     Server.maybeLoadGlobalStaffScript();
-    if (eds.isTestSite) {
-      Server.maybeLoadGlobalAdminTestScript();
-    }
   },
 
   onChange: function() {

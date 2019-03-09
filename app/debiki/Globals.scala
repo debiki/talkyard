@@ -911,7 +911,6 @@ class Globals(
   private var timeOffsetMillis: Long = 0
 
 
-  val loadGlobalAdminTestScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAdminTestScript")
   val loadGlobalAdminScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAdminScript")
   val loadGlobalStaffScript: Boolean = getBoolOrFalse("talkyard.loadGlobalStaffScript")
   val loadGlobalAllScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAllScript")

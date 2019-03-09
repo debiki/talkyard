@@ -122,6 +122,7 @@ class JsonMaker(dao: SiteDao) {
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
+      "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
       "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),

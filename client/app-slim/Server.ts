@@ -182,13 +182,13 @@ export function maybeLoadGlobalStaffScript() {
 }
 
 
-let globalAdminTestScriptLoaded = false;
+let globalAdminScriptLoaded = false;
 
-export function maybeLoadGlobalAdminTestScript() {
+export function maybeLoadGlobalAdminScript() {
   if (location.hostname.search('-test-') >= 0) return;  // [5UKF03]
-  if (!globalAdminTestScriptLoaded && eds.loadGlobalAdminTestScript) {
-    loadJs(eds.cdnOrServerOrigin + '/-/globalAdminTestScript.js');
-    globalAdminTestScriptLoaded = true;
+  if (!globalAdminScriptLoaded && eds.loadGlobalAdminScript) {
+    loadJs(eds.cdnOrServerOrigin + '/-/globalAdminScript.js');
+    globalAdminScriptLoaded = true;
   }
 }
 
