@@ -4,8 +4,21 @@
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-      <layout class="ed.stackdriver.StackdriverLayout" />
+    <!--
+    Cannot use Talkyard's custom logging layout, StackdriverLayout, because
+    in Play Framework's dev mode, dynamically compiled classes are not available [2ABKR05]
+    when Logback starts, because of how Play's auto-compile-reload things work.
+    A work-around is to place the classes in a separate module, and compile separately,
+    and include via sbt-publish-local — but I didn't get that to work,
+    automatically in dev mode, without running sbt publish-local manually.
+    Anyway, about the StackdriverLayout in a sub project, see:
+     - https://github.com/playframework/playframework/issues/8125#issuecomment-354162334
+     - https://stackoverflow.com/a/54562988/694469
+     - https://www.scala-sbt.org/1.x/docs/Multi-Project.html
+     - Commit cdbd41fa "Remove ed-logging, to simplify build" in this repo.
+    So don't use ed.stackdriver.StackdriverLayout, in dev-test mode. Instead: -->
+    <encoder>
+      <pattern>%coloredLevel %logger{15} - %message%n%xException{30}</pattern>
     </encoder>
   </appender>
 
@@ -18,8 +31,9 @@
       <!-- Maybe otherwise a "log loop bug" could fill up the disk? -->
       <totalSizeCap>200MB</totalSizeCap>
     </rollingPolicy>
-    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-      <layout class="ed.stackdriver.StackdriverLayout" />
+    <!-- Don't use ed.stackdriver.StackdriverLayout [2ABKR05]  -->
+    <encoder>
+      <pattern>%coloredLevel %logger{15} - %message%n%xException{30}</pattern>
     </encoder>
   </appender>
 

@@ -22,8 +22,8 @@ COPY app-lib-talkyard /opt/talkyard/app/lib/
 COPY app-bin          /opt/talkyard/app/bin/
 # Only copy *-prod files. Other stuff might contain private things, e.g. override.conf might
 # contain test suite OpenAuth credentials.
-COPY app-conf/app-prod.conf  /opt/talkyard/app/conf/
-COPY app-conf/logback.xml    /opt/talkyard/app/conf/
+COPY app-conf/app-prod.conf     /opt/talkyard/app/conf/
+COPY app-conf/logback-prod.xml  /opt/talkyard/app/conf/
 COPY version.txt     /opt/talkyard/app/
 COPY build-info      /opt/talkyard/build-info/
 
@@ -91,6 +91,7 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   # when running scrypt the first time, waiting for "enough entropy".
   -Djava.security.egd=file:/dev/./urandom \
   #
+  -Dlogger.file=/opt/talkyard/app/conf/logback-prod.xml \
   -Dconfig.file=${CONFIG_FILE}
 
 # and?

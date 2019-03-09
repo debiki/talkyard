@@ -18,15 +18,9 @@
       <!-- Maybe otherwise a "log loop bug" could fill up the disk? -->
       <totalSizeCap>200MB</totalSizeCap>
     </rollingPolicy>
-    <!--
-    In Play Framework's dev mode, dynamically compiled classes are not available
-    when Logback starts, because of how Play's auto-compile-reload things work.
-    (A work-around is to place the classes in a separate module, and compile separately,
-    and include via sbt-publish-local — but that'd complicate the build process).
-    So don't exclude this logging encoder, in dev-test mode.
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
       <layout class="ed.stackdriver.StackdriverLayout" />
-    </encoder>  -->
+    </encoder>
   </appender>
 
   <logger name="play" level="INFO" />
