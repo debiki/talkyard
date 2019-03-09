@@ -251,6 +251,9 @@ function renderPageInBrowser() {
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
     debiki2.ReactActions.doUrlFragmentAction();
+    window.addEventListener("hashchange", function(eventIgnored) {
+      debiki2.ReactActions.doUrlFragmentAction();
+    });
   });
 
   steps.push(function() {

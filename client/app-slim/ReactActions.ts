@@ -471,6 +471,32 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         // Don't re-open the editor, if going to another page, and then back.
         location.hash = '';
         break;
+      case FragActionType.ScrollToElemId:
+        // Add some margin-top, so the topbar won't occlude the #elem-id.
+        // There're CSS solutions, like: (see https://stackoverflow.com/a/28824157/694469)
+        //    :target::before {
+        //      content: '';
+        //      display: block;
+        //      height: 90px;
+        //      margin-top: -90px;
+        //      pointer-events: none;
+        //    }
+        // However that in some cases resulted in 90 px empty space, above the ::target
+        // (i.e. #elem-id). So let's use js instead of css, like this:
+        // (And let's wait 1 ms, to avoid any forced reflow during rendering.)
+        setTimeout(function() {
+          // moreThanTopbarHeight (below) works also if the topbar has wrapped to 2 lines,
+          // if lots of contents. Don't try to dynamically find topbar height — the topbar
+          // might suddently change its height, when the user scrolls down and the topbar
+          // changes from a position:static to a fixed bar, which can look slightly different.
+          const moreThanTopbarHeight = 90;
+          utils.scrollIntoViewInPageColumn(fragAction.elemId, {
+            marginTop: moreThanTopbarHeight, marginBottom: 999,
+            // This id is from the url; maybe it's weird, not a valid css selector.
+            maybeBadId: true,
+          })
+        }, 1);
+        break;
       default:
         // @ifdef DEBUG
         die('TyE5AKBR3');
@@ -574,8 +600,12 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
   // The rest of the actions are for a specific post.
 
   const postNr: PostNr | undefined = findIntInHashFrag(FragParamPostNr, theHashFrag);
-  if (!postNr)
-    return undefined;
+  if (!postNr) {
+    return !theHashFrag ? undefined : {
+      type: FragActionType.ScrollToElemId,
+      elemId: theHashFrag,
+    };
+  }
 
   let actionType;
   if (theHashFrag.indexOf(FragActionAndEditPost) >= 0) {

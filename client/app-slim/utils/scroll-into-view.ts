@@ -23,7 +23,7 @@ const d = { i: debiki.internal };
 
 
 export function calcScrollIntoViewCoordsInPageColumn(
-    elemOrSelector: Element | string, options?) {
+    elemOrSelector: Element | string, options: any = {}) {
   // Warning: dupl code, see [5GUKF24] below.
   let what: Element;
   if (elemOrSelector && _.isString(elemOrSelector)) {
@@ -34,9 +34,6 @@ export function calcScrollIntoViewCoordsInPageColumn(
   }
   if (!what)
     return { needsToScroll: false };
-  if (!options) {
-    options = {};
-  }
   debiki2.dieIf(options.parent, 'EsE77KF28');
   options.parent = $byId('esPageColumn');
   if (!options.parent.contains(what))
@@ -46,20 +43,23 @@ export function calcScrollIntoViewCoordsInPageColumn(
 
 
 export function scrollIntoViewInPageColumn(
-    elemOrSelector: Element | string, options?): boolean | undefined {
+    elemOrSelector: Element | string, options: any = {}): boolean | undefined {
   // Warning: dupl code, see [5GUKF24] above.
   let what: Element;
   if (elemOrSelector && _.isString(elemOrSelector)) {
-    what = $first(elemOrSelector);
+    try {
+      what = $first(elemOrSelector);
+    }
+    catch (ex) {
+      if (options.maybeBadId) return; // expected error
+      throw ex;
+    }
   }
   else {
     what = <Element> elemOrSelector;
   }
   if (!what)
     return;
-  if (!options) {
-    options = {};
-  }
   debiki2.dieIf(options.parent, 'EsE5GKF23');
   options.parent = $byId('esPageColumn');
   if (!options.parent.contains(what))

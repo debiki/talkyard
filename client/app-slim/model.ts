@@ -97,12 +97,15 @@ interface FragAction {
   topicType?: PageRole;
   postNr?: PostNr;
   draftNr?: DraftNr;
+  elemId?: string;
 }
 
 
 const enum FragActionType {
-  ScrollToPost = 11,
-  ScrollToLatestPost = 12,
+  // Javascript-scrolls to show the #hash-fragment, taking the topbar height into account.
+  ScrollToElemId = 11,
+  ScrollToPost = 12,
+  ScrollToLatestPost = 13,
   ReplyToPost = 21,
   EditPost = 22,
   ComposeTopic = 31,
