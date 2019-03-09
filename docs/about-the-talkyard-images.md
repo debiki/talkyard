@@ -11,10 +11,8 @@ Planning to change to OpenResty, with automatic HTTPS via
 https://github.com/GUI/lua-resty-auto-ssl (currently one
 needs to run LetsEncryp's `certbot` manually).
 
-Nginx serves uploaded files directly from the file system, and quickly
-replies to requests for Javascript and CSS, because caches in-memory.
-
-Also does some request rate limiting.
+Nginx serves uploaded files and transpiled Javascript and CSS directly
+from the file system. Also does some request rate limiting.
 And outgoing bandwith limiting, see `images/web/ed-lua/lua-limit-bandwidth`,
 to reduce? elliminate? the risk that you get a surprise bill from your cloud provider
 for high bandwidth costs.

@@ -46,6 +46,10 @@ export function maybeRunTour(tour: TalkyardTour) {
       !getFromLocalStorage('runToursAlthoughE2eTest'))
     return;
 
+  // Don't run tours for built-in users and groups (if impersonating).
+  if (tour.forWho.id < LowestAuthenticatedUserId || tour.forWho.isGroup)
+    return;
+
   const tourIdsSeen = tour.forWho.tourTipsSeen;
   const thisTourSeen = tourIdsSeen.indexOf(tour.id) >= 0;
   if (thisTourSeen || tourRunning)

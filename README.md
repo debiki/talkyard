@@ -164,12 +164,14 @@ Getting Started
 You need about 4 GB RAM for the development environment (whereas the production environment needs about 2 GB).
 And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
 
-Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/,
-or simply, on Linux: (maybe a 'sudo' is missing on the 1st line?)
+Install Docker and Docker-Compose, see: https://docs.docker.com/compose/install/.
+On Linux, you can:
 
 ```
-wget -qO- https://get.docker.com/ | sh
-sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo -i
+curl -fsSL https://get.docker.com -o install-docker.sh
+sh install-docker.sh
+curl -L https://github.com/docker/compose/releases/download/1.23.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker-compose --version  # should print "docker-compose version ... build ..."
 ```
@@ -202,9 +204,10 @@ how to use docker-compose already.
 
 1. Clone the repository, and type `make up`:  (you need GNU Make installed)
 
+       apt install make
        git clone https://github.com/debiki/talkyard.git talkyard
        cd talkyard
-       make up  # GNU Make
+       make up
 
 
 1. Wait. `make up` takes a while: Git submodules and Node.js packages will get downloaded,
@@ -275,10 +278,8 @@ installed, which recompile Typescript and Stylus CSS. And a container,
 named App, which runs the Play Framework application server, and looks
 for changes to Scala files, recompiles and reloads.
 
-If you edit Typescript, wait two seconds before you reload the page in
+If you edit Typescript, wait five seconds before you reload the page in
 the browser, otherwise the Typescript code might not yet have been transpiled.
-It might take 5 or 10 seconds for the page to reload, once you've changed
-something.
 
 If you keep editing and reloading Scala files many many times, then eventually
 Play Framework runs out of memory. Restart it like so: `make restart`.

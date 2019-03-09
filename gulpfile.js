@@ -513,9 +513,11 @@ function makeConcatWebScriptsStream() {
       makeConcatStream('jquery-bundle.js', jqueryJsFiles, 'DoCheckNewer'),
       makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
+          .pipe(plumber())
           .pipe(gulp.dest(webDestVersioned))
           .pipe(gzip())
-          .pipe(gulp.dest(webDestVersioned)));
+          .pipe(gulp.dest(webDestVersioned)))
+      .pipe(plumber());
 }
 
 
