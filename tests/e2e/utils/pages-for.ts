@@ -1165,6 +1165,8 @@ function pagesFor(browser) {
         }
         api.waitAndClick('#e2eNext3');
         api.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+        api.waitAndClick('#te_Next4');  // shows "Can we record ...?"
+        api.waitAndClick('#te_Next5');  // clicks No
         api.waitAndClick('input[type=submit]');
         api.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, api.origin());

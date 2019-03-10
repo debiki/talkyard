@@ -84,11 +84,17 @@ const CreateWebsiteComponent = createFactory({
   },
 
   componentDidUpdate: function(prevProps, prevState) {
-    if (this.state.showAddress && !prevState.showAddress) {
+    if (!this.state.showOrgNameInp) {
       (this.refs.embeddingOrigin || this.refs.localHostname).focus();
     }
-    if (this.state.showRemaining && !prevState.showRemaining) {
+    if (this.state.showOrgNameInp && !prevState.showOrgNameInp) {
       this.refs.organizationName.focus();
+    }
+    if (this.state.showMayRecord && !prevState.showMayRecord) {
+      this.refs.yesRecordBtn.focus();
+    }
+    if (this.state.showRemaining && !prevState.showRemaining) {
+      this.refs.submBtn.focus();
     }
   },
 
@@ -106,7 +112,8 @@ const CreateWebsiteComponent = createFactory({
         this.refs.organizationName.getValue(),
         this.state.pricePlan,
         (nextUrl) => {
-          window.location.assign(nextUrl);
+          const mayRecordHashFrag = this.state.mayRecord ? '#&myrc' : '';
+          window.location.assign(nextUrl + mayRecordHashFrag);
         });
   },
 
@@ -133,18 +140,20 @@ const CreateWebsiteComponent = createFactory({
             ref: 'localHostname',
             onChangeValueOk: (value, isOk) => this.reportOkay('address', isOk) });
 
+    const maybePrimaryColor = state.mayRecord === undefined ? 'btn-primary' : '';
+
     return (
       r.div({},
         r.h1({}, isComments ? "Create Embedded Comments" : "Create Forum"),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
           embeddingOriginOrLocalHostname,
 
-          NextStepButton({ onShowNextStep: () => this.setState({ showRemaining: true }),
-              showThisStep: okayStatuses.address && !state.showRemaining, id: 'e2eNext3' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showOrgNameInp: true }),
+              showThisStep: okayStatuses.address && !state.showOrgNameInp, id: 'e2eNext3' },
             "Next"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
-              style: { display: state.showRemaining ? 'block' : 'none' },
+              style: { display: state.showOrgNameInp ? 'block' : 'none' },
               help: "The name of your organization, if any. Otherwise, you " +
                 "can use your own name. Will be used in your Terms of Use " +
                 "and Privacy Policy documents. " +
@@ -153,8 +162,32 @@ const CreateWebsiteComponent = createFactory({
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
-          r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
-            InputTypeSubmit({ value: "Create Site", disabled: disableSubmit })))));
+          NextStepButton({ onShowNextStep: () => this.setState({ showMayRecord: true }),
+              showThisStep: okayStatuses.orgName && !state.showMayRecord, id: 'te_Next4' },
+            "Next"),
+
+          // [plugin] This should be moved to a plugin or something like that?
+          r.div({ style: { display: state.showMayRecord ? 'block' : 'none' }},
+            r.p({},
+              r.b({}, "Can we record the first 14 minutes of you using your new site? "),
+              "So we can make Talkyard simpler to use, by seeing what problems you run into. ",
+              r.small({}, "Text you type, and things like email addresses, " +
+                "are excluded from the recording. We use www.fullstory.com.")),
+
+            Button({ onClick: () => this.setState({ mayRecord: true, showRemaining: true }),
+                className: state.mayRecord ? 'active' : maybePrimaryColor,
+                ref: 'yesRecordBtn' },
+              "Okay, fine"),
+            Button({ onClick: () => this.setState({ mayRecord: false, showRemaining: true }),
+                className: state.mayRecord === false ? 'active' : maybePrimaryColor,
+                id: 'te_Next5'  },
+              "No")),
+
+          r.div({ style: { display: state.mayRecord !== undefined ? 'block' : 'none' }},
+            r.br(),
+            r.br(),
+            InputTypeSubmit({ value: "Create Site", ref: 'submBtn',
+                disabled: disableSubmit })))));
   }
 });
 
