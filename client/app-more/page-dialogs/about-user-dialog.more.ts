@@ -101,7 +101,7 @@ const AboutUserDialog = createComponent({
   },
 
   loadUser: function(idOrUsername: number | string) {
-    Server.loadUserAnyDetails(idOrUsername, (user: MemberInclDetails) => {
+    Server.loadUserAnyDetails(idOrUsername, (user: UserInclDetails) => {
       if (this.isGone) return;
       if (!this.state.post) {
         this.setState({ user: user });
@@ -138,7 +138,7 @@ const AboutUserDialog = createComponent({
     let content;
 
     if (this.state.isOpen) {
-      const user: MemberInclDetails = this.state.user;
+      const user: UserInclDetails = this.state.user;
       const childProps = _.assign({
         store: this.state.store,
         reload: this.reload,
@@ -180,7 +180,7 @@ const AboutUser = createComponent({
   },
 
   removeFromPage: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     Server.removeUsersFromPage([user.id], () => {
 
       // [redux] send a page-members patch [5FKE0WY2]
@@ -195,7 +195,7 @@ const AboutUser = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const me: Myself = store.me;
     const userIsMe = user.id === me.id;
 

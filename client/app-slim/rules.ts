@@ -88,7 +88,7 @@ export function me_isStranger(me: Myself): boolean {
 }
 
 
-export function store_maySendInvites(store: Store, user: Myself | MemberInclDetails): MayMayNot {
+export function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot {
   if (store.settings.ssoUrl) {
     return mayMayNot(false, "SSO enabled");
   }
@@ -100,7 +100,7 @@ export function store_maySendInvites(store: Store, user: Myself | MemberInclDeta
 }
 
 
-export function user_isMember(user: MemberInclDetails | BriefUser | Myself): boolean {
+export function user_isMember(user: UserInclDetails | BriefUser | Myself): boolean {
   return user.id > MaxGuestId;
 }
 
@@ -108,7 +108,7 @@ export function isGuest(user) {  // try to remove
   return user_isGuest(user);
 }
 
-export function user_isGuest(user: MemberInclDetails | Myself | BriefUser) {
+export function user_isGuest(user: UserInclDetails | Myself | BriefUser) {
   return user.id <= MaxGuestId;
 }
 
@@ -116,18 +116,18 @@ export function userId_isGuest(userId: UserId) {
   return userId <= MaxGuestId;
 }
 
-export function isMember(user: Myself | MemberInclDetails): boolean {
+export function isMember(user: Myself | UserInclDetails): boolean {
   if (!user) return false;
   var member = user.id >= MinMemberId;
   //dieIf(isGuest(user) && member, 'EsE7YKU2');
   return member;
 }
 
-export function isStaff(user: Myself | BriefUser | MemberInclDetails) {
+export function isStaff(user: Myself | BriefUser | UserInclDetails) {
   return user.isAdmin || user.isModerator;
 }
 
-export function user_isStaffOrCoreMember(user: Myself | MemberInclDetails): boolean {
+export function user_isStaffOrCoreMember(user: Myself | UserInclDetails): boolean {
   return isStaff(user) || user_trustLevel(user) >= TrustLevel.CoreMember;
 }
 

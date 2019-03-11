@@ -717,17 +717,17 @@ export function loadGroups(success: (_: Group[]) => void) {
 }
 
 
-// BUG might get a Guest or Group, not always a MemberInclDetails. SHOULD find for usages & fix.
+// BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
 export function loadUserAnyDetails(userIdOrUsername: UserId | string,
-      doneCallback: (user: MemberInclDetails, stats: UserStats) => void, error?: () => void) {
+      doneCallback: (user: UserInclDetails, stats: UserStats) => void, error?: () => void) {
   get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
     doneCallback(response.user, response.stats);
   }, error);
 }
 
 
-export function listCompleteUsers(whichUsers, success: (users: MemberInclDetailsWithStats[]) => void) {
+export function listCompleteUsers(whichUsers, success: (users: UserInclDetailsWithStats[]) => void) {
   get(`/-/list-complete-users?whichUsers=${whichUsers}`, response => {
     success(response.users);
   });

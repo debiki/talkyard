@@ -28,31 +28,36 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';  // dupl [4GKQST20]
-
-
-export function usersRoute() {
-  return (
-    // Let's keep this, although just one route — because maybe will move up to an "upper base route".
-    Route({ path: UsersRoot, component: UsersHomeComponent }));
-}
 
 
 
-const UsersHomeComponent = createReactClass(<any> {
+export const UsersHomeComponent = createReactClass(<any> {
   displayName: 'UsersHomeComponent',
 
   render: function() {
     return (
         Switch({},
+          // Users
           Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
           RedirPath({ path: UsersRoot + ':usernameOrId', exact: true,
             to: (params) => UsersRoot + params.usernameOrId + '/activity' }),
           Route({ path: UsersRoot + ':usernameOrId/:section?/:subsection?',
+              component: UserPageComponent }),
+          // Groups
+          Route({ path: GroupsRoot, component: ListGroupsComponent, exact: true }),
+          RedirPath({ path: GroupsRoot + ':usernameOrId', exact: true,
+            to: (params) => GroupsRoot + params.usernameOrId + '/members' }),
+          Route({ path: GroupsRoot + ':usernameOrId/:section?/:subsection?',
               component: UserPageComponent })));
   }
 });
 
+
+
+const ListGroupsComponent = React.createFactory<RouteChildProps>(function(props) {
+  return r.p({},
+    "Wow! props: " + JSON.stringify(props));
+});
 
 
 const BadUrlComponent = createReactClass(<any> {
@@ -100,7 +105,7 @@ const UserPageComponent = createReactClass(<any> {
       return;
 
     const newUsernameOrId: string = this.props.match.params.usernameOrId;
-    const maybeOldUser: MemberInclDetails = this.state.user;
+    const maybeOldUser: UserInclDetails = this.state.user;
     const isSameUser = maybeOldUser && (
         '' + maybeOldUser.id === newUsernameOrId || maybeOldUser.username === newUsernameOrId);
     if (!isSameUser) {
@@ -113,6 +118,7 @@ const UserPageComponent = createReactClass(<any> {
   },
 
   loadUserAnyDetails: function(redirectToCorrectUsername) {
+    const location: RouteLocation = this.props.location;
     const params = this.props.match.params;
     const usernameOrId: string | number = params.usernameOrId;
 
@@ -122,7 +128,7 @@ const UserPageComponent = createReactClass(<any> {
     const shallComposeMessage =
       this.props.location.hash.indexOf(FragActionHashComposeMessage) >= 0;
 
-    Server.loadUserAnyDetails(usernameOrId, (user: MemberInclDetails, stats: UserStats) => {
+    Server.loadUserAnyDetails(usernameOrId, (user: UserInclDetails, stats: UserStats) => {
       this.nowLoading = null;
       if (this.isGone) return;
       // This setState will trigger a rerender immediately, because we're not in a React event handler.
@@ -131,15 +137,18 @@ const UserPageComponent = createReactClass(<any> {
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
       // name, user.username will be the current name — then show current name in the url [8KFU24R].
       // Also 2) if user id specified, and the user is a member (they have usernames) show
-      // username instead,
+      // username instead, And 3) redir from /-/users/ to /-/groups/ if the member is a group
+      // not a user, and vice versa.
       const isNotLowercase = _.isString(usernameOrId) && usernameOrId !== usernameOrId.toLowerCase();
-      if (user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
-          redirectToCorrectUsername !== false) {
-        let urlWithUsername = UsersRoot + user.username.toLowerCase();
-        if (params.section) urlWithUsername += '/' + params.section;
-        if (params.subsection) urlWithUsername += '/' + params.subsection;
-        urlWithUsername += this.props.location.search + this.props.location.hash;
-        this.props.history.replace(urlWithUsername);
+      const correctRoot = user.isGroup ? GroupsRoot : UsersRoot;
+      const isCorrectRoot = location.pathname.indexOf(correctRoot) === 0;
+      if ((user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
+          redirectToCorrectUsername !== false) || !isCorrectRoot) {
+        let newUrl = correctRoot + user.username.toLowerCase();
+        if (params.section) newUrl += '/' + params.section;
+        if (params.subsection) newUrl += '/' + params.subsection;
+        newUrl += this.props.location.search + this.props.location.hash;
+        this.props.history.replace(newUrl);
       }
       if (shallComposeMessage) {
         this.maybeOpenMessageEditor(user.id);
@@ -171,7 +180,7 @@ const UserPageComponent = createReactClass(<any> {
   render: function() {
     const store: Store = this.state.store;
     const me: Myself = store.me;
-    const user: MemberInclDetails = this.state.user;  // UserAnyDetails = better class?
+    const user: UserInclDetails = this.state.user;  // ParticipantAnyDetails = better class?
     const usernameOrId = this.props.match.params.usernameOrId;
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
@@ -181,9 +190,10 @@ const UserPageComponent = createReactClass(<any> {
 
     const imStaff = isStaff(me);
     const userGone = user_isGone(user);
+    const pathToUser = pathTo(user);
 
     const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
-    const linkStart = UsersRoot + usernameOrId + '/';
+    const linkStart = pathToUser + '/';
 
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
@@ -210,12 +220,12 @@ const UserPageComponent = createReactClass(<any> {
       reloadUser: this.loadUserAnyDetails,
     };
 
-    const u = UsersRootAndIdParamSlash;
+    const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';  // dupl [4GKQST20]
 
     const childRoutes = Switch({},
       Route({ path: u + 'activity', exact: true, render: ({ match }) => {
         const hash = this.props.location.hash;
-        return Redirect({ to: UsersRoot + match.params.usernameOrId + '/activity/posts' + hash });
+        return Redirect({ to: pathToUser + '/activity/posts' + hash });
       }}),
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
@@ -327,7 +337,7 @@ const AvatarAboutAndButtons = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const stats: UserStats = this.props.stats;
     const me: Myself = this.props.me;
     const isGone = user_isGone(user);

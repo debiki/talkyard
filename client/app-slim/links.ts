@@ -60,12 +60,12 @@ export function linkToAdminPageAdvancedSettings(hostname?: string): string {
   return origin + '/-/admin/settings/advanced';
 }
 
-export function linkToUserInAdminArea(user: Myself | MemberInclDetails | User | UserId): string {
+export function linkToUserInAdminArea(user: Myself | Participant | UserId): string {
   // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).id, 'TyE4KPWQT5');
   // @endif
-  const userId = _.isObject(user) ? (<User> user).id : user;
+  const userId = _.isObject(user) ? (<Participant> user).id : user;
   return origin() + '/-/admin/users/id/' + userId;
 }
 
@@ -79,16 +79,29 @@ export function linkToReviewPage(): string {
 }
 
 
-export function linkToUserProfilePage(user: Myself | MemberInclDetails | User | UserId | string): string {
+export function linkToUserProfilePage(user: Myself | Participant | UserId | string): string {
+  return origin() + pathTo(user);
+}
+
+export function pathTo(user: Participant | Myself | UserId | string): string {
   // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
   // @endif
-  let idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
+  let rootPath;
+  let idOrUsername;
+  if (_.isObject(user)) {
+    idOrUsername = (<Participant | Myself> user).username || (<Participant | Myself> user).id;
+    rootPath = (<Participant> user).isGroup ? GroupsRoot : UsersRoot;
+  }
+  else {
+    idOrUsername = user;
+    rootPath = UsersRoot;  // will get redirected to GroupsRoot, if is group
+  }
   if (_.isString(idOrUsername)) {
     idOrUsername = idOrUsername.toLowerCase();
   }
-  return origin() + UsersRoot + idOrUsername;
+  return origin() + rootPath + idOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {

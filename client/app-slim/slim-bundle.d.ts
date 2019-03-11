@@ -68,6 +68,7 @@ declare const SiteStatusStrings: string[];
 
 declare const ApiUrlPathPrefix;
 declare const UsersRoot;
+declare const GroupsRoot;
 declare const SearchRootPath;
 
 
@@ -232,10 +233,10 @@ declare namespace debiki2 {
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
-  function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean;
-  function user_threatLevel(user: MemberInclDetails): ThreatLevel;
-  function user_trustLevel(user: Myself | MemberInclDetails): TrustLevel;
-  function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean;
+  function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean;
+  function user_threatLevel(user: UserInclDetails): ThreatLevel;
+  function user_trustLevel(user: Myself | UserInclDetails): TrustLevel;
+  function user_isGone(user: Myself | BriefUser | UserInclDetails | ParticipantAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
@@ -251,17 +252,17 @@ declare namespace debiki2 {
 
   var isWikiPost;
   var isStaff;
-  function user_isTrustMinNotThreat(me: MemberInclDetails | Myself, trustLevel: TrustLevel): boolean;
+  function user_isTrustMinNotThreat(me: UserInclDetails | Myself, trustLevel: TrustLevel): boolean;
   var threatLevel_toString;
   var isGuest;
   var user_isGuest;
-  function store_maySendDirectMessageTo(store: Store, user: MemberInclDetails): boolean;
+  function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean;
   var page_isGroupTalk;
   let store_getUserOrMissing;
   var store_thisIsMyPage;
   var hasErrorCode;
   var page_mayChangeRole;
-  function store_maySendInvites(store: Store, user: Myself | MemberInclDetails): MayMayNot;
+  function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
   function store_isNoPage(store: Store): boolean;
@@ -280,10 +281,11 @@ declare namespace debiki2 {
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
   function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
-  function linkToUserInAdminArea(user: Myself | MemberInclDetails | User | UserId): string;
+  function linkToUserInAdminArea(user: Myself | UserInclDetails | Participant | UserId): string;
   function linkToSendMessage(idOrUsername: UserId | string): string;
   function linkToUserInAdminArea(userId: UserId): string;
-  function linkToUserProfilePage(idOrUsername: Myself | User | UserId | string): string;
+  function linkToUserProfilePage(idOrUsername: Myself | Participant | UserId | string): string;
+  function pathTo(user: Participant | Myself | UserId | string): string;
   function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;

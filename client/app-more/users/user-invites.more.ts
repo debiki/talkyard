@@ -77,7 +77,7 @@ export const UserInvites = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
 
     if (isGuest(me))
       return r.p({}, "You are logged in as a guest. They may not see invites.");

@@ -1757,7 +1757,8 @@ object JsX {
     var json = Json.obj(
       "id" -> group.id,
       "username" -> group.theUsername,
-      "fullName" -> group.name)
+      "fullName" -> group.name,
+      "isGroup" -> JsTrue)
       // "grantsTrustLevel" -> group.grantsTrustLevel)
     group.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)

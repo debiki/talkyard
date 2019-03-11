@@ -55,7 +55,7 @@ export const UserProfileAdminView = createFactory({
     if (this.isGone) return;
     this.setState({ user: null });
     const params = this.props.match.params;
-    Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
+    Server.loadUserAnyDetails(params.userId, (user: UserInclDetails, stats: UserStats) => {
       if (this.isGone) return;
       this.setState({
         user: user,
@@ -73,24 +73,24 @@ export const UserProfileAdminView = createFactory({
   },
 
   resendEmailAddrVerifEmail: function() {
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
     Server.resendEmailAddrVerifEmail(user.id, user.email);
   },
 
   toggleIsAdmin: function() {
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
     const doWhat = user.isAdmin ? EditMemberAction.SetNotAdmin : EditMemberAction.SetIsAdmin;
     Server.editMember(user.id, doWhat, this.loadCompleteUser);
   },
 
   toggleIsModerator: function() {
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
     const doWhat = user.isModerator ? EditMemberAction.SetNotModerator : EditMemberAction.SetIsModerator;
     Server.editMember(user.id, doWhat, this.loadCompleteUser);
   },
 
   unsuspendUser: function() {
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
     Server.unsuspendUser(user.id, this.loadCompleteUser);
   },
 
@@ -101,7 +101,7 @@ export const UserProfileAdminView = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const settings: Settings = this.props.settings;
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
     const me: Myself = store.me;
     if (!user)
       return r.p({}, "Loading...");
@@ -401,7 +401,7 @@ const SuspendDialog = createComponent({
 
 let trustLevelDialog;
 
-function openTrustLevelDialog(user: MemberInclDetails, refreshCallback) {
+function openTrustLevelDialog(user: UserInclDetails, refreshCallback) {
   if (!trustLevelDialog) {
     trustLevelDialog = ReactDOM.render(MemberTrustLevelDialog(), utils.makeMountNode());
   }
@@ -416,7 +416,7 @@ const MemberTrustLevelDialog = createComponent({
     return { isOpen: false };
   },
 
-  open: function(user: MemberInclDetails, refreshCallback) {
+  open: function(user: UserInclDetails, refreshCallback) {
     this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
   },
 
@@ -435,7 +435,7 @@ const MemberTrustLevelDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
 
     const currentTrustLevelText = r.p({}, user.lockedTrustLevel
       ? "Trust level locked at: " + trustLevel_toString(user.lockedTrustLevel) +
@@ -485,7 +485,7 @@ const MemberTrustLevelDialog = createComponent({
 
 let threatLevelDialog;
 
-function openThreatLevelDialog(user: MemberInclDetails, refreshCallback) {
+function openThreatLevelDialog(user: UserInclDetails, refreshCallback) {
   if (!threatLevelDialog) {
     threatLevelDialog = ReactDOM.render(MemberThreatLevelDialog(), utils.makeMountNode());
   }
@@ -500,7 +500,7 @@ const MemberThreatLevelDialog = createComponent({
     return { isOpen: false };
   },
 
-  open: function(user: MemberInclDetails, refreshCallback) {
+  open: function(user: UserInclDetails, refreshCallback) {
     this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
   },
 
@@ -519,7 +519,7 @@ const MemberThreatLevelDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    const user: MemberInclDetails = this.state.user;
+    const user: UserInclDetails = this.state.user;
 
     const currentThreatLevelText = r.p({}, user.lockedThreatLevel
       ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +

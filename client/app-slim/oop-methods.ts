@@ -386,22 +386,22 @@ export function me_uiPrefs(me: Myself): UiPrefs {
 //----------------------------------
 
 
-export function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean {
+export function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean {
   return user.suspendedTillEpoch && ((user.suspendedTillEpoch * 1000) > nowMs);
 }
 
 
-export function user_threatLevel(user: MemberInclDetails): ThreatLevel {
+export function user_threatLevel(user: UserInclDetails): ThreatLevel {
   return user.lockedThreatLevel || user.threatLevel;
 }
 
 
-export function user_trustLevel(user: MemberInclDetails | Myself): TrustLevel {
-  return (<MemberInclDetails> user).effectiveTrustLevel || user.lockedTrustLevel || user.trustLevel;
+export function user_trustLevel(user: UserInclDetails | Myself): TrustLevel {
+  return (<UserInclDetails> user).effectiveTrustLevel || user.lockedTrustLevel || user.trustLevel;
 }
 
 
-export function user_isTrustMinNotThreat(user: MemberInclDetails | Myself, trustLevel: TrustLevel): boolean {
+export function user_isTrustMinNotThreat(user: UserInclDetails | Myself, trustLevel: TrustLevel): boolean {
   if (isStaff(user)) return true;
   // UX COULD check threat level too, that's done server side, not doing here can result in [5WKABY0]
   // annoying error messages (security though = server side).  Add a Myself.isThreat field?
@@ -409,9 +409,9 @@ export function user_isTrustMinNotThreat(user: MemberInclDetails | Myself, trust
 }
 
 
-export function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean {
-  // These two casts work for UserAnyDetails too.
-  const membInclDetails = <Myself | MemberInclDetails> user;
+export function user_isGone(user: Myself | BriefUser | UserInclDetails | ParticipantAnyDetails): boolean {
+  // These two casts work for ParticipantAnyDetails too.
+  const membInclDetails = <Myself | UserInclDetails> user;
   const briefUser = <BriefUser> user;
 
   return briefUser.isGone || !!membInclDetails.deactivatedAt || !!membInclDetails.deletedAt;

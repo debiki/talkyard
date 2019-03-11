@@ -87,7 +87,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   it("Owen goes to All Members' prefs page", () => {
     owensBrowser.go(idAddress.origin);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.go('/-/users/new_members/preferences/notifications');
+    owensBrowser.go('/-/groups/new_members/preferences/notifications');
   });
 
   it("... and configures All Members to get notified about new topics", () => {
@@ -161,7 +161,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
   it("Owen goes to All Members' prefs page again", () => {
     owensTopicUrl = owensBrowser.url().value;
-    owensBrowser.go('/-/users/new_members/preferences/notifications');
+    owensBrowser.go('/-/groups/new_members/preferences/notifications');
   });
 
   it("... configs prefs for every post, for everyone", () => {

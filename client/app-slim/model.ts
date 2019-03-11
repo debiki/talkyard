@@ -394,7 +394,7 @@ interface Myself extends OwnPageNotfPrefs {
   fullName?: string;
   avatarSmallHashPath?: string;
   lockedTrustLevel?: TrustLevel; // currently not set server side, hmm try make consistent [5ZKGJA2]
-  trustLevel: TrustLevel;      // inconsistency: named effectiveTrustLevel in MemberInclDetails  [5ZKGJA2]
+  trustLevel: TrustLevel;      // inconsistency: named effectiveTrustLevel in UserInclDetails  [5ZKGJA2]
   threatLevel: ThreatLevel;    // auto or effective? RENAME or repl w isThreat?
   permsOnPages: PermsOnPage[];
 
@@ -1003,14 +1003,22 @@ interface SpecialContent {
   anyCustomText?: string;
 }
 
-interface User {
+
+const enum AvatarSize {
+  Tiny = 1, // the default
+  Small = 2,
+  Medium = 3,
+}
+
+
+interface Participant {   // = a Guest, User or Group
   id: UserId;
   isGroup?: boolean;
   username?: string; // not for guests
 }
 
 
-interface Guest extends User, UserAnyDetails {
+interface Guest extends Participant {
   fullName: string;
   email: string;
   country: string;
@@ -1018,7 +1026,9 @@ interface Guest extends User, UserAnyDetails {
 }
 
 
-interface BriefUser extends User {
+// Rename to ... ParticipantWithMoreFields? No, what? Maybe rename Participant to PpIdAnyUsername,
+// and rename BriefUser to Participant?
+interface BriefUser extends Participant {
   fullName: string;
   username?: string;
   isAdmin?: boolean;
@@ -1032,23 +1042,25 @@ interface BriefUser extends User {
 }
 
 
-const enum AvatarSize {
-  Tiny = 1, // the default
-  Small = 2,
-  Medium = 3,
+interface Member extends Participant {
+  username: string;
+}
+
+
+interface Group extends Member {
+  fullName: string;
+  isGroup: true;
+  // "grantsTrustLevel" — later
+  avatarTinyHashPath?: string;
 }
 
 
 /** A member or group, including details. Or a guest; then, there are no details. */
-interface UserAnyDetails {
-  id: UserId;
-  isGroup?: boolean;
-  username?: string; // not for guests
-}
+type ParticipantAnyDetails = MemberInclDetails | Guest;
 
 
-interface MemberOrGroupInclDetails extends UserAnyDetails {
-  username: string;
+interface MemberInclDetails extends Member {
+  avatarMediumHashPath?: string;
   // Only if requester is staff:
   summaryEmailIntervalMins?: number;
   summaryEmailIntervalMinsOwn?: number;
@@ -1057,14 +1069,14 @@ interface MemberOrGroupInclDetails extends UserAnyDetails {
 }
 
 
-interface GroupInclDetails extends MemberOrGroupInclDetails {
-  isGroup: boolean; // always true
+interface GroupInclDetails extends MemberInclDetails {
+  isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
   fullName: string;
 }
 
 
-interface MemberInclDetails extends MemberOrGroupInclDetails {
+interface UserInclDetails extends MemberInclDetails {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName: string;
@@ -1076,7 +1088,6 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   country: string;
   url: string;
   seeActivityMinTrustLevel?: TrustLevel;
-  avatarMediumHashPath?: string;
   uiPrefs: UiPrefs;
   isAdmin: boolean;
   isModerator: boolean;
@@ -1100,7 +1111,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   deletedAt?: number;
 }
 
-interface MemberInclDetailsWithStats extends MemberInclDetails {
+interface UserInclDetailsWithStats extends UserInclDetails {
   // Mabye some old accounts lack stats?
   anyUserStats?: UserStats;
 }
@@ -1192,19 +1203,10 @@ const enum Presence {
 }
 
 
-interface Group {
-  id: UserId;
-  username: string;
-  fullName: string;
-  // "grantsTrustLevel" — later
-  avatarTinyHashPath?: string;
-}
-
-
 const enum Groups {
   NoUserId = 0,
   EveryoneId = 10,
-  NewMembersId = 11,
+  NewMembersId = 11,  // RENAME to AllMembersId
   BasicMembersId = 12,
   FullMembersId = 13,
   TrustedId = 14,
@@ -1632,6 +1634,39 @@ interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
   doWhat: SwDo.SubscribeToEvents;
   siteId: SiteId,
   myId: UserId,
+}
+
+
+
+// ----- External things whose @types won't work
+
+// Why won't work? Maybe because isn't using AMD / ES6 modules.
+
+// Doesn't work:
+// bash# yarn add @types/react-router-dom
+// /// <reference path="../../../node_modules/@types/react-router/index.d.ts" />
+// and then using RouteChildrenProps. Why won't work? Who cares. Instead:
+interface RouteChildProps {
+  match: RouteMatch,
+  location: RouteLocation,
+  history: RouteHistory,
+  children: any,
+}
+interface RouteMatch {
+  path: string;
+  url: string;
+  isExact: boolean;
+  params: { [paramName: string]: string };
+}
+interface RouteLocation {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+interface RouteHistory {
+  length: number;
+  action: string;
+  location: RouteLocation;
 }
 
 

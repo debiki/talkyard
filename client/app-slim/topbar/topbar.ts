@@ -299,7 +299,7 @@ export const TopBar = createComponent({
 
     if (this.props.location) {
       const path: string = this.props.location.pathname;
-      if (path.search(UsersRoot) === 0) {
+      if (path.search(UsersRoot) === 0 || path.search(GroupsRoot) === 0) {
         customTitle = t.tb.AbtUsr;
         backToSiteButton = t.tb.BackFromUsr;
       }

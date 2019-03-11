@@ -40,7 +40,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
 
-  def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
+  def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 500) { request =>
     import request.body
 
     val title = (body \ "title").as[String]

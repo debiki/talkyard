@@ -179,7 +179,8 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
       return r.p({}, "Loading...");
 
     return Switch({},
-      users.usersRoute(),
+      Route({ path: UsersRoot, component: users.UsersHomeComponent }),
+      Route({ path: GroupsRoot, component: users.UsersHomeComponent }),
       search.searchRoute());
   }
 });

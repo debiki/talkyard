@@ -99,6 +99,8 @@ POST  /-/undo-review-decision   controllers.ModerationController.tryUndoReviewDe
 
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)
+GET   /-/groups/                controllers.UserController.viewUserPage(whatever = "")
+GET   /-/groups/*whatever       controllers.UserController.viewUserPage(whatever)
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
 GET   /-/list-topics-by-user    controllers.UserController.listTopicsByUser(userId: Int)
 GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int)

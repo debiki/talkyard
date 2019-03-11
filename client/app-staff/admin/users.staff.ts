@@ -219,7 +219,7 @@ const UserList = createFactory({
       return r.p({}, "Loading...");
 
     const now = new Date().getTime();
-    let userRows = this.state.users.map((user: MemberInclDetailsWithStats) => {
+    let userRows = this.state.users.map((user: UserInclDetailsWithStats) => {
       return UserRow({ user: user, now: now, key: user.id, whichUsers: this.props.whichUsers });
     });
 
@@ -260,28 +260,28 @@ const UserRow = createFactory({
   },
 
   approveUser: function() {
-    const user: MemberInclDetailsWithStats = this.props.user;
+    const user: UserInclDetailsWithStats = this.props.user;
     Server.editMember(user.id, EditMemberAction.SetApproved, () => {
       this.setState({ wasJustApproved: true });
     });
   },
 
   rejectUser: function() {
-    const user: MemberInclDetailsWithStats = this.props.user;
+    const user: UserInclDetailsWithStats = this.props.user;
     Server.editMember(user.id, EditMemberAction.SetUnapproved, () => {
       this.setState({ wasJustRejected: true });
     });
   },
 
   undoApproveOrReject: function() {
-    const user: MemberInclDetailsWithStats = this.props.user;
+    const user: UserInclDetailsWithStats = this.props.user;
     Server.editMember(user.id, EditMemberAction.ClearApproved, () => {
       this.setState({ wasJustRejected: false, wasJustApproved: false });
     });
   },
 
   render: function() {
-    const user: MemberInclDetailsWithStats = this.props.user;
+    const user: UserInclDetailsWithStats = this.props.user;
     const nowMs: WhenMs = this.props.now;
 
     let actions;

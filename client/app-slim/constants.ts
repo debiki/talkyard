@@ -82,6 +82,7 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
 
 const ApiUrlPathPrefix = '/-/';
 const UsersRoot = '/-/users/';
+const GroupsRoot = '/-/groups/';
 const SearchRootPath = '/-/search';
 
 

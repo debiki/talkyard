@@ -24,7 +24,6 @@
 
 const r = ReactDOMFactories;
 const Post = page.Post;
-const UsersPathSlash = UsersRoot;
 const SlashActivitySlash = '/activity/';  // dupl [4GKQST20]
 
 
@@ -33,7 +32,7 @@ export const UsersActivity = createFactory({
 
   render: function() {
     const store: Store = this.props.store;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const me: Myself = store.me;
 
     const childProps = {
@@ -59,7 +58,7 @@ export const UsersActivity = createFactory({
       //Route({ path: 'likes-given', component: LikesGivenComponent }),
       //Route({ path: 'likes-received', component: LikesReceivedComponent })
 
-    const uap = UsersPathSlash + this.props.match.params.usernameOrId + SlashActivitySlash;
+    const uap = pathTo(user) + SlashActivitySlash;
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -83,7 +82,7 @@ export const UsersActivity = createFactory({
 
 
 
-function isHiddenForMe(me: Myself, user: MemberInclDetails): boolean[] {
+function isHiddenForMe(me: Myself, user: UserInclDetails): boolean[] {
   const isStaffOrSelf = isStaff(me) || user.id === me.id;
   const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
   return [isStaffOrSelf, hiddenForMe];
@@ -91,7 +90,7 @@ function isHiddenForMe(me: Myself, user: MemberInclDetails): boolean[] {
 
 
 
-function makeMaybeHiddenInfo(me: Myself, user: MemberInclDetails) {
+function makeMaybeHiddenInfo(me: Myself, user: UserInclDetails) {
   const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
   const hiddenForSomeText = !isStaffOrSelf ? null : (
       user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
@@ -121,7 +120,7 @@ const UsersPosts = createFactory({
 
   componentDidMount: function() {
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     this.loadPosts(me, user);
   },
 
@@ -134,16 +133,16 @@ const UsersPosts = createFactory({
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
     const me: Myself = this.props.me;  // not store.me, it's been modif in-place [redux]
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const nextMe: Myself = nextStore.me;
-    const nextUser: MemberInclDetails = nextProps.user;
+    const nextUser: UserInclDetails = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadPosts(nextMe, nextUser);
     }
   },
 
-  loadPosts: function(me: Myself, user: MemberInclDetails) {
+  loadPosts: function(me: Myself, user: UserInclDetails) {
     // a bit dupl code [5AWS2E8]
     const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
     if (hiddenForMe) {
@@ -173,7 +172,7 @@ const UsersPosts = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = this.props.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const posts: PostWithPage[] = this.state.posts;
     const author: BriefUser = this.state.author;
     if (!_.isArray(posts))
@@ -209,7 +208,7 @@ const UsersTopics = createFactory({
 
   componentDidMount: function() {
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     this.loadTopics(me, user);
   },
 
@@ -222,16 +221,16 @@ const UsersTopics = createFactory({
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
     const me: Myself = this.props.me;  // not store.me, it's been modif in-place [redux]
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const nextMe: Myself = nextStore.me;
-    const nextUser: MemberInclDetails = nextProps.user;
+    const nextUser: UserInclDetails = nextProps.user;
     // If we log in as someone else, which topics we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadTopics(nextMe, nextUser);
     }
   },
 
-  loadTopics: function(me: Myself, user: MemberInclDetails) {
+  loadTopics: function(me: Myself, user: UserInclDetails) {
     // a bit dupl code [5AWS2E8]
     const [isStaffOrSelf, hiddenForMe] = isHiddenForMe(me, user);
     if (hiddenForMe) {
@@ -249,7 +248,7 @@ const UsersTopics = createFactory({
 
   render: function() {
     const store: Store = this.props.store;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const me: Myself = store.me;
     const topics: Topic[] = this.state.topics;
     if (!_.isArray(topics))

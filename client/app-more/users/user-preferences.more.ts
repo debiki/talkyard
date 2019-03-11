@@ -26,7 +26,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const UsersPathSlash = UsersRoot;
 const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
 
 import EmailInput = debiki2.util.EmailInput;
@@ -41,12 +40,12 @@ export const UserPreferences = createFactory({
  displayName: 'UserPreferences',
 
   render: function() {
-    const prefsPathSlash = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
+    const user: UserInclDetails = this.props.user;
+    const prefsPathSlash = pathTo(user) + SlashPrefsSlash;
     const aboutPath = prefsPathSlash + aboutPathSeg;
     const privacyPath = prefsPathSlash + privacyPathSeg;
     const uiPath = prefsPathSlash + uiPathSeg;
     const emailsLoginsPath = prefsPathSlash + accountPathSeg;
-    const user: MemberInclDetails = this.props.user;
     const location = this.props.location;
     const store: Store = this.props.store;
     const me: Myself = store.me;
@@ -107,7 +106,7 @@ export const AboutTab = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const isSystemUser = user.id === SystemUserId;
 
     let anyNotYourPrefsInfo;
@@ -194,7 +193,7 @@ const AboutMember = createComponent({
   displayName: 'AboutMember',
 
   getInitialState: function() {
-    let user: MemberInclDetails = this.props.user;
+    let user: UserInclDetails = this.props.user;
     return {
       fullName: user.fullName,
       username: user.username,
@@ -232,7 +231,7 @@ const AboutMember = createComponent({
   },
 
   maybeChangePassword: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const question = user.hasPassword ? "Change password?" : "Create password?";  // I18N
     // BUG only works if email addr specified and verified  [7B4W20]
     util.openDefaultStupidDialog({  // import what?
@@ -271,7 +270,7 @@ const AboutMember = createComponent({
     event.preventDefault();
     const summaryEmailIntervalMins = this.state.sendSummaryEmails ?
         this.state.summaryEmailIntervalMins : DisableSummaryEmails;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const prefs = {
       userId: user.id,
       fullName: this.state.fullName,
@@ -303,7 +302,7 @@ const AboutMember = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const username = user.username || t.upp.notSpecified;
 
     // These ids = hardcoded users & groups, e.g. System and Everyone.
@@ -455,11 +454,11 @@ const NotfPrefsTab = createFactory({
   },
 
   loadNotfPrefs: function() {
-    const member: MemberInclDetails = this.props.user;
+    const member: UserInclDetails = this.props.user;
     Server.loadCatsTagsSiteNotfPrefs(member.id, (response: PageNotfPrefsResponse) => {
       if (this.isGone) return;
       const ownPrefs: OwnPageNotfPrefs = response;
-      const memberNow: MemberInclDetails = this.props.user;
+      const memberNow: UserInclDetails = this.props.user;
       if (ownPrefs.id === memberNow.id) {
         this.setState({ ownPrefs });
       }
@@ -474,7 +473,7 @@ const NotfPrefsTab = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const isOkUser = user.id >= Groups.EveryoneId;
     const ownPrefs = this.state.ownPrefs;
 
@@ -527,7 +526,7 @@ const PrivacyPrefsTab = createFactory({
   displayName: 'PrivacyPrefsTab',
 
   getInitialState: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     return {
       hideActivityForStrangers: user.seeActivityMinTrustLevel >= TrustLevel.FullMember,
       hideActivityForAll: user.seeActivityMinTrustLevel >= TrustLevel.CoreMember,
@@ -542,7 +541,7 @@ const PrivacyPrefsTab = createFactory({
     event.preventDefault();
     const seeActivityMinTrustLevel = this.state.hideActivityForAll ? TrustLevel.CoreMember : (
         this.state.hideActivityForStrangers ? TrustLevel.FullMember : null);
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const prefs = {
       userId: user.id,
       seeActivityMinTrustLevel: seeActivityMinTrustLevel,
@@ -560,7 +559,7 @@ const PrivacyPrefsTab = createFactory({
   render: function() {
     const state = this.state;
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
@@ -610,7 +609,7 @@ const AccountTab = createFactory({
   },
 
   componentDidMount: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     this.loadEmailsLogins(user.id);
   },
 
@@ -621,9 +620,9 @@ const AccountTab = createFactory({
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const nextMe: Myself = nextProps.store.me;
-    const nextUser: MemberInclDetails = nextProps.user;
+    const nextUser: UserInclDetails = nextProps.user;
     // If we log in as someone else, what stuff we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadEmailsLogins(nextUser.id);
@@ -639,7 +638,7 @@ const AccountTab = createFactory({
 
   doAddEmail: function() {
     this.setState({ showAddEmailInput: false, isAddingEmail: true });
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     Server.addEmailAddresses(user.id, this.state.newEmailAddr, (response: UserAccountResponse) => {
       if (this.isGone) return;
       this.setState({ isAddingEmail: false, doneAddingEmail: true });
@@ -648,14 +647,14 @@ const AccountTab = createFactory({
   },
 
   resendEmailAddrVerifEmail: function(emailAddress: string) {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     Server.resendEmailAddrVerifEmail(user.id, emailAddress);
     this.state.verifEmailsSent[emailAddress] = true; // modifying in place, oh well [redux]
     this.setState({ verifEmailsSent: this.state.verifEmailsSent });
   },
 
   removeEmailAddress: function(emailAddress: string) {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     Server.removeEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
       if (this.isGone) return;
       // Remove the check-your-inbox message, in case the user remoed the email just added.
@@ -664,7 +663,7 @@ const AccountTab = createFactory({
   },
 
   setPrimary: function(emailAddress: string) {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     Server.setPrimaryEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
       if (this.isGone) return;
       this.setState(response);
@@ -673,18 +672,18 @@ const AccountTab = createFactory({
   },
 
   downloadMyContent: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     window.open(Server.makeDownloadMyContentUrl(user.id), '_blank');
   },
 
   downloadPersonalData: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     window.open(Server.makeDownloadPersonalDataUrl(user.id), '_blank');
   },
 
   deleteUser: function() {
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const isMe = me.id === user.id;
     util.openDefaultStupidDialog({
       dialogClassName: '',
@@ -715,7 +714,7 @@ const AccountTab = createFactory({
 
   render: function() {
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const isMe = me.id === user.id;
 
     if (!this.state.emailAddresses)
@@ -851,10 +850,10 @@ const AccountTab = createFactory({
 
 
 const UiPrefsTab = React.createFactory(
-      function (props: { store: Store, user: MemberInclDetails }) {
+      function (props: { store: Store, user: UserInclDetails }) {
 
   const me: Myself = props.store.me;
-  const user: MemberInclDetails = props.user;
+  const user: UserInclDetails = props.user;
 
   if (user_isGuest(user))
     return r.p({}, "Cannot set UI preferences for guests.");

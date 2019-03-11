@@ -120,9 +120,9 @@ declare namespace debiki2.forum {
 }
 
 declare namespace debiki2.users {
-  function usersRoute();
   function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: WhenMs, showSender? });
   function openInviteDialog(onDone: (invites: Invite[]) => void);
+  const UsersHomeComponent;
 }
 
 declare namespace debiki2.pagetools {

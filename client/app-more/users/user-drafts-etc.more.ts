@@ -33,7 +33,7 @@ export const UserDrafts = createFactory({
   },
 
   componentDidMount: function() {
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     this.listDrafts(user.id);
   },
 
@@ -45,9 +45,9 @@ export const UserDrafts = createFactory({
   componentWillReceiveProps: function(nextProps: any) {
     // Dupl code, also in view notfs. [7WUBKZ0]
     const me: Myself = this.props.store.me;
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const nextLoggedInUser: Myself = nextProps.store.me;
-    const nextUser: MemberInclDetails = nextProps.user;
+    const nextUser: UserInclDetails = nextProps.user;
     if (me.id !== nextLoggedInUser.id || user.id !== nextUser.id) {
       this.listDrafts(nextUser.id);
     }
@@ -89,7 +89,7 @@ export const UserDrafts = createFactory({
     if (!drafts)
       return r.p({}, t.Loading);
 
-    const user: MemberInclDetails = this.props.user;
+    const user: UserInclDetails = this.props.user;
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const isMe = user.id === me.id;

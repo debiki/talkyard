@@ -54,7 +54,7 @@ export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
 }
 
 
-export function store_maySendDirectMessageTo(store: Store, user: MemberInclDetails): boolean {
+export function store_maySendDirectMessageTo(store: Store, user: UserInclDetails): boolean {
   const settings: SettingsVisibleClientSide = store.settings;
   const me: Myself = store.me;
 
