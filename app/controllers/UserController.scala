@@ -1111,18 +1111,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postNrsRead = pagePostNrIdsRead.map(_.postNr)
     val postNrsReadAsSet = postNrsRead.toSet
 
-    val tourTipsSeenJson = (body \ "tourTipsSeen").asOpt[Vector[JsString]]
-    val tourTipsSeen: Option[immutable.Seq[TourTipsId]] = tourTipsSeenJson.map(_.map(_.value))
-    tourTipsSeen.foreach(_ foreach((id: TourTipsId) => {
-      anyTourTipsIdError(id) foreach EdHttp.throwBadRequest
-    }))
-
     throwForbiddenIf(anyLastViewedPostNr.isDefined && anyPageId.isEmpty,
       "TyE2AKBF58", "Got a last viewed post nr, but no page id")
 
     play.api.Logger.trace(
-      o"""s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading,
-        tour and tips seen: $tourTipsSeen""")
+      s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
 
     val now = globals.now()
     val lowPostNrsRead: Set[PostNr] = postNrsReadAsSet.filter(_ <= PageReadingProgress.MaxLowPostNr)
@@ -1172,15 +1165,24 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // This visit happened on an article / discussion page.
       dieIf(anyPageId.isEmpty, "TyE7KAKR25")
       dao.trackReadingProgressClearNotfsPerhapsPromote(
-        requester, anyPageId.get, pagePostNrIdsRead.map(_.postId).toSet, anyPageReadingProgress.get,
-        tourTipsSeen)
+        requester, anyPageId.get, pagePostNrIdsRead.map(_.postId).toSet, anyPageReadingProgress.get)
     }
     else {
       // This visit happened on an admin page or user profile page.
-      dao.rememberVisitAndTourTipsSeen(requester, lastVisitedAt = now, tourTipsSeen)
+      dao.rememberVisit(requester, lastVisitedAt = now)
     }
   }
 
+
+  def markTourTipsSeen: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
+        maxBytes = 200) { request =>
+    import request.{dao, body, theRequester => requester}
+    val tourTipsIdSeen = (body \ "tourTipsId").as[JsString].value
+    import com.debiki.core.Prelude._
+    if (!tourTipsIdSeen.isOkVariableName) EdHttp.throwBadRequest("")
+    dao.rememberTourTipsSeen(requester, Some(Vector(tourTipsIdSeen)))
+    Ok
+  }
 
   def loadNotifications(userId: UserId, upToWhenMs: Long): Action[Unit] =
         GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>

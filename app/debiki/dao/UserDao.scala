@@ -1009,8 +1009,8 @@ trait UserDao {
     * And clear any notifications about posts hen has now seen.
     */
   def trackReadingProgressClearNotfsPerhapsPromote(
-        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: PageReadingProgress,
-        anyTourTipsSeen: Option[TourTipsSeen] = None): ReadMoreResult = {
+        user: Participant, pageId: PageId, postIdsSeen: Set[PostId], newProgress: PageReadingProgress)
+        : ReadMoreResult = {
     // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
@@ -1064,8 +1064,7 @@ trait UserDao {
         numDiscourseTopicsEntered = numMoreDiscourseTopicsEntered,
         numDiscourseRepliesRead = numMoreDiscourseRepliesRead,
         numChatTopicsEntered = numMoreChatTopicsEntered,
-        numChatMessagesRead = numMoreChatMessagesRead,
-        tourTipsSeen = anyTourTipsSeen))
+        numChatMessagesRead = numMoreChatMessagesRead))
 
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.  (5ABKR20L)
@@ -1095,20 +1094,32 @@ trait UserDao {
   }
 
 
-  def rememberVisitAndTourTipsSeen(user: Participant, lastVisitedAt: When,
-        anyTourTipsSeen: Option[TourTipsSeen]): ReadMoreResult = {
-    require(user.isMember, "EdE8KFUW2") // see above [8PLKW46]
+  def rememberVisit(user: Participant, lastVisitedAt: When): ReadMoreResult = {
+    require(user.isMember, "TyEBZSR27") // see above [8PLKW46]
     if (user.id < LowestTalkToMemberId)
       return ReadMoreResult(0)
     readWriteTransaction { tx =>
       val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
         userId = user.id,
-        lastSeenAt = lastVisitedAt,
-        tourTipsSeen = anyTourTipsSeen))
+        lastSeenAt = lastVisitedAt))
       tx.upsertUserStats(statsAfter)
     }
     ReadMoreResult(numMoreNotfsSeen = 0)
+  }
+
+
+  def rememberTourTipsSeen(user: Participant, anyTourTipsSeen: Option[TourTipsSeen]) {
+    require(user.isMember, "TyE5AKR5J") // see above [8PLKW46]
+    if (user.id < LowestTalkToMemberId)
+      return
+    readWriteTransaction { tx =>
+      val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
+      val statsAfter = statsBefore.addMoreStats(UserStats(
+        userId = user.id,
+        tourTipsSeen = anyTourTipsSeen))
+      tx.upsertUserStats(statsAfter)
+    }
   }
 
 

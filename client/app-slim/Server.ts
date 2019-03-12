@@ -1568,7 +1568,7 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // reported whenever a new long-polling-request is started?
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
-      postsRead: Post[], tourTipsSeen: TourTipsSeen | undefined, anyOnDone?: () => void) {
+      postsRead: Post[], anyOnDone?: () => void) {
   if (eds.mainWorkUntilSecs)
     return;
 
@@ -1588,7 +1588,6 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     lastReadAt: secondsReading > 0 ? nowMsUtc : null,
     secondsReading: secondsReading,
     pagePostNrIdsRead,
-    tourTipsSeen,
   };
   const onDone = !anyOnDone? UseBeacon : function(me?: MyselfPatch) {
     // See [7KABR20] server side.
@@ -1601,6 +1600,12 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
         // Don't popup any error dialog from here. If there's a network error, we'll show a
         // "No internet" non-intrusive message instead [NOINETMSG].
         () => ShowNoErrorDialog, { showLoadingOverlay: false });
+}
+
+
+export function markTourTipsSeen(tourTipsId: string) {
+  postJsonSuccess('/-/mark-tour-tips-seen', function() {}, { tourTipsId },
+        () => ShowNoErrorDialog, { showLoadingOverlay: false }); // [NOINETMSG]
 }
 
 

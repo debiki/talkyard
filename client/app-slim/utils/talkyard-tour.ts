@@ -231,13 +231,12 @@ function TalkyardTour() {
 
   function goToNextStep() {
     tourHighlightRef.current.style.pointerEvents = 'auto';
-    const nextStepIx = stepIx + 1;
-    setStepIx(nextStepIx);
-    const isLastStep = nextStepIx === tour.steps.length - 1;
+    const isLastStep = stepIx === tour.steps.length - 1;
     if (isLastStep) {
-      // This updates the state in place. Fine, in this case.  [redux]
-      tour.forWho.tourTipsSeen.push(tour.id);
-      page.PostsReadTracker.saveTourTipsSeen(tour.forWho.tourTipsSeen);
+      exitTour();
+    }
+    else {
+      setStepIx(stepIx + 1);
     }
   }
 
@@ -246,6 +245,9 @@ function TalkyardTour() {
   }
 
   function exitTour() {
+    // This updates the state in place. Fine, in this case.  [redux]
+    tour.forWho.tourTipsSeen.push(tour.id);
+    Server.markTourTipsSeen(tour.id);
     setTour(null);
     tourRunning = false;
   }

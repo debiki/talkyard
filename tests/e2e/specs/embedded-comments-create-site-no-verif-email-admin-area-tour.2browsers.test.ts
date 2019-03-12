@@ -113,12 +113,6 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
     owensBrowser.waitAndClick('.e_StngsB', { mayScroll: false });
     console.log('Step 7');
     owensBrowser.tour.clickNextForStepNr(7);
-    console.log('Step 8');
-    owensBrowser.tour.clickNextForStepNr(8);
-    console.log('Step 9');
-    owensBrowser.tour.clickNextForStepNr(9);
-    console.log('Step 10');
-    owensBrowser.tour.clickNextForStepNr(10);
   });
 
 
@@ -128,8 +122,6 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
 
   it("The tour is done, won't restart", () => {
-    owensBrowser.refresh(); // this beacon-saves  UX COULD save explicitly? when exiting tour
-    owensBrowser.pause(100);
     owensBrowser.refresh(); // this reloads new tourTipsSeen
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     owensBrowser.tour.assertTourStarts(false);

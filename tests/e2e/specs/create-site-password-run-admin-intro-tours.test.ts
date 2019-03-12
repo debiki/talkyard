@@ -66,7 +66,20 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     console.log('Step 8');
     browser.waitAndClick('.esAvtrName_name');
     console.log('Step 9');
-    browser.waitAndClick('.esMyMenu_admin [href]');
+    browser.waitAndClick('.s_Tour-Step-9 .s_Tour_D_Bs_NextB');
+  });
+
+  it("Closes the my-menu dropdown, goes to the topic list again", () => {
+    browser.clickBackdrop();
+    browser.forumButtons.viewTopics();
+  });
+
+  it("The tour won't restart", () => {
+    browser.tour.assertTourStarts(false);
+  });
+
+  it("Owen goes to the admin area", () => {
+    browser.topbar.clickGoToAdmin();
   });
 
   it("the admin area admin tour works", () => {

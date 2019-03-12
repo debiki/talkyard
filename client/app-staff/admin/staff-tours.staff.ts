@@ -159,6 +159,9 @@ export const staffTours: StaffTours = {
       placeHow: PlaceHow.ToTheRight,
       waitForClick: true,
     }, { */
+    /*
+      // This is too much, people get frustrated (well at least one out of two).
+      // And most likely, their blog address is correctly typed alread :-P
       pauseBeforeMs: 500,
       title: "For you to do:",
       text: "Check that your blog address is correct",
@@ -185,6 +188,13 @@ export const staffTours: StaffTours = {
       title: "That's it, for now",
       text: "Have a nice day",
       placeAt: 'body',
+    */
+      title: "Follow these instructions",
+      text: "And have a nice day",
+      placeAt: '.s_A_Ss_EmbCmts h2',
+      placeHow: PlaceHow.ToTheLeft,
+      highlightOffsetX: -30,
+      highlightPadding: 20,
     }],
   }},
 
@@ -242,10 +252,12 @@ export const staffTours: StaffTours = {
     }, {
       pauseBeforeMs: 200,
       title: "Admin area link",
-      text: "Click now — let's go to the admin area.",
+      text: "Click later, to go to admin settings.",
       placeAt: '.esMyMenu_admin',
       placeHow: PlaceHow.ToTheLeft,
-      waitForClick: true,
+      // waitForClick: true, — no, better if people do later, when they
+      // are done exploring the forum topics. Otherwise, the whole tour,
+      // forum + admin area, would be like 10 + 10 steps = too much.
     }],
   }},
 

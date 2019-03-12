@@ -51,7 +51,6 @@ let postNrsVisibleLastTick: { [postNr: number]: boolean };
 let pageId;
 let postNrsJustRead: PostNr[];
 let wentToTopAtMs: number;
-let newTourTipsSeen: TourTipsSeen;
 
 // After having read one post, wait a short while before posting to the server, because usually
 // the next few seonds, a bunch of more posts will also get considered read. Better then,
@@ -108,7 +107,6 @@ export function reset() {
   pageId = debiki2.ReactStore.getPageId();
   postNrsJustRead = [];
   wentToTopAtMs = undefined;
-  newTourTipsSeen = undefined;
 
   lastScrolledAtMs = Date.now();
   lastScrollLeft = -1;
@@ -145,12 +143,6 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 }
 
 
-export function saveTourTipsSeen(tourTipsSeen: TourTipsSeen) {
-  newTourTipsSeen = tourTipsSeen;
-}
-
-
-
 // @ifdef DEBUG
 function toNrs(posts: Post[]): PostNr[] {
   return posts.map(post => post.nr);
@@ -167,9 +159,6 @@ export function sendAnyRemainingData(success: () => void | null) {
   let skip = false;
   if (talksWithSererAlready) {
     skip = true;
-  }
-  else if (newTourTipsSeen) {
-    // Should be uploaded.
   }
   else if (!unreportedSecondsReading ||
       unreportedSecondsReading <= TooFewSeconds ||
@@ -197,7 +186,7 @@ export function sendAnyRemainingData(success: () => void | null) {
 
   // Don't include any 'success' callback —> sendBeacon will get used.
   Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostsRead,
-      newTourTipsSeen, success);
+      success);
   lastReportedToServerAtMs = Date.now();
 
   // If navigating to new page, it'll reset everything.
@@ -322,7 +311,7 @@ function trackReadingActivity() {
     // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
     // See subscribeToServerEvents().
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
-        unreportedPostsRead, newTourTipsSeen, () => {
+        unreportedPostsRead, () => {
       talksWithSererAlready = false;
       // In case the server is slow because under heavy load, better reset this here in
       // the done-callback, when the response arrives, rather than when the request is being sent.
@@ -334,7 +323,6 @@ function trackReadingActivity() {
     unreportedSecondsReading = 0;
     unreportedPostsRead = [];
     firstUnreportedPostReadAtMs = undefined;
-    newTourTipsSeen = undefined;
   }
 
   const hasFocus = document.hasFocus();

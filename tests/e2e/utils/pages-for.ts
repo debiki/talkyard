@@ -417,6 +417,10 @@ function pagesFor(browser) {
     },
 
 
+    clickBackdrop: () => {
+      browser.waitAndClick('.fade.in.modal');
+    },
+
     // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
     // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
     //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-
