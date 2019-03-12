@@ -351,7 +351,8 @@ h1.dw-p-ttl
   padding-bottom: 5px;
 
 .DW .dw-rr // reply receiver
-  padding: 7px 0 2px 5px
+  padding: 7px 0 2px 5px;
+  margin-top: -7px;  // cancels 7px padding, otherwise breaks vertical alignment w avatar
   display: inline-block;
   font-weight: bold;
   color: hsl(0, 0%, 28%);
@@ -866,11 +867,19 @@ html.touch .dw-p-mark-click
 
 $metaPostMarignBottom = 35px;
 
+
+//.DW .dw-chat .s_w-MP
+//  margin-top: 5px;  // unto -20px (40AKRW2)
+//  & + .s_w-MP
+//    margin-top: -15px;  // place close, no buttons in between
+//  .edAvtr
+//    top: 0;  // undo 15px;
+
 .DW .s_w-MP
   margin-bottom: $metaPostMarignBottom;
   // Place closer to the parent post, otherwise so much whitespace above.
   // There's no Reply button anyway so no wrong-Reply-button-to-click.
-  margin-top: -20px;
+  margin-top: -20px;  // (40AKRW2)
   /* Too many lines, looks cluttered:
   border: 1px solid hsl(0, 0%, 90%);
   border-left: none;
@@ -879,10 +888,11 @@ $metaPostMarignBottom = 35px;
 .s_AppendBottomDiv + .s_w-MP
   margin-top: -5px;
 
-// If two meta posts are next to each other, remove whitespace in between,
-// & make border-bottom & top overlap (so won't be a 2px double border).
-.s_w-MP + .s_w-MP
-  margin-top: - $metaPostMarignBottom - 1px;
+// If two meta posts are next to each other, remove whitespace in between.
+.DW .dw-res .s_w-MP + .s_w-MP
+  margin-top: -33px;  //- $metaPostMarignBottom;
+  padding-top: 0;
+  border-top: none;
 
 .s_MP
   border-left: none;

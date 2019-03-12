@@ -657,6 +657,15 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 //----------------------------------
 
 
+export function page_isFlatDiscourse(page: Page): boolean {
+  const pageRole = page.pageRole;
+  return (pageRole === PageRole.Idea
+      || pageRole === PageRole.Problem
+      || pageRole === PageRole.FormalMessage
+      || pageRole === PageRole.Form);
+}
+
+
 export function page_canChangeCategory(page: Page): boolean {
   const pageRole = page.pageRole;
   return (pageRole !== PageRole.Code

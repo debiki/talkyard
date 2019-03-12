@@ -92,7 +92,8 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Maria posts a bottom comment", () => {
-    mariasBrowser.complex.addBottomComment(bottomCommentOneText);  // #post-5
+    // was: addBottomComment [BEFFLAT]
+    mariasBrowser.complex.replyToOrigPost(bottomCommentOneText);  // #post-5
   });
 
   it("Changes started to New", () => {
@@ -112,7 +113,8 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Posts another bottom comment", () => {
-    mariasBrowser.complex.addBottomComment(bottomCommentTwoText);  // #post-10
+    // was: addBottomComment [BEFFLAT]
+    mariasBrowser.complex.replyToOrigPost(bottomCommentTwoText);  // #post-10
   });
 
   it("The posts has the correct contents", () => {
@@ -131,8 +133,18 @@ describe("Page statuses and bottom comments", () => {
       assert.equal(2, c.BodyNr + 1);
       assert.equal(2, c.FirstReplyNr);
       switch (i) {
-        case c.TitleNr: assert(id === 'post-' + c.TitleNr);  break;
-        case c.BodyNr:  assert(id === 'post-' + c.BodyNr);  break;
+        case c.TitleNr: assert.equal(id, 'post-' + c.TitleNr);  break;
+        case c.BodyNr:  assert.equal(id, 'post-' + c.BodyNr);  break;
+        case 2:  assert.equal(id, 'post-2');  break; // new –> planned
+        case 3:  assert.equal(id, 'post-3');  break; // planned —> started
+        case 4:  assert.equal(id, 'post-4');  break; // started —> done
+        case 5:  assert.equal(id, 'post-5');  break; // bottom comment
+        case 6:  assert.equal(id, 'post-6');  break; // done —> new
+        case 7:  assert.equal(id, 'post-7');  break; // OP reply sorted chronologically, cmp case 2 below
+        case 8:  assert.equal(id, 'post-8');  break; // reply-reply also chronologically, cmp case 3 below
+        case 9:  assert.equal(id, 'post-9');  break; // new —> planned
+        case 10: assert.equal(id, 'post-10'); break; // bottom comment
+        /* Previously, with threaded orig-post replies: [BEFFLAT]
         case 2:  assert(id === 'post-7');  break; // the orig post reply gets placed first
         case 3:  assert(id === 'post-8');  break; // orig post reply reply
         case 4:  assert(id === 'post-2');  break; // new –> planned
@@ -142,6 +154,7 @@ describe("Page statuses and bottom comments", () => {
         case 8:  assert(id === 'post-6');  break; // done —> new
         case 9:  assert(id === 'post-9');  break; // new —> planned
         case 10: assert(id === 'post-10'); break; // bottom comment
+        */
       }
     }
   });

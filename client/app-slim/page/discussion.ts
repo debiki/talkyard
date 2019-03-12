@@ -604,6 +604,7 @@ const RootPostAndComments = createComponent({
           ', these are present: ' + _.keys(postsByNr) + ' [DwE8WVP4])');
     const isBody = store.rootPostId === BodyNr;
     const pageRole: PageRole = page.pageRole;
+    const pageIsFlat = page_isFlatDiscourse(page);
     let threadClass = 'dw-t dw-depth-0' + horizontalCss(page.horizontalLayout);
     const postIdAttr = 'post-' + rootPost.nr;
     let postClass = 'dw-p';
@@ -677,28 +678,41 @@ const RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    let repliesAreFlat = false;
-    let childNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
+    let postNrs: PostNr[];
 
-    // On message pages, most likely max a few people talk — then threads make no sense.
-    // On form submission pages, people don't see each others submissions, won't talk at all.
-    if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
-      repliesAreFlat = true;
-      childNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
+    if (!pageIsFlat) {
+      postNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
+    }
+    else {
+      postNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
+      // Sort by time, oldest first.
+      postNrs.sort((nrA, nrB) => {
+        const postA: Post = postsByNr[nrA];
+        const postB: Post = postsByNr[nrB];
+        // Try to sort by when-was-approved, so won't accidentally miss a post,
+        // because it was posted long ago and didn't get approved until
+        // after even more posts had appeared.
+        const whenA = postA.approvedAtMs || postA.createdAtMs;
+        const whenB = postB.approvedAtMs || postB.createdAtMs;
+        // If A posted before B, then, whenA < whenB, resuling in a < 0 value,
+        // meaning A gets sorted before B.
+        if (whenA !== whenB) return whenA - whenB;
+        return postA.nr - postB.nr;
+      });
     }
 
     let isSquashing = false;
     let firstAppendedIndex = 0;
 
-    const threadedChildren = childNrs.map((childNr, childIndex) => {
+    const threadedChildren = postNrs.map((childNr, childIndex) => {
       if (childNr === BodyNr || childNr === TitleNr)
         return null;
       const child: Post = postsByNr[childNr];
       if (!child)
         return null; // deleted
-      const isCommentOrEvent =
-          child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
-      if (!isCommentOrEvent) {
+      const shallAppend = pageIsFlat || (
+          child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage);
+      if (!shallAppend) {
         firstAppendedIndex += 1;
       }
       if (isSquashing && child.squash)
@@ -707,7 +721,7 @@ const RootPostAndComments = createComponent({
         return null;
       isSquashing = false;
       const threadProps: any = { store };
-      if (repliesAreFlat) threadProps.isFlat = true;
+      if (pageIsFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.post = child;
       threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only?
@@ -758,7 +772,7 @@ const RootPostAndComments = createComponent({
     // Only show a thin line, for now? The text makes people confused & didn't look nice enough?
     // They don't need to understand how this works, anyway?
     if (firstAppendedIndex < threadedChildren.length &&
-        pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
+        !pageIsFlat && pageRole !== PageRole.EmbeddedComments) {
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({}, t.sb.Progr));  // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
@@ -818,7 +832,7 @@ const RootPostAndComments = createComponent({
               " Add chat comment")));
     } */
 
-    const flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
+    //const flatRepliesClass = pageIsFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
 
     const socialButtons = !store.settings.showSocialButtons ? null :
         SocialButtons(store.settings);
@@ -834,12 +848,11 @@ const RootPostAndComments = createComponent({
     // If there're no replies, also don't show an extra orig-post-reply-button. (There's already
     // a blue primary one, just below-and-to-the-right-of the orig post.)
     const skipOrigPostReplyBtn =
-        isFormalMessage || !mayReplyToOrigPost ||
-          _.every(threadedChildren, c => _.isEmpty(c));
+        !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c));
 
     // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
     // pages? UX Maybe later add back, for staff only or power users?
-    const skipBottomCommentBtn = pageRole === PageRole.EmbeddedComments;
+    const skipBottomCommentBtn = pageIsFlat;
 
     const origPostReplyButton =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
@@ -881,8 +894,8 @@ const RootPostAndComments = createComponent({
         anyHorizontalArrowToChildren,
         // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,
         // they're no longer needed.
-        r.div({ className: 'dw-single-and-multireplies' + flatRepliesClass },
-          r.ol({ className: 'dw-res dw-singlereplies' },
+        r.div({ className: 'dw-single-and-multireplies' },
+          r.ol({ className: 'dw-res dw-singlereplies' + (pageIsFlat ? ' s_Ts-Flat' : '') },
             threadedChildren)),
         origPostReplyButton,
         chatSection,

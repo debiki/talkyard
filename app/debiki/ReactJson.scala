@@ -209,7 +209,7 @@ class JsonMaker(dao: SiteDao) {
     var numPostsRepliesSection = 0
     var numPostsChatSection = 0
 
-    val interestingPosts = posts filter { post =>
+    val relevantPosts = posts filter { post =>
       // In case a page contains both form replies and "normal" comments, don't load any
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
@@ -219,9 +219,9 @@ class JsonMaker(dao: SiteDao) {
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
 
-    val tagsByPostId = transaction.loadTagsByPostId(interestingPosts.map(_.id))
+    val tagsByPostId = transaction.loadTagsByPostId(relevantPosts.map(_.id))
 
-    var allPostsJson = interestingPosts map { post: Post =>
+    var allPostsJson = relevantPosts map { post: Post =>
       numPosts += 1
       if (post.tyype == PostType.Flat)
         numPostsChatSection += 1
@@ -238,7 +238,7 @@ class JsonMaker(dao: SiteDao) {
 
     val userIdsToLoad = mutable.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= interestingPosts.map(_.createdById)
+    userIdsToLoad ++= relevantPosts.map(_.createdById)
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -489,6 +489,8 @@ class JsonMaker(dao: SiteDao) {
         includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
+
+    UX; BUG // ? what if page_isFlatDiscourse ?
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
     // This is simple but a bit too stupid? COULD come up with a better algorithm (better
@@ -1497,6 +1499,7 @@ object JsonMaker {
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsNumber(post.createdById),
       "createdAtMs" -> JsDateMs(post.createdAt),
+      "approvedAtMs" -> JsDateMsOrNull(post.approvedAt),
       "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),

@@ -139,7 +139,7 @@ describe("private chat", () => {
   });
 
   it("... and replies", () => {
-    owen.complex.addBottomComment(owensQuestionAnswer);
+    owen.complex.replyToOrigPostViaBottomButton(owensQuestionAnswer);  // was: addBottomComment [BEFFLAT]
     owen.topic.waitForPostNrVisible(4);
   });
 

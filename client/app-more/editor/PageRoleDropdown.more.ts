@@ -83,7 +83,7 @@ export var PageRoleDropdown = createComponent({
         pageRole_toIconString(pageRole), ' ', r.span({ className: 'caret' }));
 
     const discussionOption =
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'te_DiscO',
         activeEventKey: pageRole, eventKey: PageRole.Discussion,
         title: PageRole_Discussion_IconString,
         text: t.pt.DiscussionExpl });

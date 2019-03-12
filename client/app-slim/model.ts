@@ -262,6 +262,7 @@ interface Post {
   postType?: PostType;
   authorId: UserId;
   createdAtMs: number;
+  approvedAtMs?: number;
   lastApprovedEditAtMs: number;
   numEditors: number;
   numLikeVotes: number;

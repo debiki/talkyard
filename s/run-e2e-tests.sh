@@ -285,6 +285,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only flag-member-block-agree.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only flag-guest-block-agree.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only page-type-discussion-progress $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only page-type-idea-statuses-comments $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only page-type-problem-statuses $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only page-type-question-closed.2browsers $args

@@ -348,6 +348,11 @@ sealed abstract class PageRole(
 
   def isChat: Boolean = false
 
+  /** If the page is best rendered as a flat chronological discussion, rather
+    * than a threaded best-answer/comment-first discussion.
+    */
+  def isFlatDiscourse: Boolean = false
+
   /** If the topic is a discussion between a closed group of people, and visible only to them.
     */
   def isPrivateGroupTalk: Boolean = false
@@ -427,14 +432,25 @@ object PageRole {
   case object Question extends PageRole(10, staffOnly = false)
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
-  case object Problem extends PageRole(14, staffOnly = false)
+  case object Problem extends PageRole(14, staffOnly = false) {
+    // This is mostly a step-by-step get-things-done (solve problem) type topic.
+    override def isFlatDiscourse: Boolean = true
+  }
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
-  case object Idea extends PageRole(15, staffOnly = false)
+  case object Idea extends PageRole(15, staffOnly = false) {
+    // This is mostly a step-by-step get-things-done type topic. Except for maybe in the
+    // very beginning, when it's being discussed if the idea should be done or not.
+    // However, usually, better of as flat.
+    override def isFlatDiscourse: Boolean = true
+  }
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
   // [refactor] remove. Use Idea instead, bumped to "doing" state.
-  case object ToDo extends PageRole(13, staffOnly = false)  // remove [4YK0F24]
+  case object ToDo extends PageRole(13, staffOnly = false) {  // remove [4YK0F24]
+    // This is a step-by-step get-things-done type topic.
+    override def isFlatDiscourse: Boolean = true
+  }
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
   case object MindMap extends PageRole(11, staffOnly = false) {
@@ -470,12 +486,15 @@ object PageRole {
     * with the "correct" permissions on this category has access to the topic. (Not yet impl.)
     */
   case object FormalMessage extends PageRole(17, staffOnly = false) {
+    override def isFlatDiscourse = true
     override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
     override def mayChangeRole = false
   }
 
-  case object Form extends PageRole(20, staffOnly = false)  // try to remove?
+  case object Form extends PageRole(20, staffOnly = false) { // try to remove?
+    override def isFlatDiscourse: Boolean = true
+  }
 
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
   case object UsabilityTesting extends PageRole(21, staffOnly = false) // [plugin]

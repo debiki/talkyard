@@ -9,6 +9,7 @@ e_ = end-to-end-test_Whatever (classes only, for stuff to click in End-to-End te
 p_ = public api (classes only, not ids)
 
 s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside".
+w_X   = wraps X. Always a class, not an id.
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Em = email
@@ -135,7 +136,9 @@ esUP_FN         = Full name
 esUP_Prefs      = ... the preferences section
 UP_Notfs_None   = Notifications, none
 
+dw-res          = replies, rename to s_Ts = threads
 esT             = a thread (i.e. a comment thread: a post and descendant replies)
+s_Ts-Flat       = threads, flat layout
 
 esSA            = Super Admin area
 

@@ -46,7 +46,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
-    val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
+    val specifiedPostType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
@@ -67,6 +67,10 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
     }
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    val postType =
+      if (pageMeta.pageRole.isFlatDiscourse) PostType.BottomComment
+      else specifiedPostType
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),

@@ -2612,6 +2612,7 @@ function pagesFor(browser) {
         let optionId = null;
         let needsClickMore = false;
         switch (type) {
+          case c.TestPageRole.Discussion: optionId = '#te_DiscO'; break;
           case c.TestPageRole.Question: optionId = '#e2eTTD_QuestionO'; break;
           case c.TestPageRole.Problem: optionId = '#e2eTTD_ProblemO'; break;
           case c.TestPageRole.Idea: optionId = '#e2eTTD_IdeaO'; break;
@@ -2853,7 +2854,7 @@ function pagesFor(browser) {
         return browser.getText('.dw-ar-p-hd .esP_By_U');
       },
 
-      clickReplyToOrigPost: function(whichButton) {
+      clickReplyToOrigPost: function(whichButton?: 'BottomButton') {
         const selector = whichButton === 'BottomButton' ?
             '.s_APAs_OPRB' : '.dw-ar-p + .esPA .dw-a-reply';
         api.topic.clickPostActionButton(selector);
@@ -3023,6 +3024,12 @@ function pagesFor(browser) {
       reopenTopic: function() {
         api.waitAndClick(api.topic._reopenButtonSelector);
         api.waitForVisible(api.topic._closeButtonSelector);
+      },
+
+      canCloseOrReopen: function() {
+        if (browser.isVisible(api.topic._closeButtonSelector)) return true;
+        if (browser.isVisible(api.topic._reopenButtonSelector)) return true;
+        return false;
       },
 
       _closeButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-block',
@@ -4872,10 +4879,14 @@ function pagesFor(browser) {
         api.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: function(text: string, whichButton?: string) {
+      replyToOrigPost: function(text: string, whichButton?: 'BottomButton') {
         api.topic.clickReplyToOrigPost(whichButton);
         api.editor.editText(text);
         api.editor.save();
+      },
+
+      replyToOrigPostViaBottomButton: function(text: string) {
+        api.complex.replyToOrigPost(text, 'BottomButton');
       },
 
       replyToEmbeddingBlogPost: function(text: string) {
