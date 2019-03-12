@@ -396,9 +396,8 @@ const AvatarAboutAndButtons = createComponent({
               ref: 'chooseAvatarInput',
               style: { width: 0, height: 0, position: 'absolute', left: -999 }}));
 
-
     const adminButton = !isStaff(me) || isGuest(user) ? null :
-        LinkButton({ href: linkToUserInAdminArea(user.id), className: 's_UP_AdminB' },
+        LinkButton({ href: linkToUserInAdminArea(user), className: 's_UP_AdminB' },
           "View in Admin Area");
 
     const sendMessageButton = !store_maySendDirectMessageTo(store, user) ? null :

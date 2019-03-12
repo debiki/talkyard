@@ -65,7 +65,7 @@ export function linkToUserInAdminArea(user: Myself | Participant | UserId): stri
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).id, 'TyE4KPWQT5');
   // @endif
-  const userId = _.isObject(user) ? (<Participant> user).id : user;
+  const userId = _.isObject(user) ? (<any> user).id : user;
   return origin() + '/-/admin/users/id/' + userId;
 }
 

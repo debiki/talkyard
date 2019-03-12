@@ -137,7 +137,7 @@ interface PostToModerate {
 
 interface ReviewTask {
   id: number;
-  //causedBy: BriefUser;
+  //causedBy: Participant;
   reasonsLong: number;
   createdAtMs: WhenMs;
   createdById: UserId;
@@ -337,11 +337,11 @@ interface PostRevision {
   previousNr?: number;
   fullSource?: string;
   composedAtMs: number;
-  composedBy: BriefUser;
+  composedBy: Participant;
   approvedAtMs?: number;
-  approvedBy?: BriefUser;
+  approvedBy?: Participant;
   hiddenAtMs?: number;
-  hiddenBy?: BriefUser;
+  hiddenBy?: Participant;
 }
 
 
@@ -363,7 +363,7 @@ interface MyPageData {
   readingProgress?: ReadingProgress;
   votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
   unapprovedPosts: { [id: number]: Post };
-  unapprovedPostAuthors: BriefUser[];
+  unapprovedPostAuthors: Participant[];
   postNrsAutoReadLongAgo: number[];
   postNrsAutoReadNow: number[];
 
@@ -411,7 +411,7 @@ interface Myself extends OwnPageNotfPrefs {
   watchbar: Watchbar;
 
   restrictedTopics: Topic[];
-  restrictedTopicsUsers: BriefUser[];
+  restrictedTopicsUsers: Participant[];
   restrictedCategories: Category[];
 
   pageHelpMessage?: HelpMessage;
@@ -492,7 +492,7 @@ interface Notification {
   type: NotificationType;
   createdAtMs: number;
   seen: boolean;
-  byUser?: BriefUser;
+  byUser?: Participant;
   pageId?: string;
   pageTitle?: string;
   postNr?: number;
@@ -725,7 +725,7 @@ interface WatchbarTopics {
 
 
 interface VolatileDataFromServer {
-  usersOnline: BriefUser[];
+  usersOnline: Participant[];
   numStrangersOnline: number;
   me?: Myself;
   // Sometimes, on embedded comments pages, privacy tools and settings remove cookies.  [NOCOOKIES]
@@ -835,7 +835,7 @@ interface Store extends Origins {
   isImpersonating?: boolean;
   isViewingAs?: boolean;
   rootPostId: number;
-  usersByIdBrief: { [userId: number]: BriefUser };
+  usersByIdBrief: { [userId: number]: Participant };
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
@@ -1011,26 +1011,13 @@ const enum AvatarSize {
 }
 
 
-interface Participant {   // = a Guest, User or Group
+type BriefUser = Participant;  // old name, CLEAN_UP RENAME all occurrences to Participant
+
+interface Participant {   // Guest or Member, and Member = group or user
   id: UserId;
-  isGroup?: boolean;
-  username?: string; // not for guests
-}
-
-
-interface Guest extends Participant {
-  fullName: string;
-  email: string;
-  country: string;
-  isEmailUnknown?: boolean;
-}
-
-
-// Rename to ... ParticipantWithMoreFields? No, what? Maybe rename Participant to PpIdAnyUsername,
-// and rename BriefUser to Participant?
-interface BriefUser extends Participant {
-  fullName: string;
+  fullName?: string;
   username?: string;
+  isGroup?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
   isGuest?: boolean;  // = !isAuthenticated
@@ -1042,14 +1029,30 @@ interface BriefUser extends Participant {
 }
 
 
+interface Guest extends Participant {
+  fullName: string;
+  username: undefined;
+  email: string;
+  isEmailUnknown?: boolean;
+  isGuest: true;
+  isAdmin: false | undefined;
+  isModerator: false | undefined;
+  avatarTinyHashPath: undefined;
+  avatarSmallHashPath: undefined;
+}
+
+
 interface Member extends Participant {
   username: string;
+  // but fullName is optional
+  isGuest: false | undefined;
 }
 
 
 interface Group extends Member {
   fullName: string;
   isGroup: true;
+  isGuest: false | undefined;
   // "grantsTrustLevel" — later
   avatarTinyHashPath?: string;
 }
@@ -1069,7 +1072,7 @@ interface MemberInclDetails extends Member {
 }
 
 
-interface GroupInclDetails extends MemberInclDetails {
+interface GroupInclDetails extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
   fullName: string;
@@ -1085,7 +1088,6 @@ interface UserInclDetails extends MemberInclDetails {
   // mailingListMode: undefined | true;  // default false  — later
   hasPassword?: boolean;
   about?: string;
-  country: string;
   url: string;
   seeActivityMinTrustLevel?: TrustLevel;
   uiPrefs: UiPrefs;
@@ -1249,7 +1251,7 @@ interface UserStats {
 
 
 interface UsersHere {
-  users: BriefUser[];
+  users: Participant[];
   areChatChannelMembers: boolean;
   areTopicContributors: boolean;
   numOnline: number;
@@ -1349,7 +1351,7 @@ interface StorePatch {
   postsByPageId?: { [pageId: string]: Post[] };
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
   // ignored (because the page version is too old).
-  usersBrief?: BriefUser[];
+  usersBrief?: Participant[];
   pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
   me?: MyselfPatch;
@@ -1550,7 +1552,7 @@ interface LoadTopicsResponse {
   categoryName?: string;
   categoryDescr?: string;
   topics: Topic[];
-  users: BriefUser[];
+  users: Participant[];
 }
 
 

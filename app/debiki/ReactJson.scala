@@ -1717,10 +1717,10 @@ object JsonMaker {
 
 object JsX {
 
-  def JsUserOrNull(user: Option[Participant]): JsValue =
+  def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: Participant): JsObject = {  // Typescript: BriefUser, right?
+  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsParticipant
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.anyUsername),

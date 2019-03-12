@@ -350,7 +350,7 @@ const UserRow = createFactory({
 
     return (
       r.tr({},
-        r.td({}, Link({ to: linkToUserInAdminArea(user.id) }, usernameElem, fullNameElem), modifiers),
+        r.td({}, Link({ to: linkToUserInAdminArea(user) }, usernameElem, fullNameElem), modifiers),
         r.td({}, user.email, emailNotVerified),
         actionsCell,
         r.td({}, lastSeen),
