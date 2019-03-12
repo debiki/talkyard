@@ -1,17 +1,15 @@
-echo "Test manually a few times first. Open script, read, copy paste ... Bye."
-exit
+#!/bin/bash
 
-wip_version_tag=$1
-
-# v0.6.6-WIP-2-ce61ac7
-
-wip_version_tag=v0.6.6-WIP-2-ce61ac7
+wip_version_tag=`tail -n1 modules/ed-versions/version-tags.log`
 
 if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
   echo "Not a WIP version tag: $wip_version_tag, no '-WIP-'."
   exit 1
 fi
 
+
+echo "Release WIP version debiki/talkyard-*:$wip_version_tag? Press Enter (or CTRL+C to exit)"
+read -s -p ''
 
 
 echo "Pulling debiki/talkyard-*:$wip_version_tag ..."
@@ -48,6 +46,10 @@ sudo docker push debiki/talkyard-rdb:$release_version_tag
 sudo docker push debiki/talkyard-cache:$release_version_tag
 sudo docker push debiki/talkyard-search:$release_version_tag
 sudo docker push debiki/talkyard-certgen:$release_version_tag
+
+
+echo "Lastly, publish to GitHub? Press Enter"
+read -s -p ''
 
 
 echo "Publishing version tag $release_version_tag to GitHub..."
