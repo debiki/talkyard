@@ -1370,7 +1370,7 @@ const ReplyReceivers = createComponent({
     const elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        this.props.comma ? t.d.dashInReplyTo : t.d.InReplyTo, receivers, ':'));
+        this.props.comma ? t.d.repliesTo : t.d.InReplyTo, receivers, ':'));
   }
 });
 

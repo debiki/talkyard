@@ -570,6 +570,7 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     _and: " e",
 
+    repliesTo: "replies to",  // MISSING
     dashInReplyTo: "— em resposta a",
     InReplyTo: "Em resposta a",
 

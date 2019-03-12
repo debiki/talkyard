@@ -577,6 +577,7 @@ var t_en_US: TalkyardTranslations = t = {
 
     _and: " and",
 
+    repliesTo: "replies to",
     dashInReplyTo: "— in reply to",
     InReplyTo: "In reply to",
 

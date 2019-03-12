@@ -521,6 +521,7 @@ interface TalkyardTranslations {
 
     _and: string;
 
+    repliesTo: string;
     dashInReplyTo: string;
     InReplyTo: string;
 
