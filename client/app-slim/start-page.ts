@@ -251,7 +251,20 @@ function renderPageInBrowser() {
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
     debiki2.ReactActions.doUrlFragmentAction();
-    window.addEventListener("hashchange", function(eventIgnored) {
+
+    // Smooth sroll and take topbar into account, when clicking a #local-anchor:
+    // However, preventDefault() also stops the url hash frag from updating at all :-/
+    /* So skip this:
+    Bliss.delegate(document.body, 'click', 'a', function(event){
+      const hrefInclHost: string | undefined = event.target.href;
+      if (!hrefInclHost) return;
+      const anyLocalHash = hrefInclHost.replace(
+        location.origin + location.pathname + (localStorage.query || '') + '#', '#');
+      if (anyLocalHash[0] === '#') {
+        event.preventDefault();
+      }
+    }); */
+    window.addEventListener('hashchange', function(eventIgnored) {
       debiki2.ReactActions.doUrlFragmentAction();
     });
   });
