@@ -490,7 +490,7 @@ class JsonMaker(dao: SiteDao) {
 
     val depth = page.parts.depthOf(post.nr)
 
-    UX; BUG // ? what if page_isFlatDiscourse ?
+    SHOULD; UX; BUG // ? what if page_isFlatDiscourse ?
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
     // This is simple but a bit too stupid? COULD come up with a better algorithm (better

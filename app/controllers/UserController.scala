@@ -1178,8 +1178,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         maxBytes = 200) { request =>
     import request.{dao, body, theRequester => requester}
     val tourTipsIdSeen = (body \ "tourTipsId").as[JsString].value
-    import com.debiki.core.Prelude._
-    if (!tourTipsIdSeen.isOkVariableName) EdHttp.throwBadRequest("")
+    anyTourTipsIdError(tourTipsIdSeen) foreach EdHttp.throwBadRequest
     dao.rememberTourTipsSeen(requester, Some(Vector(tourTipsIdSeen)))
     Ok
   }

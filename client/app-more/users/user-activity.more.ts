@@ -24,7 +24,7 @@
 
 const r = ReactDOMFactories;
 const Post = page.Post;
-const SlashActivitySlash = '/activity/';  // dupl [4GKQST20]
+const SlashActivitySlash = '/activity/';
 
 
 export const UsersActivity = createFactory({

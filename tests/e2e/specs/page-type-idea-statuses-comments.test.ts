@@ -93,7 +93,7 @@ describe("Page statuses and bottom comments", () => {
 
   it("Maria posts a bottom comment", () => {
     // was: addBottomComment [BEFFLAT]
-    mariasBrowser.complex.replyToOrigPost(bottomCommentOneText);  // #post-5
+    mariasBrowser.complex.replyToOrigPostViaBottomButton(bottomCommentOneText);  // #post-5
   });
 
   it("Changes started to New", () => {
@@ -114,7 +114,7 @@ describe("Page statuses and bottom comments", () => {
 
   it("Posts another bottom comment", () => {
     // was: addBottomComment [BEFFLAT]
-    mariasBrowser.complex.replyToOrigPost(bottomCommentTwoText);  // #post-10
+    mariasBrowser.complex.replyToOrigPostViaBottomButton(bottomCommentTwoText);  // #post-10
   });
 
   it("The posts has the correct contents", () => {

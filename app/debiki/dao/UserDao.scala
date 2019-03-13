@@ -1114,7 +1114,7 @@ trait UserDao {
     if (user.id < LowestTalkToMemberId)
       return
     readWriteTransaction { tx =>
-      val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
+      val statsBefore = tx.loadUserStats(user.id) getOrDie "TyEZ4KKJ5"
       val statsAfter = statsBefore.addMoreStats(UserStats(
         userId = user.id,
         tourTipsSeen = anyTourTipsSeen))

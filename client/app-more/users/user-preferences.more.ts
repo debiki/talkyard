@@ -26,7 +26,7 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
+const SlashPrefsSlash = '/preferences/';
 
 import EmailInput = debiki2.util.EmailInput;
 const aboutPathSeg = 'about';

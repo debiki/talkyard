@@ -101,7 +101,7 @@ export function pathTo(user: Participant | Myself | UserId | string): string {
   if (_.isString(idOrUsername)) {
     idOrUsername = idOrUsername.toLowerCase();
   }
-  return origin() + rootPath + idOrUsername;
+  return rootPath + idOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {

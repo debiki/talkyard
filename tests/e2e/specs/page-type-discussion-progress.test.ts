@@ -20,12 +20,9 @@ let michael;
 let michaelsBrowser;
 let owen;
 let owensBrowser;
-let strangersBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
-
-let mariasTopicUrl: string;
 
 const mariasOpReply = 'mariasOpReply';
 const mariasOpReplyReply = 'mariasOpReplyReply';
@@ -38,7 +35,6 @@ describe("Page type discussion, and progress comments", () => {
 
   it("Initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    strangersBrowser = everyonesBrowsers;
     mariasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;
     owensBrowser = everyonesBrowsers;
@@ -64,7 +60,6 @@ describe("Page type discussion, and progress comments", () => {
   it("She posts a topic, type Discussion", () => {
     mariasBrowser.complex.createAndSaveTopic({
       type: c.TestPageRole.Discussion, title: "Marias Topic Title", body: "Marias Topic Text" });
-    mariasTopicUrl = mariasBrowser.url().value;
   });
 
   it("Closes", () => {

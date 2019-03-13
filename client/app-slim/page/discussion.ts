@@ -810,7 +810,7 @@ const RootPostAndComments = createComponent({
           Thread(threadProps)));
     }); */
 
-    let chatSection; /* Perhaps add back later — but probably not? [8KB42]
+    let chatSection; /* Perhaps add back later — but probably not? [8KB42] CLEAN_UP REMOVE
     if (hasChat) {
       var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
           ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
@@ -832,7 +832,7 @@ const RootPostAndComments = createComponent({
               " Add chat comment")));
     } */
 
-    //const flatRepliesClass = pageIsFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
+    //const flatRepliesClass = pageIsFlat ? ' dw-chat' : ''; // this disabled [8KB42]
 
     const socialButtons = !store.settings.showSocialButtons ? null :
         SocialButtons(store.settings);

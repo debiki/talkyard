@@ -220,7 +220,7 @@ const UserPageComponent = createReactClass(<any> {
       reloadUser: this.loadUserAnyDetails,
     };
 
-    const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';  // dupl [4GKQST20]
+    const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';
 
     const childRoutes = Switch({},
       Route({ path: u + 'activity', exact: true, render: ({ match }) => {

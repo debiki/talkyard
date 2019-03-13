@@ -68,6 +68,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
+    COULD // have the js callers to toggleWriteReplyToPost [5BIW25] specify correct post type instead.
     val postType =
       if (pageMeta.pageRole.isFlatDiscourse) PostType.BottomComment
       else specifiedPostType

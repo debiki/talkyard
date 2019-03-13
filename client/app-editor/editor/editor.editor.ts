@@ -337,6 +337,7 @@ export const Editor = createComponent({
     return link;
   },
 
+  // [5BIW25]
   toggleWriteReplyToPost: function(postNr: number, inclInReply: boolean, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
