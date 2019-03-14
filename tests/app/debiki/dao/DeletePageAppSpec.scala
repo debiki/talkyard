@@ -29,7 +29,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     var admin: Participant = null
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
-      Who(SystemUserId, browserIdData)).pagePath.thePageId
+      Who(SystemUserId, browserIdData)).get.pagePath.thePageId
 
     lazy val discussionId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
       textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)

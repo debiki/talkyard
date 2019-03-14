@@ -94,10 +94,10 @@ object DbDao {
 
   case class PathClashException(
     existingPagePath: PagePath, newPagePath: PagePath)
-    extends RuntimeException
+    extends RuntimeException(s"existingPagePath: $existingPagePath, newPagePath: $newPagePath")
 
   case class BadPageRoleException(details: String)
-    extends RuntimeException
+    extends RuntimeException(details)
 
   private def prettyDetails(anyDetails: Option[String]) = anyDetails match {
     case None => ""

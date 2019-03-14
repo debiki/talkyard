@@ -72,7 +72,7 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
 
       "prepare: create forum and pages" in {
         createForumResult = dao.createForum(title = "PermsOnPages Forum", folder = "/",
-          isForEmbCmts = false, Who(admin.id, browserIdData))
+          isForEmbCmts = false, Who(admin.id, browserIdData)).get
 
         pageAId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
           textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,

@@ -50,7 +50,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
 
       val createForumResult =
           dao.createForum("Forum", s"/notfs-tx-forum/", isForEmbCmts = false,
-            Who(owner.id, browserIdData))
+            Who(owner.id, browserIdData)).get
 
       defCatId = createForumResult.defaultCategoryId
       forumPageId = createForumResult.pagePath.pageId.get

@@ -280,8 +280,8 @@ export var CreateForumPanel = createComponent({
   },
 
   createForum: function() {
-    Server.createForum(<any> { folder: '/', ...this.state }, (forumUrlPath: string) => {
-      window.location.assign(forumUrlPath);
+    Server.createForum(<any> { folder: '/', ...this.state }, () => {
+      window.location.assign('/');
     });
   },
 

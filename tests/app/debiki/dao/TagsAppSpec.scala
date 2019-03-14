@@ -98,7 +98,7 @@ class TagsAppSpec extends DaoAppSuite() {
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false,
-      Who(theOwner.id, browserIdData)).defaultCategoryId
+      Who(theOwner.id, browserIdData)).get.defaultCategoryId
 
   lazy val theOwner: Participant = createPasswordOwner("tag_adm", dao)
   lazy val theModerator: Participant = createPasswordModerator("tag_mod", dao)

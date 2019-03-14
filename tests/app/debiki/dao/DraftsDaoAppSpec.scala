@@ -68,7 +68,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       val createForumResult =
           dao.createForum("Forum", s"/drafts-forum/", isForEmbCmts = false,
-            Who(owner.id, browserIdData))
+            Who(owner.id, browserIdData)).get
       categoryId = createForumResult.defaultCategoryId
       forumPageId = createForumResult.pagePath.pageId.get
     }

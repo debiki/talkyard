@@ -67,8 +67,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 
-    val result = request.dao.createForum(options, request.who)
-    OkSafeJson(JsString(result.pagePath.value))
+    request.dao.createForum(options, request.who)
+    Ok
   }
 
 

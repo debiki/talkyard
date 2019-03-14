@@ -37,7 +37,7 @@ class ReviewStuffAppSuite(randomString: String)
     }
     lazy val categoryId: CategoryId =
       dao.createForum("Forum", s"/forum-$nextNameNr-$r/", isForEmbCmts = false,
-        Who(theAdmin.id, browserIdData)).defaultCategoryId
+        Who(theAdmin.id, browserIdData)).get.defaultCategoryId
 
     def whoAdmin: Who = Who(theAdmin.id, browserIdData)
 

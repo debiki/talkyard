@@ -47,7 +47,8 @@ trait ForumDao {
   self: SiteDao =>
 
 
-  def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who): CreateForumResult = {
+  def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who)
+        : Option[CreateForumResult] = {
     createForum(CreateForumOptions(
       isForEmbeddedComments = isForEmbCmts,
       title = title,
@@ -60,11 +61,20 @@ trait ForumDao {
   }
 
 
-  def createForum(options: CreateForumOptions, byWho: Who): CreateForumResult = {
+  def createForum(options: CreateForumOptions, byWho: Who): Option[CreateForumResult] = {
     val titleHtmlSanitized = context.nashorn.sanitizeHtml(options.title, followLinks = false)
     val isForEmbCmts = options.isForEmbeddedComments
 
     val result = readWriteTransaction { tx =>
+      val oldForumPagePath = tx.checkPagePath(PagePath(
+        siteId = siteId, folder = options.folder, pageId = None, showId = false, pageSlug = ""))
+      if (oldForumPagePath.isDefined) {
+        // There's already a page here; this is probably a create-forum double submit.
+        // Can happen if  non-existing-page.more.ts  is open in two browser tabs
+        // at the same time — maybe because the user pasted an email verification link
+        // in a new 2nd tab. Do nothing.
+        return None
+      }
 
       // The forum page points to the root category, which points back.
       tx.deferConstraints()
@@ -121,7 +131,7 @@ trait ForumDao {
     // So settings get refreshed (might have been changed above.)
     emptyCache()
 
-    result
+    Some(result)
   }
 
 
