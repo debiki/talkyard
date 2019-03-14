@@ -43,7 +43,6 @@ object SpamCheckResult {
 object ApiKeyInvalidException extends QuickException
 object CouldNotVerifyApiKeyException extends QuickException
 object BadSpamCheckResponseException extends QuickException
-object NoApiKeyException extends QuickException
 
 
 
@@ -143,7 +142,8 @@ class SpamChecker(
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
   private val anyAkismetKey: Option[String] =
-    playConf.getString("talkyard.akismetApiKey").noneIfBlank
+    playConf.getString("talkyard.akismet.apiKey").noneIfBlank orElse
+      playConf.getString("talkyard.akismetApiKey").noneIfBlank  // old name
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -167,8 +167,27 @@ class SpamChecker(
     val Tweet = "tweet" // twitter messages
   }
 
+  val SpamChecksEnabledConfValName = "talkyard.spamChecks.enabled"
+
+  private val spamChecksEnabled: Boolean = {
+    val enabled = playConf.getOptional[Boolean](SpamChecksEnabledConfValName) getOrElse true
+    if (!enabled) {
+      play.api.Logger.info(s"Spam checks disabled; conf val $SpamChecksEnabledConfValName = false")
+    }
+    enabled
+  }
+
   val GoogleApiKeyName = "talkyard.googleApiKey"
-  val anyGoogleApiKey: Option[String] = playConf.getString(GoogleApiKeyName)
+
+  val anyGoogleApiKey: Option[String] =
+    playConf.getOptional[String](GoogleApiKeyName).noneIfBlank
+
+  private val stopForumSpamEnabled: Boolean =
+    spamChecksEnabled &&
+      playConf.getOptional[Boolean]("talkyard.stopforumspam.enabled").getOrElse(true)
+
+  private val akismetEnabled: Boolean =
+    spamChecksEnabled && anyAkismetKey.nonEmpty
 
 
   def start() {
@@ -177,8 +196,8 @@ class SpamChecker(
 
 
   private def verifyAkismetApiKey() {
-    if (anyAkismetKey.isEmpty) {
-      akismetKeyIsValidPromise.failure(NoApiKeyException)
+    if (!akismetEnabled) {
+      akismetKeyIsValidPromise.success(false)
       return
     }
 
@@ -212,6 +231,9 @@ class SpamChecker(
   def detectRegistrationSpam(request: DebikiRequest[_], name: String, email: String)
         : Future[Option[String]] = {
 
+    if (!spamChecksEnabled)
+      return Future.successful(None)
+
     val spamTestFutures =
       if (name contains EdSpamMagicText) {
         Seq(Future.successful(Some(
@@ -222,11 +244,19 @@ class SpamChecker(
           s"Email contains test spam text: '$EdSpamMagicText' [EdM5KSWU7]")))
       }
       else {
-        val stopForumSpamFuture = checkViaStopForumSpam(request, name, email)
+        val stopForumSpamFuture =
+          if (!stopForumSpamEnabled) Future.successful(None)
+          else {
+            checkViaStopForumSpam(request, name, email)
+          }
 
-        val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request.spamRelatedStuff,
-          user = None, anyName = Some(name), anyEmail = Some(email))
-        val akismetFuture = checkViaAkismet(akismetBody)
+        val akismetFuture =
+          if (!akismetEnabled) Future.successful(None)
+          else {
+            val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request.spamRelatedStuff,
+              user = None, anyName = Some(name), anyEmail = Some(email))
+            checkViaAkismet(akismetBody)
+          }
 
         Seq(stopForumSpamFuture, akismetFuture)
       }
@@ -254,6 +284,9 @@ class SpamChecker(
 
   def detectPostSpam(spamCheckTask: SpamCheckTask, stuffToSpamCheck: StuffToSpamCheck)
         : Future[Option[String]] = {
+
+    if (!spamChecksEnabled)
+      return Future.successful(None)
 
     val post = stuffToSpamCheck.getPost(spamCheckTask.sitePostId) getOrElse {
       // Apparently the post was hard deleted?
@@ -284,7 +317,7 @@ class SpamChecker(
         // Or yes do that?  dupl question [7KECW2]
         val userIsABitTrusted = user.isStaff
         val akismetFuture =
-          if (userIsABitTrusted) Future.successful(None)
+          if (userIsABitTrusted || !akismetEnabled) Future.successful(None)
           else {
             val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost,
               spamCheckTask.requestStuff,
@@ -385,9 +418,10 @@ class SpamChecker(
   }
 
 
-  def checkUrlsAndDomains(textAndHtml: TextAndHtml): Seq[Future[Option[String]]] =
+  def checkUrlsAndDomains(textAndHtml: TextAndHtml): Seq[Future[Option[String]]] = {
     checkUrlsViaGoogleSafeBrowsingApi(textAndHtml) +:
       checkDomainBlockLists(textAndHtml)
+  }
 
 
   def checkUrlsViaGoogleSafeBrowsingApi(textAndHtml: TextAndHtml): Future[Option[String]] = {
@@ -566,7 +600,7 @@ class SpamChecker(
     val promise = Promise[Boolean]()
     akismetKeyIsValidPromise.future onComplete {
       case Success(true) =>
-        sendCheckIsSpamRequest(apiKey = anyAkismetKey.get, payload = requestBody, promise)
+        sendAkismetCheckSpamRequest(apiKey = anyAkismetKey.get, payload = requestBody, promise)
       /*
       case Success(false) =>
         promise.failure(ApiKeyInvalidException) ? Or just ignore the spam check, for now
@@ -582,7 +616,7 @@ class SpamChecker(
   }
 
 
-  private def sendCheckIsSpamRequest(apiKey: String, payload: String, promise: Promise[Boolean]) {
+  private def sendAkismetCheckSpamRequest(apiKey: String, payload: String, promise: Promise[Boolean]) {
     val request: WSRequest =
       wsClient.url(s"https://$apiKey.rest.akismet.com/1.1/comment-check").withHeaders(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
