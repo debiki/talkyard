@@ -99,6 +99,9 @@ const SignUpAsAdmin = createComponent({
           "Then restart the app server: ", r.code({}, "docker-compose restart app"))
       : null;
 
+    // UX this step needs to be removed, from the create-new-site flow. [SIMPLNEWSITE]
+    // People get stuck here, when typing their email address and username etc, and
+    // later on verifying their email address.
     const loginBtn =
         PrimaryButton({ id: 't_OwnerSignupB', disabled: !!anyEmailProblem,
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },

@@ -35,6 +35,7 @@ var t_en_US: TalkyardTranslations = t = {
   ClickToShow: "Click to show",
   ChangeDots: "Change ...",
   ChatN: "Chat",
+  CheckYourEmail: "Check your email",
   Close: "Close",
   closed: "closed",
   Created: "Created",

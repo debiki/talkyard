@@ -229,7 +229,13 @@ export var CreateUserDialogContent = createClassAndFactory({
     if (!response.userCreatedAndLoggedIn) {
       dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
-      getAddressVerificationEmailSentDialog().sayVerifEmailSent();
+
+      // Don't show a close button, if creating new site, because people click it
+      // directly without reading the message about checking their email inbox. Then
+      // they don't know what to do, and are stuck.
+      // (Probably this email verif step needs to be totally removed. [SIMPLNEWSITE]
+      const mayCloseDialog = this.props.loginReason !== LoginReason.BecomeAdmin;
+      getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog);
     }
     else if (this.props.anyReturnToUrl && !eds.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
@@ -428,11 +434,11 @@ const CreateUserResultDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
   },
-  sayVerifEmailSent: function() {
-    this.setState({ isOpen: true });
+  sayVerifEmailSent: function(mayClose: boolean) {
+    this.setState({ isOpen: true, checkEmail: true, isLoggedIn: false, mayClose });
   },
   sayWelcomeLoggedIn: function() {
-    this.setState({ isOpen: true, isLoggedIn: true });
+    this.setState({ isOpen: true, checkEmail: false, isLoggedIn: true, mayClose: true });
   },
   close: function() {
     this.setState({ isOpen: false });
@@ -441,12 +447,13 @@ const CreateUserResultDialog = createComponent({
     const id = this.state.isLoggedIn ? 'te_WelcomeLoggedIn' : 'e2eNeedVerifyEmailDialog';
     const text = this.state.isLoggedIn ? t.cud.DoneLoggedIn : t.cud.AlmostDone;
     // Don't show a close-dialog button if there nothing on the page, after dialog closed.
-    const footer = eds.isInLoginPopup ? null :
+    const footer = !this.state.mayClose || eds.isInLoginPopup ? null :
         ModalFooter({},
           PrimaryButton({ onClick: this.close }, t.Okay));
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, id },
-        ModalHeader({}, ModalTitle({}, t.Welcome)),
+      Modal({ show: this.state.isOpen, onHide: this.state.mayClose ? this.close : null, id },
+        // People don't read the dialog body, so let the title be "Check your email".
+        ModalHeader({}, ModalTitle({}, this.state.checkEmail ? t.CheckYourEmail : t.Welcome)),
         ModalBody({}, r.p({}, text)),
         footer));
   }

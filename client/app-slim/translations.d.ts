@@ -21,6 +21,7 @@ interface TalkyardTranslations {
   Continue: string;
   ChangeDots: string;
   ChatN: string;
+  CheckYourEmail: string;
   Close: string;
   closed: string;
   Created: string;
