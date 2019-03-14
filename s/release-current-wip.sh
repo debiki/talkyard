@@ -8,7 +8,7 @@ if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
 fi
 
 
-echo "Release WIP version debiki/talkyard-*:$wip_version_tag? Press Enter (or CTRL+C to exit)"
+echo "Release WIP version debiki/talkyard-*:$wip_version_tag?  Press Enter (or CTRL+C to exit)"
 read -s -p ''
 
 
@@ -24,7 +24,7 @@ echo "Done pulling."
 
 release_version_tag=$( echo "$wip_version_tag" | sed -r -e 's/WIP-[0-9]+-//' )
 
-echo "Tag with debiki/talkyard-*:$release_version_tag? Press Enter (or CTRL+C to exit)"
+echo "Tag with debiki/talkyard-*:$release_version_tag?  Press Enter (or CTRL+C to exit)"
 read -s -p ''
 
 sudo docker tag debiki/talkyard-app:$wip_version_tag debiki/talkyard-app:$release_version_tag
@@ -35,7 +35,7 @@ sudo docker tag debiki/talkyard-search:$wip_version_tag debiki/talkyard-search:$
 sudo docker tag debiki/talkyard-certgen:$wip_version_tag debiki/talkyard-certgen:$release_version_tag
 
 
-echo "Done. Publish to the official Docker image registry, debiki/talkyard-*:$release_version_tag? Press Enter"
+echo "Done. Publish to the official Docker image registry, debiki/talkyard-*:$release_version_tag?  Press Enter"
 read -s -p ''
 
 echo "Publishing..."
@@ -48,7 +48,7 @@ sudo docker push debiki/talkyard-search:$release_version_tag
 sudo docker push debiki/talkyard-certgen:$release_version_tag
 
 
-echo "Lastly, publish to GitHub? Press Enter"
+echo "Lastly, publish version tag $release_version_tag to GitHub?  Press Enter"
 read -s -p ''
 
 
