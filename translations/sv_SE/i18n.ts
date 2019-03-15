@@ -552,7 +552,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     BottomCmtExpl_3: "To reply to someone, click Reply instead.",
 
     AddComment: "Add comment",
-    AddBottomComment: "Add bottom comment",
+    AddBottomComment: "Append reply",
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",

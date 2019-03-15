@@ -562,7 +562,7 @@ var t_en_US: TalkyardTranslations = t = {
     BottomCmtExpl_3: "To reply to someone, click Reply instead.",
 
     AddComment: "Add comment",
-    AddBottomComment: "Add progress comment", //"Add bottom comment", [BTM2PRGR]  I18N MISSING
+    AddBottomComment: "Append reply", //"Add bottom comment", [BTM2PRGR]  I18N MISSING
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",
