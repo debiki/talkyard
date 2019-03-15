@@ -339,6 +339,7 @@ class JsonMaker(dao: SiteDao) {
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
+      "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
@@ -394,6 +395,7 @@ class JsonMaker(dao: SiteDao) {
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
+      "siteCreatedAtMs" -> JsNumber(site.createdAt.millis),
       "siteStatus" -> site.status.toInt,
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
