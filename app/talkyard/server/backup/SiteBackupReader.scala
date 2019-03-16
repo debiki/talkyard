@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package controllers
+package talkyard.server.backup
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
@@ -41,8 +41,7 @@ import play.api.mvc.{Action, ControllerComponents}
   *
   * Search for [readlater] for stuff ignored right now.
   */
-class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+case class SiteBackupReader(context: EdContext) {
 
   import context.globals
   import context.security
@@ -50,94 +49,8 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
   val MaxBytes = 1001000
 
-  def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
-        PostJsonAction(RateLimits.CreateSite, maxBytes = MaxBytes) { _ =>
-    //val deleteOld = deleteOldSite.contains(true)
-    //val createdFromSiteId = Some(request.siteId)
-    //val response = importSiteImpl(request, request.theBrowserIdData, deleteOld, isTest = false)
-    unimplemented("EdE2KWUP0") // check what kind of permission?
-  }
 
-
-  def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = MaxBytes)) {
-        request =>
-    globals.testResetTime()
-    val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
-    val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
-      fingerprint = 0)
-    val response = importSiteImpl(request, browserIdData, deleteOld = true, isTest = true)
-    response.withCookies(moreNewCookies: _*)
-  }
-
-
-  private val ImportLock = new Object
-  @volatile
-  private var numImporingNow = 0
-
-
-  private def importSiteImpl(request: mvc.Request[JsValue], browserIdData: BrowserIdData,
-        deleteOld: Boolean, isTest: Boolean): mvc.Result = {
-    dieIf(deleteOld && !isTest, "EdE5FKWU02")
-
-    val okE2ePassword = security.hasOkE2eTestPassword(request)
-    if (!okE2ePassword)
-      throwForbidden("EsE5JKU2", "Importing sites is only allowed for e2e testing right now")
-
-    // Avoid PostgreSQL serialization errors. [one-db-writer]
-    globals.pauseAutoBackgorundRenderer3Seconds()
-
-    val siteData =
-      try parseSiteJson(request.body, isE2eTest = okE2ePassword)
-      catch {
-        case ex: JsonUtils.BadJsonException =>
-          throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
-        case ex: IllegalArgumentException =>
-          // Some case class constructor failure.
-          throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
-              invalid value combinations: ${ex.getMessage}""")
-      }
-
-    throwForbiddenIf(
-      deleteOld && !siteData.site.hosts.forall(h => SiteHost.isE2eTestHostname(h.hostname)),
-      "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
-
-    // Don't allow more than one import at a time, because results in a
-    // "PSQLException: ERROR: could not serialize access due to concurrent update" error:
-
-    if (numImporingNow > 3)
-      throwServiceUnavailable("TyE2MNYIMPRT", s"Too many parallel imports: $numImporingNow")
-
-    val newSite = ImportLock synchronized {
-      numImporingNow += 1
-      try {
-        doImportSite(siteData, browserIdData, deleteOldSite = deleteOld)
-      }
-      finally {
-        numImporingNow -= 1
-      }
-    }
-
-    Ok(Json.obj(
-      "id" -> newSite.id,
-      "origin" -> (globals.schemeColonSlashSlash + newSite.theCanonicalHost.hostname),
-      "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
-  }
-
-
-  private case class ImportSiteData(
-    site: Site,
-    settings: SettingsToSave,
-    summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
-    summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
-    users: Seq[UserInclDetails],
-    pages: Seq[PageMeta],
-    pagePaths: Seq[PagePathWithId],
-    categories: Seq[Category],
-    posts: Seq[Post],
-    permsOnPages: Seq[PermsOnPages])
-
-
-  private def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): ImportSiteData = {
+  def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
 
     // When importing API secrets has been impl, then upd this test:
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
@@ -224,116 +137,13 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
               $error, json: $json"""))
     }
 
-    ImportSiteData(siteToSave, settings,
+    SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
       users, pages, paths, categories, posts, permsOnPages)
   }
 
 
-  private def doImportSite(siteData: ImportSiteData, browserIdData: BrowserIdData, deleteOldSite: Boolean)
-        : Site = {
-    for (page <- siteData.pages) {
-      val path = siteData.pagePaths.find(_.pageId == page.pageId)
-      throwBadRequestIf(path.isEmpty, "EsE5GKY2", o"""No PagePath included for page id
-          '${page.pageId}'""")
-    }
-
-    def isMissing(what: Option[Option[Any]]) = what.isEmpty || what.get.isEmpty || {
-      what.get.get match {
-        case s: String => s.trim.isEmpty
-        case _ => false
-      }
-    }
-
-    throwForbiddenIf(isMissing(siteData.settings.orgFullName),
-      "EdE7KB4W5", "No organization name specified")
-
-    // COULD do this in the same transaction as the one below — then, would need a function
-    // `transaction.continueWithSiteId(zzz)`?
-    val siteToSave = siteData.site
-    val site = globals.systemDao.createSite(
-      siteToSave.pubId,
-      siteToSave.name,
-      siteToSave.status,
-      siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
-      embeddingSiteUrl = None,
-      organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
-      creatorId = SystemUserId,
-      browserIdData = browserIdData,
-      isTestSiteOkayToDelete = true,
-      skipMaxSitesCheck = true,
-      deleteOldSite = deleteOldSite,
-      pricePlan = "Unknown",  // [4GKU024S]
-      createdFromSiteId = None)
-
-    val newDao = globals.siteDao(site.id)
-
-    HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
-    // And in the wrong transaction :-/
-    newDao.saveAboutGroupPrefs(AboutGroupPrefs(
-      groupId = Group.EveryoneId,
-      fullName = Some("Everyone"),
-      username = "everyone",
-      summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
-      summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
-
-    newDao.readWriteTransaction { transaction =>
-      // We might import a forum or a forum category, and then the categories reference the
-      // forum page, and the forum page references to the root category.
-      transaction.deferConstraints()
-
-      transaction.upsertSiteSettings(siteData.settings)
-
-      siteData.users foreach { user =>
-        transaction.insertMember(user)
-        // [readlater] import page notf prefs [2ABKS03R]
-        // [readlater] export & import username usages & emails, later. For now, create new here.
-        user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
-        transaction.insertUsernameUsage(UsernameUsage(
-          usernameLowercase = user.usernameLowercase, // [CANONUN]
-          inUseFrom = transaction.now, userId = user.id))
-        // [readlater] export & import UserStats. For now, create new "empty" here.
-        transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
-          emailedAt = None))
-        newDao.joinGloballyPinnedChats(user.briefUser, transaction)
-      }
-      siteData.pages foreach { pageMeta =>
-        //val newId = transaction.nextPageId()
-        transaction.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
-      }
-      siteData.pagePaths foreach { path =>
-        transaction.insertPagePath(path)
-      }
-      siteData.categories foreach { categoryMeta =>
-        //val newId = transaction.nextCategoryId()
-        transaction.insertCategoryMarkSectionPageStale(categoryMeta)
-      }
-      siteData.posts foreach { post =>
-        //val newId = transaction.nextPostId()
-        transaction.insertPost(post)
-        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
-      }
-      siteData.permsOnPages foreach { permission =>
-        transaction.insertPermsOnPages(permission)
-      }
-      // Or will this be a bit slow? Kind of loads everything we just imported.
-      siteData.pages foreach { pageMeta =>
-        // [readlater] export & import page views too, otherwise page popularity here will be wrong.
-        val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
-        newDao.updatePagePopularity(pagePartsDao, transaction)
-        // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
-        val numReplies = pagePartsDao.allPosts.count(_.isReply)
-        val correctMeta = pageMeta.copy(
-          numRepliesVisible = numReplies,
-          numRepliesTotal = numReplies,
-          numPostsTotal = pagePartsDao.numPostsTotal)
-        transaction.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
-      }
-    }
-
-    site
-  }
 
 
   def readSiteMeta(jsObject: JsObject): Site = {

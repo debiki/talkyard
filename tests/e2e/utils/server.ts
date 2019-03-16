@@ -143,7 +143,7 @@ function showResponseBodyJson(body) {
 
 function importSiteData(siteData: SiteData): IdAddress {
   const deleteOldSite = settings.deleteOldSite ? '?deleteOldSite=true' : '';
-  const url = settings.mainSiteOrigin + '/-/import-test-site' + deleteOldSite;
+  const url = settings.mainSiteOrigin + '/-/import-test-site-json' + deleteOldSite;
   const ids = postOrDie(url, siteData).bodyJson();
   dieIf(!ids.id, "No site id in import-site response [EsE7UGK2]",
       showResponseBodyJson(ids));

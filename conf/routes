@@ -237,8 +237,14 @@ POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
 POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
 
-POST  /-/import-site            controllers.ImportExportController.importSiteJson(deleteOldSite: Option[Boolean])
-POST  /-/import-test-site       controllers.ImportExportController.importTestSite
+#POST  /-/start-creating-backup   talkyard.server.backup.SiteBackupController.startCreatingBackup
+#POST  /-/download-backup         talkyard.server.backup.SiteBackupController.downloadBackup
+#POST  /-/delete-backup           talkyard.server.backup.SiteBackupController.deleteBackup
+#POST  /-/upload-backup           talkyard.server.backup.SiteBackupController.uploadBackup
+#POST  /-/import-backup           talkyard.server.backup.SiteBackupController.importBackup
+POST  /-/export-site-json        talkyard.server.backup.SiteBackupController.exportSiteJson
+POST  /-/import-site-json        talkyard.server.backup.SiteBackupController.importSiteJson(deleteOldSite: Option[Boolean])
+POST  /-/import-test-site-json   talkyard.server.backup.SiteBackupController.importTestSite
 
 POST /-/play-time               controllers.DebugTestController.playTime
 POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors

@@ -18,19 +18,18 @@
 package talkyard.server.backup
 
 import com.debiki.core._
-import ed.server._
 
 
+case class SiteBackup(
+  site: Site,
+  settings: SettingsToSave,
+  summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
+  summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
+  users: Seq[UserInclDetails],
+  pages: Seq[PageMeta],
+  pagePaths: Seq[PagePathWithId],
+  categories: Seq[Category],
+  posts: Seq[Post],
+  permsOnPages: Seq[PermsOnPages])
 
-/** Creates json and .tar individual site backup files.
-  *
-  * Search for [readlater] for stuff ignored right now.
-  */
-case class SiteBackupMaker(context: EdContext) {
-
-  import context.globals
-  import context.security
-
-
-}
 
