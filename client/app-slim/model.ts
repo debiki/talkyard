@@ -1032,28 +1032,28 @@ interface Participant {   // Guest or Member, and Member = group or user
 
 interface Guest extends Participant {
   fullName: string;
-  username: undefined;
+  username?: undefined;
   email: string;
   isEmailUnknown?: boolean;
   isGuest: true;
-  isAdmin: false | undefined;
-  isModerator: false | undefined;
-  avatarTinyHashPath: undefined;
-  avatarSmallHashPath: undefined;
+  isAdmin?: false;
+  isModerator?: false;
+  avatarTinyHashPath?: undefined;
+  avatarSmallHashPath?: undefined;
 }
 
 
 interface Member extends Participant {
   username: string;
   // but fullName is optional
-  isGuest: false | undefined;
+  isGuest?: false;
 }
 
 
 interface Group extends Member {
   fullName: string;
   isGroup: true;
-  isGuest: false | undefined;
+  isGuest?: false;
   // "grantsTrustLevel" — later
   avatarTinyHashPath?: string;
 }
