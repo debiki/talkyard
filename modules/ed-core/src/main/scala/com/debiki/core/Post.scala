@@ -301,7 +301,7 @@ case class Draft(
   * SHOULD: If a post has been flagged, it gets hidden. People can click to view it anyway, so that
   * they can notify moderators if posts are being flagged and hidden inappropriately.
   */
-case class Post(
+case class Post(   // [exp] ok use
   id: PostId,
   pageId: PageId,
   nr: PostNr,

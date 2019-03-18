@@ -93,9 +93,9 @@ object PostAction {
   }
 }
 
-
-case class PostVote(
-  uniqueId: PostId,
+// [exp] delete field:  action_id (alw null), sub_id (always 1), updated_at, deleted_at, deleted_by_id
+case class PostVote(  // [exp] ok to use
+  uniqueId: PostId,   // RENAME to postId
   pageId: PageId,
   postNr: PostNr,
   doneAt: When,
@@ -107,8 +107,8 @@ case class PostVote(
 }
 
 
-case class PostFlag(
-  uniqueId: PostId,
+case class PostFlag(  // [exp] ok to use
+  uniqueId: PostId,   // RENAME to postId
   pageId: PageId,
   postNr: PostNr,
   doneAt: When,

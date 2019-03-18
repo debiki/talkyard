@@ -53,7 +53,7 @@ case class PagePathNoId(  // better than PagePath? Has no site id, and never a p
  * Or perhaps siteId should not be part of the PagePath?
  * "Path" implies host name & tenant-id does not belong here?))
  */
-case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
+case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?  [exp] ok, rm cdati, skip canonical_dati
   siteId: SiteId,  // COULD be a Dao(parameter) instead?
   // This is either the page's parent folder, or, if no page was specified,
   // the actual target of the path.

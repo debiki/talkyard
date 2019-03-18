@@ -41,7 +41,7 @@ object Presence {
 /** An invite to the user with the specified emailAddress to join the site.
   * S/he gets an email and clicks a link to join.
   */
-case class Invite(
+case class Invite(   // [exp] ok use
   emailAddress: String,
   secretKey: String,
   createdById: UserId,
@@ -712,7 +712,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 }
 
 
-case class Guest(
+case class Guest(  // [exp] missing: createdAt
   id: UserId,
   guestName: String,
   guestBrowserId: Option[String],
@@ -775,7 +775,7 @@ sealed trait MemberInclDetails {
 }
 
 
-case class UserInclDetails(
+case class UserInclDetails(  // ok for export
   id: UserId,
   externalId: Option[String],
   fullName: Option[String],
@@ -1133,7 +1133,7 @@ object UnknownParticipant extends Participant {
 /** Groups have a username but no trust level. Members have username and trust level. [8KPG2W5]
   * A group can, however, auto-grant trust level 'grantsTrustLevel' to all its members.
   */
-case class Group(
+case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
   id: UserId,
   theUsername: String,
   name: String,
@@ -1394,7 +1394,7 @@ case class OpenAuthIdentity(
 
 
 @deprecated("now", "Use ExternalSocialProfile instead")
-case class OpenAuthDetails(
+case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   providerId: String,
   providerKey: String,
   username: Option[String] = None,

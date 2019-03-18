@@ -18,7 +18,11 @@
 package talkyard.server.backup
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import ed.server._
+import play.api.libs.json.{JsObject, JsValue}
+import scala.collection.mutable
+import talkyard.server.JsX._
 
 
 
@@ -29,8 +33,15 @@ import ed.server._
 case class SiteBackupMaker(context: EdContext) {
 
   import context.globals
-  import context.security
 
+  def createPostgresqlJsonBackup(siteId: SiteId): JsValue = {
+    val fields = mutable.HashMap.empty[String, JsValue]
+    globals.siteDao(siteId).readOnlyTransaction { tx =>
+      val site: Site = tx.loadSite().getOrDie("TyE2RKKP85")
+      //fields("site") = JsSiteInclDetails(site)
+    }
+    JsObject(fields.toSeq)
+  }
 
 }
 

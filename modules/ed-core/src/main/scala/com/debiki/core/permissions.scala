@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 
 /** If maySeeOwn is true, then one may see one's own stuff, even if maySee is false.
   */
-case class PermsOnPages(
+case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagged
   id: PermissionId,
   forPeopleId: UserId,
   onWholeSite: Option[Boolean] = None,

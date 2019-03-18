@@ -954,7 +954,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     lookupPagePathImpl(pageId)
 
 
-  def lookupPagePathImpl(pageId: PageId): Option[PagePath] =
+  private def lookupPagePathImpl(pageId: PageId): Option[PagePath] =
     lookupPagePathsImpl(pageId, loadRedirects = false).headOption
 
 

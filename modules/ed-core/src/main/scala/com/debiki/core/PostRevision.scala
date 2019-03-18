@@ -27,7 +27,7 @@ import PostRevision._
   *  so it's not the creation date. Not "writtenAt" because the revision might be a bunch of
   *  applied edit suggestions written by *other* people.
   */
-case class PostRevision(
+case class PostRevision(  // [exp] ok
   postId: PostId,
   revisionNr: Int,
   previousNr: Option[Int],

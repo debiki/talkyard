@@ -175,7 +175,7 @@ object PageMeta {
   * @param htmlHeadTitle Text for the html <title>...</title> tag.
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
-case class PageMeta(
+case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
   pageRole: PageRole,
   version: PageVersion,

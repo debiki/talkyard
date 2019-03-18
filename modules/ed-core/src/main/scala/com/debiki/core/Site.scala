@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import Prelude._
+import scala.collection.immutable
 import scala.util.matching.Regex
 
 
@@ -167,6 +168,36 @@ case class Site(
   def brief =
     SiteBrief(id, pubId, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
 }
+
+
+case class SiteInclDetails(  // [exp] ok use. delete: price_plan
+  id: SiteId,
+  publId: String,
+  name: String,
+  createdAt: When,
+  createdFromIp: Option[IpAddress],
+  nextPageId: Int,
+  creatorEmailAddress: Option[String],
+  quotaLimitMbs: Option[Int],
+  numGuests: Int,
+  numIdentities: Int,
+  numRoles: Int,
+  numRoleSettings: Int,
+  numPages: Int,
+  numPosts: Int,
+  numPostTextBytes: Int,
+  numPostsRead: Int,
+  numActions: Int,
+  numNotfs: Int,
+  numEmailsSent: Int,
+  numAuditRows: Int,
+  numUploads: Int,
+  numUploadBytes: Long,
+  version: Int,
+  numPostRevisions: Int,
+  numPostRevBytes: Long,
+  status: Int,
+  hosts: immutable.Seq[SiteHostInclDetails])
 
 
 

@@ -27,6 +27,44 @@ import play.api.libs.json._
 
 object JsX {
 
+  def JsSiteInclDetails(site: SiteInclDetails): JsObject = {
+    Json.obj(
+      "id" -> site.id,
+      "pubId" -> site.publId,
+      "name" -> site.name,
+      "status" -> site.status.toInt,
+      "createdAt" -> site.createdAt.millis,
+      "createdFromIp" -> site.createdFromIp,
+      "creatorEmailAddress" -> site.creatorEmailAddress,
+      "nextPageId" -> site.nextPageId,
+      "quotaLimitMbs" -> site.quotaLimitMbs,
+      "version" -> site.version,
+      "numGuests" -> site.numGuests,
+      "numIdentities" -> site.numIdentities,
+      "numRoles" -> site.numRoles,
+      "numRoleSettings" -> site.numRoleSettings,
+      "numPages" -> site.numPages,
+      "numPosts" -> site.numPosts,
+      "numPostTextBytes" -> site.numPostTextBytes,
+      "numPostsRead" -> site.numPostsRead,
+      "numActions" -> site.numActions,
+      "numNotfs" -> site.numNotfs,
+      "numEmailsSent" -> site.numEmailsSent,
+      "numAuditRows" -> site.numAuditRows,
+      "numUploads" -> site.numUploads,
+      "numUploadBytes" -> site.numUploadBytes,
+      "numPostRevisions" -> site.numPostRevisions,
+      "numPostRevBytes" -> site.numPostRevBytes,
+      "hostnames" -> Json.arr(site.hosts.map(JsHostInclDetails)))
+  }
+
+  def JsHostInclDetails(host: SiteHostInclDetails): JsObject = {
+    Json.obj(
+      "hostname" -> host.hostname,
+      "role" -> host.role.toInt,
+      "addedAt" -> host.addedAt.millis)
+  }
+
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser).getOrElse(JsNull)
 

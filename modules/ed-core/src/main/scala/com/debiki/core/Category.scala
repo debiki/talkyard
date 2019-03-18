@@ -37,7 +37,12 @@ object IncludeInSummaries {
 }
 
 
-/**
+/** [exp] In the db, but not needed:
+  *  - updatedAt — who cares
+  *  - staff_only — use page perms instead
+  *  - only_staff_may_create_topics  — use page perms instead
+  *  - default_topic_type — not in use, always 12, delete
+  *
   * @param id
   * @param sectionPageId
   * @param parentId
@@ -56,7 +61,7 @@ object IncludeInSummaries {
   * @param frozenAt
   * @param deletedAt
   */
-case class Category(
+case class Category(  // [exp] ok use
   id: CategoryId,
   sectionPageId: PageId,
   // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the

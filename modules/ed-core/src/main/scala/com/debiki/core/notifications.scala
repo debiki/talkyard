@@ -84,7 +84,7 @@ object Notification {
 
   /** A reply, @mention, or new post in a topic you're watching.
     */
-  case class NewPost(
+  case class NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
     notfType: NotificationType,
     siteId: SiteId,
     id: NotificationId,

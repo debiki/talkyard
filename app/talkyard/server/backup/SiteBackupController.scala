@@ -47,8 +47,9 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   val MaxBytes = 1001000
 
 
-  def exportSiteJson(): Action[Unit] = StaffGetAction { _ =>
-    Ok
+  def exportSiteJson(): Action[Unit] = AdminGetAction { request =>  // what rate limits?
+    val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
+    Ok(json.toString()) as JSON
   }
 
 
