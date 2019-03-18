@@ -21,10 +21,10 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import play.api.libs.json._
 import scala.collection.immutable
-import JsX._
 import debiki.EdHttp.throwBadRequest
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
+import talkyard.server.JsX._
 
 
 

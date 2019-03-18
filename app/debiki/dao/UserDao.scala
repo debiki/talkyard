@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.EdHttp.{throwBadRequest, throwForbidden, throwForbiddenIf, throwNotFound}
-import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
@@ -30,6 +29,7 @@ import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.mutable.ArrayBuffer
+import talkyard.server.JsX
 
 
 case class LoginNotFoundException(siteId: SiteId, userId: UserId)

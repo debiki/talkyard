@@ -20,12 +20,12 @@ package ed.server
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.PageStuff
-import debiki.JsX._
 import org.{elasticsearch => es}
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import scala.collection.immutable
+import talkyard.server.JsX._
 
 
 /** Full text search and faceted search.

@@ -19,7 +19,6 @@ package controllers
 
 import com.debiki.core._
 import debiki.JsonMaker
-import debiki.JsX.{JsPageMetaBrief, JsUser}
 import debiki.EdHttp._
 import ed.server.http.{ApiRequest, GetRequest}
 import ed.server.{EdContext, EdController}
@@ -27,6 +26,7 @@ import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX.{JsPageMetaBrief, JsUser}
 
 
 /** Lists posts for the moderation page, and approves/rejects/deletes posts

@@ -22,13 +22,13 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.{JsUser, JsStringOrNull}
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX.{JsUser, JsStringOrNull}
 
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.

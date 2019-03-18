@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
 import ed.server._
 import ed.server.http.DebikiRequest
@@ -31,6 +30,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import talkyard.server.JsX.{DateEpochOrNull, JsNumberOrNull, JsUser}
 
 
 /** Invites new users to join the site.

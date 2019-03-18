@@ -23,7 +23,6 @@ import com.debiki.core.Participant.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.dao.{ReadMoreResult, SiteDao}
 import debiki.EdHttp._
-import debiki.JsX._
 import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
@@ -35,6 +34,7 @@ import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
+import talkyard.server.JsX._
 
 
 /** Handles requests related to users.
@@ -421,7 +421,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     OkSafeJson(Json.obj(
-      "author" -> JsX.JsUser(author),
+      "author" -> JsUser(author),
       "posts" -> JsArray(postsJson)))
   }
 

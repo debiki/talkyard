@@ -22,7 +22,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX._
 import ed.server.http._
 import play.api.libs.json._
 import play.api.mvc._
@@ -32,6 +31,7 @@ import scala.util.Try
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import ForumController._
+import talkyard.server.JsX._
 
 
 /** Handles requests related to forums and forum categories.

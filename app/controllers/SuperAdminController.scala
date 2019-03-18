@@ -20,12 +20,12 @@ package controllers
 import com.debiki.core._
 import debiki.SiteTpi
 import debiki.EdHttp._
-import debiki.JsX._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.ControllerComponents
+import talkyard.server.JsX._
 
 
 class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdContext)

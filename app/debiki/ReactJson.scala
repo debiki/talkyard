@@ -31,7 +31,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 import talkyard.server.{IfCached, PostRenderer, PostRendererSettings}
 import JsonMaker._
-import JsX._
+import talkyard.server.JsX._
 
 
 case class PostExcerpt(text: String, firstImageUrls: immutable.Seq[String])
@@ -69,9 +69,8 @@ object FindHeadTagsResult {
 }
 
 
-// CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
 // REFACTOR COULD split into one class JsonDao, which accesses the database and is a Dao trait?
-// + a class JsonMaker or EdJson that doesn't do any db calls or anything like that.
+// + a class that doesn't do any db calls or anything like that.
 //
 class JsonMaker(dao: SiteDao) {
 
@@ -1718,179 +1717,4 @@ object JsonMaker {
 }
 
 
-
-
-object JsX {
-
-  def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
-    user.map(JsUser).getOrElse(JsNull)
-
-  def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsParticipant
-    var json = Json.obj(
-      "id" -> JsNumber(user.id),
-      "username" -> JsStringOrNull(user.anyUsername),
-      "fullName" -> JsStringOrNull(user.anyName))
-    user.tinyAvatar foreach { uploadRef =>
-      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
-    }
-    user.smallAvatar foreach { uploadRef =>
-      json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
-    }
-    if (user.isGuest) {
-      json += "isGuest" -> JsTrue
-    }
-    else {
-      require(user.isAuthenticated, "EdE8GPY4")
-      json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
-    }
-    if (user.email.isEmpty) {
-      json += "isEmailUnknown" -> JsTrue
-    }
-    if (user.isAdmin) {
-      json += "isAdmin" -> JsTrue
-    }
-    if (user.isModerator) {
-      json += "isModerator" -> JsTrue
-    }
-    if (user.isGone) {
-      json += "isGone" -> JsTrue
-    }
-    json
-  }
-
-  def JsGroup(group: Group): JsObject = {
-    var json = Json.obj(
-      "id" -> group.id,
-      "username" -> group.theUsername,
-      "fullName" -> group.name,
-      "isGroup" -> JsTrue)
-      // "grantsTrustLevel" -> group.grantsTrustLevel)
-    group.tinyAvatar foreach { uploadRef =>
-      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
-    }
-    json
-  }
-
-  val JsEmptyObj = JsObject(Nil)
-
-  def JsPagePath(pagePath: PagePath): JsValue =
-    Json.obj(
-      "value" -> pagePath.value,
-      "folder" -> pagePath.folder,
-      "showId" -> pagePath.showId,
-      "slug" -> pagePath.pageSlug)
-
-  def JsPageMetaBrief(meta: PageMeta): JsValue =  // Typescript interface PageMetaBrief
-    Json.obj(
-      "pageId" -> meta.pageId,
-      "createdAtMs" -> JsDateMs(meta.createdAt),
-      "createdById" -> meta.authorId,
-      "lastReplyAtMs" -> JsDateMsOrNull(meta.lastReplyAt),
-      "lastReplyById" -> JsNumberOrNull(meta.lastReplyById),
-      "pageRole" -> meta.pageRole.toInt,
-      "categoryId" -> JsNumberOrNull(meta.categoryId),
-      "embeddingPageUrl" -> JsStringOrNull(meta.embeddingPageUrl),
-      "closedAtMs" -> JsDateMsOrNull(meta.closedAt),
-      "lockedAtMs" -> JsDateMsOrNull(meta.lockedAt),
-      "frozenAtMs" -> JsDateMsOrNull(meta.frozenAt),
-      "hiddenAtMs" -> JsWhenMsOrNull(meta.hiddenAt),
-      "deletedAtMs" -> JsDateMsOrNull(meta.deletedAt))
-
-  def JsFlag(flag: PostFlag): JsValue =
-    Json.obj(
-      "flaggerId" -> flag.flaggerId,
-      "flagType" -> flag.flagType.toInt,
-      "flaggedAt" -> JsWhenMs(flag.doneAt),
-      //flagReason
-      "uniqueId" -> flag.uniqueId,
-      "pageId" -> flag.pageId,
-      "postNr" -> flag.postNr)
-
-  def JsStringOrNull(value: Option[String]): JsValue =
-    value.map(JsString).getOrElse(JsNull)
-
-  def JsBooleanOrNull(value: Option[Boolean]): JsValue =
-    value.map(JsBoolean).getOrElse(JsNull)
-
-  def JsNumberOrNull(value: Option[Int]): JsValue =
-    value.map(JsNumber(_)).getOrElse(JsNull)
-
-  def JsLongOrNull(value: Option[Long]): JsValue =
-    value.map(JsNumber(_)).getOrElse(JsNull)
-
-  def JsFloatOrNull(value: Option[Float]): JsValue =
-    value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
-
-  def JsWhenMs(when: When) =
-    JsNumber(when.unixMillis)
-
-  def JsDateMs(value: ju.Date) =
-    JsNumber(value.getTime)
-
-  def JsWhenMsOrNull(value: Option[When]): JsValue =
-    value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
-
-  def JsDateMsOrNull(value: Option[ju.Date]): JsValue =
-    value.map(JsDateMs).getOrElse(JsNull)
-
-  def DateEpochOrNull(value: Option[ju.Date]): JsValue =
-    value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
-
-  def date(value: ju.Date) =
-    JsString(toIso8601NoSecondsNoT(value))
-
-  def dateOrNull(value: Option[ju.Date]): JsValue = value match {
-    case Some(v) => date(v)
-    case None => JsNull
-  }
-
-  def JsDraftLocator(draftLocator: DraftLocator): JsObject = {
-    Json.obj(
-      "draftType" -> draftLocator.draftType.toInt,
-      "categoryId" -> JsNumberOrNull(draftLocator.categoryId),
-      "toUserId" -> JsNumberOrNull(draftLocator.toUserId),
-      "postId" -> JsNumberOrNull(draftLocator.postId),
-      "pageId" -> JsStringOrNull(draftLocator.pageId),
-      "postNr" -> JsNumberOrNull(draftLocator.postNr))
-  }
-
-  def JsDraftOrNull(draft: Option[Draft]): JsValue =
-    draft.map(JsDraft).getOrElse(JsNull)
-
-  def JsDraft(draft: Draft): JsObject = {
-    Json.obj(
-      "byUserId" -> draft.byUserId,
-      "draftNr" -> draft.draftNr,
-      "forWhat" -> JsDraftLocator(draft.forWhat),
-      "createdAt" -> JsWhenMs(draft.createdAt),
-      "lastEditedAt" -> JsWhenMsOrNull(draft.lastEditedAt),
-      "deletedAt" -> JsWhenMsOrNull(draft.deletedAt),
-      "topicType" -> JsNumberOrNull(draft.topicType.map(_.toInt)),
-      "postType" -> JsNumberOrNull(draft.postType.map(_.toInt)),
-      "title" -> JsString(draft.title),
-      "text" -> JsString(draft.text))
-  }
-
-
-  def JsPageNotfPref(notfPref: PageNotfPref): JsObject = {
-    Json.obj(  // PageNotfPref
-      "memberId" -> notfPref.peopleId,
-      "notfLevel" -> notfPref.notfLevel.toInt,
-      "pageId" -> notfPref.pageId,
-      "pagesInCategoryId" -> notfPref.pagesInCategoryId,
-      "wholeSite" -> notfPref.wholeSite)
-  }
-
-
-  def JsApiSecret(apiSecret: ApiSecret): JsObject = {
-    Json.obj(
-      "nr" -> apiSecret.nr,
-      "userId" -> JsNumberOrNull(apiSecret.userId),
-      "createdAt" -> JsWhenMs(apiSecret.createdAt),
-      "deletedAt" -> JsWhenMsOrNull(apiSecret.deletedAt),
-      "isDeleted" -> apiSecret.isDeleted,
-      "secretKey" -> JsString(apiSecret.secretKey))
-  }
-
-}
 

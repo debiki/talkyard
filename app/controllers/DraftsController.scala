@@ -25,12 +25,11 @@ import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
 import javax.inject.Inject
-import play.api._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.util.Try
-import JsX.JsDraft
 import scala.collection.immutable
+import talkyard.server.JsX.JsDraft
 
 
 class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)

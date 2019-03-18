@@ -22,12 +22,12 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.JsStringOrNull
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX.JsStringOrNull
 
 
 /** Edits the page title and changes settings like forum category, URL path,

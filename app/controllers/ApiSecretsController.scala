@@ -20,13 +20,13 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import debiki.JsX.JsApiSecret
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc._
 import scala.collection.immutable
+import talkyard.server.JsX.JsApiSecret
 
 
 class ApiSecretsController @Inject()(cc: ControllerComponents, edContext: EdContext)

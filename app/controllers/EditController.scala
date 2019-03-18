@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.JsStringOrNull
 import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
@@ -30,7 +29,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
 import EditController._
 import scala.concurrent.ExecutionContext
-import scala.util.Try
+import talkyard.server.JsX.{JsStringOrNull, JsDraft, JsDraftOrNull}
 
 
 /** Edits pages and posts.
@@ -117,7 +116,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     OkSafeJson(Json.obj(
-      "drafts" -> JsArray(drafts.map(JsX.JsDraft)),
+      "drafts" -> JsArray(drafts.map(JsDraft)),
       "guidelinesSafeHtml" -> JsStringOrNull(guidelinesSafeHtml)))
   }
 
@@ -161,7 +160,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "postUid" -> post.id,
       "currentText" -> post.currentSource,
       "currentRevisionNr" -> post.currentRevisionNr,
-      "draft" -> JsX.JsDraftOrNull(anyDraft)))
+      "draft" -> JsDraftOrNull(anyDraft)))
   }
 
 

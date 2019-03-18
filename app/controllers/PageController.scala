@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.JsX.JsLongOrNull
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
@@ -29,6 +28,7 @@ import java.{util => ju}
 import javax.inject.Inject
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX.JsLongOrNull
 
 
 /** Creates pages, toggles is-done, deletes them.
