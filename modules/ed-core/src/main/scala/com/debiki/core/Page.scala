@@ -31,7 +31,7 @@ trait Page {
   def id: PageId
   def siteId: SiteId
   def categoryId: Option[CategoryId] = meta.categoryId
-  def role: PageRole = meta.pageRole
+  def pageType: PageType = meta.pageType
   def meta: PageMeta
   def thePath: PagePath
   def path: Option[PagePath]
@@ -39,7 +39,7 @@ trait Page {
   def version: PageVersion
 
   def anyAnswerPost: Option[Post] = {
-    meta.answerPostUniqueId.flatMap(parts.postById)
+    meta.answerPostId.flatMap(parts.postById)
   }
 
 }
@@ -64,10 +64,10 @@ case class PagePathAndMeta(
   path: PagePath,
   meta: PageMeta) {
 
-  def id = meta.pageId
-  def pageId = meta.pageId
-  def categoryId = meta.categoryId
-  def pageRole = meta.pageRole
+  def id: PageId = meta.pageId
+  def pageId: PageId = meta.pageId
+  def categoryId: Option[CategoryId] = meta.categoryId
+  def pageType: PageType = meta.pageType
 
   requireMetaMatchesPaths(this)
 }
@@ -91,7 +91,7 @@ object PageMeta {
 
   def forNewPage(
         pageId: PageId,
-        pageRole: PageRole,
+        pageRole: PageType,
         authorId: UserId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
@@ -106,7 +106,7 @@ object PageMeta {
         publishDirectly: Boolean = false): PageMeta = {
     var result = PageMeta(
       pageId = pageId,
-      pageRole = pageRole,
+      pageType = pageRole,
       version = 1,
       createdAt = creationDati,
       plannedAt = plannedAt,
@@ -140,13 +140,13 @@ object PageMeta {
 
 
 /** @param pageId
-  * @param pageRole
+  * @param pageType
   * @param createdAt
   * @param updatedAt
   * @param publishedAt
   * @param bumpedAt
-  * @param lastReplyAt
-  * @param lastReplyById Set to None if there's no reply.
+  * @param lastApprovedReplyAt
+  * @param lastApprovedReplyById Set to None if there's no reply.
   * @param categoryId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
@@ -163,7 +163,7 @@ object PageMeta {
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
   * @param numPostsTotal Includes all replies, and also meta message posts.
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
-  * @param answerPostUniqueId The id of the post that answers this question.
+  * @param answerPostId The id of the post that answers this question.
   // [befrel] @param answerPostNr
   * @param plannedAt When a problem/idea got planned to be fixed/done.
   * @param startedAt When started fixing/implementing the problem/idea.
@@ -177,14 +177,14 @@ object PageMeta {
   */
 case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
-  pageRole: PageRole,
+  pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,
   updatedAt: ju.Date,
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
-  lastReplyAt: Option[ju.Date] = None,   // could rename to lastApprovedReplyApprovedAt?
-  lastReplyById: Option[UserId] = None,  // could rename to lastApprovedReplyById?
+  lastApprovedReplyAt: Option[ju.Date] = None,
+  lastApprovedReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
@@ -205,7 +205,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   numOrigPostUnwantedVotes: Int = 0,
   numOrigPostRepliesVisible: Int = 0,
   answeredAt: Option[ju.Date] = None,
-  answerPostUniqueId: Option[PostId] = None,
+  answerPostId: Option[PostId] = None,
   plannedAt: Option[ju.Date] = None,
   startedAt: Option[ju.Date] = None,
   doneAt: Option[ju.Date] = None,
@@ -220,13 +220,13 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   htmlHeadDescription: String = "",
   numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
 
-  require(lastReplyAt.isDefined == lastReplyById.isDefined, "DwE5JGY1")
+  require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, "DwE5JGY1")
   // If there are no replies, then there are no frequent posters.
-  require(lastReplyById.isDefined || frequentPosterIds.isEmpty, "DwE7UMF2")
+  require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, "DwE7UMF2")
   require(frequentPosterIds.length <= 3, "DwE6UMW3") // for now — change if needed
 
   require(version > 0, "DwE6KFU2")
-  require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")
+  require(pageType != PageType.AboutCategory || categoryId.isDefined, "DwE5PKI8")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
   require(numLikes >= 0, "DwE6PKF3")
@@ -263,7 +263,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "DwE4KEF7")
   // A locked or frozen topic, should be closed too.
   require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, "DwE6UMP3")
-  require(answeredAt.isEmpty == answerPostUniqueId.isEmpty, "DwE2PYU5")
+  require(answeredAt.isEmpty == answerPostId.isEmpty, "DwE2PYU5")
   require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02]")
 
   def isPinned = pinOrder.isDefined
@@ -272,11 +272,11 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   def isHidden = hiddenAt.isDefined
   def isDeleted = deletedAt.isDefined
 
-  def isGroupTalk = pageRole.isGroupTalk
-  def isPrivateGroupTalk = pageRole.isPrivateGroupTalk
+  def isGroupTalk = pageType.isGroupTalk
+  def isPrivateGroupTalk = pageType.isPrivateGroupTalk
 
   def isChatPinnedGlobally: Boolean =
-    pageRole == PageRole.OpenChat && pinWhere.contains(PinPageWhere.Globally)
+    pageType == PageType.OpenChat && pinWhere.contains(PinPageWhere.Globally)
 
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published
@@ -287,7 +287,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   def addUserIdsTo(ids: mutable.Set[UserId]) {
     ids += authorId
     ids ++= frequentPosterIds
-    lastReplyById.foreach(ids += _)
+    lastApprovedReplyById.foreach(ids += _)
   }
 
   def idVersion = PageIdVersion(pageId, version = version)
@@ -296,10 +296,10 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   def copyWithNewVersion: PageMeta = copy(version = version + 1)
 
 
-  def copyWithNewRole(newRole: PageRole): PageMeta = {
+  def copyWithNewRole(newRole: PageType): PageMeta = {
     var newClosedAt = closedAt
     val (newAnsweredAt, newAnswerPostUniqueId) = newRole match {
-      case PageRole.Question => (answeredAt, answerPostUniqueId)
+      case PageType.Question => (answeredAt, answerPostId)
       case _ =>
         if (answeredAt.isDefined) {
           // Reopen it since changing type.
@@ -309,7 +309,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
     }
 
     val (newPlannedAt, newStartedAt, newDoneAt) = newRole match {
-      case PageRole.Problem | PageRole.Idea =>
+      case PageType.Problem | PageType.Idea =>
         // These page types understand planned/started/done, so keep them unchanged.
         (plannedAt, startedAt, doneAt)
       case _ =>
@@ -324,9 +324,9 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
     }
 
     copy(
-      pageRole = newRole,
+      pageType = newRole,
       answeredAt = newAnsweredAt,
-      answerPostUniqueId = newAnswerPostUniqueId,
+      answerPostId = newAnswerPostUniqueId,
       plannedAt = newPlannedAt,
       startedAt = newStartedAt,
       doneAt = newDoneAt,
@@ -337,7 +337,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
 
 
 
-sealed abstract class PageRole(
+sealed abstract class PageType(
   protected val IntValue: Int,
   val staffOnly: Boolean = true /*[2GKW0M]*/) {
 
@@ -359,54 +359,54 @@ sealed abstract class PageRole(
 
   /** If one needs to join the page before one can say anything.
     */
-  def isGroupTalk = isChat || isPrivateGroupTalk
+  def isGroupTalk: Boolean = isChat || isPrivateGroupTalk
 
   // Also see [WHENFOLLOW].
   def shallFollowLinks: Boolean = false
 
-  def canClose = !isSection
+  def canClose: Boolean = !isSection
 
   def canHaveReplies = true
 
   // Sync with JS [6KUW204]
   def mayChangeRole: Boolean = true
 
-  def toInt = IntValue
+  def toInt: Int = IntValue
 
   dieIf(isSection && mayChangeRole, "EsE7KUP2")
 
 }
 
 
-object PageRole {
+object PageType {
 
-  def InfoPageMaxId = WebPage.toInt
+  def InfoPageMaxId: Int = WebPage.toInt
 
-  case object CustomHtmlPage extends PageRole(1) {
+  case object CustomHtmlPage extends PageType(1) {
     // Only staff can create these — so ok to follow links.
     override def shallFollowLinks = true
     override def canHaveReplies = false
   }
 
-  case object WebPage extends PageRole(2) {
+  case object WebPage extends PageType(2) {
     // Only staff can create these — so ok to follow links.
     override def shallFollowLinks = true
   }
 
-  case object Code extends PageRole(3) {
+  case object Code extends PageType(3) {
     override def canHaveReplies = false // for now
     override def mayChangeRole = false
   }
 
-  case object SpecialContent extends PageRole(4) {
+  case object SpecialContent extends PageType(4) {
     override def canHaveReplies = false
     override def mayChangeRole = false
   }
 
-  case object EmbeddedComments extends PageRole(5, staffOnly = false)
+  case object EmbeddedComments extends PageType(5, staffOnly = false)
 
   /** Lists blog posts. */
-  case object Blog extends PageRole(6) {
+  case object Blog extends PageType(6) {
     override def isSection = true
     override def mayChangeRole = false
     override def canHaveReplies = false
@@ -414,7 +414,7 @@ object PageRole {
 
   /** Lists forum topics and categories. A Talkyard site can have many forum pages.
     * Each forum is then its own sub community, like a Reddit subreddit. */
-  case object Forum extends PageRole(7) {
+  case object Forum extends PageType(7) {
     override def isSection = true
     override def mayChangeRole = false
     override def canHaveReplies = false
@@ -423,22 +423,22 @@ object PageRole {
   /** About a forum category (Discourse's forum category about topic). Shown as a per
     * category welcome page, and by editing the page body you edit the forum category
     * description. */
-  case object AboutCategory extends PageRole(9) {
+  case object AboutCategory extends PageType(9) {
     override def mayChangeRole = false
   }
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
-  case object Question extends PageRole(10, staffOnly = false)
+  case object Question extends PageType(10, staffOnly = false)
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
-  case object Problem extends PageRole(14, staffOnly = false) {
+  case object Problem extends PageType(14, staffOnly = false) {
     // This is mostly a step-by-step get-things-done (solve problem) type topic.
     override def isFlatDiscourse: Boolean = true
   }
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
-  case object Idea extends PageRole(15, staffOnly = false) {
+  case object Idea extends PageType(15, staffOnly = false) {
     // This is mostly a step-by-step get-things-done type topic. Except for maybe in the
     // very beginning, when it's being discussed if the idea should be done or not.
     // However, usually, better of as flat.
@@ -447,13 +447,13 @@ object PageRole {
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
   // [refactor] remove. Use Idea instead, bumped to "doing" state.
-  case object ToDo extends PageRole(13, staffOnly = false) {  // remove [4YK0F24]
+  case object ToDo extends PageType(13, staffOnly = false) {  // remove [4YK0F24]
     // This is a step-by-step get-things-done type topic.
     override def isFlatDiscourse: Boolean = true
   }
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
-  case object MindMap extends PageRole(11, staffOnly = false) {
+  case object MindMap extends PageType(11, staffOnly = false) {
     // May-edit permissions work differently for mind maps; don't let people change type to/from
     // mind map, because that could result in on-that-page permission escalation. [0JUK2WA5]
     BUG // harmless, but should hide page type mind-map in the js edit-title-category-&-type form,
@@ -462,16 +462,16 @@ object PageRole {
   }
 
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
-  case object Discussion extends PageRole(12, staffOnly = false)
+  case object Discussion extends PageType(12, staffOnly = false)
 
   /** Any forum member with access to the page can join. */
-  case object OpenChat extends PageRole(18, staffOnly = false) {
+  case object OpenChat extends PageType(18, staffOnly = false) {
     override def isChat = true
     override def mayChangeRole = false
   }
 
   /** Users added explicitly. Topic not shown in forum unless already member. */
-  case object PrivateChat extends PageRole(19, staffOnly = false) {
+  case object PrivateChat extends PageType(19, staffOnly = false) {
     override def isChat = true
     override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
@@ -485,22 +485,22 @@ object PageRole {
     * If a FormalMessage topic is placed in a forum category, then everyone in a group
     * with the "correct" permissions on this category has access to the topic. (Not yet impl.)
     */
-  case object FormalMessage extends PageRole(17, staffOnly = false) {
+  case object FormalMessage extends PageType(17, staffOnly = false) {
     override def isFlatDiscourse = true
     override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
     override def mayChangeRole = false
   }
 
-  case object Form extends PageRole(20, staffOnly = false) { // try to remove?
+  case object Form extends PageType(20, staffOnly = false) { // try to remove?
     override def isFlatDiscourse: Boolean = true
   }
 
-  case object Critique extends PageRole(16, staffOnly = false) // [plugin]
-  case object UsabilityTesting extends PageRole(21, staffOnly = false) // [plugin]
+  case object Critique extends PageType(16, staffOnly = false) // [plugin]
+  case object UsabilityTesting extends PageType(21, staffOnly = false) // [plugin]
 
 
-  def fromInt(value: Int): Option[PageRole] = Some(value match {
+  def fromInt(value: Int): Option[PageType] = Some(value match {
     case CustomHtmlPage.IntValue => CustomHtmlPage
     case WebPage.IntValue => WebPage
     case Code.IntValue => Code

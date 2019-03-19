@@ -23,7 +23,7 @@ import debiki.Nashorn
 
 
 case class PostRendererSettings(
-  pageRole: PageRole,
+  pageRole: PageType,
   pubSiteId: PublSiteId)
 
 

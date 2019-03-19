@@ -101,8 +101,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
 
     throwForbiddenIf(
-      deleteOld && !siteData.site.hosts.forall(h => SiteHost.isE2eTestHostname(h.hostname)),
-      "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
+      deleteOld && !siteData.site.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
+      "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${Hostname.E2eTestPrefix}")
 
     // Don't allow more than one import at a time, because results in a
     // "PSQLException: ERROR: could not serialize access due to concurrent update" error:
@@ -123,7 +123,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     Ok(Json.obj(
       "id" -> newSite.id,
-      "origin" -> (globals.schemeColonSlashSlash + newSite.theCanonicalHost.hostname),
+      "origin" -> (globals.schemeColonSlashSlash + newSite.theCanonicalHostname.hostname),
       "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
   }
 

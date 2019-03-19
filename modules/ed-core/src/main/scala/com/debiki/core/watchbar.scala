@@ -139,7 +139,7 @@ case class WatchbarWithTitles(
   /** Used if a page has been deleted or made private, so that title etc is no longer available */
   private def NoTitleEtc = new PageTitleRole {
     def title = "(page gone, DwM5YKW24)"
-    def role: PageRole = PageRole.Discussion
+    def role: PageType = PageType.Discussion
   }
 }
 
@@ -173,7 +173,7 @@ case class BareWatchbar(
       // section. When one leaves it, it gets moved to the recent section. So,
       // if a forum = sub community is in the recent section, that means we've left it.  [5JKW20Z]
       // Then don't add it back to the communities section (until the user re-joins it explicitly).
-      else if (pageMeta.pageRole == PageRole.Forum && !isInRecentSection(pageMeta.pageId)) {
+      else if (pageMeta.pageType == PageType.Forum && !isInRecentSection(pageMeta.pageId)) {
         copy(subCommunities = placeFirstMarkSeen(pageMeta, subCommunities))
       }
       else if (isInOtherThanRecentSection(pageMeta.pageId)) {
@@ -205,11 +205,11 @@ case class BareWatchbar(
 
 
   def addPage(pageMeta: PageMeta, hasSeenIt: Boolean): BareWatchbar =
-    addPage(pageMeta.pageId, pageMeta.pageRole, hasSeenIt)
+    addPage(pageMeta.pageId, pageMeta.pageType, hasSeenIt)
 
 
-  def addPage(pageId: PageId, pageRole: PageRole, hasSeenIt: Boolean): BareWatchbar = {
-    if (pageRole == PageRole.Forum) {
+  def addPage(pageId: PageId, pageRole: PageType, hasSeenIt: Boolean): BareWatchbar = {
+    if (pageRole == PageType.Forum) {
       addSubCommunity(pageId, hasSeenIt)
     }
     else if (pageRole.isChat) {

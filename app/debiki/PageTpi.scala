@@ -88,10 +88,10 @@ class SiteTpi protected (
   def debikiMeta: xml.Unparsed = {
     // At UTX, the page title is the website being tested — which is confusing. Instead, always
     // show the UTX website title.
-    val pageRole = anyCurrentPageRole orElse anyCurrentPageMeta.map(_.pageRole)
+    val pageRole = anyCurrentPageRole orElse anyCurrentPageMeta.map(_.pageType)
     val thePageTitle =
       if (anyCustomMetaTags.includesTitleTag) None
-      else if (pageRole is PageRole.UsabilityTesting) { // [plugin]
+      else if (pageRole is PageType.UsabilityTesting) { // [plugin]
         Some("Usability Testing Exchange")
       }
       else anyCurrentPageMeta.map(_.htmlHeadTitle) match {
@@ -109,7 +109,7 @@ class SiteTpi protected (
   def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
-  def anyCurrentPageRole: Option[PageRole] = None
+  def anyCurrentPageRole: Option[PageType] = None
   def anyCurrentPageLayout: Option[TopicListLayout] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
@@ -132,7 +132,7 @@ class SiteTpi protected (
   def debikiHtmlTagClasses: String = {
     // Sync with js [4JXW5I2].
     val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat" else ""
-    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) " es-forum" else ""
+    val forumClass = if (anyCurrentPageRole.contains(PageType.Forum)) " es-forum" else ""
     val customClass = anyCurrentPageMeta.map(" " + _.htmlTagCssClasses) getOrElse ""
     val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse ""     // [5J7KTW2]
     val pageLayoutClass = anyCurrentPageLayout.map(" s_PL-" + _.toInt) getOrElse ""
@@ -278,7 +278,7 @@ class SiteTpi protected (
   */
 class EditPageTpi(
   request: GetRequest,
-  val pageRole: PageRole,
+  val pageRole: PageType,
   val anyEmbeddedPageId: Option[PageId],
   override val anyAltPageId: Option[AltPageId],
   override val anyEmbeddingUrl: Option[String]) extends SiteTpi(request) {
@@ -309,7 +309,7 @@ class PageTpi(
   override def cachedVersionString: String = cachedVersion.computerString
 
   private val horizontalComments =
-    pageReq.thePageRole == PageRole.MindMap || pageReq.thePageSettings.horizontalComments
+    pageReq.thePageRole == PageType.MindMap || pageReq.thePageSettings.horizontalComments
 
 
   override def debikiHtmlTagClasses: String =

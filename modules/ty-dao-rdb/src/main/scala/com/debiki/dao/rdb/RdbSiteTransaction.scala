@@ -448,7 +448,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   /* UNT ESTED
   def loadPageMetaForAllSections(): Seq[PageMeta] = {
-    import PageRole.{Forum, Blog}
+    import PageType.{Forum, Blog}
     val sql = s"""
       select g.page_id, $_PageMetaSelectListItems from pages3 g
       where g.site_id = ? and g.page_role in ($Forum, $Blog)
@@ -478,20 +478,20 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   private def _updatePageMeta(newMeta: PageMeta, anyOld: Option[PageMeta])
         (implicit connection: js.Connection) {
     anyOld foreach { oldMeta =>
-      dieIf(!oldMeta.pageRole.mayChangeRole && oldMeta.pageRole != newMeta.pageRole,
-        "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageRole} to ${newMeta.pageRole}")
+      dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
+        "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
     }
     val values = List(
       newMeta.version.asAnyRef,
-      newMeta.pageRole.toInt.asAnyRef,
+      newMeta.pageType.toInt.asAnyRef,
       newMeta.categoryId.orNullInt,
       newMeta.embeddingPageUrl.orNullVarchar,
       newMeta.authorId.asAnyRef,
       newMeta.publishedAt.orNullTimestamp,
       // Always write to bumped_at so SQL queries that sort by bumped_at works.
       newMeta.bumpedOrPublishedOrCreatedAt.asTimestamp,
-      newMeta.lastReplyAt.orNullTimestamp,
-      newMeta.lastReplyById.orNullInt,
+      newMeta.lastApprovedReplyAt.orNullTimestamp,
+      newMeta.lastApprovedReplyById.orNullInt,
       newMeta.frequentPosterIds.drop(0).headOption.orNullInt,
       newMeta.frequentPosterIds.drop(1).headOption.orNullInt,
       newMeta.frequentPosterIds.drop(2).headOption.orNullInt,
@@ -512,7 +512,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.numOrigPostUnwantedVotes.asAnyRef,
       newMeta.numOrigPostRepliesVisible.asAnyRef,
       newMeta.answeredAt.orNullTimestamp,
-      newMeta.answerPostUniqueId.orNullInt,
+      newMeta.answerPostId.orNullInt,
       newMeta.plannedAt.orNullTimestamp,
       newMeta.startedAt.orNullTimestamp,
       newMeta.doneAt.orNullTimestamp,
@@ -640,14 +640,19 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def loadHostsInclDetails(): Seq[SiteHostInclDetails] = {
+  def loadSiteInclDetails(): Option[SiteInclDetails] = {
+    asSystem.loadSiteInclDetails(siteId)
+  }
+
+
+  def loadHostsInclDetails(): Seq[HostnameInclDetails] = {
     val query = """
       select host, canonical, ctime
       from hosts3
       where site_id = ?
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
-      SiteHostInclDetails(
+      HostnameInclDetails(
         rs.getString("host"),
         _toTenantHostRole(rs.getString("canonical")),
         getWhen(rs, "ctime"))
@@ -655,7 +660,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def insertSiteHost(host: SiteHost) {
+  def insertSiteHost(host: Hostname) {
     asSystem.insertSiteHost(siteId, host)
   }
 
@@ -694,12 +699,12 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def updateHost(host: SiteHost) {
+  def updateHost(host: Hostname) {
     val newRoleChar = host.role match {
-      case SiteHost.RoleCanonical => "C"
-      case SiteHost.RoleDuplicate => "D"
-      case SiteHost.RoleRedirect => "R"
-      case SiteHost.RoleLink => "L"
+      case Hostname.RoleCanonical => "C"
+      case Hostname.RoleDuplicate => "D"
+      case Hostname.RoleRedirect => "R"
+      case Hostname.RoleLink => "L"
     }
     val statement = s"""
       update hosts3 set canonical = ?
@@ -718,10 +723,10 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def changeExtraHostsRole(newRole: SiteHost.Role) {
+  def changeExtraHostsRole(newRole: Hostname.Role) {
     val letter =
-      if (newRole == SiteHost.RoleDuplicate) "D"
-      else if (newRole == SiteHost.RoleRedirect) "R"
+      if (newRole == Hostname.RoleDuplicate) "D"
+      else if (newRole == Hostname.RoleRedirect) "R"
       else die("EsE3KP34I6")
     val statement = s"""
       update hosts3 set canonical = ?
@@ -1118,7 +1123,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     require(pageMeta.numOrigPostUnwantedVotes == 0, "DwE2WKU7")
     require(pageMeta.numOrigPostRepliesVisible == 0, "DwE5PWZ1")
     require(pageMeta.answeredAt.isEmpty, "DwE2KFY9")
-    require(pageMeta.answerPostUniqueId.isEmpty, "DwE5FKEW0")
+    require(pageMeta.answerPostId.isEmpty, "DwE5FKEW0")
     // plannedAt is defined for to-do pages: they're an Idea, in planned status.
     require(pageMeta.startedAt.isEmpty, "EdE5RAQW0")
     require(pageMeta.doneAt.isEmpty, "DwE4KPW2")
@@ -1138,7 +1143,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
     val values = List[AnyRef](
       siteId.asAnyRef, pageMeta.pageId, pageMeta.version.asAnyRef,
-      pageMeta.pageRole.toInt.asAnyRef,
+      pageMeta.pageType.toInt.asAnyRef,
       pageMeta.categoryId.orNullInt,
       pageMeta.embeddingPageUrl.orNullVarchar,
       pageMeta.createdAt.asTimestamp,

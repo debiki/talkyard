@@ -174,7 +174,7 @@ class RenderContentActor(
       return result
     }
 
-    val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageRole == PageRole.EmbeddedComments)
+    val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageType == PageType.EmbeddedComments)
 
     // Render for tiny width
     // A bit dupl code. [2FKBJAL3]

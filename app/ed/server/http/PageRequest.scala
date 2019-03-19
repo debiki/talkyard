@@ -85,7 +85,7 @@ class PageRequest[A](
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
     }) getOrElse {
       pageRole match {
-        case Some(PageRole.EmbeddedComments) =>
+        case Some(PageType.EmbeddedComments) =>
           // There's no page body that can be used as page root, because embedded
           // pages contain comments only.
           None
@@ -95,9 +95,9 @@ class PageRequest[A](
     }
 
 
-  def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
+  def pageRole: Option[PageType] = pageMeta.map(_.pageType)
 
-  def thePageRole : PageRole = thePageMeta.pageRole
+  def thePageRole : PageType = thePageMeta.pageType
 
   def thePageMeta: PageMeta = pageMeta getOrElse throwNotFound(
     "DwE3ES58", s"No page meta found, page id: $pageId")

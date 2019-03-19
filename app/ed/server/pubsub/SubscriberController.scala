@@ -122,11 +122,11 @@ class SubscriberController @Inject()(cc: ControllerComponents, edContext: EdCont
         if (result.thisHost == result.canonicalHost)
           result.siteId
         else result.thisHost.role match {
-          case SiteHost.RoleDuplicate =>
+          case Hostname.RoleDuplicate =>
             result.siteId
-          case SiteHost.RoleRedirect =>
+          case Hostname.RoleRedirect =>
             throwForbidden("EsE6U80K3", s"May not subscribe to a RoleRedirect host: $host")
-          case SiteHost.RoleLink =>
+          case Hostname.RoleLink =>
             die("EsE4GUK20", "Not implemented: <link rel='canonical'>")
           case _ =>
             die("EsE2WKF7")

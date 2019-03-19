@@ -81,7 +81,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       pageId <- sectionPageIds
       // (We're not in a transaction, the page might just have been deleted.)
       pageStuff: PageStuff <- pageStuffById.get(pageId)
-      if pageStuff.pageRole == PageRole.Forum
+      if pageStuff.pageRole == PageType.Forum
       pagePath: PagePath <- dao.getPagePath(pageId)
     } yield {
       // Return model.ts: interface Forum.
@@ -123,7 +123,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val includeInSummaries = includeInSummariesInt.flatMap(IncludeInSummaries.fromInt)
         .getOrElse(IncludeInSummaries.Default)
     val defaultTopicTypeInt = (categoryJson \ "defaultTopicType").as[Int]
-    val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
+    val defaultTopicType = PageType.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
@@ -343,7 +343,7 @@ object ForumController {
         recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff])
         : JsObject = {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
-    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
+    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageType != PageType.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
     JsonMaker.makeCategoryJson(category, isDefault, recentTopicsJson)
   }
@@ -369,7 +369,7 @@ object ForumController {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
     Json.obj(
       "pageId" -> topic.id,
-      "pageRole" -> topic.pageRole.toInt,
+      "pageRole" -> topic.pageType.toInt,
       "title" -> topicStuff.title,
       "url" -> topic.path.value,
       // Private chats & formal messages might not belong to any category.
@@ -389,11 +389,11 @@ object ForumController {
       "authorId" -> JsNumber(topic.meta.authorId),
       "createdAtMs" -> JsDateMs(topic.meta.createdAt),
       "bumpedAtMs" -> JsDateMsOrNull(topic.meta.bumpedAt),
-      "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastReplyAt),
+      "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastApprovedReplyAt),
       "lastReplyerId" -> JsNumberOrNull(topicStuff.lastReplyerId),
       "frequentPosterIds" -> JsArray(topicStuff.frequentPosterIds.map(JsNumber(_))),
       "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
-      "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
+      "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostId),
       "plannedAtMs" -> dateOrNull(topic.meta.plannedAt),
       "startedAtMs" -> dateOrNull(topic.meta.startedAt),
       "doneAtMs" -> dateOrNull(topic.meta.doneAt),

@@ -158,7 +158,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
           g.category_id in (${ makeInListFor(categoryIds) }) and   -- BUG cannot have g. and t. in 'where' part? only pps. ?
           $offsetTestAnd
           $pageFilterAnd
-          g.page_role <> ${PageRole.Forum.toInt}
+          g.page_role <> ${PageType.Forum.toInt}
           $andNotDeleted
         order by pps.$periodScore desc, g.bumped_at desc
         limit $limit"""
@@ -243,7 +243,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
           $offsetTestAnd
           $pageFilterAnd
           g.site_id = ? and
-          g.page_role <> ${PageRole.Forum.toInt} and
+          g.page_role <> ${PageType.Forum.toInt} and
           g.category_id in (${ makeInListFor(categoryIds) })
           $andNotDeleted
         $orderBy
@@ -258,7 +258,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
 
 
   private def makePageFilterTestsAnd(pageQuery: PageQuery): String = {
-    import PageRole._
+    import PageType._
     pageQuery.pageFilter.filterType match {
       case PageFilterType.ForActivitySummaryEmail =>
         s"""
@@ -305,7 +305,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val values = List[AnyRef](
       siteId.asAnyRef, category.id.asAnyRef, category.sectionPageId, category.parentId.orNullInt,
-      category.defaultCategoryId.orNullInt,
+      category.defaultSubCatId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef,
@@ -328,7 +328,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         deleted_at = ?
       where site_id = ? and id = ?"""
     val values = List[AnyRef](
-      category.sectionPageId, category.parentId.orNullInt, category.defaultCategoryId.orNullInt,
+      category.sectionPageId, category.parentId.orNullInt, category.defaultSubCatId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef, category.includeInSummaries.toInt.asAnyRef,
@@ -346,7 +346,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       select page_id from pages3
       where site_id = ?
         and category_id = ?
-        and page_role = ${PageRole.AboutCategory.toInt}
+        and page_role = ${PageType.AboutCategory.toInt}
       """
     runQueryFindOneOrNone(query, List(siteId.asAnyRef, categoryId.asAnyRef), rs => {
       rs.getString("page_id")
@@ -359,7 +359,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       id = rs.getInt("id"),
       sectionPageId = rs.getString("page_id"),
       parentId = getOptionalInt(rs, "parent_id"),
-      defaultCategoryId = getOptionalInt(rs, "default_category_id"),
+      defaultSubCatId = getOptionalInt(rs, "default_category_id"),
       position = rs.getInt("position"),
       name = rs.getString("name"),
       slug = rs.getString("slug"),
@@ -377,20 +377,20 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def topicTypesToVarchar(topicTypes: Seq[PageRole]): AnyRef =
+  private def topicTypesToVarchar(topicTypes: Seq[PageType]): AnyRef =
     topicTypes.map(_.toInt).mkString(",") orIfEmpty NullVarchar
 
 
-  private def getNewTopicTypes(rs: js.ResultSet): immutable.Seq[PageRole] = {
+  private def getNewTopicTypes(rs: js.ResultSet): immutable.Seq[PageType] = {
     // This is a comma separated topic type list, like: "5,3,11".
-    val newTopicTypes: immutable.Seq[PageRole] = Option(rs.getString("new_topic_types")) match {
+    val newTopicTypes: immutable.Seq[PageType] = Option(rs.getString("new_topic_types")) match {
       case Some(text) if text.nonEmpty =>
         val topicTypeIdStrings = text.split(',')
-        var typeIds = Vector[PageRole]()
+        var typeIds = Vector[PageType]()
         for (typeIdString <- topicTypeIdStrings) {
           // COULD log an error instead of silently ignoring errors here?
           Try(typeIdString.toInt) foreach { typeIdInt =>
-            PageRole.fromInt(typeIdInt) foreach { pageRole: PageRole =>
+            PageType.fromInt(typeIdInt) foreach { pageRole: PageType =>
               typeIds :+= pageRole
             }
           }

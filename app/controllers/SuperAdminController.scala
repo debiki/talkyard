@@ -84,7 +84,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "id" -> site.id,
       "pubId" -> site.pubId,
       "status" -> site.status.toInt,
-      "canonicalHostname" -> JsStringOrNull(site.canonicalHost.map(_.hostname)),
+      "canonicalHostname" -> JsStringOrNull(site.canonicalHostname.map(_.hostname)),
       "name" -> site.name,
       "createdAtMs" -> site.createdAt.toUnixMillis)
   }

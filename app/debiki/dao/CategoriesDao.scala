@@ -48,7 +48,7 @@ case class CategoryToSave(
   slug: String,
   position: Int,
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
-  newTopicTypes: immutable.Seq[PageRole],
+  newTopicTypes: immutable.Seq[PageType],
   shallBeDefaultCategory: Boolean,
   unlistCategory: Boolean,
   unlistTopics: Boolean,
@@ -70,7 +70,7 @@ case class CategoryToSave(
     id = id,
     sectionPageId = sectionPageId,
     parentId = Some(parentId),
-    defaultCategoryId = None,
+    defaultSubCatId = None,
     name = name,
     slug = slug,
     position = position,
@@ -118,7 +118,7 @@ trait CategoriesDao {
       dieIf(rootCategories eq null, "TyE2PK50")
     }
     dieIf(rootCategories.isEmpty, "TyE2FWBK5")
-    rootCategories.head.defaultCategoryId getOrDie "TyE2KQBP6"
+    rootCategories.head.defaultSubCatId getOrDie "TyE2KQBP6"
   }
 
 
@@ -142,7 +142,7 @@ trait CategoriesDao {
       SectionCategories(
         sectionPageId = rootCategory.sectionPageId,
         categories = categories,
-        defaultCategoryId = rootCategory.defaultCategoryId getOrDie "TyE6KAW21")
+        defaultCategoryId = rootCategory.defaultSubCatId getOrDie "TyE6KAW21")
     }
   }
 
@@ -162,7 +162,7 @@ trait CategoriesDao {
       result.append(SectionCategories(
         sectionPageId = rootCategory.sectionPageId,
         categories = categories,
-        defaultCategoryId = rootCategory.defaultCategoryId getOrDie "TyEWKB201"))
+        defaultCategoryId = rootCategory.defaultSubCatId getOrDie "TyEWKB201"))
     }
 
     result
@@ -185,7 +185,7 @@ trait CategoriesDao {
     val rootCategory = loadRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
       includeDeleted = authzCtx.isStaff, includeUnlistTopics = true, authzCtx).sortBy(_.position)
-    (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
+    (categories, Some(rootCategory.defaultSubCatId getOrDie "TyE5JKF2"))
   }
 
 
@@ -325,7 +325,7 @@ trait CategoriesDao {
     val anyCategory = catsStuff._1.get(id)
     anyCategory map { category =>
       val rootCategory: Option[Category] = category.parentId.flatMap(catsStuff._1.get)
-      (category, rootCategory.flatMap(_.defaultCategoryId) is category.id)
+      (category, rootCategory.flatMap(_.defaultSubCatId) is category.id)
     }
   }
 
@@ -526,7 +526,7 @@ trait CategoriesDao {
     val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
 
     val (aboutPagePath, _) = createPageImpl(
-        PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
+        PageType.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
         titleSource = titleTextAndHtml.text,
         titleHtmlSanitized = titleTextAndHtml.safeHtml,
@@ -573,9 +573,9 @@ trait CategoriesDao {
   private def setDefaultCategory(category: Category, tx: SiteTransaction) {
     val rootCategoryId = category.parentId getOrDie "EsE2PK8O4"
     val rootCategory = tx.loadCategory(rootCategoryId) getOrDie "EsE5KG02"
-    if (rootCategory.defaultCategoryId.contains(category.id))
+    if (rootCategory.defaultSubCatId.contains(category.id))
       return
-    val rootWithNewDefault = rootCategory.copy(defaultCategoryId = Some(category.id))
+    val rootWithNewDefault = rootCategory.copy(defaultSubCatId = Some(category.id))
     // (The section page will be marked as stale anyway, doesn't matter if we do it here too.)
     tx.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }

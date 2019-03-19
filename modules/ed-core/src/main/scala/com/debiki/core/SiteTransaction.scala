@@ -43,6 +43,7 @@ trait SiteTransaction {
 
 
   def loadSite(): Option[Site]
+  def loadSiteInclDetails(): Option[SiteInclDetails]
   def bumpSiteVersion()
   def updateSite(changedSite: Site)
 
@@ -55,11 +56,11 @@ trait SiteTransaction {
   def loadSiteSettings(): Option[EditedSettings]
   def upsertSiteSettings(settings: SettingsToSave)
 
-  def loadHostsInclDetails(): Seq[SiteHostInclDetails]
-  def insertSiteHost(host: SiteHost)
-  def updateHost(host: SiteHost)
+  def loadHostsInclDetails(): Seq[HostnameInclDetails]
+  def insertSiteHost(host: Hostname)
+  def updateHost(host: Hostname)
   def changeCanonicalHostRoleToExtra()
-  def changeExtraHostsRole(newRole: SiteHost.Role)
+  def changeExtraHostsRole(newRole: Hostname.Role)
 
   def loadResourceUsage(): ResourceUse
 
@@ -146,7 +147,7 @@ trait SiteTransaction {
   def loadMessageMembers(pageId: PageId): Set[UserId]
 
   def loadAnyPrivateGroupTalkMembers(pageMeta: PageMeta): Set[UserId] = {
-    if (pageMeta.pageRole.isPrivateGroupTalk)
+    if (pageMeta.pageType.isPrivateGroupTalk)
       loadMessageMembers(pageMeta.pageId)
     else
       Set.empty
@@ -154,7 +155,7 @@ trait SiteTransaction {
 
   // Returns recently active pages first.
   def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr]
-  def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
+  def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageType]): immutable.Seq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
         : (Option[PageReadingProgress], Boolean)
@@ -246,7 +247,7 @@ trait SiteTransaction {
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
-    dieIf(newMeta.pageRole != oldMeta.pageRole && !oldMeta.pageRole.mayChangeRole, "EsE4KU0W2")
+    dieIf(newMeta.pageType != oldMeta.pageType && !oldMeta.pageType.mayChangeRole, "EsE4KU0W2")
     dieIf(newMeta.version < oldMeta.version, "EsE6JKU0D4")
     updatePageMetaImpl(newMeta, oldMeta = oldMeta, markSectionPageStale)
   }

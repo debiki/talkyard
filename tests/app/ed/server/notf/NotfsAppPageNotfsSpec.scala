@@ -92,7 +92,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     }
 
     "Owen creates a page" in {
-      owensTopicIdOne = createPage(PageRole.Discussion,
+      owensTopicIdOne = createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("owensTopicIdOne"),
         textAndHtmlMaker.testBody("owensTopicIdOne bd"),
         owner.id, browserIdData, dao, Some(categoryId))
@@ -126,7 +126,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     }
 
     "Owen creates another page" in {
-      owensTopicIdTwo = createPage(PageRole.Discussion,
+      owensTopicIdTwo = createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("owensTopicIdTwo"),
         textAndHtmlMaker.testBody("owensTopicIdTwo bd"),
         owner.id, browserIdData, dao, Some(categoryId))
@@ -157,7 +157,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     }
 
     "Member 1 creates a page" in {
-      member1sPageOne = createPage(PageRole.Discussion,
+      member1sPageOne = createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("member1sPageOne"),
         textAndHtmlMaker.testBody("member1sPageOne bd"),
         member1.id, browserIdData, dao, Some(categoryId))
@@ -235,7 +235,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
       var memberIdsNotified: Set[UserId] = null
 
       "Owen creates a topic, people get notified" in {
-        everyoneNotfdTopicId = createPage(PageRole.Discussion,
+        everyoneNotfdTopicId = createPage(PageType.Discussion,
           textAndHtmlMaker.testTitle("owensTopicIdOne"),
           textAndHtmlMaker.testBody("owensTopicIdOne bd"),
           owner.id, browserIdData, dao, Some(categoryId))

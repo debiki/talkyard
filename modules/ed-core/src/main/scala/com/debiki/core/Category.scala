@@ -46,7 +46,8 @@ object IncludeInSummaries {
   * @param id
   * @param sectionPageId
   * @param parentId
-  * @param defaultCategoryId
+  * @param defaultSubCatId — if creating a topic in this category (typically, a forum root
+  *  category), then, if no category specified, the new topic will be placed in this sub category.
   * @param name
   * @param slug
   * @param position
@@ -67,13 +68,13 @@ case class Category(  // [exp] ok use
   // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
   // root category).
   parentId: Option[CategoryId],
-  defaultCategoryId: Option[CategoryId],
+  defaultSubCatId: Option[CategoryId],
   name: String,
   slug: String,
   position: Int,
   description: Option[String],
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
-  newTopicTypes: immutable.Seq[PageRole],
+  newTopicTypes: immutable.Seq[PageType],
   // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
   unlistCategory: Boolean,  // also unlists topics
   unlistTopics: Boolean,
@@ -91,7 +92,7 @@ case class Category(  // [exp] ok use
   require(slug.length <= MaxSlugLength, "EsE4ZXW2")
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
-  require(!isRoot || defaultCategoryId.isDefined,
+  require(!isRoot || defaultSubCatId.isDefined,
     s"No defult category specified for root category '$name' with id $id [EsE7GJIK10]")
   require(!description.exists(_.isEmpty), "EsE2KPU7")
   require(!description.exists(_.length > MaxDescriptionLength), "EsE2PFU4")

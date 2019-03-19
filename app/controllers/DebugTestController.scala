@@ -187,7 +187,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def origin: Action[Unit] = GetAction { request =>
-    val canonicalHost = request.dao.theSite().canonicalHost
+    val canonicalHostname = request.dao.theSite().canonicalHostname
     val response =
       s"""Globals.secure: ${globals.secure}
          |Globals.scheme: ${globals.scheme}
@@ -206,8 +206,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
          |Request host: ${request.host}
          |Request secure: ${request.request.secure}
          |
-         |Site canonical hostname: ${canonicalHost.map(_.hostname)}
-         |Site canonical host origin: ${canonicalHost.map(globals.originOf)}
+         |Site canonical hostname: ${canonicalHostname.map(_.hostname)}
+         |Site canonical hostname origin: ${canonicalHostname.map(globals.originOf)}
        """.stripMargin
     Ok(response)
   }

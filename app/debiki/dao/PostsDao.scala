@@ -114,7 +114,7 @@ trait PostsDao {
       tx.loadCategoryPathRootLast(page.meta.categoryId),
       tx.loadPermsOnPages()), "EdEMAY0RE")
 
-    if (page.role.isChat)
+    if (page.pageType.isChat)
       throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
     // Some dupl code [3GTKYA02]
@@ -127,7 +127,7 @@ trait PostsDao {
         // On embedded comments pages, there's no Original Post, so top level comments
         // have no parent post.
         if (postType != PostType.Flat && postType != PostType.BottomComment &&
-            postType != PostType.CompletedForm && page.role != PageRole.EmbeddedComments)
+            postType != PostType.CompletedForm && page.pageType != PageType.EmbeddedComments)
           throwBadReq("DwE2CGW7", "Post lacks parent id")
         else
           None
@@ -180,8 +180,8 @@ trait PostsDao {
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
       bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
-      lastReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastReplyAt,
-      lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
+      lastApprovedReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastApprovedReplyAt,
+      lastApprovedReplyById = shallApprove ? Option(authorId) | oldMeta.lastApprovedReplyById,
       frequentPosterIds = newFrequentPosterIds,
       numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
       numRepliesTotal = page.parts.numRepliesTotal + 1,
@@ -258,14 +258,14 @@ trait PostsDao {
 
 
   def throwOrFindReviewReasonsImpl(author: UserAndLevels, pageMeta: Option[PageMeta],
-        newPageRole: Option[PageRole], tx: SiteTransaction)
+        newPageRole: Option[PageType], tx: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
 
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
-    if (pageMeta.map(_.pageRole).contains(PageRole.FormalMessage))
+    if (pageMeta.map(_.pageType).contains(PageType.FormalMessage))
       return (Nil, true)
 
     val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
@@ -294,7 +294,7 @@ trait PostsDao {
     // those, unless the receiver reports the message.
     // Later: Create a review task anyway, for admins only, if the user is considered a mild threat?
     // And throw-forbidden if considered a moderate threat.
-    if (newPageRole.contains(PageRole.FormalMessage)) {
+    if (newPageRole.contains(PageType.FormalMessage)) {
       // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
       // to non-staff. COULD allow messages to staff, but currently we here don't have access
       // to the page members, so we don't know if they are staff.
@@ -386,7 +386,7 @@ trait PostsDao {
       val (reviewReasons: Seq[ReviewReason], _) =
         throwOrFindReviewPostReasons(page.meta, authorAndLevels, tx)
 
-      if (!page.role.isChat)
+      if (!page.pageType.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
 
       val pageMemberIds = tx.loadMessageMembers(pageId)
@@ -446,7 +446,7 @@ trait PostsDao {
 
     val uniqueId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
-    if (!page.role.isChat)
+    if (!page.pageType.isChat)
       throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
 
     // This is better than some database foreign key error.
@@ -478,8 +478,8 @@ trait PostsDao {
       numRepliesTotal = oldMeta.numRepliesTotal + 1,
       numPostsTotal = oldMeta.numPostsTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
-      lastReplyAt = Some(tx.now.toJavaDate),
-      lastReplyById = Some(authorId),
+      lastApprovedReplyAt = Some(tx.now.toJavaDate),
+      lastApprovedReplyById = Some(authorId),
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
 
@@ -541,7 +541,7 @@ trait PostsDao {
           is not a chat message""")
 
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
-    require(lastPost.currentSourcePatch.isEmpty, "EsE7YGKU2")
+    require(lastPost.currentRevSourcePatch.isEmpty, "EsE7YGKU2")
     require(lastPost.currentRevisionNr == FirstRevisionNr, "EsE2FWY2")
     require(lastPost.isCurrentVersionApproved, "EsE4GK7Y2")
     // The system user auto approves all chat messages and edits of chat messages. [7YKU24]
@@ -699,7 +699,7 @@ trait PostsDao {
 
 
       val isInNinjaEditWindow = {
-        val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
+        val ninjaWindowMs = ninjaEditWindowMsFor(page.pageType)
         val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
         tx.now.millis < ninjaEditEndMs
       }
@@ -737,7 +737,7 @@ trait PostsDao {
         currentRevStaredAt = newStartedAt,
         currentRevLastEditedAt = Some(tx.now.toJavaDate),
         currentRevisionById = editorId,
-        currentSourcePatch = newCurrentSourcePatch,
+        currentRevSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
         previousRevisionNr = newPrevRevNr,
         lastApprovedEditAt = newLastApprovedEditAt,
@@ -753,7 +753,7 @@ trait PostsDao {
       }
 
       // If we're editing an about-category-post == a category description, update the category.
-      val editsAboutCategoryPost = page.role == PageRole.AboutCategory && editedPost.isOrigPost
+      val editsAboutCategoryPost = page.pageType == PageType.AboutCategory && editedPost.isOrigPost
       val anyEditedCategory =
         if (!editsAboutCategoryPost || !editsApproved) {
           if (editsAboutCategoryPost && !editsApproved) {
@@ -1188,11 +1188,11 @@ trait PostsDao {
     var answerGotDeleted = false
 
     // If a question's answer got deleted, change question status to unsolved, and reopen it. [2JPKBW0]
-    newMeta.answerPostUniqueId foreach { answerPostId =>
+    newMeta.answerPostId foreach { answerPostId =>
       if (postsDeleted.exists(_.id == answerPostId)) {
         answerGotDeleted = true
         // Dupl line. [4UKP58B]
-        newMeta = newMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None)
+        newMeta = newMeta.copy(answeredAt = None, answerPostId = None, closedAt = None)
         // Need change from the Solved icon: ✓  to a question mark: (?) icon, in the topic list:
         markSectionPageStale = true
       }
@@ -1217,7 +1217,7 @@ trait PostsDao {
 
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
     val isChatWithWrongReplyCount =
-      page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
+      page.pageType.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
     val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
 
     if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
@@ -1258,7 +1258,7 @@ trait PostsDao {
 
     // ------ The post
 
-    val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
+    val renderSettings = PostRendererSettings(pageMeta.pageType, thePubSiteId())
     COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. [4WKAB02]
     val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
       IfCached.Die("TyE2BKYUF4"))
@@ -1273,7 +1273,7 @@ trait PostsDao {
       approvedById = Some(approverId),
       approvedSource = Some(postBefore.currentSource),
       approvedHtmlSanitized = Some(approvedHtmlSanitized),
-      currentSourcePatch = None,
+      currentRevSourcePatch = None,
       // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
       bodyHiddenAt = None,
       bodyHiddenById = None,
@@ -1310,13 +1310,13 @@ trait PostsDao {
           (1, postAfter.isOrigPostReply ? 1 | 0,
             Some(tx.now.toJavaDate), Some(postAfter.createdById))
         else
-          (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
+          (0, 0, pageMeta.lastApprovedReplyAt, pageMeta.lastApprovedReplyById)
 
       newMeta = newMeta.copy(
         numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
         numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
-        lastReplyAt = newLastReplyAt,
-        lastReplyById = newLastReplyById,
+        lastApprovedReplyAt = newLastReplyAt,
+        lastApprovedReplyById = newLastReplyById,
         hiddenAt = newHiddenAt,
         bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate))
       makesSectionPageHtmlStale = true
@@ -1363,7 +1363,7 @@ trait PostsDao {
 
       // ----- A post
 
-      val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
+      val renderSettings = PostRendererSettings(pageMeta.pageType, thePubSiteId())
       COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. + [4WKAB02]x
       val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
         IfCached.Die("TyE2PKL99"))
@@ -1376,7 +1376,7 @@ trait PostsDao {
         approvedById = Some(SystemUserId),
         approvedSource = Some(post.currentSource),
         approvedHtmlSanitized = Some(approvedHtmlSanitized),
-        currentSourcePatch = None)
+        currentRevSourcePatch = None)
 
       tx.updatePost(postAfter)
       tx.indexPostsSoon(postAfter)
@@ -1399,7 +1399,7 @@ trait PostsDao {
 
     val (newLastReplyAt, newLastReplyById) =
       if (thereAreNoReplies) {
-        dieIf(pageMeta.lastReplyAt.isDefined, "EdE2KF80P", s"Page id $pageId")
+        dieIf(pageMeta.lastApprovedReplyAt.isDefined, "EdE2KF80P", s"Page id $pageId")
         (None, None)
       }
       else {
@@ -1410,8 +1410,8 @@ trait PostsDao {
     val newMeta = pageMeta.copy(
       numRepliesVisible = pageMeta.numRepliesVisible + numNewVisibleReplies,
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
-      lastReplyAt = newLastReplyAt,
-      lastReplyById = newLastReplyById,
+      lastApprovedReplyAt = newLastReplyAt,
+      lastApprovedReplyById = newLastReplyById,
       bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate),
       hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)
@@ -2000,13 +2000,13 @@ object PostsDao {
 
   /** For non-discussion pages, uses a long ninja edit window.
     */
-  def ninjaEditWindowMsFor(pageRole: PageRole): Int = pageRole match {
-    case PageRole.CustomHtmlPage => OneHourMs
-    case PageRole.WebPage => OneHourMs
-    case PageRole.Code => OneHourMs
-    case PageRole.SpecialContent => OneHourMs
-    case PageRole.Blog => OneHourMs
-    case PageRole.Forum => OneHourMs
+  def ninjaEditWindowMsFor(pageRole: PageType): Int = pageRole match {
+    case PageType.CustomHtmlPage => OneHourMs
+    case PageType.WebPage => OneHourMs
+    case PageType.Code => OneHourMs
+    case PageType.SpecialContent => OneHourMs
+    case PageType.Blog => OneHourMs
+    case PageType.Forum => OneHourMs
     case _ => SixMinutesMs
   }
 

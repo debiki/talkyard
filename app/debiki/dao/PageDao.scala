@@ -73,7 +73,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
 
 case class NonExistingPage(
   override val siteId: SiteId,
-  pageRole: PageRole,
+  pageRole: PageType,
   anyCategoryId: Option[CategoryId],
   embeddingUrl: String,
   now: When) extends Page {

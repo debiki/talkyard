@@ -17,13 +17,13 @@
 
 @(tpi: debiki.SiteTpi, siteId: Int,
   // CLEAN_UP remove anyPageRole, they're in the store json already, don't dupl!
-  anyPageRole: Option[com.debiki.core.PageRole],
+  anyPageRole: Option[com.debiki.core.PageType],
   isInLoginWindow: Boolean,
   isAdminApp: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import tpi.globals
-@import com.debiki.core.PageRole.InfoPageMaxId
+@import com.debiki.core.PageType.InfoPageMaxId
 @import org.owasp.encoder.Encode
 
 @altPageIdOrUndefined = @{

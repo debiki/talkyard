@@ -30,7 +30,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class PageStuff(
   pageId: PageId,
-  pageRole: PageRole,
+  pageRole: PageType,
   title: String,
   bodyExcerpt: Option[String],
   // Need not cache these urls per server origin? [5JKWBP2]
@@ -40,7 +40,7 @@ case class PageStuff(
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
 
-  def role: PageRole = pageRole
+  def role: PageType = pageRole
 
   def categoryId: Option[CategoryId] = pageMeta.categoryId
 
@@ -137,13 +137,13 @@ trait PageStuffDao {
 
       val summary = PageStuff(
         pageId,
-        pageMeta.pageRole,
+        pageMeta.pageType,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerpt = anyExcerpt.map(_.text),
         bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
         popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
-        lastReplyerId = pageMeta.lastReplyById,
+        lastReplyerId = pageMeta.lastApprovedReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)(pageMeta)
 
       stuffById += pageMeta.pageId -> summary

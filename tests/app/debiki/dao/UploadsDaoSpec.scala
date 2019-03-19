@@ -296,7 +296,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("create page, link first file, now some quota used")
       val titleTextAndHtml = textAndHtmlMaker.forTitle("Planets")
       val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
-      val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
+      val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
@@ -350,7 +350,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("create page, link missing file, no quota used")
       val titleTextAndHtml = textAndHtmlMaker.forTitle("The Sun")
       val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
-      val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
+      val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
@@ -431,12 +431,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val bodyTextAndHtmlSite2 = textAndHtmlMaker.forBodyOrComment(
         s"[Shared](${sharedFile.ref.url}), [site-two](${site2File.ref.url})")
 
-      val pagePath1 = dao.createPage(PageRole.Discussion, PageStatus.Published,
+      val pagePath1 = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
-      dao2.createPage(PageRole.Discussion, PageStatus.Published,
+      dao2.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
         showId = true, deleteDraftNr = None, Who(user2.id, browserIdData), dummySpamRelReqStuff)

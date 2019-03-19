@@ -32,7 +32,7 @@ trait MessagesDao {
   /** COULD perhaps this method be used to create OpenChat pages too? So that the creator
     * gets auto added to the page? [5KTE02Z]
     */
-  def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageRole,
+  def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageType,
         toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff,
         deleteDraftNr: Option[DraftNr]): PagePath = {
 
@@ -116,7 +116,7 @@ trait MessagesDao {
 
 
   def getAnyPrivateGroupTalkMembers(pageMeta: PageMeta): Set[UserId] = {
-    if (!pageMeta.pageRole.isPrivateGroupTalk)
+    if (!pageMeta.pageType.isPrivateGroupTalk)
       return Set.empty
     COULD_OPTIMIZE // could cache page members.
     readOnlyTransaction(_.loadMessageMembers(pageMeta.pageId))

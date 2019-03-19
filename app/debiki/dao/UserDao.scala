@@ -127,8 +127,8 @@ trait UserDao {
       if (inviter.isStaff) {
         newUser = newUser.copy(
           isApproved = Some(true),
-          approvedAt = Some(tx.now.toJavaDate),
-          approvedById = Some(invite.createdById))
+          reviewedAt = Some(tx.now.toJavaDate),
+          reviewedById = Some(invite.createdById))
       }
 
       invite = invite.copy(acceptedAt = Some(tx.now.toJavaDate), userId = Some(userId))
@@ -228,11 +228,11 @@ trait UserDao {
       case SetEmailUnverified =>
         member.copy(emailVerifiedAt = None)
       case SetApproved =>
-        member.copy(isApproved = Some(true), approvedAt = someNow, approvedById = someById)
+        member.copy(isApproved = Some(true), reviewedAt = someNow, reviewedById = someById)
       case SetUnapproved =>
-        member.copy(isApproved = Some(false), approvedAt = someNow, approvedById = someById)
+        member.copy(isApproved = Some(false), reviewedAt = someNow, reviewedById = someById)
       case ClearApproved =>
-        member.copy(isApproved = None, approvedAt = None, approvedById = None)
+        member.copy(isApproved = None, reviewedAt = None, reviewedById = None)
       case SetIsAdmin =>
         checkNotPromotingSuspended()
         checkNotPromotingOrDemotingOneself()
@@ -884,7 +884,7 @@ trait UserDao {
     // - the Join Chat button (disappears/appears)
 
     // Chat page JSON includes a list of all page members, so:
-    if (pageMeta.pageRole.isChat) {
+    if (pageMeta.pageType.isChat) {
       refreshPageInMemCache(pageId)
     }
 
@@ -910,7 +910,7 @@ trait UserDao {
 
     // Right now, to join a forum page = sub community, one just adds it to one's watchbar.
     // But we don't add/remove the user from the page members list, so nothing to do here.
-    if (pageMeta.pageRole == PageRole.Forum)
+    if (pageMeta.pageType == PageType.Forum)
       return pageMeta
 
     val usersById = tx.loadUsersAsMap(userIds + byWho.id)
@@ -934,8 +934,8 @@ trait UserDao {
         "EsE28PDW9", "Only staff and the page author may add/remove people to/from the page")
 
     if (add) {
-      if (!pageMeta.pageRole.isGroupTalk)
-        throwForbidden("EsE8TBP0", s"Cannot add people to pages of type ${pageMeta.pageRole}")
+      if (!pageMeta.pageType.isGroupTalk)
+        throwForbidden("EsE8TBP0", s"Cannot add people to pages of type ${pageMeta.pageType}")
 
       userIds.find(!usersById.contains(_)) foreach { missingUserId =>
         throwForbidden("EsE5PKS40", s"User not found, id: $missingUserId, cannot add to page")
@@ -1051,7 +1051,7 @@ trait UserDao {
 
       val (numMoreDiscourseRepliesRead, numMoreDiscourseTopicsEntered,
           numMoreChatMessagesRead, numMoreChatTopicsEntered) =
-        if (pageMeta.pageRole.isChat)
+        if (pageMeta.pageType.isChat)
           (0, 0, numMoreNonOrigPostsRead, numMoreTopicsEntered)
         else
           (numMoreNonOrigPostsRead, numMoreTopicsEntered, 0, 0)
@@ -1540,8 +1540,8 @@ trait UserDao {
         username = anonUsername,
         createdAt = memberBefore.createdAt,
         isApproved = memberBefore.isApproved,
-        approvedAt = memberBefore.approvedAt,
-        approvedById = memberBefore.approvedById,
+        reviewedAt = memberBefore.reviewedAt,
+        reviewedById = memberBefore.reviewedById,
         primaryEmailAddress = anonEmail,
         emailNotfPrefs = EmailNotfPrefs.DontReceive,
         seeActivityMinTrustLevel = memberBefore.seeActivityMinTrustLevel,

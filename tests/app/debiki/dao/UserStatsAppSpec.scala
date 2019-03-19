@@ -69,13 +69,13 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "staff creates stuff" in {
-      noRepliesTopicId = createPage(PageRole.Discussion,
+      noRepliesTopicId = createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("noRepliesTopicId"),
         textAndHtmlMaker.testBody("noRepliesTopicIde body"),
         owner.id, browserIdData, dao, Some(categoryId))
       pretendThereAreManyReplies(noRepliesTopicId)
 
-      withRepliesTopicId = createPage(PageRole.Discussion,
+      withRepliesTopicId = createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("withRepliesTopicId"),
         textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
@@ -84,7 +84,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
       reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 4)")(dao)
       pretendThereAreManyReplies(withRepliesTopicId)
 
-      twoMessagesChatTopicId = createPage(PageRole.OpenChat,
+      twoMessagesChatTopicId = createPage(PageType.OpenChat,
         textAndHtmlMaker.testTitle("twoMessagesChatTopicId"),
         textAndHtmlMaker.testBody("chat purpose 2953"),
         owner.id, browserIdData, dao, Some(categoryId))
@@ -94,13 +94,13 @@ class UserStatsAppSpec extends DaoAppSuite() {
       // Needs to be a different member, otherwise the prev chat message gets appended to, instead.
       chat(moderator.id, twoMessagesChatTopicId, "chat message 2")(dao)
 
-      addMessagesChatTopicId = createPage(PageRole.OpenChat,
+      addMessagesChatTopicId = createPage(PageType.OpenChat,
         textAndHtmlMaker.testTitle("chatTopicId"),
         textAndHtmlMaker.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
       pretendThereAreManyReplies(addMessagesChatTopicId)
 
-      withMessagesChatTopicId = createPage(PageRole.OpenChat,
+      withMessagesChatTopicId = createPage(PageType.OpenChat,
         textAndHtmlMaker.testTitle("withMessagesChatTopicId"),
         textAndHtmlMaker.testBody("withMessagesChatTopicId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
@@ -137,7 +137,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... posts a topic, stats get updated" in {
       playTimeMillis(1000)
-      createPage(PageRole.Discussion,
+      createPage(PageType.Discussion,
         textAndHtmlMaker.testTitle("topic"),
         textAndHtmlMaker.testBody("topic text"),
         member1.id, browserIdData, dao, Some(categoryId))

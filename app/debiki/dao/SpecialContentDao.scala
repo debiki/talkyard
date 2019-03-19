@@ -89,7 +89,7 @@ trait SpecialContentDao {
         def theRootPage = s"Root page '$rootPageId', site '$siteId',"
         val meta = transaction.loadPageMeta(rootPageId) getOrElse
           throwForbidden("Dw0FfR1", s"$theRootPage does not exist")
-        if (!meta.pageRole.isSection)
+        if (!meta.pageType.isSection)
           throwForbidden("Dw7GBR8", s"$theRootPage is not a section")
       }
 
@@ -107,7 +107,7 @@ trait SpecialContentDao {
 
   protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
       source: String, htmlSanitized: String, transaction: SiteTransaction) {
-    val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
+    val pageMeta = PageMeta.forNewPage(pageId, PageType.SpecialContent, authorId,
       transaction.now.toJavaDate,
       numPostsTotal = 1, // no title post, only body
       categoryId = None, embeddingUrl = None, publishDirectly = true)
@@ -148,7 +148,7 @@ trait SpecialContentDao {
     val editedPost = oldPost.copy(
       currentRevLastEditedAt = Some(transaction.now.toJavaDate),
       currentRevisionById = forNowEditorId,
-      currentSourcePatch = None,
+      currentRevSourcePatch = None,
       currentRevisionNr = nextRevisionNr,
       lastApprovedEditAt = Some(transaction.now.toJavaDate),
       lastApprovedEditById = Some(forNowEditorId),

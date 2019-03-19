@@ -70,7 +70,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     COULD // have the js callers to toggleWriteReplyToPost [5BIW25] specify correct post type instead.
     val postType =
-      if (pageMeta.pageRole.isFlatDiscourse) PostType.BottomComment
+      if (pageMeta.pageType.isFlatDiscourse) PostType.BottomComment
       else specifiedPostType
 
     throwNoUnless(Authz.mayPostReply(
@@ -181,7 +181,7 @@ object EmbeddedCommentsPageCreator {
     val folder = None
     val categoryId = dao.getDefaultCategoryId()
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
-    val pageRole = PageRole.EmbeddedComments
+    val pageRole = PageType.EmbeddedComments
 
     context.security.throwNoUnless(Authz.mayCreatePage(
       request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),

@@ -521,8 +521,8 @@ class Globals(
 
   val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
-  def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
-  def originOf(host: SiteHost): String = originOf(host.hostname)
+  def originOf(site: Site): Option[String] = site.canonicalHostname.map(originOf)
+  def originOf(host: Hostname): String = originOf(host.hostname)
   def originOf(hostOrHostname: String): String = {
     val (hostname, colonPortParam) = hostOrHostname.span(_ != ':')
     def portParam = colonPortParam drop 1
@@ -653,11 +653,11 @@ class Globals(
         if (result.thisHost == result.canonicalHost)
           result
         else result.thisHost.role match {
-          case SiteHost.RoleDuplicate =>
+          case Hostname.RoleDuplicate =>
             result
-          case SiteHost.RoleRedirect =>
+          case Hostname.RoleRedirect =>
             throwPermanentRedirect(originOf(result.canonicalHost.hostname) + pathAndQuery)
-          case SiteHost.RoleLink =>
+          case Hostname.RoleLink =>
             die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
           case _ =>
             die("DwE20SE4")

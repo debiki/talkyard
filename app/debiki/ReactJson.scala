@@ -174,11 +174,11 @@ class JsonMaker(dao: SiteDao) {
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
     val pageParts = page.parts
     val posts =
-      if (page.role.isChat) {
+      if (page.pageType.isChat) {
         // Load the latest chat messages only. We'll load earlier posts from the browser, on demand.
         transaction.loadOrigPostAndLatestPosts(page.id, limit = 100)
       }
-      else if (page.role == PageRole.Form) {
+      else if (page.pageType == PageType.Form) {
         // Don't load any comments on form pages. [5GDK02]
         transaction.loadTitleAndOrigPost(page.id)
       }
@@ -192,7 +192,7 @@ class JsonMaker(dao: SiteDao) {
     // Only staff can edit custom html pages, currently, so reasonably safe, [2GKW0M]
     // + we remove weird attrs, below.
     val headTags: FindHeadTagsResult =
-      if (page.role != PageRole.CustomHtmlPage) FindHeadTagsResult.None
+      if (page.pageType != PageType.CustomHtmlPage) FindHeadTagsResult.None
       else posts.find(_.isOrigPost) match {
         case None => FindHeadTagsResult.None
         case Some(origPost) =>
@@ -241,7 +241,7 @@ class JsonMaker(dao: SiteDao) {
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    if (page.role == PageRole.EmbeddedComments) {
+    if (page.pageType == PageType.EmbeddedComments) {
       allPostsJson +:=
         PageParts.BodyNr.toString ->
           embeddedCommentsDummyRootPost(pageParts.topLevelComments)
@@ -258,7 +258,7 @@ class JsonMaker(dao: SiteDao) {
     val siteSettings = dao.getWholeSiteSettings()
 
     val anyLatestTopics: JsValue =
-      if (page.role == PageRole.Forum) {
+      if (page.pageType == PageType.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = renderParams.anyPageQuery getOrElse defaultPageQuery(siteSettings)
@@ -275,7 +275,7 @@ class JsonMaker(dao: SiteDao) {
         JsNull
       }
 
-    val anyAnswerPostNr = page.meta.answerPostUniqueId flatMap { postId =>
+    val anyAnswerPostNr = page.meta.answerPostId flatMap { postId =>
       posts.find(_.id == postId).map(_.nr)
     }
 
@@ -285,7 +285,7 @@ class JsonMaker(dao: SiteDao) {
     })
 
     //val pageSettings = dao.loadSinglePageSettings(pageId)
-    val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
+    val horizontalLayout = page.pageType == PageType.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
 
     val pageJsonObj = Json.obj(
@@ -295,7 +295,7 @@ class JsonMaker(dao: SiteDao) {
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
-      "pageRole" -> JsNumber(page.role.toInt),
+      "pageRole" -> JsNumber(page.pageType.toInt),
       "pagePath" -> JsPagePath(page.thePath),
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
@@ -304,7 +304,7 @@ class JsonMaker(dao: SiteDao) {
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
-      "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
+      "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostId),
       "pageAnswerPostNr" -> JsNumberOrNull(anyAnswerPostNr),
       "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
       "pageStartedAtMs" -> dateOrNull(page.meta.startedAt),
@@ -453,7 +453,7 @@ class JsonMaker(dao: SiteDao) {
       Json.obj(
         "pageId" -> metaAndPath.pageId,
         "path" -> metaAndPath.path.value,
-        "pageRole" -> metaAndPath.pageRole.toInt)
+        "pageRole" -> metaAndPath.pageType.toInt)
     }
     JsArray(jsonObjs)
   }
@@ -538,14 +538,14 @@ class JsonMaker(dao: SiteDao) {
         squash = squash, childrenSorted = childrenSorted)
 
     val renderer = RendererWithSettings(
-      dao.context.postRenderer, PostRendererSettings(page.role, pubSiteId))
+      dao.context.postRenderer, PostRendererSettings(page.pageType, pubSiteId))
 
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole = page.role, tags = tags, howRender, renderer)
+      pageRole = page.pageType, tags = tags, howRender, renderer)
   }
 
 
-  def postToJsonOutsidePage(post: Post, pageRole: PageRole, showHidden: Boolean, includeUnapproved: Boolean,
+  def postToJsonOutsidePage(post: Post, pageRole: PageType, showHidden: Boolean, includeUnapproved: Boolean,
         tags: Set[TagLabel]): JsObject = {
     val renderer = RendererWithSettings(dao.context.postRenderer, PostRendererSettings(pageRole, pubSiteId))
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
@@ -800,7 +800,7 @@ class JsonMaker(dao: SiteDao) {
     val categoriesJson = listRestrictedCategoriesJson(categoryId, authzCtx)
 
     val (topics: Seq[PagePathAndMeta], pageStuffById) =
-      if (request.thePageRole != PageRole.Forum) {
+      if (request.thePageRole != PageType.Forum) {
         // Then won't list topics; no need to load any.
         (Nil, Map[PageId, PageStuff]())
       }
@@ -869,10 +869,10 @@ class JsonMaker(dao: SiteDao) {
     val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
       val tags = tagsByPostId(post.id)
       val renderer = RendererWithSettings(
-        dao.context.postRenderer, PostRendererSettings(pageMeta.pageRole, pubSiteId))
+        dao.context.postRenderer, PostRendererSettings(pageMeta.pageType, pubSiteId))
       post.nr.toString ->
         postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
-          pageMeta.pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false,
+          pageMeta.pageType, tags = tags, new HowRenderPostInPage(false, JsNull, false,
             // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
             Nil), renderer)
     }
@@ -1405,7 +1405,7 @@ object JsonMaker {
       "slug" -> category.slug,
       // [refactor] [5YKW294] There should be only one default type.
       "defaultTopicType" -> JsNumber(
-          category.newTopicTypes.headOption.getOrElse(PageRole.Discussion).toInt),
+          category.newTopicTypes.headOption.getOrElse(PageType.Discussion).toInt),
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlistCategory" -> JsBoolean(category.unlistCategory),
@@ -1468,7 +1468,7 @@ object JsonMaker {
 
 
   private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
-    pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
+    pageRole: PageType, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
     renderer: RendererWithSettings): JsObject = {
 
     import inPageInfo._

@@ -62,7 +62,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       owner = createPasswordOwner("5kwu8f40", dao)
       userOne = createPasswordUser("pp22xxnn", dao, trustLevel = TrustLevel.BasicMember)
       userTwo = createPasswordUser("jjyyzz55", dao, trustLevel = TrustLevel.BasicMember)
-      pageId = createPage(PageRole.Discussion, dao.textAndHtmlMaker.forTitle("Reply Draft Page"),
+      pageId = createPage(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Reply Draft Page"),
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text."),
         authorId = SystemUserId, browserIdData, dao, anyCategoryId = None)
 
@@ -130,7 +130,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         draftNr = 2,
         forWhat = locator,
         createdAt = now.plusMillis(1000),  // newer
-        topicType = Some(PageRole.Discussion),
+        topicType = Some(PageType.Discussion),
         title = "New topic title",
         text = DraftTwoTextOrig)
 
@@ -149,7 +149,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         draftNr = 3,
         forWhat = locator,
         createdAt = now.minusMillis(1000),  // older
-        topicType = Some(PageRole.Discussion),
+        topicType = Some(PageType.Discussion),
         title = "Direct message title",
         text = DraftThreeText)
 
@@ -327,7 +327,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         draftNr = 4,
         forWhat = locator,
         createdAt = now.plusMillis(9000),  // newest, but older than the edits (4BKARE2)
-        topicType = Some(PageRole.Question),
+        topicType = Some(PageType.Question),
         title = "Is this a good question to ask?",
         text = DraftTwoTextOrig)
 

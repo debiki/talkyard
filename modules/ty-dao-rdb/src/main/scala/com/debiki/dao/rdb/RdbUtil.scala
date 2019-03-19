@@ -100,6 +100,39 @@ object RdbUtil {
   }
 
 
+  def getSiteInclDetails(rs: js.ResultSet, hostnames: immutable.Seq[HostnameInclDetails])
+        : SiteInclDetails = {
+    SiteInclDetails(
+      id = rs.getInt("id"),
+      publId = rs.getString("publ_id"),
+      name = rs.getString("name"),
+      createdAt = getWhen(rs, "ctime"),
+      createdFromIp = getOptString(rs, "creator_ip"),
+      nextPageId = rs.getInt("next_page_id"),
+      creatorEmailAddress = getOptString(rs, "creator_email_address"),
+      quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
+      numGuests = rs.getInt("num_guests"),
+      numIdentities = rs.getInt("num_identities"),
+      numRoles = rs.getInt("num_roles"),
+      numRoleSettings = rs.getInt("num_role_settings"),
+      numPages = rs.getInt("num_pages"),
+      numPosts = rs.getInt("num_posts"),
+      numPostTextBytes = rs.getInt("num_post_text_bytes"),
+      numPostsRead = rs.getInt("num_posts_read"),
+      numActions = rs.getInt("num_actions"),
+      numNotfs = rs.getInt("num_notfs"),
+      numEmailsSent = rs.getInt("num_emails_sent"),
+      numAuditRows = rs.getInt("num_audit_rows"),
+      numUploads = rs.getInt("num_uploads"),
+      numUploadBytes = rs.getLong("num_upload_bytes"),
+      version = rs.getInt("version"),
+      numPostRevisions = rs.getInt("num_post_revisions"),
+      numPostRevBytes = rs.getLong("num_post_rev_bytes"),
+      status = rs.getInt("status"),
+      hostnames = hostnames)
+  }
+
+
   val InviteSelectListItems = i"""
       |site_id,
       |secret_key,
@@ -349,8 +382,8 @@ object RdbUtil {
       about = getOptString(rs, "about"),
       seeActivityMinTrustLevel = getOptInt(rs, "see_activity_min_trust_level").flatMap(TrustLevel.fromInt),
       isApproved = getOptionalBoolean(rs, "is_approved"),
-      approvedAt = getOptionalDate(rs, "approved_at"),
-      approvedById = getOptionalIntNoneNot0(rs, "approved_by_id"),
+      reviewedAt = getOptionalDate(rs, "approved_at"),
+      reviewedById = getOptionalIntNoneNot0(rs, "approved_by_id"),
       suspendedAt = getOptionalDate(rs, "suspended_at"),
       suspendedTill = getOptionalDate(rs, "suspended_till"),
       suspendedById = getOptionalIntNoneNot0(rs, "suspended_by_id"),
@@ -562,7 +595,7 @@ object RdbUtil {
 
     PageMeta(
       pageId = if (pageId ne null) pageId else resultSet.getString("PAGE_ID"),
-      pageRole = PageRole.fromInt(resultSet.getInt("PAGE_ROLE")) getOrElse PageRole.Discussion,
+      pageType = PageType.fromInt(resultSet.getInt("PAGE_ROLE")) getOrElse PageType.Discussion,
       version = resultSet.getInt("version"),
       categoryId = getOptionalIntNoneNot0(resultSet, "category_id"),
       embeddingPageUrl = Option(resultSet.getString("EMBEDDING_PAGE_URL")),
@@ -570,8 +603,8 @@ object RdbUtil {
       updatedAt = getDate(resultSet, "UPDATED_AT"),
       publishedAt = publishedAt,
       bumpedAt = bumpedAt,
-      lastReplyAt = getOptionalDate(resultSet, "LAST_REPLY_AT"),
-      lastReplyById = getOptionalInt(resultSet, "last_reply_by_id"),
+      lastApprovedReplyAt = getOptionalDate(resultSet, "LAST_REPLY_AT"),
+      lastApprovedReplyById = getOptionalInt(resultSet, "last_reply_by_id"),
       authorId = resultSet.getInt("AUTHOR_ID"),
       frequentPosterIds = frequentPosterIds,
       layout = TopicListLayout.fromInt(resultSet.getInt("layout")) getOrElse TopicListLayout.Default,
@@ -591,7 +624,7 @@ object RdbUtil {
       numOrigPostUnwantedVotes = resultSet.getInt("num_op_unwanted_votes"),
       numOrigPostRepliesVisible = resultSet.getInt("num_op_replies_visible"),
       answeredAt = getOptionalDate(resultSet, "answered_at"),
-      answerPostUniqueId = getOptionalIntNoneNot0(resultSet, "answer_post_id"),
+      answerPostId = getOptionalIntNoneNot0(resultSet, "answer_post_id"),
       plannedAt = getOptionalDate(resultSet, "planned_at"),
       startedAt = getOptionalDate(resultSet, "started_at"),
       doneAt = getOptionalDate(resultSet, "done_at"),
@@ -607,11 +640,11 @@ object RdbUtil {
   }
 
 
-  def _toTenantHostRole(roleStr: String): SiteHost.Role = roleStr match {
-    case "C" => SiteHost.RoleCanonical
-    case "R" => SiteHost.RoleRedirect
-    case "L" => SiteHost.RoleLink
-    case "D" => SiteHost.RoleDuplicate
+  def _toTenantHostRole(roleStr: String): Hostname.Role = roleStr match {
+    case "C" => Hostname.RoleCanonical
+    case "R" => Hostname.RoleRedirect
+    case "L" => Hostname.RoleLink
+    case "D" => Hostname.RoleDuplicate
   }
 
 

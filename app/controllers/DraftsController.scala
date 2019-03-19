@@ -110,7 +110,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
         createdAt = now,
         lastEditedAt = None, // createdAt will be used, if overwriting [5AKJWX0]
         deletedAt = (body \ "deletedAt").asOptWhen,
-        topicType = (body \ "topicType").asOpt[Int].flatMap(PageRole.fromInt),
+        topicType = (body \ "topicType").asOpt[Int].flatMap(PageType.fromInt),
         postType = (body \ "postType").asOpt[Int].flatMap(PostType.fromInt),
         title = (body \ "title").asOptStringNoneIfBlank.getOrElse(""),
         text = (body \ "text").as[String].trim())) getOrIfFailure { ex =>

@@ -227,12 +227,13 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     else loadSitesImpl(siteIds)
 
 
-  def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Boolean = false): Seq[Site] = {
-    // For now, load only 1 tenant.
+  private def loadHosts(siteIds: Seq[SiteId] = Nil, all: Boolean = false)
+        : Map[SiteId, List[HostnameInclDetails]] = {
+    // For now, load one or all.
     require(siteIds.length == 1 || all)
 
-    var hostsByTenantId = Map[SiteId, List[SiteHost]]().withDefaultValue(Nil)
-    var hostsQuery = "select SITE_ID, HOST, CANONICAL from hosts3"
+    var hostsByTenantId = Map[SiteId, List[HostnameInclDetails]]().withDefaultValue(Nil)
+    var hostsQuery = "select SITE_ID, HOST, CANONICAL, ctime from hosts3"
     var hostsValues: List[AnyRef] = Nil
     if (!all) {
       UNTESTED
@@ -243,12 +244,22 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         while (rs.next) {
           val siteId = rs.getInt("SITE_ID")
           var hosts = hostsByTenantId(siteId)
-          hosts ::= SiteHost(
+          hosts ::= HostnameInclDetails(
              hostname = rs.getString("HOST"),
-             role = _toTenantHostRole(rs.getString("CANONICAL")))
+             role = _toTenantHostRole(rs.getString("CANONICAL")),
+             addedAt = getWhen(rs, "ctime"))
           hostsByTenantId = hostsByTenantId.updated(siteId, hosts)
         }
       })
+    hostsByTenantId
+  }
+
+
+  def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Boolean = false): Seq[Site] = {
+    // For now, load one or all.
+    require(siteIds.length == 1 || all)
+
+    val hostsByTenantId: Map[SiteId, List[HostnameInclDetails]] = loadHosts(siteIds, all)
 
     var sitesQuery = s"""
       select id, publ_id, status, name, ctime, creator_ip, creator_email_address
@@ -271,10 +282,19 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
           name = rs.getString("NAME"),
           createdAt = getWhen(rs, "ctime"),
           creatorIp = rs.getString("CREATOR_IP"),
-          hosts = hosts)
+          hostnames = hosts.map(_.noDetails))
       }
     })
     tenants
+  }
+
+
+  def loadSiteInclDetails(siteId: SiteId): Option[SiteInclDetails] = {
+    val hosts = loadHosts(Seq(siteId)).values.headOption.getOrElse(Nil)
+    val query = s"""
+      select * from sites3 where id = ?
+      """
+    runQueryFindOneOrNone(query, List(siteId.asAnyRef), rs => RdbUtil.getSiteInclDetails(rs, hosts))
   }
 
 
@@ -304,12 +324,12 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
       return Some(CanonicalHostLookup(
         siteId = rs.getInt("TID"),
-        thisHost = SiteHost(
+        thisHost = Hostname(
           hostname = hostname,
           role = _toTenantHostRole(rs.getString("THIS_CANONICAL"))),
-        canonicalHost = SiteHost(
+        canonicalHost = Hostname(
           hostname = rs.getString("CANONICAL_HOST"),
-          role = SiteHost.RoleCanonical)))
+          role = Hostname.RoleCanonical)))
     })
   }
 
@@ -489,7 +509,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
           on p.site_id = h.site_id and p.page_id = h.page_id
       where h.page_id is null
       and p.created_at < now_utc() - interval '2' minute
-      and p.page_role != ${PageRole.SpecialContent.toInt}
+      and p.page_role != ${PageType.SpecialContent.toInt}
       limit $limit
       """
     runQuery(neverRenderedQuery, Nil, rs => {
@@ -516,7 +536,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         -- load an embedded comments page because it gets rendered on demand: the user will start
         -- with looking at the blog post/article, won't care about the comments until later, right.
         -- Do need to match the cdn origin though.
-        where p.page_role <> ${PageRole.EmbeddedComments.toInt}
+        where p.page_role <> ${PageType.EmbeddedComments.toInt}
           and h.is_embedded = false
           and width_layout in (${WidthLayout.Tiny.toInt}, ${WidthLayout.Medium.toInt})
           -- Remote origin only used, for embedded pages. [REMOTEORIGIN]

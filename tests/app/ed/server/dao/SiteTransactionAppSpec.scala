@@ -52,13 +52,13 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
     "prepare: create pages" in {
       // Num topics created by admin is tested later, (5FKW02Y).
-      pageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
+      pageId = createPage(PageType.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
         textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
-      otherPageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
+      otherPageId = createPage(PageType.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
         textAndHtmlMaker.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
-      thirdPageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Third Page Title"),
+      thirdPageId = createPage(PageType.Discussion, textAndHtmlMaker.forTitle("Third Page Title"),
         textAndHtmlMaker.forBodyOrComment("Third page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
     }
@@ -345,7 +345,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       }
 
       "prepare: create pages" in {
-        pageAId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
+        pageAId = createPage(PageType.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
           textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         reply(admin.id, pageAId, s"Post 2")(dao)
@@ -354,7 +354,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         reply(admin.id, pageAId, s"Post 5")(dao)
         reply(admin.id, pageAId, s"Post 6")(dao)
 
-        pageBId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
+        pageBId = createPage(PageType.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
           textAndHtmlMaker.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         reply(admin.id, pageBId, s"Post 2")(dao)

@@ -52,7 +52,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
     "someone creates a few pages" in {
       for (pageNr <- 1 to 22) {
-        pageIds += pageNr -> createPage(PageRole.Discussion,
+        pageIds += pageNr -> createPage(PageType.Discussion,
           textAndHtmlMaker.testTitle(s"Page nr $pageNr"), textAndHtmlMaker.testBody(s"Page nr $pageNr body"),
           owner.id, browserIdData, dao, Some(categoryId))
       }

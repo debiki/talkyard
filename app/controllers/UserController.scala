@@ -83,9 +83,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // Ok to load also deactivated users — the requester is staff.
       val membersAndStats = transaction.loadUsersInclDetailsAndStats(peopleQuery)
       val members = membersAndStats.map(_._1)
-      val approverIds = members.flatMap(_.approvedById)
+      val reviewerIds = members.flatMap(_.reviewedById)
       val suspenderIds = members.flatMap(_.suspendedById)
-      val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
+      val usersById = transaction.loadUsersAsMap(reviewerIds ++ suspenderIds)
       COULD // later load all groups too, for each user. Not needed now though. [2WHK7PU0]
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: UserInclDetails = memberAndStats._1
@@ -232,7 +232,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
     if (callerIsStaff || callerIsUserHerself) {
-      val anyApprover = user.approvedById.flatMap(usersById.get)
+      val anyReviewer = user.reviewedById.flatMap(usersById.get)
       val safeEmail =
         if (callerIsAdmin || callerIsUserHerself) user.primaryEmailAddress
         else hideEmailLocalPart(user.primaryEmailAddress)
@@ -248,10 +248,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
       userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsEmptyObj)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
-      userJson += "approvedAtMs" -> JsDateMsOrNull(user.approvedAt)
-      userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
-      userJson += "approvedByName" -> JsStringOrNull(anyApprover.flatMap(_.fullName))
-      userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
+      userJson += "approvedAtMs" -> JsDateMsOrNull(user.reviewedAt)
+      userJson += "approvedById" -> JsNumberOrNull(user.reviewedById)
+      userJson += "approvedByName" -> JsStringOrNull(anyReviewer.flatMap(_.fullName))
+      userJson += "approvedByUsername" -> JsStringOrNull(anyReviewer.flatMap(_.username))
       userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
       userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
     }
@@ -405,7 +405,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postsJson = posts flatMap { post =>
       val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
       val tags = tagsByPostId.getOrElse(post.id, Set.empty)
-      var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageRole,
+      var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
         showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
 
       pageStuffById.get(post.pageId) map { pageStuff =>

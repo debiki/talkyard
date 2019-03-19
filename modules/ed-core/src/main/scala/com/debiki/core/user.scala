@@ -73,8 +73,8 @@ case class Invite(   // [exp] ok use
     username = username,
     createdAt = currentTime,
     isApproved = None,
-    approvedAt = None,
-    approvedById = None,
+    reviewedAt = None,
+    reviewedById = None,
     primaryEmailAddress = emailAddress,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = Some(currentTime))
@@ -112,8 +112,8 @@ sealed abstract class NewUserData {
     username = username,
     createdAt = createdAt,
     isApproved = None,
-    approvedAt = None,
-    approvedById = None,
+    reviewedAt = None,
+    reviewedById = None,
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt,
@@ -155,8 +155,8 @@ case class NewPasswordUserData(
     username = username,
     createdAt = createdAt.toJavaDate,
     isApproved = None,
-    approvedAt = None,
-    approvedById = None,
+    reviewedAt = None,
+    reviewedById = None,
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt.map(_.toJavaDate),
@@ -782,8 +782,8 @@ case class UserInclDetails(  // ok for export
   username: String,
   createdAt: ju.Date,
   isApproved: Option[Boolean],
-  approvedAt: Option[ju.Date],    // RENAME to reviewedAt
-  approvedById: Option[UserId],   // RENAME to reviewedById
+  reviewedAt: Option[ju.Date],
+  reviewedById: Option[UserId],
   primaryEmailAddress: String,
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
@@ -823,9 +823,9 @@ case class UserInclDetails(  // ok for export
   require(fullName == fullName.map(_.trim), "EdE3WKD5F")
   require(country == country.map(_.trim), "EdEZ8KP02")
   require(!website.exists(_.contains(isBlank _)), "EdE4AB6GD")
-  require(approvedAt.isDefined == approvedById.isDefined, "DwE0KEI4")
-  require(!approvedById.exists(_ < LowestNonGuestId), "DwE55UKH4")
-  require(isApproved.isEmpty || (approvedById.isDefined && approvedAt.isDefined), "DwE4DKQ1")
+  require(reviewedAt.isDefined == reviewedById.isDefined, "DwE0KEI4")
+  require(!reviewedById.exists(_ < LowestNonGuestId), "DwE55UKH4")
+  require(isApproved.isEmpty || (reviewedById.isDefined && reviewedAt.isDefined), "DwE4DKQ1")
   require(suspendedAt.isDefined == suspendedById.isDefined, "DwE64kfe2")
   require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
   require(suspendedReason.isDefined == suspendedAt.isDefined, "DwE5JK26")
@@ -844,7 +844,7 @@ case class UserInclDetails(  // ok for export
   require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
 
   def isStaff: Boolean = isAdmin || isModerator
-  def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
+  def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
   def isGuest: Boolean = Participant.isGuestId(id)
 

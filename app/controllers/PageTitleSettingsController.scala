@@ -55,8 +55,8 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringNoneIfBlank
 
-    val anyNewRole: Option[PageRole] = anyNewRoleInt map { newRoleInt =>
-      PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
+    val anyNewRole: Option[PageType] = anyNewRoleInt map { newRoleInt =>
+      PageType.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
     }
 
     val hasManuallyEditedSlug = anySlug.exists(slug =>
@@ -65,17 +65,17 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (anyLayout.isDefined) {
       throwForbiddenIf(!request.theUser.isAdmin,
         "EdE7PK4QL", "Only admins may change the topic list layout")
-      throwForbiddenIf(anyNewRole.exists(_ != PageRole.Forum),
+      throwForbiddenIf(anyNewRole.exists(_ != PageType.Forum),
         "EdEZ5FK20", "Cannot change topic list layout and page type at the same time")
     }
 
     val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
-    if (anyNewRole.exists(_ != oldMeta.pageRole) && !oldMeta.pageRole.mayChangeRole)
-      throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageRole} to something else")
+    if (anyNewRole.exists(_ != oldMeta.pageType) && !oldMeta.pageType.mayChangeRole)
+      throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
 
-    throwForbiddenIf(anyLayout.isDefined && oldMeta.pageRole != PageRole.Forum,
+    throwForbiddenIf(anyLayout.isDefined && oldMeta.pageType != PageType.Forum,
       "EdE5FKL0P", "Can only specify topic list layout for forum pages")
 
     // Authorization.
@@ -88,7 +88,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
            and certain other stuff""")
     }
 
-    if (anyNewRole.is(PageRole.Forum) || (anyNewRole.isEmpty && oldMeta.pageRole == PageRole.Forum)) {
+    if (anyNewRole.is(PageType.Forum) || (anyNewRole.isEmpty && oldMeta.pageType == PageType.Forum)) {
       throwForbiddenIf(anyShowId.is(true), "TyE22PKGEW0", "Forum pages should not show the page id.")
       throwForbiddenIf(anySlug.isDefined, "TyE2PKDPU0", "Forum pages should have no page slug")
     }

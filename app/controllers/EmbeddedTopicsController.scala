@@ -60,11 +60,11 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         // Embedded comments page not yet created. Return a dummy page; we'll create a real one,
         // later when the first reply gets posted.
         val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
-            PageRole.EmbeddedComments, globals.now())
+            PageType.EmbeddedComments, globals.now())
         val categoryId = dao.getDefaultCategoryId()
 
         val dummyPage = NonExistingPage(
-          dao.siteId, PageRole.EmbeddedComments, Some(categoryId), embeddingUrl, globals.now())
+          dao.siteId, PageType.EmbeddedComments, Some(categoryId), embeddingUrl, globals.now())
 
         val (maySee, debugCode) = dao.maySeePageUseCache(dummyPage.meta, request.requester)
         if (!maySee)
@@ -93,7 +93,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
       case Some(realId) =>
         val pageMeta = dao.getThePageMeta(realId)
-        if (pageMeta.pageRole != PageRole.EmbeddedComments)
+        if (pageMeta.pageType != PageType.EmbeddedComments)
           throwForbidden("EdE2F6UHY3", "Not an embedded comments page")
 
         val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.requester)
@@ -149,7 +149,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         edPageId: Option[PageId]): Action[Unit] = AsyncGetActionMaybeSkipCookies(avoidCookies = true) {
         request =>
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
-    val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
+    val tpi = new EditPageTpi(request, PageType.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
       anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
     val htmlStr = views.html.embeddedEditor(tpi).body
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,

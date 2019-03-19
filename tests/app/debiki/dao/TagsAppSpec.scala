@@ -156,7 +156,7 @@ class TagsAppSpec extends DaoAppSuite() {
     }
 
     "load, add, remove tags" in {
-      thePageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+      thePageId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
         textAndHtmlMaker.testBody("body"), theOwner.id, browserIdData, dao, Some(categoryId))
       val postNoTags = reply(theMember.id, thePageId, "No tags")(dao)
       val postWithTags = reply(theMember.id, thePageId, "With tags")(dao)
@@ -231,7 +231,7 @@ class TagsAppSpec extends DaoAppSuite() {
       val moderatorWho = Who(theModerator.id, browserIdData)
 
       // No notfs will be sent to the system user.
-      thePageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title2"),
+      thePageId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title2"),
         textAndHtmlMaker.testBody("body2"), SystemUserId, browserIdData, dao, Some(categoryId))
 
       val post = dao.readOnlyTransaction(_.loadThePost(thePageId, PageParts.BodyNr))

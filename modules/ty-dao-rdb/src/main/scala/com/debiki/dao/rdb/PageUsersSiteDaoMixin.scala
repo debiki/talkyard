@@ -84,7 +84,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole])
+  override def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageType])
         : immutable.Seq[PageId] = {
     require(onlyPageRoles.nonEmpty, "EsE4G8U1")
     // Inline the page roles (rather than (?, ?, ?, ...)) because they'll always be the same

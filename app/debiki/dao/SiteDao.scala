@@ -236,7 +236,7 @@ class SiteDao(
 
   def theSiteNameAndOrigin(): (String, String) = {
     val site = theSite()
-    val anyHostname = site.canonicalHost.map(_.hostname)
+    val anyHostname = site.canonicalHostname.map(_.hostname)
     val anyOrigin = anyHostname.map(globals.schemeColonSlashSlash + _ + globals.colonPort)
     val siteNameOrHostname = anyHostname getOrElse site.name
     val origin = anyOrigin getOrElse globals.siteByIdOrigin(siteId)
@@ -259,7 +259,7 @@ class SiteDao(
     val site = loadSiteNoCache() getOrElse {
       return  Set.empty
     }
-    site.hosts.map(host => {
+    site.hostnames.map(host => {
       globals.schemeColonSlashSlash + host.hostname + globals.colonPort
     }) toSet
   }
@@ -296,7 +296,7 @@ class SiteDao(
     }
   }
 
-  def listHostnames(): Seq[SiteHostInclDetails] = {
+  def listHostnames(): Seq[HostnameInclDetails] = {
     readOnlyTransaction(_.loadHostsInclDetails())
   }
 
@@ -311,13 +311,13 @@ class SiteDao(
       }
       tx.changeCanonicalHostRoleToExtra()
       hostsNewestFirst.find(_.hostname == newHostname) match {
-        case Some(oldSiteHost: SiteHostInclDetails) =>
+        case Some(oldSiteHost: HostnameInclDetails) =>
           // We're changing back to one of our old hostnames.
-          val hostAsCanonical = oldSiteHost.copy(role = SiteHost.RoleCanonical)
+          val hostAsCanonical = oldSiteHost.copy(role = Hostname.RoleCanonical)
           tx.updateHost(hostAsCanonical.noDetails)
         case None =>
           // This is a new hostname.
-          try tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+          try tx.insertSiteHost(Hostname(newHostname, Hostname.RoleCanonical))
           catch {
             case _: DuplicateHostnameException =>
               throwForbidden("TyE7FKW20", s"There's already a site with hostname '$newHostname'")
@@ -327,7 +327,7 @@ class SiteDao(
     uncacheSiteFromMemCache()
   }
 
-  def changeExtraHostsRole(newRole: SiteHost.Role) {
+  def changeExtraHostsRole(newRole: Hostname.Role) {
     readWriteTransaction { transaction =>
       transaction.changeExtraHostsRole(newRole)
       uncacheSiteFromMemCache()
@@ -456,7 +456,7 @@ object SiteDao {
     * in the config file only, that is, globals.defaultSiteHostname.
     */
   def maybeCopyWithDefaultHostname(site: Site, globals: debiki.Globals): Site = {
-    if (site.canonicalHost.nonEmpty)
+    if (site.canonicalHostname.nonEmpty)
       return site
 
     // If no canonical host, use site-NNN.base-domain.com:
@@ -464,13 +464,13 @@ object SiteDao {
     // talkyard.defaultSiteId has been set to != 1.)
     if (site.id != globals.defaultSiteId) {
       val hostname = globals.siteByIdHostname(site.id)
-      return site.copy(hosts = SiteHost(hostname, SiteHost.RoleCanonical) :: site.hosts)
+      return site.copy(hostnames = Hostname(hostname, Hostname.RoleCanonical) :: site.hostnames)
     }
 
     val defaultHostname = globals.defaultSiteHostname.getOrDie(
       "TyE5GKU2S7", s"No ${Globals.DefaultSiteHostnameConfValName} specified")
-    val canonicalHost = SiteHost(defaultHostname, SiteHost.RoleCanonical)
-    site.copy(hosts = canonicalHost :: site.hosts)
+    val canonicalHost = Hostname(defaultHostname, Hostname.RoleCanonical)
+    site.copy(hostnames = canonicalHost :: site.hostnames)
   }
 
 }

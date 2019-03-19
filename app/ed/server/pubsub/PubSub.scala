@@ -45,7 +45,7 @@ sealed trait Message {
 case class NewPageMessage(
   siteId: SiteId,
   pageId: PageId,
-  pageRole: PageRole,
+  pageRole: PageType,
   notifications: Notifications) extends Message {
 
   def toJson: JsValue = JsNull

@@ -97,7 +97,7 @@ trait ForumDao {
       // Create forum page.
       val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
       val (forumPagePath, _) = createPageImpl(
-        PageRole.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
+        PageType.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
         anyFolder = Some(options.folder), anySlug = Some(""), showId = false,
         titleSource = options.title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = introText.source, bodyHtmlSanitized = introText.html,
@@ -148,7 +148,7 @@ trait ForumDao {
       id = rootCategoryId,
       sectionPageId = forumPageId,
       parentId = None,
-      defaultCategoryId = Some(defaultCategoryId),
+      defaultSubCatId = Some(defaultCategoryId),
       name = RootCategoryName,
       slug = RootCategorySlug,
       position = 1,
@@ -171,7 +171,7 @@ trait ForumDao {
         slug = "staff",
         position = DefaultCategoryPosition + 10,
         description = "Private category for staff discussions.",
-        newTopicTypes = immutable.Seq(PageRole.Discussion),
+        newTopicTypes = immutable.Seq(PageType.Discussion),
         unlistCategory = false,
         unlistTopics = false,
         includeInSummaries = IncludeInSummaries.Default),
@@ -205,7 +205,7 @@ trait ForumDao {
         slug = EmbCommentsCategorySlug,
         position = DefaultCategoryPosition,
         description = "Embedded comments for your blog or articles.",
-        newTopicTypes = immutable.Seq(PageRole.Discussion),
+        newTopicTypes = immutable.Seq(PageType.Discussion),
         // Strangers may not list all topics, maybe blog owner wants to keep some of them private?
         // SECURITY [rand-page-id]
         unlistCategory = true,
@@ -258,7 +258,7 @@ trait ForumDao {
           slug = "support",
           position = DefaultCategoryPosition - 2,
           description = "Here you can ask questions and report problems.",
-          newTopicTypes = immutable.Seq(PageRole.Question),
+          newTopicTypes = immutable.Seq(PageType.Question),
           unlistCategory = false,
           unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
@@ -281,7 +281,7 @@ trait ForumDao {
           slug = "ideas",
           position = DefaultCategoryPosition - 1,
           description = "Here you can suggest new ideas.",
-          newTopicTypes = immutable.Seq(PageRole.Idea),
+          newTopicTypes = immutable.Seq(PageType.Idea),
           unlistCategory = false,
           unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
@@ -304,7 +304,7 @@ trait ForumDao {
           slug = UncategorizedCategorySlug,
           position = DefaultCategoryPosition,
           description = "For topics that don't fit in other categories.",
-          newTopicTypes = immutable.Seq(PageRole.Discussion),
+          newTopicTypes = immutable.Seq(PageType.Discussion),
           unlistCategory = false,
           unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
@@ -328,7 +328,7 @@ trait ForumDao {
           description =
             o"""Sample topics of different types. They aren't listed in the main
               topic list — you'll see them only if you open this sample topics category.""",
-          newTopicTypes = immutable.Seq(PageRole.Discussion),
+          newTopicTypes = immutable.Seq(PageType.Discussion),
           unlistCategory = false,
           unlistTopics = true,  // so won't appear in the main topic list
           includeInSummaries = IncludeInSummaries.NoExclude),
@@ -340,7 +340,7 @@ trait ForumDao {
 
     // Create forum welcome topic.
     createPageImpl(
-      PageRole.Discussion, PageStatus.Published,
+      PageType.Discussion, PageStatus.Published,
       anyCategoryId = Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
@@ -355,7 +355,7 @@ trait ForumDao {
 
     // Create staff chat
     createPageImpl(
-      PageRole.OpenChat, PageStatus.Published,
+      PageType.OpenChat, PageStatus.Published,
       anyCategoryId = Some(staffCategoryId),
       anyFolder = None, anySlug = Some("staff-chat"), showId = true,
       titleSource = StaffChatTopicTitle,
@@ -372,7 +372,7 @@ trait ForumDao {
 
       // Create a sample open-ended discussion.
       createPageImpl(
-        PageRole.Discussion, PageStatus.Published,
+        PageType.Discussion, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-discussion"), showId = true,
         titleSource = SampleThreadedDiscussionTitle,
@@ -387,7 +387,7 @@ trait ForumDao {
 
       // Create sample problem.
       createPageImpl(
-        PageRole.Problem, PageStatus.Published,
+        PageType.Problem, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-problem"), showId = true,
         titleSource = SampleProblemTitle,
@@ -402,7 +402,7 @@ trait ForumDao {
 
       // Create sample idea.
       createPageImpl(
-        PageRole.Idea, PageStatus.Published,
+        PageType.Idea, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-idea"), showId = true,
         titleSource = SampleIdeaTitle,
@@ -417,7 +417,7 @@ trait ForumDao {
 
       // Create sample question.
       val questionPagePath = createPageImpl(
-        PageRole.Question, PageStatus.Published,
+        PageType.Question, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-question"), showId = true,
         titleSource = SampleQuestionTitle,

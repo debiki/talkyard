@@ -63,8 +63,8 @@ trait WatchbarDao {
       orCacheAndReturn = redisCache.loadWatchbar(userId) orElse Some({
         readOnlyTransaction { transaction =>
           val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
-            userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
-          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.FormalMessage))
+            userId, Set(PageType.OpenChat, PageType.PrivateChat))
+          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageType.FormalMessage))
           BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
         }
       }),

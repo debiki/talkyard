@@ -185,7 +185,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       createdAt = getWhen(rs, "created_at"),
       lastEditedAt = getOptWhen(rs, "last_edited_at"),
       deletedAt = getOptWhen(rs, "deleted_at"),
-      topicType = getOptInt(rs, "topic_type").flatMap(PageRole.fromInt),
+      topicType = getOptInt(rs, "topic_type").flatMap(PageType.fromInt),
       postType = getOptInt(rs, "post_type").flatMap(PostType.fromInt),
       title = getString(rs, "title"),
       text = getString(rs, "text"))

@@ -65,7 +65,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
           slug = "otherCategory",
           description = "Descr, other cat",
           position = 11,
-          newTopicTypes = List(PageRole.Discussion),
+          newTopicTypes = List(PageType.Discussion),
           shallBeDefaultCategory = false,
           unlistCategory = false,
           unlistTopics = false,
@@ -73,17 +73,17 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
         Vector(ForumDao.makeEveryonesDefaultCategoryPerms(otherCatId)),
         Who.System)
 
-      pageIdOne = createPage(PageRole.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test One"),
+      pageIdOne = createPage(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test One"),
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text one."),
         authorId = SystemUserId, browserIdData, dao,
         anyCategoryId = Some(defCatId))
 
-      pageIdTwo = createPage(PageRole.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test Two"),
+      pageIdTwo = createPage(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test Two"),
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text two."),
         authorId = SystemUserId, browserIdData, dao,
         anyCategoryId = Some(defCatId))
 
-      pageIdThree = createPage(PageRole.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test Three"),
+      pageIdThree = createPage(PageType.Discussion, dao.textAndHtmlMaker.forTitle("Notfs Test Three"),
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text three."),
         authorId = SystemUserId, browserIdData, dao,
         anyCategoryId = Some(defCatId))

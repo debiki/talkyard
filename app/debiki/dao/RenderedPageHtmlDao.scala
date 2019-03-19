@@ -151,7 +151,7 @@ trait RenderedPageHtmlDao {
           }
         })
 
-      if (pageRequest.thePageRole == PageRole.Forum) {
+      if (pageRequest.thePageRole == PageType.Forum) {
         Logger.trace(s"s$siteId: Mem-Remembering forum: ${pageRequest.thePageId}")
         rememberForum(pageRequest.thePageId)
       }

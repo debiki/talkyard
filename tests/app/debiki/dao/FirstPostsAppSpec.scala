@@ -322,7 +322,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         "auto-approves chat messages, and doesn't let them interfere with discussion replies" in {
           pending
           newAdminAndPage()
-          val chatPageId = createPage(PageRole.OpenChat, textAndHtmlMaker.testTitle("Chat Page 594284"),
+          val chatPageId = createPage(PageType.OpenChat, textAndHtmlMaker.testTitle("Chat Page 594284"),
             textAndHtmlMaker.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
@@ -388,17 +388,17 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           val member = createPasswordUser(s"mem_4zm2", dao)
 
           info("create Allow = 2 pages, pending approval since Approve > 0")
-          val first = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2"),
+          val first = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2"),
             textAndHtmlMaker.testBody("Page body 4ZM2."), member.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
-          val second = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 b"),
+          val second = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 b"),
             textAndHtmlMaker.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
           info("rejct page 3")
           intercept[ResultException] {
-            createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 c"),
+            createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 c"),
                 textAndHtmlMaker.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao,
                 anyCategoryId = Some(categoryId))
           }.getMessage must include("_EsE6YKF2_")

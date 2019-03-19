@@ -241,7 +241,7 @@ class DaoAppSuite(
   }
 
 
-  def createPage(pageRole: PageRole, titleTextAndHtml: TextAndHtml,
+  def createPage(pageRole: PageType, titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None): PageId = {
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,

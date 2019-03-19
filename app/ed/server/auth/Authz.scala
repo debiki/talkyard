@@ -99,7 +99,7 @@ object Authz {
   def mayCreatePage(
     userAndLevels: UserAndLevels,
     groupIds: immutable.Seq[GroupId],
-    pageRole: PageRole,
+    pageRole: PageType,
     bodyPostType: PostType,
     pinWhere: Option[PinPageWhere],
     anySlug: Option[String],
@@ -196,7 +196,7 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
 
-    if (pageMeta.pageRole == PageRole.MindMap) {
+    if (pageMeta.pageType == PageType.MindMap) {
       // Mind maps could easily get messed up by people posting new stuff to the mind map, so,
       // only allow people with edit-*page* permission to add stuff to a mind map. [7KUE20]
       if (!mayWhat.mayEditPage) // before: user.id != pageMeta.authorId && !user.isStaff)
@@ -207,8 +207,8 @@ object Authz {
         return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
     }
 
-    if (!pageMeta.pageRole.canHaveReplies)
-      return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageRole}")
+    if (!pageMeta.pageType.canHaveReplies)
+      return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageType}")
 
     // Dupl code, a bit repeated in AuthzSiteDaoMixin. [8KUWC1]
     replyToPosts foreach { post =>
@@ -250,7 +250,7 @@ object Authz {
     if (isOwnPost) {
       // Fine, may edit.
     }
-    else if (pageMeta.pageRole == PageRole.MindMap) {  // [0JUK2WA5]
+    else if (pageMeta.pageType == PageType.MindMap) {  // [0JUK2WA5]
       if (!mayWhat.mayEditPage)
         return NoMayNot("EdEM0ED0YOURMINDM", "You may not edit other people's mind maps")
     }
@@ -320,11 +320,11 @@ object Authz {
     if (!mayWhat.mayPostComment)
       return NoMayNot("EdEM0FRM0RE", "You don't have permissions to submit this form")
 
-    if (pageMeta.pageRole != PageRole.WebPage && pageMeta.pageRole != PageRole.Form) {
-      return NoMayNot("EsEM0FRMPT", s"Cannot submit custom forms to page type ${pageMeta.pageRole}")
+    if (pageMeta.pageType != PageType.WebPage && pageMeta.pageType != PageType.Form) {
+      return NoMayNot("EsEM0FRMPT", s"Cannot submit custom forms to page type ${pageMeta.pageType}")
     }
 
-    dieUnless(pageMeta.pageRole.canHaveReplies, "EdE5PJWK20")
+    dieUnless(pageMeta.pageType.canHaveReplies, "EdE5PJWK20")
 
     Yes
   }
@@ -374,18 +374,18 @@ object Authz {
       }
 
       // These page types are for admins only.
-      if (meta.pageRole == PageRole.SpecialContent || meta.pageRole == PageRole.Code)
+      if (meta.pageType == PageType.SpecialContent || meta.pageType == PageType.Code)
         return MayWhat.mayNotSee("EdE0SEEISCODE")
 
       if (meta.isHidden && !isStaff && !isOwnPage)
         return MayWhat.mayNotSee("EdE0SEEPAGEHIDDEN_")
 
       // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
-      if (meta.pageRole == PageRole.MindMap && (isOwnPage || isStaff))
+      if (meta.pageType == PageType.MindMap && (isOwnPage || isStaff))
         mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats or private formal messages.
-      if (meta.pageRole.isPrivateGroupTalk) {
+      if (meta.pageType.isPrivateGroupTalk) {
         val thePageMembers = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {
           return MayWhat.mayNotSee("EdE0SEE0USER")
@@ -407,7 +407,7 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
-    val isForumPage = pageMeta.exists(_.pageRole == PageRole.Forum)
+    val isForumPage = pageMeta.exists(_.pageType == PageType.Forum)
     var isDeleted = pageMeta.exists(_.isDeleted)
 
     // Later: return may-not-see also if !published?

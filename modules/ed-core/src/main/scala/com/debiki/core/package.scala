@@ -320,7 +320,7 @@ package object core {
 
   trait PageTitleRole {
     def title: String
-    def role: PageRole
+    def role: PageType
   }
 
 

@@ -164,8 +164,8 @@ class SystemDao(
 
     try readWriteTransaction { sysTx =>
       if (deleteOldSite) {
-        dieUnless(SiteHost.isE2eTestHostname(hostname), "EdE7PK5W8")
-        dieUnless(SiteHost.isE2eTestHostname(name), "EdE50K5W4")
+        dieUnless(Hostname.isE2eTestHostname(hostname), "EdE7PK5W8")
+        dieUnless(Hostname.isE2eTestHostname(name), "EdE50K5W4")
 
         val anySitesToDeleteMaybeDupls: Vec[Site] =
           sysTx.loadSiteByHostname(hostname).toVector ++ sysTx.loadSiteByName(name).toVector
@@ -184,7 +184,7 @@ class SystemDao(
             "TyE2ABK493U4", s"Could not delete site: $siteToDelete")
 
           deletedAlready.add(siteToDelete.id)
-          siteToDelete.hosts.map(_.hostname)
+          siteToDelete.hostnames.map(_.hostname)
         }
 
         anyDeletedHostnames.toSet foreach this.forgetHostname
@@ -256,7 +256,7 @@ class SystemDao(
         enableDirectMessages = notIfEmbedded,
         orgFullName = Some(Some(organizationName))))
 
-      val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
+      val newSiteHost = Hostname(hostname, Hostname.RoleCanonical)
       try newSiteTx.insertSiteHost(newSiteHost)
       catch {
         case _: DuplicateHostnameException =>
@@ -280,7 +280,7 @@ class SystemDao(
         browserLocation = None,
         targetSiteId = createdFromSiteId))
 
-      newSite.copy(hosts = List(newSiteHost))
+      newSite.copy(hostnames = List(newSiteHost))
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site) =>
@@ -507,7 +507,7 @@ object SystemDao {
 
 
   def removeCanonicalHostCacheEntries(site: Site, memCache: MemCache) {
-    site.hosts foreach { host =>
+    site.hostnames foreach { host =>
       memCache.remove(canonicalHostKey(host.hostname))
     }
   }

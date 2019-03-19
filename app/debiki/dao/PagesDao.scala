@@ -51,7 +51,7 @@ trait PagesDao {
   }
 
 
-  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+  def createPage(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
@@ -109,7 +109,7 @@ trait PagesDao {
 
   /** Returns (PagePath, body-post)
     */
-  def createPageImpl2(pageRole: PageRole,
+  def createPageImpl2(pageRole: PageType,
         title: TextAndHtml, body: TextAndHtml,
         pageStatus: PageStatus = PageStatus.Published,
         anyCategoryId: Option[CategoryId] = None,
@@ -125,7 +125,7 @@ trait PagesDao {
       byWho, spamRelReqStuff, tx = tx, layout = None)
 
 
-  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus,
+  def createPageImpl(pageRole: PageType, pageStatus: PageStatus,
       anyCategoryId: Option[CategoryId],
       anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
       titleSource: String, titleHtmlSanitized: String,
@@ -268,7 +268,7 @@ trait PagesDao {
       doneAt = now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
-      pageRole = Some(pageRole),
+      pageType = Some(pageRole),
       uniquePostId = Some(bodyPost.id),
       postNr = Some(bodyPost.nr))
 
@@ -324,7 +324,7 @@ trait PagesDao {
   }
 
 
-  def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageRole,
+  def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageType,
         tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
     throwOrFindReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), tx)
   }
@@ -375,7 +375,7 @@ trait PagesDao {
     val answeredAt = readWriteTransaction { tx =>
       val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
-      if (oldMeta.pageRole != PageRole.Question)
+      if (oldMeta.pageType != PageType.Question)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
       if (!user.isStaff && user.id != oldMeta.authorId)
@@ -395,7 +395,7 @@ trait PagesDao {
       val answeredAt = Some(tx.now.toJavaDate)
       val newMeta = oldMeta.copy(
         answeredAt = answeredAt,
-        answerPostUniqueId = Some(postUniqueId),
+        answerPostId = Some(postUniqueId),
         closedAt = answeredAt,
         version = oldMeta.version + 1)
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
@@ -417,7 +417,7 @@ trait PagesDao {
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
 
       // Dupl line. [4UKP58B]
-      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None,
+      val newMeta = oldMeta.copy(answeredAt = None, answerPostId = None, closedAt = None,
         version = oldMeta.version + 1)
 
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
@@ -438,9 +438,9 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
 
-      val pageRole = oldMeta.pageRole
-      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea &&
-          pageRole != PageRole.UsabilityTesting)
+      val pageRole = oldMeta.pageType
+      if (pageRole != PageType.Problem && pageRole != PageType.Idea &&
+          pageRole != PageType.UsabilityTesting)
         throwBadReq("DwE6KEW2", "This page cannot be marked as planned or done")
 
       var newPlannedAt: Option[ju.Date] = None
@@ -467,7 +467,7 @@ trait PagesDao {
         newStartedAt = Some(now.toJavaDate)
         newStatus = "Started"
       }
-      else if (pageRole == PageRole.UsabilityTesting) {  // [plugin]
+      else if (pageRole == PageType.UsabilityTesting) {  // [plugin]
         // These get Done after just one status change, there's no Planned or Started. So bump to Done.
         newDoneAt = Some(now.toJavaDate)
         newClosedAt = Some(now.toJavaDate)
@@ -509,8 +509,8 @@ trait PagesDao {
       throwBadRequestIf(oldMeta.isDeleted,
           "TyE0CLSPGDLD", s"Cannot close or reopen deleted pages")
 
-      throwBadRequestIf(!oldMeta.pageRole.canClose,
-          "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
+      throwBadRequestIf(!oldMeta.pageType.canClose,
+          "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageType}")
 
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
@@ -562,7 +562,7 @@ trait PagesDao {
       // Hmm but trying to delete a deleted *post*, throws an error. [5WKQRH2]
       if pageMeta.isDeleted == undelete
     } {
-      if ((pageMeta.pageRole.isSection || pageMeta.pageRole == PageRole.CustomHtmlPage) &&
+      if ((pageMeta.pageType.isSection || pageMeta.pageType == PageType.CustomHtmlPage) &&
           !deleter.isAdmin)
         throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")
 
@@ -574,7 +574,7 @@ trait PagesDao {
         doneAt = tx.now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(pageId),
-        pageRole = Some(pageMeta.pageRole))
+        pageType = Some(pageMeta.pageType))
 
       var (newMeta, auditLogEntry) =
         if (undelete) {
@@ -653,8 +653,8 @@ trait PagesDao {
         tx: SiteTransaction) {
     val page = PageDao(pageId, tx)
     val newMeta = page.meta.copy(
-      lastReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
-      lastReplyById = page.parts.lastVisibleReply.map(_.createdById),
+      lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
+      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,
       numLikes = page.parts.numLikes,
       numWrongs = page.parts.numWrongs,
@@ -669,7 +669,7 @@ trait PagesDao {
       numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
       answeredAt = page.anyAnswerPost.map(_.createdAt),
-      answerPostUniqueId = page.anyAnswerPost.map(_.id),
+      answerPostId = page.anyAnswerPost.map(_.id),
       version = page.version + 1)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)

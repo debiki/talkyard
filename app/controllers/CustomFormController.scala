@@ -72,7 +72,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
-    val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
+    val pageType = PageType.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
     val titleText = (request.body \ "newTopicTitle").as[String]
     val bodyText = (request.body \ "newTopicBody").as[String]
     val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)

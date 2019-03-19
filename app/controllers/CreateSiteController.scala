@@ -101,7 +101,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         .replaceFirst("https?://", "")
         .replaceAll("[.:]+", "-")   // www.example.com:8080 —> www-example-com-8080
         .replaceFirst("/.*$", "")   // www.weird.com/some/path —> www-weird-com  only
-      SiteHost.EmbeddedCommentsHostnamePrefix + hostnameWithDashes
+      Hostname.EmbeddedCommentsHostnamePrefix + hostnameWithDashes
     }
 
     if (!acceptTermsAndPrivacy)
@@ -138,7 +138,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     }
 
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-    val deleteOldSite = isTestSiteOkayToDelete && SiteHost.isE2eTestHostname(hostname)
+    val deleteOldSite = isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname)
 
     val goToUrl: String =
       try {
@@ -199,7 +199,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   def deleteTestSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
     val localHostname = (request.body \ "localHostname").as[String]
-    throwForbiddenUnless(SiteHost.isE2eTestHostname(localHostname), "EdE7UKFW2", "Not a test site")
+    throwForbiddenUnless(Hostname.isE2eTestHostname(localHostname), "EdE7UKFW2", "Not a test site")
     request.dao.readWriteTransaction { tx =>
       tx.asSystem.deleteAnyHostname(localHostname)
     }

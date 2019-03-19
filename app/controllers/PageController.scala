@@ -46,7 +46,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
     val pageRoleInt = (body \ "pageRole").as[Int]
-    val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
+    val pageRole = PageType.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
     val pageStatusStr = (body \ "pageStatus").as[String]
     val pageStatus = PageStatus.parse(pageStatusStr)
     val anyFolder = (body \ "folder").asOptStringNoneIfBlank
@@ -71,7 +71,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
     // Non-staff users shouldn't be able to create anything outside the forum section(s)
     // — except for private messages.
-    if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.FormalMessage) {
+    if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageType.FormalMessage) {
       throwForbidden("DwE8GKE4", "No category specified")
     }
 

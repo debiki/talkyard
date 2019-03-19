@@ -271,7 +271,7 @@ case class Draft(
   createdAt: When,
   lastEditedAt: Option[When] = None,
   deletedAt: Option[When] = None,
-  topicType: Option[PageRole] = None,
+  topicType: Option[PageType] = None,
   postType: Option[PostType] = None,
   title: String,
   text: String) {
@@ -313,7 +313,7 @@ case class Post(   // [exp] ok use
   currentRevisionById: UserId,
   currentRevStaredAt: ju.Date,
   currentRevLastEditedAt: Option[ju.Date],
-  currentSourcePatch: Option[String],
+  currentRevSourcePatch: Option[String],
   currentRevisionNr: Int,
   previousRevisionNr: Option[Int],
   lastApprovedEditAt: Option[ju.Date],
@@ -377,14 +377,14 @@ case class Post(   // [exp] ok use
 
   require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
   require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
-  require(approvedSource.isDefined || currentSourcePatch.isDefined, "DwE3KI59")
-  require(currentSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
+  require(approvedSource.isDefined || currentRevSourcePatch.isDefined, "DwE3KI59")
+  require(currentRevSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
 
   // If the current version of the post has been approved, then one doesn't need to
   // apply any patch to get from the approved version to the current version (since they
   // are the same).
   require(approvedRevisionNr.isEmpty || (
-    (currentRevisionNr == approvedRevisionNr.get) == currentSourcePatch.isEmpty), "DwE7IEP0")
+    (currentRevisionNr == approvedRevisionNr.get) == currentRevSourcePatch.isEmpty), "DwE7IEP0")
 
   require(approvedRevisionNr.map(_ <= currentRevisionNr) != Some(false), "DwE6KJ0")
   require(safeRevisionNr.isEmpty || (
@@ -460,7 +460,7 @@ case class Post(   // [exp] ok use
     if ((closedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
 
   lazy val currentSource: String =
-    currentSourcePatch match {
+    currentRevSourcePatch match {
       case None => approvedSource.getOrElse("")
       case Some(patch) => applyPatch(patch, to = approvedSource.getOrElse(""))
     }
@@ -703,7 +703,7 @@ object Post {
       currentRevisionById = createdById,
       currentRevStaredAt = createdAt,
       currentRevLastEditedAt = None,
-      currentSourcePatch = currentSourcePatch,
+      currentRevSourcePatch = currentSourcePatch,
       currentRevisionNr = FirstVersion,
       lastApprovedEditAt = None,
       lastApprovedEditById = None,

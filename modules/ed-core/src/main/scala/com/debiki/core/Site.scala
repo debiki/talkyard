@@ -156,17 +156,17 @@ case class Site(
   name: String,
   createdAt: When,
   creatorIp: String,
-  hosts: List[SiteHost]) {
+  hostnames: List[Hostname]) {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
-  def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
-  def theCanonicalHost: SiteHost = canonicalHost getOrDie "EsE7YKF2"
+  def canonicalHostname: Option[Hostname] = hostnames.find(_.role == Hostname.RoleCanonical)
+  def theCanonicalHostname: Hostname = canonicalHostname getOrDie "EsE7YKF2"
   def isTestSite: Boolean = id <= MaxTestSiteId
 
   def brief =
-    SiteBrief(id, pubId, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
+    SiteBrief(id, pubId, canonicalHostname.getOrDie("EsE2GUY5").hostname, status)
 }
 
 
@@ -197,14 +197,14 @@ case class SiteInclDetails(  // [exp] ok use. delete: price_plan
   numPostRevisions: Int,
   numPostRevBytes: Long,
   status: Int,
-  hosts: immutable.Seq[SiteHostInclDetails])
+  hostnames: immutable.Seq[HostnameInclDetails])
 
 
 
 /** A server name that replies to requests to a certain website.
   * (Should be renamed to SiteHost.)
   */
-object SiteHost {
+object Hostname {
   sealed abstract class Role(val IntVal: Int) { def toInt: Int = IntVal }
   case object RoleCanonical extends Role(1)
   case object RoleRedirect extends Role(2)
@@ -218,25 +218,25 @@ object SiteHost {
   val EmbeddedCommentsHostnamePrefix = "comments-for-"   // also in info message [7PLBKA24]
 
   def isE2eTestHostname(hostname: String): Boolean =
-    hostname.startsWith(SiteHost.E2eTestPrefix) ||
+    hostname.startsWith(Hostname.E2eTestPrefix) ||
       hostname.startsWith(EmbeddedCommentsHostnamePrefix + E2eTestPrefix)
 }
 
 
-case class SiteHost(
+case class Hostname(
   hostname: String,
-  role: SiteHost.Role) {
+  role: Hostname.Role) {
   require(!hostname.contains("\""), "TyE6FK20R")
   require(!hostname.contains("'"), "TyE8FSW24")
 }
 
 
-case class SiteHostInclDetails(
+case class HostnameInclDetails(
   hostname: String,
-  role: SiteHost.Role,
+  role: Hostname.Role,
   addedAt: When) {
 
-  def noDetails = SiteHost(hostname, role)
+  def noDetails = Hostname(hostname, role)
 }
 
 
@@ -244,8 +244,8 @@ case class SiteHostInclDetails(
   */
 case class CanonicalHostLookup(
   siteId: SiteId,
-  thisHost: SiteHost,
-  canonicalHost: SiteHost)
+  thisHost: Hostname,
+  canonicalHost: Hostname)
 
 
 

@@ -296,7 +296,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
       // Show a create-something-here page (see TemplateRenderer).
       val pageRequest = makeEmptyPageRequest(
-          request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage, globals.now())
+          request, pageId = EmptyPageId, showId = false, pageRole = PageType.WebPage, globals.now())
       val json = dao.jsonMaker.emptySiteJson(pageRequest).toString()
       val html = views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
       val renderedPage = RenderedPage(html, "NoJson-2WBKCG7", unapprovedPostAuthorIds = Set.empty)
@@ -454,7 +454,7 @@ object ViewPageController {
   }
 
   def makeEmptyPageRequest(request: DebikiRequest[Unit], pageId: PageId, showId: Boolean,
-        pageRole: PageRole, now: When): PageGetRequest = {
+        pageRole: PageType, now: When): PageGetRequest = {
     val pagePath = PagePath(
       siteId = request.siteId,
       folder = "/",

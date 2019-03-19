@@ -44,7 +44,7 @@ class ReviewStuffAppSuite(randomString: String)
     def nextNameNr: Int = { nameCounter += 1; nameCounter }
 
     def newAdminAndPage() {
-      thePageId = dao.createPage(PageRole.Discussion, PageStatus.Published,
+      thePageId = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
         bodyTextAndHtml = textAndHtmlMaker.testBody("discussion_230593 $r"),

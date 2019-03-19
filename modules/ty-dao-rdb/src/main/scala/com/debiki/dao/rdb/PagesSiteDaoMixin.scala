@@ -39,7 +39,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
       select g.page_id, ${_PageMetaSelectListItems}
       from pages3 g
       where g.site_id = ?
-        and g.page_role = ${PageRole.OpenChat.toInt}
+        and g.page_role = ${PageType.OpenChat.toInt}
         and g.pin_order is not null
         and g.pin_where = ${PinPageWhere.Globally.toInt}
       order by g.pin_order desc

@@ -84,7 +84,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
   def updateExtraHostnames: Action[JsValue] = AdminPostJsonAction(maxBytes = 50) {
         request: JsonPostRequest =>
     val redirect = (request.body \ "redirect").as[Boolean]
-    val role = if (redirect) SiteHost.RoleRedirect else SiteHost.RoleDuplicate
+    val role = if (redirect) Hostname.RoleRedirect else Hostname.RoleDuplicate
     request.dao.changeExtraHostsRole(newRole = role)
     Ok
   }

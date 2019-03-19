@@ -58,7 +58,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     }
 
     val newSiteNoId = Site(theId, pubId = pubId, status, name = name, createdAt = createdAt,
-      creatorIp = creatorIp, hosts = Nil)
+      creatorIp = creatorIp, hostnames = Nil)
 
     val newSite =
       try insertSite(newSiteNoId, quotaLimitMegabytes, pricePlan)
@@ -130,7 +130,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
 
   def deleteAnyHostname(hostname: String): Boolean = {
     // For now, safety check. Remove if needed.
-    require(SiteHost.isE2eTestHostname(hostname), "EdE5GPQ0V")
+    require(Hostname.isE2eTestHostname(hostname), "EdE5GPQ0V")
     val sql = """
       delete from hosts3 where host = ?
       """
@@ -138,12 +138,12 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
 
-  def insertSiteHost(siteId: SiteId, host: SiteHost) {
+  def insertSiteHost(siteId: SiteId, host: Hostname) {
     val cncl = host.role match {
-      case SiteHost.RoleCanonical => "C"
-      case SiteHost.RoleRedirect => "R"
-      case SiteHost.RoleLink => "L"
-      case SiteHost.RoleDuplicate => "D"
+      case Hostname.RoleCanonical => "C"
+      case Hostname.RoleRedirect => "R"
+      case Hostname.RoleLink => "L"
+      case Hostname.RoleDuplicate => "D"
     }
     val sql = """
       insert into hosts3 (SITE_ID, HOST, CANONICAL)
@@ -168,7 +168,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
   def deleteSiteByName(name: String): Option[Site] = {
-    require(SiteHost.isE2eTestHostname(name), "Can delete test sites only [EdE4PF0Y4]")
+    require(Hostname.isE2eTestHostname(name), "Can delete test sites only [EdE4PF0Y4]")
     val site = loadSites().find(_.name == name) getOrElse {
       return None
     }

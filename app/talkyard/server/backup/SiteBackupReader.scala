@@ -172,8 +172,8 @@ case class SiteBackupReader(context: EdContext) {
       name = name,
       createdAt = When.fromMillis(createdAtMs),
       creatorIp = "0.0.0.0",
-      hosts = List(
-        SiteHost(fullHostname, SiteHost.RoleCanonical)))
+      hostnames = List(
+        Hostname(fullHostname, Hostname.RoleCanonical)))
   }
 
 
@@ -203,8 +203,8 @@ case class SiteBackupReader(context: EdContext) {
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         isApproved = readOptBool(jsObj, "isApproved"),
-        approvedAt = readOptDateMs(jsObj, "approvedAtMs"),
-        approvedById = readOptInt(jsObj, "approvedById"),
+        reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME
+        reviewedById = readOptInt(jsObj, "approvedById"),
         primaryEmailAddress = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
@@ -258,14 +258,14 @@ case class SiteBackupReader(context: EdContext) {
     try {
       Good(PageMeta(
         pageId = id,
-        pageRole = PageRole.fromInt(readInt(jsObj, "role")).getOrThrowBadJson("role"),
+        pageType = PageType.fromInt(readInt(jsObj, "role")).getOrThrowBadJson("role"),
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         publishedAt = readOptDateMs(jsObj, "publishedAtMs"),
         bumpedAt = readOptDateMs(jsObj, "bumpedAtMs"),
-        lastReplyAt = None,
-        lastReplyById = None,
+        lastApprovedReplyAt = None,
+        lastApprovedReplyById = None,
         categoryId = readOptInt(jsObj, "categoryId"),
         embeddingPageUrl = None,
         authorId = readInt(jsObj, "authorId")
@@ -347,7 +347,7 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         sectionPageId = readString(jsObj, "sectionPageId"),
         parentId = readOptInt(jsObj, "parentId"),
-        defaultCategoryId = readOptInt(jsObj, "defaultCategoryId"),
+        defaultSubCatId = readOptInt(jsObj, "defaultCategoryId"),
         name = readString(jsObj, "name"),
         slug = readString(jsObj, "slug"),
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
@@ -410,7 +410,7 @@ case class SiteBackupReader(context: EdContext) {
         currentRevisionById = readInt(jsObj, "currRevById"),
         currentRevStaredAt = readDateMs(jsObj, "currRevStartedAtMs"),
         currentRevLastEditedAt = readOptDateMs(jsObj, "currRevLastEditedAtMs"),
-        currentSourcePatch = readOptString(jsObj, "currRevSourcePatch"),
+        currentRevSourcePatch = readOptString(jsObj, "currRevSourcePatch"),
         currentRevisionNr = readInt(jsObj, "currRevNr"),
         previousRevisionNr = readOptInt(jsObj, "prevRevNr"),
         lastApprovedEditAt = readOptDateMs(jsObj, "lastApprovedEditAtMs"),

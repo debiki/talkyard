@@ -103,7 +103,7 @@ case class AuditLogEntry(
   browserLocation: Option[BrowserLocation] = None,
   emailAddress: Option[String] = None,
   pageId: Option[PageId] = None,
-  pageRole: Option[PageRole] = None,
+  pageType: Option[PageType] = None,
   uniquePostId: Option[PostId] = None,
   postNr: Option[PostNr] = None,
   uploadHashPathSuffix: Option[String] = None,
@@ -120,7 +120,7 @@ case class AuditLogEntry(
   if (!isLoading) {
     val T = AuditLogEntryType
     emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
-    require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
+    require(pageType.isEmpty || pageId.isDefined, "DwE4PFKW7")
     require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
     require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
     requireIf(didWhat == T.NewPage, pageId.isDefined && uniquePostId.isDefined, "EdE5PFK2")

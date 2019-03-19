@@ -31,13 +31,13 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
       Who(SystemUserId, browserIdData)).get.pagePath.thePageId
 
-    lazy val discussionId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+    lazy val discussionId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
       textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
-    lazy val htmlPageId = createPage(PageRole.CustomHtmlPage, textAndHtmlMaker.testTitle("Title"),
+    lazy val htmlPageId = createPage(PageType.CustomHtmlPage, textAndHtmlMaker.testTitle("Title"),
       textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
-    lazy val otherPageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+    lazy val otherPageId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
       textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
     "prepare" in {
@@ -96,7 +96,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
     "non-staff may not delete" in {
       val user = createPasswordUser(s"dltr_mbr", dao)
-      val discussionId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+      val discussionId = createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Title"),
         textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
       intercept[ResultException] {
         dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)

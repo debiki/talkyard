@@ -51,7 +51,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {
       siteToSave.pubId,
       siteToSave.name,
       siteToSave.status,
-      siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
+      siteToSave.canonicalHostname.getOrDie("EsE2FUPFY7").hostname,
       embeddingSiteUrl = None,
       organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
       creatorId = SystemUserId,

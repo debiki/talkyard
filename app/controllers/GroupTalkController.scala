@@ -46,7 +46,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
     val toUserIds = (body \ "userIds").as[Set[UserId]]
     val sender = request.theUser
     val pageRoleInt = (body \ "pageRole").as[Int]
-    val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadRequest(
+    val pageRole = PageType.fromInt(pageRoleInt) getOrElse throwBadRequest(
       "EsE4KGP0W", "No page role specified")
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
@@ -56,7 +56,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
     throwBadRequestIf(text.trim.isEmpty, "EsE5JGU8", "Empty message")
     // Private chat members can be added later, but a formal message starts by clicking "Message"
     // on an about-user dialog or page, so then there'll always be a receiver.
-    throwBadRequestIf(toUserIds.isEmpty && pageRole != PageRole.PrivateChat,   // test
+    throwBadRequestIf(toUserIds.isEmpty && pageRole != PageType.PrivateChat,   // test
       "EsE7GMUW2", "No recipient")
     throwBadRequestIf(toUserIds.size > 5, "EsE3FKT5", "More than 5 recipients") // safest, for now
     throwBadRequestIf(toUserIds contains sender.id, "EsE7UKF2", "Cannot send message to yourself")

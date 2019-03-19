@@ -87,7 +87,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val writeWhat = WriteWhat.fromInt(writingWhat)
 
-    val thePageRole = PageRole.fromInt(pageRole).getOrThrowBadArgument("TyE6PYK8", "pageRole")
+    val thePageRole = PageType.fromInt(pageRole).getOrThrowBadArgument("TyE6PYK8", "pageRole")
 
     val guidelinesSafeHtml = writeWhat flatMap {
       case WriteWhat.ChatComment =>
@@ -95,7 +95,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // This is for progress-comments / chrono-comments / bottom-comments:
         //   Some(ChatCommentGuidelines)
       case WriteWhat.Reply =>
-        if (thePageRole == PageRole.MindMap) {
+        if (thePageRole == PageType.MindMap) {
           // Then we're adding a mind map node — we aren't really replying to anyone.
           None
         }
@@ -103,14 +103,14 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           Some(ReplyGuidelines)
         }
       case WriteWhat.ReplyToOriginalPost =>
-        if (thePageRole == PageRole.MindMap) None // see just above
-        else if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
-        else if (thePageRole == PageRole.UsabilityTesting) Some(UsabilityTestingTextGuidelines) // [plugin]
+        if (thePageRole == PageType.MindMap) None // see just above
+        else if (thePageRole == PageType.Critique) Some(GiveCritiqueGuidelines) // [plugin]
+        else if (thePageRole == PageType.UsabilityTesting) Some(UsabilityTestingTextGuidelines) // [plugin]
         else Some(ReplyGuidelines)
       case WriteWhat.OriginalPost =>
-        if (thePageRole == PageRole.Critique) Some(AskForCritiqueGuidelines) // [plugin]
+        if (thePageRole == PageType.Critique) Some(AskForCritiqueGuidelines) // [plugin]
         else {
-          if (thePageRole == PageRole.FormalMessage) Some(DirectMessageGuidelines)
+          if (thePageRole == PageType.FormalMessage) Some(DirectMessageGuidelines)
           else None // Some(OriginalPostGuidelines)
         }
     }
@@ -199,7 +199,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
       // But that won't work for wikis (staff might accidentally change a non-staff user's link
       // to rel=follow). For now, instead:
-      followLinks = postNr == PageParts.BodyNr && pageMeta.pageRole.shallFollowLinks)
+      followLinks = postNr == PageParts.BodyNr && pageMeta.pageType.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, deleteDraftNr = deleteDraftNr,
       request.who, request.spamRelatedStuff, newTextAndHtml)

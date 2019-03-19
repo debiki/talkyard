@@ -40,7 +40,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
 
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
-    val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
+    val pageType = PageType.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
 
     val addressOfWebsiteToTest: String = {
       val address = (request.body \ "websiteAddress").as[String]
@@ -139,7 +139,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
 
     // Filter away any topics that for some reason are of the wrong type (maybe was moved manually).
     val usabilityTestingTopics =
-      topicsWithAboutPage.filter(_.pageRole == PageRole.UsabilityTesting)
+      topicsWithAboutPage.filter(_.pageType == PageType.UsabilityTesting)
 
     val feedbackByPageId = dao.readOnlyTransaction { tx =>
       tx.loadApprovedOrigPostAndRepliesByPage(usabilityTestingTopics.map(_.pageId))

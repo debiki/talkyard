@@ -435,7 +435,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       post.currentRevStaredAt,
       post.currentRevisionById.asAnyRef,
       post.currentRevLastEditedAt.orNullTimestamp,
-      post.currentSourcePatch.orNullVarchar,
+      post.currentRevSourcePatch.orNullVarchar,
       post.currentRevisionNr.asAnyRef,
 
       o2ts(post.lastApprovedEditAt),
@@ -550,7 +550,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       post.currentRevStaredAt,
       post.currentRevisionById.asAnyRef,
       post.currentRevLastEditedAt.orNullTimestamp,
-      post.currentSourcePatch.orNullVarchar,
+      post.currentRevSourcePatch.orNullVarchar,
       post.currentRevisionNr.asAnyRef,
       post.previousRevisionNr.orNullInt,
 
@@ -613,7 +613,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       currentRevStaredAt = getDate(rs, "curr_rev_started_at"),
       currentRevisionById = rs.getInt("curr_rev_by_id"),
       currentRevLastEditedAt = getOptionalDate(rs, "curr_rev_last_edited_at"),
-      currentSourcePatch = Option(rs.getString("curr_rev_source_patch")),
+      currentRevSourcePatch = Option(rs.getString("curr_rev_source_patch")),
       currentRevisionNr = rs.getInt("curr_rev_nr"),
       previousRevisionNr = getOptInt(rs, "prev_rev_nr"),
       lastApprovedEditAt = getOptionalDate(rs, "LAST_APPROVED_EDIT_AT"),

@@ -55,10 +55,10 @@ object JsX {
       "numUploadBytes" -> site.numUploadBytes,
       "numPostRevisions" -> site.numPostRevisions,
       "numPostRevBytes" -> site.numPostRevBytes,
-      "hostnames" -> Json.arr(site.hosts.map(JsHostInclDetails)))
+      "hostnames" -> Json.arr(site.hostnames.map(JsHostInclDetails)))
   }
 
-  def JsHostInclDetails(host: SiteHostInclDetails): JsObject = {
+  def JsHostInclDetails(host: HostnameInclDetails): JsObject = {
     Json.obj(
       "hostname" -> host.hostname,
       "role" -> host.role.toInt,
@@ -128,9 +128,9 @@ object JsX {
       "pageId" -> meta.pageId,
       "createdAtMs" -> JsDateMs(meta.createdAt),
       "createdById" -> meta.authorId,
-      "lastReplyAtMs" -> JsDateMsOrNull(meta.lastReplyAt),
-      "lastReplyById" -> JsNumberOrNull(meta.lastReplyById),
-      "pageRole" -> meta.pageRole.toInt,
+      "lastReplyAtMs" -> JsDateMsOrNull(meta.lastApprovedReplyAt),
+      "lastReplyById" -> JsNumberOrNull(meta.lastApprovedReplyById),
+      "pageRole" -> meta.pageType.toInt,
       "categoryId" -> JsNumberOrNull(meta.categoryId),
       "embeddingPageUrl" -> JsStringOrNull(meta.embeddingPageUrl),
       "closedAtMs" -> JsDateMsOrNull(meta.closedAt),
