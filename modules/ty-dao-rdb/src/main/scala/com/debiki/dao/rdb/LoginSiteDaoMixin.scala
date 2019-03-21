@@ -52,10 +52,11 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   override def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
       var userId = 0
       var emailNotfsStr = ""
+      var createdAt: Option[When] = None
       var isNewGuest = false
       for (i <- 1 to 2 if userId == 0) {
         runQuery("""
-          select u.USER_ID, g.EMAIL_NOTFS from users3 u
+          select u.USER_ID, u.created_at, g.EMAIL_NOTFS from users3 u
             left join guest_prefs3 g
                    on u.site_id = g.site_id
                   and u.guest_email_addr = g.EMAIL
@@ -69,6 +70,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           rs => {
             if (rs.next) {
               userId = rs.getInt("USER_ID")
+              createdAt = Some(getWhen(rs, "created_at"))
               emailNotfsStr = rs.getString("EMAIL_NOTFS")
             }
           })
@@ -99,6 +101,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
       val user = Guest(
         id = userId,
+        createdAt = createdAt.getOrElse(now),
         guestName = loginAttempt.name,
         guestBrowserId = Some(loginAttempt.guestBrowserId),
         email = loginAttempt.email,

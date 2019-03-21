@@ -88,7 +88,7 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress] = {
+  def loadUserEmailAddresses(userId: UserId): immutable.Seq[UserEmailAddress] = {
     val query = s"""
       select email_address, added_at, verified_at
       from user_emails3
@@ -102,6 +102,23 @@ trait EmailAddressesSiteDaoMixin extends SiteTransaction {
         getOptWhen(rs, "verified_at"))
     })
   }
+
+
+  def loadUserEmailAddressesForAllUsers(): immutable.Seq[UserEmailAddress] = {
+    val query = s"""
+      select user_id, email_address, added_at, verified_at
+      from user_emails3
+      where site_id = ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      UserEmailAddress(
+        rs.getInt("user_id"),
+        rs.getString("email_address"),
+        getWhen(rs, "added_at"),
+        getOptWhen(rs, "verified_at"))
+    })
+  }
+
 }
 
 

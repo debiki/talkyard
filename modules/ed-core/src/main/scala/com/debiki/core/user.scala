@@ -71,7 +71,7 @@ case class Invite(   // [exp] ok use
     externalId = None,
     fullName = None,
     username = username,
-    createdAt = currentTime,
+    createdAt = When.fromDate(currentTime),
     isApproved = None,
     reviewedAt = None,
     reviewedById = None,
@@ -110,7 +110,7 @@ sealed abstract class NewUserData {
     externalId = None,
     fullName = name,
     username = username,
-    createdAt = createdAt,
+    createdAt = When.fromDate(createdAt),
     isApproved = None,
     reviewedAt = None,
     reviewedById = None,
@@ -153,7 +153,7 @@ case class NewPasswordUserData(
     externalId = externalId,
     fullName = name,
     username = username,
-    createdAt = createdAt.toJavaDate,
+    createdAt = createdAt,
     isApproved = None,
     reviewedAt = None,
     reviewedById = None,
@@ -334,13 +334,19 @@ case object Participant {
 
   def isOkayUserId(id: UserId): Boolean =
     id >= LowestAuthenticatedUserId ||
+      id <= MaxCustomGuestId ||
+      isBuiltInPerson(id)
+
+  def isBuiltInPerson(id: UserId): Boolean =
       id == SystemUserId ||
       id == SysbotUserId ||
       //id == SuperAdminId ||     later
       //id == SuperbotId ||       later
       //id == AnonymousUserId ||  later
-      id == UnknownUserId ||
-      id <= MaxCustomGuestId
+      id == UnknownUserId
+
+  def isBuiltInGroup(id: UserId): Boolean =
+    Group.NewMembersId <= id && id <= Group.AdminsId
 
   def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
@@ -547,6 +553,7 @@ sealed trait Participant {
   def isSystemUser: Boolean = id == SystemUserId
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
   def isHuman: Boolean = id >= LowestTalkToMemberId || id <= MaxGuestId
+  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
   def isGone: Boolean = isDeactivated || isDeleted
 
   def isStaffOrCoreMember: Boolean =
@@ -712,17 +719,20 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 }
 
 
-case class Guest(  // [exp] missing: createdAt
+/** (Could split into Guest and GuestInclDetails, where emailAddress and createdAt are
+  * the details. But no particular reason to do this — would maybe just add more code,
+  * for no good reason.)
+  */
+case class Guest(   // [exp] ok
   id: UserId,
+  createdAt: When,
   guestName: String,
   guestBrowserId: Option[String],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: Option[String] = None,  // COULD rename to Location
-  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant {
+  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant with ParticipantInclDetails {
 
-  def theUsername: Nothing = die("EsE7YKWP4")
-  def username: Option[String] = None
   def emailVerifiedAt: Option[ju.Date] = None
   def passwordHash: Option[String] = None
   def tinyAvatar: Option[UploadRef] = None
@@ -732,6 +742,7 @@ case class Guest(  // [exp] missing: createdAt
   def isOwner: Boolean = false
   def isModerator: Boolean = false
   def isSuperAdmin: Boolean = false
+  override def isBuiltIn: Boolean = super.isBuiltIn
   def suspendedTill: Option[ju.Date] = None
   def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
 
@@ -747,7 +758,14 @@ case class Guest(  // [exp] missing: createdAt
 }
 
 
-sealed trait MemberInclDetails {
+sealed trait ParticipantInclDetails {
+  def id: UserId
+  def createdAt: When
+  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id)
+}
+
+
+sealed trait MemberInclDetails extends ParticipantInclDetails {
   def isAdmin: Boolean
   def isModerator: Boolean
   def isStaff: Boolean
@@ -780,7 +798,7 @@ case class UserInclDetails(  // ok for export
   externalId: Option[String],
   fullName: Option[String],
   username: String,
-  createdAt: ju.Date,
+  createdAt: When,
   isApproved: Option[Boolean],
   reviewedAt: Option[ju.Date],
   reviewedById: Option[UserId],
@@ -833,20 +851,20 @@ case class UserInclDetails(  // ok for export
   require(!suspendedReason.exists(r => r.trim.length < r.length), "DwE4KPF8")
   require(!suspendedById.exists(_ < LowestNonGuestId), "DwE7K2WF5")
   require(!isAdmin || !isModerator, s"User $id is both admin and moderator [EdE7JLRV2]")
-  require(!isGuest, "DwE0GUEST223")
+  require(!Participant.isGuestId(id), "DwE0GUEST223")
   require(!isEmailLocalPartHidden(primaryEmailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
   uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
     die("TyE2AKBS04", s"User with weird uiPrefs JSON field: $problemMessage")
   }
-  require(!deactivatedAt.exists(_.isBefore(createdWhen)), "TyE2GKDU0")
-  require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
+  require(!deactivatedAt.exists(_.isBefore(createdAt)), "TyE2GKDU0")
+  require(!deletedAt.exists(_.isBefore(createdAt)), "TyE1PUF054")
 
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
-  def isGuest: Boolean = Participant.isGuestId(id)
+  def isGuest: Boolean = false
 
   def isSuspendedAt(when: ju.Date): Boolean =
     Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
@@ -868,14 +886,12 @@ case class UserInclDetails(  // ok for export
   def idSpaceName: String = s"$id @$username"
   def usernameHashId: String = s"@$username#$id"
 
-  def createdWhen: When = When.fromDate(createdAt)
-
   def primaryEmailInfo: Option[UserEmailAddress] =
     if (primaryEmailAddress.isEmpty) None
     else Some(UserEmailAddress(
       userId = id,
       emailAddress = primaryEmailAddress,
-      addedAt = When.fromDate(createdAt),
+      addedAt = createdAt,
       verifiedAt = When.fromOptDate(emailVerifiedAt)))
 
 
@@ -893,7 +909,7 @@ case class UserInclDetails(  // ok for export
     val baseTime =
       if (effectiveSummaryEmailIfActive(myGroups) is true) {
         // Email summaries regularly, regardless of other activity.
-        stats.lastSummaryEmailAt.getOrElse(createdWhen)
+        stats.lastSummaryEmailAt.getOrElse(createdAt)
       }
       else {
         // Don't send summaries, until user has been inactive for a while + gotten no other emails.
@@ -1080,7 +1096,7 @@ case class MemberPrivacyPrefs(
 
 
 
-case class UserEmailAddress(
+case class UserEmailAddress(  // RENAME to MemberEmailAAddres (also groups can have email addrs)
   userId: UserId,
   emailAddress: String,
   addedAt: When,
@@ -1137,6 +1153,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   id: UserId,
   theUsername: String,
   name: String,
+  createdAt: When = When.Genesis,  // for now
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   summaryEmailIntervalMins: Option[Int] = None,
@@ -1158,6 +1175,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   def isAdmin: Boolean = id == Group.AdminsId
   def isOwner: Boolean = false
   def isSuperAdmin: Boolean = false
+  override def isBuiltIn: Boolean = super.isBuiltIn
   def isApproved: Option[Boolean] = Some(true)
   def suspendedTill: Option[ju.Date] = None
 

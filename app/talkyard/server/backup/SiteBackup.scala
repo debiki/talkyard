@@ -21,7 +21,7 @@ import com.debiki.core._
 
 
 case class SiteBackup(
-  site: Site,
+  site: SiteInclDetails,
   settings: SettingsToSave,
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]

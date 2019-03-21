@@ -99,6 +99,7 @@ trait SiteTransaction {
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
 
+  def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
@@ -272,6 +273,7 @@ trait SiteTransaction {
     insertPagePath(PagePath(siteId = this.siteId, folder = pagePath.folder,
       pageId = Some(pagePath.pageId), showId = pagePath.showId, pageSlug = pagePath.slug))
 
+  def loadAllPagePaths(): immutable.Seq[PagePath]
   def loadPagePath(pageId: PageId): Option[PagePath]
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]  // rename? check? load? what?
   /**
@@ -352,6 +354,8 @@ trait SiteTransaction {
       case g: Group => g
     }
 
+  def loadAllUsersInclDetails(): immutable.Seq[UserInclDetails]
+
   def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails]
 
   def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails]
@@ -366,7 +370,7 @@ trait SiteTransaction {
     loadMemberInclDetailsById(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadGroups(memberOrGroup: MemberInclDetails): immutable.Seq[Group] = {
-    val allGroups = loadGroupsAsMap()
+    val allGroups = loadAllGroupsAsMap()
     val groupIds = loadGroupIdsMemberIdFirst(memberOrGroup)
     groupIds.flatMap(allGroups.get)
   }
@@ -387,7 +391,8 @@ trait SiteTransaction {
   def updateUserEmailAddress(userEmailAddress: UserEmailAddress)
   def deleteUserEmailAddress(userId: UserId, emailAddress: String)
   def deleteAllUsersEmailAddresses(userId: UserId)
-  def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress]
+  def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress] // RENAME to loadMember...
+  def loadUserEmailAddressesForAllUsers(): Seq[UserEmailAddress]    // RENAME to loadMember...
 
   def insertUsernameUsage(usage: UsernameUsage)
   def updateUsernameUsage(usage: UsernameUsage)
@@ -399,10 +404,13 @@ trait SiteTransaction {
   def loadTheParticipant(userId: UserId): Participant =
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
 
+  def loadAllGuests(): immutable.Seq[Guest]
+
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
     loadParticipant(userId).map(_.asInstanceOf[Guest])
   }
+
   def loadTheGuest(userId: UserId): Guest = {
     dieIf(userId > Participant.MaxGuestId, "EsE6YKWU2", userId)
     loadTheParticipant(userId).asInstanceOf[Guest]
@@ -463,8 +471,8 @@ trait SiteTransaction {
 
   def insertGroup(group: Group)
   def updateGroup(group: Group)
-  def loadGroupsAsSeq(): immutable.Seq[Group]
-  def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
+  def loadAllGroupsAsSeq(): immutable.Seq[Group]
+  def loadAllGroupsAsMap(): Map[UserId, Group] = loadAllGroupsAsSeq().map(g => g.id -> g).toMap
 
   def loadGroupIdsMemberIdFirst(anyUser: Option[Participant]): Vector[UserId] = {
     anyUser.map(loadGroupIdsMemberIdFirst) getOrElse Vector(Group.EveryoneId)

@@ -65,7 +65,7 @@ trait SummaryEmailsDao {
   def makeActivitySummaries(userStats: immutable.Seq[UserStats], now: When)
         : Vector[ActivitySummary] = {
     val activitySummaries = ArrayBuffer[ActivitySummary]()
-    val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
+    val allGroups = readOnlyTransaction(_.loadAllGroupsAsMap())
     val settings = getWholeSiteSettings()
 
     val members = loadUsersInclDetailsById(userStats.map(_.userId))
@@ -92,7 +92,7 @@ trait SummaryEmailsDao {
         val theSummaryEmailIntervalMins =
           member.effectiveSummaryEmailIntervalMins(groups).getOrDie("EdE4PKES0")
         val millisSinceLast =
-          now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
+          now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.millis)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]
         val period =
           if (millisSinceLast > OneWeekInMillis) TopTopicsPeriod.Month

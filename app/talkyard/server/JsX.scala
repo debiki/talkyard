@@ -19,21 +19,29 @@ package talkyard.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.JsonUtils
 import java.{util => ju}
 import play.api.libs.json._
+import scala.collection.immutable
 
 
 
 
+// Split into JsX and JsObj, where JsX are primitives like Int, Float, Boolean etc,
+// and JsObj reads objects. There'll be JsObjV1, V2, V3 etc for backwards compatibility
+// with reading old site dumps. And the most recent JsObj can be a trait, that gets
+// inherited by all JsObjVX and then they override and change only the things they do
+// different.
+//
 object JsX {
 
   def JsSiteInclDetails(site: SiteInclDetails): JsObject = {
     Json.obj(
       "id" -> site.id,
-      "pubId" -> site.publId,
+      "pubId" -> site.pubId,
       "name" -> site.name,
       "status" -> site.status.toInt,
-      "createdAt" -> site.createdAt.millis,
+      "createdAtMs" -> site.createdAt.millis,
       "createdFromIp" -> site.createdFromIp,
       "creatorEmailAddress" -> site.creatorEmailAddress,
       "nextPageId" -> site.nextPageId,
@@ -41,8 +49,8 @@ object JsX {
       "version" -> site.version,
       "numGuests" -> site.numGuests,
       "numIdentities" -> site.numIdentities,
-      "numRoles" -> site.numRoles,
-      "numRoleSettings" -> site.numRoleSettings,
+      "numRoles" -> site.numParticipants,
+      "numRoleSettings" -> site.numPageUsers,
       "numPages" -> site.numPages,
       "numPosts" -> site.numPosts,
       "numPostTextBytes" -> site.numPostTextBytes,
@@ -55,18 +63,64 @@ object JsX {
       "numUploadBytes" -> site.numUploadBytes,
       "numPostRevisions" -> site.numPostRevisions,
       "numPostRevBytes" -> site.numPostRevBytes,
-      "hostnames" -> Json.arr(site.hostnames.map(JsHostInclDetails)))
+      "hostnames" -> site.hostnames.map(JsHostnameInclDetails))
   }
 
-  def JsHostInclDetails(host: HostnameInclDetails): JsObject = {
+
+  def JsHostnameInclDetails(host: HostnameInclDetails): JsObject = {
     Json.obj(
       "hostname" -> host.hostname,
       "role" -> host.role.toInt,
       "addedAt" -> host.addedAt.millis)
   }
 
+
+  def readJsHostnameInclDetails(json: JsObject): HostnameInclDetails = {
+    HostnameInclDetails(
+      hostname = readJsString(json, "hostname"),
+      role = Hostname.Role.fromInt(readJsInt(json, "role")).get,
+      addedAt = readJsWhen(json, "addedAt"))
+  }
+
+
+  def JsInvite(invite: Invite, shallHideEmailLocalPart: Boolean): JsObject = {
+    val safeEmail =
+      if (shallHideEmailLocalPart) hideEmailLocalPart(invite.emailAddress)
+      else invite.emailAddress
+    Json.obj(   // change Typescript interface Invite to this [REFINVFLDS]
+      "invitedEmailAddress" -> safeEmail,
+      "invitedById" -> invite.createdById,
+      "invitedAt" -> invite.createdAt.getTime,
+      "acceptedAt" -> JsDateMsOrNull(invite.acceptedAt),
+      "becameUserId" -> JsNumberOrNull(invite.userId),
+      "deletedAt" -> JsDateMsOrNull(invite.deletedAt),
+      "deletedById" -> JsNumberOrNull(invite.deletedById),
+      "invalidatedAt" -> JsDateMsOrNull(invite.invalidatedAt))
+  }
+
+
+  /*  rm
+  def JsParticipantInclDetails(participant: ParticipantInclDetails, callerIsAdmin: Boolean): JsObject = {
+    participant match {
+      case guest: Guest => JsGuestInclDetails(guest)
+      case group: Group => JsGroupInclDetails(group)
+      case user: UserInclDetails =>
+        JsUserInclDetails(user, groups = Nil, usersById = Map.empty, callerIsAdmin = callerIsAdmin)
+    }
+  }*/
+
+
+  def JsGuestInclDetails(guest: Guest, inclEmail: Boolean): JsObject = {
+    var json = JsUser(guest)
+    if (inclEmail) json += "emailAddress" -> JsString(guest.email)
+    json += "createdAt" -> JsWhenMs(guest.createdAt)
+    json
+  }
+
+
   def JsUserOrNull(user: Option[Participant]): JsValue =  // RENAME to JsParticipantOrNull
     user.map(JsUser).getOrElse(JsNull)
+
 
   def JsUser(user: Participant): JsObject = {  // Typescript: Participant, RENAME to JsParticipant
     var json = Json.obj(
@@ -101,6 +155,120 @@ object JsX {
     json
   }
 
+
+  def JsUserInclDetails(user: UserInclDetails,
+        usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
+        groups: immutable.Seq[Group],
+        callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
+        anyStats: Option[UserStats] = None)
+      : JsObject = {
+    def callerIsStaff_ = callerIsAdmin || callerIsStaff
+    var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
+      "id" -> user.id,
+      "externalId" -> JsStringOrNull(user.externalId),
+      "createdAtEpoch" -> JsNumber(user.createdAt.millis),  // REMOVE
+      "createdAtMs" -> JsNumber(user.createdAt.millis),  // REMOVE
+      "username" -> user.username,
+      "fullName" -> user.fullName,
+      "isAdmin" -> user.isAdmin,
+      "isModerator" -> user.isModerator,
+      "deactivatedAtMs" -> JsWhenMsOrNull(user.deactivatedAt),
+      "deactivatedAt" -> JsWhenMsOrNull(user.deactivatedAt),
+      "deletedAtMs" -> JsWhenMsOrNull(user.deletedAt),
+      "deletedAt" -> JsWhenMsOrNull(user.deletedAt),
+      "country" -> JsStringOrNull(user.country),
+      "url" -> JsStringOrNull(user.website),
+      "about" -> JsStringOrNull(user.about),
+      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
+      "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
+      "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
+      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
+      "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),
+      "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
+
+    if (callerIsStaff_ || callerIsUserHerself) {
+      val anyReviewer = user.reviewedById.flatMap(usersById.get)
+      val safeEmail =
+        if (callerIsAdmin || callerIsUserHerself) user.primaryEmailAddress
+        else hideEmailLocalPart(user.primaryEmailAddress)
+
+      userJson += "email" -> JsString(safeEmail)   // REMOVE
+      userJson += "emailAddress" -> JsString(safeEmail)
+      userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)  // RENAME emailAddr...
+      userJson += "emailVerifiedAt" -> JsDateMsOrNull(user.emailVerifiedAt)
+      userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
+      userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
+      if (groups.nonEmpty) userJson += "summaryEmailIntervalMins" ->
+        JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))
+      userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
+      if (groups.nonEmpty) userJson += "summaryEmailIfActive" ->
+        JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
+      userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsEmptyObj)
+      userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
+      userJson += "approvedAtMs" -> JsDateMsOrNull(user.reviewedAt)
+      userJson += "approvedAt" -> JsDateMsOrNull(user.reviewedAt)
+      userJson += "approvedById" -> JsNumberOrNull(user.reviewedById)
+      userJson += "approvedByName" -> JsStringOrNull(anyReviewer.flatMap(_.fullName))
+      userJson += "approvedByUsername" -> JsStringOrNull(anyReviewer.flatMap(_.username))
+      userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
+      userJson += "suspendedAtMs" -> DateEpochOrNull(user.suspendedAt)
+      userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
+    }
+
+    if (callerIsStaff_) {
+      val anySuspender = user.suspendedById.flatMap(usersById.get)
+      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
+      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
+      userJson += "trustLevel" -> JsNumber(user.trustLevel.toInt)
+      userJson += "lockedTrustLevel" -> JsNumberOrNull(user.lockedTrustLevel.map(_.toInt))
+      userJson += "threatLevel" -> JsNumber(user.threatLevel.toInt)
+      userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
+
+      anyStats foreach { stats =>
+        userJson += "anyUserStats" -> JsUserStats(stats, isStaffOrSelf = true)
+      }
+    }
+
+    userJson
+  }
+
+
+  def JsUserStats(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
+    var result = Json.obj(
+      "userId" -> stats.userId,
+      "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
+      "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt),
+      "firstSeenAt" -> JsWhenMs(stats.firstSeenAtOr0),
+      "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt),
+      "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
+      "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
+      "numDaysVisited" -> stats.numDaysVisited,
+      "numSecondsReading" -> stats.numSecondsReading,
+      "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
+      "numDiscourseRepliesPosted" -> stats.numDiscourseRepliesPosted,
+      "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
+      "numDiscourseTopicsRepliedIn" -> stats.numDiscourseTopicsRepliedIn,
+      "numDiscourseTopicsCreated" -> stats.numDiscourseTopicsCreated,
+      "numChatMessagesRead" -> stats.numChatMessagesRead,
+      "numChatMessagesPosted" -> stats.numChatMessagesPosted,
+      "numChatTopicsEntered" -> stats.numChatTopicsEntered,
+      "numChatTopicsRepliedIn" -> stats.numChatTopicsRepliedIn,
+      "numChatTopicsCreated" -> stats.numChatTopicsCreated,
+      "numLikesGiven" -> stats.numLikesGiven,
+      "numLikesReceived" -> stats.numLikesReceived,
+      "numSolutionsProvided" -> stats.numSolutionsProvided)
+    if (isStaffOrSelf) {
+      result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
+      result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
+      result += "nextSummaryEmailAt" -> JsWhenMsOrNull(stats.nextSummaryEmailAt)
+      result += "emailBounceSum" -> JsNumber(stats.emailBounceSum.toDouble)
+      result += "topicsNewSince" -> JsWhenMs(stats.topicsNewSince)
+      result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)
+    }
+    result
+  }
+
+
   def JsGroup(group: Group): JsObject = {
     var json = Json.obj(
       "id" -> group.id,
@@ -114,12 +282,157 @@ object JsX {
     json
   }
 
+
+  def JsGroupInclDetails(group: Group, inclEmail: Boolean): JsObject = {
+    var json = JsGroup(group)
+    json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
+    json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+    json += "grantsTrustLevel" -> JsNumberOrNull(group.grantsTrustLevel.map(_.toInt))
+    json += "uiPrefs" -> group.uiPrefs.getOrElse(JsNull)
+    json
+  }
+
+
+  def JsMemberEmailAddress(member: UserEmailAddress): JsObject = {
+    Json.obj(
+      "userId" -> member.userId,
+      "emailAddress" -> member.emailAddress,
+      "addedAt" -> JsWhenMs(member.addedAt),
+      "verifiedAt" -> JsWhenMsOrNull(member.verifiedAt))
+  }
+
+
   val JsEmptyObj = JsObject(Nil)
+
+
+  def JsPageMeta(pageMeta: PageMeta): JsObject = {
+    Json.obj(
+      "id" -> pageMeta.pageId,
+      "pageType" -> pageMeta.pageType.toInt,
+      "version" -> pageMeta.version,
+      "createdAtMs" -> JsDateMs(pageMeta.createdAt),
+      "updatedAtMs" -> JsDateMs(pageMeta.updatedAt),
+      "publishedAtMs" -> JsDateMsOrNull(pageMeta.publishedAt),
+      "bumpedAtMs" -> JsDateMsOrNull(pageMeta.bumpedAt),
+      "lastApprovedReplyAt" -> JsDateMsOrNull(pageMeta.lastApprovedReplyAt),
+      "lastApprovedReplyById" -> JsNumberOrNull(pageMeta.lastApprovedReplyById),
+      "categoryId" -> JsNumberOrNull(pageMeta.categoryId),
+      "embeddingPageUrl" -> JsStringOrNull(pageMeta.embeddingPageUrl),
+      "authorId" -> pageMeta.authorId,
+      "frequentPosterIds" -> pageMeta.frequentPosterIds,
+      "layout" -> pageMeta.layout.toInt,
+      "pinOrder" -> JsNumberOrNull(pageMeta.pinOrder),
+      "pinWhere" -> JsNumberOrNull(pageMeta.pinWhere.map(_.toInt)),
+      "numLikes" -> pageMeta.numLikes,
+      "numWrongs" -> pageMeta.numWrongs,
+      "numBurys" -> pageMeta.numBurys,
+      "numUnwanteds" -> pageMeta.numUnwanteds,
+      "numRepliesVisible" -> pageMeta.numRepliesVisible,
+      "numRepliesTotal" -> pageMeta.numRepliesTotal,
+      "numPostsTotal" -> pageMeta.numPostsTotal,
+      "numOrigPostLikeVotes" -> pageMeta.numOrigPostLikeVotes,
+      "numOrigPostWrongVotes" -> pageMeta.numOrigPostWrongVotes,
+      "numOrigPostBuryVotes" -> pageMeta.numOrigPostBuryVotes,
+      "numOrigPostUnwantedVotes" -> pageMeta.numOrigPostUnwantedVotes,
+      "numOrigPostRepliesVisible" -> pageMeta.numOrigPostRepliesVisible,
+      "answeredAt" -> JsDateMsOrNull(pageMeta.answeredAt),
+      "answerPostId" -> JsNumberOrNull(pageMeta.answerPostId),
+      "plannedAt" -> JsDateMsOrNull(pageMeta.plannedAt),
+      "startedAt" -> JsDateMsOrNull(pageMeta.startedAt),
+      "doneAt" -> JsDateMsOrNull(pageMeta.doneAt),
+      "closedAt" -> JsDateMsOrNull(pageMeta.closedAt),
+      "lockedAt" -> JsDateMsOrNull(pageMeta.lockedAt),
+      "frozenAt" -> JsDateMsOrNull(pageMeta.frozenAt),
+      "unwantedAt" -> JsNull,
+      "hiddenAt" -> JsWhenMsOrNull(pageMeta.hiddenAt),
+      "deletedAt" -> JsDateMsOrNull(pageMeta.deletedAt),
+      "htmlTagCssClasses" -> pageMeta.htmlTagCssClasses,
+      "htmlHeadTitle" -> pageMeta.htmlHeadTitle,
+      "htmlHeadDescription" -> pageMeta.htmlHeadDescription)
+  }
+
+
+  def JsPostInclDetails(post: Post): JsObject = {
+    Json.obj(
+      "id" -> post.id,
+      "pageId" -> post.pageId,
+      "nr" -> post.nr,
+      "parentNr" -> JsNumberOrNull(post.parentNr),
+      "multireplyPostNrs" -> JsArray(), // post.multireplyPostNrs
+      "postType" -> post.tyype.toInt,
+      "createdAt" -> JsDateMs(post.createdAt),
+      "createdById" -> post.createdById,
+      "currRevById" -> post.currentRevisionById,
+      "currRevStartedAt" -> JsDateMs(post.currentRevStaredAt),
+      "currRevLastEditedAt" -> JsDateMsOrNull(post.currentRevLastEditedAt),
+      "currRevSourcePatch" -> JsStringOrNull(post.currentRevSourcePatch),
+      "currRevNr" -> post.currentRevisionNr,
+      "prevRevNr" -> JsNumberOrNull(post.previousRevisionNr),
+      "lastApprovedEditAt" -> JsDateMsOrNull(post.lastApprovedEditAt),
+      "lastApprovedEditById" -> JsNumberOrNull(post.lastApprovedEditById),
+      "numDistinctEditors" -> post.numDistinctEditors,
+      "safeRevNr" -> JsNumberOrNull(post.safeRevisionNr),
+      "approvedSource" -> JsStringOrNull(post.approvedSource),
+      "approvedHtmlSanitized" -> JsStringOrNull(post.approvedHtmlSanitized),
+      "approvedAt" -> JsDateMsOrNull(post.approvedAt),
+      "approvedById" -> JsNumberOrNull(post.approvedById),
+      "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr),
+      "collapsedStatus" -> post.collapsedStatus.underlying,
+      "collapsedAt" -> JsDateMsOrNull(post.collapsedAt),
+      "collapsedById" -> JsNumberOrNull(post.collapsedById),
+      "closedStatus" -> post.closedStatus.underlying,
+      "closedAt" -> JsDateMsOrNull(post.closedAt),
+      "closedById" -> JsNumberOrNull(post.closedById),
+      "bodyHiddenAt" -> JsDateMsOrNull(post.bodyHiddenAt),
+      "bodyHiddenById" -> JsNumberOrNull(post.bodyHiddenById),
+      "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason),
+      "deletedStatus" -> post.deletedStatus.underlying,
+      "deletedAt" -> JsDateMsOrNull(post.deletedAt),
+      "deletedById" -> JsNumberOrNull(post.deletedById),
+      "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
+      "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
+      "numPendingFlags" -> post.numPendingFlags,
+      "numHandledFlags" -> post.numHandledFlags,
+      "numPendingEditSuggestions" -> post.numPendingEditSuggestions,
+      "numLikeVotes" -> post.numLikeVotes,
+      "numWrongVotes" -> post.numWrongVotes,
+      "numBuryVotes" -> post.numBuryVotes,
+      "numUnwantedVotes" -> post.numUnwantedVotes,
+      "numTimesRead" -> post.numTimesRead)
+  }
+
+
+  def JsCategoryInclDetails(category: Category): JsObject = {
+    Json.obj(
+      "id" -> category.id,  // : CategoryId,
+      "sectionPageId" -> category.sectionPageId,  // : PageId,
+      // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
+      // root category).
+      "parentId" -> JsNumberOrNull(category.parentId),
+      "defaultSubCatId" -> JsNumberOrNull(category.defaultSubCatId),
+      "name" -> category.name,
+      "slug" -> category.slug,
+      "position" -> category.position,
+      "description" -> JsStringOrNull(category.description),
+      // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
+      "newTopicTypes" -> category.newTopicTypes.map(_.toInt),  // : immutable.Seq[PageType],
+      // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
+      "unlistCategory" -> category.unlistCategory,
+      "unlistTopics" -> category.unlistTopics,
+      //  -----------
+      "includeInSummaries" -> category.includeInSummaries.toInt,
+      "createdAtMs" -> JsDateMs(category.createdAt),
+      "updatedAtMs" -> JsDateMs(category.updatedAt),
+      "lockedAtMs" -> JsDateMsOrNull(category.lockedAt),
+      "frozenAtMs" -> JsDateMsOrNull(category.frozenAt),
+      "deletedAtMs" -> JsDateMsOrNull(category.deletedAt))
+  }
 
   def JsPagePath(pagePath: PagePath): JsValue =
     Json.obj(
       "value" -> pagePath.value,
       "folder" -> pagePath.folder,
+      "pageId" -> JsStringOrNull(pagePath.pageId),
       "showId" -> pagePath.showId,
       "slug" -> pagePath.pageSlug)
 
@@ -152,6 +465,9 @@ object JsX {
   def JsStringOrNull(value: Option[String]): JsValue =
     value.map(JsString).getOrElse(JsNull)
 
+  def readJsString(json: JsObject, field: String): String =
+    JsonUtils.readString(json, field)
+
   def JsBooleanOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
@@ -164,8 +480,20 @@ object JsX {
   def JsFloatOrNull(value: Option[Float]): JsValue =
     value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
 
+  def readJsLong(json: JsObject, field: String): Long =
+    (json \ field).asInstanceOf[JsNumber].value.toLong
+
+  def readJsInt(json: JsObject, field: String): Int =
+    JsonUtils.readInt(json, field)
+
+  def readJsFloat(json: JsObject, field: String): Float =
+    (json \ field).asInstanceOf[JsNumber].value.toFloat
+
   def JsWhenMs(when: When) =
     JsNumber(when.unixMillis)
+
+  def readJsWhen(json: JsObject, field: String): When =
+    JsonUtils.readWhen(json, field)
 
   def JsDateMs(value: ju.Date) =
     JsNumber(value.getTime)

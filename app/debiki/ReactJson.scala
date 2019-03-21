@@ -541,7 +541,7 @@ class JsonMaker(dao: SiteDao) {
       dao.context.postRenderer, PostRendererSettings(page.pageType, pubSiteId))
 
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole = page.pageType, tags = tags, howRender, renderer)
+      tags = tags, howRender, renderer)
   }
 
 
@@ -549,7 +549,7 @@ class JsonMaker(dao: SiteDao) {
         tags: Set[TagLabel]): JsObject = {
     val renderer = RendererWithSettings(dao.context.postRenderer, PostRendererSettings(pageRole, pubSiteId))
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), renderer)
+      tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), renderer)
   }
 
 
@@ -872,7 +872,7 @@ class JsonMaker(dao: SiteDao) {
         dao.context.postRenderer, PostRendererSettings(pageMeta.pageType, pubSiteId))
       post.nr.toString ->
         postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
-          pageMeta.pageType, tags = tags, new HowRenderPostInPage(false, JsNull, false,
+          tags = tags, new HowRenderPostInPage(false, JsNull, false,
             // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
             Nil), renderer)
     }
@@ -1468,7 +1468,7 @@ object JsonMaker {
 
 
   private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
-    pageRole: PageType, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
+    tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
     renderer: RendererWithSettings): JsObject = {
 
     import inPageInfo._

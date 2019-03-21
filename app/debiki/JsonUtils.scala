@@ -78,12 +78,13 @@ object JsonUtils {
   }
 
 
-  def readInt(json: JsValue, fieldName: String): Int =
-    readOptInt(json, fieldName) getOrElse throwMissing("EsE5KPU3", fieldName)
+  def readInt(json: JsValue, fieldName: String, altName: String = "", default: Option[Int] = None): Int =
+    readOptInt(json, fieldName).orElse(readOptInt(json, altName)).orElse(default)
+      .getOrElse(throwMissing("EsE5KPU3", fieldName))
 
 
-  def readOptInt(json: JsValue, fieldName: String): Option[Int] = {
-    readOptLong(json, fieldName) map { valueAsLong =>
+  def readOptInt(json: JsValue, fieldName: String, altName: String = ""): Option[Int] = {
+    readOptLong(json, fieldName).orElse(readOptLong(json, altName)) map { valueAsLong =>
       if (valueAsLong > Int.MaxValue)
         throwBadJson("EsE5YKP02", s"$fieldName is too large for an Int: $valueAsLong")
       if (valueAsLong < Int.MinValue)
@@ -131,8 +132,15 @@ object JsonUtils {
     readOptDateMs(json, fieldName) getOrElse throwMissing("EsE2PKU0", fieldName)
 
 
-  def readOptDateMs(json: JsValue, fieldName: String): Option[ju.Date] =
-    (json \ fieldName).validateOpt[Long] match {
+  def readOptDateMs(json: JsValue, fieldName: String): Option[ju.Date] = {
+    // Backw compat: support both ...AtMs  and  ...At
+    val jsValue: JsLookupResult = {
+      (json \ fieldName).orElse({
+        if (fieldName.endsWith("AtMs")) json \ fieldName.dropRight(2)
+        else JsUndefined(s"Field missing: $fieldName")
+      })
+    }
+    jsValue.validateOpt[Long] match {
       case JsSuccess(value, _) =>
         val dateMs = value getOrElse {
           return None
@@ -146,7 +154,7 @@ object JsonUtils {
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE5YYW2", s"'$fieldName' is not a number: " + errors.toString())
     }
-
+  }
 
   private def throwBadJson(errorCode: String, message: String) =
     throw new BadJsonException(s"$message [$errorCode]")

@@ -90,7 +90,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: UserInclDetails = memberAndStats._1
         val anyStats: Option[UserStats] = memberAndStats._2
-        jsonForMemberInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
+        JsUserInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true, anyStats = anyStats)
       }))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
@@ -129,7 +129,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val groups = transaction.loadGroups(memberOrGroup)
           memberOrGroup match {
             case m: UserInclDetails =>
-              jsonForMemberInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
+              JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
@@ -142,7 +142,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             callerIsAdmin = callerIsAdmin)
 
         }
-      (usersJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), userId)
+      (usersJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), userId)
     }
   }
 
@@ -194,83 +194,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val stats = includeStats ? transaction.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
-          val userJson = jsonForMemberInclDetails(
+          val userJson = JsUserInclDetails(
             member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
+          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
         case group: Group =>
           val groupJson = jsonForGroupInclDetails(
             group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
           (groupJson, JsNull, group.id)
       }
     }
-  }
-
-
-  private def jsonForMemberInclDetails(user: UserInclDetails, usersById: Map[UserId, User],
-                                       groups: immutable.Seq[Group],
-                                       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-                                       anyStats: Option[UserStats] = None)
-        : JsObject = {
-    var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
-      "id" -> user.id,
-      "externalId" -> JsStringOrNull(user.externalId),
-      "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
-      "username" -> user.username,
-      "fullName" -> user.fullName,
-      "isAdmin" -> user.isAdmin,
-      "isModerator" -> user.isModerator,
-      "deactivatedAt" -> JsWhenMsOrNull(user.deactivatedAt),
-      "deletedAt" -> JsWhenMsOrNull(user.deletedAt),
-      "country" -> JsStringOrNull(user.country),
-      "url" -> JsStringOrNull(user.website),
-      "about" -> JsStringOrNull(user.about),
-      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
-      "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
-      "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
-      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
-      "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
-
-    if (callerIsStaff || callerIsUserHerself) {
-      val anyReviewer = user.reviewedById.flatMap(usersById.get)
-      val safeEmail =
-        if (callerIsAdmin || callerIsUserHerself) user.primaryEmailAddress
-        else hideEmailLocalPart(user.primaryEmailAddress)
-
-      userJson += "email" -> JsString(safeEmail)
-      userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)
-      userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
-      userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
-      userJson += "summaryEmailIntervalMins" ->
-          JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))
-      userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
-      userJson += "summaryEmailIfActive" ->
-          JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
-      userJson += "uiPrefs" -> user.uiPrefs.getOrElse(JsEmptyObj)
-      userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
-      userJson += "approvedAtMs" -> JsDateMsOrNull(user.reviewedAt)
-      userJson += "approvedById" -> JsNumberOrNull(user.reviewedById)
-      userJson += "approvedByName" -> JsStringOrNull(anyReviewer.flatMap(_.fullName))
-      userJson += "approvedByUsername" -> JsStringOrNull(anyReviewer.flatMap(_.username))
-      userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
-      userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
-    }
-
-    if (callerIsStaff) {
-      val anySuspender = user.suspendedById.flatMap(usersById.get)
-      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
-      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
-      userJson += "trustLevel" -> JsNumber(user.trustLevel.toInt)
-      userJson += "lockedTrustLevel" -> JsNumberOrNull(user.lockedTrustLevel.map(_.toInt))
-      userJson += "threatLevel" -> JsNumber(user.threatLevel.toInt)
-      userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
-
-      anyStats foreach { stats =>
-        userJson += "anyUserStats" -> makeUserStatsJson(stats, isStaffOrSelf = true)
-      }
-    }
-
-    userJson
   }
 
 
@@ -306,42 +239,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
     }
     userJson
-  }
-
-
-  private def makeUserStatsJson(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
-    var result = Json.obj(
-      "userId" -> stats.userId,
-      "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
-      "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt),
-      "firstSeenAt" -> JsWhenMs(stats.firstSeenAtOr0),
-      "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt),
-      "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
-      "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
-      "numDaysVisited" -> stats.numDaysVisited,
-      "numSecondsReading" -> stats.numSecondsReading,
-      "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
-      "numDiscourseRepliesPosted" -> stats.numDiscourseRepliesPosted,
-      "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
-      "numDiscourseTopicsRepliedIn" -> stats.numDiscourseTopicsRepliedIn,
-      "numDiscourseTopicsCreated" -> stats.numDiscourseTopicsCreated,
-      "numChatMessagesRead" -> stats.numChatMessagesRead,
-      "numChatMessagesPosted" -> stats.numChatMessagesPosted,
-      "numChatTopicsEntered" -> stats.numChatTopicsEntered,
-      "numChatTopicsRepliedIn" -> stats.numChatTopicsRepliedIn,
-      "numChatTopicsCreated" -> stats.numChatTopicsCreated,
-      "numLikesGiven" -> stats.numLikesGiven,
-      "numLikesReceived" -> stats.numLikesReceived,
-      "numSolutionsProvided" -> stats.numSolutionsProvided)
-    if (isStaffOrSelf) {
-      result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
-      result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
-      result += "nextSummaryEmailAt" -> JsWhenMsOrNull(stats.nextSummaryEmailAt)
-      result += "emailBounceSum" -> JsNumber(stats.emailBounceSum.toDouble)
-      result += "topicsNewSince" -> JsWhenMs(stats.topicsNewSince)
-      result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)
-    }
-    result
   }
 
 
@@ -455,7 +352,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
 
       val anyStats: Option[UserStats] = tx.loadUserStats(userId)
-      val statsJson = anyStats.map(makeUserStatsJson(_, isStaffOrSelf = true)) getOrElse JsNull
+      val statsJson = anyStats.map(JsUserStats(_, isStaffOrSelf = true)) getOrElse JsNull
 
       val otherEmailAddresses =
         tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
@@ -492,7 +389,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       Json.obj(
         "fullName" -> JsStringOrNull(member.fullName),
         "username" -> JsString(member.username),
-        "createdAt" -> JsString(toIso8601Day(member.createdAt)),
+        "createdAt" -> JsString(toIso8601Day(member.createdAt.toJavaDate)),
         "primaryEmailAddress" -> JsString(member.primaryEmailAddress),
         "otherEmailAddresses" -> otherEmailsJson,
         "country" -> JsStringOrNull(member.country),
@@ -1247,7 +1144,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def loadGroups: Action[Unit] = AdminGetAction { request =>
     val groups = request.dao.readOnlyTransaction { tx =>
-      tx.loadGroupsAsSeq()
+      tx.loadAllGroupsAsSeq()
     }
     OkSafeJson(JsArray(groups map JsGroup))
   }

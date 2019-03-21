@@ -242,6 +242,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private def jsonForInvite(invite: Invite, isAdminOrSelf: Boolean): JsValue = {
     val safeEmail = isAdminOrSelf ? invite.emailAddress | hideEmailLocalPart(invite.emailAddress)
+    CLEAN_UP // dupl code, use JsX.JsInvite instead [REFINVFLDS]
     Json.obj(
       "invitedEmailAddress" -> safeEmail,
       "invitedById" -> invite.createdById,

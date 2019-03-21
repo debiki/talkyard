@@ -1261,16 +1261,16 @@ interface UsersHere {
 }
 
 
-interface Invite {
+interface Invite {  // [REFINVFLDS]
   invitedEmailAddress: string;
   invitedById: UserId;
-  createdAtEpoch: number;  // change to millis
-  createdById: UserId;
+  createdAtEpoch: number;  // change to millis, remove "Epoch" suffix
+  createdById: UserId;  // remove
   acceptedAtEpoch?: number;  // change to millis
   invalidatedAtEpoch?: number;  // change to millis
   deletedAtEpoch?: number;  // change to millis
   deletedById?: UserId;
-  userId?: UserId;
+  userId?: UserId;   // rename to becameUserId
   // Later:
   /*
   userFullName?: string;

@@ -21,7 +21,7 @@ import java.{util => ju}
 import scala.collection.immutable
 
 
-sealed abstract class IncludeInSummaries(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class IncludeInSummaries(val IntVal: Int) { def toInt: Int = IntVal }
 object IncludeInSummaries {
   case object Default extends IncludeInSummaries(0)
   // Later. To feature a specific page, or Announcements category.

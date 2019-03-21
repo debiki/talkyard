@@ -1024,6 +1024,10 @@ class Config(conf: play.api.Configuration) {
   private def getIntOrDefault(confName: String, default: Int): Int =
     conf.getOptional[Int](confName) getOrElse default
 
+  private def getBoolOrDefault[A](confName: String, default: Boolean): Boolean =
+    conf.getOptional[Boolean](confName) getOrElse default
+
+  val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
 
   val featureFlags: Map[String, FeatureOnOff] = {
     val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank

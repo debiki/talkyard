@@ -98,7 +98,7 @@ function buildSite(site?: SiteData) {
       const category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
       const page = api.addPage({
         dbgSrc: 'StBldrCatWAbt',
-        id: `about_cat_${opts.slug}`.substr(0, 32),
+        id: `about_cat_${opts.slug.replace('-', '_')}`.substr(0, 32),
         folder: '/',
         showId: false,
         slug: `about-cat-${opts.slug}`,

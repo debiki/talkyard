@@ -130,7 +130,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       case PagePath.Parsed.Good(goodPath) => goodPath
       case PagePath.Parsed.Corrected(correctedPath) =>
         // For now
-        return Future.successful(makeProblemJsonResult(BAD_REQUEST, "Unimplemented [EdE6GJHML2]"))
+        return Future.successful(makeProblemJsonResult(BAD_REQUEST,
+          s"Unimplemented: Correcting page path from $path to $correctedPath [EdE6GJHML2]"))
       case PagePath.Parsed.Bad(error) =>
         return Future.successful(makeProblemJsonResult(BAD_REQUEST, "Bad page path [EdE2WBR04]"))
     }

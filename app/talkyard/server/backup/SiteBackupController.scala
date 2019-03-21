@@ -44,7 +44,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   import context.security
   import context.safeActions.ExceptionAction
 
-  val MaxBytes = 1001000
+  val MaxBytes: Int = 1000 * 1000
 
 
   def exportSiteJson(): Action[Unit] = AdminGetAction { request =>  // what rate limits?
@@ -54,11 +54,12 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
-        PostJsonAction(RateLimits.CreateSite, maxBytes = MaxBytes) { _ =>
-    //val deleteOld = deleteOldSite.contains(true)
+        StaffPostJsonAction(maxBytes = MaxBytes) { request =>
+    throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMP", "May not import sites")
     //val createdFromSiteId = Some(request.siteId)
-    //val response = importSiteImpl(request, request.theBrowserIdData, deleteOld, isTest = false)
-    unimplemented("EdE2KWUP0") // check what kind of permission?
+    val response = importSiteImpl(
+      request.underlying, request.theBrowserIdData, deleteOld = false, isTest = false)
+    response
   }
 
 

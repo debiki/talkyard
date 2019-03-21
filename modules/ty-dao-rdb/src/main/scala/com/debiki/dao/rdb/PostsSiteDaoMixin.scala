@@ -140,6 +140,14 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllPosts(): immutable.Seq[Post] = {
+    val query = i"""
+      select * from posts3 where site_id = ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => readPost(rs, pageId = None))
+  }
+
+
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post] = {
     loadUnapprovedPostsImpl(pageId, None, limit)
   }

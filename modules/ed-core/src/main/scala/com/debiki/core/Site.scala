@@ -149,7 +149,7 @@ object SiteStatus {
 
 /** A website.
   */
-case class Site(
+case class Site(  // delete? Use only SiteInclDetails instead?
   id: SiteId,
   pubId: PublSiteId,
   status: SiteStatus,
@@ -172,32 +172,36 @@ case class Site(
 
 case class SiteInclDetails(  // [exp] ok use. delete: price_plan
   id: SiteId,
-  publId: String,
+  pubId: String,
+  status: SiteStatus,
   name: String,
   createdAt: When,
   createdFromIp: Option[IpAddress],
-  nextPageId: Int,
   creatorEmailAddress: Option[String],
+  nextPageId: Int,
   quotaLimitMbs: Option[Int],
-  numGuests: Int,
-  numIdentities: Int,
-  numRoles: Int,
-  numRoleSettings: Int,
-  numPages: Int,
-  numPosts: Int,
-  numPostTextBytes: Int,
-  numPostsRead: Int,
-  numActions: Int,
-  numNotfs: Int,
-  numEmailsSent: Int,
-  numAuditRows: Int,
-  numUploads: Int,
-  numUploadBytes: Long,
-  version: Int,
-  numPostRevisions: Int,
-  numPostRevBytes: Long,
-  status: Int,
-  hostnames: immutable.Seq[HostnameInclDetails])
+  hostnames: immutable.Seq[HostnameInclDetails],
+  version: Int = 0,
+  numGuests: Int = 0,  // gone? delete
+  numIdentities: Int = 0,
+  numParticipants: Int = 0,
+  numPageUsers: Int = 0,
+  numPages: Int = 0,
+  numPosts: Int = 0,
+  numPostTextBytes: Int = 0,
+  numPostsRead: Int = 0,
+  numActions: Int = 0,
+  numNotfs: Int = 0,
+  numEmailsSent: Int = 0,
+  numAuditRows: Int = 0,
+  numUploads: Int = 0,
+  numUploadBytes: Long = 0,
+  numPostRevisions: Int = 0,
+  numPostRevBytes: Long = 0) {
+
+  def canonicalHostname: Option[HostnameInclDetails] =
+    hostnames.find(_.role == Hostname.RoleCanonical)
+}
 
 
 
@@ -211,6 +215,15 @@ object Hostname {
   case object RoleLink extends Role(3)
   case object RoleDuplicate extends Role(4)
 
+  case object Role {
+    def fromInt(value: Int): Option[Role] = Some(value match {
+      case RoleCanonical.IntVal => RoleCanonical
+      case RoleRedirect.IntVal => RoleRedirect
+      case RoleLink.IntVal => RoleLink
+      case RoleDuplicate.IntVal => RoleDuplicate
+      case _ => return None
+    })
+  }
 
   /** Should be used as prefix for both the hostname and the site name, for test sites. */
   val E2eTestPrefix = "e2e-test-"

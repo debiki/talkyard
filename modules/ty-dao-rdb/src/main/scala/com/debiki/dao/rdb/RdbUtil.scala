@@ -104,7 +104,7 @@ object RdbUtil {
         : SiteInclDetails = {
     SiteInclDetails(
       id = rs.getInt("id"),
-      publId = rs.getString("publ_id"),
+      pubId = rs.getString("publ_id"),
       name = rs.getString("name"),
       createdAt = getWhen(rs, "ctime"),
       createdFromIp = getOptString(rs, "creator_ip"),
@@ -113,8 +113,8 @@ object RdbUtil {
       quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
       numGuests = rs.getInt("num_guests"),
       numIdentities = rs.getInt("num_identities"),
-      numRoles = rs.getInt("num_roles"),
-      numRoleSettings = rs.getInt("num_role_settings"),
+      numParticipants = rs.getInt("num_roles"),
+      numPageUsers = rs.getInt("num_role_settings"),
       numPages = rs.getInt("num_pages"),
       numPosts = rs.getInt("num_posts"),
       numPostTextBytes = rs.getInt("num_post_text_bytes"),
@@ -128,7 +128,7 @@ object RdbUtil {
       version = rs.getInt("version"),
       numPostRevisions = rs.getInt("num_post_revisions"),
       numPostRevBytes = rs.getLong("num_post_rev_bytes"),
-      status = rs.getInt("status"),
+      status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
       hostnames = hostnames)
   }
 
@@ -161,6 +161,7 @@ object RdbUtil {
 
   val GroupSelectListItems = o"""
       user_id,
+      created_at,
       full_name,
       username,
       locked_trust_level,
@@ -177,6 +178,7 @@ object RdbUtil {
 
   val UserSelectListItemsNoGuests: String =
     s"""u.USER_ID u_id,
+      |u.created_at u_created_at,
       |u.full_name u_full_name,
       |u.USERNAME u_username,
       |u.external_id u_external_id,
@@ -220,6 +222,7 @@ object RdbUtil {
 
   def getParticipant(rs: js.ResultSet): Participant = {
     val userId = rs.getInt("u_id")
+    def createdAt = getWhen(rs, "u_created_at")   // loaded??
     val emailNotfPrefs = {
       if (isGuestId(userId))
         _toEmailNotfs(rs.getString("g_email_notfs"))
@@ -238,6 +241,7 @@ object RdbUtil {
     if (isGuestId(userId))
       Guest(
         id = userId,
+        createdAt = createdAt,
         guestName = dn2e(name.orNull),
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
         email = dn2e(rs.getString("u_guest_email_addr")),
@@ -247,6 +251,7 @@ object RdbUtil {
     else if (anyTrustLevel.isEmpty)  // Right now, groups have no trust level. [1WBK5JZ0]
       Group(
         id = userId,
+        createdAt = createdAt,
         theUsername = theUsername,
         name = name getOrElse "Unnamed group [EdE21QKS0]",
         tinyAvatar = tinyAvatar,
@@ -282,6 +287,7 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     Group(
       id = rs.getInt("user_id"),
+      createdAt = getWhen(rs, "created_at"),   // loaded??
       theUsername = rs.getString("username"),
       name = rs.getString("full_name"),
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
@@ -294,6 +300,7 @@ object RdbUtil {
 
 
   val CompleteUserSelectListItemsNoUserId = i"""
+    |created_at,
     |external_id,
     |full_name,
     |primary_email_addr,
@@ -310,7 +317,6 @@ object RdbUtil {
     |deleted_at,
     |username,
     |email_verified_at,
-    |created_at,
     |password_hash,
     |email_for_every_new_post,
     |see_activity_min_trust_level,
@@ -365,7 +371,7 @@ object RdbUtil {
       externalId = getOptString(rs, "external_id"),
       fullName = Option(rs.getString("full_name")),
       username = rs.getString("username"),
-      createdAt = getDate(rs, "created_at"),
+      createdAt = getWhen(rs, "created_at"),
       primaryEmailAddress = dn2e(rs.getString("primary_email_addr")),
       emailNotfPrefs = _toEmailNotfs(rs.getString("email_notfs")),
       emailVerifiedAt = getOptionalDate(rs, "email_verified_at"),

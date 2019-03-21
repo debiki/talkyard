@@ -100,7 +100,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (category, isDefault) = dao.loadTheCategory(categoryId)
     val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
     val (allPerms, groups) = dao.readOnlyTransaction { tx =>
-      (tx.loadPermsOnPages(), tx.loadGroupsAsSeq())
+      (tx.loadPermsOnPages(), tx.loadAllGroupsAsSeq())
     }
     val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
     OkSafeJson(Json.obj(  // Typescript: LoadCategoryResponse
@@ -339,7 +339,7 @@ object ForumController {
   val NumTopicsToList = 40
 
 
-  private def categoryToJson(category: Category, isDefault: Boolean,
+  private def categoryToJson(category: Category, isDefault: Boolean,  // [JsObj]
         recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff])
         : JsObject = {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")

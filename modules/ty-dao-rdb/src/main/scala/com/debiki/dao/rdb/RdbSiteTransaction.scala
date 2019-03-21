@@ -955,6 +955,15 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def loadAllPagePaths(): immutable.Seq[PagePath] = {
+    val query = s"""
+      select * from page_paths3 where site_id = ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      _PagePath(rs, siteId, pageId = None)
+    })
+  }
+
   def loadPagePath(pageId: PageId): Option[PagePath] =
     lookupPagePathImpl(pageId)
 
@@ -1102,7 +1111,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def insertPageMetaMarkSectionPageStale(pageMeta: PageMeta, isImporting: Boolean) {
-    require(pageMeta.createdAt == pageMeta.updatedAt, "DwE2EGPF8")
+    require(pageMeta.createdAt.getTime <= pageMeta.updatedAt.getTime, "TyE2EGPF8")
 
     // Publ date can be in the future, also if creating new page.
     pageMeta.publishedAt.foreach(publAt =>

@@ -242,7 +242,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/delete-backup           talkyard.server.backup.SiteBackupController.deleteBackup
 #POST  /-/upload-backup           talkyard.server.backup.SiteBackupController.uploadBackup
 #POST  /-/import-backup           talkyard.server.backup.SiteBackupController.importBackup
-POST  /-/export-site-json        talkyard.server.backup.SiteBackupController.exportSiteJson
+GET   /-/export-site-json        talkyard.server.backup.SiteBackupController.exportSiteJson
 POST  /-/import-site-json        talkyard.server.backup.SiteBackupController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site-json   talkyard.server.backup.SiteBackupController.importTestSite
 

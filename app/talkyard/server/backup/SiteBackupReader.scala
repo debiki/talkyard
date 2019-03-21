@@ -30,6 +30,7 @@ import org.scalactic._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX
 
 
 /** Imports and exports dumps of websites.
@@ -75,7 +76,7 @@ case class SiteBackupReader(context: EdContext) {
           throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
       }
 
-    val siteToSave: Site =
+    val siteToSave: SiteInclDetails =
       try readSiteMeta(siteMetaJson)
       catch {
         case ex: IllegalArgumentException =>
@@ -89,13 +90,14 @@ case class SiteBackupReader(context: EdContext) {
     var summaryEmailIfActive = false
     groupsJson.value.zipWithIndex foreach { case (json, index) =>
       val groupId = (json \ "id").as[UserId]
-      require(groupId == Group.EveryoneId, "EdE1QK04S")
-      summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").as[Int]
-      summaryEmailIfActive = (json \ "summaryEmailIfActive").as[Boolean]
+      if (groupId == Group.EveryoneId) {
+        summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").as[Int]
+        summaryEmailIfActive = (json \ "summaryEmailIfActive").as[Boolean]
+      }
     }
 
     val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
-      readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+      readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "EsE0GY72", s"""Invalid user json at index $index in the 'users' list: $errorMessage,
                 json: $json"""))
@@ -146,15 +148,23 @@ case class SiteBackupReader(context: EdContext) {
 
 
 
-  def readSiteMeta(jsObject: JsObject): Site = {
+  def readSiteMeta(jsObject: JsObject): SiteInclDetails = {
     val name = readString(jsObject, "name")
-    val anyFullHostname = readOptString(jsObject, "fullHostname")
-    untestedIf(anyFullHostname.isDefined, "EsE5FK02", "fullHostname has never been used before")
 
     def theLocalHostname = {
       readOptString(jsObject, "localHostname") getOrElse {
-        throw new BadJsonException(s"Neither fullHostname nor localHostname specified [EsE2KF4Y8]")
+        throw new BadJsonException(s"Neither hostnames nor localHostname specified [TyE2KF4Y8]")
       }
+    }
+
+    val anyHostnamesJson = (jsObject \ "hostnames").asOpt[Seq[JsObject]].getOrElse(Nil)
+    val hostnames: Seq[HostnameInclDetails] = {
+      val hns = anyHostnamesJson.map(JsX.readJsHostnameInclDetails)
+      if (hns.isEmpty) {
+        val fullHostname = s"$theLocalHostname.${globals.baseDomainNoPort}"
+        Seq(HostnameInclDetails(fullHostname, Hostname.RoleCanonical, addedAt = globals.now()))
+      }
+      else hns
     }
 
     val siteStatusInt = readInt(jsObject, "status")
@@ -162,22 +172,21 @@ case class SiteBackupReader(context: EdContext) {
       throwBadRequest("EsE6YK2W4", s"Bad site status int: $siteStatusInt")
     }
 
-    val createdAtMs = readLong(jsObject, "createdAtMs")
-    val fullHostname = anyFullHostname.getOrElse(s"$theLocalHostname.${globals.baseDomainNoPort}")
-
-    Site(
+    SiteInclDetails(
       id = NoSiteId,
       pubId = readOptString(jsObject, "pubId") getOrElse Site.newPublId(),
       status = siteStatus,
       name = name,
-      createdAt = When.fromMillis(createdAtMs),
-      creatorIp = "0.0.0.0",
-      hostnames = List(
-        Hostname(fullHostname, Hostname.RoleCanonical)))
+      createdAt = readWhen(jsObject, "createdAtMs"),
+      createdFromIp = None,
+      creatorEmailAddress = None,
+      nextPageId = 123,
+      quotaLimitMbs = None,
+      hostnames = hostnames.toList)
   }
 
 
-  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): UserInclDetails Or ErrorMessage = {
+  def readUserOrBad(jsValue: JsValue, isE2eTest: Boolean): UserInclDetails Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -201,7 +210,7 @@ case class SiteBackupReader(context: EdContext) {
         externalId = readOptString(jsObj, "externalId"),
         username = username,
         fullName = readOptString(jsObj, "fullName"),
-        createdAt = readDateMs(jsObj, "createdAtMs"),
+        createdAt = readWhen(jsObj, "createdAtMs"),
         isApproved = readOptBool(jsObj, "isApproved"),
         reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME
         reviewedById = readOptInt(jsObj, "approvedById"),
@@ -254,11 +263,27 @@ case class SiteBackupReader(context: EdContext) {
       case ex: IllegalArgumentException =>
         return Bad(s"Invalid page id: " + ex.getMessage)
     }
+    if (!id.isOkVariableName && id.toIntOption.isEmpty) {
+      return Bad(s"Invalid page id '$id': not a number and not an ok variable name [TyE2ABD04]")
+    }
+
+    val frequentPosterIds =
+      try {
+        (jsValue \ "frequentPosterIds").asOpt[Seq[JsNumber]].getOrElse(Nil).map(_.value.toInt)
+      }
+      catch {
+        case ex: Exception =>
+          return Bad(s"On page id $id, invalid frequentPosterIds: " + ex.getMessage)
+      }
+
+    val layout: TopicListLayout =
+      TopicListLayout.fromInt(readInt(jsObj, "layout", default = Some(TopicListLayout.Default.toInt)))
+        .getOrElse(TopicListLayout.Default)
 
     try {
       Good(PageMeta(
         pageId = id,
-        pageType = PageType.fromInt(readInt(jsObj, "role")).getOrThrowBadJson("role"),
+        pageType = PageType.fromInt(readInt(jsObj, "pageType", "role")).getOrThrowBadJson("pageType"),
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
@@ -268,34 +293,37 @@ case class SiteBackupReader(context: EdContext) {
         lastApprovedReplyById = None,
         categoryId = readOptInt(jsObj, "categoryId"),
         embeddingPageUrl = None,
-        authorId = readInt(jsObj, "authorId")
-        /* Later:
-        frequentPosterIds = Nil,
-        pinOrder = None,
-        pinWhere = None,
-        numLikes: Int = 0,
-        numWrongs: Int = 0,
-        numBurys: Int = 0,
-        numUnwanteds: Int = 0,
-        numRepliesVisible: Int = 0,
-        numRepliesTotal: Int = 0,
-        numOrigPostLikeVotes: Int = 0,
-        numOrigPostWrongVotes: Int = 0,
-        numOrigPostBuryVotes: Int = 0,
-        numOrigPostUnwantedVotes: Int = 0,
-        numOrigPostRepliesVisible: Int = 0,
-        answeredAt: Option[ju.Date] = None,
-        answerPostUniqueId: Option[UniquePostId] = None,
-        plannedAt: Option[ju.Date] = None,
-        doneAt: Option[ju.Date] = None,
-        closedAt: Option[ju.Date] = None,
-        lockedAt: Option[ju.Date] = None,
-        frozenAt: Option[ju.Date] = None,
-        // unwantedAt: Option[ju.Date] = None,
-        // deletedAt: Option[ju.Date] = None,
-        numChildPages: Int = 0  <-- DoLater: remove, replace with category table
-        */
-      ))
+        authorId = readInt(jsObj, "authorId"),
+        frequentPosterIds = frequentPosterIds,
+        layout = layout,
+        pinOrder = readOptInt(jsObj, "pinOrder"),
+        pinWhere = readOptInt(jsObj, "pinWhere").flatMap(PinPageWhere.fromInt),
+        numLikes = readInt(jsObj, "numLikes", default = Some(0)),
+        numWrongs = readInt(jsObj, "numWrongs", default = Some(0)),
+        numBurys = readInt(jsObj, "numBurys", default = Some(0)),
+        numUnwanteds = readInt(jsObj, "numUnwanteds", default = Some(0)),
+        numRepliesVisible = readInt(jsObj, "numRepliesVisible", default = Some(0)),
+        numRepliesTotal = readInt(jsObj, "numRepliesTotal", default = Some(0)),
+        numPostsTotal = readInt(jsObj, "numPostsTotal", default = Some(0)),
+        numOrigPostLikeVotes = readInt(jsObj, "numOrigPostLikeVotes", default = Some(0)),
+        numOrigPostWrongVotes = readInt(jsObj, "numOrigPostWrongVotes", default = Some(0)),
+        numOrigPostBuryVotes = readInt(jsObj, "numOrigPostBuryVotes", default = Some(0)),
+        numOrigPostUnwantedVotes = readInt(jsObj, "numOrigPostUnwantedVotes", default = Some(0)),
+        numOrigPostRepliesVisible = readInt(jsObj, "numOrigPostRepliesVisible", default = Some(0)),
+        answeredAt = readOptDateMs(jsObj, "answeredAt"),
+        answerPostId = readOptInt(jsObj, "answerPostId"),
+        plannedAt = readOptDateMs(jsObj, "plannedAt"),
+        startedAt = readOptDateMs(jsObj, "startedAt"),
+        doneAt = readOptDateMs(jsObj, "doneAt"),
+        closedAt = readOptDateMs(jsObj, "closedAt"),
+        lockedAt = readOptDateMs(jsObj, "lockedAt"),
+        frozenAt = readOptDateMs(jsObj, "frozenAt"),
+        //unwantedAt = readOptDateMs(jsObj, "unwantedAt"),
+        hiddenAt = readOptWhen(jsObj, "hiddenAt"),
+        deletedAt = readOptDateMs(jsObj, "deletedAt"),
+        htmlTagCssClasses = readOptString(jsObj, "htmlTagCssClasses").getOrElse(""),
+        htmlHeadTitle = readOptString(jsObj, "htmlHeadTitle").getOrElse(""),
+        htmlHeadDescription = readOptString(jsObj, "htmlHeadDescription").getOrElse("")))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -347,12 +375,12 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         sectionPageId = readString(jsObj, "sectionPageId"),
         parentId = readOptInt(jsObj, "parentId"),
-        defaultSubCatId = readOptInt(jsObj, "defaultCategoryId"),
+        defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME
         name = readString(jsObj, "name"),
         slug = readString(jsObj, "slug"),
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
-        newTopicTypes = Nil, // fix later
+        newTopicTypes = Nil, // fix later [readlater]
         unlistCategory = readOptBool(jsObj, "unlistCategory").getOrElse(false),
         unlistTopics = readOptBool(jsObj, "unlistTopics").getOrElse(false),
         includeInSummaries = includeInSummaries,
@@ -382,7 +410,7 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     val postTypeDefaultNormal =
-      PostType.fromInt(readOptInt(jsObj, "type").getOrElse(PostType.Normal.toInt))
+      PostType.fromInt(readOptInt(jsObj, "postType", "type").getOrElse(PostType.Normal.toInt))
           .getOrThrowBadJson("type")
 
     val deletedStatusDefaultOpen =

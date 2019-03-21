@@ -314,7 +314,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
         """,
         List[AnyRef](siteId.asAnyRef, user.id.asAnyRef, user.externalId.orNullVarchar,
           user.fullName.orNullVarchar,
-          user.username, user.createdAt, user.primaryEmailAddress.trimNullVarcharIfBlank,
+          user.username, user.createdAt.asTimestamp, user.primaryEmailAddress.trimNullVarcharIfBlank,
           _toFlag(user.emailNotfPrefs), o2ts(user.emailVerifiedAt),
           user.mailingListMode.asTrueOrNull,
           user.passwordHash.orNullVarchar,
@@ -672,20 +672,38 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUsers(): immutable.Seq[Participant] = {
+  def loadAllGuests(): immutable.Seq[Guest] = {
     val query = i"""
       select $UserSelectListItemsWithGuests
       from users3 u
       left join guest_prefs3 e
         on u.guest_email_addr = e.EMAIL and u.SITE_ID = e.SITE_ID
       where
-        u.SITE_ID = ?
+        u.SITE_ID = ? and u.user_id <= ${Participant.MaxGuestId}
       """
-    runQueryFindMany(query, List(siteId.asAnyRef), getParticipant)
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      val p = getParticipant(rs)
+      dieIf(!p.isInstanceOf[Guest], "TyE4AKS05")
+      p.asInstanceOf[Guest]
+    })
   }
 
 
-  def loadGroupsAsSeq(): immutable.Seq[Group] = {
+  def loadAllUsersInclDetails(): immutable.Seq[UserInclDetails] = {
+    val query = s"""
+      select $CompleteUserSelectListItemsWithUserId
+      from users3
+      where site_id = ?
+        and user_id >= ${Participant.LowestMemberId}
+        and trust_level is not null -- means is user, not group
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      getUserInclDetails(rs)
+    })
+  }
+
+
+  def loadAllGroupsAsSeq(): immutable.Seq[Group] = {
     // The null checks below: groups have no trust level, but all members do. [8KPG2W5]
     val query = i"""
       select $GroupSelectListItems
