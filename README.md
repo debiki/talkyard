@@ -15,7 +15,7 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-A place to talk.
+Discussion software. Create a place to talk.
 
 <!--
 Create a place to talk,
@@ -23,16 +23,18 @@ where your audience find answers to their questions, and discuss ideas.<br>
 Place it at `talkyard.Your-Website.org`.
 -->
 
- - **Get unstuck** by finding solutions in Question-Answers topics, like at StackOverflow.
+ - **Get unstuck** by finding answers in Question-Answers topics, like at StackOverflow.
  - **Discuss ideas** in open-ended topics, like at Reddit and Hacker News.
+ - **Solve problems** step by step, in traditional flat forum topics.
  - **Collaborate** in real time chat, like Slack.
  - **Talk with your blog visitors** in embedded comments, like Disqus.
- <!-- Don't mention until is actually available?
-      Maybe not mention at all — 'collaborate' above, is perhaps enough?
- - **Solve problems** step by step, in flat by-time topics, coming soon.    -->
 
+This is for development;
+**installation instructions** are elsewhere: https://github.com/debiki/talkyard-prod-one
+
+<!--
 For your students / volunteers / colleagues / customers / donors /
-open source users / city / community.
+open source users / city / community. -->
 
 
 <!--
@@ -65,17 +67,7 @@ Screenshots a bit below.<br>
 See it live: https://www.talkyard.io/forum/latest<br>
 Read about it, and demo forums: https://www.talkyard.io
 
-
-### How install?
-
-_This_ repository is for writing Talkyard source code, and building Docker images (docker build
-files are in <code>./images/<i>image-name</i>/</code>).
-To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
-("-prod-one" means "production installation on one server").
-
-Docker based installation. Automatic upgrades.
-One installation can host many sites.
-There's [hosting](https://www.talkyard.io/plans), if you don't want to install it yourself.
+You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</code>
 
 This is beta software; there might be bugs.
 
@@ -159,10 +151,14 @@ to review in separate commits).
 Getting Started
 -----------------------------
 
+This is for **development**. To install and *use* the software, instead go here:
+[talkyard-prod-one](https://github.com/debiki/talkyard-prod-one)
+
+
 #### Before you start
 
-You need about 4 GB RAM for the development environment (whereas the production environment needs about 2 GB).
-And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
+You need about 6 GB RAM for the development environment (whereas the production environment needs about 2 GB).
+And an internet connection — you'll download perhaps 1 GB Docker images and other files.
 
 Install Docker and Docker-Compose, see: https://docs.docker.com/compose/install/.
 On Linux, you can:
@@ -202,11 +198,11 @@ how to use docker-compose already.
        sudo sysctl --system
 
 
-1. Clone the repository, and type `make up`:  (you need GNU Make installed)
+1. Clone the repository, install GNU Make (and `jq` for viewing logs), and type `make up`:
 
-       apt install make
        git clone https://github.com/debiki/talkyard.git talkyard
        cd talkyard
+       apt install make jq
        make up
 
 
@@ -584,7 +580,7 @@ License
 Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.talkyard.io/contact
 
 
-    Copyright (c) 2010-2018  Kaj Magnus Lindberg and Debiki AB
+    Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
