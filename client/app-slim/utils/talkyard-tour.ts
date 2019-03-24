@@ -69,6 +69,7 @@ function TalkyardTour() {
   const [stepIx, setStepIx] = React.useState(0);
   const [showExitButton, setShowExitButton] = React.useState(false);
   const tourHighlightRef = React.useRef(null);
+  const tourClickHereRef = React.useRef(null);
   const tourDialogRef = React.useRef(null);
   React.useLayoutEffect(waitForAndScrollToElemThenShowDialog);
 
@@ -98,7 +99,9 @@ function TalkyardTour() {
 
     // Remove highlighting, until new elem appears and done scrolling.
     const highlightElem: HTMLElement = tourHighlightRef.current;
+    const clickHereElem: HTMLElement = tourClickHereRef.current;
     highlightElem.style.padding = '0px';
+    clickHereElem.style.display = 'none';
 
     // Hide the dialog, until the elem to place it at, appears, and any pause is over.
     // Don't use display:none — that'd mess up the position calc code, which needs
@@ -131,6 +134,7 @@ function TalkyardTour() {
   function showDialog() {
     const placeAtElem: HTMLElement = $first(step.placeAt);  // [27KAH5]
     const highlightElem: HTMLElement = tourHighlightRef.current;
+    const clickHereElem: HTMLElement = tourClickHereRef.current;
 
     if (step.waitForClick) {
       // Let clicks pass through the highlight overlay, so the elem can be clicked.
@@ -208,6 +212,15 @@ function TalkyardTour() {
       highlightElem.style.left = '0px';
       highlightElem.style.top = '0px';
       highlightElem.style.padding = '0px';
+    }
+
+    // Show a colored circle around the elem to click, otherwise people don't realize
+    // they are to click it.
+    if (step.waitForClick) {
+      clickHereElem.style.left = highlightElem.style.left;
+      clickHereElem.style.top = highlightElem.style.top;
+      clickHereElem.style.padding = highlightElem.style.padding;
+      clickHereElem.style.display = 'block';
     }
 
     // Ignore clicks outside the highlighted area.
@@ -292,6 +305,7 @@ function TalkyardTour() {
   return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
     r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
         onClick: maybeGoNextOnElemClick }),
+    r.div({ className: 's_Tour_ClickHere', ref: tourClickHereRef }),
     r.div({ className: 's_Tour_ClickBlocker-Left-All' }),
     r.div({ className: 's_Tour_ClickBlocker-Right' }),
     r.div({ className: 's_Tour_ClickBlocker-Above' }),

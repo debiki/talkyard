@@ -3,6 +3,7 @@
   z-index: 2000;
   position: relative;
 
+.s_Tour_ClickHere,
 .s_Tour_Highlight
   position: fixed;
   // This, together with some padding, paints a transparent circle at
@@ -10,6 +11,10 @@
   border: 200vmax solid rgba(0, 0, 0, 0.4);
   border-radius: 50%;
   transform: translate(-50%, -50%);
+
+.s_Tour_ClickHere
+  border: 11px solid hsl($uiHue, 100%, 64%);
+  pointer-events: none;
 
 .s_Tour_ClickBlocker-Left-All
   position: fixed;
@@ -59,6 +64,10 @@
 .s_Tour_D_Bs_NextB
   min-width: 87px;
   margin-right: 8px;
+
+.s_Tour_D_Bs_NextB[disabled]
+  // If it's just grayed out, people still sometimes try to click it.
+  visibility: hidden;
 
 .s_Tour_D_Bs_Ix
   display: inline-block;
