@@ -17,14 +17,14 @@ if [ ! -d "$1" ]; then
   exit 1
 fi
 
-latest_dump=`ls -t $1 2>/dev/null | grep '\.gz' | head -n1`
+latest_dump=`ls -t $1 2>/dev/null | grep '.*postgres.*\.gz' | head -n1`
 if [ -z "$latest_dump" ]; then
   echo 'Error: No database dump files (*.gz) found in: '"$1"
   exit 1
 fi
 
 echo "The most recent dumps in $1 are:"
-echo "`ls -hlt $1 | grep '\.gz' | head -n5`"
+echo "`ls -hlt $1 | grep '\.gz' | head`"
 echo
 
 read -r -p "Shall I import $latest_dump into the Docker database container? [Y/n]" response
