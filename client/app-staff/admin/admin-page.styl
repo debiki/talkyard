@@ -33,7 +33,27 @@
 .s_A_Ss_EmbCmts
   padding-left: 8px;
   pre
-    font-size: 11px; xx
+    margin: 15px 0;
+    padding-bottom: 16px;
+    font-size: 11px;
+  h2 b
+    text-decoration: underline;
+  h3
+    font-size: 18px;
+
+.s_A_Ss_S-WhichBlog .form-group
+  float: left;
+  margin: 11px 23px 0 0;
+  padding-left: 5px; // so bg color won't stop immediately to the left of radio circle
+  label
+    padding: 11px 12px 11px 0px;
+  &:hover
+    background: hsl($uiHue, 100%, 96%);
+  &.active
+    background: hsl($uiHue, 100%, 97%);
+    outline: 5px solid hsl($uiHue, 100%, 91%);
+    label
+      font-weight: bold;
 
 .s_A_Ss_EmbCmts_Plugins
   margin-top: 20px;

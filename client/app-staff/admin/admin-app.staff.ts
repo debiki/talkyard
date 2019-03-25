@@ -1058,6 +1058,12 @@ const FeatureSettings = createFactory({
 const EmbeddedCommentsSettings = createFactory({
   displayName: 'EmbeddedCommentsSettings',
 
+  getInitialState: function() {
+    return {
+      selectedBlog: getFromLocalStorage('adminAppSelectedBlog'),
+    };
+  },
+
   componentDidMount: function() {
     if (isBlogCommentsSite()) {
       const store: Store = this.props.store;
@@ -1067,8 +1073,9 @@ const EmbeddedCommentsSettings = createFactory({
 
   render: function() {
     const props = this.props;
-    const settings: Settings = props.currentSettings;
-    const embeddingUrl = settings.allowEmbeddingFrom.trim();
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
+    const embeddingUrl = currentSettings.allowEmbeddingFrom.trim();
     let dotMin = '.min';
     // @ifdef DEBUG
     dotMin = '';
@@ -1083,7 +1090,10 @@ const EmbeddedCommentsSettings = createFactory({
       return Input({ type: 'radio', name: 'whichBlog', label: blogName,
         checked: isSelected,
         className: (isSelected ? 'active ' : '') + e2eClass,
-        onChange: () => this.setState({ selectedBlog: blogName }) });
+        onChange: () => {
+          putInLocalStorage('adminAppSelectedBlog', blogName);
+          this.setState({ selectedBlog: blogName })
+        } });
     }
 
     const whichBlogQuestion= !urlSeemsValid ? null :
@@ -1099,38 +1109,43 @@ const EmbeddedCommentsSettings = createFactory({
             makeWhichBlogInput("Something Else", 'e_SthElseB')));
 
     let discussionId = '';
-    let doWhat;
+    const blogInstrProps = {
+      talkyardServerUrl: location.origin,
+      commentsScriptSrc: `${eds.cdnOrServerOrigin}/-/talkyard-comments${dotMin}.js`,
+    };
+
+    let stepByStepInstructions;
     switch (selectedBlog) {
       case "Ghost":
-        discussionId = 'ghost-{{comment_id}}';
-        doWhat = r.div({},
-          "In your Ghost blog's theme, insert the below HTML, " +
-          "where you want comments to appear. Typically into ", r.code({}, "post.hbs"),
-          ", e.g. ", r.code({}, "content/themes/casper/post.hbs"),
-          ", inside the section ", r.code({}, '<section class="post-full-comments">'), '.');
+        stepByStepInstructions = GhostInstructions(blogInstrProps);
         break;
-      default: // leave blank
+      case "Hugo":
+        stepByStepInstructions = HugoInstructions(blogInstrProps);
+        break;
+      case "Gatsby":
+        stepByStepInstructions = GatsbyInstructions(blogInstrProps);
+        break;
+      case "Jekyll":
+        stepByStepInstructions = JekyllInstructions(blogInstrProps);
+        break;
+      case "Hexo":
+        stepByStepInstructions = HexoInstructions(blogInstrProps);
+        break;
+      default:
+        stepByStepInstructions = SomethingElseInstructions(blogInstrProps);
     }
 
     const anyInstructions = !urlSeemsValid || !selectedBlog ? null :
         r.div({ className: 's_A_Ss_EmbCmts col-sm-offset-3 col-sm-9' },
-          r.h2({}, "Instructions"),
-          r.p({}, "On your website, i.e. ", r.code({}, embeddingUrl),
-            ", paste the following HTML in a web page or site template, " +
-            "where you want comments to appear:"),
-          r.pre({ id: 'e_EmbCmtsHtml' },
-            // script url defined here: [2WPGKS04]
-            // this code is dupl in e2e test [2JKWTQ0].
-`<script>talkyardServerUrl='${location.origin}';</script>
-<script async defer src="${eds.cdnOrServerOrigin}/-/talkyard-comments${dotMin}.js"></script>
-<!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
-<div class="talkyard-comments" data-discussion-id="" style="margin-top: 45px;">
-<noscript>Please enable Javascript to view comments.</noscript>
-<p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
-<a href="https://www.talkyard.io">Talkyard</a>.</p>
-</div>`),
+          r.h2({}, "Instructions for ", r.b({}, selectedBlog), ':'),
+          stepByStepInstructions,
           r.p({},
-            "Thereafter, try adding a comment, over at your website — should work now."),
+            "You can ask for help in ",
+            r.a({ href: 'https://www.talkyard.io/forum' },
+              "Talkyard's support forum",
+              r.span({ className: 'icon-link-ext' })), '.'),
+            /*
+            Maybe show links to Hugo, Jekyll etc example blogs? Or not?
           r.p({ className: 's_A_Ss_EmbCmts_Plugins' },
             r.b({}, "However"),
             " if you use any of these (below), have a look at their specific instructions:"),
@@ -1151,7 +1166,7 @@ const EmbeddedCommentsSettings = createFactory({
               r.b({}, "Hexo"), " — see ",
               r.a({ href: 'https://hexo-demo.talkyard.io/2018/01/04/demo-and-instructions/' },
                 "these instructions"), '.'),
-            ));
+                */);
 
     return (
       r.div({},
@@ -1166,10 +1181,439 @@ const EmbeddedCommentsSettings = createFactory({
             newSettings.allowEmbeddingFrom = target.value;
           }
         }),
+        whichBlogQuestion,
         anyInstructions));
   }
 });
 
+
+interface BlogInstrProps {
+  talkyardServerUrl: string;
+  commentsScriptSrc: string;
+};
+
+
+function GhostInstructions(props: BlogInstrProps) {
+  const tagParams: BlogTagProps = { ...props, discussionId: 'ghost-{{comment_id}}' };
+  return rFragment({},
+      r.div({},
+        "In your Ghost blog's theme, insert the below HTML, " +
+        "where you want comments to appear. Typically into ", r.code({}, "post.hbs"),
+        ", e.g. ", r.code({}, "content/themes/casper/post.hbs"),
+        ", inside the section ", r.code({}, '<section class="post-full-comments">'), '.'),
+      BlogCommentsHtmlTags(tagParams),
+      ThenRestart());
+}
+
+/* Test Ghost instructions like so:
+====================================
+
+Create a docker-compose.yml file:
+------------------------------------
+# From:  https://hub.docker.com/_/ghost/
+# By default, the Ghost image will use SQLite (and thus requires no separate database container)
+# we have used MySQL here merely for demonstration purposes (especially
+# environment-variable-based configuration)
+version: '3.7'
+services:
+  ghost:
+    image: ghost:2.14.0-alpine
+    #restart: never
+    ports:
+      - 2368:2368
+------------------------------------
+Then:
+sudo docker-compose up
+sudo docker-compose exec ghost bash
+vi content/themes/casper/post.hbs  # add the HTML from the instructions
+sudo docker-compose restart ghost
+*/
+
+
+function HugoInstructions(props: BlogInstrProps) {
+  const tagParams: BlogTagProps = {
+    talkyardServerUrl: '{{ .Site.Params.talkyardServerUrl }}',
+    commentsScriptSrc: `{{ .Site.Params.talkyardScriptUrl }}`,
+    discussionId: '{{ .Params.discussionId }}',
+  };
+  return rFragment({},
+    r.ol({},
+      r.li({},
+        r.p({}, "Add this to ", r.code({}, "config.toml"), " in the ", r.code({}, "params"), " section:"),
+        r.pre({},
+          '[params]\n' +
+          `talkyardServerUrl = "${props.talkyardServerUrl}"\n` +
+          `talkyardScriptUrl = "${props.commentsScriptSrc}"`)),
+      r.li({},
+        r.p({},
+          "In your Hugo blog's theme, insert the below HTML, " +
+          "where you want comments to appear. For example, into ",
+          r.code({}, "./themes/YOUR_THEME_NAME/layouts/_default/single.html"),
+          ", in a new ", r.code({}, "<section>"),
+          ", after the blog post ", r.code({}, '{{- .Content -}}'), ' section:'),
+        BlogCommentsHtmlTags(tagParams))),
+    r.p({},
+      "Thereafter, ", r.b({}, "restart Hugo"), ", and a comments section should appear."),
+    ToSupportChangingUrls(rFragment({},
+        "add a frontmatter ", r.code({}, "discussionId: per-discussion-id"),
+        " to each blog post. Like so:")),
+    r.pre({},
+      '---\n' +
+      'title: "My First Post"\n' +
+      'date: 2019-03-29T12:17:24+01:00\n' +
+      'discussionId: 2019-03-my-first-post       <—— Add this\n' +
+      '---\n' +
+      '\n' +
+      'Blog post text, text, text...'),
+    r.p({},
+      "Thereafter, ", r.b({}, "restart Hugo"),
+      ", post a comment, and then change the URL to the blog post, and reload it — " +
+      "the comments should still be there. ",
+      r.i({}, "However"), " any test comment you posted ",
+      r.i({}, "before"), " you added the discussion id, will be gone."));
+}
+
+/* Test the Hugo instructions like so:
+====================================
+
+Install Hugo: https://gohugo.io/getting-started/installing, e.g.:
+  cd ~/app/
+  wget https://github.com/gohugoio/hugo/releases/download/v0.54.0/hugo_0.54.0_Linux-64bit.tar.gz
+  mkdir hugo-v0.54
+  cd hugo-v0.54/
+  tar -xf ../hugo_0.54.0_Linux-64bit.tar.gz
+  cd ..
+  ln -s hugo-v0.54/hugo ./hugo
+
+Generate a blog:
+  ~/app/hugo new site quickstart
+  cd quickstart
+
+Add a theme:
+  git init
+  git submodule add https://github.com/budparr/gohugo-theme-ananke.git themes/ananke
+  echo 'theme = "ananke"' >> config.toml
+
+Add a post:
+  ~/app/hugo new posts/my-first-post.md
+  vi content/posts/my-first-post.md
+
+Start a server, show draft posts:
+  ~/app/hugo server -D
+
+Then follow the Talkyard instructions.
+*/
+
+
+function JekyllInstructions(props: BlogInstrProps) {
+  const jekyllDocsLink = 'https://jekyllrb.com/docs/themes/#overriding-theme-defaults';
+  const tagParams: BlogTagProps = {
+    prefix: 'TEST001\n\n{% if site.talkyard_server_url %}\n',
+    talkyardServerUrl: '{{ site.talkyard_server_url }}',
+    commentsScriptSrc: '{{ site.talkyard_script_url }}',
+    discussionId: '{{ page.discussion_id }}',
+    postfix: '\n{% endif %}',
+  };
+  return r.ol({},
+      r.li({},
+        r.p({}, "In your Jekyll site configuration, i.e.", r.code({}, "_config.yml"), "add this:"),
+        r.pre({},
+          `talkyard_server_url: ${props.talkyardServerUrl}\n` +
+          `talkyard_script_url: ${props.commentsScriptSrc}`)),
+      r.li({},
+        r.p({},
+          "Create a file ",
+          r.code({}, "_includes/talkyard-comments.html"),
+          " with the following contents: (TEST001 is intentional)"),
+        BlogCommentsHtmlTags(tagParams)),
+      r.li({},
+        r.p({},
+          "Add the following to your post template, typically ", r.code({}, "_layouts/post.html"),
+          ", where you want comments to appear:"),
+        r.pre({},
+          `{% include talkyard-comments.html %}`),
+        r.p({},
+          "Note: If you don’t have a ", r.code({}, "_layout/posts.html"),
+          " file, that's because Jekyll hides it. Read more here: ",
+          r.a({ href: jekyllDocsLink }, jekyllDocsLink),
+          ". You need to find it and copy it to your directory. Something like this:"),
+        r.ol({ style: { listStyleType: 'lower-alpha' }},
+          r.li({},
+            r.p({},
+              "Find the theme file directory: " +
+              "(look in ", r.code({}, "_config.yml"), " to find your theme name)"),
+            r.pre({}, "bundle show minima   # replace 'minima' with your theme's name")),
+          r.li({},
+            r.p({},
+              "Copy probably the ", r.code({}, "_layouts/post.html"),
+              " file into your blog directory. Could be like this: "),
+            r.pre({},
+              "mkdir _layouts\n" +
+              "# remove 'echo' on the next line\n" +
+              "echo  cp $(bundle show minima)/_layouts/post.html _layouts/")
+              ))),
+      r.p({},
+        "Now, ", r.b({}, "restart Jekyll"),
+        " and reload a blog post in the browser. Do you see a comments section now? " +
+        "If so, remove TEST001 above. If not — do you see TEST001? " +
+        "If you do see TEST001 but not the comments, you can ask for help, see below. " +
+        "(Or maybe you didn't restart Jekyll?) " +
+        "If you don’t see TEST001, you added the comments code at the wrong place, " +
+        "or you’re looking at the wrong page."),
+      ToSupportChangingUrls(rFragment({},
+        "add a frontmatter ", r.code({}, "discussion_id: per-discussion-id"),
+        " to each blog post. Like so:")),
+      r.pre({},
+        `---\n` +
+        `layout: post\n` +
+        `title:  "Welcome to Jekyll!"\n` +
+        `date:   2019-03-29 17:02:39 +0000\n` +
+        `categories: jekyll update\n` +
+        `discussion_id: 2019-03-welcome      <———— add this\n` +
+        `---\n` +
+        `\n` +
+        `Blog post text text text ...`),
+      r.p({},
+        "Thereafter, ", r.b({}, "restart Jekyll"),
+        ", post a comment, and then change the URL to the blog post, and reload it — " +
+        "the comments should still be there. ",
+        r.i({}, "However"), " any test comment you posted ",
+        r.i({}, "before"), " you added the discussion id, will be gone."));
+}
+
+/* Test the Jekyll instructions like so:
+====================================
+
+There's a Jekyll docker-compose repo you can use:
+
+  git clone https://github.com/debiki/ed-jekyll-comments-demo.git jekyll-blog-test
+  cd jekyll-blog-test
+  sudo docker-compose up -d
+  sudo docker-compose exec ruby bash   # after 2 mins when Ruby image done building
+  bundle install
+  gem install jekyll bundler   # seems to install the latest version of Jekyll
+  bundle exec jekyll _3.8.5_ new blog385    # or another version number
+  cd blog385
+  bundle exec jekyll serve --host 0.0.0.0 --port 4000
+  # Now visit localhost:4000, will be a "Welcome to Jekyll!" blog post.
+
+Proceed with following the Talkyard Jekyll instructions.
+
+*/
+
+function GatsbyInstructions(props: BlogInstrProps) {
+  return rFragment({},
+    r.ol({},
+      r.li({},
+        r.p({}, "Install the Talkyard plugin:"),
+        r.pre({},
+          `npm install --save @debiki/gatsby-plugin-talkyard  # with npm\n` +
+          `yarn add @debiki/gatsby-plugin-talkyard            # with yarn`)),
+      r.li({},
+        r.p({}, "Configure the plugin. In ", r.code({}, 'gatsby-config.js'), ":"),
+        r.pre({},
+`plugins: [
+ {
+   resolve: '@debiki/gatsby-plugin-talkyard',
+   options: {
+     talkyardServerUrl: '${props.talkyardServerUrl}'
+   }
+ },`)),
+      r.li({},
+        r.p({},
+          "In your blog post template (maybe ", r.code({}, 'src/templates/blog-post.js'),
+          "?), add this:"),
+        r.pre({},
+          `import TalkyardCommentsIframe from '@debiki/gatsby-plugin-talkyard';\n` +
+          `\n` +
+          `// And where the comments shall appear:\n` +
+          `<TalkyardCommentsIframe />`))),
+    r.p({},
+      "Thereafter, ", r.b({}, "Restart Gatsby"),
+      ". Now, a comments section should appear below the blog posts."),
+    ToSupportChangingUrls(),
+    r.ol({ start: 4 },
+      r.li({},
+        r.p({},
+          "Add a frontmatter ", r.code({}, "discussionId: per-discussion-id"),
+          " to your blog posts. At the top of each blog post:"),
+          r.pre({},
+`---
+title: Blog post title
+author: ...
+date: ...
+description: ...
+discussionId: "2019-01-01-page-slug"   <—— Add this. Type whatever,
+                                           but no weird chars
+---
+
+Blog post text ...`)),
+      r.li({},
+        r.p({},
+          "Also have React include the discussion id in the props. " +
+          "In the GraphQL query at the bottom of the blog post template " +
+          "(is it ", r.code({}, 'src/templates/blog-post.js'), "?), add ",
+          r.code({}, "discussionId"), ':'),
+        r.pre({},
+`export const pageQuery = graphql\`
+  query BlogPostBySlug($slug: String!) {
+    site {
+      siteMetadata {
+        title
+        author
+      }
+    }
+    markdownRemark(fields: { slug: { eq: $slug } }) {
+      id
+      html
+      frontmatter {
+        title
+        date ...
+        discussionId         <—— Add this
+      }
+    }
+  }
+\``)),
+      r.li({},
+        r.p({},
+          "And change from: ", r.code({}, "<TalkyardCommentsIframe />"), " to:"),
+          r.pre({},
+            "<TalkyardCommentsIframe discussionId={post.frontmatter.discussionId}/>"))),
+    r.p({},
+      r.b({}, "Restart Gatsby. "), "Thereafter, if you post a comment, and " +
+      "later change the URL to the blog post, the comment should still be there."));
+}
+
+/* Test the Gatsby instructions like so:
+====================================
+
+Based on https://www.gatsbyjs.org/docs/quick-start, no, instead,
+https://daveceddia.com/start-blog-gatsby-netlify/: (simpler to follow)
+
+  cd ~/app/
+  yarn add gatsby-cli
+  ln -s ./node_modules/.bin/gatsby ./
+  ./gatsby -v
+  cd ~/dev/test/
+  ~/app/gatsby new gatsby-test-blog https://github.com/gatsbyjs/gatsby-starter-blog
+  cd gatsby-test-blog/
+  ~/app/gatsby develop
+
+Then follow the Talkyard instructions.
+
+*/
+
+
+function HexoInstructions(props: BlogInstrProps) {
+  const tagParams: BlogTagProps = {
+    prefix:
+`TEST001
+
+<% if (!index && post.comments && config.talkyard_server_url){ %>
+<section id="comments">
+`,
+    talkyardServerUrl: '<%= config.talkyard_server_url %>',
+    commentsScriptSrc: `<%= config.talkyard_script_url || '${props.commentsScriptSrc}' %>`,
+    discussionId: '<%= post.discussion_id || post.slug %>',
+    postfix: `
+</section>
+<% } %>`,
+  };
+  return rFragment({},
+    r.ol({},
+      r.li({},
+        r.p({}, "Add this to ", r.code({}, "_config.yml"), ":"),
+        r.pre({},
+          `talkyard_server_url: ${props.talkyardServerUrl}\n` +
+          `talkyard_script_url: ${props.commentsScriptSrc}`)),
+      r.li({},
+        r.p({},
+          "Add this where you want the comments to appear: (TEST001 is intentional)"),
+        BlogCommentsHtmlTags(tagParams),
+        r.p({},
+          "For example, in ", r.code({}, "themes/landscape/layout/_partial/article.ejs"),
+          ", just after ", r.code({}, '</article>'), '.'))),
+    r.p({},
+      r.b({}, "Restart Hexo"),
+      " and reload a blog post in the browser. Do you see a comments section now? " +
+      "If so, remove TEST001 above. If not — do you see TEST001? " +
+      "If you do see TEST001 but not the comments, you can ask for help, see below. " +
+      "Or maybe you didn't restart Hexo? — " +
+      "If you don’t see TEST001, you added the comments code at the wrong place, " +
+      "or you’re looking at the wrong page."),
+    ToSupportChangingUrls(rFragment({},
+      "add a frontmatter ", r.code({}, "discussion_id: per-discussion-id"),
+      " to your blog posts. Like so:")),
+    r.pre({},
+      "---\n" +
+      "title: Hello World\n" +
+      "discussion_id: 2019-03-hello-world      <——— Add this\n" +
+      "---\n" +
+      "\n" +
+      "Blog post text text text ...\n"),
+    r.p({},
+      "Now, if you post a new comment, change the URL to the blog post, " +
+      "and reload — the comment will still be there."));
+}
+
+/* Testing the Hexo instructions
+====================================
+
+From https://hexo.io/:
+  cd ~/app/
+  yarn add hexo-cli
+  ln -s node_modules/.bin/hexo ./
+  ./hexo -v
+  cd ~/dev/test
+  ~/app/hexo init hexo-test-blog
+  cd hexo-test-blog/
+  yarn
+  ~/app/hexo server
+
+ And follow the Talkyard instructions.
+
+*/
+
+
+
+function SomethingElseInstructions(props: BlogInstrProps) {
+  return rFragment({},
+      r.p({}, "On your blog" + // i.e. ", r.code({}, embeddingUrl),
+        ", paste the following HTML in a blog page template, or web page, " +
+        "where you want comments to appear:"),
+      BlogCommentsHtmlTags(props),
+      ThenRestart());
+}
+
+
+interface BlogTagProps { prefix?: string, talkyardServerUrl: string,
+      commentsScriptSrc: string, discussionId?: string, postfix?: string };
+function BlogCommentsHtmlTags(props: BlogTagProps) {
+  return r.pre({ id: 'e_EmbCmtsHtml' },
+(props.prefix || '') +
+`<script>talkyardServerUrl='${props.talkyardServerUrl}';</script>
+<script async defer src="${props.commentsScriptSrc}"></script>
+<!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
+<div class="talkyard-comments" data-discussion-id="${props.discussionId || ''}" style="margin-top: 45px;">
+<noscript>Please enable Javascript to view comments.</noscript>
+<p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
+<a href="https://www.talkyard.io">Talkyard</a>.</p>
+</div>` + (props.postfix || ''));
+}
+
+
+function ToSupportChangingUrls(doWhat: string = "do as follows.") {
+  return rFragment({},
+    r.h3({}, "Supporting changing URLs"),
+    r.p({}, "To make it possible to change the URL to a blog post, " +
+        "without the embedded discussion disappearing, ", doWhat));
+}
+
+
+function ThenRestart() {
+  return r.p({},
+      "Thereafter, restart your blog, reload a blog post, and try posting a comment.");
+}
 
 
 const LanguageSettings = createFactory({
