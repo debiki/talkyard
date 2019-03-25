@@ -142,6 +142,8 @@ function showResponseBodyJson(body) {
 
 
 function importSiteData(siteData: SiteData): IdAddress {
+  siteData.meta.nextPageId = 100; // for now
+  siteData.meta.version = 1;      // for now
   const deleteOldSite = settings.deleteOldSite ? '?deleteOldSite=true' : '';
   const url = settings.mainSiteOrigin + '/-/import-test-site-json' + deleteOldSite;
   const ids = postOrDie(url, siteData).bodyJson();

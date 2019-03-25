@@ -1075,7 +1075,44 @@ const EmbeddedCommentsSettings = createFactory({
     // @endif
 
     const urlSeemsValid = /https?:\/\/.+/.test(embeddingUrl);   // 'http://localhost' is ok
-    const anyInstructions = !urlSeemsValid ? null :
+
+    const selectedBlog = this.state.selectedBlog;
+
+    const makeWhichBlogInput = (blogName: string, e2eClass: string) => {
+      const isSelected = selectedBlog === blogName;
+      return Input({ type: 'radio', name: 'whichBlog', label: blogName,
+        checked: isSelected,
+        className: (isSelected ? 'active ' : '') + e2eClass,
+        onChange: () => this.setState({ selectedBlog: blogName }) });
+    }
+
+    const whichBlogQuestion= !urlSeemsValid ? null :
+        r.div({ className: 's_A_Ss_S-WhichBlog col-sm-offset-3 col-sm-9' },
+          r.h2({}, "Which blog do you use? Or static site generator?"),
+          r.div({},
+            makeWhichBlogInput("Ghost", 'e_GhostB'),
+            makeWhichBlogInput("Hugo", 'e_HugoB'),
+            makeWhichBlogInput("Gatsby", 'e_GatsbyB'),
+            makeWhichBlogInput("Jekyll", 'e_JekyllB'),
+            makeWhichBlogInput("Hexo", 'e_HexoB'),
+            r.br(),
+            makeWhichBlogInput("Something Else", 'e_SthElseB')));
+
+    let discussionId = '';
+    let doWhat;
+    switch (selectedBlog) {
+      case "Ghost":
+        discussionId = 'ghost-{{comment_id}}';
+        doWhat = r.div({},
+          "In your Ghost blog's theme, insert the below HTML, " +
+          "where you want comments to appear. Typically into ", r.code({}, "post.hbs"),
+          ", e.g. ", r.code({}, "content/themes/casper/post.hbs"),
+          ", inside the section ", r.code({}, '<section class="post-full-comments">'), '.');
+        break;
+      default: // leave blank
+    }
+
+    const anyInstructions = !urlSeemsValid || !selectedBlog ? null :
         r.div({ className: 's_A_Ss_EmbCmts col-sm-offset-3 col-sm-9' },
           r.h2({}, "Instructions"),
           r.p({}, "On your website, i.e. ", r.code({}, embeddingUrl),

@@ -176,8 +176,8 @@ case class SiteInclDetails(  // [exp] ok use. delete: price_plan
   status: SiteStatus,
   name: String,
   createdAt: When,
-  createdFromIp: Option[IpAddress],
-  creatorEmailAddress: Option[String],
+  createdFromIp: Option[IpAddress],    // REMOVE move to audit log
+  creatorEmailAddress: Option[String], // REMOVE move to audit log
   nextPageId: Int,
   quotaLimitMbs: Option[Int],
   hostnames: immutable.Seq[HostnameInclDetails],

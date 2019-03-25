@@ -59,6 +59,9 @@ export const staffTours: StaffTours = {
       placeHow: PlaceHow.Below,
       highlightOffsetX: 20,
       highlightOffsetY: 3,
+    /* Skip this. The tour is too long already; some people exit before it ends.
+       And looking at the reviews page, is not so meaningful now, in the beginning,
+       when it's empty.
     }, {
       title: "Let's go here",
       text: r.span({}, "Click the ", r.b({}, "Review"), " tab"),
@@ -71,8 +74,9 @@ export const staffTours: StaffTours = {
       text: "... first posts are shown here. So you can " +
           "check that they are okay.",
       placeAt: 'body',
+      */
     }, {
-      title: "One last thing",
+      title: "To grow your community",
       text: r.span({}, "Click the ", r.b({}, "Users"), " tab"),
       placeAt: '.e_UsrsB',
       placeHow: PlaceHow.ToTheRight,
@@ -123,12 +127,7 @@ export const staffTours: StaffTours = {
       placeHow: PlaceHow.ToTheRight,
       waitForClick: true,
     }, {
-      pauseBeforeMs: 500, /*
-      title: "These are the",
-      text: rFragment({}, r.b({}, "login and sign up"), " settings."),
-      placeAt: 'body',
-    }, {
-      pauseBeforeMs: 500, */
+      pauseBeforeMs: 500,
       title: "Here you can ...",
       text: r.span({}, "... enable or disable anonymous Guest login "),
       placeAt: '.e_A_Ss_S-AllowGuestsCB',
@@ -159,39 +158,9 @@ export const staffTours: StaffTours = {
       placeHow: PlaceHow.ToTheRight,
       waitForClick: true,
     }, { */
-    /*
-      // This is too much, people get frustrated (well at least one out of two).
-      // And most likely, their blog address is correctly typed alread :-P
-      pauseBeforeMs: 500,
-      title: "For you to do:",
-      text: "Check that your blog address is correct",
-      placeAt: '#e_AllowEmbFrom',
-      placeHow: PlaceHow.Below,
-      highlightOffsetX: -90,
-      highlightOffsetY: -20,
-      highlightPadding: 20,
-    }, {
-      title: "Thereafter:",
-      text: "Follow these instructions",
-      placeAt: '.s_A_Ss_EmbCmts h2',
-      placeHow: PlaceHow.ToTheLeft,
-      highlightOffsetX: -30,
-      highlightPadding: 20,
-    }, {
-      title: "And look here",
-      text: "for any special instructions, for your blog.",
-      placeAt: '.s_A_Ss_EmbCmts ul',
-      placeHow: PlaceHow.Above,
-      highlightOffsetX: -110,
-      highlightPadding: 7,
-    }, {
-      title: "That's it, for now",
-      text: "Have a nice day",
-      placeAt: 'body',
-    */
-      title: "Follow these instructions",
+      title: "Now continue here",
       text: "And have a nice day",
-      placeAt: '.s_A_Ss_EmbCmts h2',
+      placeAt: '.s_A_Ss_S-WhichBlog h2',
       placeHow: PlaceHow.ToTheLeft,
       highlightOffsetX: -30,
       highlightPadding: 20,

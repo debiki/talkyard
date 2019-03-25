@@ -1,3 +1,15 @@
+delete: categories3:
+  updatedAt — who cares
+  staff_only — use page perms instead
+  only_staff_may_create_topics  — use page perms instead
+  default_topic_type — keep. rename new_topic_types to allowed_topic_types?
+page_path  cdati  canonical_dati
+actions:  action_id (alw null), sub_id (always 1), updated_at, deleted_at, deleted_by_id
+SiteInclDetails(  // [exp] ok use. delete: price_plan
+NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
+OpenAuthDetails(   // [exp] ok use, country, createdAt
+
+
 
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?

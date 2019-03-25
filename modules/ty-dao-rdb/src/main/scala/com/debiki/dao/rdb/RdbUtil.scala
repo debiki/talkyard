@@ -222,7 +222,7 @@ object RdbUtil {
 
   def getParticipant(rs: js.ResultSet): Participant = {
     val userId = rs.getInt("u_id")
-    def createdAt = getWhen(rs, "u_created_at")   // loaded??
+    def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
       if (isGuestId(userId))
         _toEmailNotfs(rs.getString("g_email_notfs"))
@@ -287,7 +287,7 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     Group(
       id = rs.getInt("user_id"),
-      createdAt = getWhen(rs, "created_at"),   // loaded??
+      createdAt = getWhen(rs, "created_at"),
       theUsername = rs.getString("username"),
       name = rs.getString("full_name"),
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),

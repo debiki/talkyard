@@ -36,7 +36,7 @@ done
 
 
 # If we start running the tests too early, they will need to wait for Nashorn, and might then timeout and fail.
-echo "Waiting for Nashorn to compile Javascript code..."
+echo "Waiting for Nashorn to compile Javascript code... (polling http://localhost/-/are-scripts-ready )"
 until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-scripts-ready); do
   printf '.'
   sleep 1

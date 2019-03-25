@@ -20,7 +20,7 @@ package talkyard.server.backup
 import com.debiki.core._
 
 
-case class SiteBackup(
+case class SiteBackup(  // RENAME to SiteDmup, and all related classes too
   site: SiteInclDetails,
   settings: SettingsToSave,
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]

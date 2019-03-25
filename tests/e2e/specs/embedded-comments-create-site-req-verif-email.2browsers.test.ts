@@ -97,6 +97,11 @@ describe("embedded comments, new site", () => {
   });
 
 
+  it("... clicks Blog = Something Else", () => {
+    owensBrowser.waitAndClick('.e_SthElseB');
+  });
+
+
   it("... and creates an embedding page", () => {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');

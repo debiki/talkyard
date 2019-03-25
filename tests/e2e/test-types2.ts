@@ -105,10 +105,10 @@ interface Member {
   username: string;
   fullName: string;
   createdAtMs: number;
-  emailAddress: string;
+  emailAddress?: string;
   emailVerifiedAtMs?: number;
-  passwordHash: string;
-  password: string;
+  passwordHash?: string;
+  password?: string;
   isOwner?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;

@@ -95,7 +95,7 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
 
   it("An intro guide appears", () => {
-    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    owensBrowser.waitForVisible('.e_SthElseB');
     owensBrowser.tour.assertTourStarts(true);
     console.log('Step 1');
     owensBrowser.tour.clickNextForStepNr(1);
@@ -123,8 +123,13 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
   it("The tour is done, won't restart", () => {
     owensBrowser.refresh(); // this reloads new tourTipsSeen
-    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    owensBrowser.waitForVisible('.e_SthElseB');
     owensBrowser.tour.assertTourStarts(false);
+  });
+
+
+  it("Clicks Blog = Something Else, to show the instructions", () => {
+    owensBrowser.waitAndClick('.e_SthElseB');
   });
 
 

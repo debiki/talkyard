@@ -167,23 +167,24 @@ object JsX {
       "id" -> user.id,
       "externalId" -> JsStringOrNull(user.externalId),
       "createdAtEpoch" -> JsNumber(user.createdAt.millis),  // REMOVE
-      "createdAtMs" -> JsNumber(user.createdAt.millis),  // REMOVE
+      "createdAtMs" -> JsNumber(user.createdAt.millis),  // RENAME
       "username" -> user.username,
       "fullName" -> user.fullName,
       "isAdmin" -> user.isAdmin,
       "isModerator" -> user.isModerator,
-      "deactivatedAtMs" -> JsWhenMsOrNull(user.deactivatedAt),
+      "deactivatedAtMs" -> JsWhenMsOrNull(user.deactivatedAt),  // REMOVE
       "deactivatedAt" -> JsWhenMsOrNull(user.deactivatedAt),
-      "deletedAtMs" -> JsWhenMsOrNull(user.deletedAt),
+      "deletedAtMs" -> JsWhenMsOrNull(user.deletedAt),  // REMOVE
       "deletedAt" -> JsWhenMsOrNull(user.deletedAt),
       "country" -> JsStringOrNull(user.country),
       "url" -> JsStringOrNull(user.website),
       "about" -> JsStringOrNull(user.about),
       "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
+      "avatarTinyHashPath" -> JsStringOrNull(user.tinyAvatar.map(_.hashPath)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
-      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
-      "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),
+      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),  // REMOVE
+      "suspendedTillMs" -> DateEpochOrNull(user.suspendedTill),  // RENAME
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
     if (callerIsStaff_ || callerIsUserHerself) {

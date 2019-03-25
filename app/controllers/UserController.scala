@@ -389,7 +389,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       Json.obj(
         "fullName" -> JsStringOrNull(member.fullName),
         "username" -> JsString(member.username),
-        "createdAt" -> JsString(toIso8601Day(member.createdAt.toJavaDate)),
+        "createdAtDateStr" -> JsString(toIso8601Day(member.createdAt.toJavaDate)),
         "primaryEmailAddress" -> JsString(member.primaryEmailAddress),
         "otherEmailAddresses" -> otherEmailsJson,
         "country" -> JsStringOrNull(member.country),

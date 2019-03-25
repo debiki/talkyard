@@ -151,20 +151,17 @@ case class SiteBackupReader(context: EdContext) {
   def readSiteMeta(jsObject: JsObject): SiteInclDetails = {
     val name = readString(jsObject, "name")
 
-    def theLocalHostname = {
-      readOptString(jsObject, "localHostname") getOrElse {
-        throw new BadJsonException(s"Neither hostnames nor localHostname specified [TyE2KF4Y8]")
-      }
-    }
-
-    val anyHostnamesJson = (jsObject \ "hostnames").asOpt[Seq[JsObject]].getOrElse(Nil)
+    val hostnamesJson = (jsObject \ "hostnames").asOpt[Seq[JsObject]].getOrElse(Nil)
     val hostnames: Seq[HostnameInclDetails] = {
-      val hns = anyHostnamesJson.map(JsX.readJsHostnameInclDetails)
-      if (hns.isEmpty) {
-        val fullHostname = s"$theLocalHostname.${globals.baseDomainNoPort}"
+      val hs = hostnamesJson.map(JsX.readJsHostnameInclDetails)
+      if (hs.isEmpty) {
+        val localHostname = readOptString(jsObject, "localHostname") getOrElse {
+          throw new BadJsonException(s"Neither hostnames nor localHostname specified [TyE2KF4Y8]")
+        }
+        val fullHostname = s"$localHostname.${globals.baseDomainNoPort}"
         Seq(HostnameInclDetails(fullHostname, Hostname.RoleCanonical, addedAt = globals.now()))
       }
-      else hns
+      else hs
     }
 
     val siteStatusInt = readInt(jsObject, "status")
@@ -180,8 +177,9 @@ case class SiteBackupReader(context: EdContext) {
       createdAt = readWhen(jsObject, "createdAtMs"),
       createdFromIp = None,
       creatorEmailAddress = None,
-      nextPageId = 123,
+      nextPageId = readInt(jsObject, "nextPageId"),
       quotaLimitMbs = None,
+      version = readInt(jsObject, "version"),
       hostnames = hostnames.toList)
   }
 
@@ -212,7 +210,7 @@ case class SiteBackupReader(context: EdContext) {
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         isApproved = readOptBool(jsObj, "isApproved"),
-        reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME
+        reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME to reviewdAt
         reviewedById = readOptInt(jsObj, "approvedById"),
         primaryEmailAddress = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
@@ -289,10 +287,10 @@ case class SiteBackupReader(context: EdContext) {
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         publishedAt = readOptDateMs(jsObj, "publishedAtMs"),
         bumpedAt = readOptDateMs(jsObj, "bumpedAtMs"),
-        lastApprovedReplyAt = None,
-        lastApprovedReplyById = None,
+        lastApprovedReplyAt = readOptDateMs(jsObj, "lastApprovedReplyAt"),
+        lastApprovedReplyById = readOptInt(jsObj, "lastApprovedReplyById"),
         categoryId = readOptInt(jsObj, "categoryId"),
-        embeddingPageUrl = None,
+        embeddingPageUrl = readOptString(jsObj, "embeddingPageUrl"),
         authorId = readInt(jsObj, "authorId"),
         frequentPosterIds = frequentPosterIds,
         layout = layout,
@@ -375,7 +373,7 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         sectionPageId = readString(jsObj, "sectionPageId"),
         parentId = readOptInt(jsObj, "parentId"),
-        defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME
+        defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME to ...SubCat...
         name = readString(jsObj, "name"),
         slug = readString(jsObj, "slug"),
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,

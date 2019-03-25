@@ -1305,7 +1305,7 @@ trait PostsDao {
     // or if the original post was edited.
     var makesSectionPageHtmlStale = false
     if (isApprovingNewPost || isApprovingPageBody) {
-      val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
+      val (numNewReplies, numNewOrigPostReplies, newLastApprovedReplyAt, newLastApprovedReplyById) =
         if (isApprovingNewPost && postAfter.isReply)
           (1, postAfter.isOrigPostReply ? 1 | 0,
             Some(tx.now.toJavaDate), Some(postAfter.createdById))
@@ -1315,8 +1315,8 @@ trait PostsDao {
       newMeta = newMeta.copy(
         numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
         numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
-        lastApprovedReplyAt = newLastReplyAt,
-        lastApprovedReplyById = newLastReplyById,
+        lastApprovedReplyAt = newLastApprovedReplyAt,
+        lastApprovedReplyById = newLastApprovedReplyById,
         hiddenAt = newHiddenAt,
         bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate))
       makesSectionPageHtmlStale = true
@@ -1395,23 +1395,22 @@ trait PostsDao {
     val isNewPage = posts.exists(_.isOrigPost) && posts.exists(_.isTitle)
     val newHiddenAt = if (isNewPage) None else pageMeta.hiddenAt
 
-    val thereAreNoReplies = isNewPage && posts.size == 2  // title + orig-post = 2
+    val approvedReplies = posts.filter(p => p.isReply && p.approvedAt.isDefined)
 
-    val (newLastReplyAt, newLastReplyById) =
-      if (thereAreNoReplies) {
-        dieIf(pageMeta.lastApprovedReplyAt.isDefined, "EdE2KF80P", s"Page id $pageId")
+    val (newLastApprovedReplyAt, newLastApprovedReplyById) =
+      if (approvedReplies.isEmpty) {
         (None, None)
       }
       else {
-        val newLastReply = Some(posts.maxBy(_.createdAt.getTime))
-        (Some(tx.now.toJavaDate), newLastReply.map(_.createdById))
+        val lastApprovedReply = Some(approvedReplies.maxBy(_.approvedAt.getOrDie("TyE2ABKL4").getTime))
+        (Some(tx.now.toJavaDate), lastApprovedReply.map(_.createdById))
       }
 
     val newMeta = pageMeta.copy(
       numRepliesVisible = pageMeta.numRepliesVisible + numNewVisibleReplies,
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
-      lastApprovedReplyAt = newLastReplyAt,
-      lastApprovedReplyById = newLastReplyById,
+      lastApprovedReplyAt = newLastApprovedReplyAt,
+      lastApprovedReplyById = newLastApprovedReplyById,
       bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate),
       hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)

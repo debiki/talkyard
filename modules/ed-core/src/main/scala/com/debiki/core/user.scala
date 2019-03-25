@@ -761,7 +761,7 @@ case class Guest(   // [exp] ok
 sealed trait ParticipantInclDetails {
   def id: UserId
   def createdAt: When
-  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id)
+  def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
 }
 
 

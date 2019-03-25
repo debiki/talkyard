@@ -1,4 +1,3 @@
-/// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
 import assert = require('assert');
@@ -16,6 +15,7 @@ declare let browserB: any;
 
 const everyoneGroup: GroupInclDetails = {
   id: c.EveryoneId,
+  createdAtMs: 1234,
   isGroup: true,
   username: 'everyone',
   fullName: 'Everyone',
