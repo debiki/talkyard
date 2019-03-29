@@ -35,16 +35,22 @@ var t_pt_BR: TalkyardTranslations = t = {
   ClickToShow: "Click to show",  // MISSING
   ChangeDots: "Modificar ...",
   ChatN: "Chat",
+  Chatting: "Chatting",  // MISSING
   CheckYourEmail: "Check your email",  // MISSING
   Close: "Fechar",
   closed: "fechado",
   Created: "Criado",
   Delete: "Deletar",
+  Deleted: "Deleted",  // MISSING
+  DirectMessage: "Direct message",  // MISSING
   Discussion: "Discussão",
   EditV: "Editar",
+  Editing: "Editing",  // MISSING
   EmailAddress: "Email",
   EmailAddresses: "Email addresses",  // MISSING
+  EmailSentD: "Email sent.",  // MISSING
   Forum: "Fórum",
+  GetNotifiedAbout: "Get notified about",  // MISSING
   Hide: "Ocultar",
   Home: "Home",    // MISSING
   Idea: "Ideia",
@@ -55,14 +61,18 @@ var t_pt_BR: TalkyardTranslations = t = {
   LogIn: "Logado",
   LoggedInAs: "Logado como ",
   LogOut: "Encerrar sessão",
+  Maybe: "Maybe",  // MISSING
   MessageN: "Mensagem",
   MoreDots: "Mais...",
   Move: "Mover",
   Name: "Nomear",
   NameC: "Nome:",
+  NewTopic: "New topic",  // MISSING
+  NoCancel: "No, cancel",  // MISSING
   Notifications: "Notifications",  // MISSING
   NotImplemented: "(Não implementado)",
   NotYet: "Ainda não",
+  NoTitle: "No title",  // MISSING
   NoTopics: "Nenhum tópico.",
   Okay: "Ok",
   OkayDots: "Ok ...",
@@ -75,6 +85,7 @@ var t_pt_BR: TalkyardTranslations = t = {
   Remove: "Remover",
   Reopen: "Reabrir",
   ReplyV: "Responder",
+  Replying: "Replying",  // MISSING
   Replies: "Respostas",
   replies: "respostas",
   Save: "Salvar",
@@ -88,12 +99,16 @@ var t_pt_BR: TalkyardTranslations = t = {
   Submit: "Enviar",
   Tools: "Tools",  // MISSING
   Topics: "Tópicos",
+  TopicTitle: "Topic title",  // MISSING
   TopicType: "Tipo do tópico",
   UploadingDots: "Fazendo upload...",
   Username: "Nome de usuário",
   Users: "Usuários",
   Welcome: "Bem-vindo",
   Wiki: "Wiki",
+  Yes: "Yes",  // MISSING
+  YesBye: "Yes, bye",  // MISSING
+  YesDoThat: "Yes, do that",  // MISSING
   You: "You",  // MISSING
   you: "você",
 
@@ -631,6 +646,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     Report: "Denunciar",
     ReportThisPost: "Denunciar este post",
     Admin: "Administrador",
+    DiscIx: "Discussions index",  // MISSING
 
     Disagree: "Discordar",
     DisagreeExpl: "Clique aqui para discordar deste post, ou para avisar outras pessoas sobre erros factuais.",
@@ -679,6 +695,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     NeedsReview: "Precisa de revisão ",
     AdminHelp: "Ajuda do administrador ",
     StaffHelp: "Ajuda do staff ",
+    DraftsEtc: "Drafts, bookmarks, tasks",  // MISSING
     MoreNotfs: "Ver mais notificações",    // MISSING changed from "View more..." to "...all.."
     DismNotfs: "Mark all as read",         // MISSING
     ViewProfile: "Visualizar seu perfil",  // MAYBE, I removed "/editar"
@@ -746,9 +763,11 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     Preferences: "Preferências",
     Invites: "Convites",
+    DraftsEtc: "Drafts etc",  // MISSING
     About: "Sobre",
     Privacy: "Privacidade",
     Account: "Conta",
+    Interface: "Interface",  // MISSING
 
     // ----- Overview stats
 
@@ -794,6 +813,15 @@ var t_pt_BR: TalkyardTranslations = t = {
     NoNotfs: "Nenhuma notificação",
     NotfsToYouC: "Notificação para você:",
     NotfsToOtherC: (name: string) => `Notificação para ${name}:`,
+    DefNotfsSiteWide: "Default notifications, site wide",  // MISSING
+    // The "for" in:  "Default notifications, site wide, for (someone's name)".
+    forWho: "for",  // MISSING
+
+    // ----- Drafts Etc page
+
+    NoDrafts: "No drafts",  // MISSING
+    YourDraftsC: "Your drafts:",  // MISSING
+    DraftsByC: (name: string) => `Drafts by ${name}:`,  // MISSING
 
     // ----- Invites page
 
@@ -805,6 +833,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     WhoAccepted: "Membro que aceitou",
     InvAccepted: "Convite aceito",
     InvSent: "Convite enviado",
+    JoinedAlready: "Joined already",  // MISSING
 
     SendAnInv: "Enviar um Convite",
     SendInv: "Enviar Convite",
@@ -814,8 +843,16 @@ var t_pt_BR: TalkyardTranslations = t = {
         "A pessoa vai se tornar um membro comum, não um moderador ou administrador.",
     //EnterEmail: "Digite o email",
     InvDone: "Concluído. Enviando um email para a pessoa.",
-    //InvErrJoinedAlready: "A pessoa já se associou a este site",
-    //InvErrYouInvAlready: "Você já convidou a pessoa",
+    // MISSING x 9:
+    NoOneToInv: "No one to invite.",
+    InvNotfLater: "I'll notify you later, when I've invited them.",
+    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
+    InvErr_1: "These resulted in ",
+    InvErr_2: "errors",
+    InvErr_3: ":",
+    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
+    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
+    InvAgain: "Invite again",
 
     // ----- Preferences, About
 
@@ -881,6 +918,13 @@ var t_pt_BR: TalkyardTranslations = t = {
         "('Primário' significa que você pode fazer login usando este endereço, e que nós enviamos notificações para ele. " +
         "'Verificado' significa que você clicou no link de verificação em um email de verificação.)",
 
+    // Password:     // MISSING x 4
+    ChangePwdQ: "Change password?",
+    CreatePwdQ: "Create password?",
+    WillGetPwdRstEml: "You'll get a reset password email.",
+    // This is the "None" in:  "Password: None"
+    PwdNone: "None",
+
     // Logins:
     LoginMethods: "Métodos de login",
     commaAs: ", como: ",
@@ -902,9 +946,9 @@ var t_pt_BR: TalkyardTranslations = t = {
         "quaisquer identidades online (como o login do Facebook ou do Twitter). " +
         "Você não vai poder mais fazer login novamente. Esta operação não pode ser desfeita.",
     DeleteUserQ:
-		"Deletar este usuário? Vamos remover o nome, esquecer o endereço de email, senha e " +
-		"quaisquer identidades online (como o login do Facebook ou do Twitter). " +
-		"Este usuário não vai poder mais fazer login novamente. Esta operação não pode ser desfeita.",
+        "Deletar este usuário? Vamos remover o nome, esquecer o endereço de email, senha e " +
+        "quaisquer identidades online (como o login do Facebook ou do Twitter). " +
+        "Este usuário não vai poder mais fazer login novamente. Esta operação não pode ser desfeita.",
     YesDelete: "Sim, deletar",
   },
 
@@ -1149,8 +1193,16 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     PreviewInfo: "Aqui você pode pré-visualizar como seu post vai ficar.",
     CannotType: "Você não pode digitar aqui.",
+
+    LoadingDraftDots: "Loading any draft...",  // MISSING
   },
 
+
+  // Select category dropdown
+
+  scd: {
+    SelCat: "Select category",  // MISSING
+  },
 
   // Page type dropdown
 
@@ -1182,8 +1234,18 @@ var t_pt_BR: TalkyardTranslations = t = {
 
 
   // Search dialogs and the search page.
+
   s: {
     TxtToFind: "Text to search for",  // MISSING
+  },
+
+
+  // No internet    // MISSING x 3
+
+  ni: {
+    NoInet: "No internet connection",
+    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
+    RefrNow: "Refresh now",
   }
 
 };

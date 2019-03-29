@@ -92,7 +92,7 @@ export const UserPreferences = createFactory({
               isGuestOrBuiltIn ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
               !isNormalMember ? null : LiNavLink({
-                  to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, "Interface"))), // I18N
+                  to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, t.upp.Interface))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -232,18 +232,18 @@ const AboutMember = createComponent({
 
   maybeChangePassword: function() {
     const user: UserInclDetails = this.props.user;
-    const question = user.hasPassword ? "Change password?" : "Create password?";  // I18N
+    const question = user.hasPassword ? t.upp.ChangePwdQ : t.upp.CreatePwdQ;
     // BUG only works if email addr specified and verified  [7B4W20]
     util.openDefaultStupidDialog({  // import what?
-      body: question + " You'll get a reset password email.",  // I18N
-      primaryButtonTitle: "Yes, do that",  // I18N
-      secondaryButonTitle: "No, cancel",
+      body: question + ' ' + t.upp.WillGetPwdRstEml,
+      primaryButtonTitle: t.YesDoThat,
+      secondaryButonTitle: t.NoCancel,
       onCloseOk: function(whichButton) {
         if (whichButton === 1)
           Server.sendResetPasswordEmail(() => {
             // Continue also if this.isGone.
             util.openDefaultStupidDialog({
-              body: "Email sent.",  // I18N
+              body: t.EmailSentD,
               small: true,
             });
           });
@@ -400,7 +400,7 @@ const AboutMember = createComponent({
         // However people might not think about looking there? So incl both here and there?
         isBuiltInUser ? null : r.div({ className: 'form-group' },    // + also on  Account tab.
           r.label({}, t.pwd.PasswordC),
-          r.span({}, user.hasPassword ? " Yes." : " None."),   // I18N
+          r.span({}, ' ' + (user.hasPassword ? t.Yes : t.upp.PwdNone) + '.'),
           r.a({
             // UX COULD improve: For now, send a pwd reset email — works only if the user
             // has typed hens email addr :-/
@@ -483,13 +483,15 @@ const NotfPrefsTab = createFactory({
     if (!isOkUser)
       return r.p({}, 'Built-in special user, or guest. [TyE2PKT0684]');
 
-    const forWho = me.id === user.id ? '' : rFragment({}, ", for ", r.b({}, user.username));
+    const forWho = me.id === user.id ? '' : rFragment({},
+        `, ${t.upp.forWho} `, r.b({}, user.username));
+
     const target = { wholeSite: true };
 
     return (
       r.div({},
 
-        r.p({}, "Default notifications, site wide", forWho, ':'),   // I18N
+        r.p({}, t.upp.DefNotfsSiteWide, forWho, ':'),
 
         notfs.PageNotfPrefButton({ target, store, ownPrefs, saveFn: (notfLevel: PageNotfLevel) => {
               Server.savePageNotfPrefUpdStore(user.id, target, notfLevel, () => {

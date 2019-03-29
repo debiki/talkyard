@@ -35,16 +35,22 @@ var t_en_US: TalkyardTranslations = t = {
   ClickToShow: "Click to show",
   ChangeDots: "Change ...",
   ChatN: "Chat",
+  Chatting: "Chatting",
   CheckYourEmail: "Check your email",
   Close: "Close",
   closed: "closed",
   Created: "Created",
   Delete: "Delete",
+  Deleted: "Deleted",
+  DirectMessage: "Direct message",
   Discussion: "Discussion",
   EditV: "Edit",
+  Editing: "Editing",
   EmailAddress: "Email address",
   EmailAddresses: "Email addresses",
+  EmailSentD: "Email sent.",
   Forum: "Forum",
+  GetNotifiedAbout: "Get notified about",
   Hide: "Hide",
   Home: "Home",
   Idea: "Idea",
@@ -55,14 +61,18 @@ var t_en_US: TalkyardTranslations = t = {
   LogIn: "Log In",
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
+  Maybe: "Maybe",
   MessageN: "Message",
   MoreDots: "More...",
   Move: "Move",
   Name: "Name",
   NameC: "Name:",
+  NewTopic: "New topic",
+  NoCancel: "No, cancel",
   Notifications: "Notifications",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
+  NoTitle: "No title",
   NoTopics: "No topics.",
   Okay: "Okay",
   OkayDots: "Okay ...",
@@ -75,6 +85,7 @@ var t_en_US: TalkyardTranslations = t = {
   Remove: "Remove",
   Reopen: "Reopen",
   ReplyV: "Reply",
+  Replying: "Replying",
   Replies: "Replies",
   replies: "replies",
   Save: "Save",
@@ -88,12 +99,16 @@ var t_en_US: TalkyardTranslations = t = {
   Submit: "Submit",
   Tools: "Tools",
   Topics: "Topics",
+  TopicTitle: "Topic title",
   TopicType: "Topic type",
   UploadingDots: "Uploading...",
   Username: "Username",
   Users: "Users",
   Welcome: "Welcome",
   Wiki: "Wiki",
+  Yes: "Yes",
+  YesBye: "Yes, bye",
+  YesDoThat: "Yes, do that",
   You: "You",
   you: "you",
 
@@ -548,11 +563,6 @@ var t_en_US: TalkyardTranslations = t = {
     AboveBestFirst: "Above: Replies, best first.",
     BelowCmtsEvents: "Below: Comments and events.",
 
-    /* Old. When were called "Bottom comments" instead of "Progress comments".
-    BottomCmtExpl_1: "You're adding a comment that will stay at the bottom of the page. " +
-        "It won't rise to the top even if it gets upvotes.",
-    BottomCmtExpl_2: "This is useful for status messages, e.g. to clarify why you close/reopen " +
-        "a topic. Or for suggesting changes to the original post.", */
     // I18N _1 and _2 MISSING, all languages  [BTM2PRGR]
     BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress " +
       "towards answering the question / solving the problem / implementing the idea.",
@@ -638,6 +648,7 @@ var t_en_US: TalkyardTranslations = t = {
     Report: "Report",
     ReportThisPost: "Report this post",
     Admin: "Admin",
+    DiscIx: "Discussions index",
 
     Disagree: "Disagree",
     DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
@@ -686,6 +697,7 @@ var t_en_US: TalkyardTranslations = t = {
     NeedsReview: "Needs review ",
     AdminHelp: "Admin help ",
     StaffHelp: "Staff help ",
+    DraftsEtc: "Drafts, bookmarks, tasks",
     MoreNotfs: "View all notifications",
     DismNotfs: "Mark all as read",
     ViewProfile: "View your profile",
@@ -753,9 +765,11 @@ var t_en_US: TalkyardTranslations = t = {
 
     Preferences: "Preferences",
     Invites: "Invites",
+    DraftsEtc: "Drafts etc",
     About: "About",
     Privacy: "Privacy",
     Account: "Account",
+    Interface: "Interface",
 
     // ----- Overview stats
 
@@ -801,6 +815,15 @@ var t_en_US: TalkyardTranslations = t = {
     NoNotfs: "No notifications",
     NotfsToYouC: "Notifications to you:",
     NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
+    DefNotfsSiteWide: "Default notifications, site wide",
+    // The "for" in:  "Default notifications, site wide, for (someone's name)".
+    forWho: "for",
+
+    // ----- Drafts Etc page
+
+    NoDrafts: "No drafts",
+    YourDraftsC: "Your drafts:",
+    DraftsByC: (name: string) => `Drafts by ${name}:`,
 
     // ----- Invites page
 
@@ -812,6 +835,7 @@ var t_en_US: TalkyardTranslations = t = {
     WhoAccepted: "Member who accepted",
     InvAccepted: "Invitation accepted",
     InvSent: "Invitation sent",
+    JoinedAlready: "Joined already",
 
     SendAnInv: "Invite people", // was: "Send an Invite",   MISSING I18N all other langs
     SendInv: "Send invites",   // MISSING I18N is just "Send invite" (singularis) in all other langs
@@ -821,8 +845,15 @@ var t_en_US: TalkyardTranslations = t = {
         "They'll become normal members, not moderators or admins.",
     //EnterEmail: "Enter email(s)",
     InvDone: "Done. I'll send them an email.",
-    //InvErrJoinedAlready: "He or she has joined this site already",
-    //InvErrYouInvAlready: "You have invited him or her already",
+    NoOneToInv: "No one to invite.",
+    InvNotfLater: "I'll notify you later, when I've invited them.",
+    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
+    InvErr_1: "These resulted in ",
+    InvErr_2: "errors",
+    InvErr_3: ":",
+    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
+    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
+    InvAgain: "Invite again",
 
     // ----- Preferences, About
 
@@ -887,6 +918,13 @@ var t_en_US: TalkyardTranslations = t = {
     EmailStatusExpl:
         "('Primary' means you can login via this address, and we send notifications to it. " +
         "'Verified' means you clicked a verification link in an address verification email.)",
+
+    // Password:
+    ChangePwdQ: "Change password?",
+    CreatePwdQ: "Create password?",
+    WillGetPwdRstEml: "You'll get a reset password email.",
+    // This is the "None" in:  "Password: None"
+    PwdNone: "None",
 
     // Logins:
     LoginMethods: "Login methods",
@@ -1156,8 +1194,16 @@ var t_en_US: TalkyardTranslations = t = {
 
     PreviewInfo: "Here you can preview how your post will look.",
     CannotType: "You cannot type here.",
+
+    LoadingDraftDots: "Loading any draft...",
   },
 
+
+  // Select category dropdown
+
+  scd: {
+    SelCat: "Select category",
+  },
 
   // Page type dropdown
 
@@ -1189,8 +1235,18 @@ var t_en_US: TalkyardTranslations = t = {
 
 
   // Search dialogs and the search page.
+
   s: {
     TxtToFind: "Text to search for",
+  },
+
+
+  // No internet
+
+  ni: {
+    NoInet: "No internet connection",
+    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
+    RefrNow: "Refresh now",
   }
 
 };

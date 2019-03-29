@@ -408,7 +408,7 @@ export const TopBar = createComponent({
         r.div({ className: 'esTopbar_custom' },
           customTitle,
           // UX REFACTOR break out to its own widget, incl a retry-timeout countdown?
-          r.div({ className: 's_NoInetM' }, "No internet connection"), // I18N   [NOINETMSG]
+          r.div({ className: 's_NoInetM' }, t.ni.NoInet), //  [NOINETMSG]
           // "Will retry in X seconds"  I18N  seconds for live notfs retry, not reading progr
           anyMaintWorkMessage,
           backToSiteButton),

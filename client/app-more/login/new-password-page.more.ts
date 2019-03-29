@@ -61,7 +61,7 @@ const NewPasswordPage = createClassAndFactory({
         oldPasswordInput,
         NewPasswordInput({ newPasswordData: this.props, minLength: this.props.minLength,
             setPasswordOk: this.setPasswordOk }),
-        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit",  // I18N
+        InputTypeSubmit({ disabled: !this.state.passwordOk, value: t.Submit,
             className: 'e_SbmNewPwB' })));
   }
 });

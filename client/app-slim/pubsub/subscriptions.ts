@@ -182,9 +182,9 @@ function subscribeToServerEventsDirectly(me: Myself) {
       // But ... will work in prod mode? Because then caches, no server roundtrip needed?
       Server.loadMoreScriptsBundle(function() {
         util.openDefaultStupidDialog({  // import what?
-          body: "Refresh page to see any latest changes. (There was a disconnection)",  // I18N
-          primaryButtonTitle: "Refresh now",
-          secondaryButonTitle: "Cancel",
+          body: t.ni.PlzRefr,
+          primaryButtonTitle: t.ni.RefrNow,
+          secondaryButonTitle: t.Cancel,
           onCloseOk: function(whichButton) {
             if (whichButton === 1)
               window.location.reload()

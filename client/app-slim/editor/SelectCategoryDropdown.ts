@@ -73,7 +73,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
       _.find(categoriesToList, c => c.id === props.selectedCategoryId);
 
     dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
-    const categoryName = selectedCategory ? selectedCategory.name : "Select category...";  // I18N
+    const categoryName = selectedCategory ? selectedCategory.name : t.scd.SelCat + '...';
 
     const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton' },
@@ -88,7 +88,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
     const dropdownModal =
       DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
-        r.div({ className: 'esDropModal_header' }, "Select category:"),  // I18N
+        r.div({ className: 'esDropModal_header' }, t.scd.SelCat + ':'),
         r.ul({},
           categoryListItems));
 

@@ -202,8 +202,7 @@ const UserPageComponent = createReactClass(<any> {
       LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
     const draftsEtcNavItem = !showPrivateStuff || user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' },
-        "Drafts etc"); // I18N
+      LiNavLink({ to: linkStart + 'drafts-etc', className: 'e_UP_DrftsB' }, t.upp.DraftsEtc);
 
     const preferencesNavItem = !showPrivateStuff ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);

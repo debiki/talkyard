@@ -21,16 +21,22 @@ interface TalkyardTranslations {
   Continue: string;
   ChangeDots: string;
   ChatN: string;
+  Chatting: string;
   CheckYourEmail: string;
   Close: string;
   closed: string;
   Created: string;
   Delete: string;
+  Deleted: string;
+  DirectMessage: string;
   Discussion: string;
   EditV: string;
+  Editing: string;
   EmailAddress: string;
   EmailAddresses: string;
+  EmailSentD: string;
   Forum: string;
+  GetNotifiedAbout: string;
   Hide: string;
   Home: string;
   Idea: string;
@@ -41,14 +47,18 @@ interface TalkyardTranslations {
   LogIn: string;
   LoggedInAs: string;
   LogOut: string;
+  Maybe: string;
   MessageN: string;
   MoreDots: string;
   Move: string;
   Name: string;
   NameC: string;
+  NewTopic: string;
+  NoCancel: string;
   Notifications: string;
   NotImplemented: string;
   NotYet: string;
+  NoTitle: string;
   NoTopics: string;
   Okay: string;
   OkayDots: string;
@@ -61,6 +71,7 @@ interface TalkyardTranslations {
   Remove: string;
   Reopen: string;
   ReplyV: string;
+  Replying: string;
   Replies: string;
   replies: string;
   Save: string;
@@ -74,12 +85,16 @@ interface TalkyardTranslations {
   Submit: string;
   Tools: string;
   Topics: string;
+  TopicTitle: string;
   TopicType: string;
   UploadingDots: string;
   Username: string;
   Users: string;
   Welcome: string;
   Wiki: string;
+  Yes: string;
+  YesBye: string;
+  YesDoThat: string;
   You: string;
   you: string;
 
@@ -383,6 +398,7 @@ interface TalkyardTranslations {
     Report: string;
     ReportThisPost: string;
     Admin: string;
+    DiscIx: string;
 
     Disagree: string;
     DisagreeExpl: string;
@@ -553,6 +569,7 @@ interface TalkyardTranslations {
     NeedsReview: string;
     AdminHelp: string;
     StaffHelp: string;
+    DraftsEtc: string;
     MoreNotfs: string;
     DismNotfs: string;
     ViewProfile: string;
@@ -604,9 +621,11 @@ interface TalkyardTranslations {
 
     Preferences: string;
     Invites: string;
+    DraftsEtc: string;
     About: string;
     Privacy: string;
     Account: string;
+    Interface: string;
 
     // ----- Overview stats
 
@@ -652,6 +671,14 @@ interface TalkyardTranslations {
     NoNotfs: string;
     NotfsToYouC: string;
     NotfsToOtherC: (name: string) => string;
+    DefNotfsSiteWide: string;
+    forWho: string;
+
+    // ----- Drafts Etc page
+
+    NoDrafts: string;
+    YourDraftsC: string;
+    DraftsByC: (name: string) => string;
 
     // ----- Invites page
 
@@ -663,14 +690,22 @@ interface TalkyardTranslations {
     WhoAccepted: string;
     InvAccepted: string;
     InvSent: string;
+    JoinedAlready: string;
 
     SendAnInv: string;
     SendInv: string;
     SendInvExpl: string;
     //EnterEmail: string;
     InvDone: string;
-    //InvErrJoinedAlready: string;
-    //InvErrYouInvAlready: string;
+    NoOneToInv: string;
+    InvNotfLater: string;
+    AlreadyInvSendAgainQ: string;
+    InvErr_1: string;
+    InvErr_2: string;
+    InvErr_3: string;
+    TheseJoinedAlrdyC: string;
+    ResendInvsQ: string;
+    InvAgain: string;
 
     // ----- Preferences, About
 
@@ -728,6 +763,13 @@ interface TalkyardTranslations {
     SendVerifEmail: string;
 
     EmailStatusExpl: string;
+
+    // Password:
+    ChangePwdQ: string;
+    CreatePwdQ: string;
+    WillGetPwdRstEml: string;
+    PwdNone: string;
+
 
     // Logins:
     LoginMethods: string;
@@ -962,6 +1004,14 @@ interface TalkyardTranslations {
 
     PreviewInfo: string;
     CannotType: string;
+
+    LoadingDraftDots: string;
+  },
+
+
+  // Select category dropdown
+  scd: {
+    SelCat: string;
   },
 
 
@@ -995,6 +1045,14 @@ interface TalkyardTranslations {
   // Search dialogs and the search page.
   s: {
     TxtToFind: string;
+  },
+
+
+  // Refresh page dialog
+  ni: {
+    NoInet: string;
+    PlzRefr: string;
+    RefrNow: string;
   }
 }
 

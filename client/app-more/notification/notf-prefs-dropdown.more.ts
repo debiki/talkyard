@@ -135,7 +135,7 @@ const NotfsLevelDropdownModal = createComponent({
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
           pullLeft: true, showCloseButton: true },
-        r.div({ className: 's_NotfPrefDD_Ttl' }, "Get notified about:"),  // I18N
+        r.div({ className: 's_NotfPrefDD_Ttl' }, t.GetNotifiedAbout + ':'),
         everyPostListItem,
         newTopicsListItem,
         normalListItem,

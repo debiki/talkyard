@@ -100,7 +100,7 @@ export const UserInvites = createFactory({
     if (user.id === me.id && mayInvite.yes) {
       inviteButton =
           Button({ className: 'e_SndInvB', onClick: () => openInviteDialog(this.addInvites) },
-            t.upp.SendAnInv);  // I18N SHOULD change to "Invite people"
+            t.upp.SendAnInv);
     }
     else {
       // (This is for staff, need not translate. [5JKBWS2])
@@ -156,10 +156,10 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
       deletedClass = '';
     }
     else if (invite.deletedAtEpoch) {
-      acceptedAt = "Deleted";  // I18N unless is staff
+      acceptedAt = t.Deleted;
     }
     else if (invite.invalidatedAtEpoch) {
-      acceptedAt = "Joined already";  // I18N unless is staff
+      acceptedAt = t.upp.JoinedAlready;
     }
     else {
       deletedClass = '';
@@ -244,11 +244,12 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
         message = t.upp.InvDone;
       }
       else if (!sendInvitesResponse.willSendLater) {
-        message = "No one to invite.";  // I18N
+        message = t.upp.NoOneToInv;
       }
       else {
         messageE2eClass += ' e_SndInvsLtr';
-        message = "I'll notify you later, when I've invited them.";  // I18N
+        // Text: "I'll notify you later, when have invited them".
+        message = t.upp.InvNotfLater;
       }
 
       message = r.p({ className: messageE2eClass }, message);
@@ -278,15 +279,16 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
         message = rFragment({},
             message,
             !alreadyInvitedAddresses.length ? null : r.div({},
-                "These have been invited already — maybe you'd like to invite them again?",   // I18N
+                t.upp.AlreadyInvSendAgainQ,
                 r.ul({ className: 'e_InvRtr' },
                   alreadyInvitedAddresses.map(makeAddrListItem))),
             !failedAddresses.length ? null : r.div({},
-                "These resulted in ", r.b({}, "errors"), ':',   // I18N
+                // Text: "These resulted in errors:"
+                t.upp.InvErr_1, r.b({}, t.upp.InvErr_2), t.upp.InvErr_3,
                 r.ul({ className: 'e_InvErr' },
                   failedAddresses.map(makeAddrListItem))),
             !alreadyJoinedAddresses.length ? null : r.div({},
-                "These have joined already, so I didn't invite them:",   // I18N
+                t.upp.TheseJoinedAlrdyC,
                 r.ul({ className: 'e_InvJoind' },
                   alreadyJoinedAddresses.map(makeAddrListItem))));
       }
@@ -299,7 +301,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
       util.openDefaultStupidDialog({
         body: message,
         dialogClassName: 's_InvSentD',
-        closeButtonTitle: alreadyInvitedAddresses.length === 0 ? t.Okay : "Maybe ...",  // I18N,
+        closeButtonTitle: alreadyInvitedAddresses.length === 0 ? t.Okay : t.Maybe + " ...",
         // Let's force the user to read and click ok, because this is a somewhat
         // important message, especially if there were any errors.
         closeOnClickOutside: false,
@@ -319,10 +321,10 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     else {
       const isResend = this.state.alreadyInvitedAddresses;
       const info = isResend
-          ? "Re-send invitations to these people? They have been invited already."   // I18N
+          ? t.upp.ResendInvsQ
           : t.upp.SendInvExpl;
       buttonTitle = isResend
-          ? r.span({ className: 'e_InvAgain' }, "Invite again")  // I18N
+          ? r.span({ className: 'e_InvAgain' }, t.upp.InvAgain)
           : t.upp.SendInv;
       content = rFragment({},
         r.p({}, info),

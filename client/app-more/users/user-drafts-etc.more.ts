@@ -95,7 +95,7 @@ export const UserDrafts = createFactory({
     const isMe = user.id === me.id;
 
     const anyNoDraftsMessage = drafts.length ? null :
-        r.p({ className: 'e_Dfs_None' }, "No drafts");  // I18N
+        r.p({ className: 'e_Dfs_None' }, t.upp.NoDrafts);
 
     const draftElems = drafts.map((draft: Draft) =>
         r.li({ key: draft.draftNr },
@@ -104,7 +104,8 @@ export const UserDrafts = createFactory({
 
     return (
       r.div({},
-        r.p({}, isMe ? "Your drafts:" : `Drafts by ${user.username || user.fullName}:`),  // I18N
+        r.p({},
+          isMe ? t.upp.YourDraftsC : t.upp.DraftsByC(user.username || user.fullName)),
         anyNoDraftsMessage,
         r.ol({ className: 's_Dfs' },
           draftElems)));
@@ -127,11 +128,11 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
     // This draft is related to an already existing page and post.
 
     if (forWhat.draftType === DraftType.Reply) {
-      if (draft.postType === PostType.ChatMessage) what = "Chatting"; // I18N
-      else what = "Replying"; // I18N
+      if (draft.postType === PostType.ChatMessage) what = t.Chatting;
+      else what = t.Replying;
     }
     else if (forWhat.draftType === DraftType.Edit) {
-      what = "Editing"; // I18N
+      what = t.Editing;
     }
     else {
       // @ifdef DEBUG
@@ -144,18 +145,18 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
     const pagePostNr = props.pagePostNrsByPostId[postId];
     pageId = pagePostNr[0];
     postNr = pagePostNr[1];
-    title = "Topic title: " + props.pageTitlesById[pageId];  // I18N
+    title = `${t.TopicTitle}: ${props.pageTitlesById[pageId]}`;
   }
   else {
     // This draft is for a new page.
 
-    title = "Your title: " + title || "(No title)";  // I18N
+    title = `${t.TopicTitle}: ` + (title || `(${t.NoTitle})`);
 
     if (forWhat.draftType === DraftType.DirectMessage) {
-      what = "Direct message"; // I18N
+      what = t.DirectMessage;
     }
     else if (forWhat.draftType === DraftType.Topic) {
-      what = "New forum topic"; // I18N
+      what = t.NewTopic;
     }
     else {
       // @ifdef DEBUG

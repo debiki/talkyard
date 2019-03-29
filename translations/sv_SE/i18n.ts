@@ -35,16 +35,22 @@ var t_sv_SE: TalkyardTranslations = t = {
   ClickToShow: "Click to show",
   ChangeDots: "Change ...",
   ChatN: "Chat",
-  CheckYourEmail: "Check your email",  // MISSING
+  Chatting: "Chatting",
+  CheckYourEmail: "Check your email",
   Close: "Close",
   closed: "closed",
   Created: "Created",
   Delete: "Delete",
+  Deleted: "Deleted",
+  DirectMessage: "Direct message",
   Discussion: "Discussion",
   EditV: "Edit",
+  Editing: "Editing",
   EmailAddress: "Email address",
-  EmailAddresses: "Email addresses",  // MISSING
+  EmailAddresses: "Email addresses",
+  EmailSentD: "Email sent.",
   Forum: "Forum",
+  GetNotifiedAbout: "Get notified about",
   Hide: "Göm",
   Home: "Home",
   Idea: "Idé",
@@ -55,14 +61,18 @@ var t_sv_SE: TalkyardTranslations = t = {
   LogIn: "Log In",
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
+  Maybe: "Maybe",
   MessageN: "Message",
   MoreDots: "More...",
   Move: "Move",
   Name: "Name",
   NameC: "Name:",
+  NewTopic: "New topic",
+  NoCancel: "No, cancel",
   Notifications: "Notifications",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
+  NoTitle: "No title",
   NoTopics: "No topics.",
   Okay: "Okay",
   OkayDots: "Okay ...",
@@ -75,6 +85,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   Remove: "Ta bort",
   Reopen: "Öppna",
   ReplyV: "Svara",
+  Replying: "Svarar",
   Replies: "Svar",
   replies: "svar",
   Save: "Spara",
@@ -88,12 +99,16 @@ var t_sv_SE: TalkyardTranslations = t = {
   Submit: "Submit",
   Tools: "Tools",
   Topics: "Topics",
+  TopicTitle: "Topic title",
   TopicType: "Topic type",
   UploadingDots: "Uploading...",
   Username: "Username",
   Users: "Users",
   Welcome: "Welcome",
   Wiki: "Wiki",
+  Yes: "Yes",
+  YesBye: "Yes, bye",
+  YesDoThat: "Yes, do that",
   You: "You",
   you: "you",
 
@@ -171,7 +186,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     EveryPost: "Every Post",
     EveryPostInTopic: "You'll be notified of all new replies in this topic.",
     EveryPostInCat: "You'll be notified of all new topics and replies, in this category",
-    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and every post in those topics",
+    EveryPostInTopicsWithTag: "You'll be notified of new topics with this tag, and all replies in those topics.",
     EveryPostWholeSite: "You'll be notified of all new topics and replies, anywhere",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
@@ -186,12 +201,14 @@ var t_sv_SE: TalkyardTranslations = t = {
     Normal: "Normal",
     NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +
       "reply to a reply to you.",
+    //NormalTopic_1: "You'll be notified if someone talks to you, or mentions your ",
+    //NormalTopic_2: "@name",
 
     Hushed: "Hushed",
     HushedDescr: "You'll be notified only if someone talks directly to you.",
 
     Muted: "Muted",
-    MutedTopic: "No notifications about this topic.",
+    MutedTopic: "No notifications.",
   },
 
 
@@ -400,7 +417,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     UsersInThisChat: "Users in this chat:",
     UsersInThisTopic: "Users in this topic:",
 
-    GettingStartedGuide: "Getting Started Guide",
+    GettingStartedGuide: "Admin Guide",
     AdminGuide: "Admin Guide",
     Guide: "Guide",
 
@@ -628,6 +645,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     Report: "Report",
     ReportThisPost: "Report this post",
     Admin: "Admin",
+    DiscIx: "Andra diskussioner",
 
     Disagree: "Disagree",
     DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
@@ -676,6 +694,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     NeedsReview: "Needs review ",
     AdminHelp: "Admin help ",
     StaffHelp: "Staff help ",
+    DraftsEtc: "Drafts, bookmarks, tasks",
     MoreNotfs: "View all notifications",
     DismNotfs: "Mark all as read",
     ViewProfile: "View your profile",
@@ -702,7 +721,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
     // top, and 2 to see the first reply, and B to go back, F forward, so on.
     PgTop: "Page top",
-    PgTopHelp: "Go to the top of the page. Shortcut: 1 (on a keyboard)",
+    PgTopHelp: "Go to the top of the page. Keyboard shortcut: 1",
     Repl: "Replies",
     ReplHelp: "Go to the Replies section. Shortcut: 2",
     Progr: "Progress",
@@ -743,9 +762,11 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     Preferences: "Preferences",
     Invites: "Invites",
+    DraftsEtc: "Drafts etc",
     About: "About",
     Privacy: "Privacy",
     Account: "Account",
+    Interface: "Interface",
 
     // ----- Overview stats
 
@@ -791,6 +812,15 @@ var t_sv_SE: TalkyardTranslations = t = {
     NoNotfs: "No notifications",
     NotfsToYouC: "Notifications to you:",
     NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
+    DefNotfsSiteWide: "Default notifications, site wide",
+    // The "for" in:  "Default notifications, site wide, for (someone's name)".
+    forWho: "for",
+
+    // ----- Drafts Etc page
+
+    NoDrafts: "No drafts",
+    YourDraftsC: "Your drafts:",
+    DraftsByC: (name: string) => `Drafts by ${name}:`,
 
     // ----- Invites page
 
@@ -802,17 +832,25 @@ var t_sv_SE: TalkyardTranslations = t = {
     WhoAccepted: "Member who accepted",
     InvAccepted: "Invitation accepted",
     InvSent: "Invitation sent",
+    JoinedAlready: "Joined already",
 
-    SendAnInv: "Send an Invite",
-    SendInv: "Send Invite",
+    SendAnInv: "Invite people",
+    SendInv: "Send invites",
     SendInvExpl:
-        "We'll send your friend a brief email, and he or she then clicks a link " +
+        "We'll send your friends a brief email. They'll click a link " +
         "to join immediately, no login required. " +
-        "He or she will become a normal member, not a moderator or admin.",
-    //EnterEmail: "Enter email",
-    InvDone: "Done. I'll send him/her an email.",
-    //InvErrJoinedAlready: "He or she has joined this site already",
-    //InvErrYouInvAlready: "You have invited him or her already",
+        "They'll become normal members, not moderators or admins.",
+    //EnterEmail: "Enter email(s)",
+    InvDone: "Done. I'll send them an email.",
+    NoOneToInv: "No one to invite.",
+    InvNotfLater: "I'll notify you later, when I've invited them.",
+    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
+    InvErr_1: "These resulted in ",
+    InvErr_2: "errors",
+    InvErr_3: ":",
+    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
+    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
+    InvAgain: "Invite again",
 
     // ----- Preferences, About
 
@@ -834,7 +872,7 @@ var t_sv_SE: TalkyardTranslations = t = {
         "they won't know how to @mention you.",
 
     NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
-    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",  // MISSING
+    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",
 
     ActivitySummaryEmails: "Activity summary emails",
 
@@ -877,6 +915,13 @@ var t_sv_SE: TalkyardTranslations = t = {
     EmailStatusExpl:
         "('Primary' means you can login via this address, and we send notifications to it. " +
         "'Verified' means you clicked a verification link in an address verification email.)",
+
+    // Password:
+    ChangePwdQ: "Change password?",
+    CreatePwdQ: "Create password?",
+    WillGetPwdRstEml: "You'll get a reset password email.",
+    // This is the "None" in:  "Password: None"
+    PwdNone: "None",
 
     // Logins:
     LoginMethods: "Login methods",
@@ -1146,8 +1191,16 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     PreviewInfo: "Here you can preview how your post will look.",
     CannotType: "You cannot type here.",
+
+    LoadingDraftDots: "Loading any draft...",
   },
 
+
+  // Select category dropdown
+
+  scd: {
+    SelCat: "Select category",
+  },
 
   // Page type dropdown
 
@@ -1179,8 +1232,18 @@ var t_sv_SE: TalkyardTranslations = t = {
 
 
   // Search dialogs and the search page.
+
   s: {
     TxtToFind: "Text to search for",
+  },
+
+
+  // No internet
+
+  ni: {
+    NoInet: "No internet connection",
+    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
+    RefrNow: "Refresh now",
   }
 
 };

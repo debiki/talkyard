@@ -40,9 +40,9 @@ export const MyMenuContent = createFactory({
     util.openDefaultStupidDialog({
       dialogClassName: 'e_ByeD',
       tiny: true,
-      body: "Log out?",  // I18N
-      primaryButtonTitle: "Yes, bye",  // I18N
-      secondaryButonTitle: "Cancel",
+      body: t.LogOut + '?',
+      primaryButtonTitle: t.YesBye,
+      secondaryButonTitle: t.Cancel,
       onCloseOk: function(whichButton) {
         if (whichButton === 1) {
           debiki2.ReactActions.logout();
@@ -146,7 +146,7 @@ export const MyMenuContent = createFactory({
       viewDraftsAndBookmarks =
           MenuItemsMany({},
             LinkUnstyled({ to: linkToMyDraftsEtc(store), className: 'e_MyDfsB' },
-              "Drafts, bookmarks, tasks"),  // I18N
+              t.mm.DraftsEtc),
             !logoutButtonNextToViewProfile ? logoutButton : null);
 
       myStuffDivider = MenuItemDivider();

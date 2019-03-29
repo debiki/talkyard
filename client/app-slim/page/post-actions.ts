@@ -359,7 +359,7 @@ export const PostActions = createComponent({
 
     const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null : rFragment({},
       r.a({ className: 'dw-a dw-a-other-topics icon-link-ext', href: linkToEmbeddedDiscussions(),
-        target: '_blank' }, "Discussions index"),  // I18N
+        target: '_blank' }, t.pa.DiscIx),
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
         target: '_blank' }, t.pa.Admin));
 

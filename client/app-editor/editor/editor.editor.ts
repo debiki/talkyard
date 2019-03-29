@@ -1426,7 +1426,7 @@ export const Editor = createComponent({
 
     const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
-        !anyDraftLoaded ? r.pre({}, "Loading any draft...") :   // I18N same as here: [5AKBR02]
+        !anyDraftLoaded ? r.pre({}, t.e.LoadingDraftDots) :
           ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'rtaTextarea',
@@ -1643,7 +1643,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   const draftErrorStatusCode: number | undefined = props.draftErrorStatusCode;
 
   switch (props.draftStatus) {  // I18N all draft statuses
-    case DraftStatus.NotLoaded: draftStatusText = "Loading any draft..."; break;  // I18N same as here: [5AKBR02]
+    case DraftStatus.NotLoaded: draftStatusText = t.e.LoadingDraftDots; break;
     case DraftStatus.NothingHappened: break;
     case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
     case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;

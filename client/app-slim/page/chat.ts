@@ -566,7 +566,7 @@ const ChatMessageEditor = createComponent({
       r.div({ className: 'esC_Edtr' },
         // The @mentions username autocomplete might overflow the textarea. [J7UKFBW]
         ReactTextareaAutocomplete({ className: 'esC_Edtr_textarea', ref: 'textarea',
-          value: anyDraftLoaded ? this.state.text : "Loading any draft...",  // I18N same as here: [5AKBR02]
+          value: anyDraftLoaded ? this.state.text : t.e.LoadingDraftDots,
           onChange: this.onTextEdited,
           onKeyPress: this.onKeyPress,
           onKeyDown: this.onKeyDown,
