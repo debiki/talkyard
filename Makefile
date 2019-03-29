@@ -77,7 +77,7 @@ endef
 
 # This'll be all Git submodule directories. If some are missing, need to git-clone them.
 git_modules := \
-  $(shell grep submodule .gitmodules | sed -r 's/^.submodule "([^"]+).*$$/\1\/.git/')
+  $(shell grep submodule .gitmodules | egrep -v '^ *\#' | sed -r 's/^.submodule "([^"]+).*$$/\1\/.git/')
 
 git-subm-init-upd: $(git_modules)
 
