@@ -161,7 +161,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // The last thing we do, update the url path, so it cannot happen that we change the
     // url path, but then afterwards something else fails so we reply error — that would
     // be bad because the browser wouldn't know if it should update its url path or not.
-    var newPath: Option[PagePath] = None
+    var newPath: Option[PagePathWithId] = None
     if (anyFolder.orElse(anySlug).orElse(anyShowId).isDefined) {
       try {
         newPath = Some(
@@ -171,9 +171,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       catch {
         case ex: DbDao.PageNotFoundException =>
           throwNotFound("DwE34FK81", "The page was deleted just now")
-        case DbDao.PathClashException(existingPagePath, newPagePath) =>
+        case DbDao.PathClashException(newPagePath) =>
           throwForbidden(
-            "DwE4FKEU5", o"""Cannot move page to ${existingPagePath.value}. There is
+            "DwE4FKEU5", o"""Cannot move page '$pageId' to ${newPagePath.value}. There is
               already another page there. Please move that page elsewhere, first""")
       }
     }

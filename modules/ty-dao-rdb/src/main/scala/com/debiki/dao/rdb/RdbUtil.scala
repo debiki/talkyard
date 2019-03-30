@@ -524,6 +524,15 @@ object RdbUtil {
   }
 
 
+  def getPagePathWithId(resultSet: js.ResultSet, pageId: Option[String] = None) =
+    PagePathWithId(
+      folder = resultSet.getString("parent_folder"),
+      pageId = pageId getOrElse resultSet.getString("page_id"),
+      showId = resultSet.getString("show_id") == "T",
+      pageSlug = d2e(resultSet.getString("page_slug")),
+      canonical = resultSet.getString("canonical") == "C")
+
+
   def _PagePath(resultSet: js.ResultSet, siteId: SiteId,
         pageId: Option[Option[String]] = None) =
     PagePath(

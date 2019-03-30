@@ -141,7 +141,7 @@ object EmbeddedCommentsPageCreator {
         anyPageId: Option[PageId],
         anyAltPageId: Option[String],
         anyEmbeddingUrl: Option[String],
-        request: DebikiRequest[_]): (PageId, Option[PagePath]) = {
+        request: DebikiRequest[_]): (PageId, Option[PagePathWithId]) = {
     anyPageId foreach { pageId =>
       if (pageId != NoPageId)
         return (pageId, None)
@@ -156,12 +156,12 @@ object EmbeddedCommentsPageCreator {
       throwNotFound("TyE0ID0EMBURL", "Page not found and no embedding url specified")
     }
     val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
-    (newPagePath.thePageId, Some(newPagePath))
+    (newPagePath.pageId, Some(newPagePath))
   }
 
 
   private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String,
-        anyAltPageId: Option[String]): PagePath = {
+        anyAltPageId: Option[String]): PagePathWithId = {
     import request.{dao, requester, context}
 
     // (Security, fine: I don't think we need to verify that there is actually a page at

@@ -25,7 +25,20 @@ case class PagePathWithId(  // better than PagePath? Has no site id, and always 
   folder: String,
   pageId: PageId,
   showId: Boolean,
-  slug: String)
+  pageSlug: String,
+  canonical: Boolean) {
+
+  // Check this path is valid, for now by converting it to the old PagePath class
+  // which has all consistency checks.
+  value
+
+  def toOld(siteId: SiteId) = PagePath(
+    siteId, folder, pageId = Some(pageId), showId = showId, pageSlug = pageSlug)
+
+  def value: String = toOld(9999999).value
+
+  def copyNoId = PagePathNoId(folder, showId, slug = pageSlug)
+}
 
 case class PagePathNoId(  // better than PagePath? Has no site id, and never a page id
   folder: String,

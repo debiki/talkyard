@@ -49,7 +49,7 @@ class ReviewStuffAppSuite(randomString: String)
         titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
         bodyTextAndHtml = textAndHtmlMaker.testBody("discussion_230593 $r"),
         showId = true, deleteDraftNr = None,
-        Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).thePageId
+        Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).pageId
     }
 
     def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {

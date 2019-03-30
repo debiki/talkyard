@@ -107,7 +107,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       includeUnapproved = false, showHidden = true)
 
     OkSafeJson(Json.obj(
-      "newlyCreatedPageId" -> JsStringOrNull(anyNewPagePath.flatMap(_.pageId)),
+      "newlyCreatedPageId" -> JsStringOrNull(anyNewPagePath.map(_.pageId)),
       "updatedPost" -> postJson))
   }
 

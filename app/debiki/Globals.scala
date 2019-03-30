@@ -602,12 +602,12 @@ class Globals(
         val site = systemDao.getSite(defaultSiteId).getOrDie(
           "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
             default site id (config value: $DefaultSiteIdConfValName)""")
-        SiteBrief(defaultSiteId, site.pubId, hostname, site.status)
+        SiteBrief(defaultSiteId, site.pubId, Some(hostname), site.status)
       }
       else {
         // Lazy-create the very first site, with id 1, if doesn't yet exist.
         val firstSite = systemDao.getOrCreateFirstSite()
-        SiteBrief(FirstSiteId, firstSite.pubId, hostname, firstSite.status)
+        SiteBrief(FirstSiteId, firstSite.pubId, Some(hostname), firstSite.status)
       }
     }
 
@@ -640,7 +640,7 @@ class Globals(
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
             // Let the config file hostname have precedence over the database.
             if (site.id == defaultSiteId && defaultSiteHostname.isDefined)
-              return site.brief.copy(hostname = defaultSiteHostname.get)
+              return site.brief.copy(hostname = defaultSiteHostname)
             else
               return site.brief
         }

@@ -57,12 +57,14 @@ case class SiteBackupReader(context: EdContext) {
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
-    val (siteMetaJson, settingsJson, groupsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
+    val (siteMetaJson, settingsJson, guestsJson, groupsJson, membersJson,
+        permsOnPagesJson, pagesJson, pathsJson,
         categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
+          readJsArray(bodyJson, "guests"),
           readJsArray(bodyJson, "groups"),
           readJsArray(bodyJson, "members"),
           readJsArray(bodyJson, "permsOnPages"),
@@ -85,21 +87,32 @@ case class SiteBackupReader(context: EdContext) {
 
     val settings = Settings2.settingsToSaveFromJson(settingsJson, globals)
 
+    val guests: Seq[Guest] = guestsJson.value.zipWithIndex map { case (json, index) =>
+      readGuestOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "EsE0GY72", o"""Invalid guest json at index $index in the 'guests' list: $errorMessage,
+                json: $json"""))
+    }
+
     HACK // just loading Everyone's summary email interval. [7FKB4Q1]
     var summaryEmailIntervalMins = SummaryEmails.DoNotSend
     var summaryEmailIfActive = false
     groupsJson.value.zipWithIndex foreach { case (json, index) =>
-      val groupId = (json \ "id").as[UserId]
+      val groupId = readInt(json, "id")
       if (groupId == Group.EveryoneId) {
-        summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").as[Int]
-        summaryEmailIfActive = (json \ "summaryEmailIfActive").as[Boolean]
+        (json \ "summaryEmailIntervalMins").asOpt[Int] foreach { mins =>
+          summaryEmailIntervalMins = mins
+        }
+        (json \ "summaryEmailIfActive").asOpt[Boolean] foreach { value =>
+          summaryEmailIfActive = value
+        }
       }
     }
 
     val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
-            "EsE0GY72", s"""Invalid user json at index $index in the 'users' list: $errorMessage,
+            "EsE0GY72", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
                 json: $json"""))
     }
 
@@ -142,7 +155,7 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      users, pages, paths, categories, posts, permsOnPages)
+      guests, users, pages, paths, categories, posts, permsOnPages)
   }
 
 
@@ -184,11 +197,42 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
+  def readGuestOrBad(jsValue: JsValue, isE2eTest: Boolean): Guest Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Guest json is not an object, but a: " + classNameOf(bad))
+    }
+    val id = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid guest id: " + ex.getMessage)
+    }
+
+    try {
+      val passwordHash = readOptString(jsObj, "passwordHash")
+      passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
+      Good(Guest(
+        id = id,
+        createdAt = readWhen(jsObj, "createdAtMs"),
+        guestName = readOptString(jsObj, "fullName").getOrElse(""),
+        guestBrowserId = readOptString(jsObj, "guestBrowserId"),
+        email = readString(jsObj, "emailAddress").trim,
+        emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater] [7KABKF2]
+        country = readOptString(jsObj, "country"),
+        lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for guest id $id: ${ex.getMessage}")
+    }
+  }
+
+
   def readUserOrBad(jsValue: JsValue, isE2eTest: Boolean): UserInclDetails Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
-        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+        return Bad(s"User list entry is not a json object, but a: " + classNameOf(bad))
     }
 
     val id = try readInt(jsObj, "id") catch {
@@ -342,7 +386,8 @@ case class SiteBackupReader(context: EdContext) {
         folder = readString(jsObj, "folder"),
         pageId = readString(jsObj, "pageId"),
         showId = readBoolean(jsObj, "showId"),
-        slug = readString(jsObj, "slug")))
+        pageSlug = readString(jsObj, "slug"),
+        canonical = readBoolean(jsObj, "canonical")))
     }
     catch {
       case ex: IllegalArgumentException =>

@@ -26,6 +26,7 @@ import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.JsX.JsStringOrNull
 
 
 /** Imports and exports dumps of websites.
@@ -44,12 +45,13 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   import context.security
   import context.safeActions.ExceptionAction
 
-  val MaxBytes: Int = 1000 * 1000
+  val MaxBytes: Int = 50 * 1000 * 1000
 
 
   def exportSiteJson(): Action[Unit] = AdminGetAction { request =>
     // As of 2019-03, site 121 at talkyard.net wants to try this.
-    throwForbiddenIf(request.site.id != 121 && !security.hasOkForbiddenPassword(request),
+    throwForbiddenIf(globals.isProd && request.site.id != 121 &&
+      !security.hasOkForbiddenPassword(request),
       "TyE7KRABP2", "Exporting json is still being tested out") // add rate limits
     val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
     Ok(json.toString()) as JSON
@@ -57,17 +59,25 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
-        StaffPostJsonAction(maxBytes = MaxBytes) { request =>
-    throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMP", "May not import sites")
+        ExceptionAction(parse.json(maxLength = MaxBytes)) { request =>
+    throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
+    /*
     //val createdFromSiteId = Some(request.siteId)
     val response = importSiteImpl(
       request.underlying, request.theBrowserIdData, deleteOld = false, isTest = false)
-    response
+    response */
+    val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
+    val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
+      fingerprint = 0)
+    val response = importSiteImpl(request, browserIdData, deleteOld = false, isTest = false)
+    response.withCookies(moreNewCookies: _*)
   }
 
 
   def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = MaxBytes)) {
         request =>
+    throwForbiddenIf(!security.hasOkE2eTestPassword(request),
+      "TyE5JKU2", "Importing test sites only allowed when e2e testing")
     globals.testResetTime()
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
@@ -84,17 +94,29 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   private def importSiteImpl(request: mvc.Request[JsValue], browserIdData: BrowserIdData,
         deleteOld: Boolean, isTest: Boolean): mvc.Result = {
-    dieIf(deleteOld && !isTest, "EdE5FKWU02")
-
-    val okE2ePassword = security.hasOkE2eTestPassword(request)
-    if (!okE2ePassword)
-      throwForbidden("EsE5JKU2", "Importing sites is only allowed for e2e testing right now")
+    dieIf(deleteOld && !isTest, "TyE5FKWU02", "Can only delete old site, if is testing")
 
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     val siteData =
-      try SiteBackupReader(context).parseSiteJson(request.body, isE2eTest = okE2ePassword)
+      try {
+        val sd = SiteBackupReader(context).parseSiteJson(request.body, isE2eTest = isTest)
+        // Unless we're deleting any old site, don't import the new site's hostnames —
+        // they can cause unique key errors. The site owner can instead add the right
+        // hostnames via the admin interface later.
+        if (deleteOld) sd // won't be any unique key error
+        else {
+          // Later: Could import the hostnames, if currently absent in the database?
+          // However, I'd guess people import the same site many times? And if
+          // the hostnames are imported the first time only, that can cause confusion?
+          // Maybe better to *never* import hostnames. Or URL param?
+          sd.copy(site = sd.site.copy(
+            pubId = Site.newPublId(),
+            name = "x" + nextRandomString().toLowerCase.take(10),  // for now. Maybe remove  .name  field?
+            hostnames = Nil))
+        }
+      }
       catch {
         case ex: JsonUtils.BadJsonException =>
           throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
@@ -125,9 +147,12 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
     }
 
+    val anyHostname = newSite.canonicalHostname.map(
+      h => globals.schemeColonSlashSlash + h.hostname)
+
     Ok(Json.obj(
       "id" -> newSite.id,
-      "origin" -> (globals.schemeColonSlashSlash + newSite.theCanonicalHostname.hostname),
+      "origin" -> JsStringOrNull(anyHostname),
       "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
   }
 

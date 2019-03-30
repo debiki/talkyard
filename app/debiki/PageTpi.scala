@@ -175,7 +175,8 @@ class SiteTpi protected (
   def hostname: String = debikiRequest.host
 
   def companyDomain: String = {
-    debikiRequest.canonicalHostname
+    debikiRequest.canonicalHostname.getOrElse(
+      globals.siteByIdHostname(debikiRequest.siteId))
     // was: debikiRequest.siteSettings.companyDomain
     // — but why did I make it configurable? No idea. Remove that setting? [3PU85J7]
   }

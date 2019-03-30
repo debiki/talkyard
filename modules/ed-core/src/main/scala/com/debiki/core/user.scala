@@ -1252,7 +1252,7 @@ object Group {
 
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
-  val Receive, DontReceive, ForbiddenForever, Unspecified = Value
+  val Receive, DontReceive, ForbiddenForever, Unspecified = Value   // add toInt [7KABKF2]
 }
 
 object SummaryEmails {

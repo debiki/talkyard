@@ -144,7 +144,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       try {
         globals.systemDao.createSite(
           pubId = Site.newPublId(),
-          name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
+          name = localHostname, SiteStatus.NoAdmin, hostname = Some(hostname),
           embeddingSiteUrl = anyEmbeddingSiteAddress,
           creatorId = request.user.map(_.id) getOrElse UnknownUserId,
           browserIdData = request.theBrowserIdData, organizationName = organizationName,

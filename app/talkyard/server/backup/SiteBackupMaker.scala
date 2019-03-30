@@ -75,7 +75,7 @@ case class SiteBackupMaker(context: EdContext) {
 
       val pagePaths = tx.loadAllPagePaths()
       fields("pagePaths") = JsArray(
-        pagePaths.map(JsPagePath))
+        pagePaths.map(JsPagePathWithId))
 
       val categories = tx.loadCategoryMap().values.toSeq
       fields("categories") = JsArray(

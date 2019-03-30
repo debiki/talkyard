@@ -481,6 +481,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
         "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
     }
+
+    // Dulp code, see the insert query [5RKS025].
     val values = List(
       newMeta.version.asAnyRef,
       newMeta.pageType.toInt.asAnyRef,
@@ -527,7 +529,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.numChildPages.asAnyRef,
       siteId.asAnyRef,
       newMeta.pageId)
-    val sql = s"""
+
+    val statement = s"""
       update pages3 set
         version = ?,
         PAGE_ROLE = ?,
@@ -577,7 +580,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       where SITE_ID = ? and PAGE_ID = ?
       """
 
-    val numChangedRows = db.update(sql, values)
+    val numChangedRows = db.update(statement, values)
 
     if (numChangedRows == 0)
       throw DbDao.PageNotFoundByIdException( siteId, newMeta.pageId)
@@ -627,7 +630,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   def moveRenamePage(pageId: PageId,
         newFolder: Option[String], showId: Option[Boolean],
-        newSlug: Option[String]): PagePath = {
+        newSlug: Option[String]): PagePathWithId = {
     transactionCheckQuota { implicit connection =>
       moveRenamePageImpl(pageId, newFolder = newFolder, showId = showId,
          newSlug = newSlug)
@@ -955,52 +958,53 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def loadAllPagePaths(): immutable.Seq[PagePath] = {
+  def loadAllPagePaths(): immutable.Seq[PagePathWithId] = {
     val query = s"""
       select * from page_paths3 where site_id = ?
       """
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {
-      _PagePath(rs, siteId, pageId = None)
+      getPagePathWithId(rs, pageId = None)
     })
   }
 
   def loadPagePath(pageId: PageId): Option[PagePath] =
-    lookupPagePathImpl(pageId)
+    lookupPagePathImpl(pageId).map(_.toOld(siteId))
 
 
-  private def lookupPagePathImpl(pageId: PageId): Option[PagePath] =
+  private def lookupPagePathImpl(pageId: PageId): Option[PagePathWithId] =
     lookupPagePathsImpl(pageId, loadRedirects = false).headOption
 
 
-  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] =
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePathWithId] =
     lookupPagePathsImpl(pageId, loadRedirects = true)
 
 
-  private def lookupPagePathsImpl(pageId: PageId, loadRedirects: Boolean): List[PagePath] = {
+  private def lookupPagePathsImpl(pageId: PageId, loadRedirects: Boolean): List[PagePathWithId] = {
     val andOnlyCanonical = if (loadRedirects) "" else "and CANONICAL = 'C'"
     val values = List(siteId.asAnyRef, pageId)
     val sql = s"""
-      select PARENT_FOLDER, SHOW_ID, PAGE_SLUG,
+      select PARENT_FOLDER, SHOW_ID, PAGE_SLUG, canonical,
         -- For debug assertions:
-        CANONICAL, CANONICAL_DATI
+        CANONICAL_DATI
       from page_paths3
       where SITE_ID = ? and PAGE_ID = ? $andOnlyCanonical
       order by $CanonicalLast, CANONICAL_DATI asc"""
 
-    var pagePaths = List[PagePath]()
+    var pagePaths = List[PagePathWithId]()
 
     runQuery(sql, values, rs => {
       var debugLastIsCanonical = false
       var debugLastCanonicalDati = new ju.Date(0)
       while (rs.next) {
+        val path = getPagePathWithId(rs, pageId = Some(pageId))
         // Assert that there are no sort order bugs.
         assert(!debugLastIsCanonical)
-        debugLastIsCanonical = rs.getString("CANONICAL") == "C"
+        debugLastIsCanonical = path.canonical
         val canonicalDati = getDate(rs, "CANONICAL_DATI")
         assert(canonicalDati.getTime > debugLastCanonicalDati.getTime)
         debugLastCanonicalDati = canonicalDati
 
-        pagePaths ::= _PagePath(rs, siteId, pageId = Some(Some(pageId)))
+        pagePaths ::= path
       }
       assert(debugLastIsCanonical || pagePaths.isEmpty)
     })
@@ -1124,84 +1128,160 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     else {
       // Page cannot have been bumped yet, since it's getting created now.
       require(pageMeta.bumpedAt.isEmpty, "TyE2AKB40F")
+      // It's getting created, so shouldn't be any votes or replies etc yet.
+      require(pageMeta.numOrigPostLikeVotes == 0, "DwE4KPE8")
+      require(pageMeta.numOrigPostWrongVotes == 0, "DwE2PKFE9")
+      require(pageMeta.numOrigPostBuryVotes == 0, "DwE44KP5")
+      require(pageMeta.numOrigPostUnwantedVotes == 0, "DwE2WKU7")
+      require(pageMeta.numOrigPostRepliesVisible == 0, "DwE5PWZ1")
+      require(pageMeta.answeredAt.isEmpty, "DwE2KFY9")
+      require(pageMeta.answerPostId.isEmpty, "DwE5FKEW0")
+      // plannedAt is defined for to-do pages: they're an Idea, in planned status.
+      require(pageMeta.startedAt.isEmpty, "EdE5RAQW0")
+      require(pageMeta.doneAt.isEmpty, "DwE4KPW2")
+      require(pageMeta.closedAt.isEmpty, "DwE8UKW2")
+      require(pageMeta.lockedAt.isEmpty, "DwE3KWY2")
+      require(pageMeta.frozenAt.isEmpty, "DwE3KFY2")
     }
 
-    require(pageMeta.numOrigPostLikeVotes == 0, "DwE4KPE8")
-    require(pageMeta.numOrigPostWrongVotes == 0, "DwE2PKFE9")
-    require(pageMeta.numOrigPostBuryVotes == 0, "DwE44KP5")
-    require(pageMeta.numOrigPostUnwantedVotes == 0, "DwE2WKU7")
-    require(pageMeta.numOrigPostRepliesVisible == 0, "DwE5PWZ1")
-    require(pageMeta.answeredAt.isEmpty, "DwE2KFY9")
-    require(pageMeta.answerPostId.isEmpty, "DwE5FKEW0")
-    // plannedAt is defined for to-do pages: they're an Idea, in planned status.
-    require(pageMeta.startedAt.isEmpty, "EdE5RAQW0")
-    require(pageMeta.doneAt.isEmpty, "DwE4KPW2")
-    require(pageMeta.closedAt.isEmpty, "DwE8UKW2")
-    require(pageMeta.lockedAt.isEmpty, "DwE3KWY2")
-    require(pageMeta.frozenAt.isEmpty, "DwE3KFY2")
-
-    val sql = """
+    val statement = """
       insert into pages3 (
-         SITE_ID, PAGE_ID, version, PAGE_ROLE, category_id, EMBEDDING_PAGE_URL,
-         CREATED_AT, UPDATED_AT, PUBLISHED_AT, BUMPED_AT, hidden_at, AUTHOR_ID,
-         PLANNED_AT, num_posts_total, layout, PIN_ORDER, PIN_WHERE)
+        site_id,
+        page_id,
+        version,
+        page_role,
+        category_id,
+        embedding_page_url,
+        author_id,
+        created_at,
+        updated_at,
+        published_at,
+        bumped_at,
+        last_reply_at,
+        last_reply_by_id,
+        frequent_poster_1_id,
+        frequent_poster_2_id,
+        frequent_poster_3_id,
+        frequent_poster_4_id,
+        layout,
+        pin_order,
+        pin_where,
+        num_likes,
+        num_wrongs,
+        num_bury_votes,
+        num_unwanted_votes,
+        num_replies_visible,
+        num_replies_total,
+        num_posts_total,
+        num_op_like_votes,
+        num_op_wrong_votes,
+        num_op_bury_votes,
+        num_op_unwanted_votes,
+        num_op_replies_visible,
+        answered_at,
+        answer_post_id,
+        planned_at,
+        started_at,
+        done_at,
+        closed_at,
+        locked_at,
+        frozen_at,
+        hidden_at,
+        deleted_at,
+        html_tag_css_classes,
+        html_head_title,
+        html_head_description,
+        num_child_pages)
       values (
-         ?, ?, ?, ?, ?, ?,
-         ?, ?, ?, ?, ?, ?,
-         ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?)"""
 
-    val values = List[AnyRef](
-      siteId.asAnyRef, pageMeta.pageId, pageMeta.version.asAnyRef,
+    // Dulp code, see the update query [5RKS025].
+    val values = List(
+      siteId.asAnyRef,
+      pageMeta.pageId,
+      pageMeta.version.asAnyRef,
       pageMeta.pageType.toInt.asAnyRef,
       pageMeta.categoryId.orNullInt,
       pageMeta.embeddingPageUrl.orNullVarchar,
+      pageMeta.authorId.asAnyRef,
       pageMeta.createdAt.asTimestamp,
       pageMeta.updatedAt.asTimestamp,
       pageMeta.publishedAt.orNullTimestamp,
+      // Always write to bumped_at so SQL queries that sort by bumped_at works.
       pageMeta.bumpedOrPublishedOrCreatedAt.asTimestamp,
-      pageMeta.hiddenAt.orNullTimestamp,
-      pageMeta.authorId.asAnyRef,
-      pageMeta.plannedAt.orNullTimestamp,
-      pageMeta.numPostsTotal.asAnyRef,
+      pageMeta.lastApprovedReplyAt.orNullTimestamp,
+      pageMeta.lastApprovedReplyById.orNullInt,
+      pageMeta.frequentPosterIds.drop(0).headOption.orNullInt,
+      pageMeta.frequentPosterIds.drop(1).headOption.orNullInt,
+      pageMeta.frequentPosterIds.drop(2).headOption.orNullInt,
+      pageMeta.frequentPosterIds.drop(3).headOption.orNullInt,
       pageMeta.layout.toInt.asAnyRef,
       pageMeta.pinOrder.orNullInt,
-      pageMeta.pinWhere.map(_.toInt).orNullInt)
+      pageMeta.pinWhere.map(_.toInt).orNullInt,
+      pageMeta.numLikes.asAnyRef,
+      pageMeta.numWrongs.asAnyRef,
+      pageMeta.numBurys.asAnyRef,
+      pageMeta.numUnwanteds.asAnyRef,
+      pageMeta.numRepliesVisible.asAnyRef,
+      pageMeta.numRepliesTotal.asAnyRef,
+      pageMeta.numPostsTotal.asAnyRef,
+      pageMeta.numOrigPostLikeVotes.asAnyRef,
+      pageMeta.numOrigPostWrongVotes.asAnyRef,
+      pageMeta.numOrigPostBuryVotes.asAnyRef,
+      pageMeta.numOrigPostUnwantedVotes.asAnyRef,
+      pageMeta.numOrigPostRepliesVisible.asAnyRef,
+      pageMeta.answeredAt.orNullTimestamp,
+      pageMeta.answerPostId.orNullInt,
+      pageMeta.plannedAt.orNullTimestamp,
+      pageMeta.startedAt.orNullTimestamp,
+      pageMeta.doneAt.orNullTimestamp,
+      pageMeta.closedAt.orNullTimestamp,
+      pageMeta.lockedAt.orNullTimestamp,
+      pageMeta.frozenAt.orNullTimestamp,
+      pageMeta.hiddenAt.orNullTimestamp,
+      pageMeta.deletedAt.orNullTimestamp,
+      pageMeta.htmlTagCssClasses.orIfEmpty(NullVarchar),
+      pageMeta.htmlHeadTitle.orIfEmpty(NullVarchar),
+      pageMeta.htmlHeadDescription.orIfEmpty(NullVarchar),
+      pageMeta.numChildPages.asAnyRef)
 
-    val numNewRows = runUpdate(sql, values)
+    val numNewRows = runUpdate(statement, values)
 
-    dieIf(numNewRows == 0, "DwE4GKPE21")
-    dieIf(numNewRows > 1, "DwE45UL8")
+    dieIf(numNewRows == 0, "TyE4GKPE21")
+    dieIf(numNewRows > 1, "TyE45UL8")
 
     pageMeta.categoryId.foreach(markSectionPageContentHtmlAsStale)
   }
 
 
-  def insertPagePath(pagePath: PagePath): Unit = {
+  def insertPagePath(pagePath: PagePathWithId) {
     insertPagePathOrThrow(pagePath)(theOneAndOnlyConnection)
   }
 
 
-  private def insertPagePathOrThrow(pagePath: PagePath)(
+  private def insertPagePathOrThrow(pagePath: PagePathWithId)(
         implicit conn: js.Connection) {
-    illArgErrIf3(pagePath.pageId.isEmpty, "DwE21UY9", s"No page id: $pagePath")
     val showPageId = pagePath.showId ? "T" | "F"
+    val canonical = pagePath.canonical ? "C" | "R"
     try {
       db.update("""
         insert into page_paths3 (
           SITE_ID, PARENT_FOLDER, PAGE_ID, SHOW_ID, PAGE_SLUG, CANONICAL)
-        values (?, ?, ?, ?, ?, 'C')
+        values (?, ?, ?, ?, ?, ?)
         """,
-        List(pagePath.siteId.asAnyRef, pagePath.folder, pagePath.pageId.get,
-          showPageId, e2d(pagePath.pageSlug)))(conn)
+        List(siteId.asAnyRef, pagePath.folder, pagePath.pageId,
+          showPageId, e2d(pagePath.pageSlug), canonical))(conn)
     }
     catch {
       case ex: js.SQLException if isUniqueConstrViolation(ex) =>
         val mess = ex.getMessage.toUpperCase
         if (mess.contains("DW1_PGPTHS_PATH_NOID_CNCL__U")) {
-          // There's already a page path where we attempt to insert
-          // the new path.
-          throw PathClashException(
-            pagePath.copy(pageId = None), newPagePath = pagePath)
+          // There's already a page path where we attempt to insert the new path.
+          throw PathClashException(pagePath)
         }
         if (ex.getMessage.contains("DW1_PGPTHS_TNT_PGID_CNCL__U")) {
           // Race condition. Another session just moved this page, that is,
@@ -1216,7 +1296,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           //  and are fairly long, unlikely to clash.
           throw new ju.ConcurrentModificationException(
             s"Another administrator/moderator apparently just added a path" +
-            s" to this page: ${pagePath.value}, id `${pagePath.pageId.get}'." +
+            s" to this page: ${pagePath.value}, id `${pagePath.pageId}'." +
             s" (Or the server needs to generate longer page ids.)")
         }
         throw ex
@@ -1257,13 +1337,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   private def moveRenamePageImpl(pageId: PageId,
         newFolder: Option[String], showId: Option[Boolean],
         newSlug: Option[String])
-        (implicit conn: js.Connection): PagePath = {
+        (implicit conn: js.Connection): PagePathWithId = {
 
     // Verify new path is legal.
     PagePath.checkPath(siteId = siteId, pageId = Some(pageId),
       folder = newFolder getOrElse "/", pageSlug = newSlug getOrElse "")
 
-    val currentPath: PagePath = lookupPagePathImpl(pageId) getOrElse (
+    val currentPath: PagePathWithId = lookupPagePathImpl(pageId) getOrElse (
           throw PageNotFoundByIdException(siteId, pageId))
 
     val newPath = {
@@ -1287,18 +1367,17 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def moveRenamePage(newPath: PagePath) {
+  def moveRenamePage(newPath: PagePathWithId) {
     transactionCheckQuota { implicit connection =>
       moveRenamePageImpl(newPath)
     }
   }
 
 
-  private def moveRenamePageImpl(newPath: PagePath)
+  private def moveRenamePageImpl(newPath: PagePathWithId)
         (implicit conn: js.Connection) {
 
-    val pageId = newPath.pageId getOrElse
-      illArgErr("DwE37KZ2", s"Page id missing: $newPath")
+    val pageId = newPath.pageId
 
     // Lets do this:
     // 1. Set all current paths to pageId to CANONICAL = 'R'edirect
@@ -1322,7 +1401,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           "It seems all paths to the page were deleted moments ago"))
     }
 
-    def deleteAnyExistingRedirectFrom(newPath: PagePath) {
+    def deleteAnyExistingRedirectFrom(newPath: PagePathWithId) {
       val showPageId = newPath.showId ? "T" | "F"
       var vals = List(siteId.asAnyRef, newPath.folder, e2d(newPath.pageSlug), showPageId)
       var stmt = """

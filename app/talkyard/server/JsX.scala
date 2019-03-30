@@ -112,8 +112,12 @@ object JsX {
 
   def JsGuestInclDetails(guest: Guest, inclEmail: Boolean): JsObject = {
     var json = JsUser(guest)
-    if (inclEmail) json += "emailAddress" -> JsString(guest.email)
+    if (inclEmail) {
+      json += "emailAddress" -> JsString(guest.email)
+      //json += "emailNotfPrefs" -> JsString(guest.emailNotfPrefs.value)  need a toInt [7KABKF2]
+    }
     json += "createdAt" -> JsWhenMs(guest.createdAt)
+    json += "guestBrowserId" -> JsStringOrNull(guest.guestBrowserId)
     json
   }
 
@@ -430,12 +434,21 @@ object JsX {
   }
 
   def JsPagePath(pagePath: PagePath): JsValue =
-    Json.obj(
+    Json.obj(  // dupl code (4AKBS03)
       "value" -> pagePath.value,
       "folder" -> pagePath.folder,
       "pageId" -> JsStringOrNull(pagePath.pageId),
       "showId" -> pagePath.showId,
       "slug" -> pagePath.pageSlug)
+
+  def JsPagePathWithId(pagePath: PagePathWithId): JsValue =
+    Json.obj(  // dupl code (4AKBS03)
+      "value" -> pagePath.value,
+      "folder" -> pagePath.folder,
+      "pageId" -> JsString(pagePath.pageId),
+      "showId" -> pagePath.showId,
+      "slug" -> pagePath.pageSlug,
+      "canonical" -> pagePath.canonical)
 
   def JsPageMetaBrief(meta: PageMeta): JsValue =  // Typescript interface PageMetaBrief
     Json.obj(

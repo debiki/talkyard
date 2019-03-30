@@ -88,7 +88,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
       showId = true, deleteDraftNr = None,
       request.who, request.spamRelatedStuff)
 
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
   }
 
 }

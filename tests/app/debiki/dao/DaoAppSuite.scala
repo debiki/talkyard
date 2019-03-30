@@ -247,7 +247,7 @@ class DaoAppSuite(
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-      showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff).thePageId
+      showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff).pageId
   }
 
 

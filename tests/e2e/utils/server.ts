@@ -141,15 +141,24 @@ function showResponseBodyJson(body) {
 }
 
 
-function importSiteData(siteData: SiteData): IdAddress {
+function importRealSiteData(siteData: SiteData): IdAddress {
+  const url = settings.mainSiteOrigin + '/-/import-site-json';
+  const idAddr = postOrDie(url, siteData).bodyJson();
+  dieIf(!idAddr.id, "No site id in import-site response [TyE4STJ2]",
+      showResponseBodyJson(idAddr));
+  return idAddr;
+}
+
+
+function importTestSiteData(siteData: SiteData): IdAddress {
   siteData.meta.nextPageId = 100; // for now
   siteData.meta.version = 1;      // for now
   const deleteOldSite = settings.deleteOldSite ? '?deleteOldSite=true' : '';
   const url = settings.mainSiteOrigin + '/-/import-test-site-json' + deleteOldSite;
-  const ids = postOrDie(url, siteData).bodyJson();
-  dieIf(!ids.id, "No site id in import-site response [EsE7UGK2]",
-      showResponseBodyJson(ids));
-  return ids;
+  const idAddr = postOrDie(url, siteData).bodyJson();
+  dieIf(!idAddr.id, "No site id in import-site response [TyE7UGK2]",
+      showResponseBodyJson(idAddr));
+  return idAddr;
 }
 
 
@@ -394,7 +403,8 @@ function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, api
 
 export = {
   initOrDie,
-  importSiteData,
+  importRealSiteData,
+  importSiteData: importTestSiteData,
   deleteOldTestSite,
   playTimeSeconds,
   playTimeMinutes,

@@ -104,29 +104,28 @@ describe("imp-exp-imp-exp-site [TyT5BKW2ZY]", () => {
     owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin); owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
-  let jsonDumpStr: string;
-  let jsonDump: any;
-
   it("Exports the site as json", () => {
     owensBrowser.go('/-/export-site-json');
-    // The browser wraps the json response in a <html><body><pre> tag. At least Chrome does.
-    jsonDumpStr = owensBrowser.getText('pre');
   });
 
+  let jsonDump: any;
+
   it("Can parse the exported json into a js obj", () => {
+    // The browser wraps the json response in a <html><body><pre> tag. At least Chrome does.
+    const jsonDumpStr = owensBrowser.getText('pre');
     jsonDump = JSON.parse(jsonDumpStr);
     console.log("JSON: " + JSON.stringify(jsonDump, null, 2));
   });
 
-  let response;
+  let response: IdAddress;
 
   it("Re-imports the site", () => {
-    response = server.importSiteData(jsonDump);
+    response = server.importRealSiteData(jsonDump);
     console.log("Import site response: " + JSON.stringify(response));
   });
 
   it("Goes to the re-imported site", () => {
-    owensBrowser.go(response.origin);
+    owensBrowser.go(response.origin || response.siteIdOrigin);
   });
 
 });

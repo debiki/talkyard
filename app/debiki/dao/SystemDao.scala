@@ -137,7 +137,7 @@ class SystemDao(
     pubId: PublSiteId,
     name: String,
     status: SiteStatus,
-    hostname: String,
+    hostname: Option[String],
     embeddingSiteUrl: Option[String],
     organizationName: String,
     creatorId: UserId,
@@ -151,7 +151,7 @@ class SystemDao(
     if (!Site.isOkayName(name))
       throwForbidden("EsE7UZF2_", s"Bad site name: '$name'")
 
-    dieIf(hostname contains ":", "DwE3KWFE7")
+    dieIf(hostname.exists(_ contains ":"), "DwE3KWFE7")
 
     val config = globals.config
     val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
@@ -164,11 +164,12 @@ class SystemDao(
 
     try readWriteTransaction { sysTx =>
       if (deleteOldSite) {
-        dieUnless(Hostname.isE2eTestHostname(hostname), "EdE7PK5W8")
-        dieUnless(Hostname.isE2eTestHostname(name), "EdE50K5W4")
+        dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8")
+        dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4")
 
         val anySitesToDeleteMaybeDupls: Vec[Site] =
-          sysTx.loadSiteByHostname(hostname).toVector ++ sysTx.loadSiteByName(name).toVector
+          if (hostname.isEmpty) Vector.empty else
+            sysTx.loadSiteByHostname(hostname.get).toVector ++ sysTx.loadSiteByName(name).toVector
 
         val anySitesToDelete = anySitesToDeleteMaybeDupls.distinct
         val deletedAlready = mutable.HashSet[SiteId]()
@@ -256,13 +257,15 @@ class SystemDao(
         enableDirectMessages = notIfEmbedded,
         orgFullName = Some(Some(organizationName))))
 
-      val newSiteHost = Hostname(hostname, Hostname.RoleCanonical)
-      try newSiteTx.insertSiteHost(newSiteHost)
-      catch {
-        case _: DuplicateHostnameException =>
-          throwForbidden(
-            "TyE5AKB02ZF", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
-            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
+      val newSiteHost = hostname.map(Hostname(_, Hostname.RoleCanonical))
+      newSiteHost foreach { h =>
+        try newSiteTx.insertSiteHost(h)
+        catch {
+          case _: DuplicateHostnameException =>
+            throwForbidden(
+              "TyE5AKB02ZF", o"""There's already a site with hostname '${h.hostname}'. Add
+              the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
+        }
       }
 
       CreateSiteDao.createSystemUser(newSiteTx)
@@ -280,7 +283,7 @@ class SystemDao(
         browserLocation = None,
         targetSiteId = createdFromSiteId))
 
-      newSite.copy(hostnames = List(newSiteHost))
+      newSite.copy(hostnames = newSiteHost.toList)
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site) =>

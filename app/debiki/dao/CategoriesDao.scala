@@ -91,7 +91,7 @@ case class CategoryToSave(
 
 case class CreateCategoryResult(
   category: Category,
-  pagePath: PagePath,
+  pagePath: PagePathWithId,
   permissionsWithIds: immutable.Seq[PermsOnPages])
 
 

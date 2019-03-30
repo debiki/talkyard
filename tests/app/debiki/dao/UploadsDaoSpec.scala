@@ -307,7 +307,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: add second file, more quota used")
       val newTextAndHtml = bodyTextAndHtml.append(s"\n[The moon](${moonImage.ref.url})")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+      dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
         Who(user.id, browserIdData),
         dummySpamRelReqStuff, newTextAndHtml)
 
@@ -366,7 +366,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 1060
 
       info("edit page: remove link, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+      dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
         Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
@@ -451,7 +451,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
-      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+      dao.editPostIfAuth(pagePath1.pageId, PageParts.BodyNr, deleteDraftNr = None,
         Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 

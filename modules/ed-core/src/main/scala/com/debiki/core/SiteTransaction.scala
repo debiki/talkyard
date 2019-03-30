@@ -268,19 +268,16 @@ trait SiteTransaction {
   def listAltPageIds(realPageId: PageId): Set[AltPageId]
   def loadRealPageId(altPageId: AltPageId): Option[PageId]
 
-  def insertPagePath(pagePath: PagePath): Unit
-  def insertPagePath(pagePath: PagePathWithId): Unit =
-    insertPagePath(PagePath(siteId = this.siteId, folder = pagePath.folder,
-      pageId = Some(pagePath.pageId), showId = pagePath.showId, pageSlug = pagePath.slug))
+  def insertPagePath(pagePath: PagePathWithId): Unit
 
-  def loadAllPagePaths(): immutable.Seq[PagePath]
+  def loadAllPagePaths(): immutable.Seq[PagePathWithId]
   def loadPagePath(pageId: PageId): Option[PagePath]
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]  // rename? check? load? what?
   /**
     * Loads all PagePaths that map to pageId. The canonical path is placed first
     * and the tail consists only of any redirection paths.
     */
-  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath]
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePathWithId]
   def listPagePaths(pageRanges: PathRanges, include: List[PageStatus],
     orderOffset: PageOrderOffset, limit: Int): Seq[PagePathAndMeta]
 
@@ -292,7 +289,7 @@ trait SiteTransaction {
 
   def moveRenamePage(pageId: PageId,
     newFolder: Option[String] = None, showId: Option[Boolean] = None,
-    newSlug: Option[String] = None): PagePath
+    newSlug: Option[String] = None): PagePathWithId
 
 
   /** Remembers that a file has been uploaded and where it's located. */
@@ -333,6 +330,8 @@ trait SiteTransaction {
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
   def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId)
+
+  def insertGuest(guest: Guest)
 
   def nextMemberId: UserId
   def insertMember(user: UserInclDetails)

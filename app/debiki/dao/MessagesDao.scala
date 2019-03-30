@@ -34,7 +34,7 @@ trait MessagesDao {
     */
   def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageType,
         toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        deleteDraftNr: Option[DraftNr]): PagePath = {
+        deleteDraftNr: Option[DraftNr]): PagePathWithId = {
 
     if (!pageRole.isPrivateGroupTalk)
       throwForbidden("EsE5FKU02", s"Not a private group talk page role: $pageRole")
@@ -74,7 +74,7 @@ trait MessagesDao {
         byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), tx = tx)
 
       (toUserIds + sentById) foreach { userId =>
-        tx.insertMessageMember(pagePath.pageId.getOrDie("EsE6JMUY2"), userId,
+        tx.insertMessageMember(pagePath.pageId, userId,
           addedById = sentById)
       }
 
@@ -97,7 +97,7 @@ trait MessagesDao {
       // BUG. Race condition.
       var watchbar: BareWatchbar = getOrCreateWatchbar(userId)
       val hasSeenIt = userId == sentByWho.id
-      watchbar = watchbar.addPage(pagePath.thePageId, pageRole, hasSeenIt)
+      watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt)
       saveWatchbar(userId, watchbar)
 
       // We know that the sender is online currently, so s/he should start watching the
@@ -108,8 +108,8 @@ trait MessagesDao {
     }
 
     pubSub.publish(
-      // pagePath.thePageId is pointless (since the page is new) — send the forum page id instead?
-      pubsub.NewPageMessage(siteId, pagePath.thePageId, pageRole, notfs), byId = sentById)
+      // pagePath.pageId is pointless (since the page is new) — send the forum page id instead?
+      pubsub.NewPageMessage(siteId, pagePath.pageId, pageRole, notfs), byId = sentById)
 
     pagePath
   }

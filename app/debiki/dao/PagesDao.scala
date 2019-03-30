@@ -44,7 +44,7 @@ import org.owasp.encoder.Encode
 trait PagesDao {
   self: SiteDao =>
 
-  import context.{globals, nashorn}
+  import context.{globals}
 
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
@@ -55,7 +55,7 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): PagePath = {
+        altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): PagePathWithId = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -90,10 +90,8 @@ trait PagesDao {
         pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
         tx, altPageId = altPageId, embeddingUrl = embeddingUrl)
 
-      val thePageId = pagePath.pageId getOrDie "DwE5KWI2"
-
       val notifications = notfGenerator(tx).generateForNewPost(
-        PageDao(thePageId, tx), bodyPost, Some(bodyTextAndHtml))
+        PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml))
       tx.saveDeleteNotifications(notifications)
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
@@ -101,7 +99,7 @@ trait PagesDao {
       pagePath
     }
 
-    memCache.firePageCreated(pagePath)
+    memCache.firePageCreated(pagePath.toOld(siteId))
     pagePath
     // Don't start rendering any html. See comment below [5KWC58]
   }
@@ -116,7 +114,7 @@ trait PagesDao {
         anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
         pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
         byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-        tx: SiteTransaction): (PagePath, Post) =
+        tx: SiteTransaction): (PagePathWithId, Post) =
     createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
       anyFolder = anyFolder, anySlug = anySlug, showId = showId,
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
@@ -137,7 +135,7 @@ trait PagesDao {
       bodyPostType: PostType = PostType.Normal,
       altPageId: Option[AltPageId] = None,
       embeddingUrl: Option[String] = None,
-      createAsDeleted: Boolean = false): (PagePath, Post) = {
+      createAsDeleted: Boolean = false): (PagePathWithId, Post) = {
 
     val now = globals.now()
     val authorId = byWho.id
@@ -208,8 +206,8 @@ trait PagesDao {
     // discovering all pages. E.g. iterating through all discussions, in a public blog.
     val pageId = tx.nextPageId()
     val siteId = tx.siteId // [5GKEPMW2] remove this row later
-    val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
-      showId = showId, pageSlug = pageSlug)
+    val pagePath = PagePathWithId(folder = folder, pageId = pageId,
+      showId = showId, pageSlug = pageSlug, canonical = true)
 
     val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1

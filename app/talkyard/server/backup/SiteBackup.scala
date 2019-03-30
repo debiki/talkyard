@@ -25,6 +25,7 @@ case class SiteBackup(  // RENAME to SiteDmup, and all related classes too
   settings: SettingsToSave,
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
+  guests: Seq[Guest],
   users: Seq[UserInclDetails],
   pages: Seq[PageMeta],
   pagePaths: Seq[PagePathWithId],

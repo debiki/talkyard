@@ -138,19 +138,19 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.enableTwitterLogin.getOrElse(None).orNullBoolean,
       editedSettings2.enableGitHubLogin.getOrElse(None).orNullBoolean,
       editedSettings2.requireVerifiedEmail.getOrElse(None).orNullBoolean,
-      editedSettings2.emailDomainBlacklist.getOrElse(None).orNullVarchar,
-      editedSettings2.emailDomainWhitelist.getOrElse(None).orNullVarchar,
+      editedSettings2.emailDomainBlacklist.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.emailDomainWhitelist.getOrElse(None).trimOrNullVarchar,
       editedSettings2.mayComposeBeforeSignup.getOrElse(None).orNullBoolean,
       editedSettings2.mayPostBeforeEmailVerified.getOrElse(None).orNullBoolean,
       editedSettings2.doubleTypeEmailAddress.getOrElse(None).orNullBoolean,
       editedSettings2.doubleTypePassword.getOrElse(None).orNullBoolean,
       editedSettings2.begForEmailAddress.getOrElse(None).orNullBoolean,
       editedSettings2.enableSso.getOrElse(None).orNullBoolean,
-      editedSettings2.ssoUrl.getOrElse(None).orNullVarchar,
-      editedSettings2.ssoNotApprovedUrl.getOrElse(None).orNullVarchar,
-      editedSettings2.forumMainView.getOrElse(None).orNullVarchar,
-      editedSettings2.forumTopicsSortButtons.getOrElse(None).orNullVarchar,
-      editedSettings2.forumCategoryLinks.getOrElse(None).orNullVarchar,
+      editedSettings2.ssoUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoNotApprovedUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.forumMainView.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.forumTopicsSortButtons.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.forumCategoryLinks.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumTopicsLayout.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.forumCategoriesLayout.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.showCategories.getOrElse(None).orNullBoolean,
@@ -162,29 +162,29 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.numFirstPostsToReview.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToApprove.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToAllow.getOrElse(None).orNullInt,
-      editedSettings2.faviconUrl.getOrElse(None).orNullVarchar,
-      editedSettings2.headStylesHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.headScriptsHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.endOfBodyHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.headerHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.footerHtml.getOrElse(None).orNullVarchar,
+      editedSettings2.faviconUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.headStylesHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.headScriptsHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.endOfBodyHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.headerHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.footerHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.horizontalComments.getOrElse(None).orNullBoolean,
-      editedSettings2.socialLinksHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.logoUrlOrHtml.getOrElse(None).orNullVarchar,
-      editedSettings2.orgDomain.getOrElse(None).orNullVarchar,
-      editedSettings2.orgFullName.getOrElse(None).orNullVarchar,
-      editedSettings2.orgShortName.getOrElse(None).orNullVarchar,
+      editedSettings2.socialLinksHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.logoUrlOrHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.orgDomain.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.orgFullName.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.orgShortName.getOrElse(None).trimOrNullVarchar,
       editedSettings2.contribAgreement.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.contentLicense.getOrElse(None).map(_.toInt).orNullInt,
-      editedSettings2.languageCode.getOrElse(None).orNullVarchar,
-      editedSettings2.googleUniversalAnalyticsTrackingId.getOrElse(None).orNullVarchar,
+      editedSettings2.languageCode.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.googleUniversalAnalyticsTrackingId.getOrElse(None).trimOrNullVarchar,
       editedSettings2.enableChat.getOrElse(None).orNullBoolean,
       editedSettings2.enableDirectMessages.getOrElse(None).orNullBoolean,
       editedSettings2.showSubCommunities.getOrElse(None).orNullBoolean,
       editedSettings2.showExperimental.getOrElse(None).orNullBoolean,
-      editedSettings2.featureFlags.getOrElse(None).orNullVarchar,
-      editedSettings2.allowEmbeddingFrom.getOrElse(None).orNullVarchar,
-      editedSettings2.htmlTagCssClasses.getOrElse(None).orNullVarchar)
+      editedSettings2.featureFlags.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.allowEmbeddingFrom.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.htmlTagCssClasses.getOrElse(None).trimOrNullVarchar)
 
     runUpdate(statement, values)
   }
@@ -218,19 +218,19 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("enable_twitter_login", s.enableTwitterLogin.map(_.orNullBoolean))
     maybeSet("enable_github_login", s.enableGitHubLogin.map(_.orNullBoolean))
     maybeSet("require_verified_email", s.requireVerifiedEmail.map(_.orNullBoolean))
-    maybeSet("email_domain_blacklist", s.emailDomainBlacklist.map(_.orNullVarchar))
-    maybeSet("email_domain_whitelist", s.emailDomainWhitelist.map(_.orNullVarchar))
+    maybeSet("email_domain_blacklist", s.emailDomainBlacklist.map(_.trimOrNullVarchar))
+    maybeSet("email_domain_whitelist", s.emailDomainWhitelist.map(_.trimOrNullVarchar))
     maybeSet("may_compose_before_signup", s.mayComposeBeforeSignup.map(_.orNullBoolean))
     maybeSet("may_login_before_email_verified", s.mayPostBeforeEmailVerified.map(_.orNullBoolean))
     maybeSet("double_type_email_address", s.doubleTypeEmailAddress.map(_.orNullBoolean))
     maybeSet("double_type_password", s.doubleTypePassword.map(_.orNullBoolean))
     maybeSet("beg_for_email_address", s.begForEmailAddress.map(_.orNullBoolean))
     maybeSet("enable_sso", s.enableSso.map(_.orNullBoolean))
-    maybeSet("sso_url", s.ssoUrl.map(_.orNullVarchar))
-    maybeSet("sso_not_approved_url", s.ssoNotApprovedUrl.map(_.orNullVarchar))
-    maybeSet("forum_main_view", s.forumMainView.map(_.orNullVarchar))
-    maybeSet("forum_topics_sort_buttons", s.forumTopicsSortButtons.map(_.orNullVarchar))
-    maybeSet("forum_category_links", s.forumCategoryLinks.map(_.orNullVarchar))
+    maybeSet("sso_url", s.ssoUrl.map(_.trimOrNullVarchar))
+    maybeSet("sso_not_approved_url", s.ssoNotApprovedUrl.map(_.trimOrNullVarchar))
+    maybeSet("forum_main_view", s.forumMainView.map(_.trimOrNullVarchar))
+    maybeSet("forum_topics_sort_buttons", s.forumTopicsSortButtons.map(_.trimOrNullVarchar))
+    maybeSet("forum_category_links", s.forumCategoryLinks.map(_.trimOrNullVarchar))
     maybeSet("forum_topics_layout", s.forumTopicsLayout.map(_.map(_.toInt).orNullInt))
     maybeSet("forum_categories_layout", s.forumCategoriesLayout.map(_.map(_.toInt).orNullInt))
     maybeSet("show_categories", s.showCategories.map(_.orNullBoolean))
@@ -242,29 +242,29 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("num_first_posts_to_review", s.numFirstPostsToReview.map(_.orNullInt))
     maybeSet("num_first_posts_to_approve", s.numFirstPostsToApprove.map(_.orNullInt))
     maybeSet("num_first_posts_to_allow", s.numFirstPostsToAllow.map(_.orNullInt))
-    maybeSet("favicon_url", s.faviconUrl.map(_.orNullVarchar))
-    maybeSet("head_styles_html", s.headStylesHtml.map(_.orNullVarchar))
-    maybeSet("head_scripts_html", s.headScriptsHtml.map(_.orNullVarchar))
-    maybeSet("end_of_body_html", s.endOfBodyHtml.map(_.orNullVarchar))
-    maybeSet("header_html", s.headerHtml.map(_.orNullVarchar))
-    maybeSet("footer_html", s.footerHtml.map(_.orNullVarchar))
+    maybeSet("favicon_url", s.faviconUrl.map(_.trimOrNullVarchar))
+    maybeSet("head_styles_html", s.headStylesHtml.map(_.trimOrNullVarchar))
+    maybeSet("head_scripts_html", s.headScriptsHtml.map(_.trimOrNullVarchar))
+    maybeSet("end_of_body_html", s.endOfBodyHtml.map(_.trimOrNullVarchar))
+    maybeSet("header_html", s.headerHtml.map(_.trimOrNullVarchar))
+    maybeSet("footer_html", s.footerHtml.map(_.trimOrNullVarchar))
     maybeSet("horizontal_comments", s.horizontalComments.map(_.orNullBoolean))
-    maybeSet("social_links_html", s.socialLinksHtml.map(_.orNullVarchar))
-    maybeSet("logo_url_or_html", s.logoUrlOrHtml.map(_.orNullVarchar))
-    maybeSet("org_domain", s.orgDomain.map(_.orNullVarchar))
-    maybeSet("org_full_name", s.orgFullName.map(_.orNullVarchar))
-    maybeSet("org_short_name", s.orgShortName.map(_.orNullVarchar))
+    maybeSet("social_links_html", s.socialLinksHtml.map(_.trimOrNullVarchar))
+    maybeSet("logo_url_or_html", s.logoUrlOrHtml.map(_.trimOrNullVarchar))
+    maybeSet("org_domain", s.orgDomain.map(_.trimOrNullVarchar))
+    maybeSet("org_full_name", s.orgFullName.map(_.trimOrNullVarchar))
+    maybeSet("org_short_name", s.orgShortName.map(_.trimOrNullVarchar))
     maybeSet("contrib_agreement", s.contribAgreement.map(_.map(_.toInt).orNullInt))
     maybeSet("content_license", s.contentLicense.map(_.map(_.toInt).orNullInt))
-    maybeSet("language_code", s.languageCode.map(_.orNullVarchar))
-    maybeSet("google_analytics_id", s.googleUniversalAnalyticsTrackingId.map(_.orNullVarchar))
+    maybeSet("language_code", s.languageCode.map(_.trimOrNullVarchar))
+    maybeSet("google_analytics_id", s.googleUniversalAnalyticsTrackingId.map(_.trimOrNullVarchar))
     maybeSet("enable_chat", s.enableChat.map(_.orNullBoolean))
     maybeSet("enable_direct_messages", s.enableDirectMessages.map(_.orNullBoolean))
     maybeSet("show_sub_communities", s.showSubCommunities.map(_.orNullBoolean))
     maybeSet("experimental", s.showExperimental.map(_.orNullBoolean))
-    maybeSet("feature_flags", s.featureFlags.map(_.orNullVarchar))
-    maybeSet("allow_embedding_from", s.allowEmbeddingFrom.map(_.orNullVarchar))
-    maybeSet("html_tag_css_classes", s.htmlTagCssClasses.map(_.orNullVarchar))
+    maybeSet("feature_flags", s.featureFlags.map(_.trimOrNullVarchar))
+    maybeSet("allow_embedding_from", s.allowEmbeddingFrom.map(_.trimOrNullVarchar))
+    maybeSet("html_tag_css_classes", s.htmlTagCssClasses.map(_.trimOrNullVarchar))
     maybeSet("num_flags_to_hide_post", s.numFlagsToHidePost.map(_.orNullInt))
     maybeSet("cooldown_minutes_after_flagged_hidden",
                 s.cooldownMinutesAfterFlaggedHidden.map(_.orNullInt))

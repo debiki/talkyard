@@ -292,6 +292,28 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def insertGuest(guest: Guest) {
+    val statement = s"""
+      insert into users3(
+        site_id,
+        user_id,
+        created_at,
+        full_name,
+        guest_browser_id,
+        guest_email_addr,
+        email_notfs,
+        locked_threat_level)
+      values (?, ?, ?, ?, ?, ?, ?, ?)
+      """
+    val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.createdAt.asTimestamp,
+      guest.guestName.trim, guest.guestBrowserId.orNullVarchar, e2d(guest.email),
+      // for now, notf prefs = Receive. Should exp & imp and change to Int. [7KABKF2]
+      "R",
+      guest.lockedThreatLevel.map(_.toInt).orNullInt)
+    runUpdateSingleRow(statement, values)
+  }
+
+
   def insertMember(user: UserInclDetails) {
     try {
       runUpdate("""

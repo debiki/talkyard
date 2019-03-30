@@ -45,6 +45,9 @@ object SpecialContentPages {
   })
 
 
+  def isSpecialPageId(pageId: PageId): Boolean =
+    pageId == StylesheetId || pageId == JavascriptId
+
   val StylesheetId = "_stylesheet"
   val JavascriptId = "_javascript"
 

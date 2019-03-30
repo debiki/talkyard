@@ -92,9 +92,8 @@ object DbDao {
       s"Found no page at ${pagePath.siteId}:${pagePath.value}" +
         prettyDetails(details))
 
-  case class PathClashException(
-    existingPagePath: PagePath, newPagePath: PagePath)
-    extends RuntimeException(s"existingPagePath: $existingPagePath, newPagePath: $newPagePath")
+  case class PathClashException(newPagePath: PagePathWithId)
+    extends RuntimeException(s"newPagePath: $newPagePath, value: ${newPagePath.value}")
 
   case class BadPageRoleException(details: String)
     extends RuntimeException(details)

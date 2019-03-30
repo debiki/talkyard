@@ -36,7 +36,7 @@ case class CreateForumOptions(
 
 
 case class CreateForumResult(
-  pagePath: PagePath,
+  pagePath: PagePathWithId,
   staffCategoryId: CategoryId,
   defaultCategoryId: CategoryId)
 
@@ -104,7 +104,7 @@ trait ForumDao {
         pinOrder = None, pinWhere = None,
         byWho, spamRelReqStuff = None, tx, layout = Some(options.topicListStyle))
 
-      val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
+      val forumPageId = forumPagePath.pageId
 
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
         forumPageId, rootCategoryId, options, byWho, tx)
@@ -432,13 +432,13 @@ trait ForumDao {
       // ... with two answers and a comment:
       def wrap(text: String) = textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(text, isTitle = false)
       insertReplyImpl(wrap(SampleAnswerText),
-        questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
       insertReplyImpl(wrap(SampleAnswerCommentText),
-        questionPagePath.thePageId, replyToPostNrs = Set(PageParts.FirstReplyNr), PostType.Normal,
+        questionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
       insertReplyImpl(wrap(SampleAnswerText2),
-        questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
     }
 

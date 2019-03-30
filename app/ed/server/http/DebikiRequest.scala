@@ -78,7 +78,7 @@ abstract class DebikiRequest[A] {
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
-  def canonicalHostname: String = site.hostname
+  def canonicalHostname: Option[String] = site.hostname
   def domain: String = request.domain
 
   lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()

@@ -39,16 +39,16 @@ trait PagePathMetaDao {
 
 
   def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
-        showId: Option[Boolean] = None, newSlug: Option[String] = None): PagePath = {
+        showId: Option[Boolean] = None, newSlug: Option[String] = None): PagePathWithId = {
     _removeCachedPathsTo(pageId)
     val newPath = readWriteTransaction(_.moveRenamePage(pageId = pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug))
 
     // I don't know how this could happen, but in case there's already an
     // entry that maps `newPath` to something, remove it.
-    memCache.remove(_pathWithIdByPathKey(newPath))
+    memCache.remove(_pathWithIdByPathKey(newPath.toOld(siteId)))
 
-    memCache.firePageMoved(newPath)
+    memCache.firePageMoved(newPath.toOld(siteId))
     newPath
   }
 
@@ -80,10 +80,6 @@ trait PagePathMetaDao {
       orCacheAndReturn =
         readOnlyTransaction(_.loadPagePath(pageId)))
   }
-
-
-  def loadPagePathAndRedirects(pageId: PageId): List[PagePath] =
-    readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
   def loadThePageMeta(pageId: PageId): PageMeta =

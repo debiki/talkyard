@@ -88,7 +88,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       anySlug, titleTextAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
       request.who, request.spamRelatedStuff)
 
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
   }
 
 

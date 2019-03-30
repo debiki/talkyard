@@ -20,6 +20,7 @@ package talkyard.server.backup
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.EdHttp._
+import debiki.SpecialContentPages
 import debiki.dao.{PagePartsDao, SiteDao}
 
 
@@ -30,8 +31,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {
         : Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
-      throwBadRequestIf(path.isEmpty, "EsE5GKY2", o"""No PagePath included for page id
-          '${page.pageId}'""")
+      // Special pages shouldn't be reachable via any page path. Others, should.
+      if (SpecialContentPages.isSpecialPageId(page.pageId)) {
+        throwBadRequestIf(path.isDefined,
+          "TyE2ABKY7", s"Special page has PagePath: $path")
+      }
+      else {
+        throwBadRequestIf(path.isEmpty,
+          "TyE5GKY2", s"No PagePath included for page id '${page.pageId}'")
+      }
     }
 
     def isMissing(what: Option[Option[Any]]) = what.isEmpty || what.get.isEmpty || {
@@ -51,7 +59,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {
       siteToSave.pubId,
       siteToSave.name,
       siteToSave.status,
-      siteToSave.canonicalHostname.getOrDie("EsE2FUPFY7").hostname,
+      siteToSave.canonicalHostname.map(_.hostname),
       embeddingSiteUrl = None,
       organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
       creatorId = SystemUserId,
@@ -79,6 +87,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {
       transaction.deferConstraints()
 
       transaction.upsertSiteSettings(siteData.settings)
+
+      siteData.guests foreach { guest: Guest =>
+        transaction.insertGuest(guest)
+      }
 
       siteData.users foreach { user =>
         transaction.insertMember(user)

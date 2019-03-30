@@ -61,7 +61,7 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: String, status: SiteStatus) {
+case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: Option[String], status: SiteStatus) {
   def isTestSite: Boolean = id <= Site.MaxTestSiteId
 }
 
@@ -162,11 +162,10 @@ case class Site(  // delete? Use only SiteInclDetails instead?
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
   def canonicalHostname: Option[Hostname] = hostnames.find(_.role == Hostname.RoleCanonical)
-  def theCanonicalHostname: Hostname = canonicalHostname getOrDie "EsE7YKF2"
   def isTestSite: Boolean = id <= MaxTestSiteId
 
   def brief =
-    SiteBrief(id, pubId, canonicalHostname.getOrDie("EsE2GUY5").hostname, status)
+    SiteBrief(id, pubId, canonicalHostname.map(_.hostname), status)
 }
 
 
