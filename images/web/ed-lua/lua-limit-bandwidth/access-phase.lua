@@ -41,23 +41,25 @@ end
 
 -- For now, hardcode limits here. Later, load from Postgres, cache in-mem?
 -- About how to configure in Nginx: https://github.com/openresty/lua-nginx-module#ngxvarvariable
+-- Would be good with a way to identify site staff, and then allow higher usage.
+-- And to allow a minimum amount, per each trusted site.
 
-if used_ip_bw > 10e6 then   -- or 5e6?
+if used_ip_bw > 70e6 then
     slow_down(normal_speed)
-elseif used_ip_bw > 60e6 then -- or 30e6?
+elseif used_ip_bw > 140e6 then
     slow_down(slow_speed)
-elseif used_ip_bw > 100e6 then  -- or 50e6?
+elseif used_ip_bw > 200e6 then
     ngx.log(ngx.WARN, "Per ip bandwidth exceeded, replying Forbidden, ip: " ..
             ip .. ", server: " .. server_name .. " [EdE5GUK20]")
     forbiddenMessage = "You, or someone at your Internet address, " ..
             "have downloaded too much data from this server. [TyEBWXIP]"
 end
 
-if used_server_bw > 500e6 then
+if used_server_bw > 5e9 then
     slow_down(normal_speed)
-elseif used_server_bw > 3e9 then
+elseif used_server_bw > 10e9 then
     slow_down(slow_speed)
-elseif used_server_bw > 5e9 then
+elseif used_server_bw > 15e9 then
     ngx.log(ngx.WARN, "Per server bandwidth exceeded, replying Forbidden, server: " ..
             server_name .. " [EdE2GK47R]")
     forbiddenMessage = "People have downloaded too much data from " .. server_name .. " [TyEBWXSRV]"

@@ -47,7 +47,10 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   val MaxBytes: Int = 1000 * 1000
 
 
-  def exportSiteJson(): Action[Unit] = AdminGetAction { request =>  // what rate limits?
+  def exportSiteJson(): Action[Unit] = AdminGetAction { request =>
+    // As of 2019-03, site 121 at talkyard.net wants to try this.
+    throwForbiddenIf(request.site.id != 121 && !security.hasOkForbiddenPassword(request),
+      "TyE7KRABP2", "Exporting json is still being tested out") // add rate limits
     val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
     Ok(json.toString()) as JSON
   }
