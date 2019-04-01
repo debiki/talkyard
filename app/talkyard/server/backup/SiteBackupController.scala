@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki._
 import debiki.EdHttp._
 import ed.server._
+import ed.server.http.DebikiRequest
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
@@ -49,10 +50,17 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def exportSiteJson(): Action[Unit] = AdminGetAction { request =>
+    exportSiteJsonImpl(request)
+  }
+
+
+  def exportSiteJsonImpl(request: DebikiRequest[_]): play.api.mvc.Result = {
     // As of 2019-03, site 121 at talkyard.net wants to try this.
     throwForbiddenIf(globals.isProd && request.site.id != 121 &&
       !security.hasOkForbiddenPassword(request),
       "TyE7KRABP2", "Exporting json is still being tested out") // add rate limits
+    throwForbiddenIf(!request.theRequester.isAdmin,
+      "TyE0ADM", "Only admins or the sysbot user, may export sites")
     val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
     Ok(json.toString()) as JSON
   }

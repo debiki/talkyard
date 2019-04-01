@@ -86,6 +86,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   val loginController = new _root_.controllers.LoginController(cc, context)
   val loginWithOpenAuthController = new _root_.controllers.LoginWithOpenAuthController(cc, context)
+  val backupController = new _root_.talkyard.server.backup.SiteBackupController(cc, context)
 
   lazy val router: Router = new _root_.router.Routes(
     httpErrorHandler,
@@ -121,15 +122,16 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.GroupTalkController(cc, context),
     new _root_.controllers.UploadsController(cc, context),
     new _root_.controllers.CloseCollapseController(cc, context),
-    new _root_.talkyard.server.backup.SiteBackupController(cc, context),
+    backupController,
     new _root_.controllers.DebugTestController(cc, context),
     new _root_.controllers.SiteAssetBundlesController(cc, context),
     new _root_.controllers.TagsController(cc, context),
     new _root_.controllers.SuperAdminController(cc, context),
     new _root_.controllers.ApiSecretsController(cc, context),
-    new _root_.controllers.ApiV0Controller(cc, context),
+    new _root_.controllers.ApiV0Controller(cc, context, backupController),
     new _root_.controllers.ViewPageController(cc, context))
 
+  router
 }
 
 

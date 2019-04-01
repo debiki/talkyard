@@ -111,14 +111,26 @@ const ApiSecretItem = createComponent({
     this.isGone = true;
   },
 
+  showSecret: function(secret: ApiSecret) {
+    util.openDefaultStupidDialog({
+      body: rFragment({},
+        r.p({},
+          "Secret value: ", r.code({ className: 'e_SecrVal' }, secret.secretKey)),
+        r.p({},
+          "cURL example: (note: includes the secret; don't send to anyone)"),
+        r.pre({ style: { whiteSpace: 'pre-line' }},
+          `curl --user talkyardId=2:${secret.secretKey} ${location.origin}/-/v0/...`)),
+      closeButtonTitle: "Close",
+    });
+  },
+
   render: function() {
     const secret: ApiSecret = this.props.apiSecret;
     // Don't show secrets that still works, unless one clicks Show — so less risk that they get exposed.
-    const shallShow = this.state.showValue || secret.isDeleted;
-    const secretKeyOrShowButton = shallShow
-        ? r.span({ className: 'e_SecrVal' }, secret.secretKey)
-        : Button({ onClick: () => this.setState({ showValue: true }), className: 'e_ShowSecrB' },
-          "Show");
+    const secretKeyOrShowButton = secret.isDeleted
+        ? r.span({}, secret.secretKey)
+        : Button({ onClick: () => this.showSecret(secret), className: 'e_ShowSecrB' },
+            "Show");
 
     const deleteButton = secret.isDeleted ? null :
       Button({ onClick: () => this.props.deleteSecret(secret.nr) }, "Delete");

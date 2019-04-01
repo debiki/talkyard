@@ -50,7 +50,8 @@ import Utils.OkXml
 //
 
 
-class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
+class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
+  backupController: talkyard.server.backup.SiteBackupController)
   extends EdController(cc, edContext) {
 
   import context.{security, globals}
@@ -72,6 +73,11 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
     apiEndpoint match {
+      case "export-site-json" =>
+        throwForbiddenIf(!request.isViaApiSecret,
+          "TyE0APIGET", "The API may be called only via Basic Auth and an API secret")
+        backupController.exportSiteJsonImpl(request)
+
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
       case "sso-login" |  // deprecated name, remove
            "login-with-secret" =>
