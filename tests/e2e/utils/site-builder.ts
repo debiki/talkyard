@@ -118,8 +118,9 @@ function buildSite(site?: SiteData) {
       site.pages.push(page);
 
       // Page path.
+      let path: PagePathWithId;
       if (opts.folder || opts.slug) {
-        const path = make.pagePath(opts.id, opts.folder || '/', opts.showId, opts.slug);
+        path = make.pagePath(opts.id, opts.folder || '/', opts.showId, opts.slug);
         site.pagePaths.push(path);
       }
 
@@ -139,7 +140,7 @@ function buildSite(site?: SiteData) {
         approvedHtmlSanitized: `<p>${opts.body}</p>`,
       }));
 
-      return <PageJustAdded> _.assign({}, opts, page, path);
+      return <PageJustAdded> _.assign({}, opts, page, path || {});
     },
 
 

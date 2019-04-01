@@ -1028,6 +1028,7 @@ class Config(conf: play.api.Configuration) {
     conf.getOptional[Boolean](confName) getOrElse default
 
   val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
+  val maxImportDumpBytes: Int = getIntOrDefault("talkyard.maxImportDumpBytes", default = 50*1000*1000)
 
   val featureFlags: Map[String, FeatureOnOff] = {
     val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank

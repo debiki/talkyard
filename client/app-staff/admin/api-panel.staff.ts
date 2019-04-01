@@ -101,16 +101,6 @@ export const ApiPanel = createFactory({
 const ApiSecretItem = createComponent({
   displayName: 'ApiSecretItem',
 
-  getInitialState: function() {
-    return {
-      showValue: false,
-    };
-  },
-
-  componentWillUnmount: function() {
-    this.isGone = true;
-  },
-
   showSecret: function(secret: ApiSecret) {
     util.openDefaultStupidDialog({
       body: rFragment({},
@@ -119,7 +109,7 @@ const ApiSecretItem = createComponent({
         r.p({},
           "cURL example: (note: includes the secret; don't send to anyone)"),
         r.pre({ style: { whiteSpace: 'pre-line' }},
-          `curl --user talkyardId=2:${secret.secretKey} ${location.origin}/-/v0/...`)),
+          `curl --user talkyardId=2:${secret.secretKey} ${location.origin}/-/v0/ ...`)),
       closeButtonTitle: "Close",
     });
   },

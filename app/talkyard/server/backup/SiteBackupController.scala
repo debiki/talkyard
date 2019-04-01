@@ -46,7 +46,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   import context.security
   import context.safeActions.ExceptionAction
 
-  val MaxBytes: Int = 50 * 1000 * 1000
+  private def maxImportDumpBytes: Int = globals.config.maxImportDumpBytes
 
 
   def exportSiteJson(): Action[Unit] = AdminGetAction { request =>
@@ -67,7 +67,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
-        ExceptionAction(parse.json(maxLength = MaxBytes)) { request =>
+        ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
     /*
     //val createdFromSiteId = Some(request.siteId)
@@ -82,7 +82,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = MaxBytes)) {
+  def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) {
         request =>
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
@@ -109,19 +109,20 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val siteData =
       try {
-        val sd = SiteBackupReader(context).parseSiteJson(request.body, isE2eTest = isTest)
+        val siteDump = SiteBackupReader(context).parseSiteJson(request.body, isE2eTest = isTest)
         // Unless we're deleting any old site, don't import the new site's hostnames —
         // they can cause unique key errors. The site owner can instead add the right
         // hostnames via the admin interface later.
-        if (deleteOld) sd // won't be any unique key error
+        if (deleteOld) siteDump // won't be any unique key error
         else {
           // Later: Could import the hostnames, if currently absent in the database?
-          // However, I'd guess people import the same site many times? And if
-          // the hostnames are imported the first time only, that can cause confusion?
-          // Maybe better to *never* import hostnames. Or URL param?
-          sd.copy(site = sd.site.copy(
-            pubId = Site.newPublId(),
-            name = "x" + nextRandomString().toLowerCase.take(10),  // for now. Maybe remove  .name  field?
+          // However, maybe sometimes people import the same site many times, to test if works?
+          // And if the hostnames are imported the first time only, that can cause confusion?
+          // Maybe better to *never* import hostnames. Or choose, via url param?
+          val pubId = Site.newPublId()
+          siteDump.copy(site = siteDump.site.copy(
+            pubId = pubId,
+            name = "imp-" + pubId,  // for now. Maybe remove  .name  field?
             hostnames = Nil))
         }
       }

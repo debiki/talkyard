@@ -131,7 +131,6 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.ApiV0Controller(cc, context, backupController),
     new _root_.controllers.ViewPageController(cc, context))
 
-  router
 }
 
 
