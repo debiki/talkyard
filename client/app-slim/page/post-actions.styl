@@ -401,6 +401,11 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
     opacity: 0.62;
     vertical-align: middle;
 
+// For now, hide "Append reply" and "Reply to orig post", on embedded comments pages.
+// Those btns make things look too complicated.
+.s_PT-5 .s_APAs
+  display: none;
+
 // These buttons makes no sense, for embedded discussions. [5UKWBP2]
 html.s_InIframe .dw-ar-t > .dw-p-as
   .dw-a-edit,
