@@ -64,7 +64,7 @@ case class SiteBackupReader(context: EdContext) {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
-          readJsArray(bodyJson, "guests"),
+          readJsArray(bodyJson, "guests", optional = true),
           readJsArray(bodyJson, "groups"),
           readJsArray(bodyJson, "members"),
           readJsArray(bodyJson, "permsOnPages"),

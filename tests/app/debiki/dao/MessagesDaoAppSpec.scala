@@ -43,7 +43,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dummySpamRelReqStuff, deleteDraftNr = None)
 
       dao.readOnlyTransaction { transaction =>
-        val page = PageDao(pagePath.pageId getOrDie "EsE6GMUK2", transaction)
+        val page = PageDao(pagePath.pageId, transaction)
         page.pageType mustBe PageType.FormalMessage
         page.categoryId mustBe None
         page.parts.theTitle.approvedSource mustBe Some("title_558206")
@@ -85,7 +85,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       info("but a mild threat may message non-staff users"); {
         dao.lockUserThreatLevel(badUser.id, Some(ThreatLevel.MildThreat))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = badUser.id, dao)
-        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
+        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.pageId))
         pageMeta.pageType mustBe PageType.FormalMessage
       }
     }
@@ -101,7 +101,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       info("but a Basic user may message non-staff users"); {
         dao.lockUserTrustLevel(newUser.id, Some(TrustLevel.BasicMember))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = newUser.id, dao)
-        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
+        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.pageId))
         pageMeta.pageType mustBe PageType.FormalMessage
       }
     }
@@ -114,7 +114,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
           toUserIds = Set(admin.id), sentByWho = Who(sender.id, browserIdData),
           dummySpamRelReqStuff, deleteDraftNr = None)
 
-        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
+        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.pageId))
         pageMeta.pageType mustBe PageType.FormalMessage
       }
 
@@ -130,7 +130,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
     }
 
 
-    def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePath =
+    def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePathWithId =
       dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
         body = textAndHtmlMaker.testBody("body_0482745"), PageType.FormalMessage, toUserIds = toWhom,
         sentByWho = Who(fromUserId, browserIdData), dummySpamRelReqStuff, deleteDraftNr = None)

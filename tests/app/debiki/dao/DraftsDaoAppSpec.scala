@@ -70,7 +70,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
           dao.createForum("Forum", s"/drafts-forum/", isForEmbCmts = false,
             Who(owner.id, browserIdData)).get
       categoryId = createForumResult.defaultCategoryId
-      forumPageId = createForumResult.pagePath.pageId.get
+      forumPageId = createForumResult.pagePath.pageId
     }
 
     "find the first draft nr" in {

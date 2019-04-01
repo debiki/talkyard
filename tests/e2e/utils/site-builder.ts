@@ -115,9 +115,13 @@ function buildSite(site?: SiteData) {
 
     addPage: function(opts: PageToAdd): PageJustAdded {
       const page = make.page(opts);
-      const path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);
       site.pages.push(page);
-      site.pagePaths.push(path);
+
+      // Page path.
+      if (opts.folder || opts.slug) {
+        const path = make.pagePath(opts.id, opts.folder || '/', opts.showId, opts.slug);
+        site.pagePaths.push(path);
+      }
 
       // Page title.
       site.posts.push(make.post({
@@ -169,7 +173,6 @@ function buildSite(site?: SiteData) {
           mallory: _.includes(members, 'mallory') ? make.memberMallory() : undefined,
         },
         guests: {
-          gunnar: make.guestGunnar(),
         },
         topics: <any> {},
         categories: <any> {},
@@ -185,7 +188,6 @@ function buildSite(site?: SiteData) {
       if (forum.members.maria) site.members.push(forum.members.maria);
       if (forum.members.michael) site.members.push(forum.members.michael);
       if (forum.members.mallory) site.members.push(forum.members.mallory);
-      site.guests.push(forum.guests.gunnar);
 
       _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
       if (forum.members.corax) forum.members.corax.trustLevel = c.TestTrustLevel.CoreMember;

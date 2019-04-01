@@ -4341,7 +4341,7 @@ function pagesFor(browser) {
 
         showAndCopyMostRecentSecret: (): string => {
           api.waitAndClick('.e_ShowSecrB');
-          return api.waitAndGetVisibleText('.s_ApiSecr-Active .e_SecrVal');
+          return api.waitAndGetVisibleText('.esStupidDlg .e_SecrVal');
         },
       },
 

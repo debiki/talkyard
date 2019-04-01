@@ -123,7 +123,7 @@ class DaoAppSuite(
   def createSite(hostname: String): Site = {
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
     globals.systemDao.createSite(
-      pubId = s"pubid-$siteName", name = siteName, status = SiteStatus.Active, hostname = hostname,
+      pubId = s"pubid-$siteName", name = siteName, status = SiteStatus.Active, hostname = Some(hostname),
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
       creatorId = UnknownUserId, browserIdData,
       isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,

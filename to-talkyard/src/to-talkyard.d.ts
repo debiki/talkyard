@@ -8,9 +8,9 @@ interface PageToAdd {
   dbgSrc?: string;
   id: string;
   altIds?: string[];
-  folder: string;
-  showId: boolean;
-  slug: string;
+  folder?: string;
+  showId?: boolean;
+  slug?: string;
   role: PageRole;
   title: string;
   body: string;

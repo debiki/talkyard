@@ -40,7 +40,7 @@ describe('all links', function() {
     });
     site.pages.push(forumPage);
 
-    site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '' });
+    site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '', canonical: true });
 
     site.posts.push(make.post({
       page: forumPage,
@@ -89,7 +89,7 @@ describe('all links', function() {
     site.pages.push(whateverTopic);
 
     site.pagePaths.push({ folder: '/', pageId: whateverTopic.id, showId: true,
-        slug: 'whatever-topic-title' });
+        slug: 'whatever-topic-title', canonical: true });
 
     function addPost(data: NewTestPost) {
       site.posts.push(make.post(data));
@@ -113,7 +113,7 @@ describe('all links', function() {
     site.pages.push(questionTopic);
 
     site.pagePaths.push({ folder: '/', pageId: questionTopic.id, showId: true,
-      slug: 'question-topic-title' });
+      slug: 'question-topic-title', canonical: true });
 
     addPost({ page: questionTopic, nr: c.TitleNr, approvedSource: "Question?", });
     addPost({ page: questionTopic, nr: c.BodyNr, approvedSource: "Can this or what where why or no?", });

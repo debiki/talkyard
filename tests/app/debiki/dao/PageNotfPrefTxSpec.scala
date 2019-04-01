@@ -53,13 +53,13 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
             Who(owner.id, browserIdData)).get
 
       defCatId = createForumResult.defaultCategoryId
-      forumPageId = createForumResult.pagePath.pageId.get
+      forumPageId = createForumResult.pagePath.pageId
 
       otherCatId = dao.readWriteTransaction(_.nextCategoryId())
       dao.createCategory(
         CategoryToSave(
           anyId = Some(otherCatId),
-          sectionPageId = createForumResult.pagePath.pageId.get,
+          sectionPageId = createForumResult.pagePath.pageId,
           parentId = createForumResult.staffCategoryId,
           name = "Other Category",
           slug = "otherCategory",

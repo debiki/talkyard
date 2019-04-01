@@ -123,6 +123,7 @@ interface TestGuest {  // try to rename to Guest
   createdAtMs: number;
   emailAddress?: string;
   isGuest: boolean;
+  guestBrowserId: string;
 }
 
 
@@ -259,6 +260,7 @@ interface PagePathWithId {
   pageId: string;
   showId: boolean;
   slug: string;
+  canonical: boolean;
 }
 
 
@@ -368,7 +370,6 @@ interface EmptyTestForum {
     mallory?: Member;
   };
   guests: {
-    gunnar: any;
   };
   categories: {
     categoryA: CategoryJustAdded;

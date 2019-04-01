@@ -239,6 +239,7 @@ const make = {
       fullName: "Guest Gunnar",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--guest-gunnar@example.com",
+      guestBrowserId: 'guestBrowserIdGunnar',
       isGuest: true,
     };
   },
@@ -249,6 +250,7 @@ const make = {
       fullName: "Guest Greta",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--guest-greta@example.com",
+      guestBrowserId: 'guestBrowserIdGreta',
       isGuest: true,
     };
   },
@@ -286,6 +288,7 @@ const make = {
       pageId: pageId,
       showId: showId,
       slug: slug || '',
+      canonical: true,
     };
   },
 
@@ -400,7 +403,7 @@ const make = {
     });
     site.pages.push(forumPage);
 
-    site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '' });
+    site.pagePaths.push(make.pagePath(forumPage.id, '/', false));
 
     // Forum title and intro text page.
     site.posts.push(make.post({

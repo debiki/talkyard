@@ -45,13 +45,18 @@ object JsonUtils {
     }
 
 
-  def readJsArray(json: JsValue, fieldName: String): JsArray =
-    (json \ fieldName).toOption.getOrElse(throwMissing("EsE5GUMK", fieldName)) match {
+  def readJsArray(json: JsValue, fieldName: String, optional: Boolean = false): JsArray = {
+    val array = (json \ fieldName).toOption getOrElse {
+      if (optional) return JsArray()
+      throwMissing("TyE0JSFIELD", fieldName)
+    }
+    array match {
       case o: JsArray => o
       case bad =>
         throwBadJson(
           "EsE4GLK3", s"'$fieldName' is not a JsArray, but a ${classNameOf(bad)}")
     }
+  }
 
 
   def readString(json: JsValue, fieldName: String): String =

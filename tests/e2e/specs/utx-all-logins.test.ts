@@ -65,9 +65,6 @@ describe("usability testing exchange, all logins:", () => {
 
     builder.addPage({
       id: '_javascript',
-      folder: '/',
-      showId: true,
-      slug: '',
       role: c.TestPageRole.Code,
       title: "Site Javascript",
       body: utxImpl.javascript,

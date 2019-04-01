@@ -316,7 +316,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe (1040 + 2050)
 
       info("edit page: remove second file, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+      dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
         Who(user.id, browserIdData),
         dummySpamRelReqStuff, bodyTextAndHtml)
 
@@ -325,7 +325,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 1040
 
       info("edit page: remove the first file, remaining quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+      dao.editPostIfAuth(pagePath.pageId, PageParts.BodyNr, deleteDraftNr = None,
         Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
@@ -395,7 +395,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("create site 2")
       val site2 = globals.systemDao.createSite(
-        pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active, hostname = "site-two",
+        pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active,
+        hostname = Some("site-two"),
         embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,
         browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
         deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)

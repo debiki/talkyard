@@ -150,7 +150,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     categoryNoSummaries = dao.createCategory(
       CategoryToSave(
         anyId = Some(noSummariesCategoryId),
-        sectionPageId = forum.pagePath.pageId.get,
+        sectionPageId = forum.pagePath.pageId,
         parentId = forum.staffCategoryId,
         name = "NoSummariesCat",
         slug = "nosummariescat",
