@@ -79,6 +79,8 @@ describe("spam test, no external services:", () => {
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.settings.numFlagsToHidePost = 2;
+    site.settings.numFlagsToBlockNewUser = 7;
+    site.settings.numFlaggersToBlockNewUser = 3;
     //site.members.push(mons);
     site.members.push(maja);
     site.members.push(maria);
@@ -164,15 +166,15 @@ describe("spam test, no external services:", () => {
 
   it("... and, in another topic, flags one reply and the OrigPost", () => {
     majasBrowser.go(topics.puppiesOneReplyUrl);
-    majasBrowser.complex.flagPost(1, 'Inapt');
-    majasBrowser.complex.flagPost(2, 'Inapt');
+    majasBrowser.complex.flagPost(1, 'Inapt');   // Mallory now flagged 1 times
+    majasBrowser.complex.flagPost(2, 'Inapt');   // Mallory now flagged 2 times
   });
 
   // Old topic: post 2 flagged
 
   it("... and in the old topic, flags a reply", () => {
     majasBrowser.go(topics.oldTopicUrl);
-    majasBrowser.complex.flagPost(2, 'Inapt');
+    majasBrowser.complex.flagPost(2, 'Inapt');   // Mallory now flagged 3 times
   });
 
 
@@ -187,7 +189,7 @@ describe("spam test, no external services:", () => {
   // Old page: post 2 gets hidden
 
   it("... flags a reply", () => {
-    mariasBrowser.complex.flagPost(2, 'Inapt');
+    mariasBrowser.complex.flagPost(2, 'Inapt');   // Mallory now flagged 4 times
   });
 
   it("Now that reply got two flags, and gets hidden", () => {
@@ -202,17 +204,18 @@ describe("spam test, no external services:", () => {
 
   it("... but other replies didn't get hidden", () => {
     mariasBrowser.topic.assertPostNotHidden(3);
+    mariasBrowser.topic.assertPostNotHidden(4);
   });
 
   // Puppies page: one reply, gets hidden
 
-  it("Maria sees goes to puppy page", () => {
+  it("Maria goes to the puppy page", () => {
     majasBrowser.go('/');
     majasBrowser.forumTopicList.goToTopic(topics.puppiesOneReplyTitle);
   });
 
   it("... flags Mallory's reply", () => {
-    majasBrowser.complex.flagPost(2, 'Inapt');
+    majasBrowser.complex.flagPost(2, 'Inapt');   // Mallory now flagged 5 times
   });
 
   it("... it gets hidden", () => {
@@ -227,16 +230,22 @@ describe("spam test, no external services:", () => {
   // Puppies page: OP & whole page gets hidden
 
   it("Maria flags puppet page orig post", () => {
-    majasBrowser.complex.flagPost(1, 'Inapt');
+    majasBrowser.complex.flagPost(c.BodyNr, 'Inapt');   // Mallory now flagged 6 times
   });
 
   it("... it also gets hidden", () => {
-    mariasBrowser.topic.assertPostHidden(1);
+    mariasBrowser.topic.assertPostHidden(c.BodyNr);
   });
 
-  it("... now the whole page got hidden", () => {
+  it("... the whole page got hidden", () => {
     mariasBrowser.refresh();
-    mariasBrowser.pageTitle.assertPageHidden();
+    mariasBrowser.assertWholePageHidden();
+  });
+
+  it("... Mallory can still access the page. He sees a crossed out eye, meaning, hidden", () => {
+    mallorysBrowser.go(topics.puppiesOneReplyUrl);
+    mallorysBrowser.refresh();
+    mallorysBrowser.pageTitle.assertPageHidden();
   });
 
   it("... the page is no longer listed in the topic list", () => {
@@ -258,7 +267,7 @@ describe("spam test, no external services:", () => {
 
   it("... and flags one of Mallory's posts — now lots of flags (7), by 3 people", () => {
     michaelsBrowser.go(topics.oldTopicUrl);
-    michaelsBrowser.complex.flagPost(3, 'Inapt');
+    michaelsBrowser.complex.flagPost(3, 'Inapt');   // Mallory now flagged 7 times
   });
 
 

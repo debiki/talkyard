@@ -203,7 +203,8 @@ GET   /-/utx-pick-a-task        ed.plugins.utx.UsabilityTestingExchangeControlle
 
 POST  /-/vote                   controllers.VoteController.handleVotes
 GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)
-POST  /-/flag                   controllers.Application.flag
+
+POST  /-/flag                   controllers.FlagController.flagPost
 
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: Int, categoryId: Option[Int], toUserId: Option[Int], pageId: Option[String], postNr: Option[Int])
 GET   /-/load-draft-and-text    controllers.EditController.loadDraftAndText(pageId, postNr: Int)
@@ -294,9 +295,9 @@ POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecret
 GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoint)
 POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
 
-GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
-
 #GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
+
+GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

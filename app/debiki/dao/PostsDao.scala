@@ -1687,6 +1687,7 @@ trait PostsDao {
     var postsHidden = ifBadAuthorCensorEverything(postAfter)
     if (wasHidden) {
       postsHidden :+= postAfter
+      refreshPageInMemCache(pageId)
     }
     postsHidden
   }

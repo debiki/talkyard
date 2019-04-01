@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude.unimplemented
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
@@ -29,51 +28,15 @@ import play.api.libs.json.JsValue
 
 
 
-// RENAME to FlagController?
-// Or add  FlagUser fn, so can flag user with offensive username?
-// Or move to PostController?, and add flagUser() in UserController?
-class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
+// Add  flagUser() fn, so can flag user with offensive username?
+//
+class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.security._
 
 
-  def mobileAppWebmanifest(): Action[Unit] = GetActionAllowAnyone { _ =>  // [sw]
-    unimplemented("TyE7KAESW")
-    // See:  https://github.com/discourse/discourse/blob/master/app/controllers/metadata_controller.rb
-    // or display: browser ?
-    // But:  Use `display: browser` in webmanifest for iOS devices
-    //       https://meta.discourse.org/t/back-button-in-responsive-app/93909/5
-    //       Otherwise, will be no Back button in iOS.
-    //
-    // Also compare with: (root)/images/web/ty-media/favicon/site.webmanifest.
-    //
-    Ok(s"""
-      |{
-      |  "name": "The Most Awesome Dragon Site",
-      |  "short_name": "ððð",
-      |  "display": "minimal-ui",
-      |  "start_url": "/",
-      |  "theme_color": "#673ab6",
-      |  "background_color": "#111111",
-      |  "orientation": "any",
-      |  "icons": [
-      |    {
-      |      "src": "icon-192.png",
-      |      "sizes": "192x192",
-      |      "type": "image/png"
-      |    }
-      |  ]
-      |}
-    """.stripMargin) as "application/manifest+json"  // TODO cache 1 day only, for now?
-    // needs to be that content type, see:
-    // https://github.com/discourse/discourse/commit/8fc08aad09d0db9bc176a9f2376f05b3c9cebc6b#diff-d73ec52fd8b68ed588bf337398eee53d
-    // cache max 1 day? later, maybe half a week?
-    //   "max-age=86400, s-maxage=86400, public"
-  }
-
-
-  def flag: Action[JsValue] = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
+  def flagPost: Action[JsValue] = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
     import request.{body, dao}
     SHOULD // change from page-id + post-nr to post-id.
     val pageId = (body \ "pageId").as[PageId]

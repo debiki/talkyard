@@ -116,7 +116,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.CustomFormController(cc, context),
     new ed.plugins.utx.UsabilityTestingExchangeController(cc, context),
     new _root_.controllers.VoteController(cc, context),
-    new _root_.controllers.Application(cc, context),
+    new _root_.controllers.FlagController(cc, context),
     new _root_.controllers.EditController(cc, context),
     new _root_.controllers.PageTitleSettingsController(cc, context),
     new _root_.controllers.GroupTalkController(cc, context),
@@ -129,6 +129,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.SuperAdminController(cc, context),
     new _root_.controllers.ApiSecretsController(cc, context),
     new _root_.controllers.ApiV0Controller(cc, context, backupController),
+    //new _root_.controllers.Application(cc, context),
     new _root_.controllers.ViewPageController(cc, context))
 
 }
