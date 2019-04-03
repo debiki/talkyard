@@ -63,7 +63,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     val value = s"$siteId$FieldSeparator$userId"
     Await.ready(redis.set(secretKey, value, exSeconds = Some(MaxKeyAgeSeconds)), RedisTimeout)
     val origin =
-      if (goToSiteById is true) {
+      if (goToSiteById.is(true) || request.hostname.endsWith("localhost")) {
         globals.siteByIdOrigin(siteId)
       }
       else {
