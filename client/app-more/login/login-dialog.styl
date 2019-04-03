@@ -83,7 +83,15 @@
     &:before
       margin-right: 5px;
   .icon-facebook
-    background: #3b5998;
+    background: #4267B2;
+    // Remove icon; it breaks FB's brand guidelines. Us .s_FbIcon instead, see just
+    // below, + .ts file. For now, don't remove .icon-facebook — needed for button size.
+    &::before
+      display: none;
+  .s_FbIcon
+    display: inline-block;
+    max-width: 18px;
+    margin-right: 7px;
   .icon-twitter
     background: #00bced;
     &:before

@@ -257,9 +257,8 @@ export const LoginDialogContent = createClassAndFactory({
     const childDialogProps = _.clone(this.props);
     childDialogProps.closeDialog = closeChildDialog;  // CLEAN_UP can REMOVE?
 
-    const makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
+    const makeOauthProps = (iconClass: string, provider: string) => {
       return {
-        inclWith: includeWith,
         id: 'e2eLogin' + provider,
         iconClass: iconClass,
         provider: provider,
@@ -331,16 +330,6 @@ export const LoginDialogContent = createClassAndFactory({
 
     const ss = store.settings;
 
-    let maybeWithBef = true;
-    const withBefGoogle = maybeWithBef && ss.enableGoogleLogin;
-    if (withBefGoogle) maybeWithBef = false;
-    const withBefFacebook = maybeWithBef && ss.enableFacebookLogin;
-    if (withBefFacebook) maybeWithBef = false;
-    const withBefTwitter = maybeWithBef && ss.enableTwitterLogin;
-    if (withBefTwitter) maybeWithBef = false;
-    const withBefGitHub = maybeWithBef && ss.enableGitHubLogin;
-    if (withBefGitHub) maybeWithBef = false;
-
     const anyOpenAuth = ss.enableGoogleLogin || ss.enableFacebookLogin ||
         ss.enableTwitterLogin || ss.enableGitHubLogin;
 
@@ -350,16 +339,21 @@ export const LoginDialogContent = createClassAndFactory({
       r.div({ className: 'esLD' },
         notFoundInstructions,
         becomeOwnerInstructions,
-        r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignUp : t.ld.LogIn) + spaceDots),
+        r.p({ id: 'dw-lgi-or-login-using' },
+          // I18N UX "Continue with" converts better than Sign Up or Log In, says Facebook brand guidelines.
+            (isSignUp ? t.ld.SignUp : t.ld.LogIn) + ' ' + t.ld.with_ + spaceDots),
         r.div({ id: 'dw-lgi-other-sites' },
           !ss.enableGoogleLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-google', 'Google', withBefGoogle)),
+              OpenAuthButton(makeOauthProps('icon-google', 'Google')),
           !ss.enableFacebookLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', withBefFacebook)),
+              OpenAuthButton(makeOauthProps('icon-facebook',
+              rFragment({},
+                r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
+                    className: 's_FbIcon' }), 'Facebook'))),
           !ss.enableTwitterLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter', withBefTwitter)),
+              OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           !ss.enableGitHubLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub', withBefGitHub)),
+              OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           ),
 
@@ -404,7 +398,7 @@ const OpenAuthButton = createClassAndFactory({
   render: function() {
     return (
       Button({ id: this.props.id, className: this.props.iconClass, onClick: this.onClick },
-        (this.props.inclWith ? t.ld.with_ : '') + this.props.provider));
+        this.props.provider));
   }
 });
 
