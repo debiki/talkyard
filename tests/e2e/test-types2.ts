@@ -36,6 +36,8 @@ interface TestSettings {
   facebookAdminEmail?: string;
   facebookUserPassword?: string;
   facebookUserEmail?: string;
+  linkedinPassword?: string;
+  linkedinEmail?: string;
 }
 
 

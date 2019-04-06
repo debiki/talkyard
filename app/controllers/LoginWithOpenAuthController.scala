@@ -239,6 +239,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           providerKey = p.loginInfo.providerKey,
           username = None, // not incl in CommonSocialProfile
           firstName = p.firstName,
+          lastName = p.lastName,
           fullName = p.fullName,
           email = p.email,
           avatarUrl = p.avatarURL)
@@ -248,6 +249,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           providerKey = p.providerUserId,
           username = p.username,
           firstName = p.firstName,
+          lastName = p.lastName,
           fullName = p.fullName,
           email = if (p.primaryEmailIsVerified is true) p.primaryEmail else None,  // [7KRBGQ20]
           avatarUrl = p.avatarUrl)
@@ -395,7 +397,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def someProvidersExcept(providerId: String) =
-    Seq(GoogleProvider.ID, FacebookProvider.ID, TwitterProvider.ID, GitHubProvider.ID)
+    Seq(GoogleProvider.ID, FacebookProvider.ID, TwitterProvider.ID, GitHubProvider.ID,
+      LinkedInProvider.ID)
       .filterNot(_ equalsIgnoreCase providerId).mkString(", ")
 
 
@@ -548,6 +551,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // Twitter provides no email, or I don't know if any email has been verified.
         // We currently use only verified email addresses, from GitHub. [7KRBGQ20]
         // Google and Facebook emails have been verified though.
+        // LinkedIn: Don't know if the email has been verified, so exclude LinkedIn here.
         if (oauthDetails.providerId == GoogleProvider.ID ||
             oauthDetails.providerId == GitHubProvider.ID ||
             oauthDetails.providerId == FacebookProvider.ID) {
@@ -742,9 +746,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     new GitLabProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.gitlabOAuthSettings))
 
-  private def linkedinProvider(): LinkedInProvider with CommonSocialProfileBuilder =
-    new LinkedInProvider(HttpLayer, socialStateHandler,
-      getOrThrowDisabled(globals.socialLogin.linkedInOAuthSettings))
+  private def linkedinProvider(): CustomLinkedInProvider with CommonSocialProfileBuilder =
+    new CustomLinkedInProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.socialLogin.linkedInOAuthSettings),
+      globals.wsClient)
 
   private def vkProvider(): VKProvider with CommonSocialProfileBuilder =
     new VKProvider(HttpLayer, socialStateHandler,
@@ -940,5 +945,117 @@ class CustomGitHubProvider(
 
   def withSettings(fn: Settings => Settings): CustomGitHubProvider = {
     new CustomGitHubProvider(httpLayer, stateHandler, fn(settings), wsClient)
+  }
+}
+
+
+
+// Silhouette doesn't yet support LinkedIn API v2 so using this class,
+// temporarily.
+// Also need this OAuth2Settings setting:
+// apiURL = Some("https://api.linkedin.com/v2/me?fields=id,firstName,lastName&oauth2_access_token=%s")
+class CustomLinkedInProvider(
+  protected val httpLayer: HTTPLayer,
+  protected val stateHandler: SocialStateHandler,
+  val settings: OAuth2Settings,
+  wsClient: play.api.libs.ws.WSClient)
+  extends BaseLinkedInProvider with CommonSocialProfileBuilder {
+
+  override type Self = CustomLinkedInProvider
+
+  override val profileParser = new LinkedInProfileParserApiV2(executionContext, wsClient)
+
+  override def withSettings(f: (Settings) => Settings) =
+    new CustomLinkedInProvider(httpLayer, stateHandler, f(settings), wsClient)
+}
+
+
+class LinkedInProfileParserApiV2(
+  val executionContext: ExecutionContext,
+  val wsClient: play.api.libs.ws.WSClient)
+  extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
+
+  override def parse(json: JsValue, authInfo: OAuth2Info): Future[CommonSocialProfile] = {
+    loadEmailAddr(authInfo).map({ anyEmail =>
+      // The json from API v2 is like:
+      // {
+      //   "lastName":{
+      //     "localized":{"en_US":"MyLastName"},
+      //     "preferredLocale":{"country":"US","language":"en"}},
+      //   "firstName":{
+      //     "localized":{"en_US":"MyFirstName"},
+      //     "preferredLocale":  {"country":"US","language":"en"}},
+      //   "id":"........"   // "random" chars
+      // }
+
+      // Other fields? No. Here:
+      // https://docs.microsoft.com/en-us/linkedin/shared/references/v2/profile#profile-fields-available-with-linkedin-partner-programs
+      // you'll see that one needs to "have applied and been approved for a LinkedIn Partner Program",
+      // to access more fields.
+
+      val userID = (json \ "id").as[String]
+      def readName(fieldName: String): Option[String] = {
+        (json \ fieldName).asOpt[JsObject] flatMap { jsObj =>
+          (jsObj \ "localized").asOpt[JsObject] flatMap { jsObj =>
+            jsObj.fields.headOption.map(_._2) flatMap { nameInAnyLocale =>
+              nameInAnyLocale match {
+                case jsString: JsString => Some(jsString.value)
+                case _ => None
+              }
+            }
+          }
+        }
+      }
+      val firstName = readName("firstName")
+      val lastName = readName("lastName")
+
+      CommonSocialProfile(
+        loginInfo = LoginInfo(LinkedInProvider.ID, userID),
+        firstName = firstName,
+        lastName = lastName,
+        fullName = None,    // not incl in LinkedIn API v2
+        avatarURL = None,   // not incl in LinkedIn API v2
+        email = anyEmail)
+    })(executionContext)
+  }
+
+
+  /** LinkedIn API v2 requires a separate request to fetch the email address.
+    */
+  private def loadEmailAddr(oauth2AuthInfo: OAuth2Info): Future[Option[String]] = {
+    import play.api.libs.ws
+    val emailRequestUrl =
+      "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))" +
+      "&oauth2_access_token=" + oauth2AuthInfo.accessToken
+    val linkedinRequest: ws.WSRequest = wsClient.url(emailRequestUrl)
+
+    linkedinRequest.get().map({ response: ws.WSResponse =>
+      // LinkedIn's response is (as of 2019-04) like:
+      // { "elements": [
+      //   { "handle": "urn:li:emailAddress:1234567890",
+      //      "handle~": { "emailAddress": "someone@example.com"  }} ]}
+      try {
+        val bodyAsText = response.body
+        val bodyAsJson = Json.parse(bodyAsText)
+        val elementsJsArray = (bodyAsJson \ "elements").as[JsArray]
+        val elemOne = elementsJsArray.value.headOption match {
+          case Some(o: JsObject) => o
+          case Some(x) => throwUnprocessableEntity("TyEJSN0L245", s"Weird elem class: ${classNameOf(x)}")
+          case None => throwUnprocessableEntity("TyEJSN2AKB05", "No email elem")
+        }
+        val handleObj = (elemOne \ "handle~").as[JsObject]
+        val addr = (handleObj \ "emailAddress").as[JsString].value
+        Some(addr)
+      }
+      catch {
+        case ex: Exception =>
+          play.api.Logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
+          None
+      }
+    })(executionContext).recoverWith({
+      case ex: Exception =>
+        play.api.Logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
+        Future.successful(None)
+    })(executionContext)
   }
 }

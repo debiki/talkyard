@@ -2071,6 +2071,84 @@ function pagesFor(browser) {
       },
 
 
+      createLinkedInAccount: function(data: { email: string, password: string, username: string },
+            shallBecomeOwner?: boolean, anyWelcomeDialog?) {
+        api.loginDialog.loginWithLinkedIn(data);
+        // This should be the first time we login with LinkedInd at this site, so we'll be asked
+        // to choose a username.
+        // Not just #e2eUsername, then might try to fill in the username in the create-password-
+        // user fields which are still visible for a short moment. Dupl code (2QPKW02)
+        logMessage("typing LinkedIn user's new username...");
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms(shallBecomeOwner);
+        // LinkedIn email addresses might not have been verified (or?) so need
+        // to click an email addr verif link.
+        const siteId = api.getSiteId();
+        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, data.email, browser);
+        browser.go(link);
+        api.waitAndClick('#e2eContinue');
+      },
+
+      loginWithLinkedIn: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
+        // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
+        browser.pause(100);
+        api.waitAndClick('#e2eLoginLinkedIn');
+
+        // In Facebook's login popup window:
+        if (!isInPopupAlready)
+          api.swithToOtherTabOrWindow();
+
+        while (true) {
+          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            api.switchBackToFirstTabOrWindow();
+            return;
+          }
+          try {
+            if (browser.isExisting('input#username'))
+              break;
+          }
+          catch (dummy) {
+            logMessage("Didn't find input#username. Tab closed because already logged in?");
+          }
+          browser.pause(300);
+        }
+
+        logMessage("typing LinkedIn user's email and password...");
+        browser.pause(340); // so less risk Facebook think this is a computer?
+        api.waitAndSetValue('#username', data.email);
+        browser.pause(380);
+        api.waitAndSetValue('#password', data.password);
+        browser.pause(280);
+
+        logMessage("submitting LinkedIn login dialog...");
+        api.waitAndClick('button[type="submit"]');
+
+        // If needed, confirm permissions: click an Allow button.
+        try {
+          for (let i = 0; i < 10; ++i) {
+            if (browser.isVisible('#oauth__auth-form__submit-btn')) {
+              api.waitAndClick('#oauth__auth-form__submit-btn');
+            }
+            else {
+              const url = browser.url().value;
+              if (url.indexOf('linkedin.com') === -1) {
+                logMessage("Didn't need to click any Allow button: Left linkedin.com");
+                break;
+              }
+            }
+          }
+        }
+        catch (ex) {
+          logMessage("Didn't need to click any Allow button: Exeption caught.");
+        }
+
+        if (!isInPopupAlready) {
+          logMessage("switching back to first tab...");
+          api.switchBackToFirstTabOrWindow();
+        }
+      },
+
       loginPopupClosedBecauseAlreadyLoggedIn: () => {
         try {
           logMessage("checking if we got logged in instantly... [EdM2PG44Y0]");

@@ -410,6 +410,12 @@ class Globals(
         authorizationURL = conf.getString("silhouette.linkedin.authorizationURL"),
         accessTokenURL = getLinkedin("silhouette.linkedin.accessTokenURL"),
         redirectURL = makeRedirectUrl("linkedin"),
+        // These fields no longer available in LinkedIn's API v2, unless one somehow
+        // partners with LinkedIn;
+        //apiURL = Some("https://api.linkedin.com/v2/me?fields=id,first-name,last-name,formatted-name,picture-url,email-address&oauth2_access_token=%s"),
+        // Also profilePicture results in an error.
+        // Instead:
+        apiURL = Some("https://api.linkedin.com/v2/me?fields=id,firstName,lastName&oauth2_access_token=%s"),
         clientID = getLinkedin("silhouette.linkedin.clientID"),
         clientSecret = getLinkedin("silhouette.linkedin.clientSecret"),
         scope = conf.getString("silhouette.linkedin.scope"))

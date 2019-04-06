@@ -354,6 +354,8 @@ export const LoginDialogContent = createClassAndFactory({
               OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           !ss.enableGitHubLogin ? null :
               OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
+          !ss.enableLinkedInLogin ? null :
+              OpenAuthButton(makeOauthProps('icon-linkedin', 'LinkedIn')),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           ),
 

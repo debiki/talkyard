@@ -1423,7 +1423,13 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
   avatarUrl: Option[String] = None) {
 
   def providerIdAndKey = OpenAuthProviderIdKey(providerId, providerKey)
-  def displayNameOrEmpty: String = fullName.orElse(firstName) getOrElse ""
+
+  def displayNameOrEmpty: String = {
+    fullName.orElse({
+      if (firstName.isDefined && lastName.isDefined) Some(firstName.get + " " + lastName.get)
+      else None
+    }).orElse(firstName).orElse(lastName) getOrElse ""
+  }
 
   // Mixed case email addresses not allowed, for security reasons. See db fn email_seems_ok.
   def emailLowercasedOrEmpty: String = email.map(_.toLowerCase) getOrElse ""

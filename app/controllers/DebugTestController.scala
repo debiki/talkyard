@@ -241,9 +241,12 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String): Action[Unit] =
+  def showLastE2eTestEmailSent(siteId: SiteId, sentToWithSpaces: String): Action[Unit] =
         ExceptionAction.async(cc.parsers.empty) { request =>
     SECURITY // COULD add and check an e2e password. Or rate limits.
+
+    // Un-encode plus '+' which the URL param decoder interpreted as a space ' '.
+    val sentTo = sentToWithSpaces.replaceAll(" ", "+")
 
     if (!Email.isE2eTestEmailAddress(sentTo))
       throwForbidden("DwEZ4GKE7", "Not an end-to-end test email address")

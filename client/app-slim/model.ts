@@ -873,6 +873,7 @@ interface SettingsVisibleClientSide {
   enableFacebookLogin: boolean;         // default: depends on config file
   enableTwitterLogin: boolean;          // default: depends on config file
   enableGitHubLogin: boolean;           // default: depends on config file
+  enableLinkedInLogin: boolean;         // default: depends on config file
   requireVerifiedEmail?: boolean;       // default: true
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
