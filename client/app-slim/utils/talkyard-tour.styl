@@ -2,6 +2,22 @@
 .s_Tour
   z-index: 2000;
   position: relative;
+.s_Tour-Click
+  .s_Tour_D::before
+    // Waiting for a button-or-somethign click, rather than the Next button
+    // inside the instructions dialog. Dim the dialog, so the focus will be more
+    // on that thing to click.
+    content: ' ';
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+    background: rgba(0,0,0,0.1);
+    z-index: 1;
+
 
 .s_Tour_ClickHere,
 .s_Tour_Highlight
@@ -67,7 +83,12 @@
 
 .s_Tour_D_Bs_NextB[disabled]
   // If it's just grayed out, people still sometimes try to click it.
-  visibility: hidden;
+  // No, if it's gone, they click Exit instead sometimes.
+  //visibility: hidden;
+  // Instead, keep it, but *really* make it grayed out.
+  background: white;
+  border-color: #ddd;
+  color: #888;
 
 .s_Tour_D_Bs_Ix
   display: inline-block;

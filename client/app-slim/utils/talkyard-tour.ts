@@ -207,6 +207,17 @@ function TalkyardTour() {
       const padding = step.highlightPadding || extraPadding;
       highlightElem.style.padding =
           `${placeAtRect.height / 2 + padding}px ${placeAtRect.width / 2 + padding}px`;
+      if (step.waitForClick) {
+        // Make the elem as bright as it can be, to indicate it *is* to be clicked.
+        // Otherwise people frequently don't realize they shall click it. (UX tested.)
+        highlightElem.style.background = 'none';
+        highlightElem.style.borderColor = 'rgba(0,0,0,0.4)';
+      }
+      else {
+        // Make the elem just a little bit dimmed out, to indicate it is *not* to be clicked.
+        highlightElem.style.background = 'rgba(0,0,0,0.05)';
+        highlightElem.style.borderColor = 'rgba(0,0,0,0.28)';
+      }
     }
     else {
       highlightElem.style.left = '0px';
@@ -302,7 +313,8 @@ function TalkyardTour() {
             Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  },
               isFirstStep ? "Exit tour" : "Exit")));  // I18N
 
-  return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) },
+  const shallClickClass = step.waitForClick ? ' s_Tour-Click' : '';
+  return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) + shallClickClass },
     r.div({ className: 's_Tour_Highlight', ref: tourHighlightRef,
         onClick: maybeGoNextOnElemClick }),
     r.div({ className: 's_Tour_ClickHere', ref: tourClickHereRef }),
