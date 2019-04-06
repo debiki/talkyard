@@ -332,9 +332,14 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
   const win = getMainWin();
 
   // @ifdef DEBUG
-  console.log('Window name: ' + window.name);
-  console.log('Window.opener.typs: ' + (window.opener && JSON.stringify(window.opener.typs)));
-  console.log('Main win: ' + win.name);
+  console.log("Window name: " + window.name);
+  try {
+    console.log("Window.opener.typs: " + (window.opener && JSON.stringify(window.opener.typs)));
+  }
+  catch (ignored) {
+    console.log("Window.opener.typs: Threw exception. Was opened from a cross-origin window?");
+  }
+  console.log("Main win name: " + win.name);
   // @endif
 
   const currentPageXsrfToken = win.typs.xsrfTokenIfNoCookies;

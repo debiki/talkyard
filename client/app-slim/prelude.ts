@@ -240,8 +240,15 @@ export function getMainWin(): any {
 
   // If we're in a login popup window, switch to the opener, which should be either the
   // main win (with all comments and discussions), or the embedded editor 'edEditor' in an iframe.
-  if (win.opener && win.opener.typs) {
-    win = win.opener;
+  try {
+    if (win.opener && win.opener.typs) {
+      win = win.opener;
+    }
+  }
+  catch (ignored) {
+    // The opener is apparently a different domain that e.g. window.open():ed
+    // the current page. Then, may not access opener.typs — that results in
+    // an "accessing a cross-origin frame" error. Fine, just ignore.
   }
 
   if (win.name === 'edEditor') {
