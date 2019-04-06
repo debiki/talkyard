@@ -253,6 +253,9 @@ class SystemDao(
         mayPostBeforeEmailVerified = yesIfEmbedded,
         // Features intended for forums — like chat and direct messages — just make people
         // confused, in a blog comments site, right.
+        enableForum = notIfEmbedded,
+        enableApi = Some(Some(false)),
+        enableTags = Some(Some(false)),
         enableChat = notIfEmbedded,
         enableDirectMessages = notIfEmbedded,
         orgFullName = Some(Some(organizationName))))

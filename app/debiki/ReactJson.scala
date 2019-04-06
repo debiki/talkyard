@@ -1049,7 +1049,11 @@ object JsonMaker {
       "enableGoogleLogin" -> settings.enableGoogleLogin,
       "enableFacebookLogin" -> settings.enableFacebookLogin,
       "enableTwitterLogin" -> settings.enableTwitterLogin,
-      "enableGitHubLogin" -> settings.enableGitHubLogin)
+      "enableGitHubLogin" -> settings.enableGitHubLogin,
+      "enableGitLabLogin" -> settings.enableGitLabLogin,
+      "enableLinkedInLogin" -> settings.enableLinkedInLogin,
+      "enableVkLogin" -> settings.enableVkLogin,
+      "enableInstagramLogin" -> settings.enableInstagramLogin)
 
     val D = AllSettings.makeDefault(globals)
     if (settings.languageCode != D.languageCode)
@@ -1080,6 +1084,10 @@ object JsonMaker {
       json += "ssoUrl" -> JsString(settings.ssoUrl)
     if (settings.ssoUrl.nonEmpty && settings.enableSso)
       json += "enableSso" -> JsTrue
+    if (settings.enableForum != D.enableForum)
+      json += "enableForum" -> JsBoolean(settings.enableForum)
+    if (settings.enableTags != D.enableTags)
+      json += "enableTags" -> JsBoolean(settings.enableTags)
     if (settings.enableChat != D.enableChat)
       json += "enableChat" -> JsBoolean(settings.enableChat)
     if (settings.enableDirectMessages != D.enableDirectMessages)

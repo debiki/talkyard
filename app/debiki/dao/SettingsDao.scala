@@ -75,6 +75,10 @@ trait SettingsDao {
       if (turnsOff(_.enableFacebookLogin)) throwIfLogsInWith(providers.oauth2.FacebookProvider.ID)
       if (turnsOff(_.enableTwitterLogin)) throwIfLogsInWith(providers.oauth1.TwitterProvider.ID)
       if (turnsOff(_.enableGitHubLogin)) throwIfLogsInWith(providers.oauth2.GitHubProvider.ID)
+      if (turnsOff(_.enableGitLabLogin)) throwIfLogsInWith(providers.oauth2.GitLabProvider.ID)
+      if (turnsOff(_.enableLinkedInLogin)) throwIfLogsInWith(providers.oauth2.LinkedInProvider.ID)
+      if (turnsOff(_.enableVkLogin)) throwIfLogsInWith(providers.oauth2.VKProvider.ID)
+      if (turnsOff(_.enableInstagramLogin)) throwIfLogsInWith(providers.oauth2.InstagramProvider.ID)
 
       tx.insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,

@@ -160,6 +160,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case GitHubProvider.ID =>
         throwForbiddenIf(!settings.enableGitHubLogin, "TyE0GITHLOGIN", "GitHub login disabled")
         githubProvider()
+      case GitLabProvider.ID =>
+        throwForbiddenIf(!settings.enableGitLabLogin, "TyE0GITLBLOGIN", "GitLab login disabled")
+        gitlabProvider()
+      case LinkedInProvider.ID =>
+        throwForbiddenIf(!settings.enableLinkedInLogin, "TyE0LKDINLOGIN", "LinkedIn login disabled")
+        linkedinProvider()
+      case VKProvider.ID =>
+        throwForbiddenIf(!settings.enableVkLogin, "TyE0VKLOGIN", "VK login disabled")
+        vkProvider()
+      case InstagramProvider.ID =>
+        throwForbiddenIf(!settings.enableInstagramLogin, "TyE0INSTALOGIN", "Instagram login disabled")
+        instagramProvider()
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
@@ -711,7 +723,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     new GoogleProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.googleOAuthSettings))
 
-
   private def facebookProvider(): FacebookProvider with CommonSocialProfileBuilder =
     new FacebookProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.facebookOAuthSettings))
@@ -726,6 +737,22 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     new CustomGitHubProvider(HttpLayer, socialStateHandler,
       getOrThrowDisabled(globals.socialLogin.githubOAuthSettings),
       globals.wsClient)
+
+  private def gitlabProvider(): GitLabProvider with CommonSocialProfileBuilder =
+    new GitLabProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.socialLogin.gitlabOAuthSettings))
+
+  private def linkedinProvider(): LinkedInProvider with CommonSocialProfileBuilder =
+    new LinkedInProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.socialLogin.linkedInOAuthSettings))
+
+  private def vkProvider(): VKProvider with CommonSocialProfileBuilder =
+    new VKProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.socialLogin.vkOAuthSettings))
+
+  private def instagramProvider(): InstagramProvider with CommonSocialProfileBuilder =
+    new InstagramProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.socialLogin.instagramOAuthSettings))
 
 
   private def getOrThrowDisabled[A](anySettings: A Or ErrorMessage): A = anySettings match {

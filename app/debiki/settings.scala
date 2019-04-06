@@ -46,6 +46,10 @@ trait AllSettings {
   def enableFacebookLogin: Boolean
   def enableTwitterLogin: Boolean
   def enableGitHubLogin: Boolean
+  def enableGitLabLogin: Boolean
+  def enableLinkedInLogin: Boolean
+  def enableVkLogin: Boolean
+  def enableInstagramLogin: Boolean
   def requireVerifiedEmail: Boolean
   def emailDomainBlacklist: String
   def emailDomainWhitelist: String
@@ -110,6 +114,10 @@ trait AllSettings {
   def languageCode: String
   def googleUniversalAnalyticsTrackingId: String
 
+  /** If false, then, only used for embedded comments. */
+  def enableForum: Boolean
+  def enableApi: Boolean
+  def enableTags: Boolean
   /** There will (maybe) later be allow-chat and allow-direct-messages *group permissions* too.
     * So, if direct messages and chat are enabled, still maybe not everyone will be
     * allowed to post direct messages, or create chat channels. For example, if a site
@@ -124,6 +132,7 @@ trait AllSettings {
   def featureFlags: String
 
   def allowEmbeddingFrom: String
+  def embeddedCommentsCategoryId: CategoryId
   def htmlTagCssClasses: String
 
   def numFlagsToHidePost: Int
@@ -151,6 +160,10 @@ trait AllSettings {
     enableFacebookLogin = Some(self.enableFacebookLogin),
     enableTwitterLogin = Some(self.enableTwitterLogin),
     enableGitHubLogin = Some(self.enableGitHubLogin),
+    enableGitLabLogin = Some(self.enableGitLabLogin),
+    enableLinkedInLogin = Some(self.enableLinkedInLogin),
+    enableVkLogin = Some(self.enableVkLogin),
+    enableInstagramLogin = Some(self.enableInstagramLogin),
     requireVerifiedEmail = Some(self.requireVerifiedEmail),
     emailDomainBlacklist = Some(self.emailDomainBlacklist),
     emailDomainWhitelist = Some(self.emailDomainWhitelist),
@@ -193,12 +206,16 @@ trait AllSettings {
     contentLicense = Some(self.contentLicense),
     languageCode = Some(self.languageCode),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
+    enableForum = Some(self.enableForum),
+    enableApi = Some(self.enableApi),
+    enableTags = Some(self.enableTags),
     enableChat = Some(self.enableChat),
     enableDirectMessages = Some(self.enableDirectMessages),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     featureFlags = Some(self.featureFlags),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
+    embeddedCommentsCategoryId = Some(self.embeddedCommentsCategoryId),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
     numFlagsToHidePost = Some(self.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = Some(self.cooldownMinutesAfterFlaggedHidden),
@@ -236,6 +253,10 @@ object AllSettings {
     val enableFacebookLogin: Boolean = globals.socialLogin.facebookOAuthSettings.isGood
     val enableTwitterLogin: Boolean = globals.socialLogin.twitterOAuthSettings.isGood
     val enableGitHubLogin: Boolean = globals.socialLogin.githubOAuthSettings.isGood
+    val enableGitLabLogin: Boolean = globals.socialLogin.gitlabOAuthSettings.isGood
+    val enableLinkedInLogin: Boolean = globals.socialLogin.linkedInOAuthSettings.isGood
+    val enableVkLogin: Boolean = globals.socialLogin.vkOAuthSettings.isGood
+    val enableInstagramLogin: Boolean = globals.socialLogin.instagramOAuthSettings.isGood
     val requireVerifiedEmail = true
     val emailDomainBlacklist = ""
     val emailDomainWhitelist = ""
@@ -282,12 +303,16 @@ object AllSettings {
     val contentLicense: ContentLicense = ContentLicense.CcBySa4
     val languageCode = "en_US"
     val googleUniversalAnalyticsTrackingId = ""
+    val enableForum = true
+    val enableApi = true
+    val enableTags = true
     val enableChat = true
     val enableDirectMessages = true
     val showSubCommunities = false
     val showExperimental = false
     val featureFlags = ""
     val allowEmbeddingFrom = ""
+    val embeddedCommentsCategoryId: CategoryId = NoCategoryId
     val htmlTagCssClasses = ""
     val numFlagsToHidePost = 3
     val cooldownMinutesAfterFlaggedHidden = 10
@@ -325,6 +350,10 @@ case class EffectiveSettings(
   def enableFacebookLogin: Boolean = firstInChain(_.enableFacebookLogin) getOrElse default.enableFacebookLogin
   def enableTwitterLogin: Boolean = firstInChain(_.enableTwitterLogin) getOrElse default.enableTwitterLogin
   def enableGitHubLogin: Boolean = firstInChain(_.enableGitHubLogin) getOrElse default.enableGitHubLogin
+  def enableGitLabLogin: Boolean = firstInChain(_.enableGitLabLogin) getOrElse default.enableGitLabLogin
+  def enableLinkedInLogin: Boolean = firstInChain(_.enableLinkedInLogin) getOrElse default.enableLinkedInLogin
+  def enableVkLogin: Boolean = firstInChain(_.enableVkLogin) getOrElse default.enableVkLogin
+  def enableInstagramLogin: Boolean = firstInChain(_.enableInstagramLogin) getOrElse default.enableInstagramLogin
   def requireVerifiedEmail: Boolean = firstInChain(_.requireVerifiedEmail) getOrElse default.requireVerifiedEmail
   def emailDomainBlacklist: String = firstInChain(_.emailDomainBlacklist) getOrElse default.emailDomainBlacklist
   def emailDomainWhitelist: String = firstInChain(_.emailDomainWhitelist) getOrElse default.emailDomainWhitelist
@@ -367,12 +396,16 @@ case class EffectiveSettings(
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def languageCode: String = firstInChain(_.languageCode) getOrElse default.languageCode
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
+  def enableForum: Boolean = firstInChain(_.enableForum) getOrElse default.enableForum
+  def enableApi: Boolean = firstInChain(_.enableApi) getOrElse default.enableApi
+  def enableTags: Boolean = firstInChain(_.enableTags) getOrElse default.enableTags
   def enableChat: Boolean = firstInChain(_.enableChat) getOrElse default.enableChat
   def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def featureFlags: String = firstInChain(_.featureFlags) getOrElse default.featureFlags
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
+  def embeddedCommentsCategoryId: CategoryId = firstInChain(_.embeddedCommentsCategoryId) getOrElse default.embeddedCommentsCategoryId
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
   def numFlagsToHidePost: Int = firstInChain(_.numFlagsToHidePost) getOrElse default.numFlagsToHidePost
@@ -510,6 +543,10 @@ object Settings2 {
       "enableFacebookLogin" -> JsBooleanOrNull(s.enableFacebookLogin),
       "enableTwitterLogin" -> JsBooleanOrNull(s.enableTwitterLogin),
       "enableGitHubLogin" -> JsBooleanOrNull(s.enableGitHubLogin),
+      "enableGitLabLogin" -> JsBooleanOrNull(s.enableGitLabLogin),
+      "enableLinkedInLogin" -> JsBooleanOrNull(s.enableLinkedInLogin),
+      "enableVkLogin" -> JsBooleanOrNull(s.enableVkLogin),
+      "enableInstagramLogin" -> JsBooleanOrNull(s.enableInstagramLogin),
       "requireVerifiedEmail" -> JsBooleanOrNull(s.requireVerifiedEmail),
       "emailDomainBlacklist" -> JsStringOrNull(s.emailDomainBlacklist),
       "emailDomainWhitelist" -> JsStringOrNull(s.emailDomainWhitelist),
@@ -552,12 +589,16 @@ object Settings2 {
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "languageCode" -> JsStringOrNull(s.languageCode),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
+      "enableForum" -> JsBooleanOrNull(s.enableForum),
+      "enableApi" -> JsBooleanOrNull(s.enableApi),
+      "enableTags" -> JsBooleanOrNull(s.enableTags),
       "enableChat" -> JsBooleanOrNull(s.enableChat),
       "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "featureFlags" -> JsStringOrNull(s.featureFlags),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
+      "embeddedCommentsCategoryId" -> JsNumberOrNull(s.embeddedCommentsCategoryId),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
       "numFlagsToHidePost" -> JsNumberOrNull(s.numFlagsToHidePost),
       "cooldownMinutesAfterFlaggedHidden" -> JsNumberOrNull(s.cooldownMinutesAfterFlaggedHidden),
@@ -583,6 +624,10 @@ object Settings2 {
     enableFacebookLogin = anyBool(json, "enableFacebookLogin", d.enableFacebookLogin),
     enableTwitterLogin = anyBool(json, "enableTwitterLogin", d.enableTwitterLogin),
     enableGitHubLogin = anyBool(json, "enableGitHubLogin", d.enableGitHubLogin),
+    enableGitLabLogin = anyBool(json, "enableGitLabLogin", d.enableGitLabLogin),
+    enableLinkedInLogin = anyBool(json, "enableLinkedInLogin", d.enableLinkedInLogin),
+    enableVkLogin = anyBool(json, "enableVkLogin", d.enableVkLogin),
+    enableInstagramLogin = anyBool(json, "enableInstagramLogin", d.enableInstagramLogin),
     requireVerifiedEmail = anyBool(json, "requireVerifiedEmail", d.requireVerifiedEmail),
     emailDomainBlacklist = anyString(json, "emailDomainBlacklist", d.emailDomainBlacklist),
     emailDomainWhitelist = anyString(json, "emailDomainWhitelist", d.emailDomainWhitelist),
@@ -629,12 +674,16 @@ object Settings2 {
     languageCode = anyString(json, "languageCode", d.languageCode),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
+    enableForum = anyBool(json, "enableForum", d.enableForum),
+    enableApi = anyBool(json, "enableApi", d.enableApi),
+    enableTags = anyBool(json, "enableTags", d.enableTags),
     enableChat = anyBool(json, "enableChat", d.enableChat),
     enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     featureFlags = anyString(json, "featureFlags", d.featureFlags),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
+    embeddedCommentsCategoryId = anyInt(json, "embeddedCommentsCategoryId", d.embeddedCommentsCategoryId),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),
     numFlagsToHidePost = anyInt(json, "numFlagsToHidePost", d.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = anyInt(json, "cooldownMinutesAfterFlaggedHidden", d.cooldownMinutesAfterFlaggedHidden  ),

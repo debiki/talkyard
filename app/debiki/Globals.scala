@@ -393,6 +393,51 @@ class Globals(
         scope = conf.getString("silhouette.github.scope"))
     }
 
+    val gitlabOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getGitLab(confValName: String) = getConfValOrThrowDisabled(confValName, "GitLab")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.gitlab.authorizationURL"),
+        accessTokenURL = getGitLab("silhouette.gitlab.accessTokenURL"),
+        redirectURL = makeRedirectUrl("gitlab"),
+        clientID = getGitLab("silhouette.gitlab.clientID"),
+        clientSecret = getGitLab("silhouette.gitlab.clientSecret"),
+        scope = conf.getString("silhouette.gitlab.scope"))
+    }
+
+    val linkedInOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getLinkedin(confValName: String) = getConfValOrThrowDisabled(confValName, "LinkedIn")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.linkedin.authorizationURL"),
+        accessTokenURL = getLinkedin("silhouette.linkedin.accessTokenURL"),
+        redirectURL = makeRedirectUrl("linkedin"),
+        clientID = getLinkedin("silhouette.linkedin.clientID"),
+        clientSecret = getLinkedin("silhouette.linkedin.clientSecret"),
+        scope = conf.getString("silhouette.linkedin.scope"))
+    }
+
+    val vkOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getVk(confValName: String) = getConfValOrThrowDisabled(confValName, "VK")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.vk.authorizationURL"),
+        accessTokenURL = getVk("silhouette.vk.accessTokenURL"),
+        redirectURL = makeRedirectUrl("vk"),
+        clientID = getVk("silhouette.vk.clientID"),
+        clientSecret = getVk("silhouette.vk.clientSecret"),
+        scope = conf.getString("silhouette.vk.scope"))
+    }
+
+    val instagramOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getInstagram(confValName: String) = getConfValOrThrowDisabled(confValName, "Instagram")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.instagram.authorizationURL"),
+        accessTokenURL = getInstagram("silhouette.instagram.accessTokenURL"),
+        redirectURL = makeRedirectUrl("instagram"),
+        clientID = getInstagram("silhouette.instagram.clientID"),
+        clientSecret = getInstagram("silhouette.instagram.clientSecret"),
+        scope = conf.getString("silhouette.instagram.scope"))
+    }
+
+
     private def goodOrError[A](block: => A): A Or ErrorMessage =
       try Good(block)
       catch {

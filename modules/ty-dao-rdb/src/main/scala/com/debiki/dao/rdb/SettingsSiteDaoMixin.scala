@@ -70,6 +70,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         enable_facebook_login,
         enable_twitter_login,
         enable_github_login,
+        enable_gitlab_login,
+        enable_linkedin_login,
+        enable_vk_login,
+        enable_instagram_login,
         require_verified_email,
         email_domain_blacklist,
         email_domain_whitelist,
@@ -111,16 +115,20 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         content_license,
         language_code,
         google_analytics_id,
+        enable_forum,
+        enable_api,
+        enable_tags,
         enable_chat,
         enable_direct_messages,
         show_sub_communities,
         experimental,
         feature_flags,
         allow_embedding_from,
+        embedded_comments_category_id,
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -137,6 +145,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.enableFacebookLogin.getOrElse(None).orNullBoolean,
       editedSettings2.enableTwitterLogin.getOrElse(None).orNullBoolean,
       editedSettings2.enableGitHubLogin.getOrElse(None).orNullBoolean,
+      editedSettings2.enableGitLabLogin.getOrElse(None).orNullBoolean,
+      editedSettings2.enableLinkedInLogin.getOrElse(None).orNullBoolean,
+      editedSettings2.enableVkLogin.getOrElse(None).orNullBoolean,
+      editedSettings2.enableInstagramLogin.getOrElse(None).orNullBoolean,
       editedSettings2.requireVerifiedEmail.getOrElse(None).orNullBoolean,
       editedSettings2.emailDomainBlacklist.getOrElse(None).trimOrNullVarchar,
       editedSettings2.emailDomainWhitelist.getOrElse(None).trimOrNullVarchar,
@@ -178,12 +190,16 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.contentLicense.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.languageCode.getOrElse(None).trimOrNullVarchar,
       editedSettings2.googleUniversalAnalyticsTrackingId.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.enableForum.getOrElse(None).orNullBoolean,
+      editedSettings2.enableApi.getOrElse(None).orNullBoolean,
+      editedSettings2.enableTags.getOrElse(None).orNullBoolean,
       editedSettings2.enableChat.getOrElse(None).orNullBoolean,
       editedSettings2.enableDirectMessages.getOrElse(None).orNullBoolean,
       editedSettings2.showSubCommunities.getOrElse(None).orNullBoolean,
       editedSettings2.showExperimental.getOrElse(None).orNullBoolean,
       editedSettings2.featureFlags.getOrElse(None).trimOrNullVarchar,
       editedSettings2.allowEmbeddingFrom.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.embeddedCommentsCategoryId.getOrElse(None).orNullInt,
       editedSettings2.htmlTagCssClasses.getOrElse(None).trimOrNullVarchar)
 
     runUpdate(statement, values)
@@ -217,6 +233,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("enable_facebook_login", s.enableFacebookLogin.map(_.orNullBoolean))
     maybeSet("enable_twitter_login", s.enableTwitterLogin.map(_.orNullBoolean))
     maybeSet("enable_github_login", s.enableGitHubLogin.map(_.orNullBoolean))
+    maybeSet("enable_gitlab_login", s.enableGitLabLogin.map(_.orNullBoolean))
+    maybeSet("enable_linkedin_login", s.enableLinkedInLogin.map(_.orNullBoolean))
+    maybeSet("enable_vk_login", s.enableVkLogin.map(_.orNullBoolean))
+    maybeSet("enable_instagram_login", s.enableInstagramLogin.map(_.orNullBoolean))
     maybeSet("require_verified_email", s.requireVerifiedEmail.map(_.orNullBoolean))
     maybeSet("email_domain_blacklist", s.emailDomainBlacklist.map(_.trimOrNullVarchar))
     maybeSet("email_domain_whitelist", s.emailDomainWhitelist.map(_.trimOrNullVarchar))
@@ -258,12 +278,16 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("content_license", s.contentLicense.map(_.map(_.toInt).orNullInt))
     maybeSet("language_code", s.languageCode.map(_.trimOrNullVarchar))
     maybeSet("google_analytics_id", s.googleUniversalAnalyticsTrackingId.map(_.trimOrNullVarchar))
+    maybeSet("enable_forum", s.enableForum.map(_.orNullBoolean))
+    maybeSet("enable_api", s.enableApi.map(_.orNullBoolean))
+    maybeSet("enable_tags", s.enableTags.map(_.orNullBoolean))
     maybeSet("enable_chat", s.enableChat.map(_.orNullBoolean))
     maybeSet("enable_direct_messages", s.enableDirectMessages.map(_.orNullBoolean))
     maybeSet("show_sub_communities", s.showSubCommunities.map(_.orNullBoolean))
     maybeSet("experimental", s.showExperimental.map(_.orNullBoolean))
     maybeSet("feature_flags", s.featureFlags.map(_.trimOrNullVarchar))
     maybeSet("allow_embedding_from", s.allowEmbeddingFrom.map(_.trimOrNullVarchar))
+    maybeSet("embedded_comments_category_id", s.embeddedCommentsCategoryId.map(_.orNullInt))
     maybeSet("html_tag_css_classes", s.htmlTagCssClasses.map(_.trimOrNullVarchar))
     maybeSet("num_flags_to_hide_post", s.numFlagsToHidePost.map(_.orNullInt))
     maybeSet("cooldown_minutes_after_flagged_hidden",
@@ -296,6 +320,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       enableFacebookLogin = getOptBoolean(rs, "enable_facebook_login"),
       enableTwitterLogin = getOptBoolean(rs, "enable_twitter_login"),
       enableGitHubLogin = getOptBoolean(rs, "enable_github_login"),
+      enableGitLabLogin = getOptBoolean(rs, "enable_gitlab_login"),
+      enableLinkedInLogin = getOptBoolean(rs, "enable_linkedin_login"),
+      enableVkLogin = getOptBoolean(rs, "enable_vk_login"),
+      enableInstagramLogin = getOptBoolean(rs, "enable_instagram_login"),
       requireVerifiedEmail = getOptBoolean(rs, "require_verified_email"),
       emailDomainBlacklist = getOptString(rs, "email_domain_blacklist"),
       emailDomainWhitelist = getOptString(rs, "email_domain_whitelist"),
@@ -338,12 +366,16 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       contentLicense = ContentLicense.fromInt(rs.getInt("content_license")), // 0 -> None, ok
       languageCode = Option(rs.getString("language_code")),
       googleUniversalAnalyticsTrackingId = Option(rs.getString("google_analytics_id")),
+      enableForum = getOptBool(rs, "enable_forum"),
+      enableApi = getOptBool(rs, "enable_api"),
+      enableTags = getOptBool(rs, "enable_tags"),
       enableChat = getOptBool(rs, "enable_chat"),
       enableDirectMessages = getOptBool(rs, "enable_direct_messages"),
       showSubCommunities = getOptBoolean(rs, "show_sub_communities"),
       showExperimental = getOptBoolean(rs, "experimental"),
       featureFlags = getOptString(rs, "feature_flags"),
-      allowEmbeddingFrom = Option(rs.getString("allow_embedding_from")),
+      allowEmbeddingFrom = getOptString(rs, "allow_embedding_from"),
+      embeddedCommentsCategoryId = getOptInt(rs, "embedded_comments_category_id"),
       htmlTagCssClasses = Option(rs.getString("html_tag_css_classes")),
       numFlagsToHidePost = getOptInt(rs, "num_flags_to_hide_post"),
       cooldownMinutesAfterFlaggedHidden = getOptInt(rs, "cooldown_minutes_after_flagged_hidden"),

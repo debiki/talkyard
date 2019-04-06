@@ -179,7 +179,11 @@ object EmbeddedCommentsPageCreator {
 
     val slug = None
     val folder = None
-    val categoryId = dao.getDefaultCategoryId()
+    val categoryId = {
+      val id = siteSettings.embeddedCommentsCategoryId
+      if (id != NoCategoryId) id
+      else dao.getDefaultCategoryId()
+    }
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
     val pageRole = PageType.EmbeddedComments
 
