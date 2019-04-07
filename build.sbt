@@ -49,8 +49,10 @@ val appDependencies = Seq(
   play.sbt.Play.autoImport.filters,
   "com.typesafe.play" %% "play-json" % "2.6.9",             // newest, as of 18-07-17
   // OpenAuth and OpenID etc Authentication.
-  "com.mohiva" %% "play-silhouette" % "5.0.7",              // newest, as of 19-04-06
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.7",   // newest, as of 19-04-06
+  // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
+  // would require everyone that uses Talkyard to reconfigure their Google auth app.
+  "com.mohiva" %% "play-silhouette" % "5.0.5",              // 5.0.7 is newest, as of 19-04-06
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.5",   // 5.0.7 is newest, as of 19-04-06
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
