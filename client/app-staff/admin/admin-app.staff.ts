@@ -1105,6 +1105,7 @@ const EmbeddedCommentsSettings = createFactory({
             makeWhichBlogInput("Gatsby", 'e_GatsbyB'),
             makeWhichBlogInput("Jekyll", 'e_JekyllB'),
             makeWhichBlogInput("Hexo", 'e_HexoB'),
+            makeWhichBlogInput("Zola", 'e_ZolaB'),
             r.br(),
             makeWhichBlogInput("Something Else", 'e_SthElseB')));
 
@@ -1130,6 +1131,9 @@ const EmbeddedCommentsSettings = createFactory({
         break;
       case "Hexo":
         stepByStepInstructions = HexoInstructions(blogInstrProps);
+        break;
+      case "Zola":
+        stepByStepInstructions = ZolaInstructions(blogInstrProps);
         break;
       default:
         stepByStepInstructions = SomethingElseInstructions(blogInstrProps);
@@ -1571,6 +1575,70 @@ From https://hexo.io/:
   ~/app/hexo server
 
  And follow the Talkyard instructions.
+
+*/
+
+
+function ZolaInstructions(props: BlogInstrProps) {
+  const tagParams: BlogTagProps = {
+    prefix: 'TEST001\n\n',
+    talkyardServerUrl: '{{ config.extra.talkyard_server_url | safe }}',
+    commentsScriptSrc: '{{ config.extra.talkyard_script_url }}',
+    discussionId: '{% if page.extra.discussion_id %}{{ page.extra.discussion_id }}{% endif %}',
+  };
+  return rFragment({},
+    r.ol({},
+      r.li({},
+        r.p({},
+          "Add this to ", r.code({}, "config.toml"),
+          ", at the end, in the ", r.code({}, "[extra]"), " section:"),
+        r.pre({},
+          `[extra]       <——— note\n` +
+          `talkyard_server_url = "${props.talkyardServerUrl}"\n` +
+          `talkyard_script_url = "${props.commentsScriptSrc}"`)),
+      r.li({},
+        r.p({},
+          "Add this where you want the comments to appear: (TEST001 is intentional)"),
+        BlogCommentsHtmlTags(tagParams),
+        r.p({},
+          "Could be in ", r.code({}, "themes/THEME_NAME/templates/page.html"),
+          ", just before ", r.code({}, '{% endblock content %}'), '.'))),
+    r.p({},
+      r.b({}, "Restart Zola"),
+      " and reload a blog post in the browser. Do you see a comments section now? " +
+      "If so, remove TEST001 above."),
+    ToSupportChangingUrls(rFragment({},
+      "add a frontmatter ", r.code({}, 'discussion_id: "per-discussion-id"'),
+      " to your blog posts. Like so:")),
+    r.pre({}, `
++++
+title = "What is Zola"
+date = 2017-09-24
+[extra]                                <——— in the [extra] section,
+discussion_id = "2017-what-is-zola"    <——— add something like this
++++
+
+Blog post text text text, ...`),
+    r.p({},
+      "Now, if you post a new comment, change the URL to the blog post, " +
+      "and reload — the comment will still be there."));
+}
+
+
+/* Test the Zola instructions like so:
+
+linux-bash#  sudo snap install --edge zola
+linux-bash#  zola init zolatest
+linux-bash#  cd zolatest/
+linux-bash#  cd themes/
+linux-bash#  git clone https://github.com/getzola/hyde.git
+linux-bash#  cd ..
+linux-bash#  vi config.toml  # add line:  theme = "hyde"
+linux-bash#  cd content/
+linux-bash#  cp ../themes/hyde/content/* ./  # adds sample blog posts
+linux-bash#  cd ..
+
+And then follow the Zola instructions.
 
 */
 
