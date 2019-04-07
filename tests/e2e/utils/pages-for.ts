@@ -2095,10 +2095,11 @@ function pagesFor(browser) {
         browser.pause(100);
         api.waitAndClick('#e2eLoginLinkedIn');
 
-        // In Facebook's login popup window:
+        // Switch to LinkedIn's login popup window.
         if (!isInPopupAlready)
           api.swithToOtherTabOrWindow();
 
+        // Wait until popup window done loading.
         while (true) {
           if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             api.switchBackToFirstTabOrWindow();
@@ -2115,7 +2116,7 @@ function pagesFor(browser) {
         }
 
         logMessage("typing LinkedIn user's email and password...");
-        browser.pause(340); // so less risk Facebook think this is a computer?
+        browser.pause(340); // so less risk LinkedIn thinks this is a computer?
         api.waitAndSetValue('#username', data.email);
         browser.pause(380);
         api.waitAndSetValue('#password', data.password);
@@ -2140,7 +2141,7 @@ function pagesFor(browser) {
           }
         }
         catch (ex) {
-          logMessage("Didn't need to click any Allow button: Exeption caught.");
+          logMessage("Didn't need to click Allow button: Exception caught, login popup closed itself?");
         }
 
         if (!isInPopupAlready) {

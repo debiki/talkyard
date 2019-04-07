@@ -1614,8 +1614,8 @@ function ZolaInstructions(props: BlogInstrProps) {
 +++
 title = "What is Zola"
 date = 2017-09-24
-[extra]                                <——— in the [extra] section,
-discussion_id = "2017-what-is-zola"    <——— add something like this
+[extra]                                <——— in the [extra] section ...
+discussion_id = "2017-what-is-zola"    <——— ...add something like this
 +++
 
 Blog post text text text, ...`),
@@ -1625,7 +1625,8 @@ Blog post text text text, ...`),
 }
 
 
-/* Test the Zola instructions like so:
+/* Testing the Zola instructions
+====================================
 
 linux-bash#  sudo snap install --edge zola
 linux-bash#  zola init zolatest
@@ -1638,7 +1639,7 @@ linux-bash#  cd content/
 linux-bash#  cp ../themes/hyde/content/* ./  # adds sample blog posts
 linux-bash#  cd ..
 
-And then follow the Zola instructions.
+And then follow the Talkyard instructions for Zola.
 
 */
 

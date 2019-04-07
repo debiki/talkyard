@@ -209,9 +209,9 @@ function TalkyardTour() {
           `${placeAtRect.height / 2 + padding}px ${placeAtRect.width / 2 + padding}px`;
       if (step.waitForClick) {
         // Make the elem as bright as it can be, to indicate it *is* to be clicked.
-        // Otherwise people frequently don't realize they shall click it. (UX tested.)
-        highlightElem.style.background = 'none';
-        highlightElem.style.borderColor = 'rgba(0,0,0,0.4)';
+        // Otherwise people frequently don't realize they shall click it.
+        highlightElem.style.background = 'none';             // area to click
+        highlightElem.style.borderColor = 'rgba(0,0,0,0.4)'; // backdrop background
       }
       else {
         // Make the elem just a little bit dimmed out, to indicate it is *not* to be clicked.

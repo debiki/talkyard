@@ -14,7 +14,7 @@ const logMessage = logAndDie.logMessage;
 
 declare let browser: any;
 
-describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () => {
+describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () => {
 
   if (!settings.include3rdPartyDependentTests) {
     console.log("Skipping this spec; no 3rd party login credentials specified.");
@@ -49,7 +49,7 @@ describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () =>
     pages.createSite.fillInFieldsAndSubmit(data);
     pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createLinkedInAccount(data, true);
-    pages.createSomething.createForum("Facebook Forum Title");
+    pages.createSomething.createForum("Linkedin Forum Title");
   }
 
 });

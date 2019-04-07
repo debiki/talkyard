@@ -254,6 +254,8 @@ class SystemDao(
         // Features intended for forums — like chat and direct messages — just make people
         // confused, in a blog comments site, right.
         enableForum = notIfEmbedded,
+        // People who create new sites via a hosted service, might not be technical
+        // people; to keep things simple for them, disable API and tags, initially. [DEFFEAT]
         enableApi = Some(Some(false)),
         enableTags = Some(Some(false)),
         enableChat = notIfEmbedded,

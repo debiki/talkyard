@@ -114,7 +114,7 @@ trait AllSettings {
   def languageCode: String
   def googleUniversalAnalyticsTrackingId: String
 
-  /** If false, then, only used for embedded comments. */
+  /** If !enableForum, then the site is used for embedded comments only. */
   def enableForum: Boolean
   def enableApi: Boolean
   def enableTags: Boolean
@@ -304,6 +304,8 @@ object AllSettings {
     val languageCode = "en_US"
     val googleUniversalAnalyticsTrackingId = ""
     val enableForum = true
+    // People who install Talkyard themselves are a bit advanced, so starting with
+    // these features enabled, makes sense?  [DEFFEAT]
     val enableApi = true
     val enableTags = true
     val enableChat = true

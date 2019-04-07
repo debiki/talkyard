@@ -341,7 +341,8 @@ export const LoginDialogContent = createClassAndFactory({
         notFoundInstructions,
         becomeOwnerInstructions,
         r.p({ id: 'dw-lgi-or-login-using' },
-          // I18N UX "Continue with" converts better than Sign Up or Log In, says Facebook brand guidelines.
+          // I18N UX "Continue with" converts better than Sign Up or Log In, says
+          // Facebook brand guidelines. So, could rephrase this later:
             (isSignUp ? t.ld.SignUp : t.ld.LogIn) + ' ' + t.ld.with_ + spaceDots),
         r.div({ id: 'dw-lgi-other-sites' },
           !ss.enableGoogleLogin ? null :
