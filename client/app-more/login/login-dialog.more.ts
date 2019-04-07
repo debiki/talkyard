@@ -257,13 +257,14 @@ export const LoginDialogContent = createClassAndFactory({
     const childDialogProps = _.clone(this.props);
     childDialogProps.closeDialog = closeChildDialog;  // CLEAN_UP can REMOVE?
 
-    const makeOauthProps = (iconClass: string, provider: string) => {
+    const makeOauthProps = (iconClass: string, provider: string, content?) => {
       return {
         id: 'e2eLogin' + provider,
         iconClass: iconClass,
         provider: provider,
         loginReason: loginReason,
         anyReturnToUrl: this.props.anyReturnToUrl,
+        content
       };
     };
 
@@ -346,10 +347,9 @@ export const LoginDialogContent = createClassAndFactory({
           !ss.enableGoogleLogin ? null :
               OpenAuthButton(makeOauthProps('icon-google', 'Google')),
           !ss.enableFacebookLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-facebook',
-              rFragment({},
+              OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', rFragment({},
                 r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
-                    className: 's_FbIcon' }), 'Facebook'))),
+                    className: 's_FbIcon' }), "Facebook"))),
           !ss.enableTwitterLogin ? null :
               OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           !ss.enableGitHubLogin ? null :
@@ -400,7 +400,7 @@ const OpenAuthButton = createClassAndFactory({
   render: function() {
     return (
       Button({ id: this.props.id, className: this.props.iconClass, onClick: this.onClick },
-        this.props.provider));
+        this.props.content || this.props.provider));
   }
 });
 
