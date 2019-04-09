@@ -204,6 +204,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   numOrigPostBuryVotes: Int = 0,
   numOrigPostUnwantedVotes: Int = 0,
   numOrigPostRepliesVisible: Int = 0,
+  // REFACTOR  change to enums. Remove timestamps (not used anyway). See model.ts [5RKT02].
   answeredAt: Option[ju.Date] = None,
   answerPostId: Option[PostId] = None,
   plannedAt: Option[ju.Date] = None,
@@ -259,28 +260,35 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   require(frozenAt.isEmpty || createdAt.getTime <= frozenAt.get.getTime, "DwE4YUF8")
   require(doneAt.isEmpty || !plannedAt.exists(_.getTime > doneAt.get.getTime), "DwE6K8PY2")
   require(doneAt.isEmpty || !startedAt.exists(_.getTime > doneAt.get.getTime), "EdE6K8PY3")
-  // A topic that has been fixed or solved, should be in the closed state.
-  require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "DwE4KEF7")
+  // A topic that has been fixed or solved, should be in the closed state. [5AKBS2]
+  require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "TyE5AKBS2")
   // A locked or frozen topic, should be closed too.
   require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, "DwE6UMP3")
   require(answeredAt.isEmpty == answerPostId.isEmpty, "DwE2PYU5")
   require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02]")
 
-  def isPinned = pinOrder.isDefined
-  def isClosed = closedAt.isDefined
-  def isVisible = hiddenAt.isEmpty && deletedAt.isEmpty
-  def isHidden = hiddenAt.isDefined
-  def isDeleted = deletedAt.isDefined
+  def isPinned: Boolean = pinOrder.isDefined
+  def isClosed: Boolean = closedAt.isDefined
+  def isVisible: Boolean = hiddenAt.isEmpty && deletedAt.isEmpty
+  def isHidden: Boolean = hiddenAt.isDefined
+  def isDeleted: Boolean = deletedAt.isDefined
 
-  def isGroupTalk = pageType.isGroupTalk
-  def isPrivateGroupTalk = pageType.isPrivateGroupTalk
+  def isGroupTalk: Boolean = pageType.isGroupTalk
+  def isPrivateGroupTalk: Boolean = pageType.isPrivateGroupTalk
 
   def isChatPinnedGlobally: Boolean =
     pageType == PageType.OpenChat && pinWhere.contains(PinPageWhere.Globally)
 
-  def status: PageStatus =
+  def status: PageStatus =   // RENAME to publishedStatus
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
+
+  def doingStatus: PageDoingStatus = {
+    if (doneAt.isDefined) PageDoingStatus.Done
+    else if (startedAt.isDefined) PageDoingStatus.Started
+    else if (plannedAt.isDefined) PageDoingStatus.Planned
+    else PageDoingStatus.Discussing
+  }
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
@@ -333,6 +341,25 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
       closedAt = newClosedAt)
   }
 
+  def copyWithNewDoingStatus(newDoingStatus: PageDoingStatus, when: When): PageMeta = {
+    // For now. Later, change  plannedAt, startedAt  etc, to just a doingStatus field,
+    // with no timestamp?
+    def someWhen = Some(when.toJavaDate)
+    val (newPlannedAt, newStartedAt, newDoneAt, newClosedAt) = newDoingStatus match {
+      case PageDoingStatus.Discussing => (None, None, None, None)
+      case PageDoingStatus.Planned => (someWhen, None, None, None)
+      case PageDoingStatus.Started => (plannedAt, someWhen, None, None)
+      case PageDoingStatus.Done =>
+        // A page gets closed, when status changes to Done. [5AKBS2]
+        (plannedAt, startedAt, someWhen, closedAt.orElse(someWhen))
+    }
+
+    copy(
+      plannedAt = newPlannedAt,
+      startedAt = newStartedAt,
+      doneAt = newDoneAt,
+      closedAt = newClosedAt)
+  }
 }
 
 
@@ -586,6 +613,26 @@ object PageStatus {  // RENAME to PagePublStatus — because there's also e.g. p
   }
 }
 
+
+// Sync with Typescript [5KBF02].
+sealed abstract class PageDoingStatus(val IntVal: Int) { def toInt: Int = IntVal }
+object PageDoingStatus {
+  case object Discussing extends PageDoingStatus(1)
+  case object Planned extends PageDoingStatus(2)
+  case object Started extends PageDoingStatus(3)
+  case object Done extends PageDoingStatus(4)
+  // PostponedTil = *not* a Doing status. Something can be both Started,
+  // and also postponed, at the same time. So add a separate
+  // PageMeta.postponedTil field, to indicate sth has been postponed.
+
+  def fromInt(value: Int): Option[PageDoingStatus] = Some(value match {
+    case PageDoingStatus.Discussing.IntVal => Discussing
+    case PageDoingStatus.Planned.IntVal => Planned
+    case PageDoingStatus.Started.IntVal => Started
+    case PageDoingStatus.Done.IntVal => Done
+    case _ => return None
+  })
+}
 
 
 sealed abstract class WriteWhat(protected val IntValue: Int) { def toInt = IntValue }

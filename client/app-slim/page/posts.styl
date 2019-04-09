@@ -278,7 +278,8 @@ h1.dw-p-ttl
     left: -2px;  // there's some whitespace to the left inside the icon itself
 
   // The done/not-done checkbox, if it's clickable (it is for staff and topic author).
-  .dw-clickable[class^=icon-]
+  .dw-clickable[class^="icon-"],
+  .dw-clickable[class*=" icon-"]
     &:before
       color: hsl($uiHue, 51%, 45%);
       text-decoration: none;

@@ -111,7 +111,7 @@ export const TitleEditor = createComponent({
     this.setState({ isSaving: true });
     var newTitle = this.refs.titleInput.getValue();
     var pageSettings = this.getSettings();
-    ReactActions.editTitleAndSettings(newTitle, pageSettings, this.props.closeEditor, () => {
+    ReactActions.editTitleAndSettings({ ...pageSettings, newTitle }, this.props.closeEditor, () => {
       this.setState({ isSaving: false });
     });
   },

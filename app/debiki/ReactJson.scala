@@ -306,6 +306,7 @@ class JsonMaker(dao: SiteDao) {
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostId),
       "pageAnswerPostNr" -> JsNumberOrNull(anyAnswerPostNr),
+      "doingStatus" -> page.meta.doingStatus.toInt,
       "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
       "pageStartedAtMs" -> dateOrNull(page.meta.startedAt),
       "pageDoneAtMs" -> dateOrNull(page.meta.doneAt),

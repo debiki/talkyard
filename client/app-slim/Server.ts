@@ -1168,23 +1168,22 @@ export function saveEdits(postNr: number, text: string, deleteDraftNr: DraftNr,
 }
 
 
-export function savePageTitleAndSettings(newTitle: string, settings, success: (response: any) => void,
-        error: () => void) {
+export function savePageTitleAndSettings(settings: EditPageRequestData,
+      success: (response: EditPageResponse) => void, onError: () => void) {
   const data = {
     ...settings,
     pageId: getPageId(),
-    newTitle: newTitle,
   };
   postJson('/-/edit-title-save-settings', {
     data: data,
-    success: (response) => {
+    success: (response: EditPageResponse) => {
       success(response);
       if (response.newUrlPath && window.history.replaceState) {
         const newPath = response.newUrlPath + location.search + location.hash;
         window.history.replaceState({}, null, newPath);
       }
     },
-    error: error
+    error: onError
   });
 }
 

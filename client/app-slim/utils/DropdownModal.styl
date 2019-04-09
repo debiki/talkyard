@@ -11,6 +11,10 @@
     max-width: 89%; // so always some emptiness outside that one can click to close. [4YK8ST2]
                     // ... no, now I've added a close X button instead. And made the dialog
                     // wider (89% not just 75%).
+@media (min-width: 650px)
+  .esDropModal-NotTooWide
+    .esDropModal_content
+      max-width: 560px; // or annoyingly wide
 
 .esDropModal_CloseB
   position: absolute;

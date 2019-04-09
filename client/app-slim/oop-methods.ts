@@ -657,6 +657,17 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 //----------------------------------
 
 
+export function page_isClosedNotDone(page: Page): boolean {
+  return page.pageClosedAtMs && !page.pageAnswerPostUniqueId && !page.pageDoneAtMs
+}
+
+export function page_hasDoingStatus(page: Page): boolean {
+  const pageType = page.pageRole;
+  return pageType === PageRole.Problem || pageType === PageRole.Idea ||
+        pageType === PageRole.ToDo || pageType === PageRole.UsabilityTesting;
+}
+
+
 export function page_isFlatDiscourse(page: Page): boolean {
   const pageRole = page.pageRole;
   return (pageRole === PageRole.Idea

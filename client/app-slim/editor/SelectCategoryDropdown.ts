@@ -93,7 +93,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
           categoryListItems));
 
     return (
-      r.div({ style: { display: 'inline-block' } },
+      rFragment({},
         dropdownButton,
         dropdownModal));
   }

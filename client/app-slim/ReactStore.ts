@@ -201,6 +201,10 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.EditTitleAndSettings:
+      // Could clean up: Currently using action.* fields — should instead use newMeta.*,
+      // those fields are directly from the server. [7RGEF24]
+      const newData: EditPageResponse = action;
+      const newMeta: PageMeta = newData.newPageMeta;
       if (action.htmlTagCssClasses) {
         $h.removeClasses(htmlElem, currentPage.pageHtmlTagCssClasses);
         $h.addClasses(htmlElem, action.htmlTagCssClasses);
@@ -213,7 +217,12 @@ ReactDispatcher.register(function(payload) {
       const parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
       currentPage.categoryId = parent ? parent.categoryId : null;
       const was2dTree = currentPage.horizontalLayout;
-      currentPage.pageRole = action.newPageRole || currentPage.pageRole;
+      currentPage.pageRole = newMeta.pageType;
+      currentPage.doingStatus = newMeta.doingStatus;
+      currentPage.pagePlannedAtMs = newMeta.plannedAt;
+      currentPage.pageStartedAtMs = newMeta.startedAt;
+      currentPage.pageDoneAtMs = newMeta.doneAt;
+      currentPage.pageClosedAtMs = newMeta.closedAt;
       currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
       const is2dTree = currentPage.horizontalLayout;
       updatePost(action.newTitlePost, currentPage.pageId);

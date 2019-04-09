@@ -346,8 +346,8 @@ export const Title = createComponent({
     this.setState({ isEditing: false });
   },
 
-  cycleIsDone: function() {
-    debiki2.ReactActions.cyclePageDone();
+  cycleIsDone: function() {  // rm
+    debiki2.ReactActions.cyclePageDone();  // rm
   },
 
   render: function() {
@@ -406,24 +406,19 @@ export const Title = createComponent({
         pinOrHiddenClass = ' icon-eye-off';
       }
       let tooltip = '';
-      let icon;
+      let iconClass = '';
+      let iconTooltip = '';
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
-      if (page.pageClosedAtMs && !page.pageDoneAtMs && !page.pageAnsweredAtMs) {
-        icon = r.span({ className: 'icon-block' });
+      if (page_isClosedNotDone(page)) {
+        iconClass = 'icon-block';
         tooltip = makePageClosedTooltipText(page.pageRole) + '\n';
       }
       else if (page.pageRole === PageRole.Question) {
-        icon = page.pageAnsweredAtMs
-            ? r.a({ className: 'icon-ok-circled dw-clickable',
-                onClick: utils.makeShowPostFn(TitleNr, page.pageAnswerPostNr) })
-            : r.span({ className: 'icon-help-circled' });
+        iconClass = page.pageAnsweredAtMs ? 'icon-ok-circled' : 'icon-help-circled';
         tooltip = makeQuestionTooltipText(page.pageAnsweredAtMs) + ".\n";
       }
-      else if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea ||
-                page.pageRole === PageRole.ToDo || page.pageRole === PageRole.UsabilityTesting) {
+      else if (page_hasDoingStatus(page)) {
         // (Some dupl code, see [5KEFEW2] in forum.ts.
-        let iconClass;
-        let iconTooltip;
         if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea) {
           if (page.pageDoneAtMs) {
             tooltip = page.pageRole === PageRole.Problem
@@ -475,21 +470,17 @@ export const Title = createComponent({
               : "Click to mark as done";
         }
         if (!isStaffOrMyPage) iconTooltip = null;
-        const clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
-        const onClick = isStaffOrMyPage ? this.cycleIsDone : null;
-        icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
-            title: iconTooltip });
       }
       else if (page.pageRole === PageRole.FormalMessage) {
-        icon = r.span({ className: 'icon-mail' });
+        iconClass = 'icon-mail';
         tooltip = t.d.TooltipPersMsg;
       }
       else if (page.pageRole === PageRole.OpenChat) {
-        icon = '#';
+        iconClass = 'icon-chat'; //  was: '#'
         tooltip = t.d.TooltipChat;
       }
       else if (page.pageRole === PageRole.PrivateChat) {
-        icon = r.span({ className: 'icon-lock' });
+        iconClass = 'icon-lock';
         tooltip = t.d.TooltipPrivChat;
       }
 
@@ -498,6 +489,14 @@ export const Title = createComponent({
         case PinPageWhere.InCategory: tooltip += t.d.TooltipPinnedCat; break;
         default:
       }
+
+      const titleIcon = !page.pageAnsweredAtMs && !isStaffOrMyPage
+          ? r.span({ className: iconClass, title: iconTooltip })
+          : r.a({ className: 'dw-clickable ' + iconClass, title: iconTooltip,
+              onClick: event => {
+                const rect = cloneEventTargetRect(event);
+                morebundle.openChangePageDialog(rect, { page, showViewAnswerButton: true });
+              }});
 
       let deletedIcon;
       if (store_isPageDeleted(store)) {
@@ -513,7 +512,7 @@ export const Title = createComponent({
               deletedOrUnapprovedInfo,
               r.h1({ className: 'dw-p-ttl' + pinOrHiddenClass, title: tooltip },
                 deletedIcon,
-                icon, titleText,
+                titleIcon, titleText,
                 anyShowForumInroBtn, anyEditTitleBtn)));
     }
     return (

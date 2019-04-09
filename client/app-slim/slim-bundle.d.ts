@@ -145,6 +145,7 @@ declare namespace debiki2 {
   }
 
   namespace utils {
+    function makeShowPostFn(currentPostNr: PostNr, postToShowNr: PostNr);
     var scrollIntoViewInPageColumn;
     function makeMountNode();
     var DropdownModal;
@@ -262,6 +263,7 @@ declare namespace debiki2 {
   var store_thisIsMyPage;
   var hasErrorCode;
   var page_mayChangeRole;
+  function page_canToggleClosed(page: Page): boolean;
   function store_maySendInvites(store: Store, user: Myself | UserInclDetails): MayMayNot;
   var isMember;
   var userId_isGuest;
@@ -301,6 +303,8 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function page_isClosedNotDone(page: Page): boolean;
+  function page_hasDoingStatus(page: Page): boolean;
   function page_canChangeCategory(page: Page): boolean;
   function page_mostRecentPostNr(page: Page): number;
 

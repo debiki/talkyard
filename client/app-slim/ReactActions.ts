@@ -253,15 +253,15 @@ export function unacceptAnswerClientSideOnly() {
 }
 
 
-export function editTitleAndSettings(newTitle: string, settings: any, success: () => void,
-      error: () => void) {
-  Server.savePageTitleAndSettings(newTitle, settings, (response: any) => {
-    success();
+export function editTitleAndSettings(settings: EditPageRequestData, onDone: () => void,
+      error?: () => void) {
+  Server.savePageTitleAndSettings(settings, (response: EditPageResponse) => {
+    if (onDone) onDone();
     ReactDispatcher.handleViewAction({
+      ... response,
       actionType: actionTypes.EditTitleAndSettings,
-      newTitlePost: response.newTitlePost,
-      newAncestorsRootFirst: response.newAncestorsRootFirst,
       newPageRole: settings.pageRole,
+      newDoingStatus: settings.doingStatus,
       htmlTagCssClasses: settings.htmlTagCssClasses,
       htmlHeadTitle: settings.htmlHeadTitle,
       htmlHeadDescription: settings.htmlHeadDescription,

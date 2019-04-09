@@ -104,6 +104,13 @@ export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: R
 }
 
 
+export function openChangePageDialog(atRect, props: { page: Page, showViewAnswerButton?: true }) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.pagedialogs['openChangePageModal'](atRect, props);
+  });
+}
+
+
 export function openPageToolsDialog() {
   Server.loadMoreScriptsBundle(() => {
     debiki2.pagetools.getPageToolsDialog().open();

@@ -27,7 +27,7 @@ import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
-import talkyard.server.JsX.JsStringOrNull
+import talkyard.server.JsX.{JsStringOrNull, JsPageMeta}
 
 
 /** Edits the page title and changes settings like forum category, URL path,
@@ -42,9 +42,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     import request.dao
 
     val pageId = (request.body \ "pageId").as[PageId]
-    val newTitle = (request.body \ "newTitle").as[String].trim
+    val anyNewTitle = (request.body \ "newTitle").asOptStringNoneIfBlank
     val anyNewCategoryId = (request.body \ "categoryId").asOpt[CategoryId]
     val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
+    val anyDoingStatusInt = (request.body \ "doingStatus").asOpt[Int]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
       if (folder.trim.isEmpty) "/" else folder.trim
     }
@@ -59,8 +60,14 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       PageType.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
     }
 
-    val hasManuallyEditedSlug = anySlug.exists(slug =>
-      slug != context.nashorn.slugifyTitle(newTitle))
+    val anyNewDoingStatus: Option[PageDoingStatus] = anyDoingStatusInt map { value =>
+      PageDoingStatus.fromInt(value) getOrElse throwBadRequest("TyE2ABKR04", "Bad doingStatus")
+    }
+
+    val hasManuallyEditedSlug = anySlug.exists(slug => {
+      val title = anyNewTitle getOrElse throwForbidden("TyE2AKBF05", "Cannot post slug but not title")
+      slug != context.nashorn.slugifyTitle(title)
+    })
 
     if (anyLayout.isDefined) {
       throwForbiddenIf(!request.theUser.isAdmin,
@@ -110,7 +117,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (anySlug.exists(!PagePath.isOkaySlug(_)))
       throwBadReq("DwE6KEF21", "Bad slug, must be like: 'some-page-slug'")
 
-    if (newTitle.length > MaxTitleLength)
+    if (anyNewTitle.exists(_.length > MaxTitleLength))
       throwBadReq("DwE8KYU2", s"Title too long, max length is $MaxTitleLength")
 
     if (anyHtmlTagCssClasses.exists(!HtmlUtils.OkCssClassRegex.matches(_)))
@@ -131,16 +138,20 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
-
-    request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
-      request.who, request.spamRelatedStuff, newTextAndHtml)
+    anyNewTitle foreach { newTitle => {
+      val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
+      request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
+        request.who, request.spamRelatedStuff, newTextAndHtml)
+    }}
 
     // Load old section page id before changing it.
     val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
 
     // Update page settings.
-    var newMeta = anyNewRole.map(oldMeta.copyWithNewRole).getOrElse(oldMeta)
+    var newMeta = oldMeta
+    newMeta = anyNewRole.map(newMeta.copyWithNewRole).getOrElse(newMeta)
+    newMeta = anyNewDoingStatus.map(s =>
+      newMeta.copyWithNewDoingStatus(s, context.globals.now())).getOrElse(newMeta)
     newMeta = newMeta.copy(
       categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
       htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
@@ -193,13 +204,13 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val (_, newAncestorsJson) = dao.jsonMaker.makeForumIdAndAncestorsJson(newMeta)
-
     // The browser will update the title and the url path in the address bar.
-    OkSafeJson(Json.obj(
+    OkSafeJson(Json.obj(  // ts if EditPageResponse
       "newTitlePost" -> dao.jsonMaker.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
           includeUnapproved = true),
       "newAncestorsRootFirst" -> newAncestorsJson,
-      "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
+      "newUrlPath" -> JsStringOrNull(newPath.map(_.value)),
+      "newPageMeta" -> JsPageMeta(newMeta)))  // [7RGEF24]
   }
 
 }

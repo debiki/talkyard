@@ -761,6 +761,16 @@ interface Page {
   pageHtmlHeadDescription?: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
+  doingStatus: PageDoingStatus;
+  // REFACTOR [5RKT02] remove the At fields.
+  // Use a PageDoingStatus enum: New/Planned/Doing/Done/Postponed enum
+  // instead of all status fields.
+  // And a ClosedStatus enum: Open/Closed/Locked/Frozen.
+  // And a DeletedStatus enum: NotDeleted/Deleted/Purged.
+  // And a HiddenStatus enum: Visible/Hidden.
+  // And a Published status enum: PersonalPageDraft/SharedPageDraft/Published.
+  // "PageDraft" so different from drafts for chat message, replies, posts drafts, which
+  // live only inside the editor — but not saved as real topics.
   pageAnsweredAtMs?: number;
   pageAnswerPostUniqueId?: number;
   pageAnswerPostNr?: number;
@@ -797,6 +807,53 @@ interface PageMetaBrief {
   frozenAtMs?: WhenMs;
   hiddenAtMs?: WhenMs;
   deletedAtMs?: WhenMs;
+}
+
+
+interface PageMeta {
+  id: PageId;
+  pageType: PageRole;
+  version: number;
+  createdAtMs: WhenMs;
+  updatedAtMs: WhenMs;
+  publishedAtMs?: WhenMs;
+  bumpedAtMs?: WhenMs;
+  lastApprovedReplyAt?: WhenMs;
+  lastApprovedReplyById?: UserId;
+  categoryId?: CategoryId;
+  embeddingPageUrl?: string;
+  authorId: UserId;
+  frequentPosterIds: number[];
+  layout: number; // e.g. TopicListLayout
+  pinOrder?: number;
+  pinWhere?: PinPageWhere;
+  numLikes: number;
+  numWrongs: number;
+  numBurys: number;
+  numUnwanteds: number;
+  numRepliesVisible: number;
+  numRepliesTotal: number;
+  numPostsTotal: number;
+  numOrigPostLikeVotes: number;
+  numOrigPostWrongVotes: number;
+  numOrigPostBuryVotes: number;
+  numOrigPostUnwantedVotes: number;
+  numOrigPostRepliesVisible: number;
+  answeredAt?: WhenMs;
+  answerPostId?: PostId;
+  doingStatus: PageDoingStatus;
+  plannedAt?: WhenMs;
+  startedAt?: WhenMs;
+  doneAt?: WhenMs;
+  closedAt?: WhenMs;
+  lockedAt?: WhenMs;
+  frozenAt?: WhenMs;
+  unwantedAt?: WhenMs;
+  hiddenAt?: WhenMs;
+  deletedAt?: WhenMs;
+  htmlTagCssClasses: string;
+  htmlHeadTitle: string;
+  htmlHeadDescription: string;
 }
 
 
@@ -937,6 +994,23 @@ const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
   Form = 20,  // try to remove?
   Critique = 16, // [plugin]
   UsabilityTesting = 21, // [plugin]
+}
+
+
+// Sync with Scala [5KBF02].
+const enum PageDoingStatus {
+  Discussing = 1,
+  Planned = 2,
+  Started = 3,
+  Done = 4,
+  // Available = 5, ? Thinking about software:
+  // sometimes I've implemented a feature, but not updated the server.
+  // So, it's been "done" / implemented — but is not yet "available" to others.
+  // Hmm, hmm, hmm. Or is this "Available" status a can of worms? What about
+  // available in various backported branches? Would it be better for
+  // the community to use tags (and tag values?) to indcate where the thing
+  // has yet been made available?  ... Also, which icon, for Available o.O
+  // cannot think of any make-sense icon. Better skip this (!). Stop at Done.
 }
 
 
@@ -1539,7 +1613,30 @@ interface Rect {
 
 
 
-// ----- Server responses
+// ----- Server requests and responses
+
+
+interface EditPageRequestData {
+    //pageId: PageId; — filled in By Server.ts
+    newTitle?: string;
+    categoryId?: CategoryId;
+    pageRole?: PageRole;
+    doingStatus?: PageDoingStatus;
+    folder?: string;
+    slug?: string;
+    showId?: boolean;
+    pageLayout?: TopicListLayout;
+    htmlTagCssClasses?: string;
+    htmlHeadTitle?: string;
+    htmlHeadDescription?: string;
+}
+
+interface EditPageResponse {
+  newTitlePost;
+  newAncestorsRootFirst;
+  newUrlPath?: string;
+  newPageMeta: PageMeta;
+}
 
 
 interface GuestLoginResponse {

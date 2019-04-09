@@ -59,10 +59,12 @@
   float: right; // leave space for social Like buttons to the left
                 // COULD remove — now those buttons are gone.
                 // Breaks the metabar's margin-top. [MTBMGTP]
-  .dw-a-close,
-  .dw-a-reopen
+  .dw-a-change
+  //.dw-a-close,
+  //.dw-a-reopen
     margin-left: 10px;
 
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-change,
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 7px 17px 7px 13px !important;
   position: relative;
@@ -70,9 +72,19 @@
   color: white;
   background-color: hsl($uiHue, 80%, 54%);
   margin-bottom: 18px;  // instead of metabar's margin-top  [MTBMGTP]
-  &:hover
-    color: white;
-    background-color: hsl($uiHue, 80%, 62%);
+
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply:hover
+  color: white;
+  background-color: hsl($uiHue, 95%, 64%);
+
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-change:hover
+  color: black;
+  background: hsl(0,0%,86%);
+
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-change
+  background: hsl(207, 0%, 92%);
+  color: hsl(0, 0%, 15%);
+  font-weight: bold;
 
 .dw-a
   text-decoration: none !important
@@ -212,7 +224,8 @@
 .dw-ar-t > .dw-p-as
   .dw-a-admin:before,
   .dw-a-reply:before,
-  .dw-a-close:before
+  .dw-a-change:before
+  //.dw-a-close:before
     opacity: 1 !important;
 
 .dw-ar-t > .dw-p-as
@@ -411,6 +424,7 @@ html.s_InIframe .dw-ar-t > .dw-p-as
   .dw-a-edit,
   .dw-a-link,
   .dw-a-flag,
+  .dw-a-change,
   .dw-a-close,
   .dw-a-more
     display: none;

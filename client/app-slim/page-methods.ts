@@ -71,7 +71,7 @@ export function page_mayChangeRole(pageRole: PageRole): boolean {
 }
 
 
-export function page_canToggleClosed(page: Page) {
+export function page_canToggleClosed(page: Page): boolean {
   // Lock private message pages instead, so no new replies can be added.
   return (!page.pageLockedAtMs
       && !page.pageFrozenAtMs

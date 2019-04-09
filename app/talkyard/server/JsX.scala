@@ -310,7 +310,7 @@ object JsX {
   val JsEmptyObj = JsObject(Nil)
 
 
-  def JsPageMeta(pageMeta: PageMeta): JsObject = {
+  def JsPageMeta(pageMeta: PageMeta): JsObject = {  // Typescript interface PageMeta
     Json.obj(
       "id" -> pageMeta.pageId,
       "pageType" -> pageMeta.pageType.toInt,
@@ -342,6 +342,7 @@ object JsX {
       "numOrigPostRepliesVisible" -> pageMeta.numOrigPostRepliesVisible,
       "answeredAt" -> JsDateMsOrNull(pageMeta.answeredAt),
       "answerPostId" -> JsNumberOrNull(pageMeta.answerPostId),
+      "doingStatus" -> pageMeta.doingStatus.toInt,
       "plannedAt" -> JsDateMsOrNull(pageMeta.plannedAt),
       "startedAt" -> JsDateMsOrNull(pageMeta.startedAt),
       "doneAt" -> JsDateMsOrNull(pageMeta.doneAt),
@@ -460,6 +461,7 @@ object JsX {
       "pageRole" -> meta.pageType.toInt,
       "categoryId" -> JsNumberOrNull(meta.categoryId),
       "embeddingPageUrl" -> JsStringOrNull(meta.embeddingPageUrl),
+      "doingStatus" -> meta.doingStatus.toInt,
       "closedAtMs" -> JsDateMsOrNull(meta.closedAt),
       "lockedAtMs" -> JsDateMsOrNull(meta.lockedAt),
       "frozenAtMs" -> JsDateMsOrNull(meta.frozenAt),

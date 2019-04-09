@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,7 +20,7 @@
 /// <reference path="../more-prelude.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.editor {
+   namespace debiki2.editor {
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
@@ -29,6 +29,7 @@ const ExplainingListItem = util.ExplainingListItem;
 
 
 // BEM name: esTopicType -- no. Instead, esPTD = Page-Type-Dropdown?
+// No. Instea: s_PTD = page type dialog.
 export var PageRoleDropdown = createComponent({
   getInitialState: function() {
     return {
@@ -78,6 +79,10 @@ export var PageRoleDropdown = createComponent({
     const me: Myself = store.me;
     const showAllOptions = state.showAllOptions;
 
+    // Discussions/ideas/questions etc are "totally" different from chat topics;
+    // don't allow changing such already-existing topics, to chat topics.
+    const canChangeToChat: boolean = !props.pageExists;
+
     const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton', className: 'esTopicType_dropdown' },
         pageRole_toIconString(pageRole), ' ', r.span({ className: 'caret' }));
@@ -110,14 +115,14 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_Idea_IconString,
         text: t.pt.IdeaExpl });
 
-    const chatOption =
+    const chatOption = !canChangeToChat ? null :
       user_isGuest(me) || isBjjNotStaff || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
         text: t.pt.ChatExpl });
 
-    const privateChatOption =
+    const privateChatOption = !canChangeToChat ? null :
       !isStaff(me) || props.hideStaffOnly || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
@@ -191,7 +196,7 @@ export var PageRoleDropdown = createComponent({
           customHtmlPageOption));
 
     return (
-      r.div({ style: { display: 'inline-block' } },
+      rFragment({},  //r.div({ style: { display: 'inline-block' } },
         dropdownButton,
         dropdownModal));
   }
@@ -199,7 +204,7 @@ export var PageRoleDropdown = createComponent({
 
 
 
-function pageRole_toIconString(pageRole: PageRole) {
+export function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.CustomHtmlPage: return t.pt.CustomHtml;
     case PageRole.WebPage: return t.pt.InfoPage;

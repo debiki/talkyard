@@ -238,13 +238,17 @@ export const PostActions = createComponent({
               onClick: this.onReplyClick },
             makeReplyBtnTitle(store, post, false));
 
-    // Show a close button for unanswered questions and pending to-dos, and a reopen
-    // button if the topic has been closed unanswered / unfixed. (But if it's been
-    // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
-    // mark it as not-answered/not-fixed again.)
-    let closeReopenButton;
+    const changeButton = !isStaffOrOwnPage || !isPageBody ? null :
+          r.a({ className: 'dw-a dw-a-change',
+              onClick: event => {
+                const rect = cloneEventTargetRect(event);
+                morebundle.openChangePageDialog(rect, { page })
+              }},
+            "Change ...");  // I18N
+
+    let closeReopenButton;  // rm
     const canCloseOrReopen = !isDone && !isAnswered && page_canToggleClosed(page);
-    if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
+    if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {   // xx rm
       let closeReopenTitle = t.Reopen;
       let closeReopenIcon = 'icon-circle-empty';
       let closeReopenTooltip;
@@ -366,8 +370,8 @@ export const PostActions = createComponent({
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
         replyButton,
+        changeButton,
         adminLink,
-        closeReopenButton,
         flagBtn,
         moreDropdown,
         link,

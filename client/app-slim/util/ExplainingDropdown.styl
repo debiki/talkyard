@@ -1,5 +1,31 @@
 
-.esExplDrp_entry
+$sideSpace =20px;
+
+.s_ExplDrp_Ttl
+  margin: 6px 50px 7px 12px;  // 50px = space for a close [X] button
+  font-size: 17px;
+  font-style: italic;
+
+
+// If the action-item (e.g. a button) is at the top of the dialog, add some padding.
+.esCloseCross + .s_ExplDrp_ActIt
+  padding-top: 7px;
+
+.s_ExplDrp_ActIt + .s_NotfPrefDD_Ttl,
+.esExplDrp_entry + .s_NotfPrefDD_Ttl
+  margin-top: 14px;
+
+.s_ExplDrp_ActIt   // action item, e.g. button
+  list-style: none;
+  margin: 0;
+  button,
+  .esExplDrp_ActIt_Expl
+    margin: 0 0 7px $sideSpace;
+
+  // No hover. The button instead has some :hover style.
+
+
+.esExplDrp_entry  // RENAME to s_ExplDrp_SelIt for "Select Item" (instead of above "Action Item")
   list-style: none;
   margin: 0;
   cursor: pointer;
@@ -8,7 +34,7 @@
   a
     display: block;
     text-decoration: none;
-    padding: 9px 20px;
+    padding: 9px $sideSpace;
     @media (max-width: 500px)
       padding-right: 0; // the DropModal has padding-right itself already [5YKF20]
 
@@ -31,6 +57,7 @@
   font-weight: bold;
   font-size: 15px;
 
+.esExplDrp_ActIt_Expl,
 .esExplDrp_entry_expl
   color: #333;
   font-size: $postFontSize;

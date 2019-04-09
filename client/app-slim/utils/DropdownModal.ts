@@ -240,7 +240,7 @@ export const DropdownModal = createComponent({
           bottomCloseButton);
     }
 
-    const backdropStyle: any = { opacity: 0.08 };
+    const backdropStyle: any = { opacity: 0.14 };
     if (this.state.hideBackdrop) backdropStyle.display = 'none';
 
     const dialogClassName = this.props.dialogClassName2 ? ' ' + this.props.dialogClassName2 : '';
