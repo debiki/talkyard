@@ -487,7 +487,16 @@ const ForumButtons = createComponent({
     const topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, t.fb.TopicList, 'e2eViewTopicsB', 'esForum_navLink');
 
+    // If the All Categories dummy category is active, that's not where new topics
+    // get placed. Instead they get placed in a default category. Find out which
+    // one that is, so can show the correct create-new-topic button title (the title
+    // depends on the topic type).
+    let activeOrDefaultCategory: Category = activeCategory;
+
     const categoryMenuItems = store.currentCategories.map((category: Category) => {
+      if (activeOrDefaultCategory.isForumItself && category.isDefaultCategory) {
+        activeOrDefaultCategory = category;
+      }
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) },
             r.span({ className: category_iconClass(category, store) }, category.name));
@@ -612,7 +621,7 @@ const ForumButtons = createComponent({
     if (!showsCategoryTree && mayCreateTopics) {
       createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
-        createTopicBtnTitle(activeCategory));
+        createTopicBtnTitle(activeOrDefaultCategory));
     }
 
     let createCategoryBtn;
