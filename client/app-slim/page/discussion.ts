@@ -62,10 +62,16 @@ export const TitleBodyComments = createComponent({
         t.d.ThisFormClosed_1, closedIcon, t.d.ThisFormClosed_2) };
 
     const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
+      let image;
+      if (where === pagedialogs.Facebook) {
+        // Need to follow Facebook's brand guidelines and use this image. [FBBRAND]
+        image = r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
+            className: 's_FbIcon' });
+      }
       return (
         r.a({ className: 'p_ShareIcon icon-' + where,
           onClick: () =>
-            pagedialogs.openSharePopup("https://usability.testing.exchange", where) }));
+            pagedialogs.openSharePopup("https://usability.testing.exchange", where) }, image));
     };
     const shareWithFriends =
       r.div({},

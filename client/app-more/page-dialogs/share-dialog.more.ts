@@ -105,9 +105,15 @@ const ShareDialog = createComponent({
         url = origin + '/-' + ReactStore.getPageId() + hash;
       }
       const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
+        let image;
+        if (where === Facebook) {
+          // Need to follow Facebook's brand guidelines and use this image. [FBBRAND]
+          image = r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
+              className: 's_FbIcon' });
+        }
         return (
           r.a({ className: 'p_ShareIcon icon-' + where,
-              onClick: () => openSharePopup(url, where) }));
+              onClick: () => openSharePopup(url, where) }, image));
       };
       content =
         r.div({ className: 's_ShareD' },

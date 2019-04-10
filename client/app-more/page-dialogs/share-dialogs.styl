@@ -1,4 +1,6 @@
 
+$height = 52px;
+
 .s_ShareD
   width: 340px;
   max-width: 100%;
@@ -17,18 +19,29 @@
 
 .p_ShareIcon
   display: inline-block;
-  font-size: 21px;
+  font-size: 28px;
   background: hsl(207, 100%, 54%);
   color: white;
   border: 0 solid transparent;
   border-radius: 50%;
-  padding: 6px 5px 6px 7px;
+  padding: 0px 5px 0 7px;
   margin-right: 5px;
-  &.icon-facebook,
+  height: $height;
+  vertical-align: top;
+  &.icon-facebook
+    background: #4267b2;
+    &:before
+      display: none;
+    img.s_FbIcon
+      padding: 11px 6px 5px;
+      width: 41px;
+      vertical-align: middle;
   &.icon-email
     padding: 6px;
   &:hover
     text-decoration: none;
     background: hsl(207, 100%, 70%);
     color: white;
+  &:before
+    line-height: $height;
 

@@ -349,6 +349,8 @@ export const LoginDialogContent = createClassAndFactory({
               OpenAuthButton(makeOauthProps('icon-google', 'Google')),
           !ss.enableFacebookLogin ? null :
               OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', rFragment({},
+                // Need to follow Facebook's brand guidelines. [FBBRAND]  Otherwise, when staff
+                // at Facebook inspect your OAuth app, they'll notice this and contact you.
                 r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
                     className: 's_FbIcon' }), "Facebook"))),
           !ss.enableTwitterLogin ? null :
