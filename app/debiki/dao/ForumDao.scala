@@ -304,7 +304,7 @@ trait ForumDao {
           slug = UncategorizedCategorySlug,
           position = DefaultCategoryPosition,
           description = "For topics that don't fit in other categories.",
-          newTopicTypes = immutable.Seq(PageType.Discussion),
+          newTopicTypes = immutable.Seq(PageType.Question),
           unlistCategory = false,
           unlistTopics = false,
           includeInSummaries = IncludeInSummaries.Default),
@@ -369,9 +369,10 @@ trait ForumDao {
       tx)
 
     if (options.createSampleTopics) {
+      def wrap(text: String) = textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(text, isTitle = false)
 
       // Create a sample open-ended discussion.
-      createPageImpl(
+      val discussionPagePath = createPageImpl(
         PageType.Discussion, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-discussion"), showId = true,
@@ -383,9 +384,20 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx)
+        tx)._1
+      // ... with a brief discussion.
+      insertReplyImpl(wrap(SampleDiscussionReplyOne),
+        discussionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleDiscussionReplyTwo),
+        discussionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleDiscussionReplyThree),
+        discussionPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 1), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
 
-      // Create sample problem.
+      /*
+      // Create sample problem. — maybe it's enough, with a sample Idea.
       createPageImpl(
         PageType.Problem, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
@@ -398,10 +410,10 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx)
+        tx) */
 
       // Create sample idea.
-      createPageImpl(
+      val ideaPagePath = createPageImpl(
         PageType.Idea, PageStatus.Published,
         anyCategoryId = anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-idea"), showId = true,
@@ -413,7 +425,20 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        tx)
+        tx)._1
+      // ... with a two discussion replies, and two progress replies.
+      insertReplyImpl(wrap(SampleIdeaDiscussionReplyOne),
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleIdeaDiscussionReplyTwo),
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleIdeaProgressReplyOne),
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.BottomComment,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleIdeaProgressReplyTwo),
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 2), PostType.BottomComment,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
 
       // Create sample question.
       val questionPagePath = createPageImpl(
@@ -430,7 +455,6 @@ trait ForumDao {
         spamRelReqStuff = None,
         tx)._1
       // ... with two answers and a comment:
-      def wrap(text: String) = textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(text, isTitle = false)
       insertReplyImpl(wrap(SampleAnswerText),
         questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
@@ -514,10 +538,18 @@ object ForumDao {
   private val StaffChatTopicTitle = "Staff chat"
   private val StaffChatTopicText = "This is a private chat for staff."
 
+
   private val SampleThreadedDiscussionTitle = "Sample discussion"
   private val SampleThreadedDiscussionText =
     o"""This is an open ended discussion. Good comments rise to the top, and people can click
        Disagree to show that they disagree about something."""
+
+  private val SampleDiscussionReplyOne = o"""Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+      sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+      quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."""
+  private val SampleDiscussionReplyTwo = SampleDiscussionReplyOne.takeWhile(_ != '.')
+  private val SampleDiscussionReplyThree = SampleDiscussionReplyTwo
+
 
   private val SampleProblemTitle = "Sample problem"
   private val SampleProblemText = {
@@ -550,6 +582,7 @@ object ForumDao {
         """)
   }
 
+
   private val SampleIdeaTitle = "Sample idea"
   private val SampleIdeaText = {
     val para1 = o"""This is a sample idea. Click the idea icon to the left of the title
@@ -572,6 +605,20 @@ object ForumDao {
         |<p>$ToDeleteText</p>
         """)
   }
+
+  private val SampleIdeaDiscussionReplyOne = o"""Sample reply, discussing if the idea
+     is a good idea."""
+
+  private val SampleIdeaDiscussionReplyTwo = o"""A reply to the sample reply,
+     with more thoughts about the idea is a good thing to do, or not."""
+
+  private val SampleIdeaProgressReplyOne = o"""This is a progress reply. Here you can step by
+     step update others, about how you're making progress with actually implementing
+     the idea."""
+
+  private val SampleIdeaProgressReplyTwo = o"""Now we have: ...,
+     and next we will: ... (just some sample text, this)."""
+
 
   private val SampleQuestionTitle = "Sample question"
   private val SampleQuestionText = {
