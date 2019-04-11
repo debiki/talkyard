@@ -58,7 +58,7 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     console.log('Step 4');
     browser.waitAndClick('.s_Tour-Step-4 .s_Tour_D_Bs_NextB');
     console.log('Step 5');
-    browser.waitAndClick('#e2eViewCategoriesB');
+    browser.waitAndClick('#e_ViewCatsB');
     console.log('Step 6');
     browser.waitAndClick('.s_Tour-Step-6 .s_Tour_D_Bs_NextB');
     console.log('Step 7');

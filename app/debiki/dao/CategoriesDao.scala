@@ -625,8 +625,11 @@ trait CategoriesDao {
 
 object CategoriesDao {
 
-  val CategoryDescriptionSource =  // [i18n]
-    "[Replace this with a short description of the category.]"
+  val CategoryDescriptionSource = /* [i18n] */  i"""
+    |[Replace this with a short description of the category.]
+    |
+    |By clicking the edit button <span class="icon-edit"></span> just below.
+    |"""
 
 }
 

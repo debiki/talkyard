@@ -226,10 +226,10 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
 
 .dw-about-category
   .dw-about-cat-ttl-prfx
-    margin-top: 45px !important  // why did I add 'important' to h2?
-    margin-bottom: 10px;
-    font-style: italic
+    margin: 45px 0 0;
+    padding: 0 0 5px;
     clear: both; // if there's a float-left help box above
+    font-size: 24px;
 
   .dw-p-ttl
     margin-top: 0
@@ -419,6 +419,26 @@ footer
 .s_InIframe .esPage > .container
   margin: 0;
 
+
+// About category pages
+//==============================
+
+// One shouldn't do anything but editing, and possibly link to, a category descr topic. [4AKBE02]
+.s_PT-9
+  .dw-a-change,
+  .dw-a-reply,
+  .dw-a-like,
+  .s_APAs,
+  .esMetabar,
+  .dw-a-more
+    display: none;
+
+  // Make the Edit icon easier to find. Only the pencil seems hard to see.
+  .dw-a-edit.icon-edit::after
+    content: 'Edit';
+    color: hsl(0, 0%, 18%);
+    opacity: 1;
+    margin-left: 3px;
 
 // Code pages and templates
 //==============================

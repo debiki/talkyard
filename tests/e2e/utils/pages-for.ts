@@ -2327,7 +2327,7 @@ function pagesFor(browser) {
       },
 
       clickViewCategories: function() {
-        api.waitAndClick('#e2eViewCategoriesB');
+        api.waitAndClick('#e_ViewCatsB');
       },
 
       viewTopics: function(ps: { waitForTopics?: false } = {}) {
@@ -2355,7 +2355,7 @@ function pagesFor(browser) {
 
       assertNoCreateTopicButton: function() {
         // Wait until the button bar has loaded.
-        api.waitForVisible('#e2eViewCategoriesB');
+        api.waitForVisible('#e_ViewCatsB');
         assert(!browser.isVisible('#e2eCreateSth'));
       },
 

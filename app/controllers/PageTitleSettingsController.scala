@@ -79,6 +79,9 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
+    throwForbiddenIf(oldMeta.pageType == PageType.AboutCategory,  //  [4AKBE02]
+      "TyEEDCATDSCTTL", "Don't edit the category description topic title — edit the topic text instead")
+
     if (anyNewRole.exists(_ != oldMeta.pageType) && !oldMeta.pageType.mayChangeRole)
       throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
 

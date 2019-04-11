@@ -75,12 +75,13 @@ object EdHttp {
   def UnauthorizedResult(errCode: String, message: String): Result =
     R.Unauthorized(s"401 Unauthorized\n$message [$errCode]")
 
-  def ForbiddenResult(errCode: String, message: String): Result =
-    R.Forbidden(s"403 Forbidden\n$message [$errCode]").withHeaders("X-Error-Code" -> errCode)
+  def ForbiddenResult(errCode: String, message: String, details: String = ""): Result = {
+    R.Forbidden(s"403 Forbidden\n$message [$errCode]\n\n$details").withHeaders("X-Error-Code" -> errCode)
     /* Doesn't work, the Som(reason) is ignored: (could fix later in Play 2.5 when Iterates = gone)
     Result(
       ResponseHeader(404, Map.empty, Some(s"Forbidden!!zz $errCode")),
       Enumerator(wString.transform(s"403 Forbidden bdy\n $message [$errCode]"))) */
+  }
 
   def NotImplementedResult(errorCode: String, message: String): Result =
     R.NotImplemented(s"501 Not Implemented\n$message [$errorCode]")
@@ -181,8 +182,8 @@ object EdHttp {
   def throwUnauthorized(errCode: String, message: String = "") =
     throw ResultException(UnauthorizedResult(errCode, message))
 
-  def throwForbidden(errCode: String, message: String = "") =
-    throw ResultException(ForbiddenResult(errCode, message))
+  def throwForbidden(errCode: String, message: String = "", details: String = "") =
+    throw ResultException(ForbiddenResult(errCode, message, details))
 
   def throwForbiddenIf(test: Boolean, errorCode: String, message: => String): Unit =
     if (test) throwForbidden(errorCode, message)
@@ -237,8 +238,8 @@ object EdHttp {
 
 
 
-  def throwForbidden2: (String, String) => Nothing =
-    throwForbidden
+  def throwForbidden2(errorCode: String, message: String, details: String = ""): Nothing =
+    throwForbidden(errorCode , message, details)
 
   def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = "") {
     if (test) throwNotImplemented(errorCode, message)

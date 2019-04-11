@@ -154,6 +154,8 @@ const EditCategoryDialog = createClassAndFactory({
   },
 
   deleteCategory: function() {
+    const category: Category = this.state.category;
+    dieIf(category.isDefaultCategory, "This is the default category, cannot delete it [TyEDELDFCAT]");
     ReactActions.deleteCategory(this.state.categoryId, () => {
       const deletedCategory = { ...this.state.category, isDeleted: true  };
       this.setState({ category: deletedCategory });

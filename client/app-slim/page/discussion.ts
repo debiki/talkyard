@@ -279,14 +279,19 @@ export const TitleBodyComments = createComponent({
     let anyAboutCategoryClass;
     let anyAboutCategoryTitle;
     if (page.pageRole === PageRole.About) {
+      const ancestors = page.ancestorsRootFirst;
+      const parentCategory = _.last(ancestors);
+      const categoryTitle = parentCategory.title;
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
-          r.h2({ className: 'dw-about-cat-ttl-prfx' }, t.d.AboutCat)
+          r.h2({ className: 'dw-about-cat-ttl-prfx' }, // t.d.AboutCat) I18N rm "AboutCat"
+            "Edit the description of the '" + parentCategory.title + "' category:");
     }
 
     let anyTitle = null;
     let pageRole: PageRole = page.pageRole;
     if (pageRole === PageRole.CustomHtmlPage ||
+        pageRole === PageRole.About || // excl cat descr topics [4AKBR02]
         (pageRole === PageRole.EmbeddedComments && store.isEmbedded) ||
         store.rootPostId !== BodyNr) {
       // Show no title for the homepage — it should have its own custom HTML with

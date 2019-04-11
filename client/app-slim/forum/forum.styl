@@ -84,6 +84,11 @@ html.js:not(.dw-react-started)
 // Action bar
 //===========================
 
+
+.s_F_BB-Topics .esForum_catsDrop // for now, use that instead of this (0BZZKW2)  CLEAN_UP
+  display: none;
+
+
 // Fix this long error prone list later.
 .esF_BB_SortBtn,
 .esForum_navLink,
@@ -187,6 +192,7 @@ html.js:not(.dw-react-started)
   padding-bottom: 7px;
 
 .esF_BB_EditCat
+  display: none;   // for now, use that instead of this (0BZZKW2)  CLEAN_UP
   padding-top: 7px;
 
 .esForum_topicsCatsHelp
@@ -198,7 +204,7 @@ html.js:not(.dw-react-started)
 
 .dw-forum-actionbar
   clear: both
-  padding 0 0 18px;
+  padding 0 0 10px;
 
   .form-group
     margin-bottom: 0;
@@ -267,18 +273,49 @@ $tableHeaderFontSize = 14px;
 //===========================
 
 // First, any category title and about-text (shown above the topics).
+
+.s_F_Ts_Cat
+  text-align: center;
+  margin-bottom: 20px;
+
+/* Before, when wasn't a clickble button. (Delete this paragraph soon)
 .s_F_Ts_Cat_Ttl
   margin: 5px 0 9px;
   text-align: center;
   font-size: 20px;
-  color: hsl(0, 0%, 33%);
+  color: hsl(0, 0%, 33%); */
+
+.DW.DW .s_F_Ts_Cat_Ttl   // for now, use this instead of that (0BZZKW2)
+  float: none;
+  text-align: center;
+  margin: 0 auto 6px!important;
+  background: none;
+  display: block;
+  font-size: 20px;
+  /* background: hsl(0, 0%, 93%); */
+  padding: 6px 13px 6px 14px;
+  text-decoration: underline;
+  text-decoration-color: hsl(0,0%,65%);
+  color: #141414 !important;
+  font-weight: bold;
+  color: hsl(0, 0%, 35%) !important;
+
 .s_F_Ts_Cat_Abt
   max-width: 670px;
-  margin: 0 auto 22px;
+  margin: 0 auto;
   text-align: center;
   font-size: 14px;
   line-height: 150%;
   color: hsl(0, 0%, 18%);
+
+ .s_F_Ts_Cat_Edt   // for now, use this instead of that (0BZZKW2)
+  margin: 4px 0 0;
+  padding: 3px 0;
+  display: inline-block;
+  position: relative;
+  left: -8px;
+  &:before
+    opacity: 0.8;  // or edit pencil icon too dark
 
 // Avoid undesired flash-of-the-wrong-topic-list before we know if the topic list included
 // by the server is the one we want to show. (The server doesn't know which #/client-route
@@ -492,7 +529,7 @@ td.dw-tpc-activity
         .icon-chat:before
           color: hsl(0, 0%, 70%);
           font-weight: bold;
-          margin: 0 9px 0 0;
+          margin: 0 7px 0 0;
           padding: 0;
           width: 17px;
 
@@ -643,6 +680,9 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
   visibility: hidden;
   width: 75px;
   display: block;
+
+.s_F_Ts_NoTopics
+  margin: 20px 0 10px;
 
 
 // Categories tree

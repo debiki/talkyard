@@ -683,10 +683,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
       case Some(xsrfCookie) =>
-        if (xsrfCookie.value != xsrfToken)
-          throwForbidden("DwE53FC9", "Bad XSRF token")
+        throwForbiddenIf(xsrfCookie.value != xsrfToken,
+          "TyEOAUXSRFTKN", s"Bad XSRF token, doesn't match the $ReturnToSiteXsrfTokenCookieName cookie")
       case None =>
-        throwForbidden("DwE7GCV0", "No XSRF cookie")
+        throwForbidden("TyE0OAUXSRFCO", s"No $ReturnToSiteXsrfTokenCookieName xsrf cookie",
+          o"""Are you logging in, in two browser tabs, in parallell?
+            That's not supported. Please try again in one single tab.
+            Or cookies are disabled? Please enable cookies.""")
     }
     tryLoginOrShowCreateUserDialog(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
       .discardingCookies(DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName))

@@ -615,6 +615,13 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 }
 
 
+export function store_findTheDefaultCategory(store: Store): Category | undefined {
+  return _.find(store.currentCategories, (category: Category) => {
+    return category.isDefaultCategory;
+  });
+}
+
+
 export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
   return _.filter(store.currentCategories, (c: Category) => {
     if (c.isForumItself) return false;

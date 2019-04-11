@@ -326,11 +326,14 @@ trait ForumDao {
           slug = "sample-topics",
           position = DefaultCategoryPosition + 100,
           description =
-            o"""Sample topics of different types. They aren't listed in the main
-              topic list — you'll see them only if you open this sample topics category.""",
+            o"""Sample topics of different types, okay to delete.""",
+            // yes now they are [4AKBR02]: They aren't listed in the main
+              //topic list — you'll see them only if you open this sample topics category.""",
           newTopicTypes = immutable.Seq(PageType.Discussion),
           unlistCategory = false,
-          unlistTopics = true,  // so won't appear in the main topic list
+          unlistTopics = false,  // so won't appear in the main topic list
+                                 // edit: Now I just hid all category-descr topics. [4AKBR02]
+                                 // Let's try again, with showing the sample topics by default.
           includeInSummaries = IncludeInSummaries.NoExclude),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
@@ -349,21 +352,6 @@ trait ForumDao {
       bodyHtmlSanitized = welcomeTopic.html,
       pinOrder = Some(WelcomeToForumTopicPinOrder),
       pinWhere = Some(PinPageWhere.Globally),
-      bySystem,
-      spamRelReqStuff = None,
-      tx)
-
-    // Create staff chat
-    createPageImpl(
-      PageType.OpenChat, PageStatus.Published,
-      anyCategoryId = Some(staffCategoryId),
-      anyFolder = None, anySlug = Some("staff-chat"), showId = true,
-      titleSource = StaffChatTopicTitle,
-      titleHtmlSanitized = StaffChatTopicTitle,
-      bodySource = StaffChatTopicText,
-      bodyHtmlSanitized = s"<p>$StaffChatTopicText</p>",
-      pinOrder = None,
-      pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
       tx)
@@ -465,6 +453,23 @@ trait ForumDao {
         questionPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
     }
+
+    // Create staff chat.
+    // (Create after the sample topics above, so will appear above them in the
+    // topic list, because is newer.)
+    createPageImpl(
+      PageType.OpenChat, PageStatus.Published,
+      anyCategoryId = Some(staffCategoryId),
+      anyFolder = None, anySlug = Some("staff-chat"), showId = true,
+      titleSource = StaffChatTopicTitle,
+      titleHtmlSanitized = StaffChatTopicTitle,
+      bodySource = StaffChatTopicText,
+      bodyHtmlSanitized = s"<p>$StaffChatTopicText</p>",
+      pinOrder = None,
+      pinWhere = None,
+      bySystem,
+      spamRelReqStuff = None,
+      tx)
 
     CreateForumResult(null, defaultCategoryId = defaultCategoryId,
       staffCategoryId = staffCategoryId)

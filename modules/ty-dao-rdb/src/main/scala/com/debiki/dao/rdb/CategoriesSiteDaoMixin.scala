@@ -158,7 +158,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
           g.category_id in (${ makeInListFor(categoryIds) }) and   -- BUG cannot have g. and t. in 'where' part? only pps. ?
           $offsetTestAnd
           $pageFilterAnd
-          g.page_role <> ${PageType.Forum.toInt}
+          -- exclude category descr topics [4AKBR02]
+          g.page_role not in (${PageType.Forum.toInt}, ${PageType.AboutCategory.toInt})
           $andNotDeleted
         order by pps.$periodScore desc, g.bumped_at desc
         limit $limit"""
@@ -243,7 +244,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
           $offsetTestAnd
           $pageFilterAnd
           g.site_id = ? and
-          g.page_role <> ${PageType.Forum.toInt} and
+          -- exclude category descr topics [4AKBR02]
+          g.page_role not in (${PageType.Forum.toInt}, ${PageType.AboutCategory.toInt}) and
           g.category_id in (${ makeInListFor(categoryIds) })
           $andNotDeleted
         $orderBy

@@ -162,6 +162,42 @@ export const ForumComponent = createReactClass(<any> {
     return activeCategory;
   },
 
+  setCategory: function(newCategorySlug) {
+    const [forumPath, routes] = this.getForumPathAndRoutes();
+    const sortOrderRoute = routes[0];
+    const currentPath = sortOrderRoute;
+    const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
+    const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
+    this.props.history.push({
+      pathname: forumPath + nextPath + slashSlug,
+      search: this.props.location.search,
+    });
+  },
+
+  editCategory: function() {
+    const [forumPath, routes] = this.getForumPathAndRoutes();
+    const currentCategorySlug = routes[1];
+    const activeCategory = this.getActiveCategory(currentCategorySlug);
+    morebundle.getEditCategoryDialog(dialog => {
+      if (this.isGone) return;
+      dialog.open(activeCategory.id);
+      // BUG needs to call this.props.setCategory(edited-category.slug), if slug changed. [7AFDW01]
+    });
+  },
+
+  getForumPathAndRoutes: function() {
+    const store: Store = this.state.store;
+    const page: Page = store.currentPage;
+    const forumPath = page.pagePath.value;
+    // This is done this way because of how React-Router v3 was working. It was simpler
+    // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
+    // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
+    const pathRelForumPage = this.props.location.pathname.replace(forumPath, '');
+    // This becomes e.g. ['new', 'ideas']:
+    const routes = pathRelForumPage.split('/');
+    return [forumPath, routes];
+  },
+
   render: function() {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;
@@ -174,15 +210,8 @@ export const ForumComponent = createReactClass(<any> {
       return r.div({ className: 'container dw-forum' }, t.Loading + ' [TyM2EPKB04]');
     }
 
-    const forumPath = page.pagePath.value;
+    const [forumPath, routes] = this.getForumPathAndRoutes();
 
-    // This is done this way because of how React-Router v3 was working. It was simpler
-    // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
-    // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
-    const pathRelForumPage = this.props.location.pathname.replace(forumPath, '');
-    // This becomes e.g. ['new', 'ideas']:
-
-    const routes = pathRelForumPage.split('/');
     const sortOrderRoute = routes[0];
     switch (sortOrderRoute) {
       case RoutePathLatest: break;
@@ -203,6 +232,8 @@ export const ForumComponent = createReactClass(<any> {
       sortOrderRoute,
       queryParams: parseQueryString(this.props.location.search),
       activeCategory: activeCategory,
+      setCategory: this.setCategory,
+      editCategory: this.editCategory,
       topPeriod: this.state.topPeriod,
       setTopPeriod: this.setTopPeriod,
     });
@@ -311,24 +342,6 @@ const ForumButtons = createComponent({
     }
   },
 
-  setCategory: function(newCategorySlug) {
-    const store: Store = this.props.store;
-    const currentPath = this.props.sortOrderRoute;
-    const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
-    const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
-    this.props.history.push({
-      pathname: this.props.forumPath + nextPath + slashSlug,
-      search: this.props.location.search,
-    });
-  },
-
-  findTheDefaultCategory: function() {
-    const store: Store = this.props.store;
-    return _.find(store.currentCategories, (category: Category) => {
-      return category.isDefaultCategory;
-    });
-  },
-
   setSortOrder: function(newPath: string) {
     const store: Store = this.props.store;
     this.props.history.push({
@@ -389,14 +402,6 @@ const ForumButtons = createComponent({
     this.setState({ searchText: event.target.value });
   }, */
 
-  editCategory: function() {
-    morebundle.getEditCategoryDialog(dialog => {
-      if (this.isGone) return;
-      dialog.open(this.props.activeCategory.id);
-      // BUG needs to call this.setCategory(edited-category.slug), if slug changed. [7AFDW01]
-    });
-  },
-
   createCategory: function() {
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isGone) return;
@@ -410,8 +415,9 @@ const ForumButtons = createComponent({
       if (this.isGone) return;
       let category: Category = this.props.activeCategory;
       if (category.isForumItself) {
-        category = this.findTheDefaultCategory();
-        dieIf(!category, "No Uncategorized category [DwE5GKY8]");
+        category = store_findTheDefaultCategory(this.props.store);
+        dieIf(!category,
+          "There is no default category, so I don't know where to place this new topic. [TyE0DEFCAT]");
       }
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
@@ -480,7 +486,7 @@ const ForumButtons = createComponent({
 
     let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
     let categoryTreeLink = omitCategoryStuff ? null :
-      makeCategoryLink(RoutePathCategories, t.Categories, 'e2eViewCategoriesB', 'esForum_navLink');
+      makeCategoryLink(RoutePathCategories, t.fb.ViewCategories, 'e_ViewCatsB', 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
@@ -493,12 +499,13 @@ const ForumButtons = createComponent({
     // depends on the topic type).
     let activeOrDefaultCategory: Category = activeCategory;
 
+    // Dupl code [5BKZWY0]
     const categoryMenuItems = store.currentCategories.map((category: Category) => {
       if (activeOrDefaultCategory.isForumItself && category.isDefaultCategory) {
         activeOrDefaultCategory = category;
       }
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
-          onClick: () => this.setCategory(category.slug) },
+          onClick: () => this.props.setCategory(category.slug) },
             r.span({ className: category_iconClass(category, store) }, category.name));
     });
 
@@ -508,9 +515,10 @@ const ForumButtons = createComponent({
         // No category selected?
         activeCategory.isForumItself;
 
+    // ---- Dupl code [5BKZWY0] ------------------
     categoryMenuItems.unshift(
         MenuItem({ key: -1, active: listsTopicsInAllCats,
-          onClick: () => this.setCategory('') }, t.fb.AllCats));
+          onClick: () => this.props.setCategory('') }, t.fb.AllCats));
 
     const activeCategoryIcon = category_iconClass(activeCategory, store);
 
@@ -521,6 +529,7 @@ const ForumButtons = createComponent({
                   activeCategory.name + ' ', r.span({ className: 'caret' })) },
           r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
               categoryMenuItems));
+    // --- / Dupl code [5BKZWY0] ------------------
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = this.props.sortOrderRoute;
@@ -632,7 +641,7 @@ const ForumButtons = createComponent({
 
     let editCategoryBtn;
     if (!activeCategory.isForumItself && me.isAdmin) {
-      editCategoryBtn = Button({ onClick: this.editCategory, className: 'esF_BB_EditCat' },
+      editCategoryBtn = Button({ onClick: this.props.editCategory, className: 'esF_BB_EditCat' },
         t.fb.EditCat);
     }
 
@@ -889,6 +898,8 @@ const LoadAndListTopics = createFactory({
       showLoadMoreButton: this.state.showLoadMoreButton,
       loadMoreTopics: this.loadMoreTopics,
       activeCategory: this.props.activeCategory,
+      setCategory: this.props.setCategory,
+      editCategory: this.props.editCategory,
       orderOffset: this.getOrderOffset(),
       topPeriod: this.props.topPeriod,
       setTopPeriod: this.props.setTopPeriod,
@@ -945,9 +956,6 @@ export const TopicsList = createComponent({
       return r.p({ style: { minHeight: this.props.minHeight } }, t.Loading);
     }
 
-    if (!topics.length)
-      return r.p({ className: 's_F_Ts', id: 'e2eF_NoTopics' }, t.NoTopics);
-
     const useTable = this.props.useTable;
     const orderOffset: OrderOffset = this.props.orderOffset;
 
@@ -972,14 +980,16 @@ export const TopicsList = createComponent({
         // Too few topics, then right now no one cares about the icons?
         (topics.length < numFewTopics && !this.state.helpOpened);
         */
-    const iconsHelpStuff = iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
-        ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
-              onClick: this.openIconsHelp }, t.ft.ExplIcons)
-        : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
+    const iconsHelpStuff = !topics.length ? null : (
+        iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
+          ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
+                onClick: this.openIconsHelp }, t.ft.ExplIcons)
+          : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false }));
+
     topicElems.splice(Math.min(topicElems.length, numFewTopics), 0,
       useTable
         ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
-        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff)); // (update BJJ CSS before changin this (!))
+        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
 
     let loadMoreTopicsBtn;
     if (this.props.showLoadMoreButton) {
@@ -1052,18 +1062,13 @@ export const TopicsList = createComponent({
         r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
           topicElems);
 
-    // Show a category title and description. Otherwise people tend to not
-    // notice that they are inside a category. And they typically do *not* see
-    // any about-category pinned topic (like Discourse does — don't do that).
-    const categoryId = this.props.categoryId;
-    const categoryParentId = this.props.categoryParentId;
-    const categoryName = this.props.categoryName;
-    const categoryDescr = this.props.categoryDescr;
-    const missingOrIsRootCategory = !categoryId || !categoryParentId;
-    const categoryNameDescr = missingOrIsRootCategory ? null :
-      r.div({ className: 's_F_Ts_Cat' },
-        r.h2({ className: 's_F_Ts_Cat_Ttl' }, categoryName),
-        r.p({ className: 's_F_Ts_Cat_Abt' }, categoryDescr));
+    // Show a category title and description.
+    // Otherwise people tend to not notice that they are inside a category.
+    // And they typically do *not* see any about-category pinned topic
+    // (like Discourse does — don't do that).
+    let categoryNameDescr = !settings_showCategories(store.settings, me) ? null :
+      CatNameDescr({ store, activeCategory, setCategory: this.props.setCategory,
+          editCategory: this.props.editCategory });
 
     return (
       r.div({ className: 's_F_Ts e_SrtOrdr-' + orderOffset.sortOrder },
@@ -1073,9 +1078,60 @@ export const TopicsList = createComponent({
           anyDeletedCross,
           categoryNameDescr,
           topicsTable || topicRows),
+        topics.length ? null :
+          r.div({ className: 's_F_Ts_NoTopics', id: 'e2eF_NoTopics' }, t.NoTopics),
         loadMoreTopicsBtn));
   }
 });
+
+
+function CatNameDescr(props: { store: Store, activeCategory: Category,
+      setCategory, editCategory }) {
+  const store: Store = props.store;
+  const activeCategory: Category = props.activeCategory;
+
+  // ---- Dupl code [5BKZWY0] ------------------
+  const categoryMenuItems = store.currentCategories.map((category: Category) => {
+    return MenuItem({ key: category.id, active: activeCategory.id === category.id,
+        onClick: () => props.setCategory(category.slug) },
+          r.span({ className: category_iconClass(category, store) }, category.name));
+  });
+  categoryMenuItems.unshift(
+      MenuItem({ key: -1, active: activeCategory.isForumItself,
+        onClick: () => props.setCategory('') }, t.fb.AllCats));
+
+  const activeCategoryIcon = category_iconClass(activeCategory, store);
+
+  let categoriesDropdownButton =
+      ModalDropdownButton({
+          className: 'esForum_catsNav_btn esForum_catsDrop active s_F_Ts_Cat_Ttl', pullLeft: true,
+          title: r.span({ className: activeCategoryIcon },
+                activeCategory.name + ' ', r.span({ className: 'caret' })) },
+        r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
+            categoryMenuItems));
+  // --- / Dupl code [5BKZWY0] ------------------
+
+  /*
+  const categoryId = this.props.categoryId;
+  const categoryParentId = this.props.categoryParentId;
+  */
+  const categoryName = categoriesDropdownButton; // this.props.categoryName;
+  const categoryDescr = activeCategory.description; // this.props.categoryDescr;
+  /*
+  const missingOrIsRootCategory = !categoryId || !categoryParentId;
+  const categoryNameDescr = missingOrIsRootCategory ? null :  */
+
+  const editCatButton = activeCategory.isForumItself ? null :
+      r.a({ className: 's_F_Ts_Cat_Edt icon-edit  esF_BB_EditCat', id: 'e2eEditTitle',
+            onClick: props.editCategory },
+          t.fb.EditCat);
+
+  return (
+    r.div({ className: 's_F_Ts_Cat' },
+      categoryName,  //, ' ', r.span({ class: 'caret' })),
+      r.p({ className: 's_F_Ts_Cat_Abt' }, categoryDescr),
+      editCatButton));
+}
 
 
 const IconHelpMessage = {
