@@ -53,16 +53,21 @@
 .esLD
   padding-top: 4px;
 
+  #dw-lgi-other-sites
+    margin-bottom: 28px;
+
   .btn-group-vertical
     margin: 0 auto;
     display: block;
     width: 19em;
 
-  $width = 350px;
+  $width = 323px;
   .esLD_Switch
     max-width: $width;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 17px auto;
+    &:last-child
+      margin: 31px auto 27px;  // more whitespace below, if nothing there
+
 
   form
     max-width: $width;
@@ -71,10 +76,15 @@
     &:last-child
       margin-bottom: 30px;
 
-  input
-    width: 300px !important;
-  .esCreateUser input#e2eUsername
-    width: 262px !important;  // because of the [@] in front [7RFWUQ2]
+  .input-group
+    width: 100%;  // else email and full name fields rather narrow, dupl [6RBTFE2]
+
+  // No, looks better with $width 323 and the inputs 100%.
+  //input
+  //  width: 310px !important;
+  //.esCreateUser input#e2eUsername
+  //  width: 272px !important;  // because of the [@] in front [7RFWUQ2]
+
   .input-group-addon
     background: hsl(0, 0%, 98.3%); // [7RFWUQ2]
 

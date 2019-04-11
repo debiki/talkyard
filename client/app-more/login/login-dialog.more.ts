@@ -300,8 +300,10 @@ export const LoginDialogContent = createClassAndFactory({
       // Don't show any switch-between-login-and-signup buttons.
     }
     else if (isSignUp) {
+      // If no signup fields above, center align the "Or log in instead" text, else looks weird.
+      const style = settings.allowLocalSignup === false ? { textAlign: 'center' } : null;
       switchToOtherDialogInstead =
-        r.div({ className: 'form-group esLD_Switch' },
+        r.div({ className: 'form-group esLD_Switch', style },
           "(", r.i({}, t.ld.AlreadyHaveAcctQ,
             t.ld.LogInInstead_1,
             r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
@@ -362,8 +364,9 @@ export const LoginDialogContent = createClassAndFactory({
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           ),
 
-        !anyOpenAuth ? null : r.p({ id: 'dw-lgi-or-login-using' },
-          isSignUp
+        !anyOpenAuth || (isSignUp && ss.allowLocalSignup === false) ? null :
+          r.p({ id: 'dw-lgi-or-login-using' },
+            isSignUp
               ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
               : t.ld.OrFillIn),
 
