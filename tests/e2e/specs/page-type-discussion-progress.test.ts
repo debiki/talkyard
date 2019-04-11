@@ -82,9 +82,9 @@ describe("Page type discussion, and progress comments", () => {
     mariasBrowser.topic.assertMetaPostTextMatches(3, 'reopened');
   });
 
-  it("Maria posts a progress comment", () => {
+  it("Maria posts a progress reply", () => {
     // c.FirstReplyNr + 2 = #post-4
-    mariasBrowser.complex.addBottomComment(bottomCommentOneText);
+    mariasBrowser.complex.addProgressReply(bottomCommentOneText);
   });
 
   it("Changes status to Closed", () => {

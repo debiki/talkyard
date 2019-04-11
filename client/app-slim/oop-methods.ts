@@ -675,7 +675,7 @@ export function page_hasDoingStatus(page: Page): boolean {
 }
 
 
-export function page_isFlatDiscourse(page: Page): boolean {
+export function page_isFlatDiscourse(page: Page): boolean {  // rename to page_isUsuallyFlatDiscourse?
   const pageRole = page.pageRole;
   return (pageRole === PageRole.Idea
       || pageRole === PageRole.Problem

@@ -2896,7 +2896,7 @@ function pagesFor(browser) {
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
       anyCommentSelector: '.dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
-      addBottomCommentSelector: '.s_APAs_ACBB',
+      addProgressReplySelector: '.s_APAs_ACBB',
 
       waitForReplyButtonAssertCommentsVisible: function() {
         api.waitForVisible(api.topic.anyReplyButtonSelector);
@@ -2951,9 +2951,9 @@ function pagesFor(browser) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
       },
 
-      clickAddBottomComment: function() {
-        api._waitForClickable(api.topic.addBottomCommentSelector);
-        api.topic.clickPostActionButton(api.topic.addBottomCommentSelector);
+      clickAddProgressReply: function() {
+        api._waitForClickable(api.topic.addProgressReplySelector);
+        api.topic.clickPostActionButton(api.topic.addProgressReplySelector);
         // Dismiss any help dialog that explains what bottom comments are.
         browser.pause(150);
         if (browser.isVisible('.e_HelpOk')) {
@@ -4968,10 +4968,6 @@ function pagesFor(browser) {
         api.editor.save();
       },
 
-      replyToOrigPostViaBottomButton: function(text: string) {
-        api.complex.replyToOrigPost(text, 'BottomButton');
-      },
-
       replyToEmbeddingBlogPost: function(text: string) {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
@@ -4992,8 +4988,8 @@ function pagesFor(browser) {
         api.switchToEmbeddedCommentsIrame();
       },
 
-      addBottomComment: function(text: string) {
-        api.topic.clickAddBottomComment();
+      addProgressReply: function(text: string) {
+        api.topic.clickAddProgressReply();
         api.editor.editText(text);
         api.editor.save();
       },

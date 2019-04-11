@@ -614,7 +614,6 @@ const RootPostAndComments = createComponent({
           ', these are present: ' + _.keys(postsByNr) + ' [DwE8WVP4])');
     const isBody = store.rootPostId === BodyNr;
     const pageRole: PageRole = page.pageRole;
-    const pageIsFlat = page_isFlatDiscourse(page);
     let threadClass = 'dw-t dw-depth-0' + horizontalCss(page.horizontalLayout);
     const postIdAttr = 'post-' + rootPost.nr;
     let postClass = 'dw-p';
@@ -688,41 +687,28 @@ const RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    let postNrs: PostNr[];
+    let repliesAreFlat = false;
+    let childNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
 
-    if (!pageIsFlat) {
-      postNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
-    }
-    else {
-      postNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
-      // Sort by time, oldest first.
-      postNrs.sort((nrA, nrB) => {
-        const postA: Post = postsByNr[nrA];
-        const postB: Post = postsByNr[nrB];
-        // Try to sort by when-was-approved, so won't accidentally miss a post,
-        // because it was posted long ago and didn't get approved until
-        // after even more posts had appeared.
-        const whenA = postA.approvedAtMs || postA.createdAtMs;
-        const whenB = postB.approvedAtMs || postB.createdAtMs;
-        // If A posted before B, then, whenA < whenB, resuling in a < 0 value,
-        // meaning A gets sorted before B.
-        if (whenA !== whenB) return whenA - whenB;
-        return postA.nr - postB.nr;
-      });
+    // On message pages, most likely max a few people talk — then threads make no sense.
+    // On form submission pages, people don't see each others submissions, won't talk at all.
+    if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
+      repliesAreFlat = true;
+      childNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
     }
 
     let isSquashing = false;
     let firstAppendedIndex = 0;
 
-    const threadedChildren = postNrs.map((childNr, childIndex) => {
+    const threadedChildren = childNrs.map((childNr, childIndex) => {
       if (childNr === BodyNr || childNr === TitleNr)
         return null;
       const child: Post = postsByNr[childNr];
       if (!child)
         return null; // deleted
-      const shallAppend = pageIsFlat || (
-          child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage);
-      if (!shallAppend) {
+      const isCommentOrEvent =
+          child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
+      if (!isCommentOrEvent) {
         firstAppendedIndex += 1;
       }
       if (isSquashing && child.squash)
@@ -731,7 +717,7 @@ const RootPostAndComments = createComponent({
         return null;
       isSquashing = false;
       const threadProps: any = { store };
-      if (pageIsFlat) threadProps.isFlat = true;
+      if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.post = child;
       threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only?
@@ -782,7 +768,7 @@ const RootPostAndComments = createComponent({
     // Only show a thin line, for now? The text makes people confused & didn't look nice enough?
     // They don't need to understand how this works, anyway?
     if (firstAppendedIndex < threadedChildren.length &&
-        !pageIsFlat && pageRole !== PageRole.EmbeddedComments) {
+        pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({}, t.sb.Progr));  // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
@@ -850,21 +836,23 @@ const RootPostAndComments = createComponent({
     const postActions = post_shallRenderAsHidden(rootPost) ? null :
          PostActions({ store, post: rootPost });
 
-    const mayReplyToOrigPost = store_mayIReply(store, rootPost);
     const isFormalMessage = page.pageRole === PageRole.FormalMessage;
 
     // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
     // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
     // If there're no replies, also don't show an extra orig-post-reply-button. (There's already
     // a blue primary one, just below-and-to-the-right-of the orig post.)
-    const skipOrigPostReplyBtn =
-        !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c));
+    // Edit: Instead, have a Discussion section, with a "Reply (insert)" button. [DISCPRGR]
+    // And in the Progress section, have only a "Reply (append)" button.
+    const skipOrigPostReplyBtn = true; /*
+        isFormalMessage || !mayReplyToOrigPost || pageRole === PageRole.EmbeddedComments ||
+          _.every(threadedChildren, c => _.isEmpty(c));  */
 
     // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
     // pages? UX Maybe later add back, for staff only or power users?
-    const skipBottomCommentBtn = pageIsFlat;
+    const skipBottomCommentBtn = pageRole === PageRole.EmbeddedComments;
 
-    const origPostReplyButton =
+    const afterPageActions =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
         page.pageRole === PageRole.MindMap ? null :
@@ -874,6 +862,9 @@ const RootPostAndComments = createComponent({
           makeReplyBtnTitle(store, rootPost, true)),
         skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB icon-comment-empty',
             onClick: (event) => {
+              this.onAfterPageReplyClick(event, PostType.BottomComment);
+              /* This no longer needed? [DISCPRGR] Keep for a while if want to add back
+                 some tips abou what a Progress reply is.
               const doReply = () => this.onAfterPageReplyClick(event, PostType.BottomComment);
               // Comments always added at the bottom on formal messages; no explanation needed. [4GKWC6]
               if (isFormalMessage) {
@@ -887,7 +878,7 @@ const RootPostAndComments = createComponent({
                     r.p({}, t.d.BottomCmtExpl_3)),
                   doAfter: doReply
                 });
-              }
+              } */
             } },
           isFormalMessage ? t.d.AddComment : t.d.AddBottomComment));
 
@@ -905,9 +896,9 @@ const RootPostAndComments = createComponent({
         // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,
         // they're no longer needed.
         r.div({ className: 'dw-single-and-multireplies' },
-          r.ol({ className: 'dw-res dw-singlereplies' + (pageIsFlat ? ' s_Ts-Flat' : '') },
+          r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
-        origPostReplyButton,
+        afterPageActions,
         chatSection,
         deletedText));
   },

@@ -120,8 +120,8 @@ describe("Page type question", () => {
     mariasBrowser.complex.replyToPostNr(3, "Thanks! Such a good idea");  // becomes post nr 5
   });
 
-  it("... and post a bottom comment", () => {
-    mariasBrowser.complex.addBottomComment("Thanks everyone! An otter then, a bath tube, and fish.")
+  it("... and post a progress reply", () => {
+    mariasBrowser.complex.addProgressReply("Thanks everyone! An otter then, a bath tube, and fish.")
   });
 
   it("Owen reopens the topic", () => {

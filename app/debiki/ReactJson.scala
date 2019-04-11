@@ -492,7 +492,8 @@ class JsonMaker(dao: SiteDao) {
 
     val depth = page.parts.depthOf(post.nr)
 
-    SHOULD; UX; BUG // ? what if page_isFlatDiscourse ?
+    COULD; UX; BUG // ? what if there're really many progress comments — then don't want
+    // to load all of those.
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
     // This is simple but a bit too stupid? COULD come up with a better algorithm (better

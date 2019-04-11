@@ -1017,7 +1017,7 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     if (aLast && !bLast)
       return +1;
     if (aLast && bLast)
-      return postA.nr < postB.nr ? -1 : +1;
+      return postApprovedOrCreatedBefore(postA, postB)
 
     // Place deleted posts last; they're rather uninteresting?
     if (!isDeleted(postA) && isDeleted(postB))
@@ -1082,13 +1082,26 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     // In Scala, a certain sortWith function is used, but it wants a Bool from the comparison
     // function, not a +-1 or 0 number. True means "should be sorted before".
     // But return 0 instead here to indicate that sort order doesn't matter.
+    /*
     if (postA.nr < postB.nr)
       return -1;
     else if (postA.nr > postB.nr)
       return +1;
     else
-      return 0; // cannot happen though
+      return 0; // cannot happen though  */
+    // Better to use approvedAt:
+    return postApprovedOrCreatedBefore(postA, postB);
   });
+}
+
+
+function postApprovedOrCreatedBefore(postA: Post, postB: Post): number {
+  // Sync w Scala [5BKZQF02]
+  const postAApprAt = postA.approvedAtMs || Infinity;
+  const postBApprAt = postB.approvedAtMs || Infinity;
+  if (postAApprAt < postBApprAt) return -1;
+  if (postAApprAt > postBApprAt) return +1;
+  return postA.nr < postB.nr ? -1 : +1;
 }
 
 

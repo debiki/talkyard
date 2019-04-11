@@ -792,13 +792,16 @@ object Post {
       return aPos < bPos
     } */
 
-    // Place append-at-the-bottom and meta-message posts at the bottom, sorted by time.
+    // Place append-at-the-bottom and meta-message posts at the bottom, sorted by
+    // when they were approved — rather than when they were posted, so that a
+    // post that got posted early, but didn't get approved until after some
+    // [auto approved posts by staff] won't get missed.
     if (!postA.tyype.placeLast && postB.tyype.placeLast)
       return true
     if (postA.tyype.placeLast && !postB.tyype.placeLast)
       return false
     if (postA.tyype.placeLast && postB.tyype.placeLast)
-      return postA.nr < postB.nr
+      return postApprovedOrCreatedBefore(postA, postB)
 
     // Place deleted posts last; they're rather uninteresting?
     if (!postA.deletedStatus.isDeleted && postB.deletedStatus.isDeleted)
@@ -870,11 +873,25 @@ object Post {
 
     // Newly added posts last. Use .nr, not createdAt, so a post that gets moved
     // from another page to this page, gets placed last (although maybe created first).
+    /*
     if (postA.nr < postB.nr)
       true
     else
-      false
+      false  */
+    // No, moving posts is a very rare thing. Instead, sort by approval time.
+    postApprovedOrCreatedBefore(postA, postB)
   }
 
+
+  private def postApprovedOrCreatedBefore(postA: Post, postB: Post): Boolean = {
+    // Sync w Typescript [5BKZQF02]
+    val postAApprAt: Long = postA.approvedAt.map(_.getTime).getOrElse(Long.MaxValue)
+    val postBApprAt: Long = postB.approvedAt.map(_.getTime).getOrElse(Long.MaxValue)
+    if (postAApprAt < postBApprAt)
+      return true
+    if (postAApprAt > postBApprAt)
+      return false
+    postA.nr < postB.nr
+  }
 }
 
