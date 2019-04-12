@@ -286,7 +286,7 @@ export const TitleBodyComments = createComponent({
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, // t.d.AboutCat) I18N rm "AboutCat"
-            "Edit the description of the '" + parentCategory.title + "' category:");
+            "Edit the description of the ", r.strong({}, parentCategory.title), " category:");
     }
 
     let anyTitle = null;
@@ -790,6 +790,9 @@ const RootPostAndComments = createComponent({
       // topic). Then, need not show any Discussion section title.
       showDiscussionSectionDivider = false;
     }
+    if (page.pageRole === PageRole.About) {
+      showDiscussionSectionDivider = false;
+    }
 
     if (showDiscussionSectionDivider) {
       let expl: string = '';
@@ -823,6 +826,9 @@ const RootPostAndComments = createComponent({
       // People shouldn't expect any Progress section on these pages (e.g. a Question-Answers
       // topic or a Discussion), and there are no Progress replies — so,
       // show no progr section divider.
+      showProgressSectionDivider = false;
+    }
+    if (page.pageRole === PageRole.About) {
       showProgressSectionDivider = false;
     }
 

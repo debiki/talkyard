@@ -421,11 +421,14 @@ trait ForumDao {
       insertReplyImpl(wrap(SampleIdeaDiscussionReplyTwo),
         ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
+      insertReplyImpl(wrap(SampleIdeaDiscussionReplyThree),
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 1), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
       insertReplyImpl(wrap(SampleIdeaProgressReplyOne),
         ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.BottomComment,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
       insertReplyImpl(wrap(SampleIdeaProgressReplyTwo),
-        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.FirstReplyNr + 2), PostType.BottomComment,
+        ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.BottomComment,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
 
       // Create sample question.
@@ -614,12 +617,17 @@ object ForumDao {
   private val SampleIdeaDiscussionReplyOne = o"""Sample reply, discussing if the idea
      is a good idea."""
 
-  private val SampleIdeaDiscussionReplyTwo = o"""A reply to the sample reply,
-     with more thoughts about the idea is a good thing to do, or not."""
+  private val SampleIdeaDiscussionReplyTwo = o"""
+     More thoughts about the idea."""
 
-  private val SampleIdeaProgressReplyOne = o"""This is a progress reply. Here you can step by
-     step update others, about how you're making progress with actually implementing
-     the idea."""
+  private val SampleIdeaDiscussionReplyThree = o"""
+     These Discussion section replies are always threaded.
+     Whilst the Progress section replies below, are flat."""
+
+  private val SampleIdeaProgressReplyOne = o"""
+     Here, in the Progress section,
+     you can step by step update others,
+     about how you're making progress with actually implementing the idea."""
 
   private val SampleIdeaProgressReplyTwo = o"""Now we have: ...,
      and next we will: ... (just some sample text, this)."""
