@@ -59,7 +59,7 @@ function scrollToComments(addBackStep?) {
   }
   utils.scrollIntoViewInPageColumn(
     // dupl code [5UKP20]
-    '.s_AppendBottomDiv', { marginTop: 65, marginBottom: 9999 });
+    '.s_PgSct-Prg', { marginTop: 65, marginBottom: 9999 });
 }
 
 function scrollToBottom(addBackStep?) {
@@ -181,7 +181,7 @@ export var ScrollButtons = createClassAndFactory({
           // DUPL CODE, fix  [5UKP20]
           lastPosTop =
             calcScrollIntoViewCoordsInPageColumn(
-              '.s_AppendBottomDiv', { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
+              '.s_PgSct-Prg', { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
           break;
         default: die('EsE2YWK4X8');
       }
@@ -346,7 +346,7 @@ const ScrollButtonsDropdownModal = createComponent({
       enableGotoRepliesBtn:
         calcCoords('.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 200 }).needsToScroll,
       enableGotoCommentsBtn:
-        calcCoords('.s_AppendBottomDiv', { marginTop: 65, marginBottom: 200 }).needsToScroll,
+        calcCoords('.s_PgSct', { marginTop: 65, marginBottom: 200 }).needsToScroll,
     });
   },
 

@@ -86,13 +86,13 @@ export const NoCommentsPageActions = createComponent({
 });
 
 
-export function makeReplyBtnIcon(store: Store) {
+function makeReplyBtnIcon(store: Store) {
   const page: Page = store.currentPage;
   return page.pageRole === PageRole.MindMap ? 'icon-plus' : 'icon-reply';
 }
 
 
-export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
+function makeReplyBtnTitle(store: Store, post: Post) {
   const page: Page = store.currentPage;
   if (post.nr !== BodyNr) {
     if (page.pageRole === PageRole.MindMap)
@@ -106,7 +106,13 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
     case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
     default:
-      return isAppendReplyButton ? t.pa.ReplyToOp : t.ReplyV;
+      return rFragment({},
+        r.b({}, t.ReplyV),
+        // On not-always, but *usually*-flat-progress-topics, this Reply button *appends* [DEFPRGRES]
+        // the replies, so show "append" here, to clarify.
+        !page_isAlwaysFlatDiscourse(page) &&
+          page_isUsuallyFlatDiscourse(page) ? r.span({}, " (append)") : null); // I18N
+      // t.pa.ReplyToOp <— I18N REMOVE
   }
 }
 
@@ -130,12 +136,21 @@ export const PostActions = createComponent({
 
     event.preventDefault();
     const eventTarget = event.target; // React.js will clear the field
-    // (Don't check this.props...isFlat here — use postType instead.)
-    const post: Post = this.props.post;
-    const newPostType = post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
 
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
+
+    // (Don't check this.props...isFlat here — use postType instead.)
+    const post: Post = this.props.post;
+    const newPostType =
+        page_isAlwaysFlatDiscourse(page) || (
+              // On usually-flat-progress-topics, by default, append replies. [DEFPRGRES]
+              page_isUsuallyFlatDiscourse(page) && post.nr === BodyNr)
+          ? PostType.BottomComment
+          : ((post.postType === PostType.Flat || post.postType === PostType.BottomComment)
+              ? post.postType
+              : PostType.Normal);
+
     const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
         LoginReason.PostEmbeddedComment : 'LoginToComment';
 
@@ -236,7 +251,7 @@ export const PostActions = createComponent({
     const replyButton = !store_mayIReply(store, post) ? null :
           r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store),
               onClick: this.onReplyClick },
-            makeReplyBtnTitle(store, post, false));
+            makeReplyBtnTitle(store, post));
 
     const changeButton = !isStaffOrOwnPage || !isPageBody ? null :
           r.a({ className: 'dw-a dw-a-change',
@@ -546,8 +561,8 @@ function findPostNrsRead(postsByNr: { [postNr: number]: Post }, post): PostNr[] 
 
     // Also add all previous siblings, shown before curPostNr — because to find and read curPostNr,
     // one needs to scroll past, and probably read, those too.
-    for (let i = 0; i < parent.childIdsSorted.length; ++i) {
-      const siblingNr = parent.childIdsSorted[i];
+    for (let i = 0; i < parent.childNrsSorted.length; ++i) {
+      const siblingNr = parent.childNrsSorted[i];
       if (siblingNr === curPostNr) {
         // We don't know if any siblings sorted *after* curPostNr has been read.
         // @ifdef DEBUG

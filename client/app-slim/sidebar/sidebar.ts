@@ -246,7 +246,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         const post: Post = page.postsByNr[postNr];
         if (post) {
           addPost(post);
-          addRecursively(post.childIdsSorted);
+          addRecursively(post.childNrsSorted);
         }
       });
     };
@@ -279,7 +279,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     };
 
     const rootPost = page.postsByNr[store.rootPostId];
-    addRecursively(rootPost.childIdsSorted);
+    addRecursively(rootPost.childNrsSorted);
 
     _.each(page.postsByNr, (child: Post, childId) => {
       if (child.postType === PostType.Flat) {

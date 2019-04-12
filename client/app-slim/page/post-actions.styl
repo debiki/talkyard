@@ -260,16 +260,23 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
       padding-right: 12px; // ... so reduce padding-right instead
 
 // Avoid float drop (the reply button is to the very left)
+.s_OpReB-Dsc,
 .s_APAs_OPRB,
 .s_APAs_ACBB,
 .DW.DW .dw-p-as .dw-a-reply
-  font-weight: bold;
   padding: 9px 12px 9px 8px;
   margin-left: 6px;
   background: hsl(207, 0%, 95%);
   color: hsl(0, 0%, 18%);
   &:before
     opacity: 0.6; // or icon too not-opaque
+
+.s_OpReB-Dsc,
+.s_OpReB-Prg
+  display: inline-block;
+  margin: 0 0 40px 0;
+  b
+    margin: 0 2px 0 3px;
 
 // Highlight the heart and other vote symbols if the user has voted Like or whatever.
 .dw-my-vote:before,
@@ -377,7 +384,12 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 
 .s_APAs
   clearfix()
-  margin: 16px 0 10px;
+  margin: 5px 0 10px;
+  padding-top: 16px;
+  // A border between this button, and the reply above, hopefully prevents people from
+  // believing this button replies to that reply. (It instead replies to the orig post.)
+  border-top: 1px solid hsl(0, 0%, 87%);
+
   a:first-child
     margin-left: 0;
 
@@ -392,27 +404,9 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
     outline: 1px solid hsl($uiHue, 100%, 92%);
     text-decoration: none;
 
-  &:before  // the icons
-    margin-right: 7px;
-
 .s_APAs_OPRB
   padding-left: 10px;
   margin: 0 8px 10px 0; // whitespace between the OP Reply btn and the Append-Bottom button
-
-// Make it less prominent, so people won't accidentally use this button instead of Reply.
-// Except for in formal discussions; then ok to use it (comments always appended at the bottom). [4GKWC6]
-.esPage:not(.s_PT-17) .s_APAs_ACBB
-  background: none;
-  color: hsl(0, 0%, 38%);
-  font-weight: normal;
-
-  &:before
-    font-weight: bold;  // make comment icon bold
-
-  .icon-collapse:before
-    rotateFn(180deg);  // flip collapse-up so it instead looks like append-bottom
-    opacity: 0.62;
-    vertical-align: middle;
 
 // For now, hide "Append reply" and "Reply to orig post", on embedded comments pages.
 // Those btns make things look too complicated.

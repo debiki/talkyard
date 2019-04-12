@@ -43,10 +43,10 @@ const r = ReactDOMFactories;
 
 export function drawHorizontalArrowFromRootPost(rootPost) {
   var arrowToChildren;
-  if (rootPost.childIdsSorted.length === 1) {
+  if (rootPost.childNrsSorted.length === 1) {
     arrowToChildren = r.div({ className: 'dw-arw dw-arw-hz-curve-to-reply-btn' });
   }
-  else if (rootPost.childIdsSorted.length >= 2) {
+  else if (rootPost.childNrsSorted.length >= 2) {
     arrowToChildren = r.div({ className: 'dw-arw dw-arw-hz-branch-to-reply-btn' });
   }
   return r.div({ className: 'dw-t-vspace' }, arrowToChildren);
@@ -63,7 +63,7 @@ export function drawArrowsFromParent(
   if (!parentPost)
     return [];
 
-  var postNr = parentPost.childIdsSorted[index];
+  var postNr = parentPost.childNrsSorted[index];
   var post: Post = postsByNr[postNr];
   if (!post)
     return []; // deleted
@@ -73,9 +73,9 @@ export function drawArrowsFromParent(
   // Find out how many siblings after `index` to which we shall draw arrows.
   var numRemainingWithArrows = 0;
   if (parentPost) {
-    for (var i = index + 1; i < parentPost.childIdsSorted.length; ++i) {
-      var siblingId = parentPost.childIdsSorted[i];
-      var sibling: Post = postsByNr[siblingId];
+    for (var i = index + 1; i < parentPost.childNrsSorted.length; ++i) {
+      var siblingNr = parentPost.childNrsSorted[i];
+      var sibling: Post = postsByNr[siblingNr];
       if (!sibling) {
         // This post has been deleted?
         continue;

@@ -284,7 +284,7 @@ interface Post {
   pinnedPosition: number;
   branchSideways: number;
   likeScore: number;
-  childIdsSorted: number[];
+  childNrsSorted: number[];
   unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
   sanitizedHtml?: string;
   tags?: string[];
@@ -294,14 +294,14 @@ interface Post {
 
 
 const enum PostType {   // sync with test code [26BKA01]
-  Normal = 1,
-  Flat = 2,
+  Normal = 1,         // RENAME to NormalPost
+  Flat = 2,           // CLEAN_UP remove
   ChatMessage = 3,
-  BottomComment = 4,
+  BottomComment = 4,  // RENAME to ProgressPost
   StaffWiki = 11,
   CommunityWiki = 12,
   CompletedForm = 21,
-  MetaMessage = 31,
+  MetaMessage = 31,   // RENAME to MetaPost
 }
 
 
@@ -787,7 +787,8 @@ interface Page {
   numPostsChatSection: number;
   numPostsExclTitle: number;
   postsByNr: { [postNr: number]: Post };
-  topLevelCommentIdsSorted: number[];
+  parentlessReplyNrsSorted: number[];
+  progressPostNrsSorted: number[];
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
 }

@@ -114,9 +114,14 @@ abstract class PageParts {
   def pageId: PageId
   def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
-  def topLevelComments: immutable.Seq[Post] =
+  def parentlessReplies: immutable.Seq[Post] =
     childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil) filterNot { post =>
       PageParts.isArticleOrTitlePostNr(post.nr)
+    }
+
+  def progressPosts: immutable.Seq[Post] =
+    allPosts filter { post =>
+      !PageParts.isArticleOrTitlePostNr(post.nr) && post.shallAppendLast
     }
 
   def allPosts: immutable.Seq[Post]

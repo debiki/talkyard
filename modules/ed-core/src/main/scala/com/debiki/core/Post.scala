@@ -150,7 +150,7 @@ object PostType {
   case object ChatMessage extends PostType(3)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
-  // RENAME to ProgressComment? or ChronoComment?
+  // RENAME to ProgressPost
   case object BottomComment extends PostType(4) { override def placeLast = true }
 
   CLEAN_UP // remove StaffWiki, use the permission system instead.
@@ -436,7 +436,7 @@ case class Post(   // [exp] ok use
   def isMultireply = isReply && multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
   def isMetaMessage = tyype == PostType.MetaMessage
-  def isBottomComment = tyype == PostType.BottomComment
+  def isBottomComment = tyype == PostType.BottomComment   // RENAME to isProgressReply
   def shallAppendLast = isMetaMessage || isBottomComment
   def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted

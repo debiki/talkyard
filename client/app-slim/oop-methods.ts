@@ -675,12 +675,25 @@ export function page_hasDoingStatus(page: Page): boolean {
 }
 
 
-export function page_isFlatDiscourse(page: Page): boolean {  // rename to page_isUsuallyFlatDiscourse?
+export function page_isAlwaysFlatDiscourse(page: Page): boolean {
   const pageRole = page.pageRole;
-  return (pageRole === PageRole.Idea
-      || pageRole === PageRole.Problem
-      || pageRole === PageRole.FormalMessage
+  return (pageRole === PageRole.FormalMessage
       || pageRole === PageRole.Form);
+}
+
+
+export function page_isUsuallyFlatDiscourse(page: Page): boolean {
+  const pageRole = page.pageRole;
+  return page_isAlwaysFlatDiscourse(page) || (
+      pageRole === PageRole.Idea
+      || pageRole === PageRole.Problem
+      || pageRole === PageRole.ToDo);
+}
+
+
+export function page_isUsuallyThreadedOnly(page: Page): boolean {
+  const pageRole = page.pageRole;
+  return pageRole === PageRole.Question || pageRole === PageRole.Discussion;
 }
 
 

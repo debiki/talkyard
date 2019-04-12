@@ -244,12 +244,17 @@ class JsonMaker(dao: SiteDao) {
     if (page.pageType == PageType.EmbeddedComments) {
       allPostsJson +:=
         PageParts.BodyNr.toString ->
-          embeddedCommentsDummyRootPost(pageParts.topLevelComments)
+          embeddedCommentsDummyRootPost(pageParts.parentlessReplies)
     }
 
-    val topLevelComments = pageParts.topLevelComments
-    val topLevelCommentIdsSorted =
-      Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))
+    val parentlessReplies = pageParts.parentlessReplies
+    val parentlessReplyNrsSorted =
+      Post.sortPostsBestFirst(parentlessReplies).map(reply => JsNumber(reply.nr))
+
+    val progressPosts = pageParts.progressPosts
+    val progressPostNrsSorted =
+      // COULD rename 'sortPostsBestFirst', since sorts progress replies by time.
+      Post.sortPostsBestFirst(progressPosts).map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
@@ -320,7 +325,8 @@ class JsonMaker(dao: SiteDao) {
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
       "postsByNr" -> JsObject(allPostsJson),
-      "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
+      "parentlessReplyNrsSorted" -> JsArray(parentlessReplyNrsSorted),
+      "progressPostNrsSorted" -> JsArray(progressPostNrsSorted),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
 
@@ -1482,7 +1488,6 @@ object JsonMaker {
     renderer: RendererWithSettings): JsObject = {
 
     import inPageInfo._
-    val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
     val (anySanitizedHtml: Option[String], unsafeSource: Option[String], isApproved: Boolean) =
       if ((post.isBodyHidden || post.isDeleted) && !showHidden) {
@@ -1507,7 +1512,7 @@ object JsonMaker {
       "nr" -> JsNumber(post.nr),
       "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
-      "postType" -> JsNumberOrNull(postType),
+      "postType" -> JsNumber(post.tyype.toInt),
       "authorId" -> JsNumber(post.createdById),
       "createdAtMs" -> JsDateMs(post.createdAt),
       "approvedAtMs" -> JsDateMsOrNull(post.approvedAt),
@@ -1532,7 +1537,7 @@ object JsonMaker {
       "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
       "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
       "likeScore" -> JsNumber(decimal(post.likeScore)),
-      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
+      "childNrsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
@@ -1571,7 +1576,7 @@ object JsonMaker {
       "isApproved" -> JsTrue,
       // COULD link to embedding article, change text to: "Discussion of the text at https://...."
       "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
-      "childIdsSorted" ->
+      "childNrsSorted" ->
         JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 

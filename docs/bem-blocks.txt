@@ -142,6 +142,9 @@ s_Ts-Flat       = threads, flat layout
 
 esSA            = Super Admin area
 
+s_OpReB-Dsc     = Original post Reply Button, Discussion section
+s_OpReB-Prg     = Original post Reply Button, Progress section
+
 s_Pg_DdX        = Page deleted cross (a cross across the whole page)
 
 esP             = a post

@@ -1226,8 +1226,8 @@ export const Editor = createComponent({
       }
     }
 
-    const guidelinesModal = GuidelinesModal({ guidelines: guidelines,
-        isOpen: this.state.showGuidelinesInModal, close: this.hideGuidelines });
+    const guidelinesModal = GuidelinesModal({ guidelines,
+        isOpen: guidelines && this.state.showGuidelinesInModal, close: this.hideGuidelines });
 
     // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
     // except for the editor, people will see it for sure. We'll make everything dark only for

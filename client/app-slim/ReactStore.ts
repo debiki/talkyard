@@ -729,18 +729,26 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // In case this is a new post, update its parent's child id list.
   const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
-    const alreadyAChild =
-        _.find(parentPost.childIdsSorted, childId => childId === post.nr);
+    const alreadyAChild = _.find(parentPost.childNrsSorted, childNr => childNr === post.nr);
     if (!alreadyAChild) {
-      parentPost.childIdsSorted.unshift(post.nr);
-      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, page.postsByNr);
+      parentPost.childNrsSorted.unshift(post.nr);
+      sortPostNrsInPlaceBestFirst(parentPost.childNrsSorted, page.postsByNr);
+    }
+  }
+
+  // Insert into progress reply list, if needed.
+  if (post.postType === PostType.BottomComment) {
+    const alreadyIncl = _.find(page.progressPostNrsSorted, replNr => replNr === post.nr);
+    if (!alreadyIncl) {
+      page.progressPostNrsSorted.push(post.nr);
+      sortPostNrsInPlaceBestFirst(page.progressPostNrsSorted, page.postsByNr);
     }
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
-    page.topLevelCommentIdsSorted = findTopLevelCommentIds(page.postsByNr);
-    sortPostIdsInPlaceBestFirst(page.topLevelCommentIdsSorted, page.postsByNr);
+    page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
+    sortPostNrsInPlaceBestFirst(page.parentlessReplyNrsSorted, page.postsByNr);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -851,7 +859,7 @@ function summarizeReplies() {
       const postElem = $byId('post-' + post.nr);
       return postElem && postElem.offsetHeight > 150; // offsetHeight = outer height, no margin
     }
-    if (post.childIdsSorted.length || isTooHigh()) {
+    if (post.childNrsSorted.length || isTooHigh()) {
       post.isTreeCollapsed = 'Truncated';
       post.summarize = true;
       post.summary = makeSummaryFor(post);
@@ -877,8 +885,8 @@ function unsquashTrees(postNr: number) {
   const post: Post = page.postsByNr[postNr];
   const parent = page.postsByNr[post.parentNr];
   let numLeftToUnsquash = -1;
-  for (let i = 0; i < parent.childIdsSorted.length; ++i) {
-    const childId = parent.childIdsSorted[i];
+  for (let i = 0; i < parent.childNrsSorted.length; ++i) {
+    const childId = parent.childNrsSorted[i];
     const child: Post = page.postsByNr[childId];
     if (!child)
       continue; // deleted
@@ -937,14 +945,14 @@ function uncollapsePostAndChildren(post: Post) {
   const page: Page = store.currentPage;
   uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
-  for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
-    var childId = post.childIdsSorted[i];
+  for (var i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
+    var childId = post.childNrsSorted[i];
     var child = page.postsByNr[childId];
     if (!child)
       continue;
     uncollapseOne(child);
-    for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
-      var grandchildId = child.childIdsSorted[i2];
+    for (var i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
+      var grandchildId = child.childNrsSorted[i2];
       var grandchild = page.postsByNr[grandchildId];
       if (!grandchild)
         continue;
@@ -967,7 +975,7 @@ function uncollapseOne(post: Post) {
 }
 
 
-function findTopLevelCommentIds(postsByNr): number[] {
+function findParentlessReplyIds(postsByNr): number[] {
   var ids: number[] = [];
   _.each(postsByNr, (post: Post) => {
     if (!post.parentNr && post.nr !== BodyNr && post.nr !== TitleNr) {
@@ -982,7 +990,7 @@ function findTopLevelCommentIds(postsByNr): number[] {
  * NOTE: Keep in sync with sortPostsFn() in
  *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
-function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number]: Post }) {
+function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number]: Post }) {
   postNrs.sort((nrA: number, nrB: number) => {
     var postA: Post = postsByNr[nrA];
     var postB: Post = postsByNr[nrB];
@@ -1232,10 +1240,10 @@ function patchTheStore(storePatch: StorePatch) {
             var movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
             if (movedToNewPage || movedOnThisPage) {
               var oldParent = oldPage.postsByNr[oldPost.parentNr];
-              if (oldParent && oldParent.childIdsSorted) {
-                var index = oldParent.childIdsSorted.indexOf(oldPost.nr);
+              if (oldParent && oldParent.childNrsSorted) {
+                var index = oldParent.childNrsSorted.indexOf(oldPost.nr);
                 if (index !== -1) {
-                  oldParent.childIdsSorted.splice(index, 1);
+                  oldParent.childNrsSorted.splice(index, 1);
                 }
               }
             }
@@ -1624,8 +1632,8 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // then a hereafter unwanted earlier sibling might be moved below startPostId. So we need
   // to update all subsequent siblings too.
   var parent: any = postsByNr[post.parentNr] || {};
-  for (var i = 0; i < (parent.childIdsSorted || []).length; ++i) {
-    var siblingId = parent.childIdsSorted[i];
+  for (var i = 0; i < (parent.childNrsSorted || []).length; ++i) {
+    var siblingId = parent.childNrsSorted[i];
     store.postsToUpdate[siblingId] = true;
   }
 

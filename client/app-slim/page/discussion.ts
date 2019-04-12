@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../prelude.ts" />
+/// <reference path="../oop-methods.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
@@ -688,36 +689,47 @@ const RootPostAndComments = createComponent({
     }
 
     let repliesAreFlat = false;
-    let childNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
+    let discOrProgrReplyNrs = rootPost.childNrsSorted.concat(page.parentlessReplyNrsSorted);
 
-    // On message pages, most likely max a few people talk — then threads make no sense.
+    // On message pages, most likely max a few people talk — then threads make no sense. // xx rm
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
       repliesAreFlat = true;
-      childNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
+      discOrProgrReplyNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
     }
 
     let isSquashing = false;
     let firstAppendedIndex = 0;
 
-    const threadedChildren = childNrs.map((childNr, childIndex) => {
+    const discussionReplies = [];
+    const progressPosts = [];
+
+    addReplies(discussionReplies, discOrProgrReplyNrs, false);
+    addReplies(progressPosts, page.progressPostNrsSorted, true);
+
+    function addReplies(list: any[], replyNrs: PostNr[], inProgrSect: boolean) {
+          replyNrs.forEach((childNr, childIndex) => {
       if (childNr === BodyNr || childNr === TitleNr)
-        return null;
+        return;
       const child: Post = postsByNr[childNr];
       if (!child)
-        return null; // deleted
-      const isCommentOrEvent =
+        return; // deleted
+      const isProgrPost =
           child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
-      if (!isCommentOrEvent) {
-        firstAppendedIndex += 1;
+      if (isProgrPost !== inProgrSect) {
+        return;
       }
       if (isSquashing && child.squash)
-        return null;
-      if (child.postType === PostType.Flat)  // could rename Flat to Comment?
-        return null;
+        return;
+      if (child.postType === PostType.Flat)  // could rename Flat to Comment? CLEAN_UP delete this 'if'?
+        return;
+
       isSquashing = false;
       const threadProps: any = { store };
-      if (repliesAreFlat) threadProps.isFlat = true;
+      if (isProgrPost || repliesAreFlat) {
+        threadProps.isFlat = true;
+      }
+
       threadProps.elemType = 'div';
       threadProps.post = child;
       threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only?
@@ -725,14 +737,15 @@ const RootPostAndComments = createComponent({
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
       threadProps.is2dTreeColumn = page.horizontalLayout;
+
       if (child.squash) {
         isSquashing = true;
-        return (
+        list.push(
           r.li({ key: childNr },
             SquashedThreads(threadProps)));
       }
       else if (child.postType === PostType.MetaMessage) {
-        return (
+        list.push(
           r.li({ key: childNr, className: 's_w-MP' },
             MetaPost(threadProps)));
       }
@@ -755,24 +768,76 @@ const RootPostAndComments = createComponent({
                   }}, "Next task")) }});
         }
         // --/ [plugin] [utx] ------------------------
-        return (
+        list.push(
           r.li({ key: childNr },
             pickNextTaskStuff,
             Thread(threadProps)));
       }
-    });
+    })}
 
-    // Draw a horizontal line above the first append-bottom comment, if there're normal
-    // best-first-order comments above. And text that explains how this works.
-    // After [flat-comments] added: remove pageRole != FormalMessage
-    // Only show a thin line, for now? The text makes people confused & didn't look nice enough?
-    // They don't need to understand how this works, anyway?
-    if (firstAppendedIndex < threadedChildren.length &&
-        pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
-      const line =
-        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
-          r.span({}, t.sb.Progr));  // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
-          /* CSS here: [5KDWUR].
+
+    // ----- Discussion section divider  [DSCPRG]
+
+    let discussionSectionBorder;
+    let showDiscussionSectionDivider = true;
+
+    if (page_isAlwaysFlatDiscourse(page)) {
+      // Never any Discussion section on these types of pages. (E.g. direct messages)
+      showDiscussionSectionDivider = false;
+    }
+    if (!page_isUsuallyFlatDiscourse(page)) {
+      // Usually *no* Progress section on these pages (e.g. Question-Answers or Discussion
+      // topic). Then, need not show any Discussion section title.
+      showDiscussionSectionDivider = false;
+    }
+
+    if (showDiscussionSectionDivider) {
+      let expl: string = '';
+      switch (page.pageRole) {
+        case PageRole.Idea: expl = "about how and if to do this idea"; break;  // I18N
+        case PageRole.Problem: expl = "about how and if to fix this"; break;  // I18N
+        case PageRole.ToDo: expl = "about how to do this"; break;  // I18N
+      }
+      discussionSectionBorder = rFragment({},
+        r.li({ className: 's_PgSct s_PgSct-Dsc', key: 'DiscSect' },
+          r.div({ className: 's_PgSct_Ttl' }, "Discussion"),
+          r.div({ className: 's_PgSct_Dtl' }, expl)),
+        r.li({},
+          r.a({ className: 's_OpReB-Dsc icon-reply',
+            onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
+          r.b({}, t.ReplyV), r.span({}, " (insert)"))));   // I18N
+    }
+
+
+    // ----- Progress section divider [DSCPRG]
+
+    let progressSectionBorder;
+    let showProgressSectionDivider = true;
+
+    if (page_isAlwaysFlatDiscourse(page)) {
+      // Never any Discussion section on these types of pages. (E.g. direct messages)
+      // So show neither Discussion section nor Progress section dividers.
+      showProgressSectionDivider = false;
+    }
+    if (page_isUsuallyThreadedOnly(page) && !progressPosts.length) {
+      // People shouldn't expect any Progress section on these pages (e.g. a Question-Answers
+      // topic or a Discussion), and there are no Progress replies — so,
+      // show no progr section divider.
+      showProgressSectionDivider = false;
+    }
+
+    if (showProgressSectionDivider) {
+      let expl: string = '';
+      switch (page.pageRole) {
+        case PageRole.Idea: expl = "with doing this idea"; break;  // I18N
+        case PageRole.Problem: expl = "with handling this problem"; break;  // I18N
+        case PageRole.ToDo: expl = "with doing this"; break;  // I18N
+      }
+      progressSectionBorder =
+        r.li({ className: 's_PgSct s_PgSct-Prg', key: 'ApBtmDv' },
+          r.div({ className: 's_PgSct_Ttl' }, t.sb.Progr),   // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
+          r.div({ className: 's_PgSct_Dtl' }, expl));
+          /* CSS here: [5KDWUR].  CLEAN_UP REMOVE
           r.span({},
             r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
             t.d.AboveBestFirst),
@@ -782,7 +847,6 @@ const RootPostAndComments = createComponent({
               r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
               t.d.BelowCmtsEvents)));  // needn't mention "chronologically"?
               */
-      threadedChildren.splice(firstAppendedIndex, 0, line);
     }
 
     // Disable chat comments for now, they make people confused, and  [8KB42]
@@ -844,9 +908,9 @@ const RootPostAndComments = createComponent({
     // a blue primary one, just below-and-to-the-right-of the orig post.)
     // Edit: Instead, have a Discussion section, with a "Reply (insert)" button. [DISCPRGR]
     // And in the Progress section, have only a "Reply (append)" button.
-    const skipOrigPostReplyBtn = true; /*
+    const skipOrigPostReplyBtn = true; /*  CLEAN_UP remove things that where using this
         isFormalMessage || !mayReplyToOrigPost || pageRole === PageRole.EmbeddedComments ||
-          _.every(threadedChildren, c => _.isEmpty(c));  */
+          _.every(discAndProgrReplies, c => _.isEmpty(c));  */
 
     // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
     // pages? UX Maybe later add back, for staff only or power users?
@@ -857,16 +921,17 @@ const RootPostAndComments = createComponent({
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
         page.pageRole === PageRole.MindMap ? null :
       r.div({ className: 's_APAs'},
+        /*
         skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
-          makeReplyBtnTitle(store, rootPost, true)),
-        skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB icon-comment-empty',
+          makeReplyBtnTitle(store, rootPost, true)), */
+        skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB s_OpReB-Prg icon-reply',
             onClick: (event) => {
               this.onAfterPageReplyClick(event, PostType.BottomComment);
               /* This no longer needed? [DISCPRGR] Keep for a while if want to add back
                  some tips abou what a Progress reply is.
               const doReply = () => this.onAfterPageReplyClick(event, PostType.BottomComment);
-              // Comments always added at the bottom on formal messages; no explanation needed. [4GKWC6]
+              // Comments always added at the bottom on formal messages; no explanation needed.
               if (isFormalMessage) {
                 doReply();
               }
@@ -880,7 +945,8 @@ const RootPostAndComments = createComponent({
                 });
               } */
             } },
-          isFormalMessage ? t.d.AddComment : t.d.AddBottomComment));
+          r.b({}, t.ReplyV), isFormalMessage ? null : r.span({}, " (append)")));   // I18N
+          //isFormalMessage ? t.d.AddComment : t.d.AddBottomComment));
 
     return (
       r.div({ className: threadClass },
@@ -897,7 +963,10 @@ const RootPostAndComments = createComponent({
         // they're no longer needed.
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
-            threadedChildren)),
+            discussionSectionBorder,
+            discussionReplies,
+            progressSectionBorder,
+            progressPosts)),
         afterPageActions,
         chatSection,
         deletedText));
@@ -1030,13 +1099,13 @@ const Thread = createComponent({
     }
 
     let numDeletedChildren = 0;
-    for (let i = 0; i < post.childIdsSorted.length; ++i) {
-      const childId = post.childIdsSorted[i];
+    for (let i = 0; i < post.childNrsSorted.length; ++i) {
+      const childId = post.childNrsSorted[i];
       if (!postsByNr[childId]) {
         numDeletedChildren += 1;
       }
     }
-    let numNonDeletedChildren = post.childIdsSorted.length - numDeletedChildren;
+    let numNonDeletedChildren = post.childNrsSorted.length - numDeletedChildren;
     let childrenSideways = isMindMap && !!post.branchSideways && numNonDeletedChildren >= 2;
 
 
@@ -1050,7 +1119,7 @@ const Thread = createComponent({
 
     let children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted && !isFlat) {
-      children = post.childIdsSorted.map((childId, childIndex) => {
+      children = post.childNrsSorted.map((childId, childIndex) => {
         const child = postsByNr[childId];
         if (!child)
           return null; // deleted
@@ -1062,7 +1131,7 @@ const Thread = createComponent({
 
         let childIndentationDepth = this.props.indentationDepth;
         // All children except for the last one are indented.
-        let isIndented = childIndex < post.childIdsSorted.length - 1 - numDeletedChildren;
+        let isIndented = childIndex < post.childNrsSorted.length - 1 - numDeletedChildren;
         if (!page.horizontalLayout && this.props.depth === 1) {
           // Replies to article replies are always indented, even the last child.
           isIndented = true;
@@ -1480,7 +1549,16 @@ export const PostHeader = createComponent({
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
     let inReplyTo;
-    if (!abbreviate && isFlat && (post.parentNr || post.multireplyPostNrs.length)) {
+    if (abbreviate) {
+       // We'd like to show as little as possible: just an excerpt. So skip "replies to".
+    }
+    else if (!isFlat) {
+      // An arrow already shows what this post replies to.
+    }
+    else if (
+        // If replying to the orig post, that's the "default" thing to do, so then
+        // don't shwo any "replies to" text.
+        (post.parentNr && post.parentNr != BodyNr) || post.multireplyPostNrs.length) {
       inReplyTo = ReplyReceivers({ store, post, comma: true });
     }
 
