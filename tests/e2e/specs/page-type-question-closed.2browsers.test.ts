@@ -98,6 +98,12 @@ describe("Page type question", () => {
     mariasBrowser.topic.selectPostNrAsAnswer(3);
   });
 
+  it("She can click the check mark icon next to the title, to view the answer", () => {
+    mariasBrowser.waitAndClick('.dw-p-ttl .dw-clickable')
+    mariasBrowser.waitAndClick('.e_VwAnsB');
+    // (Bonus points: Could verify that the browser scrolls to the answer.)
+  });
+
   it("Owen logs in", () => {
     michaelsBrowser.topbar.clickLogout();
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);

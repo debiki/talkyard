@@ -67,17 +67,32 @@ describe("Page statuses and bottom comments", () => {
     mariasTopicUrl = mariasBrowser.url().value;
   });
 
+  it("It's in status New: An idea icon", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-idea.dw-clickable');
+  });
+
   it("Changes status to Planned", () => {
-    mariasBrowser.waitAndClick('.icon-idea.dw-clickable');  // #post-2 = meta post
+    mariasBrowser.topic.setDoingStatus('Planned');  // #post-2 = meta post
+  });
+
+  it("... the icon changes to check-dashed", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check-dashed.dw-clickable');
   });
 
   it("... then to Started", () => {
-    mariasBrowser.waitAndClick('.icon-check-dashed.dw-clickable'); // #post-3
+    mariasBrowser.topic.setDoingStatus('Started');    // #post-3
+  });
+
+  it("... the icon changes to check-empty", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check-empty.dw-clickable');
   });
 
   it("... then to Done", () => {
-    mariasBrowser.waitAndClick('.icon-check-empty.dw-clickable');
-    mariasBrowser.waitForVisible('.icon-check.dw-clickable');      // #post-4
+    mariasBrowser.topic.setDoingStatus('Done');      // #post-4
+  });
+
+  it("... the icon changes to a check mark", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check.dw-clickable');
   });
 
   it("Three status change events appear (after page refresh)", () => {
@@ -96,11 +111,15 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Changes started to New", () => {
-    mariasBrowser.waitAndClick('.icon-check.dw-clickable');  // #post-6, meta post
+    mariasBrowser.topic.setDoingStatus('New');               // #post-6, meta post
   });
 
-  it("Posts an Orig Post reply", () => {
-    mariasBrowser.complex.replyToOrigPost(mariasOpReply);    // #post-7
+  it("... the icon changes to icon-idea", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-idea.dw-clickable');
+  });
+
+  it("Posts an Discussion reply", () => {
+    mariasBrowser.complex.replyToOrigPost(mariasOpReply, 'DiscussionSection'); // #post-7
   });
 
   it("... and a reply to the reply", () => {                 // #post-8
@@ -108,7 +127,7 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Changes status to Planned (so we know back-to-the-start and-then-bump-one-step works)", () => {
-    mariasBrowser.pageTitle.changeStatusToPlanned();         // event #post-9
+    mariasBrowser.topic.setDoingStatus('Planned');          // event #post-9
   });
 
   it("Posts another progress reply", () => {
@@ -154,7 +173,7 @@ describe("Page statuses and bottom comments", () => {
     michaelsBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed');
     // Nothing happens
     michaelsBrowser.pause(100);
-    michaelsBrowser.waitForVisible('.dw-p-ttl .icon-check-dashed');
+    assert(!michaelsBrowser.topic.isChangePageDialogOpen());
   });
 
   it("Owen can, he's admin", () => {
@@ -162,7 +181,13 @@ describe("Page statuses and bottom comments", () => {
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     assert(owensBrowser.pageTitle.canBumpPageStatus());
     owensBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed.dw-clickable');
-    owensBrowser.waitForVisible('.dw-p-ttl .icon-check-empty.dw-clickable');
+    assert(michaelsBrowser.topic.isChangePageDialogOpen());
+    owensBrowser.topic.closeChangePageDialog();
+    owensBrowser.topic.setDoingStatus('Done');
+  });
+
+  it("... he quick-jumped from Planned to Done, skipping status Planned", () => {
+    owensBrowser.waitForVisible('.dw-p-ttl .icon-check.dw-clickable');
   });
 
 });

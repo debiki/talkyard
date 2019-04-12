@@ -36,7 +36,6 @@ let guestsBrowser;
 let strangersBrowser;
 
 let idAddress: IdAddress;
-let forumTitle = "Authz Basic Test Forum";
 const guestsPostNr = c.FirstReplyNr; // (46WUKT0)
 const guestsReplyText = "Guest's reply to Orig Post";
 const guestsEditedText = "Guest's reply to Orig Post, edited";
@@ -60,7 +59,7 @@ const michaelsTopicBodyEdited = "Michaels topic body, edited";
 let michaelsTopicUrl: string;
 
 
-describe("authz basic see reply create:", () => {
+describe("authz basic see reply create  TyT2ABKR83N", () => {
 
   it("import a site", () => {
     // Later: break out 'PermTestForum' ...? if needed.
@@ -137,6 +136,17 @@ describe("authz basic see reply create:", () => {
       name: "allSeeReplyCreateCat",
       slug: 'allSeeReplyCreateCat',
       aboutPageText: "About allSeeReplyCreateCat.",
+    });
+    forum.topics.allSeeReplyCreatePage = siteBuilder.addPage({
+      dbgSrc: '382064001',
+      id: 'allSeeReplyCreatePage',
+      showId: false,
+      slug: 'allSeeReplyCreatePage',
+      role: PageRole.Discussion,
+      title: "Page allSeeReplyCreatePage Title",
+      body: "Page allSeeReplyCreatePage text text text.",
+      categoryId: allSeeReplyCreateCatId,
+      authorId: c.SystemUserId,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 1,
@@ -225,7 +235,18 @@ describe("authz basic see reply create:", () => {
       maySee: true,
       maySeeOwn: true,
     });
-    // Maria + staff & core members may edit this mind map; only >= core members have edit-page perms.
+    // Maria + staff & core members may edit these pages; only >= core members have edit-page perms.
+    forum.topics.newSeeBasicReplyFullCreatePage = siteBuilder.addPage({
+      dbgSrc: '382064002',
+      id: 'newSeeBasicReplyFullCreatePageId',
+      showId: false,
+      slug: 'newSeeBasicReplyFullCreatePageSlug',
+      role: PageRole.Discussion,
+      title: "Page newSeeBasicReplyFullCreatePage Title",
+      body: "Page newSeeBasicReplyFullCreatePage text text text.",
+      categoryId: newSeeBasicReplyFullCreateCatId,
+      authorId: c.SystemUserId,
+    });
     forum.topics.mariasMindMapPage = siteBuilder.addPage({
       id: 'marias_mind_map_page',
       folder: '/',
@@ -244,6 +265,17 @@ describe("authz basic see reply create:", () => {
       name: "onlyStaffSeeCat",
       slug: 'onlyStaffSeeCat',
       aboutPageText: "About onlyStaffSeeCat.",
+    });
+    forum.topics.onlyStaffSeePage = siteBuilder.addPage({
+      dbgSrc: '382064003',
+      id: 'onlyStaffSeePageId',
+      showId: false,
+      slug: 'onlyStaffSeePageSlug',
+      role: PageRole.Discussion,
+      title: "Page onlyStaffSeePage Title",
+      body: "Page onlyStaffSeePage text text text.",
+      categoryId: onlyStaffSeeCatId,
+      authorId: c.SystemUserId,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 8,
@@ -267,6 +299,17 @@ describe("authz basic see reply create:", () => {
       name: "onlyAdminsSeeCat",
       slug: 'onlyAdminsSeeCat',
       aboutPageText: "About onlyAdminsSeeCat.",
+    });
+    forum.topics.onlyAdminsSeePage = siteBuilder.addPage({
+      dbgSrc: '382064004',
+      id: 'onlyAdminsSeePageId',
+      showId: false,
+      slug: 'onlyAdminsSeePageSlug',
+      role: PageRole.Discussion,
+      title: "Page onlyAdminsSeePage Title",
+      body: "Page onlyAdminsSeePage text text text.",
+      categoryId: onlyAdminsSeeCatId,
+      authorId: c.SystemUserId,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 9,
@@ -338,11 +381,11 @@ describe("authz basic see reply create:", () => {
     strangersBrowser.go(idAddress.origin);
   });
 
-  it("Sees only about-all-see-reply-create topic", () => {
+  it("Sees only about-all-see-reply-create topic", () => {  // mk topic in this cat instead
     strangersBrowser.forumTopicList.waitForTopics();
     strangersBrowser.forumTopicList.assertNumVisible(1);
     strangersBrowser.forumTopicList.assertTopicVisible(
-        'About category ' + forum.categories.allSeeReplyCreateCat.name); // COULD break out fn?
+        forum.topics.allSeeReplyCreatePage.title);
   });
 
   it("Sees only 'allSeeReplyCreateCat'", () => {
@@ -363,9 +406,14 @@ describe("authz basic see reply create:", () => {
     strangersBrowser.assertMayNotSeePage();
   });
 
-  it("Can access the 'allSeeReplyCreateCat' about page", () => {
+  it("... or page 'newSeeBasicReplyFullCreatePage'", () => {
+    strangersBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug);
+    strangersBrowser.assertMayNotSeePage();
+  });
+
+  it("Can access page 'allSeeReplyCreatePage'", () => {
     strangersBrowser.go(idAddress.origin);
-    strangersBrowser.forumTopicList.goToTopic(forum.categories.allSeeReplyCreateCat.aboutPage.title);
+    strangersBrowser.forumTopicList.goToTopic(forum.topics.allSeeReplyCreatePage.title);
   });
 
   it("... can post reply", () => {
@@ -440,8 +488,8 @@ describe("authz basic see reply create:", () => {
     majasBrowser.forumButtons.assertNoCreateTopicButton();
   });
 
-  it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
-    goToNewSeeBasicReplyFullCreateCatAboutPage(majasBrowser);
+  it("Opens page 'newSeeBasicReplyFullCreatePage'", () => {
+    majasBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug)
   });
 
   it("... cannot reply or edit anything", () => {
@@ -462,8 +510,8 @@ describe("authz basic see reply create:", () => {
     assertSeesBothCategories(mariasBrowser);
   });
 
-  it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
-    goToNewSeeBasicReplyFullCreateCatAboutPage(majasBrowser);
+  it("Opens page 'newSeeBasicReplyFullCreatePage'", () => {
+    majasBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug)
   });
 
   it("... can post reply", () => {
@@ -499,8 +547,8 @@ describe("authz basic see reply create:", () => {
     assertSeesBothCategories(michaelsBrowser);
   });
 
-  it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
-    goToNewSeeBasicReplyFullCreateCatAboutPage(michaelsBrowser);
+  it("Opens page 'newSeeBasicReplyFullCreatePage'", () => {
+    michaelsBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug)
   });
 
   it("... cannot edit page or Maria's reply", () => {
@@ -535,8 +583,8 @@ describe("authz basic see reply create:", () => {
     coraxBrowser.complex.loginWithPasswordViaTopbar(corax);
   });
 
-  it("Goes to category about page", () => {
-    goToNewSeeBasicReplyFullCreateCatAboutPage(coraxBrowser);
+  it("Goes to 'newSeeBasicReplyFullCreatePage'", () => {
+    coraxBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug)
   });
 
   it("... can edit page", () => {
@@ -544,7 +592,7 @@ describe("authz basic see reply create:", () => {
   });
 
   it("... and others' replies", () => {
-    coraxBrowser.complex.editPostNr(mariasAboutCatReplyNr, "Corax was here.")
+    coraxBrowser.complex.editPostNr(mariasAboutCatReplyNr, "Corax was here. Corax did edit.")
   });
 
   it("Goes to guest topic page", () => {

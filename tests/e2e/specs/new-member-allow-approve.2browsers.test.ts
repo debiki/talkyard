@@ -316,7 +316,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.go(topics.oldTopicUrl);
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
     majasBrowser.complex.replyToOrigPost("My more replies");
-    majasBrowser.complex.replyToOrigPost("My even more replies", 'BottomButton');
+    majasBrowser.complex.addProgressReply("My even more replies");
     majasBrowser.topic.assertPostNotPendingApproval(5);
     majasBrowser.topic.assertPostNotPendingApproval(6);
   });

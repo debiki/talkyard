@@ -598,7 +598,7 @@ object PageStatus {  // RENAME to PagePublStatus — because there's also e.g. p
 // Sync with Typescript [5KBF02].
 sealed abstract class PageDoingStatus(val IntVal: Int) { def toInt: Int = IntVal }
 object PageDoingStatus {
-  case object Discussing extends PageDoingStatus(1)
+  case object Discussing extends PageDoingStatus(1) { override def toString = "New" }
   case object Planned extends PageDoingStatus(2)
   case object Started extends PageDoingStatus(3)
   case object Done extends PageDoingStatus(4)

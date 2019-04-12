@@ -639,11 +639,11 @@ const ForumButtons = createComponent({
         t.fb.CreateCat);
     }
 
-    let editCategoryBtn;
+    let editCategoryBtn;  /* rm
     if (!activeCategory.isForumItself && me.isAdmin) {
       editCategoryBtn = Button({ onClick: this.props.editCategory, className: 'esF_BB_EditCat' },
         t.fb.EditCat);
-    }
+    } */
 
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
 

@@ -937,7 +937,7 @@ function pagesFor(browser) {
       // Log a friendly error, if the selector is absent — that'd be a test suite bug.
       // Without this assert...isVisible, Webdriver just prints "Error" and one won't know
       // what the problem is.
-      assert(browser.isVisible(selector), `No text matches: ${selector} [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
+      assert(browser.isVisible(selector), `Selector '${selector}' not visible, cannot match text [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
       const textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
       _.forOwn(textByBrowserName, function(text, browserName) {
         const whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
@@ -2303,13 +2303,6 @@ function pagesFor(browser) {
       canBumpPageStatus: function() {
         return browser.isVisible('.dw-p-ttl .dw-clickable');
       },
-
-      changeStatusToPlanned: function() {
-        const selector = '.icon-idea.dw-clickable';
-        api.waitForVisible(selector);
-        api.topic.clickPostActionButton(selector);
-        api.waitForVisible('.icon-check-dashed.dw-clickable');
-      },
     },
 
 
@@ -2488,8 +2481,8 @@ function pagesFor(browser) {
         api.rememberCurrentUrl();
         api.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
         api.waitForNewUrl();
-        api.waitForVisible('.esForum_catsDrop');
-        api.assertTextMatches('.esForum_catsDrop', categoryName);
+        api.waitForVisible('.s_F_Ts_Cat_Ttl ');
+        api.assertTextMatches('.s_F_Ts_Cat_Ttl', categoryName);
       },
 
       setCatNrNotfLevel: (categoryNr: number, notfLevel: PageNotfLevel) => {
@@ -2937,9 +2930,9 @@ function pagesFor(browser) {
         return browser.getText('.dw-ar-p-hd .esP_By_U');
       },
 
-      clickReplyToOrigPost: function(whichButton?: 'BottomButton') {
-        const selector = whichButton === 'BottomButton' ?
-            '.s_APAs_OPRB' : '.dw-ar-p + .esPA .dw-a-reply';
+      clickReplyToOrigPost: function(whichButton?: 'DiscussionSection') {
+        const selector = whichButton === 'DiscussionSection' ?
+            '.s_OpReB-Dsc' : '.dw-ar-p + .esPA .dw-a-reply';
         api.topic.clickPostActionButton(selector);
       },
 
@@ -3099,24 +3092,61 @@ function pagesFor(browser) {
         return `#post-${postNr} + .esPA .dw-a-unsolve`;
       },
 
+      openChangePageDialog: () => {
+        api.waitAndClick('.dw-a-change');
+        browser.waitForVisible('.s_ChPgD');
+      },
+
+      isChangePageDialogOpen: () => {
+        return browser.isVisible('.s_ChPgD');
+      },
+
+      closeChangePageDialog: () => {
+        // Don't: api.waitAndClick('.modal-backdrop');
+        // That might block forever, waiting for the dialog that's in front of the backdrop
+        // to stop occluding (parts of) the backdrop.
+        // Instead:
+        if (!browser.isVisible('.modal-backdrop'))
+          return;
+        // Click the upper left corner — if any dialog is open, it'd be somewhere in the middle
+        // and the upper left corner, shouldn't hit it.
+        browser.leftClick('.modal-backdrop', 10, 10);
+      },
+
       closeTopic: function() {
+        api.topic.openChangePageDialog();
         api.waitAndClick(api.topic._closeButtonSelector);
         api.waitForVisible(api.topic._reopenButtonSelector);
+        api.topic.closeChangePageDialog();
       },
 
       reopenTopic: function() {
+        api.topic.openChangePageDialog();
         api.waitAndClick(api.topic._reopenButtonSelector);
         api.waitForVisible(api.topic._closeButtonSelector);
+        api.topic.closeChangePageDialog();
       },
 
       canCloseOrReopen: function() {
-        if (browser.isVisible(api.topic._closeButtonSelector)) return true;
-        if (browser.isVisible(api.topic._reopenButtonSelector)) return true;
-        return false;
+        browser.waitForVisible('.dw-a-more'); // so all buttons have appeared
+        if (!browser.isVisible('.dw-a-change'))
+          return false;
+        api.topic.openChangePageDialog();
+        let result = false;
+        if (browser.isVisible(api.topic._closeButtonSelector)) result = true;
+        else if (browser.isVisible(api.topic._reopenButtonSelector)) result = true;
+        api.topic.closeChangePageDialog();
+        return result;
       },
 
-      _closeButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-block',
-      _reopenButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-circle-empty',
+      setDoingStatus: (newStatus: 'New' | 'Planned' | 'Started' | 'Done') => {
+        api.topic.openChangePageDialog();
+        api.waitAndClick('.e_PgSt-' + newStatus);
+        api.topic.closeChangePageDialog();
+      },
+
+      _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
+      _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
       refreshUntilBodyHidden: function(postNr: PostNr) {
         while (true) {
@@ -4962,7 +4992,7 @@ function pagesFor(browser) {
         api.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: function(text: string, whichButton?: 'BottomButton') {
+      replyToOrigPost: function(text: string, whichButton?: 'DiscussionSection') {
         api.topic.clickReplyToOrigPost(whichButton);
         api.editor.editText(text);
         api.editor.save();

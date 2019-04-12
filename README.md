@@ -15,7 +15,7 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Discussion software. Create a place to talk.
+Discussion software, a place for questions and answers, ideas and feedback.
 
 <!--
 Create a place to talk,

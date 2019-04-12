@@ -39,7 +39,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
-    import request.dao
+    import request.{dao, theRequester => requester}
 
     val pageId = (request.body \ "pageId").as[PageId]
     val anyNewTitle = (request.body \ "newTitle").asOptStringNoneIfBlank
@@ -155,19 +155,25 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     newMeta = anyNewRole.map(newMeta.copyWithNewRole).getOrElse(newMeta)
     newMeta = anyNewDoingStatus.map(s =>
       newMeta.copyWithNewDoingStatus(s, context.globals.now())).getOrElse(newMeta)
+    val addsNewDoingStatusMetaPost = newMeta.doingStatus != oldMeta.doingStatus
     newMeta = newMeta.copy(
       categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
       htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
       htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
       htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
       layout = anyLayout.getOrElse(oldMeta.layout),
+      // If will be a meta post about changing the doingStatus.
+      numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
       version = oldMeta.version + 1)
 
-    request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
+    request.dao.readWriteTransaction { tx =>  // COULD wrap everything in this transaction
                                                         // and move it to PagesDao?
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      if (addsNewDoingStatusMetaPost) {
+        dao.addMetaMessage(requester, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)
+      }
       if (newMeta.categoryId != oldMeta.categoryId) {
-        transaction.indexAllPostsOnPage(pageId)
+        tx.indexAllPostsOnPage(pageId)
       }
     }
 

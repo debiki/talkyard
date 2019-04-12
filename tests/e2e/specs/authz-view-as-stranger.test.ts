@@ -29,8 +29,6 @@ function logAndAssertVisible(browser, topicTitle: string, shallBeVisible: boolea
 }
 
 function assertPublicTopicsVisible(browser) {
-  logAndAssertVisible(browser,"About category CategoryA");
-  logAndAssertVisible(browser,"About category CategoryB");
   logAndAssertVisible(browser, forum.topics.byMariaCategoryA.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryANr2.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryANr3.title);
@@ -43,9 +41,6 @@ function assertRestrictedTopicsVisible(browser, showDeleted: boolean) {
   logAndAssertVisible(browser, forum.topics.byMariaUnlistedCat.title);
   logAndAssertVisible(browser, forum.topics.byMariaStaffOnlyCat.title);
   logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title, showDeleted);
-  logAndAssertVisible(browser, forum.topics.aboutUnlistedCategory.title);
-  logAndAssertVisible(browser, forum.topics.aboutStaffOnlyCategory.title);
-  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title, showDeleted);
   process.stdout.write('\n');
 }
 
@@ -53,9 +48,6 @@ function assertRestrictedTopicsAbsent(browser) {
   logAndAssertVisible(browser, forum.topics.byMariaUnlistedCat.title, false);
   logAndAssertVisible(browser, forum.topics.byMariaStaffOnlyCat.title, false);
   logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title, false);
-  logAndAssertVisible(browser, forum.topics.aboutUnlistedCategory.title, false);
-  logAndAssertVisible(browser, forum.topics.aboutStaffOnlyCategory.title, false);
-  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title, false);
   process.stdout.write('\n');
 }
 

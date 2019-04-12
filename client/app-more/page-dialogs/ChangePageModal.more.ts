@@ -106,7 +106,7 @@ const ChangePageDialog = createComponent({
 
       anyViewAnswerButton = !page.pageAnsweredAtMs || !state.showViewAnswerButton ? null :
           r.div({ className: 's_ExplDrp_ActIt' },
-            Button({
+            Button({ className: 'e_VwAnsB',
                 onClick: (event) => {
                   utils.makeShowPostFn(TitleNr, page.pageAnswerPostNr)(event);
                   this.close();
@@ -119,28 +119,28 @@ const ChangePageDialog = createComponent({
       setNewListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active:  page.doingStatus === PageDoingStatus.Discussing,
-            title: r.span({ className: 'e_'  }, "Discussing"),  // I18N
+            title: r.span({ className: 'e_PgSt-New'  }, "New"),  // I18N
             text: "New topic, under discussion",                // I18N
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Discussing }) });
 
       setPlannedListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Planned,
-            title: r.span({ className: 'e_'  }, "Planned"), // I18N
+            title: r.span({ className: 'e_PgSt-Planned'  }, "Planned"), // I18N
             text: "We're planning to do this",              // I18N "do" —> fix/implement if probl/feat
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Planned }) });
 
       setStartedListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Started,
-            title: r.span({ className: 'e_'  }, "Started"), // I18N
+            title: r.span({ className: 'e_PgSt-Started'  }, "Started"), // I18N
             text: "We've started doing this",               // I18N "doing" —> fixing/implementing
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Started }) });
 
       setDoneListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Done,
-            title: r.span({ className: 'e_'  }, "Done"), // I18N
+            title: r.span({ className: 'e_PgSt-Done'  }, "Done"), // I18N
             text: "This has been done",                  // I18N "done" —> fixed/implemented
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Done }) });
 
@@ -178,7 +178,7 @@ const ChangePageDialog = createComponent({
         reopenListItem = rFragment({},
             r.div({ className: 's_ExplDrp_Ttl' }, "Reopen?"),  // I18N
             r.div({ className: 's_ExplDrp_ActIt' },
-              Button({ className: 'icon-circle-empty e_',
+              Button({ className: 'icon-circle-empty e_ReopenPgB',
                   onClick: debiki2.ReactActions.togglePageClosed },
                 t.Reopen)));
       }
@@ -200,7 +200,7 @@ const ChangePageDialog = createComponent({
         closeListItem = rFragment({},
             r.div({ className: 's_ExplDrp_Ttl' }, "Close?"),  // I18N
             r.div({ className: 's_ExplDrp_ActIt' },
-              Button({ className: 'icon-block e_',
+              Button({ className: 'icon-block e_ClosePgB',
                   onClick: debiki2.ReactActions.togglePageClosed },
                 t.Close),
               r.div({ className: 'esExplDrp_ActIt_Expl' }, closeItemText)));

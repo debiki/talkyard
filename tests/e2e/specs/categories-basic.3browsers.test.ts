@@ -64,7 +64,7 @@ describe("categories", function() {
     maria.forumCategoryList.openCategory(WastelandCategoryName);
     maria.topbar.clickLogin();
     maria.loginDialog.loginWithPassword(maria);
-    maria.assertTextMatches('.e2eF_T', /Description of/, /Wasteland/);
+    maria.assertTextMatches('.s_F_Ts_Cat_Ttl', /Wasteland/);
   });
 
   var mariasFirstTopicTitle = "Marias topic";
@@ -105,9 +105,12 @@ describe("categories", function() {
     owen.categoryDialog.submit();
   });
 
-  it("... now he sees its name got updated", function() {
+  it("... now he sees the category title got updated", function() {
+    owen.assertTextMatches('.s_F_Ts_Cat_Ttl', /Wasteland Unlisted/);
+  });
+
+  it("... and the category column in the topic list too", function() {
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
-    owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
   });
 
   it("Mons doesn't sees it, he hasn't logged in", function() {
@@ -128,7 +131,7 @@ describe("categories", function() {
   var urlToMonsPage2;
   var urlToMonsPage3;
 
-  it("Mons goes to the Wasteland topic", function() {
+  it("Mons goes to the Wasteland category", function() {
     mons.forumCategoryList.openCategory(WastelandCategoryName);
   });
 
@@ -145,7 +148,7 @@ describe("categories", function() {
   });
 
   it("Maria can access pages in the category via direct links though", function() {
-    maria.pause(3000);
+    //maria.pause(3000);
     maria.go(urlToMonsPage);
     maria.assertPageTitleMatches(/Mons Topic/);
     maria.assertPageBodyMatches(/Mons text text text/);
@@ -159,6 +162,13 @@ describe("categories", function() {
     owen.categoryDialog.openSecurityTab();
     owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
     owen.categoryDialog.submit();
+  });
+
+  it("The category title changes", function() {
+    owen.assertTextMatches('.s_F_Ts_Cat_Ttl', /Wasteland Only Staff Create/);
+  });
+
+  it("And the category links in the topic list", function() {
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Only Staff Create/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Only Staff Create/);
   });
@@ -199,6 +209,13 @@ describe("categories", function() {
     owen.categoryDialog.securityTab.setMayReply(c.EveryoneId, false);
     owen.categoryDialog.securityTab.setMaySee(c.EveryoneId, false);
     owen.categoryDialog.submit();
+  });
+
+  it("The category title changes", function() {
+    owen.assertTextMatches('.s_F_Ts_Cat_Ttl', WastelandCategoryNameStaffOnly);
+  });
+
+  it("And the category links in the topic list", function() {
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Staff Only/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Staff Only/);
     owen.assertNthTextMatches('.e2eF_T', 3, /Wasteland Staff Only/);

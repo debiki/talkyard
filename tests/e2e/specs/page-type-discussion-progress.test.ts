@@ -106,8 +106,8 @@ describe("Page type discussion, and progress comments", () => {
     mariasBrowser.topic.reopenTopic();   // event #post-8
   });
 
-  it("Posts another progress comment", () => {
-    mariasBrowser.complex.addBottomComment(bottomCommentTwoText);  // #post-9
+  it("Posts another progress reply", () => {
+    mariasBrowser.complex.addProgressReply(bottomCommentTwoText);  // #post-9
   });
 
   it("The posts has the correct contents", () => {
@@ -142,7 +142,7 @@ describe("Page type discussion, and progress comments", () => {
 
   it("Michael may not change page status, not his page", () => {
     assert(mariasBrowser.topic.canCloseOrReopen()); // tests the test code
-     mariasBrowser.topbar.clickLogout();
+    mariasBrowser.topbar.clickLogout();
     michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
     assert(!michaelsBrowser.topic.canCloseOrReopen());
   });

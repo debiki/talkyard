@@ -34,7 +34,7 @@ const bottomCommentOneText = 'bottomCommentOneText';
 const bottomCommentTwoText = 'bottomCommentTwoText';
 
 
-describe("Page statuses and bottom comments", () => {
+describe("Page statuses and bottom comments  TyT602AKK73", () => {
 
   it("Initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
@@ -67,25 +67,43 @@ describe("Page statuses and bottom comments", () => {
     mariasTopicUrl = mariasBrowser.url().value;
   });
 
-  it("Changes status to Planned", () => {
-    mariasBrowser.waitAndClick('.icon-attention-circled.dw-clickable');
+  it("It starts in status New, with a problem icon", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-attention-circled.dw-clickable');
   });
 
-  it("... then to Started", () => {
-    mariasBrowser.waitAndClick('.icon-check-dashed.dw-clickable');
+  it("Maria changes status to Planned", () => {
+    mariasBrowser.topic.setDoingStatus('Planned');  // meta #post-2
   });
 
-  it("... then to Done", () => {
-    mariasBrowser.waitAndClick('.icon-check-empty.dw-clickable');
-    mariasBrowser.waitForVisible('.icon-check.dw-clickable');
+  it("... the icon changes to check-dashed", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check-dashed.dw-clickable');
   });
 
-  it("... and back to New again", () => {
-    mariasBrowser.waitAndClick('.icon-check.dw-clickable');
-    mariasBrowser.waitForVisible('.icon-attention-circled.dw-clickable');
+  it("She changes status to Started", () => {
+    mariasBrowser.topic.setDoingStatus('Started');  // meta #post-3
   });
 
-  it("Three status change events appear (after page refresh)", () => {
+  it("... the icon changes to check-empty", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check-empty.dw-clickable');
+  });
+
+  it("Changes status to Done", () => {
+    mariasBrowser.topic.setDoingStatus('Done');   // meta #post-4
+  });
+
+  it("... the icon changes to a check mark", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-check.dw-clickable');
+  });
+
+  it("She sets status New again", () => {
+    mariasBrowser.topic.setDoingStatus('New');   // meta #post-5
+  });
+
+  it("... the problem icon is back", () => {
+    mariasBrowser.waitForVisible('.dw-p-ttl .icon-attention-circled.dw-clickable');
+  });
+
+  it("Four status change events appear (after page refresh)", () => {
     mariasBrowser.refresh(); // [2PKRRSZ0]
     mariasBrowser.topic.waitForPostNrVisible(5);  // 2, 3, 4 an 5  (1 is the orig post)
   });
