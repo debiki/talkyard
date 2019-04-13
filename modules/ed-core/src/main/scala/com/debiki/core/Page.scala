@@ -393,6 +393,8 @@ sealed abstract class PageType(
   // Sync with JS [6KUW204]
   def mayChangeRole: Boolean = true
 
+  def hasDoingStatus: Boolean = false
+
   def toInt: Int = IntValue
 
   dieIf(isSection && mayChangeRole, "EsE7KUP2")
@@ -454,14 +456,20 @@ object PageType {
   case object Question extends PageType(10, staffOnly = false)
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
-  case object Problem extends PageType(14, staffOnly = false)
+  case object Problem extends PageType(14, staffOnly = false) {
+    override def hasDoingStatus = true
+  }
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
-  case object Idea extends PageType(15, staffOnly = false)
+  case object Idea extends PageType(15, staffOnly = false) {
+    override def hasDoingStatus = true
+  }
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
   // [refactor] remove. Use Idea instead, bumped to "doing" state.
-  case object ToDo extends PageType(13, staffOnly = false)   // remove [4YK0F24]
+  case object ToDo extends PageType(13, staffOnly = false) {   // remove [4YK0F24]
+    override def hasDoingStatus = true
+  }
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
   case object MindMap extends PageType(11, staffOnly = false) {
@@ -504,8 +512,10 @@ object PageType {
 
   case object Form extends PageType(20, staffOnly = false)  // try to remove?
 
-  case object Critique extends PageType(16, staffOnly = false) // [plugin]
-  case object UsabilityTesting extends PageType(21, staffOnly = false) // [plugin]
+  case object Critique extends PageType(16, staffOnly = false) // [plugin] CLEAN_UP remove
+  case object UsabilityTesting extends PageType(21, staffOnly = false) { // [plugin]
+    override def hasDoingStatus = true
+  }
 
 
   def fromInt(value: Int): Option[PageType] = Some(value match {

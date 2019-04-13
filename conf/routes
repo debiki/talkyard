@@ -174,7 +174,6 @@ GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(
 POST  /-/create-page            controllers.PageController.createPage
 POST  /-/pin-page               controllers.PageController.pinPage
 POST  /-/unpin-page             controllers.PageController.unpinPage
-POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
 POST  /-/delete-pages           controllers.PageController.deletePages
 POST  /-/undelete-pages         controllers.PageController.undeletePages

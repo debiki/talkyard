@@ -134,19 +134,6 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def cyclePageDone: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
-        request =>
-    val pageId = (request.body \ "pageId").as[PageId]
-    val newMeta = request.dao.cyclePageDoneIfAuth(pageId, userId = request.theUserId,
-      request.theBrowserIdData)
-    OkSafeJson(Json.obj(
-      "plannedAtMs" -> JsLongOrNull(newMeta.plannedAt.map(_.getTime)),
-      "startedAtMs" -> JsLongOrNull(newMeta.startedAt.map(_.getTime)),
-      "doneAtMs" -> JsLongOrNull(newMeta.doneAt.map(_.getTime)),
-      "closedAtMs" -> JsLongOrNull(newMeta.closedAt.map(_.getTime))))
-  }
-
-
   def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
         request =>
     val pageId = (request.body \ "pageId").as[PageId]

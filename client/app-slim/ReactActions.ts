@@ -40,7 +40,6 @@ export const actionTypes = {
   UndeletePages: 'UndeletePages',
   AcceptAnswer: 'AcceptAnswer',
   UnacceptAnswer: 'UnacceptAnswer',
-  CyclePageDone: 'CyclePageDone',
   TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
   ShowForumIntro: 'ShowForumIntro',
@@ -200,19 +199,6 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UndeletePages,
       pageIds: pageIds,
-    });
-  });
-}
-
-
-export function cyclePageDone() {
-  Server.cyclePageDone((response) => {
-    ReactDispatcher.handleViewAction({
-      actionType: actionTypes.CyclePageDone,
-      plannedAtMs: response.plannedAtMs,
-      startedAtMs: response.startedAtMs,
-      doneAtMs: response.doneAtMs,
-      closedAtMs: response.closedAtMs,
     });
   });
 }

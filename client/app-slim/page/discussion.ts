@@ -358,10 +358,6 @@ export const Title = createComponent({
     this.setState({ isEditing: false });
   },
 
-  cycleIsDone: function() {  // rm
-    debiki2.ReactActions.cyclePageDone();  // rm
-  },
-
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;

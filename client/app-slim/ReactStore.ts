@@ -171,13 +171,6 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageClosedAtMs = null;
       break;
 
-    case ReactActions.actionTypes.CyclePageDone:
-      currentPage.pagePlannedAtMs = action.plannedAtMs;
-      currentPage.pageStartedAtMs = action.startedAtMs;
-      currentPage.pageDoneAtMs = action.doneAtMs;
-      currentPage.pageClosedAtMs = action.closedAtMs;
-      break;
-
     case ReactActions.actionTypes.TogglePageClosed:
       currentPage.pageClosedAtMs = action.closedAtMs;
       break;

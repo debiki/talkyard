@@ -79,18 +79,23 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
+    val pageTypeAfter = anyNewRole getOrElse oldMeta.pageType
+
     throwForbiddenIf(oldMeta.pageType == PageType.AboutCategory,  //  [4AKBE02]
       "TyEEDCATDSCTTL", "Don't edit the category description topic title — edit the topic text instead")
 
-    if (anyNewRole.exists(_ != oldMeta.pageType) && !oldMeta.pageType.mayChangeRole)
-      throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
+    throwForbiddenIf(anyNewRole.exists(_ != oldMeta.pageType) && !oldMeta.pageType.mayChangeRole,
+      "DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
+
+    throwForbiddenIf(anyNewDoingStatus.isDefined && !pageTypeAfter.hasDoingStatus,
+      "TyE0PGDNGSTS", s"Pages of type $pageTypeAfter shouldn't have a doing-status")
 
     throwForbiddenIf(anyLayout.isDefined && oldMeta.pageType != PageType.Forum,
       "EdE5FKL0P", "Can only specify topic list layout for forum pages")
 
     // Authorization.
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
-      throwForbidden("DwE4KEP2", "You may not rename this page")
+      throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
 
     if (anyFolder.isDefined || hasManuallyEditedSlug || anyShowId.isDefined) {
       if (!request.theUser.isAdmin)
@@ -175,6 +180,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       if (newMeta.categoryId != oldMeta.categoryId) {
         tx.indexAllPostsOnPage(pageId)
       }
+      // Should: Update audit log
     }
 
     // Update URL path (folder, slug, show/hide page id).

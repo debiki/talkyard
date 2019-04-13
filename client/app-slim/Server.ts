@@ -1522,11 +1522,6 @@ export function unacceptAnswer(success: () => void) {
   postJsonSuccess('/-/unaccept-answer', success, { pageId: getPageId() });
 }
 
-
-export function cyclePageDone(success: (newPlannedAndDoneAt: any) => void) {
-  postJsonSuccess('/-/cycle-page-done', success, { pageId: getPageId() });
-}
-
 export function togglePageClosed(success: (closedAtMs: number) => void) {
   postJsonSuccess('/-/toggle-page-closed', success, { pageId: getPageId() });
 }
