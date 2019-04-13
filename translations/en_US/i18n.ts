@@ -518,7 +518,7 @@ var t_en_US: TalkyardTranslations = t = {
     ThisPageDeleted: "This page has been deleted",
     CatDeldPageToo: "Category deleted, so this page was deleted too",
 
-    AboutCat: "About category:",
+    AboutCat: "About category:",  // REMOVE
 
     ThreadDeld: "Thread deleted",
     CmntDeld: "Comment deleted",
@@ -560,19 +560,22 @@ var t_en_US: TalkyardTranslations = t = {
     SolvedClickView_1: "Solved in post #",
     SolvedClickView_2: ", click to view",
 
-    AboveBestFirst: "Above: Replies, best first.",
-    BelowCmtsEvents: "Below: Comments and events.",
+    AboveBestFirst: "Above: Replies, best first.",  // REMOVE
+    BelowCmtsEvents: "Below: Comments and events.", // REMOVE
 
     // I18N _1 and _2 MISSING, all languages  [BTM2PRGR]
+    // REMOVE:
     BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress " +
       "towards answering the question / solving the problem / implementing the idea.",
       //"or maybe why you postpone or close this topic.",
+    // REMOVE:
     BottomCmtExpl_2: "Progress comments are appended at the bottom of the page.",
       //"sorted by time (not Like votes).",
+    // REMOVE:
     BottomCmtExpl_3: "To reply to someone, click Reply instead.",
 
-    AddComment: "Add comment",
-    AddBottomComment: "Append reply", //"Add bottom comment", [BTM2PRGR]  I18N MISSING
+    AddComment: "Add comment",   // REMOVE
+    AddBottomComment: "Append reply", //"Add bottom comment", [BTM2PRGR]  I18N MISSING   REMOVE
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",
@@ -624,7 +627,7 @@ var t_en_US: TalkyardTranslations = t = {
   // Post actions
 
   pa: {
-    ReplyToOp: "Reply to the Original Post",
+    ReplyToOp: "Reply to the Original Post",  // REMOVE
 
     CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
     CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +

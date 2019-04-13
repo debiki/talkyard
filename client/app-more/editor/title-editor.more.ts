@@ -258,7 +258,7 @@ export const TitleEditor = createComponent({
         !page_mayChangeRole(pageRole) || !settings_selectTopicType(settings, me) ? null :
       Input({ type: 'custom', label: t.TopicType, labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
-        editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
+        editor.PageRoleDropdown({ store, pageRole: this.state.pageRole, pageExists: true,
           onSelect: this.onPageRoleChanged, pullLeft: true,
           complicated: store.settings.showExperimental,
           className: 'esEdtr_titleEtc_pageRole' }));

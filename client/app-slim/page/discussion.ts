@@ -285,7 +285,7 @@ export const TitleBodyComments = createComponent({
       const categoryTitle = parentCategory.title;
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
-          r.h2({ className: 'dw-about-cat-ttl-prfx' }, // t.d.AboutCat) I18N rm "AboutCat"
+          r.h2({ className: 'dw-about-cat-ttl-prfx' },
             "Edit the description of the ", r.strong({}, parentCategory.title), " category:");
     }
 
@@ -484,7 +484,7 @@ export const Title = createComponent({
         tooltip = t.d.TooltipPersMsg;
       }
       else if (page.pageRole === PageRole.OpenChat) {
-        iconClass = 'icon-chat'; //  was: '#'
+        iconClass = 'icon-chat';
         tooltip = t.d.TooltipChat;
       }
       else if (page.pageRole === PageRole.PrivateChat) {
@@ -679,16 +679,16 @@ const RootPostAndComments = createComponent({
     // DO_AFTER 2019-06-01 CLEAN_UP REMOVE this, because now all message page posts are ProgressPost:s,
     // so this then no longer needed. However, wait for a while, so as not to mess up any
     // discussions people are having right now (2019-04-13).
+    // --------------
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
       repliesAreFlat = true;
       discOrProgrReplyNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
     }
+    // --------------
 
     let isSquashing = false;
-    let firstAppendedIndex = 0;
-
     const discussionReplies = [];
     const progressPosts = [];
 
@@ -766,7 +766,7 @@ const RootPostAndComments = createComponent({
 
     // ----- Discussion section divider  [DSCPRG]
 
-    let discussionSectionBorder;
+    let discussionSectionDivider;
     let showDiscussionSectionDivider = true;
 
     if (page_isAlwaysFlatDiscourse(page)) {
@@ -779,6 +779,7 @@ const RootPostAndComments = createComponent({
       showDiscussionSectionDivider = false;
     }
     if (page.pageRole === PageRole.About) {
+      // These pages are only for editing category descriptions.
       showDiscussionSectionDivider = false;
     }
 
@@ -789,7 +790,7 @@ const RootPostAndComments = createComponent({
         case PageRole.Problem: expl = "about how and if to fix this"; break;  // I18N
         case PageRole.ToDo: expl = "about how to do this"; break;  // I18N
       }
-      discussionSectionBorder = rFragment({},
+      discussionSectionDivider = rFragment({},
         r.li({ className: 's_PgSct s_PgSct-Dsc', key: 'DiscSect' },
           r.div({ className: 's_PgSct_Ttl' }, "Discussion"),
           r.div({ className: 's_PgSct_Dtl' }, expl)),
@@ -802,7 +803,7 @@ const RootPostAndComments = createComponent({
 
     // ----- Progress section divider [DSCPRG]
 
-    let progressSectionBorder;
+    let progressSectionDivider;
     let showProgressSectionDivider = true;
 
     if (page_isAlwaysFlatDiscourse(page)) {
@@ -812,8 +813,7 @@ const RootPostAndComments = createComponent({
     }
     if (page_isUsuallyThreadedOnly(page) && !progressPosts.length) {
       // People shouldn't expect any Progress section on these pages (e.g. a Question-Answers
-      // topic or a Discussion), and there are no Progress replies — so,
-      // show no progr section divider.
+      // topic or a Discussion), and there are no Progress posts, so, skip the divider.
       showProgressSectionDivider = false;
     }
     if (page.pageRole === PageRole.About) {
@@ -827,20 +827,10 @@ const RootPostAndComments = createComponent({
         case PageRole.Problem: expl = "with handling this problem"; break;  // I18N
         case PageRole.ToDo: expl = "with doing this"; break;  // I18N
       }
-      progressSectionBorder =
+      progressSectionDivider =
         r.li({ className: 's_PgSct s_PgSct-Prg', key: 'ApBtmDv' },
           r.div({ className: 's_PgSct_Ttl' }, t.sb.Progr),   // REFACTOR I18N move from t.sb to just t ? or to t.d.Progr?
           r.div({ className: 's_PgSct_Dtl' }, expl));
-          /* CSS here: [5KDWUR].  CLEAN_UP REMOVE
-          r.span({},
-            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
-            t.d.AboveBestFirst),
-          r.wbr(),
-          r.span({},
-            r.span({ style: { whiteSpace: 'nowrap' }},
-              r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
-              t.d.BelowCmtsEvents)));  // needn't mention "chronologically"?
-              */
     }
 
     const socialButtons = !store.settings.showSocialButtons ? null :
@@ -851,33 +841,20 @@ const RootPostAndComments = createComponent({
 
     const isFormalMessage = page.pageRole === PageRole.FormalMessage;
 
-    // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
-    // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
-    // If there're no replies, also don't show an extra orig-post-reply-button. (There's already
-    // a blue primary one, just below-and-to-the-right-of the orig post.)
-    // Edit: Instead, have a Discussion section, with a "Reply (insert)" button. [DISCPRGR]
-    // And in the Progress section, have only a "Reply (append)" button.
-    const skipOrigPostReplyBtn = true; /*  CLEAN_UP remove things that where using this
-        isFormalMessage || !mayReplyToOrigPost || pageRole === PageRole.EmbeddedComments ||
-          _.every(discAndProgrReplies, c => _.isEmpty(c));  */
-
-    // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
-    // pages? UX Maybe later add back, for staff only or power users?
-    const skipBottomCommentBtn = pageRole === PageRole.EmbeddedComments;
-
-    const afterPageActions =
+    const skipBottomReplyAppendBtn =
+        // Skip the "Reply (apppend)" button on embedded comments pages — this far,
+        // it's made people confused only. Maybe later add back, for staff only or power users?
+        pageRole === PageRole.EmbeddedComments ||
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
-        page.pageRole === PageRole.MindMap ? null :
+        pageRole === PageRole.MindMap;
+
+    const afterPageActions = skipBottomReplyAppendBtn ? null :
       r.div({ className: 's_APAs'},
-        /*
-        skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
-            onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
-          makeReplyBtnTitle(store, rootPost, true)), */
-        skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB s_OpReB-Prg icon-reply',
+        r.a({ className: 's_APAs_ACBB s_OpReB-Prg icon-reply',
             onClick: (event) => {
               this.onAfterPageReplyClick(event, PostType.BottomComment);
-              /* This no longer needed? [DISCPRGR] Keep for a while if want to add back
+              /* This no longer needed? [DSCPRG] Keep for a while if want to add back
                  some tips abou what a Progress reply is.
               const doReply = () => this.onAfterPageReplyClick(event, PostType.BottomComment);
               // Comments always added at the bottom on formal messages; no explanation needed.
@@ -895,7 +872,6 @@ const RootPostAndComments = createComponent({
               } */
             } },
           r.b({}, t.ReplyV), isFormalMessage ? null : r.span({}, " (append)")));   // I18N
-          //isFormalMessage ? t.d.AddComment : t.d.AddBottomComment));
 
     return (
       r.div({ className: threadClass },
@@ -912,9 +888,9 @@ const RootPostAndComments = createComponent({
         // they're no longer needed.
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
-            discussionSectionBorder,
+            discussionSectionDivider,
             discussionReplies,
-            progressSectionBorder,
+            progressSectionDivider,
             progressPosts)),
         afterPageActions,
         deletedText));

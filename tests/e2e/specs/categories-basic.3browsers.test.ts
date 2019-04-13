@@ -148,7 +148,6 @@ describe("categories", function() {
   });
 
   it("Maria can access pages in the category via direct links though", function() {
-    //maria.pause(3000);
     maria.go(urlToMonsPage);
     maria.assertPageTitleMatches(/Mons Topic/);
     maria.assertPageBodyMatches(/Mons text text text/);

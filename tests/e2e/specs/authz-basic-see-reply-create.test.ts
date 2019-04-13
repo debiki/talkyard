@@ -381,7 +381,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
     strangersBrowser.go(idAddress.origin);
   });
 
-  it("Sees only about-all-see-reply-create topic", () => {  // mk topic in this cat instead
+  it("Sees only about-all-see-reply-create topic", () => {
     strangersBrowser.forumTopicList.waitForTopics();
     strangersBrowser.forumTopicList.assertNumVisible(1);
     strangersBrowser.forumTopicList.assertTopicVisible(
@@ -492,7 +492,11 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
     majasBrowser.go('/' + forum.topics.newSeeBasicReplyFullCreatePage.slug)
   });
 
-  it("... cannot reply or edit anything", () => {
+  it("... may read this page", () => {
+    majasBrowser.assertPageTitleMatches(forum.topics.newSeeBasicReplyFullCreatePage.title);
+  });
+
+  it("... but cannot reply or edit anything", () => {
     assert(!majasBrowser.topic.canEditSomething());
     assert(!majasBrowser.topic.canReplyToSomething());
   });

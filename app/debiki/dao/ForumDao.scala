@@ -414,7 +414,7 @@ trait ForumDao {
         bySystem,
         spamRelReqStuff = None,
         tx)._1
-      // ... with a two discussion replies, and two progress replies.
+      // ... with some sample Discussion and Progress replies.
       insertReplyImpl(wrap(SampleIdeaDiscussionReplyOne),
         ideaPagePath.pageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)

@@ -2339,7 +2339,7 @@ function pagesFor(browser) {
       },
 
       clickEditCategory: function() {
-        api.waitAndClick('.esF_BB_EditCat');
+        api.waitAndClick('.s_F_Ts_Cat_Edt');
       },
 
       clickCreateTopic: function() {

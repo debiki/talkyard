@@ -75,6 +75,7 @@ const ChangePageDialog = createComponent({
   render: function() {
     const state = this.state;
     const store: Store = this.state.store;
+    const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
     const isOwnPage = store_thisIsMyPage(store);
     const isOwnOrStaff = isOwnPage || isStaff(me);
@@ -91,18 +92,17 @@ const ChangePageDialog = createComponent({
     let reopenListItem;
 
     function savePage(changes: EditPageRequestData) {
-      ReactActions.editTitleAndSettings(
-          changes, null, null);
+      ReactActions.editTitleAndSettings(changes, null, null);
     }
 
     if (state.isOpen) {
       const page: Page = state.page;
-      const canChangeDoingStatus =
-          page_hasDoingStatus(page) && !page_isClosedNotDone(page) && isOwnOrStaff;
-      const canChangeCategory = isOwnOrStaff && store.settings.showCategories !== false &&
+      const canChangeDoingStatus = isOwnOrStaff &&
+          page_hasDoingStatus(page) && !page_isClosedNotDone(page);
+      const canChangeCategory = isOwnOrStaff && settings.showCategories !== false &&
           store.currentCategories.length;
-      const canChangePageType = isOwnOrStaff && store.settings.showTopicTypes !== false &&
-          page_mayChangeRole(page.pageRole);
+      const canChangePageType = isOwnOrStaff && page_mayChangeRole(page.pageRole) &&
+          settings_selectTopicType(settings, me);
 
       anyViewAnswerButton = !page.pageAnsweredAtMs || !state.showViewAnswerButton ? null :
           r.div({ className: 's_ExplDrp_ActIt' },
@@ -161,12 +161,10 @@ const ChangePageDialog = createComponent({
                   savePage({ pageRole: newType });
                 }})));
 
-      // Show a close button for unanswered questions and pending to-dos, and a reopen
-      // button if the topic has been closed unanswered / unfixed. (But if it's been
-      // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
-      // mark it as not-answered/not-fixed again.)
+      // Show a Close button for unanswered questions and not-yet-done ideas/problems,
+      // and a Reopen button if closed already.
       if (page.doingStatus === PageDoingStatus.Done || page.pageAnswerPostUniqueId) {
-        // Page already done/implemented; then, it's closed already. [5AKBS2]
+        // Page already done / has-an-accepted-answer; then, it's closed already. [5AKBS2]
       }
       else if (!page_canToggleClosed(page)) {
         // Cannot close or reopen this type of page.
@@ -176,7 +174,7 @@ const ChangePageDialog = createComponent({
       }
       else if (page.pageClosedAtMs) {
         reopenListItem = rFragment({},
-            r.div({ className: 's_ExplDrp_Ttl' }, "Reopen?"),  // I18N
+            r.div({ className: 's_ExplDrp_Ttl' }, t.Reopen + '?'),
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'icon-circle-empty e_ReopenPgB',
                   onClick: debiki2.ReactActions.togglePageClosed },
@@ -198,7 +196,7 @@ const ChangePageDialog = createComponent({
             closeItemText = t.pa.CloseTopicTooltip;
         }
         closeListItem = rFragment({},
-            r.div({ className: 's_ExplDrp_Ttl' }, "Close?"),  // I18N
+            r.div({ className: 's_ExplDrp_Ttl' }, t.Close + '?'),
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'icon-block e_ClosePgB',
                   onClick: debiki2.ReactActions.togglePageClosed },

@@ -29,7 +29,7 @@ const ExplainingListItem = util.ExplainingListItem;
 
 
 // BEM name: esTopicType -- no. Instead, esPTD = Page-Type-Dropdown?
-// No. Instea: s_PTD = page type dialog.
+// No. Instead: s_PTD = page type dialog.
 export var PageRoleDropdown = createComponent({
   getInitialState: function() {
     return {
@@ -79,8 +79,10 @@ export var PageRoleDropdown = createComponent({
     const me: Myself = store.me;
     const showAllOptions = state.showAllOptions;
 
-    // Discussions/ideas/questions etc are "totally" different from chat topics;
-    // don't allow changing such already-existing topics, to chat topics.
+    // Don't allow changing already existing topics, to chat topics, because chat
+    // topics are "totally" different from "normal" topics like
+    // discussions/ideas/questions etc. Chat topic types, may be selected only
+    // when creating a new page.
     const canChangeToChat: boolean = !props.pageExists;
 
     const dropdownButton =
@@ -196,7 +198,7 @@ export var PageRoleDropdown = createComponent({
           customHtmlPageOption));
 
     return (
-      rFragment({},  //r.div({ style: { display: 'inline-block' } },
+      rFragment({},
         dropdownButton,
         dropdownModal));
   }

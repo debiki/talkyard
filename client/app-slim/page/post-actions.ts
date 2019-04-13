@@ -139,14 +139,14 @@ export const PostActions = createComponent({
 
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-
-    // (Don't check this.props...isFlat here — use postType instead.)
     const post: Post = this.props.post;
+
     const newPostType =
         page_isAlwaysFlatDiscourse(page) || (
               // On usually-flat-progress-topics, by default, append replies. [DEFPRGRES]
               page_isUsuallyFlatDiscourse(page) && post.nr === BodyNr)
           ? PostType.BottomComment
+              // Otherwise, the same type as the post we're replying to.
           : ((post.postType === PostType.Flat || post.postType === PostType.BottomComment)
               ? post.postType
               : PostType.Normal);
@@ -171,9 +171,6 @@ export const PostActions = createComponent({
     }, true);
   },
 
-  onCloseClick: function() {
-    debiki2.ReactActions.togglePageClosed();
-  },
   onEditClick: function(event) {
     debiki2.ReactActions.editPostWithNr(this.props.post.nr);
   },
@@ -260,33 +257,6 @@ export const PostActions = createComponent({
                 morebundle.openChangePageDialog(rect, { page })
               }},
             "Change ...");  // I18N
-
-    let closeReopenButton;  // rm
-    const canCloseOrReopen = !isDone && !isAnswered && page_canToggleClosed(page);
-    if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {   // xx rm
-      let closeReopenTitle = t.Reopen;
-      let closeReopenIcon = 'icon-circle-empty';
-      let closeReopenTooltip;
-      if (!page.pageClosedAtMs) {
-        closeReopenTitle = t.Close;
-        closeReopenIcon = 'icon-block';
-        switch (page.pageRole) {
-          case PageRole.Question:
-            if (isOwnPage)
-              closeReopenTooltip = t.pa.CloseOwnQuestionTooltip;
-            else
-              closeReopenTooltip = t.pa.CloseOthersQuestionTooltip;
-            break;
-          case PageRole.ToDo:
-            closeReopenTooltip = t.pa.CloseToDoTooltip;
-            break;
-          default:
-            closeReopenTooltip = t.pa.CloseTopicTooltip;
-        }
-      }
-      closeReopenButton = r.a({ className: 'dw-a dw-a-close ' + closeReopenIcon,
-          onClick: this.onCloseClick, title: closeReopenTooltip }, closeReopenTitle);
-    }
 
     let numLikesText;
     if (post.numLikeVotes) {

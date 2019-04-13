@@ -381,7 +381,7 @@ class SiteDao(
   }
 
   def createApiSecret(forUserId: Option[UserId]): ApiSecret = {
-    require(forUserId.isEmpty, "TyE4AKBR02") // for now
+    require(forUserId.isEmpty, "TyE7KFBR02") // for now
     val now = globals.now()
 
     // If more than two *sysbot* secrets get greated per day, something weird is going on.

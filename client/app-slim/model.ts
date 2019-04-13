@@ -762,7 +762,7 @@ interface Page {
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   doingStatus: PageDoingStatus;
-  // REFACTOR [5RKT02] remove the At fields.
+  // ? Refactor: [5RKT02] remove the At fields.
   // Use a PageDoingStatus enum: New/Planned/Doing/Done/Postponed enum
   // instead of all status fields.
   // And a ClosedStatus enum: Open/Closed/Locked/Frozen.
@@ -1649,8 +1649,6 @@ interface GuestLoginResponse {
 interface LoadTopicsResponse {
   categoryId?: CategoryId;
   categoryParentId?: CategoryId;
-  categoryName?: string;
-  categoryDescr?: string;
   topics: Topic[];
   users: Participant[];
 }

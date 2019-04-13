@@ -357,8 +357,6 @@ object ForumController {
     val json = Json.obj(   // LoadTopicsResponse
       "categoryId" -> JsNumberOrNull(categoryId),
       "categoryParentId" -> JsNumberOrNull(category.flatMap(_.parentId)),
-      "categoryName" -> JsStringOrNull(category.map(_.name)),
-      "categoryDescr" -> JsStringOrNull(category.flatMap(_.description)),
       "topics" -> topicsJson,
       "users" -> users.map(JsUser))
     OkSafeJson(json)

@@ -61,10 +61,11 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val anyNewDoingStatus: Option[PageDoingStatus] = anyDoingStatusInt map { value =>
-      PageDoingStatus.fromInt(value) getOrElse throwBadRequest("TyE2ABKR04", "Bad doingStatus")
+      PageDoingStatus.fromInt(value) getOrElse throwBadArgument("TyE2ABKR04", "doingStatus")
     }
 
     val hasManuallyEditedSlug = anySlug.exists(slug => {
+      // The user interface currently makes impossible to post a new slug, without a page title.
       val title = anyNewTitle getOrElse throwForbidden("TyE2AKBF05", "Cannot post slug but not title")
       slug != context.nashorn.slugifyTitle(title)
     })
@@ -84,16 +85,19 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(oldMeta.pageType == PageType.AboutCategory,  //  [4AKBE02]
       "TyEEDCATDSCTTL", "Don't edit the category description topic title — edit the topic text instead")
 
-    throwForbiddenIf(anyNewRole.exists(_ != oldMeta.pageType) && !oldMeta.pageType.mayChangeRole,
+    throwForbiddenIf(pageTypeAfter != oldMeta.pageType && !oldMeta.pageType.mayChangeRole,
       "DwE5KGU02", s"Cannot change page role ${oldMeta.pageType} to something else")
 
     throwForbiddenIf(anyNewDoingStatus.isDefined && !pageTypeAfter.hasDoingStatus,
       "TyE0PGDNGSTS", s"Pages of type $pageTypeAfter shouldn't have a doing-status")
 
-    throwForbiddenIf(anyLayout.isDefined && oldMeta.pageType != PageType.Forum,
+    throwForbiddenIf(anyLayout.isDefined && pageTypeAfter != PageType.Forum,
       "EdE5FKL0P", "Can only specify topic list layout for forum pages")
 
     // Authorization.
+    SECURITY; SHOULD // do same authz checks as when editing posts?
+    // throwNoUnless(Authz.mayEditPost(  ... ?  Not so urgent, mods somewhat ok to trust?
+    // Fix this, by moving this impl to a (new?) Dao? And look at:  PostsDao.editPostIfAuth(...)
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
 
@@ -167,7 +171,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
       htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
       layout = anyLayout.getOrElse(oldMeta.layout),
-      // If will be a meta post about changing the doingStatus.
+      // A meta post about changing the doingStatus.
       numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
       version = oldMeta.version + 1)
 

@@ -37,8 +37,6 @@ function logAndAssertVisible(browser, topicTitle: string, shallBeVisible: boolea
 
 function assertPublicTopicsVisible(browser) {
   // browser.forumTopicList.assertTopicTitlesAreAndOrder()
-  //logAndAssertVisible(browser,"About category CategoryA");
-  //logAndAssertVisible(browser,"About category CategoryB");
   logAndAssertVisible(browser, forum.topics.byMariaCategoryA.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryANr2.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryANr3.title);

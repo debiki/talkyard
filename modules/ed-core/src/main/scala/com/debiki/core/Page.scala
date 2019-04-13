@@ -204,7 +204,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   numOrigPostBuryVotes: Int = 0,
   numOrigPostUnwantedVotes: Int = 0,
   numOrigPostRepliesVisible: Int = 0,
-  // REFACTOR  change to enums. Remove timestamps (not used anyway). See model.ts [5RKT02].
+  // ? Refactor: Change to enums. Remove timestamps (not used anyway). See model.ts [5RKT02].
   answeredAt: Option[ju.Date] = None,
   answerPostId: Option[PostId] = None,
   plannedAt: Option[ju.Date] = None,
@@ -343,7 +343,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
 
   def copyWithNewDoingStatus(newDoingStatus: PageDoingStatus, when: When): PageMeta = {
     // For now. Later, change  plannedAt, startedAt  etc, to just a doingStatus field,
-    // with no timestamp?
+    // with no timestamp? [5RKT02]
     def someWhen = Some(when.toJavaDate)
     val (newPlannedAt, newStartedAt, newDoneAt, newClosedAt) = newDoingStatus match {
       case PageDoingStatus.Discussing => (None, None, None, None)

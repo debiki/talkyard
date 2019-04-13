@@ -181,12 +181,15 @@ describe("Page statuses and bottom comments", () => {
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     assert(owensBrowser.pageTitle.canBumpPageStatus());
     owensBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed.dw-clickable');
-    assert(michaelsBrowser.topic.isChangePageDialogOpen());
+    assert(owensBrowser.topic.isChangePageDialogOpen());
     owensBrowser.topic.closeChangePageDialog();
+  });
+
+  it("... and he does", () => {
     owensBrowser.topic.setDoingStatus('Done');
   });
 
-  it("... he quick-jumped from Planned to Done, skipping status Planned", () => {
+  it("... he quick-jumped from Planned to Done, skipping status Started, so fast", () => {
     owensBrowser.waitForVisible('.dw-p-ttl .icon-check.dw-clickable');
   });
 

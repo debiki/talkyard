@@ -722,7 +722,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // In case this is a new post, update its parent's child id list.
   const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
-    const alreadyAChild = _.find(parentPost.childNrsSorted, childNr => childNr === post.nr);
+    const alreadyAChild = _.find(parentPost.childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
       parentPost.childNrsSorted.unshift(post.nr);
       sortPostNrsInPlaceBestFirst(parentPost.childNrsSorted, page.postsByNr);
@@ -731,7 +731,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
 
   // Insert into progress reply list, if needed.
   if (post.postType === PostType.BottomComment) {
-    const alreadyIncl = _.find(page.progressPostNrsSorted, replNr => replNr === post.nr);
+    const alreadyIncl = _.find(page.progressPostNrsSorted, nr => nr === post.nr);
     if (!alreadyIncl) {
       page.progressPostNrsSorted.push(post.nr);
       sortPostNrsInPlaceBestFirst(page.progressPostNrsSorted, page.postsByNr);
@@ -739,6 +739,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
+  // (Top level embedded comments have no parent post — there's no Original Post.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
     sortPostNrsInPlaceBestFirst(page.parentlessReplyNrsSorted, page.postsByNr);

@@ -693,7 +693,8 @@ export function page_isUsuallyFlatDiscourse(page: Page): boolean {
 
 export function page_isUsuallyThreadedOnly(page: Page): boolean {
   const pageRole = page.pageRole;
-  return pageRole === PageRole.Question || pageRole === PageRole.Discussion;
+  return pageRole === PageRole.Question || pageRole === PageRole.Discussion ||
+      pageRole === PageRole.EmbeddedComments;
 }
 
 

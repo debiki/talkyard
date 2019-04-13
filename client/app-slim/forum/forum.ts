@@ -185,7 +185,7 @@ export const ForumComponent = createReactClass(<any> {
     });
   },
 
-  getForumPathAndRoutes: function() {
+  getForumPathAndRoutes: function(): [string, string[]] {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;
     const forumPath = page.pagePath.value;
@@ -495,11 +495,13 @@ const ForumButtons = createComponent({
 
     // If the All Categories dummy category is active, that's not where new topics
     // get placed. Instead they get placed in a default category. Find out which
-    // one that is, so can show the correct create-new-topic button title (the title
-    // depends on the topic type).
+    // one that is, so can show the correct create topic button title (the title
+    // depends on the default topic type in the default category).
     let activeOrDefaultCategory: Category = activeCategory;
 
-    // Dupl code [5BKZWY0]
+    // Dupl code [5BKZWY0]  Delete this? (except for activeOrDefaultCategory —
+    // but can use store_findTheDefaultCategory for that?),
+    // no longer using the select-category button in the forum button list.  [0BZZKW2]
     const categoryMenuItems = store.currentCategories.map((category: Category) => {
       if (activeOrDefaultCategory.isForumItself && category.isDefaultCategory) {
         activeOrDefaultCategory = category;
@@ -639,12 +641,6 @@ const ForumButtons = createComponent({
         t.fb.CreateCat);
     }
 
-    let editCategoryBtn;  /* rm
-    if (!activeCategory.isForumItself && me.isAdmin) {
-      editCategoryBtn = Button({ onClick: this.props.editCategory, className: 'esF_BB_EditCat' },
-        t.fb.EditCat);
-    } */
-
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
 
     const filterAndSortButtons = topicFilterFirst
@@ -667,8 +663,7 @@ const ForumButtons = createComponent({
         r.div({ className: 'dw-forum-actionbar clearfix ' + whatClass },
           filterAndSortButtons,
           createTopicBtn,
-          createCategoryBtn,
-          editCategoryBtn));
+          createCategoryBtn));
   }
 });
 
@@ -840,8 +835,6 @@ const LoadAndListTopics = createFactory({
         minHeight: null,
         categoryId: response.categoryId,
         categoryParentId: response.categoryParentId,
-        categoryName: response.categoryName,
-        categoryDescr: response.categoryDescr,
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
@@ -888,8 +881,6 @@ const LoadAndListTopics = createFactory({
     return TopicsList({
       categoryId: this.state.categoryId,
       categoryParentId: this.state.categoryParentId,
-      categoryName: this.state.categoryName,
-      categoryDescr: this.state.categoryDescr,
       topics: this.state.topics,
       store: this.props.store,
       forumPath: this.props.forumPath,
@@ -1111,25 +1102,14 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
             categoryMenuItems));
   // --- / Dupl code [5BKZWY0] ------------------
 
-  /*
-  const categoryId = this.props.categoryId;
-  const categoryParentId = this.props.categoryParentId;
-  */
-  const categoryName = categoriesDropdownButton; // this.props.categoryName;
-  const categoryDescr = activeCategory.description; // this.props.categoryDescr;
-  /*
-  const missingOrIsRootCategory = !categoryId || !categoryParentId;
-  const categoryNameDescr = missingOrIsRootCategory ? null :  */
-
   const editCatButton = activeCategory.isForumItself ? null :
-      r.a({ className: 's_F_Ts_Cat_Edt icon-edit  esF_BB_EditCat', id: 'e2eEditTitle',
-            onClick: props.editCategory },
-          t.fb.EditCat);
+      r.a({ className: 's_F_Ts_Cat_Edt icon-edit', onClick: props.editCategory },
+        t.fb.EditCat);
 
   return (
     r.div({ className: 's_F_Ts_Cat' },
-      categoryName,  //, ' ', r.span({ class: 'caret' })),
-      r.p({ className: 's_F_Ts_Cat_Abt' }, categoryDescr),
+      categoriesDropdownButton,
+      r.p({ className: 's_F_Ts_Cat_Abt' }, activeCategory.description),
       editCatButton));
 }
 
