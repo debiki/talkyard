@@ -783,8 +783,8 @@ interface Page {
   pageHiddenAtMs?: number;
   pageDeletedAtMs?: number;
   numPosts: number;
-  numPostsRepliesSection: number;
-  numPostsChatSection: number;
+  numPostsRepliesSection: number;  // change and rename to numDiscussionReplies
+  numPostsChatSection: number;     // change and rename to numProgressPosts
   numPostsExclTitle: number;
   postsByNr: { [postNr: number]: Post };
   parentlessReplyNrsSorted: number[];

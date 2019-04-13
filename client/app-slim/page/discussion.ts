@@ -549,7 +549,8 @@ const RootPostAndComments = createComponent({
   displayName: 'RootPostAndComments',
 
   getInitialState: function() {
-    return { showClickReplyInstead: false };
+    return {
+    };
   },
 
   componentWillUnmount: function() {
@@ -588,18 +589,6 @@ const RootPostAndComments = createComponent({
     });
   },
 
-  /*
-  onChatReplyClick: function() {
-    // Unless shown alraedy, or read already, show a tips about clicking "Reply" instead.
-    var hasReadClickReplyTips = debiki2.help.isHelpMessageClosed(this.props, clickReplyInsteadHelpMessage);
-    if (hasReadClickReplyTips || this.state.showClickReplyInstead) {
-      debiki.internal.showReplyFormForFlatChat();
-    }
-    else {
-      this.setState({ showClickReplyInstead: true });
-    }
-  }, */
-
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
@@ -612,7 +601,7 @@ const RootPostAndComments = createComponent({
     const isBody = store.rootPostId === BodyNr;
     const pageRole: PageRole = page.pageRole;
     let threadClass = 'dw-t dw-depth-0' + horizontalCss(page.horizontalLayout);
-    const postIdAttr = 'post-' + rootPost.nr;
+    const postNrAttr = 'post-' + rootPost.nr;
     let postClass = 'dw-p';
     if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
     if (post_isDeleted(rootPost)) postClass += ' s_P-Dd';
@@ -651,7 +640,7 @@ const RootPostAndComments = createComponent({
               dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }}));
       }
       body =
-        r.div({ className: postClass, id: postIdAttr },
+        r.div({ className: postClass, id: postNrAttr },
           r.div({ className: postBodyClass },
             bodyContent));
     }
@@ -687,7 +676,10 @@ const RootPostAndComments = createComponent({
     let repliesAreFlat = false;
     let discOrProgrReplyNrs = rootPost.childNrsSorted.concat(page.parentlessReplyNrsSorted);
 
-    // On message pages, most likely max a few people talk — then threads make no sense. // xx rm
+    // DO_AFTER 2019-06-01 CLEAN_UP REMOVE this, because now all message page posts are ProgressPost:s,
+    // so this then no longer needed. However, wait for a while, so as not to mess up any
+    // discussions people are having right now (2019-04-13).
+    // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
       repliesAreFlat = true;
@@ -851,51 +843,6 @@ const RootPostAndComments = createComponent({
               */
     }
 
-    // Disable chat comments for now, they make people confused, and  [8KB42]
-    // it'd be hard & take long to make them simpler to understand.
-    // let hasChat = false; hasChatSection(page.pageRole);
-
-    /*let flatComments = [];
-    if (hasChat) _.each(page.postsByNr, (child: Post, childId) => {
-      if (!child || child.postType !== PostType.Flat)
-        return null;
-      var threadProps = _.clone(store);
-      threadProps.isFlat = true;
-      threadProps.elemType = 'div';
-      threadProps.postId = childId;
-      // The index is used for drawing arrows but here there'll be no arrows.
-      threadProps.index = null;
-      threadProps.depth = 1;
-      threadProps.indentationDepth = 0;
-      flatComments.push(
-        r.li({ key: childId },
-          Thread(threadProps)));
-    }); */
-
-    let chatSection; /* Perhaps add back later — but probably not? [8KB42] CLEAN_UP REMOVE
-    if (hasChat) {
-      var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
-          ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
-          : null;
-      chatSection =
-        r.div({},
-          r.div({ className: 'dw-chat-title', id: 'dw-chat' },
-            page.numPostsChatSection + " chat comments"),
-          r.div({ className: 'dw-vt' },
-            r.div({ className: 'dw-chat dw-single-and-multireplies' },
-                r.ol({ className: 'dw-res dw-singlereplies' },
-                  flatComments))),
-          anyClickReplyInsteadHelpMessage,
-          r.div({ className: 'dw-chat-as' },
-            r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
-                title: "In a chat comment you can talk lightly and casually about this topic," +
-                  " or post a status update. — However, to reply to someone, " +
-                  "instead click Reply just below his or her post." },
-              " Add chat comment")));
-    } */
-
-    //const flatRepliesClass = pageIsFlat ? ' dw-chat' : ''; // this disabled [8KB42]
-
     const socialButtons = !store.settings.showSocialButtons ? null :
         SocialButtons(store.settings);
 
@@ -970,22 +917,9 @@ const RootPostAndComments = createComponent({
             progressSectionBorder,
             progressPosts)),
         afterPageActions,
-        chatSection,
         deletedText));
   },
 });
-
-
-/*
-const clickReplyInsteadHelpMessage = {
-  id: 'EsH5UGPM2',
-  version: 1,
-  okayText: "Okay",
-  content: r.span({},
-    r.b({}, "If you want to reply to someone"), ", then instead click ",
-    r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
-    " just below his/her post.")
-}; */
 
 
 
@@ -1102,8 +1036,8 @@ const Thread = createComponent({
 
     let numDeletedChildren = 0;
     for (let i = 0; i < post.childNrsSorted.length; ++i) {
-      const childId = post.childNrsSorted[i];
-      if (!postsByNr[childId]) {
+      const childNr = post.childNrsSorted[i];
+      if (!postsByNr[childNr]) {
         numDeletedChildren += 1;
       }
     }
@@ -1121,8 +1055,8 @@ const Thread = createComponent({
 
     let children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted && !isFlat) {
-      children = post.childNrsSorted.map((childId, childIndex) => {
-        const child = postsByNr[childId];
+      children = post.childNrsSorted.map((childNr, childIndex) => {
+        const child = postsByNr[childNr];
         if (!child)
           return null; // deleted
         if (isSquashingChildren && child.squash)
@@ -1146,12 +1080,12 @@ const Thread = createComponent({
         }
         const threadProps = _.clone(this.props);
         threadProps.elemType = childrenSideways ? 'div' : 'li';
-        threadProps.postId = childId;
+        threadProps.postId = childNr;
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;
         threadProps.is2dTreeColumn = childrenSideways;
-        threadProps.key = childId;
+        threadProps.key = childNr;
         let thread;
         if (child.squash) {
           isSquashingChildren = true;
@@ -1163,7 +1097,7 @@ const Thread = createComponent({
         if (threadProps.is2dTreeColumn) {
           // Need a <div> inside the <li> so margin-left can be added (margin-left otherwise
           // won't work, because: display table-cell [4GKUF02]).
-          thread = r.li({ key: childId }, thread);
+          thread = r.li({ key: childNr }, thread);
         }
         return thread;
       });
@@ -1517,10 +1451,10 @@ export const PostHeader = createComponent({
         r[linkFn]({ className: 'dw-p-pin icon-pin' });
     }
 
-    let postId;
+    let hashPostNr;
     if (post.nr !== TitleNr && post.nr !== BodyNr) {
       if (debiki.debug) {
-        postId = r.span({ className: 'dw-p-link' }, '#' + post.nr);
+        hashPostNr = r.span({ className: 'dw-p-link' }, '#' + post.nr);
       }
     }
 
@@ -1569,7 +1503,7 @@ export const PostHeader = createComponent({
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
-          postId,
+          hashPostNr,
           anySolutionIcon,
           anyAvatar,
           by,

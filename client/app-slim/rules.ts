@@ -34,13 +34,6 @@ export function mayIndeed() {
 }
 
 
-export function hasChatSection(pageRole: PageRole) {
-  // On message pages, replies are flat already, so an additional flat section makes no sense.
-  // Chat channels don't have any chat comments section (the whole page is nothing but chat msgs).
-  return pageRole !== PageRole.FormalMessage && !page_isChatChannel(pageRole);
-}
-
-
 export function page_isChatChannel(pageRole: PageRole): boolean {
   return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
 }

@@ -690,35 +690,8 @@ html:not(.mouse) .dw-rr
     color: hsl($solvedHue, 100%, 36%) !important;
 
 
-// Chat comments
+// Chat messages
 //===========================
-/* disabled  [8KB42]
-.DW.DW .dw-chat
-  .dw-t
-    padding-top: 7px;
-    border-bottom: 1px solid #eee;
-
-  .dw-p-hd
-    background-color: white;
-    border: none;
-
-  .dw-p-hd
-    color: hsl(0, 0%, 40%);
-
-  .dw-p-by,
-  .dw-p-e-by
-    color: hsl(0, 0%, 24%);
-
-  .dw-p-as
-    margin-bottom: 0;
-
-  .dw-a.dw-a-votes
-    padding-bottom: 4px !important;
-
-  .dw-mrrs
-    display: inline !important;
-*/
-
 
 .esC_M
   .esP_By_U
@@ -729,6 +702,7 @@ html:not(.mouse) .dw-rr
 
   .dw-rrs
     font-size: 12px;
+
 
 // Post info
 //===========================
@@ -870,18 +844,11 @@ html.touch .dw-p-mark-click
 
 $metaPostMarignBottom = 35px;
 
-//.DW .dw-chat .s_w-MP   // disabled [8KB42]
-//  margin-top: 5px;  // undo -20px (40AKRW2)
-//  & + .s_w-MP
-//    margin-top: -15px;  // place close, no buttons in between
-//  .edAvtr
-//    top: 0;  // undo 15px;
-
 .DW .s_w-MP
   margin-bottom: $metaPostMarignBottom;
   // Place closer to the parent post, otherwise so much whitespace above.
   // There's no Reply button anyway so no wrong-Reply-button-to-click.
-  margin-top: -20px;  // (40AKRW2)
+  margin-top: -20px;
   /* Too many lines, looks cluttered:
   border: 1px solid hsl(0, 0%, 90%);
   border-left: none;

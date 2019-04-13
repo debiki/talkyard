@@ -879,8 +879,8 @@ function unsquashTrees(postNr: number) {
   const parent = page.postsByNr[post.parentNr];
   let numLeftToUnsquash = -1;
   for (let i = 0; i < parent.childNrsSorted.length; ++i) {
-    const childId = parent.childNrsSorted[i];
-    const child: Post = page.postsByNr[childId];
+    const childNr = parent.childNrsSorted[i];
+    const child: Post = page.postsByNr[childNr];
     if (!child)
       continue; // deleted
     if (child.nr == postNr) {
@@ -939,14 +939,14 @@ function uncollapsePostAndChildren(post: Post) {
   uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
-    var childId = post.childNrsSorted[i];
-    var child = page.postsByNr[childId];
+    var childNr = post.childNrsSorted[i];
+    var child = page.postsByNr[childNr];
     if (!child)
       continue;
     uncollapseOne(child);
     for (var i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
-      var grandchildId = child.childNrsSorted[i2];
-      var grandchild = page.postsByNr[grandchildId];
+      var grandchildNr = child.childNrsSorted[i2];
+      var grandchild = page.postsByNr[grandchildNr];
       if (!grandchild)
         continue;
       uncollapseOne(grandchild);
@@ -1626,8 +1626,8 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // to update all subsequent siblings too.
   var parent: any = postsByNr[post.parentNr] || {};
   for (var i = 0; i < (parent.childNrsSorted || []).length; ++i) {
-    var siblingId = parent.childNrsSorted[i];
-    store.postsToUpdate[siblingId] = true;
+    var siblingNr = parent.childNrsSorted[i];
+    store.postsToUpdate[siblingNr] = true;
   }
 
   // Need to update all ancestors, otherwise when rendering the React root we won't reach
