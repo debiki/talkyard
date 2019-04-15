@@ -391,18 +391,19 @@ const AcceptTermsDialog = createComponent({
     }
   },
   render: function () {
-    const isOwner = this.state.isOwner;
-    const accepts = this.state.accepts;
-    const store = this.state.store;
-    const termsUrl = isOwner ?
-        store.siteOwnerTermsUrl || '/-/terms-for-site-owners': '/-/terms-of-use';
-    const privacyUrl = isOwner ?
-        store.siteOwnerPrivacyUrl || '/-/privacy-for-site-owners' : '/-/privacy-policy';
-    return (
-      // Don't set onHide — shouldn't be closeable by clicking outside, only by choosing Yes.
-      Modal({ show: this.state.isOpen },
-        ModalHeader({}, ModalTitle({}, t.terms.TermsAndPrivacy)),
-        ModalBody({},
+    let modalBody;
+    if (this.state.isOpen) {
+      const isOwner = this.state.isOwner;
+      const accepts = this.state.accepts;
+      const store: Store = this.state.store;
+      const settings: SettingsVisibleClientSide = store.settings;
+      const termsUrl = isOwner
+          ? store.siteOwnerTermsUrl || '/-/terms-of-use'
+          : settings.termsOfUseUrl || '/-/terms-of-use';
+      const privacyUrl = isOwner
+          ? store.siteOwnerPrivacyUrl || '/-/privacy-policy'
+          : settings.privacyUrl || '/-/privacy-policy';
+      modalBody = ModalBody({},
           // Use a <form>, so Enter key clicks the Continue button.
           r.form({ className: 'clearfix' },
             r.p({},
@@ -422,7 +423,13 @@ const AcceptTermsDialog = createComponent({
 
             // Keep inside the <form>, so Enter works. (Don't add a ModalFooter)
             Button({ onClick: this.close, className: 's_TermsD_B' + (accepts ? ' btn-primary' : '') },
-              accepts ? t.Continue : t.Cancel)))));
+              accepts ? t.Continue : t.Cancel)));
+    }
+    return (
+      // Don't set onHide — shouldn't be closeable by clicking outside, only by choosing Yes.
+      Modal({ show: this.state.isOpen },
+        ModalHeader({}, ModalTitle({}, t.terms.TermsAndPrivacy)),
+        modalBody));
   }
 });
 

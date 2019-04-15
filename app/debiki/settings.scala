@@ -109,6 +109,11 @@ trait AllSettings {
   def orgDomain: String
   def orgFullName: String
   def orgShortName: String
+  def termsOfUseUrl: String
+  def privacyUrl: String
+  def rulesUrl: String
+  def contactEmailAddr: String
+  def contactUrl: String
   def contribAgreement: ContribAgreement
   def contentLicense: ContentLicense
   def languageCode: String
@@ -202,6 +207,11 @@ trait AllSettings {
     orgDomain = Some(self.orgDomain),
     orgFullName = Some(self.orgFullName),
     orgShortName = Some(self.orgShortName),
+    termsOfUseUrl = Some(self.termsOfUseUrl),
+    privacyUrl = Some(self.privacyUrl),
+    rulesUrl = Some(self.rulesUrl),
+    contactEmailAddr = Some(self.contactEmailAddr),
+    contactUrl = Some(self.contactUrl),
     contribAgreement = Some(self.contribAgreement),
     contentLicense = Some(self.contentLicense),
     languageCode = Some(self.languageCode),
@@ -299,6 +309,11 @@ object AllSettings {
     val orgDomain = ""
     val orgFullName = ""
     val orgShortName = ""
+    val termsOfUseUrl = ""
+    val privacyUrl = ""
+    val rulesUrl = ""
+    val contactEmailAddr = ""
+    val contactUrl = ""
     val contribAgreement: ContribAgreement = ContribAgreement.CcBy3And4
     val contentLicense: ContentLicense = ContentLicense.CcBySa4
     val languageCode = "en_US"
@@ -394,6 +409,11 @@ case class EffectiveSettings(
   def orgDomain: String = firstInChain(_.orgDomain) getOrElse default.orgDomain
   def orgFullName: String = firstInChain(_.orgFullName) getOrElse default.orgFullName
   def orgShortName: String = firstInChain(_.orgShortName) getOrElse default.orgShortName
+  def termsOfUseUrl: String = firstInChain(_.termsOfUseUrl) getOrElse default.termsOfUseUrl
+  def privacyUrl: String = firstInChain(_.privacyUrl) getOrElse default.privacyUrl
+  def rulesUrl: String = firstInChain(_.rulesUrl) getOrElse default.rulesUrl
+  def contactEmailAddr: String = firstInChain(_.contactEmailAddr) getOrElse default.contactEmailAddr
+  def contactUrl: String = firstInChain(_.contactUrl) getOrElse default.contactUrl
   def contribAgreement: ContribAgreement = firstInChain(_.contribAgreement) getOrElse default.contribAgreement
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def languageCode: String = firstInChain(_.languageCode) getOrElse default.languageCode
@@ -587,6 +607,11 @@ object Settings2 {
       "companyDomain" -> JsStringOrNull(s.orgDomain),
       "companyFullName" -> JsStringOrNull(s.orgFullName),
       "companyShortName" -> JsStringOrNull(s.orgShortName),
+      "termsOfUseUrl" -> JsStringOrNull(s.termsOfUseUrl),
+      "privacyUrl" -> JsStringOrNull(s.privacyUrl),
+      "rulesUrl" -> JsStringOrNull(s.rulesUrl),
+      "contactEmailAddr" -> JsStringOrNull(s.contactEmailAddr),
+      "contactUrl" -> JsStringOrNull(s.contactUrl),
       "contribAgreement" -> JsNumberOrNull(s.contribAgreement.map(_.toInt)),
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "languageCode" -> JsStringOrNull(s.languageCode),
@@ -668,6 +693,11 @@ object Settings2 {
     orgDomain = anyString(json, "companyDomain", d.orgDomain),
     orgFullName = anyString(json, "companyFullName", d.orgFullName),
     orgShortName = anyString(json, "companyShortName", d.orgShortName),
+    termsOfUseUrl = anyString(json, "termsOfUseUrl", d.termsOfUseUrl),
+    privacyUrl = anyString(json, "privacyUrl", d.privacyUrl),
+    rulesUrl = anyString(json, "rulesUrl", d.rulesUrl),
+    contactEmailAddr = anyString(json, "contactEmailAddr", d.contactEmailAddr),
+    contactUrl = anyString(json, "contactUrl", d.contactUrl),
     contribAgreement = anyInt(json, "contribAgreement", d.contribAgreement.toInt).map(_.map(
       ContribAgreement.fromInt(_) getOrElse throwBadRequest(
         "EsE5YK28", "Invalid contributors agreement"))),

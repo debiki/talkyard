@@ -34,28 +34,28 @@ class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * of their accounts, also if things in the forum are only accessible to members. [7WKBAY02]
     */
   def viewTermsOfUsePage() = GetActionAllowAnyone { request =>
-    /* Later:
-    apiReq.siteSettings.termsOfUseUrl match {
-      case None =>
-        // Use default terms-of-use page.
-        Ok(views.html.legal.termsOfUse)
-      case Some(url) =>
-        // This website has its own custom terms-of-use page, use it instead.
-        Redirect(url)
+    val customToU = request.siteSettings.termsOfUseUrl
+    if (customToU.isEmpty) {
+      // Use default terms-of-use page.
+      Ok(views.html.legal.termsOfUse(SiteTpi(request)).body) as HTML
     }
-     */
-
-    // For now: (use hardcoded ToU page, no custimization)
-    Ok(views.html.legal.termsOfUse(SiteTpi(request)).body) as HTML
+    else {
+      // This website has its own custom terms-of-use page, use it instead.
+      TemporaryRedirect(customToU)
+    }
   }
 
 
   /** Should be visible to anyone, so can read before joining. [7WKBAY02]
     */
   def viewPrivacyPolicyPage() = GetActionAllowAnyone { request =>
-    // Later: allow overriding privacy policy, see comments in viewTermsOfUsePage() above.
-    // For now:
-    Ok(views.html.legal.privacyPolicy(SiteTpi(request)).body) as HTML
+    val customPrivacy = request.siteSettings.privacyUrl
+    if (customPrivacy.isEmpty) {
+      Ok(views.html.legal.privacyPolicy(SiteTpi(request)).body) as HTML
+    }
+    else {
+      TemporaryRedirect(customPrivacy)
+    }
   }
 
 }

@@ -1064,6 +1064,10 @@ object JsonMaker {
       "enableInstagramLogin" -> settings.enableInstagramLogin)
 
     val D = AllSettings.makeDefault(globals)
+    if (settings.termsOfUseUrl != D.termsOfUseUrl)
+      json += "termsOfUseUrl" -> JsString(settings.termsOfUseUrl)
+    if (settings.privacyUrl != D.privacyUrl)
+      json += "privacyUrl" -> JsString(settings.privacyUrl)
     if (settings.languageCode != D.languageCode)
       json += "languageCode" -> JsString(settings.languageCode)
     if (settings.inviteOnly != D.inviteOnly)

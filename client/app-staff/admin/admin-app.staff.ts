@@ -1881,6 +1881,8 @@ const LegalSettings = createFactory({
     const userContentTermsLink = r.a({ href: '/-/terms-of-use#3', target: '_blank' },
       "section about user contributions on your Terms of Use");
 
+    const hasCustomToU = valueOf(s => s.termsOfUseUrl).length;
+
     return (
       r.div({},
         Setting2(props, { type: 'text', label: "Organization name", id: 'e2eAA_Ss_OrgNameTI',
@@ -1905,6 +1907,26 @@ const LegalSettings = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'text', label: "Custom Terms of Use URL",
+          id: 'e_ToUUrl',
+          help: r.span({}, "A URL to any Terms of Use page of yours that you want to use " +
+            "instead of the built-in default."),
+          getter: (s: Settings) => s.termsOfUseUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.termsOfUseUrl = target.value;
+          }
+        }),
+
+        Setting2(props, { type: 'text', label: "Custom Privacy Policy URL",
+          id: 'e_PrivacyUrl',
+          help: r.span({}, "A URL to any Privacy Policy page of yours that you want to use " +
+            "instead of the built-in default."),
+          getter: (s: Settings) => s.privacyUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.privacyUrl = target.value;
+          }
+        }),
+
         /* This setting isn't needed? Remove?  [3PU85J7]
         Setting2(props, { type: 'text', label: "company_domain",
           help: r.span({}, "The domain name owned by the company " +
@@ -1915,7 +1937,8 @@ const LegalSettings = createFactory({
           }
         }), */
 
-        Setting2(props, { type: 'select', label: "Contributors agreement",
+        hasCustomToU ? null : Setting2(props, {
+          type: 'select', label: "Contributors agreement",
           help: r.span({}, "Which rights should people grant to you on material they create " +
               "and post to this community? (This setting affects your ", userContentTermsLink,
             " page.)"),
@@ -1936,7 +1959,8 @@ const LegalSettings = createFactory({
             "Dual license under CC-BY 3.0 and 4.0"),
         ]),
 
-        Setting2(props, { type: 'select', label: "Content license",
+        hasCustomToU ? null : Setting2(props, {
+          type: 'select', label: "Content license",
           help: r.span({},
             "Under which ",
             r.a({ href: 'https://creativecommons.org/licenses/', target: '_blank' },

@@ -2196,8 +2196,11 @@ function pagesFor(browser) {
         const termsLinkHtml = browser.getHTML('#e_TermsL');
         const privacyLinkHtml = browser.getHTML('#e_PrivacyL');
         if (isForSiteOwner) {
-          assert(termsLinkHtml.indexOf('/-/terms-for-site-owners') >= 0);
-          assert(privacyLinkHtml.indexOf('/-/privacy-for-site-owners') >= 0);
+          // In dev-test, the below dummy urls are defined [5ADS24], but not in prod.
+          if (!settings.prod) {
+            assert(termsLinkHtml.indexOf('href="/e2e-test-siteOwnerTermsUrl"') >= 0);
+            assert(privacyLinkHtml.indexOf('href="/e2e-test-siteOwnerPrivacyUrl"') >= 0);
+          }
         }
         else if (isForSiteOwner === false) {
           assert(termsLinkHtml.indexOf('/-/terms-of-use') >= 0);

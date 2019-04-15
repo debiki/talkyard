@@ -922,6 +922,8 @@ interface Store extends Origins {
 
 // Default settings: [8L4KWU02]
 interface SettingsVisibleClientSide {
+  termsOfUseUrl?: string;               // default: undefined —> built-in
+  privacyUrl?: string;                  // default: undefined —> built-in
   languageCode?: string;                // default: 'en_US'
   inviteOnly?: boolean;                 // default: false
   allowSignup?: boolean;                // default: true
@@ -1531,6 +1533,8 @@ interface Settings {
   companyDomain: string;
   companyFullName: string;
   companyShortName: string;
+  termsOfUseUrl: string;
+  privacyUrl: string;
   contribAgreement: ContribAgreement;
   contentLicense: ContentLicense;
 

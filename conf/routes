@@ -83,12 +83,8 @@ POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings
 POST  /-/change-hostname        controllers.SettingsController.changeHostname
 POST  /-/update-extra-hostnames controllers.SettingsController.updateExtraHostnames
 
-# LEGAL: SHOULD create /-/terms-of-use-for-owners, and /-/privacy-policy-for-owners.
-# But for now, these are OK: (and says we can change them — the main change, would be to *remove* terms)
 GET   /-/terms-of-use            controllers.LegalController.viewTermsOfUsePage
-GET   /-/terms-for-site-owners   controllers.LegalController.viewTermsOfUsePage
 GET   /-/privacy-policy          controllers.LegalController.viewPrivacyPolicyPage
-GET   /-/privacy-for-site-owners controllers.LegalController.viewPrivacyPolicyPage
 
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent

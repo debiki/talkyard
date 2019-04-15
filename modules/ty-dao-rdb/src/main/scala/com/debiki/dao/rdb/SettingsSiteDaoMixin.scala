@@ -111,6 +111,11 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         org_domain,
         org_full_name,
         org_short_name,
+        terms_of_use_url,
+        privacy_url,
+        rules_url,
+        contact_email_addr,
+        contact_url,
         contrib_agreement,
         content_license,
         language_code,
@@ -128,7 +133,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -186,6 +191,11 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.orgDomain.getOrElse(None).trimOrNullVarchar,
       editedSettings2.orgFullName.getOrElse(None).trimOrNullVarchar,
       editedSettings2.orgShortName.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.termsOfUseUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.privacyUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.rulesUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.contactEmailAddr.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.contactUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.contribAgreement.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.contentLicense.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.languageCode.getOrElse(None).trimOrNullVarchar,
@@ -274,6 +284,11 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("org_domain", s.orgDomain.map(_.trimOrNullVarchar))
     maybeSet("org_full_name", s.orgFullName.map(_.trimOrNullVarchar))
     maybeSet("org_short_name", s.orgShortName.map(_.trimOrNullVarchar))
+    maybeSet("terms_of_use_url", s.termsOfUseUrl.map(_.trimOrNullVarchar))
+    maybeSet("privacy_url", s.privacyUrl.map(_.trimOrNullVarchar))
+    maybeSet("rules_url", s.rulesUrl.map(_.trimOrNullVarchar))
+    maybeSet("contact_email_addr", s.contactEmailAddr.map(_.trimOrNullVarchar))
+    maybeSet("contact_url", s.contactUrl.map(_.trimOrNullVarchar))
     maybeSet("contrib_agreement", s.contribAgreement.map(_.map(_.toInt).orNullInt))
     maybeSet("content_license", s.contentLicense.map(_.map(_.toInt).orNullInt))
     maybeSet("language_code", s.languageCode.map(_.trimOrNullVarchar))
@@ -350,22 +365,27 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       numFirstPostsToReview = getOptionalInt(rs, "num_first_posts_to_review"),
       numFirstPostsToApprove = getOptionalInt(rs, "num_first_posts_to_approve"),
       numFirstPostsToAllow = getOptionalInt(rs, "num_first_posts_to_allow"),
-      faviconUrl = Option(rs.getString("favicon_url")),
-      headStylesHtml = Option(rs.getString("head_styles_html")),
-      headScriptsHtml = Option(rs.getString("head_scripts_html")),
-      endOfBodyHtml = Option(rs.getString("end_of_body_html")),
-      headerHtml = Option(rs.getString("header_html")),
-      footerHtml = Option(rs.getString("footer_html")),
+      faviconUrl = getOptString(rs, "favicon_url"),
+      headStylesHtml = getOptString(rs, "head_styles_html"),
+      headScriptsHtml = getOptString(rs, "head_scripts_html"),
+      endOfBodyHtml = getOptString(rs, "end_of_body_html"),
+      headerHtml = getOptString(rs, "header_html"),
+      footerHtml = getOptString(rs, "footer_html"),
       horizontalComments = getOptBoolean(rs, "horizontal_comments"),
-      socialLinksHtml = Option(rs.getString("social_links_html")),
-      logoUrlOrHtml = Option(rs.getString("logo_url_or_html")),
-      orgDomain = Option(rs.getString("org_domain")),
-      orgFullName = Option(rs.getString("org_full_name")),
-      orgShortName = Option(rs.getString("org_short_name")),
+      socialLinksHtml = getOptString(rs, "social_links_html"),
+      logoUrlOrHtml = getOptString(rs, "logo_url_or_html"),
+      orgDomain = getOptString(rs, "org_domain"),
+      orgFullName = getOptString(rs, "org_full_name"),
+      orgShortName = getOptString(rs, "org_short_name"),
+      termsOfUseUrl = getOptString(rs, "terms_of_use_url"),
+      privacyUrl = getOptString(rs, "privacy_url"),
+      rulesUrl = getOptString(rs, "rules_url"),
+      contactEmailAddr = getOptString(rs, "contact_email_addr"),
+      contactUrl = getOptString(rs, "contact_url"),
       contribAgreement = ContribAgreement.fromInt(rs.getInt("contrib_agreement")), // 0 -> None, ok
       contentLicense = ContentLicense.fromInt(rs.getInt("content_license")), // 0 -> None, ok
-      languageCode = Option(rs.getString("language_code")),
-      googleUniversalAnalyticsTrackingId = Option(rs.getString("google_analytics_id")),
+      languageCode = getOptString(rs, "language_code"),
+      googleUniversalAnalyticsTrackingId = getOptString(rs, "google_analytics_id"),
       enableForum = getOptBool(rs, "enable_forum"),
       enableApi = getOptBool(rs, "enable_api"),
       enableTags = getOptBool(rs, "enable_tags"),
@@ -376,7 +396,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       featureFlags = getOptString(rs, "feature_flags"),
       allowEmbeddingFrom = getOptString(rs, "allow_embedding_from"),
       embeddedCommentsCategoryId = getOptInt(rs, "embedded_comments_category_id"),
-      htmlTagCssClasses = Option(rs.getString("html_tag_css_classes")),
+      htmlTagCssClasses = getOptString(rs, "html_tag_css_classes"),
       numFlagsToHidePost = getOptInt(rs, "num_flags_to_hide_post"),
       cooldownMinutesAfterFlaggedHidden = getOptInt(rs, "cooldown_minutes_after_flagged_hidden"),
       numFlagsToBlockNewUser = getOptInt(rs, "num_flags_to_block_new_user"),
