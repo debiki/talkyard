@@ -147,6 +147,7 @@ trait PagesDao {
     val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
+    val settings = loadWholeSiteSettings(tx)
 
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
       authorAndLevels, groupIds,
@@ -250,17 +251,41 @@ trait PagesDao {
       categoryId = anyCategoryId, embeddingUrl = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
 
-    val reviewTask = if (reviewReasons.isEmpty) None
-    else Some(ReviewTask(
-      id = tx.nextReviewTaskId(),
-      reasons = reviewReasons.to[immutable.Seq],
-      createdById = SystemUserId,
-      createdAt = now.toJavaDate,
-      createdAtRevNr = Some(bodyPost.currentRevisionNr),
-      maybeBadUserId = authorId,
-      pageId = Some(pageId),
-      postId = Some(bodyPost.id),
-      postNr = Some(bodyPost.nr)))
+    val anyReviewTask =
+      if (reviewReasons.isEmpty) None
+      else Some(ReviewTask(
+        id = tx.nextReviewTaskId(),
+        reasons = reviewReasons.to[immutable.Seq],
+        createdById = SystemUserId,
+        createdAt = now.toJavaDate,
+        createdAtRevNr = Some(bodyPost.currentRevisionNr),
+        maybeBadUserId = authorId,
+        pageId = Some(pageId),
+        postId = Some(bodyPost.id),
+        postNr = Some(bodyPost.nr)))
+
+    val anySpamCheckTask =
+      if (spamRelReqStuff.isEmpty || !globals.spamChecker.spamChecksEnabled) None
+      else {
+        // The uri is now sth like /-/create-page. Change to the path to the page
+        // we're creating.
+        val spamStuffPageUri = spamRelReqStuff.getOrDie("TyE2045MEQf").copy(uri = pagePath.value)
+        Some(
+          SpamCheckTask(
+            createdAt = globals.now(),
+            siteId = siteId,
+            postToSpamCheck = Some(PostToSpamCheck(
+              postId = bodyPost.id,
+              postNr = bodyPost.nr,
+              postRevNr = bodyPost.currentRevisionNr,
+              pageId = pageMeta.pageId,
+              pageType = pageMeta.pageType,
+              pagePublishedAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
+              textToSpamCheck = bodyHtmlSanitized,
+              language = settings.languageCode)),
+            who = byWho,
+            requestStuff = spamStuffPageUri))
+      }
 
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
@@ -311,11 +336,12 @@ trait PagesDao {
     }
 
     // COULD generate notifications from here — currently done in the callers though.
-    reviewTask.foreach(tx.upsertReviewTask)
+
+    anyReviewTask.foreach(tx.upsertReviewTask)
+    anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     insertAuditLogEntry(auditLogEntry, tx)
 
     tx.indexPostsSoon(titlePost, bodyPost)
-    spamRelReqStuff.foreach(tx.spamCheckPostsSoon(byWho, _, titlePost, bodyPost))
 
     // Don't start rendering html for this page in the background. [5KWC58]
     // (Instead, when the user requests the page, we'll render it directly in
@@ -323,7 +349,7 @@ trait PagesDao {
     // for the background thread (which is too complicated) or 2) we'd generate
     // the page twice, both in the request thread and in a background thread.)
 
-    (pagePath, bodyPost, reviewTask)
+    (pagePath, bodyPost, anyReviewTask)
   }
 
 

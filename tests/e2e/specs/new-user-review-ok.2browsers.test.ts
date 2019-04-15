@@ -135,6 +135,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     majasBrowser.topic.assertPostNotPendingApproval(4);
   });
 
+  // Todo: Verify cannot post more than this. Set allow = 4 ?
+
 
   // A stranger sees Maja's posts
   // -------------------------------------

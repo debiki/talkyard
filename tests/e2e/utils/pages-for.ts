@@ -4840,6 +4840,16 @@ function pagesFor(browser) {
         api.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
       },
 
+      waitForIsRegistrationSpamError: function() {
+        // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
+        api.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
+      },
+
+      waitForTooManyPendingMaybeSpamPostsError: function() {
+        // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
+        api.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
+      },
+
       close: function() {
         api.waitAndClick('.e_SED_CloseB');
         api.waitUntilGone('.modal-dialog.dw-server-error');

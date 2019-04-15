@@ -102,7 +102,7 @@ describe("spam test, no external services:", () => {
   });
 
   it("... then a *spam* comment", () => {
-    mallorysBrowser.complex.replyToOrigPost('__ed_spam' + '_test_123__');
+    mallorysBrowser.complex.replyToOrigPost('talkyard_spam' + '_test_1234');
   });
 
   it("... which will be visible, initially", () => {
@@ -135,9 +135,11 @@ describe("spam test, no external services:", () => {
   it("A stranger attempts to sign up with password + a spammer's email: fills in details,", () => {
     strangersBrowser.topbar.clickSignUp();
     strangersBrowser.loginDialog.fillInUsername("stranger");
-    strangersBrowser.loginDialog.fillInEmail('__ed_spam' + '_test_123__@ex.co');
+    strangersBrowser.loginDialog.fillInEmail('talkyard_spam' + '_test_1234@ex.co');
     strangersBrowser.loginDialog.fillInPassword("public1234");
   });
+
+  // todo: ip addr link
 
   it("... clicks submit", () => {
     strangersBrowser.loginDialog.clickSubmit();
@@ -148,7 +150,7 @@ describe("spam test, no external services:", () => {
   });
 
   it("... but is rejected", () => {
-    mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
+    mallorysBrowser.serverErrorDialog.waitForIsRegistrationSpamError();
   });
 
   it("... closes the error dialog", () => {

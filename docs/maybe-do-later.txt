@@ -12,6 +12,14 @@ Implement sub categories.
 [sw] [sse]
 Service worker. Server sent events.
 
+[spam]
+When deleting a post, ask if it's because it's spam. If yes, and the post
+hasn't been spam checked — send it to the spam check services so they'll
+get more training data. [DELSPAM]
+
+If many posts by a new user are classified as spam. Or if staff deletes most of hens
+posts, during review. Then mark user as a moderate threat. [DETCTTHRT]
+
 [privacy-badger]:
 Privacy Badger doesn't like transient session cookies, currently.
 (See https://github.com/EFForg/privacybadger/issues/2003#issuecomment-391745819  bullet point 3. )

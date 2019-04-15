@@ -122,6 +122,16 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
+  def getE2eTestCounters: Action[Unit] = GetAction { _ =>
+    throwForbiddenIf(globals.isProd, "TyE0MAGIC", "Show me magic and I'll give you the numbers")
+    val responseJson = Json.obj(
+      "numReportedSpamFalsePositives" -> globals.e2eTestCounters.numReportedSpamFalsePositives,
+      "numReportedSpamFalseNegatives" -> globals.e2eTestCounters.numReportedSpamFalseNegatives,
+    )
+    Ok(responseJson.toString) as JSON
+  }
+
+
   /** For performance tests. */
   def pingExceptionAction: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     Ok("exception-action-pong")

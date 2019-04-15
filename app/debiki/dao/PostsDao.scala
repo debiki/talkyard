@@ -119,6 +119,8 @@ trait PostsDao {
     if (page.pageType.isChat)
       throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
+    val settings = loadWholeSiteSettings(tx)
+
     // Some dupl code [3GTKYA02]
     val uniqueId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
@@ -219,6 +221,24 @@ trait PostsDao {
       postId = Some(newPost.id),
       postNr = Some(newPost.nr)))
 
+    val anySpamCheckTask =
+      if (!globals.spamChecker.spamChecksEnabled) None
+      else Some(
+        SpamCheckTask(
+          createdAt = globals.now(),
+          siteId = siteId,
+          postToSpamCheck = Some(PostToSpamCheck(
+            postId = newPost.id,
+            postNr = newPost.nr,
+            postRevNr = newPost.currentRevisionNr,
+            pageId = newMeta.pageId,
+            pageType = newMeta.pageType,
+            pagePublishedAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
+            textToSpamCheck = textAndHtml.safeHtml,  // RENAME to safeHtmlToSpamCheck
+            language = settings.languageCode)),
+          who = byWho,
+          requestStuff = spamRelReqStuff))
+
     val stats = UserStats(
       authorId,
       lastSeenAt = now,
@@ -230,7 +250,6 @@ trait PostsDao {
     addUserStats(stats)(tx)
     tx.insertPost(newPost)
     tx.indexPostsSoon(newPost)
-    tx.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
     if (shallApprove) {
       val pagePartsInclNewPost = PreLoadedPageParts(pageId, page.parts.allPosts :+ newPost)
@@ -241,6 +260,7 @@ trait PostsDao {
     }
     insertAuditLogEntry(auditLogEntry, tx)
     anyReviewTask.foreach(tx.upsertReviewTask)
+    anySpamCheckTask.foreach(tx.insertSpamCheckTask)
 
     val notifications =
       if (skipNotifications) Notifications.None
@@ -288,6 +308,12 @@ trait PostsDao {
         throwForbidden("EsE5Y80G2_", "Forbidden")
     }
 
+    lazy val reviewTasksRecentFirst =
+      tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts, OrderBy.MostRecentFirst)
+
+    lazy val reviewTasksOldestFirst =
+      tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+
     // COULD add a users3 table status field instead, and update it on write, which says
     // if the user has too many pending comments / edits. Then could thow that status
     // client side, withouth having to run the below queries again and again.
@@ -301,18 +327,38 @@ trait PostsDao {
       // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
       // to non-staff. COULD allow messages to staff, but currently we here don't have access
       // to the page members, so we don't know if they are staff.
-      // Later: auto bump threat level to ModerateThreat, then MessagesDao will do all this
+      // Later: auto bump threat level to ModerateThreat [DETCTHR], then MessagesDao will do all this
       // automatically.
-      val tasks = tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
-        OrderBy.MostRecentFirst)
-      val numLoaded = tasks.length
-      val numPending = tasks.count(_.decision.isEmpty)
-      val numRejected = tasks.count(_.decision.exists(_.isRejectionBadUser))
+      val numLoaded = reviewTasksRecentFirst.length
+      val numPending = reviewTasksRecentFirst.count(_.decision.isEmpty)
+      val numRejected = reviewTasksRecentFirst.count(_.decision.exists(_.isRejectionBadUser))
       if (numLoaded >= 2 && numRejected > (numLoaded / 2)) // for now
         throwForbidden("EsE7YKG2", "Too many rejected comments or edits or something")
       if (numPending > 5) // for now
-        throwForbidden("EsE5JK20", "Too many pending review tasks")
+        throwForbidden("EsE5JK20", "Too many pending review tasks")  // do always instead? all new members + threat
       return (Nil, true)
+    }
+
+    // If too many recent review tasks about maybe-spam are already pending,
+    // or if too many posts got rejected,
+    // don't let this not-totally-trusted user post anything more, for now.
+    if (author.trustLevel.toInt < TrustLevel.TrustedMember.toInt) {
+      val numMaybeSpam = reviewTasksRecentFirst.count(t =>
+        t.reasons.contains(ReviewReason.PostIsSpam) && t.decision.isEmpty)
+
+      val numWasNotSpam = reviewTasksRecentFirst.count(t =>
+        t.reasons.contains(ReviewReason.PostIsSpam) && t.decision.exists(_.isFine))
+
+      val numBad = reviewTasksRecentFirst.count(t =>
+        t.decision.exists(_.isRejectionBadUser))
+
+      val maxMaybeSpam = (author.trustLevel.toInt < TrustLevel.FullMember.toInt) ?
+        AllSettings.MaxPendingMaybeSpamPostsNewMember | AllSettings.MaxPendingMaybeSpamPostsFullMember
+
+      if (numMaybeSpam + numBad >= maxMaybeSpam && numBad >= numWasNotSpam)
+        throwForbidden("TyENEWMBRSPM_", o"""You cannot post more posts until a moderator
+          has reviewed your previous posts.""" + "\n\n" + o"""Our spam detection system thinks
+          some of your posts look like spam, sorry.""")
     }
 
     val settings = loadWholeSiteSettings(tx)
@@ -327,10 +373,8 @@ trait PostsDao {
     }
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
-      val tasks = tx.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
-        OrderBy.OldestFirst)
-      val numApproved = tasks.count(_.decision.exists(_.isFine))
-      val numLoaded = tasks.length
+      lazy val numApproved = reviewTasksOldestFirst.count(_.decision.exists(_.isFine))
+      lazy val numLoaded = reviewTasksOldestFirst.length
 
       if (numApproved < numFirstToApprove) {
         // This user is still under evaluation (is s/he a spammer or not?).
@@ -447,6 +491,10 @@ trait PostsDao {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
+    val authorAndLevels = loadUserAndLevels(who, tx)
+    val author = authorAndLevels.user
+
+    val settings = loadWholeSiteSettings(tx)
 
     val uniqueId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -492,6 +540,24 @@ trait PostsDao {
     SECURITY // COULD: if is new chat user, create review task to look at his/her first
     // chat messages, but only the first few.
 
+    val anySpamCheckTask =
+      if (!globals.spamChecker.spamChecksEnabled) None
+      else Some(
+        SpamCheckTask(
+          createdAt = globals.now(),
+          siteId = siteId,
+          postToSpamCheck = Some(PostToSpamCheck(
+            postId = newPost.id,
+            postNr = newPost.nr,
+            postRevNr = newPost.currentRevisionNr,
+            pageId = newMeta.pageId,
+            pageType = newMeta.pageType,
+            pagePublishedAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
+            textToSpamCheck = textAndHtml.safeHtml,  // RENAME to safeHtmlToSpamCheck
+            language = settings.languageCode)),
+          who = who,
+          requestStuff = spamRelReqStuff))
+
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
@@ -516,12 +582,12 @@ trait PostsDao {
     addUserStats(userStats)(tx)
     tx.insertPost(newPost)
     tx.indexPostsSoon(newPost)
-    tx.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     updatePagePopularity(page.parts, tx)
     uploadRefs foreach { uploadRef =>
       tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
+    anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     insertAuditLogEntry(auditLogEntry, tx)
 
     // generate json? load all page members?
@@ -554,11 +620,14 @@ trait PostsDao {
     require(lastPost.approvedRevisionNr.contains(FirstRevisionNr), "EsE4PKW1")
     require(lastPost.deletedAt.isEmpty, "EsE2GKY8")
 
+    val settings = loadWholeSiteSettings(tx)
     val theApprovedSource = lastPost.approvedSource.getOrDie("EsE5GYKF2")
     val theApprovedHtmlSanitized = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8")
     val newCombinedText = textEndingWithNumNewlines(theApprovedSource, 2) + textAndHtml.text
 
     val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(newCombinedText, followLinks = false)
+
+    val pageMeta = tx.loadThePageMeta(lastPost.pageId)
 
     val editedPost = lastPost.copy(
       approvedSource = Some(combinedTextAndHtml.text),
@@ -569,9 +638,27 @@ trait PostsDao {
       lastApprovedEditAt = Some(tx.now.toJavaDate),
       lastApprovedEditById = Some(authorId))
 
+    val anySpamCheckTask =
+      if (!globals.spamChecker.spamChecksEnabled) None
+      else Some(
+        SpamCheckTask(
+          createdAt = globals.now(),
+          siteId = siteId,
+          postToSpamCheck = Some(PostToSpamCheck(
+            postId = editedPost.id,
+            postNr = editedPost.nr,
+            postRevNr = editedPost.currentRevisionNr,
+            pageId = pageMeta.pageId,
+            pageType = pageMeta.pageType,
+            pagePublishedAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
+            textToSpamCheck = combinedTextAndHtml.safeHtml,
+            language = settings.languageCode)),
+          who = byWho,
+          requestStuff = spamRelReqStuff))
+
     tx.updatePost(editedPost)
     tx.indexPostsSoon(editedPost)
-    tx.spamCheckPostsSoon(byWho, spamRelReqStuff, editedPost)
+    anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, tx)
 
     val oldMeta = tx.loadThePageMeta(lastPost.pageId)
@@ -610,6 +697,7 @@ trait PostsDao {
       val editorAndLevels = loadUserAndLevels(who, tx)
       val editor = editorAndLevels.user
       val page = PageDao(pageId, tx)
+      val settings = loadWholeSiteSettings(tx)
 
       val postToEdit = page.parts.postByNr(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
@@ -820,6 +908,24 @@ trait PostsDao {
             createOrAmendOldReviewTask(SystemUserId, editedPost, reviewReasons, tx))
         }
 
+      val anySpamCheckTask =
+        if (!globals.spamChecker.spamChecksEnabled) None
+        else Some(
+          SpamCheckTask(
+            createdAt = globals.now(),
+            siteId = siteId,
+            postToSpamCheck = Some(PostToSpamCheck(
+              postId = editedPost.id,
+              postNr = editedPost.nr,
+              postRevNr = editedPost.currentRevisionNr,
+              pageId = page.meta.pageId,
+              pageType = page.meta.pageType,
+              pagePublishedAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
+              textToSpamCheck = newTextAndHtml.safeHtml,
+              language = settings.languageCode)),
+            who = who,
+            requestStuff = spamRelReqStuff))
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -834,7 +940,7 @@ trait PostsDao {
 
       tx.updatePost(editedPost)
       tx.indexPostsSoon(editedPost)
-      tx.spamCheckPostsSoon(who, spamRelReqStuff, editedPost)
+      anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, tx)
 
@@ -1107,6 +1213,7 @@ trait PostsDao {
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
+    lazy val postAuthor = tx.loadTheParticipant(postBefore.createdById)
 
     // Authorization.
     if (!user.isStaff) {
@@ -1240,6 +1347,31 @@ trait PostsDao {
       val taskPostId = task.postId getOrDie "TyE6KWA2C"
       invalidateReviewTasksForPosts(postsDeleted.filter(_.id == taskPostId), doingReviewTask, tx)
       reactivateReviewTasksForPosts(postsUndeleted.filter(_.id == taskPostId), doingReviewTask, tx)
+    }
+
+    // If this post is getting deleted because it's spam, then, update any [UPDSPTSK]
+    // pending spam check task, so we can send a training sample to any spam check services.
+    // [DELSPAM] Would be good with a separate Delete button, to indicate if one deletes
+    // this post because it's spam. So we know for sure.
+    // For now: If this post was detected as spam, and is getting deleted by staff,
+    // assume it's spam.
+    // (Tricky tricky: Looking at the post author won't work, for wiki posts, if
+    // a user other than the author, edited the wiki post and inserted spam.
+    // Then we should instead compare with the last editor (or all/recent editors).
+    // But how do we know if the one who inserted any spam, is the last editor,
+    // or the original author? Ignore this, for now. [WIKISPAM])
+    // [DETCTHR] If the post got deleted because it's spam, should eventually
+    // marke the user as a moderate threat.
+    val maybeDeletingSpam = user.isStaff && !postAuthor.isStaff && user.id != postAuthor.id
+    if (maybeDeletingSpam) {  //  && anyDeleteReason is DeleteReasons.IsSpam) {
+      val spamCheckTasksAnyRevNr = tx.loadPendingSpamCheckTasksForPost(postBefore.id)
+      val spamCheckTaskSameRevNr =
+        spamCheckTasksAnyRevNr.filter(
+          postBefore.approvedRevisionNr is _.postToSpamCheck.getOrDie("TyE529KMW").postRevNr)
+      spamCheckTaskSameRevNr foreach { task =>
+        val taskWithHumanResult = task.copy(humanSaysIsSpam = Some(true))
+        tx.updateSpamCheckTaskForPostWithResults(taskWithHumanResult)
+      }
     }
 
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
@@ -1453,6 +1585,7 @@ trait PostsDao {
         browserIdData: BrowserIdData) {
     readWriteTransaction(deletePostImpl(
       pageId, postNr = postNr, deletedById = deletedById, doingReviewTask = None, browserIdData, _))
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -1462,7 +1595,7 @@ trait PostsDao {
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
       doingReviewTask = doingReviewTask,
       tx = tx)
-    refreshPageInMemCache(pageId)
+    // The caller needs to: refreshPageInMemCache(pageId) — and should be done just after tx ended.
     result
   }
 

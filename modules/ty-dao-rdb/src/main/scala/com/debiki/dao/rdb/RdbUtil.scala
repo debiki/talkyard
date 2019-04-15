@@ -470,6 +470,53 @@ object RdbUtil {
   }
 
 
+  def getSpamCheckTask(rs: js.ResultSet): SpamCheckTask = {
+    val anyPostId = getOptInt(rs, "post_id")
+    val anyPostToCheck = anyPostId map { postId =>
+      PostToSpamCheck(
+        postId = postId,
+        postNr = rs.getInt("post_nr"),
+        postRevNr = rs.getInt("post_rev_nr"),
+        pageId = rs.getString("page_id"),
+        pageType = PageType.fromInt(rs.getInt("page_type")).getOrDie("TyE049RKT2"),
+        pagePublishedAt = getWhen(rs, "page_published_at"),
+        textToSpamCheck = getString(rs, "text_to_spam_check"),
+        language = getString(rs, "language"))
+    }
+
+    val anyIsMisclassified = getOptBool(rs, "is_misclassified")
+
+    val result = SpamCheckTask(
+      siteId = rs.getInt("site_id"),
+      createdAt = getWhen(rs, "created_at"),
+      postToSpamCheck = anyPostToCheck,
+      who = Who(
+        id = rs.getInt("author_id"),
+        BrowserIdData(
+          ip = rs.getString("req_ip"),
+          idCookie = getOptString(rs, "browser_id_cookie"),
+          fingerprint = rs.getInt("browser_fingerprint"))),
+      requestStuff = SpamRelReqStuff(
+        userAgent = getOptionalStringNotEmpty(rs, "req_user_agent"),
+        referer = getOptionalStringNotEmpty(rs, "req_referer"),
+        uri = rs.getString("req_uri"),
+        userName = getOptString(rs, "author_name"),
+        userEmail = getOptString(rs, "author_email_addr"),
+        userUrl = getOptString(rs, "author_url"),
+        userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
+      resultAt = getOptWhen(rs, "results_at"),
+      resultJson = getOptJsObject(rs, "results_json"),
+      resultText = getOptString(rs, "results_text"),
+      numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
+      numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
+      humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),
+      misclassificationsReportedAt = getOptWhen(rs, "misclassifications_reported_at"))
+
+    dieIf(result.isMisclassified != anyIsMisclassified, "TyE068TDGW2")
+    result
+  }
+
+
   def getNotification(rs: js.ResultSet): Notification = {
     val siteId = rs.getInt("site_id")
     val notfId = rs.getInt("notf_id")

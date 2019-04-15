@@ -178,6 +178,12 @@ function playTimeHours(hours: number) { playTimeSeconds(hours * 3600); }
 function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
 
 
+function getTestCounters(): TestCounters {
+  const response = getOrDie(settings.mainSiteOrigin + '/-/test-counters');
+  return JSON.parse(response.body);
+}
+
+
 function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubjectBody | null {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
@@ -227,6 +233,8 @@ function getEmailsSentToAddrs(siteId: SiteId): { num: number, addrsByTimeAsc: st
 function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
       browser?): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  dieIf(!email, `No email has yet been sent to ${emailAddress}. ` + (!browser ? '' :
+    "Include a 'browser' as 3rd arguement, to poll-wait for an email.  [TyE2ABKF057]"));
   return utils.findFirstLinkToUrlIn('https?://.*/-/login-password-confirm-email', email.bodyHtmlText);
 }
 
@@ -410,6 +418,7 @@ export = {
   playTimeMinutes,
   playTimeHours,
   playTimeDays,
+  getTestCounters,
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,

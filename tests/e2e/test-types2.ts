@@ -42,6 +42,12 @@ interface TestSettings {
 }
 
 
+interface TestCounters {
+  numReportedSpamFalsePositives: number;
+  numReportedSpamFalseNegatives: number;
+}
+
+
 /*
 interface SiteData {   [3SD5PB7]
   meta: SiteMeta;

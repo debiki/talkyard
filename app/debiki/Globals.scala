@@ -96,6 +96,11 @@ object Globals {
 }
 
 
+class E2eTestCounters {
+  @volatile var numReportedSpamFalsePositives: Int = 0
+  @volatile var numReportedSpamFalseNegatives: Int = 0
+}
+
 
 class Globals(
   private val appLoaderContext: p.ApplicationLoader.Context,
@@ -112,6 +117,8 @@ class Globals(
   }
 
   var edContext: EdContext = _
+
+  val e2eTestCounters = new E2eTestCounters
 
   private implicit def execCtc: ExecutionContext = executionContext
 
@@ -572,6 +579,9 @@ class Globals(
 
   val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
+  def originOfSiteId(siteId: SiteId): Option[String] =
+    systemDao.getSite(siteId).flatMap(_.canonicalHostname.map(originOf))
+
   def originOf(site: Site): Option[String] = site.canonicalHostname.map(originOf)
   def originOf(host: Hostname): String = originOf(host.hostname)
   def originOf(hostOrHostname: String): String = {
@@ -1031,7 +1041,8 @@ class Globals(
           elasticSearchClient, actorSystem, systemDao))
 
     def spamCheckBatchSize: Int = conf.getInt("talkyard.spamcheck.batchSize") getOrElse 20
-    def spamCheckIntervalSeconds: Int = conf.getInt("talkyard.spamcheck.intervalSeconds") getOrElse 1
+    def spamCheckIntervalSeconds: Int = conf.getInt("talkyard.spamcheck.intervalSeconds").getOrElse(
+      if (isOrWasTest) 1 else 3)
 
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -1046,8 +1057,9 @@ class Globals(
       RenderContentService.startNewActor(outer, edContext.nashorn)
 
     val spamChecker = new SpamChecker(
+      isDevTest = isOrWasTest, originOfSiteId,
       executionContext, appLoaderContext.initialConfiguration, wsClient,
-      applicationVersion, new TextAndHtmlMaker("dummysiteid", edContext.nashorn))
+      new TextAndHtmlMaker("dummysiteid", edContext.nashorn))
 
     spamChecker.start()
 

@@ -56,7 +56,7 @@ describe("notfs-mark-seen-as-seen  TyT2AKBR0T", () => {
         page: forum.topics.byMichaelCategoryA,
         nr,
         parentNr: c.BodyNr,
-        type: c.TestPostType.BottomComment,
+        postType: c.TestPostType.BottomComment,
         authorId: forum.members.mallory.id,
         approvedSource: "I give you goldy golden gold coins, five per second",
       });

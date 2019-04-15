@@ -168,9 +168,19 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     if (ed.server.security.ReservedNames.isUsernameReserved(username))  // [5LKKWA10]
       throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")
 
-    globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
-        isSpamReason =>
-      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2_")
+    val spamCheckTask = SpamCheckTask(
+      createdAt = globals.now(),
+      siteId = request.siteId,
+      postToSpamCheck = None,
+      who = request.whoOrUnknown,
+      requestStuff = request.spamRelatedStuff.copy(
+        userName = Some(username),
+        userEmail = Some(emailAddress),
+        userTrustLevel = Some(TrustLevel.NewMember)))
+
+    globals.spamChecker.detectRegistrationSpam(spamCheckTask) map {
+          spamCheckResults: SpamCheckResults =>
+      SpamChecker.throwForbiddenIfSpam(spamCheckResults, "TyEPWREGSPM_")
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 

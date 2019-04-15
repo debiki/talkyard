@@ -53,6 +53,10 @@ trait ReviewsDao {
   self: SiteDao =>
 
 
+  /** This only remembers a *decision* about what to do. The decision is then
+    * carried out, by JanitorActor.executePendingReviewTasks, after a short
+    * undo-decision timeout.
+    */
   def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
         decision: ReviewDecision) {
     readWriteTransaction { tx =>
@@ -174,8 +178,10 @@ trait ReviewsDao {
         }
 
         // Currently review tasks don't always get invalidated, when posts and pages get deleted. (2KYF5A)
-        if (post.deletedAt.isDefined)
+        if (post.deletedAt.isDefined) {
+          // Any spam check task should have been updated already, here: [UPDSPTSK].
           return
+        }
 
         pageIdsToRefresh.add(post.pageId)
 
@@ -205,7 +211,9 @@ trait ReviewsDao {
               approvePostImpl(post.pageId, post.nr, approverId = decidedById, tx)
               perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx)
             }
+            updateSpamCheckTasks(humanThinksIsSpam = false, task, tx)
           case ReviewDecision.DeletePostOrPage =>
+            // [DETCTHR] If staff deletes many posts by this user, mark it as a moderate threat?
             if (task.isForBothTitleAndBody) {
               val pageId = task.pageId getOrDie "TyE4K85R2"
               deletePagesImpl(Seq(pageId), deleterId = decidedById,
@@ -215,11 +223,35 @@ trait ReviewsDao {
               deletePostImpl(post.pageId, postNr = post.nr, deletedById = decidedById,
                   doingReviewTask = Some(task), browserIdData, tx)
             }
+            updateSpamCheckTasks(humanThinksIsSpam = true, task, tx)
         }
       }
     }
 
     refreshPagesInAnyCache(pageIdsToRefresh)
+  }
+
+
+  private def updateSpamCheckTasks(humanThinksIsSpam: Boolean, reviewTask: ReviewTask,
+      tx: SiteTransaction) {
+    val postId = reviewTask.postId getOrElse {
+      return
+    }
+    val spamCheckTasksAnyRevNr: Seq[SpamCheckTask] = tx.loadPendingSpamCheckTasksForPost(postId)
+    val spamCheckTasksSameRevNr =
+      spamCheckTasksAnyRevNr.filter(
+        reviewTask.decidedAtRevNr is _.postToSpamCheck.getOrDie("TyE20597W").postRevNr)
+
+    // How do we know the spam was really inserted in this post revision? What if this is
+    // a wiki post, and a previous editor inserted the spam? Ignore, for now. [WIKISPAM]
+
+    spamCheckTasksSameRevNr foreach { spamCheckTask =>
+      val taskWithHumanResult = spamCheckTask.copy(humanSaysIsSpam = Some(humanThinksIsSpam))
+      // The Janitor thread will soon take a look at this spam check task, and
+      // report any classification error (spam detected, but human says isn't spam, or vice versa)
+      // to the spam check service. [SPMSCLRPT]
+      tx.updateSpamCheckTaskForPostWithResults(taskWithHumanResult)
+    }
   }
 
 

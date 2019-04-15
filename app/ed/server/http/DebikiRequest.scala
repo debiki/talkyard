@@ -98,7 +98,11 @@ abstract class DebikiRequest[A] {
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),
-    uri = uri)
+    uri = uri,
+    userName = user.map(_.usernameOrGuestName),
+    userEmail = user.map(_.email),
+    userUrl = None,
+    userTrustLevel = user.map(_.effectiveTrustLevel))
 
   def theUser: Participant = user_!
   def theUserId: UserId = theUser.id

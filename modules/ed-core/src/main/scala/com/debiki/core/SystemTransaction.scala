@@ -44,7 +44,7 @@ trait SystemTransaction {
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 
-  def siteTransaction(siteId: SiteId): SiteTransaction
+  def siteTransaction(siteId: SiteId): SiteTransaction  // oops doesn't (and cannot) use SiteDao.synchronizeOnSiteId
 
   def loadSites(): immutable.Seq[Site]
 
@@ -94,12 +94,13 @@ trait SystemTransaction {
 
   // ----- Spam check queue
 
-  def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck
-  def deleteFromSpamCheckQueue(siteId: SiteId, postId: PostId, postRevNr: Int)
+  def loadStuffToSpamCheck(limit: Int): immutable.Seq[SpamCheckTask]
+  def loadMisclassifiedSpamCheckTasks(limit: Int): immutable.Seq[SpamCheckTask]
 
   // ----- The janitor: Old stuff deletion
 
   def deletePersonalDataFromOldAuditLogEntries()
+  def deletePersonalDataFromOldSpamCheckTasks()
   def deleteOldUnusedUploads() { /* ... later ... */ }
 
   // ----- The janitor: Review decisions

@@ -84,7 +84,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   def conf: Configuration = globals.rawConf
 
   private val cache = caffeine.cache.Caffeine.newBuilder()
-    .maximumSize(20*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
+    .maximumSize(20*1000) // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M? [ADJMEMUSG]
     // Don't expire too quickly — the user needs time to choose & typ a username.
     // SECURITY COULD expire sooner (say 10 seconds) if just logging in, because then
     // the user need not think or type anything.
@@ -620,9 +620,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
-    globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
-        isSpamReason =>
-      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
+    val spamCheckTask = SpamCheckTask(
+      createdAt = globals.now(),
+      siteId = request.siteId,
+      postToSpamCheck = None,
+      who = request.whoOrUnknown,
+      requestStuff = request.spamRelatedStuff.copy(
+        userName = Some(username),
+        userEmail = Some(emailAddress),
+        userTrustLevel = Some(TrustLevel.NewMember)))
+
+    globals.spamChecker.detectRegistrationSpam(spamCheckTask) map {
+          spamCheckResults: SpamCheckResults =>
+      SpamChecker.throwForbiddenIfSpam(spamCheckResults, "TyE2AKF067")
 
       val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 

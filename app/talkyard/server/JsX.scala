@@ -478,6 +478,21 @@ object JsX {
       "pageId" -> flag.pageId,
       "postNr" -> flag.postNr)
 
+
+  def JsSpamCheckResult(spamCheckResult: SpamCheckResult): JsObject = {
+    var result = Json.obj(
+      "spamCheckerDomain" -> spamCheckResult.spamCheckerDomain,
+      "spamFound" -> spamCheckResult.spamFound,  // read here: [02MRHL2]
+    )
+    spamCheckResult match {
+      case spamFoundResult: SpamCheckResult.SpamFound =>
+        result += "isCertain" -> JsBoolean(spamFoundResult.isCertain)
+        result += "staffMayUnhide" -> JsBoolean(spamFoundResult.staffMayUnhide)
+      case _ =>
+    }
+    result
+  }
+
   def JsStringOrNull(value: Option[String]): JsValue =
     value.map(JsString).getOrElse(JsNull)
 

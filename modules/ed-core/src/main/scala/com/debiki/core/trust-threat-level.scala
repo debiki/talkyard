@@ -90,7 +90,15 @@ object ThreatLevel {
   /** All comments will be published directly, but also added to the moderation queue for review. */
   case object MildThreat extends ThreatLevel(4)
 
-  /** Comments won't be published until they've been approved by a moderator. */
+  /** Comments won't be published until they've been approved by a moderator.
+    *
+    * At most N comments (say, 5) may be pending review (if more, additional post
+    * are rejected) — not impl though.
+    *
+    * [DETCTHR] Ought to automatically find these threat users: those whose posts
+    * get classified as spam, by spam check services. And/or whose posts the
+    * staff rejects and deletes.
+    */
   case object ModerateThreat extends ThreatLevel(5)
 
   /** May not post any comments at all. */

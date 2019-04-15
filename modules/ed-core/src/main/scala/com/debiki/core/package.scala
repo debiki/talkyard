@@ -24,6 +24,7 @@ import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import com.debiki.core.PageParts.BodyNr
+import play.api.libs.json.JsObject
 import scala.util.{Failure, Success, Try}
 
 
@@ -300,7 +301,8 @@ package object core {
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId: UserId = Participant.SystemUserId
-  def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
+  def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
+    userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
   def SystemUserFullName: String = Participant.SystemUserFullName
   def SystemUserUsername: String = Participant.SystemUserUsername
   def SysbotUserId: UserId = Participant.SysbotUserId
@@ -465,22 +467,134 @@ package object core {
 
 
   /** Spam related request stuff, e.g. referer and user agent.
+    * Also includes the user name and email, at the time when the maybe-spam post
+    * was posted — so isn't forgotten, in case the user changes hens name and
+    * email, before staff has had time to review — Akismet wants misclassification
+    * reports to include all original data. [AKISMET].
     */
   case class SpamRelReqStuff(
     userAgent: Option[String],
     referer: Option[String],
-    uri: String)
+    uri: String,
+    userName: Option[String],
+    userEmail: Option[String],
+    userUrl: Option[String],
+    userTrustLevel: Option[TrustLevel])
 
-
-  case class SpamCheckTask(
-    siteId: SiteId,
+  case class PostToSpamCheck(
     postId: PostId,
+    postNr: PostNr,
     postRevNr: Int,
-    who: Who,
-    requestStuff: SpamRelReqStuff) {
+    pageId: PageId,
+    pageType: PageType,
+    pagePublishedAt: When,
+    textToSpamCheck: String,
+    language: String)
 
-    def sitePostId = SitePostId(siteId, postId)
+
+  /** Primary key = site id, post id and also pots revision nr, so that if
+    * a spammer edits a wiki page, and insert spam links and spam is
+    * detected and a review task generated, but then a friendly person
+    * edits and removes the links — then the spam link revision will
+    * still be remembered, so the staff who later on handle the review task
+    * can see what triggered it.
+    *
+    * Also includes some data that might change, after the post was made,
+    * and before it gets reviewed — Akismet wants misclassification
+    * reports to include all original data. [AKISMET]
+    *
+    * @postedToPageId — good to remember, if the post gets moved to a different page, later.
+    * @pagePublishedAt — if the page got unpublished and re published, good to remember
+    *   the publication date, as it was, when the maybe-spam-post was posted.
+    * @resultText — human readable spam check results description.
+    * @misclassificationsReportedAt — if the spam check service thought something was spam
+    *   when it wasn't, or vice versa, this is when this misclassification was reported
+    *   to the spam check service, so it can learn and improve.
+    */
+  case class SpamCheckTask(
+    createdAt: When,
+    siteId: SiteId,
+    postToSpamCheck: Option[PostToSpamCheck],
+    who: Who,
+    requestStuff: SpamRelReqStuff,
+    resultAt: Option[When] = None,
+    resultJson: Option[JsObject] = None,
+    resultText: Option[String] = None,
+    numIsSpamResults: Option[Int] = None,
+    numNotSpamResults: Option[Int] = None,
+    humanSaysIsSpam: Option[Boolean] = None,
+    misclassificationsReportedAt: Option[When] = None) {
+
+    require(resultAt.isDefined == resultJson.isDefined, "TyE4RBK6RS11")
+    require(resultAt.isDefined == resultText.isDefined, "TyE4RBK6RS22")
+    require(resultAt.isDefined == numIsSpamResults.isDefined, "TyE4RBK6RS33")
+    require(resultAt.isDefined == numNotSpamResults.isDefined, "TyE4RBK6RS44")
+    // We need both spam check results, and a human's opinion, before
+    // we can report this spam check as a misclassification.
+    require((resultAt.isDefined && humanSaysIsSpam.isDefined) ||
+      misclassificationsReportedAt.isEmpty, "TyE4RBK6RS55")
+
+    def key: SpamCheckTask.Key =
+      postToSpamCheck match {
+        case None => Right(siteUserId)
+        case Some(p) => Left((siteId, p.postId, p.postRevNr))
+      }
+
+    def postToSpamCheckShort: Option[PostToSpamCheck] =
+      postToSpamCheck map { p =>
+        p.copy(textToSpamCheck = p.textToSpamCheck.take(1000))
+      }
+
     def siteUserId = SiteUserId(siteId, who.id)
+
+    def sitePostIdRevOrUser: String = s"s$siteId, " + (postToSpamCheck match {
+      case Some(thePostToSpamCheck) =>
+        s"post ${thePostToSpamCheck.postId} rev nr ${thePostToSpamCheck.postRevNr}"
+      case None =>
+        s"user ${who.id} request stuff $requestStuff"
+    })
+
+    def isMisclassified: Option[Boolean] =
+      if (resultAt.isEmpty || humanSaysIsSpam.isEmpty) None
+      else Some(
+        if ((numIsSpamResults.get > 0 && !humanSaysIsSpam.get) ||
+            (numNotSpamResults.get > 0 && humanSaysIsSpam.get))
+          true
+        else
+          false)
+  }
+
+  object SpamCheckTask {
+    type Key = Either[(SiteId, PostId, Int), SiteUserId]
+  }
+
+
+  type SpamCheckResults = immutable.Seq[SpamCheckResult]
+
+  sealed abstract class SpamCheckResult(val spamFound: Boolean) {
+    def spamCheckerDomain: String
+    def humanReadableMessage: String
+  }
+
+  object SpamCheckResult {
+    case class NoSpam(spamCheckerDomain: String) extends SpamCheckResult(false) {
+      override def humanReadableMessage: String = "No spam found"
+    }
+
+    /**
+      * @param staffMayUnhide — if moderators are allowed to override the spam check result
+      *  and show the post, although detected as spam. *Not* allowed (i.e. is false)
+      *  if Google Safe Browsing API says a link is malware.
+      * @param isCertain — if the spam checker claims it knows for 100% this is spam.
+      * @param spamCheckerDomain — e.g. "akismet.com", "safebrowsing.googleapis.com", "dbl.spamhaus.org".
+      * @param humanReadableMessage — a message that can be shown to the staff, so they'll know why
+      *  the post was considered spam.
+      */
+    case class SpamFound(
+      spamCheckerDomain: String,
+      isCertain: Boolean = false,
+      staffMayUnhide: Boolean = true,
+      humanReadableMessage: String) extends  SpamCheckResult(true)
   }
 
 

@@ -236,7 +236,7 @@ class IndexingActor(
     sitePostIds foreach { siteIdAndPost =>
       try systemDao.deleteFromIndexQueue(siteIdAndPost.post, siteIdAndPost.siteId)
       catch {
-        case ex: PSQLException if ex.getSQLState == "40001" =>
+        case ex: PSQLException if ex.getSQLState == "40001" =>  // [PGSERZERR]
           p.Logger.error(
             o"""PostgreSQL serialization error when deleting
                 siteId:postId: $siteIdAndPost from index queue [EdE40001IQ]""", ex)

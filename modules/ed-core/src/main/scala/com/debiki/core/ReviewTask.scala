@@ -112,7 +112,7 @@ case class ReviewTask(
   //   member flags it (they can see deleted posts) — then, a review reason gets added
   //   to the review task, when it is already invalidated.
 
-  require(reasons.nonEmpty, "EsE3FK21")
+  require(reasons.nonEmpty, s"Review reasons is empty [TyE3FK21]: $this")
   require(!moreReasonsAt.exists(_.getTime < createdAt.getTime), "EsE7UGYP2")
   require(!decidedAt.exists(_.getTime < createdAt.getTime), "TyE6UHQ21")
   require(!completedAt.exists(_.getTime < createdAt.getTime), "EsE0YUL72")

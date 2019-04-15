@@ -99,6 +99,9 @@ export = {
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
   SsoTestPath: '/-/sso-test',
   WatchbarHomeLinkTitle: 'Home',
-
+  // ' --viagra-test-123--' makes Akismet always claim the post is spam.
+  AlwaysSpamText: '--viagra-test-123--',
+  AlwaysSpamEmailAddr: 'akismet-guaranteed-spam@example.com',
+  SafeBrowsingMalwareLink: 'http://malware.testing.google.test/testing/malware/*',
 };
 

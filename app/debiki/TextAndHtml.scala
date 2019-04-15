@@ -47,7 +47,7 @@ sealed trait TextAndHtml {
   /** Raw ip addresses (ipv4 or 6) of any links that use raw ip addresses rather than
     * domain names. If there is any, the post should probably be blocked as spam?
     */
-  def linkAddresses: immutable.Seq[String]
+  def linkIpAddresses: immutable.Seq[String]
 
   def isTitle: Boolean
 
@@ -83,7 +83,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
     val usernameMentions: Set[String],
     val links: immutable.Seq[String],
     val linkDomains: immutable.Set[String],
-    val linkAddresses: immutable.Seq[String],
+    val linkIpAddresses: immutable.Seq[String],
     val isTitle: Boolean,
     val followLinks: Boolean,
     val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
@@ -102,7 +102,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
         usernameMentions = usernameMentions ++ more.usernameMentions,
         (links.toSet ++ more.links.toSet).to[immutable.Seq],
         linkDomains ++ more.linkDomains,
-        (linkAddresses.toSet ++ more.linkAddresses.toSet).to[immutable.Seq],
+        (linkIpAddresses.toSet ++ more.linkIpAddresses.toSet).to[immutable.Seq],
         isTitle = isTitle && more.isTitle,
         followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
@@ -154,7 +154,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       val safeHtml = nashorn.sanitizeHtml(text, followLinks = false)
       new TextAndHtmlImpl(text, safeHtml, links = Nil, usernameMentions = Set.empty,
         linkDomains = Set.empty,
-        linkAddresses = Nil, isTitle = true, followLinks = followLinks,
+        linkIpAddresses = Nil, isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
     else {
@@ -192,7 +192,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       }
       new TextAndHtmlImpl(text, renderResult.safeHtml, usernameMentions = renderResult.mentions,
         links = links, linkDomains = linkDomains,
-        linkAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
+        linkIpAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
@@ -205,7 +205,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def test(text: String, isTitle: Boolean): TextAndHtml = {
     dieIf(Globals.isProd, "EsE7GPM2")
     new TextAndHtmlImpl(text, text, links = Nil, usernameMentions = Set.empty,
-      linkDomains = Set.empty, linkAddresses = Nil, isTitle = isTitle, followLinks = false,
+      linkDomains = Set.empty, linkIpAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }
 
@@ -215,7 +215,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def wrapInParagraphNoMentionsOrLinks(text: String, isTitle: Boolean): TextAndHtml = {
     new TextAndHtmlImpl(text, s"<p>$text</p>", usernameMentions = Set.empty,
       links = Nil, linkDomains = Set.empty,
-      linkAddresses = Nil, isTitle = isTitle, followLinks = false,
+      linkIpAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }
 

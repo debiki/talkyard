@@ -25,6 +25,8 @@ import debiki.EdHttp.throwForbidden
 import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.Globals
+import play.api.libs.json.{JsObject, Json}
+import talkyard.server.JsX
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -41,15 +43,21 @@ class SystemDao(
 
   val memCache = new MemCache(NoSiteId, cache, globals.mostMetrics)
 
-  protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
+  private def readOnlyTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readOnlySystemTransaction(fn)
 
-  protected def readWriteTransaction[R](fn: SystemTransaction => R): R =
+  // WARNING: [PGSERZERR] Causes transaction rollbacks, rarely and infrequently, if writing
+  // to the same parts of the same tables, at the same time as per site transactions.
+  // Even if the app server code is otherwise fine and bug free. It's a database thing.
+  // So, don't use this for updating per-site things. Instead, create a site specific
+  // dao and site specific transactions — they do the database writes under mutex,
+  // and so avoids any tx rollbacks.
+  private def dangerous_readWriteTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readWriteSystemTransaction(fn)
 
 
   def applyEvolutions() {
-    readWriteTransaction(_.applyEvolutions())
+    dangerous_readWriteTransaction(_.applyEvolutions())
   }
 
 
@@ -90,7 +98,7 @@ class SystemDao(
     readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
 
   def updateSites(sites: Seq[(SiteId, SiteStatus)]) {
-    readWriteTransaction(_.updateSites(sites))
+    dangerous_readWriteTransaction(_.updateSites(sites))  // BUG tx race, rollback risk
     for ((siteId, _) <- sites) {
       globals.siteDao(siteId).emptyCache()
     }
@@ -101,7 +109,8 @@ class SystemDao(
     val pubId =
       if (globals.isOrWasTest) Site.FirstSiteTestPublicId
       else Site.newPublId()
-    readWriteTransaction { sysTx =>
+    // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
+    dangerous_readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
         pubId = pubId, name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
@@ -162,7 +171,8 @@ class SystemDao(
       config.createSite.maxSitesTotal + 5
     }
 
-    try readWriteTransaction { sysTx =>
+    // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
+    try dangerous_readWriteTransaction { sysTx =>
       if (deleteOldSite) {
         dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8")
         dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4")
@@ -361,13 +371,13 @@ class SystemDao(
   }
 
   def deleteFromIndexQueue(post: Post, siteId: SiteId) {
-    readWriteTransaction { transaction =>
+    dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
       transaction.deleteFromIndexQueue(post, siteId)
     }
   }
 
   def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
-    readWriteTransaction { transaction =>
+    dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
       transaction.addEverythingInLanguagesToIndexQueue(languages)
     }
   }
@@ -375,25 +385,52 @@ class SystemDao(
 
   // ----- Spam
 
-  def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck = {
+  def loadStuffToSpamCheck(limit: Int): immutable.Seq[SpamCheckTask] = {
     readOnlyTransaction { transaction =>
       transaction.loadStuffToSpamCheck(limit)
     }
   }
 
-  def deleteFromSpamCheckQueue(task: SpamCheckTask) {
-    readWriteTransaction { transaction =>
-      transaction.deleteFromSpamCheckQueue(
-          task.siteId, postId = task.postId, postRevNr = task.postRevNr)
+  // COULD move to SpamSiteDao, since now uses only a per site tx.
+  //
+  def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults) {
+    val postToSpamCheck= spamCheckTaskNoResults.postToSpamCheck getOrElse {
+      // Currently registration spam is checked directly when registering;
+      // we don't save anything to the database, and shouldn't find anything here later.
+      unimplemented("Delayed dealing with spam for things other than posts " +
+        "(i.e. registration spam?) [TyE295MKAR2]")
     }
-  }
 
-  def dealWithSpam(spamCheckTask: SpamCheckTask, isSpamReason: String) {
+    val spamFoundResults: immutable.Seq[SpamCheckResult.SpamFound] =
+      spamCheckResults.collect { case r: SpamCheckResult.SpamFound => r }
+
+    val numIsSpamResults = spamFoundResults.length
+    val numNotSpamResults = spamCheckResults.length - numIsSpamResults
+
+    val spamCheckTaskWithResults: SpamCheckTask =
+      spamCheckTaskNoResults.copy(
+        resultAt = Some(globals.now()),
+        resultJson = Some(JsObject(spamCheckResults.map(r =>
+            r.spamCheckerDomain -> JsX.JsSpamCheckResult(r)))),
+        resultText = Some(spamCheckResults.map(r => i"""
+            |${r.spamCheckerDomain}:
+            |${r.humanReadableMessage}""").mkString("------").trim),
+        numIsSpamResults = Some(numIsSpamResults),
+        numNotSpamResults = Some(numNotSpamResults))
+
     // COULD if is new page, no replies, then hide the whole page (no point in showing a spam page).
     // Then mark section page stale below (4KWEBPF89).
-    val sitePageIdToRefresh = readWriteTransaction { transaction =>
-      val siteTransaction = transaction.siteTransaction(spamCheckTask.siteId)
-      val postBefore = siteTransaction.loadPost(spamCheckTask.postId) getOrElse {
+    val sitePageIdToRefresh = globals.siteDao(spamCheckTaskWithResults.siteId).readWriteTransaction {
+          siteTransaction =>
+
+      // Add the spam check results from the spam check service, so we won't re-check
+      // this again and again.
+      siteTransaction.updateSpamCheckTaskForPostWithResults(spamCheckTaskWithResults)
+
+      if (spamFoundResults.isEmpty)
+        return
+
+      val postBefore = siteTransaction.loadPost(postToSpamCheck.postId) getOrElse {
         // It was hard deleted?
         return
       }
@@ -401,14 +438,30 @@ class SystemDao(
       val postAfter = postBefore.copy(
         bodyHiddenAt = Some(siteTransaction.now.toJavaDate),
         bodyHiddenById = Some(SystemUserId),
-        bodyHiddenReason = Some(s"Spam because: $isSpamReason"))
+        bodyHiddenReason = Some(
+          s"Is spam or malware?:\n\n" +
+          spamFoundResults.mkString("\n\n")))
 
-      val reviewTask = PostsDao.createOrAmendOldReviewTask(
+      val reviewTask: ReviewTask = PostsDao.createOrAmendOldReviewTask(
         createdById = SystemUserId, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
-        siteTransaction): ReviewTask
+        siteTransaction)
 
       siteTransaction.updatePost(postAfter)
+
+      // Add a review task, so a human will check this out. When hen has
+      // done that, we'll hide or show the post, if needed, and, if the human
+      // disagrees with the spam check service, we'll tell the spam check service
+      // that it did a mistake. [SPMSCLRPT]
       siteTransaction.upsertReviewTask(reviewTask)
+
+      SECURITY; COULD // if the author hasn't posted more than a few posts,  [DETCTHR]
+      // and they haven't gotten any like votes or replies,
+      // and many of the author's posts have been detected as spam —
+      // then:
+      //  - Hide all the author's not-yet-reviewed posts, and mark hen as a Moderate Threat.
+      //  - Moderate Threat: Should block hen from posting more posts, if hen has more than,
+      //    say five?, posts pending review. To prevent staff from having to review really
+      //    lots of posts by a single maybe-spammer.
 
       // If the post was visible, need to rerender the page + update post counts.
       if (postBefore.isVisible) {
@@ -418,8 +471,12 @@ class SystemDao(
           if (postAfter.isOrigPostReply) oldMeta.numOrigPostRepliesVisible - 1
           else oldMeta.numOrigPostRepliesVisible
 
+        val newNumRepliesVisible =
+          if (postAfter.isReply) oldMeta.numRepliesVisible - 1
+          else oldMeta.numRepliesVisible
+
         val newMeta = oldMeta.copy(
-          numRepliesVisible = oldMeta.numRepliesVisible - 1,
+          numRepliesVisible = newNumRepliesVisible,
           numOrigPostRepliesVisible = newNumOrigPostRepliesVisible,
           version = oldMeta.version + 1)
 
@@ -432,7 +489,7 @@ class SystemDao(
         // popularity updated "at once", the server won't go crazy and spike the CPU. Instead,
         // it'll look at the pages one at a time, when it has some CPU to spare.
 
-        Some(SitePageId(spamCheckTask.siteId, postAfter.pageId))
+        Some(SitePageId(spamCheckTaskWithResults.siteId, postAfter.pageId))
       }
       else
         None
@@ -445,13 +502,19 @@ class SystemDao(
   // ----- The janitor actor
 
   def deletePersonalDataFromOldAuditLogEntries() {
-    readWriteTransaction { tx =>
+    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
       tx.deletePersonalDataFromOldAuditLogEntries()
     }
   }
 
+  def deletePersonalDataFromOldSpamCheckTasks() {
+    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+      tx.deletePersonalDataFromOldSpamCheckTasks()
+    }
+  }
+
   def deleteOldUnusedUploads()  {
-    readWriteTransaction { tx =>
+    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
       tx.deleteOldUnusedUploads()
     }
   }
@@ -471,10 +534,29 @@ class SystemDao(
   }
 
 
+  def reportSpamClassificationMistakesBackToSpamCheckServices() {
+    val spamCheckTasks: immutable.Seq[SpamCheckTask] =
+      readOnlyTransaction(_.loadMisclassifiedSpamCheckTasks(22))
+
+    for (task <- spamCheckTasks) {
+      globals.spamChecker.reportClassificationMistake(task).foreach({
+            case (falsePositives, falseNegatives) =>
+        globals.e2eTestCounters.numReportedSpamFalsePositives += falsePositives
+        globals.e2eTestCounters.numReportedSpamFalseNegatives += falseNegatives
+        val taskDone = task.copy(misclassificationsReportedAt = Some(globals.now()))
+        val siteDao = globals.siteDao(task.siteId)
+        siteDao.readWriteTransaction { tx =>
+          tx.updateSpamCheckTaskForPostWithResults(taskDone)
+        }
+      })(globals.executionContext)
+    }
+  }
+
+
   // ----- Testing
 
   def emptyDatabase() {
-    readWriteTransaction { transaction =>
+    dangerous_readWriteTransaction { transaction =>
       dieIf(!globals.isOrWasTest, "EsE500EDB0")
       transaction.emptyDatabase()
     }
