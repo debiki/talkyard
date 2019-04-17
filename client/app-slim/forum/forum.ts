@@ -1079,6 +1079,7 @@ export const TopicsList = createComponent({
 function CatNameDescr(props: { store: Store, activeCategory: Category,
       setCategory, editCategory }) {
   const store: Store = props.store;
+  const me: Myself = store.me;
   const activeCategory: Category = props.activeCategory;
 
   // ---- Dupl code [5BKZWY0] ------------------
@@ -1102,7 +1103,7 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
             categoryMenuItems));
   // --- / Dupl code [5BKZWY0] ------------------
 
-  const editCatButton = activeCategory.isForumItself ? null :
+  const editCatButton = activeCategory.isForumItself || !me.isAdmin ? null :
       r.a({ className: 's_F_Ts_Cat_Edt icon-edit', onClick: props.editCategory },
         t.fb.EditCat);
 
