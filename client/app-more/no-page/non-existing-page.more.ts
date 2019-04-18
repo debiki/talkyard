@@ -244,7 +244,7 @@ const CreateSomethingHere = createComponent({
     return (
       r.div({},
         r.h1({}, "Configure your community"),
-        r.p({}, "You can change all this later; nothing is carved in stone."),
+        r.p({}, "You can change all this later."),
         /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },
