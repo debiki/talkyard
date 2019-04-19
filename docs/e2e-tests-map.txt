@@ -48,7 +48,11 @@ create account -
 login -
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
     cookieless:
-          embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+          #- embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+          - embedded-comments-no-cookies-guest.test.ts        TyT295KBF6301
+          - embedded-comments-no-cookies-verif-email.test.ts  TyT795KB69285
+          - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
+          - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
     with cookies:
   password:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
@@ -610,6 +614,9 @@ notf prefs inherited:
           - notfs-prefs-inherit-group.2browsers.test.ts  TyT5RKT2WJ04
 
 email notifications:  (5ABKR024)
+  to staff about review tasks:  (502M7)
+          - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20
+          - new-user-review-ok.2browsers.test.ts  TyT39657MRDT2
   watching everything:
           - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
   new reply:

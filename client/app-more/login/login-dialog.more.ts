@@ -166,7 +166,10 @@ const LoginDialog = createClassAndFactory({
   clearLoginRelatedCookies: function() {
     getSetCookie('dwCoReturnToUrl', null);
     getSetCookie('dwCoReturnToSite', null);
-    getSetCookie('dwCoReturnToSiteXsrfToken', null);
+    // Don't clear dwCoReturnToSiteXsrfToken — that'd break parallel login, [PRLGIN]
+    // and break OAuth login if opens the login dialog, clicks "Google" to open a Google
+    // login popup, then closes and reopens the login dialog, and then logs in at Google
+    // in the popup.
     getSetCookie('dwCoIsInLoginWindow', null);
     getSetCookie('dwCoIsInLoginPopup', null);
     getSetCookie('dwCoMayCreateUser', null);
@@ -389,6 +392,11 @@ const OpenAuthButton = createClassAndFactory({
     const url = origin() +
         '/-/login-openauth/' + props.provider.toLowerCase() +
         '?' + mayNotCreateUser +
+        // If we are already in a dedicated full screen login window, the browser should
+        // redirect us inside this window to where we want to go after login.
+        // If this is just a login popup win, the browser instead returns
+        // a page that runs some javascript that updates the window.opener, and
+        // then closes the popup. [49R6BRD2]
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
         'returnToUrl=' + (props.anyReturnToUrl || '');
     if (eds.isInLoginWindow) {
@@ -397,6 +405,13 @@ const OpenAuthButton = createClassAndFactory({
       // (Use a cookie not an URL param because the cookie will be present later whe we're
       // being redirected back to the server from the OpenAuth provider.)
       getSetCookie('dwCoIsInLoginWindow', 'true');
+      // Maybe we're in a blog comments iframe? Then, cookies might not work, so tell the server
+      // to include the session id in the response body, so we can access it browser side.
+      // Also see Server.ts. [NOCOOKIES]
+      const mainWin = getMainWin();
+      if (mainWin.typs.xsrfTokenIfNoCookies) {
+        getSetCookie('TyCoAvoidCookies', 'Avoid');
+      }
       window.location.assign(url);
     }
     else {

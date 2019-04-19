@@ -3,6 +3,7 @@ declare const global: any;
 import progressReporter = require('./wdio-progress-reporter');
 import settings = require('./utils/settings');
 import server = require('./utils/server');
+import lad = require('./utils/log-and-die');
 
 server.initOrDie(settings);
 
@@ -22,6 +23,29 @@ if (browserNameAndOpts.browserName == 'chrome') {
   browserNameAndOpts.chromeOptions = {
     args: ['--disable-notifications'],
   };
+  if (settings.block3rdPartyCookies) {
+    // Seems `profile.block_third_party_cookies` isn't documented anywhere on the Internet,
+    // but you'll find it in your Chrome preferences file. On Linux, it can be in:
+    //   ~/.config/google-chrome/Default/Preferences
+    // (see:
+    //   http://chromedriver.chromium.org/capabilities
+    //   https://chromium.googlesource.com/chromium/src/+/lkgr/docs/user_data_dir.md#linux )
+    // It's a json file, with lots of settings, one of which is for 3rd party cookies.
+    browserNameAndOpts.chromeOptions.prefs = {
+      profile: {
+        block_third_party_cookies: true,
+      }
+    };
+  }
+}
+else {
+  // This supposedly works in FF: "network.cookie.cookieBehavior": 1
+  // but where is 'network'?  https://stackoverflow.com/a/48670137/694469
+  // Read this?: https://help.crossbrowsertesting.com/selenium-testing/general/running-selenium-test-cookies-turned-off-remote-browser/
+  if (settings.block3rdPartyCookies) {
+    lad.logWarning(
+      "'--block3rdPartyCookies' specified, but I don't know how to do that in this browser");
+  }
 }
 
 

@@ -1,0 +1,162 @@
+/// <reference path="../test-types.ts"/>
+
+import * as _ from 'lodash';
+import assert = require('assert');
+import fs = require('fs');
+import server = require('../utils/server');
+import utils = require('../utils/utils');
+import pages = require('../utils/pages');
+import pagesFor = require('../utils/pages-for');
+import settings = require('../utils/settings');
+import make = require('../utils/make');
+import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
+
+declare let browser: any;
+
+let everyonesBrowsers;
+let maria;
+let mariasBrowser;
+let guestsBrowser;
+
+let idAddress: IdAddress;
+let siteId: any;
+
+const mariasCommentOnePageAaa = 'mariasCommentOnePageAaa';
+const mariasCommentTwoPageBbb = 'mariasCommentTwoPageBbb';
+const mariasCommentThreePageBbb = 'mariasCommentThreePageBbb';
+
+const localHostname = 'comments-for-e2e-test-embdb3cve-localhost-8080';
+const embeddingOrigin = 'http://e2e-test-embdb3cve.localhost:8080';
+const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
+const pageBbbSlug = 'emb-cmts-b3c-bbb.html';
+
+
+describe("emb cmts no cookies verif email   TyT795KB69285", () => {
+
+  it("initialize people", () => {
+    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    mariasBrowser = everyonesBrowsers;
+    guestsBrowser = everyonesBrowsers;
+    maria = make.memberMaria();
+  });
+
+  it("import a site", () => {
+    const site: SiteData = make.forumOwnedByOwen('embdb3cve', { title: "Emb Cmts No Cookeis Verf Eml" });
+    site.meta.localHostname = localHostname;
+    site.settings.allowEmbeddingFrom = embeddingOrigin;
+    idAddress = server.importSiteData(site);
+    siteId = idAddress.id;
+  });
+
+  it("create two embedding pages b3c-aaa & b3c-bbb", () => {
+    const dir = 'target';
+    fs.writeFileSync(`${dir}/${pageAaaSlug}`, makeHtml('b3c-aaa', '#500'));
+    fs.writeFileSync(`${dir}/${pageBbbSlug}`, makeHtml('b3c-bbb', '#040'));
+    function makeHtml(pageName: string, bgColor: string): string {
+      return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
+    }
+  });
+
+  it("Maria opens embedding page aaa", () => {
+    mariasBrowser.go(embeddingOrigin + '/' + pageAaaSlug);
+  });
+
+  it("... Signs up", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+    mariasBrowser.swithToOtherTabOrWindow();
+    mariasBrowser.loginDialog.createPasswordAccount(maria);
+    mariasBrowser.close();  // close the popup with a check-your-email message
+  });
+
+  it("... clicks an email verif link", () => {
+    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, mariasBrowser);
+    const link = utils.findFirstLinkToUrlIn(
+        idAddress.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+    mariasBrowser.go(link);
+    mariasBrowser.waitAndClick('#e2eContinue');
+  });
+
+  it("... clicks Reply", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+  it("... and currently needs to log in again", () => {
+    // COULD avoid this 2nd login, by incl one-time login secret in URL to the embedding page.
+    // In the #hash fragment then? Since won't be sent to the server, but instead passed
+    // to the iframe.
+    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+  });
+
+  it("... writes and submits a comment", () => {
+    mariasBrowser.switchToEmbeddedEditorIrame();
+    mariasBrowser.editor.editText(mariasCommentOnePageAaa);
+    mariasBrowser.editor.save();
+  });
+
+  it("... it appears", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOnePageAaa);
+  });
+
+  it("she goes to page bbb", () => {
+    let source = mariasBrowser.getSource();
+    assert(source.indexOf('b3c-aaa') > 0);
+    mariasBrowser.go(embeddingOrigin + '/' + pageBbbSlug);
+    source = mariasBrowser.getSource();
+    assert(source.indexOf('b3c-bbb') > 0);
+  });
+
+  it("Posts a 2nd comment", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+  it("... needs to log in again, because cookies blocked", () => {
+    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+  });
+
+  it("... types and submits the 2nd comment", () => {
+    mariasBrowser.switchToEmbeddedEditorIrame();
+    mariasBrowser.editor.editText(mariasCommentTwoPageBbb);
+    mariasBrowser.editor.save();
+  });
+
+  it("... comment two appears too", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentTwoPageBbb);
+  });
+
+  it("After page refresh, she's logged out again", () => {
+    mariasBrowser.refresh();
+    mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
+  });
+
+  it("She clicks Reply to post a 3rd comment", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+  it("... needs to log in, for the 3rd time", () => {
+    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+  });
+
+  it("... types and submits the 3rd comment", () => {
+    mariasBrowser.switchToEmbeddedEditorIrame();
+    mariasBrowser.editor.editText(mariasCommentThreePageBbb);
+    mariasBrowser.editor.save();
+  });
+
+  it("... comment three appears", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentThreePageBbb);
+  });
+
+
+});
+

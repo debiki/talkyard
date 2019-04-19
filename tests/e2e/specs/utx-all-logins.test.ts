@@ -171,7 +171,8 @@ describe("usability testing exchange, all logins:", () => {
 
     it("signs up with Gmail", () => {
       browser.disableRateLimits();
-      browser.loginDialog.createGmailAccount(gmailUser, undefined, 'THERE_WILL_BE_NO_WELCOME_DIALOG');
+      browser.loginDialog.createGmailAccount(
+          gmailUser, { anyWelcomeDialog: 'THERE_WILL_BE_NO_WELCOME_DIALOG' });
       browser.disableRateLimits();
     });
 

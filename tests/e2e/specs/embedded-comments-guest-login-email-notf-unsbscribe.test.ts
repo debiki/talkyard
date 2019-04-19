@@ -154,7 +154,14 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
     guestsBrowser.editor.editText(gillansCommentTwo);
     guestsBrowser.editor.save();
     // (now no login dialog appears — Gillan is already logged in)
+    /*
     //   YES login dialog appears, see below...
+    //  NO, I chaned back again, [YESCOOKIES]
+    //  and now use cookies also for guests. Safari's ITP only blocks cookies, it
+    //  doesn't block the whole iframe? at least not if there're no cookies initially;
+    //  no cookies until the user has interacted with the iframe?
+    //  What about Privacy Badger, it won't block an
+    //  iframe when the user has interacted with it? (intentionally logged in)
   });
 
   it("Gillan needs to login again: guest sessions are forgotten on page reload, so tracker blockers " +
@@ -163,6 +170,7 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
     guestsBrowser.disableRateLimits();
     guestsBrowser.loginDialog.signUpLogInAs_Real_Guest("Gillan Again");
     guestsBrowser.switchBackToFirstTabOrWindow();
+    */
   });
 
   it("... her 2nd comment appears", () => {

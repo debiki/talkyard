@@ -107,6 +107,8 @@ declare namespace ed {
 
 declare namespace debiki2 {
 
+  function getMainWin(): { typs: PageSession };
+
   function getNowMs(): WhenMs;
 
   let iframeOffsetWinSize;

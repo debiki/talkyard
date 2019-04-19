@@ -203,7 +203,7 @@ var eds = {
   cdnOrServerOrigin: '@tpi.cdnOrServerOrigin',@* for admin page embedded comments code *@
   isIos: _ios,
   isInLoginWindow: @isInLoginWindowBoolStr,
-  isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,
+  isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,@* broken ?? checks in *iframe* ?? *@
   isInIframe: _isInIframe,
   isInEmbeddedCommentsIframe: @{ if (anyPageRole.isDefined) "_isInIframe" else "false" },
   isInAdminArea: @{ if (isAdminApp) "true" else "false" },

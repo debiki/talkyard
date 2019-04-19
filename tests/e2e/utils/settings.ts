@@ -34,6 +34,8 @@ settings.debugBefore = args.debugBefore || args.db;
 settings.debugAfterwards = args.debugAfterwards || args.da;
 settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;
 
+settings.block3rdPartyCookies = args.block3rdPartyCookies || args.b3c;
+
 const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);
 

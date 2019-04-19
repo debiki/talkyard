@@ -77,7 +77,7 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
     pages.createSite.fillInFieldsAndSubmit(data);
     pages.createSite.clickOwnerSignupButton();
     pages.disableRateLimits();  // new domain, disable rate limits again
-    pages.loginDialog.createGmailAccount(data, true);
+    pages.loginDialog.createGmailAccount(data, { shallBecomeOwner: true });
     pages.createSomething.createForum("Gmail Forum Title");
   }
 

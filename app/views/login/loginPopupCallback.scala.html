@@ -17,6 +17,8 @@
 
 @* TODO RENAME to loginPopupCallbackPage.scala.html ?  *@
 
+@(currentPageSessionId: String)
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -25,6 +27,7 @@ function returnToOpener() {
   // A Chrome 63 bug previously required a try-catch workaround here. [4PKGTEW20].
   window.opener.debiki.internal.handleLoginResponse({
     queryString: (window.location+'').split('?')[1],
+    currentPageSessionId: '@currentPageSessionId',  // [NOCOOKIES]
     status: 'LoginOk'
   });
   window.close();

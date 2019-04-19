@@ -83,8 +83,12 @@ object EdSecurity {
     *
     * This header tells the server to send back the session id not as a cookie, but
     * as json in the response.
+    *
+    * COULD RENAME: Add suffix: "...-In-Iframe" because that's where cookies can be
+    * blocked / cause the browser to not show the iframe at all.
     */
   val AvoidCookiesHeaderName = "X-Ty-Avoid-Cookies"
+  val Avoid = "Avoid"
 
   /** All browsers without cookie id, are rate limited together, for now.
     */
@@ -443,7 +447,7 @@ class EdSecurity(globals: Globals) {
     // the "Client-Side Cookies Capped to 7 Days of Storage", section, and sub section
     // "Will This Change Log Users Out?" — cookies that are Secure and HttpOnly aren't deleted.
     // This means the client can no longer look at the session cookie, to find out if one is
-    // logged in? Could add JS variables instead.
+    // logged in? Could add JS variables instead.  [NOCOOKIES]
     val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value,
       maxAgeSecs = Some(expireIdleAfterSecs))
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value,

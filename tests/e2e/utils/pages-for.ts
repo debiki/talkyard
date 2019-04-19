@@ -1839,20 +1839,32 @@ function pagesFor(browser) {
 
 
       createGmailAccount: function(data: { email: string, password: string, username: string },
-            shallBecomeOwner?: boolean, anyWelcomeDialog?: string) {
-        api.loginDialog.loginWithGmail(data);
+            ps: { isInPopupAlready?: true, shallBecomeOwner?: boolean,
+                anyWelcomeDialog?: string } = {}) {
+        api.loginDialog.loginWithGmail(data, ps.isInPopupAlready);
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
+        logMessage("filling in username ...");
         api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(shallBecomeOwner);
-        if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
+        logMessage("accepting terms ...");
+        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
+          logMessage("waiting for and clicking ok in welcome dialog...");
           api.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
+        if (ps.isInPopupAlready) {
+          // Then the whole popup will close, now. Don't wait for any dialogs in it to
+          // close — that'd result in a 'window was already closed' error.
+        }
+        else {
+          logMessage("waiting for login dialogs to close ...");
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
+        }
+        logMessage("... done signing up with Gmail.");
       },
 
       loginWithGmail: function(data: { email: string, password: string },
@@ -1889,20 +1901,9 @@ function pagesFor(browser) {
           browser.pause(500);
         }
 
-        // Google does something weird here, need to wait. Why? Waiting until visible and
-        // enabled = not enough.
-        while (true) {
-          try {
-            browser.pause(250);
-            logMessage(`typing Gmail email: ${data.email}...`);
-            api.waitAndSetValue(emailInputSelector, data.email);
-            break;
-          }
-          catch (dummy) {
-            // See the weird issue below: (7FUKBAQ2)
-            console.log("... Error. Trying again.");
-          }
-        }
+        browser.pause(250);
+        logMessage(`typing Gmail email: ${data.email}...`);
+        api.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
 
         browser.pause(500);
         if (browser.isExisting(emailNext)) {
@@ -1910,24 +1911,9 @@ function pagesFor(browser) {
           api.waitAndClick(emailNext);
         }
 
-        // Google does something weird here too, hmm.
-        api.waitForVisible(passwordInputSelector);
-        while (true) {
-          try {
-            browser.pause(250);
-            logMessage("typing Gmail password...");
-            api.waitAndSetValue(passwordInputSelector, data.password);
-            break;
-          }
-          catch (dummy) {
-            // As of July 29 2017, there's often this error:  (7FUKBAQ2)
-            // """org.openqa.selenium.InvalidElementStateException: invalid element state:
-            //  Element is not currently interactable and may not be manipulated"""
-            // No idea why, because we do wait until visible & endabled.
-            // Whatever. Just keep trying.
-            console.log("... Error. Trying again.");
-          }
-        }
+        browser.pause(250);
+        logMessage("typing Gmail password...");
+        api.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
 
         browser.pause(500);
         if (browser.isExisting(passwordNext)) {
@@ -2775,6 +2761,10 @@ function pagesFor(browser) {
 
       clickLogin: () => {
         api.waitAndClick('.esMetabar .dw-a-login');
+      },
+
+      waitForLoginButtonVisible: () => {
+        api.waitForVisible('.esMetabar .dw-a-login');
       },
 
       waitUntilLoggedIn: () => {
@@ -4872,6 +4862,12 @@ function pagesFor(browser) {
         api.switchToAnyParentFrame();
       },
 
+      waitForNotLoggedInInEmbeddedCommentsIframe: function() {
+        api.switchToEmbeddedCommentsIrame();
+        api.waitForMyDataAdded();
+        api.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
+        api.switchToAnyParentFrame();
+      },
 
       loginWithPasswordViaTopbar: function(username, password?: string, opts?: { resultInError?: boolean }) {
         if (!opts && password && _.isObject(password)) {

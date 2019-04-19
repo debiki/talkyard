@@ -29,8 +29,9 @@ import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api._
 import play.api.mvc._
-import play.api.libs.json.{JsBoolean, JsValue, Json}
+import play.api.libs.json._
 import LoginWithPasswordController._
+import ed.server.security.{EdSecurity, SidOk}
 import org.owasp.encoder.Encode
 
 
@@ -50,14 +51,21 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
 
+    val maybeCannotUseCookies =
+      request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
+
     val site = globals.lookupSiteOrThrow(request.request)
     val dao = globals.siteDao(site.id)
 
-    val cookies = doLogin(request, dao, email, password)
+    val (sid, cookies) = doLogin(request, dao, email, password)
 
     val response = anyReturnToUrl match {
-      case None => Ok
-      case Some(url) => Redirect(url)
+      case None =>
+        OkSafeJson(Json.obj(
+          "currentPageSessionId" -> JsString(
+            if (maybeCannotUseCookies) sid.value else ""))) // [NOCOOKIES]
+      case Some(url) =>
+        Redirect(url)
     }
 
     response.withCookies(cookies: _*)
@@ -65,7 +73,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: String, password: String)
-        : Seq[Cookie] = {
+        : (SidOk, Seq[Cookie]) = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
@@ -94,8 +102,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       }
 
     dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
-    sidAndXsrfCookies
+    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
+    (sid, sidAndXsrfCookies)
   }
 
 
@@ -112,6 +120,9 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
+
+    val maybeCannotUseCookies =
+      request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
     val dao = daoFor(request.request)
     val siteSettings = dao.getWholeSiteSettings()
@@ -181,7 +192,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
         }
 
-      val loginCookies: List[Cookie] = try {
+      val (anySid: Option[SidOk], loginCookies: List[Cookie]) = try {
         val newMember = dao.createPasswordUserCheckPasswordStrong(userData, request.theBrowserIdData)
         if (newMember.email.nonEmpty && !isServerInstaller) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
@@ -190,13 +201,13 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           TESTS_MISSING // no e2e tests for this
           // Apparently the staff wants to know that all email addresses actually work.
           // (But if no address specifeid — then, just below, we'll log the user in directly.)
-          Nil
+          (None, Nil)
         }
         else {
           dieIf(newMember.email.isEmpty && requireVerifiedEmail, "EdE2GKF06")
           dao.pubSub.userIsActive(request.siteId, newMember, request.theBrowserIdData)
-          val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
-          sidAndXsrfCookies
+          val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
+          (Some(sid), sidAndXsrfCookies)
         }
       }
       catch {
@@ -208,13 +219,16 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           // so no email addresses are leaked.
           sendYouAlreadyHaveAnAccountWithThatAddressEmail(
             dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
-          Nil
+          (None, Nil)
       }
 
-      OkSafeJson(Json.obj(
+      val responseJson = Json.obj(
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
-        "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined)))
-          .withCookies(loginCookies: _*)
+        "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined),
+        "currentPageSessionId" -> JsString(
+            if (maybeCannotUseCookies) anySid.map(_.value).getOrElse("") else "")) // [NOCOOKIES]
+
+      OkSafeJson(responseJson).withCookies(loginCookies: _*)
     }
   }
 

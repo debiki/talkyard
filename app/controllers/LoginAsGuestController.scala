@@ -45,7 +45,8 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     val name = (json \ "name").as[String].trim
     val email = (json \ "email").as[String].trim
 
-    val canUseCookies = request.headers.get(EdSecurity.AvoidCookiesHeaderName) isNot "Avoid"
+    val maybeCannotUseCookies =
+      request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
     val settings = request.dao.getWholeSiteSettings()
 
@@ -78,16 +79,16 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
+      val (sid, _, sidAndXsrfCookies) =
+        security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
       var responseJson = Json.obj(  // GuestLoginResponse
         "userCreatedAndLoggedIn" -> JsTrue,
         "emailVerifiedAndLoggedIn" -> JsFalse)
 
-      if (canUseCookies) {
-        // Don't incl session id in the json — use cookie instead, so works across page loads.
-      }
-      else {
+      if (maybeCannotUseCookies) {
+        // Incl session id in the json, so the browser can submit it in a http header
+        // instead of as-a-cookie, because cookies might be disabled.
         // This'll work only for the current page load. And happens only for embedded comments pages,
         // and then this is typically totally fine (people rarely post blog comments, and if they
         // do, probably they reply to only one blog post).
@@ -96,8 +97,11 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       val response = OkSafeJson(responseJson)
 
-      if (canUseCookies) response.withCookies(sidAndXsrfCookies: _*)
-      else response
+      // Include cookies also if maybeCannotUseCookies [YESCOOKIES] — it's better if the user stays
+      // logged in, if possible — in case cookies do work. I'd be surprised if this makes
+      // Safari's ITP or Privacy Badger block any blog comments <iframe>? because the user
+      // has now already interacted with the iframe, by clicking a login or reply button.
+      response.withCookies(sidAndXsrfCookies: _*)
     }
   }
 

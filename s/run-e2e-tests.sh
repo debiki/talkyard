@@ -356,6 +356,10 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-guest-login-email-notf-unsbscribe $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins-old-name $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-verif-email $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-guest $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-verif-gmail $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-unverif-gmail $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-vote-first $args

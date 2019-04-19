@@ -1,5 +1,5 @@
 /* Shows some OAuth login dialog.
- * Copyright (c) 2010-2012, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2010-2012, 2017, 2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -60,11 +60,28 @@ d.i.createLoginPopup = function(url) {
     }
   }
 
-  // This callback is called from the return_to page,  ...
+  // Called from app/views/login/loginPopupCallback.scala.html html page,
+  // if we're getting logged in directly via OpenAuth.
+  // Or from a login popup window, in login-if-needed.ts.
+  // COULD RENAME to handleLoginPopupResult?
+  //
+  // And in the past, when OpenID was used, from the return_to page,  ...
   // **Old comment?: OpenID no longer in use:**
   // """... or by `loginAndContinue`
   // in debiki-login-dialog.ls in a login popup window, see [509KEF31]. """
   d.i.handleLoginResponse = function(result) {
+    try {
+      if (!_.isUndefined(result.currentPageSessionId)) {
+        // See makeUpdNoCookiesTempSessionIdFn() in Server.ts.
+        var mainWin = debiki2.getMainWin();
+        var typs = mainWin.typs;
+        typs.currentPageSessionId = result.currentPageSessionId;  // [NOCOOKIES]
+      }
+    }
+    catch (ex) {
+      console.warn("Error remembering temp session id", ex);
+    }
+
     d.i.handleLoginResponse = null;
     var errorMsg;
     if (/openid\.mode=cancel/.test(result.queryString)) {

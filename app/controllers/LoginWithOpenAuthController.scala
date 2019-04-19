@@ -32,6 +32,7 @@ import debiki._
 import debiki.EdHttp._
 import ed.server._
 import ed.server.http._
+import ed.server.security.EdSecurity
 import javax.inject.Inject
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
@@ -58,18 +59,26 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   import context.globals
   import context.security._
 
+  private val LoginTimeoutMins = 15
   private val Separator = '|'
+
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
-  private val ReturnToSiteCookieName = "dwCoReturnToSite"
-  private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
+  private val ReturnToSiteOriginTokenCookieName = "dwCoReturnToSite"
+  private val ReturnToThisSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
+  private val AvoidCookiesCookieName = "TyCoAvoidCookies"
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
   private val AuthStateCookieName = "dwCoOAuth2State"
 
   private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
-    ReturnToUrlCookieName, ReturnToSiteCookieName, ReturnToSiteXsrfTokenCookieName,
-    IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
+    ReturnToUrlCookieName,
+    ReturnToSiteOriginTokenCookieName,
+    ReturnToThisSiteXsrfTokenCookieName,
+    AvoidCookiesCookieName,
+    IsInLoginWindowCookieName,
+    IsInLoginPopupCookieName,
+    MayCreateUserCookieName,
     AuthStateCookieName).map(DiscardingSecureCookie)
 
   def conf: Configuration = globals.rawConf
@@ -93,11 +102,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
         : Future[Result] = {
-    // [NOCOOKIES] use what, instead of cookies here, to make OAuth login work witout cookies?
 
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
+
     var futureResult = authenticate(provider, request)
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
@@ -140,7 +149,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(settings.enableSso,
       "TyESSO0OAUTH", "OpenAuth authentication disabled, because SSO enabled")
 
-    if (globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) {
+    DELETE_LATER // after 2019-05-01 (59289560). Just temp test to verif didn't break anything when rewriting
+    // 'if' test.
+    dieIf((globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) !=
+      (globals.anyLoginOrigin isSomethingButNot originOf(request)), "TyE8KBSWG4")
+
+    if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
@@ -185,16 +199,27 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           handleAuthenticationData(request, profile)
         }
     } recoverWith {
-      // (Could:
-      // case silhouette.api.exceptions.ProviderException => ...
-      // but why?)
       case ex: Exception =>
-        play.api.Logger.error(s"Error during OAuth2 authentication with Silhouette [TyEOAUTH0A]", ex)
-        import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
-        Future.successful(
-          InternalErrorResult(
-            "TyEOAUTH0B", s"Error when signing in with $providerName: ${ex.getMessage}",
-            moreDetails = "Stack trace:\n" + getStackTrace(ex)))
+        val noStateHandlerMessage: String =
+          com.mohiva.play.silhouette.impl.providers.DefaultSocialStateHandler.MissingItemHandlerError
+            .dropRight(5)  // trop trailing  %s
+        // Silhouette has an xsrf cookie 5 minutes timeout, and overwrites (forgets) old handlers
+        // if one clicks login buttons in different browser tabs, in parallel. [PRLGIN]
+        val handlerMissing = ex.getMessage.contains(noStateHandlerMessage)
+        val result =
+          if (handlerMissing) {
+            BadReqResult("TYEOAUTMTPLL", "\nYou need to login within 5 minutes, and " +
+              "you cannot login in different browser tabs, at the same time. Error logging in.")
+          }
+          else {
+            val errorCode = "TYE0AUUNKN"
+            play.api.Logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
+            import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
+            InternalErrorResult(errorCode, "Unknown login error", moreDetails =
+              s"Error when signing in with $providerName: ${ex.getMessage}\n\n" +
+              "Stack trace:\n" + getStackTrace(ex))
+          }
+        Future.successful(result)
     }
   }
 
@@ -204,7 +229,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
     val (anyReturnToSiteOrigin: Option[String], anyReturnToSiteXsrfToken: Option[String]) =
-      request.cookies.get(ReturnToSiteCookieName) match {
+      request.cookies.get(ReturnToSiteOriginTokenCookieName) match {
         case None => (None, None)
         case Some(cookie) =>
           val (originalSiteOrigin, separatorAndXsrfToken) = cookie.value.span(_ != Separator)
@@ -226,7 +251,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // will work properly.
       return Future.successful(
         Forbidden(errorMessage).discardingCookies(
-          DiscardingSecureCookie(ReturnToSiteCookieName),
+          DiscardingSecureCookie(ReturnToSiteOriginTokenCookieName),
           DiscardingSecureCookie(ReturnToUrlCookieName)))
     }
 
@@ -265,7 +290,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
             oauthDetailsCacheKey, xsrfToken)
         Redirect(continueAtOriginalSiteUrl)
-          .discardingCookies(DiscardingSecureCookie(ReturnToSiteCookieName))
+          .discardingCookies(DiscardingSecureCookie(ReturnToSiteOriginTokenCookieName))
       case None =>
         tryLoginOrShowCreateUserDialog(request, anyOauthDetails = Some(oauthDetails))
     }
@@ -413,7 +438,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: User)
         : Result = {
     request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
+    val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
+
+    var maybeCannotUseCookies =
+      request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
+
+    def currentPageSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
 
     val response =
       if (isAjax(request.underlying)) {
@@ -422,19 +452,28 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // Javascript dialog. It already knows about any pending redirects.
         OkSafeJson(Json.obj(
           "userCreatedAndLoggedIn" -> JsTrue,
-          "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined)))
+          "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined),
+          // In case we're in an embedded <iframe> login popup, where cookies are disabled,
+          // send the session id in the response body, so the <iframe> can access it
+          // and remember it for the current page load.
+          "currentPageSessionId" -> JsString(currentPageSessionIdOrEmpty))) // [NOCOOKIES]
       }
       else {
-        // If should avoid cookies: Use header instead? If window.opener?   [NOCOOKIES]
-        // (+ maybe return-to-url can incl &is-login-popup query param = true?
-        //  — but opener = same-origin, can access. Google Chrome 63 bug since long fixed.)
-        // What! This isn't an Ajax request, it's a page load. Need to incl is-in-popup info
-        // in the OpenAuth return-to url instead?
-        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty // query param instead?
-        def loginPopupCallback: Result =
-          Ok(views.html.login.loginPopupCallback().body) as HTML
+        // In case needs to do cookieless login:
+        // This request is a redirect from e.g. Gmail or Facebook login, so there's no
+        // AvoidCookiesHeaderName header that tells us if we are in an iframe and maybe cannot
+        // use cookies (because of e.g. Safari's "Intelligent Tracking Prevention").
+        // However, we've remembered already, in a 1st party cookie, if 3rd party
+        // iframe cookies not work.
+        maybeCannotUseCookies ||=
+          request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 
-        request.cookies.get(ReturnToUrlCookieName) match {
+        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
+        def loginPopupCallback: Result =
+          Ok(views.html.login.loginPopupCallback(
+            currentPageSessionId = currentPageSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
+
+        request.cookies.get(ReturnToUrlCookieName) match {  // [49R6BRD2]
           case Some(returnToUrlCookie) =>
             if (returnToUrlCookie.value.startsWith(
                 LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
@@ -645,13 +684,23 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     * a session id and xsrf token included in the GET request.
     */
   private def loginViaLoginOrigin(providerName: String, request: Request[Unit]): Future[Result] = {
-    val xsrfToken = nextRandomString()
+    // Parallel logins? Is the same user logging in in two browser tabs, at the same time?
+    // People sometimes do, for some reason, and if that won't work, they sometimes contact
+    // the Talkyard developers and ask what's wrong. Only to avoid these support requests,
+    // let's make parallel login work, by including xsrf tokens from all such ongoing logins,
+    // in the cookie value. [PRLGIN]
+    val anyCookie = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
+    val oldTokens: Option[String] = anyCookie.map(_.value)
+
+    val newXsrfToken = nextRandomString()
+    val newCookieValue = newXsrfToken + Separator + oldTokens.getOrElse("")
     val loginEndpoint =
       globals.anyLoginOrigin.getOrDie("DwE830bF1") +
         routes.LoginWithOpenAuthController.loginThenReturnToOriginalSite(
-          providerName, returnToOrigin = originOf(request), xsrfToken)
+          providerName, returnToOrigin = originOf(request), newXsrfToken)
     Future.successful(Redirect(loginEndpoint).withCookies(
-      SecureCookie(name = ReturnToSiteXsrfTokenCookieName, value = xsrfToken, httpOnly = false)))
+      SecureCookie(name = ReturnToThisSiteXsrfTokenCookieName, value = newCookieValue,
+        maxAgeSeconds = Some(LoginTimeoutMins * 60), httpOnly = false)))
   }
 
 
@@ -665,14 +714,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         : Action[Unit] = AsyncGetActionIsLogin { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
-    if (globals.anyLoginOrigin.map(_ == originOf(request)) != Some(true))
+    if (globals.anyLoginOrigin isNot originOf(request))
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
       response.withCookies(
-        SecureCookie(name = ReturnToSiteCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
+        SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
           httpOnly = false))
     }
   }
@@ -680,19 +729,24 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String): Action[Unit] =
         GetActionIsLogin { request =>
-    val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
+    val anyXsrfTokenInSession = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
       case Some(xsrfCookie) =>
-        throwForbiddenIf(xsrfCookie.value != xsrfToken,
-          "TyEOAUXSRFTKN", s"Bad XSRF token, doesn't match the $ReturnToSiteXsrfTokenCookieName cookie")
+        // There might be many tokens, if, surprisingly, the user clicks Login in different
+        // browser tabs in parallel. [PRLGIN]  ... Oh this doesn't work anyway, because
+        // Silhouette stores and overwrites an xsrf token in a single cookie.
+        val tokens = xsrfCookie.value.split(Separator)
+        val okToken = tokens.contains(xsrfToken)
+        throwForbiddenIf(!okToken,
+          "TyEOAUXSRFTKN", o"""Bad XSRF token, not included in the
+              $ReturnToThisSiteXsrfTokenCookieName cookie; it's value is: '${xsrfCookie.value}'""")
       case None =>
-        throwForbidden("TyE0OAUXSRFCO", s"No $ReturnToSiteXsrfTokenCookieName xsrf cookie",
-          o"""Are you logging in, in two browser tabs, in parallell?
-            That's not supported. Please try again in one single tab.
-            Or cookies are disabled? Please enable cookies.""")
+        throwForbidden("TyE0OAUXSRFCO", s"No $ReturnToThisSiteXsrfTokenCookieName xsrf cookie",
+            o"""You need to login over at Google or Facebook, within $LoginTimeoutMins minutes,
+            once you've started logging in / signing up. Feel free to try again.""")
     }
     tryLoginOrShowCreateUserDialog(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
-      .discardingCookies(DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName))
+      .discardingCookies(DiscardingSecureCookie(ReturnToThisSiteXsrfTokenCookieName))
   }
 
 

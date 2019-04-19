@@ -615,15 +615,17 @@ function handleReviewTasksResponse(response, success) {
 }
 
 
-export function createOauthUser(data, success: (response) => void,
+export function createOauthUser(data, onDone: (response) => void,
       error: (failedRequest: HttpRequest) => ErrorPolicy) {
-  postJsonSuccess('/-/login-oauth-create-user', success, error, data);
+  postJsonSuccess(
+      '/-/login-oauth-create-user', makeUpdNoCookiesTempSessionIdFn(onDone), error, data);
 }
 
 
-export function createPasswordUser(data, success: (response) => void,
+export function createPasswordUser(data, onDone: (response) => void,
       error: (failedRequest: HttpRequest) => ErrorPolicy) {
-  postJsonSuccess('/-/login-password-create-user', success, error, data);
+  postJsonSuccess(
+      '/-/login-password-create-user', makeUpdNoCookiesTempSessionIdFn(onDone), error, data);
 }
 
 
@@ -632,7 +634,7 @@ export function sendResetPasswordEmail(onOk: () => void) {
 }
 
 
-export function loginWithPassword(emailOrUsername: string, password: string, success: () => void,
+export function loginWithPassword(emailOrUsername: string, password: string, onDone: () => void,
       onDenied: () => void, onPasswordMissing: () => void) {
   function onError(xhr?: XMLHttpRequest) {
     if (xhr) {
@@ -646,7 +648,7 @@ export function loginWithPassword(emailOrUsername: string, password: string, suc
       }
     }
   }
-  postJsonSuccess('/-/login-password', success, onError, {
+  postJsonSuccess('/-/login-password', makeUpdNoCookiesTempSessionIdFn(onDone), onError, {
     email: emailOrUsername,
     password: password,
   });
@@ -655,7 +657,15 @@ export function loginWithPassword(emailOrUsername: string, password: string, suc
 
 export function loginAsGuest(name: string, email: string,
       onDone: (response: GuestLoginResponse) => void, onError: () => void) {
-  postJsonSuccess('/-/login-guest', (response: GuestLoginResponse) => {
+  postJsonSuccess('/-/login-guest', makeUpdNoCookiesTempSessionIdFn(onDone), onError, {
+    name: name,
+    email: email
+  });
+}
+
+
+function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void) {
+  return function(response) {
     // Update the current page session id, so we'll remember the current session  [NOCOOKIES]
     // until the page closes / reloads — so we stay logged in (until page closes) also if
     // we avoid cookies. Update also if the new value is `undefined` — should forget
@@ -666,17 +676,19 @@ export function loginAsGuest(name: string, email: string,
     const typs: PageSession = mainWin.typs;
     typs.currentPageSessionId = response.currentPageSessionId;
     // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
-    onDone(response);
-  }, onError, {
-    name: name,
-    email: email
-  });
+    if (onDone) {
+      onDone(response);
+    }
+  };
 }
 
 
 export function logout(success: () => void) {
   const currentUrlPath = location.pathname.toString();
   postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
+    const mainWin = getMainWin();
+    const typs: PageSession = mainWin.typs;
+    delete typs.currentPageSessionId;
     if (response.goToUrl && response.goToUrl !== currentUrlPath) {
       location.assign(response.goToUrl);  // [9UMD24]
       // Stop here, otherwise success() below might do location.reload(), which apparently
