@@ -110,7 +110,7 @@ class SiteTpi protected (
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
   def anyCurrentPageRole: Option[PageType] = None
-  def anyCurrentPageLayout: Option[TopicListLayout] = None
+  def anyCurrentPageLayout: Option[PageLayout] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
   def anyAltPageId: Option[AltPageId] = None

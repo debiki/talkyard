@@ -682,19 +682,37 @@ export function page_isAlwaysFlatDiscourse(page: Page): boolean {
 }
 
 
-export function page_isUsuallyFlatDiscourse(page: Page): boolean {
+export function page_isFlatProgress(page: Page): boolean {
+  if (page_isAlwaysFlatDiscourse(page))
+    return true;
+  if (page.pageLayout === TopicLayout.FlatProgress)
+    return true;
+  /* Later, could:
   const pageRole = page.pageRole;
-  return page_isAlwaysFlatDiscourse(page) || (
-      pageRole === PageRole.Idea
+  return (pageRole === PageRole.Idea
       || pageRole === PageRole.Problem
       || pageRole === PageRole.ToDo);
+  */
+  // However, for now: (backw compat, so as not to upset people)
+  return false;
 }
 
 
-export function page_isUsuallyThreadedOnly(page: Page): boolean {
+export function page_isThreadedDiscussion(page: Page): boolean {
+  if (page_isAlwaysFlatDiscourse(page))
+    return false;
+  if (page.pageLayout === TopicLayout.ThreadedDiscussion)
+    return true;
+  if (page.pageLayout === TopicLayout.SplitDiscussionProgress ||
+      page.pageLayout === TopicLayout.FlatProgress)
+    return false;
+  /* Later, could:
   const pageRole = page.pageRole;
   return pageRole === PageRole.Question || pageRole === PageRole.Discussion ||
       pageRole === PageRole.EmbeddedComments;
+  */
+  // However, for now: (backw compat, to not upset people)
+  return true;
 }
 
 

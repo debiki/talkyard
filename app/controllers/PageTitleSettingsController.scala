@@ -51,7 +51,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     }
     val anySlug = (request.body \ "slug").asOptStringNoneIfBlank
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
-    val anyLayout = (request.body \ "pageLayout").asOpt[Int].flatMap(TopicListLayout.fromInt)
+    val anyLayout = (request.body \ "pageLayout").asOpt[Int].flatMap(PageLayout.fromInt)
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringNoneIfBlank

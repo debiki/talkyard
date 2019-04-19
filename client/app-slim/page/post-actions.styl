@@ -257,8 +257,7 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
       padding-right: 12px; // ... so reduce padding-right instead
 
 // Avoid float drop (the reply button is to the very left)
-.s_OpReB-Dsc,
-.s_APAs_ACBB,
+.s_OpReB,
 .DW.DW .dw-p-as .dw-a-reply
   padding: 9px 12px 9px 8px;
   margin-left: 6px;
@@ -267,12 +266,23 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   &:before
     opacity: 0.6; // or icon too not-opaque
 
-.s_OpReB-Dsc,
-.s_OpReB-Prg
+.s_OpReB
   display: inline-block;
   margin: 0 0 40px 0;
+  &::before
+    margin-right: 6px;  // between the reply icon and the button text
   b
-    margin: 0 2px 0 3px;
+    margin-right: 2px;  // after the "Reply" text and any " (discussion)" clarification
+
+// In threaded discussion topics, make the add-progress-post button less prominent;
+// most people aren't supposed to use it. [ADPRGNT]
+.s_ThrDsc .s_OpReB-Prg
+  background: none;
+  color: hsl(0, 0%, 35%);
+  margin-left: 20px;
+  font-weight: normal;
+  padding-left: 0;
+  padding-right: 5px;
 
 // Highlight the heart and other vote symbols if the user has voted Like or whatever.
 .dw-my-vote:before,
@@ -389,7 +399,7 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   a:first-child
     margin-left: 0;
 
-.s_APAs_ACBB   // append comment at the bottom button
+.s_OpReB
   margin: 0;
   float: left
   &:hover

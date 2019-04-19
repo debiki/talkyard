@@ -55,7 +55,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val topicListStyleInt = (body \ "topicListStyle").as[Int]
     val topicListStyle = TopicListLayout.fromInt(topicListStyleInt) getOrElse throwBadRequest(
-      "TyE5JKSEW2", "Bad topic list style number")
+      "TyE5JKSEW2", "Bad topic list layout number")
 
     val options = CreateForumOptions(
       isForEmbeddedComments = false,

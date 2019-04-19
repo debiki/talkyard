@@ -131,7 +131,7 @@ trait PagesDao {
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
       tx: SiteTransaction, hidePageBody: Boolean = false,
-      layout: Option[TopicListLayout] = None,
+      layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
       altPageId: Option[AltPageId] = None,
       embeddingUrl: Option[String] = None,

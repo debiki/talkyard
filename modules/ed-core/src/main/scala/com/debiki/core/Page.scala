@@ -95,7 +95,7 @@ object PageMeta {
         authorId: UserId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
-        layout: Option[TopicListLayout] = None,
+        layout: Option[PageLayout] = None,
         plannedAt: Option[ju.Date] = None,
         deletedAt: Option[When] = None,
         pinOrder: Option[Int] = None,
@@ -116,7 +116,7 @@ object PageMeta {
       categoryId = categoryId,
       embeddingPageUrl = embeddingUrl,
       authorId = authorId,
-      layout = layout getOrElse TopicListLayout.Default,
+      layout = layout getOrElse PageLayout.Default,
       pinOrder = pinOrder,
       pinWhere = pinWhere,
       numLikes = 0,
@@ -189,7 +189,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
-  layout: TopicListLayout = TopicListLayout.Default,
+  layout: PageLayout = PageLayout.Default,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
@@ -547,7 +547,31 @@ object PageType {
 }
 
 
-sealed abstract class CategoriesLayout(val IntVal: Int) { def toInt: Int = IntVal }
+trait PageLayout { def toInt: Int }
+object PageLayout {
+  object Default extends PageLayout { val toInt = 0 }
+
+  def fromInt(value: Int): Option[PageLayout] = {
+    if (TopicListLayout.MinIntVal <= value && value <= TopicListLayout.MaxIntVal) {
+      TopicListLayout.fromInt(value)
+    }
+    else if (TopicLayout.MinIntVal <= value && value <= TopicLayout.MaxIntVal) {
+      TopicLayout.fromInt(value)
+    }
+    else if (value == Default.toInt) {
+      Some(PageLayout.Default)
+    }
+    else {
+      None
+    }
+  }
+}
+
+
+sealed abstract class CategoriesLayout(val IntVal: Int) extends PageLayout {
+  def toInt: Int = IntVal
+}
+
 object CategoriesLayout {
   val Default: CategoriesLayout = new CategoriesLayout(0) {}
 
@@ -558,15 +582,22 @@ object CategoriesLayout {
 }
 
 
-sealed abstract class TopicListLayout(val IntVal: Int) { def toInt: Int = IntVal }
+sealed abstract class TopicListLayout(val IntVal: Int) extends PageLayout {
+  def toInt: Int = IntVal
+}
+
 object TopicListLayout {
   object Default extends TopicListLayout(0)
+
+  val MinIntVal = 1
   object TitleOnly extends TopicListLayout(1)
   object TitleExcerptSameLine extends TopicListLayout(2)
   object ExcerptBelowTitle extends TopicListLayout(3)
   object ThumbnailLeft extends TopicListLayout(4)
   object ThumbnailsBelowTitle extends TopicListLayout(5)
   object NewsFeed extends TopicListLayout(6)
+
+  val MaxIntVal = 100
 
   def fromInt(value: Int): Option[TopicListLayout] = Some(value match {
     case Default.IntVal => Default
@@ -579,6 +610,55 @@ object TopicListLayout {
     case _ => return None
   })
 }
+
+
+sealed abstract class TopicLayout(val IntVal: Int) extends PageLayout {
+  def toInt: Int = IntVal
+}
+
+object TopicLayout {
+  object Default extends TopicLayout(0)
+
+  val MinIntVal = 1001
+
+  /** Threaded layout. Reddit, Hacker News, Disqus use this. */
+  object ThreadedDiscussion extends TopicLayout(1001)
+
+  /** Flat layout. Discourse, phpBB and other forum software use this. */
+  object FlatProgress extends TopicLayout(1002)
+
+  /** I (KajMagnus) like this, and no one has tried this before?  */
+  object SplitDiscussionProgress extends TopicLayout(1003)
+
+  /* Maybe later:
+
+  /** Top level replies sorted by time, and each such reply has its own threaded
+    * sub discussion. Nice for posting and discussing status updates — each
+    * status update, becomes its own sub discussion. I can use for the dev diary.
+    * (If separate *topics* for each status update (like, a blog), is too heavy weight.)  */
+  object ProgressWithThreadedReplies extends TopicLayout(1004)
+
+  /** Like the above, but replies are flat, just one level nesting. Facebook uses this. */
+  object ProgressWithFlatReplies extends TopicLayout(1005)
+
+  /** Like the above, but best replies first (instead of by time). Facebook uses this. */
+  object DiscussionWithFlatReplies extends TopicLayout(1006)
+  */
+
+  // Maybe not.
+  //object SplitDiscussionWithFlatRepliesAndProgressBelow extends TopicLayout(...)
+
+  val MaxIntVal = 1100
+
+  def fromInt(value: Int): Option[TopicLayout] = Some(value match {
+    case Default.IntVal => Default
+    case ThreadedDiscussion.IntVal => ThreadedDiscussion
+    case FlatProgress.IntVal => FlatProgress
+    case SplitDiscussionProgress.IntVal => SplitDiscussionProgress
+    case _ => return None
+  })
+}
+
 
 
 /**

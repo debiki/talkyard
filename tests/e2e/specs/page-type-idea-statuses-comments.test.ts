@@ -119,7 +119,7 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Posts an Discussion reply", () => {
-    mariasBrowser.complex.replyToOrigPost(mariasOpReply, 'DiscussionSection'); // #post-7
+    mariasBrowser.complex.replyToOrigPost(mariasOpReply);    // #post-7
   });
 
   it("... and a reply to the reply", () => {                 // #post-8

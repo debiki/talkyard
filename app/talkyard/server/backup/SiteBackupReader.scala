@@ -318,9 +318,9 @@ case class SiteBackupReader(context: EdContext) {
           return Bad(s"On page id $id, invalid frequentPosterIds: " + ex.getMessage)
       }
 
-    val layout: TopicListLayout =
-      TopicListLayout.fromInt(readInt(jsObj, "layout", default = Some(TopicListLayout.Default.toInt)))
-        .getOrElse(TopicListLayout.Default)
+    val layout: PageLayout =
+      PageLayout.fromInt(readInt(jsObj, "layout", default = Some(PageLayout.Default.toInt)))
+        .getOrElse(PageLayout.Default)
 
     try {
       Good(PageMeta(

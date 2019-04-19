@@ -612,6 +612,12 @@ const RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
+    const isThreadedDiscussion = page_isThreadedDiscussion(page);
+    const isFlatProgress = page_isFlatProgress(page);
+    // @ifdef DEBUG
+    dieIf(isThreadedDiscussion && isFlatProgress, 'TyE5AK40');
+    // @endif
+
     const notYetApprovedMaybeDeletedInfo = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
           '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval) + ')');
@@ -763,6 +769,52 @@ const RootPostAndComments = createComponent({
       }
     })}
 
+    /*
+
+    Depending on if the layout is ThreadedDiscussion or FlatProgress,
+    or split threaded-flat, the orig post Reply button does different things,
+    and there are, or aren't, dividers above the threaded and flat page sections,
+    and there're different bottom reply buttons. Here's a table:
+
+    dsc  = threaded discussion layout (like Reddit, HackerNews, Disqus)
+    prg  = flat progress layout (like phpBB, Discourse, Flarum)
+    re-o = replies only
+    sct  = section
+    re   = reply (button title)
+    ap   = the button appends comment to progress section
+    id   = the button inserts comment into discussion section
+    n    = no / none, don't show
+    y    = yes / show
+    nd   = show, no divider
+    wd   = show, with a divider
+    btm  = bottom
+
+            always prg       disc layout               prg layout      split dsc-prg
+                      dsc-re-o  prg-re-o both   dsc-re-o  prg-re-o both
+
+    top re
+    btn:       ap         id      id      id       ap       ap      ap    id —> ap *
+
+    dsc sct:   n          nd      nd      nd       wd       n       wd       wd
+
+    prg sct:   nd         n       wd      wd       wd       n       wd       wd
+
+    btm dsc
+    re btn:    n          y       y       y        n        n       n      y —> n *
+
+    btm prg
+    re btn:    y          y**     y**     y**      y        y       y     y** —> y  *
+
+
+    *id —> ap, etc: The page starts in discussion mode, and then changes to progress
+    mode, when the discussion phase has ended. Currently, that's when one changes
+    the doingState to Started. [SPLDSCPRG]
+
+    **y: The bottom appned-progress-reply button here has the title
+         "Add progress note", and is shown just after a Reply button that
+         inserts into the threaded discussion section. [ADPRGNT]
+
+    */
 
     // ----- Discussion section divider  [DSCPRG]
 
@@ -773,10 +825,14 @@ const RootPostAndComments = createComponent({
       // Never any Discussion section on these types of pages. (E.g. direct messages)
       showDiscussionSectionDivider = false;
     }
-    if (!page_isUsuallyFlatDiscourse(page)) {
-      // Usually *no* Progress section on these pages (e.g. Question-Answers or Discussion
-      // topic). Then, need not show any Discussion section title.
+    if (isThreadedDiscussion) {
+      // There's no Progress section discussion on these pages (e.g. Question-Answers
+      // or Discussion topic). Then, need not show any Discussion section title.
       showDiscussionSectionDivider = false;
+    }
+    if (isFlatProgress && !discussionReplies.length) {
+      // People don't expect a Discussion section on these pages, and there are
+      // no Discussion replies, so don't show any Discussion divider.
     }
     if (page.pageRole === PageRole.About) {
       // These pages are only for editing category descriptions.
@@ -795,7 +851,7 @@ const RootPostAndComments = createComponent({
           r.div({ className: 's_PgSct_Ttl' }, "Discussion"),
           r.div({ className: 's_PgSct_Dtl' }, expl)),
         r.li({},
-          r.a({ className: 's_OpReB-Dsc icon-reply',
+          r.a({ className: 's_OpReB s_OpReB-Dsc icon-reply',
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
           r.b({}, t.ReplyV), r.span({}, " (insert)"))));   // I18N
     }
@@ -811,9 +867,15 @@ const RootPostAndComments = createComponent({
       // So show neither Discussion section nor Progress section dividers.
       showProgressSectionDivider = false;
     }
-    if (page_isUsuallyThreadedOnly(page) && !progressPosts.length) {
+    if (isThreadedDiscussion && !progressPosts.length) {
       // People shouldn't expect any Progress section on these pages (e.g. a Question-Answers
       // topic or a Discussion), and there are no Progress posts, so, skip the divider.
+      showProgressSectionDivider = false;
+    }
+    if (isFlatProgress && !discussionReplies.length) {
+      // People shouldn't expect any Discussion section on this page, and there are no
+      // Discussion replies, so skip the divider. (People in this community should excpect
+      // only flat progress replies.)
       showProgressSectionDivider = false;
     }
     if (page.pageRole === PageRole.About) {
@@ -839,7 +901,8 @@ const RootPostAndComments = createComponent({
     const postActions = post_shallRenderAsHidden(rootPost) ? null :
          PostActions({ store, post: rootPost });
 
-    const isFormalMessage = page.pageRole === PageRole.FormalMessage;
+
+    // ----- After page actions
 
     const skipBottomReplyAppendBtn =
         // Skip the "Reply (apppend)" button on embedded comments pages — this far,
@@ -849,16 +912,28 @@ const RootPostAndComments = createComponent({
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
         pageRole === PageRole.MindMap;
 
+    const makeOnClick = (postType: PostType) => {
+      return (event) => {
+        this.onAfterPageReplyClick(event, postType);
+      };
+    }
+
     const afterPageActions = skipBottomReplyAppendBtn ? null :
       r.div({ className: 's_APAs'},
-        r.a({ className: 's_APAs_ACBB s_OpReB-Prg icon-reply',
-            onClick: (event) => {
-              this.onAfterPageReplyClick(event, PostType.BottomComment);
+        !isThreadedDiscussion ? null :
+          r.a({ className: 's_OpReB s_OpReB-Dsc icon-reply',
+                onClick: makeOnClick(PostType.Normal) },
+              r.b({}, t.ReplyV),
+              // If there are progress posts above, clarify that the reply will
+              // appear in the discussion section (not in the progress section).
+              progressPosts.length ? r.span({}, " (discussion)") : null),  // I18N
+        r.a({ className: 's_OpReB s_OpReB-Prg icon-reply',
+            onClick: makeOnClick(PostType.BottomComment) },
               /* This no longer needed? [DSCPRG] Keep for a while if want to add back
                  some tips abou what a Progress reply is.
               const doReply = () => this.onAfterPageReplyClick(event, PostType.BottomComment);
               // Comments always added at the bottom on formal messages; no explanation needed.
-              if (isFormalMessage) {
+              if (isFlatProgress) {
                 doReply();
               }
               else {
@@ -870,11 +945,23 @@ const RootPostAndComments = createComponent({
                   doAfter: doReply
                 });
               } */
-            } },
-          r.b({}, t.ReplyV), isFormalMessage ? null : r.span({}, " (append)")));   // I18N
+          isThreadedDiscussion
+              ? r.span({}, "Add progress note") // [ADPRGNT] I18N
+              : rFragment({},
+                  r.b({}, t.ReplyV),
+                  // If isn't a FlatProgress topic (with only Progress posts), then,
+                  // clarify that this button adds the reply in the progress section.
+                  isFlatProgress ? null : r.span({}, " (progress)")))); // I18N
+
+
+    // ----- The reslut
+
+    const layoutClass =
+        isThreadedDiscussion ? ' s_ThrDsc' : (
+            isFlatProgress ? ' s_FltPrg' : '');
 
     return (
-      r.div({ className: threadClass },
+      r.div({ className: threadClass + layoutClass },
         notYetApprovedMaybeDeletedInfo,
         deletedCross,
         body,

@@ -599,6 +599,11 @@ const enum IncludeInSummaries {
 }
 
 
+/** Either a TopicListLayout enum value, or a CategoriesLayout, or a TopicLayout.
+  */
+type PageLayout = number;
+
+
 const enum TopicListLayout {
   Default = 0,
   TitleOnly = 1,
@@ -612,6 +617,14 @@ const enum TopicListLayout {
 
 const enum CategoriesLayout {
   Default = 0,
+}
+
+
+const enum TopicLayout {
+  Default = 0,  // then, depends on topic type. E.g. question-answers —> threaded discussion.
+  ThreadedDiscussion = 1001,
+  FlatProgress = 1002,
+  SplitDiscussionProgress = 1003,
 }
 
 
@@ -755,7 +768,7 @@ interface Page {
   categoryId?: number;
   pageRole: PageRole;
   pagePath: PagePath;
-  pageLayout?: TopicListLayout;
+  pageLayout?: PageLayout;
   pageHtmlTagCssClasses?: string;
   pageHtmlHeadTitle?: string;
   pageHtmlHeadDescription?: string;
@@ -825,7 +838,7 @@ interface PageMeta {
   embeddingPageUrl?: string;
   authorId: UserId;
   frequentPosterIds: number[];
-  layout: number; // e.g. TopicListLayout
+  layout: PageLayout;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   numLikes: number;
@@ -1630,7 +1643,7 @@ interface EditPageRequestData {
     folder?: string;
     slug?: string;
     showId?: boolean;
-    pageLayout?: TopicListLayout;
+    pageLayout?: PageLayout;
     htmlTagCssClasses?: string;
     htmlHeadTitle?: string;
     htmlHeadDescription?: string;

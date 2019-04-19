@@ -206,7 +206,7 @@ class Globals(
     scala.io.Source.fromFile("/opt/talkyard/app/version.txt")(scala.io.Codec.UTF8).mkString.trim
 
   // Could rename to "rendererVersion".
-  val applicationVersion = "0.00.61"  // later, read from some build config file
+  val applicationVersion = "0.00.63"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 

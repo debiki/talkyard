@@ -622,7 +622,7 @@ object RdbUtil {
       lastApprovedReplyById = getOptionalInt(resultSet, "last_reply_by_id"),
       authorId = resultSet.getInt("AUTHOR_ID"),
       frequentPosterIds = frequentPosterIds,
-      layout = TopicListLayout.fromInt(resultSet.getInt("layout")) getOrElse TopicListLayout.Default,
+      layout = PageLayout.fromInt(resultSet.getInt("layout")) getOrElse PageLayout.Default,
       pinOrder = getOptionalIntNoneNot0(resultSet, "PIN_ORDER"),
       pinWhere = getOptionalIntNoneNot0(resultSet, "PIN_WHERE").map(int =>
         PinPageWhere.fromInt(int).getOrElse(PinPageWhere.InCategory)),

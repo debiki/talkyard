@@ -2892,7 +2892,7 @@ function pagesFor(browser) {
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
       anyCommentSelector: '.dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
-      addProgressReplySelector: '.s_APAs_ACBB',
+      addProgressReplySelector: '.s_OpReB-Prg',
 
       waitForReplyButtonAssertCommentsVisible: function() {
         api.waitForVisible(api.topic.anyReplyButtonSelector);
