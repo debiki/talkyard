@@ -109,18 +109,32 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
+  def loadNotificationsToUserSkipReviewTasks(roleId: RoleId, limit: Int, unseenFirst: Boolean,
         upToWhen: Option[ju.Date]): Seq[Notification] = {
     val notfsBySiteId = asSystem.loadNotfsImpl(   // COULD specify consumers
         limit = limit, unseenFirst = unseenFirst, onlyIfEmailVerifiedOrGuest = false,
-        Some(siteId), userIdOpt = Some(roleId), upToWhen = upToWhen)
+        Some(siteId), skipReviewTaskNotfs = true, userIdOpt = Some(roleId), upToWhen = upToWhen)
     // All loaded notifications are to `roleId` only.
     notfsBySiteId(siteId)
   }
 
 
-  def loadMentionsOfPeopleInPost(postId: PostId): Seq[Notification] = {
-    TESTS_MISSING
+  /*
+  def loadNotificationsToReviewPost(postId: PostId): Seq[Notification] = {
+    loadNotificationsAboutPostImpl(postId,
+      minNotfType = NotificationType.NewPostWaitingForReviewStartsAt,
+      maxNotfType = Some(NotificationType.NewPostWaitingForReviewEndsAt))
+  }*/
+
+
+  def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType): Seq[Notification] = {
+    // E2e tested e.g. here: TyT4AWJL208R
+    loadNotificationsAboutPostImpl(postId, notfType, None)
+  }
+
+
+  private def loadNotificationsAboutPostImpl(postId: PostId, minNotfType: NotificationType,
+        maxNotfType: Option[NotificationType]): Seq[Notification] = {
     val query = s"""
       select
         site_id, notf_id, notf_type, created_at,
@@ -130,9 +144,13 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       from notifications3
       where site_id = ?
         and unique_post_id = ?
-        and notf_type = ${NotificationType.Mention.toInt}
+        and ${
+          if (maxNotfType.isDefined) "notf_type between ? and ?"
+          else "notf_type = ?"
+        }
       """
-    val values = List(siteId.asAnyRef, postId.asAnyRef)
+    val values =
+      List(siteId.asAnyRef, postId.asAnyRef, minNotfType.toInt.asAnyRef) ::: maxNotfType.toList
     runQueryFindMany(query, values, rs => {
       RdbUtil.getNotification(rs)
     })

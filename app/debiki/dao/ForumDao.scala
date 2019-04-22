@@ -96,13 +96,13 @@ trait ForumDao {
 
       // Create forum page.
       val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
-      val (forumPagePath, _) = createPageImpl(
+      val forumPagePath = createPageImpl(
         PageType.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
         anyFolder = Some(options.folder), anySlug = Some(""), showId = false,
         titleSource = options.title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = introText.source, bodyHtmlSanitized = introText.html,
         pinOrder = None, pinWhere = None,
-        byWho, spamRelReqStuff = None, tx, layout = Some(options.topicListStyle))
+        byWho, spamRelReqStuff = None, tx, layout = Some(options.topicListStyle))._1
 
       val forumPageId = forumPagePath.pageId
 

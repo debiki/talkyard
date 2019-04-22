@@ -242,7 +242,8 @@ trait PostsDao {
 
     val notifications =
       if (skipNotifications) Notifications.None
-      else notfGenerator(tx).generateForNewPost(page, newPost, Some(textAndHtml))
+      else notfGenerator(tx).generateForNewPost(
+            page, newPost, anyNewTextAndHtml = Some(textAndHtml), anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
     (newPost, author, notifications, anyReviewTask)
@@ -294,7 +295,7 @@ trait PostsDao {
     // those, unless the receiver reports the message.
     // Later: Create a review task anyway, for admins only, if the user is considered a mild threat?
     // And throw-forbidden if considered a moderate threat.
-    if (newPageRole.contains(PageType.FormalMessage)) {
+    if (newPageRole is PageType.FormalMessage) {
       // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
       // to non-staff. COULD allow messages to staff, but currently we here don't have access
       // to the page members, so we don't know if they are staff.
@@ -353,6 +354,7 @@ trait PostsDao {
       reviewReasons.append(ReviewReason.NoBumpPost)
     }*/
 
+    dieIf(!autoApprove && reviewReasons.isEmpty, "TyE0REVWRSNS")  // [703RK2]
     (reviewReasons, autoApprove)
   }
 
@@ -524,7 +526,8 @@ trait PostsDao {
     // send the post + json back to the caller?
     // & publish [pubsub]
 
-    val notfs = notfGenerator(tx).generateForNewPost(page, newPost, Some(textAndHtml))
+    val notfs = notfGenerator(tx).generateForNewPost(
+      page, newPost, anyNewTextAndHtml = Some(textAndHtml), anyReviewTask = None)
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -1332,7 +1335,8 @@ trait PostsDao {
         Notifications.None
       }
       else if (isApprovingNewPost) {
-        notfGenerator(tx).generateForNewPost(page, postAfter, None)
+        notfGenerator(tx).generateForNewPost(page, postAfter, anyNewTextAndHtml = None,
+          anyReviewTask = None)
       }
       else {
         notfGenerator(tx).generateForEdits(postBefore, postAfter, None)
@@ -1384,7 +1388,8 @@ trait PostsDao {
       // ------ Notifications
 
       if (!post.isTitle) {
-        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter, None)
+        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter, anyNewTextAndHtml = None,
+          anyReviewTask = None)
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -1646,7 +1651,7 @@ trait PostsDao {
         }
 
       val notfs = notfGenerator(tx).generateForNewPost(
-        toPage, postAfter, anyNewTextAndHtml = None, skipMentions = true)
+        toPage, postAfter, anyNewTextAndHtml = None, anyReviewTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,

@@ -24,7 +24,7 @@ let guestsBrowser;
 let strangersBrowser;
 
 let idAddress: IdAddress;
-let forumTitle = "Flag Block Agree Forum";
+let forumTitle = "New User Reveiw Forum";
 
 let topics = {
   majasTopicTitle: "Icecream?",
@@ -33,6 +33,10 @@ let topics = {
   oldTopicTitle: "Old Topic",
   oldTopicUrl: 'old_topic',
 };
+
+const majasReplyOne = "My appears-directly first reply, post nr 2";
+const guestsFirstReplyBecomesPostNr6 = "I'm a guest, becomes post nr 6.";
+const guestsSecondReplyBecomesPostNr7 = "I'm a guest, my 2nd reply, post nr 7.";
 
 
 describe("new user, review, ok   TyT39657MRDT2", () => {
@@ -49,7 +53,7 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('newusrrvw', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
@@ -89,20 +93,44 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     topics.majasTopicUrl = majasBrowser.url().value;
   });
 
-  it("... it doesn't need to be approved by staff", () => {
+  it("... it doesn't need to be approved by staff, before shown", () => {
     majasBrowser.topic.assertPageNotPendingApproval();
+  });
+
+  it("Owen got a review task notification (to review after topic shown already)", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, topics.majasTopicText, owensBrowser);  // revw task notf 1
   });
 
   it("... she posts three replies to an old topic", () => {
     majasBrowser.go('/');
     majasBrowser.forumTopicList.goToTopic(topics.oldTopicTitle);
-    majasBrowser.complex.replyToOrigPost("My appears-directly first reply, post nr 2");
+  });
+
+  it("... reply 1", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyOne);
+  });
+
+  it("... Owen gets a notification for reply 1", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);  // revw task notf 2
+  });
+
+  it("... reply 2 and 3", () => {
     majasBrowser.complex.replyToOrigPost("My appears-directly second reply");
     majasBrowser.complex.replyToOrigPost("One two three, done.");
+  });
+
+  it("... Owen got no review task notfs for posts 2 and 3 — numFirstPostsToReview is only 2", () => {
+    // Only notifications about Maja's two first posts — reply no 2 and 3, are posts no 3 an 4
+    // respectively, and generate no notfs.
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
+
     topics.oldTopicUrl = majasBrowser.url().value;
   });
 
-  it("... they don't need to be approved by staff", () => {
+  it("... they don't need to be approved by staff, before they're shown", () => {
     majasBrowser.topic.assertPostNotPendingApproval(2);
     majasBrowser.topic.assertPostNotPendingApproval(3);
     majasBrowser.topic.assertPostNotPendingApproval(4);
@@ -219,6 +247,11 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
+  it("And Owen gets no more review tasks, for Maja", () => {
+    server.assertLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
+  });
+
 
   // Quick guest test: Guests are also enqueued for review
   // -------------------------------------
@@ -228,9 +261,17 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     guestsBrowser.complex.signUpAsGuestViaTopbar("I-The-Guest");
   });
 
-  it("... and posts three replies to the orig post", () => {
-    guestsBrowser.complex.replyToOrigPost("I'm a guest, becomes post nr 6.");
-    guestsBrowser.complex.addProgressReply("I'm a guest, my 2nd reply, post nr 7.");
+  it("... and starts posting three replies to the orig post", () => {
+    guestsBrowser.complex.replyToOrigPost(guestsFirstReplyBecomesPostNr6);
+  });
+
+  it("... Owen gets a review task notification for the guest's first reply", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, guestsFirstReplyBecomesPostNr6, owensBrowser);
+  });
+
+  it("... continues posting three replies to the orig post", () => {
+    guestsBrowser.complex.addProgressReply(guestsSecondReplyBecomesPostNr7);
     guestsBrowser.complex.addProgressReply("I'm a guest, my 3rd reply, post nr 8.");
     guestsBrowser.topic.assertPostNotPendingApproval(6);
     guestsBrowser.topic.assertPostNotPendingApproval(7);
@@ -249,6 +290,12 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
 
   it("... then Owen is done", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
+  });
+
+  it("... He has gotten a review task notification for the guest's second reply, not the third", () => {
+    // Because numFirstPostsToReview = 2 only.
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, guestsSecondReplyBecomesPostNr7, owensBrowser);
   });
 
   it("A stranger sees all the guest's posts", () => {

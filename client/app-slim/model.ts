@@ -501,14 +501,14 @@ interface Notification {
 
 
 const enum NotificationType {
-  DirectReply = 1,
-  Mention = 2,  // DirectMention
+  DirectReply = 301,
+  Mention = 302,  // DirectMention
   // GroupMention =
   // Quote = 3,
-  Message = 4,   // rename to DirectMessage
-  NewPost = 5,
+  Message = 304,   // rename to DirectMessage
+  NewPost = 305,
   // NewPage =      // Add
-  PostTagged = 6,   // Change id
+  PostTagged = 406,
 }
 
 

@@ -121,7 +121,7 @@ class TagsAppSpec extends DaoAppSuite() {
   }
 
   def countNotificationsToAbout(userId: UserId, postId: PostId): Int = {
-    var notfs = dao.loadNotificationsForRole(userId, limit = 999, unseenFirst = true)
+    var notfs = dao.loadNotificationsToUserSkipReviewTasks(userId, limit = 999, unseenFirst = true)
     notfs.count({
       case notf: Notification.NewPost => notf.uniquePostId == postId
       case x => fail(s"Bad notf type: ${classNameOf(x)}")

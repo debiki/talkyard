@@ -39,6 +39,11 @@ let topics = {
 const threeIsOkay = "Three is okay";
 
 
+const majasReplyOne = "Zeee fiiirst zecream, ze post nr 2";
+const majasReplyTwo = "Meee zecondzz zecreamiii";
+const majasReplyThree = "Zhree zecreamizz, ze looooki niimbir";
+
+
 describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths file to 'new-member-posts...'
 
   it("initialize people", () => {
@@ -101,7 +106,12 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.topic.assertPagePendingApprovalBodyVisible();
   });
 
-  it("... but she can edit the text, although not yet approved", () => {
+  it("Owen got a new-post-to-review notification", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, topics.majasTopicText, owensBrowser);
+  });
+
+  it("Maja can edit the text, although not yet approved", () => {
     majasBrowser.complex.editPageBody(topics.majasTopicTextEdited);
   });
 
@@ -115,13 +125,37 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.assertPageBodyMatches(topics.majasTopicTextEdited);
   });
 
-  it("... she posts three replies to an old topic", () => {
+  it("Maja posts three replies to an old topic ...", () => {
     majasBrowser.go('/');
     majasBrowser.forumTopicList.goToTopic(topics.oldTopicTitle);
-    majasBrowser.complex.replyToOrigPost("My first reply, post nr 2");
-    majasBrowser.complex.replyToOrigPost("My second reply");
-    majasBrowser.complex.replyToOrigPost("Three is my lucky number");
+  });
+
+  it("... reply nr 1", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyOne);
+  });
+
+  it("... Owen gets a review task notification", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
+  });
+
+  it("... reply nr 2", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyTwo);
+  });
+
+  it("... Owen gets a review task notification", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyTwo, owensBrowser);
+  });
+
+  it("... reply nr 3", () => {
+    majasBrowser.complex.replyToOrigPost(majasReplyThree);
     topics.oldTopicUrl = majasBrowser.url().value;
+  });
+
+  it("... Owen gets a review task notification", () => {
+    server.waitUntilLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyThree, owensBrowser);
   });
 
   it("... they all need to be approved by staff", () => {
@@ -345,6 +379,15 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     strangersBrowser.forumTopicList.assertNumVisible(2);
     strangersBrowser.forumTopicList.assertTopicVisible(topics.oldTopicTitle);
     strangersBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitleEdited);
+  });
+
+
+  // No more review task notfs
+  // -------------------------------------
+
+  it("Owen doesn't get more review task notfs, for Maja's posts", () => {
+    server.assertLastEmailMatches(
+        idAddress.id, owen.emailAddress, majasReplyThree, owensBrowser);
   });
 
 });

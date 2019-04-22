@@ -525,7 +525,7 @@ trait CategoriesDao {
     val titleTextAndHtml = newCategoryData.makeAboutTopicTitle(textAndHtmlMaker)
     val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
 
-    val (aboutPagePath, _) = createPageImpl(
+    val aboutPagePath = createPageImpl(
         PageType.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
         titleSource = titleTextAndHtml.text,
@@ -536,7 +536,7 @@ trait CategoriesDao {
         pinWhere = None,
         byWho, spamRelReqStuff = None, tx,
         // if createDeletedAboutTopic, then TESTS_MISSING [5WAKR02], e2e test won't get created.
-        createAsDeleted = newCategoryData.createDeletedAboutTopic)
+        createAsDeleted = newCategoryData.createDeletedAboutTopic)._1
 
     if (newCategoryData.shallBeDefaultCategory) {
       setDefaultCategory(category, tx)

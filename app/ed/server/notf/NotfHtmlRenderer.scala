@@ -75,7 +75,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       val pageStuffById = siteDao.loadPageStuffById(pageIds, transaction)
       val maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
       // Later: do support reply-via-email.
-      var result: NodeSeq = <p>(If you want to reply, click the links below -- but don't reply to this email.)</p>
+      var result: NodeSeq =
+        <p>(If you want to reply, click the links below -- but don't reply to this email.)</p>
       for (notf <- notfs) {
         val anyHtmlNotf = notf match {
           case newPostNotf: Notification.NewPost =>
@@ -97,9 +98,15 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse {
       return Nil
     }
+
     val markupSource = post.approvedSource getOrElse {
-      return Nil
+      if (notf.notfType == NotificationType.NewPostReviewTask) post.currentSource
+      else {
+        // Weird.
+        return Nil
+      }
     }
+
     SECURITY ; SHOULD // indicate if is guest's name, so cannot pretend to be any @username.
     val byUserName = transaction.loadParticipant(notf.byUserId).map(_.usernameOrGuestName) getOrElse
       "(unknown user name)"
@@ -132,9 +139,22 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           ("A new comment has been posted", ",", "by")
       case NotificationType.NewPost =>
         if (post.nr == PageParts.BodyNr)
-          ("A topic has been tagged with a tag you're watching", ".", "The topic was written by")
+          ("A topic has been tagged with a tag you're watching", ".",
+            "The topic was written by")
         else
-          ("A comment has been tagged with a tag you're watching", ".", "The comment was written by")
+          ("A comment has been tagged with a tag you're watching", ".",
+            "The comment was written by")
+      case NotificationType.NewPostReviewTask =>
+        val itIsShownOrHidden =
+          if (post.isSomeVersionApproved)
+            "It's been preliminarily approved, and is visible to others"
+          else
+            "It's currently hidden"
+        val what = (post.nr == PageParts.BodyNr) ? "topic" | "reply"
+        // Could mention if it's currently visible or not, and if there're any review tasks
+        // about it — lookup tasks in review_task_queue3.
+        (s"A new $what for you to review", ".",
+          s"$itIsShownOrHidden. It was posted by")
     }
 
     <p>

@@ -375,8 +375,11 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
    */
   def loadNotfsImpl(limit: Int, unseenFirst: Boolean, onlyIfEmailVerifiedOrGuest: Boolean,
         tenantIdOpt: Option[SiteId] = None,
-        delayMinsOpt: Option[Int] = None, userIdOpt: Option[UserId] = None,
-        emailIdOpt: Option[String] = None, upToWhen: Option[ju.Date] = None)
+        delayMinsOpt: Option[Int] = None,
+        userIdOpt: Option[UserId] = None,
+        emailIdOpt: Option[String] = None,
+        skipReviewTaskNotfs: Boolean = false,
+        upToWhen: Option[ju.Date] = None)
         : Map[SiteId, Seq[Notification]] = {
 
     require(emailIdOpt.isEmpty, "looking up by email id not tested after rewrite")
@@ -398,7 +401,11 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       else
         ""
 
-    val baseQuery = s"""
+    val skipReviewTasksAnd =
+      if (!skipReviewTaskNotfs) ""
+      else s"n.notf_type > ${NotificationType.MaxReviewTaskNotfId} and "
+
+    val baseQueryOpenPara = s"""
       select
         n.site_id, n.notf_id, n.notf_type, n.created_at,
         n.unique_post_id, n.page_id, n.action_type, n.action_sub_id,
@@ -406,11 +413,12 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         n.email_id, n.email_status, n.seen_at
       from notifications3 n inner join users3 u
         on n.site_id = u.site_id
-       and n.to_user_id = u.user_id
-       $andEmailVerifiedOrGuest
-      where """
+           and n.to_user_id = u.user_id
+           $andEmailVerifiedOrGuest
+      where
+        $skipReviewTasksAnd ("""
 
-    val (whereOrderBy, values) = (userIdOpt, emailIdOpt) match {
+    val (moreWhere, orderBy, values) = (userIdOpt, emailIdOpt) match {
       case (Some(uid), None) =>
         val orderHow =
           if (unseenFirst) {
@@ -420,26 +428,28 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
           }
           else
             "n.created_at desc"
-        val whereOrderBy = s"n.site_id = ? and n.to_user_id = ? order by $orderHow"
+        val where = "n.site_id = ? and n.to_user_id = ?"
+        val orderBy = s"order by $orderHow"
         val vals = List(tenantIdOpt.get.asAnyRef, uid.asAnyRef)
-        (whereOrderBy, vals)
+        (where, orderBy, vals)
       case (None, Some(emailId)) =>
-        val whereOrderBy = "n.site_id = ? and n.email_id = ?"
+        val where = "n.site_id = ? and n.email_id = ?"
         val vals = List(tenantIdOpt.get.asAnyRef, emailId)
-        (whereOrderBy, vals)
+        (where, "", vals)
       case (None, None) =>
         // Load notfs for which emails perhaps are to be sent, for all tenants.
-        val whereOrderBy =
+        val where =
           o"""n.email_status = ${NotfEmailStatus.Undecided.toInt}
-             and n.created_at <= ? order by n.created_at asc"""
+             and n.created_at <= ?"""
+        val orderBy = "order by n.created_at asc"
         val someMinsAgo = new ju.Date(now.millis - delayMinsOpt.get.toLong * 60 * 1000)
         val vals = someMinsAgo::Nil
-        (whereOrderBy, vals)
+        (where, orderBy, vals)
       case _ =>
         die("DwE093RI3")
     }
 
-    val query = baseQuery + whereOrderBy +" limit "+ limit
+    val query = s"$baseQueryOpenPara $moreWhere ) $orderBy limit $limit"
     var notfsByTenant =
        Map[SiteId, Vector[Notification]]().withDefaultValue(Vector.empty)
 

@@ -648,7 +648,8 @@ class JsonMaker(dao: SiteDao) {
       else ReviewTaskCounts(0, 0)
 
     // dupl line [8AKBR0]
-    val notfsAndCounts = loadNotifications(requester.id, tx, unseenFirst = true, limit = 20)
+    val notfsAndCounts = loadNotificationsSkipReviewTasks(
+      requester.id, tx, unseenFirst = true, limit = 20)
 
     // Hmm not needed? Group ids already incl in myGroupsEveryoneLast above —
     // if user = requester.
@@ -1254,10 +1255,10 @@ object JsonMaker {
     notfsJson: JsArray)
 
 
-  def loadNotifications(userId: UserId, transaction: SiteTransaction, unseenFirst: Boolean,
-    limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
-    val notfs = transaction.loadNotificationsForRole(userId, limit, unseenFirst, upToWhen)
-    notificationsToJson(notfs, transaction)
+  def loadNotificationsSkipReviewTasks(userId: UserId, tx: SiteTransaction, unseenFirst: Boolean,
+        limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
+    val notfs = tx.loadNotificationsToUserSkipReviewTasks(userId, limit, unseenFirst, upToWhen)
+    notificationsToJson(notfs, tx)
   }
 
 
@@ -1278,6 +1279,11 @@ object JsonMaker {
     val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
 
     notfs.foreach {
+      case notf: Notification.NewPost if notf.tyype.isAboutReviewTask =>
+        // No. These aren't shown in the notifications list. Instead, one looks at the
+        // review tasks, on the /-/admin/review page. And, next to one's username menu,
+        // there's a red circle that shows num pending review tasks.
+        die("TyE2AKBES04", s"Shouldn't send review task notfs to the browser. Tried to send: $notf")
       case notf: Notification.NewPost =>
         userIds.append(notf.byUserId)
         import NotificationType._

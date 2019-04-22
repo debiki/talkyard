@@ -314,17 +314,25 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
     val (siteName, origin) = dao.theSiteNameAndOrigin()
 
+    val contents = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
+    if (contents.isEmpty)
+      return None
+
     // Always use the same subject line, even if only 1 comment, so will end up in the same
     // email thread. Include site name, so simpler for people to find the email.
-    val subject: String = s"[$siteName] You have replies to posts of yours"
+    val subject: String =
+      if (notfs.exists(_.tyype == NotificationType.NewPostReviewTask)) {
+        // This might also include auto approved replies, which don't need any review.
+        // Use this title anyway.
+        s"[$siteName] New posts waiting for you to review"
+      }
+      else {
+        s"[$siteName] You have replies to posts of yours"
+      }
 
     val email = Email(EmailType.Notification, createdAt = globals.now(),
       sendTo = user.email, toUserId = Some(user.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
-
-    val contents = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
-    if (contents isEmpty)
-      return None
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.

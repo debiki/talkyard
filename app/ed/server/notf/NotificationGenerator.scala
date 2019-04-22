@@ -36,6 +36,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
+  private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
@@ -48,14 +49,43 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
 
   def generateForNewPost(page: Page, newPost: Post, anyNewTextAndHtml: Option[TextAndHtml],
+        anyReviewTask: Option[ReviewTask],
         skipMentions: Boolean = false): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
 
-    val approverId = newPost.approvedById getOrElse {
-      // Don't generate notifications until later when the post gets approved and becomes visible.
-      return Notifications.None
+    if (anyReviewTask.isDefined) {
+      // Generate notifications to staff members, so they can approve it. Don't notify
+      // others until later, when the post has been approved and is visible.
+
+      val staffUsers: Seq[User] = tx.loadStaffUsers()
+      for (staffUser <- staffUsers) {
+        avoidDuplEmailToUserIds += staffUser.id
+        notfsToCreate += Notification.NewPost(
+          NotificationType.NewPostReviewTask,
+          siteId = tx.siteId,
+          id = bumpAndGetNextNotfId(),
+          createdAt = newPost.createdAt,
+          uniquePostId = newPost.id,
+          byUserId = newPost.createdById,
+          toUserId = staffUser.id)
+      }
     }
+
+    val approverId = newPost.approvedById getOrElse {
+      // This post hasn't yet been approved and isn't visible. Don't notify people
+      // until later, when staff has reviewed it and made it visible.
+      // We've notified staff already, above, so they can ave a look.
+      dieIf(anyReviewTask.isEmpty, "TyE0REVTSK")  // [703RK2]
+      return generatedNotifications
+    }
+
+    // Don't send emails twice to the staff — they've gotten a post-to-review notf already about
+    // this post (see just above). Do however create notfs — it's nice to have any notification
+    // about e.g. a @mention of oneself, in the mentions list, also if one approved
+    // that post, oneself.
+    val oldNotfsToStaff = tx.loadNotificationsAboutPost(newPost.id, NotificationType.NewPostReviewTask)
+    avoidDuplEmailToUserIds ++= oldNotfsToStaff.map(_.toUserId)
 
     anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
@@ -310,7 +340,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           createdAt = newPost.createdAt,
           uniquePostId = newPost.id,
           byUserId = newPost.createdById,
-          toUserId = toUserId)
+          toUserId = toUserId,
+          emailStatus = emailStatusFor(toUserId))
       }
     }
   }
@@ -389,11 +420,17 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         createdAt = newPost.createdAt,
         uniquePostId = newPost.id,
         byUserId = newPost.createdById,
-        toUserId = member.id)
+        toUserId = member.id,
+        emailStatus = emailStatusFor(member.id))
     }
 
     memberIdsHandled ++= memberIdsHandlingNow
   }
+
+
+  private def emailStatusFor(userId: UserId): NotfEmailStatus =
+    if (avoidDuplEmailToUserIds.contains(userId)) NotfEmailStatus.Skipped
+    else NotfEmailStatus.Undecided
 
 
   /** Creates and deletes mentions, if '@username's are added/removed by this edit.
@@ -452,7 +489,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     dieIf(mentionsForAllCreated && mentionsForAllDeleted, "EdE2WK4Q0")
 
     lazy val previouslyMentionedUserIds: Set[UserId] =
-      tx.loadMentionsOfPeopleInPost(newPost.id).map(_.toUserId).toSet
+      tx.loadNotificationsAboutPost(newPost.id, NotificationType.Mention).map(_.toUserId).toSet
 
     if (mentionsForAllDeleted) {
       // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.

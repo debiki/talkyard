@@ -320,7 +320,10 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
     COULD // publish notifications.toDelete too (e.g. an accidental mention that gets edited out).
     val notfsReceiverIsOnline = message.notifications.toCreate filter { notf =>
-      isUserOnline(message.siteId, notf.toUserId)
+      isUserOnline(message.siteId, notf.toUserId) &&
+        // The browser doesn't know what to do with review task notifications.
+        // Instead, send an updated num-pending-review-tasks counter?
+        !notf.tyype.isAboutReviewTask
     }
     notfsReceiverIsOnline foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.

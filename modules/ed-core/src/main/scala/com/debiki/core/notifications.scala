@@ -37,26 +37,61 @@ object Notifications {
 
 
 
-sealed abstract class NotificationType(val IntValue: Int) { def toInt: Int = IntValue }
+sealed abstract class NotificationType(val IntValue: Int) {
+  def toInt: Int = IntValue
+  def isAboutReviewTask = false
+}
 
 // Could:  enum / 1000 = notification type, enum % 1000 = how many got notified?
 // No, instead, case class:  NotfTypeNumNotified(notfType, numNotified: Int)
 object NotificationType {
-  case object DirectReply extends NotificationType(1)
-  case object Mention extends NotificationType(2)  // –> 1000, group mention 1001 ...
+
+  // 100-199_ Notifications to staff about new review tasks.
+  case object NewPostReviewTask extends NotificationType(101) {
+    override def isAboutReviewTask = true
+  }
+  //case object PostEditedReviewTask extends NotificationType(..)
+  //case object PostUnpopularReviewTask extends NotificationType(..)
+  //case object PostFlaggedReviewTask extends NotificationType(..)
+  //case object PostMayBeSpamReviewTask extends NotificationType(..)
+  // post auto hidden ?
+  // post deleted ?
+  // User's profile text has spam links, review?
+  // User's profile flagged?
+  // + Staff notified that another staff member has reviewed a post, and the outcome,
+  //      and that there are currently no more review tasks waiting.
+
+  val MaxReviewTaskNotfId = 199
+
+  // 200-299  Notifications about outcomes when staff reviewed one's post,
+  // or requests staff has made about e.g. editing one's post.
+  // 201: post approved
+  // 202: edits requested
+  // 203: post rejected
+
+  // 300-399_ Notifications about new posts (that are visible, not hidden waiting for review).
+  case object DirectReply extends NotificationType(301)
+  case object Mention extends NotificationType(302)
   // + Quote
-  case object Message extends NotificationType(4)
-  case object NewPost extends NotificationType(5)
+  case object Message extends NotificationType(304)
+  case object NewPost extends NotificationType(305)
   // + NewTopic  [REFACTORNOTFS]
+
+
+  // 400-499 Something interesting happened with an already existing topic or post.
+  case object PostTagged extends NotificationType(406)
   // + TopicProgress
   // + QuestionAnswered
   // + TopicDone
   // + TopicClosed
-  case object PostTagged extends NotificationType(6)
 
-  // + GoupMention: 1001 ... 1999 = group size + 1000
+  // 700: about users?
+  // - New user joined (can then send a friendly Hello message)
+  // - Suggestion to promote user to Core Member trust level?
+  // - ... ?
 
   def fromInt(value: Int): Option[NotificationType] = Some(value match {
+    case NewPostReviewTask.IntValue => NewPostReviewTask
     case DirectReply.IntValue => DirectReply
     case Mention.IntValue => Mention
     case Message.IntValue => Message

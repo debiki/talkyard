@@ -1134,7 +1134,7 @@ trait UserDao {
   }
 
 
-  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who,
+  def loadNotificationsSkipReviewTasks(userId: UserId, upToWhen: Option[When], me: Who,
         unseenFirst: Boolean = false, limit: Int = 100)
         : NotfsAndCounts = {
     readOnlyTransaction { tx =>
@@ -1143,7 +1143,7 @@ trait UserDao {
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
-      debiki.JsonMaker.loadNotifications(userId, tx, unseenFirst = unseenFirst, limit = limit,
+      debiki.JsonMaker.loadNotificationsSkipReviewTasks(userId, tx, unseenFirst = unseenFirst, limit = limit,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
   }

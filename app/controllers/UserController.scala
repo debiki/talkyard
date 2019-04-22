@@ -949,7 +949,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // so they'll get un-highlighted, since the posts they are about, have now been seen.
 
         // dupl line [8AKBR0]
-        val notfsAndCounts = dao.loadNotifications(
+        val notfsAndCounts = dao.loadNotificationsSkipReviewTasks(
           theRequester.id, upToWhen = None, request.who, unseenFirst = true, limit = 20)
 
         // dupl code [7KABR20]
@@ -1088,7 +1088,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def loadNotificationsImpl(userId: UserId, upToWhen: Option[When], request: DebikiRequest[_])
         : mvc.Result = {
-    val notfsAndCounts = request.dao.loadNotifications(userId, upToWhen, request.who)
+    val notfsAndCounts = request.dao.loadNotificationsSkipReviewTasks(userId, upToWhen, request.who)
     OkSafeJson(notfsAndCounts.notfsJson)
   }
 

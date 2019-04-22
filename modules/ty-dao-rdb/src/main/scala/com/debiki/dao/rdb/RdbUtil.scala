@@ -491,7 +491,8 @@ object RdbUtil {
       "EsE6GMUK2", s"Bad notf type: $notfTypeInt")
 
     notfType match {
-      case NotificationType.DirectReply | NotificationType.Mention | NotificationType.Message |
+      case NotificationType.NewPostReviewTask |
+           NotificationType.DirectReply | NotificationType.Mention | NotificationType.Message |
            NotificationType.NewPost | NotificationType.PostTagged =>
         Notification.NewPost(
           siteId = siteId,

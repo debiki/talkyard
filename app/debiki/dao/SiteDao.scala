@@ -360,9 +360,9 @@ class SiteDao(
     readWriteTransaction(_.saveDeleteNotifications(notifications))
   }
 
-  def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean)
+  def loadNotificationsToUserSkipReviewTasks(roleId: RoleId, limit: Int, unseenFirst: Boolean)
         : Seq[Notification] =
-    readOnlyTransaction(_.loadNotificationsForRole(roleId, limit, unseenFirst))
+    readOnlyTransaction(_.loadNotificationsToUserSkipReviewTasks(roleId, limit, unseenFirst))
 
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))

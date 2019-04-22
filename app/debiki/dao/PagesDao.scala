@@ -44,7 +44,6 @@ import org.owasp.encoder.Encode
 trait PagesDao {
   self: SiteDao =>
 
-  import context.{globals}
 
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
@@ -83,7 +82,7 @@ trait PagesDao {
     quickCheckIfSpamThenThrow(byWho, bodyTextAndHtml, spamRelReqStuff)
 
     val pagePath = readWriteTransaction { tx =>
-      val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
+      val (pagePath, bodyPost, anyReviewTask) = createPageImpl(pageRole, pageStatus, anyCategoryId,
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
@@ -91,7 +90,7 @@ trait PagesDao {
         tx, altPageId = altPageId, embeddingUrl = embeddingUrl)
 
       val notifications = notfGenerator(tx).generateForNewPost(
-        PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml))
+        PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml), anyReviewTask)
       tx.saveDeleteNotifications(notifications)
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
@@ -114,14 +113,16 @@ trait PagesDao {
         anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
         pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
         byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-        tx: SiteTransaction): (PagePathWithId, Post) =
-    createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
+        tx: SiteTransaction): (PagePathWithId, Post) = {
+    val result = createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
       anyFolder = anyFolder, anySlug = anySlug, showId = showId,
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
       bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      byWho, spamRelReqStuff, tx = tx, layout = None)
-
+      byWho, spamRelReqStuff, tx = tx,
+      layout = None)
+    (result._1, result._2)
+  }
 
   def createPageImpl(pageRole: PageType, pageStatus: PageStatus,
       anyCategoryId: Option[CategoryId],
@@ -130,12 +131,13 @@ trait PagesDao {
       bodySource: String, bodyHtmlSanitized: String,
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-      tx: SiteTransaction, hidePageBody: Boolean = false,
+      tx: SiteTransaction,
+      hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
       altPageId: Option[AltPageId] = None,
       embeddingUrl: Option[String] = None,
-      createAsDeleted: Boolean = false): (PagePathWithId, Post) = {
+      createAsDeleted: Boolean = false): (PagePathWithId, Post, Option[ReviewTask]) = {
 
     val now = globals.now()
     val authorId = byWho.id
@@ -163,8 +165,10 @@ trait PagesDao {
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     COULD // try to move this authz + review-reason check to ed.server.auth.Authz?
-    val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, tx)
+    val (
+      reviewReasons: Seq[ReviewReason],
+      shallApprove: Boolean) =
+        throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, tx)
 
     val approvedById =
       if (author.isStaff) {
@@ -306,6 +310,7 @@ trait PagesDao {
       embeddingUrl.foreach(tx.insertAltPageIdIfFree(_, realPageId = pageId))
     }
 
+    // COULD generate notifications from here — currently done in the callers though.
     reviewTask.foreach(tx.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, tx)
 
@@ -318,7 +323,7 @@ trait PagesDao {
     // for the background thread (which is too complicated) or 2) we'd generate
     // the page twice, both in the request thread and in a background thread.)
 
-    (pagePath, bodyPost)
+    (pagePath, bodyPost, reviewTask)
   }
 
 

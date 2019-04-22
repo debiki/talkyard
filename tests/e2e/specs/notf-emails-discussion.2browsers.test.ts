@@ -93,6 +93,10 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
   it("import a site", () => {
     const site: SiteData = make.forumOwnedByOwen('eml-ntf-disc', { title: forumTitle });
+    // Avoid "messing up" the notification email counts — this test was written
+    // in the past when no email notfs were sent about review tasks. [OLDTSTNTFS]
+    site.settings.numFirstPostsToReview = 0;
+    site.settings.numFirstPostsToApprove = 0;
     site.groups.push(everyoneGroup);
     site.members.push(modya);
     site.members.push(mons);

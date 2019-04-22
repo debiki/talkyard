@@ -55,6 +55,10 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
       members: undefined, // undefined = default = everyone
     });
     assert(builder.getSite() === forum.siteData);
+    // Avoid "messing up" the notification email counts — this test was written
+    // in the past when no email notfs were sent about review tasks. [OLDTSTNTFS]
+    forum.siteData.settings.numFirstPostsToReview = 0;
+    forum.siteData.settings.numFirstPostsToApprove = 0;
 
     trillian = make.memberTrillian();
     maja = make.memberMaja();

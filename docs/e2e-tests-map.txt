@@ -473,6 +473,7 @@ admin -
   cannot bad-click break an admin, e.g. unverifying hens email or unapproving, rejecting:
     - (missing) [5AEWBN0]
   reviews - [TyT5DKW7U]
+    gets emailed about review tasks:  — see (502M7)
     delete flagged:   — also see (6JS3)
     clear flag:   — also see (6JS3)
     approve posts:  (2WY0)
@@ -587,6 +588,7 @@ restart server -
     ... same tests as above ...
 
 notifications:
+  about review tasks:   — see (502M7)
   via email:  (5ABKR024)
   mute topic:
   mute category:
