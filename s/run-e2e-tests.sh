@@ -231,6 +231,11 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-chat-adv-ed.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only drafts-delete $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only move-posts-same-page.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only move-posts-other-page.2browsers $args
+  # + wikify-posts
+  # + delete-posts
+
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-allowed-email-domains.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only settings-toggle-login-required.3browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-approve-members.2browsers $args

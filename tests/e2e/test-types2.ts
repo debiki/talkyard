@@ -330,7 +330,7 @@ interface TestPost {  // later: try to unify with Post?
   numTimesRead: number;
   numBuryVotes: number;
   numUnwantedVotes: number;
-  type?: number;
+  postType?: number;
   prevRevNr?: number;
 }
 
@@ -376,6 +376,20 @@ interface EmptyTestForum {
   };
   categories: {
     categoryA: CategoryJustAdded;
+  };
+}
+
+
+interface TwoPagesTestForum extends EmptyTestForum {
+  topics: {
+    byMariaCategoryA: PageJustAdded;
+    byMichaelCategoryA: PageJustAdded;
+    aboutCategoryA: { title: string };
+    aboutStaffOnlyCategory: { title: string };
+  };
+  categories: {
+    categoryA: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
   };
 }
 

@@ -315,8 +315,14 @@ discussion -
   live updates:  (4FE2)
 
 post -
-  move on same page:
-  move to new page:
+  copy address:
+          - move-posts.2browsers.test.ts  TyT03946HET3
+  move post:
+    move to different page section,
+    move to differen parent, same page:
+          - move-posts.2browsers.test.ts  TyT03946HET3
+    move to differen parent, other page:
+          - move-posts-other-page.2browsers.test.ts  TyT7038286BR3
   view edit history:
   votes -
     cast all types:      votes-and-best-first.test.ts
@@ -326,6 +332,7 @@ post -
     unwanted –> karma:
     see who voted:
   delete:
+  wikify:
   flag -   — also see (6JS3)
     cannot flag delted post:
   view author -
@@ -404,7 +411,7 @@ live updates -  (4FE2)
   discussion:
   chat: chat.2browsers.test.ts
 
-links -
+links -  see navigation-as-admin/member/stranger
   forum category:
   forum topic in category view:
   forum topic in topics view:

@@ -119,7 +119,9 @@ s_MM            = my menu (one's avatar + username, in the topbar)
 
 s_MP            = meta message post, about the topic, e.g. "Nnn closed this topic 3 hours ago"
 
-s_NP            = No page, i.e. login-&-create-something-here stuff
+s_MPD           = move post dialog
+
+s_NP            = No page, i.e. login-&-create-something-here stuff  RENAME to s_NPg
 
 Nrw             = narrow
 

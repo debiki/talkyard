@@ -289,7 +289,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val newHost = (request.body \ "newHost").asOpt[String] // ignore for now though
     val newSiteId = (request.body \ "newSiteId").asOpt[SiteId] // ignore for now though
     val newPageId = (request.body \ "newPageId").as[PageId]
-    val newParentNr = (request.body \ "newParentNr").as[PostNr]
+    val newParentNr = (request.body \ "newParentNr").asOpt[PostNr].getOrElse(PageParts.BodyNr)
 
     val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
       newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,

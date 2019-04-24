@@ -62,6 +62,20 @@ const MovePostsDialog = createComponent({
     this.setState({ isOpen: false, store: null, post: null });
   },
 
+  moveToOtherSection: function() {
+    const store: Store = this.state.store;
+    const post: Post = this.state.post;
+    const otherSectionType =
+        post.postType === PostType.BottomComment ? PostType.Normal : PostType.BottomComment;
+    Server.changePostType(post.nr, otherSectionType, () => {
+      util.openDefaultStupidDialog({
+        body: r.div({},
+          "Moved. ",
+          r.a({ href: `/-${store.currentPageId}#post-${post.nr}` }, "Click here to view"))
+      });
+    });
+  },
+
   doMove: function() {
     const store: Store = this.state.store;
     const post: Post = this.state.post;
@@ -91,36 +105,54 @@ const MovePostsDialog = createComponent({
   },
 
   render: function () {
-    const content = r.div({},
-      // Skip i18n, this is for staff only, right?
-      r.p({}, "Move post to where? Specify a new parent post, can be on a different page."),
-      PatternInput({ type: 'text', label: "URL to new parent post:",
-        help: r.span({}, "Tips: Click the ", r.span({ className: 'icon-link' }), " link " +
-          "below the destination post, to copy its URL"),
-        onChangeValueOk: (value, ok) => {
-          const matches = value.match(/((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)#post-([0-9]+)$/);
-          if (!matches) {
-            this.setState({ ok: false });
-            return;
-          }
-          this.setState({
-            newParentUrl: value,
-            newHost: matches[3],
-            newPageId: matches[4],
-            newParentNr: parseInt(matches[5]),
-            ok: ok
-          });
-        },
-        regex: /^((https?:\/\/)?[^/]+)?\/-[a-zA-Z0-9_]+#post-[0-9]+/,
-        message: "Invalid new parent post link, should be like: " + location.hostname +
-            "/-[page_id]/#post-[post_nr]" }),
-      PrimaryButton({ onClick: this.doMove, disabled: !this.state.ok }, "Move"),
-      Button({ onClick: this.previewNewParent }, "Preview"));
+    let content;
+
+    if (this.state.isOpen) {
+      const store: Store = this.state.store;
+      const post: Post = this.state.post;
+      const isTopLevelReply = post.parentNr === BodyNr;
+      const showMoveToOtherSection = isTopLevelReply;
+      const otherSection = post.postType === PostType.BottomComment ? "discussion" : "progress";
+      const orSpecify = showMoveToOtherSection ? "Or specify" : "Specify";
+
+      content = r.div({},
+          !showMoveToOtherSection ? null : r.div({ className: 's_MPD_OtrSct' },
+            PrimaryButton({ onClick: (event) => this.moveToOtherSection() },
+              `Move to ${otherSection} section`),
+            r.span({}, " on this page"),
+            r.p({}, "This moves any replies to that other section, too.")),
+          // Skip i18n, this is for staff only, right?
+          r.p({}, orSpecify + " a new parent post, can be on a different page:"),
+
+          PatternInput({ type: 'text', label: "URL to new parent post:", id: 'te_MvPI',
+            help: r.span({}, "Tips: Click the ", r.span({ className: 'icon-link' }), " link " +
+              "below the destination post, to copy its URL"),
+            onChangeValueOk: (value, ok) => {
+              const matches = value.match(/((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)(#post-([0-9]+))?$/);
+              if (!matches) {
+                this.setState({ ok: false });
+                return;
+              }
+              this.setState({
+                newParentUrl: value,
+                newHost: matches[3],
+                newPageId: matches[4],
+                newParentNr: parseInt(matches[6]), // might be null —> the orig post, BodyNr
+                ok: ok
+              });
+            },
+            regex: /^((https?:\/\/)?[^/]+)?\/-[a-zA-Z0-9_]+(#post-[0-9]+)?$/,
+            message: "Invalid new parent post link, should be like: " + location.hostname +
+                "/-[page_id]/#post-[post_nr]" }),
+          PrimaryButton({ onClick: this.doMove, disabled: !this.state.ok, className: 'e_MvPB' },
+            "Move"),
+          Button({ onClick: this.previewNewParent }, "Preview"));
+    }
 
     return (
       utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
           atRect: this.state.atRect, windowWidth: this.state.windowWidth },
-        ModalHeader({}, ModalTitle({}, "Move post")),
+        ModalHeader({}, ModalTitle({}, "Move post to where?")),
         ModalBody({}, content),
         ModalFooter({}, Button({ onClick: this.close }, "Cancel"))));
   }

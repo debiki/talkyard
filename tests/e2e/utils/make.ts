@@ -370,7 +370,7 @@ const make = {
       numTimesRead: undefined,
       numBuryVotes: undefined,
       numUnwantedVotes: undefined,
-      type: undefined,
+      postType: values.postType,
       prevRevNr: undefined,
     };
   },

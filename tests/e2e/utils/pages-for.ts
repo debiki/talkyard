@@ -421,18 +421,6 @@ function pagesFor(browser) {
       browser.waitAndClick('.fade.in.modal');
     },
 
-    // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
-    // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
-    //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-
-    //    element bug after refresh(), fixed in Webdriver.io 4.3.0. Instead:
-    // 2) Sometimes waitForVisible stops working = blocks forever, although isVisible returns true
-    //    (because the elem is visible already).
-    toGoogleAndBack: function() {
-      let url = browser.url().value;
-      api.go('http://www.google.com');
-      api.go(url);
-    },
-
 
     playTimeSeconds: function(seconds: number) {  // [4WKBISQ2]
       browser.execute(function (seconds) {
@@ -740,6 +728,12 @@ function pagesFor(browser) {
       assert.ok(!errorString, errorString);
     },
 
+
+    waitAndPasteClipboard: (selector: string, opts?: { maybeMoves?: true,
+          timeoutMs?: number, okayOccluders?: string }) => {
+      api._waitForClickable(selector, opts);
+      browser.setValue(selector, ["Control","v"]);
+    },
 
     waitAndSetValue: (selector: string, value: string | number,
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
@@ -2805,6 +2799,22 @@ function pagesFor(browser) {
     topic: {
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd`,
 
+      forAllPostIndexNrElem: (fn: (index, id, elem) => void) => {
+        const postElems = browser.elements('[id^="post-"]').value;
+        for (let index = 0; index < postElems.length; ++index) {
+          const elem = postElems[index];
+          const idAttr = browser.elementIdAttribute(elem.ELEMENT, 'id').value;
+          const postNr = idAttr.replace('post-', '');
+          logMessage(`post elem id attr: ${idAttr}, nr: ${postNr}`);
+          assert.equal(0, c.TitleNr);
+          assert.equal(1, c.BodyNr);
+          assert.equal(2, c.FirstReplyNr);
+          if (postNr === c.TitleNr) assert.equal(index, c.TitleNr);
+          if (postNr === c.BodyNr) assert.equal(index, c.BodyNr);
+          fn(index, postNr, elem);
+        }
+      },
+
       clickHomeNavLink: function() {
         browser.click("a=Home");
       },
@@ -2975,6 +2985,16 @@ function pagesFor(browser) {
 
       clickMoreForPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      },
+
+      openShareDialogForPostNr: function(postNr: PostNr) {
+        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-link`);
+        api.waitForVisible('.s_ShareD');
+      },
+
+      openMoveDialogForPostNr: function(postNr: PostNr) {
+        api.topic.clickMoreForPostNr(postNr);
+        api.waitAndClick('.icon-paper-plane-empty'); // COULD add a better class name
       },
 
       clickMoreVotesForPostNr: function(postNr: PostNr) {
@@ -4726,6 +4746,29 @@ function pagesFor(browser) {
       },
     },
 
+
+    shareDialog: {
+      copyLinkToPost: () => {
+        api.waitAndClick('.s_ShareD_Link');
+      },
+
+      close: () => {
+        api.waitAndClick('.esDropModal_CloseB');  // currently not inside .s_ShareD
+      }
+    },
+
+
+    movePostDialog: {
+      moveToOtherSection: () => {
+        browser.waitAndClick('.s_MPD_OtrSct .btn');
+        browser.waitAndClick('.esStupidDlg a');
+      },
+
+      pastePostLinkMoveToThere: () => {
+        browser.waitAndPasteClipboard('#te_MvPI');
+        browser.waitAndClick('.e_MvPB');
+      }
+    },
 
     serverErrorDialog: {
       waitForNotLoggedInError: function() {

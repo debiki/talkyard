@@ -220,6 +220,70 @@ function buildSite(site?: SiteData) {
     },
 
 
+    addTwoPagesForum: function(opts: { title: string, introText?: string, members?: string[] })
+          : TwoPagesTestForum {
+      const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addEmptyForum(opts);
+      const forumPage: PageJustAdded = forum.forumPage;
+
+      forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: 3,  // 1 = root, 2 = default category A, 3 = this, staff
+        parentCategoryId: forumPage.categoryId,
+        name: "Staff Only",
+        slug: 'staff-only',
+        aboutPageText: "Staff only category description.",
+      });
+
+      // ---- Permissions on categories
+
+      // Staff only:
+      site.permsOnPages.push({
+        id: 3,
+        forPeopleId: c.StaffId,
+        onCategoryId: forum.categories.staffOnlyCategory.id,
+        mayEditPage: true,
+        mayEditComment: true,
+        mayEditWiki: true,
+        mayEditOwn: true,
+        mayDeletePage: true,
+        mayDeleteComment: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
+      });
+
+      // ---- Two pages
+
+      forum.topics.byMariaCategoryA = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
+        id: 'byMariaCategoryA',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-category-a',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in CategoryA title',
+        body: 'By Maria in CategoryA, text text text.',
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.maria.id,
+      });
+
+      forum.topics.byMichaelCategoryA = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
+        id: 'byMichaelCategoryA',
+        folder: '/',
+        showId: false,
+        slug: 'by-michael-category-a',
+        role: c.TestPageRole.Question,
+        title: 'By Michael in CategoryA title',
+        body: 'By Michael in CategoryA, text text text.',
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.michael.id,
+      });
+
+      return forum;
+    },
+
+
     addLargeForum: function(opts: { title: string, introText?: string, members?: string[] })
           : LargeTestForum {
       const forum: LargeTestForum = <LargeTestForum> api.addEmptyForum(opts);

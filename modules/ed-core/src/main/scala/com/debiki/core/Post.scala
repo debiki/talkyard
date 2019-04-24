@@ -138,6 +138,8 @@ sealed abstract class PostType(protected val IntValue: Int) {
   def placeLast = false
 }
 
+
+// See harmless bug below. Should change to a bit field, or split into separate fields.
 object PostType {
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
   case object Normal extends PostType(1)
@@ -153,13 +155,20 @@ object PostType {
   // RENAME to ProgressPost
   case object BottomComment extends PostType(4) { override def placeLast = true }
 
-  CLEAN_UP // remove StaffWiki, use the permission system instead.
+  CLEAN_UP // REMOVE StaffWiki, use the permission system instead.
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
     override def isWiki = true
   }
 
-  /** Any community member (doesn't include guests) can edit this post. No author name shown. */
+  /** Any community member (doesn't include guests) can edit this post. No author name shown.
+    *
+    * Harmless BUG: A progress post (BottomComment above) currently cannot also be a Wiki post.
+    * Need to either 1) let PostType be a bit field, and 1 bit is the page section
+    * (discussion or progress section), and one bit is 0 = not wiki, 1 = yes wiki.
+    * Or 2) split PostType into separate fields:  isWiki: Boolean,  isProgressPost: Boolean.
+    * And  isChatmessage could also be its own dedicated bit.
+    */
   case object CommunityWiki extends PostType(12) {
     override def isWiki = true
   }

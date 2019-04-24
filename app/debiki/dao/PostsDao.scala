@@ -31,6 +31,8 @@ import play.{api => p}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import PostsDao._
+import com.debiki.core
+import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType
 import ed.server.auth.Authz
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
@@ -1014,19 +1016,32 @@ trait PostsDao {
 
       val postAfter = postBefore.copy(tyype = newType)
 
+      val movesToOtherSection =
+        (postBefore.tyype == PostType.Normal && postAfter.tyype == PostType.BottomComment) ||
+        (postBefore.tyype == PostType.BottomComment && postAfter.tyype == PostType.Normal)
+
+      if (movesToOtherSection) {
+        val anyParent = page.parts.postByNr(postAfter.parentNr)
+        throwForbiddenIf(!anyParent.exists(_.isOrigPost),
+          "TyE5KSQ047", "Can only move top level posts from one section to another.")
+      }
+
       // Test if the changer is allowed to change the post type in this way.
       if (changer.isStaff) {
         (postBefore.tyype, postAfter.tyype) match {
-          case (before, after)
-            if before == PostType.Normal && after.isWiki => // Fine, staff wikifies post.
-          case (before, after)
-            if before.isWiki && after == PostType.Normal => // Fine, staff removes wiki status.
+          case (before, after) if before == PostType.Normal && after.isWiki =>
+            // Fine, staff wikifies post.
+          case (before, after) if before.isWiki && after == PostType.Normal =>
+            // Fine, staff removes wiki status.
+          case (before, after) if movesToOtherSection =>
+            // Fine.
           case (before, after) =>
             throwForbidden("DwE7KFE2", s"Cannot change post type from $before to $after")
         }
       }
       else {
         // All normal users may do is to remove wiki status of their own posts.
+        // What? Why not change *to* wiki status?
         if (postBefore.isWiki && postAfter.tyype == PostType.Normal) {
           if (changer.id != author.id)
             throwForbidden("DwE5KGPF2", o"""You are not the author and not staff,
@@ -1052,6 +1067,15 @@ trait PostsDao {
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
+
+      if (movesToOtherSection) {
+        // Move all descendants replies too. (This might mean updating many posts,
+        // and that's fine; this operation is barely ever done.)
+        val descendantPosts = page.parts.descendantsOf(postAfter.nr)
+        for (descendant <- descendantPosts) {
+          tx.updatePost(descendant.copy(tyype = postAfter.tyype))
+        }
+      }
 
       // (Don't reindex)
       tx.updatePost(postAfter)
@@ -1554,6 +1578,10 @@ trait PostsDao {
 
       val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
+
+      throwForbiddenIf(!newParentPost.isOrigPost && newParentPost.tyype != postToMove.tyype,
+        "TyE8KWEL24", "The new parent post is in a different page section. " +
+          "Use the 'Move to X section' button instead")
 
       dieIf(postToMove.collapsedStatus.isCollapsed, "EsE5KGV4", "Unimpl")
       dieIf(postToMove.closedStatus.isClosed, "EsE9GKY03", "Unimpl")

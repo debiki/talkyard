@@ -262,7 +262,7 @@ const api = { config: {
   // Gets executed after all tests are done. You still have access to all global variables from
   // the test.
   after: function (capabilties, specs) {
-    if (settings.debugAfterwards) {
+    if (settings.debugAfterwards || settings.debugEachStep) {
       console.log("*** Paused, just before exiting test. Now you can connect a debugger. ***");
       global.browser.debug();
     }
