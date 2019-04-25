@@ -16,7 +16,6 @@ declare let browser: any;
 
 let everyonesBrowsers;
 let gmannesBrowser;
-let gmanne = {};
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -24,8 +23,8 @@ let siteId: any;
 const gmailCommentOne = 'gmailCommentOne';
 const gmailCommentTwo = 'gmailCommentTwo';
 
-const localHostname = 'comments-for-e2e-test-embdb3cgm-localhost-8080';
-const embeddingOrigin = 'http://e2e-test-embdb3cgm.localhost:8080';
+const localHostname = 'comments-for-e2e-test-embdb3cvgm-localhost-8080';
+const embeddingOrigin = 'http://e2e-test-embdb3cvgm.localhost:8080';
 const pageGggSlug = 'emb-cmts-b3c-ggg.html';
 
 
@@ -44,7 +43,8 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
   });
 
   it("import a site", () => {
-    const site: SiteData = make.forumOwnedByOwen('embdb3cgm', { title: "Emb Cmts No Cookeis Gmail" });
+    const site: SiteData = make.forumOwnedByOwen(
+        'embdb3cvgm', { title: "Emb Cmts No Cookeis Verif Gmail" });
     site.meta.localHostname = localHostname;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
     idAddress = server.importSiteData(site);

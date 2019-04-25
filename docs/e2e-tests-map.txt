@@ -47,13 +47,12 @@ create account -
 
 login -
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
-    cookieless:
-          #- embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+          - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
+  cookieless:
           - embedded-comments-no-cookies-guest.test.ts        TyT295KBF6301
           - embedded-comments-no-cookies-verif-email.test.ts  TyT795KB69285
           - embedded-comments-no-cookies-verif-gmail.test.ts  TyT795KB61368
           - embedded-comments-no-cookies-unverif-gmail.test.ts  TyT6224BKA253
-    with cookies:
   password:
           - password-login-reset.2browsers.test.ts  TyT5KAES20W
     via email verif email:

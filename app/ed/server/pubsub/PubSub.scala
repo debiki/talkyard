@@ -321,8 +321,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     COULD // publish notifications.toDelete too (e.g. an accidental mention that gets edited out).
     val notfsReceiverIsOnline = message.notifications.toCreate filter { notf =>
       isUserOnline(message.siteId, notf.toUserId) &&
-        // The browser doesn't know what to do with review task notifications.
-        // Instead, send an updated num-pending-review-tasks counter?
+        // The browser doesn't want review task notifications; they're for sending emails only.
+        // UX COULD send an updated num-pending-review-tasks counter, though?
         !notf.tyype.isAboutReviewTask
     }
     notfsReceiverIsOnline foreach { notf =>

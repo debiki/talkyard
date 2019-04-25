@@ -125,7 +125,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.assertPageBodyMatches(topics.majasTopicTextEdited);
   });
 
-  it("Maja posts three replies to an old topic ...", () => {
+  it("Maja posts three replies, about ice cream, to an old topic ...", () => {
     majasBrowser.go('/');
     majasBrowser.forumTopicList.goToTopic(topics.oldTopicTitle);
   });
@@ -158,7 +158,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
         idAddress.id, owen.emailAddress, majasReplyThree, owensBrowser);
   });
 
-  it("... they all need to be approved by staff", () => {
+  it("All Maja's replies need to be approved by staff", () => {
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(2);
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(3);
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(4);

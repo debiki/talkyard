@@ -684,6 +684,7 @@ function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void) {
 
 
 export function logout(success: () => void) {
+  // SECURITY COULD delete cookies and typs.currentPageSessionId also if server offline?
   const currentUrlPath = location.pathname.toString();
   postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
     const mainWin = getMainWin();

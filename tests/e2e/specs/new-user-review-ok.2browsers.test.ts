@@ -121,9 +121,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     majasBrowser.complex.replyToOrigPost("One two three, done.");
   });
 
-  it("... Owen got no review task notfs for posts 2 and 3 — numFirstPostsToReview is only 2", () => {
-    // Only notifications about Maja's two first posts — reply no 2 and 3, are posts no 3 an 4
-    // respectively, and generate no notfs.
+  it("... Owen got no review task notfs for replies 2 and 3 — numFirstPostsToReview is only 2", () => {
+    // ... so only the two first posts by a new user (Maja) generate any notifications.
     server.waitUntilLastEmailMatches(
         idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
 
@@ -247,7 +246,7 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("And Owen gets no more review tasks, for Maja", () => {
+  it("And Owen gets no more review task emails, for Maja", () => {
     server.assertLastEmailMatches(
         idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
   });
@@ -261,16 +260,16 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     guestsBrowser.complex.signUpAsGuestViaTopbar("I-The-Guest");
   });
 
-  it("... and starts posting three replies to the orig post", () => {
+  it("... and posts a reply to the orig post", () => {
     guestsBrowser.complex.replyToOrigPost(guestsFirstReplyBecomesPostNr6);
   });
 
-  it("... Owen gets a review task notification for the guest's first reply", () => {
+  it("... Owen gets a review task notification for the guest's reply", () => {
     server.waitUntilLastEmailMatches(
         idAddress.id, owen.emailAddress, guestsFirstReplyBecomesPostNr6, owensBrowser);
   });
 
-  it("... continues posting three replies to the orig post", () => {
+  it("... the guest posts two more replies to the orig post", () => {
     guestsBrowser.complex.addProgressReply(guestsSecondReplyBecomesPostNr7);
     guestsBrowser.complex.addProgressReply("I'm a guest, my 3rd reply, post nr 8.");
     guestsBrowser.topic.assertPostNotPendingApproval(6);

@@ -208,12 +208,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val handlerMissing = ex.getMessage.contains(noStateHandlerMessage)
         val result =
           if (handlerMissing) {
+            p.Logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
             BadReqResult("TYEOAUTMTPLL", "\nYou need to login within 5 minutes, and " +
               "you cannot login in different browser tabs, at the same time. Error logging in.")
           }
           else {
             val errorCode = "TYE0AUUNKN"
-            play.api.Logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
+            p.Logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
             import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
             InternalErrorResult(errorCode, "Unknown login error", moreDetails =
               s"Error when signing in with $providerName: ${ex.getMessage}\n\n" +
@@ -453,13 +454,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         OkSafeJson(Json.obj(
           "userCreatedAndLoggedIn" -> JsTrue,
           "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined),
-          // In case we're in an embedded <iframe> login popup, where cookies are disabled,
+          // In case we're in a login popup for [an embedded <iframe> with cookies disabled],
           // send the session id in the response body, so the <iframe> can access it
           // and remember it for the current page load.
           "currentPageSessionId" -> JsString(currentPageSessionIdOrEmpty))) // [NOCOOKIES]
       }
       else {
-        // In case needs to do cookieless login:
+        // In case we need to do a cookieless login:
         // This request is a redirect from e.g. Gmail or Facebook login, so there's no
         // AvoidCookiesHeaderName header that tells us if we are in an iframe and maybe cannot
         // use cookies (because of e.g. Safari's "Intelligent Tracking Prevention").
@@ -734,12 +735,14 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case Some(xsrfCookie) =>
         // There might be many tokens, if, surprisingly, the user clicks Login in different
         // browser tabs in parallel. [PRLGIN]  ... Oh this doesn't work anyway, because
-        // Silhouette stores and overwrites an xsrf token in a single cookie.
+        // Silhouette stores and overwrites a Silhouette xsrf token in a single cookie.
+        // Keep this anyway — maybe Silhouette fixes that issue, and then this Talkyard code here
+        // already works properly.
         val tokens = xsrfCookie.value.split(Separator)
         val okToken = tokens.contains(xsrfToken)
         throwForbiddenIf(!okToken,
           "TyEOAUXSRFTKN", o"""Bad XSRF token, not included in the
-              $ReturnToThisSiteXsrfTokenCookieName cookie; it's value is: '${xsrfCookie.value}'""")
+              $ReturnToThisSiteXsrfTokenCookieName cookie""")
       case None =>
         throwForbidden("TyE0OAUXSRFCO", s"No $ReturnToThisSiteXsrfTokenCookieName xsrf cookie",
             o"""You need to login over at Google or Facebook, within $LoginTimeoutMins minutes,
@@ -961,12 +964,12 @@ class CustomGitHubProfileParser(
       }
       catch {
         case ex: Exception =>
-          play.api.Logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
+          p.Logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
           (None, None)
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        play.api.Logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
+        p.Logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
         Future.successful((None, None))
     })(executionContext)
   }
@@ -1106,12 +1109,12 @@ class LinkedInProfileParserApiV2(
       }
       catch {
         case ex: Exception =>
-          play.api.Logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
+          p.Logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
           None
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        play.api.Logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
+        p.Logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
         Future.successful(None)
     })(executionContext)
   }

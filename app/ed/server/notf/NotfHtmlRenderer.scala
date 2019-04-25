@@ -151,8 +151,6 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           else
             "It's currently hidden"
         val what = (post.nr == PageParts.BodyNr) ? "topic" | "reply"
-        // Could mention if it's currently visible or not, and if there're any review tasks
-        // about it — lookup tasks in review_task_queue3.
         (s"A new $what for you to review", ".",
           s"$itIsShownOrHidden. It was posted by")
     }

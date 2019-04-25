@@ -119,14 +119,6 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  /*
-  def loadNotificationsToReviewPost(postId: PostId): Seq[Notification] = {
-    loadNotificationsAboutPostImpl(postId,
-      minNotfType = NotificationType.NewPostWaitingForReviewStartsAt,
-      maxNotfType = Some(NotificationType.NewPostWaitingForReviewEndsAt))
-  }*/
-
-
   def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType): Seq[Notification] = {
     // E2e tested e.g. here: TyT4AWJL208R
     loadNotificationsAboutPostImpl(postId, notfType, None)

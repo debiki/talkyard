@@ -23,14 +23,12 @@ let idAddress: IdAddress;
 let siteId: any;
 
 const mariasCommentOnePageAaa = 'mariasCommentOnePageAaa';
-const mariasCommentTwoPageBbb = 'mariasCommentTwoPageBbb';
 const guestCommentOne = 'guestCommentOne';
 const guestCommentTwo = 'guestCommentTwo';
 
 const localHostname = 'comments-for-e2e-test-embdb3c-localhost-8080';
 const embeddingOrigin = 'http://e2e-test-embdb3c.localhost:8080';
 const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
-const pageBbbSlug = 'emb-cmts-b3c-bbb.html';
 
 
 describe("emb cmts no cookies   TyT295KBF6301", () => {
@@ -54,7 +52,7 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     siteId = idAddress.id;
   });
 
-  it("create two embedding pages b3c-aaa & b3c-bbb", () => {
+  it("create an embedding page b3c-aaa", () => {
     const dir = 'target';
     fs.writeFileSync(`${dir}/${pageAaaSlug}`, makeHtml('b3c-aaa', '#500'));
     function makeHtml(pageName: string, bgColor: string): string {

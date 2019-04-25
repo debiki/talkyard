@@ -142,10 +142,6 @@ export const TopBar = createComponent({
     login.openLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
-  onLogoutClick: function() {
-    debiki2.ReactActions.logout();
-  },
-
   showTools: function() {
     morebundle.openPageToolsDialog();
   },

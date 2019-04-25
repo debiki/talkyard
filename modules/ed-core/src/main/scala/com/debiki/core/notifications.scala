@@ -69,7 +69,7 @@ object NotificationType {
   // 202: edits requested
   // 203: post rejected
 
-  // 300-399_ Notifications about new posts (that are visible, not hidden waiting for review).
+  // 300-399 Notifications about new posts (that are visible, not hidden waiting for review).
   case object DirectReply extends NotificationType(301)
   case object Mention extends NotificationType(302)
   // + Quote
@@ -86,7 +86,10 @@ object NotificationType {
   // + TopicClosed
 
   // 700: about users?
-  // - New user joined (can then send a friendly Hello message)
+  // - New user joined (staff can then send a friendly Hello message)
+  // - User joined/left a group one manages
+  // - User got auto blocked, posted bad things
+  // - User got auto promoted to Trusted Member
   // - Suggestion to promote user to Core Member trust level?
   // - ... ?
 

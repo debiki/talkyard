@@ -392,11 +392,11 @@ const OpenAuthButton = createClassAndFactory({
     const url = origin() +
         '/-/login-openauth/' + props.provider.toLowerCase() +
         '?' + mayNotCreateUser +
-        // If we are already in a dedicated full screen login window, the browser should
+        // If we are already in a dedicated full screen login window, the server should
         // redirect us inside this window to where we want to go after login.
-        // If this is just a login popup win, the browser instead returns
-        // a page that runs some javascript that updates the window.opener, and
-        // then closes the popup. [49R6BRD2]
+        // If instead this is just a login popup win, the server wants to know about that —
+        // it'll then instead return a html page that runs some javascript that updates our
+        // window.opener, and then closes this popup. [49R6BRD2]
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
         'returnToUrl=' + (props.anyReturnToUrl || '');
     if (eds.isInLoginWindow) {

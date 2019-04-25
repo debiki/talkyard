@@ -117,6 +117,10 @@ describe("move posts  TyT03946HET3", () => {
   });
 
   it("Now the replies appear below OP reply 2 (instead of above)", () => {
+    owensBrowser.refresh(); // or sometimes this error:
+    // "stale element reference: element is not attached to the page document"
+    //  — React redraws the page in the middle of us checking all posts
+    // below? and, in doing so, invalidating elem refs?
     verifyAfterFirstMoveOrder();
   });
 

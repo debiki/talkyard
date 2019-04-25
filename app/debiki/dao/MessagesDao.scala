@@ -71,7 +71,7 @@ trait MessagesDao {
       }
 
       // This generates no review task — staff aren't asked to review and approve
-      // direct messages; they can be semi private.
+      // direct messages; such messages can be semi private.
       val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
         byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), tx = tx)
 

@@ -65,6 +65,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           "currentPageSessionId" -> JsString(
             if (maybeCannotUseCookies) sid.value else ""))) // [NOCOOKIES]
       case Some(url) =>
+        // (We aren't in an iframe — we don't login and *redirect* in iframes. So cookies
+        // are 1st party cookies and should work.)
         Redirect(url)
     }
 
@@ -222,6 +224,14 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           (None, Nil)
       }
 
+      // If anySid is absent because one needs to verify one's email before logging in,
+      // and this is for embedded blog comments and 3rd party cookies are blocked — then,
+      // to post a comment, currently one will need to login again, after having
+      // verified one's email.
+      UX; COULD // It'd be nice if the verify-email-addr link included a hash fragment
+      // with a one-time-secret that was read by Talkyards javascript on the embedding
+      // page, passed on to the iframe, which then sent it to the server once
+      // to get a session id — without logging in again.  [0439BAS2]
       val responseJson = Json.obj(
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
         "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined),

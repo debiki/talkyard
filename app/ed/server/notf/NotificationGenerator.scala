@@ -55,8 +55,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     require(page.id == newPost.pageId, "TyE74KEW9")
 
     if (anyReviewTask.isDefined) {
-      // Generate notifications to staff members, so they can approve it. Don't notify
-      // others until later, when the post has been approved and is visible.
+      // Generate notifications to staff members, so they can review this post. Don't
+      // notify others until later, when the post has been approved and is visible.
 
       val staffUsers: Seq[User] = tx.loadStaffUsers()
       for (staffUser <- staffUsers) {
@@ -75,13 +75,13 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val approverId = newPost.approvedById getOrElse {
       // This post hasn't yet been approved and isn't visible. Don't notify people
       // until later, when staff has reviewed it and made it visible.
-      // We've notified staff already, above, so they can ave a look.
+      // We've notified staff already, above, so they can take a look.
       dieIf(anyReviewTask.isEmpty, "TyE0REVTSK")  // [703RK2]
       return generatedNotifications
     }
 
     // Don't send emails twice to the staff — they've gotten a post-to-review notf already about
-    // this post (see just above). Do however create notfs — it's nice to have any notification
+    // this post (see above). Do however create notfs — it's nice to have any notification
     // about e.g. a @mention of oneself, in the mentions list, also if one approved
     // that post, oneself.
     val oldNotfsToStaff = tx.loadNotificationsAboutPost(newPost.id, NotificationType.NewPostReviewTask)

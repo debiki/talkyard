@@ -16,7 +16,6 @@ declare let browser: any;
 
 let everyonesBrowsers;
 let gmannesBrowser;
-let gmanne = {};
 
 let idAddress: IdAddress;
 let siteId: any;

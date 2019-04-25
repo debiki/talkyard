@@ -17,7 +17,6 @@ declare let browser: any;
 let everyonesBrowsers;
 let maria;
 let mariasBrowser;
-let guestsBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -37,7 +36,6 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     mariasBrowser = everyonesBrowsers;
-    guestsBrowser = everyonesBrowsers;
     maria = make.memberMaria();
   });
 
@@ -84,9 +82,11 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("... and currently needs to log in again", () => {
-    // COULD avoid this 2nd login, by incl one-time login secret in URL to the embedding page.
-    // In the #hash fragment then? Since won't be sent to the server, but instead passed
-    // to the iframe.
+    // COULD avoid this 2nd login, by incl a one-time login secret in URL to the embedding page.
+    // In the #hash fragment then? Since shouldn't be sent to the server powering the blog,
+    // but instead read by Talkyard's javascript and passed on to the iframe, which in turn
+    // sends it to the server, just once, and gets back a login session — and the server
+    // invalidates the secret.  [0439BAS2]
     mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 

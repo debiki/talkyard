@@ -322,7 +322,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // email thread. Include site name, so simpler for people to find the email.
     val subject: String =
       if (notfs.exists(_.tyype == NotificationType.NewPostReviewTask)) {
-        // This might also include auto approved replies, which don't need any review.
+        // This might also include auto approved posts, which don't need any review.
         // Use this title anyway.
         s"[$siteName] New posts waiting for you to review"
       }
