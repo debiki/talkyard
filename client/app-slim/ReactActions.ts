@@ -204,12 +204,15 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 }
 
 
-export function togglePageClosed() {
+export function togglePageClosed(onDone?: () => void) {
   Server.togglePageClosed((closedAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.TogglePageClosed,
       closedAtMs: closedAtMs
     });
+    if (onDone) {
+      onDone();
+    }
   });
 }
 

@@ -91,9 +91,16 @@ const ChangePageDialog = createComponent({
     let closeListItem;
     let reopenListItem;
 
-    function savePage(changes: EditPageRequestData) {
-      ReactActions.editTitleAndSettings(changes, null, null);
+    // Auto close the dialog after each change, otherwise people think
+    // it's broken and are unsure if the changes took effect:
+
+    const savePage = (changes: EditPageRequestData) => {
+      ReactActions.editTitleAndSettings(changes, this.close, null);
     }
+
+    const togglePageClosed = () => {
+      debiki2.ReactActions.togglePageClosed(this.close);
+    };
 
     if (state.isOpen) {
       const page: Page = state.page;
@@ -177,7 +184,7 @@ const ChangePageDialog = createComponent({
             r.div({ className: 's_ExplDrp_Ttl' }, t.Reopen + '?'),
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'icon-circle-empty e_ReopenPgB',
-                  onClick: debiki2.ReactActions.togglePageClosed },
+                  onClick: togglePageClosed },
                 t.Reopen)));
       }
       else {
@@ -199,7 +206,7 @@ const ChangePageDialog = createComponent({
             r.div({ className: 's_ExplDrp_Ttl' }, t.Close + '?'),
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'icon-block e_ClosePgB',
-                  onClick: debiki2.ReactActions.togglePageClosed },
+                  onClick: togglePageClosed },
                 t.Close),
               r.div({ className: 'esExplDrp_ActIt_Expl' }, closeItemText)));
       }

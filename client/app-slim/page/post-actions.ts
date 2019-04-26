@@ -741,7 +741,7 @@ const MoreDropdownModal = createComponent({
     // Only the orig post looks ok, therefore: `isPageBody &&`.
     if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat) {
       moreLinks.push(
-        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
+        r.a({ className: 'dw-a icon-users s_PA_WkB', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? t.pa.UnWikify : t.pa.Wikify));
     }
 
@@ -751,7 +751,7 @@ const MoreDropdownModal = createComponent({
     // with the embedding site's origin, and when pasting the link, that'll be the wrong origin.
     if (!isPageBody && isStaff(me) && !store.isEmbedded) {
       moreLinks.push(
-        r.a({ className: 'dw-a icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
+        r.a({ className: 'dw-a s_PA_MvB icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
           t.Move));
     }
 

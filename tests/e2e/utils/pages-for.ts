@@ -499,7 +499,7 @@ function pagesFor(browser) {
 
     waitAndClick: function(selector: string,
           opts: { maybeMoves?: boolean, clickFirst?: boolean, mayScroll?: boolean,
-            waitUntilNotOccluded?: boolean } = {}) {
+            waitUntilNotOccluded?: boolean, timeoutMs?: number } = {}) {
       api._waitAndClickImpl(selector, opts);
     },
 
@@ -517,7 +517,7 @@ function pagesFor(browser) {
     // Works with many browsers at the same time.
     _waitAndClickImpl: function(selector: string,
           opts: { clickFirst?: boolean, maybeMoves?: boolean, mayScroll?: boolean,
-            waitUntilNotOccluded?: boolean } = {}) {
+            waitUntilNotOccluded?: boolean, timeoutMs?: number } = {}) {
       selector = selector.trim(); // so selector[0] below, works
       api._waitForClickable(selector, opts);
       if (selector[0] !== '#' && !opts.clickFirst) {
@@ -2993,8 +2993,15 @@ function pagesFor(browser) {
       },
 
       openMoveDialogForPostNr: function(postNr: PostNr) {
-        api.topic.clickMoreForPostNr(postNr);
-        api.waitAndClick('.icon-paper-plane-empty'); // COULD add a better class name
+        // This always works, when the tests are visible and I look at them.
+        // But can block forever, in an invisible browser. Just repeat until works.
+        utils.tryManyTimes("Open move post dialog", 3, () => {
+          if (!browser.isVisible('.s_PA_MvB')) {
+            api.topic.clickMoreForPostNr(postNr);
+          }
+          api.waitAndClick('.s_PA_MvB', { timeoutMs: 500 });
+          api.waitForVisible('.s_MvPD', 500);
+        });
       },
 
       clickMoreVotesForPostNr: function(postNr: PostNr) {
@@ -3114,6 +3121,10 @@ function pagesFor(browser) {
         return browser.isVisible('.s_ChPgD');
       },
 
+      waitUntilChangePageDialogGone: () => {
+        api.waitUntilGone('.s_ChPgD');
+      },
+
       closeChangePageDialog: () => {
         // Don't: api.waitAndClick('.modal-backdrop');
         // That might block forever, waiting for the dialog that's in front of the backdrop
@@ -3129,15 +3140,15 @@ function pagesFor(browser) {
       closeTopic: function() {
         api.topic.openChangePageDialog();
         api.waitAndClick(api.topic._closeButtonSelector);
-        api.waitForVisible(api.topic._reopenButtonSelector);
-        api.topic.closeChangePageDialog();
+        api.topic.waitUntilChangePageDialogGone();
+        api.waitForVisible('.dw-p-ttl .icon-block');
       },
 
       reopenTopic: function() {
         api.topic.openChangePageDialog();
         api.waitAndClick(api.topic._reopenButtonSelector);
-        api.waitForVisible(api.topic._closeButtonSelector);
-        api.topic.closeChangePageDialog();
+        api.topic.waitUntilChangePageDialogGone();
+        api.waitUntilGone('.dw-p-ttl .icon-block');
       },
 
       canCloseOrReopen: function() {
@@ -3155,7 +3166,7 @@ function pagesFor(browser) {
       setDoingStatus: (newStatus: 'New' | 'Planned' | 'Started' | 'Done') => {
         api.topic.openChangePageDialog();
         api.waitAndClick('.e_PgSt-' + newStatus);
-        api.topic.closeChangePageDialog();
+        api.topic.waitUntilChangePageDialogGone();
       },
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',

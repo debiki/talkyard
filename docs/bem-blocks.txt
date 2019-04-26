@@ -115,11 +115,11 @@ esLD            = login/signup dialog
 s_MB            = topic metabar (just below the Orig Post, before all replies)
 
 s_MMB-IsImp     = my menu button, is-impersonating
-s_MM            = my menu (one's avatar + username, in the topbar)
+s_MM            = my menu (one's avatar + username, in the topbar)   RENAME s_MM to s_MyMenu ?
 
 s_MP            = meta message post, about the topic, e.g. "Nnn closed this topic 3 hours ago"
 
-s_MPD           = move post dialog
+s_MvPD          = move post dialog
 
 s_NP            = No page, i.e. login-&-create-something-here stuff  RENAME to s_NPg
 

@@ -24,7 +24,12 @@ import java.{util => ju}
 
 
 class NotfsAppPageNotfsSpec extends DaoAppSuite() {
-  var dao: SiteDao = _
+
+  lazy val (site, dao) = createSite("notfsapppagenotfsspec", SettingsToSave(
+    // Disable review task notfs — this test was written, before they were added. Better to
+    // create a separate test dedicated to various review task notfs settings combos?
+    numFirstPostsToReview = Some(Some(0)),
+    numFirstPostsToApprove = Some(Some(0))))
 
   var createForumResult: CreateForumResult = _
   var categoryId: CategoryId = _
@@ -66,7 +71,6 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     "prepare" in {
       globals.testSetTime(startTime)
       globals.systemDao.getOrCreateFirstSite()
-      dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("ntf_ownr", dao)
       ownerWho = Who(owner.id, browserIdData)
       createForumResult = dao.createForum("Forum", "/notf-test-frm/", isForEmbCmts = false, ownerWho).get

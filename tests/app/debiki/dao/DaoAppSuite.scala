@@ -120,14 +120,21 @@ class DaoAppSuite(
   }
 
 
-  def createSite(hostname: String): Site = {
+  def createSite(hostname: String, settings: SettingsToSave = SettingsToSave()): (Site, SiteDao) = {
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
-    globals.systemDao.createSite(
+    val site = globals.systemDao.createSite(
       pubId = s"pubid-$siteName", name = siteName, status = SiteStatus.Active, hostname = Some(hostname),
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
       creatorId = UnknownUserId, browserIdData,
       isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
       deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
+    val dao = globals.siteDao(site.id)
+    if (settings != SettingsToSave()) {
+      dao.readWriteTransaction { tx =>
+        tx.upsertSiteSettings(settings)
+      }
+    }
+    (site, dao)
   }
 
 

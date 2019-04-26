@@ -151,7 +151,8 @@ const MovePostsDialog = createComponent({
 
     return (
       utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
-          atRect: this.state.atRect, windowWidth: this.state.windowWidth },
+          atRect: this.state.atRect, windowWidth: this.state.windowWidth,
+          dialogClassName2: 's_MvPD'   },
         ModalHeader({}, ModalTitle({}, "Move post to where?")),
         ModalBody({}, content),
         ModalFooter({}, Button({ onClick: this.close }, "Cancel"))));

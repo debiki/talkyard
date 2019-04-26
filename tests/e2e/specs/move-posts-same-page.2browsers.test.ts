@@ -120,7 +120,9 @@ describe("move posts  TyT03946HET3", () => {
     owensBrowser.refresh(); // or sometimes this error:
     // "stale element reference: element is not attached to the page document"
     //  — React redraws the page in the middle of us checking all posts
-    // below? and, in doing so, invalidating elem refs?
+    // below? and, in doing so, invalidates elem refs?
+    // Wait until all posts have appeared:
+    owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 7);
     verifyAfterFirstMoveOrder();
   });
 
