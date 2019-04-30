@@ -294,8 +294,13 @@ visible-e2e-tests: selenium-server
 dev-images: minified-asset-bundles
 	sudo docker-compose build
 
+# Any old lingering prod build project, causes netw pool ip addr overlap error.
+_kill_old_prod_build_project:
+	s/d -pedt kill web app search cache rdb ;\
+	s/d -pedt down
 
 prod-images: \
+			_kill_old_prod_build_project \
 			invisible-selenium-server
 	@# This builds minified-asset-bundles.
 	s/build-prod-images.sh
