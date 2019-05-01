@@ -28,7 +28,6 @@ debiki.scriptLoad = {  // RENAME to tyd.whenStarted(...) ?
 };
 
 
-/* [sw]
 let resolveServiceWorkerPromise;
 let rejectServiceWorkerPromise;
 
@@ -38,9 +37,12 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
   rejectServiceWorkerPromise = reject;
 });
 
-if (!('serviceWorker' in navigator)) {
-  rejectServiceWorkerPromise();
-}  */
+let serviceWorkerIsSameVersion = false;
+
+debiki.nowServiceWorkerIsRightVersion = function() {
+  serviceWorkerIsSameVersion = true;
+};
+
 
 const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
@@ -208,7 +210,7 @@ function renderPageInBrowser() {
     (<any> window).isServerHtmlStale = true;
     (<any> window).htmlFromServer = htmlBefore;
     (<any> window).htmlAfterReact = htmlAfter;
-    console.log("*** React store checksum mismatch. *** Compare window.htmlFromServer " +
+    console.warn("*** React store checksum mismatch. *** Compare window.htmlFromServer " +
         "with htmlAfterReact to find out what the problem (if any) maybe is.")
   }
   // @endif
@@ -249,6 +251,8 @@ function renderPageInBrowser() {
 
   steps.push(function() {
     registerEventHandlersFireLoginOut();
+    registerServiceWorkerWaitForSameVersion();
+
     debiki2.utils.startDetectingMouse();
     debiki2.ReactActions.doUrlFragmentAction();
 
@@ -286,55 +290,115 @@ function renderPageInBrowser() {
     // Process any remaining time-ago:s, in case we didn't do all at once earlier.
     // Plus add collapse-thread buttons, for tall threads.
     debiki2.page.Hacks.processPosts();
-    _.each(scriptLoadDoneCallbacks, function(c) { c(); });
     debiki2.page.PostsReadTracker.start();
 
-    /* [sw] Wait with the service worker, in case is an underpowered mobile phone
-    // that's 100% busy downloading things and rendering the page — then don't want the service
-    // worker to start before it's probably done. Maybe in the future, it'll download
-    // and cache things it, too.
-    // Could maybeschedule this timeout, after a done-rendering & downloading event?
-    setTimeout(registerServiceWorker, 3500);
-    */
+    debiki.serviceWorkerPromise.then(function(sw) {
+      // The service worker is of the same version as this page js code,
+      // we checked that here [SWSAMEVER].
+      sw.postMessage(<StartMagicTimeSwMessage> {
+        doWhat: SwDo.StartMagicTime,
+        startTimeMs: eds.testNowMs,
+      });
+    }).finally(lastStep);
   });
 
-  /* [sw]
-  function registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) {
-      console.log("No service worker. [TyMSWABSENT]");
-      return;
-    }
-    var dotMin = '.min';
-    // @ifdef DEBUG
-    dotMin = '';
-    // @endif
-    navigator.serviceWorker.register(`/talkyard-service-worker${dotMin}.js`)
-        .then(function(registration) {
-          console.log("Registered service worker. [TyMSWREGOK]");
-          //registration.onupdatefound = tell the user to refresh the page
-          const intervalHandle = setInterval(function() {
-            // registration.active defined, doesn't mean we have a service worker.
-            //if (navigator.serviceWorker.controller) {
-            if (registration.active) {
-              // Now we can start using it. [6KAR3DJ9]
-              // However, navigator.serviceWorker.controller might still be absent (weird).
-              clearInterval(intervalHandle);
-              resolveServiceWorkerPromise(registration.active);
-            }
-          }, 250)
-        }).catch(function(error) {
-          console.log(`Error registering service worker: ${error} [TyESWREGOK]`);
-          setTimeout(rejectServiceWorkerPromise);
-        });
-  } */
+  function lastStep() {
+    debiki2.startMagicTime(eds.testNowMs);
+    _.each(scriptLoadDoneCallbacks, function(c) { c(); });
+    console.log("Page started. [TyMPGSTRTD]");
+  }
 
   function runNextStep() {
-    debiki2.dieIf(!steps.length, "steps is empty [DwE5KPEW2]");
     steps[0]();
     steps.shift();
     if (steps.length > 0)
-      setTimeout(runNextStep, 70);
+      setTimeout(runNextStep, 50);
   }
+}
+
+
+function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
+  if (!eds.useServiceWorker) {
+    if (eds.wantsServiceWorker) {
+      console.warn("Cannot use any service worker — they require HTTPS or http://localhost, " +
+          "not incognito mode. [TyMSWMISSNG]");
+    }
+    else {
+      console.log("Not using any service worker. [TyMSWSKIPD]");
+    }
+    rejectServiceWorkerPromise();
+    return;
+  }
+
+  var dotMin = '.min';
+  // @ifdef DEBUG
+  dotMin = '';
+  // @endif
+
+  navigator.serviceWorker.addEventListener('controllerchange', (controllerchangeevent) => {
+    console.log("Service worker controllerchange event [TyMSWCTRCHG]");
+  });
+
+  navigator.serviceWorker.register(`/talkyard-service-worker${dotMin}.js`)
+      .then(function(registration) {
+        console.log("Service worker registered. [TyMSWREGOK]");
+        registration.onupdatefound = function() {
+          console.log("New service worker available [TyMNWSWAVL]");
+        };
+
+        // Optionally, check for new app versions, each hour. This'll download
+        // any new service worker, and (not impl?) here in the page js we'll notice
+        // the service worker starts including a newer version number in its
+        // messages to us — then we can ask the user to reload the page. [NEWSWVER]
+        //
+        //setInterval(registration.update, 3600*1000);
+
+        // Wait until a service worker of the same version as this code, is
+        // active. Then, resolve the service worker promise:
+
+        let i = 0;
+        const intervalHandle = setInterval(function() {
+          // This is null until a service worker — possibly an old version we don't want
+          // to use — has been installed and activated and handles this browser tab.
+          const theServiceWorker = navigator.serviceWorker.controller;
+          if (!theServiceWorker)
+            return;
+
+          i += 1;
+
+          // There's *some* service worker for this browser tab, but is it the wrong version?
+          // When the page loads, that'll happen using the currently installed service
+          // worker, possibly an old version, could be a year old, if the user hasn't
+          // visited this site in a year.
+          // It's *error prone* to write code that works with arbitrarily old service workers?
+          // So if it's of a different (older) version, wait until the new one we
+          // started installing above, has claimed [SWCLMTBS] this browser tab. Let's
+          // poll-ask the service worker about its version, until it's the same version.
+          // (Or if newer version — should tell user to refresh page [NEWSWVER]. Not impl.)
+          if (i === 1)
+            console.log("Service worker active — but which version? [TyMSWACTV]");
+
+          if ((i % 20) === 4)
+            console.log("Waiting for service worker to maybe update ... [TyMWAITSWUPD]");
+
+          // Poll the service worker's version: it replies to this message, with
+          // its version number.
+          theServiceWorker.postMessage(<TellMeYourVersionSwMessage> {
+            doWhat: SwDo.TellMeYourVersion,
+          });
+
+          // This variable gets updated when the service worker replies to the messages
+          // we send just above. (Could use a MessageChannel instead? But this works fine.)
+          if (serviceWorkerIsSameVersion) {  // [SWSAMEVER]
+            console.log(`Service worker is same version: ${SwPageJsVersion}, fine [TyMEQSWVER]`);
+            clearInterval(intervalHandle);
+            resolveServiceWorkerPromise(theServiceWorker);
+          }
+        }, 50)
+      }).catch(function(error) {
+        console.warn(`Error registering service worker: ${error} [TyESWREGKO]`);
+        rejectServiceWorkerPromise();
+      });
 }
 
 

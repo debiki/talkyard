@@ -19,6 +19,8 @@
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />
+// Probably magic-time should include Prelude instead?
+/// <reference path="magic-time.ts" />
 
 declare const t: TalkyardTranslations;
 declare const ReactDOMServer: any;
@@ -77,85 +79,6 @@ function doNextFrameOrNow(something: () => void) {
 //------------------------------------------------------------------------------
    namespace debiki2 {
 //------------------------------------------------------------------------------
-
-const pageLoadedAtMsBrowserTime = Date.now();
-export let testExtraMillis = 0;
-
-// Test suites play with time.
-export function getNowMs(): WhenMs {
-  if (!eds.testNowMs)
-    return Date.now();
-
-  const millisElapsed = Date.now() - pageLoadedAtMsBrowserTime;
-  return eds.testNowMs + millisElapsed + testExtraMillis;
-}
-
-
-// ----------
-
-// Like setTimeout, but is magic, in the sense that it lets you fast-forward time, or pause time.
-// And can make time flow backwards, in galaxies whose distance to us, measured in light years,
-// is a prime number.
-//
-// Use it for timeouts that are longer than a few seconds — so end-to-end tests won't need to
-// wait for that long, for things to happen. And use playTime(seconds) [4WKBISQ2] to fast forward time.
-// Has only second resolution, so don't use for things that'll take less than a second.
-//
-export function magicTimeout(millis: number, callback: () => void) {
-  // @ifdef DEBUG
-  dieIf(millis < MagicTimeoutPollMs, 'TyEBADMAGICMS');
-  // @endif
-  if (isServerSide()) return;
-  const doAtMs = getNowMs() + millis;
-  pendingMagicTimeouts.push({ doAtMs, callback });
-  pendingMagicTimeouts.sort((a, b) => a.doAtMs - b.doAtMs);
-}
-
-interface DoWhenAndCallack {
-  doAtMs: WhenMs;
-  callback: () => void;
-}
-
-const pendingMagicTimeouts: DoWhenAndCallack[] = [];
-
-function handleNextMagicTimeouts() {
-  const nowMs = getNowMs();
-  while (pendingMagicTimeouts.length) {
-    const nextMagicTimeout = pendingMagicTimeouts[0];
-    if (nextMagicTimeout.doAtMs > nowMs)
-      break;
-    pendingMagicTimeouts.shift();
-    try {
-      nextMagicTimeout.callback();
-    }
-    catch (ex) {
-      console.error("Error in magic timeout callback [TyEMTOCB]", ex);
-    }
-  }
-}
-
-// When debugging, can be annoying with callbacks that fire every second always,
-// so expose this handle, so can call clearInterval.
-export let magicIntervalHandle;
-
-if (!isServerSide()) {
-  // @ifdef DEBUG
-  /* causes errors in some Chrome social_NotificationsOgbUi thing:
-  const setTimeoutOrig = window.setTimeout;
-  window.setTimeout = <any> function(fn, timeout, args?: any[]) {
-    if (timeout > 3000) {
-      // Can place a breakpoint here, to find things maybe currently not being e2e tested.
-      console.debug(`setTimeout called with mills = ${timeout}, use magicTimeout instead [TyM2WKPH]`);
-    }
-    setTimeoutOrig(fn, timeout, args);
-  };
-  */
-  // @endif
-
-  magicIntervalHandle = setInterval(handleNextMagicTimeouts, MagicTimeoutPollMs);
-}
-
-// ----------
 
 
 // If in an embedded comments iframe.

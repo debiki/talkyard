@@ -192,6 +192,9 @@ var eds = {
   siteId: @siteId,@* LATER remove in Prod mode [5UKFBQW2] *@
   currentVersion: '@tpi.currentVersionString',
   cachedVersion: '@tpi.cachedVersionString',
+  talkyardVersion: '@{ generatedcode.BuildInfo.dockerTag }',
+  wantsServiceWorker: @{ globals.config.useServiceWorker },
+  useServiceWorker: @{ globals.config.useServiceWorker } && ('serviceWorker' in navigator),
   secure: @{globals.secure},
   pageDataFromServer: _store,
   volatileDataFromServer: _volatileData,

@@ -1732,20 +1732,31 @@ interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
 
 
 const enum SwDo {  // Service worker, do: ....
-  SubscribeToEvents = 1,
+  TellMeYourVersion = 1,
+  SubscribeToEvents = 2,
+  StartMagicTime = 3,
+  PlayTime = 4,  // sync with e2e tests [4092RMT5]
 }
 
 //enum SwSays {  // Service worker says: ....
 //  GotNotfs = 1,
 //}
 
+
 interface MessageToServiceWorker {
-  doWhat: SwDo
+  doWhat: SwDo;
+  // So the service worker knows if this page's js is old, and perhaps not
+  // compatible with the service worker. Then the sw can reply "Please refresh the page".
+  // This can happen if you open a browser page, wait some days until
+  // a new service worker version is released, then open a 2nd page, which
+  // installs the new service worker — which claims the old tab.
+  pageJsVersion: string;
 }
 
-//interface MesageFromServiceWorker {
-//  saysWhat: SwSays,
-//}
+
+interface TellMeYourVersionSwMessage extends MessageToServiceWorker {
+  doWhat: SwDo.TellMeYourVersion;
+}
 
 
 interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
@@ -1754,6 +1765,30 @@ interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
   myId: UserId,
 }
 
+// For e2e tests.
+interface StartMagicTimeSwMessage extends MessageToServiceWorker {
+  doWhat: SwDo.StartMagicTime;
+  startTimeMs?: number;
+}
+
+// For e2e tests, keep in sync [4092RMT5].
+interface PlayTimeSwMessage extends MessageToServiceWorker {
+  doWhat: SwDo.PlayTime;
+  extraTimeMs: number;
+}
+
+
+const enum SwSays {  // The service worker says: ....
+  MyVersionIs = 1,
+}
+
+interface MessageFromServiceWorker {
+  saysWhat: SwSays
+  swJsVersion: string;
+}
+
+interface MyVersionIsMessageFromSw extends MessageFromServiceWorker {
+}
 
 
 // ----- External things whose @types won't work

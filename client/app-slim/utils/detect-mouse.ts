@@ -71,7 +71,7 @@ function onFirstTouch() {
 
 
 function onFirstMouseMove() {
-  console.log('Mouse detected. [DwM4KGEW0]');
+  console.log('Mouse detected. [TyMMOUSE]');
   isMouseDetected = true;
   document.documentElement.className += ' mouse';
   for (let i = 0; i < pendingCallbacks.length; ++i) {

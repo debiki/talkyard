@@ -1090,6 +1090,8 @@ class Config(conf: play.api.Configuration) {
   private def getBoolOrDefault[A](confName: String, default: Boolean): Boolean =
     conf.getOptional[Boolean](confName) getOrElse default
 
+  val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = false)
+
   val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
   val maxImportDumpBytes: Int = getIntOrDefault("talkyard.maxImportDumpBytes", default = 50*1000*1000)
 

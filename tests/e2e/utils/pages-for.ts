@@ -426,9 +426,16 @@ function pagesFor(browser) {
       browser.execute(function (seconds) {
         // Don't use  logMessage in here; this is in the browser (!).
         console.log("Playing time, seconds: " + seconds);
-        window['debiki2'].testExtraMillis = window['debiki2'].testExtraMillis + seconds * 1000;
-        console.log("Time now: " + window['debiki2'].testExtraMillis);
+        window['debiki2'].addTestExtraMillis(seconds * 1000);
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            doWhat: 4, // = SwDo.PlayTime [4092RMT5]
+            extraTimeMs: seconds * 1000
+          });
+        }
+        console.log("Time now: " + window['debiki2'].getNowMs());
       }, seconds);
+      logMessage(`... ${seconds} seconds pass by ...`);
     },
 
 

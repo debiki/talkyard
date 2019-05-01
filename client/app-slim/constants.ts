@@ -17,6 +17,17 @@
 
 /// <reference path="model.ts" />
 
+// If the service worker js and the page js, are the same version, they'll
+// accept each other's messages. Otherwise:
+// 1) If the page js is newer, it registers a new up-to-date service worker [REGSW],
+// and waits for it to claim the page. Thereafter the page and the service
+// worker happily talk with each other.
+// 2) If the sw js is newer, it'll reject messages from the page,
+// and tell the page to show a dialog "Please refresh. New version available".
+// This is a separate version number, so won't need to reinstall the service
+// worker, if it didn't change. Hmm?
+const SwPageJsVersion = '0.0.0012';
+
 const ReactStartedClass = 'dw-react-started';
 
 const EmptyPageId = '0';
@@ -61,8 +72,6 @@ const IgnoreThisError: ErrorPolicy = -112233;
 const ShowNoErrorDialog: ErrorPolicy = -112234;
 
 const UseBeacon = 'UseBeacon';
-
-const MagicTimeoutPollMs = 500;   // also in test [4GKB93RA]
 
 const SiteStatusStrings = [
   'NoAdmin',

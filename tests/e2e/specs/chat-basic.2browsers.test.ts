@@ -98,10 +98,10 @@ describe('chat', function() {
     console.log(`Maria's num long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
     console.log(`Owen's num long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
 
-    assert.ok(mariaReqNrAfter > mariaReqNrBefore,
+    assert.ok(mariaReqNrAfter > mariaReqNrBefore + 1,
         `Maria's browser: Long polling didn't happen? Req nr after: ${mariaReqNrAfter}, ` +
         `before: ${mariaReqNrBefore} [TyE4WKBZW1]`);
-    assert.ok(owenReqNrAfter > owenReqNrBefore,
+    assert.ok(owenReqNrAfter > owenReqNrBefore + 1,
         `Owen's browser: Long polling didn't happen? Req nr after: ${owenReqNrAfter}, ` +
         `before: ${owenReqNrBefore} [TyE4WKBZW2]`);
   });
