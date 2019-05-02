@@ -770,6 +770,7 @@ interface Page {
   pagePath: PagePath;
   pageLayout?: PageLayout;
   pageHtmlTagCssClasses?: string;
+  // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
   pageHtmlHeadDescription?: string;
   pinOrder?: number;

@@ -1323,6 +1323,12 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   }
   store.me.myCurrentPageData = myData || makeNoPageData();
 
+  // Update <title> tag. Also done from the title editor [30MRVH2].
+  const titlePost = newPage.postsByNr[TitleNr];
+  if (titlePost && titlePost.unsafeSource) {
+    // This gets interpreted as text, so ok to use the unsanitized source.
+    document.title = titlePost.unsafeSource;
+  }
 
   // Add users on the new page, to the global users-by-id map.
   _.each(newUsers, (user: BriefUser) => {

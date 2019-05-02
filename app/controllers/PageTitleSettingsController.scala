@@ -126,8 +126,11 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (anyFolder.exists(!PagePath.isOkayFolder(_)))
       throwBadReq("DwE4KEF23", "Bad folder, must be like: '/some/folder/'")
 
+    if (anySlug.exists(_.length > PagePath.MaxSlugLength))
+      throwBadReq("TyE5YWH3A", s"Bad page slug: Too long — max ${PagePath.MaxSlugLength} characters")
+
     if (anySlug.exists(!PagePath.isOkaySlug(_)))
-      throwBadReq("DwE6KEF21", "Bad slug, must be like: 'some-page-slug'")
+      throwBadReq("TyE6KEF2B", "Bad page slug, must be like: 'some-page-slug'")
 
     if (anyNewTitle.exists(_.length > MaxTitleLength))
       throwBadReq("DwE8KYU2", s"Title too long, max length is $MaxTitleLength")

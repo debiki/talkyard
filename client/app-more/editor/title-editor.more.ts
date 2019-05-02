@@ -26,6 +26,8 @@ const r = ReactDOMFactories;
 const SelectCategoryDropdown = editor.SelectCategoryDropdown;
 const ModalDropdownButton = utils.ModalDropdownButton;
 
+const MaxSlugLength = 100;  // sync with Scala [MXPGSLGLN]
+
 
 export const TitleEditor = createComponent({
   displayName: 'TitleEditor',
@@ -42,6 +44,7 @@ export const TitleEditor = createComponent({
   },
 
   componentDidMount: function() {
+    // COULD load title source text here instead of always including it server side [5S02MR4].
     Server.loadEditorAndMoreBundles(() => {
       if (this.isGone) return;
       this.setState({ editorScriptsLoaded: true });
@@ -74,7 +77,7 @@ export const TitleEditor = createComponent({
   onTitleChanged: function(event) {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var idWillBeInUrlPath = this.refs.showIdInput ?
+    const idWillBeInUrlPath = this.refs.showIdInput ?
         this.refs.showIdInput.getChecked() : page.pagePath.showId; // isIdShownInUrl();
     if (!idWillBeInUrlPath) {
       // Then don't automatically change the slug to match the title, because links are more fragile
@@ -82,9 +85,9 @@ export const TitleEditor = createComponent({
       // to be something like 'about' (for http://server/about) which we want to keep unchanged.
       return;
     }
-    var editedTitle = event.target.value;
-    var slugMatchingTitle = window['debikiSlugify'](editedTitle);
-    this.setState({ slug: slugMatchingTitle });
+    const editedTitle = event.target.value;
+    const slugMatchingTitle: string = window['debikiSlugify'](editedTitle);
+    this.setState({ slug: slugMatchingTitle.substr(0, MaxSlugLength) });
   },
 
   onCategoryChanged: function(categoryId: CategoryId) {
@@ -111,7 +114,11 @@ export const TitleEditor = createComponent({
     this.setState({ isSaving: true });
     var newTitle = this.refs.titleInput.getValue();
     var pageSettings = this.getSettings();
-    ReactActions.editTitleAndSettings({ ...pageSettings, newTitle }, this.props.closeEditor, () => {
+    ReactActions.editTitleAndSettings({ ...pageSettings, newTitle }, () => {
+      document.title = newTitle; // also done here: [30MRVH2]
+      if (this.isGone) return;
+      this.props.closeEditor();
+    }, () => {
       this.setState({ isSaving: false });
     });
   },
@@ -141,7 +148,6 @@ export const TitleEditor = createComponent({
     const settings: SettingsVisibleClientSide = store.settings;
     const pageRole: PageRole = page.pageRole;
     const titlePost: Post = page.postsByNr[TitleNr];
-    const titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     const isForum = pageRole === PageRole.Forum;
 
     if (!this.state.editorScriptsLoaded) {
@@ -151,16 +157,16 @@ export const TitleEditor = createComponent({
 
     let layoutAndSettings;
     if (this.state.showLayoutAndSettings) {
-      let title = r.span({},
+      const layoutBtnTitle = r.span({},
           topicListLayout_getName(this.state.pageLayout) + ' ',
           r.span({ className: 'caret' }));
-      let mkSetter = (layout) => (() => this.setState({ pageLayout: layout }));
+      const mkSetter = (layout) => (() => this.setState({ pageLayout: layout }));
       layoutAndSettings =
         r.div({},
           r.div({ className: 'form-horizontal', key: 'layout-settings-key' },
             Input({ type: 'custom', label: "Topic list layout",
                 labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
-              ModalDropdownButton({ title: title },
+              ModalDropdownButton({ title: layoutBtnTitle },
                 r.ul({ className: 'dropdown-menu' },
                   MenuItem({ onClick: mkSetter(TopicListLayout.TitleOnly) },
                     topicListLayout_getName(TopicListLayout.TitleOnly)),
@@ -172,17 +178,17 @@ export const TitleEditor = createComponent({
                     topicListLayout_getName(TopicListLayout.ThumbnailsBelowTitle)),
                   MenuItem({ onClick: mkSetter(TopicListLayout.NewsFeed) },
                     topicListLayout_getName(TopicListLayout.NewsFeed)))))));
-      }
+    }
 
     var complicatedStuff;
     if (this.state.showComplicated) {
-      var dashId = this.state.showId ? '-' + page.pageId : '';
-      var slashSlug =  this.state.slug;
+      const dashId = this.state.showId ? '-' + page.pageId : '';
+      let slashSlug =  this.state.slug;
       if (dashId && slashSlug) slashSlug = '/' + slashSlug;
-      var url = location.protocol + '//' + location.host +
+      const url = location.protocol + '//' + location.host +
           addFolderSlashes(this.state.folder) + dashId + slashSlug;
 
-      var anyMetaTitleAndDescription = pageRole !== PageRole.Forum ? null :
+      const anyMetaTitleAndDescription = pageRole !== PageRole.Forum ? null :
         r.div({ className: 'esTtlEdtr_metaTags' },
           Input({ label: "SEO title", type: 'text',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
@@ -233,14 +239,14 @@ export const TitleEditor = createComponent({
     // Once more stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
 
-    let layoutAndSettingsButton =
+    const layoutAndSettingsButton =
         this.state.showLayoutAndSettings || !me.isAdmin || pageRole !== PageRole.Forum
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
               "Layout and settings");
 
-    let existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
-    let advancedStuffButton = !existsAdvStuffToEdit ||
+    const existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
+    const advancedStuffButton = !existsAdvStuffToEdit ||
         this.state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
@@ -263,7 +269,7 @@ export const TitleEditor = createComponent({
           complicated: store.settings.showExperimental,
           className: 'esEdtr_titleEtc_pageRole' }));
 
-    var addBackForumIntroButton;
+    let addBackForumIntroButton;
     if (page.pageRole === PageRole.Forum) {
       var introPost = page.postsByNr[BodyNr];
       var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isBodyHidden;
@@ -285,7 +291,7 @@ export const TitleEditor = createComponent({
     return (
       r.div({ className: 'dw-p-ttl-e' },
         Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title', id: 'e2eTitleInput',
-            defaultValue: titleText, onChange: this.onTitleChanged }),
+            defaultValue: titlePost.unsafeSource, onChange: this.onTitleChanged }),
         r.div({ className: 'form-horizontal' }, selectCategoryInput),
         r.div({ className: 'form-horizontal' }, selectTopicType),
         addBackForumIntroButton,

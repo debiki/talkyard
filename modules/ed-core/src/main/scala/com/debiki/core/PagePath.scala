@@ -223,7 +223,7 @@ object PagePath {
   }
 
 
-  // Discourse allows at least 100 chars.
+  // Discourse allows at least 100 chars. Sync with Typescript [MXPGSLGLN].
   val MaxSlugLength = 100
 
   private val SlugRegex = """[a-z0-9][a-z0-9-]*[a-z0-9]""".r

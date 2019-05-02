@@ -347,15 +347,23 @@ export const Title = createComponent({
   displayName: 'Title',
 
   getInitialState: function() {
-    return { isEditing: false };
+    return { editingPageId: null };
   },
 
-  editTitle: function(event) {
-    this.setState({ isEditing: true });
+  editTitle: function() {
+    const store: Store = this.props.store;
+    this.setState({ editingPageId: store.currentPageId });
   },
 
   closeEditor: function() {
-    this.setState({ isEditing: false });
+    this.setState({ editingPageId: null });
+  },
+
+  componentDidUpdate: function() {
+    const store: Store = this.props.store;
+    if (this.state.editingPageId && this.state.editingPageId !== store.currentPageId) {
+      this.closeEditor();
+    }
   },
 
   render: function() {
@@ -403,7 +411,7 @@ export const Title = createComponent({
     }
 
     let contents;
-    if (this.state.isEditing) {
+    if (this.state.editingPageId) {
       const editorProps = _.clone(this.props);
       editorProps.closeEditor = this.closeEditor;
       contents = morebundle.TitleEditor(editorProps);

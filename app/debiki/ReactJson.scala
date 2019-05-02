@@ -1552,6 +1552,8 @@ object JsonMaker {
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
+
+    // For now. So can edit the title without extra loading the title post's source. [5S02MR4]
     if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
 
     JsObject(fields)
