@@ -102,14 +102,17 @@ describe("notfs-mark-seen-as-seen  TyT2AKBR0T", () => {
   });
 
   it("... replies to Michael's orig post", () => {
-    reginasBrowser.complex.replyToPostNr(c.FirstReplyNr, reginasReplyOne);
+    // This reply will appear in the Dicussion section, above Mallory's progress posts, ...
+    reginasBrowser.complex.replyToPostNr(c.BodyNr, reginasReplyOne);
   });
 
   it("... replies and mentions Maria", () => {
-    reginasBrowser.complex.replyToPostNr(c.FirstReplyNr, reginasReplyTwoMentionsMaria);
+    // ... and this reply too. So Maria sees them directly, later when she opens the page.
+    reginasBrowser.complex.replyToPostNr(c.BodyNr, reginasReplyTwoMentionsMaria);
   });
 
   it("... and replies to the progr post at the comment", () => {
+    // ... However this reply appears at the bottom — Maria needs to scroll down to see it.
     reginasBrowser.complex.replyToPostNr(lastProgrPostNr, reginasReplyThreeAtTheBottom);
   });
 
