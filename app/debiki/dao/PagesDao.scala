@@ -280,8 +280,8 @@ trait PagesDao {
               postRevNr = bodyPost.currentRevisionNr,
               pageId = pageMeta.pageId,
               pageType = pageMeta.pageType,
-              pagePublishedAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
-              textToSpamCheck = bodyHtmlSanitized,
+              pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
+              htmlToSpamCheck = bodyHtmlSanitized,
               language = settings.languageCode)),
             who = byWho,
             requestStuff = spamStuffPageUri))
@@ -562,6 +562,13 @@ trait PagesDao {
       else {
         reactivateReviewTasksForPageId(pageId, doingReviewTask, tx)
       } */
+
+      // If this page is getting deleted because it's spam, then, update any [UPDSPTSK]
+      // pending spam check task, so a training sample gets sent to any spam check services.
+      tx.loadOrigPost(pageMeta.pageId) foreach { origPost =>
+        val postAuthor = tx.loadTheParticipant(origPost.createdById)
+        updateSpamCheckTaskBecausePostDeleted(origPost, postAuthor, deleter = deleter, tx)
+      }
 
       tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
       tx.insertAuditLogEntry(auditLogEntry)

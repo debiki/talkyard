@@ -104,6 +104,8 @@ trait PostsDao {
         now: When, authorId: UserId, tx: SiteTransaction, skipNotifications: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
+    require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
+
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
     val page = PageDao(pageId, tx)
@@ -233,8 +235,8 @@ trait PostsDao {
             postRevNr = newPost.currentRevisionNr,
             pageId = newMeta.pageId,
             pageType = newMeta.pageType,
-            pagePublishedAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
-            textToSpamCheck = textAndHtml.safeHtml,  // RENAME to safeHtmlToSpamCheck
+            pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
+            htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
           who = byWho,
           requestStuff = spamRelReqStuff))
@@ -339,10 +341,11 @@ trait PostsDao {
       return (Nil, true)
     }
 
-    // If too many recent review tasks about maybe-spam are already pending,
+    // If too many recent review tasks about maybe-spam are already pending,  [PENDNSPM]
     // or if too many posts got rejected,
     // don't let this not-totally-trusted user post anything more, for now.
-    if (author.trustLevel.toInt < TrustLevel.TrustedMember.toInt) {
+    if (author.trustLevel.toInt < TrustLevel.TrustedMember.toInt &&
+        !(author.threatLevel.toInt <= ThreatLevel.SuperSafe.toInt)) {
       val numMaybeSpam = reviewTasksRecentFirst.count(t =>
         t.reasons.contains(ReviewReason.PostIsSpam) && t.decision.isEmpty)
 
@@ -373,8 +376,8 @@ trait PostsDao {
     }
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
-      lazy val numApproved = reviewTasksOldestFirst.count(_.decision.exists(_.isFine))
-      lazy val numLoaded = reviewTasksOldestFirst.length
+      val numApproved = reviewTasksOldestFirst.count(_.decision.exists(_.isFine))
+      val numLoaded = reviewTasksOldestFirst.length
 
       if (numApproved < numFirstToApprove) {
         // This user is still under evaluation (is s/he a spammer or not?).
@@ -489,6 +492,8 @@ trait PostsDao {
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
       spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
 
+    require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
+
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
     val authorAndLevels = loadUserAndLevels(who, tx)
@@ -552,8 +557,8 @@ trait PostsDao {
             postRevNr = newPost.currentRevisionNr,
             pageId = newMeta.pageId,
             pageType = newMeta.pageType,
-            pagePublishedAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
-            textToSpamCheck = textAndHtml.safeHtml,  // RENAME to safeHtmlToSpamCheck
+            pageAvailableAt = When.fromDate(newMeta.publishedAt getOrElse newMeta.createdAt),
+            htmlToSpamCheck = textAndHtml.safeHtml,
             language = settings.languageCode)),
           who = who,
           requestStuff = spamRelReqStuff))
@@ -602,14 +607,20 @@ trait PostsDao {
   }
 
 
+  /** If the same user types two chat messages quickly and in a row, the 2nd message gets
+    * appended to the post for the 1st message, and no 2nd post is created. This saves
+    * some db storage space & performance when rendering the chat, and
+    * is more nice, from a ux perspective? with one message instead of many small?
+    */
   private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
         spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
 
-    dieIf(lastPost.tyype != PostType.ChatMessage, "EsE6YUW2", o"""Post id ${lastPost.id}
-          is not a chat message""")
+    require(textAndHtml.safeHtml.trim.nonEmpty, "TyE8FPZE2P")
+    require(lastPost.tyype == PostType.ChatMessage, o"""Post id ${lastPost.id}
+          is not a chat message, it is: ${lastPost.tyype} [TyE6YUW28]""")
 
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
     require(lastPost.currentRevSourcePatch.isEmpty, "EsE7YGKU2")
@@ -633,6 +644,9 @@ trait PostsDao {
       approvedSource = Some(combinedTextAndHtml.text),
       approvedHtmlSanitized = Some(combinedTextAndHtml.safeHtml),
       approvedAt = Some(tx.now.toJavaDate),
+      // COULD: bump revision, so appended text gets spam checked [SPMCKCHTAPD] — however
+      // that'd currently mess up the assumptions that one only appends to rev nr = 1.
+      //currentRevisionNr = lastPost.currentRevisionNr + 1,
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
       currentRevLastEditedAt = Some(tx.now.toJavaDate),
       lastApprovedEditAt = Some(tx.now.toJavaDate),
@@ -650,8 +664,8 @@ trait PostsDao {
             postRevNr = editedPost.currentRevisionNr,
             pageId = pageMeta.pageId,
             pageType = pageMeta.pageType,
-            pagePublishedAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
-            textToSpamCheck = combinedTextAndHtml.safeHtml,
+            pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
+            htmlToSpamCheck = combinedTextAndHtml.safeHtml,
             language = settings.languageCode)),
           who = byWho,
           requestStuff = spamRelReqStuff))
@@ -920,8 +934,8 @@ trait PostsDao {
               postRevNr = editedPost.currentRevisionNr,
               pageId = page.meta.pageId,
               pageType = page.meta.pageType,
-              pagePublishedAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
-              textToSpamCheck = newTextAndHtml.safeHtml,
+              pageAvailableAt = When.fromDate(page.meta.publishedAt getOrElse page.meta.createdAt),
+              htmlToSpamCheck = newTextAndHtml.safeHtml,
               language = settings.languageCode)),
             who = who,
             requestStuff = spamRelReqStuff))
@@ -1351,27 +1365,12 @@ trait PostsDao {
 
     // If this post is getting deleted because it's spam, then, update any [UPDSPTSK]
     // pending spam check task, so we can send a training sample to any spam check services.
-    // [DELSPAM] Would be good with a separate Delete button, to indicate if one deletes
-    // this post because it's spam. So we know for sure.
-    // For now: If this post was detected as spam, and is getting deleted by staff,
-    // assume it's spam.
-    // (Tricky tricky: Looking at the post author won't work, for wiki posts, if
-    // a user other than the author, edited the wiki post and inserted spam.
-    // Then we should instead compare with the last editor (or all/recent editors).
-    // But how do we know if the one who inserted any spam, is the last editor,
-    // or the original author? Ignore this, for now. [WIKISPAM])
-    // [DETCTHR] If the post got deleted because it's spam, should eventually
-    // marke the user as a moderate threat.
-    val maybeDeletingSpam = user.isStaff && !postAuthor.isStaff && user.id != postAuthor.id
-    if (maybeDeletingSpam) {  //  && anyDeleteReason is DeleteReasons.IsSpam) {
-      val spamCheckTasksAnyRevNr = tx.loadPendingSpamCheckTasksForPost(postBefore.id)
-      val spamCheckTaskSameRevNr =
-        spamCheckTasksAnyRevNr.filter(
-          postBefore.approvedRevisionNr is _.postToSpamCheck.getOrDie("TyE529KMW").postRevNr)
-      spamCheckTaskSameRevNr foreach { task =>
-        val taskWithHumanResult = task.copy(humanSaysIsSpam = Some(true))
-        tx.updateSpamCheckTaskForPostWithResults(taskWithHumanResult)
-      }
+    // (If we're delting a whole sub tree of posts, let's only mark the first one as spam —
+    // the one explicitly getting deleted. Anything else would be too complicated.)
+    if (postsDeleted.exists(_.id == postBefore.id)) {
+      dieIf(!action.isInstanceOf[PostStatusAction.DeletePost] &&
+          action != PostStatusAction.DeleteTree, "TyE205MKSD")
+      updateSpamCheckTaskBecausePostDeleted(postBefore, postAuthor, deleter = user, tx)
     }
 
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)

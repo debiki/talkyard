@@ -1,3 +1,9 @@
+Don't use timestamp — Change all timestam to timestamptz, or maybe i64 integer? millis since 1970?
+Compatible with client side time repr.
+
+Don't use NOT IN
+https://wiki.postgresql.org/wiki/Don%27t_Do_This#Don.27t_use_NOT_IN
+
 delete: categories3:
   updatedAt — who cares
   staff_only — use page perms instead

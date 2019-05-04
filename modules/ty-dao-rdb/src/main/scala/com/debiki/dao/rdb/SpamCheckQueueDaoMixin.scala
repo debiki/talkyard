@@ -38,8 +38,8 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         post_rev_nr,
         page_id,
         page_type,
-        page_published_at,
-        text_to_spam_check,
+        page_available_at,
+        html_to_spam_check,
         language,
         author_id,
         browser_id_cookie,
@@ -53,7 +53,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         author_trust_level,
         author_url)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      -- probably not needed:
+      -- can happen if appending to same chat message? [SPMCKCHTAPD]
       on conflict (site_id, post_id, post_rev_nr) do nothing
       """
     val values = List(
@@ -64,9 +64,9 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
       spamCheckTask.postToSpamCheck.map(_.postRevNr).orNullInt,
       spamCheckTask.postToSpamCheck.map(_.pageId).orNullVarchar,
       spamCheckTask.postToSpamCheck.map(_.pageType.toInt).orNullInt,
-      spamCheckTask.postToSpamCheck.map(_.pagePublishedAt).orNullTimestamp,
+      spamCheckTask.postToSpamCheck.map(_.pageAvailableAt).orNullTimestamp,
       // There's a constraint, spamcheckqueue_c_texttospamcheck_len, 20200 chars. Maybe 15 000 enough?
-      spamCheckTask.postToSpamCheck.map(_.textToSpamCheck.take(15*1000)).trimOrNullVarchar,
+      spamCheckTask.postToSpamCheck.map(_.htmlToSpamCheck.take(15*1000)).trimOrNullVarchar,
       spamCheckTask.postToSpamCheck.map(_.language).orNullVarchar,
       spamCheckTask.who.id.asAnyRef,
       spamCheckTask.who.idCookie.trimOrNullVarchar,
@@ -84,13 +84,14 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
   }
 
 
-  def loadPendingSpamCheckTasksForPost(postId: PostId): immutable.Seq[SpamCheckTask] = {
+  def loadSpamCheckTasksWaitingForHumanLatestLast(postId: PostId): immutable.Seq[SpamCheckTask] = {
     val query = s"""
       select * from spam_check_queue3
       where
         site_id = ? and
         post_id = ? and
-        misclassifications_reported_at is null
+        human_says_is_spam is null
+      order by created_at
       """
     val values = List(siteId.asAnyRef, postId.asAnyRef)
     runQueryFindMany(query, values, RdbUtil.getSpamCheckTask)
@@ -115,9 +116,9 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         post_rev_nr = ?
       """
     val values = List(
-      spamCheckTask.resultAt.orNullTimestamp,
-      spamCheckTask.resultJson.orNullJson,
-      spamCheckTask.resultText.orNullVarchar,
+      spamCheckTask.resultsAt.orNullTimestamp,
+      spamCheckTask.resultsJson.orNullJson,
+      spamCheckTask.resultsText.orNullVarchar,
       spamCheckTask.numIsSpamResults.orNullInt,
       spamCheckTask.numNotSpamResults.orNullInt,
       spamCheckTask.humanSaysIsSpam.orNullBoolean,

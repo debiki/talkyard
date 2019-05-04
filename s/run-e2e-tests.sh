@@ -289,6 +289,7 @@ function runAllE2eTests {
   #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only new-member-allow-reject.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only spam-basic-local.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only spam-basic-local-ip-links-unblock.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only spam-basic-safe-browsing-api-blocked.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only spam-basic-akismet-blocked.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only spam-basic-akismet-false-positives.2browsers $args

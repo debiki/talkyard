@@ -19,7 +19,6 @@ package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.SpamCheckResult.SpamFound
 import debiki.{TextAndHtml, TextAndHtmlMaker}
 import debiki.EdHttp.throwForbidden
 import debiki.JsonUtils.readOptString
@@ -30,6 +29,7 @@ import play.api.libs.ws._
 import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.immutable
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.Future.successful
 import scala.util.Success
@@ -135,6 +135,7 @@ class SpamChecker(
   private val UserAgent = s"Talkyard/$talkyardVersion | Built-In/0.0.0"
   private val ContentType = "application/x-www-form-urlencoded"
 
+  // Should be a by-site-id map? [MANYAKISMET]
   private val akismetKeyIsValidPromise: Promise[Boolean] = Promise()
 
   private def encode(text: String) = jn.URLEncoder.encode(text, "UTF-8")
@@ -208,7 +209,7 @@ class SpamChecker(
 
     // apparently port number not okay, -> invalid, and http://localhost -> invalid, too.
     val postData = "key=" + encode(anyAkismetKey.get) +
-      "&blog=" + encode("http://localhost")
+      "&blog=" + encode("http://localhost")  // Not 'localhost'? should do once per site? [MANYAKISMET]
 
     // Without (some of) these headers, Akismet says the api key is invalid.
     val request: WSRequest =
@@ -216,6 +217,7 @@ class SpamChecker(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> postData.length.toString)
+        .withRequestTimeout(7.seconds)
 
     request.post(postData).map({ response: WSResponse =>
       val body = response.body
@@ -231,7 +233,7 @@ class SpamChecker(
       akismetKeyIsValidPromise.success(isValid)
     }).recover({
       case ex: Exception =>
-        p.Logger.warn("Error verifying Akismet API key [TyE2AKB5R0]", ex)
+        p.Logger.error("Error verifying Akismet API key [TyE2AKB5R0]", ex)
     })
   }
 
@@ -242,28 +244,28 @@ class SpamChecker(
     if (!spamChecksEnabled)
       return Future.successful(Nil)
 
-    val spamTestFutures: Seq[Future[SpamCheckResult]] =
+    val spamTestFutures: Vector[Future[SpamCheckResult]] =
       if (spamCheckTask.requestStuff.userName contains TalkyardSpamMagicText) {
-        Seq(Future.successful(SpamCheckResult.SpamFound(
+        Vector(Future.successful(SpamCheckResult.SpamFound(
           spamCheckerDomain = "localhost",
           humanReadableMessage =
             s"Name contains test spam text: '$TalkyardSpamMagicText' [EdM5KSWU7]")))
       }
       else if (spamCheckTask.requestStuff.userEmail.exists(_ contains TalkyardSpamMagicText)) {
-        Seq(Future.successful(SpamCheckResult.SpamFound(
+        Vector(Future.successful(SpamCheckResult.SpamFound(
           spamCheckerDomain = "localhost",
           humanReadableMessage =
             s"Email contains test spam text: '$TalkyardSpamMagicText' [EdM5KSWU7]")))
       }
       else {
-        val stopForumSpamFuture: Future[SpamCheckResult] =
-          if (!stopForumSpamEnabled) Future.successful(SpamCheckResult.NoSpam(StopForumSpamDomain))
+        val stopForumSpamFuture: Option[Future[SpamCheckResult]] =
+          if (!stopForumSpamEnabled) None
           else {
-            checkViaStopForumSpam(spamCheckTask)
+            Some(checkViaStopForumSpam(spamCheckTask))
           }
 
-        val akismetFuture: Future[SpamCheckResult] =
-          Future.successful(SpamCheckResult.NoSpam(AkismetDomain))
+        val akismetFuture: Option[Future[SpamCheckResult]] =
+          None
           /* Disable for now — I've read Akismet sometimes blocks too many people, during
           registration, and then there might be no way for them to tell the forum staff
           about this, since they couldn't join the forum (and that might be The way
@@ -276,36 +278,29 @@ class SpamChecker(
           have any sensible on-topic replies if staff says "who are you why did you join?").
           Also submit their About profile text to a spam check service at the
           same time. [PROFLSPM]
-          if (!akismetEnabled) Future.successful(SpamCheckResult.NoSpam(AkismetDomain))
+          if (!akismetEnabled) None
           else {
-            makeAkismetRequestBody(spamCheckTask) match {
-              case None =>
-                Future.successful(SpamCheckResult.NoSpam(AkismetDomain))
-              case Some(akismetBody) =>
-                checkViaAkismet(akismetBody)
-            }
+            makeAkismetRequestBody(spamCheckTask) map checkViaAkismet
           } */
 
-        Seq(stopForumSpamFuture, akismetFuture)
+        stopForumSpamFuture.toVector ++ akismetFuture.toVector
       }
 
     // Some dupl code (5HK0XC4W2)
-    Future.sequence(spamTestFutures) map { results: Seq[SpamCheckResult] =>
-      val spamResults: immutable.Seq[SpamCheckResult.SpamFound] =
-        results.filter(_.isInstanceOf[SpamCheckResult.SpamFound])
-          .map(_.asInstanceOf[SpamCheckResult.SpamFound]).toVector
+    Future.sequence(spamTestFutures) map { results: Vector[SpamCheckResult] =>
+      val spamFoundResults = results.collect { case r: SpamCheckResult.SpamFound => r }
 
-      SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
+      SHOULD // insert into audit log (or some spam log?), gather stats
 
-      if (spamResults.nonEmpty) {
+      if (spamFoundResults.nonEmpty) {
         p.Logger.info(i"""Registration spam detected: [EdM4FK0W2]
             | $spamCheckTask
             |""")
-        spamResults foreach { spamReason =>
+        spamFoundResults foreach { spamReason =>
           p.Logger.info(s"Spam reason [EdM5GKP0R]: $spamReason")
         }
       }
-      spamResults
+      results
     }
   }
 
@@ -318,10 +313,9 @@ class SpamChecker(
       return Future.successful(Nil)
     }
 
-    COULD_OPTIMIZE // ? reuse post.approvedHtmlSanitized, if based on currentSource
-    val textAndHtml = textAndHtmlMaker.forBodyOrComment(postToSpamCheck.textToSpamCheck)
+    val textAndHtml = textAndHtmlMaker.forHtmlAlready(postToSpamCheck.htmlToSpamCheck)
 
-    val spamTestFutures: immutable.Seq[Future[SpamCheckResult]] =
+    val spamTestFutures: Vector[Future[SpamCheckResult]] =
       if (textAndHtml.text contains TalkyardSpamMagicText) {
         Vector(Future.successful(SpamCheckResult.SpamFound(
           spamCheckerDomain = "localhost",
@@ -329,8 +323,8 @@ class SpamChecker(
             s"Text contains test spam text: '$TalkyardSpamMagicText' [EdM4DKF03]")))
       }
       else {
-        val urlsAndDomainsFutures: Vector[Future[SpamCheckResult]] =
-          checkUrlsViaGoogleSafeBrowsingApi(spamCheckTask, textAndHtml) +:
+        val urlsAndDomainsFutures =
+          checkUrlsViaGoogleSafeBrowsingApi(spamCheckTask, textAndHtml).toVector ++
             checkDomainBlockLists(spamCheckTask, textAndHtml)
 
         // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
@@ -342,46 +336,40 @@ class SpamChecker(
         val userIsNotNew = spamCheckTask.requestStuff.userTrustLevel.exists(
           _.toInt >= TrustLevel.FullMember.toInt)
 
-        val akismetFuture: Future[SpamCheckResult] =
+        val akismetFuture: Option[Future[SpamCheckResult]] =
           if (userIsNotNew || !akismetEnabled) {
-            Future.successful(SpamCheckResult.NoSpam(AkismetDomain))
+            None
           }
           else {
             originOfSiteId(spamCheckTask.siteId) match {
               case None =>
                 p.Logger.warn(s"Site not found: ${spamCheckTask.siteId} [TyE5KA2Y8]")
-                successful(SpamCheckResult.NoSpam(AkismetDomain))
+                None
               case Some(siteOrigin) =>
-                makeAkismetRequestBody(spamCheckTask) match {
-                  case None =>
-                    successful(SpamCheckResult.NoSpam(AkismetDomain))
-                  case Some(payload) =>
-                    checkViaAkismet(payload)
-                }
+                makeAkismetRequestBody(spamCheckTask) flatMap checkViaAkismet
             }
           }
 
-        urlsAndDomainsFutures :+ akismetFuture
+        urlsAndDomainsFutures ++ akismetFuture.toVector
       }
 
     // Some dupl code (5HK0XC4W2)
-    Future.sequence(spamTestFutures) map { results: immutable.Seq[SpamCheckResult] =>
-      val spamResults: immutable.Seq[SpamCheckResult.SpamFound] =
-        results.filter(_.isInstanceOf[SpamCheckResult.SpamFound])
-          .map(_.asInstanceOf[SpamCheckResult.SpamFound]).toVector
+    Future.sequence(spamTestFutures) map { results: Vector[SpamCheckResult] =>
+      val spamFoundResults = results.collect { case r: SpamCheckResult.SpamFound => r }
 
-      SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
+      SHOULD // insert into audit log (or some spam log?), gather stats
+      // Auto blocking happens here: [PENDNSPM].
 
-      if (spamResults.nonEmpty) {
+      if (spamFoundResults.nonEmpty) {
         p.Logger.debug(i"""Text spam detected [TyM8YKF0]:
             | - who: ${spamCheckTask.who}
-            | - post: ${postToSpamCheck}
+            | - post: $postToSpamCheck
             | - req: ${spamCheckTask.requestStuff}
             | - siteId: ${spamCheckTask.siteId}
             |--- text: --------------
             |${textAndHtml.text.trim}
             |--- spam reasons: ------
-            |${spamResults.map(_.toString).mkString("\n").trim}
+            |${spamFoundResults.map(_.toString).mkString("\n").trim}
             |------------------------
             | """)
       }
@@ -400,14 +388,16 @@ class SpamChecker(
       if (ipAddr.startsWith("[") || ipAddr.contains(":")) ""
       else  "&ip=" + encode(ipAddr)
     val encodedEmail = encode(spamCheckTask.requestStuff.userEmail getOrElse "")
-    wsClient.url(s"https://$StopForumSpamDomain/api?email=$encodedEmail$anyIpParam&f=json").get()
+    wsClient.url(s"https://$StopForumSpamDomain/api?email=$encodedEmail$anyIpParam&f=json")
+      .withRequestTimeout(7.seconds)
+      .get()
       .map(handleStopForumSpamResponse)
       .recover({
         case ex: Exception =>
           // COULD rate limit requests to stopforumspam, seems as if otherwise it rejects connections?
           // Got this:  java.net.ConnectException  when running lots of e2e tests at the same time.
           p.Logger.warn(s"Error querying stopforumspam.com [TyE2PWC7]", ex)
-          SpamCheckResult.NoSpam(StopForumSpamDomain)
+          SpamCheckResult.Error(StopForumSpamDomain)
       })
   }
 
@@ -423,7 +413,7 @@ class SpamChecker(
       catch {
         case ex: Exception =>
           p.Logger.warn(s"Bad JSON from api.stopforumspam.org: $prettyJson", ex)
-          return SpamCheckResult.NoSpam(StopForumSpamDomain)
+          return SpamCheckResult.Error(StopForumSpamDomain)
       }
 
     if ((json \ "success").asOpt[Int] isNot 1) {
@@ -466,10 +456,10 @@ class SpamChecker(
   val GoogleSafeBrowsingApiDomain = "safebrowsing.googleapis.com"
 
   private def checkUrlsViaGoogleSafeBrowsingApi(spamCheckTask: SpamCheckTask, textAndHtml: TextAndHtml)
-        : Future[SpamCheckResult] = {
+        : Option[Future[SpamCheckResult]] = {
     // API: https://developers.google.com/safe-browsing/lookup_guide#HTTPPOSTRequest
     val apiKey = anyGoogleApiKey getOrElse {
-      return Future.successful(SpamCheckResult.NoSpam(GoogleSafeBrowsingApiDomain))
+      return None
     }
 
     def whichTask = spamCheckTask.sitePostIdRevOrUser
@@ -480,7 +470,7 @@ class SpamChecker(
     val urlValidator = new UrlValidator(new RegexValidator(".*"), UrlValidator.ALLOW_2_SLASHES)
     val validUrls = textAndHtml.links.filter(urlValidator.isValid)
     if (validUrls.isEmpty)
-      return Future.successful(SpamCheckResult.NoSpam(GoogleSafeBrowsingApiDomain))
+      return None
 
     val safeBrowsingApiUrl =
       s"https://$GoogleSafeBrowsingApiDomain/v4/threatMatches:find?key=$apiKey"
@@ -529,6 +519,7 @@ class SpamChecker(
     val request: WSRequest =
       wsClient.url(safeBrowsingApiUrl).withHttpHeaders(
         play.api.http.HeaderNames.CONTENT_LENGTH -> requestBody.length.toString)
+        .withRequestTimeout(7.seconds)
 
     /*
     Google's response is like: (2019-04-15)
@@ -549,7 +540,7 @@ class SpamChecker(
         ...]
       }  */
 
-    request.post(requestBody).map({ response: WSResponse =>
+    Some(request.post(requestBody).map({ response: WSResponse =>
       try { response.status match {
         case 200 =>
           val json = Json.parse(response.body)
@@ -573,7 +564,7 @@ class SpamChecker(
                   case Some(threatObj) =>
                     readOptString(threatObj, "url") match {
                       case Some(badUrl) =>
-                        threatLines += s"$threatType for $platformType:\n    $badUrl"
+                        threatLines += s"$threatType for $platformType:  $badUrl"
                       case None =>
                         error = true
                         p.Logger.warn(
@@ -587,12 +578,12 @@ class SpamChecker(
                       s"\nReponse body:\n" + response.body)
                 }
               }
-              SpamCheckResult.SpamFound(
+              SpamCheckResult.SpamFound(  // also if error == true
                 staffMayUnhide = false,
                 spamCheckerDomain = GoogleSafeBrowsingApiDomain,
                 humanReadableMessage =
                   "Google Safe Browsing API v4 thinks these links are bad:\n\n" +
-                  threatLines)
+                  threatLines.mkString("\n"))
           }
         case weirdStatusCode =>
           // More status codes: https://developers.google.com/safe-browsing/v4/status-codes
@@ -600,7 +591,7 @@ class SpamChecker(
             s"$whichTask: Error querying Google Safe Browsing API, " +
               "status: $weirdStatusCode [TyEGSAFEAPISTS]" +
               "\nResponse body:\n" + response.body)
-          SpamCheckResult.NoSpam(GoogleSafeBrowsingApiDomain)
+          SpamCheckResult.Error(GoogleSafeBrowsingApiDomain)
           /*
           // Google says we shall include the "read more" and "provided by Google"
           // and "perhaps all this is wrong" texts below, see:
@@ -646,14 +637,14 @@ class SpamChecker(
       catch {
         case ex: Exception =>
           p.Logger.warn(s"$whichTask: Error handling Google Safe Browsing API response [TyE5KMRD025]", ex)
-          SpamCheckResult.NoSpam(GoogleSafeBrowsingApiDomain)
+          SpamCheckResult.Error(GoogleSafeBrowsingApiDomain)
       }
     })
       .recover({
         case ex: Exception =>
           p.Logger.warn(s"$whichTask: Error querying Google Safe Browsing API [TyE4DRRETV20]", ex)
-          SpamCheckResult.NoSpam(GoogleSafeBrowsingApiDomain)
-      })
+          SpamCheckResult.Error(GoogleSafeBrowsingApiDomain)
+      }))
   }
 
 
@@ -671,8 +662,7 @@ class SpamChecker(
 
     // Consider this spam if there's any link with a raw ip address.
     textAndHtml.linkIpAddresses.headOption foreach { ipAddress =>
-      return Vector(successful(SpamFound(
-        staffMayUnhide = true,
+      return Vector(successful(SpamCheckResult.SpamFound(
         spamCheckerDomain = "localhost",
         humanReadableMessage =
           o"""You have typed a link with this raw IP address: $ipAddress.
@@ -686,15 +676,17 @@ class SpamChecker(
     // Read here; http://www.surbl.org/guidelines  about how to extract the base (registered)
     // domain from an uri.
 
-    val spamhausFuture = queryDomainBlockList("dbl.spamhaus.org", "Spamhaus", domainsToCheck)
-    val uriblFuture = queryDomainBlockList("multi.uribl.com", "uribl.com", domainsToCheck)
-    Vector(spamhausFuture, uriblFuture)
+    if (domainsToCheck.isEmpty) Vector.empty
+    else {
+      val spamhausFuture = queryDomainBlockList("dbl.spamhaus.org", "Spamhaus", domainsToCheck)
+      val uriblFuture = queryDomainBlockList("multi.uribl.com", "uribl.com", domainsToCheck)
+      Vector(spamhausFuture, uriblFuture)
+    }
   }
 
 
   def queryDomainBlockList(blockListDomain: String, blockListName: String,
         domainsToCheck: Set[String]): Future[SpamCheckResult] = {
-    val VariousDomains = "various.domain.block.lists"
     // We ask the list if a domain is spam, by querying the DNS system: prefix the
     // suspect domain, reversed, to Spamhaus (e.g. 'dbl.spamhaus.org'), and if any ip
     // is returned, then the domain is in the block list.
@@ -717,8 +709,8 @@ class SpamChecker(
           //   http://vamsoft.com/forum/topic/205/surbl-uriblcom-blacklisting-almost-everything
         }
         else {
-          return successful(SpamFound(
-            spamCheckerDomain = VariousDomains,
+          return successful(SpamCheckResult.SpamFound(
+            spamCheckerDomain = blockListDomain,
             humanReadableMessage = o"""$blockListName thinks links to this domain are spam:
              '$domain'. And you have typed a link to that domain. You could 1) remove the link,
              or 2) change it to plain text and insert spaces in the domain name — then
@@ -731,21 +723,22 @@ class SpamChecker(
         // Fine, not in the block list.
       }
     }
-    successful(SpamCheckResult.NoSpam(VariousDomains))
+    successful(SpamCheckResult.NoSpam(blockListDomain))
   }
 
 
-  def checkViaAkismet(requestBody: String): Future[SpamCheckResult] = {
-    val promise = Promise[(Boolean, Boolean)]()
+  def checkViaAkismet(requestBody: String): Option[Future[SpamCheckResult]] = {
+    val promise = Promise[(Boolean, Boolean)]()  // (is-spam?, Akismet-is-certain?)
     akismetKeyIsValidPromise.future onComplete {
       case Success(true) =>
         sendAkismetCheckSpamRequest(apiKey = anyAkismetKey.get, payload = requestBody, promise)
       case _ =>
-        // Skip the spam check. We've logged an error already about the invalid key.
-        promise.success((false, false))
+        // Cannot do spam check — API key broken / missing.
+        return None
     }
-    promise.future.map({ case (isSpam, akismetIsCertain) =>
-      if (!isSpam) SpamCheckResult.NoSpam(AkismetDomain)
+    Some(promise.future.map({ case (isSpam, akismetIsCertain) =>
+      if (!isSpam)
+        SpamCheckResult.NoSpam(AkismetDomain)
       else
         SpamCheckResult.SpamFound(
           spamCheckerDomain = AkismetDomain,
@@ -756,8 +749,8 @@ class SpamChecker(
     .recover({
       case ex: Exception =>
         p.Logger.warn(s"Error querying $AkismetDomain [TyE8KWBG2], requestBody:\n$requestBody", ex)
-        SpamCheckResult.NoSpam(AkismetDomain)
-    })
+        SpamCheckResult.Error(AkismetDomain)
+    }))
   }
 
 
@@ -770,12 +763,14 @@ class SpamChecker(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> payload.length.toString)
+        .withRequestTimeout(7.seconds)
     request.post(payload)
   }
 
 
   private def sendAkismetCheckSpamRequest(apiKey: String, payload: String,
         promise: Promise[(Boolean, Boolean)]) {
+    p.Logger.debug("Sending Akismet spam check request...")  // replace with tracing instead [TRACING]
     sendAkismetRequest(apiKey, what = "comment-check", payload = payload).map({ response: WSResponse =>
       val body = response.body
       body.trim match {
@@ -798,17 +793,12 @@ class SpamChecker(
     .recover({
       case ex: Exception =>
         p.Logger.warn(s"Error querying $AkismetDomain [TyE2AKBP0], payload:\n$payload", ex)
-        false
+        promise.failure(ex)
     })
   }
 
 
-  private def makeAkismetRequestBody(spamCheckTask: SpamCheckTask) /*siteOrigin: String,
-      browserIdData: BrowserIdData,
-      spamRelatedStuff: SpamRelReqStuff,
-      pageId: Option[PageId] = None, text: Option[String] = None, user: Option[Participant],
-      anyName: Option[String] = None, anyEmail: Option[String] = None)*/: Option[String] = {
-
+  private def makeAkismetRequestBody(spamCheckTask: SpamCheckTask): Option[String] = {
     val akismetContentType =
       spamCheckTask.postToSpamCheck match {
         case None => AkismetSpamType.Signup
@@ -824,14 +814,6 @@ class SpamChecker(
           else AkismetSpamType.Reply
       }
 
-    // Either 1) the user is known, or 2) we're creating a new site or user — then
-    // only name & email known.
-    //dieIf(anyEmail.isDefined != anyName.isDefined, "EdE6GTB20")
-    //dieIf(anyEmail.isDefined == user.isDefined, "EdE2PW2U4")
-    dieIf(anyAkismetKey.isEmpty, "Akismet API key is empty [TyM4GLU8]")
-    //def theUser = user getOrDie "TyE5PD72RA"
-
-
     val body = new StringBuilder()
     val siteOrigin = originOfSiteId(spamCheckTask.siteId) getOrElse {
       p.Logger.warn(s"Cannot do spam check, site ${spamCheckTask.siteId} not found [Ty6MBR25]")
@@ -839,6 +821,8 @@ class SpamChecker(
     }
 
     // Documentation: https://akismet.com/development/api/#comment-check
+    // Akismet want all fields to be the same, later when reporting classification mistakes, [AKISMET]
+    // as when constructing the initial comment-check request.
 
     // (required) The front page or home URL of the instance making the request.
     // For a blog or wiki this would be the front page. Note: Must be
@@ -870,7 +854,7 @@ class SpamChecker(
     // It's important to send an appropriate value, and this is further explained here.
     body.append("&comment_type=" + akismetContentType)
 
-    val anyTextToCheck = spamCheckTask.postToSpamCheck.map(_.textToSpamCheck)
+    val anyTextToCheck = spamCheckTask.postToSpamCheck.map(_.htmlToSpamCheck)
 
     // Name submitted with the comment.
     val authorName =
@@ -929,7 +913,7 @@ class SpamChecker(
   }
 
 
-  /** Returns num false positives and false negatives reported.
+  /** Returns (num false positives, num false negatives) reported.
     */
   def reportClassificationMistake(spamCheckTask: SpamCheckTask): Future[(Int, Int)] = {
     val promise = Promise[(Int, Int)]()
@@ -938,19 +922,25 @@ class SpamChecker(
       return promise.future
     }
 
-    val resultJson = spamCheckTask.resultJson.getOrDie("TyE306SK2")
+    val humanSaysIsSpam = spamCheckTask.humanSaysIsSpam getOrDie "TyE205MKAS2"
+    val resultJson = spamCheckTask.resultsJson getOrDie "TyE306SK2"
+
     val akismetResultJson = (resultJson \ AkismetDomain).asOpt[JsObject]
-    val akismetSaysIsSpam = akismetResultJson map { json =>
-      (json \ "spamFound").asOpt[Boolean] getOrElse {  // written here [02MRHL2]
-        promise.success((0, 0)); die("TyE58MK3RT2", "spamFound field missing")}
+    val akismetSaysIsSpam: Option[Boolean] = akismetResultJson map { json =>
+      (json \ "isSpam").asOpt[Boolean] getOrElse {  // written here [02MRHL2]
+        p.Logger.warn("isSpam field missing [TyE58MK3RT2]")
+        promise.success((0, 0))
+        return promise.future
+      }
     }
 
     val siteId = spamCheckTask.siteId
     val postId = spamCheckTask.postToSpamCheck.map(_.postId) getOrElse NoPostId
 
-    if (spamCheckTask.humanSaysIsSpam == akismetSaysIsSpam) {
-      // Some spam check service other than Akismet misclassified this, and it doesn't
-      // accept feedback about mistakes. Nothing to do.
+    if (akismetResultJson.isEmpty || akismetSaysIsSpam.is(humanSaysIsSpam)) {
+      // We didn't use Akismet, or the human reviewer agrees with Akismet's result.
+      // Meaning, a spam check service other than Akismet misclassified this — and
+      // it doesn't accept feedback about mistakes (only Akismet does). Nothing to do.
       promise.success((0, 0))
     }
     else {
@@ -965,9 +955,11 @@ class SpamChecker(
           val doWhat = spamCheckTask.humanSaysIsSpam.is(true) ? "submit-spam" | "submit-ham"
           makeAkismetRequestBody(spamCheckTask) match {
             case None =>
+              // Weird. Couldn't construct request. Warning logged already.
               promise.success((0, 0))
-            case Some(requsetBody) =>
-              sendAkismetRequest(anyAkismetKey.get, what = doWhat, payload = requsetBody).map({
+            case Some(requestBody) =>
+              p.Logger.debug(s"Sending Akismet correction to: $doWhat")  // replace w tracing [TRACING]
+              sendAkismetRequest(anyAkismetKey.get, what = doWhat, payload = requestBody).map({
                     response: WSResponse =>
                 val responseBody = response.body
                 if (response.status == 200) {
@@ -976,13 +968,14 @@ class SpamChecker(
                   }
                   p.Logger.debug(s"s$siteId: Reported $doWhat to Akismet, post id $postId [TyM602MBWT]")
                   promise.success(
-                    // (a, b) and a = false positive, i.e. Akismet thought "It's spam", when it wasn't.
+                    // Return (a, b) where a = num false positives, i.e. Akismet thought
+                    // "It's spam", when it wasn't, and b = num false negatives.
                     akismetSaysIsSpam.is(true) ? (1, 0) | (0, 1))
                 }
                 else {
                   p.Logger.warn("Non-200 response from Akismet to misclassification request [TyE5M70J2],"
                     + s"\nstatus: ${response.status}"
-                    + s"\nrequest body:\n$requsetBody"
+                    + s"\nrequest body:\n$requestBody"
                     + s"\nresponse body:\n$responseBody")
                   promise.success((0, 0))
                 }
@@ -990,19 +983,20 @@ class SpamChecker(
                 .recover({
                   case ex: Exception =>
                     p.Logger.warn("Error sending misclassification request to Akismet [TyE702MR84TD], " +
-                      s"requestBody:\n$requsetBody", ex)
+                      s"requestBody:\n$requestBody", ex)
                     promise.success((0, 0))
                 })
           }
         case _ =>
+          // No Akismet API key, but still we have a result from Akismet. Could be that the
+          // key just expired? In between the comment-check and the submit-spam/ham requests.
+          // We have logged any [API key is invalid] log message already.
           promise.success((0, 0))
       }
     }
 
     promise.future
   }
-
-
 
 }
 

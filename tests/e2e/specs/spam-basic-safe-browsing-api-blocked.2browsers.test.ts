@@ -45,7 +45,7 @@ describe("spam test, Google Safe Browsing API  TyTSPSAFEBRAPI", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('basicspam', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('safebrapi', { title: forumTitle });
     site.settings.numFirstPostsToReview = 9;
     site.settings.numFirstPostsToAllow = 9;
     site.members.push(mallory);
@@ -84,13 +84,20 @@ describe("spam test, Google Safe Browsing API  TyTSPSAFEBRAPI", () => {
     mallorysBrowser.topic.refreshUntilBodyHidden(c.FirstReplyNr + 3);
   });
 
-  it("The other two replies got hidden, too", () => {
+  it("... No post disappeared", () => {
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 0);
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 2);
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 3);
+  });
+
+  it("... The other two replies got hidden, too", () => {
     assert(mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 1));
     assert(mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 2));
     assert(mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 3));
   });
 
-  it("But not the non-spam reply", () => {
+  it("... But not the non-spam reply", () => {
     assert(!mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 0));
   });
 

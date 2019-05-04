@@ -15,7 +15,9 @@ Service worker. Server sent events.
 [spam]
 When deleting a post, ask if it's because it's spam. If yes, and the post
 hasn't been spam checked — send it to the spam check services so they'll
-get more training data. [DELSPAM]
+get more training data. [DELSPAM] (Currently, only if the post has already
+been spam checked, will it get sent back to the spam check service,
+if there was a classification error.)
 
 If many posts by a new user are classified as spam. Or if staff deletes most of hens
 posts, during review. Then mark user as a moderate threat. [DETCTTHRT]

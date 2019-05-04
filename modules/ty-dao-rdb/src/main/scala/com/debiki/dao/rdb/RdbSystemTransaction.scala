@@ -762,7 +762,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         forgotten = 1 and
         done_at < ?
       """
-    runUpdate(deleteMoreStatement, List(now.minusYears(SomeMonthsAgo).asTimestamp))
+    runUpdate(deleteMoreStatement, List(now.minusYears(SomeYearsAgo).asTimestamp))
   }
 
 
@@ -776,7 +776,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         -- index: scq_actionat__i
         created_at < ?
       """
-    runUpdate(deleteMoreStatement, List(now.minusYears(SomeYearsAgo).asTimestamp))
+    runUpdate(deleteMoreStatement, List(now.minusMonths(SomeMonthsAgo).asTimestamp))
   }
 
 

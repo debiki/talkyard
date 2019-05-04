@@ -123,7 +123,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def getE2eTestCounters: Action[Unit] = GetAction { _ =>
-    throwForbiddenIf(globals.isProd, "TyE0MAGIC", "Show me magic and I'll give you the numbers")
+    throwForbiddenIf(globals.isProd, "TyE0MAGIC", "Show me magic and you'll get the numbers")
     val responseJson = Json.obj(
       "numReportedSpamFalsePositives" -> globals.e2eTestCounters.numReportedSpamFalsePositives,
       "numReportedSpamFalseNegatives" -> globals.e2eTestCounters.numReportedSpamFalseNegatives,

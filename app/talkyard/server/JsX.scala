@@ -482,7 +482,7 @@ object JsX {
   def JsSpamCheckResult(spamCheckResult: SpamCheckResult): JsObject = {
     var result = Json.obj(
       "spamCheckerDomain" -> spamCheckResult.spamCheckerDomain,
-      "spamFound" -> spamCheckResult.spamFound,  // read here: [02MRHL2]
+      "isSpam" -> spamCheckResult.isSpam,  // read here: [02MRHL2]
     )
     spamCheckResult match {
       case spamFoundResult: SpamCheckResult.SpamFound =>

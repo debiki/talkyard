@@ -478,12 +478,13 @@ object RdbUtil {
         postNr = rs.getInt("post_nr"),
         postRevNr = rs.getInt("post_rev_nr"),
         pageId = rs.getString("page_id"),
-        pageType = PageType.fromInt(rs.getInt("page_type")).getOrDie("TyE049RKT2"),
-        pagePublishedAt = getWhen(rs, "page_published_at"),
-        textToSpamCheck = getString(rs, "text_to_spam_check"),
+        pageType = PageType.fromInt(rs.getInt("page_type")).getOrElse(PageType.Discussion),
+        pageAvailableAt = getWhen(rs, "page_available_at"),
+        htmlToSpamCheck = getString(rs, "html_to_spam_check"),
         language = getString(rs, "language"))
     }
 
+    // Dupl data, can be derived from the other fields. Included for simpler queries.
     val anyIsMisclassified = getOptBool(rs, "is_misclassified")
 
     val result = SpamCheckTask(
@@ -497,16 +498,16 @@ object RdbUtil {
           idCookie = getOptString(rs, "browser_id_cookie"),
           fingerprint = rs.getInt("browser_fingerprint"))),
       requestStuff = SpamRelReqStuff(
-        userAgent = getOptionalStringNotEmpty(rs, "req_user_agent"),
-        referer = getOptionalStringNotEmpty(rs, "req_referer"),
+        userAgent = getOptString(rs, "req_user_agent"),
+        referer = getOptString(rs, "req_referer"),
         uri = rs.getString("req_uri"),
         userName = getOptString(rs, "author_name"),
         userEmail = getOptString(rs, "author_email_addr"),
         userUrl = getOptString(rs, "author_url"),
         userTrustLevel = getOptInt(rs, "author_trust_level").flatMap(TrustLevel.fromInt)),
-      resultAt = getOptWhen(rs, "results_at"),
-      resultJson = getOptJsObject(rs, "results_json"),
-      resultText = getOptString(rs, "results_text"),
+      resultsAt = getOptWhen(rs, "results_at"),
+      resultsJson = getOptJsObject(rs, "results_json"),
+      resultsText = getOptString(rs, "results_text"),
       numIsSpamResults = getOptInt(rs, "num_is_spam_results"),
       numNotSpamResults = getOptInt(rs, "num_not_spam_results"),
       humanSaysIsSpam = getOptBool(rs, "human_says_is_spam"),

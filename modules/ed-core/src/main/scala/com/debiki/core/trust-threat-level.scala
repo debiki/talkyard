@@ -95,9 +95,9 @@ object ThreatLevel {
     * At most N comments (say, 5) may be pending review (if more, additional post
     * are rejected) — not impl though.
     *
-    * [DETCTHR] Ought to automatically find these threat users: those whose posts
+    * Ought to automatically find these threat users: those whose posts
     * get classified as spam, by spam check services. And/or whose posts the
-    * staff rejects and deletes.
+    * staff rejects and deletes. Partly impl, see [DETCTHR].
     */
   case object ModerateThreat extends ThreatLevel(5)
 

@@ -45,6 +45,8 @@ package object core {
   type PostNr = Int
   val NoPostNr: PostNr = -1  // COULD change to 0, and set TitleNr = -1  [4WKBA20]
 
+  type PostRevNr = Int
+
   type PageId = String
   type AltPageId = String
 
@@ -479,7 +481,12 @@ package object core {
     userName: Option[String],
     userEmail: Option[String],
     userUrl: Option[String],
-    userTrustLevel: Option[TrustLevel])
+    userTrustLevel: Option[TrustLevel]) {
+
+    require(!userName.exists(_.trim.isEmpty), "TyE430MKQ24")
+    require(!userEmail.exists(_.trim.isEmpty), "TyE430MKQ25")
+    require(!userUrl.exists(_.trim.isEmpty), "TyE430MKQ26")
+  }
 
   case class PostToSpamCheck(
     postId: PostId,
@@ -487,9 +494,13 @@ package object core {
     postRevNr: Int,
     pageId: PageId,
     pageType: PageType,
-    pagePublishedAt: When,
-    textToSpamCheck: String,
-    language: String)
+    pageAvailableAt: When,  // publication date, or if not published, the creation date
+    htmlToSpamCheck: String,
+    language: String) {
+
+    require(language.trim.nonEmpty, "TyE402MR4Q")
+    require(htmlToSpamCheck.trim.nonEmpty, "TyE402MR45")
+  }
 
 
   /** Primary key = site id, post id and also pots revision nr, so that if
@@ -506,10 +517,16 @@ package object core {
     * @postedToPageId — good to remember, if the post gets moved to a different page, later.
     * @pagePublishedAt — if the page got unpublished and re published, good to remember
     *   the publication date, as it was, when the maybe-spam-post was posted.
-    * @resultText — human readable spam check results description.
+    * @resultsAt — when all spam check services have replied, and we're saving their results.
+    * @resultsJson — there's a field and a results object, for each spam check service we queried.
+    *   The field name is the domain name for the spam check service (e.g. akismet.com).
+    *   Alternatively, could construct new database tables for this, but json = simpler,
+    *   and seems rather uninteresting to reference the results via foreign keys or anything.
+    * @resultsText — human readable spam check results description.
+    * @humanSaysIsSpam — updated once staff has reviewed.
     * @misclassificationsReportedAt — if the spam check service thought something was spam
-    *   when it wasn't, or vice versa, this is when this misclassification was reported
-    *   to the spam check service, so it can learn and improve.
+    *   when it wasn't, or vice versa, this is the time when this misclassification was
+    *   reported to the spam check service, so it can learn and improve.
     */
   case class SpamCheckTask(
     createdAt: When,
@@ -517,21 +534,21 @@ package object core {
     postToSpamCheck: Option[PostToSpamCheck],
     who: Who,
     requestStuff: SpamRelReqStuff,
-    resultAt: Option[When] = None,
-    resultJson: Option[JsObject] = None,
-    resultText: Option[String] = None,
+    resultsAt: Option[When] = None,
+    resultsJson: Option[JsObject] = None,
+    resultsText: Option[String] = None,
     numIsSpamResults: Option[Int] = None,
     numNotSpamResults: Option[Int] = None,
     humanSaysIsSpam: Option[Boolean] = None,
     misclassificationsReportedAt: Option[When] = None) {
 
-    require(resultAt.isDefined == resultJson.isDefined, "TyE4RBK6RS11")
-    require(resultAt.isDefined == resultText.isDefined, "TyE4RBK6RS22")
-    require(resultAt.isDefined == numIsSpamResults.isDefined, "TyE4RBK6RS33")
-    require(resultAt.isDefined == numNotSpamResults.isDefined, "TyE4RBK6RS44")
+    require(resultsAt.isDefined == resultsJson.isDefined, "TyE4RBK6RS11")
+    require(resultsAt.isDefined == resultsText.isDefined, "TyE4RBK6RS22")
+    require(resultsAt.isDefined == numIsSpamResults.isDefined, "TyE4RBK6RS33")
+    require(resultsAt.isDefined == numNotSpamResults.isDefined, "TyE4RBK6RS44")
     // We need both spam check results, and a human's opinion, before
     // we can report this spam check as a misclassification.
-    require((resultAt.isDefined && humanSaysIsSpam.isDefined) ||
+    require((resultsAt.isDefined && humanSaysIsSpam.isDefined) ||
       misclassificationsReportedAt.isEmpty, "TyE4RBK6RS55")
 
     def key: SpamCheckTask.Key =
@@ -542,7 +559,7 @@ package object core {
 
     def postToSpamCheckShort: Option[PostToSpamCheck] =
       postToSpamCheck map { p =>
-        p.copy(textToSpamCheck = p.textToSpamCheck.take(1000))
+        p.copy(htmlToSpamCheck = p.htmlToSpamCheck.take(600))
       }
 
     def siteUserId = SiteUserId(siteId, who.id)
@@ -555,7 +572,7 @@ package object core {
     })
 
     def isMisclassified: Option[Boolean] =
-      if (resultAt.isEmpty || humanSaysIsSpam.isEmpty) None
+      if (resultsAt.isEmpty || humanSaysIsSpam.isEmpty) None
       else Some(
         if ((numIsSpamResults.get > 0 && !humanSaysIsSpam.get) ||
             (numNotSpamResults.get > 0 && humanSaysIsSpam.get))
@@ -565,13 +582,15 @@ package object core {
   }
 
   object SpamCheckTask {
-    type Key = Either[(SiteId, PostId, Int), SiteUserId]
+    /** We spam check either a post, or a user, e.g. hens name, email addr, profile. */
+    type Key = Either[(SiteId, PostId, PostRevNr), SiteUserId]
   }
 
 
+  /** Spam check results from different external services, for a single post or user profile. */
   type SpamCheckResults = immutable.Seq[SpamCheckResult]
 
-  sealed abstract class SpamCheckResult(val spamFound: Boolean) {
+  sealed abstract class SpamCheckResult(val isSpam: Boolean) {
     def spamCheckerDomain: String
     def humanReadableMessage: String
   }
@@ -581,10 +600,14 @@ package object core {
       override def humanReadableMessage: String = "No spam found"
     }
 
+    case class Error(spamCheckerDomain: String) extends SpamCheckResult(false) {
+      override def humanReadableMessage: String = "Error talking with " + spamCheckerDomain
+    }
+
     /**
       * @param staffMayUnhide — if moderators are allowed to override the spam check result
-      *  and show the post, although detected as spam. *Not* allowed (i.e. is false)
-      *  if Google Safe Browsing API says a link is malware.
+      *  and show the post, although detected as spam.  Not allowed (i.e. is false)
+      *  if Google Safe Browsing API says a link is malware (not impl).
       * @param isCertain — if the spam checker claims it knows for 100% this is spam.
       * @param spamCheckerDomain — e.g. "akismet.com", "safebrowsing.googleapis.com", "dbl.spamhaus.org".
       * @param humanReadableMessage — a message that can be shown to the staff, so they'll know why

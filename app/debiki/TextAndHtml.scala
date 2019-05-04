@@ -143,6 +143,11 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def forBodyOrCommentAsPlainTextWithLinks(text: String): TextAndHtml =
     apply(text, isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
 
+  def forHtmlAlready(html: String): TextAndHtml = {
+    findLinksEtc(html, RenderCommonmarkResult(html, Set.empty),
+        followLinks = false, allowClassIdDataAttrs = false)
+  }
+
   private def apply(
     text: String,
     isTitle: Boolean,
@@ -161,6 +166,13 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       val renderResult = nashorn.renderAndSanitizeCommonMark(
         text, pubSiteId = pubSiteId,
         allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
+      findLinksEtc(text, renderResult, followLinks = followLinks,
+        allowClassIdDataAttrs = allowClassIdDataAttrs)
+    }
+  }
+
+  private def findLinksEtc(text: String, renderResult: RenderCommonmarkResult,
+        followLinks: Boolean, allowClassIdDataAttrs: Boolean): TextAndHtmlImpl = {
       val links = findLinks(renderResult.safeHtml)
       var linkDomains = Set[String]()
       var linkAddresses = Vector[String]()
@@ -194,7 +206,6 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
         links = links, linkDomains = linkDomains,
         linkIpAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
-    }
   }
 
 

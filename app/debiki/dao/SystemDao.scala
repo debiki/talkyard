@@ -25,6 +25,7 @@ import debiki.EdHttp.throwForbidden
 import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.Globals
+import ed.server.spam.ClearCheckingSpamNowCache
 import play.api.libs.json.{JsObject, Json}
 import talkyard.server.JsX
 
@@ -211,6 +212,8 @@ class SystemDao(
         if (isTestSiteOkayToDelete) {
           globals.endToEndTestMailer.tell(
             "ForgetEndToEndTestEmails" -> anySitesToDelete.map(_.id), Actor.noSender)
+          globals.spamCheckActor.foreach(_.tell(
+            ClearCheckingSpamNowCache, Actor.noSender))
         }
       }
 
@@ -391,12 +394,19 @@ class SystemDao(
     }
   }
 
-  // COULD move to SpamSiteDao, since now uses only a per site tx.
-  //
+  /** Handles spam check results, for a single post, or user profile.
+    *
+    * @param spamCheckTaskNoResults — A spam check task for the post or user profile.
+    * @param spamCheckResults — Results from different external spam check services.
+    *
+    * COULD move to SpamSiteDao, since now uses only a per site tx.
+    */
   def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults) {
     val postToSpamCheck= spamCheckTaskNoResults.postToSpamCheck getOrElse {
       // Currently registration spam is checked directly when registering;
       // we don't save anything to the database, and shouldn't find anything here later.
+      // Later, will spam check users' profile texts & email addrs after they've been
+      // saved already, and then this code will run. [PROFLSPM]
       unimplemented("Delayed dealing with spam for things other than posts " +
         "(i.e. registration spam?) [TyE295MKAR2]")
     }
@@ -409,10 +419,10 @@ class SystemDao(
 
     val spamCheckTaskWithResults: SpamCheckTask =
       spamCheckTaskNoResults.copy(
-        resultAt = Some(globals.now()),
-        resultJson = Some(JsObject(spamCheckResults.map(r =>
+        resultsAt = Some(globals.now()),
+        resultsJson = Some(JsObject(spamCheckResults.map(r =>
             r.spamCheckerDomain -> JsX.JsSpamCheckResult(r)))),
-        resultText = Some(spamCheckResults.map(r => i"""
+        resultsText = Some(spamCheckResults.map(r => i"""
             |${r.spamCheckerDomain}:
             |${r.humanReadableMessage}""").mkString("------").trim),
         numIsSpamResults = Some(numIsSpamResults),
@@ -421,51 +431,49 @@ class SystemDao(
     // COULD if is new page, no replies, then hide the whole page (no point in showing a spam page).
     // Then mark section page stale below (4KWEBPF89).
     val sitePageIdToRefresh = globals.siteDao(spamCheckTaskWithResults.siteId).readWriteTransaction {
-          siteTransaction =>
+          siteTx =>
 
-      // Add the spam check results from the spam check service, so we won't re-check
-      // this again and again.
-      siteTransaction.updateSpamCheckTaskForPostWithResults(spamCheckTaskWithResults)
+      // Update the spam check task with the spam check results, so we remember it's done.
+      siteTx.updateSpamCheckTaskForPostWithResults(spamCheckTaskWithResults)
 
       if (spamFoundResults.isEmpty)
         return
 
-      val postBefore = siteTransaction.loadPost(postToSpamCheck.postId) getOrElse {
+      val postBefore = siteTx.loadPost(postToSpamCheck.postId) getOrElse {
         // It was hard deleted?
         return
       }
 
       val postAfter = postBefore.copy(
-        bodyHiddenAt = Some(siteTransaction.now.toJavaDate),
+        bodyHiddenAt = Some(siteTx.now.toJavaDate),
         bodyHiddenById = Some(SystemUserId),
-        bodyHiddenReason = Some(
-          s"Is spam or malware?:\n\n" +
-          spamFoundResults.mkString("\n\n")))
+        bodyHiddenReason = Some(s"Is spam or malware?:\n\n" + spamCheckTaskWithResults.resultsText))
 
       val reviewTask: ReviewTask = PostsDao.createOrAmendOldReviewTask(
         createdById = SystemUserId, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
-        siteTransaction)
+        siteTx)
 
-      siteTransaction.updatePost(postAfter)
+      siteTx.updatePost(postAfter)
 
       // Add a review task, so a human will check this out. When hen has
       // done that, we'll hide or show the post, if needed, and, if the human
       // disagrees with the spam check service, we'll tell the spam check service
-      // that it did a mistake. [SPMSCLRPT]
-      siteTransaction.upsertReviewTask(reviewTask)
+      // it did a mistake. [SPMSCLRPT]
+      siteTx.upsertReviewTask(reviewTask)
 
       SECURITY; COULD // if the author hasn't posted more than a few posts,  [DETCTHR]
       // and they haven't gotten any like votes or replies,
-      // and many of the author's posts have been detected as spam —
-      // then:
-      //  - Hide all the author's not-yet-reviewed posts, and mark hen as a Moderate Threat.
-      //  - Moderate Threat: Should block hen from posting more posts, if hen has more than,
-      //    say five?, posts pending review. To prevent staff from having to review really
-      //    lots of posts by a single maybe-spammer.
+      // and many of the author's posts have been detected as spam
+      // then could hide all the author's not-yet-reviewed posts, and block hen and
+      // mark hen as a Moderate Threat.
+      // Alredy done:
+      // The author gets blocked from posting more posts, if hen has more than a few
+      // [posts that seem to be spam] pending review  [PENDNSPM].  So the staff won't
+      // need to review lots of posts by this maybe-spammer.
 
       // If the post was visible, need to rerender the page + update post counts.
       if (postBefore.isVisible) {
-        val oldMeta = siteTransaction.loadPageMeta(postAfter.pageId) getOrDie "EdE4FK0YUP"
+        val oldMeta = siteTx.loadPageMeta(postAfter.pageId) getOrDie "EdE4FK0YUP"
 
         val newNumOrigPostRepliesVisible =
           if (postAfter.isOrigPostReply) oldMeta.numOrigPostRepliesVisible - 1
@@ -480,7 +488,7 @@ class SystemDao(
           numOrigPostRepliesVisible = newNumOrigPostRepliesVisible,
           version = oldMeta.version + 1)
 
-        siteTransaction.updatePageMeta(newMeta, oldMeta = oldMeta,
+        siteTx.updatePageMeta(newMeta, oldMeta = oldMeta,
           markSectionPageStale = false) // (4KWEBPF89)
         BUG; SHOULD // updatePagePopularity(PagePartsDao(pageId, transaction), transaction)
         // but tricky to do right now. Also, I should perhaps, instead of updating the page
@@ -539,14 +547,15 @@ class SystemDao(
       readOnlyTransaction(_.loadMisclassifiedSpamCheckTasks(22))
 
     for (task <- spamCheckTasks) {
+      val someNow = Some(globals.now())
       globals.spamChecker.reportClassificationMistake(task).foreach({
             case (falsePositives, falseNegatives) =>
         globals.e2eTestCounters.numReportedSpamFalsePositives += falsePositives
         globals.e2eTestCounters.numReportedSpamFalseNegatives += falseNegatives
-        val taskDone = task.copy(misclassificationsReportedAt = Some(globals.now()))
         val siteDao = globals.siteDao(task.siteId)
         siteDao.readWriteTransaction { tx =>
-          tx.updateSpamCheckTaskForPostWithResults(taskDone)
+          tx.updateSpamCheckTaskForPostWithResults(
+              task.copy(misclassificationsReportedAt = someNow))
         }
       })(globals.executionContext)
     }

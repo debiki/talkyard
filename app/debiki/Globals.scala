@@ -271,6 +271,7 @@ class Globals(
   }
 
   def endToEndTestMailer: ActorRef = state.mailerActorRef
+  def spamCheckActor: Option[ActorRef] = state.spamCheckActorRef
 
   def renderPageContentInBackground(
         sitePageId: SitePageId, customParams: Option[PageRenderParamsAndHash]) {
@@ -1042,7 +1043,7 @@ class Globals(
 
     def spamCheckBatchSize: Int = conf.getInt("talkyard.spamcheck.batchSize") getOrElse 20
     def spamCheckIntervalSeconds: Int = conf.getInt("talkyard.spamcheck.intervalSeconds").getOrElse(
-      if (isOrWasTest) 1 else 3)
+      if (isOrWasTest) 1 else 4)
 
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None

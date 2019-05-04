@@ -139,7 +139,7 @@ trait SiteTransaction {
   def indexPagesSoon(pageMeta: PageMeta*)
 
   def insertSpamCheckTask(spamCheckTask: SpamCheckTask)
-  def loadPendingSpamCheckTasksForPost(postId: PostId): immutable.Seq[SpamCheckTask]
+  def loadSpamCheckTasksWaitingForHumanLatestLast(postId: PostId): immutable.Seq[SpamCheckTask]
   def updateSpamCheckTaskForPostWithResults(spamCheckTask: SpamCheckTask)
 
   // Rename to insert/loadPageMemberIds? [rename]

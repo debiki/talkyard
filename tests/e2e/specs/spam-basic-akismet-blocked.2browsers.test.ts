@@ -33,7 +33,7 @@ const replyTwoIsSpam = 'replyTwoIsSpam ' + c.AlwaysSpamText;
 const topicTwoTitle = 'topicTwoTitle';
 const topicTwoIsSpamBody = 'topicTwoIsSpamBody ' + c.AlwaysSpamText;
 
-const spamReplyThree = "This reply gets blocked. " + c.AlwaysSpamText;
+const spamReplyThree = "spamReplyThree " + c.AlwaysSpamText;
 
 
 describe("spam test, Akismet  TyTSPAKISMET", () => {
@@ -51,7 +51,7 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('basicspam', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('spamaksm', { title: forumTitle });
     site.settings.numFirstPostsToReview = 9;
     site.settings.numFirstPostsToAllow = 9;
     idAddress = server.importSiteData(site);
@@ -114,7 +114,6 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
 
   it("The spam reply gets hidden, eventually", () => {
     mallorysBrowser.topic.refreshUntilBodyHidden(c.FirstReplyNr + 1);
-    assert(mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 1));
   });
 
   it("But not the non-spam reply", () => {
@@ -134,7 +133,6 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
 
   it("... after a while, the topic is considered spam, and hidden", () => {
     mallorysBrowser.topic.refreshUntilBodyHidden(c.BodyNr);
-    assert(mallorysBrowser.topic.isPostBodyHidden(c.BodyNr));
   });
 
 
@@ -147,12 +145,16 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
   });
 
   it("... which initially is visible", () => {
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 2);
     assert(!mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 2));
   });
 
   it("... but soon get hidden, because is spam", () => {
     mallorysBrowser.topic.refreshUntilBodyHidden(c.FirstReplyNr + 2);
-    assert(mallorysBrowser.topic.isPostBodyHidden(c.FirstReplyNr + 2));
+  });
+
+  it("... it didn't disappear", () => {
+    mallorysBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 2);
   });
 
   it("Mallory tries to post another reply", () => {
@@ -165,8 +167,10 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
   });
 
   it("... closes the error dialog", () => {
-    mallorysBrowser.serverErrorDialog.close();
-    mallorysBrowser.editor.cancelNoHelp();
+    mallorysBrowser.refresh();
+    // These annoying dialogs!
+    //mallorysBrowser.serverErrorDialog.close();
+    //mallorysBrowser.editor.cancelNoHelp();
   });
 
   it("Mallory wants to post a new topic", () => {

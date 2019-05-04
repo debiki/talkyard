@@ -41,7 +41,7 @@ describe("spam test, Akismet false negatives = missed spam  TyT63MKWYT37", () =>
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('basicspam', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('spamfane', { title: forumTitle });
     site.settings.numFirstPostsToReview = 9;
     site.settings.numFirstPostsToAllow = 9;
     site.members.push(mallory);
@@ -74,10 +74,10 @@ describe("spam test, Akismet false negatives = missed spam  TyT63MKWYT37", () =>
     owensBrowser.adminArea.goToReview(idAddress.origin, { loginAs: owen });
   });
 
-  it("He deletes Mallory's posts", () => {
+  it("He deletes Mallory's 3 posts = the start-block-spammer limit [TyT029ASL45]", () => {
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(1);
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(2);
-    owensBrowser.adminArea.review.rejectDeleteTaskIndex(3);  // now he gets blocked  [TyT029ASL45]
+    owensBrowser.adminArea.review.rejectDeleteTaskIndex(3); // this nr 3 gets Mallory blocked
     owensBrowser.adminArea.review.playTimePastUndo();
   });
 

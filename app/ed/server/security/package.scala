@@ -603,7 +603,7 @@ class EdSecurity(globals: Globals) {
     val suffix =
       if (!globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
-    throwNotFound("EsE404" + suffix, "Page not found")
+    throwNotFound("TyE404_" + suffix, "Page not found")
   }
 
   def throwNoUnless(mayMaybe: MayMaybe, errorCode: String) {

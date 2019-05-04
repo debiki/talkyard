@@ -174,7 +174,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       postToSpamCheck = None,
       who = request.whoOrUnknown,
       requestStuff = request.spamRelatedStuff.copy(
-        userName = Some(username),
+        userName = Some((username + " " + fullName.getOrElse("")).trim),
         userEmail = Some(emailAddress),
         userTrustLevel = Some(TrustLevel.NewMember)))
 

@@ -49,6 +49,9 @@ object SpamCheckActor {
 
 case object CheckForSpam
 
+/** For e2e tests, so cache items from earlier tests, won't interfere with later tests. */
+case object ClearCheckingSpamNowCache
+
 
 class SpamCheckActor(
   private val batchSize: Int,
@@ -78,6 +81,8 @@ class SpamCheckActor(
         case ex: Exception =>
           p.Logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
       }
+    case ClearCheckingSpamNowCache =>
+      checkingNowCache.invalidateAll()
   }
 
 

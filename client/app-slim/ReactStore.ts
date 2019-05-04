@@ -1327,6 +1327,7 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   const titlePost = newPage.postsByNr[TitleNr];
   if (titlePost && titlePost.unsafeSource) {
     // This gets interpreted as text, so ok to use the unsanitized source.
+    // (Don't use the sanitized html — that'd result in e.g. '&amp;' instead of '&'.)
     document.title = titlePost.unsafeSource;
   }
 

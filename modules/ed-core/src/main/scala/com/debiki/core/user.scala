@@ -580,9 +580,14 @@ sealed trait Participant {
   def canPromoteToBasicMember: Boolean = false
   def canPromoteToFullMember: Boolean = false
 
+  /** A member's full name, or guest's guest name. */
   def anyName: Option[String] = None
+
+  /** Only for members, not guests. */
   def anyUsername: Option[String] = None
+
   def usernameOrGuestName: String
+  def usernameSpaceOtherName: String = (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
   def nameOrUsername: String
 
   def idSpaceName: String =

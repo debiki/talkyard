@@ -1099,9 +1099,11 @@ function pagesFor(browser) {
     assertNotFoundError: function() {
       for (let i = 0; i < 20; ++i) {
         let source = browser.getSource();
-        let is404 = /404 Not Found[\s\S]+EsE404[\s\S].*/.test(source);
+        // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
+        let is404 = /404 Not Found.+TyE404_/s.test(source);
         if (!is404) {
           browser.pause(250);
+          browser.refresh();
           continue;
         }
         return;
@@ -3179,7 +3181,7 @@ function pagesFor(browser) {
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
-      refreshUntilBodyHidden: function(postNr: PostNr) {
+      refreshUntilBodyHidden: function(postNr: PostNr) {  // RENAME to refreshUntilPostBodyHidden
         while (true) {
           let isHidden = api.topic.isPostBodyHidden(postNr);
           if (isHidden) break;

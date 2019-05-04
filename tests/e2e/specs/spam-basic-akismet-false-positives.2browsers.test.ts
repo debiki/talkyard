@@ -41,7 +41,7 @@ describe("spam test, Akismet false positives = incorrectly detected as spam  TyT
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('basicspam', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('spamfapo', { title: forumTitle });
     site.settings.numFirstPostsToReview = 9;
     site.settings.numFirstPostsToAllow = 9;
     site.members.push(maria);
@@ -59,7 +59,7 @@ describe("spam test, Akismet false positives = incorrectly detected as spam  TyT
 
   it("Posts a topic about v*agra", () => {
     mariasBrowser.complex.createAndSaveTopic(
-        { title: "Topic title", body: c.AlwaysSpamText });
+        { title: "V*agra Topic Title", body: "V*agra topic body " + c.AlwaysSpamText });
   });
 
   it("... and two replies", () => {
@@ -68,7 +68,7 @@ describe("spam test, Akismet false positives = incorrectly detected as spam  TyT
     // Now 3 comments detected as spam, so Maria gets blocked. [TyT029ASL45]
   });
 
-  it("All her posts get classified as spam", () => {
+  it("All her posts get classified as spam, and hidden", () => {
     mariasBrowser.topic.refreshUntilBodyHidden(c.BodyNr);
     mariasBrowser.topic.refreshUntilBodyHidden(c.FirstReplyNr + 0);
     mariasBrowser.topic.refreshUntilBodyHidden(c.FirstReplyNr + 1);
@@ -124,7 +124,7 @@ describe("spam test, Akismet false positives = incorrectly detected as spam  TyT
     while (true) {
       if (countersNow.numReportedSpamFalsePositives - countersBefore.numReportedSpamFalsePositives >= 3)
         break;
-      process.stdout.write(' ' + countersNow.numReportedSpamFalsePositives);
+      process.stdout.write(' ' + countersNow.numReportedSpamFalsePositives + ' ');
       owensBrowser.pause(200);
       countersNow = server.getTestCounters();
     }

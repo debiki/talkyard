@@ -211,9 +211,10 @@ trait ReviewsDao {
               approvePostImpl(post.pageId, post.nr, approverId = decidedById, tx)
               perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx)
             }
-            updateSpamCheckTasks(humanThinksIsSpam = false, task, tx)
+            updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam = false, task, tx)
           case ReviewDecision.DeletePostOrPage =>
-            // [DETCTHR] If staff deletes many posts by this user, mark it as a moderate threat?
+            // If staff deletes many posts by this user, mark it as a moderate threat?
+            // That'll be done from inside update-because-deleted fn below. [DETCTHR]
             if (task.isForBothTitleAndBody) {
               val pageId = task.pageId getOrDie "TyE4K85R2"
               deletePagesImpl(Seq(pageId), deleterId = decidedById,
@@ -223,7 +224,9 @@ trait ReviewsDao {
               deletePostImpl(post.pageId, postNr = post.nr, deletedById = decidedById,
                   doingReviewTask = Some(task), browserIdData, tx)
             }
-            updateSpamCheckTasks(humanThinksIsSpam = true, task, tx)
+            // Need not:
+            // updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam = true, task, tx)
+            // — that's done from the delete functions already. [UPDSPTSK]
         }
       }
     }
@@ -232,25 +235,80 @@ trait ReviewsDao {
   }
 
 
-  private def updateSpamCheckTasks(humanThinksIsSpam: Boolean, reviewTask: ReviewTask,
-      tx: SiteTransaction) {
+  private def updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam: Boolean,
+      reviewTask: ReviewTask, tx: SiteTransaction) {
+
+    val decidedAtRevNr = reviewTask.decidedAtRevNr getOrDie "TyE60ZF2R"
     val postId = reviewTask.postId getOrElse {
       return
     }
-    val spamCheckTasksAnyRevNr: Seq[SpamCheckTask] = tx.loadPendingSpamCheckTasksForPost(postId)
-    val spamCheckTasksSameRevNr =
+
+    val spamCheckTasksAnyRevNr: Seq[SpamCheckTask] =
+      tx.loadSpamCheckTasksWaitingForHumanLatestLast(postId)
+
+    // Which spam check task shall we update? (WHICHTASK) There might be many,
+    // for different revisions of the same post (because edits are spam checked, too).
+    // Probably the most resent spam check task corresponds to the post revision
+    // the reviewer reviewed?
+    val latestTask = spamCheckTasksAnyRevNr.lastOption
+
+    // Alternatively — but I'm not sure the rev nrs will match correctly:
+    /* val spamCheckTasksSameRevNr =
       spamCheckTasksAnyRevNr.filter(
-        reviewTask.decidedAtRevNr is _.postToSpamCheck.getOrDie("TyE20597W").postRevNr)
+        _.postToSpamCheck.getOrDie("TyE20597W").postRevNr == decidedAtRevNr)  */
 
     // How do we know the spam was really inserted in this post revision? What if this is
     // a wiki post, and a previous editor inserted the spam? Ignore, for now. [WIKISPAM]
 
-    spamCheckTasksSameRevNr foreach { spamCheckTask =>
-      val taskWithHumanResult = spamCheckTask.copy(humanSaysIsSpam = Some(humanThinksIsSpam))
+    latestTask foreach { spamCheckTask =>
       // The Janitor thread will soon take a look at this spam check task, and
       // report any classification error (spam detected, but human says isn't spam, or vice versa)
       // to the spam check service. [SPMSCLRPT]
-      tx.updateSpamCheckTaskForPostWithResults(taskWithHumanResult)
+      tx.updateSpamCheckTaskForPostWithResults(
+        spamCheckTask.copy(humanSaysIsSpam = Some(humanSaysIsSpam)))
+    }
+  }
+
+
+  def updateSpamCheckTaskBecausePostDeleted(post: Post, postAuthor: Participant, deleter: Participant,
+        tx: SiteTransaction) {
+    // [DELSPAM] Would be good with a Delete button that asks the deleter if hen
+    // deletes the post because hen considers it spam — or for some other reason.
+    // So we know for sure if we should mark the post as spam here, and maybe
+    // send a yes-this-is-spam training sample to the spam check services.
+    //
+    // For now: If this post was detected as spam, and it's being deleted by
+    // *staff*, assume it's spam.
+    //
+    // (Tricky tricky: Looking at the post author won't work, for wiki posts, if
+    // a user other than the author, edited the wiki post and inserted spam.
+    // Then, should instead compare with the last editor (or all/recent editors).
+    // But how do we know if the one who inserted any spam, is the last? last but
+    // one? two? editor, or the original author? Ignore this, for now. [WIKISPAM])
+    //
+    // [DETCTHR] If the post got deleted because it's spam, should eventually
+    // mark the user as a moderate threat and block hen? Or should the Delete
+    // button ask the reviewer "Do you want to ban this user?" instead
+    // of automatically? Maybe both: Automatically identify spammers, and
+    // ask the deleter to approve the computer's ban suggestion?
+
+    val maybeDeletingSpam = deleter.isStaff && !postAuthor.isStaff && deleter.id != postAuthor.id
+    if (!maybeDeletingSpam)  //  || !anyDeleteReason is DeleteReasons.IsSpam) {
+      return
+
+    // Which spam check task(s) shall we update? If there're many, for different
+    // revision of the same post? The last one? see: (WHICHTASK)
+    val spamCheckTasksAnyRevNr = tx.loadSpamCheckTasksWaitingForHumanLatestLast(post.id)
+    val latestTask = spamCheckTasksAnyRevNr.lastOption
+    /* Alternatively:
+    val spamCheckTaskSameRevNr =
+      spamCheckTasksAnyRevNr.filter(
+        post.approvedRevisionNr.getOrElse(post.currentRevisionNr) ==
+          _.postToSpamCheck.getOrDie("TyE529KMW").postRevNr) */
+
+    latestTask foreach { task =>
+      tx.updateSpamCheckTaskForPostWithResults(
+        task.copy(humanSaysIsSpam = Some(true)))
     }
   }
 
