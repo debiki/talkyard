@@ -1750,7 +1750,7 @@ interface MessageToServiceWorker {
   // This can happen if you open a browser page, wait some days until
   // a new service worker version is released, then open a 2nd page, which
   // installs the new service worker — which claims the old tab.
-  pageJsVersion: string;
+  talkyardVersion: string;
 }
 
 

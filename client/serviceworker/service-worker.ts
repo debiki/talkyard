@@ -1,4 +1,4 @@
-/// <reference path="../app-slim/model.ts" />
+/// <reference path="./model.ts" />
 /// <reference path="./constants.ts" />
 /// <reference path="./magic-time.ts" />
 
@@ -33,7 +33,7 @@ declare var clients;
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-console.log(`Service worker ${SwPageJsVersion} loading [TyMSWVLDNG]`);  // [sw]
+console.log(`Service worker ${TalkyardVersion} loading [TyMSWVLDNG]`);  // [sw]
 
 
 type ErrorStatusHandler = (errorStatusCode?: number) => void;
@@ -48,12 +48,13 @@ oninstall = function(event) {
   // Later: Here, can start populating an IndexedDB, and caching site assets — making
   // things available for offline use.
   console.log("Service worker installing... [TyMSWINSTLD]");
+
   // Make this the active service worker, for all clients, including any other
   // already "since long ago" open browser tabs. (Otherwise, would need to wait
-  // for them to close (but just refreshing, apparently isn't enough — then they'll
+  // for them to close — just refreshing, apparently isn't enough — then they'll
   // continue using the old service worker: """refreshing the page isn't enough
   // to let the new version take over""", see:
-  // https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle).)
+  // https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle.)
   event.waitUntil(skipWaiting());
 };
 
@@ -64,13 +65,14 @@ onactivate = function(event) {
   // old service worker might still be running. Note that an old database that's to
   // be migrated, might be many versions old, not always the previous version.
   console.log("Service worker activating... [TyMSWACTIVD]");
+
   // On the very very first Talkyard page load, the browser page tab loads without any
   // service worker, and thus won't get any live notifications, because it'll have no
-  // service worker (until after tab reload), since it was loaded outside any service worker
-  // — unless we claim() it — then, subsequent fetches (http requests) will be via this
+  // service worker (until after tab reload), since it was loaded outside any service worker.
+  // Unless we claim() it. Then, 1) subsequent fetches (http requests) will be via this
   // service worker, and we can send messages to that tab.
-  // Or, if there's an old service worker already installed, the page is currently
-  // using that one, and we need to claim() the page so it'll start using this new
+  // Or, 2) if there's an old service worker already installed, the page is currently
+  // using that one, and when we claim() that page, it'll start using this new
   // service worker instad. [SWCLMTBS]
   // Nice: https://serviceworke.rs/immediate-claim_service-worker_doc.html
   if (!clients.claim) return;
@@ -80,8 +82,8 @@ onactivate = function(event) {
 };
 
 
-if (registration.onupdatefound) registration.onupdatefound = function(event) {
-  console.log("This service worker about to be replaced by newer version. [TyMSWUPDFND]");
+if (registration.onupdatefound) registration.onupdatefound = function() {
+  console.log("This service worker about to be replaced by a newer version. [TyMSWUPDFND]");
   abortAnyLongPollingRequest();
 };
 
@@ -93,9 +95,9 @@ onmessage = function(event: any) {
   switch (untypedMessage.doWhat) {
     case SwDo.TellMeYourVersion:
       event.source.postMessage({ // <MyVersionIsMessageFromSw> {
-        type: 'MyVersionIs',
-        saysWhat: SwSays.MyVersionIs,
-        swJsVersion: SwPageJsVersion,
+        type: 'MyVersionIs',  // old, start using ...
+        saysWhat: SwSays.MyVersionIs,  // ... <— this instead
+        talkyardVersion: TalkyardVersion,
       });
       break;
     case SwDo.SubscribeToEvents:
@@ -104,7 +106,7 @@ onmessage = function(event: any) {
         // We've logged out. Don't ask for any events — if everyone did that,
         // that could put the server under an a bit high load? And not much interesting
         // to be notified about anyway, when haven't joined the site yet / not logged in.
-        console.debug(`Just logged out? Aborting any long polling. [TyMSWLOGOUT]`);
+        console.debug(`You logged out? Aborting any long polling. [TyMSWLOGOUT]`);
         abortAnyLongPollingRequest();
         return;
       }
@@ -113,7 +115,6 @@ onmessage = function(event: any) {
       // The site id is included, because users at different sites can have the same id. [7YGK082]
       const channelId = message.siteId + '-' + message.myId;
       if (currentChannelId === channelId) {
-        // We're already long polling for events for this user (myId). Need do nothing.
         console.debug(`Already subscribed to channel ${channelId}, need do nothing. [TyMSWALRSUBS]`);
       }
       else {
@@ -151,10 +152,8 @@ let startedFailingAtMs;
 
 
 /**
- * Deletes any old event subscription and creates a new for the current user.
- * If called from many tabs, aborts and restarts "the same" long polling
- * request many times — which should be fine.
- * COULD optimize: remember any current channel, and skip abort-resend.
+ * Deletes any old event subscription (long polling) and creates a new
+ * for the current user (sends a new long polling request).
  */
 function subscribeToServerEvents(channelId: string) {
   abortAnyLongPollingRequest();
@@ -294,7 +293,7 @@ function sendLongPollingRequest(channelId: string, successFn: (response) => void
 
   // We incl the req nr in the URL, for debugging, so knows which lines in
   // chrome://net-internals/#events and in the Nginx logs are for which request in the browser.
-  const pollUrl = `/-/pubsub/subscribe/${channelId}?reqNr=${reqNr}&swJsVersion=${SwPageJsVersion}`;
+  const pollUrl = `/-/pubsub/subscribe/${channelId}?reqNr=${reqNr}&talkyardVersion=${TalkyardVersion}`;
 
   longPollingState.ongoingRequest = fetch(pollUrl, options).then(function(response) {
     // This means the response http headers have arrived — we also need to wait

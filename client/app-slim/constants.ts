@@ -26,7 +26,14 @@
 // and tell the page to show a dialog "Please refresh. New version available".
 // This is a separate version number, so won't need to reinstall the service
 // worker, if it didn't change. Hmm?
-const SwPageJsVersion = '0.0.0012';
+const TalkyardVersion =
+  // @ifdef DEBUG
+  // gulp-preprocess hasn't been configured to processes debug builds ...
+  'debug-build-0001';
+  // @endif
+  // ... only prod builds, so this'll work:
+  '/* @echo TALKYARD_VERSION */';
+
 
 const ReactStartedClass = 'dw-react-started';
 

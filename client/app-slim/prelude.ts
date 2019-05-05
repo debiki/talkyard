@@ -19,7 +19,6 @@
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />
-// Probably magic-time should include Prelude instead?
 /// <reference path="magic-time.ts" />
 
 declare const t: TalkyardTranslations;

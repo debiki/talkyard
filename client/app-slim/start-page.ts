@@ -298,7 +298,11 @@ function renderPageInBrowser() {
       sw.postMessage(<StartMagicTimeSwMessage> {
         doWhat: SwDo.StartMagicTime,
         startTimeMs: eds.testNowMs,
+        talkyardVersion: TalkyardVersion,
       });
+    }).catch(function() {
+      // Fine. Message already logged. (This empty catch is needed, otherwise
+      // Chrome logs an error about an uncaught promise failure.)
     }).finally(lastStep);
   });
 
@@ -326,7 +330,7 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
     else {
       console.log("Not using any service worker. [TyMSWSKIPD]");
     }
-    rejectServiceWorkerPromise();
+    rejectServiceWorkerPromise('ok');
     return;
   }
 
@@ -353,8 +357,13 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
         //
         //setInterval(registration.update, 3600*1000);
 
-        // Wait until a service worker of the same version as this code, is
-        // active. Then, resolve the service worker promise:
+        // Wait until a service worker of the same version as this code, is active,
+        // so we know it'll understand messages we post, and that it won't post
+        // unexpected messages to this browser tab. Thereafter, resolve the
+        // service worker promise:
+        //
+        // TESTS_MISSING: installing an old service worker and upgrading to a newer.
+        // Preferably without deploying & starting an older version of the Talkyard server?
 
         let i = 0;
         const intervalHandle = setInterval(function() {
@@ -366,7 +375,7 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
 
           i += 1;
 
-          // There's *some* service worker for this browser tab, but is it the wrong version?
+          // Now there's *some* service worker for this browser tab — maybe the wrong version?
           // When the page loads, that'll happen using the currently installed service
           // worker, possibly an old version, could be a year old, if the user hasn't
           // visited this site in a year.
@@ -385,19 +394,20 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           // its version number.
           theServiceWorker.postMessage(<TellMeYourVersionSwMessage> {
             doWhat: SwDo.TellMeYourVersion,
+            talkyardVersion: TalkyardVersion,
           });
 
           // This variable gets updated when the service worker replies to the messages
           // we send just above. (Could use a MessageChannel instead? But this works fine.)
           if (serviceWorkerIsSameVersion) {  // [SWSAMEVER]
-            console.log(`Service worker is same version: ${SwPageJsVersion}, fine [TyMEQSWVER]`);
+            console.log(`Service worker is same version: ${TalkyardVersion}, fine [TyMEQSWVER]`);
             clearInterval(intervalHandle);
             resolveServiceWorkerPromise(theServiceWorker);
           }
         }, 50)
-      }).catch(function(error) {
-        console.warn(`Error registering service worker: ${error} [TyESWREGKO]`);
-        rejectServiceWorkerPromise();
+      }).catch(function(ex) {
+        console.error("Error registering service worker [TyESWREGKO]", ex);
+        rejectServiceWorkerPromise(ex);
       });
 }
 

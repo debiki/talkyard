@@ -60,6 +60,8 @@ function readGitHash() {
 const version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
 const versionTag = version + '-' + readGitHash();  // also in Bash and Scala [8GKB4W2]
 
+const preprocessProdContext = { TALKYARD_VERSION: versionTag };
+
 // Here we'll place the generated js, min.js and min.js.gz files. [GZPATHS]
 const webDest = 'images/web/assets';
 const webDestVersioned = `${webDest}/${version}`;
@@ -543,7 +545,7 @@ gulp.task('enable-prod-stuff', (done) => {
 gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
   return gulp.src([`${serverDestTranslations}/**/*.js`, `!${serverDestTranslations}/**/*.min.js`])
       .pipe(plumber())
-      .pipe(preprocess({ context: {} }))
+      .pipe(preprocess({ context: preprocessProdContext }))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
@@ -562,7 +564,7 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
   function makeMinJsGzStream(sourceAndDest, gzipped) {
     let stream = gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
       .pipe(plumber())
-      .pipe(preprocess({ context: {} })) // see comment above
+      .pipe(preprocess({ context: preprocessProdContext })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()));

@@ -1659,12 +1659,13 @@ gulp-plumber@^1.2.1:
     plugin-error "^0.1.2"
     through2 "^2.0.3"
 
-gulp-preprocess@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/gulp-preprocess/-/gulp-preprocess-2.0.0.tgz#067bf6a4e1b703d7b45ed2047ce7e87d5974d241"
+gulp-preprocess@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/gulp-preprocess/-/gulp-preprocess-3.0.2.tgz#d7086a1583eff38cd978eaea23a6bbc442ee10e6"
+  integrity sha512-RsPVAlZPMo8HQwtYdu9g9iwD/IiEOfXz30fASBhiYoUL1B+Hqpw3NnCB4u2SD6foIRMkir7uwLFzjaLuo3jE5A==
   dependencies:
-    lodash "3.10.x"
-    map-stream "0.1.x"
+    lodash "^4.17.11"
+    map-stream "^0.1.x"
     preprocess "^3.0.0"
 
 gulp-rename@^1.4.0:
@@ -2486,10 +2487,6 @@ lodash.uniq@^4.3.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
 
-lodash@3.10.x:
-  version "3.10.1"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
-
 lodash@4.17.5:
   version "4.17.5"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
@@ -2542,9 +2539,10 @@ map-cache@^0.2.0, map-cache@^0.2.2:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/map-cache/-/map-cache-0.2.2.tgz#c32abd0bd6525d9b051645bb4f26ac5dc98a0dbf"
 
-map-stream@0.1.x:
+map-stream@^0.1.x:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/map-stream/-/map-stream-0.1.0.tgz#e56aa94c4c8055a16404a0674b78f215f7c8e194"
+  integrity sha1-5WqpTEyAVaFkBKBnS3jyFffI4ZQ=
 
 map-visit@^1.0.0:
   version "1.0.0"

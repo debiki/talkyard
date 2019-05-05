@@ -42,7 +42,6 @@ interface ServerVars {
 
   currentVersion: string;
   cachedVersion: string;
-  talkyardVersion: string;
 
   wantsServiceWorker: boolean;
   useServiceWorker: boolean;  // if both wants it, and it's available

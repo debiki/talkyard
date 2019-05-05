@@ -38,13 +38,14 @@ if (eds.useServiceWorker) {
     console.debug(`SW says: ${JSON.stringify(event)}, message: ${JSON.stringify(message)} [TyMGOTSWMSG]`);
     // @endif
 
+    // REFACTOR replace these messages with SwSays?
     switch (message.type) {  // dupl switch, will delete the other one (7QKBAG202)
       case 'MyVersionIs':
-        console.debug(`Service worker says it's version ${message.swJsVersion} [TyMOKSWVER]`);
-        if (message.swJsVersion === SwPageJsVersion) {
+        console.debug(`Service worker says it's version ${message.talkyardVersion} [TyMOKSWVER]`);
+        if (message.talkyardVersion === TalkyardVersion) {
           // The service worker either was the same version as this page's js
           // from the beginning, or a matching version was just installed, and
-          // has now claimed this browser tab.
+          // has now claimed this browser tab, and now replies to our version queries.
           debiki.nowServiceWorkerIsRightVersion();
         }
         break;
@@ -83,7 +84,7 @@ if (eds.useServiceWorker) {
         });
         break;
       default:
-        die("Unknown sw message type [TyEUNKSWMSG]: " + message.type +
+        die("Unknown service worker message type [TyEUNKSWMSG]: " + message.type +
             "\n\nThe message body:\n\n" + JSON.stringify(message));
     }
   });
@@ -100,8 +101,11 @@ export function subscribeToServerEvents(me: Myself) {
         doWhat: SwDo.SubscribeToEvents,
         siteId: eds.siteId,
         myId: me.id,
+        talkyardVersion: TalkyardVersion,
       };
       sw.postMessage(message);
+    }).catch(ex => {
+      console.log("Error subscribing to events via service worker", ex);
     });
   }
   else {
@@ -113,7 +117,11 @@ export function subscribeToServerEvents(me: Myself) {
 /**
  * Deletes any old event subscription and creates a new for the current user.
  * 
- * Delete later, when talkyard-service-worker is well tested an in use always. [sw]
+ * Need to keep as a fallback for cases when the service-worker won't work,
+ * e.g. on an intranet with a http (not https) server. However:
+ * CLEAN_UP REFACTOR break out the pub-sub functions into a separate file, use the
+ * browsers' native fetch(), and include from slim-bundle and service-worker
+ * (instead of like now: dupl code, this is also in service-worker.ts).
  */
 function subscribeToServerEventsDirectly(me: Myself) {
   Server.abortAnyLongPollingRequest();
