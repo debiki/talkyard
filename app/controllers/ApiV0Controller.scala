@@ -64,6 +64,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     import request.{siteId, queryString, dao, theRequester => requester}
     lazy val now = context.globals.now()
 
+    val settings = dao.getWholeSiteSettings()
+
     def getOnly(queryParam: String): Option[String] =
       queryString.get(queryParam).flatMap(values =>
         if (values.length > 1) throwBadArgument("TyE6ABKP2", queryParam, "Too many values")
@@ -71,6 +73,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
 
     def getOnlyOrThrow(queryParam: String, errorCode: String): String =
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
+
+    throwForbiddenIf(!settings.enableApi, "TyE305MRTJW2", "API disabled")
 
     apiEndpoint match {
       case "export-site-json" =>

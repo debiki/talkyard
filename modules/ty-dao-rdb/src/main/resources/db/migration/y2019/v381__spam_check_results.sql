@@ -82,3 +82,24 @@ create index spamcheckqueue_next_miscl_i on spam_check_queue3 (results_at asc)
     is_misclassified and
     misclassifications_reported_at is null;
 
+
+alter table settings3 add column enable_stop_forum_spam bool;
+alter table settings3 add column enable_akismet bool;
+alter table settings3 add column akismet_api_key varchar;
+alter table settings3 add column send_email_to_akismet bool;
+
+alter table settings3 add constraint settings3_c_akismetapikey_len check (
+    length(akismet_api_key) between 1 and 200);
+
+alter table settings3 add constraint settings_forum_features check (
+    enable_forum or (
+        show_categories = false and
+        enable_tags = false and
+        enable_chat = false and
+        enable_direct_messages = false and
+        show_sub_communities is not true and  -- default: false
+        show_topic_filter = false and
+        show_topic_types = false and
+        select_topic_type = false and
+        experimental is not true and  -- default: false
+        embedded_comments_category_id is null));

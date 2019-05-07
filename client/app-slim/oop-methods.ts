@@ -429,18 +429,21 @@ export function settings_showCategories(settings: SettingsVisibleClientSide, me:
 
 
 export function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself) {
+  if (settings.enableForum === false) return false;
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
   return isStaff(me) || settings.showTopicFilterButton !== false;
 }
 
 
 export function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself) {
+  if (settings.enableForum === false) return false;
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
   return settings.showTopicTypes !== false;
 }
 
 
 export function settings_selectTopicType(settings: SettingsVisibleClientSide, me: Myself) {
+  if (settings.enableForum === false) return false;
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
   return isStaff(me) || settings.selectTopicType !== false;
 }
@@ -462,6 +465,10 @@ export function store_isPageDeleted(store: Store): boolean {
 
 
 export function store_mayICreateTopics(store: Store, category: Category): boolean {
+  const settings: SettingsVisibleClientSide = store.settings;
+  if (settings.enableForum === false)
+    return false;
+
   let may: boolean;
   let currentCategory = category;
   const me = store.me;

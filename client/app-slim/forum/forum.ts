@@ -295,6 +295,7 @@ const ForumIntroText = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
     const page: Page = store.currentPage;
     const user: Myself = store.me;
     const introPost = page.postsByNr[BodyNr];
@@ -306,15 +307,19 @@ const ForumIntroText = createComponent({
               onClick: morebundle.openEditIntroDialog }, t.fi.Edit)
         : null;
 
-    return r.div({ className: 'esForumIntro' },
-      r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
+    const anyForumIntroButtons = !settings.enableForum ? null :
       r.div({ className: 'esForumIntro_btns' },
         anyEditIntroBtn,
         r.a({ className: 'esForumIntro_close', onClick: () => ReactActions.showForumIntro(false) },
           r.span({ className: 'icon-cancel' }, t.fi.Hide_1),  // "Hide ..."
           r.span({ className: 'esForumIntro_close_reopen' },
             t.fi.Hide_2, r.span({ className: 'icon-info-circled dw-forum-intro-show' }), // "click"
-              t.fi.Hide_3))));  // "... to reopen"
+              t.fi.Hide_3)));  // "... to reopen"
+
+    return (
+        r.div({ className: 'esForumIntro' },
+          r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
+          anyForumIntroButtons));
   }
 });
 

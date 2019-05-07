@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp.throwForbidden
+import debiki.EdHttp.throwForbiddenIf
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -50,8 +51,15 @@ trait SettingsDao {
   def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who) {
     // COULD test here that settings are valid? No inconsistencies?
 
+    throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
+      "EdE5KP8R2", "Cannot clear the organization name")
+
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)
+
+      throwForbiddenIf(oldSettings.enableForum && settingsToSave.enableForum.is(Some(false)),
+        "TyE306KMW1Q", "Cannot disable forum features, once enabled")
+
       tx.upsertSiteSettings(settingsToSave)
       val newSettings = loadWholeSiteSettings(tx)
       newSettings.findAnyError foreach { error =>

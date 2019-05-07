@@ -580,6 +580,9 @@ class Globals(
 
   val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
+  def settingsBySiteId(siteId: SiteId): AllSettings =
+    siteDao(siteId).getWholeSiteSettings()
+
   def originOfSiteId(siteId: SiteId): Option[String] =
     systemDao.getSite(siteId).flatMap(_.canonicalHostname.map(originOf))
 
@@ -1058,7 +1061,8 @@ class Globals(
       RenderContentService.startNewActor(outer, edContext.nashorn)
 
     val spamChecker = new SpamChecker(
-      isDevTest = isOrWasTest, originOfSiteId,
+      config,
+      isDevTest = isOrWasTest, originOfSiteId, settingsBySiteId,
       executionContext, appLoaderContext.initialConfiguration, wsClient,
       new TextAndHtmlMaker("dummysiteid", edContext.nashorn))
 
@@ -1110,6 +1114,10 @@ class Config(conf: play.api.Configuration) {
 
   val maxGroupMentionNotfs: Int =
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
+
+  val akismetApiKey: Option[String] =
+    conf.getOptional[String]("talkyard.akismet.apiKey").noneIfBlank orElse  // old name
+      conf.getOptional[String]("talkyard.akismetApiKey").noneIfBlank
 
   object uploads {
     TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,

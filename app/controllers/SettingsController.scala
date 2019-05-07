@@ -20,7 +20,6 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
@@ -67,8 +66,6 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
   def saveSiteSettings: Action[JsValue] = AdminPostJsonAction(maxBytes = 10*1000) {
         request: JsonPostRequest =>
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body, globals)
-    throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
-      "EdE5KP8R2", "Cannot clear the organization name")
     request.dao.saveSiteSettings(settingsToSave, request.who)
     loadSiteSettingsImpl(request)
   }

@@ -97,6 +97,10 @@ trait AllSettings {
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
   def numFirstPostsToAllow: Int
+  def enableStopForumSpam: Boolean
+  def enableAkismet: Boolean
+  def akismetApiKey: String
+  def sendEmailToAkismet: Boolean
   def faviconUrl: String
   def headStylesHtml: String
   def headScriptsHtml: String
@@ -119,7 +123,8 @@ trait AllSettings {
   def languageCode: String
   def googleUniversalAnalyticsTrackingId: String
 
-  /** If !enableForum, then the site is used for embedded comments only. */
+  /** If !enableForum, then the site is used for embedded comments only. Doesn't do much,
+    * server side — mainly simplifies (hides) things in the UI, browser side. */
   def enableForum: Boolean
   def enableApi: Boolean
   def enableTags: Boolean
@@ -195,6 +200,10 @@ trait AllSettings {
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
     numFirstPostsToApprove = Some(self.numFirstPostsToApprove),
     numFirstPostsToAllow = Some(self.numFirstPostsToAllow),
+    enableStopForumSpam = Some(self.enableStopForumSpam),
+    enableAkismet = Some(self.enableAkismet),
+    akismetApiKey = Some(self.akismetApiKey),
+    sendEmailToAkismet = Some(self.sendEmailToAkismet),
     faviconUrl = Some(self.faviconUrl),
     headStylesHtml = Some(self.headStylesHtml),
     headScriptsHtml = Some(self.headScriptsHtml),
@@ -251,6 +260,8 @@ object AllSettings {
   val MaxPendingMaybeSpamPostsNewMember = 3  // sync with e2e test [TyT029ASL45]
   val MaxPendingMaybeSpamPostsFullMember = 6
 
+  val InConfigFile = "(in config file)"
+
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
@@ -296,6 +307,10 @@ object AllSettings {
     val numFirstPostsToReview = 1
     val numFirstPostsToApprove = 0
     val numFirstPostsToAllow = 0
+    val enableStopForumSpam = true
+    val enableAkismet = false // later, when more tested: globals.config.akismetApiKey.isDefined
+    val akismetApiKey: String = if (globals.config.akismetApiKey.isDefined) InConfigFile else ""
+    val sendEmailToAkismet = true
     val faviconUrl = ""
     val headStylesHtml = ""
     val headScriptsHtml = ""
@@ -400,6 +415,10 @@ case class EffectiveSettings(
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
   def numFirstPostsToApprove: Int = firstInChain(_.numFirstPostsToApprove) getOrElse default.numFirstPostsToApprove
   def numFirstPostsToAllow: Int = firstInChain(_.numFirstPostsToAllow) getOrElse default.numFirstPostsToAllow
+  def enableStopForumSpam = firstInChain(_.enableStopForumSpam) getOrElse default.enableStopForumSpam
+  def enableAkismet = firstInChain(_.enableAkismet) getOrElse default.enableAkismet
+  def akismetApiKey: String = firstInChain(_.akismetApiKey) getOrElse default.akismetApiKey
+  def sendEmailToAkismet = firstInChain(_.sendEmailToAkismet) getOrElse default.sendEmailToAkismet
   def faviconUrl: String = firstInChain(_.faviconUrl) getOrElse default.faviconUrl
   def headStylesHtml: String = firstInChain(_.headStylesHtml) getOrElse default.headStylesHtml
   def headScriptsHtml: String = firstInChain(_.headScriptsHtml) getOrElse default.headScriptsHtml
@@ -598,6 +617,10 @@ object Settings2 {
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
       "numFirstPostsToApprove" -> JsNumberOrNull(s.numFirstPostsToApprove),
       "numFirstPostsToAllow" -> JsNumberOrNull(s.numFirstPostsToAllow),
+      "enableStopForumSpam" -> JsBooleanOrNull(s.enableStopForumSpam),
+      "enableAkismet" -> JsBooleanOrNull(s.enableAkismet),
+      "akismetApiKey" -> JsStringOrNull(s.akismetApiKey),
+      "sendEmailToAkismet" -> JsBooleanOrNull(s.sendEmailToAkismet),
       "faviconUrl" -> JsStringOrNull(s.faviconUrl),
       "headStylesHtml" -> JsStringOrNull(s.headStylesHtml),
       "headScriptsHtml" -> JsStringOrNull(s.headScriptsHtml),
@@ -684,6 +707,10 @@ object Settings2 {
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
     numFirstPostsToApprove = anyInt(json, "numFirstPostsToApprove", d.numFirstPostsToApprove),
     numFirstPostsToAllow = anyInt(json, "numFirstPostsToAllow", d.numFirstPostsToAllow),
+    enableStopForumSpam = anyBool(json, "enableStopForumSpam", d.enableStopForumSpam),
+    enableAkismet = anyBool(json, "enableAkismet", d.enableAkismet),
+    akismetApiKey = anyString(json, "akismetApiKey", d.akismetApiKey),
+    sendEmailToAkismet = anyBool(json, "sendEmailToAkismet", d.sendEmailToAkismet),
     faviconUrl = anyString(json, "faviconUrl", d.faviconUrl),
     headStylesHtml = anyString(json, "headStylesHtml", d.headStylesHtml),
     headScriptsHtml = anyString(json, "headScriptsHtml", d.headScriptsHtml),

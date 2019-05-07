@@ -256,12 +256,6 @@ export const staffTours: StaffTours = {
       placeAt: '#e2eSortTopB',
       placeHow: PlaceHow.Below,
     }, {
-      title: "You can create new topics",
-      text: "outside any blog post, if you want to use this like a forum",
-      placeAt: '#e2eCreateSth',
-      placeHow: PlaceHow.ToTheLeft,
-      highlightPadding: 17,
-    }, {
       title: "Your menu",
       text: r.span({}, "Click your name, ", r.b({}, me.username), ", to open. Now"),
       placeAt: '.esMyMenu',

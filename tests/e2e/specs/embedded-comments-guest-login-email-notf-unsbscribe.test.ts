@@ -55,6 +55,8 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
     site.meta.localHostname = localHostname;
     site.settings.numFirstPostsToApprove = 0;
     site.settings.numFirstPostsToReview = 1;
+    // Need to disable Akismet, otherwise it sometimes thinks Fido's comments are spam.
+    site.settings.enableAkismet = false;
     site.settings.allowEmbeddingFrom = embeddingOrigin;
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;

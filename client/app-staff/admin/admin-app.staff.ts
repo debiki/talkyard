@@ -263,11 +263,12 @@ const AdminAppComponent = createReactClass(<any> {
 
   render: function() {
     const store: Store = this.state.store;
+    const currentSettings: Settings = this.state.currentSettings;
     const me = store.me;
     if (!me)
       return r.p({}, "Not logged in");
 
-    if (!this.state.currentSettings)
+    if (!currentSettings)
       return r.p({}, "Loading ...");
 
     const ar = AdminRoot;
@@ -278,7 +279,7 @@ const AdminAppComponent = createReactClass(<any> {
     const customizeLink = me.isAdmin ?
         LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;
 
-    const apiLink = me.isAdmin ?
+    const apiLink = me.isAdmin && currentSettings.enableApi ?
       LiNavLink({ to: ar + 'api', className: 'e_ApiB' }, "API") : null;
 
     const saveBar = _.isEmpty(this.state.editedSettings) ? null :
@@ -431,7 +432,8 @@ const SettingsPanel = createFactory({
 
   render: function() {
     const props = this.props;
-    if (!props.currentSettings)
+    const currentSettings: Settings = props.currentSettings;
+    if (!currentSettings)
       return r.p({}, 'Loading...');
 
     const store: Store = this.props.store;
@@ -443,6 +445,14 @@ const SettingsPanel = createFactory({
     const sr = AdminRoot + 'settings/';
     const ps = this.props;
 
+    // If this site is for blog comments, and forum features not yet enabled,
+    // then we'll soft-hide settings for changing the address to the site (which
+    // people do but then HTTPS won't work unless also configured — so their site breaks),
+    // and, accidentally, we hide Google Analytics too — which isn't useful for blog
+    // comments sites anyway, right?
+    const isSeparateSite =
+        location.hostname.indexOf('comments-for-') !== 0 || currentSettings.enableForum;
+
     return (
       r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
@@ -453,7 +463,10 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'features', id: 'e_A_Ss_Features' }, "Features"),
           LiNavLink({ to: sr + 'embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
           LiNavLink({ to: sr + 'language', id: 'e_AA_Ss_Lang' }, "Language"),
-          LiNavLink({ to: sr + 'advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
+          // Just soft-hide this — so Talkyard staff can still have a look, by typing the
+          // url to these settings, manually.
+          !isSeparateSite ? null :
+            LiNavLink({ to: sr + 'site', id: 'e2eAA_Ss_AdvancedL' }, "Site")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
             Route({ path: sr + 'legal', render: () => LegalSettings(ps) }),
@@ -463,7 +476,7 @@ const SettingsPanel = createFactory({
             Route({ path: sr + 'features', render: () => FeatureSettings(ps) }),
             Route({ path: sr + 'embedded-comments', render: () => EmbeddedCommentsSettings(ps) }), // [8UP4QX0]
             Route({ path: sr + 'language', render: () => LanguageSettings(ps) }),
-            Route({ path: sr + 'advanced', render: () => AdvancedSettings(ps) })))));
+            Route({ path: sr + 'site', render: () => AdvancedSettings(ps) })))));
   }
 });
 
@@ -890,6 +903,16 @@ const SpamFlagsSettings = createFactory({
 
     return (
       r.div({},
+        !currentSettings.akismetApiKey ? null :  // currently, needs server side key
+        Setting2(props, {
+          type: 'checkbox', label: "Enable Akismet", id: 'e_EnableAkismet',
+          help: "Akismet is a spam filter service. Uncheck to disable.",
+          getter: (s: Settings) => s.enableAkismet,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableAkismet = target.checked;
+          }
+        }),
+
         Setting2(props, { type: 'number', min: 0, max: LargeNumber,
           label: "Num flags to hide post",
           help: "If a post gets these many flags, it'll get hidden, automatically.",
@@ -1006,8 +1029,58 @@ const FeatureSettings = createFactory({
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
 
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    const isForumEnabled = valueOf(s => s.enableForum);
+
     return (
       r.div({},
+        Setting2(props, { type: 'checkbox',
+          label: "Enable discussion forum",
+          help: "If disabled, this site is for embedded blog comments only. " +
+            "Once forum features are enabled, then, cannot be disabled.",
+          // If forum features enabled, then, if disabling, categorise and topics alread
+          // created might "break" or become unaccessible? So don't let people disable.
+          disabled: currentSettings.enableForum,
+          getter: (s: Settings) => s.enableForum,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableForum = target.checked;
+            // These should get disabled, if enableForum gets disabled (can be edited,
+            // before saving). And nice to enable by default, if one enables forum features.
+            newSettings.showCategories = newSettings.enableForum;
+            newSettings.enableChat = newSettings.enableForum;
+            newSettings.enableDirectMessages = newSettings.enableForum;
+            newSettings.showTopicFilterButton = newSettings.enableForum;
+            newSettings.showTopicTypes = newSettings.enableForum;
+            newSettings.selectTopicType = newSettings.enableForum;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox',
+          label: "Enable API",
+          help: "Lets you generate API secrets and do things via HTTP API requests, " +
+            "e.g. Single Sign-On.",
+          getter: (s: Settings) => s.enableApi,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableApi = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null :
+        Setting2(props, { type: 'checkbox', label: "Enable categories",
+          className: 'e_A_Ss_S-ShowCatsCB',
+          help: "Unckeck to disable categories and hide category related buttons and columns " +
+          "— can make sense if your community is small and you don't need different categories.",
+          getter: (s: Settings) => s.showCategories,
+          update: (newSettings: Settings, target) => {
+            newSettings.showCategories = target.checked;
+          }
+        }),
+
+        // Later enableTags
+
+        !isForumEnabled ? null :
         Setting2(props, { type: 'checkbox',
           label: "Enable chat",
           help: "Lets people create and join chat topics, and shows joined chats in the left sidebar. " +
@@ -1019,6 +1092,7 @@ const FeatureSettings = createFactory({
           }
         }),
 
+        !isForumEnabled ? null :
         Setting2(props, { type: 'checkbox',
           label: "Enable direct messages",
           help: "Lets people send direct messages to each other, and shows one's direct message " +
@@ -1047,6 +1121,31 @@ const FeatureSettings = createFactory({
           getter: (s: Settings) => s.showSubCommunities,
           update: (newSettings: Settings, target) => {
             newSettings.showSubCommunities = target.checked;
+          }
+        }), */
+
+        Setting2(props, {
+          type: 'checkbox', label: "Experimental",
+          help: "Enables complicated and less well tested features, " +
+            "like custom HTML pages.",
+          getter: (s: Settings) => s.showExperimental,
+          update: (newSettings: Settings, target) => {
+            newSettings.showExperimental = target.checked;
+          }
+        }),
+
+        /*
+        // Don't do this. Use JSON instead? Then, can include feature flag values too.
+        // Reuse the UI settings approach? [6KXTEI]
+        Setting2(props, { type: 'textarea', label: "Feature flags", id: 'e_FeatFlags',
+          help: r.span({}, "Enables or disables new features. Ignore, unless you know what " +
+              "you're doing."),
+          getter: (s: Settings) =>
+            // Replace spaces with newlines, otherwise hard to read.  What? Why? No stop doing that.
+            _.isUndefined(s.featureFlags) ? undefined : s.featureFlags.replace(/\s+/g, '\n'),
+          update: (newSettings: Settings, target) => {
+            // Change back from \n to space — browsers want spaces in allow-from.
+            newSettings.featureFlags = target.value.replace(/\n+/g, ' ');
           }
         }), */
       ));
@@ -1080,6 +1179,11 @@ const EmbeddedCommentsSettings = createFactory({
     // @ifdef DEBUG
     dotMin = '';
     // @endif
+
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    const enableForum = valueOf(s => s.enableForum);
 
     const urlSeemsValid = /https?:\/\/.+/.test(embeddingUrl);   // 'http://localhost' is ok
 
@@ -1185,6 +1289,18 @@ const EmbeddedCommentsSettings = createFactory({
             newSettings.allowEmbeddingFrom = target.value;
           }
         }),
+
+        /*
+        !urlSeemsValid || !enableForum ? null : Setting2(props, { type: 'number',
+          label: "Embedded comments category id",
+          help: "In which categoy to place embedded blog comments discussions.",
+          getter: (s: Settings) => s.numFlagsToHidePost,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            newSettings.embeddedCommentsCategoryId = num;
+          }
+        }),  */
+
         whichBlogQuestion,
         anyInstructions));
   }
@@ -1822,32 +1938,6 @@ const AdvancedSettings = createFactory({
           }
         }),
 
-        Setting2(props, {
-          type: 'checkbox', label: "Experimental",
-          help: "Enables some currently not-well-tested features " +
-          "like Wiki MindMaps and custom HTML pages.",
-          getter: (s: Settings) => s.showExperimental,
-          update: (newSettings: Settings, target) => {
-            newSettings.showExperimental = target.checked;
-          }
-        }),
-
-        /*
-        // Don't do this. Use JSON instead? Then, can include feature flag values too.
-        // Reuse the UI settings approach? [6KXTEI]
-        Setting2(props, { type: 'textarea', label: "Feature flags", id: 'e_FeatFlags',
-          help: r.span({}, "Enables or disables new features. Ignore, unless you know what " +
-              "you're doing."),
-          getter: (s: Settings) =>
-            // Replace spaces with newlines, otherwise hard to read.  What? Why? No stop doing that.
-            _.isUndefined(s.featureFlags) ? undefined : s.featureFlags.replace(/\s+/g, '\n'),
-          update: (newSettings: Settings, target) => {
-            // Change back from \n to space — browsers want spaces in allow-from.
-            newSettings.featureFlags = target.value.replace(/\n+/g, ' ');
-          }
-        }), */
-
-        r.hr(),
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup));
@@ -2051,6 +2141,7 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
+        !valueOf(s => s.showCategories) ? null :
         Setting2(props, { type: 'text', label: "Forum main view",
           className: 'e_A_Ss_S-ForumMainViewTI',
           help: "Set to 'categories' to show all categories on the homepage, instead " +
@@ -2066,16 +2157,7 @@ const CustomizeBasicPanel = createFactory({
           "to make it simpler. Uncheck a checkbox to remove a feature."),
           */
 
-        Setting2(props, { type: 'checkbox', label: "Use categories",
-          className: 'e_A_Ss_S-ShowCatsCB',
-          help: "Unckeck to disable categories and hide category related buttons and columns. " +
-          "Suitable for small forums where you don't need different categories.",
-          getter: (s: Settings) => s.showCategories,
-          update: (newSettings: Settings, target) => {
-            newSettings.showCategories = target.checked;
-          }
-        }),
-
+        !valueOf(s => s.enableForum) ? null :
         Setting2(props, { type: 'checkbox', label: "Show topic filter button",
           className: 'e_A_Ss_S-ShowTopicFilterCB',
           help: r.span({}, "Uncheck to hide the ", r.i({}, "All Topics"), " / ",
@@ -2086,6 +2168,7 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
+        !valueOf(s => s.enableForum) ? null :
         Setting2(props, { type: 'checkbox', label: "Show topic type icons",
           className: 'e_A_Ss_S-ShowTopicTypesCB',
           help: "Uncheck to hide topic type icons in the forum topic list",
@@ -2095,6 +2178,7 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
+        !valueOf(s => s.enableForum) ? null :
         Setting2(props, { type: 'checkbox', label: "Choose topic type",
           className: 'e_A_Ss_S-SelectTopicTypeCB',
           help: "Uncheck to hide choose-and-change topic type buttons",

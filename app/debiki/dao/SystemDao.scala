@@ -264,15 +264,13 @@ class SystemDao(
         requireVerifiedEmail = notIfEmbedded,
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
-        // Features intended for forums — like chat and direct messages — just make people
-        // confused, in a blog comments site, right.
-        enableForum = notIfEmbedded,
+
+        // Features are disabled, for embedded blog comments sites, here instead: [493MRP1].
+
         // People who create new sites via a hosted service, might not be technical
         // people; to keep things simple for them, disable API and tags, initially. [DEFFEAT]
         enableApi = Some(Some(false)),
         enableTags = Some(Some(false)),
-        enableChat = notIfEmbedded,
-        enableDirectMessages = notIfEmbedded,
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = hostname.map(Hostname(_, Hostname.RoleCanonical))

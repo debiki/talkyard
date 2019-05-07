@@ -19,7 +19,7 @@ package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{TextAndHtml, TextAndHtmlMaker}
+import debiki.{AllSettings, Config, TextAndHtml, TextAndHtmlMaker}
 import debiki.EdHttp.throwForbidden
 import debiki.JsonUtils.readOptString
 import java.{net => jn}
@@ -116,8 +116,10 @@ object BadSpamCheckResponseException extends QuickException
   * Thread safe.
   */
 class SpamChecker(
+  config: Config,
   isDevTest: Boolean,
   originOfSiteId: Function[SiteId, Option[String]],
+  settingsBySiteId: Function[SiteId, AllSettings],
   executionContext: ExecutionContext,
   playConf: play.api.Configuration,
   wsClient: WSClient,
@@ -140,12 +142,7 @@ class SpamChecker(
 
   private def encode(text: String) = jn.URLEncoder.encode(text, "UTF-8")
 
-  // One key only, for now. Later on, one per site? + 1 global for non-commercial
-  // low traffic newly created sites? + 1 global for commercial low traffic sites?
-  // (and one per site for high traffic sites)
-  private val anyAkismetKey: Option[String] =
-    playConf.getString("talkyard.akismet.apiKey").noneIfBlank orElse
-      playConf.getString("talkyard.akismetApiKey").noneIfBlank  // old name
+  private val anyAkismetKey: Option[String] = config.akismetApiKey
 
   // See https://akismet.com/development/api/#comment-check
   val AkismetAlwaysSpamName = "viagra-test-123"
@@ -244,6 +241,8 @@ class SpamChecker(
     if (!spamChecksEnabled)
       return Future.successful(Nil)
 
+    val siteSettings: AllSettings = settingsBySiteId(spamCheckTask.siteId)
+
     val spamTestFutures: Vector[Future[SpamCheckResult]] =
       if (spamCheckTask.requestStuff.userName contains TalkyardSpamMagicText) {
         Vector(Future.successful(SpamCheckResult.SpamFound(
@@ -259,7 +258,7 @@ class SpamChecker(
       }
       else {
         val stopForumSpamFuture: Option[Future[SpamCheckResult]] =
-          if (!stopForumSpamEnabled) None
+          if (!stopForumSpamEnabled || !siteSettings.enableStopForumSpam) None
           else {
             Some(checkViaStopForumSpam(spamCheckTask))
           }
@@ -278,7 +277,7 @@ class SpamChecker(
           have any sensible on-topic replies if staff says "who are you why did you join?").
           Also submit their About profile text to a spam check service at the
           same time. [PROFLSPM]
-          if (!akismetEnabled) None
+          if (!akismetEnabled || !siteSettings.enableAkismet) None
           else {
             makeAkismetRequestBody(spamCheckTask) map checkViaAkismet
           } */
@@ -313,6 +312,8 @@ class SpamChecker(
       return Future.successful(Nil)
     }
 
+    val siteSettings: AllSettings = settingsBySiteId(spamCheckTask.siteId)
+
     val textAndHtml = textAndHtmlMaker.forHtmlAlready(postToSpamCheck.htmlToSpamCheck)
 
     val spamTestFutures: Vector[Future[SpamCheckResult]] =
@@ -337,7 +338,7 @@ class SpamChecker(
           _.toInt >= TrustLevel.FullMember.toInt)
 
         val akismetFuture: Option[Future[SpamCheckResult]] =
-          if (userIsNotNew || !akismetEnabled) {
+          if (userIsNotNew || !akismetEnabled || !siteSettings.enableAkismet) {
             None
           }
           else {
@@ -1017,5 +1018,19 @@ object SpamChecker {
           |""").mkString("\n\n------------------\n") + "\n\n")
   }
 
+  def shallCheckSpamFor(userAndLevels: UserAndLevels): Boolean = {
+    shallCheckSpamFor(userAndLevels.user)
+  }
+
+  def shallCheckSpamFor(participant: Participant): Boolean = {
+    if (participant.isStaff) return false
+    val hasHighTrustLevel = participant.effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt
+    val isGuestOrThreat = participant match {
+      case m: User => m.effectiveThreatLevel.toInt >= ThreatLevel.MildThreat.toInt
+      case _: Guest => true
+      case _: Group => false
+    }
+    isGuestOrThreat || !hasHighTrustLevel
+  }
 }
 

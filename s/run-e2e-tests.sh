@@ -357,7 +357,7 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-req-verif-email.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-forum-intro-tour $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-create-site-forum-intro-tour $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-drafts-not-logged-in $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)

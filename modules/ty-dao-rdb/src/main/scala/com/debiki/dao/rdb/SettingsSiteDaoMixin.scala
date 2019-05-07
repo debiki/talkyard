@@ -99,6 +99,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         num_first_posts_to_review,
         num_first_posts_to_approve,
         num_first_posts_to_allow,
+        enable_stop_forum_spam,
+        enable_akismet,
+        akismet_api_key,
+        send_email_to_akismet,
         favicon_url,
         head_styles_html,
         head_scripts_html,
@@ -133,7 +137,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -179,6 +183,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.numFirstPostsToReview.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToApprove.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToAllow.getOrElse(None).orNullInt,
+      editedSettings2.enableStopForumSpam.getOrElse(None).orNullBoolean,
+      editedSettings2.enableAkismet.getOrElse(None).orNullBoolean,
+      editedSettings2.akismetApiKey.getOrElse(None).orNullVarchar,
+      editedSettings2.sendEmailToAkismet.getOrElse(None).orNullBoolean,
       editedSettings2.faviconUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headStylesHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headScriptsHtml.getOrElse(None).trimOrNullVarchar,
@@ -272,6 +280,10 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("num_first_posts_to_review", s.numFirstPostsToReview.map(_.orNullInt))
     maybeSet("num_first_posts_to_approve", s.numFirstPostsToApprove.map(_.orNullInt))
     maybeSet("num_first_posts_to_allow", s.numFirstPostsToAllow.map(_.orNullInt))
+    maybeSet("enable_stop_forum_spam", s.enableStopForumSpam.map(_.orNullBoolean))
+    maybeSet("enable_akismet", s.enableAkismet.map(_.orNullBoolean))
+    maybeSet("akismet_api_key", s.akismetApiKey.map(_.trimOrNullVarchar))
+    maybeSet("send_email_to_akismet", s.sendEmailToAkismet.map(_.orNullBoolean))
     maybeSet("favicon_url", s.faviconUrl.map(_.trimOrNullVarchar))
     maybeSet("head_styles_html", s.headStylesHtml.map(_.trimOrNullVarchar))
     maybeSet("head_scripts_html", s.headScriptsHtml.map(_.trimOrNullVarchar))
@@ -356,22 +368,26 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       forumCategoryLinks = getOptString(rs, "forum_category_links"),
       forumTopicsLayout = getOptInt(rs, "forum_topics_layout").flatMap(TopicListLayout.fromInt),
       forumCategoriesLayout = getOptInt(rs, "forum_categories_layout").flatMap(CategoriesLayout.fromInt),
-      showCategories = getOptBoolean(rs, "show_categories"),
-      showTopicFilterButton = getOptBoolean(rs, "show_topic_filter"),
-      showTopicTypes = getOptBoolean(rs, "show_topic_types"),
-      selectTopicType = getOptBoolean(rs, "select_topic_type"),
+      showCategories = getOptBool(rs, "show_categories"),
+      showTopicFilterButton = getOptBool(rs, "show_topic_filter"),
+      showTopicTypes = getOptBool(rs, "show_topic_types"),
+      selectTopicType = getOptBool(rs, "select_topic_type"),
       showAuthorHow = getOptInt(rs, "show_author_how").flatMap(ShowAuthorHow.fromInt),
       watchbarStartsOpen = getOptBool(rs, "watchbar_starts_open"),
-      numFirstPostsToReview = getOptionalInt(rs, "num_first_posts_to_review"),
-      numFirstPostsToApprove = getOptionalInt(rs, "num_first_posts_to_approve"),
-      numFirstPostsToAllow = getOptionalInt(rs, "num_first_posts_to_allow"),
+      numFirstPostsToReview = getOptInt(rs, "num_first_posts_to_review"),
+      numFirstPostsToApprove = getOptInt(rs, "num_first_posts_to_approve"),
+      numFirstPostsToAllow = getOptInt(rs, "num_first_posts_to_allow"),
+      enableStopForumSpam = getOptBool(rs, "enable_stop_forum_spam"),
+      enableAkismet = getOptBool(rs, "enable_akismet"),
+      akismetApiKey = getOptString(rs, "akismet_api_key"),
+      sendEmailToAkismet = getOptBool(rs, "send_email_to_akismet"),
       faviconUrl = getOptString(rs, "favicon_url"),
       headStylesHtml = getOptString(rs, "head_styles_html"),
       headScriptsHtml = getOptString(rs, "head_scripts_html"),
       endOfBodyHtml = getOptString(rs, "end_of_body_html"),
       headerHtml = getOptString(rs, "header_html"),
       footerHtml = getOptString(rs, "footer_html"),
-      horizontalComments = getOptBoolean(rs, "horizontal_comments"),
+      horizontalComments = getOptBool(rs, "horizontal_comments"),
       socialLinksHtml = getOptString(rs, "social_links_html"),
       logoUrlOrHtml = getOptString(rs, "logo_url_or_html"),
       orgDomain = getOptString(rs, "org_domain"),
@@ -391,8 +407,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       enableTags = getOptBool(rs, "enable_tags"),
       enableChat = getOptBool(rs, "enable_chat"),
       enableDirectMessages = getOptBool(rs, "enable_direct_messages"),
-      showSubCommunities = getOptBoolean(rs, "show_sub_communities"),
-      showExperimental = getOptBoolean(rs, "experimental"),
+      showSubCommunities = getOptBool(rs, "show_sub_communities"),
+      showExperimental = getOptBool(rs, "experimental"),
       featureFlags = getOptString(rs, "feature_flags"),
       allowEmbeddingFrom = getOptString(rs, "allow_embedding_from"),
       embeddedCommentsCategoryId = getOptInt(rs, "embedded_comments_category_id"),
@@ -401,7 +417,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       cooldownMinutesAfterFlaggedHidden = getOptInt(rs, "cooldown_minutes_after_flagged_hidden"),
       numFlagsToBlockNewUser = getOptInt(rs, "num_flags_to_block_new_user"),
       numFlaggersToBlockNewUser = getOptInt(rs, "num_flaggers_to_block_new_user"),
-      notifyModsIfUserBlocked = getOptBoolean(rs, "notify_mods_if_user_blocked"),
+      notifyModsIfUserBlocked = getOptBool(rs, "notify_mods_if_user_blocked"),
       regularMemberFlagWeight = getOptFloat(rs, "regular_member_flag_weight"),
       coreMemberFlagWeight = getOptFloat(rs, "core_member_flag_weight"))
   }

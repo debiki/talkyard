@@ -152,6 +152,7 @@ export const TopBar = createComponent({
     const me: Myself = store.me;
     const pageRole = page.pageRole;
     const isChat = page_isChatChannel(page.pageRole);
+    const isEmbComments = pageRole === PageRole.EmbeddedComments;
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
@@ -170,7 +171,7 @@ export const TopBar = createComponent({
     const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
     const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlistCategory);
 
-    if (isUnlisted || isSection(pageRole)) {
+    if ((isUnlisted || isSection(pageRole)) && !isEmbComments) {
       // Show no ancestors.
     }
     else if (thereAreAncestors && shallShowAncestors) {
@@ -186,8 +187,10 @@ export const TopBar = createComponent({
           }));
     }
     // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
-    // direct messages, which aren't placed in any category (!thereAreAncestors).
-    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage) {
+    // direct messages, which aren't placed in any category (!thereAreAncestors),
+    // and 3) for embedded comments, if categories disabled, so can still return to
+    // discussion list page.
+    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage || isEmbComments) {
       // Currently there's always just one site section, namely the forum.
       const homePath = store.siteSections[0].path;
       ancestorCategories =

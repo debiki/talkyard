@@ -240,14 +240,16 @@ export const TitleEditor = createComponent({
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
 
     const layoutAndSettingsButton =
-        this.state.showLayoutAndSettings || !me.isAdmin || pageRole !== PageRole.Forum
+        this.state.showLayoutAndSettings || !me.isAdmin || pageRole !== PageRole.Forum ||
+              settings.enableForum === false
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
               "Layout and settings");
 
     const existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
     const advancedStuffButton = !existsAdvStuffToEdit ||
-        this.state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage
+        this.state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage ||
+              settings.enableForum === false
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
               "Advanced");

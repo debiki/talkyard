@@ -26,6 +26,7 @@ import debiki._
 import debiki.EdHttp._
 import ed.server.auth.{Authz, ForumAuthzContext}
 import ed.server.notf.NotificationGenerator
+import ed.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import math.max
@@ -266,6 +267,7 @@ trait PagesDao {
 
     val anySpamCheckTask =
       if (spamRelReqStuff.isEmpty || !globals.spamChecker.spamChecksEnabled) None
+      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else {
         // The uri is now sth like /-/create-page. Change to the path to the page
         // we're creating.

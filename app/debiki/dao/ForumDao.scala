@@ -109,10 +109,17 @@ trait ForumDao {
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
         forumPageId, rootCategoryId, options, byWho, tx)
 
+      // Delaying configuration of these settings until here, instead of here: [493MRP1],
+      // lets us let people choose to create embedded comments sites, also
+      // when doing a self hosted installation. Only partly impl, see [602KMRR52].
       val settings =
         if (isForEmbCmts) {
+          // Features intended for forums just make people confused, in a blog comments site.
           Some(SettingsToSave(
+            enableForum = Some(Some(false)),
             showCategories = Some(Some(false)),
+            enableChat = Some(Some(false)),
+            enableDirectMessages = Some(Some(false)),
             showTopicFilterButton = Some(Some(false)),
             showTopicTypes = Some(Some(false)),
             selectTopicType = Some(Some(false))))

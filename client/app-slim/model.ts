@@ -955,6 +955,8 @@ interface SettingsVisibleClientSide {
   ssoUrl?: string;                      // default: undefined
   enableSso?: boolean;                  // default: undefined —> false
   minPasswordLength?: number;           // default: 10
+  enableForum?: boolean;                // default: true
+  enableTags?: boolean;                 // default: false for now, true later when impl.
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
   showSubCommunities?: boolean;         // default: false
@@ -1502,6 +1504,10 @@ interface Settings {
   numFirstPostsToAllow: number;
   numFirstPostsToApprove: number;
   numFirstPostsToReview: number;
+  enableStopForumSpam: boolean;
+  enableAkismet: boolean;
+  akismetApiKey: string;
+  sendEmailToAkismet: boolean;
 
   // Forum
   forumMainView: string;
@@ -1527,9 +1533,15 @@ interface Settings {
   regularMemberFlagWeight: number;  // RENAME to trustedMemberFlagWeight [RENREGLS]
   coreMemberFlagWeight: number;
 
+  // Features
+  enableForum: boolean;
+  enableApi: boolean;
+  enableTags: boolean;
   enableChat: boolean;
   enableDirectMessages: boolean;
   showSubCommunities: boolean;
+  showExperimental: boolean;
+  featureFlags: string;
 
   horizontalComments: boolean;
 
@@ -1555,10 +1567,8 @@ interface Settings {
   languageCode: string;
   googleUniversalAnalyticsTrackingId: string;
 
-  showExperimental: boolean;
-  featureFlags: string;
-
   allowEmbeddingFrom: string;
+  embeddedCommentsCategoryId: number;
 }
 
 

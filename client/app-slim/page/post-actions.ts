@@ -655,10 +655,12 @@ const MoreDropdownModal = createComponent({
 
   makeButtons: function() {
     const store: Store = this.state.store;
+    const settings: SettingsVisibleClientSide = store.settings;
     const page: Page = store.currentPage;
     const isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
     const me: Myself = store.me;
     const post: Post = this.state.post;
+    const isForumSite = settings.enableForum !== false;
     const isPageBody = post.nr === BodyNr;
     const isPostDeleted = post_isDeleted(post);
     const isPageDeleted = page.pageDeletedAtMs;
@@ -717,7 +719,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Tags
 
-    if ((isStaff(me) || isOwnPost) && !store.isEmbedded) {
+    if ((isStaff(me) || isOwnPost) && !store.isEmbedded && settings.enableTags !== false) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
           t.pa.AddTags));
@@ -739,7 +741,7 @@ const MoreDropdownModal = createComponent({
 
     // Wikified posts no longer looks good, because of the avatar icon to the left.
     // Only the orig post looks ok, therefore: `isPageBody &&`.
-    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat) {
+    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat && isForumSite) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users s_PA_WkB', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? t.pa.UnWikify : t.pa.Wikify));

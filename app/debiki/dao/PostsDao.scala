@@ -34,6 +34,7 @@ import PostsDao._
 import com.debiki.core
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType
 import ed.server.auth.Authz
+import ed.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
 import talkyard.server.{IfCached, PostRendererSettings}
@@ -225,6 +226,7 @@ trait PostsDao {
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -547,6 +549,7 @@ trait PostsDao {
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -617,6 +620,7 @@ trait PostsDao {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
+    val authorAndLevels = loadUserAndLevels(byWho, tx)
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE8FPZE2P")
     require(lastPost.tyype == PostType.ChatMessage, o"""Post id ${lastPost.id}
@@ -654,6 +658,7 @@ trait PostsDao {
 
     val anySpamCheckTask =
       if (!globals.spamChecker.spamChecksEnabled) None
+      else if (!SpamChecker.shallCheckSpamFor(authorAndLevels)) None
       else Some(
         SpamCheckTask(
           createdAt = globals.now(),
@@ -924,6 +929,7 @@ trait PostsDao {
 
       val anySpamCheckTask =
         if (!globals.spamChecker.spamChecksEnabled) None
+        else if (!SpamChecker.shallCheckSpamFor(editor)) None
         else Some(
           SpamCheckTask(
             createdAt = globals.now(),
