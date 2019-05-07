@@ -51,10 +51,8 @@ export var AdminGuide =
     r.h2({},
       "Create categories"),
     r.p({},
-      "Click ", r.strong({}, "Categories"),
-      ", then ", r.strong({}, "Create Category"),
-      ". Edit the ", r.i({}, "description-of-this-category"),
-      " topic you'll find in your new category. " +
+      "Click ", r.strong({ style: { textDecoration: 'underline' }}, t.fb.ViewCategories),
+      ", then ", r.strong({}, t.fb.CreateCat), ". " +
       "Don't create too many categories — if you do, they might look rather empty. " +
       "Also, create some interesting topics, so people won't find an empty forum. "),
     r.h2({},

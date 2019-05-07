@@ -519,6 +519,8 @@ admin -
         - mod-review.2browsers.test.ts  TyT6KRBEQ2
 
 spam: (4BKS0)
+          - spam-basic-local.2browsers.test.ts  TyT530KRM1R
+          - spam-basic-local-ip-links-unblock.2browsers.test.ts  TyT602RGL4X
           - spam-basic-akismet.2browsers.test.ts  TyTSPAKISMET
           - spam-basic-akismet-false-positives.2browsers.test.ts  TyT205MKRRK0
           - spam-basic-akismet-false-negatives.2browsers.test.ts  TyT63MKWYT37

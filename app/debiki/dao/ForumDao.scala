@@ -94,6 +94,9 @@ trait ForumDao {
 
       val rootCategoryId = tx.nextCategoryId()
 
+      // If is the first forum for this site, we're also creating the first category, id = 1. [8UWKQXN45]
+      val isFirstForumForThisSite = rootCategoryId == 1
+
       // Create forum page.
       val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
       val forumPagePath = createPageImpl(
@@ -111,10 +114,20 @@ trait ForumDao {
 
       // Delaying configuration of these settings until here, instead of here: [493MRP1],
       // lets us let people choose to create embedded comments sites, also
-      // when doing a self hosted installation. Only partly impl, see [602KMRR52].
+      // for the first site when doing a self hosted installation. Only partly impl, see [602KMRR52].
       val settings =
-        if (isForEmbCmts) {
+        if (!isFirstForumForThisSite) {
+          // Don't overwrite site settings — this is a 2nd forum for the same site,
+          // and the current settings have been choosen to suite the 1st forum for this site.
+          // (Each forum is its own sub community. So, this is a multi sub community site.)
+          // Could, however, add forum specific settings (the ones below) scoped to the new forum?
+          None
+        }
+        else if (isForEmbCmts) {
+          // (This is the first "forum" we create, for this site. We're free to
+          // update site settings as we want.)
           // Features intended for forums just make people confused, in a blog comments site.
+          // So disable:
           Some(SettingsToSave(
             enableForum = Some(Some(false)),
             showCategories = Some(Some(false)),

@@ -248,7 +248,7 @@ trait ReviewsDao {
 
     // Which spam check task shall we update? (WHICHTASK) There might be many,
     // for different revisions of the same post (because edits are spam checked, too).
-    // Probably the most resent spam check task corresponds to the post revision
+    // Probably the most recent spam check task corresponds to the post revision
     // the reviewer reviewed?
     val latestTask = spamCheckTasksAnyRevNr.lastOption
 
@@ -262,8 +262,8 @@ trait ReviewsDao {
 
     latestTask foreach { spamCheckTask =>
       // The Janitor thread will soon take a look at this spam check task, and
-      // report any classification error (spam detected, but human says isn't spam, or vice versa)
-      // to the spam check service. [SPMSCLRPT]
+      // report classification errors (spam detected, but human says isn't spam, or vice versa)
+      // to spam check services. [SPMSCLRPT]
       tx.updateSpamCheckTaskForPostWithResults(
         spamCheckTask.copy(humanSaysIsSpam = Some(humanSaysIsSpam)))
     }

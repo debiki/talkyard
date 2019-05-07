@@ -915,6 +915,8 @@ class SpamChecker(
 
 
   /** Returns (num false positives, num false negatives) reported.
+    *
+    * (A false positive = a spam check service incorrectly classified sth as spam.)
     */
   def reportClassificationMistake(spamCheckTask: SpamCheckTask): Future[(Int, Int)] = {
     val promise = Promise[(Int, Int)]()
@@ -1022,6 +1024,7 @@ object SpamChecker {
     shallCheckSpamFor(userAndLevels.user)
   }
 
+  SECURITY; COULD // always check links with Google Safe Browsing API, also for staff?
   def shallCheckSpamFor(participant: Participant): Boolean = {
     if (participant.isStaff) return false
     val hasHighTrustLevel = participant.effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt

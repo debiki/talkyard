@@ -307,7 +307,7 @@ const ForumIntroText = createComponent({
               onClick: morebundle.openEditIntroDialog }, t.fi.Edit)
         : null;
 
-    const anyForumIntroButtons = !settings.enableForum ? null :
+    const anyForumIntroButtons = settings.enableForum === false ? null :
       r.div({ className: 'esForumIntro_btns' },
         anyEditIntroBtn,
         r.a({ className: 'esForumIntro_close', onClick: () => ReactActions.showForumIntro(false) },
@@ -1062,7 +1062,8 @@ export const TopicsList = createComponent({
     // Otherwise people tend to not notice that they are inside a category.
     // And they typically do *not* see any about-category pinned topic
     // (like Discourse does — don't do that).
-    let categoryNameDescr = !settings_showCategories(store.settings, me) ? null :
+    let categoryNameDescr = !settings_showCategories(store.settings, me) ||
+        this.props.skipCatNameDescr ? null :
       CatNameDescr({ store, activeCategory, setCategory: this.props.setCategory,
           editCategory: this.props.editCategory });
 

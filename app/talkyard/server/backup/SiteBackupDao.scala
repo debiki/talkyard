@@ -55,7 +55,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {
     // COULD do this in the same transaction as the one below — then, would need a function
     // `transaction.continueWithSiteId(zzz)`?
     val siteToSave = siteData.site
-    val site = globals.systemDao.createSite(
+    val site = globals.systemDao.createAdditionalSite(
       siteToSave.pubId,
       siteToSave.name,
       siteToSave.status,

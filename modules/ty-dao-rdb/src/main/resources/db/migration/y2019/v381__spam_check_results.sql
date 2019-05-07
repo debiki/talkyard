@@ -54,9 +54,11 @@ alter table spam_check_queue3 add column misclassifications_reported_at timestam
 
 alter table spam_check_queue3 add constraint spamcheckqueue_c_results_null_eq check (
     (results_at is null) = (results_json is null) and
-    (results_at is null) = (results_text is null) and
     (results_at is null) = (num_is_spam_results is null) and
     (results_at is null) = (num_not_spam_results is null));
+
+alter table spam_check_queue3 add constraint spamcheckqueue_c_resultstext_null check (
+    (results_at is not null) or (results_text is null));
 
 alter table spam_check_queue3 add constraint spamcheckqueue_c_ismiscl_null check (
     (results_at is not null and human_says_is_spam is not null) = (is_misclassified is not null));
@@ -65,7 +67,8 @@ alter table spam_check_queue3 add constraint spamcheckqueue_c_results_before_rep
     (results_json is not null and human_says_is_spam is not null)
     or (misclassifications_reported_at is null));
 
--- json and text result fields 2 x larger than the text to spam check:
+-- json and text result fields 2 x larger than the text to spam check --
+-- because what if it's links only, all of them echoed in the results?
 
 alter table spam_check_queue3 add constraint spamcheckqueue_c_resultsjson_len check (
     pg_column_size(results_json) between 2 and 40400);
@@ -84,15 +87,16 @@ create index spamcheckqueue_next_miscl_i on spam_check_queue3 (results_at asc)
 
 
 alter table settings3 add column enable_stop_forum_spam bool;
+alter table settings3 add column send_email_to_stop_forum_spam bool;
 alter table settings3 add column enable_akismet bool;
-alter table settings3 add column akismet_api_key varchar;
 alter table settings3 add column send_email_to_akismet bool;
+alter table settings3 add column akismet_api_key varchar;
 
 alter table settings3 add constraint settings3_c_akismetapikey_len check (
     length(akismet_api_key) between 1 and 200);
 
 alter table settings3 add constraint settings_forum_features check (
-    enable_forum or (
+    enable_forum is not false or (
         show_categories = false and
         enable_tags = false and
         enable_chat = false and

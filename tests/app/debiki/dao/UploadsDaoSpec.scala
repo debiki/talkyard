@@ -394,7 +394,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         browserIdData)
 
       info("create site 2")
-      val site2 = globals.systemDao.createSite(
+      val site2 = globals.systemDao.createAdditionalSite(
         pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active,
         hostname = Some("site-two"),
         embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,

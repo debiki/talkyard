@@ -648,8 +648,11 @@ trait PostsDao {
       approvedSource = Some(combinedTextAndHtml.text),
       approvedHtmlSanitized = Some(combinedTextAndHtml.safeHtml),
       approvedAt = Some(tx.now.toJavaDate),
-      // COULD: bump revision, so appended text gets spam checked [SPMCKCHTAPD] — however
+      // COULD: bump revision, so appended text gets spam checked [SPMCHKED] — however
       // that'd currently mess up the assumptions that one only appends to rev nr = 1.
+      // *Solution?* Add a spam check task id, so the prim key becomes (site-id, id)?
+      // Then, here, a new task can be created. And it'll also be possible to have
+      // spam check tasks for checking new user profiles (user profile spam)  [PROFLSPM]
       //currentRevisionNr = lastPost.currentRevisionNr + 1,
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
       currentRevLastEditedAt = Some(tx.now.toJavaDate),
@@ -931,6 +934,8 @@ trait PostsDao {
         if (!globals.spamChecker.spamChecksEnabled) None
         else if (!SpamChecker.shallCheckSpamFor(editor)) None
         else Some(
+          // This can get same prim key as earlier spam check task, if is ninja edit. [SPMCHKED]
+          // Solution: Give each spam check task its own id field.
           SpamCheckTask(
             createdAt = globals.now(),
             siteId = siteId,

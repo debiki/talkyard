@@ -260,6 +260,7 @@ const UsersTopics = createFactory({
     const topicsElems = forum.TopicsList({
       topics: this.state.topics,
       store: this.props.store,
+      skipCatNameDescr: true,
       useTable: true,
       minHeight: 300,
       showLoadMoreButton: false,

@@ -53,7 +53,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
         author_trust_level,
         author_url)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      -- can happen if appending to same chat message? [SPMCKCHTAPD]
+      -- can happen if appending to same chat message? or ninja editing post [SPMCHKED]
       on conflict (site_id, post_id, post_rev_nr) do nothing
       """
     val values = List(
@@ -118,7 +118,7 @@ trait SpamCheckQueueDaoMixin extends SiteTransaction {
     val values = List(
       spamCheckTask.resultsAt.orNullTimestamp,
       spamCheckTask.resultsJson.orNullJson,
-      spamCheckTask.resultsText.orNullVarchar,
+      spamCheckTask.resultsText.trimNoneIfBlank,
       spamCheckTask.numIsSpamResults.orNullInt,
       spamCheckTask.numNotSpamResults.orNullInt,
       spamCheckTask.humanSaysIsSpam.orNullBoolean,

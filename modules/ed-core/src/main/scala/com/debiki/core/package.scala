@@ -543,7 +543,7 @@ package object core {
     misclassificationsReportedAt: Option[When] = None) {
 
     require(resultsAt.isDefined == resultsJson.isDefined, "TyE4RBK6RS11")
-    require(resultsAt.isDefined == resultsText.isDefined, "TyE4RBK6RS22")
+    require(resultsAt.isDefined || resultsText.isEmpty, "TyE4RBK6RS22")
     require(resultsAt.isDefined == numIsSpamResults.isDefined, "TyE4RBK6RS33")
     require(resultsAt.isDefined == numNotSpamResults.isDefined, "TyE4RBK6RS44")
     // We need both spam check results, and a human's opinion, before

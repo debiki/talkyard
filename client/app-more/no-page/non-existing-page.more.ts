@@ -216,7 +216,8 @@ const CreateSomethingHere = createComponent({
     or a dicussion forum. Now this choice happens earlier instead, at Talkyard.io.
     Still could make sense to re-enable this, because when doing a
     self hosted installation, that earlier-choice doesn't happen.  [602KMRR52]
-    For now, always assume one wants a forum, when self hosting.
+    For now, always assume one wants primarily a discussion forum
+    (rather than blog comments), when self hosting.
 
     const anyCreateEmbeddedCommentsPanel = createWhat === PageRole.EmbeddedComments ?
         CreateEmbeddedCommentsPanel(store) : null;

@@ -450,8 +450,7 @@ const SettingsPanel = createFactory({
     // people do but then HTTPS won't work unless also configured — so their site breaks),
     // and, accidentally, we hide Google Analytics too — which isn't useful for blog
     // comments sites anyway, right?
-    const isSeparateSite =
-        location.hostname.indexOf('comments-for-') !== 0 || currentSettings.enableForum;
+    const isBlogCommentsOnly = isBlogCommentsSite() && !currentSettings.enableForum;
 
     return (
       r.div({ className: 'esA_Ss' },
@@ -465,7 +464,7 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'language', id: 'e_AA_Ss_Lang' }, "Language"),
           // Just soft-hide this — so Talkyard staff can still have a look, by typing the
           // url to these settings, manually.
-          !isSeparateSite ? null :
+          isBlogCommentsOnly ? null :
             LiNavLink({ to: sr + 'site', id: 'e2eAA_Ss_AdvancedL' }, "Site")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
@@ -1040,8 +1039,8 @@ const FeatureSettings = createFactory({
           label: "Enable discussion forum",
           help: "If disabled, this site is for embedded blog comments only. " +
             "Once forum features are enabled, then, cannot be disabled.",
-          // If forum features enabled, then, if disabling, categorise and topics alread
-          // created might "break" or become unaccessible? So don't let people disable.
+          // If forum features enabled, then, if disabling, any forum categories and topics
+          // might "break" or become unaccessible? So disallow disabling this.
           disabled: currentSettings.enableForum,
           getter: (s: Settings) => s.enableForum,
           update: (newSettings: Settings, target) => {
@@ -1067,8 +1066,8 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        !isForumEnabled ? null :
-        Setting2(props, { type: 'checkbox', label: "Enable categories",
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable categories",
           className: 'e_A_Ss_S-ShowCatsCB',
           help: "Unckeck to disable categories and hide category related buttons and columns " +
           "— can make sense if your community is small and you don't need different categories.",
@@ -1080,9 +1079,8 @@ const FeatureSettings = createFactory({
 
         // Later enableTags
 
-        !isForumEnabled ? null :
-        Setting2(props, { type: 'checkbox',
-          label: "Enable chat",
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable chat",
           help: "Lets people create and join chat topics, and shows joined chats in the left sidebar. " +
             "If everyone uses another team chat tool already, like Slack, " +
             "then you might want to disable chat, here.",
@@ -1092,8 +1090,8 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        !isForumEnabled ? null :
-        Setting2(props, { type: 'checkbox',
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox',
           label: "Enable direct messages",
           help: "Lets people send direct messages to each other, and shows one's direct message " +
             "topics in the left sidebar. " +
@@ -2125,6 +2123,7 @@ const CustomizeBasicPanel = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     const faviconUrl = valueOf(s => s.faviconUrl);
+    const enableForum = valueOf(s => s.enableForum);
 
     return (
       r.div({},
@@ -2157,7 +2156,7 @@ const CustomizeBasicPanel = createFactory({
           "to make it simpler. Uncheck a checkbox to remove a feature."),
           */
 
-        !valueOf(s => s.enableForum) ? null :
+        !enableForum ? null :
         Setting2(props, { type: 'checkbox', label: "Show topic filter button",
           className: 'e_A_Ss_S-ShowTopicFilterCB',
           help: r.span({}, "Uncheck to hide the ", r.i({}, "All Topics"), " / ",
@@ -2168,7 +2167,7 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
-        !valueOf(s => s.enableForum) ? null :
+        !enableForum ? null :
         Setting2(props, { type: 'checkbox', label: "Show topic type icons",
           className: 'e_A_Ss_S-ShowTopicTypesCB',
           help: "Uncheck to hide topic type icons in the forum topic list",
@@ -2178,7 +2177,7 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
-        !valueOf(s => s.enableForum) ? null :
+        !enableForum ? null :
         Setting2(props, { type: 'checkbox', label: "Choose topic type",
           className: 'e_A_Ss_S-SelectTopicTypeCB',
           help: "Uncheck to hide choose-and-change topic type buttons",

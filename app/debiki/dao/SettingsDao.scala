@@ -20,8 +20,8 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.EdHttp.throwForbidden
-import debiki.EdHttp.throwForbiddenIf
+import debiki.EdHttp.throwBadRequest
+import debiki.EdHttp.throwBadRequestIf
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -51,20 +51,20 @@ trait SettingsDao {
   def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who) {
     // COULD test here that settings are valid? No inconsistencies?
 
-    throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
+    throwBadRequestIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
       "EdE5KP8R2", "Cannot clear the organization name")
 
     readWriteTransaction { tx =>
       val oldSettings = loadWholeSiteSettings(tx)
 
-      throwForbiddenIf(oldSettings.enableForum && settingsToSave.enableForum.is(Some(false)),
+      throwBadRequestIf(oldSettings.enableForum && settingsToSave.enableForum.is(Some(false)),
         "TyE306KMW1Q", "Cannot disable forum features, once enabled")
 
       tx.upsertSiteSettings(settingsToSave)
       val newSettings = loadWholeSiteSettings(tx)
       newSettings.findAnyError foreach { error =>
         // This'll rollback the transaction.
-        throwForbidden("EsE40GY28", s"Bad settings: $error")
+        throwBadRequest("EsE40GY28", s"Bad settings: $error")
       }
 
       lazy val identities = tx.loadIdentities(byWho.id)
@@ -74,7 +74,7 @@ trait SettingsDao {
 
       def throwIfLogsInWith(loginMethodName: String) {
         if (identities.exists(_.loginMethodName.toLowerCase contains loginMethodName.toLowerCase))
-          throwForbidden("TyE5UKDWSQ2", o"""Currently you cannot disable login with $loginMethodName
+          throwBadRequest("TyE5UKDWSQ2", o"""Currently you cannot disable login with $loginMethodName
             — you use it yourself to login""")
       }
 

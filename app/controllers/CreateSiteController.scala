@@ -142,7 +142,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val goToUrl: String =
       try {
-        globals.systemDao.createSite(
+        globals.systemDao.createAdditionalSite(
           pubId = Site.newPublId(),
           name = localHostname, SiteStatus.NoAdmin, hostname = Some(hostname),
           embeddingSiteUrl = anyEmbeddingSiteAddress,

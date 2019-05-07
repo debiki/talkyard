@@ -119,9 +119,11 @@ export function subscribeToServerEvents(me: Myself) {
  * 
  * Need to keep as a fallback for cases when the service-worker won't work,
  * e.g. on an intranet with a http (not https) server. However:
- * CLEAN_UP REFACTOR break out the pub-sub functions into a separate file, use the
- * browsers' native fetch(), and include from slim-bundle and service-worker
- * (instead of like now: dupl code, this is also in service-worker.ts).
+ * DO_AFTER 2021-01-01: CLEAN_UP REFACTOR break out the pub-sub functions into
+ * a separate file, use the browsers' native fetch(), and include from
+ * slim-bundle and service-worker (instead of like now: dupl code, this is
+ * also in service-worker.ts). — No point in doing this "too soon" though,
+ * because IE11 doesn't support fetc().
  */
 function subscribeToServerEventsDirectly(me: Myself) {
   Server.abortAnyLongPollingRequest();

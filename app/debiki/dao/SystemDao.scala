@@ -143,7 +143,12 @@ class SystemDao(
   }
 
 
-  def createSite(
+  /** Used to create additional sites on the same server. The server then becomes a
+    * multi site server (i.e. separate communities, on the same server).
+    *
+    * The first site is instead created by [[createFirstSite()]] above.
+    */
+  def createAdditionalSite(
     pubId: PublSiteId,
     name: String,
     status: SiteStatus,
@@ -257,6 +262,11 @@ class SystemDao(
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
         allowEmbeddingFrom = Some(embeddingSiteUrl),
+
+        // Features are disabled, for embedded blog comments sites, here instead: [493MRP1].
+        // The below login settings should be moved to there too? So will take effect
+        // also for the very first site (self hosted installations for embedded comments)?
+
         // Blogs barely get any comments nowadays (instead, everyone uses Facebook/Reddit/etc),
         // so, by default, make it easy to post a blog comment: don't require people to create
         // real accounts. Guest comments always get queued for moderation anyway. [4JKFWP4]
@@ -265,10 +275,10 @@ class SystemDao(
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
 
-        // Features are disabled, for embedded blog comments sites, here instead: [493MRP1].
-
         // People who create new sites via a hosted service, might not be technical
         // people; to keep things simple for them, disable API and tags, initially. [DEFFEAT]
+        // (This is not the very first site on this server, so the person creating this site,
+        // is apparently not doing a self hosted installation.)
         enableApi = Some(Some(false)),
         enableTags = Some(Some(false)),
         orgFullName = Some(Some(organizationName))))
@@ -422,7 +432,7 @@ class SystemDao(
             r.spamCheckerDomain -> JsX.JsSpamCheckResult(r)))),
         resultsText = Some(spamCheckResults.map(r => i"""
             |${r.spamCheckerDomain}:
-            |${r.humanReadableMessage}""").mkString("------").trim),
+            |${r.humanReadableMessage}""").mkString("------")).trimNoneIfBlank,
         numIsSpamResults = Some(numIsSpamResults),
         numNotSpamResults = Some(numNotSpamResults))
 

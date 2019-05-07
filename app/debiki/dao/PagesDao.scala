@@ -568,6 +568,7 @@ trait PagesDao {
       // If this page is getting deleted because it's spam, then, update any [UPDSPTSK]
       // pending spam check task, so a training sample gets sent to any spam check services.
       tx.loadOrigPost(pageMeta.pageId) foreach { origPost =>
+        TESTS_MISSING
         val postAuthor = tx.loadTheParticipant(origPost.createdById)
         updateSpamCheckTaskBecausePostDeleted(origPost, postAuthor, deleter = deleter, tx)
       }
