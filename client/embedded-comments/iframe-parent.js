@@ -55,6 +55,8 @@ function loadCommentsCreateEditor() {
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
+  var discussionTitle = commentsElem.getAttribute('data-iframe-title');
+
   var discussionId = commentsElem.getAttribute('data-discussion-id');
   if (/[#?& \t\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
@@ -84,6 +86,8 @@ function loadCommentsCreateEditor() {
   commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
+    // A title attr, for better accessibility. See: https://www.w3.org/TR/WCAG20-TECHS/H64.html
+    title: discussionTitle || "Comments",
     src: commentsIframeUrl,
     height: 0, // don't `hide()` (see comment just above)
     style: {
