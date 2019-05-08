@@ -297,6 +297,7 @@ declare namespace debiki2 {
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
   function linkToReviewPage(): string;
+  function linkToStaffInvitePage(): string;
   function externalLinkToAdminHelp(): string;
   function linkToMyDraftsEtc(store: Store): string;
   function linkToMyProfilePage(store: Store): string;

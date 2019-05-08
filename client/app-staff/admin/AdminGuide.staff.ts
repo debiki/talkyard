@@ -41,7 +41,8 @@ export var AdminGuide =
     r.p({},
       "In the admin area, look at the ", r.b({}, "Settings"),
       " tab — maybe there's something you'd like to change? " +
-      "To make the forum private, edit the ", r.strong({}, "Signup and Login"), " settings."),
+      "To make the forum private, edit the ",
+      r.a({ href: linkToAdminPageLoginSettings() }, "Signup and Login"), " settings."),
     r.h2({},
       "Welcome your members"),
     r.p({},
@@ -51,25 +52,27 @@ export var AdminGuide =
     r.h2({},
       "Create categories"),
     r.p({},
-      "Click ", r.strong({ style: { textDecoration: 'underline' }}, t.fb.ViewCategories),
+      "Click ",
+      r.a({ href: '/categories', style: { textDecoration: 'underline' }}, t.fb.ViewCategories),
       ", then ", r.strong({}, t.fb.CreateCat), ". " +
       "Don't create too many categories — if you do, they might look rather empty. " +
       "Also, create some interesting topics, so people won't find an empty forum. "),
     r.h2({},
-      "Launch your community"),
+      "Invite people"),
     r.p({},
-      "Ask some people to have a look at your community. " +
-      "See if they understand what it is about and what they can do here."),
+      "First ask some people to have a look at your community — " +
+      "see if they understand what it is about and what they can do here."),
     r.p({},
       "Then start promoting your community: link to it on the Internet, and tell people about it. " +
       "Invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
-      ", then ", r.strong({}, "Invite"), "."),
+      ", then ", r.strong({}, "Invite"),
+      " — ", r.a({ href: linkToStaffInvitePage() }, "here, shortcut.")),
     r.h2({},
       "Need help?"),
     r.p({},
       "For help, go to Talkyard's ",
       r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' },
-        r.b({}, "support forum"), r.span({ className: 'icon-link-ext' })), '.'));
+        "support forum", r.span({ className: 'icon-link-ext' })), '.'));
 
 //------------------------------------------------------------------------------
    }

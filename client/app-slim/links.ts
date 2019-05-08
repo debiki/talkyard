@@ -78,6 +78,10 @@ export function linkToReviewPage(): string {
   return origin() + '/-/admin/review/all';
 }
 
+export function linkToStaffInvitePage(): string {
+  return origin() + '/-/admin/users/invited';
+}
+
 
 export function linkToUserProfilePage(user: Myself | Participant | UserId | string): string {
   return origin() + pathTo(user);
