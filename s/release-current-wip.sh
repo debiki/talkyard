@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Exit on any error. That's important, so we don't push a tag to Git,
+# although some image wasn't uploaded / tagged properly.
+set -e
+
 wip_version_tag=`tail -n1 modules/ed-versions/version-tags.log`
 
 if [ -z "$( echo "$wip_version_tag" | grep 'WIP-' )" ]; then
@@ -58,7 +62,7 @@ pushd .
 cd modules/ed-versions/
 git fetch
 git checkout master
-git merge --ff-only origin master
+git merge --ff-only origin/master
 echo $release_version_tag >> version-tags.log
 git add version-tags.log
 git commit -m "Add $release_version_tag = the prev WIP, release tagged."
