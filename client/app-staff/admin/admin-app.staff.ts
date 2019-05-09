@@ -1891,7 +1891,7 @@ const AdvancedSettings = createFactory({
 
     const changeHostnameFormGroup =
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label col-sm-3' }, "Address"),
+        r.label({ className: 'control-label col-sm-3' }, "Site address"),
         r.div({ className: 'col-sm-9 esA_Ss_S esAdmin_settings_setting' },
           location.protocol + "//", r.code({ className: 'esA_Ss_S_Hostname' }, canonicalHostname),
           r.div({ className: 'help-block' },
@@ -1925,8 +1925,7 @@ const AdvancedSettings = createFactory({
             canonicalHostnameSamp, " (with status 302 Found):"),
           r.pre({}, redirectingHostnames.join('\n'))));
 
-    return (
-      r.div({},
+    const googleAnalyticsId =
         Setting2(props, { type: 'text', label: "Google Universal Analytics tracking ID",
           help: r.span({}, "Any Google Universal Analytics tracking ID, e.g. ",
             r.samp({}, "UA-12345678-9"), ", see http://google.com/analytics."),
@@ -1934,8 +1933,11 @@ const AdvancedSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
           }
-        }),
+        });
 
+    return (
+      r.div({},
+        googleAnalyticsId,
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup));

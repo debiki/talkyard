@@ -55,9 +55,10 @@ export function linkToAdminPageLoginSettings(): string {
   return linkToAdminPage()+ 'settings/login';
 }
 
-export function linkToAdminPageAdvancedSettings(hostname?: string): string {
-  const origin = hostname ? '//' + hostname : '';   // ?? or just reuse 'origin' from above ?
-  return origin + '/-/admin/settings/advanced';
+export function linkToAdminPageAdvancedSettings(differentHostname?: string): string {
+  // This fn is called if we change the hostname, to jump to site settings at the new address.
+  const maybeNewOrigin = differentHostname ? '//' + differentHostname : origin();
+  return maybeNewOrigin + '/-/admin/settings/site';
 }
 
 export function linkToUserInAdminArea(user: Myself | Participant | UserId): string {

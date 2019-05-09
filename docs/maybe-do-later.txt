@@ -170,3 +170,7 @@ one to continue editing. (Rather than just picking a random one.)
 
 
 SECURITY Use HMAC. Not SHAX. Need not fix urgently. Prevents extension attacks
+
+SECURITY Use Distroless? https://github.com/GoogleContainerTools/distroless instead of Alpine?
+Slightly less attack surface, and slightly faster: glibc instead of musl.
+https://news.ycombinator.com/item?id=19862002

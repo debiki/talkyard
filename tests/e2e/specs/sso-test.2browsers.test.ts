@@ -47,6 +47,8 @@ describe("sso-test  TyT4ABKRW0268", () => {
 
   it("import a site", () => {
     const builder = buildSite();
+    const site = builder.getSite();
+    site.settings.enableApi = true;
     forum = builder.addLargeForum({
       title: "Test of SSO Test",
       members: undefined, // default = everyone

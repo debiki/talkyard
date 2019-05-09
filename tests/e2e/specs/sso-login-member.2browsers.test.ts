@@ -45,6 +45,8 @@ describe("sso-real  TyT5HNATS20P", () => {
 
   it("import a site", () => {
     const builder = buildSite();
+    const site = builder.getSite();
+    site.settings.enableApi = true;
     forum = builder.addLargeForum({
       title: "Test of SSO for Real",
       members: undefined, // default = everyone

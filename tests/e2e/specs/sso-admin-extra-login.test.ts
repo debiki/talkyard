@@ -34,6 +34,8 @@ describe("some-e2e-test [TyT1234ABC]", () => {
 
   it("import a site", () => {
     const builder = buildSite();
+    const site = builder.getSite();
+    site.settings.enableApi = true;
     forum = builder.addLargeForum({
       title: "Some E2E Test",
       members: undefined, // default = everyone

@@ -52,6 +52,7 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
 
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('spamaksm', { title: forumTitle });
+    site.settings.enableAkismet = true;
     site.settings.numFirstPostsToReview = 9;
     site.settings.numFirstPostsToAllow = 9;
     idAddress = server.importSiteData(site);

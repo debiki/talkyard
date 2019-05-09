@@ -33,6 +33,9 @@ alter table spam_check_queue3 add constraint spamcheckqueue_c_authorname_len che
 alter table spam_check_queue3 add constraint spamcheckqueue_c_authoremailaddr_len check (
     length(author_email_addr) between 1 and 200);
 
+alter table spam_check_queue3 add constraint spamcheckqueue_c_trustlevel_betw check (
+    author_trust_level between 1 and 6);
+
 alter table spam_check_queue3 add constraint spamcheckqueue_c_authorurl_len check (
     length(author_url) between 1 and 200);
 
@@ -49,7 +52,7 @@ alter table spam_check_queue3 add column results_text varchar;
 alter table spam_check_queue3 add column num_is_spam_results int;
 alter table spam_check_queue3 add column num_not_spam_results int;
 alter table spam_check_queue3 add column human_says_is_spam bool;
-alter table spam_check_queue3 add column is_misclassified boolean; -- dupl data, for simpler lookup
+alter table spam_check_queue3 add column is_misclassified bool; -- dupl data, for simpler lookup
 alter table spam_check_queue3 add column misclassifications_reported_at timestamp;
 
 alter table spam_check_queue3 add constraint spamcheckqueue_c_results_null_eq check (

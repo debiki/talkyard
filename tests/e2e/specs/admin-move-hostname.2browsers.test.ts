@@ -140,10 +140,13 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
   it("... sees the old hostname is now a Duplicating hostname", () => {
     const duplHostnames = owensBrowser.adminArea.settings.advanced.getDuplicatingHostnames();
     assert.equal(duplHostnames, origHost);
+  });
+
+  it("... there are no redirecting hostnames", () => {
     assert(!owensBrowser.adminArea.settings.advanced.isRedirectingHostnamesVisible());
   });
 
-  it("... and clicks Redirect Old Addresses", () => {
+  it("Owen clicks Redirect Old Addresses", () => {
     owensBrowser.adminArea.settings.advanced.clickRedirectOldSiteAddresses();
     owensBrowser.refresh();
   });
@@ -151,6 +154,9 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
   it("... now the old hostname changes to a Redirecting hostname", () => {
     const redirHostnames = owensBrowser.adminArea.settings.advanced.getRedirectingHostnames();
     assert.equal(redirHostnames, origHost);
+  });
+
+  it("... and there are no Duplicating hostnames", () => {
     assert(!owensBrowser.adminArea.settings.advanced.isDuplicatingHostnamesVisible());
   });
 

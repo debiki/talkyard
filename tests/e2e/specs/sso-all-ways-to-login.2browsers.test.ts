@@ -53,6 +53,7 @@ describe("sso-real  TyT5HNATS20P", () => {
   it("import a site", () => {
     const builder = buildSite();
     const site = builder.getSite();
+    site.settings.enableApi = true;
     site.settings.ssoUrl = ssoUrl;
     //site.settings.enableSso = true;   no API secret [5ABKR2038]
     forum = builder.addLargeForum({

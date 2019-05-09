@@ -74,7 +74,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     def getOnlyOrThrow(queryParam: String, errorCode: String): String =
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
-    throwForbiddenIf(!settings.enableApi, "TyE305MRTJW2", "API disabled")
+    throwForbiddenIf(!settings.enableApi, "TyEAPIDSBLD", "API disabled")
 
     apiEndpoint match {
       case "export-site-json" =>

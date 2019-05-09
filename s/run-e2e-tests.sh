@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# You can try the whole test suite twice:
+# (you need your own secrets file)
+#
+#  for x in 1 2 ; do  time  s/run-e2e-tests.sh --3 --secretsPath=../debiki-site-www.debiki.com/conf/e2e-secrets.json && break  ; done
+
+
 if [ `id -u` -eq 0 ]; then
   echo "You are root. Don't run the E2E tests as root please."
   exit 1
