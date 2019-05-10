@@ -295,6 +295,7 @@ package object core {
   val OneDayInMillis: Long = MillisPerDay
   val OneWeekInMillis: Long = 7 * MillisPerDay
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
+  val OneYearInMillis: Long = 365 * MillisPerDay
 
   val Megabyte: Int = 1000 * 1000
   val Megabytes: Int = Megabyte

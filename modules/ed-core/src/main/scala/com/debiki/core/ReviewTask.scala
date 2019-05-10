@@ -148,7 +148,7 @@ case class ReviewTask(
     // Cannot add more review reasons to an already completed task.
     require(oldTask.completedAt.isEmpty, "EsE1WQC3")
     require(oldTask.invalidatedAt.isEmpty, "EsE7UGMF2")
-    val newReasonsValue = ReviewReason.toLong(oldTask.reasons) + ReviewReason.toLong(this.reasons)
+    val newReasonsValue = ReviewReason.toLong(oldTask.reasons) | ReviewReason.toLong(this.reasons)
     val newReasonsSeq = ReviewReason.fromLong(newReasonsValue)
     this.copy(
       reasons = newReasonsSeq,

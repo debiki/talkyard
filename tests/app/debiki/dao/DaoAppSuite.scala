@@ -100,7 +100,8 @@ class DaoAppSuite(
 
 
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = Some("dummy_id_cookie"), fingerprint = 334455)
-  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
+  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
+    userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
 
 
   private var _currentTime: When = _

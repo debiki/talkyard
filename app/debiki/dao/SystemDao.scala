@@ -407,7 +407,7 @@ class SystemDao(
     * @param spamCheckTaskNoResults — A spam check task for the post or user profile.
     * @param spamCheckResults — Results from different external spam check services.
     *
-    * COULD move to SpamSiteDao, since now uses only a per site tx.
+    * COULD REFACTOR move to SpamSiteDao, since now uses only a per site tx.
     */
   def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults) {
     val postToSpamCheck= spamCheckTaskNoResults.postToSpamCheck getOrElse {
