@@ -312,6 +312,7 @@ tag-and-push-latest-images:  tag-latest-images  push-tagged-images  _print_push_
 tag-latest-images:
 	@$(call die_unless_tag_specified, Tag with)
 	@$(call ask_for_root_password)
+	set -e  ;\
 	REPO=$(DOCKER_REPOSITORY)  ;\
 	sudo docker tag $$REPO/talkyard-app $$REPO/talkyard-app:$(tag)  ;\
 	sudo docker tag $$REPO/talkyard-web $$REPO/talkyard-web:$(tag)  ;\
@@ -325,6 +326,7 @@ tag-latest-images:
 push-tagged-images:
 	@$(call die_unless_tag_specified, Push)
 	@$(call ask_for_root_password)
+	set -e  ;\
 	REPO=$(DOCKER_REPOSITORY)  ;\
 	sudo docker push $$REPO/talkyard-app:$(tag)  ;\
 	sudo docker push $$REPO/talkyard-web:$(tag)  ;\
@@ -348,10 +350,11 @@ push-tag-to-git:
 	@echo
 	@echo "Publishing version tag $(tag) to GitHub..."
 	 
-	@cd modules/ed-versions/  ;\
+	@set -e  ;\
+	cd modules/ed-versions/  ;\
 	git fetch  ;\
 	git checkout master  ;\
-	git merge --ff-only origin master  ;\
+	git merge --ff-only origin/master  ;\
 	echo $(tag) >> version-tags.log  ;\
 	git add version-tags.log  ;\
 	git commit -m "Add $(tag)."  ;\

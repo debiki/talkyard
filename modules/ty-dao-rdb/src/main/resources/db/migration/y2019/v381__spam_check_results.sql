@@ -98,6 +98,19 @@ alter table settings3 add column akismet_api_key varchar;
 alter table settings3 add constraint settings3_c_akismetapikey_len check (
     length(akismet_api_key) between 1 and 200);
 
+update settings3 set
+    show_categories = false,
+    enable_tags = false,
+    enable_chat = false,
+    enable_direct_messages = false,
+    show_sub_communities = null,
+    show_topic_filter = false,
+    show_topic_types = false,
+    select_topic_type = false,
+    embedded_comments_category_id = null
+where
+    enable_forum = false;
+
 alter table settings3 add constraint settings_forum_features check (
     enable_forum is not false or (
         show_categories = false and
@@ -108,5 +121,4 @@ alter table settings3 add constraint settings_forum_features check (
         show_topic_filter = false and
         show_topic_types = false and
         select_topic_type = false and
-        experimental is not true and  -- default: false
         embedded_comments_category_id is null));
