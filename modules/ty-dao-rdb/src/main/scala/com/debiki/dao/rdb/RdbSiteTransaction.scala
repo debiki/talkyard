@@ -812,7 +812,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           and t.SITE_ID = ?
           and ($pageRangeClauses)
           and ($filterStatusClauses)
-          and g.PAGE_ROLE <> 'SP' -- skip Special Content
+          and g.page_role <> ${PageType.SpecialContent.toInt}
         $orderByStr
         limit $limit"""
 

@@ -120,7 +120,9 @@ describe("spam test, no external services  TyT530KRM1R", () => {
   });
 
   it("... but the not-spam comment is still visible", () => {
-    mallorysBrowser.topic.assertPostNotHidden(3);
+    // There's a race: for a short while, the server might return a cached page,
+    // where this new post isn't yet included.
+    mallorysBrowser.topic.refreshUntilPostPresentBodyNotHidden(3);
   });
 
   it("... and remains visible", () => {

@@ -265,6 +265,7 @@ class JsonMaker(dao: SiteDao) {
     val anyLatestTopics: JsValue =
       if (page.pageType == PageType.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
+          // Constraint `dw1_pages__c_has_category` ensures there's a category id.
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = renderParams.anyPageQuery getOrElse defaultPageQuery(siteSettings)
         val authzCtx = dao.getForumAuthzContext(user = None)
@@ -301,7 +302,7 @@ class JsonMaker(dao: SiteDao) {
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "pageRole" -> JsNumber(page.pageType.toInt),
-      "pagePath" -> JsPagePath(page.thePath),
+      "pagePath" -> JsPagePath(page.path getOrElse PagePath.fromIdOnly(page.siteId, page.id)),
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
       "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),

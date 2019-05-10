@@ -13,6 +13,7 @@ let cb = 0;
 let cc = 0;
 
 const PollMs = 100;
+const RefreshPollMs = 250;
 const PollExpBackoff = 1.33;
 const PollMaxMs = 5000;
 
@@ -3183,10 +3184,20 @@ function pagesFor(browser) {
 
       refreshUntilBodyHidden: function(postNr: PostNr) {  // RENAME to refreshUntilPostBodyHidden
         while (true) {
-          let isHidden = api.topic.isPostBodyHidden(postNr);
-          if (isHidden) break;
+          let isBodyHidden = api.topic.isPostBodyHidden(postNr);
+          if (isBodyHidden) break;
+          browser.pause(RefreshPollMs);
           browser.refresh();
-          browser.pause(250);
+        }
+      },
+
+      refreshUntilPostPresentBodyNotHidden: function(postNr: PostNr) {
+        while (true) {
+          let isVisible = browser.isVisible(`#post-${postNr}`);
+          let isBodyHidden = api.topic.isPostBodyHidden(postNr);
+          if (isVisible && !isBodyHidden) break;
+          browser.pause(RefreshPollMs);
+          browser.refresh();
         }
       },
 

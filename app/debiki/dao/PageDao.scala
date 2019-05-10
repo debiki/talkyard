@@ -32,9 +32,9 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
   var _meta: Option[PageMeta] = null
   var _path: Option[PagePath] = null
 
-  val parts = new PagePartsDao(id, transaction)
+  val parts = PagePartsDao(id, transaction)
 
-  override def siteId = transaction.siteId
+  override def siteId: SiteId = transaction.siteId
 
   def exists: Boolean = {
     if (_meta eq null) {
@@ -43,8 +43,8 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
     _meta.isDefined
   }
 
-  def version = meta.version
-  def isClosed = meta.isClosed
+  def version: PageVersion = meta.version
+  def isClosed: Boolean = meta.isClosed
 
   override def meta: PageMeta = {
     if (_meta eq null) {
@@ -54,8 +54,6 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
     _meta getOrElse throwPageNotFound()
   }
 
-
-  override def thePath = path.getOrDie("DwE6KP2", s"No path to page $sitePageId")
 
   override def path: Option[PagePath] = {
     if (_path eq null) {
@@ -90,9 +88,7 @@ case class NonExistingPage(
     embeddingUrl = Some(embeddingUrl),
     publishDirectly = true)
 
-  override def thePath: PagePath = PagePath(siteId, "/", Some(EmptyPageId), showId = true, pageSlug = "")
-
-  override def path: Option[PagePath] = Some(thePath)
+  override def path: Option[PagePath] = Some(PagePath.fromIdOnly(siteId, pageId = EmptyPageId))
 
   override def parts: PageParts = PreLoadedPageParts(EmptyPageId, allPosts = Nil)
 

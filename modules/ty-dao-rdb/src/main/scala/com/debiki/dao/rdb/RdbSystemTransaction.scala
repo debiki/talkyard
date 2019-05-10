@@ -531,6 +531,11 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
       from pages3 p left join page_html3 h
           on p.site_id = h.site_id and p.page_id = h.page_id
+          -- Skip pages that for some (weird) reason aren't reachable via a page path.
+          -- (But do include any such pages in the `outOfDateQuery` below? Feels better
+          -- to regenerate the html then, since something is there already.)
+          inner join page_paths3 pp
+              on p.site_id = pp.site_id and p.page_id = pp.page_id and pp.canonical = 'C'
       where h.page_id is null
       and p.created_at < now_utc() - interval '2' minute
       and p.page_role != ${PageType.SpecialContent.toInt}

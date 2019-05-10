@@ -273,6 +273,11 @@ object PagePath {
     case class Bad(error: String) extends Parsed
   }
 
+  def fromIdOnly(siteId: SiteId, pageId: PageId): PagePath = {
+    PagePath(siteId, folder = "/", pageId = Some(pageId), showId = true, pageSlug = "")
+  }
+
+
   /** Parses the path part of a URL into a PagePath.
     *
     * URL path examples:
