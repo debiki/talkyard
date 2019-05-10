@@ -63,7 +63,8 @@ export var AdminGuide =
       "First ask some people to have a look at your community — " +
       "see if they understand what it is about and what they can do here."),
     r.p({},
-      "Then start promoting your community: link to it on the Internet, and tell people about it. " +
+      "Then tell others about your community. Link to it from your website " +
+      "and other places. " +
       "Invite people via email: go to the Admin Area, click ", r.strong({}, "Users"),
       ", then ", r.strong({}, "Invite"),
       " — ", r.a({ href: linkToStaffInvitePage() }, "here, shortcut.")),
