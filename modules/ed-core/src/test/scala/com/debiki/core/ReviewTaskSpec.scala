@@ -57,7 +57,8 @@ class ReviewTaskSpec extends FreeSpec with MustMatchers {
         taskOne.copy(reasons = Vector(ReviewReason.IsByNewUser))))
       task.reasons mustBe Vector(ReviewReason.IsByNewUser, ReviewReason.PostIsSpam)
       task.createdAt mustBe taskOne.createdAt
-      task.createdAtRevNr mustBe taskOne.createdAtRevNr
+      //task.createdAtRevNr mustBe taskOne.createdAtRevNr [MOREREVRSNS]
+      //task.moreReasonsAtRevNr mustBe taskTwo.createdAtRevNr [MOREREVRSNS]  ??
       task.moreReasonsAt mustBe Some(taskTwo.createdAt)
     }
 
@@ -65,7 +66,7 @@ class ReviewTaskSpec extends FreeSpec with MustMatchers {
       val task = taskTwo.mergeWithAny(Some(taskOne))
       task.reasons mustBe Vector(ReviewReason.PostIsSpam)
       task.createdAt mustBe taskOne.createdAt
-      task.createdAtRevNr mustBe taskOne.createdAtRevNr
+      //task.createdAtRevNr mustBe taskOne.createdAtRevNr [MOREREVRSNS]
       task.moreReasonsAt mustBe Some(taskTwo.createdAt)
     }
 
@@ -77,7 +78,7 @@ class ReviewTaskSpec extends FreeSpec with MustMatchers {
       task.reasons mustBe Vector(
         ReviewReason.IsByThreatUser, ReviewReason.IsByNewUser, ReviewReason.LateEdit)
       task.createdAt mustBe taskOne.createdAt
-      task.createdAtRevNr mustBe taskOne.createdAtRevNr
+      //task.createdAtRevNr mustBe taskOne.createdAtRevNr [MOREREVRSNS]
       task.moreReasonsAt mustBe Some(taskTwo.createdAt)
     }
   }

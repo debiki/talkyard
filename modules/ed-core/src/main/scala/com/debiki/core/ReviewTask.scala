@@ -92,6 +92,7 @@ case class ReviewTask(
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
   moreReasonsAt: Option[ju.Date] = None,
+  //moreReasonsAtRevNr: Option[ju.Date] = None,
   decidedAt: Option[ju.Date] = None,
   completedAt: Option[ju.Date] = None,
   decidedAtRevNr: Option[Int] = None,
@@ -114,6 +115,8 @@ case class ReviewTask(
 
   require(reasons.nonEmpty, s"Review reasons is empty [TyE3FK21]: $this")
   require(!moreReasonsAt.exists(_.getTime < createdAt.getTime), "EsE7UGYP2")
+  //require(moreReasonsAt.isDefined == moreReasonsAtRevNr.isDefined, "TyE6MKWZ8") [MOREREVRSNS]
+  //require(!moreReasonsAtRevNr.exists(_ < createdAtRevNr), "TyE6MKWZ9")
   require(!decidedAt.exists(_.getTime < createdAt.getTime), "TyE6UHQ21")
   require(!completedAt.exists(_.getTime < createdAt.getTime), "EsE0YUL72")
   require(!invalidatedAt.exists(_.getTime < createdAt.getTime), "EsE5GKP2")
@@ -153,7 +156,10 @@ case class ReviewTask(
     this.copy(
       reasons = newReasonsSeq,
       createdAt = oldTask.createdAt,
-      moreReasonsAt = Some(this.createdAt))
+      //createdAtRevNr = oldTask.createdAtRevNr,  [MOREREVRSNS]
+      moreReasonsAt = Some(this.createdAt),
+      //moreReasonsAtRevNr = Some(this.createdAtRevNr) [MOREREVRSNS]
+      )
   }
 
 }
