@@ -16,7 +16,14 @@
 
 FROM alpine:3.9
 
+# Nodejs Fibers 3.x, used by wdio-sync, won't build with Node 12 yet,
+# wait until the new wdio-sync version that uses Fibers 4.x has been released:
+# https://github.com/webdriverio-boneyard/wdio-sync/commit/dce97e0482a712660d269beb9b575bd731f26977
+# (unreleased).
+#ENV NODE_VERSION 12.1.0
+
 ENV NODE_VERSION 11.10.0
+
 
 # Don't: (see comment above)
 #RUN addgroup -g 1000 node \
@@ -63,14 +70,14 @@ RUN apk add --no-cache \
     && tar -xf "node-v$NODE_VERSION.tar.xz" \
     && cd "node-v$NODE_VERSION" \
     && ./configure \
-    && make -j$(getconf _NPROCESSORS_ONLN) \
+    && make -j$(getconf _NPROCESSORS_ONLN) V= \
     && make install \
     # && apk del .build-deps \  # no, keep Python etc (KEEPDEPS)
     && cd .. \
     && rm -Rf "node-v$NODE_VERSION" \
     && rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt
 
-ENV YARN_VERSION 1.14.0
+ENV YARN_VERSION 1.15.2
 
 # (KEEPDEPS). curl = can debug, nice
 RUN apk add --no-cache curl gnupg tar \

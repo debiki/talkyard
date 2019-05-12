@@ -19,6 +19,8 @@ import scala.sys.process._  // "shell command".!! = execute the command, return 
 // Imported automatically, but incl here anyway so can click and open in the IDE:
 import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
+// If SBT crashes, enable debug to find out which file it crashes in:
+//logLevel := Level.Debug
 
 val versionFileContents = {
   val source = scala.io.Source.fromFile("version.txt")

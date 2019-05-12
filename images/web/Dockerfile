@@ -31,9 +31,9 @@
 
 # In the distant future: Maybe switch to https://github.com/envoyproxy/envoy ?  & Zipkin tracing
 
-FROM alpine:3.7
+FROM alpine:3.9
 
-ENV NGINX_VERSION 1.15.2
+ENV NGINX_VERSION 1.15.12
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
@@ -51,7 +51,7 @@ RUN \
 		zlib-dev \
 		linux-headers \
 		curl \
-		gnupg \
+		gnupg1 \
 		# libxslt-dev \
 		# some graphics lib, needed for ? http_image_filter_module ?
 		# gd-dev \

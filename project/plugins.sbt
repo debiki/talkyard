@@ -18,7 +18,7 @@ resolvers ++= Seq(
   Resolver.sbtPluginRepo("releases")) // =  https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.20")    // newest, as of 19-01-03
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.22")    // newest 6x, as of 19-05-12
 
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph

@@ -1,4 +1,4 @@
-FROM openjdk:8u151-jdk-alpine3.7
+FROM openjdk:8u212-jdk-alpine3.9
 
 RUN apk add --no-cache \
   # Required:
@@ -22,7 +22,7 @@ RUN \
 #   see: http://stackoverflow.com/questions/10559313/play-framework-installation
 RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
     rm -f /tmp/$ACTIVATOR.zip && \
-    mkdir /opt/ && \
+    mkdir -p /opt/ && \
     mv /tmp/activator-$ACVERSION-minimal /opt/typesafe-activator && \
     chmod -R ugo+rw /opt/typesafe-activator/ && \
     chmod -R ugo+x /opt/typesafe-activator/bin/activator
