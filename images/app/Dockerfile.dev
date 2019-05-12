@@ -63,6 +63,9 @@ ENV PLAY_HEAP_MEMORY_MB 1048
 CMD cd /opt/talkyard/app/ && exec /opt/typesafe-activator/bin/activator \
   -mem $PLAY_HEAP_MEMORY_MB \
   -jvm-debug 9999 \
+  # Avoid SBT compilation java.lang.StackOverflowError in
+  # scala.tools.nsc.transform.Erasure.
+  -J-Xss5m \
   -Duser.home=/home/owner \
    # see [30PUK42] in app-prod/Dockerfile
   -Djava.security.egd=file:/dev/./urandom \
