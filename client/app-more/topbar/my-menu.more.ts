@@ -127,6 +127,7 @@ export const MyMenuContent = createFactory({
     // ------- The current user
 
     let viewProfileLogOutMenuItem;
+    let viewUsersOrGroups;
     let viewDraftsAndBookmarks;
     let myStuffDivider;
     let unhideHelpMenuItem;
@@ -142,6 +143,11 @@ export const MyMenuContent = createFactory({
           MenuItemsMany({},
             LinkUnstyled({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' }, t.mm.ViewProfile),
             logoutButtonNextToViewProfile ? logoutButton : null);
+
+      const isMemberOfCustomGroup = _.some(me.myGroupIds, id => id >= LowestAuthenticatedUserId);
+      viewUsersOrGroups = !isStaff(me) && !isMemberOfCustomGroup ? null :
+          MenuItemsMany({},
+            LinkUnstyled({ to: GroupsRoot, id: 'te_VwGrps' }, "View groups")), // I18N
 
       viewDraftsAndBookmarks =
           MenuItemsMany({},
@@ -169,6 +175,7 @@ export const MyMenuContent = createFactory({
         reviewMenuItem,
         (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
         viewProfileLogOutMenuItem,
+        viewUsersOrGroups,
         viewDraftsAndBookmarks,
         viewAsOtherItem,
         notfsDivider,

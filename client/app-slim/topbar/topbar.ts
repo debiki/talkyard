@@ -299,8 +299,12 @@ export const TopBar = createComponent({
     if (this.props.location) {
       const path: string = this.props.location.pathname;
       if (path.search(UsersRoot) === 0 || path.search(GroupsRoot) === 0) {
-        customTitle = t.tb.AbtUsr;
         backToSiteButton = t.tb.BackFromUsr;
+        customTitle = path === GroupsRoot
+            ? "Groups:" // I18N t.Groups;
+            : (path.search(GroupsRoot) === 0
+                ? LinkUnstyled({ to: GroupsRoot }, "Groups:") // I18N t.Groups;
+                : t.tb.AbtUsr);
       }
       else if (path.search(SearchRootPath) === 0) {
         customTitle = t.tb.SearchPg;

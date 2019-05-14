@@ -136,14 +136,14 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       if (draft.isReply) {
         val postType = draft.postType getOrDie "TyER35SKS02GU"
         throwNoUnless(Authz.mayPostReply(
-          request.theUserAndLevels, dao.getGroupIds(requester),
+          request.theUserAndLevels, dao.getOnesGroupIds(requester),
           postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
           permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
       }
       else {
         throwNoUnless(Authz.mayEditPost(
-          request.theUserAndLevels, dao.getGroupIds(requester),
+          request.theUserAndLevels, dao.getOnesGroupIds(requester),
           post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
           permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
@@ -179,7 +179,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listDrafts(userId: UserId): Action[Unit] = GetActionRateLimited(RateLimits.TouchesDbGetRequest) {
+  def listDrafts(userId: UserId): Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) {
         request: GetRequest =>
     import request.{dao, theRequester => requester}
 

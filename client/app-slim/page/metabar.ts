@@ -88,12 +88,12 @@ export var Metabar = createComponent({
     const page: Page = store.currentPage;
     const ui = this.state.ui;
     const me: Myself = store.me;
-    const effPageNotfPref = pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me);
 
-    const notfLevelElem = me.isAuthenticated && !ui.showDetails
-      ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          t.Notifications + ': ' + notfPref_title(effPageNotfPref))
-      : null;
+    const notfLevelElem = !me.isAuthenticated || ui.showDetails ? null :
+      r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
+          t.Notifications + ': ' +
+            notfPref_title(
+              pageNotfPrefTarget_findEffPref({ pageId: page.pageId }, store, me)));
 
     const toggleDetailsBtn = !me.isLoggedIn ? null :
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },

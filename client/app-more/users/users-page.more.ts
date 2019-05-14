@@ -22,6 +22,7 @@
 /// <reference path="user-drafts-etc.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
+/// <reference path="groups-page.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -50,13 +51,6 @@ export const UsersHomeComponent = createReactClass(<any> {
           Route({ path: GroupsRoot + ':usernameOrId/:section?/:subsection?',
               component: UserPageComponent })));
   }
-});
-
-
-
-const ListGroupsComponent = React.createFactory<RouteChildProps>(function(props) {
-  return r.p({},
-    "Wow! props: " + JSON.stringify(props));
 });
 
 
@@ -195,6 +189,9 @@ const UserPageComponent = createReactClass(<any> {
     const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
     const linkStart = pathToUser + '/';
 
+    const membersNavItem = !user.isGroup ? null :
+      LiNavLink({ to: linkStart + 'members', className: 'e_UP_MembrsB' }, "Members"); // I18N
+
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
@@ -226,6 +223,7 @@ const UserPageComponent = createReactClass(<any> {
         const hash = this.props.location.hash;
         return Redirect({ to: pathToUser + '/activity/posts' + hash });
       }}),
+      Route({ path: u + 'members', render: (ps) => GroupMembers({ ...childProps, ...ps }) }),
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
       Route({ path: u + 'drafts-etc', render: () => UserDrafts(childProps) }),
@@ -236,6 +234,7 @@ const UserPageComponent = createReactClass(<any> {
       r.div({ className: 'container esUP' },
         AvatarAboutAndButtons(childProps),
         r.ul({ className: 'dw-sub-nav nav nav-pills' },
+          membersNavItem,
           activityNavItem,
           notificationsNavItem,
           draftsEtcNavItem,

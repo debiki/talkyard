@@ -111,6 +111,11 @@ POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 POST  /-/save-content-notf-pref controllers.UserController.saveContentNotfPref
 GET   /-/load-groups            controllers.UserController.loadGroups()
+POST  /-/create-group           controllers.UserController.createGroup()
+POST  /-/delete-group           controllers.UserController.deleteGroup()
+GET   /-/list-group-members     controllers.UserController.listGroupMembers(groupId: Int)
+POST  /-/add-group-members      controllers.UserController.addGroupMembers
+POST  /-/remove-group-members   controllers.UserController.removeGroupMembers
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 POST  /-/save-about-member-prefs controllers.UserController.saveAboutMemberPrefs

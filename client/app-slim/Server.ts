@@ -734,10 +734,33 @@ export function stopImpersonatingReloadPage() {
 }
 
 
-export function loadGroups(success: (_: Group[]) => void) {
-  get('/-/load-groups', response => {
-    success(response);
-  });
+export function loadGroups(onDone: (_: Group[]) => void) {
+  get('/-/load-groups', r => onDone(r));
+}
+
+
+export function createGroup(newGroup: Group, onDone: (newGroup: Group) => void) {
+  postJsonSuccess('/-/create-group', r => onDone(r), newGroup);
+}
+
+
+export function deleteGroup(groupIdToDelete: UserId, onDone: (deletedGroup: Group) => void) {
+  postJsonSuccess('/-/delete-group', r => onDone(r), { groupIdToDelete });
+}
+
+
+export function listGroupMembers(groupId: UserId, onDone: (_: Participant[]) => void) {
+  get(`/-/list-group-members?groupId=${groupId}`, r => onDone(r));
+}
+
+
+export function addGroupMembers(groupId: UserId, memberIds: UserId[], onDone: () => void) {
+  postJsonSuccess('/-/add-group-members', r => onDone(), { groupId, memberIds });
+}
+
+
+export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone: () => void) {
+  postJsonSuccess('/-/remove-group-members', r => onDone(), { groupId, memberIds });
 }
 
 
@@ -872,7 +895,7 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 }
 
 
-export function savePageNotfPrefUpdStore(memberId: UserId, target: PageNotfPrefTarget,
+export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNotfPrefTarget,
       notfLevel: PageNotfLevel, onDone?: () => void) {
   const notfPref: PageNotfPref = { ...target, memberId, notfLevel };
   const postData: PageNotfPref & NewEmbCommentsPageAltIdUrl = notfPref;

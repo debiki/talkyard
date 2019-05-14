@@ -346,7 +346,7 @@ case object Participant {
       id == UnknownUserId
 
   def isBuiltInGroup(id: UserId): Boolean =
-    Group.NewMembersId <= id && id <= Group.AdminsId
+    Group.AllMembersId <= id && id <= Group.AdminsId
 
   def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
@@ -593,6 +593,9 @@ sealed trait Participant {
   def idSpaceName: String =
     anyUsername.map(un => s"$id @$un") getOrElse s"$id '$usernameOrGuestName'"
 
+  def nameParaId: String =
+    anyUsername.map(un => s"@$un (id $id)") getOrElse s"'$usernameOrGuestName' (id $id)"
+
   def toUserOrThrow: User = {
     this match {
       case m: User => m
@@ -607,6 +610,11 @@ sealed trait Participant {
 trait Member extends Participant {
   def theUsername: String
   //def fullName: String
+}
+
+
+object Member {
+  val DeletedUsernameSuffix = "_deleted"
 }
 
 
@@ -1151,13 +1159,16 @@ object UnknownParticipant extends Participant {
 }
 
 
-/** Groups have a username but no trust level. Members have username and trust level. [8KPG2W5]
+case class GroupAndStats(group: Group, stats: Option[GroupStats])
+
+
+/** Groups have a username but no trust level. Members have username and trust level.
   * A group can, however, auto-grant trust level 'grantsTrustLevel' to all its members.
   */
 case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
   id: UserId,
   theUsername: String,
-  name: String,
+  name: Option[String],
   createdAt: When = When.Genesis,  // for now
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
@@ -1167,6 +1178,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   uiPrefs: Option[JsObject] = None)
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
 
+  require(!name.exists(_.trim.isEmpty), "TyE305MDW73")
   uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>
     die("TyE2AKBS05", s"Group with weird uiPrefs JSON field: $problemMessage")
   }
@@ -1188,14 +1200,14 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername
-  override def nameOrUsername: String = if (name.isEmpty) theUsername else name
+  override def nameOrUsername: String = if (name.isEmpty) theUsername else name.get
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
 
   // Not yet incl in Group, but could be. For now, let be core members & staff only.
   def seeActivityMinTrustLevel: Option[TrustLevel] = Some(TrustLevel.CoreMember)
 
-  override def anyName: Option[String] = Some(name)  // [50UKQV1]
+  override def anyName: Option[String] = name
   override def anyUsername: Option[String] = Some(theUsername)
 
   def preferences: AboutGroupPrefs =
@@ -1208,7 +1220,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
 
   def copyWithNewAboutPrefs(preferences: AboutGroupPrefs): Group =
     copy(
-      name = preferences.fullName getOrDie "EdE46KWFTAR1", // currently always Some, see [50UKQV1]
+      name = preferences.fullName,
       theUsername = preferences.username,
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive)
@@ -1231,7 +1243,7 @@ object Group {
     *     does *not* include full members and core members — but it does.
     *     "All members" obviously includes those other trust levels too.
     */
-  val NewMembersId = 11  ; RENAME // to AllMembersId [ALLMEMBS]
+  val AllMembersId = 11
 
   val BasicMembersId = 12
   val FullMembersId = 13
@@ -1249,10 +1261,12 @@ object Group {
   val AdminsId = 19
 
 
-  dieUnless(NewMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
+  dieUnless(AllMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")
 }
 
+
+case class GroupStats(numMembers: Int)
 
 
 object EmailNotfPrefs extends Enumeration {

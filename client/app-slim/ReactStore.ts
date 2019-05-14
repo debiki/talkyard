@@ -42,6 +42,36 @@ declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't 
 export const ReactStore = new EventEmitter3();
 
 
+type StoreStateSetter = (store: Store) => void;
+const useStoreStateSetters: StoreStateSetter[] = [];
+
+
+// Read-only hooks based store state. WOULD REFACTOR make it read-write and delete ReactActions,
+// and remove EventEmitter too? [4WG20ABG2]  Have all React code use `useStoreState`
+// instead of that old "flux" stuff.
+export function useStoreState(): [Store, () => void] {
+  const [state, setState] = React.useState<Store>(store);
+
+  // Remember the setter, so we can call it whenever the store changes.
+  // Also, forget it, when unmounting.
+  React.useEffect(function() {
+    if (useStoreStateSetters.indexOf(setState) === -1) {
+      useStoreStateSetters.push(setState);
+    }
+    return function() {
+      const index = useStoreStateSetters.indexOf(setState);
+      if (index >= 0) {
+        useStoreStateSetters.splice(index, 1);
+      }
+    };
+  }, []);
+
+  return [state,
+      // For now, update via ReactActions instead.
+      function() { die('TyESETSTORESTATE'); }];
+}
+
+
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
@@ -364,7 +394,11 @@ ReactDispatcher.register(function(payload) {
       return true;
   }
 
-  ReactStore.emitChange();
+  ReactStore.emitChange();             // old, for non-hooks based code
+  useStoreStateSetters.forEach(s => {  // new, hooks based code
+    s(store);
+  });
+
   store.quickUpdate = false;
   store.postsToUpdate = {};
 

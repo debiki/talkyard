@@ -125,9 +125,10 @@ export function pageNotfPrefTarget_findEffPref(
   // @ifdef DEBUG
   dieIf(oneIfDef(target.pageId) + oneIfDef(target.pagesInCategoryId) +
       oneIfDef(target.wholeSite) !== 1, 'TyE6SKDW207');
+  dieIf(!ownPrefs.id, 'TyE305HD2');
   // @endif
 
-  const result: EffPageNotfPref = { ...target };
+  const result: EffPageNotfPref = { ...target, forMemberId: ownPrefs.id };
 
   // Check for notf prefs for this page.
   const myPageData: MyPageData | undefined =
@@ -135,6 +136,9 @@ export function pageNotfPrefTarget_findEffPref(
   if (myPageData) {
     if (myPageData.myPageNotfPref) {
       result.notfLevel = myPageData.myPageNotfPref.notfLevel;
+      // Continue below to find out if we're also inheriting a notf level
+      // from a category or group (although then it's not in use, since we've
+      // explicitly specified a notf level for this page).
     }
 
     const maxGroupsPref = maxPref(myPageData.groupsPageNotfPrefs);
@@ -155,14 +159,20 @@ export function pageNotfPrefTarget_findEffPref(
     const maxGroupsPref = maxPref(groupsPrefs);
 
     if (target.pageId) {
+      // When the target is a page, and we find a notf pref for a *category*, then
+      // that pref is inherited, from one's own category notf pefs, or the category notf
+      // prefs of a group one is in.
       result.inheritedNotfPref = myPref || maxGroupsPref;
       if (result.inheritedNotfPref)
         return result;
     }
     else if (target.pagesInCategoryId) {
+      // If, however, the target is itself a category, then, if we have our own notf level
+      // for this category, it's not inherited — it's explicitly for this category.
       if (myPref) {
         result.notfLevel = myPref.notfLevel;
       }
+      // Maybe inheriting from a group? (And has no effect, if myPref.notLevel defined.)
       if (maxGroupsPref) {
         result.inheritedNotfPref = maxGroupsPref;
         return result;
@@ -236,7 +246,7 @@ export function notfPref_title(notfPref: EffPageNotfPref): string {
 }
 
 
-export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, store: Store): any {
+export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, ppsById: PpsById): any {
   let descr;
   switch (notfLevel) {
     case PageNotfLevel.EveryPostAllEdits:
@@ -309,7 +319,7 @@ export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPr
       // Add a bit text that explains this — so people understand why this setting
       // is in use, or has the text "Default", although they didn't do anything themselves.
       explainWhyInherited = r.div({ className: 's_NotfPrefDD_WhyInh' },
-          makeWhyInheritedExpl(notfLevel, effPref, store));
+          makeWhyNotfLvlInheritedExpl(effPref, ppsById));
     }
   }
 
@@ -317,14 +327,19 @@ export function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPr
 }
 
 
-function makeWhyInheritedExpl(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, store: Store) { // I18N
+export function makeWhyNotfLvlInheritedExpl(effPref: EffPageNotfPref, ppsById: PpsById) {  // I18N
   const inhPref = effPref.inheritedNotfPref;
-  const inheritedOrDefault = !effPref.notfLevel ? "Inherited" : "The default";
-  const user = store.usersByIdBrief[inhPref.memberId];
-  const fromUserName = user && !user.isGroup ? '' :
-      ", from @" + (user && user.username || `#${inhPref.memberId}`);
+  const inhFromMember = ppsById[inhPref.memberId];
+
+  const isInherited = !effPref.notfLevel;
+  const inheritedOrDefault = isInherited ? "Inherited" : "The default";
+
+  const fromUserName = effPref.forMemberId === inhPref.memberId ? '' :
+      ", from group @" + (inhFromMember && inhFromMember.username || `#${inhPref.memberId}`);
+
   const forWholeSite = inhPref.wholeSite ? ", whole site setting" : '';
   const onCategory = inhPref.pagesInCategoryId ? ", category #" + inhPref.pagesInCategoryId : '';
+
   return inheritedOrDefault + fromUserName + forWholeSite + onCategory;
 }
 
@@ -380,6 +395,19 @@ export function me_copyWithNewPageData(me: Myself, newPageData: MyPageData): Mys
 export function me_uiPrefs(me: Myself): UiPrefs {
   return shallowMergeFirstItemLast(me.uiPrefsOwnFirst);
 }
+
+
+// Groups
+//----------------------------------
+
+
+// Members
+//----------------------------------
+
+export function member_isBuiltIn(member: Member): boolean {
+  return member.id < LowestAuthenticatedUserId;
+}
+
 
 
 // Users

@@ -111,6 +111,14 @@ export const UserProfileAdminView = createFactory({
         ExtLinkButton({ href: this.publicProfileLink(), className: 'e_VwPblPrfB' },
           "View Public Profile");
 
+    if (user.isGroup)
+      return rFragment({},
+        r.div({ className: 'pull-right' },
+          showPublProfileButton),
+        r.p({ style: { clear: 'both' }},
+          "A group: ",
+          r.b({}, user.fullName + ' @' + user.username)));
+
     const makeRow = (what: string, value, controls, alsoForGroups?: boolean) => {
       if (!alsoForGroups && user.isGroup) return null;
       return r.div({ className: 'esA_Us_U_Rows_Row' },

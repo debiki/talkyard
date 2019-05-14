@@ -396,6 +396,7 @@ trait SiteTransaction {
   def loadUserEmailAddressesForAllUsers(): Seq[UserEmailAddress]    // RENAME to loadMember...
 
   def insertUsernameUsage(usage: UsernameUsage)
+  def deleteUsernameUsagesForMemberId(memberId: UserId): Int
   def updateUsernameUsage(usage: UsernameUsage)
   def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
@@ -477,11 +478,15 @@ trait SiteTransaction {
 
   def loadOwner(): Option[UserInclDetails]
 
-  def loadGroupMembers(groupId: UserId): Seq[Participant]
+  def loadGroupMembers(groupId: UserId): Vector[Participant]
+  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId]
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId])
+  def removeAllGroupParticipants(groupId: UserId)
 
   def insertGroup(group: Group)
+  def deleteGroup(groupId: UserId)
   def updateGroup(group: Group)
-  def loadAllGroupsAsSeq(): immutable.Seq[Group]
+  def loadAllGroupsAsSeq(): Vector[Group]
   def loadAllGroupsAsMap(): Map[UserId, Group] = loadAllGroupsAsSeq().map(g => g.id -> g).toMap
 
   def loadGroupIdsMemberIdFirst(anyUser: Option[Participant]): Vector[UserId] = {
@@ -497,76 +502,88 @@ trait SiteTransaction {
   }
 
   /** Loads ids of groups the member is in. Returns them, prefixed with
-    * the members own id, first.
+    * the members own id, first (guests aren't members; for them,
+    * only the EveryoneId is returned).
     */
-  def loadGroupIdsMemberIdFirst(user: Participant): Vector[UserId] = {
-    val G = Group
-
-    val member = user match {
-      case _: Guest | UnknownParticipant => return Vector(G.EveryoneId)
-      case m: User => m
-      case g: Group => return makeGroupIdsForGroup(g)
+  def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId] = {
+    val builtInGroups = ppt match {
+      case _: Guest | UnknownParticipant => return Vector(Group.EveryoneId)
+      case u: User => getBuiltInGroupIdsForUser(u)
+      case g: Group => getBuiltInGroupIdsForGroup(g)
     }
 
+    val customGroups = loadCustomGroupsFor_impl(ppt)
+    ppt.id +: (builtInGroups ++ customGroups)
+  }
+
+
+  def loadCustomGroupsFor_impl(user: Participant): Vector[UserId]  // CLEAN_UP move to UserSiteDaoMixin [50BAD25]
+
+
     // For now. Later, also do db request and add custom groups.  [7JKC1104]
+  private def getBuiltInGroupIdsForUser(member: User): Vector[UserId] = {  // move to UserSiteDaoMixin [50BAD25]
+    val G = Group
 
     if (member.isAdmin)
-      return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      return Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
 
     if (member.isModerator)
-      return Vector(member.id, G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      return Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
 
     member.effectiveTrustLevel match {
       case TrustLevel.NewMember =>
-        Vector(member.id, G.NewMembersId, G.EveryoneId)
+        Vector(G.AllMembersId, G.EveryoneId)
       case TrustLevel.BasicMember =>
-        Vector(member.id, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case TrustLevel.FullMember =>
-        Vector(member.id, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case TrustLevel.TrustedMember =>
-        Vector(member.id, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case TrustLevel.RegularMember =>
-        Vector(member.id, G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case TrustLevel.CoreMember =>
-        Vector(member.id, G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
     }
   }
 
 
-  private def makeGroupIdsForGroup(group: Group): Vector[UserId] = {
+  private def getBuiltInGroupIdsForGroup(group: Group): Vector[UserId] = {  // move to UserSiteDaoMixin [50BAD25]
     // For now. Later, also do db request and add custom groups.  [7JKC1104]
     val G = Group
     group.id match {
-      case G.NewMembersId =>
-        Vector(G.NewMembersId, G.EveryoneId)
+      case G.EveryoneId =>
+        Vector(G.EveryoneId)
+      case G.AllMembersId =>
+        Vector(G.AllMembersId, G.EveryoneId)
       case G.BasicMembersId =>
-        Vector(G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.FullMembersId =>
-        Vector(G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.TrustedMembersId =>
-        Vector(G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+        Vector(G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.RegularMembersId =>
         Vector(G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.CoreMembersId =>
         Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
-          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+          G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.StaffId =>
         Vector(G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.ModeratorsId =>
         Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case G.AdminsId =>
         Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
-          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.AllMembersId, G.EveryoneId)
       case _ =>
-        Vector(G.EveryoneId)
+        // Custom groups are members, so should be in the all-members group, right.
+        Vector(G.AllMembersId, G.EveryoneId)
     }
   }
 

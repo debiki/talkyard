@@ -730,6 +730,12 @@ trait UserDao {
   }
 
 
+  def getParticipantOrUnknown(userId: UserId): Participant = {
+    if (userId == UnknownParticipant.id) UnknownParticipant
+    getParticipant(userId) getOrElse UnknownParticipant
+  }
+
+
   def getTheParticipant(userId: UserId): Participant = {
     getParticipant(userId).getOrElse(throw UserNotFoundException(userId))
   }
@@ -803,18 +809,139 @@ trait UserDao {
 
 
   def getGroupIdsOwnFirst(user: Option[Participant]): Vector[UserId] = {
-    user.map(getGroupIds) getOrElse Vector(Group.EveryoneId)
+    user.map(getOnesGroupIds) getOrElse Vector(Group.EveryoneId)
   }
 
 
-  def getGroupIds(user: Participant): Vector[UserId] = {
-    COULD_OPTIMIZE // For now. Later, cache.
+  def getGroups(requester: Participant): Vector[Group] = {
+    val tooManyGroups = memCache.lookup[Vector[Group]](
+      allGroupsKey,
+      orCacheAndReturn = {
+        readOnlyTransaction { tx =>
+          Some(tx.loadAllGroupsAsSeq())
+        }
+      }).get
+
+    val requestersGroupIds = getOnesGroupIds(requester)
+    // + groups one manages or is an adder or bouncer for [GRPMAN]
+
+    val groups =
+      if (requester.isStaff) tooManyGroups
+      else tooManyGroups
+        // Later: .filter(g => g.isVisibleFor(forWho) || requestersGroupIds.contains(g.id))
+
+    groups
+  }
+
+
+  def getGroupsAndStats(forWho: Who): Vector[GroupAndStats] = {
+    val requester = getParticipantOrUnknown(forWho.id)
+    val groups = getGroups(requester)
+    val groupsAndStats = groups map { group =>
+      GroupAndStats(group, getGroupStatsIfMaySee(group, requester))
+    }
+    groupsAndStats
+  }
+
+
+  private def getGroupStatsIfMaySee(group: Group, requester: Participant): Option[GroupStats] = {
+    // Hmm this counts not only users, but child groups too. [NESTDGRPS]
+    val members = listGroupMembers(group.id, requester) getOrElse {
+      return None
+    }
+    Some(GroupStats(numMembers = members.length))
+  }
+
+
+  /** Returns Some(the members), or, if one isn't allowed to know who they are, None.
+    */
+  def listGroupMembers(groupId: UserId, requester: Participant): Option[Vector[Participant]] = {
+    if (groupId == Group.EveryoneId)
+      return None
+
+    val group = getTheGroup(groupId)
+    val requestersGroupIds = getOnesGroupIds(requester)
+    if (!requester.isStaff && !requestersGroupIds.contains(groupId))  // or if is manager [GRPMAN]
+      return None
+
+    lazy val members = memCache.lookup[Vector[Participant]](
+      groupMembersKey(groupId),
+      orCacheAndReturn = {
+        readOnlyTransaction { tx =>
+          Some(tx.loadGroupMembers(groupId))
+        }
+      }).get
+
+    if (requester.isStaff) {
+      Some(members)
+    }
+    else if (group.id == Group.EveryoneId) {
+      // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
+      // at built-in groups like Everyone or All Members.
+      None
+    }
+    else if (group.isBuiltIn && requester.effectiveTrustLevel.isBelow(TrustLevel.TrustedMember)) {
+      // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
+      // at built-in groups like Everyone or All Members.
+      None
+    }
+    else {
+      Some(members)
+    }
+  }
+
+
+  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]) {
+    throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
+      "TyE206JKDT2", "Cannot add members to built-in automatic groups")
+    readWriteTransaction { tx =>
+      val newMembers = tx.loadParticipants(memberIdsToAdd)
+      newMembers.find(_.isGroup) foreach { group =>
+        // Currently trust level groups are already nested in each other — but let's
+        // wait with allowing nesting custom groups in each other. [NESTDGRPS]
+        throwForbidden("TyEGRINGR", s"Cannot add groups to groups. Is a group: ${group.nameParaId}")
+      }
+      newMembers.find(_.isGuest) foreach { guest =>
+        throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
+      }
+      tx.addGroupMembers(groupId, memberIdsToAdd)
+    }
+    uncacheGroupMembership(memberIdsToAdd)
+    memCache.remove(groupMembersKey(groupId))
+    memCache.remove(allGroupsKey)
+  }
+
+
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]) {
+    throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
+      "TyE8WKD2T0", "Cannot remove members from built-in automatic groups")
+    readWriteTransaction { tx =>
+      tx.removeGroupMembers(groupId, memberIdsToRemove)
+    }
+    uncacheGroupMembership(memberIdsToRemove)
+    memCache.remove(groupMembersKey(groupId))
+    memCache.remove(allGroupsKey)
+  }
+
+
+  private def uncacheGroupMembership(memberIds: Iterable[UserId]) {
+    memberIds foreach { memberId =>
+      memCache.remove(onesGroupIdsKey(memberId))
+    }
+  }
+
+
+  def getOnesGroupIds(user: Participant): Vector[UserId] = {
     user match {
       case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
       case _: User | _: Group =>
-        readOnlyTransaction { tx =>
-          tx.loadGroupIdsMemberIdFirst(user)
-        }
+        memCache.lookup[Vector[UserId]](
+          onesGroupIdsKey(user.id),
+          orCacheAndReturn = {
+            readOnlyTransaction { tx =>
+              Some(tx.loadGroupIdsMemberIdFirst(user))
+            }
+          }).get
     }
   }
 
@@ -1398,12 +1525,12 @@ trait UserDao {
       val groupAfter = group.copyWithNewAboutPrefs(preferences)
 
       if (groupAfter.name != group.name) {
-        throwForbiddenIfBadFullName(Some(groupAfter.name))
+        throwForbiddenIfBadFullName(groupAfter.name)
       }
 
       if (groupAfter.theUsername != group.theUsername) {
         throwForbiddenIfBadUsername(preferences.username)
-        unimplemented("Changing a group's username", "TyE2KBFU50")
+        unimplemented("Changing a group's username", "TyE2KBFU50")  // SHOULD fix now
         // Need to: tx.updateUsernameUsage(usageStopped) — stop using current
         // And: tx.insertUsernameUsage(UsernameUsage(   [CANONUN]
         // See saveAboutMemberPrefs.
@@ -1468,6 +1595,51 @@ trait UserDao {
   }
 
 
+  def createGroup(username: String, fullName: Option[String]): Group Or ErrorMessage = {
+    throwForbiddenIfBadFullName(fullName)
+    throwForbiddenIfBadUsername(username)
+
+    val result = readWriteTransaction { tx =>
+      tx.loadUsernameUsages(username) foreach { usage =>
+        return Bad(o"""There is, or was, already a member with username
+          '$username', member id: ${usage.userId} [TyE204KMFG]""")
+      }
+      val groupId = tx.nextMemberId
+      val group = Group(
+        id = groupId,
+        theUsername = username.toLowerCase,  // [CANONUN]
+        name = fullName,
+        createdAt = tx.now)
+      tx.insertGroup(group)
+      tx.insertUsernameUsage(UsernameUsage(
+        usernameLowercase = group.theUsername,
+        tx.now, userId = group.id))
+      Good(group)
+    }
+    memCache.remove(allGroupsKey)
+    result
+  }
+
+
+  def deleteGroup(groupId: UserId) {
+    throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
+      "TyE307DMAT2", "Cannot delete built-in groups")
+    val formerMembers = readWriteTransaction { tx =>
+      val group = tx.loadTheGroupInclDetails(groupId)
+      val members = tx.loadGroupMembers(groupId)
+      tx.deleteUsernameUsagesForMemberId(groupId)
+      tx.removeAllGroupParticipants(groupId)
+      tx.deleteGroup(groupId)
+      members
+    }
+    RACE // not impossible that a member just loaded hens group ids from the database,
+    // and inserts into the mem cache just after we've uncached, here?
+    uncacheGroupMembership(formerMembers.map(_.id))
+    memCache.remove(groupMembersKey(groupId))
+    memCache.remove(allGroupsKey)
+  }
+
+
   def saveGuest(guestId: UserId, name: String) {
     // BUG: the lost update bug.
     readWriteTransaction { tx =>
@@ -1517,7 +1689,7 @@ trait UserDao {
   def deleteUser(userId: UserId, byWho: Who): UserInclDetails = {
     readWriteTransaction { tx =>
       tx.deferConstraints()
-
+// remove from groups <——————
       val deleter = tx.loadTheParticipant(byWho.id)
       require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
 
@@ -1681,6 +1853,10 @@ trait UserDao {
   }
 
   private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById")
+
+  private def allGroupsKey = MemCacheKey(siteId, "AlGrps")
+  private def groupMembersKey(groupId: UserId) = MemCacheKey(siteId, s"$groupId|GrMbrs")
+  private def onesGroupIdsKey(userId: UserId) = MemCacheKey(siteId, s"$userId|GIdsByPp")
 
 }
 

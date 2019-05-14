@@ -571,6 +571,7 @@ class JsonMaker(dao: SiteDao) {
       "trustLevel" -> TrustLevel.StrangerDummyLevel,
       "notifications" -> JsArray(),
       "watchbar" -> makeStrangersWatcbarJson(),
+      "myGroupIds" -> Json.arr(Group.EveryoneId),
       "myDataByPageId" -> JsObject(Nil),
       "marksByPostId" -> JsObject(Nil),
       "closedHelpMessages" -> JsObject(Nil),
@@ -764,6 +765,7 @@ class JsonMaker(dao: SiteDao) {
       "uiPrefsOwnFirst" -> JsArray(uiPrefsOwnFirstJsonSeq),
       "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
       "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
+      "myGroupIds" -> JsArray(myGroupsEveryoneLast.map(g => JsNumber(g.id))),
       "myDataByPageId" -> ownDataByPageId,
       "marksByPostId" -> JsObject(Nil))
 

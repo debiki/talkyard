@@ -71,6 +71,9 @@ object Validation {
   val TwoSpecialCharsErrorMessage = "The username has two special chars in a row"
   val BadFirstCharErrorMessage = "The username's first character must be one of a-z, A-Z, 0-9 _"
   val BadLastCharErrorMessage = "The username's last character must be one of a-z, A-Z, 0-9"
+  val DeletedSuffixErrorMessage =
+    s"The username contains the magic '${Member.DeletedUsernameSuffix}' suffix"
+
   def justWeird(username: String, okayUsername: Option[String]): String = {
     val tryInsteadWith = okayUsername.map(n => s"try instead with '$n'") getOrElse ""
     s"The username is weird: '$username', $tryInsteadWith [TyE2LKB57A]"
@@ -99,6 +102,9 @@ object Validation {
 
     if (!charIsAzOrNum(username.last))
       return Bad(BadLastCharErrorMessage)
+
+    if (username.contains(Member.DeletedUsernameSuffix))
+      return Bad(DeletedSuffixErrorMessage)
 
     val anyBadChar = UsernameBadCharsRegex.findFirstIn(username)
     anyBadChar foreach { badChar =>

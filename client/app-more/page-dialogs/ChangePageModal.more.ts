@@ -29,7 +29,7 @@ const ExplainingListItem = util.ExplainingListItem;
 
 let changePageDialog;
 
-export function openChangePageModal(atRect, props: { page: Page, showViewAnswerButton?: true }) {
+export function openChangePageDialog(atRect, props: { page: Page, showViewAnswerButton?: true }) {
   if (!changePageDialog) {
     changePageDialog = ReactDOM.render(ChangePageDialog(), utils.makeMountNode());
   }

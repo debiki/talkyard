@@ -45,7 +45,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: Int,
         categoryId: Option[Int], toUserId: Option[UserId],
         pageId: Option[String], postNr: Option[Int]): Action[Unit] =
-      GetActionRateLimited(RateLimits.TouchesDbGetRequest) { request =>
+      GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
 
     import request.{dao, requester}
 
@@ -126,7 +126,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
   def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] =
-        GetActionRateLimited(RateLimits.TouchesDbGetRequest) { request =>
+        GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
 
     import request.{dao, theRequester => requester}
 
@@ -135,7 +135,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayEditPost(
-      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
@@ -187,7 +187,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayEditPost(
-      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")

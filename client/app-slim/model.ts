@@ -48,6 +48,11 @@ interface CheckboxEvent {
   };
 }
 
+type ValueOk<T> = {
+  value?: T;
+  isOk?: boolean;
+}
+
 
 // Send back IgnoreThisError to the caller from an error callback, and the caller won't
 // continue with its default error handling — it'll ignore the error.
@@ -420,6 +425,7 @@ interface Myself extends OwnPageNotfPrefs {
   tourTipsSeen: TourTipsSeen;
   uiPrefsOwnFirst: UiPrefs[];
 
+  myGroupIds: UserId[];
   myDataByPageId: { [id: string]: MyPageData };
   myCurrentPageData: MyPageData;
 
@@ -464,7 +470,16 @@ interface PageNotfPrefTarget {
 
 
 interface EffPageNotfPref extends PageNotfPrefTarget {
+  // Will be different from the user one is logged in as, if one is a staff member,
+  // and edits another member's (e.g. a group's) notfs settings.
+  forMemberId: UserId;
+
+  // Defined, if the member has specified a notf level directly for the PageNotfPrefTarget.
   notfLevel?: PageNotfLevel;
+
+  // Notf prefs are inherited structure wise: pages inherit from sub categories, and
+  // sub categories from main categories. And people wise: members inherit from the groups
+  // they're in.
   inheritedNotfPref?: PageNotfPref;
 }
 
@@ -908,7 +923,7 @@ interface Store extends Origins {
   isImpersonating?: boolean;
   isViewingAs?: boolean;
   rootPostId: number;
-  usersByIdBrief: { [userId: number]: Participant };
+  usersByIdBrief: { [userId: number]: Participant };  // = PpsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
@@ -1123,6 +1138,8 @@ interface Participant {   // Guest or Member, and Member = group or user
   isGone?: boolean;
 }
 
+type PpsById = { [ppId: number]: Participant };
+
 
 interface Guest extends Participant {
   fullName: string;
@@ -1150,6 +1167,16 @@ interface Group extends Member {
   isGuest?: false;
   // "grantsTrustLevel" — later
   avatarTinyHashPath?: string;
+}
+
+interface GroupAndStats extends Group {
+  // Some people (like strangers and new members) might not get to know details
+  // about a group, only its name.
+  stats?: GroupStats;
+}
+
+interface GroupStats {
+  numMembers: number;
 }
 
 
@@ -1734,6 +1761,9 @@ interface ListDraftsResponse {
 }
 
 interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
+  categoriesMaySee: Category[];
+  categoriesMayNotSee: Category[];
+  groups: Group[];
   // Later: Category and group names, so can lookup ther names, for display.
 }
 

@@ -192,6 +192,9 @@ db-cli:
 	  db_user="$${db_user:-$$def_user}" ;\
 	  sudo s/d-psql "$$db_user" "$$db_user"
 
+build:
+	s/d build
+
 up: minified-asset-bundles
 	sudo s/d up -d
 	@echo

@@ -70,26 +70,26 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
     val now = tx.now
 
     val Everyone = Group(
-      EveryoneId, "everyone", "Everyone", createdAt = now, grantsTrustLevel = None)
+      EveryoneId, "everyone", Some("Everyone"), createdAt = now, grantsTrustLevel = None)
     val New = Group(
-      NewMembersId, "new_members", "New Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.NewMember))
+      AllMembersId, "all_members", Some("All Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.NewMember))
     val Basic = Group(
-      BasicMembersId, "basic_members", "Basic Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.BasicMember))
+      BasicMembersId, "basic_members", Some("Basic Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.BasicMember))
     val Full = Group(
-      FullMembersId, "full_members", "Full Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.FullMember))
+      FullMembersId, "full_members", Some("Full Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.FullMember))
     val Trusted = Group(
-      TrustedMembersId, "trusted_members", "Trusted Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.TrustedMember))
+      TrustedMembersId, "trusted_members", Some("Trusted Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.TrustedMember))
     val Regular = Group(
       // RENAME to  "Trusted Regulars"  [RENREGLS]
-      RegularMembersId, "regular_members", "Regular Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.RegularMember))
+      RegularMembersId, "regular_members", Some("Regular Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.RegularMember))
     val Core = Group(
-      CoreMembersId, "core_members", "Core Members", createdAt = now, grantsTrustLevel = Some(TrustLevel.CoreMember))
+      CoreMembersId, "core_members", Some("Core Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.CoreMember))
     val Staff = Group(
-      StaffId, "staff", "Staff", createdAt = now, grantsTrustLevel = None)
+      StaffId, "staff", Some("Staff"), createdAt = now, grantsTrustLevel = None)
     val Moderators = Group(
-      ModeratorsId, "moderators", "Moderators", createdAt = now, grantsTrustLevel = None)
+      ModeratorsId, "moderators", Some("Moderators"), createdAt = now, grantsTrustLevel = None)
     val Admins = Group(
-      AdminsId, "admins", "Admins", createdAt = now, grantsTrustLevel = None)
+      AdminsId, "admins", Some("Admins"), createdAt = now, grantsTrustLevel = None)
 
     insertGroupAndUsernameUsage(Everyone, tx)
     insertGroupAndUsernameUsage(New, tx)

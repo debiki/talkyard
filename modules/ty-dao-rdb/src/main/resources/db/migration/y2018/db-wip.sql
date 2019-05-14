@@ -1,3 +1,7 @@
+drop table category_notf_levels3;
+drop table tag_notf_levels3;
+drop table dw1_settings;
+
 Don't use timestamp — Change all timestam to timestamptz, or maybe i64 integer? millis since 1970?
 Compatible with client side time repr.
 

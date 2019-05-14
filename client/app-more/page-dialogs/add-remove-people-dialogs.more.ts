@@ -34,15 +34,16 @@ const ModalFooter = rb.ModalFooter;
 let addPeopleDialog;
 
 
-export function openAddPeopleDialog() {
+export function openAddPeopleDialog(alreadyAddedIds: UserId[],
+      onDone: (newIds: UserId[]) => void) {
   if (!addPeopleDialog) {
     addPeopleDialog = ReactDOM.render(AddPeopleDialog(), utils.makeMountNode());
   }
-  addPeopleDialog.open();
+  addPeopleDialog.open(alreadyAddedIds, onDone);
 }
 
 
-var AddPeopleDialog = createComponent({
+const AddPeopleDialog = createComponent({
   displayName: 'AddPeopleDialog',
 
   getInitialState: function () {
@@ -52,22 +53,19 @@ var AddPeopleDialog = createComponent({
     };
   },
 
-  componentWillMount: function() {
-    this.isUnmounted = false;
-  },
-
   componentWillUnmount: function() {
-    this.isUnmounted = true;
+    this.isGone = true;
   },
 
-  open: function() {
+  open: function(alreadyAddedIds: UserId[], onDone: (newIds: UserId[]) => void) {
     this.setState({
       isOpen: true,
       isLoading: true,
-      store: ReactStore.allData(),
+      alreadyAddedIds,
+      onDone,
     });
     Server.listAllUsernames('', users => {
-      if (this.isUnmounted || !this.state.isOpen) return;
+      if (this.isGone || !this.state.isOpen) return;
       this.setState({
         selectedLabelValues: [],
         allUsers: users,
@@ -77,7 +75,7 @@ var AddPeopleDialog = createComponent({
   },
 
   close: function() {
-    this.setState({ isOpen: false });
+    this.setState({ isOpen: false, alreadyAddedIds: null, onDone: null });
   },
 
   onSelectChange: function(labelsAndValues: any) {
@@ -86,37 +84,28 @@ var AddPeopleDialog = createComponent({
   },
 
   save: function() {
-    var userIds = this.state.selectedLabelValues.map(entry => entry.value);
-    Server.addUsersToPage(userIds, () => {
-      if (this.isUnmounted) return;
-      this.close();
-      util.openDefaultStupidDialog({ body: "Now I've added him/her/them. Currently you need " +
-        "to reload the page (hit F5) to see them in the users list." }); // [5FKE0WY2] also in e2e
-    });
+    const userIds = this.state.selectedLabelValues.map(entry => entry.value);
+    this.state.onDone(userIds);
+    this.close();
   },
 
   render: function () {
-    let content;
     if (this.state.isLoading)
       return r.p({}, "Loading...");
 
-    if (!this.state.isOpen) {
-      // Nothing.
-    }
-    else {
-      const store: Store = this.state.store;
-      const page: Page = store.currentPage;
+    let content;
+    if (this.state.isOpen) {
       content =
         r.div({ id: 'e2eAddUsD'},
           rb.ReactSelect({ multi: true, value: this.state.selectedLabelValues,
-            placeholder: "Select users",
-            options: makeLabelValues(this.state.allUsers, page.pageMemberIds),
+            placeholder: "Select users",  // I18N
+            options: makeLabelValues(this.state.allUsers, this.state.alreadyAddedIds),
             onChange: this.onSelectChange }));
     }
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esTsD' },
-        ModalHeader({}, ModalTitle({}, "Select users")),
+        ModalHeader({}, ModalTitle({}, "Select users")),  // I18N
         ModalBody({}, content),
         ModalFooter({},
           PrimaryButton({ onClick: this.save, id: 'e2eAddUsD_SubmitB',
@@ -128,11 +117,11 @@ var AddPeopleDialog = createComponent({
 
 function makeLabelValues(users: BriefUser[], pageMemberIds: UserId[]) {
   return users.map((user: BriefUser) => {
-    var prettyName = user.username;
+    let prettyName = user.username;
     if (user.fullName) {
       prettyName += ' (' + user.fullName + ')';
     }
-    var alreadyMember =  _.includes(pageMemberIds, user.id);
+    const alreadyMember =  _.includes(pageMemberIds, user.id);
     if (alreadyMember) {
       prettyName += " — already added";
     }

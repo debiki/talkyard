@@ -226,7 +226,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
       "All members listens for new topics. Except for member 1: Normal, member 2: Muted" in {
         dao.readWriteTransaction { tx =>
           tx.upsertPageNotfPref(
-            PageNotfPref(Group.NewMembersId, NotfLevel.WatchingFirst, wholeSite = true))
+            PageNotfPref(Group.AllMembersId, NotfLevel.WatchingFirst, wholeSite = true))
 
           tx.upsertPageNotfPref(PageNotfPref(member1.id, NotfLevel.Normal, wholeSite = true))
           tx.upsertPageNotfPref(PageNotfPref(member2.id, NotfLevel.Muted, wholeSite = true))
@@ -253,7 +253,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
         // Member 2 has muted the site, and
         // member 1 has set site notfs to Normal — that overrides AllMember's notf setting.
         memberIdsNotified  mustBe Set(
-            Group.NewMembersId, member3.id, member4.id, memberNoNotfsConfigd.id)
+            Group.AllMembersId, member3.id, member4.id, memberNoNotfsConfigd.id)
       }
 
       "In total, 4 peoples got notified" in {

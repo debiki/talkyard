@@ -436,6 +436,10 @@ class EdSecurity(globals: Globals) {
     COULD_OPTIMIZE // pass settings or a dao to here instead? so won't need to create this 2nd one.
                     // (the caller always already has one)
     val dao = globals.siteDao(siteId)
+
+    val ppt = dao.getParticipant(userId)
+    throwForbiddenIf(ppt.exists(_.isGroup), "TyELGIGRP", "Cannot login as a group")  // [imp-groups]
+
     val settings = dao.getWholeSiteSettings()
     val expireIdleAfterSecs = settings.expireIdleAfterMins * 60
 

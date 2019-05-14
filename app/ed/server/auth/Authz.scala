@@ -55,7 +55,10 @@ case class ForumAuthzContext(
   permissions: immutable.Seq[PermsOnPages]) extends AuthzContext {
 
   def groupIdsEveryoneLast: immutable.Seq[GroupId] = {
-    if (groupIdsUserIdFirst.length >= 2) {
+    if (requester.exists(_.isGroup)) {
+      die("TyEs024HRS25", "Trying to authz as a group")  // [imp-groups]
+    }
+    else if (groupIdsUserIdFirst.length >= 2) {
       dieIf(requester.map(_.id) isNot groupIdsUserIdFirst(0), "TyE2AKBR05")
       groupIdsUserIdFirst.tail
     }

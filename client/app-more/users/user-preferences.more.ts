@@ -56,7 +56,8 @@ export const UserPreferences = createFactory({
 
     const childProps = {
       store,
-      user,
+      user, // CLEAN_UP remove — use `member` instead, because can be a group
+      member: user,
       reloadUser: this.props.reloadUser,
       emailsLoginsPath,
     };
@@ -68,7 +69,9 @@ export const UserPreferences = createFactory({
       Route({ path: '(.*)/' + notfsPathSeg, exact: true, render: () => NotfPrefsTab(childProps) }),
       Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => PrivacyPrefsTab(childProps) }),
       Route({ path: '(.*)/' + accountPathSeg, exact: true, render: (ps) =>
-          AccountTab({ ...childProps, ...ps }) }),
+          user.isGroup
+            ? AccountTabForGroup({ ...childProps, ...ps })
+            : AccountTab({ ...childProps, ...ps }) }),
       Route({ path: '(.*)/' + uiPathSeg, exact: true, render: () => UiPrefsTab(childProps) }),
           );
 
@@ -76,6 +79,7 @@ export const UserPreferences = createFactory({
     const isNormalMember = user.id >= LowestNormalMemberId;
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
     const isGuestOrBuiltIn = isGuest || isBuiltInUser;
+    const isGroupGuestOrBuiltIn = user.isGroup || isGuestOrBuiltIn;
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -87,11 +91,11 @@ export const UserPreferences = createFactory({
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
               !isNormalMember ? null: LiNavLink({
                   to: prefsPathSlash + notfsPathSeg, className: 's_UP_Prf_Nav_NtfsL' }, t.Notifications),
-              isGuestOrBuiltIn ? null : LiNavLink({
+              isGroupGuestOrBuiltIn ? null : LiNavLink({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGuestOrBuiltIn ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
-              !isNormalMember ? null : LiNavLink({
+              user.isGroup || !isNormalMember ? null : LiNavLink({
                   to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, t.upp.Interface))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
@@ -454,17 +458,18 @@ const NotfPrefsTab = createFactory({
   },
 
   loadNotfPrefs: function() {
-    const member: UserInclDetails = this.props.user;
+    const member: UserInclDetails = this.props.member;
     Server.loadCatsTagsSiteNotfPrefs(member.id, (response: PageNotfPrefsResponse) => {
       if (this.isGone) return;
-      const ownPrefs: OwnPageNotfPrefs = response;
-      const memberNow: UserInclDetails = this.props.user;
-      if (ownPrefs.id === memberNow.id) {
-        this.setState({ ownPrefs });
+      const membersPrefs: PageNotfPrefsResponse = response;
+      const memberNow: UserInclDetails = this.props.member;
+      const ppsById: { [userId: number]: Participant } = groupByKeepOne(membersPrefs.groups, g => g.id);
+      if (membersPrefs.id === memberNow.id) {
+        this.setState({ membersPrefs, ppsById });
       }
       else {
         // The data we got from the server, is old: we have since updated the UI
-        // to show info about a different user, apparently.
+        // to show info about a different member, apparently. Fine.
         console.log("Race condition. [2C80BX]");
       }
     });
@@ -473,37 +478,103 @@ const NotfPrefsTab = createFactory({
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
-    const user: UserInclDetails = this.props.user;
-    const isOkUser = user.id >= Groups.EveryoneId;
-    const ownPrefs = this.state.ownPrefs;
+    const member: UserInclDetails = this.props.member;
+    const membersPrefs: PageNotfPrefsResponse = this.state.membersPrefs;
+    const isOkMember = member.id >= Groups.EveryoneId;
+    const isMe = me.id === member.id;
+    const ppsById = this.state.ppsById;
 
-    if (!ownPrefs)
+    if (!membersPrefs)
       return r.p({}, t.Loading);
 
-    if (!isOkUser)
+    if (!isOkMember)
       return r.p({}, 'Built-in special user, or guest. [TyE2PKT0684]');
 
-    const forWho = me.id === user.id ? '' : rFragment({},
-        `, ${t.upp.forWho} `, r.b({}, user.username));
+    const forWho = isMe ? '' : rFragment({},
+        `, ${t.upp.forWho} `, r.b({}, member.username));
 
-    const target = { wholeSite: true };
+    // Why list all categories, and notf levels per category?
+    //
+    // Instead of listing all categories, and a notf level dropdown per category,
+    // *Discourse* lists all notification levels, and shows a list of
+    // categories that one has subscribed to with the respective notification level.
+    //
+    // However, that's the wrong approach for Talkyard? Because Talkyard
+    // has notification settings inheritance: you inherit settings from
+    // groups you're in, and also a sub category inherits settings from
+    // its parent category.
+    //
+    // And to make it easy to see from where a notification level
+    // got inhereited, it's simpler / better to list all categories,
+    // and notification settings per category?
+    // Then there's space for adding text like "Inherited from <group name>"
+    // next to a category name and notf level. So it'll be clear
+    // to people why their notf settings might be differetn from
+    // the defaults.
+    //
+    // And, is this list-categories-first approch more user friendly?
+    // Because then, if the staff wants to subscribe a group or a user
+    // to a category, they need to just click the per category notf
+    // settings dropdown. Rather than (the Discourse approach) remembering
+    // and starting typing the category name in a multi select.
+    //
+    // (Later: If a site has surprisingly many categories, then, can add
+    // a filter-categories-by-name filter. Or if many sub categories,
+    // collapse/open them.)
+
+    const categories: Category[] = membersPrefs.categoriesMaySee;
+    const perCategoryNotfLevels =
+        r.ul({},
+          categories.map((category: Category) => {
+            const target = { pagesInCategoryId: category.id };
+            const effPref = pageNotfPrefTarget_findEffPref(target, store, membersPrefs);
+            const isUsingInheritedLevel = !effPref.notfLevel;
+              //effPref.inheritedNotfPref && effPref.inheritedNotfPref.notfLevel === effPref.notfLevel;
+            const inheritedWhy = !isUsingInheritedLevel ? null :
+                makeWhyNotfLvlInheritedExpl(effPref, ppsById);
+            return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C' },
+              r.span({ className: 's_UP_Prfs_Ntfs_Cs_C_Name' }, category.name + ':'),
+              notfs.PageNotfPrefButton({ store, target, ppsById, ownPrefs: membersPrefs,
+                  saveFn: (notfLevel: PageNotfLevel) => {
+                    saveAndReload(target, notfLevel);
+                  }}),
+              r.span({}, inheritedWhy))
+          }));
+
+    const categoriesMayNotSee: Category[] = membersPrefs.categoriesMayNotSee;
+    const categoriesMayNotSeeInfo = !categoriesMayNotSee.length ? null :
+        r.div({ className: 's_UP_Prfs_Ntfs_NotSeeCats' },
+          r.p({}, "This member cannot see these categories, but you can:"),
+          r.ul({},
+            categoriesMayNotSee.map(c => r.li({ key: c.id }, c.name))));
+
+    const saveAndReload = (target, notfLevel) => {
+      Server.savePageNotfPrefUpdStoreIfSelf(member.id, target, notfLevel, () => {
+        if (this.isGone) return;
+        this.loadNotfPrefs();
+      });
+    };
 
     return (
-      r.div({},
+      r.div({ className: 's_UP_Prfs_Ntfs' },
 
         r.p({}, t.upp.DefNotfsSiteWide, forWho, ':'),
 
-        notfs.PageNotfPrefButton({ target, store, ownPrefs, saveFn: (notfLevel: PageNotfLevel) => {
-              Server.savePageNotfPrefUpdStore(user.id, target, notfLevel, () => {
-                if (this.isGone) return;
-                this.loadNotfPrefs();
-              });
-            } }),
+        notfs.PageNotfPrefButton({ target: { wholeSite: true }, store, ownPrefs: membersPrefs, ppsById,
+            saveFn: (notfLevel: PageNotfLevel) =>
+              saveAndReload({ wholeSite: true }, notfLevel) }),
+
+        r.h3({}, t.Categories),
+        r.p({}, "You can configure notifications, per category:"),
+
+        perCategoryNotfLevels,
+
+        categoriesMayNotSeeInfo,
 
         // @ifdef DEBUG
         r.br(),
         r.br(),
-        r.pre({}, "(In debug builds only) ownPrefs:\n" + JSON.stringify(ownPrefs, undefined, 2)),
+        r.pre({}, "(In debug builds only) membersPrefs:\n" + JSON.stringify(membersPrefs, undefined, 2)),
         // @endif
         null,
         ));
@@ -600,6 +671,38 @@ const PrivacyPrefsTab = createFactory({
 });
 
 
+const AccountTabForGroup = React.createFactory<any>(function(props: { member: Group, store: Store }) {
+  const me: Myself = props.store.me;
+  const group: Group = props.member;
+
+  function deleteGroup() {
+    util.openDefaultStupidDialog({  // dupl code [DELYESNO]
+      body: `Delete group '${group.fullName || group.username}'? Cannot be undone.`,
+      primaryButtonTitle: t.Cancel,
+      secondaryButonTitle: t.upp.YesDelete,  // UX red color (still keep Cancel = blue primary color)
+      onCloseOk: (number) => {
+        if (!number || number === 1) {
+          // Click outside dialog, or on primary button = cancel, do nothing.
+        }
+        else {
+          dieIf(number !== 2, 'TyE6UKBA');
+          Server.deleteGroup(group.id, () => location.assign(GroupsRoot));
+        }
+      },
+    });
+  }
+
+  const dangerZone = !me.isAdmin ? null : (    // +  || group.isDeleted
+    rFragment({},
+      r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
+      Button({ onClick: deleteGroup }, "Delete this group"))); //  I18N  t.upp.DeleteAccount)));
+
+  return (
+    r.div({ className: 's_UP_EmLg' },
+      dangerZone,
+    ));
+});
+
 
 const AccountTab = createFactory({
   displayName: 'AccountTab',
@@ -687,7 +790,7 @@ const AccountTab = createFactory({
     const me: Myself = this.props.store.me;
     const user: UserInclDetails = this.props.user;
     const isMe = me.id === user.id;
-    util.openDefaultStupidDialog({
+    util.openDefaultStupidDialog({  // dupl code [DELYESNO]
       dialogClassName: '',
       body: isMe ? t.upp.DeleteYourAccountQ : t.upp.DeleteUserQ,
       primaryButtonTitle: t.Cancel,

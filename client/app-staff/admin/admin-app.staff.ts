@@ -307,13 +307,11 @@ const AdminAppComponent = createReactClass(<any> {
 
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
-        RedirAppend({ path: ar + 'groups', append: '/built-in' }),
         RedirAppend({ path: ar + 'review', append: '/all' }),
         RedirAppend({ path: ar + 'settings', append: defaultSettingsPath }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
-        Route({ path: ar + 'groups', render: () => GroupsTab(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
         Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
@@ -325,7 +323,6 @@ const AdminAppComponent = createReactClass(<any> {
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             settingsLink,
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
-            LiNavLink({ to: ar + 'groups', className: 'e_GrpsB' }, "Groups"),
             customizeLink,
             apiLink,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
@@ -336,6 +333,7 @@ const AdminAppComponent = createReactClass(<any> {
 
 
 
+/*
 function GroupsTab(childProps) {
   const bp = '/-/admin/groups/';  // groups base path
   return (
@@ -349,6 +347,9 @@ function GroupsTab(childProps) {
             ))));
 }
 
+// Keep this for now. Can copy-paste these descriptions into built-in groups'
+// about texts?
+// (Thereafter, delete the whole BuiltInGroupsPanel.)
 
 function BuiltInGroupsPanel(childProps) {
   const currentSettings: Settings = childProps.currentSettings;
@@ -369,7 +370,7 @@ function BuiltInGroupsPanel(childProps) {
         /*
         "So, if you configure category notifciation preferences for Basic Members, " +
         "that affects, among others, members of the Full Members and Trusted Members groups, " +
-        "and all other groups below, too."*/ ),
+        "and all other groups below, too."* / ),
       r.br(),
       r.ul({},
         r.li({},
@@ -412,7 +413,7 @@ function BuiltInGroupsPanel(childProps) {
           r.p({}, "Can do anything, including edit site settings, " +
             "and add more admins and moderators.")),
         )));
-}
+} */
 
 
 function OnlyForAdmins() {

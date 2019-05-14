@@ -106,7 +106,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       // (If the replying-to-post is by a group (currently cannot happen), and someone in the group
       // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
       // do about that.)
-      makeNewPostNotf(
+      makeNewPostNotfs(
           NotificationType.DirectReply, newPost, page.categoryId, replyingToUser)
     }
 
@@ -128,7 +128,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
       var mentionedMembers: Set[Participant] = mentionedUsernames.flatMap(tx.loadMemberByUsername)
 
-      // [MENTIONALIAS] can create more mention aliases, like @new-members (= trust levels new & basic),
+      // Can create more mention aliases, like @new-members (= trust levels new & basic only),
       // and @guests and @here-now and @everyone (= all members)
       val allMentioned = mentionsAllInChannel(mentionedUsernames)
       if (allMentioned) {
@@ -143,16 +143,16 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       }
 
       for {
-        memberOrGroup <- mentionedMembers
+        userOrGroup <- mentionedMembers
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
-        if memberOrGroup.id != newPost.createdById  // poster mentions him/herself?
-        if !notfCreatedAlreadyTo(memberOrGroup.id)
+        if userOrGroup.id != newPost.createdById  // poster mentions him/herself?
+        if !notfCreatedAlreadyTo(userOrGroup.id)
       } {
-        makeNewPostNotf(
-            NotificationType.Mention, newPost, page.categoryId, memberOrGroup)
+        makeNewPostNotfs(
+            NotificationType.Mention, newPost, page.categoryId, userOrGroup)
       }
     }
 
@@ -227,14 +227,14 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
     tx.loadParticipants(toUserIds) foreach { user =>
-      makeNewPostNotf(
+      makeNewPostNotfs(
           NotificationType.Message, pageBody, categoryId = None, user)
     }
     generatedNotifications
   }
 
 
-  private def makeNewPostNotf(notfType: NotificationType, newPost: Post,
+  private def makeNewPostNotfs(notfType: NotificationType, newPost: Post,
         categoryId: Option[CategoryId], toUserMaybeGroup: Participant,
         minNotfLevel: NotfLevel = NotfLevel.Hushed) {
     if (sentToUserIds.contains(toUserMaybeGroup.id))
@@ -259,16 +259,11 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         throwForbiddenIf(isMention && groupId == Group.EveryoneId,
           "TyEBDGRPMT01", s"May not mention ${toUserMaybeGroup.idSpaceName}")
 
-        // Later, when there're custom groups, allow other ids (> AdminsId). [custom-groups]
-        if (isMention) throwForbiddenIf(
-          groupId < Group.EveryoneId || Group.AdminsId < groupId,
-          "TyEBDGRPMT02", s"Weird group mention: ${toUserMaybeGroup.idSpaceName}")
-
         if (isMention && !mayMentionGroups(author)) {
           // For now, may still mention core members, staff and admins, so can ask how the site works.
           throwForbiddenIf(
             groupId < Group.CoreMembersId || Group.AdminsId < groupId,
-              "TyEM0MNTNGRPS", s"You may not metion groups: ${toUserMaybeGroup.idSpaceName}")
+              "TyEM0MNTNGRPS", s"You may not mention groups: ${toUserMaybeGroup.idSpaceName}")
         }
 
         // Generate a notf to the group, so will appear in its user profile.
@@ -291,7 +286,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
-        // because they're members of the AllMembers group, hmm, maybe shouldn't be?
+        // because they're members of the AllMembers group. [NESTDGRPS]
         groupMembers = groupMembers.filterNot(_.isGroup)
         // Alternatively:
         /*
@@ -526,7 +521,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     } {
       BUG // harmless. might mention people again, if previously mentioned directly,
       // and now again via a @group_mention. See REFACTOR above.
-      makeNewPostNotf(
+      makeNewPostNotfs(
           NotificationType.Mention, newPost, categoryId = pageMeta.flatMap(_.categoryId), user)
     }
 
@@ -545,7 +540,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       user <- usersToNotify
       if user.id != post.createdById
     } {
-      makeNewPostNotf(
+      makeNewPostNotfs(
           NotificationType.PostTagged, post, categoryId = pageMeta.flatMap(_.categoryId), user)
     }
     generatedNotifications

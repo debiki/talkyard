@@ -74,6 +74,7 @@ abstract class DebikiRequest[A] {
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[Participant] = user
+  def requesterOrUnknown = user getOrElse UnknownParticipant
   def theRequester: Participant = theUser
 
   def tenantId: SiteId = dao.siteId

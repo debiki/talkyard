@@ -225,7 +225,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   // COULD move to new superclass? Dupl code [8FKW20Q]
   def runQueryFindMany[R](query: String, values: List[AnyRef],
-        singleRowHandler: js.ResultSet => R): immutable.Seq[R] = {
+        singleRowHandler: js.ResultSet => R): Vector[R] = {
     val results = ArrayBuffer[R]()
     runQuery(query, values, rs => {
       while (rs.next) {

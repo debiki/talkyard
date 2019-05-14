@@ -575,15 +575,24 @@ const SelectGroupDropdown = createClassAndFactory({
     dieIf(selectedGroup && !_.find(groups, g => g.id === selectedGroup.id), 'EdE2WCPA40');
     // @endif
 
-    const title = selectedGroup ? selectedGroup.fullName : "Select group ...";
+    function nameOf(group) {
+      return group.fullName || '@' + group.username;
+    }
+
+    const title = selectedGroup ? nameOf(selectedGroup) : "Select group ...";
 
     const dropdownButton =
       Button({ onClick: this.open, ref: 'btn' }, title + ' ', r.span({ className: 'caret' }));
 
-    const listItems = groups.map((group: Group) => {
+    // Sort by id, so will always appear in the same order, and also, so built-in groups
+    // like "Everyone" appear first (it's typically interesting to know what permissions
+    // Everyone has).
+    const groupsById = [...groups].sort((a, b) => a.id - b.id);
+
+    const listItems = groupsById.map((group: Group) => {
       return ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: group.id, key: group.id,
-        title: group.fullName });
+        title: nameOf(group) });
     });
 
     listItems.unshift(ExplainingListItem({ onSelect: this.onSelect,

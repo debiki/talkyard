@@ -19,7 +19,7 @@
 /// <reference path="Server.ts" />
 /// <reference path="login/login-if-needed.ts" />
 
-// REFACTOR SMALLER_BUNDLE (4WG20ABG2) try to remove ReactActions? Move the fns to the store instead,
+// REFACTOR SMALLER_BUNDLE [4WG20ABG2] try to remove ReactActions? Move the fns to the store instead,
 // call directly? This ReactActions obj is just a pointless indirection.
 // Also, remove the EventEmitter. I can write my own in 10 lines. The EventEmitter
 // has 99% things that aren't needed in Talkyard's case. It just makes the slim-bundle larger.
@@ -68,7 +68,7 @@ export const actionTypes = {
   PatchTheStore: 'PatchTheStore',
   ShowNewPage: 'ShowNewPage',
   // !
-  // Try to add no more action types. Instead, use PatchTheStore for everything. (4WG20ABG2)
+  // Try to add no more action types. Instead, use PatchTheStore for everything. [4WG20ABG2]
 };
 
 

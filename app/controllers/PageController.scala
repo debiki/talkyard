@@ -78,7 +78,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(anyCategoryId)
 
     throwNoUnless(Authz.mayCreatePage(
-      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categories = categoriesRootLast)),

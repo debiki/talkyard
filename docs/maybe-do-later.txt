@@ -169,6 +169,30 @@ If there're many drafts for the same thing, show them in a list and let the user
 one to continue editing. (Rather than just picking a random one.)
 
 
+[imp-groups]
+Make it possible to impersonate groups. Nice for testing one's access control settings.
+Currently disallowed, though, because haven't had time to verify doing things as a group,
+wouldn't result in unexpected weird things. And who should be notified about replies to
+a test comment made when impersonating a group?
+(Everyone in the group? No, they'd get annoyed. Only the group then?)
+
+[group-feats]
+Add group visibility settings. And who-may-join feautre, and Join/Leave group buttons.
++ other features, look at Discourse.
+Don't let one self-join groups that grants a trust level higher than one's current level.
+
+[message-managers]
+A way to message only the managers in a group, rather than everyone in the group?
+Maybe `@managers@group_name` ?
+
+[req-memship]
+Add a Request [group] Membership button (for groups that are visible, and that one may
+not self-join). Group Managers and Adders then get notified
+(Discourse: the 5 most recently active "group owners") — or, if there are none,
+then the site staff get notified. Also, if the group managers don't handle the request
+within X days, then the site staff get notified? (Passive group managers = not good.)
+
+
 SECURITY Use HMAC. Not SHAX. Need not fix urgently. Prevents extension attacks
 
 SECURITY Use Distroless? https://github.com/GoogleContainerTools/distroless instead of Alpine?

@@ -58,7 +58,7 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayFlagPost(
-      request.theMember, dao.getGroupIds(request.theUser),
+      request.theMember, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")

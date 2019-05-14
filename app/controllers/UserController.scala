@@ -34,6 +34,7 @@ import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
+import org.scalactic.{Bad, Good}
 import talkyard.server.JsX._
 
 
@@ -79,13 +80,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val peopleQuery = PeopleQuery(orderOffset, peopleFilter)
 
-    request.dao.readOnlyTransaction { transaction =>
+    request.dao.readOnlyTransaction { tx =>
       // Ok to load also deactivated users — the requester is staff.
-      val membersAndStats = transaction.loadUsersInclDetailsAndStats(peopleQuery)
+      val membersAndStats = tx.loadUsersInclDetailsAndStats(peopleQuery)
       val members = membersAndStats.map(_._1)
       val reviewerIds = members.flatMap(_.reviewedById)
       val suspenderIds = members.flatMap(_.suspendedById)
-      val usersById = transaction.loadUsersAsMap(reviewerIds ++ suspenderIds)
+      val usersById = tx.loadUsersAsMap(reviewerIds ++ suspenderIds)
       COULD // later load all groups too, for each user. Not needed now though. [2WHK7PU0]
       val usersJson = JsArray(membersAndStats.map(memberAndStats => {
         val member: UserInclDetails = memberAndStats._1
@@ -121,12 +122,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
-    request.dao.readOnlyTransaction { transaction =>
-      val stats = includeStats ? transaction.loadUserStats(userId) | None
+    request.dao.readOnlyTransaction { tx =>
+      val stats = includeStats ? tx.loadUserStats(userId) | None
       val usersJson =
         if (Participant.isRoleId(userId)) {
-          val memberOrGroup = transaction.loadTheMemberInclDetails(userId)
-          val groups = transaction.loadGroups(memberOrGroup)
+          val memberOrGroup = tx.loadTheMemberInclDetails(userId)
+          val groups = tx.loadGroups(memberOrGroup)
           memberOrGroup match {
             case m: UserInclDetails =>
               JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
@@ -137,7 +138,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           }
         }
         else {
-          val user = transaction.loadTheGuest(userId)
+          val user = tx.loadTheGuest(userId)
           jsonForGuest(user, Map.empty, callerIsStaff = callerIsStaff,
             callerIsAdmin = callerIsAdmin)
 
@@ -162,14 +163,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (isEmail)
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
-    request.dao.readOnlyTransaction { transaction =>
+    request.dao.readOnlyTransaction { tx =>
       val memberOrGroup =
-            transaction.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
+            tx.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
         // Username perhaps changed? Then ought to update the url, browser side [8KFU24R]
-        val possibleUserIds = transaction.loadUsernameUsages(emailOrUsername).map(_.userId).toSet
+        val possibleUserIds = tx.loadUsernameUsages(emailOrUsername).map(_.userId).toSet
         if (possibleUserIds.isEmpty)
           throwNotFound("EsEZ6F0U", "User not found")
 
@@ -181,17 +182,17 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // If the user has been deleted, don't allow looking up the anonymized profile,
         // via the old username. (This !isGone test won't be needed, if old usernames are
         // replaced with hashes. [6UKBWTA2])
-        transaction.loadMemberInclDetailsById(userId).filter(_ match {
+        tx.loadMemberInclDetailsById(userId).filter(_ match {
           case member: UserInclDetails => !member.isGone || callerIsStaff
           case _ => true
         }) getOrElse throwNotFound("EsE8PKU02", "User not found")
       }
 
-      val groups = transaction.loadGroups(memberOrGroup)
+      val groups = tx.loadGroups(memberOrGroup)
 
       memberOrGroup match {
         case member: UserInclDetails =>
-          val stats = includeStats ? transaction.loadUserStats(member.id) | None
+          val stats = includeStats ? tx.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
           val userJson = JsUserInclDetails(
@@ -281,8 +282,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val limit = all ? 9999 | 100
 
     // ----- Dupl code [4AKB2F0]
-    val postsInclForbidden = dao.readOnlyTransaction { transaction =>
-      transaction.loadPostsSkipTitles(limit = limit, OrderBy.MostRecentFirst, byUserId = Some(authorId))
+    val postsInclForbidden = dao.readOnlyTransaction { tx =>
+      tx.loadPostsSkipTitles(limit = limit, OrderBy.MostRecentFirst, byUserId = Some(authorId))
     }
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
@@ -1128,7 +1129,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(memberId != requester.id && !requester.isStaff, "TyE5HKG205",
       "May not change other members notf prefs")
     throwForbiddenIf(memberId == Group.AdminsId && !requester.isAdmin, "TyE4HKW2R7",
-      "May not change admins notf prefs")
+      "May not change admin group's notf prefs")
+    throwForbiddenIf(participant.isAdmin && !requester.isAdmin, "TyE5P2AQ04",
+      "May not change admin user's notf prefs")
 
 
     // If this is for a not yet created embedded comments page, then lazy-create it here.
@@ -1165,11 +1168,55 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadGroups: Action[Unit] = AdminGetAction { request =>
-    val groups = request.dao.readOnlyTransaction { tx =>
-      tx.loadAllGroupsAsSeq()
+  def loadGroups: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+    val groups = request.dao.getGroupsAndStats(forWho = request.whoOrUnknown)
+    OkSafeJson(JsArray(groups map JsGroupAndStats))
+  }
+
+
+  def createGroup: Action[JsValue] = AdminPostJsonAction(maxBytes = 2000) { request =>
+    val fullName: Option[String] = (request.body \ "fullName").as[String].trimNoneIfEmpty
+    val username: String = (request.body \ "username").as[String].trim
+
+    throwForbiddenIf(username.isEmpty, "TyE205MA6", "No username specified")
+
+    request.dao.createGroup(username, fullName) match {
+      case Bad(errorMessage) =>
+        throwForbidden("TyE603MRST", errorMessage)
+      case Good(group) =>
+        OkSafeJson(JsGroup(group))
     }
-    OkSafeJson(JsArray(groups map JsGroup))
+  }
+
+
+  def deleteGroup: Action[JsValue] = AdminPostJsonAction(maxBytes = 2000) { request =>
+    val groupIdToDelete: UserId = (request.body \ "groupIdToDelete").as[UserId]
+    request.dao.deleteGroup(groupIdToDelete)
+    Ok
+  }
+
+
+  def listGroupMembers(groupId: UserId): Action[Unit] =
+        GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
+    val maybeMembers = request.dao.listGroupMembers(groupId, request.requesterOrUnknown)
+    val membersJson: JsValue = maybeMembers.map(ms => JsArray(ms map JsUser)).getOrElse(JsFalse)
+    OkSafeJson(membersJson)
+  }
+
+
+  def addGroupMembers: Action[JsValue] = StaffPostJsonAction(maxBytes = 5000) { request =>
+    val groupId = (request.body \ "groupId").as[UserId]
+    val memberIds = (request.body \ "memberIds").as[Set[UserId]]
+    request.dao.addGroupMembers(groupId, memberIds)
+    Ok
+  }
+
+
+  def removeGroupMembers: Action[JsValue] = StaffPostJsonAction(maxBytes = 5000) { request =>
+    val groupId = (request.body \ "groupId").as[UserId]
+    val memberIds = (request.body \ "memberIds").as[Set[UserId]]
+    request.dao.removeGroupMembers(groupId, memberIds)
+    Ok
   }
 
 
@@ -1272,14 +1319,31 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val prefs = dao.loadMembersCatsTagsSiteNotfPrefs(member)
     val myCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId == memberId)
     val groupsCatsTagsSiteNotfPrefs = prefs.filter(_.peopleId != memberId)
+
+    val authContextForMember = dao.getForumAuthzContext(Some(member))
+
+    val categoriesMemberMaySee = dao.listMaySeeCategoriesAllSections(
+      includeDeleted = false, authContextForMember).flatMap(_.categories)
+
+    val categoryIdsMemberMaySee = categoriesMemberMaySee.map(_.id)  // (or use a set?)
+
+    val categoriesRequesterMaySee = dao.listMaySeeCategoriesAllSections(
+      includeDeleted = false, request.authzContext).flatMap(_.categories)
+
+    val (
+      categoriesBothMaySee: Seq[Category],
+      categoriesOnlyRequesterMaySee: Seq[Category]) =
+          categoriesRequesterMaySee.partition(c => categoryIdsMemberMaySee.contains(c.id))
+
+    val groups = dao.getGroups(requester)
+
     OkSafeJson(Json.obj(  // OwnPageNotfPrefs
       "id" -> memberId,
       "myCatsTagsSiteNotfPrefs" -> JsArray(myCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
-      "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref))
-      //later:
-      // "categoryNamesById" -> ...,
-      // "groupNamesById" ->  ..., needed for rendering prefs
-      ))
+      "groupsCatsTagsSiteNotfPrefs" -> JsArray(groupsCatsTagsSiteNotfPrefs.map(JsPageNotfPref)),
+      "categoriesMaySee" -> categoriesBothMaySee.map(JsCategoryInclDetails),
+      "categoriesMayNotSee" -> categoriesOnlyRequesterMaySee.map(JsCategoryInclDetails),
+      "groups" -> groups.map(JsGroup)))
   }
 
 

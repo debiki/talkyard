@@ -44,6 +44,7 @@ export const UsersTab = createFactory({
       r.div({},
         r.div({ className: 'dw-sub-nav' },
           r.ul({ className: 'nav nav-pills' },
+            LiNavLink({ to: bp + 'invited', className: 'e_InvitedUsB' }, "Invite"),
             LiNavLink({ to: bp + 'enabled', className: 'e_EnabledUsB' }, "Enabled"),
             showWaiting ? LiNavLink({ to: bp + 'waiting', className: 'e_WaitingUsB' }, "Waiting") : null,
             LiNavLink({ to: bp + 'new', className: 'e_NewUsB' }, "New"),
@@ -54,7 +55,8 @@ export const UsersTab = createFactory({
             // The internal name, "Threats", would sound a bit worrisome? "Under surveillance"
             // or just "Watching" sounds better?
             LiNavLink({ to: bp + 'watching', className: 'e_WatchingUsB' }, "Watching"),
-            LiNavLink({ to: bp + 'invited', className: 'e_InvitedUsB' }, "Invite"))),
+            LiExtLink({ href: '/-/groups/', className: 'e_GrpsB' }, "Groups ",
+                r.span({ className: 'icon-link-ext' })))),
         r.div({ className: 's_A_Us' },
           Switch({},
             Route({ path: bp + 'enabled', render: () => EnabledUsersPanel(childProps) }),

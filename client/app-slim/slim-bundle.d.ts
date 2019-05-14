@@ -132,6 +132,7 @@ declare namespace debiki2 {
   var Link; // ReactRouterDOM.Link
   var NavLink; // ReactRouterDOM.NavLink
   function LiNavLink(props, ...contents); // A NavLink in a <li>
+  function LiExtLink(props, ...contents); // An <a href=...> in a <li>
 
   var createComponent: any;       // don't use — I'm renaming to createFactory
   var createClassAndFactory: any; // don't use — I'm renaming to createFactory
@@ -143,6 +144,7 @@ declare namespace debiki2 {
   namespace notfs {
     function PageNotfPrefButton(props: {
         target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs,
+        ppsById?: { [ppId: number]: Participant },
         saveFn?: (notfLevel: PageNotfLevel) => void });
   }
 
@@ -210,8 +212,15 @@ declare namespace debiki2 {
   function reactGetRefRect(ref): Rect;
   var Server: any;
   var StoreListenerMixin: any;
+
+  // Currenty read-only (never call the returned 'setState'). Instead, ...
+  function useStoreState(): [Store, () => void];
+  // ... use ReactActions to update the store. For now. Would want to remove ReactActions,
+  // and use only hooks instead? [4WG20ABG2]
   var ReactActions: any;
+
   var ReactStore: any;
+
   var findDOMNode: any;
   var die: any;
   var dieIf: any;
@@ -236,6 +245,7 @@ declare namespace debiki2 {
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function member_isBuiltIn(member: Member): boolean;
   function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean;
   function user_threatLevel(user: UserInclDetails): ThreatLevel;
   function user_trustLevel(user: Myself | UserInclDetails): TrustLevel;
@@ -243,6 +253,7 @@ declare namespace debiki2 {
 
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
+  function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V };
   function isNullOrUndefined(x): boolean;
   function isDefined2(x): boolean;  // = !_.isUndefined
   function nonEmpty(x): boolean;
@@ -325,7 +336,8 @@ declare namespace debiki2 {
 
   function pageNotfPrefTarget_findEffPref(target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs): EffPageNotfPref;
   function notfPref_title(notfPref: EffPageNotfPref): string;
-  function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, store: Store): any;
+  function notfLevel_descr(notfLevel: PageNotfLevel, effPref: EffPageNotfPref, ppsById: PpsById): any;
+  function makeWhyNotfLvlInheritedExpl(effPref: EffPageNotfPref, ppsById: PpsById);
 
   namespace edithistory {
 

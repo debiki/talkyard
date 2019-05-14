@@ -38,6 +38,10 @@ export function LiNavLink(...propsAndContents) {
   return r.li({}, NavLink.apply(this, arguments));
 }
 
+export function LiExtLink(...propsAndContents) {
+  return r.li({}, r.a.apply(this, arguments));
+}
+
 
 /**
  * Redirects the URL path only — preserves query string and hash fragment.

@@ -284,6 +284,17 @@ object JsX {
     group.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
+    group.isDeleted
+    json
+  }
+
+
+  def JsGroupAndStats(groupAndStats: GroupAndStats): JsObject = {
+    var json = JsGroup(groupAndStats.group)
+    groupAndStats.stats foreach { stats =>
+      json += "stats" -> Json.obj(
+        "numMembers" -> JsNumber(stats.numMembers))
+    }
     json
   }
 

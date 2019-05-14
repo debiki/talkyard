@@ -24,6 +24,7 @@ Dd = deleted
 Df = draft
 Dl = download
 CB = checkbox
+Cr = create
 Pw = password, e.g. NewPwI
 St = status or state
 R = table row
@@ -106,6 +107,9 @@ s_F_Ts_T_CN     = Forum topic list, one topic, category name
 
 FD              = flag dialog
 
+G               = group
+GP              = groups list page
+
 esH             = help
 
 s_InvD          = invites dialog
@@ -135,7 +139,7 @@ s_UP_Ab         = The about part (the top of the profile page)
 s_UP_EmLg       = Emails and logins
 esUP_Un         = Username  COULD rename t s_UP_Ab_UN
 esUP_FN         = Full name
-esUP_Prefs      = ... the preferences section
+s_UP_Prfs_Ntfs  = User page, the preferences tab, notifications sub tab
 UP_Notfs_None   = Notifications, none
 
 dw-res          = replies, rename to s_Ts = threads

@@ -20,7 +20,16 @@ package com.debiki.core
 import com.debiki.core.ThreatLevel.{MildThreat, SevereThreat}
 
 
-sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class TrustLevel(val IntVal: Int) {
+  def toInt: Int = IntVal
+
+  def isBelow(other: TrustLevel): Boolean =
+    toInt < other.toInt
+
+  def isAtLeast(level: TrustLevel): Boolean =
+    toInt >= level.toInt
+}
+
 
 /** The same as Discourse's trust levels, plus one more level: the helpful member,
   *
@@ -55,7 +64,7 @@ object TrustLevel {
   })
 
   def fromBuiltInGroupId(groupId: Int): Option[TrustLevel] = Some(groupId match {
-    case Group.NewMembersId => TrustLevel.NewMember
+    case Group.AllMembersId => TrustLevel.NewMember
     case Group.BasicMembersId => TrustLevel.BasicMember
     case Group.FullMembersId => TrustLevel.FullMember
     case Group.TrustedMembersId => TrustLevel.TrustedMember

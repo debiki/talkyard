@@ -152,7 +152,7 @@ object RateLimits {
   }
 
 
-  object TouchesDbGetRequest extends RateLimits {
+  object ReadsFromDb extends RateLimits {
     val key = "DbRq"
     val what = "sent too many a bit complicated HTTP GET requests"
     def maxPerFifteenSeconds = 25             //  100/min

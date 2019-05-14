@@ -144,28 +144,27 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadGroupMembers(groupId: UserId): Seq[Participant] = {
-    // Right now, there're only the built-in groups.
+  def loadGroupMembers(groupId: UserId): Vector[Participant] = {
     // In e2e test: TyT4AWJL208R
     groupId match {
       case Group.AdminsId =>
-        loadGroupMembersImpl(adminsOnly = true)
+        loadMembersOfBuiltInGroup(adminsOnly = true)
       case Group.ModeratorsId =>
-        loadGroupMembersImpl(modsOnly = true)
+        loadMembersOfBuiltInGroup(modsOnly = true)
       case Group.StaffId =>
-        loadGroupMembersImpl(staffOnly = true)
-      case trustLevelGroupId if trustLevelGroupId >= Group.NewMembersId
+        loadMembersOfBuiltInGroup(staffOnly = true)
+      case trustLevelGroupId if trustLevelGroupId >= Group.AllMembersId
                               && trustLevelGroupId <= Group.CoreMembersId =>
-        loadGroupMembersImpl(builtInGroup = Some(trustLevelGroupId))
+        loadMembersOfBuiltInGroup(builtInGroup = Some(trustLevelGroupId))
       case _ =>
-        Nil
+        loadMembersOfCustomGroup(groupId)
     }
   }
 
 
-  private def loadGroupMembersImpl(
+  private def loadMembersOfBuiltInGroup(
         adminsOnly: Boolean = false, modsOnly: Boolean = false, staffOnly: Boolean = false,
-        builtInGroup: Option[UserId] = None): Seq[Participant] = {
+        builtInGroup: Option[UserId] = None): Vector[Participant] = {
 
     import Group.{AdminsId, ModeratorsId => ModsId}
 
@@ -184,29 +183,14 @@ trait UserSiteDaoMixin extends SiteTransaction {
       else {
         val groupId = builtInGroup getOrDie "TyE3QKB05W"
         val trustLevel = TrustLevel.fromBuiltInGroupId(groupId) getOrElse {
-          return Nil
+          return Vector.empty
         }
         values.append(trustLevel.toInt.asAnyRef)
-        // Trust level NewMembers means the All Members group, which includes all members,
+        // The NewMembers *trust level* means the All Members *group*, which includes all members,
         // also basic members, full members, ect, and staff. The group has a different name
         // ("All Members") from the trust level ("New Members"), because it'd be confusing
         // if a group named New Members also included e.g. long time full members.
-        // no
-        // OLD COMMENT, find newer thoughts if you search for [ALLMEMBS]:
-        // This:  "Hello @new_members"  and "Hi @basic_members" sounds as if full members
-        // and trusted members and higher, are *not* supposed to be included.
-        // A 'trusted member' or a 'core member' is not a 'new member'. Instead, it's
-        // a *long time* member.
-        // However, this: "All @full_members, ..." — that also includes trusted members and
-        // up. Because all of them *are* full members.
-        // So, for new and basic members, load only exactly those trust levels.
-        // And for full member and higher, load that trust level, and all higher trust levels.
-        // This is the least confusing behavior, for people who don't know what trust levels are?
-        val eqOrGte = ">="  // NO:  if (groupId <= Group.BasicMembersId) "=" else ">="
-                            // Instead, rename New Members to All Members [ALLMEMBS]  [MENTIONALIAS]
-                            // Then it's obvious that it incls all higher levels.
-                            // And somewhat ok that a "Full member" is also a "Basic member", right.
-        s"coalesce(u.locked_trust_level, u.trust_level) $eqOrGte ?  or  ($isStaffTest)"
+        s"coalesce(u.locked_trust_level, u.trust_level) >= ?  or  ($isStaffTest)"
       }
 
     val query = s"""
@@ -224,13 +208,99 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  private def loadMembersOfCustomGroup(groupId: UserId): Vector[Participant] = {
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef, groupId.asAnyRef)
+
+    val query = s"""
+      select $UserSelectListItemsNoGuests
+      from group_participants3 gp inner join users3 u
+        on gp.site_id = u.site_id and
+           gp.participant_id = u.user_id
+      where
+        gp.site_id = ? and
+        gp.group_id = ? and
+        gp.is_member
+      """
+
+    runQueryFindMany(query, values.toList, rs => {
+      val user = getParticipant(rs)
+      dieIf(user.isGuest, "TyE603KRJL")
+      user
+    })
+  }
+
+
+  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId] = {
+    dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE5RKMZ25")
+    val idsAdded = ArrayBuffer[UserId]()
+    memberIdsToAdd foreach { newMemberId =>
+      val sql = """
+        insert into group_participants3(site_id, group_id, participant_id, is_member)
+        values (?, ?, ?, true)
+        on conflict do nothing
+        """
+      val values = List(siteId.asAnyRef, groupId.asAnyRef, newMemberId.asAnyRef)
+      val numRowsInserted = runUpdate(sql, values)
+      if (numRowsInserted == 1) {
+        idsAdded += newMemberId
+      }
+    }
+    idsAdded.toSet
+  }
+
+
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]) {
+    dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE205RHM63")
+    if (memberIdsToRemove.isEmpty) return
+    val sql = s"""
+      delete from group_participants3
+        where site_id = ?
+          and group_id = ?
+          and participant_id in (${makeInListFor(memberIdsToRemove)})
+          and is_member
+      """
+    val values = siteId.asAnyRef :: groupId.asAnyRef :: memberIdsToRemove.map(_.asAnyRef).toList
+    runUpdate(sql, values)
+  }
+
+
+  def removeAllGroupParticipants(groupId: UserId) {
+    dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE5AKT2E7")
+    val sql = s"""
+      delete from group_participants3
+        where site_id = ?
+          and group_id = ?
+      """
+    val values = List(siteId.asAnyRef, groupId.asAnyRef)
+    runUpdate(sql, values)
+  }
+
+
   def insertGroup(group: Group) {
     val sql = """
-      insert into users3(site_id, user_id, username, full_name, created_at)
-      values (?, ?, ?, ?, ?)
+      insert into users3(site_id, user_id, username, full_name, created_at, is_group)
+      values (?, ?, ?, ?, ?, true)
       """
-    val values = List(siteId.asAnyRef, group.id.asAnyRef, group.theUsername, group.name,
+    val values = List(siteId.asAnyRef, group.id.asAnyRef, group.theUsername, group.name.orNullVarchar,
       now.asTimestamp)
+    runUpdateExactlyOneRow(sql, values)
+  }
+
+  def deleteGroup(groupId: UserId) {
+    dieIf(groupId < LowestAuthenticatedUserId, "TyE205ARGN3")
+    val randomNumber = Prelude.nextRandomLong().toString.take(10)
+    val sql = s"""
+      update users3
+      set deleted_at = ?,
+          -- The constraint `participants_c_username_len_deleted` makes it possible
+          -- to make the username longer, by appending here, when a member is deleted.
+          username = username || '${Member.DeletedUsernameSuffix}_$randomNumber'
+      where is_group
+        and site_id = ?
+        and user_id = ?
+        and user_id >= $LowestAuthenticatedUserId
+      """
+    val values = List(now.asTimestamp, siteId.asAnyRef, groupId.asAnyRef)
     runUpdateExactlyOneRow(sql, values)
   }
 
@@ -263,6 +333,22 @@ trait UserSiteDaoMixin extends SiteTransaction {
         "dw1_users_site_usernamelower__u", ex) =>
         throw DuplicateUsernameException(group.theUsername)
     }
+  }
+
+
+  // + move more stuff to here, [50BAD25].
+  //
+  def loadCustomGroupsFor_impl(ppt: Participant): Vector[UserId] = {
+    val query = s"""
+        select group_id
+        from group_participants3
+        where site_id = ?
+          and participant_id = ?
+          and is_member
+        """
+    runQueryFindMany(query, List(siteId.asAnyRef, ppt.id.asAnyRef), rs => {
+      rs.getInt("group_id")
+    })
   }
 
 
@@ -725,14 +811,14 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAllGroupsAsSeq(): immutable.Seq[Group] = {
-    // The null checks below: groups have no trust level, but all members do. [8KPG2W5]
+  def loadAllGroupsAsSeq(): Vector[Group] = {
     val query = i"""
       select $GroupSelectListItems
+      -- should use index: participants_groups_i
       from users3
       where site_id = ?
-        and username is not null
-        and trust_level is null
+        and is_group
+        and deleted_at is null
       """
     runQueryFindMany(query, List(siteId.asAnyRef), getGroup)
   }
@@ -837,7 +923,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       where
         u.site_id = ? and
         u.user_id >= ${Participant.LowestAuthenticatedUserId} and
-        u.trust_level is not null   -- currently always null for groups [1WBK5JZ0]
+        not u.is_group
         $andEmailVerified
         $andIsApprovedOrWaiting
         $andIsStaff

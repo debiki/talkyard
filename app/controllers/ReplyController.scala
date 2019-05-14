@@ -69,7 +69,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
-      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
@@ -110,7 +110,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
-      request.theUserAndLevels, dao.getGroupIds(request.theMember),
+      request.theUserAndLevels, dao.getOnesGroupIds(request.theMember),
       PostType.ChatMessage, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),

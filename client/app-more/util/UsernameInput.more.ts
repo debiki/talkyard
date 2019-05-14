@@ -85,9 +85,12 @@ export const UsernameInput = createClassAndFactory({
         },
         onBlur: this.props.onBlur,
         defaultValue,
-        help: r.span({},
-          // "Your @username, unique and short"
-          t.inp.UnUnqShrt_1, r.code({}, t.inp.UnUnqShrt_2), t.inp.UnUnqShrt_3, extraHelp) }));
+        help: this.props.isForGroup
+          ?  r.span({},
+              "The group's ", r.code({}, "@username"), ", unique and short") // for staff, no i18n
+          : r.span({},
+              // "Your @username, unique and short"
+              t.inp.UnUnqShrt_1, r.code({}, t.inp.UnUnqShrt_2), t.inp.UnUnqShrt_3, extraHelp) }));
   }
 });
 

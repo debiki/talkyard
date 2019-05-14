@@ -250,6 +250,15 @@ export function firstDefinedOf(x, y, z?) {
 }
 
 
+/** Like _.groupBy but keeps just one value per key.
+  */
+export function groupByKeepOne<V>(vs: V[], fn: (v: V) => number): { [key: number]: V } {
+  const manyById: { [key: number]: V[] } = _.groupBy(vs, fn);
+  const oneById:  { [key: number]: V   } = _.mapValues(manyById, many => many[0]);
+  return oneById;
+}
+
+
 // Finds and replaces (in-place) the first item with item.id = replacement.id.
 // Dies, if there's not matching item.
 export function replaceById(itemsWithId: any[], replacement) {

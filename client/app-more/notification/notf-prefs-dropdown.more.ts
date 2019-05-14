@@ -29,7 +29,8 @@ const ExplainingListItem = util.ExplainingListItem;
 let notfsLevelDropdownModal;
 
 export function openNotfPrefDropdown(atRect, props: {
-      target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, saveFn?: (newLevel: PageNotfLevel) => void }) {
+      target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, ppsById?: PpsById,
+      saveFn?: (newLevel: PageNotfLevel) => void }) {
   if (!notfsLevelDropdownModal) {
     notfsLevelDropdownModal = ReactDOM.render(NotfsLevelDropdownModal(), utils.makeMountNode());
   }
@@ -56,14 +57,13 @@ const NotfsLevelDropdownModal = createComponent({
 
   // dupl code [6KUW24]
   openAtFor: function(rect, props: {
-      target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, saveFn?: (newLevel: PageNotfLevel) => void }) {
+      target: PageNotfPrefTarget, ownPrefs: OwnPageNotfPrefs, ppsById?: PpsById,
+      saveFn?: (newLevel: PageNotfLevel) => void }) {
     this.setState({
+      ...props,
       isOpen: true,
       atX: rect.left,
       atY: rect.bottom,
-      target: props.target,
-      ownPrefs: props.ownPrefs,
-      saveFn: props.saveFn,
     });
   },
 
@@ -72,6 +72,7 @@ const NotfsLevelDropdownModal = createComponent({
       isOpen: false,
       target: undefined,
       ownPrefs: undefined,
+      ppsById: undefined,
       saveFn: undefined,
     });
   },
@@ -83,7 +84,7 @@ const NotfsLevelDropdownModal = createComponent({
     else {
       const ownPrefs: OwnPageNotfPrefs = this.state.ownPrefs;
       const target: PageNotfPrefTarget = this.state.target;
-      Server.savePageNotfPrefUpdStore(ownPrefs.id, target, notfLevel);
+      Server.savePageNotfPrefUpdStoreIfSelf(ownPrefs.id, target, notfLevel);
     }
     this.close();
   },
@@ -104,6 +105,7 @@ const NotfsLevelDropdownModal = createComponent({
       const inheritedLevel = effPref.inheritedNotfPref && effPref.inheritedNotfPref.notfLevel;
       const effLevel: PageNotfLevel = effPref.notfLevel || inheritedLevel;
       const isForPage = !!target.pageId;
+      const ppsById: PpsById = state.ppsById || store.usersByIdBrief;
 
       // @ifdef DEBUG
       console.log("Debug:\n" + JSON.stringify(effPref));
@@ -113,7 +115,7 @@ const NotfsLevelDropdownModal = createComponent({
           ExplainingListItem({
             active: effLevel === itemsLevel,
             title: r.span({ className: e2eClass  }, title),
-            text: notfLevel_descr(itemsLevel, effPref, store),
+            text: notfLevel_descr(itemsLevel, effPref, ppsById),
             onSelect: () => this.saveNotfLevel(itemsLevel) });
 
       everyPostListItem = makeListItem(PageNotfLevel.EveryPost, t.nl.EveryPost, 'e_NtfAll');
@@ -128,7 +130,7 @@ const NotfsLevelDropdownModal = createComponent({
             active: effLevel === PageNotfLevel.Normal || (
                 isForPage && effLevel === PageNotfLevel.NewTopics),
             title: r.span({ className: 'e_NtfNml'  }, t.nl.Normal),
-            text: notfLevel_descr(PageNotfLevel.Normal, effPref, store),
+            text: notfLevel_descr(PageNotfLevel.Normal, effPref, ppsById),
             onSelect: () => this.saveNotfLevel(PageNotfLevel.Normal) });
     }
 

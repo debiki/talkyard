@@ -48,9 +48,9 @@ export function openAboutUserDialogForAuthor(post: Post, at) {
 }
 
 
-export function openAddPeopleDialog() {
+export function openAddPeopleDialog(alreadyAddedIds: UserId[], onDone: (newIds: UserId[]) => void) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openAddPeopleDialog();
+    debiki2.pagedialogs.openAddPeopleDialog(alreadyAddedIds, onDone);
   });
 }
 
@@ -106,7 +106,7 @@ export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: R
 
 export function openChangePageDialog(atRect, props: { page: Page, showViewAnswerButton?: true }) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs['openChangePageModal'](atRect, props);
+    debiki2.pagedialogs['openChangePageDialog'](atRect, props);
   });
 }
 

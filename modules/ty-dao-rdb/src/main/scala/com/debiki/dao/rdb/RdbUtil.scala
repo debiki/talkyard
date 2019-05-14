@@ -178,6 +178,7 @@ object RdbUtil {
 
   val UserSelectListItemsNoGuests: String =
     s"""u.USER_ID u_id,
+      |u.is_group u_is_group,
       |u.created_at u_created_at,
       |u.full_name u_full_name,
       |u.USERNAME u_username,
@@ -222,6 +223,7 @@ object RdbUtil {
 
   def getParticipant(rs: js.ResultSet): Participant = {
     val userId = rs.getInt("u_id")
+    val isGroup = rs.getBoolean("u_is_group")
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
       if (isGuestId(userId))
@@ -229,7 +231,7 @@ object RdbUtil {
       else
         _toEmailNotfs(rs.getString("u_email_notfs"))
     }
-    val lockedThreatLevel = getOptionalInt(rs, "u_locked_threat_level").flatMap(ThreatLevel.fromInt)
+    val lockedThreatLevel = getOptInt(rs, "u_locked_threat_level").flatMap(ThreatLevel.fromInt)
     def theUsername = rs.getString("u_username")
     val name = Option(rs.getString("u_full_name"))
     def tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path")
@@ -248,12 +250,12 @@ object RdbUtil {
         emailNotfPrefs = emailNotfPrefs,
         country = dn2e(rs.getString("u_country")).trimNoneIfEmpty,
         lockedThreatLevel = lockedThreatLevel)
-    else if (anyTrustLevel.isEmpty)  // Right now, groups have no trust level. [1WBK5JZ0]
+    else if (isGroup)
       Group(
         id = userId,
         createdAt = createdAt,
         theUsername = theUsername,
-        name = name getOrElse "Unnamed group [EdE21QKS0]",
+        name = name,
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
         uiPrefs = getOptJsObject(rs, "ui_prefs"),
@@ -270,10 +272,10 @@ object RdbUtil {
       passwordHash = Option(rs.getString("u_password_hash")),
       tinyAvatar = tinyAvatar,
       smallAvatar = smallAvatar,
-      isApproved = getOptionalBoolean(rs, "u_is_approved"),
+      isApproved = getOptBool(rs, "u_is_approved"),
       suspendedTill = getOptionalDate(rs, "u_suspended_till"),
       trustLevel = anyTrustLevel.getOrDie("EsE7YK24"),
-      lockedTrustLevel = getOptionalInt(rs, "u_locked_trust_level").flatMap(TrustLevel.fromInt),
+      lockedTrustLevel = getOptInt(rs, "u_locked_trust_level").flatMap(TrustLevel.fromInt),
       threatLevel = ThreatLevel.fromInt(rs.getInt("u_threat_level")).getOrDie("EsE0PW4V2"),
       lockedThreatLevel = lockedThreatLevel,
       isOwner = rs.getBoolean("u_is_owner"),
@@ -289,17 +291,18 @@ object RdbUtil {
       id = rs.getInt("user_id"),
       createdAt = getWhen(rs, "created_at"),
       theUsername = rs.getString("username"),
-      name = rs.getString("full_name"),
+      name = getOptString(rs, "full_name"),
       tinyAvatar = getAnyUploadRef(rs, "avatar_tiny_base_url", "avatar_tiny_hash_path"),
       smallAvatar = getAnyUploadRef(rs, "avatar_small_base_url", "avatar_small_hash_path"),
       uiPrefs = getOptJsObject(rs, "ui_prefs"),
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
-      grantsTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt))
+      grantsTrustLevel = getOptInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt))
   }
 
 
   val CompleteUserSelectListItemsNoUserId = i"""
+    |is_group,
     |created_at,
     |external_id,
     |full_name,
@@ -356,16 +359,13 @@ object RdbUtil {
     val theUserId = userId getOrElse rs.getInt("user_id")
     dieIf(Participant.isGuestId(theUserId), "DwE6P4K3")
 
-    // Right now, groups never have any trust level, but single persons always do. [1WBK5JZ0]
-    TrustLevel.fromInt(rs.getInt("trust_level")) match {
-      case Some(trustLevel) => getUserInclDetails(rs, theUserId, trustLevel)
-      case None => getGroup(rs)
-    }
+    val isGroup = rs.getBoolean("is_group")
+    if (isGroup) getGroup(rs)
+    else getUserInclDetails(rs, theUserId)
   }
 
 
-  private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId,
-        trustLevel: TrustLevel): UserInclDetails = {
+  private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId): UserInclDetails = {
     UserInclDetails(
       id = theUserId,
       externalId = getOptString(rs, "external_id"),
@@ -394,7 +394,7 @@ object RdbUtil {
       suspendedTill = getOptionalDate(rs, "suspended_till"),
       suspendedById = getOptionalIntNoneNot0(rs, "suspended_by_id"),
       suspendedReason = Option(rs.getString("suspended_reason")),
-      trustLevel = trustLevel,
+      trustLevel = TrustLevel.fromInt(rs.getInt("trust_level")).getOrDie("TyE205WR4", s"User id $theUserId"),
       lockedTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt),
       threatLevel = ThreatLevel.fromInt(rs.getInt("threat_level")).getOrDie("EsE22IU60C"),
       lockedThreatLevel = getOptionalInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt),
