@@ -485,7 +485,9 @@ const SearchForm = createComponent({
   },
 
   componentDidMount: function() {
-    this.refs.input.focus();
+    // BUG COULD find some way for the DropdownModal to tell its contents when
+    // it's done fading iteslf in, so can focus the input field here? [FOCUSMODAL]
+    //setTimeout(this.refs.input.focus, 900);  — doesn't work, why not.
   },
 
   onQueryChange: function(event) {

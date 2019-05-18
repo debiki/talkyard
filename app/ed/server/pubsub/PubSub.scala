@@ -350,7 +350,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
         sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
       case x =>
-        unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
+        unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")  // BUG sometimes happens, harmless?
     }
   }
 

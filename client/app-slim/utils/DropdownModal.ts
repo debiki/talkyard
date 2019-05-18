@@ -128,6 +128,8 @@ export const DropdownModal = createComponent({
     // Wait until all stuff inside has gotten its proper size. Apparently componentDidUpdate()
     // fires before the browser has done that — because without setTimeout(_, 0), the dialog
     // can become too small.
+    // Would be nice if could tell the child components when this modal is done animating and
+    // opening and placing itself, so they can e.g. focus themselves? [FOCUSMODAL]
     setTimeout(() => {
       if (!this.props.show || !this.refs.content || this.isGone)
         return;

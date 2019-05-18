@@ -16,7 +16,9 @@
  *@
 
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
-
+@* SECURITY try removing polyfill.io — it's a supply chain attack security risk.
+DO_AFTER 2020-01-01?: remove. Maybe use SauceLabs to find out if no-polyfill causes
+problems for IE11? old iOS and Android versions? *@
 <script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs}"></script>
 <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
 <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>

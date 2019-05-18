@@ -176,3 +176,5 @@ Slightly less attack surface, and slightly faster: glibc instead of musl.
 https://news.ycombinator.com/item?id=19862002
 
 SECURITY: https://news.ycombinator.com/item?id=19856419 "HTTP headers for the responsible developer"
+https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+

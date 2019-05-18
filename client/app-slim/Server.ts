@@ -111,7 +111,7 @@ function postJson(urlPath: string, requestData: RequestData) {
       if (perhapsIgnoreError === IgnoreThisError)
         return;
     }
-    console.error(`Error calling ${urlPath}: ${errorAsJson}, details: ${details}`);
+    console.error(`Error POSTing to ${urlPath}: ${errorAsJson}, details: ${details}`);
     if (perhapsIgnoreError === ShowNoErrorDialog) {
       // Noop.
     }
@@ -298,7 +298,7 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
   }).catch(errorObj => {
     const errorAsJson = JSON.stringify(errorObj);
     const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
-    console.error(`Error calling ${uri}: ${errorAsJson}, details: ${details}`);
+    console.error(`Error GETting from ${uri}: ${errorAsJson}, details: ${details}`);
     if (!options.suppressErrorDialog) {
       const errorDialog = pagedialogs.getServerErrorDialog();
       if (errorObj.xhr) {
