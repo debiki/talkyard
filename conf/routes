@@ -21,6 +21,7 @@
 
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
+GET   /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/resend-owner-email-addr-verif-email controllers.LoginController.resendSiteOwnerAddrVerifEmail
 

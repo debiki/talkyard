@@ -51,8 +51,11 @@ trait UserDao {
     if (NoUserId < moreStats.userId && moreStats.userId < Participant.LowestNormalMemberId)
       return
 
-    val anyStats = tx.loadUserStats(moreStats.userId)
-    val stats = anyStats.getOrDie("EdE2WKZ8A4", s"No stats for user $siteId:${moreStats.userId}")
+    val stats = tx.loadUserStats(moreStats.userId) getOrElse {
+      p.Logger.warn(s"s$siteId: Stats missing for user ${moreStats.userId} [TyE2W5Z8A4]")
+      return
+    }
+
     val newStats = stats.addMoreStats(moreStats)
     SHOULD // if moreStats replies to chat message or discourse topic, then update
     // num-chat/discourse-topics-replied-in.

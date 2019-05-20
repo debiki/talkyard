@@ -127,11 +127,14 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
         dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
     }
 
-    def homepagePath = JsString("/")
-
-    // Keep the xsrf cookie, so login dialog works:
-    OkSafeJson(Json.obj("goToUrl" -> (if (stayOnSamePage) JsNull else homepagePath)))
-      .discardingCookies(DiscardingSessionCookie)
+    if (request.isAjax) {
+      def homepagePath = JsString("/")
+      // Keep the xsrf cookie, so login dialog works:
+      OkSafeJson(Json.obj("goToUrl" -> (if (stayOnSamePage) JsNull else homepagePath)))
+        .discardingCookies(DiscardingSessionCookie)
+    }
+    else
+      TemporaryRedirect("/")
   }
 
 
