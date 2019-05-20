@@ -629,8 +629,8 @@ export function createPasswordUser(data, onDone: (response) => void,
 }
 
 
-export function sendResetPasswordEmail(onOk: () => void) {
-  postJsonSuccess('/-/send-reset-password-email', onOk, {});
+export function sendResetPasswordEmail(user: UserInclDetails, onOk: () => void) {
+  postJsonSuccess('/-/send-reset-password-email', onOk, { toUserId: user.id });
 }
 
 

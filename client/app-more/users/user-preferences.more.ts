@@ -240,7 +240,7 @@ const AboutMember = createComponent({
       secondaryButonTitle: t.NoCancel,
       onCloseOk: function(whichButton) {
         if (whichButton === 1)
-          Server.sendResetPasswordEmail(() => {
+          Server.sendResetPasswordEmail(user, () => {
             // Continue also if this.isGone.
             util.openDefaultStupidDialog({
               body: t.EmailSentD,

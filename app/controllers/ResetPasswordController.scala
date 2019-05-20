@@ -96,7 +96,15 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 10) {
         request =>
     import request.{dao, siteId, theRequester => requester}
-    val member = dao.loadTheUserInclDetailsById(requester.id)
+    val forUserId = (request.body \ "toUserId").as[UserId]
+
+    throwForbiddenIf(requester.id != forUserId && !requester.isStaff,
+      "TyE305MRKT2", "Cannot reset password for other people")
+
+    val member = dao.loadTheUserInclDetailsById(forUserId)
+
+    throwForbiddenIf(member.isAdmin && !requester.isAdmin,
+      "TyE607MAST2", "Cannot reset password for admins")
 
     // Later, ask for current pwd, if no email addr available. [7B4W20]
     throwForbiddenIf(member.primaryEmailAddress.isEmpty, "TyE5KBRE20", "No primary email address")
