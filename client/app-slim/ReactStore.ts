@@ -1300,9 +1300,17 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
 
   // Change page.
   const oldPage: Page = store.currentPage;
-  store.pagesById[newPage.pageId] = newPage;
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
+  if (newPage.pageId) {
+    store.pagesById[newPage.pageId] = newPage;
+  }
+  // @ifdef DEBUG
+  else {
+    // Is an auto page (see makeAutoPage()), e.g. a user profile page, and has no id.
+    dieIf(newPage.dbgSrc !== 'AP', 'TyE25KT70R1');
+  }
+  // @endif
 
   // Update categories — maybe this page is in a different sub community with different categories.
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
