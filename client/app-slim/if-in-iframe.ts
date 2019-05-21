@@ -114,14 +114,22 @@ function onMessage(event) {
 function syncDocSizeWithIframeSize() {
   var lastWidth = 0;
   var lastHeight = 0;
-  setInterval(pollAndSyncSize, 150);
+  setInterval(pollAndSyncSize, 250);
 
   function pollAndSyncSize() {
     // Don't use window.innerHeight — that'd be the size of the parent window, outside the iframe.
     // Don't use document.body.clientHeight — it might be too small, before iframe resized.
-    var discussion = debiki2.$byId('dwPosts');
+    var discussion = $byId('dwPosts');
     var currentWidth = discussion.clientWidth;
-    var currentHeight = discussion.clientHeight;
+    var currentDiscussionHeight = discussion.clientHeight;
+
+    // Make space for any notf prefs dialog — it can be taller than the emb cmts
+    // iframe height, before there're any comments. [IFRRESIZE]
+    const anyDialog = $first('.esDropModal_content');
+    const dialogHeight = anyDialog ? anyDialog.clientHeight + 30 : 0;
+
+    const currentHeight = Math.max(currentDiscussionHeight, dialogHeight);
+
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;
 

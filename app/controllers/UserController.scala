@@ -1113,20 +1113,42 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, theRequester => requester}
     val body = request.body
     val memberId = (body \ "memberId").as[MemberId]
-    val pageId = (body \ "pageId").asOpt[PageId]
+    val anyPageIdMaybeEmptyPage = (body \ "pageId").asOpt[PageId]
     val pagesInCategoryId = (body \ "pagesInCategoryId").asOpt[CategoryId]
     val wholeSite = (body \ "wholeSite").asOpt[Boolean]
     val newNotfLevelInt = (body \ "notfLevel").asOpt[Int]
     val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
+
+    // If is a not-yet-created embedded comments page:
+    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
+
+    def participant = dao.getTheParticipant(memberId)
 
     throwForbiddenIf(memberId != requester.id && !requester.isStaff, "TyE5HKG205",
       "May not change other members notf prefs")
     throwForbiddenIf(memberId == Group.AdminsId && !requester.isAdmin, "TyE4HKW2R7",
       "May not change admins notf prefs")
 
+
+    // If this is for a not yet created embedded comments page, then lazy-create it here.
+    // (Sometimes people subscribe to comments for embedded blog comments discussions,
+    // before any comments or Like votes have been submitted — then this is where the
+    // emb page needs to get lazy-created, so the notf prefs has a page id to refer to.)
+    val (anyPageIdx, isNewEmbCmtsPage) =
+      if (anyPageIdMaybeEmptyPage is EmptyPageId) {
+        val (newPageId: PageId, newPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+          anyPageId = Some(EmptyPageId), anyAltPageId = anyAltPageId,
+          anyEmbeddingUrl = anyEmbeddingUrl, request)
+        (Some(newPageId), true)
+      }
+      else {
+        (anyPageIdMaybeEmptyPage, false)
+      }
+
     val newPref = Try(
       PageNotfPref(
-        memberId, pageId = pageId, wholeSite = wholeSite.getOrElse(false),
+        memberId, pageId = anyPageIdx, wholeSite = wholeSite.getOrElse(false),
         pagesInCategoryId = pagesInCategoryId,
         notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
           .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
@@ -1138,7 +1160,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao.deletePageNotfPref(newPref, request.who)
     }
 
-    Ok
+    OkSafeJson(Json.obj(
+      "newlyCreatedPageId" -> (if (isNewEmbCmtsPage) JsString(anyPageIdx.get) else JsNull)))
   }
 
 

@@ -237,9 +237,19 @@ function messageCommentsIframeNewWinTopSize() {
 
   var rect = commentsIframe.getBoundingClientRect();
   // We're interested in the height part of the viewport that is used for the iframe.
+
+  // If the iframe extends below the lower window edge, we see only the part of it
+  // down to `window.innerHeight` (then, don't use `rect.bottom`).
   var height = Math.min(window.innerHeight, rect.bottom);
-  sendToComments('["iframeOffsetWinSize", {' +
-      '"top":' + (-rect.top) + ', "height":' + height + '}]');
+
+  // If the iframe starts above the upper window edge, we don't see the parts of it above 0 (zero).
+  // And if it starts below the upper window edge, then, `rect.top` is where it starts.
+  var iframeVisibleHeight = height - Math.max(0, rect.top);
+
+  sendToComments('["iframeOffsetWinSize",' +
+      '{ "top":' + (-rect.top) +  // why did I negate?
+      ', "height":' + height +    // rename 'height'? but to what? Maybe 'iframeVisibleBottom'?
+      ', "iframeVisibleHeight": ' + iframeVisibleHeight + '}]');
 }
 
 

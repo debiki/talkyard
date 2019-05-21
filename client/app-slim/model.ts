@@ -1738,6 +1738,13 @@ interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
 }
 
 
+interface IframeOffsetWinSize {
+  top: number;
+  height: number;
+  iframeVisibleHeight?: number;
+}
+
+
 // ----- Service worker messages  [sw]
 
 

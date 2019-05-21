@@ -56,6 +56,12 @@ interface RequestData {
 }
 
 
+interface NewEmbCommentsPageAltIdUrl {
+  altPageId?: string;
+  embeddingUrl?: string;
+}
+
+
 function postJson(urlPath: string, requestData: RequestData) {
   let url = appendE2eAndForbiddenPassword(origin() + urlPath);
   let timeoutHandle;
@@ -869,7 +875,21 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 export function savePageNotfPrefUpdStore(memberId: UserId, target: PageNotfPrefTarget,
       notfLevel: PageNotfLevel, onDone?: () => void) {
   const notfPref: PageNotfPref = { ...target, memberId, notfLevel };
-  postJsonSuccess('/-/save-content-notf-pref', () => {
+  const postData: PageNotfPref & NewEmbCommentsPageAltIdUrl = notfPref;
+
+  // If this is for an embedded comments page that hasn't yet been created, we should
+  // also include any alt page id, and the embedding url. [4AMJX7]
+  if (notfPref.pageId === EmptyPageId) {
+    postData.altPageId = eds.embeddedPageAltId || undefined;
+    postData.embeddingUrl = eds.embeddingUrl || undefined;
+  }
+
+  postJsonSuccess('/-/save-content-notf-pref', (response) => {
+    if (response.newlyCreatedPageId) {
+      // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+      eds.embeddedPageId = response.newlyCreatedPageId;
+    }
+
     // If one saved one's own prefs (rather than if one is staff, and changed someone
     // else's prefs), then, update store.me to reflect the changes.
     const store: Store = ReactStore.allData();
@@ -891,7 +911,7 @@ export function savePageNotfPrefUpdStore(memberId: UserId, target: PageNotfPrefT
     if (onDone) {
       onDone();
     }
-  }, notfPref);
+  }, postData);
 }
 
 
