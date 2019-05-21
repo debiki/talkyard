@@ -154,7 +154,7 @@ describe("impersonate", () => {
 
   it("... and post replies", () => {
     maria.complex.replyToOrigPost(origPostReplyText);
-    maria.topic.assertPostTextMatches(c.FirstReplyNr, origPostReplyText);
+    maria.topic.waitForPostAssertTextMatches(c.FirstReplyNr, origPostReplyText);
   });
 
   it("... she goes to her profile page", () => {

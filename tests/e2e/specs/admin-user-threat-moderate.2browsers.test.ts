@@ -137,8 +137,7 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
     mariasBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyAgainEdited);
     mariasBrowser.topbar.clickLogout();
     strangersBrowser.refresh();
-    strangersBrowser.topic.waitForPostNrVisible(c.BodyNr);
-    strangersBrowser.topic.assertPostTextMatches(c.FirstReplyNr,
+    strangersBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr,
         // Shouldn't be mariasReplyAgainEdited, but instead the old value, after the 1st edit:
         mariasReplyEdited);
   });

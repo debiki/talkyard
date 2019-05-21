@@ -84,7 +84,7 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
 
   it("Maria can post a reply", () => {
     mariasBrowser.complex.replyToOrigPost("And replying.");
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, "And replying.");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, "And replying.");
   });
 
   // This shouldn' expire the session though — she's been idle for only 11 minutes;
@@ -108,7 +108,7 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
 
   it("Now she can post a 2nd reply", () => {
     mariasBrowser.complex.replyToOrigPost("I am back");
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, "I am back");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, "I am back");
   });
 
   it("Owen configures 2000 minutes session expiration time ", () => {
@@ -146,7 +146,7 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
 
   it("This didn't expire Maria's session; she can post a third reply", () => {
     mariasBrowser.complex.replyToOrigPost("Maybe I'll stay");
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 2, "Maybe I'll stay");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "Maybe I'll stay");
   });
 
 });

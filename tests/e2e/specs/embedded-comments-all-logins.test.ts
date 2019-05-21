@@ -106,8 +106,7 @@ describe("emb cmts all logins", () => {
 
   it("... it appears", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
-    majasBrowser.topic.assertPostTextMatches(2, majasComment);
+    majasBrowser.topic.waitForPostAssertTextMatches(2, majasComment);  // the first reply nr, = comment 1
   });
 
   it("Michael signs up, with Facebook", () => {
@@ -136,10 +135,8 @@ describe("emb cmts all logins", () => {
 
   it("... it appears", () => {
     michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.topic.waitForPostNrVisible(2);
-    michaelsBrowser.topic.waitForPostNrVisible(3);
-    michaelsBrowser.topic.assertPostTextMatches(2, majasComment);
-    michaelsBrowser.topic.assertPostTextMatches(3, michaelsComment);
+    michaelsBrowser.topic.waitForPostAssertTextMatches(2, majasComment);
+    michaelsBrowser.topic.waitForPostAssertTextMatches(3, michaelsComment);
   });
 
   it("Maja logs in again, with Gmail", () => {
@@ -165,8 +162,7 @@ describe("emb cmts all logins", () => {
 
   it("... it appears, it too", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostNrVisible(4);
-    majasBrowser.topic.assertPostTextMatches(4, majas2ndComment);
+    majasBrowser.topic.waitForPostAssertTextMatches(4, majas2ndComment);
   });
 
 });

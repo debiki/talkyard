@@ -72,8 +72,7 @@ describe("chat-create-from-direct-message  TyT5FKB2A", () => {
   it("Michael gets a notf", () => {
     michaelsBrowser.topbar.waitForMyMenuVisible();
     michaelsBrowser.topbar.openNotfToMe();
-    michaelsBrowser.topic.waitForPostNrVisible(c.BodyNr);
-    michaelsBrowser.topic.assertPostTextMatches(c.BodyNr, mariasMessageText);
+    michaelsBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, mariasMessageText);
   });
 
   it("He creates a chat — works, although he isn't currently in any site section [4GWRQA28]", () => {

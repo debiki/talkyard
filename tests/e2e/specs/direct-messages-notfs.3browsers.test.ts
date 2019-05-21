@@ -110,14 +110,12 @@ describe("private chat", () => {
 
   it("Maria sees the reply", () => {
     // This fails (times out) if Nchan messed up internally, because of an Nginx worker thread crash.
-    maria.topic.waitForPostNrVisible(2);
-    maria.topic.assertPostTextMatches(2, owensAnswer);
+    maria.topic.waitForPostAssertTextMatches(2, owensAnswer);
   });
 
   it("... and replies", () => {
     maria.complex.replyToPostNr(2, mariasQuestion);
-    maria.topic.waitForPostNrVisible(3);
-    maria.topic.assertPostTextMatches(3, mariasQuestion);
+    maria.topic.waitForPostAssertTextMatches(3, mariasQuestion);
   });
 
   it("... she got a notification, dismisses it", () => {
@@ -134,8 +132,7 @@ describe("private chat", () => {
   });
 
   it("Owen sees Maria reply", () => {
-    owen.topic.waitForPostNrVisible(3);
-    owen.topic.assertPostTextMatches(3, mariasQuestion);
+    owen.topic.waitForPostAssertTextMatches(3, mariasQuestion);
   });
 
   it("... and replies", () => {
@@ -169,8 +166,7 @@ describe("private chat", () => {
   });
 
   it("... she sees the question answer", () => {
-    maria.topic.waitForPostNrVisible(4);
-    maria.topic.assertPostTextMatches(4, owensQuestionAnswer);
+    maria.topic.waitForPostAssertTextMatches(4, owensQuestionAnswer);
   });
 
 

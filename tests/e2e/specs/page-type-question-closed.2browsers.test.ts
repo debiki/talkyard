@@ -141,7 +141,7 @@ describe("Page type question", () => {
 
   it("Everything is in the correct order", () => {
     mariasBrowser.refresh();
-    mariasBrowser.topic.assertPostTextMatches(1, "a cat or an otter?");
+    mariasBrowser.topic.waitForPostAssertTextMatches(1, "a cat or an otter?");
     mariasBrowser.topic.assertPostTextMatches(2, "Yes, a cat");
     mariasBrowser.topic.assertPostTextMatches(3, "Yes, an otter");
     mariasBrowser.topic.assertMetaPostTextMatches(4, "closed");

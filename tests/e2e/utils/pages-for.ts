@@ -30,8 +30,11 @@ function count(elems): number {
 }
 
 
-function byBrowser(result) {  // dupl code [4WKET0] move all to here?
-  if (!_.isObject(result) || _.isArray(result) || result.value) {
+type ByBrowserResults = { [browserName: string]: { value: any }};
+
+
+function byBrowser(result): ByBrowserResults {  // dupl code [4WKET0] move all to here?
+  if (!_.isObject(result) || _.isArray(result) || (<any> result).value) {
     // This is the results from one single browser. Create a dummy by-browser
     // result map.
     return { onlyOneBrowser: result };
@@ -42,7 +45,7 @@ function byBrowser(result) {  // dupl code [4WKET0] move all to here?
     // or like:
     //    { browserA: "text-found", browserB: "other-text-found" }
     // That's what we want.
-    return result;
+    return <ByBrowserResults> result;
   }
 }
 
@@ -1059,7 +1062,7 @@ function pagesFor(browser) {
     // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertWholePageHidden: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
-      _.forOwn(resultsByBrowser, (text, browserName) => {
+      _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
           assert(api._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
@@ -1074,7 +1077,7 @@ function pagesFor(browser) {
     // Also see api.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertMayNotSeePage: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
-      _.forOwn(resultsByBrowser, (text, browserName) => {
+      _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
           assert(api._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
@@ -1698,7 +1701,9 @@ function pagesFor(browser) {
         api.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      loginWithPassword: function(username, password?, opts?: { resultInError?: boolean }) {
+      loginWithPassword: (username: string | { username: string, password: string },
+            password?, opts?: { resultInError?: boolean }) => {
+
         if (!opts && password && _.isObject(password)) {
           opts = <any> password;
           password = null;
@@ -1724,7 +1729,8 @@ function pagesFor(browser) {
       },
 
       // Embedded discussions do all logins in popups.
-      loginWithPasswordInPopup: function(username, password?: string) {
+      loginWithPasswordInPopup:
+          (username: string | { username: string, password: string }, password?: string) => {
         api.swithToOtherTabOrWindow();
         api.disableRateLimits();
         if (_.isObject(username)) {
@@ -2859,6 +2865,11 @@ function pagesFor(browser) {
 
       waitForPostNrVisible: function(postNr) {
         api.waitForVisible('#post-' + postNr);
+      },
+
+      waitForPostAssertTextMatches: function(postNr, text: string) {
+        api.topic.waitForPostNrVisible(postNr);
+        api.topic.assertPostTextMatches(postNr, text);
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
@@ -4953,7 +4964,8 @@ function pagesFor(browser) {
         api.switchToAnyParentFrame();
       },
 
-      loginWithPasswordViaTopbar: function(username, password?: string, opts?: { resultInError?: boolean }) {
+      loginWithPasswordViaTopbar: (username: string | { username, password },
+            password?: string, opts?: { resultInError?: boolean }) => {
         if (!opts && password && _.isObject(password)) {
           opts = <any> password;
           password = null;
@@ -4975,14 +4987,17 @@ function pagesFor(browser) {
         api.loginDialog.acceptTerms();
       },
 
-      signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {
+      signUpAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
         api.disableRateLimits();
         api.topbar.clickSignUp();
-        let name = nameOrObj;
+        let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
           name = nameOrObj.fullName;
           email = nameOrObj.emailAddress;
+        }
+        else {
+          name = nameOrObj;
         }
         api.loginDialog.signUpAsGuest(name, email);
       },
@@ -4994,13 +5009,16 @@ function pagesFor(browser) {
             email: settings.gmailEmail, password: settings.gmailPassword, username });
       },
 
-      logInAsGuestViaTopbar: function(nameOrObj, email?: string) {
+      logInAsGuestViaTopbar: function(nameOrObj: string | { fullName, emailAddress }, email?: string) {
         api.topbar.clickLogin();
-        let name = nameOrObj;
+        let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
           name = nameOrObj.fullName;
           email = nameOrObj.emailAddress;
+        }
+        else {
+          name = nameOrObj;
         }
         api.loginDialog.logInAsGuest(name, email);
       },

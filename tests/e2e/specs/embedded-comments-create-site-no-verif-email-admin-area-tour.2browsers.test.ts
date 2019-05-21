@@ -184,15 +184,13 @@ ${htmlToPaste}
 
   it("... the comment it appears", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
-    mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText); // the first reply nr, = comment 1
   });
 
   it("Owen sees it too", () => {
     owensBrowser.go(data.embeddingUrl);
     owensBrowser.switchToEmbeddedCommentsIrame();
-    owensBrowser.topic.waitForPostNrVisible(2);
-    owensBrowser.topic.assertPostTextMatches(2, mariasCommentText);
+    owensBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText);
   });
 
   it("Owen replies to Maria (he's already logged in)", () => {
@@ -204,17 +202,14 @@ ${htmlToPaste}
 
   it("... his comment appears", () => {
     owensBrowser.switchToEmbeddedCommentsIrame();
-    owensBrowser.topic.waitForPostNrVisible(3);
-    owensBrowser.topic.assertPostTextMatches(3, owensCommentText);
+    owensBrowser.topic.waitForPostAssertTextMatches(3, owensCommentText);
   });
 
   it("Maria sees Owen's comment and her own too", () => {
     mariasBrowser.refresh();
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(2);
-    mariasBrowser.topic.waitForPostNrVisible(3);
-    mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
-    mariasBrowser.topic.assertPostTextMatches(3, owensCommentText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(2, mariasCommentText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(3, owensCommentText);
   });
 
   it("When embedding via the wrong domain, the comments refuse to load", () => {
