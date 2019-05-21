@@ -345,6 +345,17 @@ export function UserName(props: {
   return linkFn(newProps, namePartOne, namePartTwo);
 }
 
+
+// Facebook logo.
+// Need to follow Facebook's brand guidelines, and use this image for Facebook
+// login and share buttons. [FBBRAND]  Otherwise, when staff at Facebook inspect your
+// OAuth app, they'll notice this and contact you, and tell you that you need to
+// follow Facebook's brand guidelines.
+export const FacebookLogoImage =
+    r.img({ src: eds.cdnOrServerOrigin + '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
+         className: 's_FbIcon' });
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

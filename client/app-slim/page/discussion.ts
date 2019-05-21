@@ -66,8 +66,7 @@ export const TitleBodyComments = createComponent({
       let image;
       if (where === pagedialogs.Facebook) {
         // Need to follow Facebook's brand guidelines and use this image. [FBBRAND]
-        image = r.img({ src: '/-/media/brands/facebook/flogo-HexRBG-Wht-58.png',
-            className: 's_FbIcon' });
+        image = FacebookLogoImage;
       }
       return (
         r.a({ className: 'p_ShareIcon icon-' + where,

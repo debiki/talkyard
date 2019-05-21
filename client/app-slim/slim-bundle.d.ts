@@ -381,6 +381,7 @@ declare namespace debiki2 {
   var MenuItemsMany;
   var MenuItemDivider;
   var UserName;
+  var FacebookLogoImage;
 
   // More stuff, place where?
   //namespace reactelements {
