@@ -103,7 +103,7 @@ trait CategoriesDao {
 
   // The dao shouldn't live past the current HTTP request anyway.
   private var categoriesById: Map[CategoryId, Category] = _
-  private var categoriesByParentId: mutable.HashMap[CategoryId, ArrayBuffer[Category]] = _
+  private var categoriesByParentId: Map[CategoryId, Vector[Category]] = _
   private var rootCategories: Seq[Category] = _
 
 
@@ -418,27 +418,48 @@ trait CategoriesDao {
   }
 
 
-  private def loadBuildRememberCategoryMaps(): (Map[CategoryId, Category],
-        mutable.HashMap[CategoryId, ArrayBuffer[Category]]) = {
+  private def loadBuildRememberCategoryMaps()   // RENAME to getAndRememberCategories?
+        : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
+    // We already remember?
     if (categoriesById ne null)
       return (categoriesById, categoriesByParentId)
 
-    categoriesByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
-    categoriesById = loadCategoryMap()
+    // Didn't remember. Load.
+    val result = memCache.lookup(
+      allCategoriesKey,
+      orCacheAndReturn = Some({
+        loadBuildRememberCategoryMaps_impl()
+      })).get
 
-    for ((_, category) <- categoriesById; parentId <- category.parentId) {
-      val siblings = categoriesByParentId.getOrElseUpdate(parentId, ArrayBuffer[Category]())
+    // Remember.
+    categoriesById = result._1
+    categoriesByParentId = result._2
+    rootCategories = categoriesById.values.filter(_.isRoot).toVector
+    result
+  }
+
+
+  private def loadBuildRememberCategoryMaps_impl()
+        : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
+    val catsById: Map[CategoryId, Category] = readOnlyTransaction(tx => {
+      tx.loadCategoryMap()
+    })
+
+    val catsByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
+
+    for ((_, category) <- catsById; parentId <- category.parentId) {
+      val siblings = catsByParentId.getOrElseUpdate(parentId, ArrayBuffer[Category]())
       siblings.append(category)
     }
 
-    rootCategories = categoriesById.values.filter(_.isRoot).toVector
-    val anyRoot = categoriesById.values.find(_.isRoot)
-    (categoriesById, categoriesByParentId)
+    val catsByParentIdImmutable = Map.apply(catsByParentId.mapValues(_.toVector).toSeq: _*)
+    (catsById, catsByParentIdImmutable)
   }
 
-  COULD_OPTIMIZE // cache
-  private def loadCategoryMap() =
-    readOnlyTransaction(_.loadCategoryMap())
+
+  private def uncacheAllCategories() {
+    memCache.remove(allCategoriesKey)
+  }
 
 
   def editCategory(editCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
@@ -477,6 +498,10 @@ trait CategoriesDao {
       // so just empty the whole cache.
       emptyCache()
     }
+    else {
+      // Since this category was edited:
+      uncacheAllCategories()
+    }
 
     // Do this even if we just emptied the cache above, because then the forum page
     // will be regenerated earlier.
@@ -492,6 +517,10 @@ trait CategoriesDao {
     val result = readWriteTransaction { tx =>
       createCategoryImpl(newCategoryData, permissions, byWho)(tx)
     }
+    // Need to reload permissions and categories, so this new category and its permissions
+    // also get included.
+    uncacheAllPermissions()
+    uncacheAllCategories()
     // Refresh the forum topic list page; it has cached the category list (in JSON in the cached HTML).
     refreshPageInMemCache(result.category.sectionPageId)
     result
@@ -619,6 +648,10 @@ trait CategoriesDao {
 
     (permsWithIds.toVector, wasChangesMade)
   }
+
+
+  private val allCategoriesKey = debiki.dao.MemCacheKey(siteId, "AllCats")
+
 }
 
 

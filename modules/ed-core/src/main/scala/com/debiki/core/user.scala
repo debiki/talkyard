@@ -877,6 +877,7 @@ case class UserInclDetails(  // ok for export
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
+  def isGroup: Boolean = false
   def isGuest: Boolean = false
 
   def isSuspendedAt(when: ju.Date): Boolean =

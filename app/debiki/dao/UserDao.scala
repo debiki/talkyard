@@ -37,7 +37,8 @@ case class LoginNotFoundException(siteId: SiteId, userId: UserId)
 
 
 case class ReadMoreResult(
-  numMoreNotfsSeen: Int)
+  numMoreNotfsSeen: Int,
+  gotPromoted: Boolean)
 
 
 
@@ -75,7 +76,7 @@ trait UserDao {
     */
   def acceptInviteCreateUser(secretKey: String, browserIdData: BrowserIdData)
         : (UserInclDetails, Invite, Boolean) = {
-    readWriteTransaction { tx =>
+    val result = readWriteTransaction { tx =>
       var invite = tx.loadInviteBySecretKey(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
 
@@ -150,6 +151,12 @@ trait UserDao {
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(newUser, browserIdData, tx.now))
       (newUser, invite, false)
     }
+
+    uncacheBuiltInGroups()
+    // + other groups this new member might auto join.
+    // + uncache, when deleting / anonymizing member.
+
+    result
   }
 
 
@@ -199,6 +206,12 @@ trait UserDao {
     // uncache pages where hens name appears (if admin/moderator status got changed). [5KSIQ24]
 
     removeUserFromMemCache(memberId)
+
+    // In case the user was promoted/demoted to moderator or admin, or a different
+    // trust level, update hens group membership. (Could add logic to do this only if
+    // necessary, but that'd be extra code and bug risk?)
+    uncacheOnesGroupIds(Seq(memberId))
+    uncacheBuiltInGroups()
   }
 
 
@@ -265,6 +278,9 @@ trait UserDao {
       tx.updateUserInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
+    // Now the user might have joined / left trust level groups.
+    uncacheOnesGroupIds(Seq(memberId))
+    uncacheBuiltInGroups()
   }
 
 
@@ -275,6 +291,7 @@ trait UserDao {
       tx.updateUserInclDetails(memberAfter)
     }
     removeUserFromMemCache(memberId)
+    // (There are no threat level groups to uncache.)
   }
 
 
@@ -477,6 +494,10 @@ trait UserDao {
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
       MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
     }
+
+    uncacheBuiltInGroups()
+    // Also uncache any custom groups, if auto-joins any such groups here.
+
     memCache.fireUserCreated(loginGrant.user)
     loginGrant
   }
@@ -514,6 +535,7 @@ trait UserDao {
     val user = readWriteTransaction { tx =>
       createPasswordUserImpl(userData, browserIdData, tx).briefUser
     }
+    uncacheBuiltInGroups()
     memCache.fireUserCreated(user)
     user
   }
@@ -523,6 +545,7 @@ trait UserDao {
         tx: SiteTransaction): UserInclDetails = {
     dieIf(userData.password.isDefined, "TyE7KHW2G")
     val member = createPasswordUserImpl(userData, botIdData, tx)
+    uncacheBuiltInGroups()
     memCache.fireUserCreated(member.briefUser)
     member
   }
@@ -553,6 +576,7 @@ trait UserDao {
 
     tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
     user
+    // uncache the Everyone and All Members groups. From the caller?
   }
 
 
@@ -906,9 +930,9 @@ trait UserDao {
       }
       tx.addGroupMembers(groupId, memberIdsToAdd)
     }
-    uncacheGroupMembership(memberIdsToAdd)
+    uncacheOnesGroupIds(memberIdsToAdd)
     memCache.remove(groupMembersKey(groupId))
-    memCache.remove(allGroupsKey)
+    memCache.remove(allGroupsKey)  // why? not needed, remove?  (320505)
   }
 
 
@@ -918,13 +942,29 @@ trait UserDao {
     readWriteTransaction { tx =>
       tx.removeGroupMembers(groupId, memberIdsToRemove)
     }
-    uncacheGroupMembership(memberIdsToRemove)
+    uncacheOnesGroupIds(memberIdsToRemove)
     memCache.remove(groupMembersKey(groupId))
-    memCache.remove(allGroupsKey)
+    memCache.remove(allGroupsKey)  // why? not needed, remove?  (320505)
   }
 
 
-  private def uncacheGroupMembership(memberIds: Iterable[UserId]) {
+  private def uncacheGroupsMemberLists(groupIds: Iterable[UserId]) {
+    groupIds foreach { groupId =>
+      memCache.remove(groupMembersKey(groupId))
+    }
+  }
+
+
+  private def uncacheBuiltInGroups() {
+    import Group._
+    uncacheGroupsMemberLists(
+      Vector(EveryoneId, AllMembersId, BasicMembersId, FullMembersId,
+        TrustedMembersId, RegularMembersId, CoreMembersId,
+        StaffId, ModeratorsId, AdminsId))
+  }
+
+
+  private def uncacheOnesGroupIds(memberIds: Iterable[UserId]) {
     memberIds foreach { memberId =>
       memCache.remove(onesGroupIdsKey(memberId))
     }
@@ -1147,10 +1187,10 @@ trait UserDao {
 
     // Don't track system, superadmins, deleted users — they aren't real members.
     if (user.id < LowestTalkToMemberId)
-      return ReadMoreResult(0)
+      return ReadMoreResult(0, false)
 
     COULD_OPTIMIZE // use Dao instead, so won't touch db. Also: (5ABKR20L)
-    readWriteTransaction { tx =>
+    val result = readWriteTransaction { tx =>
       val pageMeta = tx.loadPageMeta(pageId) getOrElse {
         throwNotFound("TyETRCK0PAGE", s"No page with id '$pageId'")
       }
@@ -1204,14 +1244,17 @@ trait UserDao {
       tx.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
       tx.upsertUserStats(statsAfter)
 
+      var gotPromoted = false
       if (user.canPromoteToBasicMember) {
         if (statsAfter.meetsBasicMemberRequirements) {
           promoteUser(user.id, TrustLevel.BasicMember, tx)
+          gotPromoted = true
         }
       }
       else if (user.canPromoteToFullMember) {
         if (statsAfter.meetsFullMemberRequirements) {
           promoteUser(user.id, TrustLevel.FullMember, tx)
+          gotPromoted = true
         }
       }
       else {
@@ -1219,15 +1262,23 @@ trait UserDao {
         // Instead, will be done once a day in some background job.
       }
 
-      ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen)
+      ReadMoreResult(numMoreNotfsSeen = numMoreNotfsSeen, gotPromoted = gotPromoted)
     }
+
+    if (result.gotPromoted) {
+      // Has now joined a higher trust level group.
+      uncacheOnesGroupIds(Seq(user.id))
+      uncacheBuiltInGroups()
+    }
+
+    result
   }
 
 
   def rememberVisit(user: Participant, lastVisitedAt: When): ReadMoreResult = {
     require(user.isMember, "TyEBZSR27") // see above [8PLKW46]
     if (user.id < LowestTalkToMemberId)
-      return ReadMoreResult(0)
+      return ReadMoreResult(0, gotPromoted = false)
     readWriteTransaction { tx =>
       val statsBefore = tx.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
@@ -1235,7 +1286,7 @@ trait UserDao {
         lastSeenAt = lastVisitedAt))
       tx.upsertUserStats(statsAfter)
     }
-    ReadMoreResult(numMoreNotfsSeen = 0)
+    ReadMoreResult(numMoreNotfsSeen = 0, gotPromoted = false)
   }
 
 
@@ -1253,7 +1304,7 @@ trait UserDao {
   }
 
 
-  def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction) {
+  private def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction) {
     // If trust level locked, we'll promote the member anyway — but member.effectiveTrustLevel
     // won't change, because it considers the locked trust level first.
     val member = tx.loadTheUserInclDetails(userId)
@@ -1372,6 +1423,7 @@ trait UserDao {
       tx.updateUserInclDetails(user)
     }
     removeUserFromMemCache(userId)
+    // (No groups to update.)
   }
 
 
@@ -1499,8 +1551,7 @@ trait UserDao {
         tx.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
       }
 
-      removeUserFromMemCache(preferences.userId)
-      // Clear the page cache (by clearing all caches), if we changed the user's name.  [2WBU0R1]
+      // Clear the page cache (by clearing all caches), if we changed the user's name.
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
       if (preferences.changesStuffIncludedEverywhere(user)) {
@@ -1509,6 +1560,8 @@ trait UserDao {
         emptyCacheImpl(tx)
       }
     }
+
+    removeUserFromMemCache(preferences.userId)
   }
 
 
@@ -1548,12 +1601,10 @@ trait UserDao {
           groupAfter.summaryEmailIfActive != group.summaryEmailIfActive) {
         tx.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
       }
-
-      // Group names aren't shown everywhere. So need not empty cache (as is however
-      // done here [2WBU0R1]).
     }
 
     removeUserFromMemCache(preferences.groupId)
+    memCache.remove(allGroupsKey)
   }
 
 
@@ -1634,7 +1685,7 @@ trait UserDao {
     }
     RACE // not impossible that a member just loaded hens group ids from the database,
     // and inserts into the mem cache just after we've uncached, here?
-    uncacheGroupMembership(formerMembers.map(_.id))
+    uncacheOnesGroupIds(formerMembers.map(_.id))
     memCache.remove(groupMembersKey(groupId))
     memCache.remove(allGroupsKey)
   }
@@ -1687,9 +1738,9 @@ trait UserDao {
     * - EdT5WKBWQ2
     */
   def deleteUser(userId: UserId, byWho: Who): UserInclDetails = {
-    readWriteTransaction { tx =>
+    val (user, usersGroupIds) = readWriteTransaction { tx =>
       tx.deferConstraints()
-// remove from groups <——————
+
       val deleter = tx.loadTheParticipant(byWho.id)
       require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
 
@@ -1702,8 +1753,10 @@ trait UserDao {
 
       // Load member after having forgotten avatar images (above).
       val memberBefore = tx.loadTheUserInclDetails(userId)
+      val groupIds = tx.loadGroupIdsMemberIdFirst(memberBefore)
 
       throwForbiddenIf(memberBefore.isDeleted, "TyE0ALRDYDLD", "User already deleted")
+      throwForbiddenIf(memberBefore.isGroup, "TyE0KWPP240", "Is a group")
 
       // This resets the not-mentioned-here fields to default values.
       val memberDeleted = UserInclDetails(
@@ -1777,13 +1830,19 @@ trait UserDao {
       tx.insertAuditLogEntry(auditLogEntry)
 
       tx.removeDeletedMemberFromAllPages(userId)
+      tx.removeDeletedMemberFromAllGroups(userId)
 
-      // Clear the page cache, by clearing all caches.  [2WBU0R1]
+      // Clear the page cache, by clearing all caches.
       emptyCacheImpl(tx)
-      removeUserFromMemCache(userId)
 
-      memberDeleted
+      (memberDeleted, groupIds)
     }
+
+    uncacheOnesGroupIds(Seq(userId))
+    uncacheGroupsMemberLists(usersGroupIds)
+    removeUserFromMemCache(userId)
+
+    user
   }
 
 
@@ -1806,7 +1865,7 @@ trait UserDao {
   }
 
 
-  def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: String,
+  private def editMemberThrowUnlessSelfStaff[R](userId: UserId, byWho: Who, errorCode: String,
         mayNotWhat: String)(block: SiteTransaction => R): R = {
     editMemberThrowUnlessSelfStaff2[R](userId, byWho, errorCode, mayNotWhat) { (tx, _, _) =>
       block(tx)
@@ -1820,7 +1879,7 @@ trait UserDao {
     * Plus, staff users who are moderators only, may not edit admin users — that also
     * results in 403 Forbidden.
     */
-  def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
+  private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
         mayNotWhat: String)(block: (SiteTransaction, MemberInclDetails, Participant) => R): R = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...

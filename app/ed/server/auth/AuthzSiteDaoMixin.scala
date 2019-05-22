@@ -19,7 +19,7 @@ package ed.server.auth
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.SiteDao
+import debiki.dao.{MemCacheKey, SiteDao}
 import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
 import scala.collection.immutable
@@ -239,10 +239,7 @@ trait AuthzSiteDaoMixin {
 
   @deprecated("now", "use getPermsForPeople instead?")
   def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
-    COULD_OPTIMIZE // For now
-    readOnlyTransaction { transaction =>
-      transaction.loadPermsOnPages()
-    }
+    getAllPermsOnPages()
   }
 
 
@@ -252,12 +249,28 @@ trait AuthzSiteDaoMixin {
 
 
   def getPermsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
-    COULD_OPTIMIZE // For now
-    val perms = readOnlyTransaction { transaction =>
-      transaction.loadPermsOnPages()
-    }
+    val perms = getAllPermsOnPages()
     perms.filter(p => userIds.exists(_ == p.forPeopleId))
   }
+
+
+  def uncacheAllPermissions() {
+    memCache.remove(allPermsKey)
+  }
+
+
+  private def getAllPermsOnPages(): immutable.Seq[PermsOnPages] = {
+    memCache.lookup(
+      allPermsKey,
+      orCacheAndReturn = {
+        Some(readOnlyTransaction { tx =>
+          tx.loadPermsOnPages()
+        })
+      }).get
+  }
+
+
+  private val allPermsKey: MemCacheKey = MemCacheKey(siteId, "AllPemrs")
 
 }
 

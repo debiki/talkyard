@@ -148,7 +148,7 @@ class Globals(
   }
 
   lazy val (isTestDisableBackgroundJobs, isTestEnableJanitor): (Boolean, Boolean) =
-      if (!isOrWasTest) (false, false) else {
+      if (isProd) (false, false) else {
     val disableJobs = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
     val butEnableJanitor = conf.getBoolean("isTestEnableJanitor").getOrElse(false)
     if (disableJobs) {

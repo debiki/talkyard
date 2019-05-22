@@ -482,6 +482,7 @@ trait SiteTransaction {
   def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId]
   def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId])
   def removeAllGroupParticipants(groupId: UserId)
+  def removeDeletedMemberFromAllGroups(memberId: UserId)  /// ctn here
 
   def insertGroup(group: Group)
   def deleteGroup(groupId: UserId)

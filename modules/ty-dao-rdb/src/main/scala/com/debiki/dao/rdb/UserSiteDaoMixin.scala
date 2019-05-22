@@ -276,6 +276,18 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def removeDeletedMemberFromAllGroups(memberId: UserId): Unit = {
+    dieIf(memberId < Participant.LowestAuthenticatedUserId, "TyE5DMWG05")
+    val statement = s"""
+      delete from group_participants3
+      where site_id = ?
+        and participant_id = ?
+      """
+    val values = List(siteId.asAnyRef, memberId.asAnyRef)
+    runUpdate(statement, values)
+  }
+
+
   def insertGroup(group: Group) {
     val sql = """
       insert into users3(site_id, user_id, username, full_name, created_at, is_group)

@@ -166,6 +166,7 @@ GET   /-/list-forums            controllers.ForumController.listForums
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId: Int)
 GET   /-/list-categories-all-sections controllers.ForumController.listCategoriesAllSections
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)
+# Also saves security settings / permissions / PermsOnPage:s.
 POST  /-/save-category          controllers.ForumController.saveCategory
 GET   /-/load-category          controllers.ForumController.loadCategoryToEdit(id: Int)
 POST  /-/delete-category        controllers.ForumController.deleteCategory
