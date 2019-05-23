@@ -90,7 +90,7 @@ describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
   });
 
   it("... and configs notfs about every post, for the whole site", () => {
-    mariasBrowser.userProfilePage.preferences.setNotfsForEachNewPost();
+    mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
   it("Owen posts a topic", () => {

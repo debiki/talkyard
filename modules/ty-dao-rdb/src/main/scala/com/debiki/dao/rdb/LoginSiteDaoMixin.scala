@@ -144,8 +144,25 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       throw EmailNotFoundException(emailId)
     }
 
+    REFACTOR // don't do this via LoginAttempt:s. Load the email directly from UserDao instead [306AS13].
+    // Move the logic below, to there. And remove this function.
+
     if (email.toUserId.isEmpty)
       throw BadEmailTypeException(emailId)
+
+    if (!email.tyype.canLogin)
+      throw new QuickMessageException(s"Cannot login via email type ${email.tyype} [TyE0LGIEML]")
+
+    if (email.canLoginAgain is false)
+      throw new QuickMessageException("This reset password link has already been used [TyEPWRSTUSD_]")
+
+    email.sentOn match {
+      case None =>
+        throw new QuickMessageException("Email hasn't been sent [TyEPWRST0SNT]")
+      case Some(emailSentDate) =>
+        if (emailSentDate.getTime + OneDayInMillis < loginAttempt.date.getTime)
+          throw new QuickMessageException("Reset password link expired (after 24 hours) [TyEPWRSTEXP_]")
+    }
 
     val user = loadUser(email.toUserId.get) getOrElse {
       die("TyEZ2XKW5", o"""s$siteId: User `${email.toUserId}"' not found
@@ -154,6 +171,9 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
     if (user.email != email.sentTo)
       throw EmailAddressChangedException(email, user)
+
+
+    updateSentEmail(email.copy(canLoginAgain = Some(loginAttempt.mayLoginAgain)))
 
     val idtyWithId = IdentityEmailId(id = emailId, userId = user.id, emailSent = Some(email))
     MemberLoginGrant(Some(idtyWithId), user, isNewIdentity = false, isNewMember = false)

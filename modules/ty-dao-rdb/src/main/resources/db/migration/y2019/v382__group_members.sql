@@ -88,3 +88,6 @@ create index groupparticipants_ppid_i on group_participants3 (site_id, participa
 
 create index participants_groups_i on users3 (site_id, user_id) where is_group;
 
+
+alter table emails_out3 add column can_login_again bool;
+

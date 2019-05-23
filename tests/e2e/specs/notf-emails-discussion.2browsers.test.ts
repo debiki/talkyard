@@ -247,7 +247,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
     trilliansBrowser.topbar.clickGoToProfile();
     trilliansBrowser.userProfilePage.goToPreferences();
     trilliansBrowser.userProfilePage.preferences.switchToNotifications();
-    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewPost(true);
+    trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
   it("Maja posts a new topic", () => {
@@ -270,7 +270,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
   });
 
   it("Trillian cancels notifications about every new post", () => {
-    trilliansBrowser.userProfilePage.preferences.setNotfsNormal();
+    trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Normal);
   });
 
   it("Maja posts a 2nd new topic", () => {
@@ -300,7 +300,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
 
 
   it("Trillian enables notifications about new topics", () => {
-    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
+    trilliansBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
   it("Maja posts another reply to herself", () => {

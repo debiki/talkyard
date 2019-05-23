@@ -1330,7 +1330,7 @@ const enum Presence {
 const enum Groups {
   NoUserId = 0,
   EveryoneId = 10,
-  NewMembersId = 11,  // RENAME to AllMembersId
+  AllMembersId = 11,
   BasicMembersId = 12,
   FullMembersId = 13,
   TrustedId = 14,

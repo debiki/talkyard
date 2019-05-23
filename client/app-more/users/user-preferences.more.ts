@@ -532,7 +532,7 @@ const NotfPrefsTab = createFactory({
               //effPref.inheritedNotfPref && effPref.inheritedNotfPref.notfLevel === effPref.notfLevel;
             const inheritedWhy = !isUsingInheritedLevel ? null :
                 makeWhyNotfLvlInheritedExpl(effPref, ppsById);
-            return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C' },
+            return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C e_CId-' + category.id },
               r.span({ className: 's_UP_Prfs_Ntfs_Cs_C_Name' }, category.name + ':'),
               notfs.PageNotfPrefButton({ store, target, ppsById, ownPrefs: membersPrefs,
                   saveFn: (notfLevel: PageNotfLevel) => {

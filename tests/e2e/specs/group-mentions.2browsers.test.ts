@@ -373,7 +373,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   });
 
 
-  /*  [REFACTORNOTFS]  new_members —> all_members, notifies all members.
+  /*  [REFACTORNOTFS]  @all_members notifies all members.
       Maybe sth like a mentions- alias that notifies only trust level new-memebers?
 
   // ----- @basic_members

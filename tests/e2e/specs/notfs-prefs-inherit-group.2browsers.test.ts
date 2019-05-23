@@ -39,6 +39,7 @@ let numEmailsTotal = 0;
 
 const forumTitle = "Notf Pref Inh Grps Content";
 const SpecificCatName = 'SpecificCatName';
+const SpecificCatId = 3;
 const OtherCatName = 'OtherCatName';
 
 const TitleOneTrilliianNotfd = 'TitleOneTrilliianNotfd';
@@ -112,12 +113,12 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("Owen configs New Topics subscr, Trusted members, whole site: " +
       "goes to the Trusted group", () => {
-    owensBrowser.topbar.clickGoToAdmin();
-    owensBrowser.adminArea.switchToGroupsBuiltIn();
+    owensBrowser.adminArea.goToUsersEnabled();
+    owensBrowser.adminArea.navToGroups();
   });
 
   it("... click click", () => {
-    owensBrowser.adminArea.groups.openTrustedMembersGroup();
+    owensBrowser.groupsPage.openTrustedMembersGroup();
   });
 
   it("... to notf settings", () => {
@@ -164,7 +165,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("Owen configs New Topics subscr, All Members, whole site: " +
       "goes to the All Members group", () => {
-    owensBrowser.userProfilePage.openNotfPrefsFor(c.NewMembersId);
+    owensBrowser.userProfilePage.openNotfPrefsFor(c.AllMembersId);
   });
 
   it("... and configs notfs", () => {
@@ -246,7 +247,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     numEmailsTotal += 2;
   });
 
-  it("Trillian gets notified", () => {
+  it("Trillian gets notified — more chatty prefs 'wins' (EveryPost vs NewTopics)  TyT20MRPG2", () => {
     const reply = [TopicTwoReplyTrillianEveryPost];
     server.waitUntilLastEmailMatches(siteId, trillian.emailAddress, reply, browser);
     assert.equal(server.countLastEmailsSentTo(siteId, trillian.emailAddress), numEmailsToTrillian);
@@ -264,6 +265,8 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   // ----- Trillian mutes site; Mara subscrs to Every Post
+
+  // A user's prefs are more specific, than a group's prefs, and have precedence.
 
   it("Trillian  goes to her notf prefs", () => {
     trilliansBrowser.go(idAddress.origin);
@@ -339,22 +342,18 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   // ----- Trusted members group subscribes to Spec Cat: New Topics
 
-  it ("Owen configs Trusted Members, Spec Cat: New Topics, ... by impersonating ...", () => {
-    owensBrowser.adminArea.goToUser(c.TrustedMembersId);
-    owensBrowser.adminArea.user.startImpersonating();
+  it ("Owen opens the Trusted Members notfs prefs", () => {
+    owensBrowser.userProfilePage.openPreferencesFor(c.TrustedMembersId);
+    owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... configs as Trusted member ...", () => {
-    owensBrowser.go('/categories');
-    // [2ABKF057]
-    owensBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.NewTopics);
-  });
-
-  it("... stops impersonating ...", () => {
-    owensBrowser.topbar.clickStopImpersonating();
+  it("... and sets Spec Cat to New Topics", () => {
+    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+          SpecificCatId, c.TestPageNotfLevel.NewTopics);
   });
 
   it("Owen creates a topic: opens the Specific category", () => {
+    owensBrowser.go('/categories');
     owensBrowser.forumCategoryList.openCategory(SpecificCatName);
   });
 
@@ -386,24 +385,21 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
+
   // ----- All members subscribes to Spec Cat: New Topics
 
-  it ("Owen configs All Members, Spec Cat: New Topics, ... by impersonating ...", () => {
-    owensBrowser.adminArea.goToUser(c.NewMembersId);
-    owensBrowser.adminArea.user.startImpersonating();
+  it ("Owen opens notf prefs for All Members", () => {
+    owensBrowser.userProfilePage.openPreferencesFor(c.AllMembersId);
+    owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... configs as All member, again — this overrides members' whole-site-Muted setting", () => {
-    owensBrowser.go('/categories');
-    // [2ABKF057]
-    owensBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.NewTopics);
-  });
-
-  it("... stops impersonating, agan ...", () => {
-    owensBrowser.topbar.clickStopImpersonating();
+  it("... configs notfd-of-New-Topics for Spec Cat, this overrides whole-site-Muted setting", () => {
+    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+          SpecificCatId, c.TestPageNotfLevel.NewTopics);
   });
 
   it("Owen creates a topic: opens the Specific category", () => {
+    owensBrowser.go('/categories');
     owensBrowser.forumCategoryList.openCategory(SpecificCatName);
   });
 
@@ -427,7 +423,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... and Maria, since Everyone listens for new topics now", () => {
+  it("... and Maria, since All Members listens for new topics now", () => {
     const titleBody = [TitleFourNotfsAll, BodyFourNotfsAll];
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody, browser);
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
@@ -450,7 +446,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, modya.emailAddress), numEmailsToModya);
   });
 
-  it("... but no one else — they only get notfd about new topics", () => {
+  it("... but no one else — they only get notfd about new topics, in Spec Cat", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
     // Double check:
@@ -460,19 +456,14 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   // ----- Trusted members subscribes to Every Topic, Spec Cat
 
-  it ("Owen configs Full Members, Spec Cat: Every Topics, ... by impersonating ...", () => {
-    owensBrowser.adminArea.goToUser(c.FullMembersId);
-    owensBrowser.adminArea.user.startImpersonating();
+  it ("Owen configs Full Members, Spec Cat: Every Topics: Opens the group's notf prefs", () => {
+    owensBrowser.userProfilePage.openPreferencesFor(c.FullMembersId);
+    owensBrowser.userProfilePage.preferences.switchToNotifications();
   });
 
-  it("... configs as Full Member", () => {
-    owensBrowser.go('/categories');
-    // [2ABKF057]
-    owensBrowser.forumCategoryList.setCatNrNotfLevel(2, c.TestPageNotfLevel.EveryPost);
-  });
-
-  it("... stops impersonating, again ...", () => {
-    owensBrowser.topbar.clickStopImpersonating();
+  it("... and sets Spec Cat to Every Post", () => {
+    owensBrowser.userProfilePage.preferences.notfs.setNotfLevelForCategoryId(
+          SpecificCatId, c.TestPageNotfLevel.EveryPost);
   });
 
   it("Owen replies, now when Full Members subscribed to Every Post", () => {

@@ -1555,6 +1555,7 @@ function makeStranger(store: Store): Myself {
     tourTipsSeen: <TourTipsSeen> [],
     uiPrefsOwnFirst: <UiPrefs[]> [],
 
+    myGroupIds: [Groups.EveryoneId],
     myCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],
     groupsCatsTagsSiteNotfPrefs: <PageNotfPref[]> [],
     myDataByPageId: <any> {},

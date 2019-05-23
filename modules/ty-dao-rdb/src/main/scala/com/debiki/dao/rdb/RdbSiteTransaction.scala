@@ -876,26 +876,23 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       val vals = List(
         sentOn, email.providerEmailId.orNullVarchar,
         failureType, email.failureText.orNullVarchar, failureTime,
+        email.canLoginAgain.orNullBoolean,
         siteId.asAnyRef, email.id)
 
       db.update("""
         update emails_out3
         set SENT_ON = ?, PROVIDER_EMAIL_ID = ?,
-            FAILURE_TYPE = ?, FAILURE_TEXT = ?, FAILURE_TIME = ?
+            FAILURE_TYPE = ?, FAILURE_TEXT = ?, FAILURE_TIME = ?,
+            can_login_again = ?
         where SITE_ID = ? and ID = ?
         """, vals)
     }
   }
 
-  val EmailSelectListItems: String = o"""
-      id, TYPE, SENT_TO, TO_USER_ID, SENT_ON, CREATED_AT, SUBJECT,
-        BODY_HTML, PROVIDER_EMAIL_ID, FAILURE_TEXT
-      """
 
   def loadEmailById(emailId: String): Option[Email] = {
     val query = s"""
-      select $EmailSelectListItems
-      from emails_out3
+      select * from emails_out3
       where SITE_ID = ? and ID = ?
       """
     runQueryFindOneOrNone(query, List(siteId.asAnyRef, emailId), rs => {
@@ -910,8 +907,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       return Map.empty
 
     val query = s"""
-      select $EmailSelectListItems
-      from emails_out3
+      select * from emails_out3
       where site_id = ?
         and sent_on > ?
         and type = ?
@@ -944,7 +940,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       subject = rs.getString("subject"),
       bodyHtmlText = rs.getString("body_html"),
       providerEmailId = Option(rs.getString("provider_email_id")),
-      failureText = Option(rs.getString("failure_text")))
+      failureText = Option(rs.getString("failure_text")),
+      canLoginAgain = getOptBool(rs, "can_login_again"))
   }
 
 

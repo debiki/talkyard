@@ -2484,6 +2484,7 @@ function pagesFor(browser) {
         api.assertTextMatches('.s_F_Ts_Cat_Ttl', categoryName);
       },
 
+      // RENAME to setNotfLevelForCategoryNr?
       setCatNrNotfLevel: (categoryNr: number, notfLevel: PageNotfLevel) => {
         api.waitAndClickNth('.dw-notf-level', categoryNr);
         api.notfLevelDropdown.clickNotfLevel(notfLevel);
@@ -3516,6 +3517,14 @@ function pagesFor(browser) {
     },
 
 
+    groupsPage: {
+      openTrustedMembersGroup: () => {
+        api.waitForThenClickText('.s_Gs_G_L .esP_By', 'trusted_members');
+        api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
+      },
+    },
+
+
     userProfilePage: {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
@@ -3803,26 +3812,6 @@ function pagesFor(browser) {
           setCheckbox('#sendSummaryEmails', enabled);
         },
 
-        // ---  Shuld use notifications.setSiteNotfLevel instead
-        setNotfsForEachNewPost: function() {
-          api.waitAndClick('.dw-notf-level');
-          api.waitAndClick('.e_NtfAll');
-          api.waitForGone('.e_NtfAll');
-        },
-
-        setNotfsForEachNewTopic: function() {
-          api.waitAndClick('.dw-notf-level');
-          api.waitAndClick('.e_NtfFst');
-          api.waitForGone('.e_NtfFst');
-        },
-
-        setNotfsNormal: function() {
-          api.waitAndClick('.dw-notf-level');
-          api.waitAndClick('.e_NtfNml');
-          api.waitForGone('.e_NtfNml');
-        },
-        // ---  / Shuld use notifications.setSiteNotfLevel instead
-
         clickChangePassword: function() {
           api.waitAndClick('.s_UP_Prefs_ChangePwB');
         },
@@ -3839,10 +3828,16 @@ function pagesFor(browser) {
         // ---- /END should be wrapped in `about { .. }`.
 
         notfs: {
-          setSiteNotfLevel: (notfLevel: PageNotfLevel) => {
-            api.waitAndClick('.dw-notf-level');
+          setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
+            // The site notfs btn is the topmost one.
+            api.waitAndClickFirst('.dw-notf-level');
             api.notfLevelDropdown.clickNotfLevel(notfLevel);
-          }
+          },
+
+          setNotfLevelForCategoryId: (categoryId: CategoryId, notfLevel: PageNotfLevel) => {
+            api.waitAndClick(`.e_CId-${categoryId} .dw-notf-level`);
+            api.notfLevelDropdown.clickNotfLevel(notfLevel);
+          },
         },
 
         privacy: {
@@ -4007,12 +4002,10 @@ function pagesFor(browser) {
         api.go((origin || '') + `/-/admin/users/id/${userId}`);
       },
 
-      goToGroupsBuiltIn: function(origin?: string) {
-        api.go((origin || '') + '/-/admin/groups');
-      },
-
-      switchToGroupsBuiltIn: function() {
+      navToGroups: function() {
+        api.rememberCurrentUrl();
         api.waitAndClick('.e_GrpsB');
+        api.waitForNewUrl();
       },
 
       goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
@@ -4049,10 +4042,6 @@ function pagesFor(browser) {
 
       isUsersTabVisible: () => {
         return browser.isVisible('.e_UsrsB');
-      },
-
-      isGroupsTabVisible: () => {
-        return browser.isVisible('.e_GrpsB');
       },
 
       numTabsVisible: () => {
@@ -4485,13 +4474,6 @@ function pagesFor(browser) {
             api.waitAndClick('.s_AA_Us_Inv_SendB');
           },
         }
-      },
-
-      groups: {
-        openTrustedMembersGroup: () => {
-          api.waitAndClick('.e_TrstdMbsL');
-          api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
-        },
       },
 
       apiTab: {

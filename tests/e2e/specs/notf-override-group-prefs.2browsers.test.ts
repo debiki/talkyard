@@ -87,11 +87,11 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   it("Owen goes to All Members' prefs page", () => {
     owensBrowser.go(idAddress.origin);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
-    owensBrowser.go('/-/groups/new_members/preferences/notifications');
+    owensBrowser.go('/-/groups/all_members/preferences/notifications');
   });
 
   it("... and configures All Members to get notified about new topics", () => {
-    owensBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
+    owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
   it("Maria goes to her notfs prefs page", () => {
@@ -102,7 +102,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   });
 
   it("... and overrides the All Members group prefs: She wants to be notfd about every post ", () => {
-    mariasBrowser.userProfilePage.preferences.setNotfsNormal();
+    mariasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.Normal);
   });
 
   it("Maja goes to her notfs prefs page", () => {
@@ -113,7 +113,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   });
 
   it("... and overrides the All Members group prefs, to get notified about every post", () => {
-    majasBrowser.userProfilePage.preferences.setNotfsForEachNewPost();
+    majasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
   it("Owen posts a topic", () => {
@@ -161,11 +161,11 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
   it("Owen goes to All Members' prefs page again", () => {
     owensTopicUrl = owensBrowser.url().value;
-    owensBrowser.go('/-/groups/new_members/preferences/notifications');
+    owensBrowser.go('/-/groups/all_members/preferences/notifications');
   });
 
   it("... configs prefs for every post, for everyone", () => {
-    owensBrowser.userProfilePage.preferences.setNotfsForEachNewPost();
+    owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.EveryPost);
   });
 
   it("Owen returns to his topic", () => {
@@ -195,7 +195,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
 
   it("Maja changes her prefs, to new topics only", () => {
-    majasBrowser.userProfilePage.preferences.setNotfsForEachNewTopic();
+    majasBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
 

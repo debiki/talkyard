@@ -84,7 +84,8 @@ case class Email(
   subject: String,
   bodyHtmlText: String,
   providerEmailId: Option[String],
-  failureText: Option[String] = None) {
+  failureText: Option[String] = None,
+  canLoginAgain: Option[Boolean] = None) {
 
   dieIf(sentTo.isEmpty, "EdENOEMLADR")
   dieIf(!sentTo.contains("@"), "EdEBADEMLADR")
@@ -96,16 +97,16 @@ case class Email(
 }
 
 
-sealed abstract class EmailType(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class EmailType(val IntVal: Int, val canLogin: Boolean = false ) { def toInt = IntVal }
 object EmailType {
   case object Notification extends EmailType(1)
   case object ActivitySummary extends EmailType(2)
   case object Invite extends EmailType(11)
   case object InviteAccepted extends EmailType(12)
-  case object InvitePassword extends EmailType(13)
+  case object InvitePassword extends EmailType(13, canLogin = true)
   case object VerifyAddress extends EmailType(21)
-  case object ResetPassword extends EmailType(22)
-  case object OneTimeLoginLink extends EmailType(23)
+  case object ResetPassword extends EmailType(22, canLogin = true)
+  case object OneTimeLoginLink extends EmailType(23) // doesn't use loginWithEmailId
   case object SiteCreatedSuperAdminNotf extends EmailType(41)
   case object HelpExchangeReminder extends EmailType(31)  // [plugin]? Change to 101? but db constraints
 

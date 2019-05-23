@@ -146,8 +146,7 @@ describe("mod-review  TyT5WB2R0", () => {
     mariasBrowser.adminArea.waitAssertVisible();
     assert(mariasBrowser.adminArea.isReviewTabVisible());
     assert(mariasBrowser.adminArea.isUsersTabVisible());
-    assert(mariasBrowser.adminArea.isGroupsTabVisible());
-    assert.equal(mariasBrowser.adminArea.numTabsVisible(), 3);
+    assert.equal(mariasBrowser.adminArea.numTabsVisible(), 2);
   });
 
   it("There's a review task for each one of Mallory's replies One and Two", () => {

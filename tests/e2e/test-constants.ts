@@ -85,7 +85,7 @@ export = {
   SystemUserId: 1,
   SysbotUserId: 2,
   EveryoneId: 10,
-  NewMembersId: 11,
+  AllMembersId: 11,
   BasicMembersId: 12,
   FullMembersId: 13,
   TrustedMembersId: 14,

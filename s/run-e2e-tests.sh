@@ -260,7 +260,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-access $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-change-username $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-change-email $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-change-password $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-change-password.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-cannot-delete-openauth-email $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-activity-private.2browsers $args
 

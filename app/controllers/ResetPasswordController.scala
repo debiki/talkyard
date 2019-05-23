@@ -93,7 +93,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     s"to ${member.usernameHashId}, addr: ${member.primaryEmailAddress}"
 
 
-  def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 10) {
+  def sendResetPasswordEmail: Action[JsValue] = PostJsonAction(RateLimits.ResetPassword, maxBytes = 100) {
         request =>
     import request.{dao, siteId, theRequester => requester}
     val forUserId = (request.body \ "toUserId").as[UserId]
@@ -152,8 +152,11 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
 
   def showChooseNewPasswordPage(resetPasswordEmailId: String): Action[Unit] =
         GetActionAllowAnyoneRateLimited(RateLimits.NewPasswordPage) { request =>
-    SECURITY; COULD // check email type: ResetPassword or InvitePassword.
-    val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request)
+    // Tested here: TyT6HJ2RD1
+    // (Note that we don't login for real here — we don't set any session cookie.)
+    val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request,
+      // So the request to handleNewPasswordForm() below works:
+      mayLoginAgain = true)
     Ok(views.html.resetpassword.chooseNewPassword(
       SiteTpi(request),
       user = loginGrant.user,
@@ -166,11 +169,11 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
           allowAnyone = true) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
 
-    val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
+    val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request,
+      // So someone who might e.g. see the reset-pwd url in some old log file or wherever,
+      // will be unable to reuse it:
+      mayLoginAgain = false)
     request.dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)
-
-    SECURITY // SHOULD test if reset password email too old, expired
-    SECURITY // SHOULD mark reset password email as used, so cannot be used again
 
     // Log the user in and show password changed message.
     request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
@@ -181,11 +184,11 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   }
 
 
-  private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_])
-        : MemberLoginGrant = {
+  private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_],
+        mayLoginAgain: Boolean): MemberLoginGrant = {
     val loginAttempt = EmailLoginAttempt(
-      ip = request.ip, date = globals.now().toJavaDate, emailId = resetPasswordEmailId)
-    // TODO: Check email type !
+      ip = request.ip, date = globals.now().toJavaDate, emailId = resetPasswordEmailId,
+      mayLoginAgain = mayLoginAgain)
     val loginGrant =
       try request.dao.tryLoginAsMember(loginAttempt)
       catch {

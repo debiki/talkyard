@@ -168,7 +168,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 2,
-      forPeopleId: c.NewMembersId,
+      forPeopleId: c.AllMembersId,
       onCategoryId: newSeeBasicReplyFullCreateCatId,
       mayEditOwn: true,
       maySee: true,

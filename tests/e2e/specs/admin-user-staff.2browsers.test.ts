@@ -89,7 +89,6 @@ describe("admin-user-staff [TyT2GKFI594]", function() {
 
   it("Owen revokes Moderator", function() {
     owensBrowser.go(michaelsPageUrl);
-owensBrowser.debug();  // oops, group membership not uncached.
     owensBrowser.adminArea.user.revokeModerator();
   });
 
@@ -100,10 +99,8 @@ owensBrowser.debug();  // oops, group membership not uncached.
   });
 
   it("Michael can no longer edit Maria's posts", function() {
-owensBrowser.debug();
     michaelsBrowser.refresh();
     michaelsBrowser.topic.waitForPostNrVisible(c.BodyNr);
-owensBrowser.debug();
     assert(!michaelsBrowser.topic.canEditOrigPost());
   });
 

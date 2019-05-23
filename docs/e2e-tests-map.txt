@@ -631,6 +631,8 @@ notf prefs inherited:
           - notfs-prefs-inherit-own.2browsers.test.ts  TyT4RKK7Q2J
   inherits from groups and cats:
           - notfs-prefs-inherit-group.2browsers.test.ts  TyT5RKT2WJ04
+  chatty wins:
+          - notfs-prefs-inherit-group.2browsers.test.ts  TyT20MRPG2
 
 email notifications:  (5ABKR024)
   to staff about review tasks:  (502M7)

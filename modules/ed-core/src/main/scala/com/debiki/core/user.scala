@@ -1317,10 +1317,12 @@ case class PasswordLoginAttempt(
 }
 
 
-case class EmailLoginAttempt(
+@deprecated("Load email from Dao changePasswordCheckStrongEnough() instead, do everything from there")
+case class EmailLoginAttempt(  // [306AS13]
   ip: String,
   date: ju.Date,
-  emailId: String) extends MemberLoginAttempt {
+  emailId: String,
+  mayLoginAgain: Boolean) extends MemberLoginAttempt {
 }
 
 
