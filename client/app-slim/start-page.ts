@@ -37,6 +37,14 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
   rejectServiceWorkerPromise = reject;
 });
 
+// Add a `catch()` here already, otherwise the browser can log an
+// "uncaught exception: ..." error, if we intentionally reject the promise
+// because we've disabled service workers / they aren't supported.
+debiki.serviceWorkerPromise.catch(function(ex) {
+  if (ex !== 'ok')
+    console.log("Error subscribing to events via service worker", ex);
+});
+
 let serviceWorkerIsSameVersion = false;
 
 debiki.nowServiceWorkerIsRightVersion = function() {
@@ -292,18 +300,23 @@ function renderPageInBrowser() {
     debiki2.page.Hacks.processPosts();
     debiki2.page.PostsReadTracker.start();
 
-    debiki.serviceWorkerPromise.then(function(sw) {
-      // The service worker is of the same version as this page js code,
-      // we checked that here [SWSAMEVER].
-      sw.postMessage(<StartMagicTimeSwMessage> {
-        doWhat: SwDo.StartMagicTime,
-        startTimeMs: eds.testNowMs,
-        talkyardVersion: TalkyardVersion,
-      });
-    }).catch(function() {
-      // Fine. Message already logged. (This empty catch is needed, otherwise
-      // Chrome logs an error about an uncaught promise failure.)
-    }).finally(lastStep);
+    const swPromise = !eds.useServiceWorker ? debiki.serviceWorkerPromise :
+        debiki.serviceWorkerPromise.then(function(sw) {
+          // The service worker is of the same version as this page js code,
+          // we checked that here [SWSAMEVER].
+          sw.postMessage(<StartMagicTimeSwMessage> {
+            doWhat: SwDo.StartMagicTime,
+            startTimeMs: eds.testNowMs,
+            talkyardVersion: TalkyardVersion,
+          });
+        }).catch(function(ex) {
+          console.error("Error sending start-magic-time to service worker [TyESWMGCTM]", ex);
+        });
+
+    swPromise.finally(lastStep).catch(function(ex) {
+      if (ex !== 'ok')
+        console.error("Error in lastStep() [TyELSTSTP]", ex);
+    });
   });
 
   function lastStep() {
