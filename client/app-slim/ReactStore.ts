@@ -394,9 +394,18 @@ ReactDispatcher.register(function(payload) {
       return true;
   }
 
-  ReactStore.emitChange();             // old, for non-hooks based code
-  useStoreStateSetters.forEach(s => {  // new, hooks based code
-    s(store);
+  ReactStore.emitChange();   // old, for non-hooks based code ...
+
+  // Ensure new hooks based code cannot 'cheat' by updating things in-place:
+  // (Also, apparently React.useEffect sometimes won't run, unless `setStore()`
+  // below gets a new object — if reusing the same obj, the useEffect aren't called.)
+  // COULD clone more nested objs (not only `me`), to ensure no hooks code relies
+  // on in-place updates.
+  const meCopy: Myself = { ...store.me };
+  const storeCopy: Store = { ...store, me: meCopy };
+
+  useStoreStateSetters.forEach(setStore => {  // ... new, hooks based code
+    setStore(storeCopy);
   });
 
   store.quickUpdate = false;
