@@ -6,6 +6,7 @@ import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
 import { logUnusual, logError, logWarning, logMessage, printBoringToStdout, die, dieIf } from './log-and-die';
+import { string } from 'prop-types';
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -2359,9 +2360,13 @@ function pagesFor(browser) {
     },
 
 
-    forumTopicList: {
+    forumTopicList: {  // RENAME to topicList
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
+
+      goHere: (ps: { categorySlug?: string } = {}) => {
+        api.go('/latest/' + (ps.categorySlug || ''));
+      },
 
       waitUntilKnowsIsEmpty: function() {
         api.waitForVisible('#e2eF_NoTopics');
@@ -2461,8 +2466,13 @@ function pagesFor(browser) {
     },
 
 
-    forumCategoryList: {
+    forumCategoryList: {   // RENAME to categoryList
       categoryNameSelector: '.esForum_cats_cat .forum-title',
+
+      goHere: () => {
+        api.go('/categories');
+        api.forumCategoryList.waitForCategories();
+      },
 
       waitForCategories: function() {
         api.waitForVisible('.s_F_Cs');
@@ -2652,12 +2662,14 @@ function pagesFor(browser) {
         // browser.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: function() {
+      submit: function(ps: { closeStupidDialogAndRefresh?: true } = {}) {
         browser.click('#e2eAddUsD_SubmitB');
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
-        api.waitForVisible('.esStupidDlg');
-        browser.refresh();
+        if (ps.closeStupidDialogAndRefresh) {
+          api.waitForVisible('.esStupidDlg');
+          browser.refresh();
+        }
       }
     },
 
@@ -3517,11 +3529,37 @@ function pagesFor(browser) {
     },
 
 
-    groupsPage: {
+    groupListPage: {
+      goHere: (origin?: string) => {
+        api.go((origin || '') + '/-/groups/');
+        api.waitForVisible('.s_GP');
+      },
+
+      waitUntilLoaded: () => {
+        api.waitForVisible('.s_GP');
+      },
+
+      countCustomGroups: (): number => {
+        return api.count('.s_Gs-Custom .s_Gs_G');
+      },
+
       openTrustedMembersGroup: () => {
         api.waitForThenClickText('.s_Gs_G_L .esP_By', 'trusted_members');
         api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
       },
+
+      createGroup: (ps: { username: string, fullName: string }) => {
+        api.waitAndClick('.s_GP_CrGB');
+        api.waitAndSetValue('#te_CrGD_Un', ps.username);
+        api.waitAndSetValue('#te_CrGD_FN', ps.fullName);
+        api.waitAndClick('.s_CrGD .btn-primary');
+        api.waitForVisible('.e_AddMbrsB');
+      },
+
+      openGroupWithUsername: (username: string) => {
+        api.waitForThenClickText('.s_Gs_G .esP_By_U', username);
+        api.userProfilePage.groupMembers.waitUntilLoaded();
+      }
     },
 
 
@@ -3542,7 +3580,7 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      openNotfPrefsFor: function(who: string, origin?: string) {
+      openNotfPrefsFor: function(who: string, origin?: string) {  // oops, dupl (443300222), remove this
         api.go((origin || '') + `/-/users/${who}/preferences/notifications`);
         api.waitUntilLoadingOverlayGone();
       },
@@ -3618,6 +3656,40 @@ function pagesFor(browser) {
 
       clickSendMessage: function() {
         api.waitAndClick('.s_UP_SendMsgB');
+      },
+
+      goBackToGroups: () => {
+        api.waitAndClick('.esTopbar_custom_title a');
+      },
+
+      _makeGoHerePath: (username: string, ps: { isGroup?: true, origin?: string }, suffix: string) => {
+        api.go(`${ps.origin || ''}/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
+      },
+
+      groupMembers: {
+        goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
+          api.userProfilePage._makeGoHerePath(username, ps, '/members');
+        },
+
+        waitUntilLoaded: () => {
+          api.waitForExist('.s_G_Mbrs');
+        },
+
+        waitUntilMemberPresent: (username: string) => {
+          api.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
+        },
+
+        addOneMember: (username: string) => {
+          api.waitAndClick('.e_AddMbrsB');
+          api.addUsersToPageDialog.addOneUser(username);
+          api.addUsersToPageDialog.submit();
+          api.userProfilePage.groupMembers.waitUntilMemberPresent(username);
+        },
+
+        removeFirstMember: () => {
+          api.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
+          api.waitAndClick('.e_RmMbr');
+        }
       },
 
       activity: {
@@ -3772,9 +3844,20 @@ function pagesFor(browser) {
       },
 
       preferences: {  // RENAME to prefs
-        switchToEmailsLogins: function() {
+        goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
+          api.userProfilePage._makeGoHerePath(username, ps, '/preferences');
+        },
+
+        switchToEmailsLogins: function() {  // RENAME to switchToAccount
           api.waitAndClick('.s_UP_Prf_Nav_EmLgL');
-          api.waitForVisible('.s_UP_EmLg_EmL');
+          if (api.urlPath().startsWith(c.UsersUrlPrefix)) {
+            // Wait for user emails loaded.
+            api.waitForVisible('.s_UP_EmLg_EmL');
+          }
+          else {
+            // Currently (May 2019) just this section with a delete button.
+            api.waitForVisible('.s_UP_EmLg');
+          }
           api.waitUntilLoadingOverlayGone();
         },
 
@@ -3828,6 +3911,10 @@ function pagesFor(browser) {
         // ---- /END should be wrapped in `about { .. }`.
 
         notfs: {
+          goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {  // oops, dupl (443300222), keep this
+            api.userProfilePage._makeGoHerePath(username, ps, '/preferences/notifications');
+          },
+
           setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
             // The site notfs btn is the topmost one.
             api.waitAndClickFirst('.dw-notf-level');
@@ -3856,7 +3943,7 @@ function pagesFor(browser) {
           },
         },
 
-        emailsLogins: {
+        emailsLogins: {   // RENAME to `account`
           getEmailAddress: function() {
             api.waitForVisible('.s_UP_EmLg_EmL_It_Em');
             return browser.getText('.s_UP_EmLg_EmL_It_Em');
@@ -3919,6 +4006,13 @@ function pagesFor(browser) {
 
           makeOtherEmailPrimary: function() {
             api.waitAndClick('.e_MakeEmPrimaryB');
+          },
+
+          deleteAccount: () => {
+            api.rememberCurrentUrl();
+            api.waitAndClick('.e_DlAcct');
+            api.waitAndClick('.e_SD_SecB');
+            api.waitForNewUrl();
           }
         }
       }
@@ -5174,7 +5268,7 @@ function pagesFor(browser) {
       addPeopleToPageViaContextbar(usernames: string[]) {
         api.contextbar.clickAddPeople();
         _.each(usernames, api.addUsersToPageDialog.addOneUser);
-        api.addUsersToPageDialog.submit();
+        api.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
         _.each(usernames, api.contextbar.assertUserPresent);
       }
     }

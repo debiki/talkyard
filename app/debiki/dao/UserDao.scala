@@ -18,7 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.EdHttp.{throwBadRequest, throwForbidden, throwForbiddenIf, throwNotFound}
+import debiki.EdHttp.{throwBadRequest, throwBadRequestIf, throwForbidden, throwForbiddenIf, throwNotFound}
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
@@ -739,6 +739,16 @@ trait UserDao {
   }
 
 
+  def getTheGroupOrThrowClientError(groupId: UserId): Group = {
+    throwBadRequestIf(groupId <= MaxGuestId, "TyE30KMRAK", s"User $groupId is a guest")
+    getParticipant(groupId) match {
+      case Some(g: Group) => g
+      case Some(x) => throwForbidden("TyE20JMRA5", s"Not a group, but a ${classNameOf(x)}")
+      case None => throwNotFound("TyE02HMRG", s"No member with id $groupId")
+    }
+  }
+
+
   def getTheGroup(groupId: UserId): Group = {
     getGroup(groupId).getOrElse(throw UserNotFoundException(groupId))
   }
@@ -883,7 +893,7 @@ trait UserDao {
     if (groupId == Group.EveryoneId)
       return None
 
-    val group = getTheGroup(groupId)
+    val group: Group = getTheGroupOrThrowClientError(groupId)
     val requestersGroupIds = getOnesGroupIds(requester)
     if (!requester.isStaff && !requestersGroupIds.contains(groupId))  // or if is manager [GRPMAN]
       return None

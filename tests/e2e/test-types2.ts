@@ -396,6 +396,7 @@ interface TwoPagesTestForum extends EmptyTestForum {
   categories: {
     categoryA: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
+    specificCategory: CategoryJustAdded;
   };
 }
 

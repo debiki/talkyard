@@ -695,7 +695,7 @@ const AccountTabForGroup = React.createFactory<any>(function(props: { member: Gr
   const dangerZone = !me.isAdmin ? null : (    // +  || group.isDeleted
     rFragment({},
       r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
-      Button({ onClick: deleteGroup }, "Delete this group"))); //  I18N  t.upp.DeleteAccount)));
+      Button({ onClick: deleteGroup, className: 'e_DlAcct' }, "Delete this group"))); //  I18N  t.upp.DeleteAccount)));
 
   return (
     r.div({ className: 's_UP_EmLg' },

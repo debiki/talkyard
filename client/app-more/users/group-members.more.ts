@@ -70,11 +70,11 @@ export const GroupMembers = React.createFactory<any>(function(props) {
         "Add Members");  // I18N
 
   const memberElems = members.map((m: Participant) => {
-     return r.li({ key: m.id },
-        LinkUnstyled({ to: UsersRoot + m.username },
+     return r.li({ key: m.id, className: 's_G_Mbrs_Mbr' },
+        LinkUnstyled({ to: UsersRoot + m.username, className: 's_G_Mbrs_Mbr_L' },
           UserName({ user: m, store, makeLink: false, onClick: null })),
-        builtInOrNotStaff ? null : utils.ModalDropdownButton({ title: "Manage ..." },  // I18N
-          Button({ className: '', onClick: () => removeMember(m.id) },
+        builtInOrNotStaff ? null : utils.ModalDropdownButton({ title: "Manage ...", className: 'e_MngMbr' },  // I18N
+          Button({ className: 'e_RmMbr', onClick: () => removeMember(m.id) },
             "Remove")));   // I18N
   });
 

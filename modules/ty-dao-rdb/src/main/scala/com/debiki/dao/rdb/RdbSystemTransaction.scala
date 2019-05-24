@@ -875,6 +875,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       delete from user_stats3
       delete from usernames3
       delete from user_emails3
+      delete from group_participants3
       delete from users3
       delete from hosts3
       delete from sites3

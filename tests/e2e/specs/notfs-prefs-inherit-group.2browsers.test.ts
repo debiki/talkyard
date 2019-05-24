@@ -118,7 +118,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
   });
 
   it("... click click", () => {
-    owensBrowser.groupsPage.openTrustedMembersGroup();
+    owensBrowser.groupListPage.openTrustedMembersGroup();
   });
 
   it("... to notf settings", () => {

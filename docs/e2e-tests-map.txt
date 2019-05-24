@@ -120,6 +120,17 @@ profile page -
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  [TyT4AR8GFAH]
 
+  notf prefs for groups,
+  add/remove group members:
+          - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+
+groups:
+  list/create/delete groups,
+  add/remove members,
+  conf group cat notf prefs,
+  inherit group's notf prefs,
+  override group's notf prefs:
+          - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
 
 invites -
   before accepts:
@@ -631,8 +642,10 @@ notf prefs inherited:
           - notfs-prefs-inherit-own.2browsers.test.ts  TyT4RKK7Q2J
   inherits from groups and cats:
           - notfs-prefs-inherit-group.2browsers.test.ts  TyT5RKT2WJ04
+          - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
   chatty wins:
           - notfs-prefs-inherit-group.2browsers.test.ts  TyT20MRPG2
+          - notf-prefs-custom-groups.2browsers.test.ts   TyT05NMSS4
 
 email notifications:  (5ABKR024)
   to staff about review tasks:  (502M7)

@@ -220,6 +220,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       delete from user_stats3 where site_id = ?
       delete from usernames3 where site_id = ?
       delete from user_emails3 where site_id = ?
+      delete from group_participants3 where site_id = ?
       delete from users3 where site_id = ?
       delete from hosts3 where site_id = ?
       """).trim.split("\n")

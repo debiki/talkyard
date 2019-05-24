@@ -478,6 +478,8 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
     var conn2: js.Connection = null
     var pstmt: js.PreparedStatement = null
     var committed = false
+    // Nice for verifying if using the cache, only:
+    // System.out.println(o"***DB EXEC***: ${query.replaceAll("\n", " ")}")
     try {
       conn2 =
         if (conn ne null) conn
@@ -521,6 +523,8 @@ class Rdb(val readOnlyDataSource: jxs.DataSource, val readWriteDataSource: jxs.D
          stmt: String, batchValues: List[List[AnyRef]], batchSize: Int = 100)
          (implicit conn: js.Connection): Seq[Array[Int]] = {
     assert(batchSize > 0)
+    // Nice for verifying if using the cache, only:
+    //System.out.println(o"***DB BATCH***: ${stmt.replaceAll("\n", " ")}")
     val isAutonomous = conn eq null
     var conn2: js.Connection = null
     var pstmt: js.PreparedStatement = null

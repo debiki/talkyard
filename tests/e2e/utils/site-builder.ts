@@ -233,11 +233,22 @@ function buildSite(site?: SiteData) {
         aboutPageText: "Staff only category description.",
       });
 
+      // A "Specific Category".
+      const specificCategoryId = 4;
+      forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: specificCategoryId,
+        parentCategoryId: forumPage.categoryId,
+        name: "Specific Category",
+        slug: 'specific-category',
+        aboutPageText: "The Specific Category description.",
+      });
+
       // ---- Permissions on categories
 
       // Staff only:
+      const staffPermsId = 3; // 1 & 2 = for the default category
       site.permsOnPages.push({
-        id: 3,
+        id: staffPermsId,
         forPeopleId: c.StaffId,
         onCategoryId: forum.categories.staffOnlyCategory.id,
         mayEditPage: true,
@@ -251,6 +262,9 @@ function buildSite(site?: SiteData) {
         maySee: true,
         maySeeOwn: true,
       });
+
+      // The specific category:
+      api.addDefaultCatPerms(site, specificCategoryId, staffPermsId + 1);
 
       // ---- Two pages
 

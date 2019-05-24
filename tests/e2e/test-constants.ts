@@ -98,6 +98,8 @@ export = {
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
   SsoTestPath: '/-/sso-test',
+  UsersUrlPrefix: '/-/users/',
+  GroupsUrlPrefix: '/-/groups/',
   WatchbarHomeLinkTitle: 'Home',
   // ' --viagra-test-123--' makes Akismet always claim the post is spam.
   AlwaysSpamText: '--viagra-test-123--',
