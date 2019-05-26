@@ -951,7 +951,7 @@ export const Editor = createComponent({
 
   saveStuff: function() {
     const isReplying = this.state.replyToPostNrs.length > 0;
-    const loginToWhat = eds.isInIframe && isReplying ?
+    const loginToWhat = eds.isInEmbeddedEditor && isReplying ?
       LoginReason.PostEmbeddedComment : LoginReason.SubmitEditorText;
 
     // Email verification shouldn't be needed immediately, checked by this constraint:

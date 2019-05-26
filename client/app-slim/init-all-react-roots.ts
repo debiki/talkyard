@@ -112,7 +112,9 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   else {
     // Compare with [2FKB5P].
 
-    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe; // CLEAN_UP always false? remove DO_AFTER 2018-09-01? [2KBFU4]
+    // (Currently always false, however maybe start using, if adding options for hiding
+    // nav buttons, if in emb forum iframe?)
+    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;
     // @ifdef DEBUG
     dieIf(isEmbCmts, 'TyE2RKBP3');
     // @endif

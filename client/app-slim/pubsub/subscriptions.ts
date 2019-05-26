@@ -146,7 +146,7 @@ function subscribeToServerEventsDirectly(me: Myself) {
   // Or maybe server-sent-events [sse].
   // And because 2) the aborted poll requests, result in error messages in the dev
   // console, possibly making technical blog writers confused.
-  if (eds.isInIframe)
+  if (isInSomeEmbCommentsIframe())
     return;
 
   Server.sendLongPollingRequest(me.id, (response) => {

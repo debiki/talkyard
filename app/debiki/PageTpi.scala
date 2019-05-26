@@ -148,7 +148,6 @@ class SiteTpi protected (
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
-      anyPageRole = anyCurrentPageRole,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
       isInLoginWindow = isInLoginWindow,
       isAdminApp = isAdminApp,

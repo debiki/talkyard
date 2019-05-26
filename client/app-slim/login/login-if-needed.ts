@@ -49,6 +49,8 @@ export function loginIfNeededReturnToAnchor(
     success();
   }
   else if (eds.isInIframe) {
+    // ... or only if isInSomeEmbCommentsIframe()?
+
     // (Previously, a Chrome 63 bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
     // required an ugly workaround here: to poll and see if a session cookie suddenly appeared.
     // DO_AFTER Remove this comment 2019-06-01? [4PKGTEW20])

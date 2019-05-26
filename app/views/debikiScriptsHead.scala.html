@@ -15,15 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, siteId: Int,
-  // CLEAN_UP remove anyPageRole, they're in the store json already, don't dupl!
-  anyPageRole: Option[com.debiki.core.PageType],
-  isInLoginWindow: Boolean,
-  isAdminApp: Boolean,
+@(tpi: debiki.SiteTpi, siteId: Int, isInLoginWindow: Boolean, isAdminApp: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import tpi.globals
 @import com.debiki.core.PageType.InfoPageMaxId
+@import com.debiki.core.PageType.EmbeddedComments
 @import org.owasp.encoder.Encode
 
 @altPageIdOrUndefined = @{
@@ -114,7 +111,12 @@ _store.currentPage = _cp; @* Is set to {} in the embedded editor [2BK4P3R] *@
 var _isInIframe;
 try { _isInIframe = window.self !== window.top; }
 catch (e) { _isInIframe = true; }
-if (_isInIframe) _doc.className += ' s_InIframe';
+
+var _isInEmbCmtsIframe = (_cp || {}).pageRole === @{ EmbeddedComments.toInt } && _isInIframe;
+
+@* This css class hides the topbar and sidebars — they'd be confusing in an embedded
+blog comments discussion section.  COULD RENAME to s_InEmbCmtsIframe ? *@
+if (_isInEmbCmtsIframe) _doc.className += ' s_InIframe';
 
 @* In FF, in an embedded comments iframe, this error might happen, when doing getItem(..):  [7IWD20ZQ1]
   "SecurityError: The operation is insecure"
@@ -207,7 +209,7 @@ var eds = {
   isInLoginWindow: @isInLoginWindowBoolStr,
   isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,@* broken ?? checks in *iframe* ?? *@
   isInIframe: _isInIframe,
-  isInEmbeddedCommentsIframe: @{ if (anyPageRole.isDefined) "_isInIframe" else "false" },
+  isInEmbeddedCommentsIframe: _isInEmbCmtsIframe,
   isInAdminArea: @{ if (isAdminApp) "true" else "false" },
   embeddingOrigin: @Html(embeddingOriginOrUndefined),
   embeddingUrl: @Html(embeddingUrlOrUndefined),

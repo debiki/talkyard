@@ -144,6 +144,9 @@ export function isCommunitySite(): boolean {
 }
 
 
+export function isInSomeEmbCommentsIframe(): boolean {
+  return eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor;
+}
 
 /**
  * Finds the main embedded comments window, where the per page temporary xsrf token

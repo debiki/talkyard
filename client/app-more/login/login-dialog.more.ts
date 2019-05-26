@@ -102,7 +102,7 @@ const LoginDialog = createClassAndFactory({
   open: function(isSignUp: boolean, loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
-    dieIf(eds.isInIframe, 'Login dialog in iframe [EdE5KER2]');
+    dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
 
     // The login reason might be a stringified number from the url, so try to convert to enum.
     // Some login reasons are enums, others are strings. CLEAN_UP: Change the strings to enums.

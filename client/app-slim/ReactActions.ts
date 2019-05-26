@@ -79,7 +79,7 @@ export function loadMyself(afterwardsCallback?) {
   // deleted by the server.)
 
   Server.loadMyself((user) => {
-    if (eds.isInIframe) {
+    if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in.
       window.parent.postMessage(JSON.stringify([
         'justLoggedIn', { user }]),  // [JLGDIN]
