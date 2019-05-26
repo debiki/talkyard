@@ -1138,7 +1138,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // (Sometimes people subscribe to comments for embedded blog comments discussions,
     // before any comments or Like votes have been submitted — then this is where the
     // emb page needs to get lazy-created, so the notf prefs has a page id to refer to.)
-    val (anyPageIdx, isNewEmbCmtsPage) =
+    val (anyPageId: Option[PageId], isNewEmbCmtsPage: Boolean) =
       if (anyPageIdMaybeEmptyPage is EmptyPageId) {
         val (newPageId: PageId, newPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
           anyPageId = Some(EmptyPageId), anyAltPageId = anyAltPageId,
@@ -1151,7 +1151,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val newPref = Try(
       PageNotfPref(
-        memberId, pageId = anyPageIdx, wholeSite = wholeSite.getOrElse(false),
+        memberId, pageId = anyPageId, wholeSite = wholeSite.getOrElse(false),
         pagesInCategoryId = pagesInCategoryId,
         notfLevel = newNotfLevel.getOrElse(NotfLevel.DoesNotMatterHere)))
           .getOrIfFailure(ex => throwBadRequest("TyE2ABKRP0", ex.getMessage))
@@ -1164,12 +1164,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     OkSafeJson(Json.obj(
-      "newlyCreatedPageId" -> (if (isNewEmbCmtsPage) JsString(anyPageIdx.get) else JsNull)))
+      "newlyCreatedPageId" -> (if (isNewEmbCmtsPage) JsString(anyPageId.get) else JsNull)))
   }
 
 
   def loadGroups: Action[Unit] = GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
-    val groups = request.dao.getGroupsAndStats(forWho = request.whoOrUnknown)
+    val groups = request.dao.getGroupsAndStatsReqrMaySee(request.requesterOrUnknown)
     OkSafeJson(JsArray(groups map JsGroupAndStats))
   }
 
@@ -1180,7 +1180,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     throwForbiddenIf(username.isEmpty, "TyE205MA6", "No username specified")
 
-    request.dao.createGroup(username, fullName) match {
+    request.dao.createGroup(username, fullName = fullName, request.reqrId) match {
       case Bad(errorMessage) =>
         throwForbidden("TyE603MRST", errorMessage)
       case Good(group) =>
@@ -1191,14 +1191,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def deleteGroup: Action[JsValue] = AdminPostJsonAction(maxBytes = 2000) { request =>
     val groupIdToDelete: UserId = (request.body \ "groupIdToDelete").as[UserId]
-    request.dao.deleteGroup(groupIdToDelete)
+    request.dao.deleteGroup(groupIdToDelete, request.reqrId)
     Ok
   }
 
 
   def listGroupMembers(groupId: UserId): Action[Unit] =
         GetActionRateLimited(RateLimits.ReadsFromDb) { request =>
-    val maybeMembers = request.dao.listGroupMembers(groupId, request.requesterOrUnknown)
+    val maybeMembers = request.dao.listGroupMembersIfReqrMaySee(groupId, request.requesterOrUnknown)
     val membersJson: JsValue = maybeMembers.map(ms => JsArray(ms map JsUser)).getOrElse(JsFalse)
     OkSafeJson(membersJson)
   }
@@ -1207,7 +1207,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def addGroupMembers: Action[JsValue] = StaffPostJsonAction(maxBytes = 5000) { request =>
     val groupId = (request.body \ "groupId").as[UserId]
     val memberIds = (request.body \ "memberIds").as[Set[UserId]]
-    request.dao.addGroupMembers(groupId, memberIds)
+    request.dao.addGroupMembers(groupId, memberIds, request.reqrId)
     Ok
   }
 
@@ -1215,7 +1215,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def removeGroupMembers: Action[JsValue] = StaffPostJsonAction(maxBytes = 5000) { request =>
     val groupId = (request.body \ "groupId").as[UserId]
     val memberIds = (request.body \ "memberIds").as[Set[UserId]]
-    request.dao.removeGroupMembers(groupId, memberIds)
+    request.dao.removeGroupMembers(groupId, memberIds, request.reqrId)
     Ok
   }
 
@@ -1245,7 +1245,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
     throwNoUnless(Authz.maySeePage(
@@ -1335,7 +1335,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       categoriesOnlyRequesterMaySee: Seq[Category]) =
           categoriesRequesterMaySee.partition(c => categoryIdsMemberMaySee.contains(c.id))
 
-    val groups = dao.getGroups(requester)
+    val groups = dao.getGroupsReqrMaySee(requester)
 
     OkSafeJson(Json.obj(  // OwnPageNotfPrefs
       "id" -> memberId,

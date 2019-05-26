@@ -160,8 +160,8 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       case None =>
         throw new QuickMessageException("Email hasn't been sent [TyEPWRST0SNT]")
       case Some(emailSentDate) =>
-        if (emailSentDate.getTime + OneDayInMillis < loginAttempt.date.getTime)
-          throw new QuickMessageException("Reset password link expired (after 24 hours) [TyEPWRSTEXP_]")
+        if (emailSentDate.getTime + 36 * OneHourInMillis < loginAttempt.date.getTime)
+          throw new QuickMessageException("Reset password link expired (after 36 hours) [TyEPWRSTEXP_]")
     }
 
     val user = loadUser(email.toUserId.get) getOrElse {
@@ -173,7 +173,8 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       throw EmailAddressChangedException(email, user)
 
 
-    updateSentEmail(email.copy(canLoginAgain = Some(loginAttempt.mayLoginAgain)))
+    if (!loginAttempt.mayLoginAgain)
+      updateSentEmail(email.copy(canLoginAgain = Some(false)))
 
     val idtyWithId = IdentityEmailId(id = emailId, userId = user.id, emailSent = Some(email))
     MemberLoginGrant(Some(idtyWithId), user, isNewIdentity = false, isNewMember = false)

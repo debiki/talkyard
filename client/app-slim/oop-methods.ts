@@ -137,8 +137,8 @@ export function pageNotfPrefTarget_findEffPref(
     if (myPageData.myPageNotfPref) {
       result.notfLevel = myPageData.myPageNotfPref.notfLevel;
       // Continue below to find out if we're also inheriting a notf level
-      // from a category or group (although then it's not in use, since we've
-      // explicitly specified a notf level for this page).
+      // from a category or group. (If so, then it's not in use — since we've
+      // now found a notf level explicitly for this page, on the line above).
     }
 
     const maxGroupsPref = maxPref(myPageData.groupsPageNotfPrefs);

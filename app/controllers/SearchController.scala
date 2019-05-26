@@ -53,7 +53,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val rawQuery = (request.body \ "rawQuery").as[String]
     val searchQuery = parseRawSearchQueryString(rawQuery, categorySlug => {
       // BUG (need not fix now): What if many sub communities, with the same cat slug? [4GWRQA28]
-      request.dao.loadCategoryBySlug(categorySlug).map(_.id)
+      request.dao.getCategoryBySlug(categorySlug).map(_.id)
     })
     request.dao.fullTextSearch(searchQuery, None, request.user) map {
       searchResults: Seq[PageAndHits] =>

@@ -24,7 +24,9 @@
 
 
 export function PageNotfPrefButton(props: {
-      target: PageNotfPrefTarget, store: Store, ownPrefs: OwnPageNotfPrefs, ppsById?: PpsById,
+      target: PageNotfPrefTarget, store: Store,
+      ownPrefs: OwnPageNotfPrefs,  // RENAME to membersPrefs
+      ppsById?: PpsById,
       saveFn?: (notfLevel: PageNotfLevel) => void }) {
   const effPref = pageNotfPrefTarget_findEffPref(props.target, props.store, props.ownPrefs);
   return (

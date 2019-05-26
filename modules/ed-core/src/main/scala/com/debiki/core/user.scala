@@ -348,6 +348,8 @@ case object Participant {
   def isBuiltInGroup(id: UserId): Boolean =
     Group.AllMembersId <= id && id <= Group.AdminsId
 
+  def isBuiltInParticipant(id: UserId): Boolean = MaxCustomGuestId < id && id < LowestAuthenticatedUserId
+
   def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
 
@@ -1201,7 +1203,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername
-  override def nameOrUsername: String = if (name.isEmpty) theUsername else name.get
+  override def nameOrUsername: String = name getOrElse theUsername
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
 
@@ -1249,7 +1251,7 @@ object Group {
   val BasicMembersId = 12
   val FullMembersId = 13
   val TrustedMembersId = 14
-  val RegularMembersId = 15
+  val RegularMembersId = 15  ; RENAME // to TrustedRegulars. In typescript  model.ts  too
   val CoreMembersId = 16
 
   /** Includes all admins and all moderators. */
@@ -1261,6 +1263,10 @@ object Group {
 
   val AdminsId = 19
 
+  val NumBuiltInGroups: Int = AdminsId - EveryoneId + 1
+
+  def isBuiltInGroupId(groupId: UserId): Boolean = EveryoneId <= groupId && groupId <= AdminsId
+  def isStaffGroupId(groupId: UserId): Boolean = StaffId <= groupId && groupId <= AdminsId
 
   dieUnless(AllMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")

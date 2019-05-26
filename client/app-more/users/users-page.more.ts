@@ -190,7 +190,7 @@ const UserPageComponent = createReactClass(<any> {
     const linkStart = pathToUser + '/';
 
     const membersNavItem = !user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'members', className: 'e_UP_MembrsB' }, "Members"); // I18N
+      LiNavLink({ to: linkStart + 'members', className: 'e_UP_MbrsB' }, "Members"); // I18N
 
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
@@ -350,7 +350,7 @@ const AvatarAboutAndButtons = createComponent({
     }
 
     const deletedInfo = !isGone ? null :
-      r.p({}, t.upp.DeactOrDeld);
+      r.p({ className: 'e_ActDd' }, t.upp.DeactOrDeld);
 
     const isMe = me.id === user.id;
 

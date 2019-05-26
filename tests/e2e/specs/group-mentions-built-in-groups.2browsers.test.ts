@@ -46,7 +46,7 @@ let forum: EmptyTestForum;
 const topicTitle = 'topicTitle';
 
 
-describe("group-mentions.2browsers  TyT4AWJL208R", () => {
+describe("group-mentions-built-in.2browsers  TyT4AWJL208R", () => {
 
   it("import a site", () => {
     const builder = buildSite();

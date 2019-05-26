@@ -148,7 +148,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
-        if userOrGroup.id != newPost.createdById  // poster mentions him/herself?
+        if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
       } {
         makeNewPostNotfs(
@@ -253,6 +253,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         (Set(toUserMaybeGroup.id), notfType)
       }
       else {
+        // Is a group mention / a reply to a post by a group.
+
         val isMention = notfType == NotificationType.Mention
         val groupId = toUserMaybeGroup.id
 

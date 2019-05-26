@@ -56,7 +56,6 @@ trait UsernamesSiteDaoMixin extends SiteTransaction {
 
 
   def deleteUsernameUsagesForMemberId(memberId: UserId): Int = {
-    TESTS_MISSING
     val statement = s"""
       delete from usernames3
       where site_id = ?

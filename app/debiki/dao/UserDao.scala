@@ -152,9 +152,7 @@ trait UserDao {
       (newUser, invite, false)
     }
 
-    uncacheBuiltInGroups()
-    // + other groups this new member might auto join.
-    // + uncache, when deleting / anonymizing member.
+    uncacheBuiltInGroups()  // later: uncache any groups this new member auto joined. [inv2groups]
 
     result
   }
@@ -341,7 +339,7 @@ trait UserDao {
 
 
   def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
-    readWriteTransaction { tx =>
+    val anyChangedGuest: Option[Guest] = readWriteTransaction { tx =>
       val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
       }
@@ -349,11 +347,14 @@ trait UserDao {
       blockGuestImpl(auditLogEntry.browserIdData, auditLogEntry.doerId,
           numDays, threatLevel, blockerId)(tx)
     }
+    anyChangedGuest.foreach(g => removeUserFromMemCache(g.id))
   }
 
 
+  /** Returns any guest whose threat level got changed and should be uncached.
+    */
   def blockGuestImpl(browserIdData: BrowserIdData, guestId: UserId, numDays: Int,
-        threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTransaction) {
+        threatLevel: ThreatLevel, blockerId: UserId)(tx: SiteTransaction): Option[Guest] = {
 
       if (!Participant.isGuestId(guestId))
         throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
@@ -393,27 +394,34 @@ trait UserDao {
 
       // Also set the user's threat level, if the new level is worse.
       tx.loadGuest(guestId) foreach { guest =>
-        if (!guest.lockedThreatLevel.exists(_.toInt > threatLevel.toInt)) {
+        if (!guest.lockedThreatLevel.exists(_.toInt >= threatLevel.toInt)) {
+          // The new threat level is worse than the previous (if any).
           tx.updateGuest(
             guest.copy(lockedThreatLevel = Some(threatLevel)))
+          return Some(guest)
         }
       }
+      None
   }
 
 
   def unblockGuest(postNr: PostNr, unblockerId: UserId) {
-    readWriteTransaction { tx =>
+    val anyChangedGuest = readWriteTransaction { tx =>
       val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postNr) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
       tx.unblockIp(auditLogEntry.browserIdData.inetAddress)
       auditLogEntry.browserIdData.idCookie foreach tx.unblockBrowser
-      tx.loadGuest(auditLogEntry.doerId) foreach { guest =>
-        if (guest.lockedThreatLevel.isDefined) {
+      val anyGuest = tx.loadGuest(auditLogEntry.doerId)
+      anyGuest flatMap { guest =>
+        if (guest.lockedThreatLevel.isEmpty) None
+        else {
           tx.updateGuest(guest.copy(lockedThreatLevel = None))
+          Some(guest)
         }
       }
     }
+    anyChangedGuest.foreach(g => removeUserFromMemCache(g.id))
   }
 
 
@@ -496,8 +504,7 @@ trait UserDao {
     }
 
     uncacheBuiltInGroups()
-    // Also uncache any custom groups, if auto-joins any such groups here.
-
+    // Also uncache any custom groups, if auto-joins any such groups here.  [inv2groups]
     memCache.fireUserCreated(loginGrant.user)
     loginGrant
   }
@@ -544,10 +551,7 @@ trait UserDao {
   def createUserForExternalSsoUser(userData: NewPasswordUserData, botIdData: BrowserIdData,
         tx: SiteTransaction): UserInclDetails = {
     dieIf(userData.password.isDefined, "TyE7KHW2G")
-    val member = createPasswordUserImpl(userData, botIdData, tx)
-    uncacheBuiltInGroups()
-    memCache.fireUserCreated(member.briefUser)
-    member
+    createPasswordUserImpl(userData, botIdData, tx)
   }
 
 
@@ -576,12 +580,11 @@ trait UserDao {
 
     tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
     user
-    // uncache the Everyone and All Members groups. From the caller?
   }
 
 
   private def makeCreateUserAuditEntry(member: UserInclDetails, browserIdData: BrowserIdData,
-                                       now: When): AuditLogEntry = {
+      now: When): AuditLogEntry = {
     AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
@@ -719,7 +722,7 @@ trait UserDao {
   }
 
 
-  def loadUsersWithPrefix(prefix: String): immutable.Seq[User] = {
+  def loadUsersWithPrefix(prefix: String): immutable.Seq[User] = {  RENAME // to ...WithUsernamePrefix
     readOnlyTransaction(_.loadUsersWithPrefix(prefix))
   }
 
@@ -740,7 +743,8 @@ trait UserDao {
 
 
   def getTheGroupOrThrowClientError(groupId: UserId): Group = {
-    throwBadRequestIf(groupId <= MaxGuestId, "TyE30KMRAK", s"User $groupId is a guest")
+    COULD // instead lookup all groups: allGroupsKey  [LDALGRPS]
+    throwBadRequestIf(groupId <= MaxGuestId, "TyE30KMRAK", s"User id $groupId is a guest id")
     getParticipant(groupId) match {
       case Some(g: Group) => g
       case Some(x) => throwForbidden("TyE20JMRA5", s"Not a group, but a ${classNameOf(x)}")
@@ -755,6 +759,8 @@ trait UserDao {
 
 
   def getGroup(groupId: UserId): Option[Group] = {
+    COULD // instead lookup all groups, using: allGroupsKey, insert into the cache,  [LDALGRPS]
+    // and then return. Instead of loading just one group?
     require(groupId >= Participant.LowestMemberId, "EsE4GKX24")
     getParticipant(groupId) map {
       case _: User => throw GotANotGroupException(groupId)
@@ -847,7 +853,9 @@ trait UserDao {
   }
 
 
-  def getGroups(requester: Participant): Vector[Group] = {
+  def getGroupsReqrMaySee(requester: Participant): Vector[Group] = {
+    BUG // risk: ?? Maybe shouldn't cache Group:s, but group ids ??  [LDALGRPS]
+    // So cannot get different results if loading groups via  allGroupsKey, or via  pptKey
     val tooManyGroups = memCache.lookup[Vector[Group]](
       allGroupsKey,
       orCacheAndReturn = {
@@ -862,25 +870,26 @@ trait UserDao {
     val groups =
       if (requester.isStaff) tooManyGroups
       else tooManyGroups
-        // Later: .filter(g => g.isVisibleFor(forWho) || requestersGroupIds.contains(g.id))
+        // Later: .filter(g => g.isVisibleFor(requester) || requestersGroupIds.contains(g.id))
+        // but start with the names of all custom groups visible (although one might not
+        // be allowed to see their members)
 
     groups
   }
 
 
-  def getGroupsAndStats(forWho: Who): Vector[GroupAndStats] = {
-    val requester = getParticipantOrUnknown(forWho.id)
-    val groups = getGroups(requester)
+  def getGroupsAndStatsReqrMaySee(requester: Participant): Vector[GroupAndStats] = {
+    val groups = getGroupsReqrMaySee(requester)
     val groupsAndStats = groups map { group =>
-      GroupAndStats(group, getGroupStatsIfMaySee(group, requester))
+      GroupAndStats(group, getGroupStatsIfReqrMaySee(group, requester))
     }
     groupsAndStats
   }
 
 
-  private def getGroupStatsIfMaySee(group: Group, requester: Participant): Option[GroupStats] = {
+  private def getGroupStatsIfReqrMaySee(group: Group, requester: Participant): Option[GroupStats] = {
     // Hmm this counts not only users, but child groups too. [NESTDGRPS]
-    val members = listGroupMembers(group.id, requester) getOrElse {
+    val members = listGroupMembersIfReqrMaySee(group.id, requester) getOrElse {
       return None
     }
     Some(GroupStats(numMembers = members.length))
@@ -889,13 +898,21 @@ trait UserDao {
 
   /** Returns Some(the members), or, if one isn't allowed to know who they are, None.
     */
-  def listGroupMembers(groupId: UserId, requester: Participant): Option[Vector[Participant]] = {
+  def listGroupMembersIfReqrMaySee(groupId: UserId, requester: Participant)
+        : Option[Vector[Participant]] = {
+    // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
+    // at built-in groups like Everyone or All Members.
     if (groupId == Group.EveryoneId)
       return None
 
     val group: Group = getTheGroupOrThrowClientError(groupId)
     val requestersGroupIds = getOnesGroupIds(requester)
-    if (!requester.isStaff && !requestersGroupIds.contains(groupId))  // or if is manager [GRPMAN]
+
+    // Let everyone see who the staff members are. That's important so one knows whom
+    // to trust about how the community functions?
+    // Later: configurable count/view-members per group settings.
+    // Later: or if is manager [GRPMAN]
+    if (!requester.isStaff && !requestersGroupIds.contains(groupId) && !Group.isStaffGroupId(groupId))
       return None
 
     lazy val members = memCache.lookup[Vector[Participant]](
@@ -906,17 +923,12 @@ trait UserDao {
         }
       }).get
 
-    if (requester.isStaff) {
+    if (requester.isStaffOrCoreMember) {
       Some(members)
     }
-    else if (group.id == Group.EveryoneId) {
-      // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
-      // at built-in groups like Everyone or All Members.
-      None
-    }
     else if (group.isBuiltIn && requester.effectiveTrustLevel.isBelow(TrustLevel.TrustedMember)) {
-      // For now, don't allow "anyone" to list almost all members in the whole forum, by looking
-      // at built-in groups like Everyone or All Members.
+      // For now, don't let not-yet-trusted members list all members in the whole forum
+      // (by looking at the All Members group members).
       None
     }
     else {
@@ -925,10 +937,13 @@ trait UserDao {
   }
 
 
-  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]) {
+  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId], reqrId: ReqrId) {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE206JKDT2", "Cannot add members to built-in automatic groups")
     readWriteTransaction { tx =>
+      throwForbiddenIf(memberIdsToAdd.contains(groupId),
+        "TyEGR2SELF", s"Cannot make group $groupId a member of itself")
+
       val newMembers = tx.loadParticipants(memberIdsToAdd)
       newMembers.find(_.isGroup) foreach { group =>
         // Currently trust level groups are already nested in each other — but let's
@@ -938,23 +953,50 @@ trait UserDao {
       newMembers.find(_.isGuest) foreach { guest =>
         throwForbidden("TyEGSTINGR", s"Cannot add guests to groups. Is a guest: ${guest.nameParaId}")
       }
+
+      // For now. Don't let a group become too large.
+      val oldMemberIds = tx.loadGroupMembers(groupId).map(_.id).toSet
+      val allMemberIdsAfter = oldMemberIds ++ memberIdsToAdd
+      val maxMembers = getLengthLimits().maxMembersPerCustomGroup
+      throwForbiddenIf(allMemberIdsAfter.size > maxMembers,
+        "TyE2MNYMBRS", s"Group $groupId would get more than $maxMembers members")
+
+      // Don't allow adding someone to very many groups — that could be a DoS attack.
+      val maxGroups = getLengthLimits().maxGroupsMemberCanJoin
+      val anyMemberInManyGroups = newMembers.find(member => {
+        if (oldMemberIds.contains(member.id)) false
+        else {
+          val membersCurrentGroupIds = tx.loadGroupIdsMemberIdFirst(member)
+          membersCurrentGroupIds.length >= maxGroups
+        }
+      })
+      anyMemberInManyGroups foreach { m =>
+        throwForbidden("TyEMBRIN2MNY", s"Member ${m.nameParaId} is in $maxGroups groups already, " +
+          "cannot add to more groups")
+      }
+
+      AUDIT_LOG
       tx.addGroupMembers(groupId, memberIdsToAdd)
     }
+    // Might need to uncache all pages where the members' names occur — if an is-member-of-group
+    // title will be shown, next to the members' names. [grp-mbr-title]
+
     uncacheOnesGroupIds(memberIdsToAdd)
     memCache.remove(groupMembersKey(groupId))
-    memCache.remove(allGroupsKey)  // why? not needed, remove?  (320505)
   }
 
 
-  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]) {
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId], reqrId: ReqrId) {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE8WKD2T0", "Cannot remove members from built-in automatic groups")
     readWriteTransaction { tx =>
+      AUDIT_LOG
       tx.removeGroupMembers(groupId, memberIdsToRemove)
     }
+    // Might need to uncache pages. [grp-mbr-title]
+
     uncacheOnesGroupIds(memberIdsToRemove)
     memCache.remove(groupMembersKey(groupId))
-    memCache.remove(allGroupsKey)  // why? not needed, remove?  (320505)
   }
 
 
@@ -965,7 +1007,7 @@ trait UserDao {
   }
 
 
-  private def uncacheBuiltInGroups() {
+  def uncacheBuiltInGroups() {
     import Group._
     uncacheGroupsMemberLists(
       Vector(EveryoneId, AllMembersId, BasicMembersId, FullMembersId,
@@ -981,15 +1023,15 @@ trait UserDao {
   }
 
 
-  def getOnesGroupIds(user: Participant): Vector[UserId] = {
-    user match {
+  def getOnesGroupIds(ppt: Participant): Vector[UserId] = {
+    ppt match {
       case _: Guest | UnknownParticipant => Vector(Group.EveryoneId)
       case _: User | _: Group =>
         memCache.lookup[Vector[UserId]](
-          onesGroupIdsKey(user.id),
+          onesGroupIdsKey(ppt.id),
           orCacheAndReturn = {
             readOnlyTransaction { tx =>
-              Some(tx.loadGroupIdsMemberIdFirst(user))
+              Some(tx.loadGroupIdsMemberIdFirst(ppt))
             }
           }).get
     }
@@ -1197,7 +1239,7 @@ trait UserDao {
 
     // Don't track system, superadmins, deleted users — they aren't real members.
     if (user.id < LowestTalkToMemberId)
-      return ReadMoreResult(0, false)
+      return ReadMoreResult(0, gotPromoted = false)
 
     COULD_OPTIMIZE // use Dao instead, so won't touch db. Also: (5ABKR20L)
     val result = readWriteTransaction { tx =>
@@ -1484,6 +1526,7 @@ trait UserDao {
     // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
+    var clearMemCacheAfterTx = false
 
     editMemberThrowUnlessSelfStaff2(preferences.userId, byWho, "TyE2WK7G4", "configure about prefs") {
         (tx, _, me) =>
@@ -1503,18 +1546,60 @@ trait UserDao {
 
       // Don't let people change their usernames too often.
       if (user.username != preferences.username) {
-        throwForbiddenIfBadUsername(preferences.username)
+        addUsernameUsageOrThrowClientError(user.id, newUsername = preferences.username, me = me, tx)
+      }
 
-        val usersOldUsernames: Seq[UsernameUsage] = tx.loadUsersOldUsernames(user.id)
+      // Changing address is done via UserController.setPrimaryEmailAddresses instead, not here
+      if (user.primaryEmailAddress != preferences.emailAddress)
+        throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
+
+      val userAfter = user.copyWithNewAboutPrefs(preferences)
+      try tx.updateUserInclDetails(userAfter)
+      catch {
+        case _: DuplicateUsernameException =>
+          throwForbidden("EdE2WK8Y4_", s"Username '${preferences.username}' already in use")
+      }
+
+      if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins ||
+        userAfter.summaryEmailIfActive != user.summaryEmailIfActive) {
+        tx.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
+      }
+
+      // Clear the page cache (by clearing all caches), if we changed the user's name.
+      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+      // uncache only those pages.
+      if (preferences.changesStuffIncludedEverywhere(user)) {
+        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
+        // Use markPagesWithUserAvatarAsStale ?
+        emptyCacheImpl(tx)
+        clearMemCacheAfterTx = true
+      }
+    }
+
+    if (clearMemCacheAfterTx) {
+      memCache.clearSingleSite(siteId)
+    }
+    removeUserFromMemCache(preferences.userId)
+  }
+
+
+  def addUsernameUsageOrThrowClientError(memberId: UserId, newUsername: String,
+          me: User, tx: SiteTransaction) {
+        dieIf(Participant.isGuestId(memberId), "TyE04MSR245")
+        throwForbiddenIf(Participant.isBuiltInParticipant(memberId),
+          "TyE3HMSTUG563", "Cannot rename built-in members")
+        throwForbiddenIfBadUsername(newUsername)
+
+        val usersOldUsernames: Seq[UsernameUsage] = tx.loadUsersOldUsernames(memberId)
 
         // [CANONUN] load both exact & canonical username, any match —> not allowed (unless one's own).
-        val previousUsages = tx.loadUsernameUsages(preferences.username)
+        val previousUsages = tx.loadUsernameUsages(newUsername)
 
         // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
-        val usagesByOthers = previousUsages.filter(_.userId != user.id)
+        val usagesByOthers = previousUsages.filter(_.userId != memberId)
         if (usagesByOthers.nonEmpty)
           throwForbidden("EdE5D0Y29_",
-            "That username is, or has been, in use by someone else. You cannot use it.")
+            s"The username '$newUsername' is, or has been, in use by someone else. You cannot use it.")
 
         val maxPerYearTotal = me.isStaff ? 20 | 9
         val maxPerYearDistinct = me.isStaff ? 8 | 3
@@ -1523,10 +1608,10 @@ trait UserDao {
             _.inUseFrom.daysBetween(tx.now) < 365)
         if (recentUsernames.length >= maxPerYearTotal)
           throwForbidden("DwE5FKW02",
-            "You have changed your username too many times the past year")
+            "You have changed the username too many times the past year")
 
         val recentDistinct = recentUsernames.map(_.usernameLowercase).toSet
-        def yetAnotherNewName = !recentDistinct.contains(preferences.username.toLowerCase)
+        def yetAnotherNewName = !recentDistinct.contains(newUsername.toLowerCase)
         if (recentDistinct.size >= maxPerYearDistinct && yetAnotherNewName)
           throwForbidden("EdE7KP4ZZ_",
             "You have changed to different usernames too many times the past year")
@@ -1538,40 +1623,11 @@ trait UserDao {
         }
 
         tx.insertUsernameUsage(UsernameUsage(
-          usernameLowercase = preferences.username.toLowerCase, // [CANONUN]
+          usernameLowercase = newUsername.toLowerCase, // [CANONUN]
           inUseFrom = tx.now,
           inUseTo = None,
-          userId = user.id,
+          userId = memberId,
           firstMentionAt = None))
-      }
-
-      // Changing address is done via UserController.setPrimaryEmailAddresses instead, not here
-      if (user.primaryEmailAddress != preferences.emailAddress)
-        throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
-
-      val userAfter = user.copyWithNewAboutPrefs(preferences)
-      try tx.updateUserInclDetails(userAfter)
-      catch {
-        case _: DuplicateUsernameException =>
-          throwForbidden("EdE2WK8Y4_", "Username already in use")
-      }
-
-      if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins ||
-          userAfter.summaryEmailIfActive != user.summaryEmailIfActive) {
-        tx.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
-      }
-
-      // Clear the page cache (by clearing all caches), if we changed the user's name.
-      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
-      // uncache only those pages.
-      if (preferences.changesStuffIncludedEverywhere(user)) {
-        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
-        // Use markPagesWithUserAvatarAsStale ?
-        emptyCacheImpl(tx)
-      }
-    }
-
-    removeUserFromMemCache(preferences.userId)
   }
 
 
@@ -1584,6 +1640,7 @@ trait UserDao {
       val group = tx.loadTheGroupInclDetails(preferences.groupId)
       val me = tx.loadTheUser(byWho.id)
       require(me.isStaff, "EdE5LKWV0")
+      dieIf(group.id == Group.AdminsId && !me.isAdmin, "TyE30HMTR24")
 
       val groupAfter = group.copyWithNewAboutPrefs(preferences)
 
@@ -1592,17 +1649,13 @@ trait UserDao {
       }
 
       if (groupAfter.theUsername != group.theUsername) {
-        throwForbiddenIfBadUsername(preferences.username)
-        unimplemented("Changing a group's username", "TyE2KBFU50")  // SHOULD fix now
-        // Need to: tx.updateUsernameUsage(usageStopped) — stop using current
-        // And: tx.insertUsernameUsage(UsernameUsage(   [CANONUN]
-        // See saveAboutMemberPrefs.
+        addUsernameUsageOrThrowClientError(group.id, groupAfter.theUsername, me = me, tx)
       }
 
       try tx.updateGroup(groupAfter)
       catch {
         case _: DuplicateUsernameException =>
-          throwForbidden("EdE2WK8Y4_", "Username already in use")
+          throwForbidden("EdED3ABLW2", s"Username '${groupAfter.theUsername}' already in use")
       }
 
       // If summary-email-settings were changed, hard to know which people were affected.
@@ -1620,7 +1673,7 @@ trait UserDao {
 
   def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who) {
     editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHW67", "change UI prefs") {
-        (tx, memberInclDetails, byWho) =>
+        (tx, memberInclDetails, _) =>
       tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
     }
     removeUserFromMemCache(memberId)
@@ -1656,11 +1709,17 @@ trait UserDao {
   }
 
 
-  def createGroup(username: String, fullName: Option[String]): Group Or ErrorMessage = {
+  def createGroup(username: String, fullName: Option[String], reqrId: ReqrId): Group Or ErrorMessage = {
     throwForbiddenIfBadFullName(fullName)
     throwForbiddenIfBadUsername(username)
 
     val result = readWriteTransaction { tx =>
+      // Too many groups could be a DoS attack.
+      val currentGroups = tx.loadAllGroupsAsSeq()
+      val maxCustomGroups = getLengthLimits().maxCustomGroups
+      throwForbiddenIf(currentGroups.length >= maxCustomGroups + Group.NumBuiltInGroups,
+        "TyE2MNYGRPS", s"Cannot create more than $maxCustomGroups custom groups")
+
       tx.loadUsernameUsages(username) foreach { usage =>
         return Bad(o"""There is, or was, already a member with username
           '$username', member id: ${usage.userId} [TyE204KMFG]""")
@@ -1675,6 +1734,7 @@ trait UserDao {
       tx.insertUsernameUsage(UsernameUsage(
         usernameLowercase = group.theUsername,
         tx.now, userId = group.id))
+      AUDIT_LOG // that reqrId created group
       Good(group)
     }
     memCache.remove(allGroupsKey)
@@ -1682,19 +1742,25 @@ trait UserDao {
   }
 
 
-  def deleteGroup(groupId: UserId) {
+  def deleteGroup(groupId: UserId, reqrId: ReqrId) {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE307DMAT2", "Cannot delete built-in groups")
+
+    // If doesn't exist, fail with a client error instead of a server error inside the tx.
+    getTheGroupOrThrowClientError(groupId)
+
     val formerMembers = readWriteTransaction { tx =>
-      val group = tx.loadTheGroupInclDetails(groupId)
+      tx.loadTheGroupInclDetails(groupId) ; RACE // might fail (harmless)
       val members = tx.loadGroupMembers(groupId)
       tx.deleteUsernameUsagesForMemberId(groupId)
       tx.removeAllGroupParticipants(groupId)
       tx.deleteGroup(groupId)
+      AUDIT_LOG // that reqrId deleted group
       members
     }
     RACE // not impossible that a member just loaded hens group ids from the database,
     // and inserts into the mem cache just after we've uncached, here?
+    removeUserFromMemCache(groupId)
     uncacheOnesGroupIds(formerMembers.map(_.id))
     memCache.remove(groupMembersKey(groupId))
     memCache.remove(allGroupsKey)
@@ -1848,6 +1914,10 @@ trait UserDao {
       (memberDeleted, groupIds)
     }
 
+    // To uncache pages where the user's name appears: (now changed to anonNNN)
+    memCache.clearSingleSite(siteId)
+    COULD // instead uncache only the pages on which hens name appears, plus this:
+    // (this not needed, since cleared the site cache just above. Do anyway.)
     uncacheOnesGroupIds(Seq(userId))
     uncacheGroupsMemberLists(usersGroupIds)
     removeUserFromMemCache(userId)
@@ -1888,9 +1958,11 @@ trait UserDao {
     * If isn't the same preson, or isn't staff, then, throws 403 Forbidden.
     * Plus, staff users who are moderators only, may not edit admin users — that also
     * results in 403 Forbidden.
+    *
+    * block = (tx, member-to-edit, me) => side effects...  .
     */
   private def editMemberThrowUnlessSelfStaff2[R](userId: UserId, byWho: Who, errorCode: String,
-        mayNotWhat: String)(block: (SiteTransaction, MemberInclDetails, Participant) => R): R = {
+        mayNotWhat: String)(block: (SiteTransaction, MemberInclDetails, User) => R): R = {
     SECURITY // review all fns in UserDao, and in UserController, and use this helper fn?
     // Also create a helper fn:  readMemberThrowUnlessSelfStaff2 ...
 
@@ -1902,7 +1974,7 @@ trait UserDao {
       errorCode + "-ISBTI", s"May not $mayNotWhat for special built-in users")
 
     readWriteTransaction { tx =>
-      val me = tx.loadTheParticipant(byWho.id) // [2ABKF057]  later: tx.loadTheMember(byWho.id)
+      val me = tx.loadTheUser(byWho.id)
       throwForbiddenIf(me.id != userId && !me.isStaff,
           errorCode + "-ISOTR", s"May not $mayNotWhat for others")
 
@@ -1921,7 +1993,7 @@ trait UserDao {
     memCache.remove(key(userId))
   }
 
-  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById")
+  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById") ; RENAME // to pptKey?
 
   private def allGroupsKey = MemCacheKey(siteId, "AlGrps")
   private def groupMembersKey(groupId: UserId) = MemCacheKey(siteId, s"$groupId|GrMbrs")

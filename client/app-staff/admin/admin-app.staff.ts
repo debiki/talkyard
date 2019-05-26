@@ -333,19 +333,7 @@ const AdminAppComponent = createReactClass(<any> {
 
 
 
-/*
-function GroupsTab(childProps) {
-  const bp = '/-/admin/groups/';  // groups base path
-  return (
-      r.div({},
-        r.div({ className: 'dw-sub-nav' },
-          r.ul({ className: 'nav nav-pills' },
-            LiNavLink({ to: bp + 'built-in', className: 'e_BltInL' }, "Built-In"))),
-        r.div({ className: 's_A_Gs' },
-          Switch({},
-            Route({ path: bp + 'built-in', render: () => BuiltInGroupsPanel(childProps) }),
-            ))));
-}
+/*  Old groups tab
 
 // Keep this for now. Can copy-paste these descriptions into built-in groups'
 // about texts?

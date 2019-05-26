@@ -553,7 +553,6 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     const addMorePeopleButton = !page_isGroupTalk(page.pageRole) || !isStaffOrMyPage ? null :
         r.button({ className: 'btn btn-default', onClick: () => {
-              const page: Page = store.currentPage;
               morebundle.openAddPeopleDialog(page.pageMemberIds, (newIds: UserId[]) => {
                 Server.addUsersToPage(newIds, () => {
                   util.openDefaultStupidDialog({ body: "Now I've added him/her/them. Currently you need " +

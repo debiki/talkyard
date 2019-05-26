@@ -151,7 +151,8 @@ function trySendBeacon(url, data) {
 
 // If needed later:
 // loadCss: use https://github.com/filamentgroup/loadCSS/blob/master/src/loadCSS.js
-
+// SMALLER_BUNDLE use Bliss.load() instead? Works for both js and css.
+//
 export function loadJs(src: string, onOk?: () => void, onError?: () => void): any {  // : Promise, but compilation error
   const promise = new Promise(function (resolve, reject) {
     const scriptElem = document.createElement('script');
@@ -288,8 +289,8 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
 
   addAnyNoCookieHeaders(headers);
 
-  const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack [7FKRPQ2T0]
-    method: 'GET',
+  const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack, search for "Hack" in fetch()
+    method: 'GET',                                            // in client/third-party/bliss.shy.js
     headers: headers,
     timeout: options.timeout,
   });
@@ -735,22 +736,22 @@ export function stopImpersonatingReloadPage() {
 
 
 export function loadGroups(onDone: (_: Group[]) => void) {
-  get('/-/load-groups', r => onDone(r));
+  get('/-/load-groups', onDone);
 }
 
 
 export function createGroup(newGroup: Group, onDone: (newGroup: Group) => void) {
-  postJsonSuccess('/-/create-group', r => onDone(r), newGroup);
+  postJsonSuccess('/-/create-group', onDone, newGroup);
 }
 
 
 export function deleteGroup(groupIdToDelete: UserId, onDone: (deletedGroup: Group) => void) {
-  postJsonSuccess('/-/delete-group', r => onDone(r), { groupIdToDelete });
+  postJsonSuccess('/-/delete-group', onDone, { groupIdToDelete });
 }
 
 
 export function listGroupMembers(groupId: UserId, onDone: (_: Participant[]) => void) {
-  get(`/-/list-group-members?groupId=${groupId}`, r => onDone(r));
+  get(`/-/list-group-members?groupId=${groupId}`, onDone);
 }
 
 
@@ -918,7 +919,14 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
     const store: Store = ReactStore.allData();
     const me: Myself = store.me;
     if (memberId === me.id) {
-      const pageData: MyPageData = me.myDataByPageId[target.pageId];
+      let pageData: MyPageData = me.myDataByPageId[target.pageId];
+      if (!pageData && response.newlyCreatedPageId) {
+        // Add page data for the new page, so it's there if we need to e.g. render a
+        // notf pref button title (then, need to know our page notf level) [TyT305MHRTDP23].
+        // The id will remain EmptyPageId = '0', not newlyCreatedPageId, until page reload.
+        pageData = makeNoPageData();
+      }
+
       let newMe: Myself;
       if (pageData) {
         newMe = me_copyWithNewPageData(me, { ...pageData, myPageNotfPref: notfPref })
@@ -927,9 +935,7 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
         const updPrefs = pageNotfPrefs_copyWithUpdatedPref(me.myCatsTagsSiteNotfPrefs, notfPref);
         newMe = { ...me, myCatsTagsSiteNotfPrefs: updPrefs };
       }
-      if (newMe) {
-        ReactActions.patchTheStore({ me: newMe });
-      }
+      ReactActions.patchTheStore({ me: newMe });
     }
     if (onDone) {
       onDone();

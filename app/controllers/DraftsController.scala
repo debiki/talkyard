@@ -131,7 +131,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val post = anyPost orElse dao.loadPostByUniqueId(  // (7RWBJ3)
         draftLocator.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
       val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE2AKBRE5")
-      val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+      val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
       if (draft.isReply) {
         val postType = draft.postType getOrDie "TyER35SKS02GU"

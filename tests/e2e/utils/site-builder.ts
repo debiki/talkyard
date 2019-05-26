@@ -170,6 +170,7 @@ function buildSite(site?: SiteData) {
           regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
           trillian: _.includes(members, 'trillian') ? make.memberTrillian() : undefined,
           maria: _.includes(members, 'maria') ? make.memberMaria() : undefined,
+          maja: _.includes(members, 'maja') ? make.memberMaja() : undefined,
           michael: _.includes(members, 'michael') ? make.memberMichael() : undefined,
           mallory: _.includes(members, 'mallory') ? make.memberMallory() : undefined,
         },
@@ -187,6 +188,7 @@ function buildSite(site?: SiteData) {
       if (forum.members.regina) site.members.push(forum.members.regina);
       if (forum.members.trillian) site.members.push(forum.members.trillian);
       if (forum.members.maria) site.members.push(forum.members.maria);
+      if (forum.members.maja) site.members.push(forum.members.maja);
       if (forum.members.michael) site.members.push(forum.members.michael);
       if (forum.members.mallory) site.members.push(forum.members.mallory);
 

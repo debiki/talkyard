@@ -378,7 +378,7 @@ interface MyPageData {
 }
 
 
-interface OwnPageNotfPrefs {
+interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
   id?: UserId;
   myDataByPageId?: { [id: string]: MyPageData };
   myCatsTagsSiteNotfPrefs: PageNotfPref[];
@@ -471,10 +471,11 @@ interface PageNotfPrefTarget {
 
 interface EffPageNotfPref extends PageNotfPrefTarget {
   // Will be different from the user one is logged in as, if one is a staff member,
-  // and edits another member's (e.g. a group's) notfs settings.
+  // and edits another member's (e.g. a group's) notf settings.
   forMemberId: UserId;
 
   // Defined, if the member has specified a notf level directly for the PageNotfPrefTarget.
+  // If undefined, `inheritedNotfPref` instead determines the notf level.
   notfLevel?: PageNotfLevel;
 
   // Notf prefs are inherited structure wise: pages inherit from sub categories, and
@@ -1171,7 +1172,7 @@ interface Group extends Member {
 
 interface GroupAndStats extends Group {
   // Some people (like strangers and new members) might not get to know details
-  // about a group, only its name.
+  // about a group, only its name. Then no stats here.
   stats?: GroupStats;
 }
 
@@ -1761,10 +1762,18 @@ interface ListDraftsResponse {
 }
 
 interface PageNotfPrefsResponse extends OwnPageNotfPrefs {
+  // Categories the member whose profile you're looking at, may see. Assuming you're
+  // a staff user looking at another user's profile.
   categoriesMaySee: Category[];
+
+  // Categories you may see but that the member whose profile you're looking at, may not see.
+  // If you're looking at your own profle, this'll be empty.
   categoriesMayNotSee: Category[];
+
+  // Only for displaying names of groups whose notf prefs are being inherited.
   groups: Group[];
-  // Later: Category and group names, so can lookup ther names, for display.
+
+  // Later: Category names too, so can display their names (not only group names).
 }
 
 

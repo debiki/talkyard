@@ -509,27 +509,27 @@ const NotfPrefsTab = createFactory({
     // and notification settings per category?
     // Then there's space for adding text like "Inherited from <group name>"
     // next to a category name and notf level. So it'll be clear
-    // to people why their notf settings might be differetn from
+    // to people why their notf settings might be different from
     // the defaults.
     //
-    // And, is this list-categories-first approch more user friendly?
+    // Also, this list-categories-first approch is more user friendly?
+    // (Instead of notf levels first.)
     // Because then, if the staff wants to subscribe a group or a user
     // to a category, they need to just click the per category notf
     // settings dropdown. Rather than (the Discourse approach) remembering
-    // and starting typing the category name in a multi select.
+    // and starting typing the category name in a multi select. ...
     //
-    // (Later: If a site has surprisingly many categories, then, can add
-    // a filter-categories-by-name filter. Or if many sub categories,
-    // collapse/open them.)
+    // (...Later: In the rare cases when a site has surprisingly many
+    // categories, then, can add a filter-categories-by-name filter. Or if
+    // many sub categories, collapse/open them.)
 
     const categories: Category[] = membersPrefs.categoriesMaySee;
     const perCategoryNotfLevels =
         r.ul({},
           categories.map((category: Category) => {
-            const target = { pagesInCategoryId: category.id };
+            const target: PageNotfPrefTarget = { pagesInCategoryId: category.id };
             const effPref = pageNotfPrefTarget_findEffPref(target, store, membersPrefs);
             const isUsingInheritedLevel = !effPref.notfLevel;
-              //effPref.inheritedNotfPref && effPref.inheritedNotfPref.notfLevel === effPref.notfLevel;
             const inheritedWhy = !isUsingInheritedLevel ? null :
                 makeWhyNotfLvlInheritedExpl(effPref, ppsById);
             return r.li({ key: category.id, className: 's_UP_Prfs_Ntfs_Cs_C e_CId-' + category.id },
@@ -692,7 +692,7 @@ const AccountTabForGroup = React.createFactory<any>(function(props: { member: Gr
     });
   }
 
-  const dangerZone = !me.isAdmin ? null : (    // +  || group.isDeleted
+  const dangerZone = !me.isAdmin ? null : (
     rFragment({},
       r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
       Button({ onClick: deleteGroup, className: 'e_DlAcct' }, "Delete this group"))); //  I18N  t.upp.DeleteAccount)));
@@ -929,7 +929,7 @@ const AccountTab = createFactory({
     const dangerZone = user.deletedAt || (me.id !== user.id && !me.isAdmin) ? null : (
       rFragment({},
         r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
-        Button({ onClick: this.deleteUser }, t.upp.DeleteAccount)));
+        Button({ onClick: this.deleteUser, className: 'e_DlAcct' }, t.upp.DeleteAccount)));
 
     return (
       r.div({ className: 's_UP_EmLg' },
@@ -960,6 +960,12 @@ const UiPrefsTab = React.createFactory(
   const me: Myself = props.store.me;
   const user: UserInclDetails = props.user;
 
+  const myId = React.useRef(me.id);  // COULD break out this + useEffect to  useMyId ? Hmm
+  React.useEffect(() => {
+    myId.current = me.id;
+    return () => myId.current = null;
+  }, [me.id]);
+
   if (user_isGuest(user))
     return r.p({}, "Cannot set UI preferences for guests.");
 
@@ -982,7 +988,10 @@ const UiPrefsTab = React.createFactory(
     try {
       prefsJson = JSON.parse(prefsText)
       setSavingStatus(1);
-      Server.saveUiPrefs(user.id, prefsJson, () => setSavingStatus(2));
+      Server.saveUiPrefs(user.id, prefsJson, () => {
+        if (myId.current !== me.id) return;
+        setSavingStatus(2);
+      });
     }
     catch (ex) {
       setBadJsonError(true);

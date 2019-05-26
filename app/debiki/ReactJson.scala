@@ -429,7 +429,7 @@ class JsonMaker(dao: SiteDao) {
     val categoryId = pageMeta.categoryId getOrElse {
       return (None, Nil)
     }
-    val categoriesRootFirst = dao.loadAncestorCategoriesRootLast(categoryId).reverse
+    val categoriesRootFirst = dao.getAncestorCategoriesRootLast(categoryId).reverse
     if (categoriesRootFirst.isEmpty) {
       return (None, Nil)
     }
@@ -452,7 +452,7 @@ class JsonMaker(dao: SiteDao) {
     if (settings.userMustBeAuthenticated)
       return JsArray() */
 
-    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
+    val sectionPageIds = dao.getSectionPageIdsAsSeq()
     val jsonObjs = for {
       pageId <- sectionPageIds
       // (We're not in a transaction, the page might be gone [transaction])

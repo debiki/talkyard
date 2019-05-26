@@ -62,7 +62,7 @@ create table group_participants3 (
 
   constraint groupparticipants_groupid_ppid_p primary key (site_id, group_id, participant_id),
 
-  -- ix: groupparticipants_p
+  -- ix: groupparticipants_groupid_ppid_p
   constraint groupparticipants_group_r_pps foreign key (
       site_id, group_id) references users3 (site_id, user_id) deferrable,
 

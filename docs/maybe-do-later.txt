@@ -176,6 +176,14 @@ wouldn't result in unexpected weird things. And who should be notified about rep
 a test comment made when impersonating a group?
 (Everyone in the group? No, they'd get annoyed. Only the group then?)
 
+[inv2groups]
+Invite people to groups and custom landing pages.
+
+[grp-mbr-title]
+Show a title, like "Team" or "Support" or "Volunteer" or "Students 2019",
+depending on which custom group one is in.  Need clear caches after?
+That is, both: emptyCacheImpl(tx)  and  memCache.clearSingleSite(siteId).
+
 [group-feats]
 Add group visibility settings. And who-may-join feautre, and Join/Leave group buttons.
 + other features, look at Discourse.

@@ -97,7 +97,7 @@ const utxImpl = {
   javascript: `
 debiki.scriptLoad.done(function() {
 
-Bliss.delegate(document, 'click', '#utxSubmitAddrForm input[type="submit"]', function(event) {
+Bliss.delegate(document.body, 'click', '#utxSubmitAddrForm input[type="submit"]', function(event) {
   event.preventDefault();
   event.stopPropagation();
   var addrInp = document.getElementById('utxWebsiteAddr');

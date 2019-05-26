@@ -302,7 +302,7 @@ export const TopBar = createComponent({
         backToSiteButton = t.tb.BackFromUsr;
         customTitle = path === GroupsRoot
             ? "Groups:" // I18N t.Groups;
-            : (path.search(GroupsRoot) === 0
+            : (path.startsWith(GroupsRoot)
                 ? LinkUnstyled({ to: GroupsRoot }, "Groups:") // I18N t.Groups;
                 : t.tb.AbtUsr);
       }

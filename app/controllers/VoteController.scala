@@ -116,7 +116,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requester}
 
     val pageMeta: PageMeta = dao.getThePageMetaForPostId(postId)
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.maySeePage(
       pageMeta, requester,

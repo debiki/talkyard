@@ -141,7 +141,7 @@ trait AuthzSiteDaoMixin {
     val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
         anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
-          loadAncestorCategoriesRootLast(categoryId)
+          getAncestorCategoriesRootLast(categoryId)
         }
       } getOrElse Nil
 
@@ -270,6 +270,9 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  // There typicaly aren't many permissinos — let's say 20 custom groups (unusually many)
+  // with 10 permissions each (unusually many). 200 perms in total — that's not much,
+  // better load all at once.
   private val allPermsKey: MemCacheKey = MemCacheKey(siteId, "AllPemrs")
 
 }

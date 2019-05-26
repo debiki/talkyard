@@ -198,7 +198,7 @@ function makeWholeSpec(initFn) {
         usersBrowser.go('/-/users/michael');
       });
       it("... it looks ok", () => {
-        usersBrowser.userProfilePage.waitForName();
+        usersBrowser.userProfilePage.waitUntilUsernameVisible();
         usersBrowser.userProfilePage.assertUsernameIs('michael');
       });
       it("... go to Maria's profile page", () => {
@@ -367,7 +367,7 @@ function addMariasProfileTets(testPrefix) {
   const numTopicsAndPosts = memberIsAdmin ? 4 + 3 : 4;
 
   it(pfx + "check username", () => {
-    usersBrowser.userProfilePage.waitForName();
+    usersBrowser.userProfilePage.waitUntilUsernameVisible();
     usersBrowser.userProfilePage.assertUsernameIs('maria');
   });
 

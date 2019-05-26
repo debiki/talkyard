@@ -715,7 +715,7 @@ trait PostsDao {
 
     quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
 
-    readWriteTransaction { tx =>
+    val anyEditedCategory = readWriteTransaction { tx =>
       val editorAndLevels = loadUserAndLevels(who, tx)
       val editor = editorAndLevels.user
       val page = PageDao(pageId, tx)
@@ -993,6 +993,13 @@ trait PostsDao {
         makesSectionPageHtmlStale = true
       }
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
+      anyEditedCategory
+    }
+
+    if (anyEditedCategory.isDefined) {
+      // The cached categories remember their category description — one of which we
+      // have now edited.
+      uncacheAllCategories()
     }
 
     refreshPageInMemCache(pageId)

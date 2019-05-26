@@ -24,25 +24,34 @@
 
 const r = ReactDOMFactories;
 
+interface GroupMembersProps {
+  user: Group;
+  store: Store;
+}
 
-export const GroupMembers = React.createFactory<any>(function(props) {
+
+export const GroupMembers = React.createFactory<GroupMembersProps>(function(props) {
   //displayName: 'GroupMembers',
 
   const group: Group = props.user; // werid name, could fix
   const store: Store = props.store;
   const me = store.me;
+  const myId = React.useRef(me.id);
   const builtInOrNotStaff = member_isBuiltIn(group) || !isStaff(me);
-  let isGone;  // BUG should be useState instead, right.
 
   const [membersNullOrFalse, setMembers] = React.useState<Participant[] | null | false>(null);
 
   React.useEffect(() => {
+    myId.current = me.id;
     listAndSetMembers();
-    return () => { isGone = true };
+    return () => myId.current = null;
   }, [me.id]);
 
   function listAndSetMembers() {
-    Server.listGroupMembers(group.id, setMembers);
+    Server.listGroupMembers(group.id, (members) => {
+      if (myId.current !== me.id) return;
+      setMembers(members);
+    });
   }
 
   if (membersNullOrFalse === null)
@@ -56,7 +65,7 @@ export const GroupMembers = React.createFactory<any>(function(props) {
   function showAddMembersDialog() {
     const currentMemberIds = members.map(m => m.id);
     pagedialogs.openAddPeopleDialog(currentMemberIds, (newIds: UserId[]) => {
-      if (isGone) return;
+      if (myId.current !== me.id) return;
       Server.addGroupMembers(group.id, newIds, listAndSetMembers);
     });
   }
@@ -65,7 +74,7 @@ export const GroupMembers = React.createFactory<any>(function(props) {
     Server.removeGroupMembers(group.id, [memberId], listAndSetMembers);
   }
 
-  const addMembersButton = builtInOrNotStaff || member_isBuiltIn(group) ? null :
+  const addMembersButton = builtInOrNotStaff ? null :
       Button({ className: 'e_AddMbrsB', onClick: () => showAddMembersDialog() },
         "Add Members");  // I18N
 
@@ -73,9 +82,10 @@ export const GroupMembers = React.createFactory<any>(function(props) {
      return r.li({ key: m.id, className: 's_G_Mbrs_Mbr' },
         LinkUnstyled({ to: UsersRoot + m.username, className: 's_G_Mbrs_Mbr_L' },
           UserName({ user: m, store, makeLink: false, onClick: null })),
-        builtInOrNotStaff ? null : utils.ModalDropdownButton({ title: "Manage ...", className: 'e_MngMbr' },  // I18N
-          Button({ className: 'e_RmMbr', onClick: () => removeMember(m.id) },
-            "Remove")));   // I18N
+        builtInOrNotStaff ? null :
+          utils.ModalDropdownButton({ title: "Manage ...", className: 'e_MngMbr' },  // I18N
+            Button({ className: 'e_RmMbr', onClick: () => removeMember(m.id) },
+              "Remove")));   // I18N
   });
 
   const cannotModifyInfo = !member_isBuiltIn(group) ? null :

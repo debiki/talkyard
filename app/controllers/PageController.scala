@@ -75,7 +75,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbidden("DwE8GKE4", "No category specified")
     }
 
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(anyCategoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(anyCategoryId)
 
     throwNoUnless(Authz.mayCreatePage(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),

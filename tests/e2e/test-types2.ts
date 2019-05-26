@@ -375,6 +375,7 @@ interface EmptyTestForum {
     regina?: Member;
     trillian?: Member;
     maria?: Member;
+    maja?: Member;
     michael?: Member;
     mallory?: Member;
   };

@@ -113,20 +113,14 @@ trait CategoriesDao {
     */
   def getDefaultCategoryId(): CategoryId = {
     COULD_OPTIMIZE // remember default category, refresh when saving a root category?
-    if (rootCategories eq null) {
-      loadBuildRememberCategoryMaps()
-      dieIf(rootCategories eq null, "TyE2PK50")
-    }
+    getAndRememberCategories()
     dieIf(rootCategories.isEmpty, "TyE2FWBK5")
     rootCategories.head.defaultSubCatId getOrDie "TyE2KQBP6"
   }
 
 
   def getCategory(categoryId: CategoryId): Option[Category] = {
-    COULD_OPTIMIZE // cache category, don't forget to clear when editing any About page,
-                    // or editing any category (then, clear all cats, in case later on will
-                    // cache parent—>child-cat relationships.
-    loadCategory(categoryId).map(_._1)
+    getCategoryAndIsDefault(categoryId).map(_._1)
   }
 
 
@@ -136,7 +130,7 @@ trait CategoriesDao {
   def listMaySeeCategoriesInSection(sectionPageId: PageId, includeDeleted: Boolean,
         authzCtx: ForumAuthzContext): Option[SectionCategories] = {
     // A bit dupl code (7UKWTW1)
-    loadRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
+    getRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
         includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
       SectionCategories(
@@ -149,13 +143,8 @@ trait CategoriesDao {
 
   def listMaySeeCategoriesAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
         : Seq[SectionCategories] = {
-    if (rootCategories eq null) {
-      loadBuildRememberCategoryMaps()
-      dieIf(rootCategories eq null, "TyE5PB20A")
-    }
-
+    getAndRememberCategories()
     val result = ArrayBuffer[SectionCategories]()
-
     for (rootCategory <- rootCategories) {
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
         includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
@@ -164,7 +153,6 @@ trait CategoriesDao {
         categories = categories,
         defaultCategoryId = rootCategory.defaultSubCatId getOrDie "TyEWKB201"))
     }
-
     result
   }
 
@@ -173,16 +161,12 @@ trait CategoriesDao {
     */
   def listMaySeeCategoriesInSameSectionAs(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : (Seq[Category], Option[CategoryId]) = {
-    if (rootCategories eq null) {
-      loadBuildRememberCategoryMaps()
-      dieIf(rootCategories eq null, "EsE4KG0W2")
-    }
-
+    getAndRememberCategories()
     if (rootCategories.isEmpty)
       return (Nil, None)
 
     // A bit dupl code (7UKWTW1)
-    val rootCategory = loadRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
+    val rootCategory = getRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
       includeDeleted = authzCtx.isStaff, includeUnlistTopics = true, authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultSubCatId getOrDie "TyE5JKF2"))
@@ -247,7 +231,7 @@ trait CategoriesDao {
     // For now. COULD do some of filtering in the db query instead, so won't find 0 pages
     // just because all most-recent-pages are e.g. hidden.
     val filteredPages = pagesInclForbidden filter { page =>
-      val categories = loadAncestorCategoriesRootLast(page.categoryId)
+      val categories = getAncestorCategoriesRootLast(page.categoryId)
       val may = ed.server.auth.Authz.maySeePage(
         page.meta,
         user = authzCtx.requester,
@@ -298,33 +282,38 @@ trait CategoriesDao {
   }
 
 
-  def loadAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
+  def getAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): Vector[Category] = {
     val id = anyCategoryId getOrElse {
-      return Nil
+      return Vector.empty
     }
-    loadAncestorCategoriesRootLast(id)
+    getAncestorCategoriesRootLast(id)
   }
 
 
-  def loadAncestorCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
-    val categoriesById = loadBuildRememberCategoryMaps()._1
+  def getAncestorCategoriesRootLast(categoryId: CategoryId): Vector[Category] = {
+    val categoriesById = getAndRememberCategories()._1
     val categories = ArrayBuffer[Category]()
     var current = categoriesById.get(categoryId)
+    var lapNr = 0
     while (current.isDefined) {
+      dieIf(lapNr > categoriesById.size,
+        "TyECATLOOP", s"s$siteId: Category ancestors loop involving category id $categoryId")
+      lapNr += 1
       categories.append(current.get)
       current = current.get.parentId flatMap categoriesById.get
     }
-    categories.to[immutable.Seq]
+    categories.toVector
   }
 
 
   /** Returns (category, is-default).
     */
-  def loadCategory(id: CategoryId): Option[(Category, Boolean)] = {
-    val catsStuff = loadBuildRememberCategoryMaps()
-    val anyCategory = catsStuff._1.get(id)
+  def getCategoryAndIsDefault(id: CategoryId): Option[(Category, Boolean)] = {
+    val catsStuff = getAndRememberCategories()
+    val catsById = catsStuff._1
+    val anyCategory = catsById.get(id)
     anyCategory map { category =>
-      val rootCategory: Option[Category] = category.parentId.flatMap(catsStuff._1.get)
+      val rootCategory: Option[Category] = category.parentId.flatMap(catsById.get)
       (category, rootCategory.flatMap(_.defaultSubCatId) is category.id)
     }
   }
@@ -332,29 +321,29 @@ trait CategoriesDao {
 
   // Some time later: Add a site section page id? So will load the correct category, also
   // if there're many sub communities with the same category slug.
-  def loadCategoryBySlug(slug: String): Option[Category] = {
-    val catsStuff = loadBuildRememberCategoryMaps()
+  def getCategoryBySlug(slug: String): Option[Category] = {
+    val catsStuff = getAndRememberCategories()
     catsStuff._1.values.find(_.slug == slug)
   }
 
 
-  def loadTheCategory(id: CategoryId): (Category, Boolean) =
-    loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
+  def getTheCategoryAndIsDefault(id: CategoryId): (Category, Boolean) =
+    getCategoryAndIsDefault(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
-  private def loadRootCategoryForCategoryId(categoryId: CategoryId): Option[Category] =
-    loadAncestorCategoriesRootLast(categoryId).lastOption
+  private def getRootCategoryForCategoryId(categoryId: CategoryId): Option[Category] =
+    getAncestorCategoriesRootLast(categoryId).lastOption
 
 
-  def loadSectionPageId(categoryId: CategoryId): Option[PageId] =
-    loadRootCategoryForCategoryId(categoryId).map(_.sectionPageId)
+  def getSectionPageId(categoryId: CategoryId): Option[PageId] =
+    getRootCategoryForCategoryId(categoryId).map(_.sectionPageId)
 
 
-  def loadTheSectionPageId(categoryId: CategoryId): PageId =
-    loadRootCategoryForCategoryId(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
+  def getTheSectionPageId(categoryId: CategoryId): PageId =
+    getRootCategoryForCategoryId(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
-  def loadSectionPageIdsAsSeq(): Seq[PageId] = {
-    loadBuildRememberCategoryMaps()
+  def getSectionPageIdsAsSeq(): Seq[PageId] = {
+    getAndRememberCategories()
     categoriesById.values.filter(_.parentId.isEmpty).map(_.sectionPageId).toSeq
   }
 
@@ -364,8 +353,8 @@ trait CategoriesDao {
   }
 
 
-  private def loadRootCategoryForSectionPageId(sectionPageId: PageId): Option[Category] = {
-    val categoriesById = loadBuildRememberCategoryMaps()._1
+  private def getRootCategoryForSectionPageId(sectionPageId: PageId): Option[Category] = {
+    val categoriesById = getAndRememberCategories()._1
     for ((_, category) <- categoriesById) {
       if (category.sectionPageId == sectionPageId && category.parentId.isEmpty)
         return Some(category)
@@ -383,12 +372,12 @@ trait CategoriesDao {
       return
     }
 
-    val (categoriesById, categoriesByParentId) = loadBuildRememberCategoryMaps()
+    val (categoriesById, categoriesByParentId) = getAndRememberCategories()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
 
-    val categories = loadAncestorCategoriesRootLast(rootCategoryId)
+    val categories = getAncestorCategoriesRootLast(rootCategoryId)
 
     // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
     if (!categories.head.isRoot) {
@@ -418,17 +407,22 @@ trait CategoriesDao {
   }
 
 
-  private def loadBuildRememberCategoryMaps()   // RENAME to getAndRememberCategories?
+  /** Returns (categoriesById, childCatsByParentId).
+    */
+  private def getAndRememberCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
     // We already remember?
-    if (categoriesById ne null)
+    if (categoriesById ne null) {
+      dieIf(rootCategories eq null, "TyE046DMR2")
+      dieIf(categoriesByParentId eq null, "TyE046DMR3")
       return (categoriesById, categoriesByParentId)
+    }
 
-    // Didn't remember. Load.
+    // Didn't remember. Get from cache.
     val result = memCache.lookup(
       allCategoriesKey,
       orCacheAndReturn = Some({
-        loadBuildRememberCategoryMaps_impl()
+        loadCategories()
       })).get
 
     // Remember.
@@ -439,7 +433,7 @@ trait CategoriesDao {
   }
 
 
-  private def loadBuildRememberCategoryMaps_impl()
+  private def loadCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
     val catsById: Map[CategoryId, Category] = readOnlyTransaction(tx => {
       tx.loadCategoryMap()
@@ -457,7 +451,7 @@ trait CategoriesDao {
   }
 
 
-  private def uncacheAllCategories() {
+  def uncacheAllCategories() {
     memCache.remove(allCategoriesKey)
   }
 
@@ -614,6 +608,7 @@ trait CategoriesDao {
         permissions: immutable.Seq[PermsOnPages])(tx: SiteTransaction)
         : (immutable.Seq[PermsOnPages], Boolean) = {
     dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
+
     val permsWithIds = ArrayBuffer[PermsOnPages]()
     val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
       tx.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
@@ -645,6 +640,14 @@ trait CategoriesDao {
     // latent BUG: not incl info about these deleted perms in the fn result [0YKAG25L]
     tx.deletePermsOnPages(oldPermissionsById.keys)
     wasChangesMade ||= oldPermissionsById.nonEmpty
+
+    // Too many permission settings, afterwards?
+    // (COULD add a check in the request handlers that throws client-error directly.)
+    val permsAfter = tx.loadPermsOnPages()
+    val maxPerms = getLengthLimits().maxPermsPerSite
+    dieIf(permsAfter.length > maxPerms,
+      "TyEMNYPERMS", s"Cannot save ${permissions.length} permissions, " +
+        s"would result in ${permsAfter.length} permissions in total, but $maxPerms is max")
 
     (permsWithIds.toVector, wasChangesMade)
   }

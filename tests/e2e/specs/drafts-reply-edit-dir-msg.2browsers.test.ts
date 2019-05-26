@@ -186,13 +186,13 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
   it("Maria clicks the most recent draft: the direct message to Michael", () => {
-    mariasBrowser.userProfilePage.waitForName(maria.username);
+    mariasBrowser.userProfilePage.waitUntilUsernameIs(maria.username);
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(3);
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
   });
 
   it("... the browser goes to Michael's profile page", () => {
-    mariasBrowser.userProfilePage.waitForName(michael.username);
+    mariasBrowser.userProfilePage.waitUntilUsernameIs(michael.username);
   });
 
   it("... and the draft text for the message to him, loads", () => {

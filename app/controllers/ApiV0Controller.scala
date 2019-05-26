@@ -169,7 +169,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             The email address ${extUser.primaryEmailAddress} of external user '${extUser.externalId}'
             hasn't been verified.""")
 
-        val user = request.dao.readWriteTransaction { tx =>
+        val (user, isNew) = request.dao.readWriteTransaction { tx =>
           // Look up by external id. If found, login.
           // Look up by email. If found, reuse account, set external id, and login.
           // Else, create new user with specified external id and email.
@@ -197,7 +197,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             // mod / admin:  UserDao:  editMember
             // name etc:  UserDao:  saveAboutMemberPrefs
             // For now, just generate a login secret; don't sync users:
-            user
+            (user, false)
           }) orElse
               // TODO what about looking up by secondary email addresses, or not?
               // Don't do that? They aren't supposed to be used for login. And do require
@@ -231,7 +231,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             val updatedUser = user.copyWithExternalData(extUser)
             dieIf(updatedUser == user, "TyE4AKBRE2")
             tx.updateUserInclDetails(updatedUser)
-            updatedUser
+            (updatedUser, false)
           }) getOrElse {
             // Create a new Talkyard user account, for this external user.
             // (There's no mirror account with a matching external id or email address.)
@@ -261,8 +261,17 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
                 case Bad(errorMessage) =>
                   throwUnprocessableEntity("TyE4BKR03J", s"$errorMessage, please try again.")
               }
-            dao.createUserForExternalSsoUser(userData, request.theBrowserIdData, tx)
+            val newUser = dao.createUserForExternalSsoUser(userData, request.theBrowserIdData, tx)
+            (newUser, true)
           }
+        }
+
+        if (isNew) {
+          // COULD make these Dao methods protected/private — then need to move this
+          // ApiV0Controller code to inside the Dao.
+          dao.uncacheBuiltInGroups()
+          // Plus uncache any custom groups, if can sso-login user and auto add to group. [inv2groups]
+          dao.memCache.fireUserCreated(user.briefUser)
         }
 
         val secret = nextRandomString()

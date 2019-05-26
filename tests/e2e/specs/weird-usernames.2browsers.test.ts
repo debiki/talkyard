@@ -147,7 +147,7 @@ describe("weird-usernames.2browsers  TyT5ABKPUW2", () => {
 
   it("The View Profile link really opens the user's profile page", () => {
     mariasBrowser.aboutUserDialog.clickViewProfile();
-    mariasBrowser.userProfilePage.waitForName();
+    mariasBrowser.userProfilePage.waitUntilUsernameVisible();
     mariasBrowser.userProfilePage.assertUsernameIs(corax.username);
   });
 

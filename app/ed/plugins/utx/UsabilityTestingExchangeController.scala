@@ -67,7 +67,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     val categorySlug = (request.body \ "categorySlug").as[String]
-    val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+    val category = request.dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
@@ -117,7 +117,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
     */
   private def doPickTask(categorySlug: String, request: http.GetRequest): Result = {
     import request.{dao, theRequester}
-    val category = dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+    val category = dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
     val topicIdsToSkip: Set[PageId] = urlDecodeCookie("edCoUtxSkip", request.underlying) match {

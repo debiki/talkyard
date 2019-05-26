@@ -567,12 +567,12 @@ const SelectGroupDropdown = createClassAndFactory({
   render: function() {
     const props = this.props;
     const state = this.state;
-    const groups: Group[] = props.groups;
+    const groupsUnsorted: Group[] = props.groups;
     const selectedGroup: Group = props.selectedGroup;
 
     // The 'selectedGroup' should be in 'groups'.
     // @ifdef DEBUG
-    dieIf(selectedGroup && !_.find(groups, g => g.id === selectedGroup.id), 'EdE2WCPA40');
+    dieIf(selectedGroup && !_.find(groupsUnsorted, g => g.id === selectedGroup.id), 'EdE2WCPA40');
     // @endif
 
     function nameOf(group) {
@@ -587,9 +587,9 @@ const SelectGroupDropdown = createClassAndFactory({
     // Sort by id, so will always appear in the same order, and also, so built-in groups
     // like "Everyone" appear first (it's typically interesting to know what permissions
     // Everyone has).
-    const groupsById = [...groups].sort((a, b) => a.id - b.id);
+    const groupsSorted = _.sortBy(groupsUnsorted, g => g.id);
 
-    const listItems = groupsById.map((group: Group) => {
+    const listItems = groupsSorted.map((group: Group) => {
       return ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: group.id, key: group.id,
         title: nameOf(group) });

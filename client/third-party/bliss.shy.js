@@ -4,7 +4,7 @@
 // The MIT License (MIT)
 // Copyright (c) 2015 Lea Verou.
 //
--// Parts Copyright (c) 2019 Kaj Magnus Lindberg, search for [BLISSTY] to find my change.
+// Parts Copyright (c) 2019 Kaj Magnus Lindberg, search for [BLISSTY] to find my change.
 
 (function() {
 "use strict";

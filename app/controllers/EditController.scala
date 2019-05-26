@@ -132,7 +132,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
@@ -184,7 +184,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdEZWBR81")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdEBKWRWY9")
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayEditPost(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),

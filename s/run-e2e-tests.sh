@@ -263,6 +263,9 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-change-password.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-cannot-delete-openauth-email $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-profile-activity-private.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only user-self-delete-upd-groups.2browsers $args
+
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-profile-change-things.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only custom-forms.3browsers $args
 
@@ -323,7 +326,8 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only weird-usernames.2browsers $args
 
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-mentions.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-mentions-built-in-groups.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-mentions-custom-groups.2browsers $args
 
   # wip:
   # settings-allow-local-signup
@@ -381,6 +385,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-vote-first $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-conf-notf-pref-first $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)
 

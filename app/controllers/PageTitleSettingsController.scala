@@ -160,7 +160,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     }}
 
     // Load old section page id before changing it.
-    val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
+    val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.getTheSectionPageId
 
     // Update page settings.
     var newMeta = oldMeta
@@ -220,7 +220,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     else {
       // Refresh cache, plus any forum page if this page is a forum topic.
       // (Forum pages cache category JSON and a latest topics list, includes titles.)
-      val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
+      val newSectionPageId = newMeta.categoryId map request.dao.getTheSectionPageId
       val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
       idsToRefresh.foreach(request.dao.refreshPageInMemCache)
     }

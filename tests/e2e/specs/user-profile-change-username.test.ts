@@ -144,7 +144,7 @@ describe("user profile access:", () => {
 
   it("She reloads the page, sees her username is now " + mariasUsername2, () => {
     mariasBrowser.refresh();
-    mariasBrowser.userProfilePage.waitForName();
+    mariasBrowser.userProfilePage.waitUntilUsernameVisible();
     mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2);
   });
 
@@ -162,7 +162,7 @@ describe("user profile access:", () => {
   it("She reloads the page, sees her username is now " + mariasUsername2b, () => {
     mariasBrowser.refresh();
     mariasBrowser.debug();
-    mariasBrowser.userProfilePage.waitForName();
+    mariasBrowser.userProfilePage.waitUntilUsernameVisible();
     mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2b);
   });  */
 

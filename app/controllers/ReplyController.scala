@@ -66,7 +66,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
     }
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
@@ -107,7 +107,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwIndistinguishableNotFound("EdE7JS2")
     }
     val replyToPosts = Nil  // currently cannot reply to specific posts, in the chat [7YKDW3]
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getOnesGroupIds(request.theMember),
@@ -179,7 +179,7 @@ object EmbeddedCommentsPageCreator {
       if (id != NoCategoryId) id
       else dao.getDefaultCategoryId()
     }
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(categoryId)
     val pageRole = PageType.EmbeddedComments
 
     context.security.throwNoUnless(Authz.mayCreatePage(

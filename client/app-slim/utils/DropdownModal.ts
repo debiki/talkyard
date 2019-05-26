@@ -145,8 +145,8 @@ export const DropdownModal = createComponent({
       rect.bottom -= winOfsSize.top;
 
       const rectHeight = rect.bottom - rect.top;
-      const visibleHeight = winOfsSize.iframeVisibleHeight || winOfsSize.height;
-      if (rectHeight >= visibleHeight) {
+      const winVisibleHeight = winOfsSize.iframeVisibleHeight || winOfsSize.height;
+      if (rectHeight >= winVisibleHeight) {
         // The dialog is larger than the window. Place it at the top, so if resizing the window
         // (it'll expand downwards), the hidden part of the dialog becomes visible.
         // Important for blog comments, if one opens the notf prefs dialog before there're
@@ -156,6 +156,7 @@ export const DropdownModal = createComponent({
       else if (rect.bottom > winOfsSize.height) {
         this.fitInWindowVertically(winOfsSize);
       }
+
       // (This right-&-left stuff works also in iframes.)
       if (rect.right > window.innerWidth) {
         this.moveLeftwardsSoFitsInWindow();
@@ -165,6 +166,7 @@ export const DropdownModal = createComponent({
         // to the left, so 6px not 0px here:
         content.style.left = '6px';
       }
+
       this.setState({ fitsInDisplay: true });
     }, 0);
   },

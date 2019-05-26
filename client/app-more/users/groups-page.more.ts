@@ -34,43 +34,43 @@ const ModalTitle = rb.ModalTitle;
 export const ListGroupsComponent = React.createFactory<RouteChildProps>(function(props) {
   const store: Store = useStoreState()[0];
   const me: Myself = store.me;
-  const notStaff = !isStaff(me);
-
-  const [groupsOrNull, setGroups] = React.useState(null);
+  const myId = React.useRef(me.id);
+  const [groupsOrNull, setGroups] = React.useState<Group[]>(null);
 
   React.useEffect(() => {
-    Server.loadGroups(setGroups);
-  },
-    // Reload the groups, if we logout/in as a different user — then, which groups
-    // we can seee, might change.
-    [me.id]);
+    myId.current = me.id;
+    Server.loadGroups((groups) => {
+      if (myId.current !== me.id) return;
+      setGroups(groups);
+    });
+    return () => myId.current = null;
+  }, [me.id]);
 
   if (!groupsOrNull)
     return (
         r.p({ className: 'container' },
           t.Loading));
 
-  //const groupsSortedById: Group[] = [...groupsOrNull].sort((a, b) => a.id - b.id);
-  const [builtInGroupsUnsorted, customGroupsUnsorted] =
+  const [builtInGroupsUnsorted, customGroupsUnsorted] = <[Group[], Group[]]>
       _.partition(groupsOrNull, member_isBuiltIn);
 
-  // Place interesting groups like Admin, Moderators first.
-  const builtInGroups = _.sortBy(builtInGroupsUnsorted, (g: Group) => -g.id);
+  // Place interesting groups like Admins and Moderators first.
+  const builtInGroups = _.sortBy(builtInGroupsUnsorted, g => -g.id);
 
-  // Sort by name.
-  const customGroups = _.sortBy(customGroupsUnsorted, (g: Group) => g.fullName || g.username);
+  // Sort custom groups by name.
+  const customGroups = _.sortBy(customGroupsUnsorted, g => g.fullName || g.username);
 
   function makeGroupRows(groups: GroupAndStats[]) {
-    return groups.map((g: GroupAndStats) => {
-      const numMembers = !g.stats ? null :
-        r.span({}, g.stats.numMembers + " members. ");  // I18N
-      const youreAMember = !_.includes(me.myGroupIds, g.id) ? null :
+    return groups.map((gs: GroupAndStats) => {
+      const numMembers = !gs.stats ? null :
+        r.span({}, gs.stats.numMembers + " members. ");  // I18N
+      const youreAMember = !_.includes(me.myGroupIds, gs.id) ? null :
         r.span({}, "You're a member."); // I18N
 
       return (
-        r.li({ key: g.id, className: 's_Gs_G' },
-          LinkUnstyled({ to: GroupsRoot + g.username, className: 's_Gs_G_L' },
-            UserName({ user: g, store, makeLink: false, onClick: null })),
+        r.li({ key: gs.id, className: 's_Gs_G' },
+          LinkUnstyled({ to: GroupsRoot + gs.username, className: 's_Gs_G_L' },
+            UserName({ user: gs, store, makeLink: false, onClick: null })),
           r.p({ className: 's_Gs_G_Stats' },
             numMembers, youreAMember)));
     });

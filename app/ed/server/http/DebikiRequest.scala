@@ -74,7 +74,8 @@ abstract class DebikiRequest[A] {
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[Participant] = user
-  def requesterOrUnknown = user getOrElse UnknownParticipant
+  def requesterOrUnknown: Participant = user getOrElse UnknownParticipant
+  def requesterIdOrUnknown: UserId = user.map(_.id) getOrElse UnknownUserId
   def theRequester: Participant = theUser
 
   def tenantId: SiteId = dao.siteId
@@ -84,12 +85,11 @@ abstract class DebikiRequest[A] {
 
   lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
 
+  def reqrId: ReqrId = who
+  @deprecated("use reqrId: ReqrId instead", "now")
   def who = Who(theUserId, theBrowserIdData)
 
-  def whoOrUnknown: Who = {
-    val id = user.map(_.id) getOrElse UnknownUserId
-    Who(id, theBrowserIdData)
-  }
+  def whoOrUnknown: Who = Who(requesterIdOrUnknown, theBrowserIdData)
 
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
 

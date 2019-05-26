@@ -99,7 +99,7 @@ unapproved comments -
     staff can approve:  (2WY0)
     staff can delete:
 
-profile page -
+profile page, user:
   upload photo:  (8PK2)
   edit full name:
   change username:
@@ -118,19 +118,39 @@ profile page -
     won't list posts from pages one may not see:
 
   list login methods:
-          - create-site-github-oauth-uppercase-email.test.ts  [TyT4AR8GFAH]
+          - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
 
-  notf prefs for groups,
+  self delete, gdpr:
+          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+
+
+profile page, a group:
+  edit username:
+          - group-profile-change-things.2browsers.test.ts  TyT5MS5TWV0
+  notf prefs for groups:
+          - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+
   add/remove group members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+          - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
+          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
 
 groups:
   list/create/delete groups,
-  add/remove members,
   conf group cat notf prefs,
   inherit group's notf prefs,
   override group's notf prefs:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+
+  add/remove members:
+          - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
+          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+
+  update when user deleted:
+          - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+  @mention:
+          - group-mentions-built-in-groups.2browsers.test.ts  TyT4AWJL208R
+          - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
 
 invites -
   before accepts:
@@ -374,6 +394,8 @@ embedded comments:
           - "all" e2e emb cmts tests
   start with Like vote:
           - embedded-comments-vote-first.test.ts  TyT2AKBS056
+  start with configuring one's notf prefs:
+          - embedded-comments-conf-notf-pref-first.test.ts  TyT502HMSJP3
   login via metabar:
           - embedded-comments-vote-first.test.ts  TyT2AKBS056
   click login:

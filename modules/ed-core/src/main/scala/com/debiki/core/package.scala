@@ -224,6 +224,11 @@ package object core {
   }
 
 
+  type ReqrId = Who // RENAME to ReqrIds? (with an ...s)
+                    // ... because is more than one id (user id, ip, bowser id cookie, etc)
+
+  RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
+  // I find "who" being confusing as to whom it refers to.
   case class Who(id: UserId, browserIdData: BrowserIdData) {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
@@ -915,6 +920,7 @@ package object core {
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
   def SHOULD_LOG_STH = () // If an info/debug message ought to be logged here.
+  def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()

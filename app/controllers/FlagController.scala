@@ -55,7 +55,7 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE5PJB2R8")
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayFlagPost(
       request.theMember, dao.getOnesGroupIds(request.theUser),

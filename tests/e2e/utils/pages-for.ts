@@ -1330,6 +1330,14 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
+      navigateToGroups: () => {
+        api.rememberCurrentUrl();
+        api.topbar.openMyMenu();
+        api.waitAndClick('#te_VwGrps');
+        api.waitForNewUrl();
+        api.groupListPage.waitUntilLoaded();
+      },
+
       clickGoToProfile: function() {
         api.rememberCurrentUrl();
         api.topbar.openMyMenu();
@@ -3556,6 +3564,11 @@ function pagesFor(browser) {
         api.waitForVisible('.e_AddMbrsB');
       },
 
+      waitUntilGroupPresent: (ps: { username: string, fullName: string }) => {
+        api.waitAndGetElemIdWithText('.s_Gs_G_L .esP_By_U', ps.username);
+        api.waitAndGetElemIdWithText('.s_Gs_G_L .esP_By_F', ps.fullName);
+      },
+
       openGroupWithUsername: (username: string) => {
         api.waitForThenClickText('.s_Gs_G .esP_By_U', username);
         api.userProfilePage.groupMembers.waitUntilLoaded();
@@ -3566,8 +3579,32 @@ function pagesFor(browser) {
     userProfilePage: {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
-      waitForName: function() {
+      waitUntilUsernameVisible: function() {
         api.waitForVisible('.esUP_Un');
+      },
+
+      waitUntilUsernameIs: (username) => {
+        api.waitAndGetElemIdWithText('.esUP_Un', username);
+      },
+
+      waitAndGetUsername: () => {
+        return api.waitAndGetVisibleText('.esUP_Un');
+      },
+
+      waitUntilDeletedOrDeactivated: () => {
+        browser.waitForVisible('.e_ActDd');
+      },
+
+      navigateBackToUsersOrGroupsList: () => {
+        api.rememberCurrentUrl();
+        api.waitAndClick('.esTopbar_custom_title a');
+        api.waitForNewUrl();
+        if (api.urlPath().startsWith(c.GroupsUrlPrefix)) {
+          api.groupListPage.waitUntilLoaded();
+        }
+        else {
+          // /-/users/ all users list not yet impl
+        }
       },
 
       openActivityFor: function(who: string, origin?: string) {
@@ -3677,6 +3714,10 @@ function pagesFor(browser) {
 
         waitUntilMemberPresent: (username: string) => {
           api.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
+        },
+
+        getNumMembers: (): number => {
+          return api.count('.s_G_Mbrs .esP_By_U');
         },
 
         addOneMember: (username: string) => {
@@ -3882,7 +3923,7 @@ function pagesFor(browser) {
           api.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
-        startChangingUsername: function(username: string) {
+        startChangingUsername: function() {
           api.waitAndClick('.s_UP_Prefs_ChangeUNB');
           api.stupidDialog.close();
         },

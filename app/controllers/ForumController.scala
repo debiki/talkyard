@@ -75,7 +75,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listForums: Action[Unit] = GetAction { request =>
     import request.dao
     SECURITY // Later, not now: Set permissions on site sections, load only those the requester may see.
-    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
+    val sectionPageIds = dao.getSectionPageIdsAsSeq()
     val pageStuffById = dao.getPageStuffById(sectionPageIds)
     val forumJsObjs = for {
       pageId <- sectionPageIds
@@ -97,7 +97,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def loadCategoryToEdit(categoryId: CategoryId): Action[Unit] = AdminGetAction { request =>
     import request.dao
-    val (category, isDefault) = dao.loadTheCategory(categoryId)
+    val (category, isDefault) = dao.getTheCategoryAndIsDefault(categoryId)
     val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
     val (allPerms, groups) = dao.readOnlyTransaction { tx =>
       (tx.loadPermsOnPages(), tx.loadAllGroupsAsSeq())
@@ -265,7 +265,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     // If category deleted, load deleted topics too. Otherwise rather confusing, if one
     // navigates to the deleted category, and sees its name, but no topics.
-    val showDeletedTopicsAnyway = dao.loadCategory(categoryId) exists { case (category, _) =>
+    val showDeletedTopicsAnyway = dao.getCategory(categoryId) exists { category =>
       category.isDeleted
     }
     if (showDeletedTopicsAnyway) {

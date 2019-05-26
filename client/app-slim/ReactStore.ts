@@ -55,11 +55,17 @@ export function useStoreState(): [Store, () => void] {
   // Remember the setter, so we can call it whenever the store changes.
   // Also, forget it, when unmounting.
   React.useEffect(function() {
-    if (useStoreStateSetters.indexOf(setState) === -1) {
-      useStoreStateSetters.push(setState);
-    }
+    // @ifdef DEBUG
+    const index = useStoreStateSetters.indexOf(setState);
+    dieIf(index !== -1, 'TyE506MRS24');
+    // @endif
+    useStoreStateSetters.push(setState);
+
     return function() {
       const index = useStoreStateSetters.indexOf(setState);
+      // @ifdef DEBUG
+      dieIf(index === -1, 'TyE03HMAD24');
+      // @endif
       if (index >= 0) {
         useStoreStateSetters.splice(index, 1);
       }
@@ -397,10 +403,10 @@ ReactDispatcher.register(function(payload) {
   ReactStore.emitChange();   // old, for non-hooks based code ...
 
   // Ensure new hooks based code cannot 'cheat' by updating things in-place:
-  // (Also, apparently React.useEffect sometimes won't run, unless `setStore()`
-  // below gets a new object — if reusing the same obj, the useEffect aren't called.)
-  // COULD clone more nested objs (not only `me`), to ensure no hooks code relies
-  // on in-place updates.
+  // (COULD clone more nested objs (not only `me`), to ensure no hooks code relies
+  // on in-place updates.)
+  // Also, apparently React.useEffect:s sometimes won't run, unless setStore()
+  // below gets a new object. If reusing the same obj, the useEffect fn:s aren't called.
   const meCopy: Myself = { ...store.me };
   const storeCopy: Store = { ...store, me: meCopy };
 

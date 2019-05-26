@@ -20,6 +20,34 @@ package debiki
 import RateLimits._
 
 
+/** There should be a Max-X-per-site restriction for each X that can be saved in
+  * the database — or X should count against the allowed disc quota.
+  * Otherwise it'd be possible to out-of-disk DoS attack the database,
+  * or DoS attack the CPUs by giving O(n^2) algorithms too many items.
+  *
+  * In the distant future, these limits will be configurable in the Play config
+  * file — that'll be the default limits, for all sites on this server.
+  * And via an admin web interface — that'll be dynamic per site limits.
+  *
+  * Maybe should be two default limits? One for blog comments sites —
+  * they shouldn't need any custom categories or permissions. And another for
+  * forums.
+  */
+object LengthLimits {
+
+  // Lowercase — late on, won't be a constant, but loaded from the database.
+  val maxPermsPerSite = 200
+
+  val maxCustomGroups = 21
+  val maxGroupsMemberCanJoin = 25
+  val maxMembersPerCustomGroup = 1000
+
+  // There are many other limits but they're hardcoded here and there ...
+  // COULD move them all to here. A nice first step, to later on making it
+  // possible to bump the restrictions, per site.
+}
+
+
 
 abstract class RateLimits {
   def key: String

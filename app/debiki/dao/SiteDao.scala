@@ -102,14 +102,18 @@ class SiteDao(
   with FeedsDao
   with AuditDao {
 
-  protected lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
+  // Could be protected instead? Then need to move parts of ApiV0Controller to inside the Dao.
+  lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
+
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
+
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
   def textAndHtmlMaker = new TextAndHtmlMaker(this.thePubSiteId(), context.nashorn)
   def notfGenerator(tx: SiteTransaction) = NotificationGenerator(tx, context.nashorn, globals.config)
+  def getLengthLimits(): debiki.LengthLimits.type = debiki.LengthLimits
 
   import context.security.throwIndistinguishableNotFound
 

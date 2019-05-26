@@ -86,6 +86,7 @@ export = {
   SysbotUserId: 2,
   EveryoneId: 10,
   AllMembersId: 11,
+  AllMembersUsername: 'all_members',
   BasicMembersId: 12,
   FullMembersId: 13,
   TrustedMembersId: 14,

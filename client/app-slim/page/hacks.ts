@@ -63,7 +63,7 @@ export const ExtReactRootNavComponent = createReactClass({
 
 
 export function reactRouterLinkifyTopHeaderLinks() {
-  Bliss.delegate(document, 'click', '.esPageHeader a[href]', function(event) {
+  Bliss.delegate(document.body, 'click', '.esPageHeader a[href]', function(event) {
     const elem = <HTMLLinkElement> event.target;
     if (!elem || !elem.href || !elem.href.length) return;
     // Try internal single-page-app navigation, if it's a link to a page here on the same site.

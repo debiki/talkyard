@@ -50,7 +50,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     val pageMeta = dao.getPageMeta(pageId) getOrElse
       throwIndistinguishableNotFound("EdE2WK0F")
 
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
     // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
@@ -80,7 +80,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     // BUG (need not fix now) if there are many sub communities with the same category slug. [4GWRQA28]
     val categorySlug = (request.body \ "categorySlug").as[String]
-    val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+    val category = request.dao.getCategoryBySlug(categorySlug).getOrThrowBadArgument(
         "EsE0FYK42", s"No category with slug: $categorySlug")
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
