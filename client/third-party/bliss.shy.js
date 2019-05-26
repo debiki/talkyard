@@ -3,6 +3,8 @@
 // wget https://raw.githubusercontent.com/LeaVerou/bliss/master/bliss.shy.js
 // The MIT License (MIT)
 // Copyright (c) 2015 Lea Verou.
+//
+-// Parts Copyright (c) 2019 Kaj Magnus Lindberg, search for [BLISSTY] to find my change.
 
 (function() {
 "use strict";
@@ -875,6 +877,12 @@ $.add($.classProps, {element: false, array: false});
 // Add native methods on $ and _
 var dummy = document.createElement("_");
 $.add($.extend({}, HTMLElement.prototype, function(method) {
+	//----------
+	// [BLISSTY] These methods have been deprecated in FF and cause FF to log warnings.
+	if (method.startsWith('onmozfullscreen')) {
+		return false;
+	}
+	//----------
 	return $.type(dummy[method]) === "function";
 }), null, true);
 
