@@ -34,7 +34,6 @@ const concat = require('gulp-concat');
 const insert = require('gulp-insert');
 const del = require('del');
 const rename = require("gulp-rename");
-const uglify = require('gulp-uglify');
 const gzip = require('gulp-gzip');
 const merge2 = require('merge2');
 const fs = require("fs");
@@ -42,6 +41,11 @@ const fs = require("fs");
 const save = require('gulp-save');
 const execSync = require('child_process').execSync;
 const preprocess = require('gulp-preprocess');
+
+const uglify = require('gulp-uglify');
+// Later, to use a more recent uglifyjs version:
+//const composer = require('gulp-uglify/composer');
+//const uglify = composer(require('uglify-js'), console);
 
 const currentDirectorySlash = __dirname + '/';
 const versionFilePath = 'version.txt';
@@ -248,7 +252,13 @@ var embeddedJsFiles = [
 // Don't insert any newline before the contents — that'd result in incorrect line numbers reported,
 // in compilation error messages.
 //
+// Remove 'use strict', or uglifyjs refuses to minify the combined slim-bundle.js,
+// because functions end up declared in a non-strict order (all fns not first).
+//
 const nextFileTemplate = function(contents, file) {
+  // Matching ^['"]use strict["']  (with  /s so ^ matches newlines) still leaves
+  // some 'use strict' that breaks minification. So remove them all.
+  contents = contents.replace(/['"]use strict["']/g, '');
   return (
     // Don't use file.relative (https://github.com/gulpjs/vinyl#filerelative),
     // it doesn't inc 'client/app-*/'.
