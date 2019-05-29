@@ -428,47 +428,6 @@ interface TalkyardTranslations {
     ThisTopicClosed_1: string;
     ThisTopicClosed_2: string;
 
-    ThisQuestSloved_1: string;
-    ThisQuestSloved_2: string;
-
-    ThisQuestWaiting_1: string;
-    ThisQuestWaiting_2: string;
-    ThisQuestWaiting_3: string;
-
-    ThisProblSolved_1: string;
-    ThisProblSolved_2: string;
-
-    ThisProblStarted_1: string;
-    ThisProblStarted_2: string;
-    ThisProblStarted_3: string;
-
-    ThisProblPlanned_1: string;
-    ThisProblPlanned_2: string;
-    ThisProblPlanned_3: string;
-    ThisProblPlanned_4: string;
-
-    ThisProblemNew_1: string;
-    ThisProblemNew_2: string;
-    ThisProblemNew_3: string;
-
-    ThisIdeaDone_1: string;
-    ThisIdeaDone_2: string;
-
-    ThisIdeaStarted_1: string;
-    ThisIdeaStarted_2: string;
-    ThisIdeaStarted_3: string;
-
-    ThisIdeaPlanned_1: string;
-    ThisIdeaPlanned_2: string;
-    ThisIdeaPlanned_3: string;
-    ThisIdeaPlanned_4: string;
-
-    ThisIdeaNew_1: string;
-    ThisIdeaNew_2: string;
-    ThisIdeaNew_3: string;
-    ThisIdeaNew_4: string;
-    ThisIdeaNew_5: string;
-
     ThisPageDeleted: string;
     CatDeldPageToo: string;
 

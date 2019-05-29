@@ -473,48 +473,6 @@ var t_pt_BR: TalkyardTranslations = t = {
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
     ThisTopicClosed_2: ". Você ainda pode postar comentários.",  // REVIEW removed "won't make ... bump ..."
 
-    ThisQuestSloved_1: "isto é uma pergunta e foi ",
-    // A  Topic-has-been-Answered icon shown here.
-    ThisQuestSloved_2: "respondida.",
-
-    ThisQuestWaiting_1: "Isto é uma ",
-    ThisQuestWaiting_2: "pergunta, aguardando uma ",
-    ThisQuestWaiting_3: "resposta.",
-
-    ThisProblSolved_1: "Isto é um problema e foi ",
-    ThisProblSolved_2: " resolvido.",
-
-    ThisProblStarted_1: "Isto é um problema. Nós ",
-    ThisProblStarted_2: " começamos a corrigir, mas ainda não foi ",
-    ThisProblStarted_3: " concluído.",
-
-    ThisProblPlanned_1: "Isto é um problema. Nós ",
-    ThisProblPlanned_2: " planejamos consertá-lo, mas ainda não ",
-    ThisProblPlanned_3: " começamos, ainda não está ",
-    ThisProblPlanned_4: " conclúido.",
-
-    ThisProblemNew_1: "Isto é um ",
-    ThisProblemNew_2: " problema. Ainda não está ",
-    ThisProblemNew_3: " resolvido.",
-
-    ThisIdeaDone_1: "Isto foi ",
-    ThisIdeaDone_2: " implementado.",
-
-    ThisIdeaStarted_1: "Nós ",
-    ThisIdeaStarted_2: " começamos a implementar. Mas ainda não está ",
-    ThisIdeaStarted_3: " concluído.",
-
-    ThisIdeaPlanned_1: "Nós ",
-    ThisIdeaPlanned_2: " planejamos implementar. Mas ainda não ",
-    ThisIdeaPlanned_3: " começamos, ainda não está ",
-    ThisIdeaPlanned_4: " concluído.",
-
-    ThisIdeaNew_1: "Isto é uma ",
-    ThisIdeaNew_2: " ideia, ainda não ",
-    ThisIdeaNew_3: " planejada, não ",
-    ThisIdeaNew_4: " iniciada, não ",
-    ThisIdeaNew_5: " concluída.",
-
     ThisPageDeleted: "Esta página foi deletada",
     CatDeldPageToo: "Categoria deletada; esta página foi deletada também",
 

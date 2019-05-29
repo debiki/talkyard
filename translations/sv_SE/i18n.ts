@@ -472,48 +472,6 @@ var t_sv_SE: TalkyardTranslations = t = {
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
     ThisTopicClosed_2: ". You can still post comments.",
 
-    ThisQuestSloved_1: "This is a question and it has been ",
-    // A  Topic-has-been-Answered icon shown here.
-    ThisQuestSloved_2: "answered.",
-
-    ThisQuestWaiting_1: "This is a ",
-    ThisQuestWaiting_2: "question, waiting for an ",
-    ThisQuestWaiting_3: "answer.",
-
-    ThisProblSolved_1: "This is a problem and it has been ",
-    ThisProblSolved_2: " solved.",
-
-    ThisProblStarted_1: "This is a problem. We have ",
-    ThisProblStarted_2: " started fixing it, but it's not yet ",
-    ThisProblStarted_3: " done.",
-
-    ThisProblPlanned_1: "This is a problem. We ",
-    ThisProblPlanned_2: " plan to fix it, but it's not yet ",
-    ThisProblPlanned_3: " started, not yet ",
-    ThisProblPlanned_4: " done.",
-
-    ThisProblemNew_1: "This is a ",
-    ThisProblemNew_2: " problem. It's not yet ",
-    ThisProblemNew_3: " solved.",
-
-    ThisIdeaDone_1: "This has been ",
-    ThisIdeaDone_2: " implemented.",
-
-    ThisIdeaStarted_1: "We have ",
-    ThisIdeaStarted_2: " started implementing this. But it's not yet ",
-    ThisIdeaStarted_3: " done.",
-
-    ThisIdeaPlanned_1: "We ",
-    ThisIdeaPlanned_2: " plan to implement this. But it's not yet ",
-    ThisIdeaPlanned_3: " started, not yet ",
-    ThisIdeaPlanned_4: " done.",
-
-    ThisIdeaNew_1: "This is an ",
-    ThisIdeaNew_2: " idea, not yet ",
-    ThisIdeaNew_3: " planned, not ",
-    ThisIdeaNew_4: " started, not ",
-    ThisIdeaNew_5: " done.",
-
     ThisPageDeleted: "This page has been deleted",
     CatDeldPageToo: "Category deleted, so this page was deleted too",
 

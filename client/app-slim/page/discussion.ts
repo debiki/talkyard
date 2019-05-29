@@ -109,71 +109,62 @@ export const TitleBodyComments = createComponent({
       ...
     */
 
+    let props1 = {};
+    let props2 = {};
+    let props3 = {};
+    let props4 = {};
+    const activeProps = { className: 's_Pg_TtlExpl_Active' };
+
     if (page.pageRole === PageRole.Question) {
       if (page.pageAnsweredAtMs) {
-        return { id: 'EsH5JV8', version: 1, content: r.div({ className: 'esHelp-solved' },
-            t.d.ThisQuestSloved_1, solvedIcon, t.d.ThisQuestSloved_2) };
+        props2 = activeProps;
       }
       else {
-        return { id: 'EsH2YK03', version: 1, content: r.div({},
-            t.d.ThisQuestWaiting_1, questionIcon,
-            t.d.ThisQuestWaiting_2, solvedIcon,
-            t.d.ThisQuestWaiting_3) };
+        props1 = activeProps;
       }
+      return { id: 'TyH603B', version: 1, content: r.ol({ className: '' },
+          r.li(props1, questionIcon, "= a question"),  // I18N all these new brief icon explanations
+          r.li(props2, solvedIcon, "= has an accepted answer")) };
     }
 
     if (page.pageRole === PageRole.Problem) {
       if (page.pageDoneAtMs) {
-        return { id: 'EsH5GKU0', version: 1, className: 'esH_ProblemSolved', content: r.div({},
-            t.d.ThisProblSolved_1, doneIcon, t.d.ThisProblSolved_2) };
+        props4 = activeProps;
       }
       else if (page.pageStartedAtMs) {
-        return { id: 'EsH7BK28', version: 1, className: 's_H_ProblemStarted', content: r.div({},
-            t.d.ThisProblStarted_1, startedIcon,
-            t.d.ThisProblStarted_2, doneIcon,
-            t.d.ThisProblStarted_3) };
+        props3 = activeProps;
       }
       else if (page.pagePlannedAtMs) {
-        return { id: 'EsH2PK40', version: 1, className: 's_H_ProblemPlanned', content: r.div({},
-            t.d.ThisProblPlanned_1, plannedIcon,
-            t.d.ThisProblPlanned_2, startedIcon,
-            t.d.ThisProblPlanned_3, doneIcon,
-            t.d.ThisProblPlanned_4) };
+        props2 = activeProps;
       }
       else {
-        return { id: 'EsH1WKG5', version: 1, className: 'esH_ProblemNew', content: r.div({},
-            t.d.ThisProblemNew_1, problemIcon,
-            t.d.ThisProblemNew_2, doneIcon,
-            t.d.ThisProblemNew_3) };
+        props1 = activeProps;
       }
+      return { id: 'TyH5KMA2', version: 1, content: r.ol({ className: '' },
+          r.li(props1, problemIcon, "= a problem"),
+          r.li(props2, plannedIcon, "= plan to fix"),
+          r.li(props3, startedIcon, "= started"),
+          r.li(props4, doneIcon, "= done")) };
     }
 
     if (page.pageRole === PageRole.Idea) {
       if (page.pageDoneAtMs) {
-        return { id: 'EsH9PK0', version: 1, content: r.div({},
-            t.d.ThisIdeaDone_1, doneIcon, t.d.ThisIdeaDone_2) };
+        props4 = activeProps;
       }
       else if (page.pageStartedAtMs) {
-        return { id: 'EsH2WTSK', version: 1, content: r.div({},
-          t.d.ThisIdeaStarted_1, startedIcon,
-          t.d.ThisIdeaStarted_2, doneIcon,
-          t.d.ThisIdeaStarted_3) };
+        props3 = activeProps;
       }
       else if (page.pagePlannedAtMs) {
-        return { id: 'EsH44TK2', version: 1, content: r.div({},
-            t.d.ThisIdeaPlanned_1, plannedIcon,
-            t.d.ThisIdeaPlanned_2, startedIcon,
-            t.d.ThisIdeaPlanned_3, doneIcon,
-            t.d.ThisIdeaPlanned_4) };
+        props2 = activeProps;
       }
       else {
-        return { id: 'EsH4GY6Z', version: 1, content: r.div({},
-            t.d.ThisIdeaNew_1, ideaIcon,
-            t.d.ThisIdeaNew_2, plannedIcon,
-            t.d.ThisIdeaNew_3, startedIcon,
-            t.d.ThisIdeaNew_4, doneIcon,
-            t.d.ThisIdeaNew_5) };
+        props1 = activeProps;
       }
+      return { id: 'TyH4RD28', version: 1, content: r.ol({ className: '' },
+          r.li(props1, ideaIcon, "= an idea"),
+          r.li(props2, plannedIcon, "= plan to do"),
+          r.li(props3, startedIcon, "= started"),
+          r.li(props4, doneIcon, "= done")) };
     }
 
     if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]
@@ -273,7 +264,7 @@ export const TitleBodyComments = createComponent({
 
     const anyHelpMessageData = this.makeHelpMessage();
     const anyHelpMessage = anyHelpMessageData
-        ? debiki2.help.HelpMessageBox({ message: anyHelpMessageData })
+        ? debiki2.help.HelpMessageBox({ message: anyHelpMessageData, className: 's_Pg_TtlExpl' })
         : null;
 
     let anyAboutCategoryClass;
