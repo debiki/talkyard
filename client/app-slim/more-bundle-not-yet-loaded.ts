@@ -29,6 +29,13 @@
 //========================
 
 
+export function openDefaultStupidDialog(props: StupidDialogStuff) {
+  Server.loadMoreScriptsBundle(() => {
+    util.openDefaultStupidDialog(props);
+  });
+}
+
+
 export function openAboutUserDialog(who: number | string | BriefUser, at, extraInfo?: string) {
   Server.loadMoreScriptsBundle(() => {
     if (_.isString(who) || _.isNumber(who)) {

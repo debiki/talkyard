@@ -26,22 +26,6 @@ const Modal = rb.Modal;
 const ModalBody = rb.ModalBody;
 
 
-export interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
-  dialogClassName?: string;
-  body?: any;
-  closeButtonTitle?: any;
-  primaryButtonTitle?: any;
-  secondaryButonTitle?: any;
-  small?: boolean,
-  tiny?: boolean,
-  // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
-  // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
-  onCloseOk?: (number) => void,
-  preventClose?: boolean,
-  closeOnClickOutside?: boolean, // default true
-}
-
-
 /**
  * Makes a function that returns a simple dialog that you can use for dialogs
  * like: "Wrong password [Okay]" i.e. only a simple message and a close button.
@@ -79,7 +63,11 @@ export const StupidDialog = createComponent({
   open: function(stuff: StupidDialogStuff) {
     const winWidth = window.innerWidth;
     const atX = eds.isInEmbeddedCommentsIframe ? winWidth / 2 : undefined;
-    this.setState({ isOpen: true, stuff, atX, winWidth });
+    this.setState({ isOpen: true, stuff, atX, winWidth }, () => {
+      if (stuff.getCloseFn) {
+        stuff.getCloseFn(this.close);
+      }
+    });
   },
 
   close: function(whichButton: number) {

@@ -545,3 +545,18 @@ object MayWhat {
     mayPostComment = false, maySee = Some(false), maySeeOwn = false, debugCode)
 
 }
+
+
+sealed abstract class MaySeeOrWhyNot(val IntVal: Int, val may: Boolean = false) {
+  def toInt: Int = IntVal
+}
+
+object MaySeeOrWhyNot {
+  case object YesMaySee extends MaySeeOrWhyNot(1, true)
+  case object NopeNoPostWithThatNr extends MaySeeOrWhyNot(3)
+  case object NopePostDeleted extends MaySeeOrWhyNot(4)
+
+  /** One may not see the post or page, or even know if it exists or not. */
+  case object NopeUnspecified extends MaySeeOrWhyNot(2)
+}
+

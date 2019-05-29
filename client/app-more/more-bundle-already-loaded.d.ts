@@ -98,7 +98,7 @@ declare namespace debiki2.login {
 
 
 declare namespace debiki2.util {
-  var openDefaultStupidDialog;
+  function openDefaultStupidDialog(stuff: StupidDialogStuff);
 }
 
 declare namespace debiki2.nopage {

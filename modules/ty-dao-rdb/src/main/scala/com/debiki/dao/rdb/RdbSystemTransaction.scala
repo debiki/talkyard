@@ -393,6 +393,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         userIdOpt: Option[UserId] = None,
         emailIdOpt: Option[String] = None,
         skipReviewTaskNotfs: Boolean = false,
+        skipDeletedPosts: Boolean = false,
         upToWhen: Option[ju.Date] = None)
         : Map[SiteId, Seq[Notification]] = {
 
@@ -415,9 +416,23 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       else
         ""
 
-    val skipReviewTasksAnd =
+    val maybeSkipReviewTasksAnd =
       if (!skipReviewTaskNotfs) ""
       else s"n.notf_type > ${NotificationType.MaxReviewTaskNotfId} and "
+
+    val (maybeLeftJoinPostsAndPages, maybeSkipDeletedPostsAnd) =  // [SKIPDDNTFS]
+      if (!skipDeletedPosts) ("", "")
+      else (
+        """
+         left join posts3 po on
+            n.site_id = po.site_id and
+            n.unique_post_id = po.unique_post_id
+          left join pages3 pg on
+            po.site_id = pg.site_id and
+            po.page_id = pg.page_id""",
+        """
+         po.deleted_at is null and
+         pg.deleted_at is null and""")
 
     val baseQueryOpenPara = s"""
       select
@@ -429,8 +444,10 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         on n.site_id = u.site_id
            and n.to_user_id = u.user_id
            $andEmailVerifiedOrGuest
+        $maybeLeftJoinPostsAndPages
       where
-        $skipReviewTasksAnd ("""
+        $maybeSkipReviewTasksAnd
+        $maybeSkipDeletedPostsAnd ("""
 
     val (moreWhere, orderBy, values) = (userIdOpt, emailIdOpt) match {
       case (Some(uid), None) =>

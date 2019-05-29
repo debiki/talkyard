@@ -546,6 +546,24 @@ interface HelpMessage {
 }
 
 
+interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
+  dialogClassName?: string;
+  body?: any;
+  closeButtonTitle?: any;
+  primaryButtonTitle?: any;
+  secondaryButonTitle?: any;
+  small?: boolean,
+  tiny?: boolean,
+  // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
+  // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
+  onCloseOk?: (number) => void,
+  preventClose?: boolean,
+  closeOnClickOutside?: boolean, // default true
+  // Call this to get a fn that closes the dialog.
+  getCloseFn?: (closeFn: () => void) => void,
+}
+
+
 
 type TourId = string;
 type TourTipsSeen = TourId[];

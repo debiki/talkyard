@@ -3652,6 +3652,12 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
+      tabToNotfs: function() {
+        api.waitAndClick('.e_UP_NotfsB');
+        api.userProfilePage.notfs.waitUntilSeesNotfs();
+        api.waitUntilLoadingOverlayGone();
+      },
+
       goToPreferences: function() {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
         api.userProfilePage.clickGoToPreferences();
       },
@@ -3844,6 +3850,10 @@ function pagesFor(browser) {
 
         waitUntilSeesNotfs: function() {
           api.waitForVisible('.esUP .esNotfs li a');
+        },
+
+        numNotfs: (): number => {
+          return api.count('.esUP .esNotfs li a');
         },
 
         openPageNotfWithText: function(text) {

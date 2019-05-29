@@ -1370,14 +1370,15 @@ trait UserDao {
   def loadNotificationsSkipReviewTasks(userId: UserId, upToWhen: Option[When], me: Who,
         unseenFirst: Boolean = false, limit: Int = 100)
         : NotfsAndCounts = {
+    val isAdmin = getParticipant(me.id).exists(_.isAdmin)
     readOnlyTransaction { tx =>
       if (me.id != userId) {
         if (!tx.loadParticipant(me.id).exists(_.isStaff))
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
-      debiki.JsonMaker.loadNotificationsSkipReviewTasks(userId, tx, unseenFirst = unseenFirst, limit = limit,
-        upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
+      debiki.JsonMaker.loadNotificationsToShowInMyMenu(userId, tx, unseenFirst = unseenFirst,
+        limit = limit, skipDeleted = !isAdmin, upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
   }
 

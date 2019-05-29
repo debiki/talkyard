@@ -650,8 +650,8 @@ class JsonMaker(dao: SiteDao) {
       else ReviewTaskCounts(0, 0)
 
     // dupl line [8AKBR0]
-    val notfsAndCounts = loadNotificationsSkipReviewTasks(
-      requester.id, tx, unseenFirst = true, limit = 20)
+    val notfsAndCounts = loadNotificationsToShowInMyMenu(
+      requester.id, tx, unseenFirst = true, limit = 20, skipDeleted = !requester.isAdmin)
 
     // Hmm not needed? Group ids already incl in myGroupsEveryoneLast above —
     // if user = requester.
@@ -1260,9 +1260,10 @@ object JsonMaker {
     notfsJson: JsArray)
 
 
-  def loadNotificationsSkipReviewTasks(userId: UserId, tx: SiteTransaction, unseenFirst: Boolean,
-        limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
-    val notfs = tx.loadNotificationsToUserSkipReviewTasks(userId, limit, unseenFirst, upToWhen)
+  def loadNotificationsToShowInMyMenu(userId: UserId, tx: SiteTransaction, unseenFirst: Boolean,
+        limit: Int, skipDeleted: Boolean, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
+    val notfs = tx.loadNotificationsToShowInMyMenu(
+      userId, limit, unseenFirst, skipDeleted = skipDeleted, upToWhen)
     notificationsToJson(notfs, tx)
   }
 

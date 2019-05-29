@@ -306,7 +306,11 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
     const errorAsJson = JSON.stringify(errorObj);
     const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
     console.error(`Error GETting from ${uri}: ${errorAsJson}, details: ${details}`);
-    if (!options.suppressErrorDialog) {
+    let maybeIgnoreError;
+    if (errorFn) {
+      maybeIgnoreError = errorFn(details, errorObj.status);
+    }
+    if (!options.suppressErrorDialog && maybeIgnoreError !== IgnoreThisError) {
       const errorDialog = pagedialogs.getServerErrorDialog();
       if (errorObj.xhr) {
         errorDialog.open(errorObj.xhr);
@@ -314,9 +318,6 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
       else {
         errorDialog.openForBrowserError(errorObj.stack || 'Unknown error [EdEUNK2]');
       }
-    }
-    if (errorFn) {
-      errorFn(details, errorObj.status);
     }
   });
 
@@ -801,7 +802,7 @@ export function resendOwnerEmailAddrVerifEmail(success) {
 //
 export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) {
   postJsonSuccess('/-/resend-email-addr-verif-email', (response: UserAccountResponse) => {
-    util.openDefaultStupidDialog({ body: "Email sent" });  // why accessible here?
+    morebundle.openDefaultStupidDialog({ body: "Email sent" });
   }, { userId, emailAddress });
 }
 
@@ -1171,9 +1172,10 @@ export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => v
   }, function() {
     // Pass null to tell the editor to show no onebox (it should show the link instead).
     success(null);
+    // It'd be annoying if error dialogs popped up, whilst typing.
+    return IgnoreThisError;
   }, {
     dataType: 'html',
-    suppressErrorDialog: true,
   });
 }
 
@@ -1418,7 +1420,32 @@ export function submitUsabilityTestingRequest(formData: FormData) {  // [plugin]
 
 
 export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => void) {
-  get(`/-/load-post?pageId=${getPageId()}&postNr=${postNr}`, success);
+  get(`/-/load-post?pageId=${getPageId()}&postNr=${postNr}`, success,
+      (errorDetails: string, satus: number) => {
+    let e2eTestClass: string;
+    let message: string;
+    if (errorDetails.indexOf('_TyEPOSTGONE_') >= 0) {
+      // Post deleted, and it's ok to tell the requester about this.
+      e2eTestClass = 'e_PDd';
+      message = `That post, nr ${postNr}, has been deleted.`;  // I18N
+    }
+    else if (errorDetails.indexOf('_TyEBADPOSTNR') >= 0) {
+      // No post with that nr, and it's ok to tell the requester about this.
+      e2eTestClass = 'e_BadPNr';
+      message = `There's no post nr ${postNr} on this page. [TyEBADPOSTNR]`;  // I18N
+    }
+    else {
+      // Show error dialog: don't return IgnoreThisError below.
+      return;
+    }
+
+    // UX COULD remove any notf from theStore, so any blue notf dot, disappears
+    // directly.  Doesn't matter much; such a notf will be gone anyway, after
+    // page reload (filtered out here [SKIPDDNTFS]).
+
+    morebundle.openDefaultStupidDialog({ body: message, dialogClassName: e2eTestClass });
+    return IgnoreThisError;
+  });
 }
 
 

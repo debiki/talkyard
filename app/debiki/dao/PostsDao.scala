@@ -1364,8 +1364,9 @@ trait PostsDao {
       }
     }
 
-    BUG ; SHOULD // delete any notifications, if post deleted. Otherwise people click the notf
-    // icon, and then won't see the linked post, or maybe they'll get to a 404 Not Found page.
+    // Need not delete any notifications, even if posts were deleted —
+    // instead, notfs about deleted posts, or on deleted pages, are filtered
+    // out here: [SKIPDDNTFS].
 
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 

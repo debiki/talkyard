@@ -851,9 +851,26 @@ export function loadAndShowNewPage(newUrlPath, history) {
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
   Server.loadPageJson(newUrlPath, response => {
     if (response.problemCode) {
-      // COULD look at the code and do sth "smart" instead. But not urgent — only pages one
-      // may access, should be shown & SPA-linked to anyway.
-      die(`${response.problemMessage} [${response.problemCode}]`);
+      // Code 404 Not Found  happens if page delted, or moved to a cat one may not access.
+      switch (response.problemCode) {
+        case 404:
+          let closeDialogFn;
+          function goBack() {
+            closeDialogFn();
+            history.goBack();
+          }
+          morebundle.openDefaultStupidDialog({ dialogClassName: 'e_NoPg',
+              // Closing the dialog would leave the user stranded on an empty broken page.
+              preventClose: true,
+              getCloseFn: fn => closeDialogFn = fn,
+              body: rFragment({},
+                // I18N:
+                r.p({}, "This page has been deleted, or it never existed, or you may not access it."),
+                r.p({}, r.a({ onClick: goBack }, "Go back to last page"))) });
+          break;
+        default:
+          die(`${response.problemMessage} [${response.problemCode}]`);
+      }
       return;
     }
 

@@ -30,6 +30,7 @@ import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
 import debiki.dao.UsersOnlineStuff
+import ed.server.auth.MaySeeOrWhyNot
 import ed.server.security.EdSecurity
 
 
@@ -66,11 +67,18 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
         throwForbidden("EdE4F8WV0", "Account not approved")
     }
 
-    val (maySee, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
-    if (!maySee) {
-      // Don't indicate that the page exists, because the page slug might tell strangers
-      // what it is about. [7C2KF24]
-      throwIndistinguishableNotFound(debugCode)
+    val (maySeeResult, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
+    maySeeResult match {
+      case MaySeeOrWhyNot.YesMaySee =>
+        // Fine, don't throw.
+      case MaySeeOrWhyNot.NopeNoPostWithThatNr =>
+        throwNotFound("_TyEBADPOSTNR", s"There's no post nr $postNr on page $pageId [$debugCode]")
+      case MaySeeOrWhyNot.NopePostDeleted =>
+        throwNotFound("_TyEPOSTGONE_", s"Post nr $postNr on page $pageId has been deleted [$debugCode]")
+      case _ =>
+        // Don't indicate that the page exists, because the page slug might tell strangers
+        // what it is about. [7C2KF24]
+        throwIndistinguishableNotFound(debugCode)
     }
 
     val json = dao.jsonMaker.makeStorePatchForPostNr(pageId, postNr, showHidden = true) getOrElse {

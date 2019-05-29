@@ -292,7 +292,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
       if dao.maySeePostUseCache(post, pageMeta, requester,
-        maySeeUnlistedPages = requesterIsStaffOrAuthor)._1
+        maySeeUnlistedPages = requesterIsStaffOrAuthor)._1.may
     } yield post
 
     val pageIds = posts.map(_.pageId).distinct

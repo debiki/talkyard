@@ -546,8 +546,11 @@ trait SiteTransaction {
   def updateNotificationSkipEmail(notifications: Seq[Notification])
   def markNotfsAsSeenSkipEmail(userId: UserId, notfId: Option[NotificationId])
   def markNotfsForPostIdsAsSeenSkipEmail(userId: UserId, postIds: Set[PostId]): Int
-  def loadNotificationsToUserSkipReviewTasks(roleId: RoleId, limit: Int, unseenFirst: Boolean,
-    upToWhen: Option[ju.Date] = None): Seq[Notification]
+
+  /** This skips review tasks and notfs about deleted posts. */
+  def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
+    skipDeleted: Boolean, upToWhen: Option[ju.Date] = None): Seq[Notification]
+
   def loadNotificationsAboutPost(postId: PostId, notfType: NotificationType): Seq[Notification]
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
   /** Useful when writing tests. */

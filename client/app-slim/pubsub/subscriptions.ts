@@ -72,8 +72,7 @@ if (eds.useServiceWorker) {
         // BUG won't work, unless the more-scripts bundle already loaded.
         // Instead, find a tiny modal dialog lib, use instead of React Bootstrap? [tiny-dialog]
         // But ... will work in prod mode? Because then caches, no server roundtrip needed?
-        Server.loadMoreScriptsBundle(function() {
-          util.openDefaultStupidDialog({  // import what?
+        morebundle.openDefaultStupidDialog({
             body: t.ni.PlzRefr,
             primaryButtonTitle: t.ni.RefrNow,
             secondaryButonTitle: t.Cancel,
@@ -81,7 +80,6 @@ if (eds.useServiceWorker) {
               if (whichButton === 1)
                 window.location.reload()
             } });
-        });
         break;
       default:
         die("Unknown service worker message type [TyEUNKSWMSG]: " + message.type +
@@ -196,8 +194,7 @@ function subscribeToServerEventsDirectly(me: Myself) {
       // BUG won't work, unless the more-scripts bundle already loaded  :-P
       // Instead, find a tiny modal dialog lib, use instead of React Bootstrap? [tiny-dialog]
       // But ... will work in prod mode? Because then caches, no server roundtrip needed?
-      Server.loadMoreScriptsBundle(function() {
-        util.openDefaultStupidDialog({  // import what?
+      morebundle.openDefaultStupidDialog({
           body: t.ni.PlzRefr,
           primaryButtonTitle: t.ni.RefrNow,
           secondaryButonTitle: t.Cancel,
@@ -205,7 +202,6 @@ function subscribeToServerEventsDirectly(me: Myself) {
             if (whichButton === 1)
               window.location.reload()
           } });
-      });
     }
     else {
       // If the server couldn't reply with an error code, there's likely no internet connection?

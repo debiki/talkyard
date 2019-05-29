@@ -109,11 +109,12 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadNotificationsToUserSkipReviewTasks(roleId: RoleId, limit: Int, unseenFirst: Boolean,
-        upToWhen: Option[ju.Date]): Seq[Notification] = {
+  def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
+        skipDeleted: Boolean, upToWhen: Option[ju.Date]): Seq[Notification] = {
     val notfsBySiteId = asSystem.loadNotfsImpl(   // COULD specify consumers
         limit = limit, unseenFirst = unseenFirst, onlyIfEmailVerifiedOrGuest = false,
-        Some(siteId), skipReviewTaskNotfs = true, userIdOpt = Some(roleId), upToWhen = upToWhen)
+        Some(siteId), skipReviewTaskNotfs = true, skipDeletedPosts = skipDeleted,
+        userIdOpt = Some(roleId), upToWhen = upToWhen)
     // All loaded notifications are to `roleId` only.
     notfsBySiteId(siteId)
   }
