@@ -137,6 +137,7 @@ trait AllSettings {
     */
   def enableChat: Boolean
   def enableDirectMessages: Boolean
+  def enableSimilarTopics: Boolean
 
   def showSubCommunities: Boolean  // RENAME to enableSubCommunities? Why "show"?
   def showExperimental: Boolean
@@ -231,6 +232,7 @@ trait AllSettings {
     enableTags = Some(self.enableTags),
     enableChat = Some(self.enableChat),
     enableDirectMessages = Some(self.enableDirectMessages),
+    enableSimilarTopics = Some(self.enableSimilarTopics),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     featureFlags = Some(self.featureFlags),
@@ -344,6 +346,7 @@ object AllSettings {
     val enableTags = true
     val enableChat = true
     val enableDirectMessages = true
+    val enableSimilarTopics = true
     val showSubCommunities = false
     val showExperimental = false
     val featureFlags = ""
@@ -446,6 +449,7 @@ case class EffectiveSettings(
   def enableTags: Boolean = firstInChain(_.enableTags) getOrElse default.enableTags
   def enableChat: Boolean = firstInChain(_.enableChat) getOrElse default.enableChat
   def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
+  def enableSimilarTopics: Boolean = firstInChain(_.enableSimilarTopics) getOrElse default.enableSimilarTopics
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def featureFlags: String = firstInChain(_.featureFlags) getOrElse default.featureFlags
@@ -648,6 +652,7 @@ object Settings2 {
       "enableTags" -> JsBooleanOrNull(s.enableTags),
       "enableChat" -> JsBooleanOrNull(s.enableChat),
       "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
+      "enableSimilarTopics" -> JsBooleanOrNull(s.enableSimilarTopics),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "featureFlags" -> JsStringOrNull(s.featureFlags),
@@ -742,6 +747,7 @@ object Settings2 {
     enableTags = anyBool(json, "enableTags", d.enableTags),
     enableChat = anyBool(json, "enableChat", d.enableChat),
     enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
+    enableSimilarTopics = anyBool(json, "enableSimilarTopics", d.enableSimilarTopics),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     featureFlags = anyString(json, "featureFlags", d.featureFlags),

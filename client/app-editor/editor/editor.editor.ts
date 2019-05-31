@@ -101,6 +101,7 @@ export const Editor = createComponent({
   componentWillMount: function() {
     this.updatePreview = _.debounce(this.updatePreview, 333);
     this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);  // [7AKBJ42]
+    this.searchForSimilarTopicsDebounced = _.debounce(this.searchForSimilarTopics, 1800);
   },
 
   componentDidMount: function() {
@@ -450,6 +451,8 @@ export const Editor = createComponent({
       newForumTopicCategoryId: categoryId,
       newPageRole: role,
       text: text,
+      showSimilarTopics: true,
+      searchResults: null,
     },
       this.updatePreview);
 
@@ -665,7 +668,7 @@ export const Editor = createComponent({
   // If we're showing some guidelines, but they're not visible on screen, then show them
   // in a modal dialog instead — guidelines are supposedly fairly important.
   perhapsShowGuidelineModal: function() {
-    if (!this.refs.guidelines)
+    if (!this.refs.guidelines || this.state.showGuidelinesInModal)
       return;
 
     // If the guidelines are visible, we don't need no modal.
@@ -700,9 +703,14 @@ export const Editor = createComponent({
         ? DraftStatus.EditsUndone
         : DraftStatus.ShouldSave;
 
+    const titleChanged = this.state.title !== title;
+
     this.setState({ title, text, draftStatus }, () => {
       if (draftStatus === DraftStatus.ShouldSave) {
         this.saveDraftDebounced();
+      }
+      if (titleChanged) {
+        this.searchForSimilarTopicsDebounced();
       }
       this.updatePreview();
     });
@@ -749,6 +757,48 @@ export const Editor = createComponent({
     this.setState({
       safePreviewHtml: htmlText
     }, anyCallback);
+  },
+
+  searchForSimilarTopics: function() {
+    if (!this.refs.editor)
+      return;
+
+    const store: Store = this.state.store;
+    let settings: SettingsVisibleClientSide = store.settings;
+    if (settings.enableSimilarTopics === false)
+      return;
+
+    // Wait until has typed a bit, so there's sth to search for.
+    // People sometimes type short titles like "Popups flicker" or "gravatar support",
+    // so start searching fairly soon:
+    const trimmedTitle = (this.state.title || '').trim();
+    const tooFewChars = trimmedTitle.length < 12;
+    const tooFewWords = trimmedTitle.indexOf(' ') === -1;  // 2 words
+
+    let skipSilimarTopics = tooFewChars || tooFewWords;
+
+    // For now, if not enough space to show a list of similar topics, don't do it.
+    // UX COULD instead show the similar topics, between the title input, and the
+    // topic body textarea input. (StackOverflow does this, for some screen resolutons).
+    // This'd work on mobile, at least if it's in portrait orientation
+    // (in landscape orientation, might push the textarea down below the lower edge
+    // of the screen — maybe bad?).
+    if (!skipSilimarTopics) {
+      const rect = this.refs.editor.getBoundingClientRect();
+      skipSilimarTopics = rect.top < 170; // sync w css [SIMLTPCH]
+    }
+
+    if (skipSilimarTopics) {
+      if (this.state.searchResults) {
+        this.setState({ searchResults: null });
+      }
+      return;
+    }
+
+    Server.search(this.state.title, (searchResults: SearchResults) => {
+      if (this.isGone) return;
+      this.setState({ searchResults });
+    });
   },
 
   changeCategory: function(categoryId: CategoryId) {
@@ -1205,6 +1255,9 @@ export const Editor = createComponent({
     const draftStatus: DraftStatus = this.state.draftStatus;
     const anyDraftLoaded = draftStatus !== DraftStatus.NotLoaded;
 
+
+    // ----- Guidelines?
+
     const guidelines = state.guidelines;
     let guidelinesElem;
     let showGuidelinesBtn;
@@ -1229,11 +1282,43 @@ export const Editor = createComponent({
     const guidelinesModal = GuidelinesModal({ guidelines,
         isOpen: guidelines && this.state.showGuidelinesInModal, close: this.hideGuidelines });
 
+
+    // ----- Similar topics?
+
+    let oldSimilarTopicsTips;
+    const searchResults: SearchResults = this.state.searchResults;
+
+    if (searchResults && this.state.showSimilarTopics) {
+      const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.title);
+      const searchUrl = '/-/search?q=' + urlEncodedQuery;
+
+      const hitList = !searchResults || !this.state.showSimilarTopics ? null :
+          r.ul({},
+            _.take(searchResults.pagesAndHits, 10).map((pageAndHits: PageAndHits) =>
+              r.li({ key: pageAndHits.pageId, className: 's_E_SimlTpcs_L_It' },
+                r.a({ href: '/-' + pageAndHits.pageId }, pageAndHits.pageTitle))));
+
+      oldSimilarTopicsTips = !hitList ? null :
+        r.div({ className: 's_E_SimlTpcs', ref: 'simlTpcs' },
+          r.div({ className: '' },
+            r.h4({}, "Similar topics:"),  // I18N
+            r.a({ className: 'icon-cancel dw-hide s_E_SimlTpcs_HideB',
+                onClick: () => this.setState({ showSimilarTopics: false }) },
+              t.Hide),
+            r.a({ className: 'icon-search dw-hide s_E_SimlTpcs_SearchB', href: searchUrl,
+                target: '_blank' },
+              t.Search),
+            hitList));
+    }
+
     // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
     // except for the editor, people will see it for sure. We'll make everything dark only for
     // a short while.
     const anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
         r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
+
+
+    // ----- Title, page type, category
 
     let titleInput;
     let pageRoleDropdown;
@@ -1339,6 +1424,9 @@ export const Editor = createComponent({
           ':');
     }
 
+
+    // ----- Save button
+
     function makeSaveTitle(brief, extra) {
       if (!extra) return brief;
       return r.span({}, brief, r.span({ className: 'esE_SaveB_Verbose' }, ' ' + extra));
@@ -1392,6 +1480,9 @@ export const Editor = createComponent({
       }
     }
 
+
+    // ----- Misc (move elsewhere?)
+
     let anyViewHistoryButton;
     if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
@@ -1404,6 +1495,9 @@ export const Editor = createComponent({
     const styles = {
       display: this.state.visible ? 'block' : 'none'
     };
+
+
+    // ----- Textarea and editor buttons
 
     const textareaButtons =
       r.div({ className: 'esEdtr_txtBtns' },
@@ -1445,6 +1539,9 @@ export const Editor = createComponent({
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
+
+    // ----- Editor size
+
     let editorClasses = eds.isInEmbeddedEditor ? '' : 'editor-box-shadow';
     editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
     editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
@@ -1458,11 +1555,17 @@ export const Editor = createComponent({
         !this.state.showMaximized ? t.e.Maximize : (
           this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
+
+    // ----- Draft status
+
     const draft: Draft = this.state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
 
     const draftStatusText =
         DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
+
+
+    // ----- The result
 
     return (
       r.div({ style: styles },
@@ -1472,6 +1575,7 @@ export const Editor = createComponent({
             className: editorClasses },
           r.button({ className: 'esEdtr_close esCloseCross', onClick: this.onCancelClick }),
           guidelinesElem,
+          oldSimilarTopicsTips,
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },

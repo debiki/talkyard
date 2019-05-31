@@ -129,6 +129,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         enable_tags,
         enable_chat,
         enable_direct_messages,
+        enable_similar_topics,
         show_sub_communities,
         experimental,
         feature_flags,
@@ -137,7 +138,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -213,6 +214,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.enableTags.getOrElse(None).orNullBoolean,
       editedSettings2.enableChat.getOrElse(None).orNullBoolean,
       editedSettings2.enableDirectMessages.getOrElse(None).orNullBoolean,
+      editedSettings2.enableSimilarTopics.getOrElse(None).orNullBoolean,
       editedSettings2.showSubCommunities.getOrElse(None).orNullBoolean,
       editedSettings2.showExperimental.getOrElse(None).orNullBoolean,
       editedSettings2.featureFlags.getOrElse(None).trimOrNullVarchar,
@@ -310,6 +312,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("enable_tags", s.enableTags.map(_.orNullBoolean))
     maybeSet("enable_chat", s.enableChat.map(_.orNullBoolean))
     maybeSet("enable_direct_messages", s.enableDirectMessages.map(_.orNullBoolean))
+    maybeSet("enable_similar_topics", s.enableSimilarTopics.map(_.orNullBoolean))
     maybeSet("show_sub_communities", s.showSubCommunities.map(_.orNullBoolean))
     maybeSet("experimental", s.showExperimental.map(_.orNullBoolean))
     maybeSet("feature_flags", s.featureFlags.map(_.trimOrNullVarchar))
@@ -407,6 +410,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       enableTags = getOptBool(rs, "enable_tags"),
       enableChat = getOptBool(rs, "enable_chat"),
       enableDirectMessages = getOptBool(rs, "enable_direct_messages"),
+      enableSimilarTopics = getOptBool(rs, "enable_similar_topics"),
       showSubCommunities = getOptBool(rs, "show_sub_communities"),
       showExperimental = getOptBool(rs, "experimental"),
       featureFlags = getOptString(rs, "feature_flags"),

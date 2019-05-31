@@ -1108,6 +1108,8 @@ object JsonMaker {
       json += "enableChat" -> JsBoolean(settings.enableChat)
     if (settings.enableDirectMessages != D.enableDirectMessages)
       json += "enableDirectMessages" -> JsBoolean(settings.enableDirectMessages)
+    if (settings.enableSimilarTopics != D.enableSimilarTopics)
+      json += "enableSimilarTopics" -> JsBoolean(settings.enableSimilarTopics)
     if (settings.showSubCommunities != D.showSubCommunities)
       json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
     if (settings.showExperimental != D.showExperimental)

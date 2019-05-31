@@ -1039,6 +1039,7 @@ const FeatureSettings = createFactory({
             newSettings.showCategories = newSettings.enableForum;
             newSettings.enableChat = newSettings.enableForum;
             newSettings.enableDirectMessages = newSettings.enableForum;
+            newSettings.enableSimilarTopics = newSettings.enableForum;
             newSettings.showTopicFilterButton = newSettings.enableForum;
             newSettings.showTopicTypes = newSettings.enableForum;
             newSettings.selectTopicType = newSettings.enableForum;
@@ -1089,6 +1090,17 @@ const FeatureSettings = createFactory({
           getter: (s: Settings) => s.enableDirectMessages,
           update: (newSettings: Settings, target) => {
             newSettings.enableDirectMessages = target.checked;
+          }
+        }),
+
+        !isForumEnabled ? null : Setting2(props, {
+          type: 'checkbox',
+          label: "Enable similar topics",
+          help: "When people types new questions / topics, show them a list of similar topics, " +
+            "so they find answers, without having to repeat old questions.",
+          getter: (s: Settings) => s.enableSimilarTopics,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableSimilarTopics = target.checked;
           }
         }),
 

@@ -975,6 +975,7 @@ interface SettingsVisibleClientSide {
   enableTags?: boolean;                 // default: false for now, true later when impl.
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
+  enableSimilarTopics?: boolean;        // default: depends on config file, later: true
   showSubCommunities?: boolean;         // default: false
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
@@ -1567,6 +1568,7 @@ interface Settings {
   enableTags: boolean;
   enableChat: boolean;
   enableDirectMessages: boolean;
+  enableSimilarTopics: boolean;
   showSubCommunities: boolean;
   showExperimental: boolean;
   featureFlags: string;

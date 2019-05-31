@@ -133,6 +133,7 @@ trait ForumDao {
             showCategories = Some(Some(false)),
             enableChat = Some(Some(false)),
             enableDirectMessages = Some(Some(false)),
+            enableSimilarTopics = Some(Some(false)),
             showTopicFilterButton = Some(Some(false)),
             showTopicTypes = Some(Some(false)),
             selectTopicType = Some(Some(false))))

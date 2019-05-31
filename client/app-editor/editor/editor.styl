@@ -76,6 +76,35 @@ $spacyYMinHeight = 400px;
     background-color: hsl(0,0%,80%);
     cursor: pointer;
 
+
+.s_E_SimlTpcs
+  box-shadow: 10px 9px 10px rgba(0,0,0,0.57) !important;
+  bottom: calc(100% + 5px) !important;  // or the shadow gets bit too close to the title
+  max-height: 170px;  // sync with js [SIMLTPCH]
+  overflow-y: scroll;
+  overflow-x: hidden;
+  h4
+    margin: 0 0 9px;
+    float: left;
+  ul
+   clear: both;
+
+.s_E_SimlTpcs_L_It
+  line-height: 131%;
+  font-size: 15.3px;
+  margin-left: 26px;
+
+
+.s_E_SimlTpcs_SearchB,
+.s_E_SimlTpcs_HideB
+  padding: 10px 0 2px 13px !important;
+  position: relative;
+  top: -12px;
+
+.s_E_SimlTpcs_SearchB
+  padding-right: 13px !important;
+
+
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite
   top: initial;
@@ -149,15 +178,16 @@ $spacyYMinHeight = 400px;
   .btn-default
     border-color: hsl(0, 0%, 70%); // not 80% because background not white but light gray
 
+  .s_E_SimlTpcs,
   .dw-editor-guidelines-wrap
     position: absolute;
     bottom: 100%;
 
+  .s_E_SimlTpcs,
   .dw-editor-guidelines
     background-color: hsl(49, 70%, 93%);
     border: 1px solid hsl(49, 70%, 85%);
     box-shadow: 6px 7px 9px rgba(80, 80, 80, 0.63);
-    position: relative;
     left: 13px;
     padding: 18px 18px 8px;
     min-width: 300px;
@@ -171,6 +201,9 @@ $spacyYMinHeight = 400px;
       padding: 0 15px 8px;
       color: hsl($uiHue, 70%, 45%);
       float: right;
+
+  .dw-editor-guidelines
+    position: relative;  // or can move  left 13px to the -wrap instead?
 
   #editor-after-borders
     position: absolute;
