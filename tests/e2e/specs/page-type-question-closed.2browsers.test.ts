@@ -76,11 +76,13 @@ describe("Page type question", () => {
 
   it("... attempts to select an answer, but cannot (not his question)", () => {
     michaelsBrowser.refresh();
+    michaelsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     assert(!michaelsBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
 
   it("Maria selects one answer", () => {
     mariasBrowser.refresh();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     assert(mariasBrowser.topic.canSelectAnswer()); // (2PR5PH)
     mariasBrowser.topic.selectPostNrAsAnswer(2);   // a cat
   });
@@ -119,6 +121,7 @@ describe("Page type question", () => {
 
   it("Maria wants to select Otter as the accepted answer again, but now she cannot", () => {
     mariasBrowser.refresh();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     assert(!mariasBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
 
@@ -155,7 +158,7 @@ describe("Page type question", () => {
       const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
       console.log('id: ' + id);
       switch (i) {
-        case c.TitleNr:  assert(id === 'post-' + c.TitleNr);  break;
+        case c.TitleNr: assert(id === 'post-' + c.TitleNr); break;
         case c.BodyNr:  assert(id === 'post-' + c.BodyNr);  break;
         case 2:  assert(id === 'post-2');  break; // cat
         case 3:  assert(id === 'post-3');  break; // otter

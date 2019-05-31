@@ -8,6 +8,7 @@ update users3 set full_name = 'Trusted Regulars', username = 'trusted_regulars'
 alter table users3 add column is_group bool not null default false;
 update users3 set is_group = trust_level is null and user_id > 0;
 
+update users3 set username = null where user_id < 0; -- not needed, just in case
 alter table users3 add constraint participants_c_guest_no_username check (
   user_id > 0 or username is null);
 
@@ -18,6 +19,23 @@ alter table users3 add constraint participants_c_username_len_active check (
 alter table users3 add constraint participants_c_username_len_deleted check (
   deleted_at is null or length(username) <= 80);
 
+update users3 set
+    is_admin = case when user_id = 19 then true else null end,
+    is_moderator = case when user_id in (17, 18) then true else null end,
+    is_owner = null,
+    is_superadmin = null,
+    trust_level = null,  -- not needed here, but anyway
+    threat_level = null,
+    is_approved = null,
+    approved_at = null,
+    approved_by_id = null,
+    suspended_at = null,
+    suspended_till = null,
+    suspended_by_id = null,
+    suspended_reason = null,
+    deactivated_at = null
+    -- external_id = null  skip, want to know if error
+  where is_group;
 
 alter table users3 add constraint participants_c_group_not_adm_mod_ownr check (
   not is_group or (
@@ -33,22 +51,46 @@ alter table users3 add constraint participants_c_group_no_password check (
   not is_group or (
     password_hash is null));
 
-alter table users3 add constraint participants_c_group_not_approved_suspended check (
+alter table users3 add constraint participants_c_group_not_approved check (
   not is_group or (
     is_approved is null and
     approved_at is null and
-    suspended_at is null));
+    approved_by_id is null));
+
+alter table users3 add constraint participants_c_group_not_suspended check (
+  not is_group or (
+    suspended_at is null and
+    suspended_till is null and
+    suspended_by_id is null and
+    suspended_reason is null));
+
+alter table users3 add constraint participants_c_group_not_deactivated check (
+  not is_group or (
+    deactivated_at is null));
+
+alter table users3 add constraint participants_c_group_no_external_id check (
+  not is_group or (
+    external_id is null));
 
 alter table users3 add constraint participants_c_group_no_trust_threat_lvl check (
   not is_group or (
     trust_level is null and threat_level is null));
 
+
+-- 2 x not needed, just in case:
+update users3 set trust_level = 1 where user_id >= 0 and trust_level is null and not is_group;
+update users3 set threat_level = 3 where user_id >= 0 and threat_level is null and not is_group;
+
 alter table users3 add constraint participants_c_user_has_trust_threat_lvl check (
   is_group or user_id < 0 or (
     trust_level is not null and threat_level is not null));
 
+
+update users3 set guest_email_addr = null  -- not needed, just in case
+    where user_id >= 0 and guest_email_addr is not null;
 alter table users3 add constraint participants_c_member_no_guest_email check (
     user_id < 0 or guest_email_addr is null);
+
 
 
 create table group_participants3 (
@@ -77,10 +119,7 @@ create table group_participants3 (
       participant_id >= 100),
 
   constraint groupparticipants_c_pp_does_sth check (
-      is_member or is_manager or is_adder or is_bouncer),
-
-  constraint groupparticipants_c_pp_adder_can_bounce check (
-      not is_adder or is_bouncer)
+      is_member or is_manager or is_adder or is_bouncer)
 );
 
 

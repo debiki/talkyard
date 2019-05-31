@@ -17,25 +17,31 @@ B  = button, e.g. ReplyB
 T  = table
 Ttl = title
 Txt = text
+Lk = link
 L  = list
 It = list item
 D  = dialog,  e.g. AbtUsrD
 Dd = deleted
+Dl = delete
 Df = draft
-Dl = download
+Dl = download — change to Dwnl? so rare
 CB = checkbox
 Cr = create
 Pw = password, e.g. NewPwI
 St = status or state
 R = table row
 U  = user
+G  = group
+Pp = participant
+P, Pg = page
+Po = post
 Un = username
 FN = full name
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
 ...    = B means Button
 ...WhateverI    = I means Input
-...WhateverL    = L means Link  .. No?  .. means List? see above, hmm
+...WhateverL    = L means list
 ...WhateverLI   = List item  — no, use "It" instead, see aboe
 ...WhateverS    = S means Select (usually react-select)
 ...WhateverTA   = TA means textarea  — hmm should be "Ta" instead?
@@ -134,7 +140,7 @@ Nrw             = narrow
 s_UD            = About user dialog
 s_UD_ExtrInf    = Extra info about the user, e.g. s/he is a Frequent Poster in a topic, or topic starter.
 
-s_UP            = A user's public profile page
+s_UP            = A user's public profile page  RENAME to  s_PPP = participant's profile page?
 s_UP_Ab         = The about part (the top of the profile page)
 s_UP_EmLg       = Emails and logins
 esUP_Un         = Username  COULD rename t s_UP_Ab_UN

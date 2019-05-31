@@ -352,7 +352,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.complex.replyToOrigPost("My more replies");
     majasBrowser.complex.addProgressReply("My even more replies");
     majasBrowser.topic.assertPostNotPendingApproval(5);
-    majasBrowser.topic.assertPostNotPendingApproval(6);
+    majasBrowser.topic.assertPostNotPendingApproval(6, { wait: false });
   });
 
 
@@ -363,10 +363,10 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
     majasBrowser.topbar.clickLogout();
     assert(majasBrowser === strangersBrowser);
     strangersBrowser.topic.assertPostNotPendingApproval(2);
-    strangersBrowser.topic.assertPostNotPendingApproval(3);
-    strangersBrowser.topic.assertPostNotPendingApproval(4);
-    strangersBrowser.topic.assertPostNotPendingApproval(5);
-    strangersBrowser.topic.assertPostNotPendingApproval(6);
+    strangersBrowser.topic.assertPostNotPendingApproval(3, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(4, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(5, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(6, { wait: false });
   });
 
   it("... incl Maja's edits to reply three", () => {

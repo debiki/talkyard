@@ -6,7 +6,7 @@ import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
 import { logUnusual, logError, logWarning, logMessage, printBoringToStdout, die, dieIf } from './log-and-die';
-import { string } from 'prop-types';
+
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -31,10 +31,12 @@ function count(elems): number {
 }
 
 
-type ByBrowserResults = { [browserName: string]: { value: any }};
+type ByBrowserAnyResults = { [browserName: string]: any };
+type ByBrowserObjValueResults = { [browserName: string]: { value: any } };
+type ByBrowserResult<T> = { [browserName: string]: T };
 
 
-function byBrowser(result): ByBrowserResults {  // dupl code [4WKET0] move all to here?
+function byBrowser(result): ByBrowserAnyResults {  // dupl code [4WKET0] move all to here?
   if (!_.isObject(result) || _.isArray(result) || (<any> result).value) {
     // This is the results from one single browser. Create a dummy by-browser
     // result map.
@@ -46,7 +48,7 @@ function byBrowser(result): ByBrowserResults {  // dupl code [4WKET0] move all t
     // or like:
     //    { browserA: "text-found", browserB: "other-text-found" }
     // That's what we want.
-    return <ByBrowserResults> result;
+    return result;
   }
 }
 
@@ -3276,7 +3278,10 @@ function pagesFor(browser) {
         die('EdEKW05Y', `Post nr ${postNr} never gets approved`);
       },
 
-      assertPostNotPendingApproval: function(postNr: PostNr) {
+      assertPostNotPendingApproval: function(postNr: PostNr, ps: { wait?: false } = {}) {
+        if (ps.wait !== false) {
+          api.topic.waitForPostNrVisible(postNr);
+        }
         assert(api.topic.isPostNotPendingApproval(postNr));
       },
 
@@ -3540,7 +3545,7 @@ function pagesFor(browser) {
     groupListPage: {
       goHere: (origin?: string) => {
         api.go((origin || '') + '/-/groups/');
-        api.waitForVisible('.s_GP');
+        api.groupListPage.waitUntilLoaded();
       },
 
       waitUntilLoaded: () => {
@@ -3552,7 +3557,7 @@ function pagesFor(browser) {
       },
 
       openTrustedMembersGroup: () => {
-        api.waitForThenClickText('.s_Gs_G_L .esP_By', 'trusted_members');
+        api.waitForThenClickText('.s_Gs_G_Lk .esP_By', 'trusted_members');
         api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
       },
 
@@ -3565,12 +3570,12 @@ function pagesFor(browser) {
       },
 
       waitUntilGroupPresent: (ps: { username: string, fullName: string }) => {
-        api.waitAndGetElemIdWithText('.s_Gs_G_L .esP_By_U', ps.username);
-        api.waitAndGetElemIdWithText('.s_Gs_G_L .esP_By_F', ps.fullName);
+        api.waitAndGetElemIdWithText('.s_Gs_G_Lk .esP_By_U', ps.username);
+        api.waitAndGetElemIdWithText('.s_Gs_G_Lk .esP_By_F', ps.fullName);
       },
 
       openGroupWithUsername: (username: string) => {
-        api.waitForThenClickText('.s_Gs_G .esP_By_U', username);
+        api.waitForThenClickText('.s_Gs_G_Lk .esP_By_U', username);
         api.userProfilePage.groupMembers.waitUntilLoaded();
       }
     },
@@ -3595,14 +3600,20 @@ function pagesFor(browser) {
         browser.waitForVisible('.e_ActDd');
       },
 
-      navigateBackToUsersOrGroupsList: () => {
+      navBackToGroups: () => {
+        api.userProfilePage._navigateBackToUsersOrGroupsList(true);
+      },
+
+      _navigateBackToUsersOrGroupsList: (isGroup: boolean) => {
         api.rememberCurrentUrl();
         api.waitAndClick('.esTopbar_custom_title a');
         api.waitForNewUrl();
         if (api.urlPath().startsWith(c.GroupsUrlPrefix)) {
+          assert(isGroup);
           api.groupListPage.waitUntilLoaded();
         }
         else {
+          assert(!isGroup);
           // /-/users/ all users list not yet impl
         }
       },
@@ -3695,17 +3706,13 @@ function pagesFor(browser) {
         api.waitAndClick('.s_UP_SendMsgB');
       },
 
-      goBackToGroups: () => {
-        api.waitAndClick('.esTopbar_custom_title a');
-      },
-
-      _makeGoHerePath: (username: string, ps: { isGroup?: true, origin?: string }, suffix: string) => {
+      _goHere: (username: string, ps: { isGroup?: true, origin?: string }, suffix: string) => {
         api.go(`${ps.origin || ''}/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
       },
 
       groupMembers: {
         goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          api.userProfilePage._makeGoHerePath(username, ps, '/members');
+          api.userProfilePage._goHere(username, ps, '/members');
         },
 
         waitUntilLoaded: () => {
@@ -3730,6 +3737,7 @@ function pagesFor(browser) {
         removeFirstMember: () => {
           api.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
           api.waitAndClick('.e_RmMbr');
+          // (Could wait until 1 fewer member? or name gone?)
         }
       },
 
@@ -3886,10 +3894,10 @@ function pagesFor(browser) {
 
       preferences: {  // RENAME to prefs
         goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          api.userProfilePage._makeGoHerePath(username, ps, '/preferences');
+          api.userProfilePage._goHere(username, ps, '/preferences');
         },
 
-        switchToEmailsLogins: function() {  // RENAME to switchToAccount
+        switchToEmailsLogins: function() {  // RENAME to tabToAccount
           api.waitAndClick('.s_UP_Prf_Nav_EmLgL');
           if (api.urlPath().startsWith(c.UsersUrlPrefix)) {
             // Wait for user emails loaded.
@@ -3953,7 +3961,7 @@ function pagesFor(browser) {
 
         notfs: {
           goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {  // oops, dupl (443300222), keep this
-            api.userProfilePage._makeGoHerePath(username, ps, '/preferences/notifications');
+            api.userProfilePage._goHere(username, ps, '/preferences/notifications');
           },
 
           setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
@@ -4051,7 +4059,7 @@ function pagesFor(browser) {
 
           deleteAccount: () => {
             api.rememberCurrentUrl();
-            api.waitAndClick('.e_DlAcct');
+            api.waitAndClick('.e_DlAct');
             api.waitAndClick('.e_SD_SecB');
             api.waitForNewUrl();
           }

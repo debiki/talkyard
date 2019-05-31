@@ -38,7 +38,7 @@ const topicThreeTitle = 'topicThreeTitle SpecCat';
 const topicThreeBody = 'topicThreeBody SpecCat';
 const owensReplyMentionsMichel = 'owensReplyMentionsMichel Hi @michael';
 const owensReplyTwo = 'owensReplyTwo';
-const owensReplyThree = 'owensReplyThree';
+const owensReplyNotMuted = 'owensReplyNotMuted';
 const owensReplyFourMichaelMemberNotMaria = 'owensReplyFourMichaelMemberNotMaria';
 const owensReplyFiveMentionsMaria = 'owensReplyFiveMentionsMaria Hi there, @maria';
 
@@ -107,7 +107,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
   });
 
   it("... goes back to the group page", () => {
-    owensBrowser.userProfilePage.goBackToGroups();
+    owensBrowser.userProfilePage.navBackToGroups();
   });
 
   it("... creates Custom Group Two", () => {
@@ -207,7 +207,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
     numEmailsTotal += 1;
   });
 
-  it(`... Maria gets notified about "${topicThreeTitle}"`, () => {
+  it(`... Maria gets notified about "${topicThreeTitle}" — NewTopics wins over Muted`, () => {
     const titleBody = [topicThreeTitle, topicThreeBody];
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, titleBody, browser);
   });
@@ -264,8 +264,11 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
         forum.categories.specificCategory.id, c.TestPageNotfLevel.EveryPost);
   });
 
-  it("And posts another reply", () => {
+  it("... goes back to the last topic", () => {
     owensBrowser.go(pageUrl);
+  });
+
+  it("... and posts another reply", () => {
     owensBrowser.complex.replyToOrigPost(owensReplyTwo);
     numEmailsToMaria += 1;
     numEmailsTotal += 1;
@@ -340,14 +343,14 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
   });
 
   it("Owen posts another reply", () => {
-    owensBrowser.complex.replyToOrigPost(owensReplyThree);
+    owensBrowser.complex.replyToOrigPost(owensReplyNotMuted);
     numEmailsToMichael += 1;
     numEmailsTotal += 1;
   });
 
   it("... Michael still gets notified — because the group's EveryPost cat notf pref, is more " +
       "specific, than Michael's whole site Muted pref", () => {
-    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, owensReplyThree, browser);
+    server.waitUntilLastEmailMatches(siteId, michael.emailAddress, owensReplyNotMuted, browser);
   });
 
   it("... num emails sent is correct", () => {

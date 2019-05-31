@@ -79,13 +79,13 @@ describe("group-mentions-custom-group  TyT5BMRP2058", () => {
         { username: BasicGroupUsername, fullName: BasicGroupFullName });
   });
 
-  it("... adds Maja and Michael", () => {
+  it("... adds Maria and Maja", () => {
     owensBrowser.userProfilePage.groupMembers.addOneMember(maria.username);
     owensBrowser.userProfilePage.groupMembers.addOneMember(maja.username);
   });
 
   it("Owen creates Group Two", () => {
-    owensBrowser.userProfilePage.navigateBackToUsersOrGroupsList();
+    owensBrowser.userProfilePage.navBackToGroups();
     owensBrowser.groupListPage.createGroup(
         { username: GroupTwoUsername, fullName: GroupTwoFullName });
   });

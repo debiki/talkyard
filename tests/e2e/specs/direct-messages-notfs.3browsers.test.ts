@@ -8,6 +8,7 @@ import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
 
 declare let browser: any;
 declare let browserA: any;
@@ -99,7 +100,7 @@ describe("private chat", () => {
 
   it("... and replies", () => {
     owen.complex.replyToOrigPost(owensAnswer);
-    owen.topic.waitForPostNrVisible(2);
+    owen.topic.waitForPostNrVisible(c.FirstReplyNr);
   });
 
   it("... he also got an email notf about this new topic", () => {
@@ -110,7 +111,7 @@ describe("private chat", () => {
 
   it("Maria sees the reply", () => {
     // This fails (times out) if Nchan messed up internally, because of an Nginx worker thread crash.
-    maria.topic.waitForPostAssertTextMatches(2, owensAnswer);
+    maria.topic.waitForPostAssertTextMatches(c.FirstReplyNr, owensAnswer);
   });
 
   it("... and replies", () => {

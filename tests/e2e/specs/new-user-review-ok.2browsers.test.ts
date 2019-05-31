@@ -131,8 +131,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
 
   it("... they don't need to be approved by staff, before they're shown", () => {
     majasBrowser.topic.assertPostNotPendingApproval(2);
-    majasBrowser.topic.assertPostNotPendingApproval(3);
-    majasBrowser.topic.assertPostNotPendingApproval(4);
+    majasBrowser.topic.assertPostNotPendingApproval(3, { wait: false });
+    majasBrowser.topic.assertPostNotPendingApproval(4, { wait: false });
   });
 
   // Todo: Verify cannot post more than this. Set allow = 4 ?
@@ -158,8 +158,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
   it("... and sees Maja's replies", () => {
     strangersBrowser.go(topics.oldTopicUrl);
     strangersBrowser.topic.assertPostNotPendingApproval(2);
-    strangersBrowser.topic.assertPostNotPendingApproval(3);
-    strangersBrowser.topic.assertPostNotPendingApproval(4);
+    strangersBrowser.topic.assertPostNotPendingApproval(3, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(4, { wait: false });
   });
 
   it("... and can access Maja' page", () => {
@@ -212,8 +212,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
   it("... still sees Maja's old replies", () => {
     strangersBrowser.go(topics.oldTopicUrl);
     strangersBrowser.topic.assertPostNotPendingApproval(2);
-    strangersBrowser.topic.assertPostNotPendingApproval(3);
-    strangersBrowser.topic.assertPostNotPendingApproval(4);
+    strangersBrowser.topic.assertPostNotPendingApproval(3, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(4, { wait: false });
   });
 
   it("... still sees Maja's topic in the topic list", () => {
@@ -275,8 +275,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     guestsBrowser.complex.addProgressReply(guestsSecondReplyBecomesPostNr7);
     guestsBrowser.complex.addProgressReply("I'm a guest, my 3rd reply, post nr 8.");
     guestsBrowser.topic.assertPostNotPendingApproval(6);
-    guestsBrowser.topic.assertPostNotPendingApproval(7);
-    guestsBrowser.topic.assertPostNotPendingApproval(8);
+    guestsBrowser.topic.assertPostNotPendingApproval(7, { wait: false });
+    guestsBrowser.topic.assertPostNotPendingApproval(8, { wait: false });
   });
 
   it("Owen approves the guest's first two replies", () => {
@@ -303,8 +303,8 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     guestsBrowser.topbar.clickLogout();
     assert(guestsBrowser === strangersBrowser);
     strangersBrowser.topic.assertPostNotPendingApproval(6);
-    strangersBrowser.topic.assertPostNotPendingApproval(7);
-    strangersBrowser.topic.assertPostNotPendingApproval(8);
+    strangersBrowser.topic.assertPostNotPendingApproval(7, { wait: false });
+    strangersBrowser.topic.assertPostNotPendingApproval(8, { wait: false });
   });
 
 });

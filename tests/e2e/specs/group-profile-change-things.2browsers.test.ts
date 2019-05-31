@@ -76,17 +76,15 @@ describe("group-profile-change-things  TyT5MS5TWV0", () => {
 
   it("... creates a dummy won't-be-used group", () => {
     // Just so can verify the server won't edit the wrong custom group.
-    owensBrowser.groupListPage.createGroup(
-        { username: DummyGroupUsername, fullName: DummyGroupFullName });
+    owensBrowser.groupListPage.createGroup(DummyGroupNames);
   });
 
   it("... navigates back to the groups list page", () => {
-    owensBrowser.userProfilePage.navigateBackToUsersOrGroupsList();
+    owensBrowser.userProfilePage.navBackToGroups();
   });
 
   it("... creates a group to edit", () => {
-    owensBrowser.groupListPage.createGroup(
-        { username: GroupsFirstUsername, fullName: GroupsFirstFullName });
+    owensBrowser.groupListPage.createGroup(GroupsFirstNames);
   });
 
   it("... adds Maria", () => {

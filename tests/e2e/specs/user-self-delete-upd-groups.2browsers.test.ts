@@ -153,7 +153,7 @@ describe("user-self-delete-upd-groups  TyT6DMSNW3560", () => {
     pariniasBrowser.userProfilePage.waitUntilDeletedOrDeactivated();
   });
 
-  it("The stranger, who is in fact a secret agent, reloads the page", () => {
+  it("The stranger, who is in fact a secret agent, reloads the page (a mistake!)", () => {
     strangersBrowser.refresh();
     strangersBrowser.topic.waitForLoaded();
   });
@@ -163,7 +163,7 @@ describe("user-self-delete-upd-groups  TyT6DMSNW3560", () => {
     assert.equal(username.substr(0, '@anon'.length), '@anon');
   });
 
-  it("The secret agent clicks anonNNNN, goes to the account page", () => {
+  it("The secret agent desperately clicks anonNNNN, goes to the account page", () => {
     strangersBrowser.complex.openPageAuthorProfilePage();
   });
 
@@ -181,7 +181,7 @@ describe("user-self-delete-upd-groups  TyT6DMSNW3560", () => {
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("... now only one member — Parinia is gone", () => {
+  it("... now there's only one member — Parinia is gone", () => {
     assert.equal(owensBrowser.userProfilePage.groupMembers.getNumMembers(), 1);
   });
 
@@ -198,9 +198,6 @@ describe("user-self-delete-upd-groups  TyT6DMSNW3560", () => {
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(forum.members.maria.username);
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(forum.members.owen.username);
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(forum.members.michael.username);
-  });
-
-  it("The secret agent doesn't remember Parina's real name", () => {
   });
 
 });

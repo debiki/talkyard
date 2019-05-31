@@ -69,7 +69,7 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
 
       return (
         r.li({ key: gs.id, className: 's_Gs_G' },
-          LinkUnstyled({ to: GroupsRoot + gs.username, className: 's_Gs_G_L' },
+          LinkUnstyled({ to: GroupsRoot + gs.username, className: 's_Gs_G_Lk' },
             UserName({ user: gs, store, makeLink: false, onClick: null })),
           r.p({ className: 's_Gs_G_Stats' },
             numMembers, youreAMember)));

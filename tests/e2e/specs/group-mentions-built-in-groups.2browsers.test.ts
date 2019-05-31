@@ -24,19 +24,13 @@ let monsBrowser;
 let modya: Member;
 let modyasBrowser;
 let corax: Member;
-let coraxBrowser;
 let regina: Member;
-let reginasBrowser;
 let trillian: Member;
-let trilliansBrowser;
 let maja: Member;
 let maria: Member;
 let mariasBrowser;
 let michael: Member;
-let michaelsBrowser;
 let mallory: Member;
-let mallorysBrowser;
-let strangersBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -89,17 +83,12 @@ describe("group-mentions-built-in.2browsers  TyT4AWJL208R", () => {
     modya = forum.members.modya;
     modyasBrowser = richBrowserA;
     corax = forum.members.corax;
-    coraxBrowser = richBrowserA;
 
     regina = forum.members.regina;
-    reginasBrowser = richBrowserA;
     //trillian: see above
     //maja: see above
     michael = forum.members.michael;
-    michaelsBrowser = richBrowserA;
     mallory = forum.members.mallory;
-    mallorysBrowser = richBrowserA;
-    strangersBrowser = richBrowserA;
 
     maria = forum.members.maria;
     mariasBrowser = richBrowserB;
