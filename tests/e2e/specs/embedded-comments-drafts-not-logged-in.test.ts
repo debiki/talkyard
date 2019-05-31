@@ -162,8 +162,7 @@ describe("emb cmts drafts when not logged in  TyT2ZBKPW048", () => {
 
   it("The comment is there, as the first reply", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOneEdited);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOneEdited);
   });
 
 

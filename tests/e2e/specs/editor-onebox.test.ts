@@ -135,16 +135,14 @@ describe("editor onebox:", () => {
 
   it("A media url inside a text paragraph is converted to a link, not a onebox", () => {
     mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
-    mariasBrowser.topic.waitForPostNrVisible(4);
+    mariasBrowser.topic.waitForPostAssertTextMatches(4, 'zzz .* qqq');
     assert(!mariasBrowser.topic.postNrContains(4, dotOneboxClass));
     assert(mariasBrowser.topic.postNrContains(4, `a[href="${imageJpgUrl}"]`));
-    mariasBrowser.topic.assertPostTextMatches(4, 'zzz .* qqq');
   });
 
   it("A onebox can be inserted between two text paragraphs", () => {
     mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
-    mariasBrowser.topic.waitForPostNrVisible(5);
-    mariasBrowser.topic.assertPostTextMatches(5, "Paragraph one");
+    mariasBrowser.topic.waitForPostAssertTextMatches(5, "Paragraph one");
     mariasBrowser.topic.assertPostTextMatches(5, "Para two");
     // Failed once.
     assert(mariasBrowser.topic.postNrContains(5, dotOneboxClass));
@@ -170,10 +168,9 @@ describe("editor onebox:", () => {
   it("The server survives an invalid YouTube video id", () => {
     // Reply to the previous post because we've now scrolled down so the orig post isn't visible.
     mariasBrowser.complex.replyToPostNr(6, videoYouTubeUrlInvalidId + '\n\n\nPlain text.');
-    mariasBrowser.topic.waitForPostNrVisible(7);
+    mariasBrowser.topic.waitForPostAssertTextMatches(7, "Plain text");
     assert(!mariasBrowser.topic.postNrContains(7, dotOneboxClass));
     assert(mariasBrowser.topic.postNrContains(7, `a[href="${videoYouTubeUrlInvalidId}"]`));
-    mariasBrowser.topic.assertPostTextMatches(7, "Plain text");
   });
 
 });

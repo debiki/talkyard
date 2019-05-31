@@ -95,8 +95,7 @@ describe("embedded-comments-conf-notf-pref-first  TyT502HMSJP3", () => {
   it("After page reload, the reply is still there", () => {
     owensBrowser.refresh();
     owensBrowser.switchToEmbeddedCommentsIrame();
-    owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    owensBrowser.topic.assertPostTextMatches(c.FirstReplyNr, owensComment);
+    owensBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, owensComment);
   });
 
 });

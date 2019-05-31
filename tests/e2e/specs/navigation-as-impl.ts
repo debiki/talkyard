@@ -141,8 +141,8 @@ function makeWholeSpec(initFn) {
         usersBrowser.go('/' + forum.topics.byMariaCategoryANr2.slug);
       });
       it("... it looks ok", () => {
-        usersBrowser.topic.waitForPostNrVisible(c.BodyNr);
-        usersBrowser.topic.assertPostTextMatches(c.BodyNr, forum.topics.byMariaCategoryANr2.body);
+        usersBrowser.topic.waitForPostAssertTextMatches(
+            c.BodyNr, forum.topics.byMariaCategoryANr2.body);
       });
       it("go to Maria's topic, test it (topic to topic)", () => {
         usersBrowser.watchbar.goToTopic(forum.topics.byMariaCategoryA.title);
@@ -343,8 +343,7 @@ function addMariasTopicTests() {
   nextPostNr += 1;
 
   it(pfx + "check orig post", () => {
-    usersBrowser.topic.waitForPostNrVisible(c.BodyNr);
-    usersBrowser.topic.assertPostTextMatches(c.BodyNr, forum.topics.byMariaCategoryA.body);
+    usersBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, forum.topics.byMariaCategoryA.body);
   });
 
   // Strangers cannot post replies, not logged in.
@@ -354,8 +353,7 @@ function addMariasTopicTests() {
   it(pfx + "reply", () => {
     const text = 'Hello post nr ' + postNr;
     usersBrowser.complex.replyToOrigPost(text);
-    usersBrowser.topic.waitForPostNrVisible(postNr);
-    usersBrowser.topic.assertPostTextMatches(postNr, text);
+    usersBrowser.topic.waitForPostAssertTextMatches(postNr, text);
   });
 }
 

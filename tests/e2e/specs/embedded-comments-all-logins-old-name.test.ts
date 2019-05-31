@@ -111,8 +111,7 @@ describe("emb cmts all logins", () => {
 
   it("... it appears", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
-    majasBrowser.topic.assertPostTextMatches(2, majasComment);
+    majasBrowser.topic.waitForPostAssertTextMatches(2, majasComment); // the first reply nr = comment 1
   });
 
   it("Michael signs up, with Facebook", () => {

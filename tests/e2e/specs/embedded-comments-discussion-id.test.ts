@@ -79,8 +79,7 @@ describe("emb cmts discussion-id", () => {
 
   it("... it appears", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
   });
 
   it("she goes from page aaa to bbb", () => {
@@ -93,8 +92,7 @@ describe("emb cmts discussion-id", () => {
 
   it("... sees her comment, because same discussion id", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
   });
 
   it("she posts a comment on page bbb (already logged in)", () => {
@@ -106,8 +104,7 @@ describe("emb cmts discussion-id", () => {
 
   it("... comment two appears too", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
   });
 
   it("page ccc is unchanged, because has no id, so url used instead", () => {
@@ -130,26 +127,21 @@ describe("emb cmts discussion-id", () => {
 
   it("... the comment appears", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentThree);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentThree);
   });
 
   it("back on page aaa, only the page-aaa and -bbb comments are shown (not the -ccc comment)", () => {
     mariasBrowser.go(embeddingOrigin + '/' + pageAaaSlug);
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
   });
 
   it("... the same on page bbb", () => {
     mariasBrowser.go(embeddingOrigin + '/' + pageBbbSlug);
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentTwo);
   });
 
 });

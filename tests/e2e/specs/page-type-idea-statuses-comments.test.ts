@@ -136,8 +136,7 @@ describe("Page statuses and bottom comments", () => {
 
   it("The posts has the correct contents", () => {
     mariasBrowser.refresh();  // currently needed, so event posts will appear [2PKRRSZ0]
-    mariasBrowser.topic.waitForPostNrVisible(10);
-    mariasBrowser.topic.assertPostTextMatches(10, bottomCommentTwoText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(10, bottomCommentTwoText);
     mariasBrowser.topic.assertMetaPostTextMatches(9, 'marked this topic as Planned');
   });
 

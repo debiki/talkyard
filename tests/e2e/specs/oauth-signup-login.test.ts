@@ -95,11 +95,11 @@ describe(testName, () => {
   // ---------- All fine?
 
   it("the gmail user's reply is visible @gmail @google", () => {
-    browser.topic.assertPostTextMatches(2, 'the gmail_user');
+    browser.topic.waitForPostAssertTextMatches(2, 'the gmail_user');
   });
 
   it("the facebook user's reply is visible @facebook", () => {
-    browser.topic.assertPostTextMatches(3, 'the fb_user');
+    browser.topic.waitForPostAssertTextMatches(3, 'the fb_user');
   });
 
 });

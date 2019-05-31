@@ -162,7 +162,7 @@ describe("emb cmts all logins", () => {
 
   it("... it appears, it too", () => {
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.waitForPostAssertTextMatches(4, majas2ndComment);
+    majasBrowser.topic.waitForPostAssertTextMatches(4, majas2ndComment);  // [402BMTJ4]
   });
 
 });

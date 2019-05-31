@@ -112,8 +112,7 @@ describe("Page type discussion, and progress comments", () => {
 
   it("The posts has the correct contents", () => {
     mariasBrowser.refresh();  // currently needed, so event posts will appear [2PKRRSZ0]
-    mariasBrowser.topic.waitForPostNrVisible(9);
-    mariasBrowser.topic.assertPostTextMatches(9, bottomCommentTwoText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(9, bottomCommentTwoText);
     mariasBrowser.topic.assertMetaPostTextMatches(8, 'reopened');
   });
 

@@ -2891,8 +2891,15 @@ function pagesFor(browser) {
       },
 
       waitForPostAssertTextMatches: function(postNr, text: string) {
+        /* // Only doing this:
         api.topic.waitForPostNrVisible(postNr);
-        api.topic.assertPostTextMatches(postNr, text);
+        // sometimes causes this error: (here [402BMTJ4])
+        //  "Selector '#post-4 .dw-p-bd' not visible, cannot match text [EdE1WBPGY93]"
+        // so instead, try many times, and wait for the post *body*:  */
+        utils.tryManyTimes(`wait for post nr ${postNr}, assert text matches "${text}"`, 3, () => {
+          browser.waitForVisible(api.topic.postBodySelector(postNr));
+          api.topic.assertPostTextMatches(postNr, text);
+        });
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
@@ -3385,10 +3392,6 @@ function pagesFor(browser) {
           }
           logMessage(`clickPostActionButton: attempt 2...`);
         }
-      },
-
-      assertFirstReplyTextMatches: function(text) {
-        api.topic.assertPostTextMatches(c.FirstReplyNr, text);
       },
 
       _isOrigPostBodyVisible: function() {

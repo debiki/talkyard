@@ -91,8 +91,7 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
 
   it("... it appears", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
   });
 
 
@@ -121,8 +120,7 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
 
   it("... it appears, as the first reply", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentTwo);
   });
 
 
@@ -152,8 +150,7 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
 
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.assertNumOrigPostRepliesVisible(1);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
   });
 
   it("She posts a comment on the now id less page", () => {
@@ -166,8 +163,7 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
 
   it("... it appears, as the 2nd reply", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
   });
 
 
@@ -183,8 +179,7 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
 
   it("Now, the second discussion is there again", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentTwo);
   });
 
 
@@ -201,10 +196,8 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
   it("Now, the first discussion is back, with two comments", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.assertNumOrigPostRepliesVisible(2);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
   });
 
 
@@ -238,10 +231,8 @@ describe("emb cmts different ids same page  TyT2BKPJL3", () => {
   it("Now, the discussion with no id, is there", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.assertNumOrigPostRepliesVisible(2);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOne);
-    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasCommentOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasCommentThree);
   });
 
 });
