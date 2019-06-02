@@ -341,9 +341,16 @@ export const LoginDialogContent = createClassAndFactory({
 
     const spaceDots = anyOpenAuth ? ' ...' : '';
 
-    return (
-      r.div({ className: 'esLD' },
-        notFoundInstructions,
+    let content;
+    if (settings.enableSso) {
+      const ssoUrl = makeSsoUrl(store, location.toString());
+      content =
+          r.div({ style: { textAlign: 'center' }},
+            ExtLinkButton({ href: ssoUrl, className: 's_LD_SsoB btn-primary' },
+              "Log In"));
+    }
+    else {
+      content = rFragment({},
         becomeOwnerInstructions,
         r.p({ id: 'dw-lgi-or-login-using' },
           // I18N UX "Continue with" converts better than Sign Up or Log In, says
@@ -373,7 +380,13 @@ export const LoginDialogContent = createClassAndFactory({
 
         switchToOtherDialogInstead,
         loginForm,
-        createUserForm));
+        createUserForm);
+    }
+
+    return (
+      r.div({ className: 'esLD' },
+        notFoundInstructions,
+        content));
   }
 });
 
