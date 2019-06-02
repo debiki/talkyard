@@ -55,10 +55,12 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         memberIds must contain(userTwo.id)
 
         transaction.loadNotificationsToShowInMyMenu(
-          userOne.id, limit = 99, unseenFirst = true) mustBe empty
+          userOne.id, limit = 99, unseenFirst = true, skipDeleted = true) mustBe empty
 
         val userTwoNotfs = transaction.loadNotificationsToShowInMyMenu(
-          userTwo.id, limit = 99, unseenFirst = true)
+          userTwo.id, limit = 99, unseenFirst = true,
+          // 'false' just to run a slightly different query; will give the same results in this case.
+          skipDeleted = false)
         userTwoNotfs.length mustBe 1
         val notf = userTwoNotfs.head
         notf.toUserId mustBe userTwo.id

@@ -798,7 +798,7 @@ export const Editor = createComponent({
     Server.search(this.state.title, (searchResults: SearchResults) => {
       if (this.isGone) return;
       this.setState({ searchResults });
-    });
+    }, null, { showLoadingOverlay: false });
   },
 
   changeCategory: function(categoryId: CategoryId) {
@@ -1285,30 +1285,30 @@ export const Editor = createComponent({
 
     // ----- Similar topics?
 
-    let oldSimilarTopicsTips;
+    let similarTopicsTips;
     const searchResults: SearchResults = this.state.searchResults;
 
     if (searchResults && this.state.showSimilarTopics) {
       const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.title);
       const searchUrl = '/-/search?q=' + urlEncodedQuery;
 
-      const hitList = !searchResults || !this.state.showSimilarTopics ? null :
+      const hitList =
           r.ul({},
-            _.take(searchResults.pagesAndHits, 10).map((pageAndHits: PageAndHits) =>
+            _.take(searchResults.pagesAndHits, 15).map((pageAndHits: PageAndHits) =>
               r.li({ key: pageAndHits.pageId, className: 's_E_SimlTpcs_L_It' },
-                r.a({ href: '/-' + pageAndHits.pageId }, pageAndHits.pageTitle))));
+                r.a({ href: '/-' + pageAndHits.pageId, target: '_blank' },
+                  pageAndHits.pageTitle))));
 
-      oldSimilarTopicsTips = !hitList ? null :
-        r.div({ className: 's_E_SimlTpcs', ref: 'simlTpcs' },
-          r.div({ className: '' },
-            r.h4({}, "Similar topics:"),  // I18N
-            r.a({ className: 'icon-cancel dw-hide s_E_SimlTpcs_HideB',
-                onClick: () => this.setState({ showSimilarTopics: false }) },
-              t.Hide),
-            r.a({ className: 'icon-search dw-hide s_E_SimlTpcs_SearchB', href: searchUrl,
-                target: '_blank' },
-              t.Search),
-            hitList));
+      similarTopicsTips = !hitList ? null :
+        r.div({ className: 's_E_SimlTpcs' },
+          r.h4({}, "Similar topics:"),  // I18N
+          r.a({ className: 'icon-cancel dw-hide s_E_SimlTpcs_HideB',
+              onClick: () => this.setState({ showSimilarTopics: false }) },
+            t.Hide),
+          r.a({ className: 'icon-search dw-hide s_E_SimlTpcs_SearchB', href: searchUrl,
+              target: '_blank' },
+            t.Search),
+          hitList);
     }
 
     // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
@@ -1575,7 +1575,7 @@ export const Editor = createComponent({
             className: editorClasses },
           r.button({ className: 'esEdtr_close esCloseCross', onClick: this.onCancelClick }),
           guidelinesElem,
-          oldSimilarTopicsTips,
+          similarTopicsTips,
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },

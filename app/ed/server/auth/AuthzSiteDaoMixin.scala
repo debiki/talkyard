@@ -208,6 +208,11 @@ trait AuthzSiteDaoMixin {
 
     def thePageId = anyPageMeta.map(_.pageId) getOrElse pageId
 
+    // Below: Since the requester may see the page, it's ok if hen learns
+    // if a post has been deleted or it never existed? (Probably hen can
+    // figure that out anyway, just by looking for holes in the post nr
+    // sequence.)
+
     val post = anyPost orElse loadPost(thePageId, postNr) getOrElse {
       return (MaySeeOrWhyNot.NopeNoPostWithThatNr, "7URAZ8S-Post-Not-Found")
     }

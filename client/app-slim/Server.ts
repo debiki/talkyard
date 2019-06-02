@@ -1432,16 +1432,17 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
     else if (errorDetails.indexOf('_TyEBADPOSTNR') >= 0) {
       // No post with that nr, and it's ok to tell the requester about this.
       e2eTestClass = 'e_BadPNr';
-      message = `There's no post nr ${postNr} on this page. [TyEBADPOSTNR]`;  // I18N
+      message = `There's no post nr ${postNr} on this page. [TyEPOSTNR]`;  // I18N
     }
     else {
-      // Show error dialog: don't return IgnoreThisError below.
+      // Show error dialog — don't return IgnoreThisError below.
       return;
     }
 
-    // UX COULD remove any notf from theStore, so any blue notf dot, disappears
-    // directly.  Doesn't matter much; such a notf will be gone anyway, after
-    // page reload (filtered out here [SKIPDDNTFS]).
+    // UX COULD remove any notf from theStore, so any blue MyMenu notf dot, disappears
+    // directly. Because we can get to here, by clicking a MyMenu notf about a post
+    // that was just deleted. — Doesn't matter much; such a notf will be gone anyway,
+    // after page reload (filtered out here [SKIPDDNTFS]).
 
     morebundle.openDefaultStupidDialog({ body: message, dialogClassName: e2eTestClass });
     return IgnoreThisError;
@@ -1647,8 +1648,9 @@ export function deleteApiSecrets(secretNrs: ApiSecretNr[], onOk: () => void) {
 }
 
 
-export function search(rawQuery: string, success: (results: SearchResults) => void) {
-  postJsonSuccess('/-/search', success, { rawQuery: rawQuery });
+export function search(rawQuery: string, success: (results: SearchResults) => void,
+    onError?: () => void, opts?: { showLoadingOverlay?: false }) {
+  postJsonSuccess('/-/search', success, { rawQuery: rawQuery }, onError, opts);
 }
 
 

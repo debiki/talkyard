@@ -64,8 +64,8 @@ export const StupidDialog = createComponent({
     const winWidth = window.innerWidth;
     const atX = eds.isInEmbeddedCommentsIframe ? winWidth / 2 : undefined;
     this.setState({ isOpen: true, stuff, atX, winWidth }, () => {
-      if (stuff.getCloseFn) {
-        stuff.getCloseFn(this.close);
+      if (stuff.withCloseFn) {
+        stuff.withCloseFn(this.close);
       }
     });
   },

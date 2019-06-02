@@ -94,7 +94,7 @@ describe("notfs-page-gone  TyT7DMR24RF8", () => {
     owensBrowser.topic.deletePost(c.FirstReplyNr);
   });
 
-  it("Owen replies to Maria that only colibri are on-topic", () => {
+  it("Owen replies to Maria that only colibris are on-topic", () => {
     owensBrowser.complex.replyToOrigPost("Please talk about colibris, they are so interesting");
   });
 

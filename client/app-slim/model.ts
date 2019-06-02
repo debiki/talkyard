@@ -559,8 +559,8 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   onCloseOk?: (number) => void,
   preventClose?: boolean,
   closeOnClickOutside?: boolean, // default true
-  // Call this to get a fn that closes the dialog.
-  getCloseFn?: (closeFn: () => void) => void,
+  // Specify this to get a fn that closes the dialog.
+  withCloseFn?: (closeFn: () => void) => void,
 }
 
 

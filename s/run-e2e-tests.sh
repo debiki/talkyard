@@ -283,9 +283,9 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-prefs-inherit-group.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-prefs-custom-groups.2browsers $args
 
-  # Later:
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-page-gone.2browsers $args
-  # + move page from a staff only cat, to a publ cat, and verify people who have
+  # Later:
+  # Move page from a staff only cat, to a publ cat, and verify people who have
   # subscr to the publ cat and haven't seen the topic before, get notified.
 
   # See: specs/notf-page-cats-site.2browsers.test.ts:
