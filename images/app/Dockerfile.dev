@@ -65,7 +65,7 @@ CMD cd /opt/talkyard/app/ && exec /opt/typesafe-activator/bin/activator \
   -jvm-debug 9999 \
   # Avoid SBT compilation java.lang.StackOverflowError in
   # scala.tools.nsc.transform.Erasure.
-  -J-Xss5m \
+  -J-Xss10m \
   -Duser.home=/home/owner \
    # see [30PUK42] in app-prod/Dockerfile
   -Djava.security.egd=file:/dev/./urandom \

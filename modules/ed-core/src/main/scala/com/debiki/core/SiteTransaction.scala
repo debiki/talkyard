@@ -372,7 +372,7 @@ trait SiteTransaction {
 
   def loadGroups(memberOrGroup: MemberInclDetails): immutable.Seq[Group] = {
     val allGroups = loadAllGroupsAsMap()
-    val groupIds = loadGroupIdsMemberIdFirst(memberOrGroup)
+    val groupIds = loadGroupIdsMemberIdFirst2(memberOrGroup)
     groupIds.flatMap(allGroups.get)
   }
 
@@ -495,7 +495,11 @@ trait SiteTransaction {
     anyUser.map(loadGroupIdsMemberIdFirst) getOrElse Vector(Group.EveryoneId)
   }
 
-  def loadGroupIdsMemberIdFirst(memberOrGroupInclDetails: MemberInclDetails): Vector[UserId] = {
+  // Add '2' to the name to avoid a Scala compiler java.lang.StackOverflowError in SBT
+  // — there's a similarly named function, with a Participant instead of MemberInclDetails,
+  // just below, and the compiler (Scala 2.12.8) crashes if they have the same name.
+  // Or was it -J-Xss10m (MB stack size) that solved this?
+  def loadGroupIdsMemberIdFirst2(memberOrGroupInclDetails: MemberInclDetails): Vector[UserId] = {
     val memberNoDetails = memberOrGroupInclDetails match {
       case m: UserInclDetails => m.briefUser
       case g: Group => g

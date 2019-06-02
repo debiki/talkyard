@@ -1830,7 +1830,7 @@ trait UserDao {
 
       // Load member after having forgotten avatar images (above).
       val memberBefore = tx.loadTheUserInclDetails(userId)
-      val groupIds = tx.loadGroupIdsMemberIdFirst(memberBefore)
+      val groupIds = tx.loadGroupIdsMemberIdFirst2(memberBefore)
 
       throwForbiddenIf(memberBefore.isDeleted, "TyE0ALRDYDLD", "User already deleted")
       throwForbiddenIf(memberBefore.isGroup, "TyE0KWPP240", "Is a group")
