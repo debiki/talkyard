@@ -334,6 +334,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-mentions-built-in-groups.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-mentions-custom-groups.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-permissions-similar-topics.2browsers $args
+
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup

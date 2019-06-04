@@ -84,6 +84,7 @@ export = {
   FirstReplyNr: 2,  // [5FKF0F2]
   SystemUserId: 1,
   SysbotUserId: 2,
+  EveryoneFullName: 'Everyone',
   EveryoneId: 10,
   AllMembersId: 11,
   AllMembersUsername: 'all_members',

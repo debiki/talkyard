@@ -175,6 +175,11 @@ function pagesFor(browser) {
     },
 
 
+    numBrowserTabs: (): number => {
+      return browser.getTabIds().length;
+    },
+
+
     swithToOtherTabOrWindow: function() {
       for (let i = 0; i < 3; ++i) {
         logMessage("Waiting for other window to open, to prevent weird Selenium errors...");
@@ -242,6 +247,7 @@ function pagesFor(browser) {
       while (api._currentUrl === browser.url().value) {
         browser.pause(250);
       }
+      api._currentUrl = '';
     },
 
 
@@ -808,7 +814,11 @@ function pagesFor(browser) {
     },
 
 
-    waitForThenClickText: function(selector, regex) {
+    waitAndClickSelectorWithText: (selector, regex) => {
+      api.waitForThenClickText(selector, regex);
+    },
+
+    waitForThenClickText: function(selector, regex) {   // RENAME to waitAndClickSelectorWithText (above)
       // In FF, the click sometimes fails, the first time before pause(), with
       // this error message:  "Error: Remote end send an unknown status code."
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
@@ -832,13 +842,14 @@ function pagesFor(browser) {
     },
 
 
-    waitAndGetElemIdWithText: (selector, regex): string => {
+    waitAndGetElemIdWithText: (selector, regex, timeoutMs?: number): string => {
       if (_.isString(regex)) {
         regex = new RegExp(regex);
       }
       // Don't use browser.waitUntil(..) — exceptions in waitUntil apparently don't
       // propagade to the caller, and instead always break the test. E.g. using
       // a stale elem ref in an ok harmless way, apparently breaks the test.
+      const startMs = Date.now();
       for (let pauseMs = PollMs; true; pauseMs *= PollExpBackoff) {
         const elemsWrap = browser.elements(selector);
         dieIf(!elemsWrap.value,
@@ -856,6 +867,10 @@ function pagesFor(browser) {
         }
         logMessage(`Waiting for <${selector}> to match: ${regex}, ` +
             `but the ${elems.length} selector matching texts are: ${texts}.`)
+        if (timeoutMs && (Date.now() - startMs) > timeoutMs) {
+          die(`Didn't find text ${regex} in selector '${selector}'. ` +
+            `Instead, the matching selectors texts are: [${texts}]  [TyE40MRBL25]`)
+        }
         browser.pause(Math.min(pauseMs, PollMaxMs));
       }
     },
@@ -2382,6 +2397,10 @@ function pagesFor(browser) {
         api.waitForVisible('#e2eF_NoTopics');
       },
 
+      waitForCategoryName: (name: string) => {
+        api.waitAndGetElemIdWithText('.s_F_Ts_Cat_Ttl', name);
+      },
+
       waitForTopics: function() {
         // This is in some cases really slow, often makes tests/e2e/specs/navigation-as-admin.test.ts
         // time out — unless runs selenium-standalone *with*  `-- -debug` logging. Weird. [E2EBUG]
@@ -2403,6 +2422,12 @@ function pagesFor(browser) {
 
       clickLoadMore: (opts: { mayScroll?: boolean } = {}) => {
         api.waitAndClick('.load-more', opts);
+      },
+
+      switchToCategory: (toCatName: string) => {
+        api.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
+        api.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
+        api.forumTopicList.waitForCategoryName(toCatName);
       },
 
       clickViewLatest: function() {
@@ -2511,7 +2536,7 @@ function pagesFor(browser) {
       },
 
       assertCategoryNotFoundOrMayNotAccess: function() {
-        api.assertAnyTextMatches('.dw-forum', 'EdE0CAT');
+        api.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
       }
     },
 
@@ -2525,6 +2550,10 @@ function pagesFor(browser) {
       },
 
       submit: function() {
+        // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
+        api.scrollIntoViewInPageColumn('#e2eSaveCatB')
+        api.scrollToBottom();
+        // ----
         api.waitAndClick('#e2eSaveCatB');
         api.waitUntilModalGone();
         api.waitUntilLoadingOverlayGone();
@@ -2551,6 +2580,11 @@ function pagesFor(browser) {
       },
 
       securityTab: {
+        switchGroupFromTo(fromGroupName: string, toGroupName: string) {
+          api.waitAndClickSelectorWithText('.s_PoP_Un button', fromGroupName);
+          api.waitAndClickSelectorWithText('.esDropModal_content .esExplDrp_entry', toGroupName);
+        },
+
         setMayCreate: function(groupId: UserId, may: boolean) {
           // For now, just click once
           api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
@@ -2696,6 +2730,19 @@ function pagesFor(browser) {
 
       getTitle: function() {
         return browser.getText('.editor-area .esEdtr_titleEtc_title');
+      },
+
+      waitForSimilarTopics: () => {
+        api.waitForVisible('.s_E_SimlTpcs');
+      },
+
+      numSimilarTopics: (): number => {
+        return api.count('.s_E_SimlTpcs_L_It');
+      },
+
+      isSimilarTopicTitlePresent: (title: string) => {
+        const text = api.waitAndGetVisibleText('.s_E_SimlTpcs')
+        return text.search(title) >= 0;
       },
 
       editText: function(text, opts: { timeoutMs?: number, checkAndRetry?: true } = {}) {
@@ -3486,6 +3533,10 @@ function pagesFor(browser) {
 
 
     searchResultsPage: {
+      waitForSearchInputField: () => {
+        api.waitForVisible('.s_SP_QueryTI');
+      },
+
       assertPhraseNotFound: function(phrase: string) {
         api.searchResultsPage.waitForResults(phrase);
         assert(browser.isVisible('#e_SP_NothingFound'));
@@ -3530,6 +3581,10 @@ function pagesFor(browser) {
 
       countNumPagesFound_1: function(): number {
         return browser.elements('.esSERP_Hit_PageTitle').value.length;
+      },
+
+      assertResultPageTitlePresent: (title: string) => {
+        api.waitAndGetElemIdWithText('.esSERP_Hit_PageTitle', title, 1);
       },
 
       goToSearchResult: function(linkText?: string) {

@@ -465,8 +465,8 @@ const ForumButtons = createComponent({
       // Or hen is not allowed to access the category.
       return !store.userSpecificDataAdded ? null : r.p({},
           r.br(),
-          "Category not found. Did you just create it? Or renamed it? Or you're not allowed " +
-          "to access it? Or perhaps it doesn't exist? [EdE0CAT]",  // (4JKSWX2)
+          "Category not found. Did you just create it? Or renamed it? Or you may not " +
+          "access it? Maybe it doesn't exist? [_TyE0CAT]",  // (4JKSWX2)
           r.br(), r.br(),
           PrimaryLinkButton({ href: '/' }, "Go to the homepage"));
     }

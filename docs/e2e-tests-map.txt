@@ -15,12 +15,15 @@ I'm planning to implement the text on lines with "NEXT" soon (probably because
 someone reproted a bug & it got fixed, better avoid regressions.)
 
 
+search /
 full text search:
   ... lots of places ...
   staff only page:
     found by admins:
             navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
     not found by non-staff:
+  custom groups private pages not found:
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
 
 create site & forum -
   create:  create-site-all-logins
@@ -151,6 +154,13 @@ groups:
   @mention:
           - group-mentions-built-in-groups.2browsers.test.ts  TyT4AWJL208R
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
+  permissions, custom groups:
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+
+access denied,
+not found page, 404:
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J TyT406AK24
+
 
 invites -
   before accepts:
@@ -213,7 +223,8 @@ forum -
     only one category:
     change category:
             - navigation-as-impl.ts  TyT4BKAFE5GA  MISSING
-            - forum-sort-and-scroll [TyT5ABK2WL4]  MISSING
+            - forum-sort-and-scroll  TyT5ABK2WL4   MISSING
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
     show waiting:
     show deleted -
       not/staff: authz-view-as-stranger.test.ts
@@ -306,6 +317,8 @@ editor -
   upload things:  (7KFC2)
   other buttons -
     ...
+  similar topics:
+            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
 
 
 mentions:
