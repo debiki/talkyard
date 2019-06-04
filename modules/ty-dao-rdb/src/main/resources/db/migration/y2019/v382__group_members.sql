@@ -4,10 +4,6 @@ update users3 set full_name = 'All Members', username = 'all_members'
 update users3 set full_name = 'Trusted Regulars', username = 'trusted_regulars'
   where user_id = 15 and username = 'regular_members';
 
-
-alter table users3 add column is_group bool not null default false;
-update users3 set is_group = trust_level is null and user_id > 0;
-
 update users3 set username = null where user_id < 0; -- not needed, just in case
 alter table users3 add constraint participants_c_guest_no_username check (
   user_id > 0 or username is null);
@@ -19,12 +15,17 @@ alter table users3 add constraint participants_c_username_len_active check (
 alter table users3 add constraint participants_c_username_len_deleted check (
   deleted_at is null or length(username) <= 80);
 
+
+alter table users3 add column is_group bool not null default false;
+
 update users3 set
+    is_group = true,
     is_admin = case when user_id = 19 then true else null end,
     is_moderator = case when user_id in (17, 18) then true else null end,
     is_owner = null,
     is_superadmin = null,
-    trust_level = null,  -- not needed here, but anyway
+    password_hash = null,
+    trust_level = null,
     threat_level = null,
     is_approved = null,
     approved_at = null,
@@ -33,9 +34,10 @@ update users3 set
     suspended_till = null,
     suspended_by_id = null,
     suspended_reason = null,
-    deactivated_at = null
-    -- external_id = null  skip, want to know if error
-  where is_group;
+    deactivated_at = null,
+    external_id = null
+  where user_id between 10 and 19;
+
 
 alter table users3 add constraint participants_c_group_not_adm_mod_ownr check (
   not is_group or (
@@ -112,7 +114,7 @@ create table group_participants3 (
   constraint groupparticipants_pp_r_pps foreign key (
       site_id, participant_id) references users3 (site_id, user_id) deferrable,
 
-  constraint groupparticipants_c_groupid check (
+  constraint groupparticipants_c_no_built_in_groups check (
       group_id >= 100),
 
   constraint groupparticipants_c_no_guests_or_built_in_users check (
@@ -125,7 +127,7 @@ create table group_participants3 (
 
 create index groupparticipants_ppid_i on group_participants3 (site_id, participant_id);
 
-create index participants_groups_i on users3 (site_id, user_id) where is_group;
+create index participants_groupid_i on users3 (site_id, user_id) where is_group;
 
 
 alter table emails_out3 add column can_login_again bool;
