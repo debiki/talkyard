@@ -625,6 +625,8 @@ object Prelude {
   def charIsAzOrNum(c: Char): Boolean =
     (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || charIsNum(c)
 
+  def charIsNumOrDotDash(c: Char): Boolean = charIsNum(c) || c == '.' || c == '-'
+
   def charIsNum(c: Char): Boolean = c >= '0' && c <= '9'
 
   /**

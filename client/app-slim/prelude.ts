@@ -216,6 +216,16 @@ export function toId(x: number | { id: number } | { uniqueId: number }): number 
 }
 
 
+export function isDigitsOnly(maybeDigits: string): boolean {
+  return /^\d+$/.test(maybeDigits);
+  // Also negative numbers:  insert:  [\+-]?
+  // Number.isInteger not supported in IE11.
+  // (isNaN('222aaa') is false — the whole string needs to be a number. Except that
+  // it thinks '' is a number: isNaN('') === false.
+  // It considers '123e45' a number though so don't use. )
+}
+
+
 export function uppercaseFirst(text: string): string {
   return !text ? text : (
     text[0].toUpperCase() + text.substr(1));

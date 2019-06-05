@@ -478,16 +478,19 @@ case object Participant {
       .dropWhile(!charIsAzOrNum(_))      // drops anything but  a-z  A-Z  0-9, for now. [UNPUNCT]
       .dropRightWhile(!charIsAzOrNum(_)) //
 
-    // For now, don't allow numeric usernames. That wouldn't be a name would it?
+    // For now, don't allow numeric usernames or digits and '.' '-' only.
+    // That wouldn't be a name would it?
     // Maybe if someone chooses hens name to be '2010' or '1945', people will believe it's
-    // a date instead? Not good for usability? Let's prefix 'n', could mean "numeric name".
+    // a date instead? Not good for usability? And '12.34' is a weird name.
+    // Let's prefix 'n', could mean "numeric name".
     val usernameNotOnlyDigits =
-      if (usernameOkChars.forall(charIsNum)) 'n' + usernameOkChars
+      if (usernameOkChars.forall(charIsNumOrDotDash)) 'n' + usernameOkChars
       else usernameOkChars
 
     var usernameOkCharsLen =
       (if (usernameNotOnlyDigits.length >= Participant.MinUsernameLength) usernameNotOnlyDigits
-      else (usernameNotOnlyDigits + "23456789") take Participant.MinUsernameLength) take Participant.MaxUsernameLength
+      else (usernameNotOnlyDigits + "23456789") take Participant.MinUsernameLength)
+        .take(Participant.MaxUsernameLength)
 
 
     // Not a file extension suffix? like .png or .jpg or .js?  Tested here: [5WKAJH20]

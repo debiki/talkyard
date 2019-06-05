@@ -36,6 +36,50 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
       Validation.checkUsername("__sx_writing_12345__").isGood mustBe true
     }
 
+    "reject numeric usernames" in {
+      Validation.checkUsername("1234").isBad mustBe true
+      Validation.checkUsername("0").isBad mustBe true
+      Validation.checkUsername("00").isBad mustBe true
+      Validation.checkUsername("000").isBad mustBe true
+      Validation.checkUsername("007").isBad mustBe true
+      Validation.checkUsername("700").isBad mustBe true
+      Validation.checkUsername("-700").isBad mustBe true
+      Validation.checkUsername("700-").isBad mustBe true
+      Validation.checkUsername("700+").isBad mustBe true
+      Validation.checkUsername("007_so_dangerous").isGood mustBe true
+      Validation.checkUsername("so_dangerous_007").isGood mustBe true
+      Validation.checkUsername("-000").isBad mustBe true
+      Validation.checkUsername("000-").isBad mustBe true
+      Validation.checkUsername("000+").isBad mustBe true
+      Validation.checkUsername("-0").isBad mustBe true
+      Validation.checkUsername("+-0").isBad mustBe true
+      Validation.checkUsername("+0-").isBad mustBe true
+      Validation.checkUsername("+0-3").isBad mustBe true
+      Validation.checkUsername("0.5").isBad mustBe true
+      Validation.checkUsername("5e7").isGood mustBe true   // ok
+      Validation.checkUsername("5.5e7").isGood mustBe true // ok
+    }
+
+    "rejects digits dots dashes only" in {
+      Validation.checkUsername("1.2").isBad mustBe true
+      Validation.checkUsername("1-2").isBad mustBe true
+      Validation.checkUsername("1-2x").isGood mustBe true
+      Validation.checkUsername("1.2x").isGood mustBe true
+      Validation.checkUsername("x1-2").isGood mustBe true
+      Validation.checkUsername("x1.2").isGood mustBe true
+      Validation.checkUsername("1x2").isGood mustBe true
+      Validation.checkUsername("1.x-2").isGood mustBe true
+      Validation.checkUsername("1+2").isBad mustBe true
+
+      Validation.checkUsername("1.2.3.4").isBad mustBe true
+      Validation.checkUsername("1-2-3-4").isBad mustBe true
+      Validation.checkUsername("1-2.3-4").isBad mustBe true
+
+      Validation.checkUsername("1-2.3-4x").isGood mustBe true
+      Validation.checkUsername("x1-2.3-4").isGood mustBe true
+      Validation.checkUsername("1-2x3-4").isGood mustBe true
+    }
+
     "reject too short usernames" in {
       Participant.MinUsernameLength mustBe 3
       Validation.checkUsername("a").isBad mustBe true

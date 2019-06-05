@@ -257,6 +257,7 @@ declare namespace debiki2 {
   function isNullOrUndefined(x): boolean;
   function isDefined2(x): boolean;  // = !_.isUndefined
   function nonEmpty(x): boolean;
+  function isDigitsOnly(maybeDigits: string): boolean;
   function isBlank(x: string): boolean;
 
   function whenMsToIsoDate(whenMs: number): string;

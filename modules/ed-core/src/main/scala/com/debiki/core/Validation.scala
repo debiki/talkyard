@@ -32,6 +32,7 @@ object Validation {
   val UsernameBadCharsRegex: Regex = s"[^a-zA-Z0-9_.-]".r  // [UNPUNCT]
 
   private val TwoSpecialCharsRegex = ".*[_.-]{2}.*".r
+  private val DigitsDotsDashesOnlyRegex = """^[0-9\.-]*$""".r
 
 
   // CLEAN_UP don't return the name — looks as if it's maybe getting changed
@@ -69,6 +70,7 @@ object Validation {
   def badCharsErrorMessage(char: String) =
     s"The username must use characters a-z, A-Z, 0-9 and _ only, this char not allowed: $char"
   val TwoSpecialCharsErrorMessage = "The username has two special chars in a row"
+  val DigitsDotsDashesOnlyErrorMessage = "The username is only digits, dots and dashes"
   val BadFirstCharErrorMessage = "The username's first character must be one of a-z, A-Z, 0-9 _"
   val BadLastCharErrorMessage = "The username's last character must be one of a-z, A-Z, 0-9"
   val DeletedSuffixErrorMessage =
@@ -113,6 +115,9 @@ object Validation {
 
     if (TwoSpecialCharsRegex.matches(username))
       return Bad(TwoSpecialCharsErrorMessage)
+
+    if (DigitsDotsDashesOnlyRegex.matches(username))
+      return Bad(DigitsDotsDashesOnlyErrorMessage)
 
     // If the username needs to be changed somehow, to become okay — then reject it.
     val okayUsername = Participant.makeOkayUsername(username, allowDotDash = true, _ => false)

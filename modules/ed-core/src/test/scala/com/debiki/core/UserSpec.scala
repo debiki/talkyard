@@ -145,6 +145,17 @@ class UserSpec extends FreeSpec with MustMatchers {
             .get mustBe "mu_cho.al-l"
       }
 
+      "and prefixes *only* digits, dots, dashes with an 'n' (for 'numeric name')" in {
+        Participant.makeOkayUsername("1.2", allowDotDash = true, _ => false).get mustBe "n1.2"
+        Participant.makeOkayUsername("1-2", allowDotDash = true, _ => false).get mustBe "n1-2"
+        Participant.makeOkayUsername("1-2.3.4-5", allowDotDash = true, _ => false).get mustBe "n1-2.3.4-5"
+        Participant.makeOkayUsername(".12", allowDotDash = true, _ => false).get mustBe "n12"
+        Participant.makeOkayUsername("-34", allowDotDash = true, _ => false).get mustBe "n34"
+        Participant.makeOkayUsername(".-3456", allowDotDash = true, _ => false).get mustBe "n3456"
+        Participant.makeOkayUsername(".-34.5-6-.", allowDotDash = true, _ => false).get mustBe "n34.5-6"
+        Participant.makeOkayUsername(".-34.x-6-.", allowDotDash = true, _ => false).get mustBe "34.x-6"
+      }
+
       "and not .suffix that looks like file names, like '.jpg'" in {  // [5WKAJH20]
         for (suffix <- Seq("bmp", "css", "csv", "exe", "gif", "htm", "html", "ico",
             "js", "json", "jpg", "jpeg", "pdf", "png", "pgp", "rtf", "tar", "txt",
