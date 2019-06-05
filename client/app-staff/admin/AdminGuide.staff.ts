@@ -58,7 +58,7 @@ export var AdminGuide =
       "Don't create too many categories — if you do, they might look rather empty. " +
       "Also, create some interesting topics, so people won't find an empty forum. "),
     r.h2({},
-      "Invite people"),
+      "Invite people ", r.a({ href: linkToStaffInvitePage() }, "(here)")),
     r.p({},
       "First ask some people to have a look at your community — " +
       "see if they understand what it is about and what they can do here."),

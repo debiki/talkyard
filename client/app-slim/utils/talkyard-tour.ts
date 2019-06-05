@@ -304,10 +304,10 @@ function TalkyardTour() {
       r.h3({ className: 's_Tour_D_Ttl' }, step.title),
       r.p({ className: 's_Tour_D_Txt' }, step.text),
       r.div({ className: 's_Tour_D_Bs' },
-        PrimaryButton({ onClick: goToNextStep, className: 's_Tour_D_Bs_NextB',
-            disabled: nextDisabled }, isLastStep ? "Goodbye" : step.nextTitle || "Next"), // I18N
         !canGoBack ? null :
             Button({ onClick: goToPrevStep, className: 's_Tour_D_Bs_PrevB'  }, "Prev"),   // I18N
+        PrimaryButton({ onClick: goToNextStep, className: 's_Tour_D_Bs_NextB',
+            disabled: nextDisabled }, isLastStep ? "Goodbye" : step.nextTitle || "Next"), // I18N
         r.div({ className: 's_Tour_D_Bs_Ix' }, `${stepIx + 1}/${tour.steps.length}`),
         isLastStep ? null :
             Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  },
