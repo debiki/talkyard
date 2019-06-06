@@ -1,5 +1,3 @@
-/// <reference path="../../client/app-slim/constants.ts" />
-
 
 type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
 
@@ -11,13 +9,13 @@ interface PageToAdd {
   folder?: string;
   showId?: boolean;
   slug?: string;
-  role: PageRole;
+  role: number;// PageRole;
   title: string;
   body: string;
-  categoryId?: CategoryId;
-  authorId: UserId;
-  createdAtMs?: WhenMs;
-  bumpedAtMs?: WhenMs;
+  categoryId?: number;// CategoryId;
+  authorId: number;// UserId;
+  createdAtMs?: number;// WhenMs;
+  bumpedAtMs?: number;// WhenMs;
 }
 
 
@@ -39,8 +37,8 @@ interface PageJustAdded {
 interface NewTestPost {   // RENAME to PostToAdd
   id?: number;
   // Not just page id, because needs author, creation date, etc.
-  page: Page | PageJustAdded;
-  authorId?: UserId; // if absent, will be the page author
+  page: any;// Page | PageJustAdded;
+  authorId?: number;// UserId; // if absent, will be the page author
   nr: number;
   parentNr?: number;
   postType?: number;
@@ -48,7 +46,7 @@ interface NewTestPost {   // RENAME to PostToAdd
   approvedHtmlSanitized?: string;
   postedFromIp?: string;
   postedAtUtcStr?: string;
-  postedAtMs?: WhenMs;
+  postedAtMs?: number;// WhenMs;
   isApproved?: boolean;
 }
 

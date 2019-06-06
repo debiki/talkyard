@@ -51,7 +51,7 @@ interface CheckboxEvent {
 type ValueOk<T> = {
   value?: T;
   isOk?: boolean;
-}
+};
 
 
 // Send back IgnoreThisError to the caller from an error callback, and the caller won't
@@ -552,15 +552,15 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   closeButtonTitle?: any;
   primaryButtonTitle?: any;
   secondaryButonTitle?: any;
-  small?: boolean,
-  tiny?: boolean,
+  small?: boolean;
+  tiny?: boolean;
   // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
   // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
-  onCloseOk?: (number) => void,
-  preventClose?: boolean,
-  closeOnClickOutside?: boolean, // default true
+  onCloseOk?: (number: number) => void;
+  preventClose?: boolean;
+  closeOnClickOutside?: boolean; // default true
   // Specify this to get a fn that closes the dialog.
-  withCloseFn?: (closeFn: () => void) => void,
+  withCloseFn?: (closeFn: () => void) => void;
 }
 
 
@@ -581,7 +581,7 @@ interface TalkyardTourStep {
   text: string;  // or React element also fine
   nextTitle?: string;
   placeAt: string;
-  placeHow?: PlaceHow,
+  placeHow?: PlaceHow;
   waitForClick?: boolean;
   highlightPadding?: number;
   highlightOffsetX?: number;
@@ -633,8 +633,7 @@ const enum IncludeInSummaries {
 }
 
 
-/** Either a TopicListLayout enum value, or a CategoriesLayout, or a TopicLayout.
-  */
+// Either a TopicListLayout enum value, or a CategoriesLayout, or a TopicLayout.
 type PageLayout = number;
 
 
@@ -1660,7 +1659,7 @@ interface ApiSecret {
   userId?: UserId;
   createdAt: WhenMs;
   deletedAt?: WhenMs;
-  isDeleted: boolean,
+  isDeleted: boolean;
   secretKey: string;
 }
 
@@ -1709,8 +1708,8 @@ interface EditPageRequestData {
 }
 
 interface EditPageResponse {
-  newTitlePost;
-  newAncestorsRootFirst;
+  newTitlePost: Post;
+  newAncestorsRootFirst: Ancestor[];
   newUrlPath?: string;
   newPageMeta: PageMeta;
 }
@@ -1767,8 +1766,8 @@ interface UserAccountLoginMethod {
 
 // COULD also load info about whether the user may apply and approve the edits.
 interface LoadDraftAndTextResponse {
-  pageId: PageId,
-  postNr: PostNr,
+  pageId: PageId;
+  postNr: PostNr;
   postUid: string; // CLEAN_UP RENAME to just postId.
   currentText: string;
   currentRevisionNr: number;
@@ -1837,8 +1836,8 @@ interface TellMeYourVersionSwMessage extends MessageToServiceWorker {
 
 interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
   doWhat: SwDo.SubscribeToEvents;
-  siteId: SiteId,
-  myId: UserId,
+  siteId: SiteId;
+  myId: UserId;
 }
 
 // For e2e tests.
@@ -1859,7 +1858,7 @@ const enum SwSays {  // The service worker says: ....
 }
 
 interface MessageFromServiceWorker {
-  saysWhat: SwSays
+  saysWhat: SwSays;
   swJsVersion: string;
 }
 
@@ -1876,10 +1875,10 @@ interface MyVersionIsMessageFromSw extends MessageFromServiceWorker {
 // /// <reference path="../../../node_modules/@types/react-router/index.d.ts" />
 // and then using RouteChildrenProps. Why won't work? Who cares. Instead:
 interface RouteChildProps {
-  match: RouteMatch,
-  location: RouteLocation,
-  history: RouteHistory,
-  children: any,
+  match: RouteMatch;
+  location: RouteLocation;
+  history: RouteHistory;
+  children: any;
 }
 interface RouteMatch {
   path: string;

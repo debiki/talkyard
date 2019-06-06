@@ -69,7 +69,7 @@ const TestPageNotfLevel = {
   Normal: 3,
   Hushed: 2,
   Muted: 1,
-}
+};
 
 
 export = {

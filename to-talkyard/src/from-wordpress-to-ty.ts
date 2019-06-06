@@ -1,15 +1,9 @@
 /// <reference path="to-talkyard.d.ts" />
 
-//   ./to-talkyard --wordpressCoreXmlExportFile=...
-// or right now:
-//
-//   nodejs dist/to-talkyard/src/to-talkyard.js  --wordpressCoreXmlExportFile file.xml
 
+import * as _ from 'lodash';
+import * as sax from 'sax';
 
-import minimist from 'minimist';
-import _ from 'lodash';
-import fs from 'fs';
-import sax from 'sax';
 import { buildSite } from '../../tests/e2e/utils/site-builder';
 import c from '../../tests/e2e/test-constants';
 const strict = true; // set to false for html-mode
@@ -18,25 +12,7 @@ const parser = sax.parser(strict, {});
 const UnknownUserId = -2; // ??
 const DefaultCategoryId = 2;
 
-
-const args: any = minimist(process.argv.slice(2));
-
-const wordpressXmlFilePath: string | undefined = args.wordpressCoreXmlExportFile;
-if (!_.isString(wordpressXmlFilePath))
-  throw Error("Missing: --wordpressCoreXmlExportFile=...");
-
-const writeToPath: string | undefined = args.writeTo;
-if (!_.isString(writeToPath))
-  throw Error("Missing: --writeTo=...");
-
-const fileText = fs.readFileSync(wordpressXmlFilePath, { encoding: 'utf8' });
-
-const verboseStr: string | undefined = args.verbose || args.v;
-const verbose: boolean = !!verboseStr && verboseStr !== 'f' && verboseStr !== 'false';
-
-console.log("The input file starts with: " + fileText.substring(0, 200));
-console.log("Processing ...");
-
+let verbose: boolean | undefined;
 
 
 const wpPosts: WpBlogPostAndComments[] = [];
@@ -415,18 +391,9 @@ parser.onend = function () {
 };
 
 
-parser.write(fileText).close();
-
-
-if (errors) {
-  console.log("There were errors. Aborting. Bye. [ToTyEGDBYE]");
-}
-else {
-  const site = builder.getSite();
-  const jsonString = JSON.stringify(site, undefined, 2);
-  process.stdout.write(
-      `\n\nDone processing. Writing ${jsonString.length} JSON chars to: ${writeToPath} ...`);
-  fs.writeFileSync(writeToPath, jsonString, { encoding: 'utf8' });
-  process.stdout.write(" Done.\n");
+export default function(fileText: string, ps: { verbose?: boolean }): [SiteData, boolean] {
+  verbose = ps.verbose;
+  parser.write(fileText).close();
+  return [builder.getSite(), errors];
 }
 

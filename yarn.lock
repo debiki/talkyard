@@ -85,22 +85,6 @@
     "@types/prop-types" "*"
     csstype "^2.2.0"
 
-"@types/service_worker_api@^0.0.9":
-  version "0.0.9"
-  resolved "https://registry.yarnpkg.com/@types/service_worker_api/-/service_worker_api-0.0.9.tgz#7269ff2fa0e27e23a38a22e8909534f63823dee8"
-  dependencies:
-    "@types/whatwg-fetch" "*"
-
-"@types/whatwg-fetch@*":
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/@types/whatwg-fetch/-/whatwg-fetch-0.0.33.tgz#19c0d2863c8cb2380f21a1c736b79cbf7895bb13"
-  dependencies:
-    "@types/whatwg-streams" "*"
-
-"@types/whatwg-streams@*":
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/@types/whatwg-streams/-/whatwg-streams-0.0.7.tgz#28bfe73dc850562296367249c4b32a50db81e9d3"
-
 "@webscopeio/react-textarea-autocomplete@=1.4.1":
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/@webscopeio/react-textarea-autocomplete/-/react-textarea-autocomplete-1.4.1.tgz#454ed595c2d8f8d976271ca5258eca92c8471332"
@@ -4148,9 +4132,10 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@^3.3.3:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.3.3.tgz#f1657fc7daa27e1a8930758ace9ae8da31403221"
+typescript@^3.5:
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.5.1.tgz#ba72a6a600b2158139c5dd8850f700e231464202"
+  integrity sha512-64HkdiRv1yYZsSe4xC1WVgamNigVYjlssIoaH2HcZF0+ijsk5YK2g0G34w9wJkze8+5ow4STd22AynfO6ZYYLw==
 
 ua-parser-js@^0.7.9:
   version "0.7.17"
