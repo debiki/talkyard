@@ -544,9 +544,17 @@ Custom third party builds
 We're building & using a smaller version of Lodash, like so:
 (this makes slim-bundle.min.js.gz 8kb = 4% smaller, as of September 2016)
 
+    # COULD create custom typedef for this custom Lodash, so won't accidentally use
+    # Lodash fns that have been excluded here?
+
     node_modules/lodash-cli/bin/lodash \
-      include="assign,assignIn,before,bind,chain,clone,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArguments,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,uniqueId,value,values" \
+      include="assign,assignIn,before,bind,chain,clone,cloneDeep,compact,concat,create,debounce,defaults,defer,delay,each,escape,every,filter,find,findLast,flatten,flattenDeep,forEach,forOwn,groupBy,has,head,includes,identity,indexOf,isArguments,isArray,isBoolean,isDate,isEmpty,isEqual,isFinite,isFunction,isNaN,isNull,isNumber,isObject,isRegExp,isString,isUndefined,iteratee,keys,last,map,mapValues,matches,max,min,mixin,negate,noConflict,noop,once,partition,pick,reduce,remove,result,size,slice,some,sortBy,sumBy,take,tap,throttle,thru,toArray,uniq,uniqBy,uniqueId,value,values" \
       --output client/third-party/lodash-custom.js
+
+    # If you upgrade Lodash, afterwards, have a look at the diff of `lodash-custom.js`
+    # and scroll down towards the bottom. Look at the line `lodash.cloneDeep =` and below:
+    # did any function unexpectedly disappear? If so, include it in the long list above
+    # and regenerate `lodash-custom.js`.
 
 - For security reasons, we checkin only the resulting `.js` file (but not the `.min.js`) file
 into source control (so that you can read the source code and see what it does).
