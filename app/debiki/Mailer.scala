@@ -226,6 +226,7 @@ class Mailer(
     case x => dontRestartIfException(x)
   }
 
+
   /**
    * Accepts an (Email, site-id), and then sends that email on behalf of
    * the site. The caller should already have saved the email to the
@@ -306,9 +307,26 @@ class Mailer(
   }
 
 
-  private def sendEmail(emailToSend: Email, siteId: SiteId) {
+  private def sendEmail(emailMaybeWrongAddr: Email, siteId: SiteId) {
 
     val siteDao = daoFactory.newSiteDao(siteId)
+
+    // Reload the user and hens email address in case the address was changed recently.
+    // — Unless this is a new email address verification email. Then we want to email
+    // that specific address.
+    // COULD rename 'sentTo'? Maybe to 'sendTo' instead? since hasn't been sent yet.
+    // And set to None, when we re-lookup the participant's email anyway and won't use it? [305RMDG2]
+    val sendToAddress =
+      if (emailMaybeWrongAddr.tyype == EmailType.VerifyAddress) {
+        emailMaybeWrongAddr.sentTo
+      }
+      else {
+        val anyPp = emailMaybeWrongAddr.toUserId.flatMap(siteDao.getParticipant)
+        anyPp.map(_.email) getOrElse emailMaybeWrongAddr.sentTo
+      }
+
+    val emailToSend = emailMaybeWrongAddr.copy(
+      sentTo = sendToAddress, sentOn = Some(now().toJavaDate), providerEmailId = None)
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
@@ -347,26 +365,20 @@ class Mailer(
       return
     }
 
-    logger.debug(s"s$siteId: Sending email [TyMEMLSENDNG]: $emailToSend")
+    logger.debug(s"s$siteId: Sending email to $sendToAddress [TyMEMLSENDNG]: $emailToSend")
 
-    // Reload the user and his/her email address in case it's been changed recently.
-    val address = emailToSend.toUserId.flatMap(siteDao.getParticipant).map(_.email) getOrElse
-      emailToSend.sentTo
-
-    val emailWithAddress = emailToSend.copy(
-      sentTo = address, sentOn = Some(now().toJavaDate), providerEmailId = None)
-    val apacheCommonsEmail  = makeApacheCommonsEmail(emailWithAddress)
+    val apacheCommonsEmail  = makeApacheCommonsEmail(emailToSend)
     val emailAfter =
       try {
         apacheCommonsEmail.send()
         // Nowadays not using Amazon's SES api, so no provider email id is available.
-        logger.trace(s"s$siteId: Email sent [TyMEMLSENT]: "+ emailWithAddress)
-        emailWithAddress
+        logger.trace(s"s$siteId: Email sent [TyMEMLSENT]: "+ emailToSend)
+        emailToSend
       }
       catch {
         case ex: acm.EmailException =>
-          var message = stringifyExceptionAndCauses(ex)
-          val badEmail = emailWithAddress.copy(failureText = Some(message))
+          val message = stringifyExceptionAndCauses(ex)
+          val badEmail = emailToSend.copy(failureText = Some(message))
           logger.warn(s"s$siteId: Error sending email [TyEEMLERR]: $badEmail")
           badEmail
       }

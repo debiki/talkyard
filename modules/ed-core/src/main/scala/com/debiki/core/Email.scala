@@ -77,7 +77,7 @@ object Email {
 case class Email(
   id: String,
   tyype: EmailType,
-  sentTo: String,
+  sentTo: String,  // sometimes not used [305RMDG2]
   toUserId: Option[UserId],
   sentOn: Option[ju.Date],
   createdAt: ju.Date,

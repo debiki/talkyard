@@ -123,6 +123,10 @@ profile page, user:
   list login methods:
           - create-site-github-oauth-uppercase-email.test.ts  TyT4AR8GFAH
 
+  add email address, send verification email:
+          - user-profile-change-email.test.ts  TyT305MHPJ25
+  add gmail addr:
+
   self delete, gdpr:
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
 
@@ -202,6 +206,8 @@ emails -
             - unsubscribe.2browsers.test.ts  TyT2ABKG4RUR
             - group-mentions.2browsers.test.ts   TyT7AKWB2LG
     via user profile page:
+  add email address, send verification email:
+            - user-profile-change-email.test.ts  TyT305MHPJ25
 
 getting started guide -
   guide present:

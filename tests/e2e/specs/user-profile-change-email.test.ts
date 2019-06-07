@@ -40,7 +40,7 @@ const mariasTopicATitle = 'mariasTopicATitle';
 const mariasTopicABody = 'mariasTopicABody';
 
 
-describe("user profile change email:", () => {
+describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
 
   it("import a site, init people", () => {
     everyonesBrowser = _.assign(browser, pagesFor(browser));
@@ -87,6 +87,9 @@ describe("user profile change email:", () => {
   });
 
   it("... Maria gets an address verification email, but doesn't click the link", () => {
+    // UX COULD send a different email to Maria, since her addr is in use alread, and
+    // cannot be added to another account, we know for sure this is a mistake.
+    // (Or maybe not send an email at all?)
     server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, [
             "To finish adding", // [B4FR20L_]
