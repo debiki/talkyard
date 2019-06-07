@@ -63,6 +63,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
             Json.obj(
               "pageId" -> pageAndHits.pageId,
               "pageTitle" -> pageAndHits.pageTitle,
+              "pageType" -> pageAndHits.pageType.toInt,
               "hits" -> JsArray(pageAndHits.hitsByScoreDesc.map((hit: SearchHit) => Json.obj(
                 "postId" -> hit.postId,
                 "postNr" -> hit.postNr,

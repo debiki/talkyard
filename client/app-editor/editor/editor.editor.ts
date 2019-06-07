@@ -797,6 +797,10 @@ export const Editor = createComponent({
 
     Server.search(this.state.title, (searchResults: SearchResults) => {
       if (this.isGone) return;
+      // Exclude category description pages — they're off-topic, here.
+      const pagesNoAboutCats = _.filter(
+          searchResults.pagesAndHits, (ph: PageAndHits) => ph.pageType !== PageRole.About);
+      searchResults = { ...searchResults, pagesAndHits: pagesNoAboutCats };
       this.setState({ searchResults });
     }, null, { showLoadingOverlay: false });
   },

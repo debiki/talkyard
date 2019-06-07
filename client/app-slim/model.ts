@@ -1464,6 +1464,7 @@ interface SearchResults {
 interface PageAndHits {
   pageId: PageId;
   pageTitle: string;
+  pageType: PageRole;
   hits: SearchHit[];
 }
 

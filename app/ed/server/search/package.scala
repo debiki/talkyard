@@ -132,6 +132,7 @@ package object search {
     hitsByScoreDesc: immutable.Seq[SearchHit]) {
     def pageId: PageId = pageStuff.pageId
     def pageTitle: String = pageStuff.title
+    def pageType: PageType = pageStuff.pageRole
   }
 
 
