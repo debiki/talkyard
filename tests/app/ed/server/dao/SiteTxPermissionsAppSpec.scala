@@ -26,11 +26,13 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
 
   // Everyone's permissions on the General category,
   // staff's permissions on the General category,
-  // everyone's permissions on the Sample-Topics category,
-  // staff's permissions on the Sample-Topics category,
+  // everyone's permissions on the Questions category,
+  // staff's permissions on the Questions category,
+  // everyone's permissions on the Ideas category,
+  // staff's permissions on the Ideas category,
   // staff's permissions on the Staff category,
-  // = 5
-  val NumDefaultForumPermissions = 5
+  // = 7
+  val NumDefaultForumPermissions = 7
 
 
   "SiteTransaction can handle PermsOnPages" - {

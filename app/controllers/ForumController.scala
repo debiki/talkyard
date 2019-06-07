@@ -62,8 +62,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       title = title,
       folder = folder,
       useCategories = useCategories,
-      createSupportCategory = false, // createSupportCategory,  [NODEFCATS]
-      createIdeasCategory = false, // createIdeasCategory,
+      createSupportCategory = createSupportCategory,  // [NODEFCATS]
+      createIdeasCategory = createIdeasCategory,
       createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 

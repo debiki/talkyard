@@ -274,8 +274,8 @@ export var CreateForumPanel = createComponent({
     return {
       title: '',
       useCategories: true,
-      createSupportCategory: false,  // [NODEFCATS]
-      createIdeasCategory: false,    // [NODEFCATS]
+      createSupportCategory: true,
+      createIdeasCategory: true,
       createSampleTopics: true,
       topicListStyle: TopicListLayout.ExcerptBelowTitle,
       nextChoice: 1,

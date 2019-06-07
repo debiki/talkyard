@@ -54,8 +54,8 @@ trait ForumDao {
       title = title,
       folder = folder,
       useCategories = !isForEmbCmts,
-      createSupportCategory = false,
-      createIdeasCategory = false,
+      createSupportCategory = !isForEmbCmts,
+      createIdeasCategory = !isForEmbCmts,
       createSampleTopics = !isForEmbCmts,
       topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
   }
@@ -260,25 +260,49 @@ trait ForumDao {
       nextCategoryId - 1
     }
 
-    //var anySupportCategoryId: Option[CategoryId] = None  [NODEFCATS]
-    //var anyIdeasCategoryId: Option[CategoryId] = None
-    var uncategorizedCategoryId: CategoryId = -1
+    var anyQuestionsCategoryId: Option[CategoryId] = None
+    var anyIdeasCategoryId: Option[CategoryId] = None
+    var generalCategoryId: CategoryId = -1
     var anySampleTopicsCategoryId: Option[CategoryId] = None
 
-    /*
-    if (options.createSupportCategory) {  [NODEFCATS]
+    // Create a default General category.
+    generalCategoryId = getAndBumpCategoryId()
+    createCategoryImpl(
+      CategoryToSave(
+        anyId = Some(generalCategoryId),
+        sectionPageId = forumPageId,
+        parentId = rootCategoryId,
+        shallBeDefaultCategory = true, //uncategorizedCategoryId == defaultCategoryId,
+        name = UncategorizedCategoryName,
+        slug = UncategorizedCategorySlug,
+        position = DefaultCategoryPosition,
+        description = "For topics that don't fit in other categories.",
+        newTopicTypes = immutable.Seq(PageType.Discussion),
+        unlistCategory = false,
+        unlistTopics = false,
+        includeInSummaries = IncludeInSummaries.Default),
+      immutable.Seq[PermsOnPages](
+        makeEveryonesDefaultCategoryPerms(generalCategoryId),
+        makeStaffCategoryPerms(generalCategoryId)),
+      bySystem)(tx)
+
+    // Talkyard is advertised as Question-Answers and crowdsource ideas forum software,
+    // so makes sense to create Questions and Ideas categories?
+
+    // Create a Questions category.
+    if (options.createSupportCategory) {
       val categoryId = getAndBumpCategoryId()
-      anySupportCategoryId = Some(categoryId)
+      anyQuestionsCategoryId = Some(categoryId)
       createCategoryImpl(
         CategoryToSave(
           anyId = Some(categoryId),
           sectionPageId = forumPageId,
           parentId = rootCategoryId,
           shallBeDefaultCategory = categoryId == defaultCategoryId,
-          name = "Support",
-          slug = "support",
+          name = "Questions",
+          slug = "questions",
           position = DefaultCategoryPosition - 2,
-          description = "Here you can ask questions and report problems.",
+          description = "Here you can ask questions.",
           newTopicTypes = immutable.Seq(PageType.Question),
           unlistCategory = false,
           unlistTopics = false,
@@ -289,7 +313,8 @@ trait ForumDao {
         bySystem)(tx)
     }
 
-    if (options.createIdeasCategory) {  [NODEFCATS]
+    // Create an Ideas category.
+    if (options.createIdeasCategory) {
       val categoryId = getAndBumpCategoryId()
       anyIdeasCategoryId = Some(categoryId)
       createCategoryImpl(
@@ -301,7 +326,7 @@ trait ForumDao {
           name = "Ideas",
           slug = "ideas",
           position = DefaultCategoryPosition - 1,
-          description = "Here you can suggest new ideas.",
+          description = "Here you can suggest and discuss ideas.",
           newTopicTypes = immutable.Seq(PageType.Idea),
           unlistCategory = false,
           unlistTopics = false,
@@ -311,29 +336,8 @@ trait ForumDao {
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
     }
-    */
 
-    // Create the General category.
-    uncategorizedCategoryId = getAndBumpCategoryId()
-    createCategoryImpl(
-        CategoryToSave(
-          anyId = Some(uncategorizedCategoryId),
-          sectionPageId = forumPageId,
-          parentId = rootCategoryId,
-          shallBeDefaultCategory = uncategorizedCategoryId == defaultCategoryId,
-          name = UncategorizedCategoryName,
-          slug = UncategorizedCategorySlug,
-          position = DefaultCategoryPosition,
-          description = "For topics that don't fit in other categories.",
-          newTopicTypes = immutable.Seq(PageType.Question),
-          unlistCategory = false,
-          unlistTopics = false,
-          includeInSummaries = IncludeInSummaries.Default),
-        immutable.Seq[PermsOnPages](
-          makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
-          makeStaffCategoryPerms(uncategorizedCategoryId)),
-        bySystem)(tx)
-
+    /*
     if (options.createSampleTopics) {
       val categoryId = getAndBumpCategoryId()
       anySampleTopicsCategoryId = Some(categoryId)
@@ -360,12 +364,12 @@ trait ForumDao {
           makeEveryonesDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
-    }
+    } */
 
     // Create forum welcome topic.
     createPageImpl(
       PageType.Discussion, PageStatus.Published,
-      anyCategoryId = Some(uncategorizedCategoryId),
+      anyCategoryId = Some(generalCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
       titleHtmlSanitized = WelcomeTopicTitle,
@@ -383,7 +387,7 @@ trait ForumDao {
       // Create a sample open-ended discussion.
       val discussionPagePath = createPageImpl(
         PageType.Discussion, PageStatus.Published,
-        anyCategoryId = anySampleTopicsCategoryId,
+        anyCategoryId = Some(generalCategoryId), //anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-discussion"), showId = true,
         titleSource = SampleThreadedDiscussionTitle,
         titleHtmlSanitized = SampleThreadedDiscussionTitle,
@@ -424,7 +428,7 @@ trait ForumDao {
       // Create sample idea.
       val ideaPagePath = createPageImpl(
         PageType.Idea, PageStatus.Published,
-        anyCategoryId = anySampleTopicsCategoryId,
+        anyCategoryId = anyIdeasCategoryId.orElse(Some(generalCategoryId)), //anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-idea"), showId = true,
         titleSource = SampleIdeaTitle,
         titleHtmlSanitized = SampleIdeaTitle,
@@ -455,7 +459,7 @@ trait ForumDao {
       // Create sample question.
       val questionPagePath = createPageImpl(
         PageType.Question, PageStatus.Published,
-        anyCategoryId = anySampleTopicsCategoryId,
+        anyCategoryId = anyQuestionsCategoryId.orElse(Some(generalCategoryId)), //anySampleTopicsCategoryId,
         anyFolder = None, anySlug = Some("sample-question"), showId = true,
         titleSource = SampleQuestionTitle,
         titleHtmlSanitized = SampleQuestionTitle,
@@ -616,7 +620,7 @@ object ForumDao {
   private val SampleIdeaText = {
     val para1 = o"""This is a sample idea. Click the idea icon to the left of the title
       (i.e. <span class="icon-idea"></span>)
-      to change status from New Idea, to Planned-to-do, to Doing-now, to Done."""
+      to change status from New Idea, to Planned, to Started, to Done."""
     val para2 = o"""In the topic list, everyone sees the status of the idea at a glance
       — the status icon is shown to the left (e.g.
       <span class="icon-idea"></span> or <span class="icon-check"></span>).</div>"""
@@ -648,10 +652,10 @@ object ForumDao {
   private val SampleIdeaProgressReplyOne = o"""
      Here, in the Progress section,
      you can step by step update others,
-     about how you're making progress with actually implementing the idea."""
+     about how you're making progress with implementing the idea."""
 
   private val SampleIdeaProgressReplyTwo = o"""Now we have: ...,
-     and next we will: ... (just some sample text, this)."""
+     and next we will: ..."""
 
 
   private val SampleQuestionTitle = "Sample question"
@@ -689,10 +693,7 @@ object ForumDao {
   private val SampleAnswerCommentText = o"""Here, someone has posted a comment, to start
     discussing the sample answers just above."""
 
-  private val SampleAnswerText2 = o"""Another sample answer. Lorem ipsum dolor sit amet,
-    consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
-    ea commodo consequat"""
+  private val SampleAnswerText2 = "Another sample answer."
 
   // SHOULD separate layout: chat/flat/threaded/2d, from
   // topic type: idea/question/discussion/wiki/etc ?
