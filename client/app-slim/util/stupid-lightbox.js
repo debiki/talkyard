@@ -14,6 +14,7 @@ var anySkipSelectors;
 function createLightbox(elem, event) {
   // In case wrapped in an <a> tag, don't navigate away.
   event.preventDefault();
+  event.stopPropagation();
 
   // Abort if we're already showing a lightboxed image.
   if (debiki2.$all('.stupid-lightbox-image').length)
