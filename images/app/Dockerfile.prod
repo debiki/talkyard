@@ -59,7 +59,6 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -jvm-debug 9999 \
-  -J-Xss30m \
   -Dcom.sun.management.jmxremote.port=3333 \
   -Dcom.sun.management.jmxremote.ssl=false \
   -Dcom.sun.management.jmxremote.authenticate=false \
