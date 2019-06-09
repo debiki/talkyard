@@ -48,8 +48,8 @@ interface TestCounters {
 }
 
 
-/*
-interface SiteData {   [3SD5PB7]
+
+interface SiteData2 {   // [3SD5PB7]
   meta: SiteMeta;
   settings: {
     companyFullName: string,
@@ -58,7 +58,7 @@ interface SiteData {   [3SD5PB7]
     allowSignup?: boolean;
     // allowLocalSignup?: boolean;
     allowGuestLogin?: boolean;
-    userMustBeAuthenticated?: boolean;
+    userMustBeAuthenticated?: boolean;  // = loginRequired
     requireVerifiedEmail?: boolean;
     emailDomainBlacklist?: string;
     emailDomainWhitelist?: string;
@@ -89,7 +89,7 @@ interface SiteData {   [3SD5PB7]
   uploads: any;
   auditLog: any;
   reviewTasks: any;
-} */
+}
 
 
 interface GroupInclDetails {

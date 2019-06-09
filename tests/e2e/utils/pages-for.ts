@@ -1267,7 +1267,11 @@ function pagesFor(browser) {
         api.waitForNewUrl();
       },
 
-      assertMyUsernameMatches: function(username: string) {
+      // COULD FASTER_E2E_TESTS can set  wait:false at most places
+      assertMyUsernameMatches: function(username: string, ps: { wait?: boolean } = {}) {
+        if (ps.wait !== false) {
+          browser.waitForVisible('.esMyMenu .esAvtrName_name');
+        }
         api.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
 
@@ -1876,8 +1880,9 @@ function pagesFor(browser) {
 
       createGmailAccount: function(data: { email: string, password: string, username: string },
             ps: { isInPopupAlready?: true, shallBecomeOwner?: boolean,
-                anyWelcomeDialog?: string } = {}) {
-        api.loginDialog.loginWithGmail(data, ps.isInPopupAlready);
+                anyWelcomeDialog?: string, isInFullScreenLogin?: boolean } = {}) {
+        api.loginDialog.loginWithGmail(
+              data, ps.isInPopupAlready, { isInFullScreenLogin: ps.isInFullScreenLogin });
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
@@ -1895,6 +1900,11 @@ function pagesFor(browser) {
           // Then the whole popup will close, now. Don't wait for any dialogs in it to
           // close — that'd result in a 'window was already closed' error.
         }
+        else if (ps.isInFullScreenLogin) {
+          // Then, could wait for our username to appear in my-menu — but the other if
+          // branches here don't do that (and shouldn't always do that, in case we're
+          // in an embedded something). So don't do here too, for consistency?
+        }
         else {
           logMessage("waiting for login dialogs to close ...");
           api.waitUntilModalGone();
@@ -1904,13 +1914,15 @@ function pagesFor(browser) {
       },
 
       loginWithGmail: function(data: { email: string, password: string },
-            isInPopupAlready?: boolean, ps?: { stayInPopup: boolean }) {
+            isInPopupAlready?: boolean,
+            ps?: { stayInPopup?: boolean, isInFullScreenLogin?: boolean }) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(150);
         api.waitAndClick('#e2eLoginGoogle');
+        ps = ps || {};
 
         // Switch to a login popup window that got opened, for Google:
-        if (!isInPopupAlready)
+        if (!isInPopupAlready && !ps.isInFullScreenLogin)
           api.swithToOtherTabOrWindow();
 
         const emailInputSelector = 'input[type="email"]';
@@ -1918,23 +1930,32 @@ function pagesFor(browser) {
         const passwordInputSelector = 'input[type="password"]';
         const passwordNext = '#passwordNext';
 
-        // We'll get logged in immediately, if we're already logged in to one
-        // (and only one) Gmail account in the current browser. Wait for a short while
-        // to find out what'll happen.
+        // We'll get logged in immediately via Gmail, if we're already logged in to
+        // one (and only one) Gmail account in the current browser. Wait for either
+        // the Gmail login widgets to load, or for us to be back in Talkyard again.
         while (true) {
-          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+          if (ps.isInFullScreenLogin) {
+            if (browser.isExisting('.dw-login-modal')) {
+              // We're back in Talkyard.
+              return;
+            }
+          }
+          else if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            // We're back in Talkyard.
             api.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (browser.isExisting(emailInputSelector))
+            if (browser.isExisting(emailInputSelector)) {
+              // That's a Gmail login widget. Continue with Gmail login.
               break;
+            }
           }
           catch (dummy) {
             logMessage(`didn't find ${emailInputSelector}, ` +
                 "tab closed? already logged in? [EdM5PKWT0B]");
           }
-          browser.pause(500);
+          browser.pause(PollMs);
         }
 
         browser.pause(250);

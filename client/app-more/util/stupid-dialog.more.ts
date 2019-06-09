@@ -99,7 +99,7 @@ export const StupidDialog = createComponent({
             (stuff.dialogClassName || '');
 
     const maybeClose =
-      preventClose || (stuff.closeOnClickOutside === false) ? null : makeCloseFn(0);
+      preventClose || (stuff.closeOnClickOutside === false) ? undefined : makeCloseFn(0);
 
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.
     let result;

@@ -80,6 +80,10 @@ login -
     github:
     twitter:
   via invite email: (7JK2)
+  login-required site, with password:
+          - settings-toggle-login-required.3browsers.test.ts  TyT4GKBW20
+  login-required site, with openauth:
+          - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
 
 different users -
   login, logout, switch user:  almost all tests
@@ -484,8 +488,9 @@ site settings:
     allowed email domains:
           - settings-allowed-email-domains.2browsers.test.ts  TyT5AKRD04
     login required:
-          - settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
-          - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
+          - settings-toggle-login-required.3browsers.test.ts  TyT4GKBW20
+          - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
+          - admin-user-approve-reject.2browsers.test.ts  TyT5KHEWQ2
     invites only:
     approve members:
           - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]

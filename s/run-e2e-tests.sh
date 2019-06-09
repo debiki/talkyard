@@ -244,6 +244,7 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-allowed-email-domains.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only settings-toggle-login-required.3browsers $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only login-required-oauth-signup-login $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-approve-members.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-approve-reject.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-staff.2browsers $args

@@ -107,7 +107,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       throwInternalError("DwE5WKU3", message)
     }
 
-    var futureResult = authenticate(provider, request)
+    var futureResult = startOrFinishAuthenticationWithSilhouette(provider, request)
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
         result.withCookies(
@@ -131,17 +131,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   def finishAuthentication(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
-    authenticate(provider, request)
+    startOrFinishAuthenticationWithSilhouette(provider, request)
   }
 
 
   /** Authenticates a user against e.g. Facebook or Google or Twitter, using OAuth 1 or 2.
     *
+    * Confusingly enough (?), Silhouette uses the same method both for starting
+    * and finishing authentication. (529JZ24)
+    *
     * Based on:
     *   https://github.com/mohiva/play-silhouette-seed/blob/master/
     *                     app/controllers/SocialAuthController.scala#L32
     */
-  private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
+  private def startOrFinishAuthenticationWithSilhouette(
+        providerName: String, request: GetRequest): Future[Result] = {
     context.rateLimiter.rateLimit(RateLimits.Login, request)
 
     val settings = request.siteSettings
@@ -190,10 +194,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
 
-    provider.authenticate()(request.underlying) flatMap {
+    provider.authenticate()(request.underlying) flatMap {  // (529JZ24)
       case Left(result) =>
+        // We're starting authentication.
         Future.successful(result)
       case Right(authInfo) =>
+        // We're finishing authentication.
         val futureProfile: Future[SocialProfile] = provider.retrieveProfile(authInfo)
         futureProfile flatMap { profile: SocialProfile =>   // TalkyardSocialProfile?  (TYSOCPROF)
           handleAuthenticationData(request, profile)
@@ -317,6 +323,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         case Some(value) =>
           // Remove to prevent another login with the same key, in case it gets leaked,
           // e.g. via a log file.
+          // (Hmm, we remove the OpenAuthDetails entry here, and then add it back again here: (406BM5).
+          // Maybe could avoid removing it here. Still, good to do here, so it gets
+          // deleted for all code paths below that throws a client error back to the browser.)
           cache.invalidate(cacheKey)
           value.asInstanceOf[OpenAuthDetails]
       })
@@ -328,6 +337,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
+    //var showsCreateUserDialog = false
     val result =
       try {
         val loginGrant = dao.tryLoginAsMember(loginAttempt)
@@ -407,6 +417,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                   "TyEBADEMLDMN_-OAUTH_", "You cannot sign up using that email address")
               }
               else if (mayCreateNewUser) {
+                //showsCreateUserDialog = true
                 showCreateUserDialog(request, oauthDetails)
               }
               else {
@@ -418,6 +429,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           }
       }
 
+    // COULD avoid deleting cookeis if we have now logged in (which we haven't, if
+    // the create-user dialog is shown: showsCreateUserDialog == true). Otherwise,
+    // accidentally reloading the page, results in weird errors, like the xsrf token
+    // missing. But supporting page reload here requires fairly many mini fixes,
+    // and maybe is mariginally worse for security? since then someone else,
+    // e.g. an "evil" tech support person, can ask for and resuse the url?
     result.discardingCookies(CookiesToDiscardAfterLogin: _*)
   }
 
@@ -433,6 +450,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
     oauthDetails.providerId == GoogleProvider.ID &&
       oauthDetails.email.exists(_ endsWith "@gmail.com")
+    // + known all-email-addrs-have-been-verified email domains from site settings?
   }
 
 
@@ -503,16 +521,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def showCreateUserDialog(request: GetRequest, oauthDetails: OpenAuthDetails): Result = {
+    // Re-insert the  OpenAuthDetails, we just removed it (406BM5). A bit double work?
     val cacheKey = nextRandomString()
     cache.put(cacheKey, oauthDetails)
+
     val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
     val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
     val result = if (anyIsInLoginWindowCookieValue.isDefined) {
       // Continue running in the login window, by returning a complete HTML page that
-      // shows a create-user dialog. (( This happens for example if 1) we're in a create
+      // shows a create-user dialog. (( This happens if 1) we're in a create
       // site wizard, then there's a dedicated login step in a login window, or 2)
-      // we're logging in to the admin pages, or 3) we're visiting an embedded comments
+      // we're logging in to the admin pages, or 3) when logging in to a login required site,
+      // or 4) we're visiting an embedded comments
       // site and attempted to login, then a login popup window opens (better than
       // showing a login dialog somewhere inside the iframe). ))
       Ok(views.html.login.showCreateUserDialog(
@@ -526,8 +547,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
-      // popup that closes the popup and continues execution in the main window (the popup's
-      // window.opener).
+      // popup that continues execution in the main window (the popup's window.opener)
+      // and closes the popup.
       Ok(views.html.login.closePopupShowCreateUserDialog(
         providerId = oauthDetails.providerId,
         newUserUsername = oauthDetails.username getOrElse "",
@@ -706,8 +727,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     val newXsrfToken = nextRandomString()
     val newCookieValue = newXsrfToken + Separator + oldTokens.getOrElse("")
     val loginEndpoint =
-      globals.anyLoginOrigin.getOrDie("DwE830bF1") +
-        routes.LoginWithOpenAuthController.loginThenReturnToOriginalSite(
+      globals.anyLoginOrigin.getOrDie("TyE830bF1") +
+        routes.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(
           providerName, returnToOrigin = originOf(request), newXsrfToken)
     Future.successful(Redirect(loginEndpoint).withCookies(
       SecureCookie(name = ReturnToThisSiteXsrfTokenCookieName, value = newCookieValue,
@@ -721,15 +742,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     * The request origin must be the anyLoginOrigin, because that's the origin that the
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
-  def loginThenReturnToOriginalSite(provider: String, returnToOrigin: String, xsrfToken: String)
-        : Action[Unit] = AsyncGetActionIsLogin { request =>
+  def loginAtLoginOriginThenReturnToOriginalSite(provider: String, returnToOrigin: String,
+        xsrfToken: String): Action[Unit] = AsyncGetActionIsLogin { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (globals.anyLoginOrigin isNot originOf(request))
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
-    val futureResponse = authenticate(provider, request)
+    val futureResponse = startOrFinishAuthenticationWithSilhouette(provider, request)
     futureResponse map { response =>
       response.withCookies(
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
@@ -740,6 +761,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String): Action[Unit] =
         GetActionIsLogin { request =>
+    // oauthDetailsCacheKey might be a chache key Mallory generated, when starting a login
+    // flow on his laptop — and now he might have made the current requester click a link
+    // with that cache key, in the url. So, we also check an xsrf token here.
     val anyXsrfTokenInSession = request.cookies.get(ReturnToThisSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
       case Some(xsrfCookie) =>

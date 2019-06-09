@@ -80,16 +80,21 @@ function getAddressVerificationEmailSentDialog() {
 }
 
 
-interface NewUserData {
+interface CreateUserParams {
   username: string;
   fullName: string;
   email: string;
   authDataCacheKey?: string;
+  anyReturnToUrl?: string;
+  preventClose?: true;
 }
 
-interface CreateUserPostData extends NewUserData {
+interface CreateUserPostData extends CreateUserParams {
+  username: string;
+  fullName: string;
+  email: string;
   password?: string;
-  returnToUrl: string;
+  returnToUrl?: string;
 }
 
 
@@ -99,8 +104,8 @@ interface CreateUserPostData extends NewUserData {
  * the redirect should happen only if an email address verification email is sent,
  * and via a link in that email.
  */
-debiki.internal.showCreateUserDialog = function(userData: NewUserData, anyReturnToUrl) {
-  getCreateUserDialog().open(userData, anyReturnToUrl);
+debiki.internal.showCreateUserDialog = function(params: CreateUserParams) {
+  getCreateUserDialog().open(params);
 };
 
 
@@ -108,16 +113,15 @@ const CreateUserDialog = createClassAndFactory({
   displayName: 'CreateUserDialog',
 
   getInitialState: function () {
-    return { isOpen: false, userData: undefined, store: {} };
+    return { isOpen: false, params: undefined, store: {} };
   },
 
-  open: function(userData: NewUserData, anyReturnToUrl: string) {
+  open: function(params: CreateUserParams) {
     const loginDialog = login.getLoginDialog();
     this.setState({
       isOpen: true,
-      userData: userData,
+      params,
       afterLoginCallback: loginDialog.getAfterLoginCallback(),
-      anyReturnToUrl: anyReturnToUrl,
       store: ReactStore.allData(),
     });
     // In case any login dialog is still open: (this resets the after-login-callback copied above)
@@ -125,19 +129,20 @@ const CreateUserDialog = createClassAndFactory({
   },
 
   close: function() {
-    this.setState({ isOpen: false, userData: undefined });
+    this.setState({ isOpen: false, params: undefined });
   },
 
   render: function () {
     const store: Store = this.state.store;
+    const params: CreateUserParams | undefined = this.state.params;
+    const preventClose = params && params.preventClose;
 
     let content;
     if (this.state.isOpen) {
       const childProps = {
-        ...this.state.userData,
+        ...this.state.params,
         store,
         afterLoginCallback: this.state.afterLoginCallback,
-        anyReturnToUrl: this.state.anyReturnToUrl,
         closeDialog: this.close,
       };
       if (store.siteStatus === SiteStatus.NoAdmin) {
@@ -147,8 +152,8 @@ const CreateUserDialog = createClassAndFactory({
     }
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
-          dialogClassName: 'esCreateUserDlg' },
+      Modal({ show: this.state.isOpen, onHide: preventClose ? undefined : this.close,
+          keyboard: false, dialogClassName: 'esCreateUserDlg' },
         ModalHeader({}, ModalTitle({}, t.cud.CreateUser)),
         ModalBody({}, content)));
   }
@@ -204,28 +209,29 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   doCreateUser: function() {
-    const data: CreateUserPostData = this.state.userData;
-    data.returnToUrl = this.props.anyReturnToUrl;
+    const returnToUrl = this.props.anyReturnToUrl;
+    const postData: CreateUserPostData = { ...this.state.userData, returnToUrl };
     waitUntilAcceptsTerms(this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
       if (this.props.authDataCacheKey) { // [4WHKTP06]
-        data.authDataCacheKey = this.props.authDataCacheKey;
-        Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+        postData.authDataCacheKey = this.props.authDataCacheKey;
+        Server.createOauthUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
       }
       else if (this.props.isForPasswordUser) {
-        data.password = this.refs.password.getValue();
-        Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+        postData.password = this.refs.password.getValue();
+        Server.createPasswordUser(postData, this.handleCreateUserResponse, this.handleErrorResponse);
       }
       else if (this.props.isForGuest) {
         Server.loginAsGuest(
-            data.fullName, data.email, this.handleCreateUserResponse, this.handleErrorResponse);
+            postData.fullName, postData.email, this.handleCreateUserResponse, this.handleErrorResponse);
       }
       else {
-        console.error('DwE7KFEW2');
+        console.error('TyE7KFEW2');
       }
     });
   },
 
   handleCreateUserResponse: function(response: GuestLoginResponse) {
+    const anyReturnToUrl = this.props.anyReturnToUrl;
     if (!response.userCreatedAndLoggedIn) {
       dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
@@ -237,16 +243,17 @@ export var CreateUserDialogContent = createClassAndFactory({
       const mayCloseDialog = this.props.loginReason !== LoginReason.BecomeAdmin;
       getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog);
     }
-    else if (this.props.anyReturnToUrl && !eds.isInLoginPopup &&
-        this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
-      const returnToUrl = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
+    else if (anyReturnToUrl && !eds.isInLoginPopup &&
+        anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
+      const returnToUrl = anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
+      // old comment: /*
       // Previously, only:
       //   if (returnToUrl === currentUrl) ...
       // but was never used?
       // Now, instead, for Usability Testing Exchange [plugin]: (and perhaps better, always?)
       // (afterLoginCallback = always called after signup if logged in, and the return-to-url
-      // is included in the continue-link via the email.)
+      // is included in the continue-link via the email.)  */
       if (returnToUrl === currentUrl || this.props.afterLoginCallback) {
         const afterLoginCallback = this.props.afterLoginCallback; // gets nulled when dialogs closed
         debiki2.ReactActions.loadMyself(() => {
@@ -259,8 +266,13 @@ export var CreateUserDialogContent = createClassAndFactory({
       else {
         window.location.assign(returnToUrl);
         // In case the location didn't change, reload the page, otherwise user specific things
-        // won't appear.  [redux] This reload() won't be needed later?
-        window.location.reload();
+        // won't appear.
+        // However, Chrome surprisingly does reload() here before above location.assign(),
+        // which result in reloading  /-/login-oauth-continue, if logging in with OpenAuth
+        // to a login-required site, instead of navigating to the returnToUrl.
+        // That doesn't work (weird errors, e.g. the dwCoReturnToSiteXsrfToken cookie missing,
+        // if reloading). Postpone reload(), so Chrome will handle assign() first.
+        setTimeout(window.location.reload, 1);
       }
     }
     else {
@@ -458,7 +470,7 @@ const CreateUserResultDialog = createComponent({
         ModalFooter({},
           PrimaryButton({ onClick: this.close }, t.Okay));
     return (
-      Modal({ show: this.state.isOpen, onHide: this.state.mayClose ? this.close : null, id },
+      Modal({ show: this.state.isOpen, onHide: this.state.mayClose ? this.close : undefined, id },
         // People don't read the dialog body, so let the title be "Check your email".
         ModalHeader({}, ModalTitle({}, this.state.checkEmail ? t.CheckYourEmail : t.Welcome)),
         ModalBody({}, r.p({}, text)),

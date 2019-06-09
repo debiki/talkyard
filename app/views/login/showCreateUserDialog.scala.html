@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014, 2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,10 +17,13 @@
 
 @(tpi: debiki.SiteTpi, serverAddress: String, newUserUsername: String, newUserFullName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
 
-@* After OpenAuth or OpenID login authentication has been completed in this login popup window,
- * we here continue by showing a create user dialog. This is for embedded comments pages —
+@* After OpenAuth or OpenID login authentication has been completed in this login (popup) window,
+ * we here continue by showing a create user dialog. This is 1) for embedded comments pages —
  * then, login and user creation always happens in a login popup window (this window).
- * — So don't call window.close() here. But in closePopupShowCreateUserDialog.scala.html we do the
+ * And 2) for logging in in the whole main window, to e.g. the admin area, or if the
+ * site requires login.
+ *
+ * So don't call window.close() here. But in closePopupShowCreateUserDialog.scala.html we do the
  * same things, except that we also call window.close(), and continue in the opener instead.
  *@
 
@@ -28,7 +31,7 @@
   anyContinueToUrl getOrElse ""
 }
 
-@popupMain(tpi, serverAddress) {
+@popupMain(tpi, serverAddress) {@* COULD RENAME popupMain to loginDialogMain (might not be a popup) *@
   <!-- views/login/showCreateUserDialog.scala.html -->
   <script>
     debiki.internal.showCreateUserDialog({
@@ -36,8 +39,10 @@
       username: '@newUserUsername',
       fullName: '@newUserFullName',
       email: '@newUserEmail',
-      authDataCacheKey: '@authDataCacheKey'
-    }, '@continueToUrlOrEmpty');
+      authDataCacheKey: '@authDataCacheKey',
+      anyReturnToUrl: '@continueToUrlOrEmpty',
+      preventClose: true
+    });
   </script>
 }
 
