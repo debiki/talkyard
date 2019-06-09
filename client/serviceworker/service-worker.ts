@@ -106,7 +106,7 @@ onmessage = function(event: any) {
         // We've logged out. Don't ask for any events — if everyone did that,
         // that could put the server under an a bit high load? And not much interesting
         // to be notified about anyway, when haven't joined the site yet / not logged in.
-        console.debug(`You logged out? Aborting any long polling. [TyMSWLOGOUT]`);
+        console.debug(`You're not logged in. Aborting any long polling. [TyMSWLOGOUT]`);
         abortAnyLongPollingRequest();
         return;
       }

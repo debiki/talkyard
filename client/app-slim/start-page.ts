@@ -347,16 +347,11 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
     return;
   }
 
-  var dotMin = '.min';
-  // @ifdef DEBUG
-  dotMin = '';
-  // @endif
-
   navigator.serviceWorker.addEventListener('controllerchange', (controllerchangeevent) => {
     console.log("Service worker controllerchange event [TyMSWCTRCHG]");
   });
 
-  navigator.serviceWorker.register(`/talkyard-service-worker${dotMin}.js`)
+  navigator.serviceWorker.register(`${eds.cdnOrServerOrigin}/talkyard-service-worker.${eds.minMaxJs}`)
       .then(function(registration) {
         console.log("Service worker registered. [TyMSWREGOK]");
         registration.onupdatefound = function() {
