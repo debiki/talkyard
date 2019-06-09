@@ -716,18 +716,8 @@ export const Editor = createComponent({
     });
   },
 
-  onKeyDown: function(event) {
+  onKeyPressOrKeyDown: function(event) {
     // In my Chrome, Ctrl + Enter won't fire onKeyPress, only onKeyDown. [5KU8W2]
-    if (event_isCtrlEnter(event)) {
-      event.preventDefault();
-      this.saveStuff();
-    }
-    if (event_isEscape(event)) {
-      this.saveDraftClearAndClose();
-    }
-  },
-
-  onKeyPress: function(event) {
     if (event_isCtrlEnter(event)) {
       event.preventDefault();
       this.saveStuff();
@@ -946,6 +936,9 @@ export const Editor = createComponent({
             callbackThatClosesEditor();
           }
         }), useBeacon || this.setCannotSaveDraft);
+      }
+      if (callbackThatClosesEditor) {
+        callbackThatClosesEditor();
       }
       return;
     }
@@ -1333,7 +1326,10 @@ export const Editor = createComponent({
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
               value: this.state.title, disabled: !anyDraftLoaded,
-              placeholder: t.e.TitlePlaceholder });
+              placeholder: t.e.TitlePlaceholder,
+              onKeyPress: this.onKeyPressOrKeyDown,
+              onKeyDown: this.onKeyPressOrKeyDown,
+            });
 
       if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
           settings_showCategories(settings, me))
@@ -1529,8 +1525,8 @@ export const Editor = createComponent({
             ref: 'rtaTextarea',
             value: this.state.text,
             onChange: this.onTextEdited,
-            onKeyPress: this.onKeyPress,
-            onKeyDown: this.onKeyDown,
+            onKeyPress: this.onKeyPressOrKeyDown,
+            onKeyDown: this.onKeyPressOrKeyDown,
             closeOnClickOutside: true,
             tabIndex: 1,
             placeholder: t.e.TypeHerePlaceholder,

@@ -43,11 +43,15 @@ export const ModalDropdownButton = createComponent({
   },
 
   componentDidMount: function() {
-    keymaster('escape', this.props.onClose);
+    if (this.props.onClose) {
+      keymaster('escape', this.props.onClose);
+    }
   },
 
   componentWillUnmount: function() {
-    keymaster.unbind('escape', 'all');
+    if (this.props.onClose) {
+      keymaster.unbind('escape', 'all');
+    }
   },
 
   openDropdown: function() {
