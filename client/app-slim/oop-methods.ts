@@ -837,6 +837,17 @@ export function userStats_totalNumPostsRead(stats: UserStats): number {
 }
 
 
+// Review
+//----------------------------------
+
+/*
+function isReviewPostTask(reviewTask: ReviewTask): boolean {
+  // See above. <<0 .. <<3 are for user types. <<4 ..<<19 are for review-post stuff.
+  // And <<20 and up are for users. Later: uploads? groups? categories?
+  return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
+}  */
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
