@@ -50,7 +50,7 @@ const BodyNrStr = '1';
 const FirstReplyNr = 2;
 const NoDraftNr = 0;
 
-let NoUserId = 0;
+const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;
 const MinMemberId = SystemUserId;

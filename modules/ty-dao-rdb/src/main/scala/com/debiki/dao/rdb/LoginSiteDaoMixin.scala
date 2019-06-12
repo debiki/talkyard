@@ -51,25 +51,28 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
   override def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
       var userId = 0
+      var extImpId: Option[ExtImpId] = None
       var emailNotfsStr = ""
       var createdAt: Option[When] = None
       var isNewGuest = false
       for (i <- 1 to 2 if userId == 0) {
         runQuery("""
-          select u.USER_ID, u.created_at, g.EMAIL_NOTFS from users3 u
-            left join guest_prefs3 g
-                   on u.site_id = g.site_id
-                  and u.guest_email_addr = g.EMAIL
-                  and g.VERSION = 'C'
-          where u.SITE_ID = ?
+          select u.user_id, u.ext_imp_id, u.created_at, gp.email_notfs from users3 u
+            left join guest_prefs3 gp
+                   on u.site_id = gp.site_id
+                  and u.guest_email_addr = gp.email
+                  and gp.version = 'C'
+          where u.site_id = ?
             and u.full_name = ?
             and u.guest_email_addr = ?
+            and u.guest_browser_id is not null
             and u.guest_browser_id = ?
           """,
           List(siteId.asAnyRef, e2d(loginAttempt.name), e2d(loginAttempt.email), loginAttempt.guestBrowserId),
           rs => {
             if (rs.next) {
               userId = rs.getInt("USER_ID")
+              extImpId = getOptString(rs, "ext_imp_id")
               createdAt = Some(getWhen(rs, "created_at"))
               emailNotfsStr = rs.getString("EMAIL_NOTFS")
             }
@@ -101,6 +104,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
       val user = Guest(
         id = userId,
+        extImpId = extImpId,
         createdAt = createdAt.getOrElse(now),
         guestName = loginAttempt.name,
         guestBrowserId = Some(loginAttempt.guestBrowserId),

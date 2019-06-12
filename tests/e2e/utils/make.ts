@@ -318,16 +318,6 @@ const make = {
     };
   },
 
-  /*
-  category: function(): NewCategoryStuff {
-    return {
-      category: Category;
-      aboutPage: Page;
-      aboutPageTitlePost: Post;
-      aboutPageBody: Post;
-    }
-  }, */
-
   post: function(values: NewTestPost): TestPost {
     let approvedHtmlSanitized = values.approvedHtmlSanitized;
     if (!approvedHtmlSanitized) {

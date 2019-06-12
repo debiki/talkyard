@@ -101,6 +101,12 @@ fi
 # ----------------------
 
 if [ -z "$skip_build" ]; then
+  # Build to-talkyard, needed in e2e tests.
+  pushd .
+  cd to-talkyard
+  yarn build
+  popd
+
   # Build minified script bundles; will be included in the web and app images.
   s/d-gulp release
 

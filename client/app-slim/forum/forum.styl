@@ -85,10 +85,6 @@ html.js:not(.dw-react-started)
 //===========================
 
 
-.s_F_BB-Topics .esForum_catsDrop // for now, use that instead of this [0BZZKW2]  CLEAN_UP
-  display: none;
-
-
 // Fix this long error prone list later.
 .esF_BB_SortBtn,
 .esForum_navLink,
@@ -173,19 +169,15 @@ html.js:not(.dw-react-started)
 
 .esForum_catsDrop
   color: hsl(0, 0%, 8%) !important;
-  $bgColor = hsl(0,0%,91%);
   border: none !important;
-  background: $bgColor;
-  //--
   background: none;
   &.active
     box-shadow: none;
-    margin-left: 2px !important;
   .caret
     position: relative;
-    color: #333 !important;
+    color: hsl(0, 0%, 46%);
     transform: scale(1.1, 1.1);
-    margin-left: 2px;
+    margin-left: 7px;
 
 .esF_BB_CreateBtn
   padding-top: 7px;
@@ -274,27 +266,31 @@ $tableHeaderFontSize = 14px;
   text-align: center;
   margin-bottom: 20px;
 
-/* Before, when wasn't a clickble button. (Delete this paragraph soon)
-.s_F_Ts_Cat_Ttl
-  margin: 5px 0 9px;
-  text-align: center;
-  font-size: 20px;
-  color: hsl(0, 0%, 33%); */
+.s_F_Ts_Cat_SelectCatBs
+  margin-bottom: 6px;
 
-.DW.DW .s_F_Ts_Cat_Ttl   // for now, use this instead of that (0BZZKW2)
-  float: none;
+.DW.DW .s_F_Ts_Cat_Ttl
   text-align: center;
-  margin: 0 auto 6px!important;
+  margin: 0;
   background: none;
-  display: block;
+  display: inline-block;
   font-size: 20px;
-  /* background: hsl(0, 0%, 93%); */
-  padding: 6px 13px 6px 14px;
+  padding: 6px 0;
   text-decoration: underline;
-  text-decoration-color: hsl(0,0%,65%);
-  color: #141414 !important;
+  text-decoration-color: hsl(0,0%,70%);
   font-weight: bold;
   color: hsl(0, 0%, 35%) !important;
+
+.s_F_Ts_Cat_Ttl-SubCat::before  // also see: [40792RHL3], the '—>'' arrow
+  content: "→";
+  color: hsl(0, 0%, 32%);
+  display: inline-block;
+  margin: 0 4px;
+  font-size: 24px;
+  line-height: 0;
+  vertical-align: middle;
+  position: relative;
+  top: -3px;
 
 .s_F_Ts_Cat_Abt
   max-width: 670px;
@@ -692,6 +688,27 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
   .forum-title,
   .topic-title
     crossGray();
+
+
+.s_F_Cs_C_ChildCs
+  margin: 8px 0 -1px;
+  display: flex;
+  flex-wrap: wrap;
+
+.s_F_Cs_C_ChildCs li
+  flex: 1;
+  list-style: disc;
+  margin: 8px 15px 0px 18px;
+  color: hsl(0, 0%, 33%);
+
+.DW .s_F_Cs_C_ChildCs_C
+  font-weight: bold;
+  white-space: nowrap;
+  // Move closer to list item disc.
+  position: relative;
+  left: -4px;
+  color: hsl(0, 0%, 31%);
+
 
 @keyframes esFadeIn
   from

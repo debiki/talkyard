@@ -388,7 +388,7 @@ var t_en_US: TalkyardTranslations = t = {
 
   wb: {
     AddCommunity: "Add ...",
-    RecentlyViewed: "Recently viewed",
+    RecentlyViewed: "Recently viewed topics",  // MISSING " topics"
     JoinedChats: "Joined Chats",
     ChatChannels: "Chat Channels",
     CreateChat: "Create chat channel",

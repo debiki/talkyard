@@ -504,40 +504,6 @@ const ForumButtons = createComponent({
     // depends on the default topic type in the default category).
     let activeOrDefaultCategory: Category = activeCategory;
 
-    // Dupl code [5BKZWY0]  Delete this? (except for activeOrDefaultCategory —
-    // but can use store_findTheDefaultCategory for that?),
-    // no longer using the select-category button in the forum button list.  [0BZZKW2]
-    const categoryMenuItems = store.currentCategories.map((category: Category) => {
-      if (activeOrDefaultCategory.isForumItself && category.isDefaultCategory) {
-        activeOrDefaultCategory = category;
-      }
-      return MenuItem({ key: category.id, active: activeCategory.id === category.id,
-          onClick: () => this.props.setCategory(category.slug) },
-            r.span({ className: category_iconClass(category, store) }, category.name));
-    });
-
-    const listsTopicsInAllCats =
-        // We list topics?
-        !showsCategoryTree &&
-        // No category selected?
-        activeCategory.isForumItself;
-
-    // ---- Dupl code [5BKZWY0] ------------------
-    categoryMenuItems.unshift(
-        MenuItem({ key: -1, active: listsTopicsInAllCats,
-          onClick: () => this.props.setCategory('') }, t.fb.AllCats));
-
-    const activeCategoryIcon = category_iconClass(activeCategory, store);
-
-    let categoriesDropdownButton = omitCategoryStuff ? null :
-        ModalDropdownButton({ className: 'esForum_catsNav_btn esForum_catsDrop active', pullLeft: true,
-            title: r.span({ className: activeCategoryIcon },
-                (topicFilterFirst ? t.fb.in + ' ' : '') +
-                  activeCategory.name + ' ', r.span({ className: 'caret' })) },
-          r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
-              categoryMenuItems));
-    // --- / Dupl code [5BKZWY0] ------------------
-
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = this.props.sortOrderRoute;
     let latestNewTopButton;
@@ -653,12 +619,10 @@ const ForumButtons = createComponent({
             anyPageTitle,
             topicFilterButton,
             latestNewTopButton,
-            categoriesDropdownButton,
             categoryTreeLink,
             topicListLink)
         : r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
             anyPageTitle,
-            categoriesDropdownButton,
             topicFilterButton,
             latestNewTopButton,
             categoryTreeLink,
@@ -884,8 +848,8 @@ const LoadAndListTopics = createFactory({
 
   render: function() {
     return TopicsList({
-      categoryId: this.state.categoryId,
-      categoryParentId: this.state.categoryParentId,
+      categoryId: this.state.categoryId,              // why this, (406826)
+      categoryParentId: this.state.categoryParentId,  //
       topics: this.state.topics,
       store: this.props.store,
       forumPath: this.props.forumPath,
@@ -893,7 +857,7 @@ const LoadAndListTopics = createFactory({
       minHeight: this.state.minHeight,
       showLoadMoreButton: this.state.showLoadMoreButton,
       loadMoreTopics: this.loadMoreTopics,
-      activeCategory: this.props.activeCategory,
+      activeCategory: this.props.activeCategory,   // and also this? (406826)
       setCategory: this.props.setCategory,
       editCategory: this.props.editCategory,
       orderOffset: this.getOrderOffset(),
@@ -1088,26 +1052,60 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
   const me: Myself = store.me;
   const activeCategory: Category = props.activeCategory;
 
-  // ---- Dupl code [5BKZWY0] ------------------
-  const categoryMenuItems = store.currentCategories.map((category: Category) => {
-    return MenuItem({ key: category.id, active: activeCategory.id === category.id,
-        onClick: () => props.setCategory(category.slug) },
-          r.span({ className: category_iconClass(category, store) }, category.name));
-  });
-  categoryMenuItems.unshift(
-      MenuItem({ key: -1, active: activeCategory.isForumItself,
-        onClick: () => props.setCategory('') }, t.fb.AllCats));
+  const catsActiveLast = store_ancestorsCategoriesCurrLast(store, activeCategory.id);
+  const baseCat: Category = catsActiveLast[0] || activeCategory;
+  const anySubCat: Category | undefined = catsActiveLast[1];
+  const totalDepth = catsActiveLast.length;
+  // @ifdef DEBUG
+  dieIf(totalDepth >= 3, '3 level cats not yet impl [TyE0GKRH]');
+  // @endif
 
-  const activeCategoryIcon = category_iconClass(activeCategory, store);
+  const baseCats =
+      store.currentCategories.filter(c =>
+          // If we're showing all categories, the active category id is the root category,
+          // then need to compare c.parnetId with the root category id:
+          activeCategory.isForumItself
+              ? c.parentId === activeCategory.id
+              : c.parentId === baseCat.parentId);
 
-  let categoriesDropdownButton =
-      ModalDropdownButton({
-          className: 'esForum_catsNav_btn esForum_catsDrop active s_F_Ts_Cat_Ttl', pullLeft: true,
-          title: r.span({ className: activeCategoryIcon },
-                activeCategory.name + ' ', r.span({ className: 'caret' })) },
-        r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
-            categoryMenuItems));
-  // --- / Dupl code [5BKZWY0] ------------------
+  const subCats = activeCategory.isForumItself
+      ? []  // (otherwise would include all base cats again — the All Cats dummy id is the root id)
+      : store.currentCategories.filter(c => c.parentId === baseCat.id);
+
+  const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
+  const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);
+
+
+  function makeCatDropdown(store: Store, parentCatSlug: string,
+        catsSameLevel: Category[], thisCat: Category, isSubCat: boolean, isLastCat: boolean) {
+
+    if (!catsSameLevel.length)
+      return null;
+
+    const categoryMenuItems = catsSameLevel.map((category: Category) => {
+      return MenuItem({ key: category.id, active: thisCat && thisCat.id === category.id,
+          onClick: () => props.setCategory(category.slug) },
+            r.span({ className: category_iconClass(category, store) }, category.name));
+    });
+    categoryMenuItems.unshift(
+        MenuItem({ key: -1,
+          active: thisCat && thisCat.isForumItself, // BUG doesn't work for sub cats?
+          onClick: () => props.setCategory(parentCatSlug) }, t.fb.AllCats));
+
+    const activeCategoryIcon = category_iconClass(thisCat, store);
+    const subCatClass = isSubCat ? ' s_F_Ts_Cat_Ttl-SubCat' : '';
+
+    const categoriesDropdownButton =
+        ModalDropdownButton({
+            className: 'esForum_catsDrop active s_F_Ts_Cat_Ttl' + subCatClass, pullLeft: true,
+            title: r.span({ className: activeCategoryIcon },
+                  (thisCat ? thisCat.name : (isSubCat ? "All" : t.fb.AllCats)),  // I18N "All" —> t.fb.All
+                  isLastCat ? r.span({ className: 'caret' }) : null) },
+          r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
+              categoryMenuItems));
+
+    return categoriesDropdownButton;
+  }
 
   const editCatButton = activeCategory.isForumItself || !me.isAdmin ? null :
       r.a({ className: 's_F_Ts_Cat_Edt icon-edit', onClick: props.editCategory },
@@ -1115,7 +1113,9 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
 
   return (
     r.div({ className: 's_F_Ts_Cat' },
-      categoriesDropdownButton,
+      r.div({ className: 's_F_Ts_Cat_SelectCatBs' },
+        baseCatDropdown,
+        anySubCatDropdown),
       r.p({ className: 's_F_Ts_Cat_Abt' }, activeCategory.description),
       editCatButton));
 }
@@ -1402,6 +1402,7 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 }
 
 
+
 const LoadAndListCategories = createFactory({
   displayName: 'LoadAndListCategories',
 
@@ -1435,12 +1436,21 @@ const LoadAndListCategories = createFactory({
   },
 
   render: function() {
-    if (!this.state.categories)
+    const store: Store = this.props.store;
+    const categories: Category[] = this.state.categories;
+    if (!categories)
       return r.p({}, t.Loading);
 
-    const categoryRows = this.state.categories.map((category: Category) => {
+    const siteSection: SiteSection =
+        store.siteSections.find(s => s.pageId === store.currentPageId);
+
+    const topLevelCats = categories.filter(c => c.parentId === siteSection.rootCategoryId);
+
+    const categoryRows = topLevelCats.map((category: Category) => {
+      const childCategories = categories.filter(c => c.parentId === category.id);
       return CategoryRow({ store: this.props.store, location: this.props.location,
-          forumPath: this.props.forumPath, category: category, key: category.id });
+          forumPath: this.props.forumPath, category: category, childCategories, siteSection,
+          key: category.id });
     });
 
     let recentTopicsColumnTitle;
@@ -1483,6 +1493,16 @@ const CategoryRow = createComponent({
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const category: Category = this.props.category;
+    const childCategories: Category[] = this.props.childCategories;
+    const siteSection: SiteSection = this.props.siteSection;
+    const forumPath = this.props.forumPath;
+    const location = this.props.location;
+
+    const childCatsList = childCategories.map((childCat: Category) =>
+      r.li({ key: childCat.id },
+        CatLink({ category: childCat, forumPath, location,
+            className: 's_F_Cs_C_ChildCs_C' })));
+
     const recentTopicRows = category.recentTopics.map((topic: Topic) => {
       const pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       const numReplies = topic.numPosts - 1;
@@ -1504,7 +1524,7 @@ const CategoryRow = createComponent({
     let isDeletedText = category.isDeleted ?
         r.small({}, t.fc._deleted) : null;
 
-    const isDefault = category.isDefaultCategory && isStaff(me) ?
+    const isDefaultText = category.id === siteSection.defaultCategoryId && isStaff(me) ?
         r.small({}, t.fc._defCat) : null;
 
     const categoryIconClass = category_iconClass(category, store);
@@ -1517,12 +1537,13 @@ const CategoryRow = createComponent({
       r.tr({ className: 'esForum_cats_cat' + isNewClass + isDeletedClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
-            Link({ to: {
-                pathname: this.props.forumPath + RoutePathLatest + '/' + this.props.category.slug,
-                search: this.props.location.search }, className: categoryIconClass + 'forum-title' },
-              category.name, isDefault), isDeletedText),
+            CatLink({ category, forumPath, location, isDefaultText,
+                className: categoryIconClass + 'forum-title', }),
+            isDeletedText),
           r.p({ className: 'forum-description' }, category.description),
-          anyNotfLevel),
+          anyNotfLevel,
+          r.ol({ className: 's_F_Cs_C_ChildCs' },
+            childCatsList)),
         r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},
@@ -1530,6 +1551,16 @@ const CategoryRow = createComponent({
     }
 });
 
+
+function CatLink(props: { category: Category, forumPath: string, location,
+      className: string, isDefaultText? }) {
+  const forumPath = props.forumPath;
+  const category = props.category;
+  return Link({ to: {
+      pathname: forumPath + RoutePathLatest + '/' + category.slug,
+      search: props.location.search }, className: props.className },
+    category.name, props.isDefaultText);
+}
 
 
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,

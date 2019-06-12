@@ -2524,6 +2524,7 @@ function pagesFor(browser) {
 
     forumCategoryList: {   // RENAME to categoryList
       categoryNameSelector: '.esForum_cats_cat .forum-title',
+      subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
       goHere: () => {
         api.go('/categories');
@@ -2538,16 +2539,37 @@ function pagesFor(browser) {
         return count(browser.elements(api.forumCategoryList.categoryNameSelector));
       },
 
+      numSubCategoriesVisible: function(): number {
+        return count(browser.elements(api.forumCategoryList.subCategoryNameSelector));
+      },
+
       isCategoryVisible: function(categoryName: string): boolean {
         return browser.isVisible(api.forumCategoryList.categoryNameSelector, categoryName);
       },
 
+      isSubCategoryVisible: function(categoryName: string): boolean {
+        return browser.isVisible(api.forumCategoryList.subCategoryNameSelector, categoryName);
+      },
+
       openCategory: function(categoryName: string) {
+        api.forumCategoryList._openCategoryImpl(
+            categoryName, api.forumCategoryList.categoryNameSelector);
+      },
+
+      openSubCategory: function(categoryName: string) {
+        api.forumCategoryList._openCategoryImpl(
+            categoryName, api.forumCategoryList.subCategoryNameSelector);
+      },
+
+      _openCategoryImpl: function(categoryName: string, selector: string) {
         api.rememberCurrentUrl();
-        api.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
+        api.waitForThenClickText(selector, categoryName);
         api.waitForNewUrl();
-        api.waitForVisible('.s_F_Ts_Cat_Ttl ');
-        api.assertTextMatches('.s_F_Ts_Cat_Ttl', categoryName);
+        api.waitForVisible('.s_F_Ts_Cat_Ttl');
+        const titleSelector = selector === api.forumCategoryList.subCategoryNameSelector
+            ? '.s_F_Ts_Cat_Ttl-SubCat'
+            : '.s_F_Ts_Cat_Ttl';
+        api.assertTextMatches(titleSelector, categoryName);
       },
 
       // RENAME to setNotfLevelForCategoryNr?
@@ -2563,10 +2585,14 @@ function pagesFor(browser) {
 
 
     categoryDialog: {
-      fillInFields: function(data) {
+      fillInFields: function(data: { name: string, setAsDefault?: boolean, extId?: string }) {
         api.waitAndSetValue('#e2eCatNameI', data.name);
         if (data.setAsDefault) {
           api.waitAndClick('#e2eSetDefCat');
+        }
+        if (data.extId) {
+          api.waitAndClick('#te_ShowExtId');
+          api.waitAndSetValue('#te_CatExtId', data.extId);
         }
       },
 
@@ -5251,9 +5277,9 @@ function pagesFor(browser) {
         }
       },
 
-      createCategory: (ps: { name: string }) => {
+      createCategory: (ps: { name: string, extId?: string }) => {
         api.forumButtons.clickCreateCategory();
-        api.categoryDialog.fillInFields({ name: ps.name });
+        api.categoryDialog.fillInFields(ps);
         api.categoryDialog.submit();
       },
 
@@ -5313,7 +5339,8 @@ function pagesFor(browser) {
         api.editor.save();
       },
 
-      replyToEmbeddingBlogPost: function(text: string) {
+      replyToEmbeddingBlogPost: function(text: string,
+            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
         // also won't log any error or anything, so that later on, we'll block
@@ -5322,6 +5349,9 @@ function pagesFor(browser) {
         api.switchToEmbeddedCommentsIrame();
         logMessage("comments iframe: Clicking Reply ...");
         api.topic.clickReplyToEmbeddingBlogPost();
+        //if (opts.loginWithPaswordBeforeAs) {
+          //api.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
+        //}
         api.switchToEmbeddedEditorIrame();
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
@@ -5329,6 +5359,17 @@ function pagesFor(browser) {
         api.editor.editText(text, { timeoutMs: 2000 });
         logMessage("editor iframe: Saving ...");
         api.editor.save();
+
+        if (opts.signUpWithPaswordAfterAs) {
+          logMessage("editor iframe: Switching to login popup to log in / sign up ...");
+          api.swithToOtherTabOrWindow();
+          api.disableRateLimits();
+          api.loginDialog.createPasswordAccount(
+              opts.signUpWithPaswordAfterAs, false,
+              opts.needVerifyEmail === false ? 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG' : null);
+          api.switchBackToFirstTabOrWindow();
+        }
+
         logMessage("editor iframe: Done.");
         api.switchToEmbeddedCommentsIrame();
       },
@@ -5339,7 +5380,9 @@ function pagesFor(browser) {
         api.editor.save();
       },
 
-      replyToPostNr: function(postNr: PostNr, text: string) {
+      replyToPostNr: function(postNr: PostNr, text: string, opts: { isEmbedded?: true } = {}) {
+        if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
+
         // Sometimes the click fails — maybe a sidebar opens, making the button move a bit? Or
         // the window scrolls, making the click miss? Or whatever. If the click misses the
         // button, most likely, the editor won't open. So, if after clicking, the editor
@@ -5351,16 +5394,19 @@ function pagesFor(browser) {
         for (let clickAttempt = 0; true; ++clickAttempt) {
           api.topic.clickReplyToPostNr(postNr);
           try {
+            if (opts.isEmbedded) api.switchToEmbeddedEditorIrame();
             api.waitForVisible('.esEdtr_textarea', 5000);
             break;
           }
           catch (ignore) {
-            logMessage("When clicking the Reply button, the editor didn't open. Trying again");
+            logUnusual("When clicking the Reply button, the editor didn't open. Trying again");
             dieIf(clickAttempt === 3, "Couldn't click Reply and write a reply [EdE7FKAC2]");
+            if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
           }
         }
         api.editor.editText(text);
         api.editor.save();
+        if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
       },
 
       flagPost: function(postNr: PostNr, reason: 'Inapt' | 'Spam') {

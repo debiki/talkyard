@@ -517,6 +517,10 @@ interface Category {
 }
 
 
+interface CategoryPatch extends Category {  // or Partial<Category>?
+  extId?: ExtId;
+}
+
 
 interface Topic {
   pageId: string;
@@ -821,6 +825,7 @@ interface SettingsVisibleClientSide {
   doubleTypePassword?: boolean;         // default: false
   ssoUrl?: string;                      // default: undefined
   enableSso?: boolean;                  // default: undefined —> false
+  enableApi?: boolean;                  // default: undefined —> true
   minPasswordLength?: number;           // default: 10
   enableForum?: boolean;                // default: true
   enableTags?: boolean;                 // default: false for now, true later when impl.
@@ -868,18 +873,22 @@ interface Ancestor {  // server side: [6FK02QFV]
 }
 
 
-interface Forum {
+interface Forum {  // merge into and replace with SiteSection?
   pageId: PageId;
   path: string;
   title: string;
   description: string;
+  rootCategoryId: CategoryId;
+  defaultCategoryId: CategoryId;
 }
 
 
-interface SiteSection {
+interface SiteSection {  // also see interface Forum just above
   pageId: PageId;
   path: string;
   pageRole: PageRole;
+  rootCategoryId: CategoryId;
+  defaultCategoryId: CategoryId;
 }
 
 
@@ -1449,7 +1458,7 @@ interface LoadTopicsResponse {
 
 
 interface LoadCategoryResponse {
-  category: Category;
+  category: CategoryPatch;
   permissions: PermsOnPage[];
   groups: Group[];
 }

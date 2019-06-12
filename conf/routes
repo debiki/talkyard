@@ -240,14 +240,24 @@ POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
 POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
 
-#POST  /-/start-creating-backup   talkyard.server.backup.SiteBackupController.startCreatingBackup
-#POST  /-/download-backup         talkyard.server.backup.SiteBackupController.downloadBackup
-#POST  /-/delete-backup           talkyard.server.backup.SiteBackupController.deleteBackup
-#POST  /-/upload-backup           talkyard.server.backup.SiteBackupController.uploadBackup
-#POST  /-/import-backup           talkyard.server.backup.SiteBackupController.importBackup
+#POST  /-/start-creating-backup  talkyard.server.backup.SiteBackupController.startCreatingBackup
+#POST  /-/download-backup        talkyard.server.backup.SiteBackupController.downloadBackup
+#POST  /-/delete-backup          talkyard.server.backup.SiteBackupController.deleteBackup
+#POST  /-/upload-backup          talkyard.server.backup.SiteBackupController.uploadBackup
+#POST  /-/import-backup          talkyard.server.backup.SiteBackupController.importBackup
+
+# ? plus header  Accept: application/json,  or (later):  application/zip,  or  application/protobuf
+GET   /-/export-site             talkyard.server.backup.SiteBackupController.exportSiteJson
+
+# Deprecated?
 GET   /-/export-site-json        talkyard.server.backup.SiteBackupController.exportSiteJson
+
+# RENAME? to /-/create-site-from-dump? otherwise slightly unclear if gets imported to existing site?
 POST  /-/import-site-json        talkyard.server.backup.SiteBackupController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site-json   talkyard.server.backup.SiteBackupController.importTestSite
+POST  /-/v0/upsert-simple        talkyard.server.backup.SiteBackupController.upsertSimpleJson
+POST  /-/v0/upsert-patch         talkyard.server.backup.SiteBackupController.upsertPatchJson
+
 
 POST /-/play-time               controllers.DebugTestController.playTime
 POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
@@ -295,6 +305,7 @@ POST  /-/update-sites            controllers.SuperAdminController.updateSites
 GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
 POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
+# REFACTOR use ApiSecretPostJsonAction instead, move to more precise controllers?
 GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoint)
 POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
 

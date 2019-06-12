@@ -1046,7 +1046,7 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox',
+        Setting2(props, { type: 'checkbox', id: 'te_EnblApi',
           label: "Enable API",
           help: "Lets you generate API secrets and do things via HTTP API requests, " +
             "e.g. Single Sign-On.",

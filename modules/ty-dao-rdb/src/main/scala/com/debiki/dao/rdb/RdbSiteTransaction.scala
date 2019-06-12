@@ -380,18 +380,29 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   def nextPageId(): PageId = {
     transactionCheckQuota { connection =>
-      nextPageIdImpl(connection)
+      // Loop until we find an unused id (there're might be old pages with "weird" colliding ids).
+      var oldMeta: Option[PageMeta] = None
+      var nextId: PageId = ""
+      var numLaps = 0
+      do {
+        nextId = nextPageIdImpl(connection)
+        oldMeta = loadPageMeta(nextId)
+        numLaps += 1
+        dieIf(numLaps > 100, "TyE306KSH4", "Error generating page id, tried more than 100 times")
+      }
+      while (oldMeta.isDefined)
+      nextId
     }
   }
 
 
-  private def nextPageIdImpl(implicit connecton: js.Connection): PageId = {
+  private def nextPageIdImpl(connecton: js.Connection): PageId = {
     val sql = """{? = call INC_NEXT_PAGE_ID(?) }"""
     var nextPageIdInt =
       db.call(sql, List(siteId.asAnyRef), js.Types.INTEGER, result => {
         val nextId = result.getInt(1)
         nextId
-      })
+      })(connecton)
     nextPageIdInt.toString
   }
 
@@ -447,8 +458,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     metaByPageId
   }
 
+
   /* UNT ESTED
-  def loadPageMetaForAllSections(): Seq[PageMeta] = {
+  def loadPageMetaForAllSectionPages(): Seq[PageMeta] = {
     import PageType.{Forum, Blog}
     val sql = s"""
       select g.page_id, $_PageMetaSelectListItems from pages3 g
@@ -459,6 +471,44 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       _PageMeta(rs, pageId = pageId)
     })
   }*/
+
+
+  def loadPageMetasByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta] = {
+    if (extImpIds.isEmpty)
+      return Map.empty
+
+    val values: List[AnyRef] = siteId.asAnyRef :: extImpIds.toList
+    var sql = s"""
+        select g.page_id, ${_PageMetaSelectListItems}
+        from pages3 g
+        where g.site_id = ?
+          and g.ext_imp_id in (${ makeInListFor(extImpIds) })"""
+    runQueryBuildMap(sql, values, rs => {
+      val meta = _PageMeta(rs)
+      meta.extImpId.getOrDie("TyE05HRD4") -> meta
+    })
+  }
+
+
+  def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta] = {
+    if (altIds.isEmpty)
+      return Map.empty
+
+    val values: List[AnyRef] = siteId.asAnyRef :: altIds.toList
+    val sql = s"""
+        select a.alt_page_id, g.page_id, ${_PageMetaSelectListItems}
+        from alt_page_ids3 a inner join pages3 g
+          on a.site_id = g.site_id and
+             a.real_page_id = g.page_id
+        where a.site_id = ?
+          and a.alt_page_id in (${ makeInListFor(altIds) })"""
+
+    runQueryBuildMap(sql, values, rs => {
+      val meta = _PageMeta(rs)
+      val altId = rs.getString("alt_page_id")
+      altId -> meta
+    })
+  }
 
 
   def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
@@ -481,6 +531,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     anyOld foreach { oldMeta =>
       dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
         "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
+      dieIf(oldMeta.extImpId != newMeta.extImpId, "TyE305KBR", "Changing page extImpId not yet impl")
     }
 
     // Dulp code, see the insert query [5RKS025].
@@ -490,6 +541,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.categoryId.orNullInt,
       newMeta.embeddingPageUrl.orNullVarchar,
       newMeta.authorId.asAnyRef,
+      now.asTimestamp,
       newMeta.publishedAt.orNullTimestamp,
       // Always write to bumped_at so SQL queries that sort by bumped_at works.
       newMeta.bumpedOrPublishedOrCreatedAt.asTimestamp,
@@ -538,9 +590,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         category_id = ?,
         EMBEDDING_PAGE_URL = ?,
         author_id = ?,
-        -- now_utc can otherwise be < created_at, because created_at is from the JVM,
-        -- but now_utc from the database. COULD use the JVM's date here too, instead?
-        UPDATED_AT = greatest(created_at, now_utc()),
+        UPDATED_AT = greatest(created_at, ?),
         PUBLISHED_AT = ?,
         BUMPED_AT = ?,
         LAST_REPLY_AT = ?,
@@ -1146,6 +1196,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       insert into pages3 (
         site_id,
         page_id,
+        ext_imp_id,
         version,
         page_role,
         category_id,
@@ -1195,12 +1246,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
       siteId.asAnyRef,
       pageMeta.pageId,
+      pageMeta.extImpId.orNullVarchar,
       pageMeta.version.asAnyRef,
       pageMeta.pageType.toInt.asAnyRef,
       pageMeta.categoryId.orNullInt,

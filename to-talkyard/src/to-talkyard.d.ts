@@ -1,11 +1,35 @@
+/// <reference path="../../client/types-and-const-enums.ts" />
 
 type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
+
+
+interface CategoryDumpV0 {
+  id: CategoryId;
+  extImpId?: ExtImpId;
+  sectionPageId?: PageId;
+  parentId?: CategoryId;
+  defaultSubCatId?: CategoryId;
+  name: string;
+  slug: string;
+  position?: number;
+  description?: string;
+  defaultTopicType?: PageRole;  // ?
+  unlistCategory?: boolean;
+  unlistTopics?: boolean;
+  includeInSummaries?: IncludeInSummaries;
+  createdAtMs: WhenMs;
+  updatedAtMs?: WhenMs;  // default to createdAt? or remove from db?
+  lockedAtMs?: WhenMs;
+  frozenAtMs?: WhenMs;
+  deletedAtMs?: WhenMs;
+}
 
 
 interface PageToAdd {
   dbgSrc?: string;
   id: string;
   altIds?: string[];
+  extImpId?: ExtImpId;
   folder?: string;
   showId?: boolean;
   slug?: string;
@@ -34,29 +58,157 @@ interface PageJustAdded {
 }
 
 
-interface NewTestPost {   // RENAME to PostToAdd
+interface PageDumpV0 {
+  dbgSrc?: string;
+  id: PageId;
+  extImpId?: ExtImpId; // RENAME to just  extId? because not *importing* when *upserting*
+  //altIds: PageId[];
+  pageType: PageRole;
+  version: number;
+  createdAt: WhenMs;
+  updatedAt: WhenMs;
+  publishedAt?: WhenMs;
+  bumpedAt?: WhenMs;
+  lastApprovedReplyAt?: WhenMs;
+  lastApprovedReplyById?: UserId;
+  categoryId?: CategoryId;
+  embeddingPageUrl?: string;
+  authorId: UserId;
+  frequentPosterIds?: UserId[];
+  layout?: number;
+  pinOrder?: number;
+  pinWhere?: PinPageWhere;
+  numLikes?: number;
+  numWrongs?: number;
+  numBurys?: number;
+  numUnwanteds?: number;
+  numRepliesVisible?: number;
+  numRepliesTotal?: number;
+  numPostsTotal?: number;
+  numOrigPostLikeVotes?: number;
+  numOrigPostWrongVotes?: number;
+  numOrigPostBuryVotes?: number;
+  numOrigPostUnwantedVotes?: number;
+  numOrigPostRepliesVisible?: number;
+  answeredAt?: WhenMs;
+  answerPostId?: PostId;
+  plannedAt?: WhenMs;
+  startedAt?: WhenMs;
+  doneAt?: WhenMs;
+  closedAt?: WhenMs;
+  lockedAt?: WhenMs;
+  frozenAt?: WhenMs;
+  //unwantedAt?:
+  hiddenAt?: WhenMs;
+  deletedAt?: WhenMs;
+  htmlTagCssClasses?: string;
+  htmlHeadTitle?: string;
+  htmlHeadDescription?: string;
+}
+
+
+interface PagePathDumpV0 {
+  folder: string;
+  pageId: PageId,
+  showId: boolean;
+  slug: string;
+  canonical: boolean;
+}
+
+
+interface NewTestPost {   // RENAME to PostToAdd  and move to  /tests/e2e/..somewhere..
   id?: number;
+
   // Not just page id, because needs author, creation date, etc.
-  page: any;// Page | PageJustAdded;
+  // Ignored if importing external things — then, extPageImpId used instead.
+  page?: any;// Page | PageJustAdded;
+
   authorId?: number;// UserId; // if absent, will be the page author
-  nr: number;
+
+  // If importing additional things to an already existing site,
+  // these are ignored; instead, the extImpId and parentExtImpId are used.
+  nr?: number;
   parentNr?: number;
+
+  // If re-importing the same things, we'll update posts by external import id,
+  // insted of creating new. Also, when importing, we don't know what the parent
+  // nr will be, so, in the import, we reference the parent via its external
+  // import id. — Exactly what the external import id is, depends on what you're
+  // importing. WordPress commets has a `wp_comment_id` field for example.
+  extImpId?: ExtImpId;
+  extPageImpId?: string;
+  extParentImpId?: string;
+
   postType?: number;
   approvedSource: string;
   approvedHtmlSanitized?: string;
   postedFromIp?: string;
   postedAtUtcStr?: string;
   postedAtMs?: number;// WhenMs;
-  isApproved?: boolean;
+  approvedAtMs?: number; // WhenMs;
 }
 
 
-interface GuestToAdd {
-  email: string;
-  fullName: string;
-  postedFromIp: string;
-  createdTheLatestAtUtcStr: string;
-  url: string;
+interface PostDumpV0 {
+  id: PostId;
+  extImpId?: ExtImpId;
+  pageId: PageId;
+  nr: PostNr;
+  parentNr?: PostNr;
+  postType: PostType,
+  createdAt: WhenMs;
+  createdById: UserId;
+  currRevById: UserId;
+  currRevStartedAt: WhenMs;
+  currRevLastEditedAt?: WhenMs;
+  currRevSourcePatch?: string;
+  currRevNr: number;
+  prevRevNr?: number;
+  lastApprovedEditAt?: WhenMs;
+  lastApprovedEditById?: UserId;
+  numDistinctEditors?: number;
+  safeRevNr?: number;
+  approvedSource?: string;
+  approvedHtmlSanitized?: string;
+  approvedAt?: WhenMs;
+  approvedById?: UserId;
+  approvedRevNr?: number;
+  //collapsedStatus?: any;
+  collapsedAt?: WhenMs;
+  collapsedById?: UserId;
+  //closedStatus?: any;
+  closedAt?: WhenMs;
+  closedById?: UserId;
+  hiddenAt?: WhenMs;
+  hiddenById?: UserId;
+  hiddenReason?: string;
+  //deletedStatus?: any;
+  deletedAt?: WhenMs;
+  deletedById?: UserId;
+  deletedStatus?: DeletedStatus;
+  pinnedPosition?: number;
+  branchSideways?: boolean;
+  numPendingFlags?: number;
+  numHandledFlags?: number;
+  numEditSuggestions?: number;
+  numLikeVotes?: number;
+  numWrongVotes?: number;
+  numBuryVotes?: number;
+  numUnwantedVotes?: number;
+  numTimesRead?: number;
+}
+
+interface GuestDumpV0 {
+  id: UserId;
+  extImpId?: ExtImpId;
+  createdAt: WhenMs;
+  fullName?: string;
+  guestBrowserId?: string;
+  emailAddress?: string;
+  lockedThreatLevel?: ThreatLevel;
+  //postedFromIp: string;
+  //createdTheLatestAtUtcStr?: string;   // what?
+  //url?: string;
 }
 
 

@@ -84,7 +84,17 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
     statusCode: response.statusCode,
     headers: response.headers,
     bodyJson: function() {
-      return JSON.parse(responseBody);
+      let obj;
+      try {
+        obj = JSON.parse(responseBody);
+      }
+      catch (ex) {
+        die(`Error parsing response json: ${ex.toString()} [TyE204GKRTH4]`,
+          "--- The server's response: ------\n" +
+          responseBody + '\n' +
+          '---------------------------------\n');
+      }
+      return obj;
     }
   };
 }
@@ -110,14 +120,14 @@ function getOrDie(url) {
 }
 
 
-function getResponseBodyString(response): string {
+function getResponseBodyString(response): string {  // dupl [304KWPD50]
   let bodyString = response.body;
   if (!_.isString(bodyString) && bodyString.toString) {
     bodyString = bodyString.toString('utf8');
   }
   if (!_.isString(bodyString)) {
     bodyString = "(The response body is not a string, and has no toString function. " +
-        "Don't know how to show it. [EdE7BXE2I])"
+        "Don't know how to show it. [EdE7BXE2I])";
   }
   return bodyString;
 }
@@ -405,6 +415,14 @@ function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, api
   return responseJson.loginSecret;
 }
 
+function upsertSimple(ps: { origin: string, requesterId: UserId, apiSecret: string,
+      data }): string {
+  const url = ps.origin + '/-/v0/upsert-simple';
+  const responseJson = postOrDie(
+      url, ps.data, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
+  return responseJson;
+}
+
 
 
 // ----- Export functions
@@ -422,7 +440,8 @@ export = {
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getEmailsSentToAddrs,
-  getLastVerifyEmailAddressLinkEmailedTo,
+  getLastVerifyEmailAddressLinkEmailedTo, // RENAME see next line
+  getVerifyEmailAddressLinkFromLastEmailTo: getLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,
   waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,
@@ -437,6 +456,7 @@ export = {
   assertLastEmailMatches,
   apiV0: {
     upsertUserGetLoginSecret,
+    upsertSimple,
   },
 };
 

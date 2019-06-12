@@ -312,6 +312,7 @@ case class Draft(
   */
 case class Post(   // [exp] ok use
   id: PostId,
+  extImpId: Option[ExtImpId] = None,
   pageId: PageId,
   nr: PostNr,
   parentNr: Option[PostNr],
@@ -386,7 +387,7 @@ case class Post(   // [exp] ok use
 
   require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
   require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
-  require(approvedSource.isDefined || currentRevSourcePatch.isDefined, "DwE3KI59")
+  require(approvedSource.isDefined || currentRevSourcePatch.isDefined, "DwE3KI59")  // [40HKTPJ]
   require(currentRevSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
 
   // If the current version of the post has been approved, then one doesn't need to
@@ -658,6 +659,7 @@ object Post {
 
   def create(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         postNr: PostNr,
         parent: Option[Post],
@@ -702,6 +704,7 @@ object Post {
 
     Post(
       id = uniqueId,
+      extImpId = extImpId,
       pageId = pageId,
       nr = postNr,
       parentNr = parent.map(_.nr),
@@ -750,19 +753,21 @@ object Post {
 
   def createTitle(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(uniqueId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
+    create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
       multireplyPostNrs = Set.empty, postType = PostType.Normal,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
@@ -770,7 +775,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId],
         postType: PostType = PostType.Normal): Post =
-    create(uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
+    create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
       multireplyPostNrs = Set.empty, postType,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)

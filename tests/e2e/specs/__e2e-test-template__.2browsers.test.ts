@@ -38,16 +38,16 @@ let strangersBrowser;
 let siteIdAddress: IdAddress;
 let siteId;
 
-let forum: LargeTestForum;
+let forum: TwoPagesTestForum;  // or: LargeTestForum
 
 let discussionPageUrl: string;
 
 
-describe("some-e2e-test [TyT1234ABC]", () => {
+describe("some-e2e-test  TyT1234ABC", () => {
 
   it("import a site", () => {
     const builder = buildSite();
-    forum = builder.addLargeForum({
+    forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });

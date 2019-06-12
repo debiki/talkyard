@@ -17,7 +17,6 @@
 
 package controllers
 
-import com.debiki.core.EmailNotfPrefs
 import com.debiki.core._
 import debiki.EdHttp._
 import play.api._
@@ -89,7 +88,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
       "EsE8YJ93Q", "Email not found")
 
     // Find out what to do.
-    val emailNotfPrefs: EmailNotfPrefs.Value = doWhat(request) match {
+    val emailNotfPrefs: EmailNotfPrefs = doWhat(request) match {
       case Unsub => EmailNotfPrefs.DontReceive
       case PreventResub => EmailNotfPrefs.ForbiddenForever
       case _ => die("DwE82WM91")

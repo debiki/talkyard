@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,6 @@ package com.debiki.core
 
 import java.net.InetAddress
 import java.{util => ju}
-import com.debiki.core.EmailNotfPrefs._
 import scala.collection.immutable
 import Prelude._
 
@@ -98,6 +97,7 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
+  def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
@@ -247,6 +247,8 @@ trait SiteTransaction {
   def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
+  def loadPageMetasByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
+  def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
@@ -333,6 +335,7 @@ trait SiteTransaction {
   def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId)
 
+  def nextGuestId: UserId
   def insertGuest(guest: Guest)
 
   def nextMemberId: UserId
@@ -407,6 +410,7 @@ trait SiteTransaction {
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadAllGuests(): immutable.Seq[Guest]
+  def loadAllGuestEmailNotfPrefsByEmailAddr(): Map[String, EmailNotfPrefs]
 
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")
@@ -475,6 +479,9 @@ trait SiteTransaction {
 
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
         : immutable.Seq[MemberInclDetails]
+
+  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+        : immutable.Map[ExtImpId, ParticipantInclDetails]
 
   def loadOwner(): Option[UserInclDetails]
 

@@ -47,12 +47,25 @@ object PageParts {
     nr == PageParts.BodyNr || nr == PageParts.TitleNr
 
 
+
+  def lastVisibleReply(posts: Seq[Post]): Option[Post] = {
+    val replies: Seq[Post] = posts.filter(post => post.isReply && post.isVisible)
+    //replies.maxOptBy(_.createdAt.getTime) ?? why maxOptBy not found ??
+    if (replies.isEmpty) None
+    else Some(replies.maxBy(_.createdAt.getTime))
+  }
+
+
   /** Finds the 0 to 3 most frequent posters.
     * Would: If two users have both posted X posts, then, among them, pick the most recent poster?
     */
   def findFrequentPosters(posts: Seq[Post], ignoreIds: Set[UserId]): Seq[UserId] = {
     val numPostsByUserId = mutable.HashMap[UserId, Int]().withDefaultValue(0)
-    for (post <- posts if !ignoreIds.contains(post.createdById)) {
+    for {
+      post <- posts
+      if post.isReply && post.isVisible
+      if !ignoreIds.contains(post.createdById)
+    } {
       val numPosts = numPostsByUserId(post.createdById)
       numPostsByUserId(post.createdById) = numPosts + 1
     }
@@ -128,12 +141,18 @@ abstract class PageParts {
 
   def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
-  def thePostByNr(postNr: PostNr): Post = postByNr(postNr) getOrDie "DwE9PKG3"
+  def thePostByNr(postNr: PostNr): Post = postByNr(postNr).getOrDie(
+    "TyE9PKG3", s"Post nr $postNr on page $pageId not found")
+
   def postById(postId: PostId): Option[Post] = {
     COULD_OPTIMIZE // add a (lazy) by-id map?
     postsByNr.values.find(_.id == postId)
   }
-  def thePostById(postId: PostId): Post = postById(postId) getOrDie "EsE6YKG72"
+
+  def thePostById(postId: PostId): Post = postById(postId).getOrDie(
+    "EsE6YKG72", s"Post id $postId on page $pageId not found")
+
+  def body: Option[Post] = postByNr(BodyNr)
   def theBody: Post = thePostByNr(BodyNr)
   def theTitle: Post = thePostByNr(TitleNr)
 
@@ -174,9 +193,7 @@ abstract class PageParts {
 
 
   lazy val lastVisibleReply: Option[Post] = {
-    val replies = allPosts.filter(post => post.isReply && post.isVisible)
-    if (replies.isEmpty) None
-    else Some(replies.maxBy(_.createdAt.getTime))
+    PageParts.lastVisibleReply(allPosts)
   }
 
 
@@ -184,7 +201,7 @@ abstract class PageParts {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
     // entries in the Users column in the forum topic list. [7UKPF26]
     PageParts.findFrequentPosters(this.allPosts,
-      ignoreIds = Set(theBody.createdById) ++ lastVisibleReply.map(_.createdById).toSet)
+      ignoreIds = body.map(_.createdById).toSet ++ lastVisibleReply.map(_.createdById).toSet)
   }
 
 
@@ -242,7 +259,8 @@ abstract class PageParts {
 
 
   def parentOf(postNr: PostNr): Option[Post] =
-    thePostByNr(postNr).parentNr.map(id => thePostByNr(id))
+    //thePostByNr(postNr).parentNr.map(id => thePostByNr(id))
+    postByNr(postNr).flatMap(_.parentNr.flatMap(id => postByNr(id)))
 
 
   def depthOf(postNr: PostNr): Int =
@@ -270,9 +288,17 @@ abstract class PageParts {
 
 
   def findCommonAncestorNr(postNrs: Seq[PostNr]): PostNr = {
-    TESTS_MISSING // COULD check for cycles?
+    TESTS_MISSING
     if (postNrs.isEmpty || postNrs.contains(PageParts.NoNr))
       return PageParts.NoNr
+
+    val postNrsVisited = mutable.HashSet[PostNr]()
+
+    def dieIfCycle(postNr: PostNr) {
+      dieIf(postNrsVisited contains postNr,
+        "TyEPSTANCCYCL", s"Post parent nrs form a cycle on page $pageId, these nrs: $postNrsVisited")
+      postNrsVisited.add(postNr)
+    }
 
     val firstPost = thePostByNr(postNrs.head)
     var commonAncestorNrs: Seq[PostNr] = firstPost.nr :: ancestorsOf(firstPost.nr).map(_.nr)
@@ -280,8 +306,10 @@ abstract class PageParts {
       val nextPost = thePostByNr(nextPostNr)
       var ancestorNrs = nextPost.nr :: ancestorsOf(nextPost.nr).map(_.nr)
       var commonAncestorFound = false
+      postNrsVisited.clear()
       while (ancestorNrs.nonEmpty && !commonAncestorFound) {
         val nextAncestorNr = ancestorNrs.head
+        dieIfCycle(nextAncestorNr)
         if (commonAncestorNrs.contains(nextAncestorNr)) {
           commonAncestorNrs = commonAncestorNrs.dropWhile(_ != nextAncestorNr)
           commonAncestorFound = true

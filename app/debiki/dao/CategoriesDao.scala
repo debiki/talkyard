@@ -28,9 +28,26 @@ import scala.collection.mutable.ArrayBuffer
 
 
 case class SectionCategories(
-  sectionPageId: PageId,
-  categories: immutable.Seq[Category],
-  defaultCategoryId: CategoryId)
+  rootCategory: Category,
+  categoriesExclRoot: immutable.Seq[Category]) {
+
+  categoriesExclRoot.find(_.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>
+    throwIllegalArgument(o"""Category $badCat has a different section page id
+      than the root cat: $rootCategory [TyE05RMDRYDK4]""")
+  }
+
+  categoriesExclRoot.find(_.parentId.isEmpty) foreach { badCat =>
+    throwIllegalArgument(s"Category $badCat has no parent cat id [TyE6WKDR203]")
+  }
+
+  categoriesExclRoot.find(c => c.parentId.isNot(rootCategory.id) &&
+      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>
+    throwIllegalArgument(s"Category $badCat has a parent cat in a different site section [TyE4WHUS25]")
+  }
+
+  def sectionPageId: PageId = rootCategory.sectionPageId
+  def defaultCategoryId: CategoryId = rootCategory.defaultSubCatId getOrDie "TyE306RD57"
+}
 
 
 
@@ -55,9 +72,16 @@ case class CategoryToSave(
   includeInSummaries: IncludeInSummaries,
   description: String,
   createDeletedAboutTopic: Boolean = false,
+  extId: Option[ExtImpId] = None,
   anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
+
+  //require ok ext id
+  //require ok slug
+
+  // ! + add ok chars db constraint, for ext id?  later, for slug too, but be sure to rm bad chars first.
+
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
@@ -68,6 +92,7 @@ case class CategoryToSave(
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,
+    extImpId = extId,
     sectionPageId = sectionPageId,
     parentId = Some(parentId),
     defaultSubCatId = None,
@@ -120,7 +145,12 @@ trait CategoriesDao {
 
 
   def getCategory(categoryId: CategoryId): Option[Category] = {
-    getCategoryAndIsDefault(categoryId).map(_._1)
+    getCategoryAndRoot(categoryId).map(_._1)
+  }
+
+
+  def getAllCategories(): Vector[Category] = {
+    getAndRememberCategories()._1.values.toVector
   }
 
 
@@ -134,9 +164,8 @@ trait CategoriesDao {
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
         includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
       SectionCategories(
-        sectionPageId = rootCategory.sectionPageId,
-        categories = categories,
-        defaultCategoryId = rootCategory.defaultSubCatId getOrDie "TyE6KAW21")
+        rootCategory = rootCategory,
+        categoriesExclRoot = categories)
     }
   }
 
@@ -149,27 +178,26 @@ trait CategoriesDao {
       val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
         includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
       result.append(SectionCategories(
-        sectionPageId = rootCategory.sectionPageId,
-        categories = categories,
-        defaultCategoryId = rootCategory.defaultSubCatId getOrDie "TyEWKB201"))
+        rootCategory = rootCategory,
+        categoriesExclRoot = categories))
     }
     result
   }
 
 
-  /** Returns (categories, default-category-id). (There can be only 1 default category per sub community.)
+  /** Returns (categories, root-category).
     */
   def listMaySeeCategoriesInSameSectionAs(categoryId: CategoryId, authzCtx: ForumAuthzContext)
-        : (Seq[Category], Option[CategoryId]) = {
+        : Option[SectionCategories] = {
     getAndRememberCategories()
     if (rootCategories.isEmpty)
-      return (Nil, None)
+      return None
 
     // A bit dupl code (7UKWTW1)
     val rootCategory = getRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
       includeDeleted = authzCtx.isStaff, includeUnlistTopics = true, authzCtx).sortBy(_.position)
-    (categories, Some(rootCategory.defaultSubCatId getOrDie "TyE5JKF2"))
+    Some(SectionCategories(rootCategory, categories))
   }
 
 
@@ -308,13 +336,14 @@ trait CategoriesDao {
 
   /** Returns (category, is-default).
     */
-  def getCategoryAndIsDefault(id: CategoryId): Option[(Category, Boolean)] = {
+  def getCategoryAndRoot(id: CategoryId): Option[(Category, Category)] = {
     val catsStuff = getAndRememberCategories()
     val catsById = catsStuff._1
     val anyCategory = catsById.get(id)
     anyCategory map { category =>
-      val rootCategory: Option[Category] = category.parentId.flatMap(catsById.get)
-      (category, rootCategory.flatMap(_.defaultSubCatId) is category.id)
+      val anyRootCategory = rootCategories.find(_.sectionPageId == category.sectionPageId)
+      (category, anyRootCategory getOrDie "TyE205KJF45")
+          //rootCategory.flatMap(_.defaultSubCatId is category.id)
     }
   }
 
@@ -327,8 +356,8 @@ trait CategoriesDao {
   }
 
 
-  def getTheCategoryAndIsDefault(id: CategoryId): (Category, Boolean) =
-    getCategoryAndIsDefault(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
+  def getTheCategoryAndRoot(id: CategoryId): (Category, Category) =
+    getCategoryAndRoot(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
   private def getRootCategoryForCategoryId(categoryId: CategoryId): Option[Category] =
@@ -342,14 +371,15 @@ trait CategoriesDao {
   def getTheSectionPageId(categoryId: CategoryId): PageId =
     getRootCategoryForCategoryId(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
-  def getSectionPageIdsAsSeq(): Seq[PageId] = {
-    getAndRememberCategories()
-    categoriesById.values.filter(_.parentId.isEmpty).map(_.sectionPageId).toSeq
-  }
-
 
   def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
     readOnlyTransaction(_.loadAboutCategoryPageId(categoryId))
+  }
+
+
+  def getRootCategories(): immutable.Seq[Category] = {
+    val categoriesById = getAndRememberCategories()._1
+    categoriesById.values.filter(_.parentId isEmpty).toVector
   }
 
 
@@ -379,6 +409,8 @@ trait CategoriesDao {
 
     val categories = getAncestorCategoriesRootLast(rootCategoryId)
 
+    // May we see this category?
+    // (Could skip checking the ancestors again, when we've recursed into a child category.)
     // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
     if (!categories.head.isRoot) {
       val may = Authz.maySeeCategory(authzCtx, categories)
@@ -466,6 +498,7 @@ trait CategoriesDao {
       // Could just remove all counts, who cares anyway
       require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
       val editedCategory = oldCategory.copy(
+        extImpId = editCategoryData.extId,
         name = editCategoryData.name,
         slug = editCategoryData.slug,
         position = editCategoryData.position,

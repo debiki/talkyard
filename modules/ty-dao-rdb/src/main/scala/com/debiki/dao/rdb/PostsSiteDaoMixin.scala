@@ -126,16 +126,27 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post] = {
-    if (postIds.isEmpty)
+    loadPostsBySomeId("unique_post_id", postIds, _.id)
+  }
+
+
+  def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post] = {
+    loadPostsBySomeId("ext_imp_id", extImpIds, _.extImpId.getOrDie("TyE2GKGCU7L"))
+  }
+
+
+  private def loadPostsBySomeId[T](fieldName: String, someIds: Iterable[T], getId: Post => T)
+        : immutable.Map[T, Post] = {
+    if (someIds.isEmpty)
       return Map.empty
 
     val query = i"""
-      select * from posts3 where site_id = ? and unique_post_id in (${makeInListFor(postIds)})
+      select * from posts3 where site_id = ? and $fieldName in (${makeInListFor(someIds)})
       """
-    val values = siteId.asAnyRef :: postIds.map(_.asAnyRef).toList
+    val values = siteId.asAnyRef :: someIds.map(_.asAnyRef).toList
     runQueryBuildMap(query, values, rs => {
       val post = readPost(rs)
-      post.id -> post
+      getId(post) -> post
     })
   }
 
@@ -363,6 +374,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       insert into posts3(
         site_id,
         unique_post_id,
+        ext_imp_id,
         page_id,
         post_nr,
         parent_nr,
@@ -419,7 +431,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         num_times_read)
 
       values (
-        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?,
@@ -433,7 +445,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         ?, ?, ?, ?, ?)"""
 
     val values = List[AnyRef](
-      siteId.asAnyRef, post.id.asAnyRef, post.pageId, post.nr.asAnyRef,
+      siteId.asAnyRef, post.id.asAnyRef, post.extImpId.orNullVarchar, post.pageId, post.nr.asAnyRef,
       post.parentNr.orNullInt, toDbMultireply(post.multireplyPostNrs),
       (post.tyype != PostType.Normal) ? post.tyype.toInt.asAnyRef | NullInt,
 
@@ -611,6 +623,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   private def readPost(rs: js.ResultSet, pageId: Option[PageId] = None): Post = {
     Post(
       id = rs.getInt("UNIQUE_POST_ID"),
+      extImpId = getOptString(rs, "ext_imp_id"),
       pageId = pageId.getOrElse(rs.getString("PAGE_ID")),
       nr = rs.getInt("post_nr"),
       parentNr = getOptionalInt(rs, "parent_nr"),

@@ -77,6 +77,36 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     throwForbiddenIf(!settings.enableApi, "TyEAPIDSBLD", "API disabled")
 
     apiEndpoint match {
+
+      // Move export-site-json to SiteBackupController, an ApiSecretPostJsonAction, instead.
+      //
+      // Typically, one saves the exported data in a file  site-name.tydump.json
+      // or, with query params like:
+      //    ?exportSiteMeta=false
+      //    &categories=1,2,3   or  categories=extId:aaa,extId:bbb,extId:ccc
+      // instead exports a *patch*: only the specified data, and no site name or id.
+      // Then, one typically saves the file in  site-name.typatch.json.
+      //
+      // Dump = whole site. Can be imported to an empty server, to migrate from one server to another.
+      // Patch = parts of a site. Can only be imported (added to) an already existing site —
+      // to "patch" it.  E.g. Disqus comments converted to Talkyard json format, is in a patch
+      // file: can be imported to an already existing Talkyard comments site only.
+      //
+      // There'll also be an  export-site-zip  endpoint, which, if one specifies
+      // &includeUploads=true,  also includes uploaded files like images and attachments
+      // and videos in the resulting zip.  — This zip is a totally complete export file,
+      // whilst the .json is text only.  (Maybe could base64 encode binary data? and include
+      // in the json? some time in the distant future. Or bson? or MessagePack? — not bson,
+      // bson is apparently intended for fast lookup in the bson file, but for Talkyard,
+      // keeping the dump file small is instead the goal.
+      // """Compared to BSON, MessagePack is more space-efficient. ... designed for
+      // efficient transmission over the wire"""  https://en.wikipedia.org/wiki/MessagePack
+      // Or **Protobuf** ?  Yes, use protobuf, not messagepack.
+      // Protocol buffers = seems nice :- )  apparently verifies the input is valid,
+      // so Talkyard wouldn't need to do that (!). One instead declares the data structure,
+      // and compiles a parser? Works with Rust? There's rust-protobuf.
+      // Javascript? Yes, https://github.com/protocolbuffers/protobuf/tree/master/js.
+      //
       case "export-site-json" =>
         throwForbiddenIf(!request.isViaApiSecret,
           "TyE0APIGET", "The API may be called only via Basic Auth and an API secret")

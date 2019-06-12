@@ -50,18 +50,23 @@ class PlainApiActions(
         rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false,
         avoidCookies: Boolean = false)
         : ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, rateLimits, adminOnly = false, staffOnly = false,
+    PlainApiActionImpl(parser, rateLimits,
         allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies)
 
   def PlainApiActionStaffOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = true)
+    PlainApiActionImpl(parser, NoRateLimits, staffOnly = true)
 
-  def PlainApiActionAdminOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, NoRateLimits, adminOnly = true, staffOnly = false)
+  def PlainApiActionAdminOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
+        : ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, rateLimits, adminOnly = true)
 
-  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
-    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = false,
-        superAdminOnly = true)
+  def PlainApiActionApiSecretOnly[B](rateLimits: RateLimits, parser: BodyParser[B])
+        : ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, rateLimits, viaApiSecretOnly = true)
+
+  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B])
+        : ActionBuilder[ApiRequest, B] =
+    PlainApiActionImpl(parser, NoRateLimits, superAdminOnly = true)
 
 
 
@@ -75,11 +80,14 @@ class PlainApiActions(
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
   def PlainApiActionImpl[B](aParser: BodyParser[B],
-        rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
+        rateLimits: RateLimits,
+        adminOnly: Boolean = false,
+        staffOnly: Boolean = false,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         avoidCookies: Boolean = false,
-        isLogin: Boolean = false, superAdminOnly: Boolean = false)
-        : ActionBuilder[ApiRequest, B] =
+        isLogin: Boolean = false,
+        superAdminOnly: Boolean = false,
+        viaApiSecretOnly: Boolean = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
 
     override def parser: BodyParser[B] =
@@ -120,6 +128,8 @@ class PlainApiActions(
         case Some(authHeaderValue) =>
           invokeBlockAuthViaApiSecret(request, site, authHeaderValue, block)
         case None =>
+          throwForbiddenIf(viaApiSecretOnly,
+            "TyE0APIRQ", s"You may invoke ${request.path} only via the API")
           invokeBlockAuthViaCookie(request, site, block)
       }
     }
@@ -137,7 +147,7 @@ class PlainApiActions(
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
       }
       val talkyardIdPrefix = "talkyardId="
-      val externalIdPrefix = "externalId="
+      val externalIdPrefix = "externalId="   // rename to extSsoId? for consistency [395KSH20]. Or not?
       val anyUser: Option[Participant] =
         if (username.startsWith(talkyardIdPrefix)) {
           val userIdStr = username.drop(talkyardIdPrefix.length)

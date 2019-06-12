@@ -657,6 +657,33 @@ export function store_findTheDefaultCategory(store: Store): Category | undefined
 }
 
 
+export function store_ancestorsCategoriesCurrLast(
+      store: Store, categoryId: CategoryId): Category[] {
+  const ancestors = [];
+  const cats: Category[] = store.currentCategories;
+  let nextCatId = categoryId;
+  for (let i = 0; i < 10; ++i) {
+    const nextCat = _.find(cats, c => c.id === nextCatId);  // [On2]
+    if (!nextCat) {
+      // The prev cat is a top level cat, and root cats currently not incl in the
+      // json sent to the browser, so we won't find the root cat. However
+      // the root cat's id should be one of the SiteSection's root cat ids.
+      // @ifdef DEBUG
+      const siteSection = _.find(store.siteSections, s => s.rootCategoryId === nextCatId);
+      dieIf(!siteSection, `No site section root cat found for cat ${categoryId}, ` +
+          `root cat id ${nextCatId} [TyE036RKTHF2]`);
+      // @endif
+      break;
+    }
+    ancestors.unshift(nextCat);
+    nextCatId = nextCat.parentId;
+    if (!nextCatId)
+      break;
+  }
+  return ancestors;
+}
+
+
 export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
   return _.filter(store.currentCategories, (c: Category) => {
     if (c.isForumItself) return false;

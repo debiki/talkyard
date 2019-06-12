@@ -114,7 +114,7 @@ object JsX {
     var json = JsUser(guest)
     if (inclEmail) {
       json += "emailAddress" -> JsString(guest.email)
-      //json += "emailNotfPrefs" -> JsString(guest.emailNotfPrefs.value)  need a toInt [7KABKF2]
+      json += "emailNotfPrefs" -> JsNumber(guest.emailNotfPrefs.toInt)
     }
     json += "createdAt" -> JsWhenMs(guest.createdAt)
     json += "guestBrowserId" -> JsStringOrNull(guest.guestBrowserId)
@@ -422,6 +422,7 @@ object JsX {
   def JsCategoryInclDetails(category: Category): JsObject = {
     Json.obj(
       "id" -> category.id,  // : CategoryId,
+      "extId" -> JsStringOrNull(category.extImpId),
       "sectionPageId" -> category.sectionPageId,  // : PageId,
       // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
       // root category).

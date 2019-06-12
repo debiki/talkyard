@@ -55,7 +55,8 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): PagePathWithId = {
+        altPageIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
+        extId: Option[ExtImpId] = None): PagePathWithId = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -88,7 +89,7 @@ trait PagesDao {
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
-        tx, altPageId = altPageId, embeddingUrl = embeddingUrl)
+        tx, altPageIds = altPageIds, embeddingUrl = embeddingUrl, extId = extId)
 
       val notifications = notfGenerator(tx).generateForNewPost(
         PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml), anyReviewTask)
@@ -136,8 +137,9 @@ trait PagesDao {
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
-      altPageId: Option[AltPageId] = None,
+      altPageIds: Set[AltPageId] = Set.empty,
       embeddingUrl: Option[String] = None,
+      extId: Option[String] = None,
       createAsDeleted: Boolean = false): (PagePathWithId, Post, Option[ReviewTask]) = {
 
     val now = globals.now()
@@ -150,6 +152,8 @@ trait PagesDao {
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
     val settings = loadWholeSiteSettings(tx)
 
+    // die unless ok extId
+
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
       authorAndLevels, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
@@ -161,6 +165,7 @@ trait PagesDao {
     require(!titleSource.isEmpty && !titleHtmlSanitized.isEmpty, "EsE7MGK24")
     require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
+    require(embeddingUrl.trimNoneIfBlank == embeddingUrl, "Cannot have blank emb urls [TyE75SPJBJ]")
 
     val pageSlug = anySlug.getOrElse({
         context.nashorn.slugifyTitle(titleSource)
@@ -244,6 +249,7 @@ trait PagesDao {
     val uploadPaths = findUploadRefsInPost(bodyPost)
 
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId,
+      extId = extId,
       creationDati = now.toJavaDate,
       deletedAt = if (createAsDeleted) Some(now) else None,
       numPostsTotal = 2, // title & body
@@ -330,11 +336,21 @@ trait PagesDao {
       tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
 
-    altPageId.foreach(tx.insertAltPageId(_, realPageId = pageId))
-    if (altPageId != embeddingUrl) {
-      // If the url already points to another embedded discussion, keep it pointing to the old one.
-      // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
-      embeddingUrl.foreach(tx.insertAltPageIdIfFree(_, realPageId = pageId))
+    altPageIds.foreach(tx.insertAltPageId(_, realPageId = pageId))
+
+    embeddingUrl.trimNoneIfBlank foreach { embUrl =>
+      if (!altPageIds.contains(embUrl)) {
+        // If the url already points to another embedded discussion, keep it pointing to the old one.
+        // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
+        tx.insertAltPageIdIfFree(embUrl, realPageId = pageId)
+      }
+      // To make it simple to test things from localhost, and moving to
+      // a new address, store the discussion id by url path too, without origin. [06KWDNF2]
+      // Maybe some time later, could add a conf val to disable this.
+      val embeddingPath = extractUrlPath(embUrl)
+      if (!altPageIds.contains(embeddingPath)) {
+        tx.insertAltPageIdIfFree(embeddingPath, realPageId = pageId)
+      }
     }
 
     // COULD generate notifications from here — currently done in the callers though.
@@ -620,7 +636,8 @@ trait PagesDao {
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
         tx: SiteTransaction) {
     val page = PageDao(pageId, tx)
-    val newMeta = page.meta.copy(
+    var newMeta = page.meta.copyWithUpdatedStats(page) /*
+    var newMeta = page.meta.copy(  // code review: this = (...) is identical to [0969230876]
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,
@@ -638,7 +655,8 @@ trait PagesDao {
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
       answeredAt = page.anyAnswerPost.map(_.createdAt),
       answerPostId = page.anyAnswerPost.map(_.id),
-      version = page.version + 1)
+      version = page.version + 1)  */
+
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }

@@ -18,16 +18,7 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
-import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
-import com.debiki.core.Prelude._
-import com.debiki.core.Participant.{LowestNonGuestId, LowestAuthenticatedUserId}
-import _root_.java.{util => ju, io => jio}
-import java.{sql => js}
-import scala.collection.{immutable, mutable}
-import scala.collection.{mutable => mut}
-import scala.collection.mutable.{ArrayBuffer, StringBuilder}
 import Rdb._
-import RdbUtil._
 
 
 /** Keeps track of which usernames have been used already in the past, in case

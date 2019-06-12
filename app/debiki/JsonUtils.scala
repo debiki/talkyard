@@ -37,7 +37,10 @@ object JsonUtils {
 
 
   def readJsObject(json: JsValue, fieldName: String): JsObject =
-    (json \ fieldName).toOption.getOrElse(throwMissing("EsE1FY90", fieldName)) match {
+    readOptJsObject(json, fieldName).getOrElse(throwMissing("EsE1FY90", fieldName))
+
+  def readOptJsObject(json: JsValue, fieldName: String): Option[JsObject] =
+    (json \ fieldName).toOption map {
       case o: JsObject => o
       case bad =>
         throwBadJson(

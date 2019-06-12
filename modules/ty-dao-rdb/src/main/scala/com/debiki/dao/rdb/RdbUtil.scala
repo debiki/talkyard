@@ -18,7 +18,6 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
-import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.isGuestId
 import java.{sql => js, util => ju}
@@ -111,9 +110,10 @@ object RdbUtil {
       nextPageId = rs.getInt("next_page_id"),
       creatorEmailAddress = getOptString(rs, "creator_email_address"),
       quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
+      version = rs.getInt("version"),
+      numParticipants = rs.getInt("num_roles"),
       numGuests = rs.getInt("num_guests"),
       numIdentities = rs.getInt("num_identities"),
-      numParticipants = rs.getInt("num_roles"),
       numPageUsers = rs.getInt("num_role_settings"),
       numPages = rs.getInt("num_pages"),
       numPosts = rs.getInt("num_posts"),
@@ -125,7 +125,6 @@ object RdbUtil {
       numAuditRows = rs.getInt("num_audit_rows"),
       numUploads = rs.getInt("num_uploads"),
       numUploadBytes = rs.getLong("num_upload_bytes"),
-      version = rs.getInt("version"),
       numPostRevisions = rs.getInt("num_post_revisions"),
       numPostRevBytes = rs.getLong("num_post_rev_bytes"),
       status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
@@ -161,6 +160,7 @@ object RdbUtil {
 
   val GroupSelectListItems = o"""
       user_id,
+      ext_imp_id,
       created_at,
       full_name,
       username,
@@ -178,6 +178,7 @@ object RdbUtil {
 
   val UserSelectListItemsNoGuests: String =
     s"""u.USER_ID u_id,
+      |u.ext_imp_id u_ext_imp_id,
       |u.is_group u_is_group,
       |u.created_at u_created_at,
       |u.full_name u_full_name,
@@ -222,7 +223,10 @@ object RdbUtil {
 
 
   def getParticipant(rs: js.ResultSet): Participant = {
+    // A bit dupl code. (703KWH4)
+
     val userId = rs.getInt("u_id")
+    val extImpId = getOptString(rs, "u_ext_imp_id")
     val isGroup = rs.getBoolean("u_is_group")
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
@@ -243,6 +247,7 @@ object RdbUtil {
     if (isGuestId(userId))
       Guest(
         id = userId,
+        extImpId = extImpId,
         createdAt = createdAt,
         guestName = dn2e(name.orNull),
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
@@ -253,6 +258,7 @@ object RdbUtil {
     else if (isGroup)
       Group(
         id = userId,
+        extImpId = extImpId,
         createdAt = createdAt,
         theUsername = theUsername,
         name = name,
@@ -302,11 +308,14 @@ object RdbUtil {
 
 
   val CompleteUserSelectListItemsNoUserId = i"""
+    |ext_imp_id,
     |is_group,
     |created_at,
     |external_id,
     |full_name,
     |primary_email_addr,
+    |guest_email_addr,
+    |guest_browser_id,
     |about,
     |country,
     |website,
@@ -347,6 +356,18 @@ object RdbUtil {
     s"user_id, $CompleteUserSelectListItemsNoUserId"
 
 
+  def getParticipantInclDetails(rs: js.ResultSet): ParticipantInclDetails = {
+    UNTESTED
+    val participantId = rs.getInt("user_id")
+    if (participantId <= MaxGuestId) {
+      getGuestInclDetails(rs, participantId)
+    }
+    else {
+      getMemberInclDetails(rs, Some(participantId))
+    }
+  }
+
+
   def getUserInclDetails(rs: js.ResultSet): UserInclDetails = {
     getMemberInclDetails(rs) match {
       case m: UserInclDetails => m
@@ -365,9 +386,28 @@ object RdbUtil {
   }
 
 
+  /** Currently there's no GuestInclDetails, just a Guest and it includes everything. */
+  private def getGuestInclDetails(rs: js.ResultSet, theGuestId: UserId): Guest = {
+    // A bit dupl code. (703KWH4)
+    val name = Option(rs.getString("full_name"))
+    Guest(
+      id = theGuestId,
+      extImpId = getOptString(rs, "ext_imp_id"),
+      createdAt = getWhen(rs, "created_at"),
+      guestName = dn2e(name.orNull),
+      guestBrowserId = Option(rs.getString("guest_browser_id")),
+      email = dn2e(rs.getString("guest_email_addr")),
+      emailNotfPrefs = _toEmailNotfs(rs.getString("email_notfs")),
+      country = dn2e(rs.getString("country")).trimNoneIfEmpty,
+      lockedThreatLevel = getOptInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt))
+  }
+
+
   private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId): UserInclDetails = {
+    // A bit dupl code. (703KWH4)
     UserInclDetails(
       id = theUserId,
+      extImpId = getOptString(rs, "ext_imp_id"),
       externalId = getOptString(rs, "external_id"),
       fullName = Option(rs.getString("full_name")),
       username = rs.getString("username"),
@@ -389,15 +429,15 @@ object RdbUtil {
       seeActivityMinTrustLevel = getOptInt(rs, "see_activity_min_trust_level").flatMap(TrustLevel.fromInt),
       isApproved = getOptionalBoolean(rs, "is_approved"),
       reviewedAt = getOptionalDate(rs, "approved_at"),
-      reviewedById = getOptionalIntNoneNot0(rs, "approved_by_id"),
+      reviewedById = getOptInt(rs, "approved_by_id"),
       suspendedAt = getOptionalDate(rs, "suspended_at"),
       suspendedTill = getOptionalDate(rs, "suspended_till"),
-      suspendedById = getOptionalIntNoneNot0(rs, "suspended_by_id"),
+      suspendedById = getOptInt(rs, "suspended_by_id"),
       suspendedReason = Option(rs.getString("suspended_reason")),
       trustLevel = TrustLevel.fromInt(rs.getInt("trust_level")).getOrDie("TyE205WR4", s"User id $theUserId"),
-      lockedTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt),
+      lockedTrustLevel = getOptInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt),
       threatLevel = ThreatLevel.fromInt(rs.getInt("threat_level")).getOrDie("EsE22IU60C"),
-      lockedThreatLevel = getOptionalInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt),
+      lockedThreatLevel = getOptInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt),
       isOwner = rs.getBoolean("is_owner"),
       isAdmin = rs.getBoolean("is_admin"),
       isModerator = rs.getBoolean("is_moderator"),
@@ -593,6 +633,7 @@ object RdbUtil {
 
 
   val _PageMetaSelectListItems = i"""
+      |g.ext_imp_id,
       |g.version,
       |g.CREATED_AT,
       |g.UPDATED_AT,
@@ -659,6 +700,7 @@ object RdbUtil {
 
     PageMeta(
       pageId = if (pageId ne null) pageId else resultSet.getString("PAGE_ID"),
+      extImpId = getOptString(resultSet, "ext_imp_id"),
       pageType = PageType.fromInt(resultSet.getInt("PAGE_ROLE")) getOrElse PageType.Discussion,
       version = resultSet.getInt("version"),
       categoryId = getOptionalIntNoneNot0(resultSet, "category_id"),

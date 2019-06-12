@@ -44,6 +44,9 @@ package object core {
 
   type PostNr = Int
   val NoPostNr: PostNr = -1  // COULD change to 0, and set TitleNr = -1  [4WKBA20]
+  val TitleNr: PostNr = PageParts.TitleNr
+  val BodyNr: PostNr = PageParts.BodyNr
+  val FirstReplyNr: PostNr = PageParts.FirstReplyNr
 
   type PostRevNr = Int
 
@@ -80,6 +83,13 @@ package object core {
   type PermissionId = Int
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
+
+  type ExtImpId = String
+
+  val LowestTempImpId: Int = 2*1000*1000*1000
+  val FirstTempImpId: Int = LowestTempImpId + 1
+  def isPageTempId(pageId: PageId) =
+    pageId.length == 10 && pageId.startsWith("2000") // good enough for now
 
   type Tag = String
   type TagLabelId = Int
@@ -185,6 +195,14 @@ package object core {
     def anyLatestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
       if (whenA.isDefined && whenB.isDefined) {
         if (whenA.get.millis > whenB.get.millis) whenA
+        else whenB
+      }
+      else whenA orElse whenB
+    }
+
+    def anyJavaDateLatestOf(whenA: Option[ju.Date], whenB: Option[ju.Date]): Option[ju.Date] = {
+      if (whenA.isDefined && whenB.isDefined) {
+        if (whenA.get.getTime > whenB.get.getTime) whenA
         else whenB
       }
       else whenA orElse whenB
@@ -866,6 +884,13 @@ package object core {
     def getOrIfFailure(fn: Throwable => Nothing): T = underlying match {
       case Failure(ex) => fn(ex)
       case Success(value) => value
+    }
+  }
+
+  implicit class RichSeq[K, V](val underlying: Seq[V]) {
+    def groupByKeepOne(fn: V => K): immutable.Map[K, V] = {
+      val multiMap = underlying.groupBy(fn)
+      multiMap.mapValues(many => many.head)
     }
   }
 

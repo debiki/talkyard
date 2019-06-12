@@ -30,6 +30,7 @@ import org.scalactic._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import scala.collection.mutable
 import talkyard.server.JsX
 
 
@@ -51,44 +52,115 @@ case class SiteBackupReader(context: EdContext) {
   val MaxBytes = 1001000
 
 
+  def parseDumpJsonMaybeThrowBadRequest(siteId: Option[SiteId], bodyJson: JsValue, simpleFormat: Boolean,
+          isE2eTest: Boolean): SiteBackup = {
+    try {
+      if (simpleFormat) parseSimpleSitePatch(siteId getOrDie "TyE045ASDKH3", bodyJson)
+      else parseSiteJson(bodyJson, isE2eTest = isE2eTest)
+    }
+    catch {
+      case ex: JsonUtils.BadJsonException =>
+        throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
+      case ex: IllegalArgumentException =>
+        // Some case class constructor failure.
+        throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
+              invalid value combinations: ${ex.getMessage}""")
+    }
+  }
+
+
+  def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
+    val categoriesJson =
+      try {
+        readJsArray(bodyJson, "categories", optional = true)
+      }
+      catch {
+        case ex: IllegalArgumentException =>
+          throwBadRequest("TyE306TMRT2", s"Invalid json: ${ex.getMessage}")
+      }
+
+    val categoryPatches = categoriesJson.value.zipWithIndex map { case (json, index) =>
+      readCategoryOrBad(json, mustBePatch = true, isE2eTest = false).getOrIfBad(error =>
+        throwBadReq(
+          "TyE205KTSK2", o"""Invalid category json at index $index in the 'categories' list: $error,
+              json: $json"""))
+      match {
+        case Left(c: Category) => die("TyE0662TKSR")
+        case Right(p: CategoryPatch) => p
+      }
+    }
+
+    val simplePatch = SimpleSitePatch(categoryPatches = categoryPatches)
+
+    val oldCats = context.globals.siteDao(siteId).getAllCategories()
+    // For now, pick the first random root category. Sub communities currently disabled. [4GWRQA28]
+    val rootCategory = context.globals.siteDao(siteId).getRootCategories().headOption.getOrElse {
+      throwForbidden("TyE6PKWTY4", "No root category has been created")
+    }
+    val completePatch = simplePatch.makeComplete(oldCats, globals.now()) match {
+      case Good(p) => p
+      case Bad(errorMessage) =>
+        throwBadRequest("TyE05JKRVHP8", s"Error interpreting patch: $errorMessage")
+    }
+    completePatch
+  }
+
+
   def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
 
     // When importing API secrets has been impl, then upd this test:
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
-    val (siteMetaJson, settingsJson, guestsJson, groupsJson, membersJson,
-        permsOnPagesJson, pagesJson, pathsJson,
+    val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, membersJson,
+        permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         categoriesJson, postsJson) =
       try {
-        (readJsObject(bodyJson, "meta"),
-          readJsObject(bodyJson, "settings"),
+        (readOptJsObject(bodyJson, "meta"),
+          readOptJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
           readJsArray(bodyJson, "guests", optional = true),
-          readJsArray(bodyJson, "groups"),
-          readJsArray(bodyJson, "members"),
-          readJsArray(bodyJson, "permsOnPages"),
-          readJsArray(bodyJson, "pages"),
-          readJsArray(bodyJson, "pagePaths"),
-          readJsArray(bodyJson, "categories"),
-          readJsArray(bodyJson, "posts"))
+          readOptJsObject(bodyJson, "guestEmailPrefs"),
+          readJsArray(bodyJson, "groups", optional = true),
+          readJsArray(bodyJson, "members", optional = true),   // RENAME to "users"
+          readJsArray(bodyJson, "permsOnPages", optional = true),
+          readJsArray(bodyJson, "pages", optional = true),
+          readJsArray(bodyJson, "pagePaths", optional = true),
+          readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),
+          readJsArray(bodyJson, "categories", optional = true),
+          readJsArray(bodyJson, "posts", optional = true))
       }
       catch {
         case ex: IllegalArgumentException =>
           throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
       }
 
-    val siteToSave: SiteInclDetails =
-      try readSiteMeta(siteMetaJson)
+    val siteToSave: Option[SiteInclDetails] =
+      try siteMetaJson.map(readSiteMeta)
       catch {
         case ex: IllegalArgumentException =>
           throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
       }
 
-    val settings = Settings2.settingsToSaveFromJson(settingsJson, globals)
+    val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
+
+    val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ json =>
+      val emailsAndPrefs = json.fields.map(emailAddrAndPrefJsVal => {
+        val email = emailAddrAndPrefJsVal._1
+        val prefsJson = emailAddrAndPrefJsVal._2
+        prefsJson match {
+          case JsNumber(value) =>
+            val pref = EmailNotfPrefs.fromInt(value.toInt).getOrElse(EmailNotfPrefs.Unspecified)
+            email -> pref
+          case x => throwBadRequest("TyE506NP2", o"""Bad email notf pref value for email address
+            ${emailAddrAndPrefJsVal._1}: "${emailAddrAndPrefJsVal._2}"""")
+        }
+      })
+      Map(emailsAndPrefs: _*)
+    }) getOrElse Map.empty
 
     val guests: Seq[Guest] = guestsJson.value.zipWithIndex map { case (json, index) =>
-      readGuestOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+      readGuestOrBad(json, guestEmailPrefs, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "EsE0GY72", o"""Invalid guest json at index $index in the 'guests' list: $errorMessage,
                 json: $json"""))
@@ -108,6 +180,8 @@ case class SiteBackupReader(context: EdContext) {
         }
       }
     }
+
+    val groups = Vector.empty  // groupsJson, later
 
     val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
@@ -130,11 +204,27 @@ case class SiteBackupReader(context: EdContext) {
               json: $json"""))
     }
 
-    val categories: Seq[Category] = categoriesJson.value.zipWithIndex map { case (json, index) =>
-      readCategoryOrBad(json, isE2eTest).getOrIfBad(error =>
+    val pageIdsByAltIds: Map[AltPageId, PageId] = Map(pageIdsByAltIdsJson.fields map {
+      case (altId, pageIdJs) =>
+        pageIdJs match {
+          case JsString(value) => altId -> value
+          case x => throwBadRequest(
+            "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")
+        }
+    }: _*)
+
+    val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
+    val categories = mutable.ArrayBuffer[Category]()
+
+    categoriesJson.value.zipWithIndex foreach { case (json, index) =>
+      readCategoryOrBad(json, mustBePatch =  false, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "EsE5PYK2", o"""Invalid category json at index $index in the 'categories' list: $error,
               json: $json"""))
+        match {
+          case Left(c: Category) => categories.append(c)
+          case Right(p: CategoryPatch) => categoryPatches.append(p)
+        }
     }
 
     val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
@@ -155,7 +245,8 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, users, pages, paths, categories, posts, permsOnPages)
+      guests, guestEmailPrefs, groups, users, categoryPatches.toVector, categories.toVector,
+      pages, paths, pageIdsByAltIds = pageIdsByAltIds, posts, permsOnPages)
   }
 
 
@@ -197,7 +288,8 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readGuestOrBad(jsValue: JsValue, isE2eTest: Boolean): Guest Or ErrorMessage = {
+  def readGuestOrBad(jsValue: JsValue, guestEmailPrefs: Map[String, EmailNotfPrefs], isE2eTest: Boolean)
+        : Guest Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -211,13 +303,16 @@ case class SiteBackupReader(context: EdContext) {
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
+      val email = readString(jsObj, "emailAddress").trim
       Good(Guest(
         id = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
-        guestName = readOptString(jsObj, "fullName").getOrElse(""),
+        guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
         email = readString(jsObj, "emailAddress").trim,
-        emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater] [7KABKF2]
+        emailNotfPrefs = readEmailNotfsPref(jsObj).getOrElse(
+          guestEmailPrefs.getOrElse(email, EmailNotfPrefs.Unspecified)),
         country = readOptString(jsObj, "country"),
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
     }
@@ -257,7 +352,7 @@ case class SiteBackupReader(context: EdContext) {
         reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME to reviewdAt
         reviewedById = readOptInt(jsObj, "approvedById"),
         primaryEmailAddress = readString(jsObj, "emailAddress").trim,
-        emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
+        emailNotfPrefs = readEmailNotfsPref(jsObj).getOrElse(EmailNotfPrefs.Unspecified),
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
         mailingListMode = readOptBool(jsObj, "mailingListMode") getOrElse false,
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
@@ -325,6 +420,7 @@ case class SiteBackupReader(context: EdContext) {
     try {
       Good(PageMeta(
         pageId = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         pageType = PageType.fromInt(readInt(jsObj, "pageType", "role")).getOrThrowBadJson("pageType"),
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
@@ -396,27 +492,48 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readCategoryOrBad(jsValue: JsValue, isE2eTest: Boolean): Category Or ErrorMessage = {
+  def readCategoryOrBad(jsValue: JsValue, mustBePatch: Boolean, isE2eTest: Boolean)
+        : Either[Category, CategoryPatch] Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
         return Bad(s"Not a json object, but a: " + classNameOf(bad))
     }
 
-    val id = try readInt(jsObj, "id") catch {
+
+    lazy val theId = try readInt(jsObj, "id") catch {
       case ex: IllegalArgumentException =>
         return Bad(s"Invalid category id: " + ex.getMessage)
     }
 
     try {
+      // For now (later, use a CategoryPatch class instead), if there's nothing but
+      // an id and an ext id, then required the id to be a temp import id,
+      // and load an old category, by external id:
+      if (mustBePatch || jsObj.fields.length == 2) {
+        val id = readOptInt(jsObj, "id")
+        val extId = readOptString(jsObj, "extId")
+        val parentRef = readOptString(jsObj, "parentRef")
+        val name = readOptString(jsObj, "name")
+        val position = readOptInt(jsObj, "position")
+        val slug = readOptString(jsObj, "slug")
+        val description = readOptString(jsObj, "description")
+        return Good(Right(CategoryPatch(
+          id, extImpId = extId, parentRef = parentRef, name = name, slug = slug,
+          description = description, position = position)))
+
+          // ?? Where check slug, name, extId etc are valid (not too long, no weird chars) ?? [05970KF5]
+      }
+
       val includeInSummariesInt = readOptInt(jsObj, "includeInSummaries")
           .getOrElse(IncludeInSummaries.Default.IntVal)
       val includeInSummaries = IncludeInSummaries.fromInt(includeInSummariesInt) getOrElse {
         return Bad(s"Invalid includeInSummaries: $includeInSummariesInt")
       }
-      Good(Category(
-        id = id,
-        sectionPageId = readString(jsObj, "sectionPageId"),
+      Good(Left(Category(
+        id = theId,
+        extImpId = readOptString(jsObj, "extImpId"),
+        sectionPageId = readString(jsObj, "sectionPageId"), // opt, use the one and only section
         parentId = readOptInt(jsObj, "parentId"),
         defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME to ...SubCat...
         name = readString(jsObj, "name"),
@@ -431,11 +548,11 @@ case class SiteBackupReader(context: EdContext) {
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),
         frozenAt = readOptDateMs(jsObj, "frozenAtMs"),
-        deletedAt = readOptDateMs(jsObj, "deletedAtMs")))
+        deletedAt = readOptDateMs(jsObj, "deletedAtMs"))))
     }
     catch {
       case ex: IllegalArgumentException =>
-        Bad(s"Bad json for page id '$id': ${ex.getMessage}")
+        Bad(s"Bad json for page id '$theId': ${ex.getMessage}")
     }
   }
 
@@ -470,7 +587,8 @@ case class SiteBackupReader(context: EdContext) {
 
     try {
       Good(Post(
-        id = readInt(jsObj, "id"),
+        id = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         pageId = readString(jsObj, "pageId"),
         nr = readInt(jsObj, "nr"),
         parentNr = readOptInt(jsObj, "parentNr"),
@@ -486,7 +604,7 @@ case class SiteBackupReader(context: EdContext) {
         previousRevisionNr = readOptInt(jsObj, "prevRevNr"),
         lastApprovedEditAt = readOptDateMs(jsObj, "lastApprovedEditAtMs"),
         lastApprovedEditById = readOptInt(jsObj, "lastApprovedEditById"),
-        numDistinctEditors = readInt(jsObj, "numDistinctEditors"),
+        numDistinctEditors = readInt(jsObj, "numDistinctEditors", default = Some(1)),
         safeRevisionNr = readOptInt(jsObj, "safeRevNr"),
         approvedSource = readOptString(jsObj, "approvedSource"),
         approvedHtmlSanitized = readOptString(jsObj, "approvedHtmlSanitized"),
@@ -555,6 +673,10 @@ case class SiteBackupReader(context: EdContext) {
         Bad(s"Bad page path json: ${ex.getMessage}")
     }
   }
+
+
+  def readEmailNotfsPref(jsObj: JsObject): Option[EmailNotfPrefs] =
+    readOptInt(jsObj, "emailNotfPrefs").flatMap(EmailNotfPrefs.fromInt)
 
 
   /* Later: Need to handle file uploads / streaming, so can import e.g. images.

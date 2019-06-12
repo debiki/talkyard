@@ -18,10 +18,6 @@
 package com.debiki.core
 
 import com.lambdaworks.crypto.SCryptUtil
-import java.{util => ju}
-import scala.concurrent.Future
-import DbDao._
-import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 
 

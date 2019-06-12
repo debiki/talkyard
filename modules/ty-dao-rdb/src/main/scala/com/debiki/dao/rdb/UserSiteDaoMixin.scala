@@ -18,7 +18,6 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
-import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{LowestNonGuestId, LowestAuthenticatedUserId}
 import _root_.java.{util => ju, io => jio}
@@ -447,13 +446,22 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def nextGuestId: UserId = {
+    val query = s"""
+      select least(min(user_id) - 1, ${Participant.MaxCustomGuestId})
+      from users3
+      where site_id = ?
+      """
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), _.getInt(1))
+  }
+
+
   def nextMemberId: UserId = {
     val query = s"""
       select max(user_id) max_id from users3
       where site_id = ? and user_id >= $LowestAuthenticatedUserId
       """
-    runQuery(query, List(siteId.asAnyRef), rs => {
-      rs.next()
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), rs => {
       val maxId = rs.getInt("max_id")
       math.max(LowestAuthenticatedUserId, maxId + 1)
     })
@@ -465,8 +473,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       select max(id) max_id from identities3
       where site_id = ?
       """
-    runQuery(query, List(siteId.asAnyRef), rs => {
-      rs.next()
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), rs => {
       val maxId = rs.getInt("max_id")
       (maxId + 1).toString
     })
@@ -478,18 +485,19 @@ trait UserSiteDaoMixin extends SiteTransaction {
       insert into users3(
         site_id,
         user_id,
+        ext_imp_id,
         created_at,
         full_name,
         guest_browser_id,
         guest_email_addr,
         email_notfs,
         locked_threat_level)
-      values (?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
-    val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.createdAt.asTimestamp,
-      guest.guestName.trim, guest.guestBrowserId.orNullVarchar, e2d(guest.email),
-      // for now, notf prefs = Receive. Should exp & imp and change to Int. [7KABKF2]
-      "R",
+    val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.extImpId.orNullVarchar,
+      guest.createdAt.asTimestamp, guest.guestName.trim,
+      guest.guestBrowserId.orNullVarchar, e2d(guest.email),
+      _toFlag(guest.emailNotfPrefs),  // change to Int [7KABKF2]
       guest.lockedThreatLevel.map(_.toInt).orNullInt)
     runUpdateSingleRow(statement, values)
   }
@@ -892,6 +900,19 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllGuestEmailNotfPrefsByEmailAddr(): Map[String, EmailNotfPrefs] = {
+    val query = i"""
+      select email, email_notfs from guest_prefs3
+      where site_id = ?
+      """
+    runQueryBuildMap(query, List(siteId.asAnyRef), rs => {
+      val emailAddr = rs.getString("email")
+      val notfPref = _toEmailNotfs(rs.getString("email_notfs"))
+      emailAddr -> notfPref
+    })
+  }
+
+
   def loadAllUsersInclDetails(): immutable.Seq[UserInclDetails] = {
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
@@ -964,6 +985,24 @@ trait UserSiteDaoMixin extends SiteTransaction {
       getMemberInclDetails(rs)
     })
   }
+
+
+  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+        : immutable.Map[ExtImpId, ParticipantInclDetails] = {
+    UNTESTED
+    if (extImpIds.isEmpty) return Map.empty
+    val query = s"""
+      select $CompleteUserSelectListItemsWithUserId
+      from users3
+      where site_id = ? and ext_imp_id in (${makeInListFor(extImpIds)})
+      """
+    val values = siteId.asAnyRef :: extImpIds.toList
+    runQueryBuildMap(query, values, rs => {
+      val pp = getParticipantInclDetails(rs)
+      pp.extImpId.getOrDie("TyE205HKSD63") -> pp
+    })
+  }
+
 
 
   def loadUsersInclDetailsAndStats(peopleQuery: PeopleQuery)

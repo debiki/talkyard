@@ -55,20 +55,59 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def exportSiteJsonImpl(request: DebikiRequest[_]): play.api.mvc.Result = {
-    // As of 2019-03, site 121 at talkyard.net wants to try this.
-    throwForbiddenIf(globals.isProd && request.site.id != 121 &&
-      !security.hasOkForbiddenPassword(request),
-      "TyE7KRABP2", "Exporting json is still being tested out") // add rate limits
     throwForbiddenIf(!request.theRequester.isAdmin,
-      "TyE0ADM", "Only admins or the sysbot user, may export sites")
-    val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
+      "TyE0ADM", "Only admins and Sysbot may export sites")
+    if (!security.hasOkForbiddenPassword(request)) {
+      request.context.rateLimiter.rateLimit(RateLimits.ExportSite, request)
+    }
+    val json = context.globals.siteDao(request.siteId).readOnlyTransaction { tx =>
+      SiteBackupMaker.createPostgresqlJsonBackup(anyTx = Some(tx))
+    }
     Ok(json.toString()) as JSON
+  }
+
+
+  // + API endpoint for listing categories, + use cache.
+
+  def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
+          RateLimits.UpsertSimple, maxBytes = maxImportDumpBytes) { request =>
+    // Parse JSON, construct a dump "manually", and call
+    // upsertDumpJsonImpl(dump, request)
+    val simplePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+      siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
+    upsertSitePatchImpl(simplePatch, request)
+  }
+
+
+  def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
+          RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
+    val dump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+      siteId = Some(request.siteId), request.body, simpleFormat = false, isE2eTest = false)
+    upsertSitePatchImpl(dump, request)
+  }
+
+
+  private def upsertSitePatchImpl(dump: SiteBackup, request: DebikiRequest[_]) = {
+    // Avoid PostgreSQL serialization errors. [one-db-writer]
+    globals.pauseAutoBackgorundRenderer3Seconds()
+
+    // We don't want to change things like site hostname or settings, via this endpoint.
+    throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in dump")
+    throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in dump")
+
+    val upsertedThings = doImportOrUpserts {
+      SiteBackupImporterExporter(globals).upsertIntoExistingSite(
+          request.siteId, dump, request.theBrowserIdData)
+    }
+
+    Ok(upsertedThings.toJson.toString()) as JSON
   }
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
+    throwForbiddenIf(deleteOldSite is true, "TyE56AKSD2", "Deleting old sites not yet well tested enough")
     /*
     //val createdFromSiteId = Some(request.siteId)
     val response = importSiteImpl(
@@ -77,7 +116,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
-    val response = importSiteImpl(request, browserIdData, deleteOld = false, isTest = false)
+    val response = importSiteImpl(request, browserIdData, deleteOld = deleteOldSite is true,
+      isTest = false)
     response.withCookies(moreNewCookies: _*)
   }
 
@@ -107,9 +147,11 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
-    val siteData =
-      try {
-        val siteDump = SiteBackupReader(context).parseSiteJson(request.body, isE2eTest = isTest)
+    val siteData = {
+        val siteDump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+          siteId = None, request.body, simpleFormat = false, isE2eTest = isTest)
+        throwBadRequestIf(siteDump.site.isEmpty, "TyE305MHKR2", "No site meta included in dump")
+        throwBadRequestIf(siteDump.settings.isEmpty, "TyE5KW0PG", "No site settings included in dump")
         // Unless we're deleting any old site, don't import the new site's hostnames —
         // they can cause unique key errors. The site owner can instead add the right
         // hostnames via the admin interface later.
@@ -120,40 +162,22 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
           // And if the hostnames are imported the first time only, that can cause confusion?
           // Maybe better to *never* import hostnames. Or choose, via url param?
           val pubId = Site.newPublId()
-          siteDump.copy(site = siteDump.site.copy(
+          siteDump.copy(site = Some(siteDump.site.getOrDie("TyE305TBK").copy(
             pubId = pubId,
             name = "imp-" + pubId,  // for now. Maybe remove  .name  field?
-            hostnames = Nil))
+            hostnames = Nil)))
         }
-      }
-      catch {
-        case ex: JsonUtils.BadJsonException =>
-          throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
-        case ex: IllegalArgumentException =>
-          // Some case class constructor failure.
-          throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
-              invalid value combinations: ${ex.getMessage}""")
-      }
+    }
+
+    val siteMeta = siteData.site.getOrDie("TyE04HKRG53")
 
     throwForbiddenIf(
-      deleteOld && !siteData.site.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
+      deleteOld && !siteMeta.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
       "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${Hostname.E2eTestPrefix}")
 
-    // Don't allow more than one import at a time, because results in a
-    // "PSQLException: ERROR: could not serialize access due to concurrent update" error:
-
-    if (numImporingNow > 3)
-      throwServiceUnavailable("TyE2MNYIMPRT", s"Too many parallel imports: $numImporingNow")
-
-    val newSite = ImportLock synchronized {
-      numImporingNow += 1
-      try {
-        SiteBackupImporterExporter(globals).importSite(
-          siteData, browserIdData, deleteOldSite = deleteOld)
-      }
-      finally {
-        numImporingNow -= 1
-      }
+    val newSite = doImportOrUpserts {
+      SiteBackupImporterExporter(globals).importCreateSite(
+        siteData, browserIdData, deleteOldSite = deleteOld)
     }
 
     val anyHostname = newSite.canonicalHostname.map(
@@ -165,6 +189,23 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
   }
 
+
+  private def doImportOrUpserts[R](block: => R): R = {
+    // Don't allow more than one import at a time, because results in a
+    // "PSQLException: ERROR: could not serialize access due to concurrent update" error:
+    if (numImporingNow > 3) throwServiceUnavailable(
+      "TyE2MNYIMPRT", s"Too many parallel imports: $numImporingNow")
+    val result: R = ImportLock synchronized {
+      numImporingNow += 1
+      try {
+        block
+      }
+      finally {
+        numImporingNow -= 1
+      }
+    }
+    result
+  }
 
   /* Later: Need to handle file uploads / streaming, so can import e.g. images.
   def importSite(siteId: SiteId) = PostFilesAction(RateLimits.NoRateLimits, maxBytes = 9999) {

@@ -265,6 +265,9 @@ forum intro text -  (5KC2)
 categories -
   create -
     custom name, default everything:
+          - create-site-admin-guide.2browsers.test.ts  TyT62RJHLPK4
+    custom name and ext id:
+          - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
     custom name, custom everything:
   edit about topic:
   edit name, slug, topic types, position:
@@ -430,6 +433,8 @@ embedded comments:
           - embedded-comments-scroll  TyT2K4DHR49   MISSING
   import with discussion id:
           - embedded-comments-scroll  TyT2K4DHR49   MISSING
+  import from Disqus xml export file:  (impexp)
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
@@ -705,6 +710,7 @@ email notifications:  (5ABKR024)
   watching:
   not until after email verified:
           - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
   unsubscribe:
           -  (7ABKR023)
 
@@ -727,6 +733,18 @@ server side rendering -
     click category:
     click tag:
     category dropdown:
+
+api:
+  upsert categories:
+          - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
+
+import and export:  (impexp)
+  site patch:
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+  import Disqus comments:
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+
+
 
 Tests to create:
   Login with pwd here: /-/users/id/109/activity, no .categories bug

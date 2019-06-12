@@ -36,6 +36,8 @@ type AuditLogEntryId = number;
 type TagLabel = string;
 type ApiSecretNr = number;
 type WhenMs = number;
+type ExtId = string;
+type ExtImpId = ExtId; // RENAME to ExtId
 
 
 
@@ -52,6 +54,15 @@ const enum FlagType {
   Spam = 51,
   Inapt = 52,
   Other = 53,
+}
+
+
+const enum DeletedStatus {
+  SelfBit = 1,
+  SuccessorsBit = 2,
+  TreeBits = SelfBit | SuccessorsBit,
+  AncestorsBit = 4,
+  AllBits = SelfBit | SuccessorsBit | AncestorsBit,
 }
 
 
@@ -184,8 +195,9 @@ const enum TopTopicsPeriod {
   All = 6
 }
 
+type PageType = PageRole;
 
-const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
+const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to PageType
   CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,

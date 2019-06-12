@@ -219,6 +219,7 @@ trait ForumDao {
     createCategoryImpl(
       CategoryToSave(
         anyId = Some(defaultCategoryId),
+        extId = Some(EmbeddedCommentsExtId),
         sectionPageId = forumPageId,
         parentId = rootCategoryId,
         shallBeDefaultCategory = true,
@@ -516,6 +517,7 @@ object ForumDao {
   private val UncategorizedCategoryName = "General" // I18N everywhere here
   private val UncategorizedCategorySlug = "general"
 
+  val EmbeddedCommentsExtId = "embedded_comments"
   private val EmbCommentsCategoryName = "Blog Comments"
   private val EmbCommentsCategorySlug = "blog-comments"
 

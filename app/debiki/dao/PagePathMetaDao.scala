@@ -167,6 +167,14 @@ trait PagePathMetaDao {
   }
 
 
+  def getAltPageIdsForPageId(realPageId: PageId): Set[AltPageId] = {
+    COULD_OPTIMIZE // cache this?
+    readOnlyTransaction { tx =>
+      tx.listAltPageIds(realPageId)
+    }
+  }
+
+
   private def _removeCachedPathsTo(pageId: PageId) {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.

@@ -249,13 +249,42 @@ class DaoAppSuite(
   }
 
 
+  /*
+  def createCategory(sectionPageId: PageId,
+        bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
+        dao: SiteDao, anyCategoryId: Option[CategoryId] = None): (Category, Seq[PermsOnPages]) = {
+
+    val categoryData: CategoryToSave = CategoryToSave(
+      anyId = None, //Some(categoryId),
+      sectionPageId = sectionPageId,
+      parentId = (categoryJson \ "parentId").as[CategoryId],
+      name = (categoryJson \ "name").as[String],
+      slug = (categoryJson \ "slug").as[String].toLowerCase,
+      description = CategoriesDao.CategoryDescriptionSource,
+      position = (categoryJson \ "position").as[Int],
+      newTopicTypes = List(defaultTopicType),
+      shallBeDefaultCategory = shallBeDefaultCategory,
+      unlistCategory = unlistCategory,
+      unlistTopics = unlistTopics,
+      includeInSummaries = includeInSummaries)
+
+    val permissions = ArrayBuffer[PermsOnPages]()
+
+    request.dao.createCategory(
+      categoryData, permissions.to[immutable.Seq], request.who)
+  } */
+
+
   def createPage(pageRole: PageType, titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
-        dao: SiteDao, anyCategoryId: Option[CategoryId] = None): PageId = {
+        dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
+        extId: Option[ExtImpId] = None, altIds: Set[AltPageId] = Set.empty): PageId = {
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-      showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff).pageId
+      showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff,
+      altPageIds = altIds, extId = extId
+    ).pageId
   }
 
 

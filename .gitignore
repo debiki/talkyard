@@ -5,6 +5,7 @@ project/project
 project/target
 project/boot
 dist
+gitignored/
 target
 tmp
 .history

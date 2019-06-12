@@ -452,16 +452,18 @@ class JsonMaker(dao: SiteDao) {
     if (settings.userMustBeAuthenticated)
       return JsArray() */
 
-    val sectionPageIds = dao.getSectionPageIdsAsSeq()
+    val rootCats = dao.getRootCategories()
     val jsonObjs = for {
-      pageId <- sectionPageIds
+      rootCat <- rootCats
       // (We're not in a transaction, the page might be gone [transaction])
-      metaAndPath <- dao.getPagePathAndMeta(pageId)
+      metaAndPath <- dao.getPagePathAndMeta(rootCat.sectionPageId)
     } yield {
       Json.obj(
         "pageId" -> metaAndPath.pageId,
         "path" -> metaAndPath.path.value,
-        "pageRole" -> metaAndPath.pageType.toInt)
+        "pageRole" -> metaAndPath.pageType.toInt,
+        "defaultCategoryId" -> JsNumberOrNull(rootCat.defaultSubCatId),
+        "rootCategoryId" -> rootCat.id)
     }
     JsArray(jsonObjs)
   }
@@ -780,13 +782,17 @@ class JsonMaker(dao: SiteDao) {
 
   private def listRestrictedCategoriesJson(categoryId: CategoryId,
         authzCtx: ForumAuthzContext): JsArray = {
-    val (categories, defaultCategoryId) =
+    val sectCats =
       dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
+    makeCategoriesJsonNoDbAccess(sectCats)
+    /*
+    if (categories.isEmpty)
+      return Json.arr()
 
-    // A tiny bit dupl code [5YK03W5]
+    val rootCat = categories.find(_.isRoot) getOrDie "TyE05WKDHJ5"
     JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, defaultCategoryId.contains(category.id))
-    })
+      makeCategoryJson(category, rootCat.defaultSubCatId is category.id, rootCatId = rootCat.id)
+    }) */
   }
 
 
@@ -909,12 +915,17 @@ class JsonMaker(dao: SiteDao) {
 
   def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
-    // A tiny bit dupl code [5YK03W5]
+    val sectCats = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
+    makeCategoriesJsonNoDbAccess(sectCats)
+    /*
+    if (categories.isEmpty)
+      return Json.arr()
+
+    val rootCat = categories.find(_.isRoot) getOrDie "TyE7WKTH67S5"
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, defaultCategoryId.contains(category.id))
+      makeCategoryJson(category, rootCat.defaultSubCatId is category.id, rootCatId = rootCat.id)
     })
-    categoriesJson
+    categoriesJson */
   }
 
 
@@ -1100,6 +1111,8 @@ object JsonMaker {
       json += "ssoUrl" -> JsString(settings.ssoUrl)
     if (settings.ssoUrl.nonEmpty && settings.enableSso)
       json += "enableSso" -> JsTrue
+    if (settings.enableApi != D.enableApi)
+      json += "enableApi" -> JsBoolean(settings.enableApi)
     if (settings.enableForum != D.enableForum)
       json += "enableForum" -> JsBoolean(settings.enableForum)
     if (settings.enableTags != D.enableTags)
@@ -1429,10 +1442,23 @@ object JsonMaker {
   }
 
 
-  def makeCategoryJson(category: Category, isDefaultCategory: Boolean,
-        recentTopicsJson: Seq[JsObject] = null): JsObject = {
+  def makeCategoriesJsonNoDbAccess(anySectCats: Option[SectionCategories]): JsArray = {
+    val sectCats = anySectCats getOrElse {
+      return JsArray()
+    }
+
+    val categoriesJson = JsArray(sectCats.categoriesExclRoot map { category =>
+      makeCategoryJson(category, sectCats.rootCategory)
+    })
+    categoriesJson
+  }
+
+
+  def makeCategoryJson(category: Category, rootCategory: Category,
+        recentTopicsJson: Seq[JsObject] = null, includeDetails: Boolean = false): JsObject = {
     var json = Json.obj(
       "id" -> category.id,
+      "parentId" -> JsNumberOrNull(category.parentId),
       "name" -> category.name,
       "slug" -> category.slug,
       // [refactor] [5YKW294] There should be only one default type.
@@ -1448,11 +1474,14 @@ object JsonMaker {
     if (recentTopicsJson ne null) {
       json += "recentTopics" -> JsArray(recentTopicsJson)
     }
-    if (isDefaultCategory) {
-      json += "isDefaultCategory" -> JsTrue
+    if (rootCategory.defaultSubCatId is category.id) {
+      json += "isDefaultCategory" -> JsTrue  // REMOVE do client side instead? SiteSectino.defaultCategoryId
     }
     if (category.isDeleted) {
       json += "isDeleted" -> JsTrue
+    }
+    if (includeDetails && category.extImpId.isDefined) {
+      json += "extId" -> JsString(category.extImpId.get)
     }
     json
   }
