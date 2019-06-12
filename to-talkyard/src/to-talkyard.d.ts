@@ -6,6 +6,7 @@ interface PageToAdd {
   dbgSrc?: string;
   id: string;
   altIds?: string[];
+  extImpId?: string;
   folder?: string;
   showId?: boolean;
   slug?: string;
@@ -37,10 +38,23 @@ interface PageJustAdded {
 interface NewTestPost {   // RENAME to PostToAdd
   id?: number;
   // Not just page id, because needs author, creation date, etc.
-  page: any;// Page | PageJustAdded;
+  page?: any;// Page | PageJustAdded;
   authorId?: number;// UserId; // if absent, will be the page author
+
+  // If importing additional things to an already existing site,
+  // these are ignored; instead, the extImpId and parentExtImpId are used.
   nr: number;
   parentNr?: number;
+
+  // If re-importing the same things, we'll update posts by external import id,
+  // insted of creating new. Also, when importing, we don't know what the parent
+  // nr will be, so, in the import, we reference the parent via its external
+  // import id. — Exactly what the external import id is, depends on what you're
+  // importing. WordPress commets has a `wp_comment_id` field for example.
+  extImpId?: string;
+  parentExtImpId?: string;
+  extPageId?: string;
+
   postType?: number;
   approvedSource: string;
   approvedHtmlSanitized?: string;
@@ -48,15 +62,19 @@ interface NewTestPost {   // RENAME to PostToAdd
   postedAtUtcStr?: string;
   postedAtMs?: number;// WhenMs;
   isApproved?: boolean;
+  isDeleted?: boolean;
+  isSpam?: boolean;
 }
 
 
 interface GuestToAdd {
+  extImpId?: string,
   email: string;
   fullName: string;
   postedFromIp: string;
-  createdTheLatestAtUtcStr: string;
-  url: string;
+  createdTheLatestAtUtcStr?: string;   // what?
+  createdAtMs?: number;  // WhenMs
+  url?: string;
 }
 
 

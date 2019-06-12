@@ -12,6 +12,7 @@
 import minimist from 'minimist';
 import * as _ from 'lodash';
 import * as fs from 'fs';
+// ? import * as zlib from 'zlib';
 import fromWordPressToTalkyard from './from-wordpress-to-ty';
 import fromDisqusToTalkyard from './from-disqus-to-ty';
 const strict = true; // set to false for html-mode

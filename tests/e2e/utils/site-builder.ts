@@ -149,8 +149,18 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addGuest: function(guest: any) {  // should be: GuestToAdd
+    addPosts: function(posts: NewTestPost[]) {
+      posts.forEach(p => site.posts.push(make.post(p)));
+    },
+
+
+    addGuest: function(guest: GuestToAdd) {
       site.guests.push(guest);
+    },
+
+
+    addGuests: function(guests: GuestToAdd[]) {
+      guests.forEach(site.guests.push);
     },
 
 
