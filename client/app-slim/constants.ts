@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="model.ts" />
-
 // If the service worker js and the page js, are the same version, they'll
 // accept each other's messages. Otherwise:
 // 1) If the page js is newer, it registers a new up-to-date service worker [REGSW],
@@ -79,6 +77,11 @@ const MaxEmailsPerUser = 5;  // also in scala [4GKRDF0]
 // something is amiss. Can then show and error or do nothing.
 const TooHighNumber = 100e6;  // [05RKVJWG2]
 
+// Send back IgnoreThisError to the caller from an error callback, and the caller won't
+// continue with its default error handling — it'll ignore the error.
+// Send back undefined or anything else to the caller, and the error will be considered.
+type ErrorPolicy = number | void;
+
 const IgnoreThisError: ErrorPolicy = -112233;
 const ShowNoErrorDialog: ErrorPolicy = -112234;
 
@@ -92,12 +95,6 @@ const SiteStatusStrings = [
   'HiddenUnlessAdmin',
   'Deleted',
   'Purged'];
-
-function isReviewPostTask(reviewTask: ReviewTask): boolean {
-  // See above. <<0 .. <<3 are for user types. <<4 ..<<19 are for review-post stuff.
-  // And <<20 and up are for users. Later: uploads? groups? categories?
-  return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
-}
 
 
 const ApiUrlPathPrefix = '/-/';
