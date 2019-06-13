@@ -9,9 +9,6 @@ import c from '../../tests/e2e/test-constants';
 const strict = true; // set to false for html-mode
 const parser = sax.parser(strict, {});
 
-const UnknownUserId = -2; // ??
-const DefaultCategoryId = 2;
-
 let verbose: boolean | undefined;
 
 
@@ -31,27 +28,38 @@ const tySiteData: SiteData = {
 
 const builder = buildSite(tySiteData);
 
+const WordPressIdSuffix = ':wp';
+
 
 function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
-  const linkNoOrigin = !wpBlogPostAndComments.link ? undefined :
-      wpBlogPostAndComments.link.replace(/https?:\/\/[^/]+\//, '');
+  if (!wpBlogPostAndComments.link) {
+    // What's this? An unreachable blog post? Skip.
+    return;
+  }
+
+  const urlNoOrigin = wpBlogPostAndComments.link.replace(/https?:\/\/[^/]+\//, '');  // dupl [305MBKR52]
+
+  const pageUrl = wpBlogPostAndComments.link;
 
   const pageToAdd: PageToAdd = {
     dbgSrc: 'ToTy',
     id: '?',
-    altIds: [wpBlogPostAndComments.link],
+    extImpId: wpBlogPostAndComments.wp_post_id + WordPressIdSuffix,
+    altIds: [urlNoOrigin],
     folder: '/',
     showId: true,
-    slug: '',
+    slug: 'imported-from-wordpress',
     role: c.TestPageRole.Discussion,
-    title: "Comments for " + linkNoOrigin,
-    body: "Comments for " + wpBlogPostAndComments.link,
-    categoryId: DefaultCategoryId,
+    title: "Comments for " + wpBlogPostAndComments.title,
+    body: `Comments for <a href="${pageUrl}">${pageUrl}</a>`,
+    categoryId: c.DefaultDefaultCategoryId,
     authorId: c.SystemUserId,
   };
 
   const pageJustAdded: PageJustAdded = builder.addPage(pageToAdd);
-  let nextReplyNr = c.FirstReplyNr;
+
+  // To do: add dummy title and body posts.  [307K740]
+
 
   const guestsByEmailNameUrl: { [ipEmailNameUrl: string]: GuestToAdd } = {};
   const postsByWpNr: { [wpPostId: number]: NewTestPost } = {};
@@ -142,33 +150,29 @@ function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
     //  - Add post types:  Pingback and Trackback, and Webmention too.
     //  - Add remote url field = the url to the pingback/trackback remote blog post.
 
+    const isApproved = wpComment.wp_comment_approved === 1;
+    if (!isApproved)
+      return; // not yet supported
+
+    const postedAtMs = Date.parse(wpComment.wp_comment_date_gmt);
+
     const postToAdd: NewTestPost = {
-      page: pageJustAdded,
-      nr: nextReplyNr,
-      parentNr: wpComment.wp_comment_parent,
+      // Not in use when importing things:
+      page: undefined,
+      nr: undefined,
+      parentNr: undefined,
+      // Instead, these three:
+      extImpId: wpComment.wp_comment_id + WordPressIdSuffix,
+      extPageImpId: pageToAdd.extImpId,
+      extParentImpId: wpComment.wp_comment_parent + WordPressIdSuffix,
       authorId: c.SystemUserId,
       approvedSource: wpComment.wp_comment_content,
       postedFromIp: wpComment.wp_comment_author_ip,
-      postedAtUtcStr: wpComment.wp_comment_date_gmt,
-      isApproved: wpComment.wp_comment_approved === 1,
+      postedAtMs,
+      approvedAtMs: postedAtMs,
     };
 
-    nextReplyNr += 1;
     postsByWpNr[wpComment.wp_comment_id] = postToAdd;
-  });
-
-  // Update parent nr.
-  _.each(wpBlogPostAndComments.comments, (wpComment: WpComment) => {
-    const thisPost = postsByWpNr[wpComment.wp_comment_id];
-    const anyParent = postsByWpNr[wpComment.wp_comment_parent];
-    if (anyParent) {
-      // Connect them, using Talkyard's post nrs.
-      thisPost.parentNr = anyParent.nr;
-    }
-    else {
-      // Then, top level comment.
-      thisPost.parentNr = c.BodyNr;
-    }
   });
 
   _.each(guestsByEmailNameUrl, builder.addGuest);

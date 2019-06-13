@@ -37,13 +37,16 @@ interface PageJustAdded {
 
 interface NewTestPost {   // RENAME to PostToAdd
   id?: number;
+
   // Not just page id, because needs author, creation date, etc.
+  // Ignored if importing external things — then, extPageImpId used instead.
   page?: any;// Page | PageJustAdded;
+
   authorId?: number;// UserId; // if absent, will be the page author
 
   // If importing additional things to an already existing site,
   // these are ignored; instead, the extImpId and parentExtImpId are used.
-  nr: number;
+  nr?: number;
   parentNr?: number;
 
   // If re-importing the same things, we'll update posts by external import id,
@@ -52,8 +55,8 @@ interface NewTestPost {   // RENAME to PostToAdd
   // import id. — Exactly what the external import id is, depends on what you're
   // importing. WordPress commets has a `wp_comment_id` field for example.
   extImpId?: string;
-  parentExtImpId?: string;
-  extPageId?: string;
+  extPageImpId?: string;
+  extParentImpId?: string;
 
   postType?: number;
   approvedSource: string;
@@ -61,9 +64,7 @@ interface NewTestPost {   // RENAME to PostToAdd
   postedFromIp?: string;
   postedAtUtcStr?: string;
   postedAtMs?: number;// WhenMs;
-  isApproved?: boolean;
-  isDeleted?: boolean;
-  isSpam?: boolean;
+  approvedAtMs?: number; // WhenMs;
 }
 
 

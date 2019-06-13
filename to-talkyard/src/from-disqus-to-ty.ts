@@ -9,8 +9,6 @@
 import * as _ from 'lodash';
 import * as sax from 'sax';
 import { dieIf, logMessage } from '../../tests/e2e/utils/log-and-die';
-
-import { buildSite } from '../../tests/e2e/utils/site-builder';
 import c from '../../tests/e2e/test-constants';
 const strict = true; // set to false for html-mode
 const parser = sax.parser(strict, {});
@@ -20,6 +18,8 @@ let verbose: boolean | undefined;
 let errors = false;
 
 
+interface DisqusCategory {
+}
 
 
 interface DisqusThread {
@@ -60,7 +60,7 @@ let depth = 0;
 let numCategories = 0;
 let curTagName: string;
 
-let curCategory: any;
+let curCategory: DisqusCategory;
 let curThread: DisqusThread;
 let curPost: DisqusPost;
 
@@ -75,7 +75,7 @@ parser.onopentag = function (tag: SaxTag) {
   depth += 1;
   curTagName = tag.name;
   const anyDisqusId = tag.attributes['dsq:id'];
-  let openedThing;
+  let openedThing: DisqusCategory | DisqusThread | DisqusPost;
 
   switch (tag.name) {
     case 'disqus':
@@ -90,7 +90,7 @@ parser.onopentag = function (tag: SaxTag) {
       break;
     case 'thread':
       if (curPost) {
-        dieIf(depth !== 2 + 1, 'TyE305MBRDK5');
+        dieIf(depth !== 2 + 1, 'ToTyE305MBRDK5');
         curPost.disqusThreadId = anyDisqusId;
       }
       else {
@@ -102,6 +102,7 @@ parser.onopentag = function (tag: SaxTag) {
       }
       break;
     case 'post':
+      dieIf(!!curThread, 'ToTyE502MBKRG6');
       openedThing = curPost = {
         disqusPostId: anyDisqusId,
         author: {},
@@ -109,7 +110,7 @@ parser.onopentag = function (tag: SaxTag) {
       break;
     case 'parent':
       dieIf(!curPost, 'ToTyE205MBRKDG');
-      dieIf(depth !== 2 + 1, 'TyE7MTK05RK');
+      dieIf(depth !== 2 + 1, 'ToTyE7MTK05RK');
       curPost.disqusParentPostId = anyDisqusId;
       break;
   }
@@ -192,7 +193,16 @@ parser.onclosetag = function (tagName: string) {
       curCategory = undefined;
       break;
     case 'thread':
-      if (curPost) return;
+      if (curPost) {
+        // This tag tells to which already-creted-thread a post belongs
+        // — we shouldn't try to create a new thread here.
+        // Example:
+        //   <post dsq:id="...">
+        //     ...
+        //     <thread dsq:id="..." />
+        //   </post>
+        return;
+      }
       dieIf(!curThread, 'ToTyE305MBRS');
       dieIf(!curThread.disqusThreadId, 'ToTyE5BM205');
       threadsByDisqusId[curThread.disqusThreadId] = curThread;
@@ -200,6 +210,7 @@ parser.onclosetag = function (tagName: string) {
       curThread = undefined;
       break;
     case 'post':
+      dieIf(!!curThread, 'ToTyE5RD0266');
       dieIf(!curPost, 'ToTyE607MASK53');
       const threadId = curPost.disqusThreadId;
       dieIf(!threadId, 'ToTyE2AMJ037R');
@@ -207,6 +218,7 @@ parser.onclosetag = function (tagName: string) {
       dieIf(!thread,
           `Thread ${threadId} for post ${curPost.disqusPostId} missing [ToTyE0MJHF56]`);
       thread.posts.push(curPost);
+      postsByDisqusId[curPost.disqusPostId] = curPost;
       closedThing = curPost;
       curPost = undefined;
       break;
@@ -228,12 +240,16 @@ parser.onend = function () {
 };
 
 
-function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): SiteData {
-  const tySiteData: SiteData = {
-    guests: [],
-    pages: [],
-    pagePaths: [],
+function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): any {
+  const tySiteData: any = {
+    groups: [],
+    members: [],
+    guests: <TestGuest[]> [],
+    pages: <Page[]> [],
+    pagePaths: <PagePathWithId[]> [],
     posts: [],
+    categories: [],
+    permsOnPages: [],
   };
 
   // Even if the Disqus user has a real username account, we'll insert
@@ -242,63 +258,68 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): S
   // with the same email is indeed the same person or not.
   const guestsByKey: { [guestKey: string]: GuestToAdd } = {};
 
-  const builder = buildSite(tySiteData);
-
   Object.keys(threadsByDisqusId).forEach(threadDisqusId => {
 
     // ----- Page
 
     const thread: DisqusThread = threadsByDisqusId[threadDisqusId];
     const pageCreatedAtMs = Date.parse(thread.createdAtIsoString);
-    const tyPage: PageToAdd = {
+    const urlNoOrigin = thread.link.replace(/https?:\/\/[^/]+\//, '');  // dupl [305MBKR52]
+    const tyPage: any = { //Page = {
       dbgSrc: 'ToTy',
-      id: '?',
-      altIds: [thread.link],
+      pageId: '?',
+      pageVersion: 1,
+      pageMemberIds: [],
+      pageRole: c.TestPageRole.EmbeddedComments,
+      altIds: [urlNoOrigin],
       extImpId: threadDisqusId + DisqusIdSuffix,
       folder: '/',
       showId: true,
       slug: 'imported-from-disqus',
       role: c.TestPageRole.Discussion,
       title: "Comments for " + thread.title,
-      body: "Comments for " + thread.link,
+      body: `Comments for <a href="${thread.link}">${thread.link}</a>`,
       categoryId: c.DefaultDefaultCategoryId,
       authorId: c.SystemUserId,
     };
 
-    // ----- Title and body
+    // ----- Title and body  [307K740]
 
-    // Disqus doesn't include any title or body post in the xml dump, so here we
-    // generate our own title and body post:
+    // Disqus doesn't have any title or body post, so we generate our own
+    // title and body post.
 
     const tyTitle: NewTestPost = {
-      extPageId: tyPage.extImpId,
+      extPageImpId: tyPage.extImpId,
       nr: c.TitleNr,
       extImpId: threadDisqusId + ':title' + DisqusIdSuffix,
       authorId: c.SystemUserId,
       approvedSource: tyPage.title,
       postedFromIp: '127.0.0.1',
       postedAtMs: pageCreatedAtMs,
-      isApproved: true,
     };
 
     const tyBody: NewTestPost = {
-      extPageId: tyPage.extImpId,
+      extPageImpId: tyPage.extImpId,
       nr: c.BodyNr,
       extImpId: threadDisqusId + ':body' + DisqusIdSuffix,
       authorId: c.SystemUserId,
       approvedSource: tyPage.title,
       postedFromIp: '127.0.0.1',
       postedAtMs: pageCreatedAtMs,
-      isApproved: true,
     };
 
     // ----- Comments and authors
 
-    const tyComments: NewTestPost[] = thread.posts.map((post: DisqusPost) => {
+    const tyComments: NewTestPost[] = [];
+
+    thread.posts.forEach((post: DisqusPost) => {
+      if (post.isDeleted || post.isSpam)
+        return;
+
       const disqParentId = post.disqusParentPostId;
       const parentPost = postsByDisqusId[post.disqusParentPostId];
       const postCreatedAtMs = Date.parse(post.createdAtIsoString);
-  
+
       if (post.disqusParentPostId) {
         dieIf(!parentPost,
           `Cannot find parent post w Diqus id '${disqParentId}' in all posts ToTyE2KS70W`);
@@ -311,7 +332,8 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): S
       // Same email, name and URL means it's most likely the same person.
       const authorKey = author.username ||
           `${author.email || ''}|${author.name || ''}|${author.isAnonymous || ''}`;
-      const duplGuest = guestsByKey[authorKey];
+      const anyDuplGuest = guestsByKey[authorKey];
+      const anyDuplGuestCreatedAt = anyDuplGuest ? anyDuplGuest.createdAtMs : undefined;
 
       const guest: GuestToAdd = {
         extImpId: authorKey + DisqusIdSuffix,
@@ -319,36 +341,40 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): S
         email: author.email,
         postedFromIp: post.ipAddr,
         // Use the earliest known post date, as the user's created-at date.
-        createdAtMs: Math.min(duplGuest.createdAtMs || Infinity, postCreatedAtMs)
+        createdAtMs: Math.min(anyDuplGuestCreatedAt || Infinity, postCreatedAtMs)
       };
 
       guestsByKey[authorKey] = guest;
 
       const tyPost: NewTestPost = {
-        extPageId: post.disqusThreadId + DisqusIdSuffix,
-        nr: c.FirstReplyNr, // ignored
-        parentNr: undefined, // ignored
+        // These are choosen by the server, when importing:
+        nr: undefined,
+        parentNr: undefined,
+        page: undefined,
+        // Instead, these three:
         extImpId: post.disqusPostId + DisqusIdSuffix,
-        parentExtImpId: post.disqusParentPostId + DisqusIdSuffix,
+        extPageImpId: post.disqusThreadId + DisqusIdSuffix,
+        extParentImpId: post.disqusParentPostId + DisqusIdSuffix,
         authorId: c.SystemUserId,  // for now
-        approvedSource: '', // ??wpComment.wp_comment_content,
+        approvedSource: post.message,
         postedFromIp: post.ipAddr,
         postedAtMs: postCreatedAtMs,
-        isApproved: !post.isSpam,
-        isDeleted: post.isDeleted,
-        isSpam: !post.isSpam,
+        approvedAtMs: postCreatedAtMs,
       };
 
-      return tyPost;
+      tyComments.push(tyPost);
     });
 
     // ----- Add to site
 
-    builder.addPage(tyPage);
-    builder.addPosts(tyComments);
+    tySiteData.pages.push(tyPage);
+    //builder.getSite().posts.push(tyTitle);
+    //builder.getSite().posts.push(tyBody);
+    tyComments.forEach(tySiteData.posts.push);
   });
 
-  builder.addGuests(_.values(guestsByKey));
+  _.values(guestsByKey).forEach(tySiteData.guests.push);
+  return tySiteData;
 }
 
 
