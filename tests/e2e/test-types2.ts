@@ -341,14 +341,6 @@ interface TestPost {  // later: try to unify with Post?
 }
 
 
-interface NewCategoryStuff {
-  category: Category;
-  aboutPage: Page;
-  aboutPageTitlePost: Post;
-  aboutPageBody: Post;
-}
-
-
 interface IdAddress {
   id: SiteId;
   origin?: string; // e.g. kittens-forum.example.com

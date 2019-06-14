@@ -73,6 +73,7 @@ const TestPageNotfLevel = {
 
 
 export = {
+  LowestExtImpId: 2000000001,
   TestPageRole,
   TestPageNotfLevel,
   TestPostType,
@@ -82,6 +83,7 @@ export = {
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
+  NoUserId: 0,
   SystemUserId: 1,
   SysbotUserId: 2,
   EveryoneFullName: 'Everyone',

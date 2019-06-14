@@ -743,6 +743,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   */
 case class Guest(   // [exp] ok
   id: UserId,
+  extImpId: Option[String],
   createdAt: When,
   guestName: String,
   guestBrowserId: Option[String],

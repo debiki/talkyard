@@ -176,6 +176,7 @@ object PageMeta {
   */
 case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
+  extImpId: Option[ExtImpId] = None,
   pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,

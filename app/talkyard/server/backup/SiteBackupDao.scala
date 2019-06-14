@@ -24,10 +24,15 @@ import debiki.SpecialContentPages
 import debiki.dao.{PagePartsDao, SiteDao}
 
 
-case class SiteBackupImporterExporter(globals: debiki.Globals) {
+case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
 
 
-  def importSite(siteData: SiteBackup, browserIdData: BrowserIdData, deleteOldSite: Boolean)
+  def importToExistingSite(siteData: SiteBackup, browserIdData: BrowserIdData) {
+
+  }
+
+
+  def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData, deleteOldSite: Boolean)
         : Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)

@@ -81,6 +81,8 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type ExtImpId = String
+
   type Tag = String
   type TagLabelId = Int
   type TagLabel = String

@@ -241,12 +241,16 @@ parser.onend = function () {
 
 
 function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): any {
+  let nextPageId  =  c.LowestExtImpId;
+  let nextPostId  =  c.LowestExtImpId;
+  let nextGuestId = -c.LowestExtImpId;
+
   const tySiteData: any = {
     groups: [],
     members: [],
-    guests: <TestGuest[]> [],
-    pages: <Page[]> [],
-    pagePaths: <PagePathWithId[]> [],
+    guests: [],
+    pages: [],
+    pagePaths: [],
     posts: [],
     categories: [],
     permsOnPages: [],
@@ -256,61 +260,88 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
   // it into Talkyard as a guest. Too complicated to find out if
   // hens email has been verified and if someone who logs in to Talkyard
   // with the same email is indeed the same person or not.
-  const guestsByKey: { [guestKey: string]: GuestToAdd } = {};
+  const guestsByImpId: { [guestImpId: string]: GuestDumpV0 } = {};
 
   Object.keys(threadsByDisqusId).forEach(threadDisqusId => {
 
+
     // ----- Page
 
+    const pageId: PageId = '' + nextPageId;
+    nextPageId += 1;
+
     const thread: DisqusThread = threadsByDisqusId[threadDisqusId];
-    const pageCreatedAtMs = Date.parse(thread.createdAtIsoString);
+    const pageCreatedAt: WhenMs = Date.parse(thread.createdAtIsoString);
     const urlNoOrigin = thread.link.replace(/https?:\/\/[^/]+\//, '');  // dupl [305MBKR52]
-    const tyPage: any = { //Page = {
+
+    const tyPage: PageDumpV0 = {
       dbgSrc: 'ToTy',
-      pageId: '?',
-      pageVersion: 1,
-      pageMemberIds: [],
-      pageRole: c.TestPageRole.EmbeddedComments,
-      altIds: [urlNoOrigin],
+      id: pageId,
       extImpId: threadDisqusId + DisqusIdSuffix,
-      folder: '/',
-      showId: true,
-      slug: 'imported-from-disqus',
-      role: c.TestPageRole.Discussion,
-      title: "Comments for " + thread.title,
-      body: `Comments for <a href="${thread.link}">${thread.link}</a>`,
+      altIds: [urlNoOrigin],
+      pagePathValues: [`/-${pageId}/imported-from-disqus`],
+      pageType: c.TestPageRole.EmbeddedComments,
+      version: 1,
+      createdAt: pageCreatedAt,
+      updatedAt: pageCreatedAt,
+      publishedAt: pageCreatedAt,
       categoryId: c.DefaultDefaultCategoryId,
+      embeddingPageUrl: thread.link,
       authorId: c.SystemUserId,
     };
+
+    const tyPagePath: PagePathDumpV0 =
+        { folder: '/', pageId: tyPage.id, showId: true, slug: 'imported-from-disqus' };
+
 
     // ----- Title and body  [307K740]
 
     // Disqus doesn't have any title or body post, so we generate our own
     // title and body post.
 
-    const tyTitle: NewTestPost = {
-      extPageImpId: tyPage.extImpId,
-      nr: c.TitleNr,
+    const tyTitle: PostDumpV0 = {
+      id: nextPostId,
       extImpId: threadDisqusId + ':title' + DisqusIdSuffix,
-      authorId: c.SystemUserId,
-      approvedSource: tyPage.title,
-      postedFromIp: '127.0.0.1',
-      postedAtMs: pageCreatedAtMs,
+      pageId: tyPage.id,
+      nr: c.TitleNr,
+      postType: PostType.Normal,
+      createdAt: pageCreatedAt,
+      createdById: c.SystemUserId,
+      currRevById: c.SystemUserId,
+      currRevStartedAt: pageCreatedAt,
+      currRevNr: 1,
+      approvedSource: "Comments for " + thread.title,
+      approvedAt: pageCreatedAt,
+      approvedById: c.SysbotUserId,
+      approvedRevNr: 1,
     };
 
-    const tyBody: NewTestPost = {
-      extPageImpId: tyPage.extImpId,
-      nr: c.BodyNr,
+    nextPostId += 1;
+
+    const tyBody: PostDumpV0 = {
+      id: nextPostId,
       extImpId: threadDisqusId + ':body' + DisqusIdSuffix,
-      authorId: c.SystemUserId,
-      approvedSource: tyPage.title,
-      postedFromIp: '127.0.0.1',
-      postedAtMs: pageCreatedAtMs,
+      pageId: tyPage.id,
+      nr: c.BodyNr,
+      postType: PostType.Normal,
+      createdAt: pageCreatedAt,
+      createdById: c.SystemUserId,
+      currRevById: c.SystemUserId,
+      currRevStartedAt: pageCreatedAt,
+      currRevNr: 1,
+      approvedSource: `Comments for <a href="${thread.link}">${thread.link}</a>`,
+      approvedAt: pageCreatedAt,
+      approvedById: c.SysbotUserId,
+      approvedRevNr: 1,
     };
+
+    nextPostId += 1;
+
 
     // ----- Comments and authors
 
-    const tyComments: NewTestPost[] = [];
+    let nextPostNr = c.LowestExtImpId;
+    const tyComments: PostDumpV0[] = [];
 
     thread.posts.forEach((post: DisqusPost) => {
       if (post.isDeleted || post.isSpam)
@@ -318,7 +349,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
       const disqParentId = post.disqusParentPostId;
       const parentPost = postsByDisqusId[post.disqusParentPostId];
-      const postCreatedAtMs = Date.parse(post.createdAtIsoString);
+      const postCreatedAt = Date.parse(post.createdAtIsoString);
 
       if (post.disqusParentPostId) {
         dieIf(!parentPost,
@@ -328,52 +359,80 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
           `Cannot find parent post w Diqus id '${disqParentId}' in thread ToTyE50MRXV2`);
       }
 
-      const author = post.author;
+      const disqusAuthor = post.author;
       // Same email, name and URL means it's most likely the same person.
-      const authorKey = author.username ||
-          `${author.email || ''}|${author.name || ''}|${author.isAnonymous || ''}`;
-      const anyDuplGuest = guestsByKey[authorKey];
-      const anyDuplGuestCreatedAt = anyDuplGuest ? anyDuplGuest.createdAtMs : undefined;
+      const guestExtImpId = (
+          disqusAuthor.username ||
+          `${disqusAuthor.email || ''}|${disqusAuthor.name || ''}|${disqusAuthor.isAnonymous || ''}`)
+              + DisqusIdSuffix;
+      const anyDuplGuest = guestsByImpId[guestExtImpId];
+      const anyDuplGuestCreatedAt = anyDuplGuest ? anyDuplGuest.createdAt : undefined;
 
-      const guest: GuestToAdd = {
-        extImpId: authorKey + DisqusIdSuffix,
-        fullName: author.name,
-        email: author.email,
-        postedFromIp: post.ipAddr,
+      const guest: GuestDumpV0 = {
+        id: nextGuestId,
+        extImpId: guestExtImpId,
         // Use the earliest known post date, as the user's created-at date.
-        createdAtMs: Math.min(anyDuplGuestCreatedAt || Infinity, postCreatedAtMs)
+        createdAt: Math.min(anyDuplGuestCreatedAt || Infinity, postCreatedAt),
+        fullName: disqusAuthor.name,
+        emailAddress: disqusAuthor.email,
+        //postedFromIp: post.ipAddr
       };
 
-      guestsByKey[authorKey] = guest;
+      nextGuestId -= 1;
 
-      const tyPost: NewTestPost = {
-        // These are choosen by the server, when importing:
-        nr: undefined,
-        parentNr: undefined,
-        page: undefined,
-        // Instead, these three:
+      guestsByImpId[guestExtImpId] = guest;
+
+      const tyPost: PostDumpV0 = {
+        id: nextPostId,
         extImpId: post.disqusPostId + DisqusIdSuffix,
-        extPageImpId: post.disqusThreadId + DisqusIdSuffix,
-        extParentImpId: post.disqusParentPostId + DisqusIdSuffix,
-        authorId: c.SystemUserId,  // for now
+        pageId: tyPage.id,
+        nr: nextPostNr,
+        parentNr: undefined, // updated below
+        postType: PostType.Normal,
+        createdAt: postCreatedAt,
+        createdById: guest.id,
+        currRevById: guest.id,
+        currRevStartedAt: postCreatedAt,
+        currRevNr: 1,
         approvedSource: post.message,
-        postedFromIp: post.ipAddr,
-        postedAtMs: postCreatedAtMs,
-        approvedAtMs: postCreatedAtMs,
+        approvedAt: postCreatedAt,
+        approvedById: c.SystemUserId,
+        approvedRevNr: 1,
       };
+
+      nextPostId += 1;
 
       tyComments.push(tyPost);
     });
 
+
+    // ----- Fill in parent post nrs
+
+    tyComments.forEach(comment => {
+      const disqusId: string = comment.extImpId.slice(0, -DisqusIdSuffix.length);
+      const disqusPost: DisqusPost = postsByDisqusId[disqusId];
+      dieIf(!disqusPost, 'ToTyE305DMRTK6');
+      const disqusParent = postsByDisqusId[disqusPost.disqusParentPostId];
+      dieIf(!disqusParent,
+          `Parent Disqus comment not found, Disqus id: '${disqusPost.disqusParentPostId}' ` +
+            `[ToTyE7DMDKRT0]`);
+      const disqusParentExtImpId = disqusParent + DisqusIdSuffix;
+      const parent = tyComments.find(p => p.extImpId === disqusParentExtImpId);
+      dieIf(!parent, 'ToTyE7MDKF03');
+      comment.parentNr = parent.nr;
+    });
+
+
     // ----- Add to site
 
     tySiteData.pages.push(tyPage);
-    //builder.getSite().posts.push(tyTitle);
-    //builder.getSite().posts.push(tyBody);
-    tyComments.forEach(tySiteData.posts.push);
+    tySiteData.pagePaths.push(tyPagePath);
+    tySiteData.posts.push(tyTitle);
+    tySiteData.posts.push(tyBody);
+    tyComments.forEach(c => tySiteData.posts.push(c));
   });
 
-  _.values(guestsByKey).forEach(tySiteData.guests.push);
+  _.values(guestsByImpId).forEach(g => tySiteData.guests.push(g));
   return tySiteData;
 }
 

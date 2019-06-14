@@ -148,7 +148,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     val newSite = ImportLock synchronized {
       numImporingNow += 1
       try {
-        SiteBackupImporterExporter(globals).importSite(
+        SiteBackupImporterExporter(globals).importCreateSite(
           siteData, browserIdData, deleteOldSite = deleteOld)
       }
       finally {

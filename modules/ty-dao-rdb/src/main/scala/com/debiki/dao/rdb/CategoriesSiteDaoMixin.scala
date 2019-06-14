@@ -299,14 +299,15 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   override def insertCategoryMarkSectionPageStale(category: Category) {
     val statement = """
       insert into categories3 (
-        site_id, id, page_id, parent_id, default_category_id,
+        site_id, id, ext_imp_id, page_id, parent_id, default_category_id,
         name, slug, position,
         description, new_topic_types, unlist_category, unlist_topics, incl_in_summaries,
         created_at, updated_at, deleted_at)
       values (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
     val values = List[AnyRef](
-      siteId.asAnyRef, category.id.asAnyRef, category.sectionPageId, category.parentId.orNullInt,
+      siteId.asAnyRef, category.id.asAnyRef, category.extImpId.orNullVarchar,
+      category.sectionPageId, category.parentId.orNullInt,
       category.defaultSubCatId.orNullInt,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
@@ -359,6 +360,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
   private def getCategory(rs: js.ResultSet): Category = {
     Category(
       id = rs.getInt("id"),
+      extImpId = getOptString(rs, "ext_imp_id"),
       sectionPageId = rs.getString("page_id"),
       parentId = getOptionalInt(rs, "parent_id"),
       defaultSubCatId = getOptionalInt(rs, "default_category_id"),

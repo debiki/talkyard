@@ -3,8 +3,6 @@
 
 import * as _ from 'lodash';
 import * as sax from 'sax';
-
-import { buildSite } from '../../tests/e2e/utils/site-builder';
 import c from '../../tests/e2e/test-constants';
 const strict = true; // set to false for html-mode
 const parser = sax.parser(strict, {});
@@ -26,7 +24,7 @@ const tySiteData: SiteData = {
 };
 
 
-const builder = buildSite(tySiteData);
+const builder: any = {}; // = buildSite(tySiteData);
 
 const WordPressIdSuffix = ':wp';
 
@@ -56,17 +54,18 @@ function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
     authorId: c.SystemUserId,
   };
 
+  throw 'Unimpl [ToTyE305MRDT395]';
   const pageJustAdded: PageJustAdded = builder.addPage(pageToAdd);
 
   // To do: add dummy title and body posts.  [307K740]
 
 
-  const guestsByEmailNameUrl: { [ipEmailNameUrl: string]: GuestToAdd } = {};
+  const guestsByEmailNameUrl: { [ipEmailNameUrl: string]: GuestDumpV0 } = {};
   const postsByWpNr: { [wpPostId: number]: NewTestPost } = {};
 
   // Create posts and guests.
   _.each(wpBlogPostAndComments.comments, (wpComment: WpComment) => {
-    const guest: GuestToAdd = {
+    const guest: any = { //GuestDumpV0 = {
       fullName: wpComment.wp_comment_author,
       email: wpComment.wp_comment_author_email,
       postedFromIp: wpComment.wp_comment_author_ip,

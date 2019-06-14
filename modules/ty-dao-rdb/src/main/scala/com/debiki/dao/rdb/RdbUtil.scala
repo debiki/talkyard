@@ -161,6 +161,7 @@ object RdbUtil {
 
   val GroupSelectListItems = o"""
       user_id,
+      ext_imp_id,
       created_at,
       full_name,
       username,
@@ -178,6 +179,7 @@ object RdbUtil {
 
   val UserSelectListItemsNoGuests: String =
     s"""u.USER_ID u_id,
+      |u.ext_imp_id u_ext_imp_id,
       |u.is_group u_is_group,
       |u.created_at u_created_at,
       |u.full_name u_full_name,
@@ -223,6 +225,7 @@ object RdbUtil {
 
   def getParticipant(rs: js.ResultSet): Participant = {
     val userId = rs.getInt("u_id")
+    val extImpId = getOptString(rs, "u_ext_imp_id")
     val isGroup = rs.getBoolean("u_is_group")
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
@@ -243,6 +246,7 @@ object RdbUtil {
     if (isGuestId(userId))
       Guest(
         id = userId,
+        extImpId = extImpId,
         createdAt = createdAt,
         guestName = dn2e(name.orNull),
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
@@ -593,6 +597,7 @@ object RdbUtil {
 
 
   val _PageMetaSelectListItems = i"""
+      |g.ext_imp_id
       |g.version,
       |g.CREATED_AT,
       |g.UPDATED_AT,
@@ -659,6 +664,7 @@ object RdbUtil {
 
     PageMeta(
       pageId = if (pageId ne null) pageId else resultSet.getString("PAGE_ID"),
+      extImpId = getOptString(resultSet, "ext_imp_id"),
       pageType = PageType.fromInt(resultSet.getInt("PAGE_ROLE")) getOrElse PageType.Discussion,
       version = resultSet.getInt("version"),
       categoryId = getOptionalIntNoneNot0(resultSet, "category_id"),

@@ -65,13 +65,13 @@ case class SiteBackupReader(context: EdContext) {
           readJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
           readJsArray(bodyJson, "guests", optional = true),
-          readJsArray(bodyJson, "groups"),
-          readJsArray(bodyJson, "members"),
-          readJsArray(bodyJson, "permsOnPages"),
-          readJsArray(bodyJson, "pages"),
-          readJsArray(bodyJson, "pagePaths"),
-          readJsArray(bodyJson, "categories"),
-          readJsArray(bodyJson, "posts"))
+          readJsArray(bodyJson, "groups", optional = true),
+          readJsArray(bodyJson, "members", optional = true),
+          readJsArray(bodyJson, "permsOnPages", optional = true),
+          readJsArray(bodyJson, "pages", optional = true),
+          readJsArray(bodyJson, "pagePaths", optional = true),
+          readJsArray(bodyJson, "categories", optional = true),
+          readJsArray(bodyJson, "posts", optional = true))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -213,8 +213,9 @@ case class SiteBackupReader(context: EdContext) {
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(Guest(
         id = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
-        guestName = readOptString(jsObj, "fullName").getOrElse(""),
+        guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
         email = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater] [7KABKF2]
@@ -325,6 +326,7 @@ case class SiteBackupReader(context: EdContext) {
     try {
       Good(PageMeta(
         pageId = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         pageType = PageType.fromInt(readInt(jsObj, "pageType", "role")).getOrThrowBadJson("pageType"),
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
@@ -416,7 +418,8 @@ case class SiteBackupReader(context: EdContext) {
       }
       Good(Category(
         id = id,
-        sectionPageId = readString(jsObj, "sectionPageId"),
+        extImpId = readOptString(jsObj, "extImpId"),
+        sectionPageId = readString(jsObj, "sectionPageId"), // opt, use the one and only section
         parentId = readOptInt(jsObj, "parentId"),
         defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME to ...SubCat...
         name = readString(jsObj, "name"),
@@ -470,7 +473,8 @@ case class SiteBackupReader(context: EdContext) {
 
     try {
       Good(Post(
-        id = readInt(jsObj, "id"),
+        id = id,
+        extImpId = readOptString(jsObj, "extImpId"),
         pageId = readString(jsObj, "pageId"),
         nr = readInt(jsObj, "nr"),
         parentNr = readOptInt(jsObj, "parentNr"),
@@ -486,7 +490,7 @@ case class SiteBackupReader(context: EdContext) {
         previousRevisionNr = readOptInt(jsObj, "prevRevNr"),
         lastApprovedEditAt = readOptDateMs(jsObj, "lastApprovedEditAtMs"),
         lastApprovedEditById = readOptInt(jsObj, "lastApprovedEditById"),
-        numDistinctEditors = readInt(jsObj, "numDistinctEditors"),
+        numDistinctEditors = readInt(jsObj, "numDistinctEditors", default = Some(1)),
         safeRevisionNr = readOptInt(jsObj, "safeRevNr"),
         approvedSource = readOptString(jsObj, "approvedSource"),
         approvedHtmlSanitized = readOptString(jsObj, "approvedHtmlSanitized"),

@@ -312,6 +312,7 @@ case class Draft(
   */
 case class Post(   // [exp] ok use
   id: PostId,
+  extImpId: Option[ExtImpId] = None,
   pageId: PageId,
   nr: PostNr,
   parentNr: Option[PostNr],
