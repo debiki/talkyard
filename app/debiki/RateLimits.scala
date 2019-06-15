@@ -213,6 +213,36 @@ object RateLimits {
   }
 
 
+  object ExportSite extends RateLimits {
+    val key = "ExSt"
+    val what = "Exported the site too many times"
+    def maxPerFifteenSeconds = 1
+    def maxPerFifteenMinutes = 5
+    def maxPerDay = 8
+    def maxPerDayNewUser = 10
+  }
+
+
+  object UpsertSimple extends RateLimits {
+    val key = "UpSm"
+    val what = "Upserted things too many times"
+    def maxPerFifteenSeconds = 2
+    def maxPerFifteenMinutes = 10
+    def maxPerDay = 20
+    def maxPerDayNewUser = 10
+  }
+
+
+  object UpsertDump extends RateLimits {
+    val key = "UpDp"
+    val what = "Upserted dumps too many times"
+    def maxPerFifteenSeconds = 1
+    def maxPerFifteenMinutes = 5
+    def maxPerDay = 8
+    def maxPerDayNewUser = 10
+  }
+
+
   /** This is per IP, always, so set fairly high limits. Or ... no, computing scrypt takes long. */
   object Login extends RateLimits {
     val key = "Lgi"

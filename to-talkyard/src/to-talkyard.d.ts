@@ -5,7 +5,7 @@ type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
 
 interface CategoryDumpV0 {
   id: CategoryId;
-  extImpId: any;
+  extImpId?: ExtImpId;
   sectionPageId?: PageId;
   parentId?: CategoryId;
   defaultSubCatId?: CategoryId;
@@ -16,7 +16,7 @@ interface CategoryDumpV0 {
   defaultTopicType?: PageRole;  // ?
   unlistCategory?: boolean;
   unlistTopics?: boolean;
-  includeInSummaries?: any;
+  includeInSummaries?: IncludeInSummaries;
   createdAtMs: WhenMs;
   updatedAtMs?: WhenMs;  // default to createdAt? or remove from db?
   lockedAtMs?: WhenMs;
@@ -29,7 +29,7 @@ interface PageToAdd {
   dbgSrc?: string;
   id: string;
   altIds?: string[];
-  extImpId?: string;
+  extImpId?: ExtImpId;
   folder?: string;
   showId?: boolean;
   slug?: string;
@@ -135,7 +135,7 @@ interface NewTestPost {   // RENAME to PostToAdd  and move to  /tests/e2e/..some
   // nr will be, so, in the import, we reference the parent via its external
   // import id. — Exactly what the external import id is, depends on what you're
   // importing. WordPress commets has a `wp_comment_id` field for example.
-  extImpId?: string;
+  extImpId?: ExtImpId;
   extPageImpId?: string;
   extParentImpId?: string;
 

@@ -51,6 +51,21 @@ case class SiteBackupReader(context: EdContext) {
   val MaxBytes = 1001000
 
 
+  def parseDumpJsonMaybeThrowBadRequest(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
+    try {
+      SiteBackupReader(context).parseSiteJson(bodyJson, isE2eTest = isE2eTest)
+    }
+    catch {
+      case ex: JsonUtils.BadJsonException =>
+        throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
+      case ex: IllegalArgumentException =>
+        // Some case class constructor failure.
+        throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
+              invalid value combinations: ${ex.getMessage}""")
+    }
+  }
+
+
   def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
 
     // When importing API secrets has been impl, then upd this test:
@@ -61,8 +76,8 @@ case class SiteBackupReader(context: EdContext) {
         permsOnPagesJson, pagesJson, pathsJson,
         categoriesJson, postsJson) =
       try {
-        (readJsObject(bodyJson, "meta"),
-          readJsObject(bodyJson, "settings"),
+        (readOptJsObject(bodyJson, "meta"),
+          readOptJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
           readJsArray(bodyJson, "guests", optional = true),
           readJsArray(bodyJson, "groups", optional = true),
@@ -78,14 +93,14 @@ case class SiteBackupReader(context: EdContext) {
           throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
       }
 
-    val siteToSave: SiteInclDetails =
-      try readSiteMeta(siteMetaJson)
+    val siteToSave: Option[SiteInclDetails] =
+      try siteMetaJson.map(readSiteMeta)
       catch {
         case ex: IllegalArgumentException =>
           throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
       }
 
-    val settings = Settings2.settingsToSaveFromJson(settingsJson, globals)
+    val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
 
     val guests: Seq[Guest] = guestsJson.value.zipWithIndex map { case (json, index) =>
       readGuestOrBad(json, isE2eTest).getOrIfBad(errorMessage =>

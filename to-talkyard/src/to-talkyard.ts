@@ -1,12 +1,17 @@
 /// <reference path="to-talkyard.d.ts" />
 
-//   ./to-talkyard --wordpressCoreXmlExportFile=...
-//   ./to-talkyard --disqusXmlExportFile=...
+//   ./to-talkyard --*ExportFile=... [ --writeTo=file | --sendToServer=https://ty.example.com ]
 //
-// or right now:
+// where --*ExportFile is one of:
+//    --wordpressCoreXmlExportFile
+//    --disqusXmlExportFile
 //
-//   nodejs dist/to-talkyard/src/to-talkyard.js  --wordpressCoreXmlExportFile file.xml
-//   nodejs dist/to-talkyard/src/to-talkyard.js  --disqusXmlExportFile file.xml
+// but right now:
+//
+//  nodejs dist/to-talkyard/src/to-talkyard.js --wordpressCoreXmlExportFile file.xml
+//  nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --writeTo=test.json
+//  nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --sendToServer=localhost
+//
 
 
 import minimist from 'minimist';

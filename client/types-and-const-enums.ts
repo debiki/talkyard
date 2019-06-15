@@ -185,8 +185,9 @@ const enum TopTopicsPeriod {
   All = 6
 }
 
+type PageType = PageRole;
 
-const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
+const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to PageType
   CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,

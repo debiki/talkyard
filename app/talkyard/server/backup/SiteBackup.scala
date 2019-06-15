@@ -21,8 +21,8 @@ import com.debiki.core._
 
 
 case class SiteBackup(  // RENAME to SiteDmup, and all related classes too
-  site: SiteInclDetails,
-  settings: SettingsToSave,
+  site: Option[SiteInclDetails],
+  settings: Option[SettingsToSave],
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],

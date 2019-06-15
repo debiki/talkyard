@@ -60,10 +60,13 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiActionStaffOnly(cc.parsers.empty)(f)
 
   def AsyncAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
-    PlainApiActionAdminOnly(cc.parsers.empty).async(f)
+    PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty).async(f)
 
   def AdminGetAction(f: GetRequest => Result): Action[Unit] =
-    PlainApiActionAdminOnly(cc.parsers.empty)(f)
+    PlainApiActionAdminOnly(NoRateLimits, cc.parsers.empty)(f)
+
+  def ApiSecretGetJsonAction(rateLimits: RateLimits)(f: GetRequest => Result): Action[Unit] =
+    PlainApiActionApiSecretOnly(rateLimits, cc.parsers.empty)(f)
 
   def SuperAdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionSuperAdminOnly(cc.parsers.empty)(f)
@@ -95,9 +98,15 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiActionStaffOnly(
       cc.parsers.json(maxLength = maxBytes))(f)
 
+  SECURITY // add rate limits for admins
   def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionAdminOnly(
-      cc.parsers.json(maxLength = maxBytes))(f)
+      NoRateLimits, cc.parsers.json(maxLength = maxBytes))(f)
+
+  def ApiSecretPostJsonAction(rateLimits: RateLimits, maxBytes: Int)(
+        f: JsonPostRequest => Result): Action[JsValue] =
+    PlainApiActionApiSecretOnly(
+      rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
 
   def SuperAdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionSuperAdminOnly(

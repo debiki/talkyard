@@ -10,6 +10,7 @@ import * as _ from 'lodash';
 import * as sax from 'sax';
 import { dieIf, logMessage } from '../../tests/e2e/utils/log-and-die';
 import c from '../../tests/e2e/test-constants';
+
 const strict = true; // set to false for html-mode
 const parser = sax.parser(strict, {});
 
@@ -31,11 +32,11 @@ interface DisqusThread {
   ipAddr?: string;
   isClosed?: boolean;
   isDeleted?: boolean;
-  posts: DisqusPost[];
+  posts: DisqusComment[];
 }
 
 
-interface DisqusPost {
+interface DisqusComment {
   disqusThreadId?: string;
   disqusPostId?: string;
   disqusParentPostId?: string;
@@ -62,10 +63,10 @@ let curTagName: string;
 
 let curCategory: DisqusCategory;
 let curThread: DisqusThread;
-let curPost: DisqusPost;
+let curPost: DisqusComment;
 
 const threadsByDisqusId: { [id: string]: DisqusThread } = {};
-const postsByDisqusId: { [id: string]: DisqusPost } = {};
+const commentsByDisqusId: { [id: string]: DisqusComment } = {};
 
 const DisqusIdSuffix = ':dsq';
 
@@ -75,7 +76,7 @@ parser.onopentag = function (tag: SaxTag) {
   depth += 1;
   curTagName = tag.name;
   const anyDisqusId = tag.attributes['dsq:id'];
-  let openedThing: DisqusCategory | DisqusThread | DisqusPost;
+  let openedThing: DisqusCategory | DisqusThread | DisqusComment;
 
   switch (tag.name) {
     case 'disqus':
@@ -97,7 +98,7 @@ parser.onopentag = function (tag: SaxTag) {
         openedThing = curThread = {
           disqusThreadId: anyDisqusId,
           author: {},
-          posts: <DisqusPost[]> [],
+          posts: <DisqusComment[]> [],
         };
       }
       break;
@@ -218,7 +219,7 @@ parser.onclosetag = function (tagName: string) {
       dieIf(!thread,
           `Thread ${threadId} for post ${curPost.disqusPostId} missing [ToTyE0MJHF56]`);
       thread.posts.push(curPost);
-      postsByDisqusId[curPost.disqusPostId] = curPost;
+      commentsByDisqusId[curPost.disqusPostId] = curPost;
       closedThing = curPost;
       curPost = undefined;
       break;
@@ -279,7 +280,6 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       id: pageId,
       extImpId: threadDisqusId + DisqusIdSuffix,
       altIds: [urlNoOrigin],
-      pagePathValues: [`/-${pageId}/imported-from-disqus`],
       pageType: c.TestPageRole.EmbeddedComments,
       version: 1,
       createdAt: pageCreatedAt,
@@ -290,8 +290,8 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       authorId: c.SystemUserId,
     };
 
-    const tyPagePath: PagePathDumpV0 =
-        { folder: '/', pageId: tyPage.id, showId: true, slug: 'imported-from-disqus' };
+    const tyPagePath: PagePathDumpV0 = {
+        folder: '/', pageId: tyPage.id, showId: true, slug: 'imported-from-disqus' };
 
 
     // ----- Title and body  [307K740]
@@ -312,7 +312,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       currRevNr: 1,
       approvedSource: "Comments for " + thread.title,
       approvedAt: pageCreatedAt,
-      approvedById: c.SysbotUserId,
+      approvedById: c.SystemUserId,
       approvedRevNr: 1,
     };
 
@@ -331,7 +331,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       currRevNr: 1,
       approvedSource: `Comments for <a href="${thread.link}">${thread.link}</a>`,
       approvedAt: pageCreatedAt,
-      approvedById: c.SysbotUserId,
+      approvedById: c.SystemUserId,
       approvedRevNr: 1,
     };
 
@@ -343,12 +343,9 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     let nextPostNr = c.LowestExtImpId;
     const tyComments: PostDumpV0[] = [];
 
-    thread.posts.forEach((post: DisqusPost) => {
-      if (post.isDeleted || post.isSpam)
-        return;
-
+    thread.posts.forEach((post: DisqusComment) => {
       const disqParentId = post.disqusParentPostId;
-      const parentPost = postsByDisqusId[post.disqusParentPostId];
+      const parentPost = commentsByDisqusId[post.disqusParentPostId];
       const postCreatedAt = Date.parse(post.createdAtIsoString);
 
       if (post.disqusParentPostId) {
@@ -360,25 +357,32 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       }
 
       const disqusAuthor = post.author;
+
       // Same email, name and URL means it's most likely the same person.
       const guestExtImpId = (
           disqusAuthor.username ||
           `${disqusAuthor.email || ''}|${disqusAuthor.name || ''}|${disqusAuthor.isAnonymous || ''}`)
               + DisqusIdSuffix;
+
       const anyDuplGuest = guestsByImpId[guestExtImpId];
       const anyDuplGuestCreatedAt = anyDuplGuest ? anyDuplGuest.createdAt : undefined;
 
+      const thisGuestId = anyDuplGuest ? anyDuplGuest.id : nextGuestId;
+
+      if (thisGuestId === nextGuestId) {
+        // (Guest ids are < 0 so decrement the ids.)
+        nextGuestId -= 1;
+      }
+
       const guest: GuestDumpV0 = {
-        id: nextGuestId,
-        extImpId: guestExtImpId,
+        id: thisGuestId,
+        extImpId: guestExtImpId,  // TODO delete, if deleting user — contains name
         // Use the earliest known post date, as the user's created-at date.
         createdAt: Math.min(anyDuplGuestCreatedAt || Infinity, postCreatedAt),
         fullName: disqusAuthor.name,
         emailAddress: disqusAuthor.email,
         //postedFromIp: post.ipAddr
       };
-
-      nextGuestId -= 1;
 
       guestsByImpId[guestExtImpId] = guest;
 
@@ -400,7 +404,21 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         approvedRevNr: 1,
       };
 
+      // We need to incl also deleted comments, because people might have replied
+      // to them before they got deleted, so they are needed in the replies tree structure.
+      if (post.isDeleted || post.isSpam) {
+        tyPost.deletedAt = postCreatedAt; // date unknown
+        tyPost.deletedById = c.SystemUserId;
+        if (post.isSpam) {
+          delete tyPost.approvedSource;
+          delete tyPost.approvedAt;
+          delete tyPost.approvedById;
+          delete tyPost.approvedRevNr;
+        }
+      }
+
       nextPostId += 1;
+      nextPostNr += 1;
 
       tyComments.push(tyPost);
     });
@@ -408,18 +426,24 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     // ----- Fill in parent post nrs
 
-    tyComments.forEach(comment => {
-      const disqusId: string = comment.extImpId.slice(0, -DisqusIdSuffix.length);
-      const disqusPost: DisqusPost = postsByDisqusId[disqusId];
-      dieIf(!disqusPost, 'ToTyE305DMRTK6');
-      const disqusParent = postsByDisqusId[disqusPost.disqusParentPostId];
-      dieIf(!disqusParent,
-          `Parent Disqus comment not found, Disqus id: '${disqusPost.disqusParentPostId}' ` +
-            `[ToTyE7DMDKRT0]`);
-      const disqusParentExtImpId = disqusParent + DisqusIdSuffix;
-      const parent = tyComments.find(p => p.extImpId === disqusParentExtImpId);
-      dieIf(!parent, 'ToTyE7MDKF03');
-      comment.parentNr = parent.nr;
+    tyComments.forEach(tyComment => {
+      const disqusId: string = tyComment.extImpId.slice(0, -DisqusIdSuffix.length);
+      const disqusComment: DisqusComment = commentsByDisqusId[disqusId];
+      dieIf(!disqusComment, 'ToTyE305DMRTK6');
+      const disqusParentId = disqusComment.disqusParentPostId;
+      if (disqusParentId) {
+        const disqusParent = commentsByDisqusId[disqusParentId];
+        dieIf(!disqusParent,
+            `Parent Disqus comment not found, Disqus id: '${disqusParentId}' ` +
+            `[ToTyEDSQ0DSQPRNT]`);
+        const parentExtImpId = disqusParentId + DisqusIdSuffix;
+        const tyParent = tyComments.find(c => c.extImpId === parentExtImpId);
+        dieIf(!tyParent,
+            `Parent of Talkyard post nr ${tyComment.nr} w Disqus id '${disqusId}' not found, ` +
+            `parent's ext imp id: '${parentExtImpId}' ` +
+            '[ToTyEDSQ0PRNT]');
+        tyComment.parentNr = tyParent.nr;
+      }
     });
 
 
@@ -433,6 +457,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
   });
 
   _.values(guestsByImpId).forEach(g => tySiteData.guests.push(g));
+
   return tySiteData;
 }
 

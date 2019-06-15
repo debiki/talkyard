@@ -27,8 +27,8 @@ import debiki.dao.{PagePartsDao, SiteDao}
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
 
 
-  def importToExistingSite(siteData: SiteBackup, browserIdData: BrowserIdData) {
-
+  def upsertIntoExistingSite(siteData: SiteBackup, browserIdData: BrowserIdData) {
+    // to do
   }
 
 
@@ -54,12 +54,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       }
     }
 
-    throwForbiddenIf(isMissing(siteData.settings.orgFullName),
+    val siteToSave = siteData.site.getOrDie("TyE7KRUGV24")
+    val siteSettings = siteData.settings.getOrDie("TyE5KRYTG02")
+
+    throwForbiddenIf(isMissing(siteSettings.orgFullName),
       "EdE7KB4W5", "No organization name specified")
 
     // COULD do this in the same transaction as the one below — then, would need a function
     // `transaction.continueWithSiteId(zzz)`?
-    val siteToSave = siteData.site
     val site = globals.systemDao.createAdditionalSite(
       siteToSave.pubId,
       siteToSave.name,
@@ -91,7 +93,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // forum page, and the forum page references to the root category.
       transaction.deferConstraints()
 
-      transaction.upsertSiteSettings(siteData.settings)
+      transaction.upsertSiteSettings(siteSettings)
 
       siteData.guests foreach { guest: Guest =>
         transaction.insertGuest(guest)
