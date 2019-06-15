@@ -63,7 +63,6 @@ interface PageDumpV0 {
   id: PageId;
   extImpId?: ExtImpId;
   altIds: PageId[],  //
-  pagePathValues: string[],
   pageType: PageRole;
   version: number;
   createdAt: WhenMs;

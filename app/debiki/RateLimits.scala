@@ -219,7 +219,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 1
     def maxPerFifteenMinutes = 5
     def maxPerDay = 8
-    def maxPerDayNewUser = 10
+    def maxPerDayNewUser = 0
   }
 
 
@@ -229,7 +229,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 2
     def maxPerFifteenMinutes = 10
     def maxPerDay = 20
-    def maxPerDayNewUser = 10
+    def maxPerDayNewUser = 0
   }
 
 
@@ -239,7 +239,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 1
     def maxPerFifteenMinutes = 5
     def maxPerDay = 8
-    def maxPerDayNewUser = 10
+    def maxPerDayNewUser = 0
   }
 
 

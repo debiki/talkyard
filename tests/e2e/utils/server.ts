@@ -110,14 +110,14 @@ function getOrDie(url) {
 }
 
 
-function getResponseBodyString(response): string {
+function getResponseBodyString(response): string {  // dupl [304KWPD50]
   let bodyString = response.body;
   if (!_.isString(bodyString) && bodyString.toString) {
     bodyString = bodyString.toString('utf8');
   }
   if (!_.isString(bodyString)) {
     bodyString = "(The response body is not a string, and has no toString function. " +
-        "Don't know how to show it. [EdE7BXE2I])"
+        "Don't know how to show it. [EdE7BXE2I])";
   }
   return bodyString;
 }

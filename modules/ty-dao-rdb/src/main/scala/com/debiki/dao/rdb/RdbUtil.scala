@@ -597,7 +597,7 @@ object RdbUtil {
 
 
   val _PageMetaSelectListItems = i"""
-      |g.ext_imp_id
+      |g.ext_imp_id,
       |g.version,
       |g.CREATED_AT,
       |g.UPDATED_AT,
