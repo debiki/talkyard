@@ -65,6 +65,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           where u.site_id = ?
             and u.full_name = ?
             and u.guest_email_addr = ?
+            and u.guest_browser_id is not null
             and u.guest_browser_id = ?
           """,
           List(siteId.asAnyRef, e2d(loginAttempt.name), e2d(loginAttempt.email), loginAttempt.guestBrowserId),

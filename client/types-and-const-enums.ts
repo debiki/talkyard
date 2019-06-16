@@ -56,6 +56,15 @@ const enum FlagType {
 }
 
 
+const enum DeletedStatus {
+  SelfBit = 1,
+  SuccessorsBit = 2,
+  TreeBits = SelfBit | SuccessorsBit,
+  AncestorsBit = 4,
+  AllBits = SelfBit | SuccessorsBit | AncestorsBit,
+}
+
+
 const enum DraftStatus {  // sync with test code [5ABXG20]
   NotLoaded = 0,
   NothingHappened = 1,

@@ -403,7 +403,7 @@ case object Participant {
 
 
   def isOkayGuestBrowserdId(anyValue: Option[String]): Boolean = anyValue match {
-    case None => false
+    case None => true
     case Some(value) => value.nonEmpty && value.trim == value
   }
 
@@ -740,6 +740,9 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 /** (Could split into Guest and GuestInclDetails, where emailAddress and createdAt are
   * the details. But no particular reason to do this — would maybe just add more code,
   * for no good reason.)
+  *
+  * Guests don't have any trust level, cannot get more than completely-new-user access.
+  * However if a guest behaves well, hens *threat level* decreases (not yet implemented).
   */
 case class Guest(   // [exp] ok
   id: UserId,
@@ -769,10 +772,11 @@ case class Guest(   // [exp] ok
   def usernameOrGuestName: String = guestName
   def nameOrUsername: String = guestName
 
-  require(isOkayGuestId(id), "TyE4GYUK21")
-  require(guestName == guestName.trim, "TyE5YGUK3")
-  require(guestName.nonEmpty, "TyEJ4KEPF8")
-  require(Participant.isOkayGuestBrowserdId(guestBrowserId), "TyE5W5QF7")
+  require(isOkayGuestId(id), s"Bad guest id: $id [TyE4GYUK21]")
+  require(guestName == guestName.trim, "Name starts or ends with whitespace [TyE5YGUK3]")
+  require(guestName.nonEmpty, "Name is empty [TyEJ4KEPF8]")
+  require(Participant.isOkayGuestBrowserdId(guestBrowserId),
+    s"Bad guest browserd id: '$guestBrowserId' [TyE5W5QF7]")
   require(!isEmailLocalPartHidden(email), "TyE826kJ23")
 }
 
@@ -1301,6 +1305,8 @@ case class GuestLoginAttempt(
   date: ju.Date,
   name: String,
   email: String = "",
+  // May only be absent if importing comment authors from e.g. WordPress or Disqus
+  // — but not when attempting to login.
   guestBrowserId: String) {
 
   require(ip == ip.trim, "TyEBDGSTIP")

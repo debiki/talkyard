@@ -291,7 +291,12 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     };
 
     const tyPagePath: PagePathDumpV0 = {
-        folder: '/', pageId: tyPage.id, showId: true, slug: 'imported-from-disqus' };
+      folder: '/',
+      pageId: tyPage.id,
+      showId: true,
+      slug: 'imported-from-disqus',
+      canonical: true,
+    };
 
 
     // ----- Title and body  [307K740]
@@ -409,12 +414,15 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       if (post.isDeleted || post.isSpam) {
         tyPost.deletedAt = postCreatedAt; // date unknown
         tyPost.deletedById = c.SystemUserId;
-        if (post.isSpam) {
-          delete tyPost.approvedSource;
-          delete tyPost.approvedAt;
-          delete tyPost.approvedById;
-          delete tyPost.approvedRevNr;
-        }
+        tyPost.deletedStatus = DeletedStatus.SelfBit;  // but not SuccessorsBit
+        // Skip this; a db constraint [40HKTPJ] wants either approved source, or a source patch,
+        // and it's compliated to construct a patch?
+        //if (post.isSpam) {
+        //  delete tyPost.approvedSource;
+        //  delete tyPost.approvedAt;
+        //  delete tyPost.approvedById;
+        //  delete tyPost.approvedRevNr;
+        //}
       }
 
       nextPostId += 1;

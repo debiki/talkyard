@@ -112,6 +112,7 @@ interface PagePathDumpV0 {
   pageId: PageId,
   showId: boolean;
   slug: string;
+  canonical: boolean;
 }
 
 
@@ -184,6 +185,7 @@ interface PostDumpV0 {
   //deletedStatus?: any;
   deletedAt?: WhenMs;
   deletedById?: UserId;
+  deletedStatus?: DeletedStatus;
   pinnedPosition?: number;
   branchSideways?: boolean;
   numPendingFlags?: number;

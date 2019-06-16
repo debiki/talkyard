@@ -119,7 +119,7 @@ if (writeToPath) {
 }
 
 if (sendToOrigin) {
-  process.stdout.write(`\nSending ${jsonString.length} JSON chars to: ${sendToOrigin} ...`);
+  console.log(`\nSending ${jsonString.length} JSON chars to: ${sendToOrigin} ...`);
   //const responseJson = postOrDie(
    //   url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
   const response = postOrDie(sendToOrigin + '/-/v0/upsert-dump-json', talkyardSiteData);

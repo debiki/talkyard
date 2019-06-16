@@ -387,7 +387,7 @@ case class Post(   // [exp] ok use
 
   require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
   require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
-  require(approvedSource.isDefined || currentRevSourcePatch.isDefined, "DwE3KI59")
+  require(approvedSource.isDefined || currentRevSourcePatch.isDefined, "DwE3KI59")  // [40HKTPJ]
   require(currentRevSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
 
   // If the current version of the post has been approved, then one doesn't need to

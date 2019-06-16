@@ -20,6 +20,53 @@ alter table categories3 add constraint categories_c_extimpid_len check (
     length(ext_imp_id) between 1 and 100);
 
 
+
+drop index users_site_guest_u;
+
+create unique index users_site_guest_no_browser_id_u on users3 (site_id, full_name, guest_email_addr)
+  where guest_browser_id is null;
+
+create unique index users_site_guest_w_browser_id_u on users3 (
+    site_id, full_name, guest_email_addr, guest_browser_id)
+  where guest_browser_id is not null;
+
+
+alter table users3 drop constraint users_c_guest_nn;
+
+update users3 set primary_email_addr = null, password_hash = null
+    where user_id < 0 and (primary_email_addr is not null or password_hash is not null);
+alter table users3 add constraint participants_c_guest_no_email_pwd check (
+    user_id > 0 or (
+        primary_email_addr is null and
+        password_hash is null));
+
+update users3 set is_admin = null, is_moderator = null, is_owner = null, is_superadmin = null
+    where user_id < 0 and (
+        is_admin is not null or
+        is_moderator is not null or
+        is_owner is not null or
+        is_superadmin is not null);
+alter table users3 add constraint participants_c_guest_not_staff check (
+    user_id > 0 or (
+        is_admin is not true and
+        is_moderator is not true and
+        is_owner is not true and
+        is_superadmin is not true));
+
+alter table users3 rename constraint dw1_users_avatars__c to participants_c_guest_no_avatar;
+
+update users3 set trust_level = null where user_id < 0 and trust_level is not null;
+alter table users3 add constraint participants_c_guest_no_trust_level check (
+    user_id > 0 or trust_level is null);
+
+alter table users3 add constraint participants_c_guest_not_nulls check (
+    user_id > 0 or (
+        created_at is not null and
+        full_name is not null and
+        guest_email_addr is not null));
+
+
+
 -- So won't accidentally insert import ids into the database,
 -- without remapping to 1 .. 2e9 -1 numbers:
 
