@@ -19,6 +19,10 @@ alter table posts3 add constraint posts_c_extimpid_len check (
 alter table categories3 add constraint categories_c_extimpid_len check (
     length(ext_imp_id) between 1 and 100);
 
+create unique index users_u_extimpid on users3 (site_id, ext_imp_id);
+create unique index pages_u_extimpid on pages3 (site_id, ext_imp_id);
+create unique index posts_u_extimpid on posts3 (site_id, ext_imp_id);
+create unique index categories_u_extimpid on categories3 (site_id, ext_imp_id);
 
 
 drop index users_site_guest_u;

@@ -351,6 +351,19 @@ object RdbUtil {
     s"user_id, $CompleteUserSelectListItemsNoUserId"
 
 
+  def getParticipantInclDetails(rs: js.ResultSet): ParticipantInclDetails = {
+    UNTESTED
+    val participantId = rs.getInt("user_id")
+    if (participantId <= MaxGuestId) {
+      // Currntly guests have no details, so can do this:
+      getParticipant(rs).asInstanceOf[Guest]
+    }
+    else {
+      getMemberInclDetails(rs, Some(participantId))
+    }
+  }
+
+
   def getUserInclDetails(rs: js.ResultSet): UserInclDetails = {
     getMemberInclDetails(rs) match {
       case m: UserInclDetails => m

@@ -27,8 +27,76 @@ import debiki.dao.{PagePartsDao, SiteDao}
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
 
 
-  def upsertIntoExistingSite(siteData: SiteBackup, browserIdData: BrowserIdData) {
-    // to do
+  def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData) {
+    dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
+    val dao = globals.siteDao(siteId)
+    dao.readWriteTransaction { tx =>
+
+      val extImpIds =
+        siteData.guests.flatMap(_.extImpId)
+        // ++ siteData.users.flatMap(_.extImpId)  later
+        // ++ siteData.groups.flatMap(_.extImpId)  later
+
+      val oldParticipantsByImpId: Map[ExtImpId, ParticipantInclDetails] =
+        tx.loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds)
+
+      //val ppsWithNewIdsByImpId
+
+      siteData.guests foreach { guest: Guest =>
+        guest.extImpId.flatMap(oldParticipantsByImpId.get) match {
+          case None =>
+            val nextId = tx.nextGuestId
+            tx.insertGuest(guest.copy(id = nextId))
+          case Some(oldGuest: Guest) =>
+            dieIf(oldGuest.id != guest.id, "TyE046MKP01")
+            dieIf(oldGuest.extImpId != guest.extImpId, "TyE046MKP02")
+            tx.updateGuest(guest)
+        }
+      }
+
+      val oldPagesByImpId: Map[ExtImpId, PageMeta] =
+        tx.loadPageMetasByImpIdAsMap(siteData.pages.flatMap(_.extImpId))
+
+      siteData.pages foreach { pageMeta: PageMeta =>
+        // Later: update with any reassigned participant and post ids:
+        //   lastApprovedReplyById, categoryId, authorId, frequentPosterIds, answerPostId,
+        pageMeta.extImpId.flatMap(oldPagesByImpId.get) match {
+          case None =>
+            val nextId = tx.nextPageId()
+            val pageWithId = pageMeta.copy(pageId = nextId)
+            tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
+          case Some(oldPageMeta) =>
+            if (oldPageMeta.updatedAt.getTime < pageMeta.updatedAt.getTime) {
+              val pageWithId = pageMeta.copy(pageId = oldPageMeta.pageId)
+              tx.updatePageMeta(pageWithId, oldMeta = oldPageMeta,
+                // Maybe not always needed:
+                markSectionPageStale = true)
+            }
+        }
+      }
+
+      siteData.pagePaths foreach { path: PagePathWithId =>
+        // remap  pageId.pageId from "ty imp id" to the page's new id
+        tx.insertPagePath(path)
+      }
+
+      siteData.categories foreach { categoryMeta: Category =>
+        // remap: sectionPageId, parentId, defaultSubCatId.
+
+        //val newId = tx.nextCategoryId()
+        tx.insertCategoryMarkSectionPageStale(categoryMeta)
+      }
+
+      siteData.posts foreach { post: Post =>
+        // remap: id, pageId, nr, parentNr, (multireplyPostNrs),
+        // createdById, currentRevisionById, lastApprovedEditById,
+        // approvedById,collapsedById,closedById,bodyHiddenById,deletedById.
+
+        //val newId = tx.nextPostId()
+        tx.insertPost(post)
+        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
+      }
+    }
   }
 
 

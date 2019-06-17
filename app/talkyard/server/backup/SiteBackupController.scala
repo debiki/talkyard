@@ -90,7 +90,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in dump")
 
     doImportOrUpserts {
-      SiteBackupImporterExporter(globals).upsertIntoExistingSite(dump, request.theBrowserIdData)
+      SiteBackupImporterExporter(globals).upsertIntoExistingSite(
+          request.siteId, dump, request.theBrowserIdData)
     }
 
     Ok

@@ -871,6 +871,13 @@ package object core {
     }
   }
 
+  implicit class RichSeq[K, V](val underlying: Seq[V]) {
+    def groupByKeepOne(fn: V => K): immutable.Map[K, V] = {
+      val multiMap = underlying.groupBy(fn)
+      multiMap.mapValues(many => many.head)
+    }
+  }
+
 
   def minOfMany(first: Long, more: Long*): Long = {
     var min = first

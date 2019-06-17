@@ -447,8 +447,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     metaByPageId
   }
 
+
   /* UNT ESTED
-  def loadPageMetaForAllSections(): Seq[PageMeta] = {
+  def loadPageMetaForAllSectionPages(): Seq[PageMeta] = {
     import PageType.{Forum, Blog}
     val sql = s"""
       select g.page_id, $_PageMetaSelectListItems from pages3 g
@@ -459,6 +460,23 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       _PageMeta(rs, pageId = pageId)
     })
   }*/
+
+
+  def loadPageMetasByImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta] = {
+    if (extImpIds.isEmpty)
+      return Map.empty
+
+    val values: List[AnyRef] = siteId.asAnyRef :: extImpIds.toList
+    var sql = s"""
+        select g.page_id, ${_PageMetaSelectListItems}
+        from pages3
+        where site_id = ?
+          and g.page_id in (${ makeInListFor(extImpIds) })"""
+    runQueryBuildMap(sql, values, rs => {
+      val meta = _PageMeta(rs)
+      meta.pageId -> meta
+    })
+  }
 
 
   def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {

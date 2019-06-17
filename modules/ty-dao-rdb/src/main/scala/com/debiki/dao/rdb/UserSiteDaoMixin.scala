@@ -447,13 +447,22 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def nextGuestId: UserId = {
+    val query = s"""
+      select least(min(user_id) - 1, ${Participant.MaxCustomGuestId})
+      from users3
+      where site_id = ?
+      """
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), _.getInt(1))
+  }
+
+
   def nextMemberId: UserId = {
     val query = s"""
       select max(user_id) max_id from users3
       where site_id = ? and user_id >= $LowestAuthenticatedUserId
       """
-    runQuery(query, List(siteId.asAnyRef), rs => {
-      rs.next()
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), rs => {
       val maxId = rs.getInt("max_id")
       math.max(LowestAuthenticatedUserId, maxId + 1)
     })
@@ -465,8 +474,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       select max(id) max_id from identities3
       where site_id = ?
       """
-    runQuery(query, List(siteId.asAnyRef), rs => {
-      rs.next()
+    runQueryFindExactlyOne(query, List(siteId.asAnyRef), rs => {
       val maxId = rs.getInt("max_id")
       (maxId + 1).toString
     })
@@ -966,6 +974,24 @@ trait UserSiteDaoMixin extends SiteTransaction {
       getMemberInclDetails(rs)
     })
   }
+
+
+  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+        : immutable.Map[ExtImpId, ParticipantInclDetails] = {
+    UNTESTED
+    if (extImpIds.isEmpty) return Map.empty
+    val query = s"""
+      select $CompleteUserSelectListItemsWithUserId
+      from users3
+      where site_id = ? and ext_imp_id in (${makeInListFor(extImpIds)})
+      """
+    val values = siteId.asAnyRef :: extImpIds.toList
+    runQueryBuildMap(query, values, rs => {
+      val pp = getParticipantInclDetails(rs)
+      pp.extImpId.getOrDie("TyE205HKSD63") -> pp
+    })
+  }
+
 
 
   def loadUsersInclDetailsAndStats(peopleQuery: PeopleQuery)

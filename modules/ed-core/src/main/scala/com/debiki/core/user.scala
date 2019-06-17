@@ -746,7 +746,7 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   */
 case class Guest(   // [exp] ok
   id: UserId,
-  extImpId: Option[String],
+  override val extImpId: Option[ExtImpId],
   createdAt: When,
   guestName: String,
   guestBrowserId: Option[String],
@@ -783,6 +783,7 @@ case class Guest(   // [exp] ok
 
 sealed trait ParticipantInclDetails {
   def id: UserId
+  def extImpId: Option[ExtImpId] = unimplemented("Only impl for guests [TyE0HKRD$Q]")
   def createdAt: When
   def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
 }

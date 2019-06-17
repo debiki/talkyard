@@ -247,6 +247,7 @@ trait SiteTransaction {
   def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
+  def loadPageMetasByImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
@@ -333,6 +334,7 @@ trait SiteTransaction {
   def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId)
 
+  def nextGuestId: UserId
   def insertGuest(guest: Guest)
 
   def nextMemberId: UserId
@@ -475,6 +477,9 @@ trait SiteTransaction {
 
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
         : immutable.Seq[MemberInclDetails]
+
+  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+        : immutable.Map[ExtImpId, ParticipantInclDetails]
 
   def loadOwner(): Option[UserInclDetails]
 
