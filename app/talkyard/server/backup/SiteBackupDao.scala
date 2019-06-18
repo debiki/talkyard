@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki.EdHttp._
 import debiki.SpecialContentPages
 import debiki.dao.{PagePartsDao, SiteDao}
+import scala.collection.mutable
 
 
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
@@ -32,6 +33,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     val dao = globals.siteDao(siteId)
     dao.readWriteTransaction { tx =>
 
+
+      // ----- Participants
+
       val extImpIds =
         siteData.guests.flatMap(_.extImpId)
         // ++ siteData.users.flatMap(_.extImpId)  later
@@ -40,60 +44,248 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val oldParticipantsByImpId: Map[ExtImpId, ParticipantInclDetails] =
         tx.loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds)
 
-      //val ppsWithNewIdsByImpId
+      val ppsWithRealIdsByTempImpId = mutable.HashMap[UserId, ParticipantInclDetails]()
+
+      def remappedPpTempId(tempId: UserId): UserId = {
+        if (tempId < LowestTempImpId) tempId
+        else ppsWithRealIdsByTempImpId.get(tempId).map(_.id).getOrElse({
+          throwBadRequest("TyE305KRD3H", o"""Participant with temp id $tempId
+            missing from the uploaded data""")
+        })
+      }
+
+      val firstNextGuestId = tx.nextGuestId
+      var nextGuestId = firstNextGuestId
 
       siteData.guests foreach { guest: Guest =>
-        guest.extImpId.flatMap(oldParticipantsByImpId.get) match {
+        val upsertedGuest = guest.extImpId.flatMap(oldParticipantsByImpId.get) match {
           case None =>
-            val nextId = tx.nextGuestId
-            tx.insertGuest(guest.copy(id = nextId))
+            val guestWithId = guest.copy(id = nextGuestId)
+            nextGuestId -= 1
+            tx.insertGuest(guestWithId)
+            guestWithId
           case Some(oldGuest: Guest) =>
-            dieIf(oldGuest.id != guest.id, "TyE046MKP01")
+            dieIf(oldGuest.id != guest.id, "TyE046MKP01")  // will fail, remove? ...
             dieIf(oldGuest.extImpId != guest.extImpId, "TyE046MKP02")
-            tx.updateGuest(guest)
+            val guestWithId = guest.copy(id = oldGuest.id)
+            //if (guest.updatedAt.millis > oldGuest.updatedAt.millis)
+            //  tx.updateGuest(guestWithId) ... instead, update the id?
+            //  guestWithId
+            // else
+            oldGuest
+        }
+        ppsWithRealIdsByTempImpId.put(guest.id, upsertedGuest)
+      }
+
+
+      // ----- Post ids and nrs
+
+      val oldPostsByExtImpId = tx.loadPostsByExtImpIdAsMap(siteData.posts.flatMap(_.extImpId))
+
+      val firstNextPostId = tx.nextPostId()
+      var nextPostId = firstNextPostId
+
+      val postsRealIdNrsByTempId = mutable.HashMap[PostId, Post]()
+      val postsRealIdNrsByTempPagePostNr = mutable.HashMap[PagePostNr, Post]()
+
+      siteData.posts.groupBy(_.pageId).foreach { case (pageId, postsTempIdNrs) =>
+        val allPostsOnPage = tx.loadPostsOnPage(pageId)  ; COULD_OPTIMIZE // don't need them
+        dieIf(allPostsOnPage.isEmpty, "TyE05KSDU2KJ", s"Page $pageId has no posts")
+        val maxNr = allPostsOnPage.map(_.nr).max
+        val firstNextPostNr = maxNr + 1
+        var nextPostNr = firstNextPostNr
+
+        postsTempIdNrs map { postTempIdNr =>
+          postTempIdNr.extImpId.flatMap(oldPostsByExtImpId.get) match {
+            case Some(oldPostRealIdNr) =>
+              postsRealIdNrsByTempId.put(postTempIdNr.id, oldPostRealIdNr)
+              postsRealIdNrsByTempPagePostNr.put(postTempIdNr.pagePostNr, oldPostRealIdNr)
+            case None =>
+              // Probably we need a real post nr?
+              val maybeNewRealNr =
+                if (postTempIdNr.nr < LowestTempImpId) {
+                  // This is a real nr already, e.g. the title or body post nr.
+                  postTempIdNr.nr
+                }
+                else {
+                  nextPostNr += 1
+                  nextPostNr - 1
+                }
+              val postNewIdNr = postTempIdNr.copy(id = nextPostId, nr = maybeNewRealNr)
+              nextPostId += 1
+              postsRealIdNrsByTempId.put(postTempIdNr.id, postNewIdNr)
+              postsRealIdNrsByTempPagePostNr.put(postTempIdNr.pagePostNr, postNewIdNr)
+          }
         }
       }
 
-      val oldPagesByImpId: Map[ExtImpId, PageMeta] =
+      def remappedPostNr(pagePostNr: PagePostNr): PostNr = {
+        // (The page id might still be a temp id.)
+        if (pagePostNr.postNr < LowestTempImpId) pagePostNr.postNr
+        else postsRealIdNrsByTempPagePostNr.get(pagePostNr).map(_.pagePostNr.postNr).getOrElse({
+          throwBadRequest("TyE8KWHL42B", o"""Post with temp page-post-nr $pagePostNr
+            missing from the uploaded data""")
+        })
+      }
+
+
+      // ----- Category ids  (don't insert just yet — we don't know their section page ids)
+
+      val firstNextCategoryId = tx.nextCategoryId()
+      var nextCategoryId = firstNextCategoryId
+
+      val (oldCategoriesByExtImpId: Map[ExtImpId, Category],
+          categoriesRealIdsByTempImpId: Map[CategoryId, Category]) = {
+        val oldCategoriesById = tx.loadCategoryMap()
+        val oldCategories = oldCategoriesById.values
+
+        val catsTempAndRealIds: Seq[(Category, Category)] =
+          siteData.categories.map(catTempId => {
+            oldCategories.find(_.extImpId == catTempId.extImpId) match {
+              case Some(oldCatRealId) =>
+                (catTempId, oldCatRealId)
+              case None =>
+                val catNewRealId = catTempId.copy(id = nextCategoryId)
+                nextCategoryId += 1
+                (catTempId, catNewRealId)
+            }
+          })
+
+        val oldCatsByExtImpId =
+          Map(catsTempAndRealIds.flatMap(
+            tempAndOld => tempAndOld._1.extImpId.map(extImpId => extImpId -> tempAndOld._2)): _*)
+        val oldCatsByTempImpId =
+          Map(catsTempAndRealIds.map(
+            tempAndOld => tempAndOld._1.id -> tempAndOld._2): _*)
+
+        (oldCatsByExtImpId, oldCatsByTempImpId)
+      }
+
+      def remappedCategoryTempId(tempId: CategoryId): CategoryId = {
+        if (tempId < LowestTempImpId) tempId
+        else categoriesRealIdsByTempImpId.get(tempId).map(_.id).getOrElse({
+          throwBadRequest("TyE75KWG25L", o"""Category with temp id $tempId
+            missing from the uploaded data""")
+        })
+      }
+
+
+      // ----- Pages
+
+      val oldPagesByExtImpId: Map[ExtImpId, PageMeta] =
         tx.loadPageMetasByImpIdAsMap(siteData.pages.flatMap(_.extImpId))
 
-      siteData.pages foreach { pageMeta: PageMeta =>
+      val pageMetaWithRealIdsByTempImpId = mutable.HashMap[PageId, PageMeta]()
+
+      def remappedPageTempId(tempId: PageId): PageId = {
+        if (!isPageTempId(tempId)) tempId
+        else pageMetaWithRealIdsByTempImpId.get(tempId).map(_.pageId).getOrElse({
+          throwBadRequest("TyE5DKGWT205", o"""Page with temp id $tempId
+            missing from the uploaded data""")
+        })
+      }
+
+      val firstNextPageId = tx.nextPageId().toIntOption.getOrDie("TyE05KSDE2")
+      var nextPageId = firstNextPageId
+
+      siteData.pages foreach { pageMetaTempIds: PageMeta =>
         // Later: update with any reassigned participant and post ids:
-        //   lastApprovedReplyById, categoryId, authorId, frequentPosterIds, answerPostId,
-        pageMeta.extImpId.flatMap(oldPagesByImpId.get) match {
+        //   answerPostId (complicated? need assign tempId —> real id to posts first, somewhere above)
+        val pageMetaRealIds = pageMetaTempIds.extImpId.flatMap(oldPagesByExtImpId.get) match {
           case None =>
-            val nextId = tx.nextPageId()
-            val pageWithId = pageMeta.copy(pageId = nextId)
-            tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
+            val pageMetaRealIds = pageMetaTempIds.copy(
+              pageId = nextPageId.toString,
+              categoryId = pageMetaTempIds.categoryId.map(remappedCategoryTempId),
+              authorId = remappedPpTempId(pageMetaTempIds.authorId),
+              lastApprovedReplyById = pageMetaTempIds.lastApprovedReplyById.map(remappedPpTempId),
+              frequentPosterIds = pageMetaTempIds.frequentPosterIds.map(remappedPpTempId))
+            nextPageId += 1
+            tx.insertPageMetaMarkSectionPageStale(pageMetaRealIds, isImporting = true)
+            pageMetaRealIds
           case Some(oldPageMeta) =>
-            if (oldPageMeta.updatedAt.getTime < pageMeta.updatedAt.getTime) {
-              val pageWithId = pageMeta.copy(pageId = oldPageMeta.pageId)
+            /* Later?:
+            if (oldPageMeta.updatedAt.getTime < pageMetaTempIds.updatedAt.getTime) {
+              val pageWithId = pageMetaTempIds.copy(pageId = oldPageMeta.pageId)
               tx.updatePageMeta(pageWithId, oldMeta = oldPageMeta,
                 // Maybe not always needed:
                 markSectionPageStale = true)
-            }
+            } */
+            oldPageMeta
+        }
+        pageMetaWithRealIdsByTempImpId.put(pageMetaRealIds.pageId, pageMetaRealIds)
+      }
+
+
+      // ----- Page paths
+
+      val oldPathsByPageTempId: Map[PageId, Seq[PagePathWithId]] = {
+        val pageTempIds = siteData.pagePaths.map(_.pageId)
+        val realIds: Seq[PageId] = pageTempIds.map(remappedPageTempId)
+        val pathsByRealIds: Map[PageId, Seq[PagePathWithId]] =
+          realIds.flatMap(tx.lookupPagePathAndRedirects).groupBy(_.pageId)
+        Map(pageTempIds.flatMap(tempId => {
+          val realId: PageId = remappedPageTempId(tempId)
+          pathsByRealIds.get(realId).map(
+            (pathsRealId: Seq[PagePathWithId]) => tempId -> pathsRealId)
+        }): _*)
+      }
+
+      siteData.pagePaths foreach { pathTempId: PagePathWithId =>
+        oldPathsByPageTempId.get(pathTempId.pageId) match {
+          case None =>
+            val pathRealId = pathTempId.copy(pageId = remappedPageTempId(pathTempId.pageId))
+            tx.insertPagePath(pathRealId)
+            pathRealId
+          case Some(_ /* pathRealId */) =>
+            // Later, could update.
         }
       }
 
-      siteData.pagePaths foreach { path: PagePathWithId =>
-        // remap  pageId.pageId from "ty imp id" to the page's new id
-        tx.insertPagePath(path)
+
+      // ----- Categories
+
+      siteData.categories foreach { catTempId: Category =>
+        // Hmm all upserted items need an ext imp id then?
+        val alreadyExists = catTempId.extImpId.flatMap(oldCategoriesByExtImpId.get).isDefined
+        if (!alreadyExists) {
+          val catRealAndTempIds = categoriesRealIdsByTempImpId.getOrDie(catTempId.id, "TyE703KRHF4")
+          val catRealIds = catRealAndTempIds.copy(
+            sectionPageId = remappedPageTempId(catRealAndTempIds.sectionPageId),
+            parentId = catRealAndTempIds.parentId.map(remappedCategoryTempId),
+            defaultSubCatId = catRealAndTempIds.defaultSubCatId.map(remappedCategoryTempId))
+          tx.insertCategoryMarkSectionPageStale(catRealIds)
+        }
       }
 
-      siteData.categories foreach { categoryMeta: Category =>
-        // remap: sectionPageId, parentId, defaultSubCatId.
 
-        //val newId = tx.nextCategoryId()
-        tx.insertCategoryMarkSectionPageStale(categoryMeta)
-      }
+      // ----- Posts
 
-      siteData.posts foreach { post: Post =>
-        // remap: id, pageId, nr, parentNr, (multireplyPostNrs),
-        // createdById, currentRevisionById, lastApprovedEditById,
-        // approvedById,collapsedById,closedById,bodyHiddenById,deletedById.
+      siteData.posts foreach { postTempAll: Post =>
+        val oldPostRealAll = postTempAll.extImpId.flatMap(oldPagesByExtImpId.get)
+        val alreadyExists = oldPostRealAll.isDefined
+        if (!alreadyExists) {
+          val postTempPageNr = postsRealIdNrsByTempId.get(postTempAll.id).getOrDie("TyE5FKBG025")
+          val tempPageId = postTempPageNr.pageId
+          val parentPagePostNr = postTempPageNr.parentNr.map { nr =>
+            val parentTempPageIdPostNr = PagePostNr(tempPageId, nr)
+            remappedPostNr(parentTempPageIdPostNr)
+          }
+          val postRealAll = postTempPageNr.copy(
+            pageId = remappedPageTempId(postTempPageNr.pageId),
+            parentNr = parentPagePostNr,
+            // later: multireplyPostNrs
+            createdById = remappedPpTempId(postTempPageNr.createdById),
+            currentRevisionById = remappedPpTempId(postTempPageNr.currentRevisionById),
+            approvedById = postTempPageNr.approvedById.map(remappedPpTempId),
+            lastApprovedEditById = postTempPageNr.lastApprovedEditById.map(remappedPpTempId),
+            collapsedById = postTempPageNr.collapsedById.map(remappedPpTempId),
+            closedById = postTempPageNr.closedById.map(remappedPpTempId),
+            bodyHiddenById = postTempPageNr.bodyHiddenById.map(remappedPpTempId),
+            deletedById = postTempPageNr.deletedById.map(remappedPpTempId))
+          tx.insertPost(postRealAll)
+        }
 
-        //val newId = tx.nextPostId()
-        tx.insertPost(post)
+        // TODO:
         // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
       }
     }

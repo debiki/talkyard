@@ -98,6 +98,7 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
+  def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]

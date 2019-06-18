@@ -83,6 +83,11 @@ package object core {
 
   type ExtImpId = String
 
+  val LowestTempImpId: Int = 2*1000*1000*1000
+  val FirstTempImpId: Int = LowestTempImpId + 1
+  def isPageTempId(pageId: PageId) =
+    pageId.length == 10 && pageId.startsWith("2000") // good enough for now
+
   type Tag = String
   type TagLabelId = Int
   type TagLabel = String
