@@ -1138,6 +1138,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // (Sometimes people subscribe to comments for embedded blog comments discussions,
     // before any comments or Like votes have been submitted — then this is where the
     // emb page needs to get lazy-created, so the notf prefs has a page id to refer to.)
+    BUG // lazy creating the page here reportedly results in a
+        // "You have replies to posts of yours" email, although there aren't yet any replies.
+        // https://www.talkyard.io/-227#post-8
     val (anyPageId: Option[PageId], isNewEmbCmtsPage: Boolean) =
       if (anyPageIdMaybeEmptyPage is EmptyPageId) {
         val (newPageId: PageId, newPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(

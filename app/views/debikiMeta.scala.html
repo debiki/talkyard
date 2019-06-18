@@ -20,7 +20,7 @@
 @import com.debiki.core.Prelude._
 
 @if(pageTitle.nonEmpty) {
-<title>@{pageTitle.get}</title>
+<title>@Html(Encode.forHtmlContent(pageTitle.get))</title>
 }
 @if(description.nonEmpty) {
 <meta name="description" content="@{description.get}">
