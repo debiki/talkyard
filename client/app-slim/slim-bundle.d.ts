@@ -319,6 +319,7 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function isSection(pageRole: PageRole): boolean;
   function page_isClosedNotDone(page: Page): boolean;
   function page_hasDoingStatus(page: Page): boolean;
   function page_canChangeCategory(page: Page): boolean;

@@ -49,6 +49,10 @@ object PostFlagType {
   case object Spam extends PostFlagType { val toInt = 51 }
   case object Inapt extends PostFlagType { val toInt = 52 }
   case object Other extends PostFlagType { val toInt = 53 }
+
+  // Disqus' flag types: https://disqus.com/api/docs/posts/report/
+  // harassment, threat, impersonation, private info (doxxing?), spam, inappropriate_content
+  // + disagree (why? for silly flaggers?)
 }
 
 

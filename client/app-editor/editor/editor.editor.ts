@@ -787,9 +787,12 @@ export const Editor = createComponent({
 
     Server.search(this.state.title, (searchResults: SearchResults) => {
       if (this.isGone) return;
-      // Exclude category description pages — they're off-topic, here.
+      // Exclude category description pages — they're off-topic, here. Also don't show
+      // forum topic index pages or blog post list pages. (Such pages are typically
+      // *not* answers to a question we're asking.)
       const pagesNoAboutCats = _.filter(
-          searchResults.pagesAndHits, (ph: PageAndHits) => ph.pageType !== PageRole.About);
+          searchResults.pagesAndHits, (ph: PageAndHits) =>
+              ph.pageType !== PageRole.About && !isSection(ph.pageType));
       searchResults = { ...searchResults, pagesAndHits: pagesNoAboutCats };
       this.setState({ searchResults });
     }, null, { showLoadingOverlay: false });
