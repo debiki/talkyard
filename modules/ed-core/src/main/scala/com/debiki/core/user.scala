@@ -783,7 +783,7 @@ case class Guest(   // [exp] ok
 
 sealed trait ParticipantInclDetails {
   def id: UserId
-  def extImpId: Option[ExtImpId] = unimplemented("Only impl for guests [TyE0HKRD$Q]")
+  def extImpId: Option[ExtImpId]
   def createdAt: When
   def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
 }
@@ -819,6 +819,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 
 case class UserInclDetails(  // ok for export
   id: UserId,
+  extImpId: Option[ExtImpId] = None,
   externalId: Option[String],
   fullName: Option[String],
   username: String,
@@ -1181,6 +1182,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   id: UserId,
   theUsername: String,
   name: Option[String],
+  extImpId: Option[ExtImpId] = None,
   createdAt: When = When.Genesis,  // for now
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,

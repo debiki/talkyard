@@ -44,6 +44,9 @@ package object core {
 
   type PostNr = Int
   val NoPostNr: PostNr = -1  // COULD change to 0, and set TitleNr = -1  [4WKBA20]
+  val TitleNr: PostNr = PageParts.TitleNr
+  val BodyNr: PostNr = PageParts.BodyNr
+  val FirstReplyNr: PostNr = PageParts.FirstReplyNr
 
   type PostRevNr = Int
 

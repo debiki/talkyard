@@ -224,6 +224,8 @@ object RdbUtil {
 
 
   def getParticipant(rs: js.ResultSet): Participant = {
+    // A bit dupl code. (703KWH4)
+
     val userId = rs.getInt("u_id")
     val extImpId = getOptString(rs, "u_ext_imp_id")
     val isGroup = rs.getBoolean("u_is_group")
@@ -257,6 +259,7 @@ object RdbUtil {
     else if (isGroup)
       Group(
         id = userId,
+        extImpId = extImpId,
         createdAt = createdAt,
         theUsername = theUsername,
         name = name,
@@ -306,11 +309,14 @@ object RdbUtil {
 
 
   val CompleteUserSelectListItemsNoUserId = i"""
+    |ext_imp_id,
     |is_group,
     |created_at,
     |external_id,
     |full_name,
     |primary_email_addr,
+    |guest_email_addr,
+    |guest_browser_id,
     |about,
     |country,
     |website,
@@ -355,8 +361,7 @@ object RdbUtil {
     UNTESTED
     val participantId = rs.getInt("user_id")
     if (participantId <= MaxGuestId) {
-      // Currntly guests have no details, so can do this:
-      getParticipant(rs).asInstanceOf[Guest]
+      getGuestInclDetails(rs, participantId)
     }
     else {
       getMemberInclDetails(rs, Some(participantId))
@@ -382,9 +387,28 @@ object RdbUtil {
   }
 
 
+  /** Currently there's no GuestInclDetails, just a Guest and it includes everything. */
+  private def getGuestInclDetails(rs: js.ResultSet, theGuestId: UserId): Guest = {
+    // A bit dupl code. (703KWH4)
+    val name = Option(rs.getString("full_name"))
+    Guest(
+      id = theGuestId,
+      extImpId = getOptString(rs, "ext_imp_id"),
+      createdAt = getWhen(rs, "created_at"),
+      guestName = dn2e(name.orNull),
+      guestBrowserId = Option(rs.getString("guest_browser_id")),
+      email = dn2e(rs.getString("guest_email_addr")),
+      emailNotfPrefs = _toEmailNotfs(rs.getString("email_notfs")),
+      country = dn2e(rs.getString("country")).trimNoneIfEmpty,
+      lockedThreatLevel = getOptInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt))
+  }
+
+
   private def getUserInclDetails(rs: js.ResultSet, theUserId: UserId): UserInclDetails = {
+    // A bit dupl code. (703KWH4)
     UserInclDetails(
       id = theUserId,
+      extImpId = getOptString(rs, "ext_imp_id"),
       externalId = getOptString(rs, "external_id"),
       fullName = Option(rs.getString("full_name")),
       username = rs.getString("username"),
@@ -406,15 +430,15 @@ object RdbUtil {
       seeActivityMinTrustLevel = getOptInt(rs, "see_activity_min_trust_level").flatMap(TrustLevel.fromInt),
       isApproved = getOptionalBoolean(rs, "is_approved"),
       reviewedAt = getOptionalDate(rs, "approved_at"),
-      reviewedById = getOptionalIntNoneNot0(rs, "approved_by_id"),
+      reviewedById = getOptInt(rs, "approved_by_id"),
       suspendedAt = getOptionalDate(rs, "suspended_at"),
       suspendedTill = getOptionalDate(rs, "suspended_till"),
-      suspendedById = getOptionalIntNoneNot0(rs, "suspended_by_id"),
+      suspendedById = getOptInt(rs, "suspended_by_id"),
       suspendedReason = Option(rs.getString("suspended_reason")),
       trustLevel = TrustLevel.fromInt(rs.getInt("trust_level")).getOrDie("TyE205WR4", s"User id $theUserId"),
-      lockedTrustLevel = getOptionalInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt),
+      lockedTrustLevel = getOptInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt),
       threatLevel = ThreatLevel.fromInt(rs.getInt("threat_level")).getOrDie("EsE22IU60C"),
-      lockedThreatLevel = getOptionalInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt),
+      lockedThreatLevel = getOptInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt),
       isOwner = rs.getBoolean("is_owner"),
       isAdmin = rs.getBoolean("is_admin"),
       isModerator = rs.getBoolean("is_moderator"),

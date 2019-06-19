@@ -248,7 +248,7 @@ trait SiteTransaction {
   def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
-  def loadPageMetasByImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
+  def loadPageMetasByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
