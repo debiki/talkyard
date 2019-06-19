@@ -18,6 +18,7 @@
 @(tpi: debiki.SiteTpi, pageTitle: Option[String], description: Option[String], faviconUrl: String)
 
 @import com.debiki.core.Prelude._
+@import org.owasp.encoder.Encode
 
 @if(pageTitle.nonEmpty) {
 <title>@Html(Encode.forHtmlContent(pageTitle.get))</title>
