@@ -363,6 +363,24 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
 }
 
 
+case class PageMetaNumBumps(
+  lastApprovedReplyAt: Option[ju.Date] = None,
+  lastApprovedReplyById: Option[UserId] = None,
+  frequentPosterIds: Seq[UserId] = Seq.empty,
+  numLikes: Int = 0,
+  numWrongs: Int = 0,
+  numBurys: Int = 0,
+  numUnwanteds: Int = 0,
+  numRepliesVisible: Int = 0,
+  numRepliesTotal: Int = 0,
+  numPostsTotal: Int = 0,
+  numOrigPostLikeVotes: Int = 0,
+  numOrigPostWrongVotes: Int = 0,
+  numOrigPostBuryVotes: Int = 0,
+  numOrigPostUnwantedVotes: Int = 0,
+  numOrigPostRepliesVisible: Int = 0)
+
+
 
 sealed abstract class PageType(
   protected val IntValue: Int,

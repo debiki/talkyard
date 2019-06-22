@@ -332,6 +332,12 @@ object EdHttp {
 
 
   implicit class GetOrThrowBadArgument[A](val underlying: Option[A]) {
+    def getOrThrowBadRequest(errorCode: String, message: => String = ""): A = {
+      underlying getOrElse {
+        throwBadRequest(errorCode, message)
+      }
+    }
+
     def getOrThrowBadArgument(errorCode: String, parameterName: String, message: => String = ""): A = {
       underlying getOrElse {
         throwBadArgument(errorCode, parameterName, message)

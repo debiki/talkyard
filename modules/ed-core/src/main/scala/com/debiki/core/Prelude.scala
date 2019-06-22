@@ -523,6 +523,13 @@ object Prelude {
     def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
   }
 
+  implicit class RichSeq[T](underlying: Seq[T]) {
+    def maxOptBy[B](f: T => B)(implicit cmp: Ordering[B]): Option[T] = {
+      if (underlying.isEmpty) None
+      else Some(underlying.maxBy(f))
+    }
+  }
+
   implicit class BlankStringToNone(underlying: Option[String]) {
     def noneIfBlank: Option[String] =
       if (underlying.exists(_.trim.isEmpty)) None else underlying

@@ -380,18 +380,29 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
   def nextPageId(): PageId = {
     transactionCheckQuota { connection =>
-      nextPageIdImpl(connection)
+      // Loop until we find an unused id (there're might be old pages with "weird" colliding ids).
+      var oldMeta: Option[PageMeta] = None
+      var nextId: PageId = ""
+      var numLaps = 0
+      do {
+        nextId = nextPageIdImpl(connection)
+        oldMeta = loadPageMeta(nextId)
+        numLaps += 1
+        dieIf(numLaps > 100, "TyE306KSH4", "Error generating page id, tried more than 100 times")
+      }
+      while (oldMeta.isDefined)
+      nextId
     }
   }
 
 
-  private def nextPageIdImpl(implicit connecton: js.Connection): PageId = {
+  private def nextPageIdImpl(connecton: js.Connection): PageId = {
     val sql = """{? = call INC_NEXT_PAGE_ID(?) }"""
     var nextPageIdInt =
       db.call(sql, List(siteId.asAnyRef), js.Types.INTEGER, result => {
         val nextId = result.getInt(1)
         nextId
-      })
+      })(connecton)
     nextPageIdInt.toString
   }
 
@@ -474,7 +485,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
           and g.ext_imp_id in (${ makeInListFor(extImpIds) })"""
     runQueryBuildMap(sql, values, rs => {
       val meta = _PageMeta(rs)
-      meta.pageId -> meta
+      meta.extImpId.getOrDie("TyE05HRD4") -> meta
     })
   }
 
@@ -499,6 +510,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     anyOld foreach { oldMeta =>
       dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
         "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
+      dieIf(oldMeta.extImpId != newMeta.extImpId, "TyE305KBR", "Changing page extImpId not yet impl")
     }
 
     // Dulp code, see the insert query [5RKS025].
@@ -1164,6 +1176,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       insert into pages3 (
         site_id,
         page_id,
+        ext_imp_id,
         version,
         page_role,
         category_id,
@@ -1213,12 +1226,13 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?)"""
+        ?, ?, ?, ?, ?, ?, ?)"""
 
     // Dulp code, see the update query [5RKS025].
     val values = List(
       siteId.asAnyRef,
       pageMeta.pageId,
+      pageMeta.extImpId.orNullVarchar,
       pageMeta.version.asAnyRef,
       pageMeta.pageType.toInt.asAnyRef,
       pageMeta.categoryId.orNullInt,

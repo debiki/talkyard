@@ -200,6 +200,14 @@ package object core {
       else whenA orElse whenB
     }
 
+    def anyJavaDateLatestOf(whenA: Option[ju.Date], whenB: Option[ju.Date]): Option[ju.Date] = {
+      if (whenA.isDefined && whenB.isDefined) {
+        if (whenA.get.getTime > whenB.get.getTime) whenA
+        else whenB
+      }
+      else whenA orElse whenB
+    }
+
     def earliestOf(whenA: When, whenB: When): When =
       if (whenA.millis < whenB.millis) whenA else whenB
 
