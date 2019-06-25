@@ -136,7 +136,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       sectionPageId = sectionPageId,
       parentId = (categoryJson \ "parentId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
-      slug = (categoryJson \ "slug").as[String].toLowerCase,
+      slug = (categoryJson \ "slug").as[String].toLowerCase,  // what? I don't restrict characters?? [05970KF5]
       description = CategoriesDao.CategoryDescriptionSource,
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),

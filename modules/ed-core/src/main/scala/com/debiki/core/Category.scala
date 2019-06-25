@@ -90,7 +90,7 @@ case class Category(  // [exp] ok use
   import Category._
 
   require(slug.nonEmpty, "EsE6MPFK2")
-  require(slug.length <= MaxSlugLength, "EsE4ZXW2")
+  require(slug.length <= MaxSlugLength, "EsE4ZXW2")  // what? I don't check werid chars? [05970KF5]
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
   require(!isRoot || defaultSubCatId.isDefined,
