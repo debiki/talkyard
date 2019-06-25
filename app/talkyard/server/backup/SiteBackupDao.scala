@@ -253,29 +253,29 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               }
           }
 
-          val anyOldPageMeta = tx.loadPageMeta(realPageId)
-
-          val anyPageCreator: Option[UserId] = anyOldPageMeta.map(_.authorId) orElse {
-            oldAndNewPosts.find(_.nr == BodyNr).map(_.createdById)
-          }
-          val anyLastPost = oldAndNewPosts.filter(_.isVisible).maxOptBy(_.createdAtMillis)
-          val anyLastAuthor = anyLastPost.map(_.createdById)
-
-          val frequentPosters = PageParts.findFrequentPosters(
-            oldAndNewPosts, ignoreIds = anyPageCreator.toSet ++ anyLastAuthor.toSet)
-
-          val lastVisibleReply = PageParts.lastVisibleReply(oldAndNewPosts)
-
-          pageNumBumpsByRealPageId.put(realPageId,
-            pageMetaNumBumps.copy(
-              lastApprovedReplyAt = lastVisibleReply.map(_.createdAt),
-              lastApprovedReplyById = lastVisibleReply.map(_.createdById),
-              frequentPosterIds = frequentPosters))
-
           postsRealByTempId.put(tempPost.id, realPostExclParentNr)
           postsRealByTempPagePostNr.put(tempPost.pagePostNr, realPostExclParentNr)
           realPostExclParentNr
         }
+
+        val anyOldPageMeta = tx.loadPageMeta(realPageId)
+
+        val anyPageCreator: Option[UserId] = anyOldPageMeta.map(_.authorId) orElse {
+          oldAndNewPosts.find(_.nr == BodyNr).map(_.createdById)
+        }
+        val anyLastPost = maxOptBy(oldAndNewPosts.filter(_.isVisible))(_.createdAtMillis)
+        val anyLastAuthor = anyLastPost.map(_.createdById)
+
+        val frequentPosters = PageParts.findFrequentPosters(
+          oldAndNewPosts, ignoreIds = anyPageCreator.toSet ++ anyLastAuthor.toSet)
+
+        val lastVisibleReply = PageParts.lastVisibleReply(oldAndNewPosts)
+
+        pageNumBumpsByRealPageId.put(realPageId,
+          pageMetaNumBumps.copy(
+            lastApprovedReplyAt = lastVisibleReply.map(_.createdAt),
+            lastApprovedReplyById = lastVisibleReply.map(_.createdById),
+            frequentPosterIds = frequentPosters))
 
         // Update parent nrs, sanitize html, and upsert into db.
         tempPosts foreach { tempPost =>

@@ -25,6 +25,7 @@ import play.api.libs.json.{JsNumber, JsObject, JsString}
 import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
+import scala.collection.immutable
 
 
 object Prelude {
@@ -523,12 +524,19 @@ object Prelude {
     def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
   }
 
-  implicit class RichSeq[T](underlying: Seq[T]) {
+  // Doesn't work, causes error: maxOptBy is not a member of Seq[com.debiki.core.Post]
+  implicit class RichSeq[T](underlying: scala.collection.Seq[T]) {
     def maxOptBy[B](f: T => B)(implicit cmp: Ordering[B]): Option[T] = {
       if (underlying.isEmpty) None
       else Some(underlying.maxBy(f))
     }
   }
+  // ... but this works:
+  def maxOptBy[T, B](underlying: scala.collection.Seq[T])(f: T => B)(
+          implicit cmp: Ordering[B]): Option[T] = {
+      if (underlying.isEmpty) None
+      else Some(underlying.maxBy(f))
+    }
 
   implicit class BlankStringToNone(underlying: Option[String]) {
     def noneIfBlank: Option[String] =
