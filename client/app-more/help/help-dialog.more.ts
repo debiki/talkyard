@@ -84,7 +84,7 @@ const HelpDialog = createComponent({
     const hideThisHelpTipsCheckbox = !message || !message.id ? null :
       Input({ type: 'checkbox', checked: this.state.hideNextTime,
         onChange: (event) => this.setState({ hideNextTime: event.target.checked }),
-        label: "Hide this tips" });
+        label: "Hide these tips" });
 
     content = !content ? null :
         ModalBody({},
