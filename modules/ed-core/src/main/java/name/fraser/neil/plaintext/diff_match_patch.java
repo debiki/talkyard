@@ -1,1 +1,1 @@
-../../../../../../../../google-diff-match-patch/java/name/fraser/neil/plaintext/diff_match_patch.java
+../../../../../../../../google-diff-match-patch/java/src/name/fraser/neil/plaintext/diff_match_patch.java
