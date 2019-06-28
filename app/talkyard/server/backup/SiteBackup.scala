@@ -34,3 +34,17 @@ case class SiteBackup(  // RENAME to SiteDmup, and all related classes too
   permsOnPages: Seq[PermsOnPages])
 
 
+case object SiteBackup {
+  val empty = SiteBackup(
+    site = None,
+    settings = None,
+    summaryEmailIntervalMins = 60, // for now [7FKB4Q1]
+    summaryEmailIfActive = false, // for now [7FKB4Q1]
+    guests = Nil,
+    users = Nil,
+    pages = Nil,
+    pagePaths = Nil,
+    categories = Nil,
+    posts = Nil,
+    permsOnPages = Nil)
+}

@@ -35,25 +35,26 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     val dao = globals.siteDao(siteId)
     dao.readWriteTransaction { tx =>
 
-      // Posts link to pages, and Question type pages links to the accepted answer post,
+      // Posts link to pages, and Question type pages link to the accepted answer post,
       // that is, can form a cycle.  And a root category links to the section index page,
       // which links to the root category.
       tx.deferConstraints()
 
       // Real id = an id to something in the database.
       //
-      // External import id = the external id (in some external software system)
+      // External import id = the external id, in some external software system,
       // of something we're inserting or updating.
       //
-      // Temp import ids and nrs = ids and nrs > 2e9 things in the siteData use
+      // Temp import ids and nrs = ids and nrs > 2e9 that things in the siteData use
       // to link to each other. These ids are then remapped to low values, like 1, 2, 3, 4,
-      // before actually inserting into the database. Exactly which ids and nrs we'll
-      // use, depend on what's in the db already — we need to avoid conflicts.
+      // before actually inserting into the database. Exactly which low ids and nrs
+      // the temp imp ids and nrs get remapped to, depend on what's in the db
+      // already — we need to avoid conflicts.
 
 
       // ----- Page ids
       //
-      // Start with remapping temporary import ids to real page ids that don't
+      // Start with remapping page temporary import ids to real page ids that don't
       // conflict with any existing pages, or are the same as already existing
       // pages if the imported page(s) have matching external import ids.
       // — Start with pages, because other things, like posts and categories,

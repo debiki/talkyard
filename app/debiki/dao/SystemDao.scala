@@ -155,7 +155,7 @@ class SystemDao(
     hostname: Option[String],
     embeddingSiteUrl: Option[String],
     organizationName: String,
-    creatorId: UserId,
+    creatorId: UserId,   // change to Option, present iff createdFromSiteId ?
     browserIdData: BrowserIdData,
     isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean,

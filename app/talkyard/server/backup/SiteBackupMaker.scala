@@ -38,6 +38,45 @@ case class SiteBackupMaker(context: EdContext) {
 
   private val AllForNow: Int = 100*1000
 
+
+  def loadSiteDump(siteId: SiteId): SiteBackup = {
+    globals.siteDao(siteId).readOnlyTransaction { tx =>
+      val site: SiteInclDetails = tx.loadSiteInclDetails().getOrDie("TyE2RKKP85")
+
+      //val anyEditeSiteSettings = tx.loadSiteSettings()
+      // how convert to SettingsToSave?
+      // or change to EditedSetings?
+
+      val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn)
+
+      // memberEmailAddresses: Seq[UserEmailAddress] = tx.loadUserEmailAddressesForAllUsers()
+
+      // invites: Seq[Invite] = tx.loadAllInvites(limit = AllForNow)
+
+      val pageMetas = tx.loadAllPageMetas()
+
+      val pagePaths = tx.loadAllPagePaths()
+
+      val categories = tx.loadCategoryMap().values.toSeq
+
+      val permsOnPages = tx.loadPermsOnPages()
+
+      val posts = tx.loadAllPosts()
+
+      SiteBackup.empty.copy(
+        site = Some(site),
+        // groups = tx.loadAllGroupsAsSeq()
+        users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn),
+        guests = guests,
+        categories = categories,
+        pages = pageMetas,
+        pagePaths = pagePaths,
+        permsOnPages = permsOnPages,
+        posts = posts)
+    }
+  }
+
+
   def createPostgresqlJsonBackup(siteId: SiteId): JsObject = {
     val fields = mutable.HashMap.empty[String, JsValue]
     globals.siteDao(siteId).readOnlyTransaction { tx =>
