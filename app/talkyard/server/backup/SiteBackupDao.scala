@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.backup  // RENAME to  talkyard.server.sitedump
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
@@ -135,6 +135,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val firstNextGuestId = tx.nextGuestId
       var nextGuestId = firstNextGuestId
 
+      siteData.guestEmailPrefs.iterator foreach { case (emailAddr, pref) =>
+       tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
+      }
+
       siteData.guests foreach { guestTempId: Guest =>
         // For now, don't allow upserting via real ids, only via ext imp ids. (3607TK2)
         throwForbiddenIf(guestTempId.id > -LowestTempImpId,
@@ -245,8 +249,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                     numPostsTotal =
                       pageMetaNumBumps.numPostsTotal + 1,
                     numOrigPostRepliesVisible = ifThenIncr(
-                      tempPost.isOrigPostReply,
-                      pageMetaNumBumps.numPostsTotal))
+                      tempPost.isOrigPostReply && tempPost.isSomeVersionApproved,
+                      pageMetaNumBumps.numOrigPostRepliesVisible))
 
                   nextPostId += 1
                   postTempIdsToInsert += tempPost.id
@@ -340,7 +344,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val extImpId = catTempId.extImpId getOrElse throwForbidden(
           "TyE6DKWG2RJ", s"Inserting categories with no extImpId not yet impl, category: $catTempId")
         val realId = oldCategories.find(_.extImpId is extImpId).map(oldCatRealId => {
-          throwBadRequestIf(catTempId.id < FirstTempImpId && catTempId.id != oldCatRealId,
+          throwBadRequestIf(catTempId.id < FirstTempImpId && catTempId.id != oldCatRealId.id,
             "TyE306HKD2", o"""Category to import with real id ${catTempId.id} has the same
             extImpId as category ${oldCatRealId.id} — but they aren't the same;
             they have different ids""")
@@ -352,7 +356,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             // other way around? — For now, just disallow this.
             // oldCategoriesById.get(catTempId.id) — maybe later.
             throwForbidden("TyE305HKRD6",
-              s"Importing categories with real ids not yet implemented, category: ${catTempId}")
+              s"Importing categories with real ids not yet implemented, category: $catTempId")
           }
           nextCategoryId += 1
           nextCategoryId - 1
@@ -367,11 +371,31 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val alreadyExists = oldCat.isDefined
         if (!alreadyExists) {
           val catRealIds = catTempId.copy(
+            id = realId,
             sectionPageId = remappedPageTempId(catTempId.sectionPageId),
             parentId = catTempId.parentId.map(remappedCategoryTempId),
             defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
           tx.insertCategoryMarkSectionPageStale(catRealIds)
         }
+      }
+
+
+      // ----- Permissions
+
+      val oldPerms = tx.loadPermsOnPages()
+
+      siteData.permsOnPages foreach { permissionTempIds: PermsOnPages =>
+        continue_here
+        // Find any old perm, and update, instead of inserting?
+        val permissionRealIds = permissionTempIds.copy(
+          forPeopleId = permissionTempIds.forPeopleId,
+          onCategoryId = permissionTempIds.onCategoryId.map(remappedCategoryTempId),
+          onPageId = permissionTempIds.onPageId.map(remappedPageTempId),
+          //onPostId = permissionTempIds.onPostId.map(rema),
+          //onTagId = permissionTempIds.onTagId,
+          )
+        // How know if should update instead?
+        tx.insertPermsOnPages(permissionRealIds)
       }
 
 
@@ -405,6 +429,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + b.numOrigPostRepliesVisible)
         }
 
+
         pageMetaTempId.extImpId.flatMap(oldPagesByExtImpId.get) match {
           case None =>
             val pageMetaRealIds = pageMetaTempId.copy(
@@ -412,7 +437,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               categoryId = pageMetaTempId.categoryId.map(remappedCategoryTempId),
               authorId = remappedPpTempId(pageMetaTempId.authorId),
               lastApprovedReplyById = pageMetaTempId.lastApprovedReplyById.map(remappedPpTempId),
-              lastApprovedReplyAt = ???,  // <———
               frequentPosterIds = pageMetaTempId.frequentPosterIds.map(remappedPpTempId))
             val pageMetaOkNums = bumpNums(pageMetaRealIds)
             tx.insertPageMetaMarkSectionPageStale(pageMetaOkNums, isImporting = true)

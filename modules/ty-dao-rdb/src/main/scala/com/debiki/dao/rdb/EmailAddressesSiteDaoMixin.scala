@@ -18,7 +18,6 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
-import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{LowestNonGuestId, LowestAuthenticatedUserId}
 import _root_.java.{util => ju, io => jio}

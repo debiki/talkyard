@@ -114,7 +114,7 @@ object JsX {
     var json = JsUser(guest)
     if (inclEmail) {
       json += "emailAddress" -> JsString(guest.email)
-      //json += "emailNotfPrefs" -> JsString(guest.emailNotfPrefs.value)  need a toInt [7KABKF2]
+      json += "emailNotfPrefs" -> JsNumber(guest.emailNotfPrefs.toInt)
     }
     json += "createdAt" -> JsWhenMs(guest.createdAt)
     json += "guestBrowserId" -> JsStringOrNull(guest.guestBrowserId)

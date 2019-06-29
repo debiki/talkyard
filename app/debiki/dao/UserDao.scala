@@ -26,7 +26,6 @@ import play.api.libs.json.{JsArray, JsObject}
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
-import EmailNotfPrefs.EmailNotfPrefs
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.mutable.ArrayBuffer
 import talkyard.server.JsX

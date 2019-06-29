@@ -119,11 +119,11 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     val site = siteNoId.copy(id = newId)
     runUpdateSingleRow("""
         insert into sites3 (
-          ID, publ_id, status, NAME, CREATOR_IP,
+          ID, publ_id, status, NAME, ctime, CREATOR_IP,
           QUOTA_LIMIT_MBS, price_plan)
-        values (?, ?, ?, ?, ?, ?, ?)""",
+        values (?, ?, ?, ?, ?, ?, ?, ?)""",
       List[AnyRef](site.id.asAnyRef, site.pubId, site.status.toInt.asAnyRef, site.name,
-        site.creatorIp, quotaLimitMegabytes.orNullInt, pricePlan))
+        site.createdAt.asTimestamp, site.creatorIp, quotaLimitMegabytes.orNullInt, pricePlan))
     site
   }
 
@@ -146,11 +146,12 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       case Hostname.RoleDuplicate => "D"
     }
     val sql = """
-      insert into hosts3 (SITE_ID, HOST, CANONICAL)
-      values (?, ?, ?)
+      insert into hosts3 (SITE_ID, HOST, CANONICAL, ctime, mtime)
+      values (?, ?, ?, ?, ?)
       """
+    val values = List(siteId.asAnyRef, host.hostname, cncl, now.asTimestamp, now.asTimestamp)
     val inserted =
-      try runUpdateSingleRow(sql, List(siteId.asAnyRef, host.hostname, cncl))
+      try runUpdateSingleRow(sql, values)
       catch {
         case ex: js.SQLException =>
           if (Rdb.isUniqueConstrViolation(ex) &&

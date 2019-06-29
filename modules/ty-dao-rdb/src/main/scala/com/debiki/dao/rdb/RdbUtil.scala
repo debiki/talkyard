@@ -18,7 +18,6 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
-import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.isGuestId
 import java.{sql => js, util => ju}
@@ -111,9 +110,10 @@ object RdbUtil {
       nextPageId = rs.getInt("next_page_id"),
       creatorEmailAddress = getOptString(rs, "creator_email_address"),
       quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
+      version = rs.getInt("version"),
+      numParticipants = rs.getInt("num_roles"),
       numGuests = rs.getInt("num_guests"),
       numIdentities = rs.getInt("num_identities"),
-      numParticipants = rs.getInt("num_roles"),
       numPageUsers = rs.getInt("num_role_settings"),
       numPages = rs.getInt("num_pages"),
       numPosts = rs.getInt("num_posts"),
@@ -125,7 +125,6 @@ object RdbUtil {
       numAuditRows = rs.getInt("num_audit_rows"),
       numUploads = rs.getInt("num_uploads"),
       numUploadBytes = rs.getLong("num_upload_bytes"),
-      version = rs.getInt("version"),
       numPostRevisions = rs.getInt("num_post_revisions"),
       numPostRevBytes = rs.getLong("num_post_rev_bytes"),
       status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),

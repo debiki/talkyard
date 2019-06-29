@@ -47,26 +47,28 @@ case class SiteBackupMaker(context: EdContext) {
       // how convert to SettingsToSave?
       // or change to EditedSetings?
 
-      val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn)
+      val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
+
+      val users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn).sortBy(_.id)
 
       // memberEmailAddresses: Seq[UserEmailAddress] = tx.loadUserEmailAddressesForAllUsers()
 
       // invites: Seq[Invite] = tx.loadAllInvites(limit = AllForNow)
 
-      val pageMetas = tx.loadAllPageMetas()
+      val pageMetas = tx.loadAllPageMetas().sortBy(_.pageId)
 
-      val pagePaths = tx.loadAllPagePaths()
+      val pagePaths = tx.loadAllPagePaths().sortBy(_.pageId)
 
-      val categories = tx.loadCategoryMap().values.toSeq
+      val categories = tx.loadCategoryMap().values.toVector.sortBy(_.id)
 
       val permsOnPages = tx.loadPermsOnPages()
 
-      val posts = tx.loadAllPosts()
+      val posts = tx.loadAllPosts().sortBy(_.id)
 
       SiteBackup.empty.copy(
         site = Some(site),
-        // groups = tx.loadAllGroupsAsSeq()
-        users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn),
+        // groups = tx.loadAllGroupsAsSeq().sortBy(_.id),
+        users = users,
         guests = guests,
         categories = categories,
         pages = pageMetas,

@@ -659,6 +659,7 @@ object Post {
 
   def create(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         postNr: PostNr,
         parent: Option[Post],
@@ -703,6 +704,7 @@ object Post {
 
     Post(
       id = uniqueId,
+      extImpId = extImpId,
       pageId = pageId,
       nr = postNr,
       parentNr = parent.map(_.nr),
@@ -751,19 +753,21 @@ object Post {
 
   def createTitle(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(uniqueId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
+    create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
       multireplyPostNrs = Set.empty, postType = PostType.Normal,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
         uniqueId: PostId,
+        extImpId: Option[String] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
@@ -771,7 +775,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId],
         postType: PostType = PostType.Normal): Post =
-    create(uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
+    create(uniqueId, extImpId = extImpId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
       multireplyPostNrs = Set.empty, postType,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)

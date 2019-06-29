@@ -22,7 +22,6 @@ import java.net.InetAddress
 import java.{net => jn, util => ju}
 import org.scalactic.{ErrorMessage, Or}
 import scala.collection.{immutable, mutable}
-import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import Participant._
 import java.text.Normalizer
@@ -820,7 +819,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 case class UserInclDetails(  // ok for export
   id: UserId,
   extImpId: Option[ExtImpId] = None,
-  externalId: Option[String],
+  externalId: Option[String],   // RENAME to extSsoId, + in API protocol too? [395KSH20]
   fullName: Option[String],
   username: String,
   createdAt: When,
@@ -1287,10 +1286,25 @@ object Group {
 case class GroupStats(numMembers: Int)
 
 
-object EmailNotfPrefs extends Enumeration {
-  type EmailNotfPrefs = Value
-  val Receive, DontReceive, ForbiddenForever, Unspecified = Value   // add toInt [7KABKF2]
+sealed abstract class EmailNotfPrefs(val IntVal: Int) {
+  def toInt: Int = IntVal
 }
+
+object EmailNotfPrefs extends Enumeration {
+  case object Receive extends EmailNotfPrefs(1)
+  case object DontReceive extends EmailNotfPrefs(2)
+  case object ForbiddenForever extends EmailNotfPrefs(3)
+  case object Unspecified extends EmailNotfPrefs(4)
+
+  def fromInt(value: Int): Option[EmailNotfPrefs] = Some(value match {
+    case Receive.IntVal => EmailNotfPrefs.Receive
+    case DontReceive.IntVal =>  EmailNotfPrefs.DontReceive
+    case ForbiddenForever.IntVal =>  EmailNotfPrefs.ForbiddenForever
+    case Unspecified.IntVal =>  EmailNotfPrefs.Unspecified
+    case _ => return None
+  })
+}
+
 
 object SummaryEmails {
   val DoNotSend: Int = -1  // Also in Javascript [5WKIQU2]

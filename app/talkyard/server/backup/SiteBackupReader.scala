@@ -30,6 +30,7 @@ import org.scalactic._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
+import scala.collection.mutable
 import talkyard.server.JsX
 
 
@@ -72,7 +73,7 @@ case class SiteBackupReader(context: EdContext) {
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
-    val (siteMetaJson, settingsJson, guestsJson, groupsJson, membersJson,
+    val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, membersJson,
         permsOnPagesJson, pagesJson, pathsJson,
         categoriesJson, postsJson) =
       try {
@@ -80,6 +81,7 @@ case class SiteBackupReader(context: EdContext) {
           readOptJsObject(bodyJson, "settings"),
           // + API secrets [5ABKR2038]
           readJsArray(bodyJson, "guests", optional = true),
+          readOptJsObject(bodyJson, "guestEmailPrefs"),
           readJsArray(bodyJson, "groups", optional = true),
           readJsArray(bodyJson, "members", optional = true),
           readJsArray(bodyJson, "permsOnPages", optional = true),
@@ -102,8 +104,23 @@ case class SiteBackupReader(context: EdContext) {
 
     val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
 
+    val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ json =>
+      val emailsAndPrefs = json.fields.map(emailAddrAndPrefJsVal => {
+        val email = emailAddrAndPrefJsVal._1
+        val prefsJson = emailAddrAndPrefJsVal._2
+        prefsJson match {
+          case JsNumber(value) =>
+            val pref = EmailNotfPrefs.fromInt(value.toInt).getOrElse(EmailNotfPrefs.Unspecified)
+            email -> pref
+          case x => throwBadRequest("TyE506NP2", o"""Bad email notf pref value for email address
+            ${emailAddrAndPrefJsVal._1}: "${emailAddrAndPrefJsVal._2}"""")
+        }
+      })
+      Map(emailsAndPrefs: _*)
+    }) getOrElse Map.empty
+
     val guests: Seq[Guest] = guestsJson.value.zipWithIndex map { case (json, index) =>
-      readGuestOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+      readGuestOrBad(json, guestEmailPrefs, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "EsE0GY72", o"""Invalid guest json at index $index in the 'guests' list: $errorMessage,
                 json: $json"""))
@@ -170,7 +187,7 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, users, pages, paths, categories, posts, permsOnPages)
+      guests, guestEmailPrefs, users, categories, pages, paths, posts, permsOnPages)
   }
 
 
@@ -212,7 +229,8 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readGuestOrBad(jsValue: JsValue, isE2eTest: Boolean): Guest Or ErrorMessage = {
+  def readGuestOrBad(jsValue: JsValue, guestEmailPrefs: Map[String, EmailNotfPrefs], isE2eTest: Boolean)
+        : Guest Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -226,6 +244,7 @@ case class SiteBackupReader(context: EdContext) {
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
+      val email = readString(jsObj, "emailAddress").trim
       Good(Guest(
         id = id,
         extImpId = readOptString(jsObj, "extImpId"),
@@ -233,7 +252,8 @@ case class SiteBackupReader(context: EdContext) {
         guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
         email = readString(jsObj, "emailAddress").trim,
-        emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater] [7KABKF2]
+        emailNotfPrefs = readEmailNotfsPref(jsObj).getOrElse(
+          guestEmailPrefs.getOrElse(email, EmailNotfPrefs.Unspecified)),
         country = readOptString(jsObj, "country"),
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
     }
@@ -273,7 +293,7 @@ case class SiteBackupReader(context: EdContext) {
         reviewedAt = readOptDateMs(jsObj, "approvedAtMs"),  // [exp] RENAME to reviewdAt
         reviewedById = readOptInt(jsObj, "approvedById"),
         primaryEmailAddress = readString(jsObj, "emailAddress").trim,
-        emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
+        emailNotfPrefs = readEmailNotfsPref(jsObj).getOrElse(EmailNotfPrefs.Unspecified),
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
         mailingListMode = readOptBool(jsObj, "mailingListMode") getOrElse false,
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
@@ -574,6 +594,10 @@ case class SiteBackupReader(context: EdContext) {
         Bad(s"Bad page path json: ${ex.getMessage}")
     }
   }
+
+
+  def readEmailNotfsPref(jsObj: JsObject): Option[EmailNotfPrefs] =
+    readOptInt(jsObj, "emailNotfPrefs").flatMap(EmailNotfPrefs.fromInt)
 
 
   /* Later: Need to handle file uploads / streaming, so can import e.g. images.

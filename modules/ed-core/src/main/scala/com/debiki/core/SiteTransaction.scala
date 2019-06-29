@@ -19,7 +19,6 @@ package com.debiki.core
 
 import java.net.InetAddress
 import java.{util => ju}
-import com.debiki.core.EmailNotfPrefs._
 import scala.collection.immutable
 import Prelude._
 

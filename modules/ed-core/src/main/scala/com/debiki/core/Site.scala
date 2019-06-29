@@ -169,6 +169,9 @@ case class Site(  // delete? Use only SiteInclDetails instead?
 }
 
 
+// COULD split into SiteMeta and SiteStats?  So one can construct a SiteMeta even if
+// one has not yet counted all pages and members etc.
+//
 case class SiteInclDetails(  // [exp] ok use. delete: price_plan
   id: SiteId,
   pubId: String,
@@ -180,10 +183,12 @@ case class SiteInclDetails(  // [exp] ok use. delete: price_plan
   nextPageId: Int,
   quotaLimitMbs: Option[Int],
   hostnames: immutable.Seq[HostnameInclDetails],
-  version: Int = 0,
+  version: Int,  // >= 1,
+  // >= 13 because of built-in members: System, Sysbot, Unknown, 10 groups Everyone .. Admins.
+  numParticipants: Int = 0,
   numGuests: Int = 0,  // gone? delete
   numIdentities: Int = 0,
-  numParticipants: Int = 0,
+  // + numCategories?
   numPageUsers: Int = 0,
   numPages: Int = 0,
   numPosts: Int = 0,
