@@ -78,14 +78,13 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       }
 
       siteData.pages foreach { pageTempId: PageMeta =>
-        val extImpId = pageTempId.extImpId getOrElse throwForbidden(
-          "TyE305KBSG", "Inserting pages with no extImpId not yet impl")
         val tempId = pageTempId.pageId
+        val extImpId = pageTempId.extImpId getOrElse throwForbidden(
+          "TyE305KBSG", s"Inserting pages with no extImpId not yet implemented, page temp id: $tempId")
         val realId = oldPagesByExtImpId.get(extImpId).map(oldPage => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != oldPage.pageId,
             "TyE30TKKWFG3", o"""Imported page w extImpId '$extImpId' has real id $tempId
-               which differs from page ${oldPage.pageId} in the db, with the same extImpId
-               """)
+               which differs from page ${oldPage.pageId} in the db, with the same extImpId""")
           oldPage.pageId
         }).getOrElse({
           tx.nextPageId()
@@ -125,7 +124,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           val anyPpWithRealId = ppsWithRealIdsByTempImpId.get(tempId)
           val ppWithRealId: ParticipantInclDetails = anyPpWithRealId.getOrElse({
             throwBadRequest("TyE305KRD3H", o"""Participant with temp id $tempId
-            missing from the uploaded data""")
+              missing from the uploaded data""")
           })
           dieIf(ppWithRealId.id <= -LowestTempImpId || LowestTempImpId <= ppWithRealId.id, "TyE305KRST2")
           ppWithRealId.id
@@ -135,7 +134,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val firstNextGuestId = tx.nextGuestId
       var nextGuestId = firstNextGuestId
 
-      siteData.guestEmailPrefs.iterator foreach { case (emailAddr, pref) =>
+      siteData.guestEmailNotfPrefs.iterator foreach { case (emailAddr, pref) =>
        tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
       }
 
@@ -143,6 +142,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // For now, don't allow upserting via real ids, only via ext imp ids. (3607TK2)
         throwForbiddenIf(guestTempId.id > -LowestTempImpId,
           "TyE05KKST25", s"Upserting guest with real id ${guestTempId.id}: not yet implemented")
+
+        // We need an extImpId, so we won't duplicate this guest, if we import the same dump many times.
+        throwBadRequestIf(guestTempId.extImpId.isEmpty,
+          "TyE5HKW30R", s"Upserting guests with no extImpId not yet supported ${guestTempId.id}")
 
         val upsertedGuestRealId = guestTempId.extImpId.flatMap(oldParticipantsByExtImpId.get) match {
           case None =>
@@ -179,6 +182,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       val pageNumBumpsByRealPageId = mutable.HashMap[PageId, PageMetaNumBumps]()
 
+      def remappedPostIdTempId(tempId: PostId): PostId = {
+        if (tempId < LowestTempImpId) tempId
+        else {
+          val postRealIds = postsRealByTempId.getOrElse(tempId, throwBadRequest(
+            "TyE305HKRD5", s"Post with temp imp id $tempId missing from the uploaded data"))
+          postRealIds.id
+        }
+      }
+
       siteData.posts.groupBy(_.pageId).foreach { case (tempPageId, tempPosts) =>
         val realPageId = remappedPageTempId(tempPageId)
         val allOldPostsOnPage = tx.loadPostsOnPage(realPageId)  ; COULD_OPTIMIZE // don't need them all
@@ -196,10 +208,18 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         var pageMetaNumBumps = PageMetaNumBumps()
 
         val oldAndNewPosts: Seq[Post] = tempPosts map { tempPost =>
+          throwBadRequestIf(tempPost.id < LowestTempImpId,
+            "TyE30HRPG2", s"Upserting posts with real ids not yet implemented, post id: ${tempPost.id}")
+
+          // We need an extImpId, so we won't recreate and duplicate the post, if we import
+          // the same dump more than once.
+          throwBadRequestIf(tempPost.extImpId.isEmpty,
+            "TyE30HRPG8", s"Upserting posts with no extImpId not yet supported ${tempPost.id}")
+
           val realPostExclParentNr: Post = tempPost.extImpId.flatMap(oldPostsByExtImpId.get) match {
             case Some(oldPostRealIdNr: Post) =>
               // Later: If has same id and nr, then could upsert.
-              // If differetn id or nr, then, error?
+              // If different id or nr, then, error?
               oldPostRealIdNr
             case None =>
               // Probably we need to remap the post nr to 2, 3, 4, 5 ... instead of a temp nr.
@@ -301,10 +321,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 postTempParentNr.copy(parentNr = Some(parentPost.nr))
               }
 
-            // These put() not needed; do anyway, to update parentNr and reduce future bug risk.
-            postsRealByTempId.put(tempPost.id, postRealNoHtml)
-            postsRealByTempPagePostNr.put(tempPost.pagePostNr, postRealNoHtml)
-
             // Sanitize html or convert from commonmark to html — good to wati with,
             // until we're here, so we know the imported contents seems well structured?
             // Need a way to specify if the source is in commonmark or html?
@@ -316,6 +332,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                     postRealNoHtml.approvedSource.get, Whitelist.basicWithImages)))
               }
             tx.insertPost(postReal)
+
+            postsRealByTempId.put(tempPost.id, postReal)
+            postsRealByTempPagePostNr.put(tempPost.pagePostNr, postReal)
           }
         }
       }
@@ -356,7 +375,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             // other way around? — For now, just disallow this.
             // oldCategoriesById.get(catTempId.id) — maybe later.
             throwForbidden("TyE305HKRD6",
-              s"Importing categories with real ids not yet implemented, category: $catTempId")
+              s"Upserting categories with real ids not yet implemented, category: $catTempId")
           }
           nextCategoryId += 1
           nextCategoryId - 1
@@ -382,20 +401,39 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       // ----- Permissions
 
-      val oldPerms = tx.loadPermsOnPages()
+      // For now, only import permissions for each category, once? Seems unclear what to
+      // do, if after the first import, the admins have changed the permissions in the
+      // Talkyard database. Then, if re-importing, maybe they wouldn't want the re-import
+      // to "mess with" the permissions they've edited themselves already? (305DKASP)
+      // (Could add import/upsert options to let the admins clarify what should happen,
+      // if re-importing the same permissions again.)
+
+      // Permissions shouldn't have extImpId:s? or?
+
+      val oldPerms = tx.loadPermsOnPages()   // for debugging
+      val oldPermWithHighestId = maxOptBy(oldPerms)(_.id)
+      var nextPermId = oldPermWithHighestId.map(_.id).getOrElse(0) + 1
 
       siteData.permsOnPages foreach { permissionTempIds: PermsOnPages =>
-        continue_here
-        // Find any old perm, and update, instead of inserting?
-        val permissionRealIds = permissionTempIds.copy(
-          forPeopleId = permissionTempIds.forPeopleId,
-          onCategoryId = permissionTempIds.onCategoryId.map(remappedCategoryTempId),
-          onPageId = permissionTempIds.onPageId.map(remappedPageTempId),
-          //onPostId = permissionTempIds.onPostId.map(rema),
-          //onTagId = permissionTempIds.onTagId,
+        val oldCategoryWithThisPerm =
+          permissionTempIds.onCategoryId.flatMap((catId: CategoryId) =>
+            oldCategories.find(_.id == catId))
+
+        if (oldCategoryWithThisPerm.isDefined) {
+          // Then skip this permission, see above (305DKASP)
+        }
+        else {
+          val permissionRealIds = permissionTempIds.copy(
+            id = nextPermId,
+            forPeopleId = permissionTempIds.forPeopleId,
+            onCategoryId = permissionTempIds.onCategoryId.map(remappedCategoryTempId),
+            onPageId = permissionTempIds.onPageId.map(remappedPageTempId),
+            onPostId = permissionTempIds.onPostId.map(remappedPostIdTempId)
+            //onTagId = permissionTempIds.onTagId,
           )
-        // How know if should update instead?
-        tx.insertPermsOnPages(permissionRealIds)
+          tx.insertPermsOnPages(permissionRealIds)
+          nextPermId += 1
+        }
       }
 
 

@@ -900,6 +900,19 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllGuestEmailNotfPrefsByEmailAddr(): Map[String, EmailNotfPrefs] = {
+    val query = i"""
+      select email, email_notfs from guest_prefs3
+      where site_id = ?
+      """
+    runQueryBuildMap(query, List(siteId.asAnyRef), rs => {
+      val emailAddr = rs.getString("email")
+      val notfPref = _toEmailNotfs(rs.getString("email_notfs"))
+      emailAddr -> notfPref
+    })
+  }
+
+
   def loadAllUsersInclDetails(): immutable.Seq[UserInclDetails] = {
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId

@@ -409,6 +409,7 @@ trait SiteTransaction {
     loadParticipant(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadAllGuests(): immutable.Seq[Guest]
+  def loadAllGuestEmailNotfPrefsByEmailAddr(): Map[String, EmailNotfPrefs]
 
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > Participant.MaxGuestId, "EsE8FY032")

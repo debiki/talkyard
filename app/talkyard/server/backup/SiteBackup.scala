@@ -27,7 +27,7 @@ case class SiteBackup(  // RENAME to SiteDmup, and all related classes too
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],
-  guestEmailPrefs: Map[String, EmailNotfPrefs],
+  guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
   users: Seq[UserInclDetails],
   categories: Seq[Category],
   pages: Seq[PageMeta],
@@ -46,7 +46,7 @@ case object SiteBackup {
     summaryEmailIntervalMins = 60, // for now [7FKB4Q1]
     summaryEmailIfActive = false, // for now [7FKB4Q1]
     guests = Nil,
-    guestEmailPrefs = Map.empty,
+    guestEmailNotfPrefs = Map.empty,
     users = Nil,
     pages = Nil,
     pagePaths = Nil,

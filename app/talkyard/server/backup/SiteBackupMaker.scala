@@ -48,6 +48,7 @@ case class SiteBackupMaker(context: EdContext) {
       // or change to EditedSetings?
 
       val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
+      val guestEmailNotfPrefs: Map[String, EmailNotfPrefs] = tx.loadAllGuestEmailNotfPrefsByEmailAddr()
 
       val users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn).sortBy(_.id)
 
@@ -70,6 +71,7 @@ case class SiteBackupMaker(context: EdContext) {
         // groups = tx.loadAllGroupsAsSeq().sortBy(_.id),
         users = users,
         guests = guests,
+        guestEmailNotfPrefs = guestEmailNotfPrefs,
         categories = categories,
         pages = pageMetas,
         pagePaths = pagePaths,

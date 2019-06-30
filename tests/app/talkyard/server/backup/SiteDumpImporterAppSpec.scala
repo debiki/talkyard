@@ -54,7 +54,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
     createdAt = globals.now(),
     guestName = "Gräddelina Guest",
     guestBrowserId = Some("guest-br-id"), email = "guestemail@x.co",
-    emailNotfPrefs = EmailNotfPrefs.Receive)
+    emailNotfPrefs = EmailNotfPrefs.Unspecified)
 
   lazy val UnapprovedUser =
     UserInclDetails(
@@ -144,7 +144,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
     canonical = true)
 
   lazy val Page333TitlePost: Post = Post.createTitle(
-    uniqueId = 1,
+    uniqueId = LowestTempImpId + 1,
     extImpId = Some(s"page-$PageTempImpId-title-ext-imp-id"),
     pageId = PageTempImpId,
     createdAt = globals.now().toJavaDate,
@@ -154,7 +154,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
     approvedById = None)
 
   lazy val Page333BodyPost: Post = Post.createBody(
-    uniqueId = 2,
+    uniqueId = LowestTempImpId + 2,
     extImpId = Some(s"page-$PageTempImpId-body-ext-imp-id"),
     pageId = PageTempImpId,
     postType = PostType.Normal,
@@ -204,6 +204,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
 
       lazy val dumpToUpsert = SiteBackup.empty.copy(
         guests = Vector(GuestWithAllFields),
+        guestEmailNotfPrefs = Map(
+          // This will override GuestWithAllFields.emailNotfPrefs: (50525205)
+          GuestWithAllFields.email -> EmailNotfPrefs.Receive),
         // users = Vector(UnapprovedUser), later
         categories = Vector(CategoryWithSectPageId333, CategoryWithSectPageId333SubCat),
         pages = Vector(PageMeta333),
@@ -214,9 +217,13 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
       val sectPageId = "1"
 
       // Temp imp ids > 2e9 + 1,2,3,4 ... converted to real ids 1,2,3,4 ....
-      lazy val dumpToReadBack = SiteBackup.empty.copy(
+      lazy val dumpToReadBack = dumpToUpsert.copy(
         guests = Vector(
-          GuestWithAllFields.copy(id = -10)),
+          GuestWithAllFields.copy(
+            id = -10,
+            // This is from guestEmailNotfPrefs, and overrides the value in the Guest
+            // instance imported above: (50525205)
+            emailNotfPrefs = EmailNotfPrefs.Receive)),
         //users = Vector(
         // UnapprovedUser.copy(id = 100)), later
         categories = Vector(
@@ -225,14 +232,19 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
           CategoryWithSectPageId333SubCat.copy(
             id = 2, sectionPageId = sectPageId, parentId = Some(1))),
         pages = Vector(
-          PageMeta333.copy(pageId = sectPageId, categoryId = Some(1))),
+          PageMeta333.copy(
+            pageId = sectPageId,
+            categoryId = Some(1),
+            numPostsTotal = 2)),
         pagePaths = Vector(
           PagePathToPage333.copy(pageId = sectPageId)),
         posts = Vector(
-          Page333TitlePost.copy(pageId = sectPageId),
-          Page333BodyPost.copy(pageId = sectPageId)),
+          Page333TitlePost.copy(id = 1, pageId = sectPageId),
+          Page333BodyPost.copy(id = 2, pageId = sectPageId)),
         permsOnPages = Vector(
-          MayAllPermsForCatWSectPageId333))
+          MayAllPermsForCatWSectPageId333.copy(
+            id = 1,
+            onCategoryId = Some(2))))
 
       "import the items" in {
         site = createSite(siteName)
