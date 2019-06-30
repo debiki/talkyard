@@ -217,7 +217,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
       val sectPageId = "1"
 
       // Temp imp ids > 2e9 + 1,2,3,4 ... converted to real ids 1,2,3,4 ....
-      lazy val dumpToReadBack = dumpToUpsert.copy(
+      lazy val expectedDumpWithoutSiteMeta = dumpToUpsert.copy(
         guests = Vector(
           GuestWithAllFields.copy(
             id = -10,
@@ -246,76 +246,60 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) {
             id = 1,
             onCategoryId = Some(2))))
 
+      var expectedDump: SiteBackup = null
+      var actualDump: SiteBackup = null
+
       "import the items" in {
         site = createSite(siteName)
         upsert(site.id, dumpToUpsert)
       }
 
+      "load / recreate dump from database" in {
+        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+      }
+
       "now they're all there" in {
-        val dump = SiteBackupMaker(context = context).loadSiteDump(site.id)
-        val expectedDump = dumpToReadBack.copy(site = Some(SiteInclDetails(
-          id = dump.theSite.id,
-          pubId = dump.theSite.pubId,
-          status = SiteStatus.Active,
-          name = "imp-test-" + siteName,
-          createdAt = dump.theSite.createdAt,
-          createdFromIp = Some("1.2.3.4"),
-          creatorEmailAddress = None,
-          //numCategories = 2,
-          numPages = 1,
-          numPosts = 2,
-          numPostTextBytes = dump.theSite.numPostTextBytes,
-          nextPageId = 2,
-          quotaLimitMbs = Some(100),
-          hostnames = Vector(HostnameInclDetails(
-            hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-          version = 1,
-          numParticipants = 14,
-        )))
-        dump mustBe expectedDump
+        expectedDump = expectedDumpWithoutSiteMeta.copy(
+          site = Some(SiteInclDetails(
+            id = actualDump.theSite.id,
+            pubId = actualDump.theSite.pubId,
+            status = SiteStatus.Active,
+            name = "imp-test-" + siteName,
+            createdAt = actualDump.theSite.createdAt,
+            createdFromIp = Some("1.2.3.4"),
+            creatorEmailAddress = None,
+            //numCategories = 2,
+            numPages = 1,
+            numPosts = 2,
+            numPostTextBytes = actualDump.theSite.numPostTextBytes,
+            nextPageId = 2,
+            quotaLimitMbs = Some(100),
+            hostnames = Vector(HostnameInclDetails(
+              hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+            version = 1,
+            numParticipants = 14)))
+        actualDump mustBe expectedDump
       }
 
       "re-importing the dump has no effect" - {
-        "re-import" in {
+        "import the same things, a 2nd time" in {
+          upsert(site.id, dumpToUpsert)
         }
 
-        "has no effect" in {
+        "read back" in {
+          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        }
+
+        "nothing changed" in {
+          actualDump mustBe expectedDump
         }
       }
     }
+
 
     "re-import a dump with old and new items, upserts only the new items" in {
       var site: Site = null
 
-    }
-
-    "two sites can share the same upload" in {
-      var site: Site = null
-
-      /*
-      val dao = globals.siteDao(Site.FirstSiteId)
-
-      info("create user, site 1")
-      val magic = "site1_6kmf2"
-      val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = false).get,
-        browserIdData)
-
-      info("create site 2")
-      val site2 = globals.systemDao.createAdditionalSite(
-        pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active,
-        hostname = Some("site-two"),
-        embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,
-        browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-        deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
-
-      info("create user (owner), site 2")
-      val dao2 = globals.siteDao(site2.id)
-      val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
-        password = Some(magic), createdAt = globals.now(), isAdmin = true, isOwner = true).get,
-        browserIdData) */
     }
 
   }

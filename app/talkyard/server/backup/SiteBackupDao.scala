@@ -134,8 +134,17 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val firstNextGuestId = tx.nextGuestId
       var nextGuestId = firstNextGuestId
 
+      val oldGuestEmailNotfPrefs = tx.loadAllGuestEmailNotfPrefsByEmailAddr()
+
       siteData.guestEmailNotfPrefs.iterator foreach { case (emailAddr, pref) =>
-       tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
+        if (oldGuestEmailNotfPrefs.contains(emailAddr)) {
+          // Noop: For now, don't overwrite prefs already in the database. Later,
+          // add config options so one can specify what should happen (e.g. update if
+          // more recent timestamp?).
+        }
+        else {
+          tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
+        }
       }
 
       siteData.guests foreach { guestTempId: Guest =>
@@ -416,8 +425,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       siteData.permsOnPages foreach { permissionTempIds: PermsOnPages =>
         val oldCategoryWithThisPerm =
-          permissionTempIds.onCategoryId.flatMap((catId: CategoryId) =>
-            oldCategories.find(_.id == catId))
+          permissionTempIds.onCategoryId.flatMap((tempCatId: CategoryId) => {
+            val realCatId = remappedCategoryTempId(tempCatId)
+            oldCategories.find(_.id == realCatId)
+          })
 
         if (oldCategoryWithThisPerm.isDefined) {
           // Then skip this permission, see above (305DKASP)
@@ -425,7 +436,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         else {
           val permissionRealIds = permissionTempIds.copy(
             id = nextPermId,
-            forPeopleId = permissionTempIds.forPeopleId,
+            forPeopleId = remappedPpTempId(permissionTempIds.forPeopleId),
             onCategoryId = permissionTempIds.onCategoryId.map(remappedCategoryTempId),
             onPageId = permissionTempIds.onPageId.map(remappedPageTempId),
             onPostId = permissionTempIds.onPostId.map(remappedPostIdTempId)
