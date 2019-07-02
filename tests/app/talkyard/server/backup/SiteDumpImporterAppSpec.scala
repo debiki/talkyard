@@ -81,8 +81,6 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         posts = Vector(Page333TitlePost, Page333BodyPost),
         permsOnPages = Vector(MayAllPermsForCatWSectPageId333))
 
-      var latestDumpToUpsert: SiteBackup = null
-
       val sectPageId = "1"
 
       // Temp imp ids > 2e9 + 1,2,3,4 ... converted to real ids 1,2,3,4 ....
@@ -164,30 +162,89 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         }
       }
 
-      "re-import a dump with a new sub category, upserts the sub category" - {
-        lazy val rootCat = actualDump.categories.find(_.parentId.isEmpty) getOrDie "TyE305HSDRA"
-        lazy val sectPage = actualDump.pages.headOption getOrDie "TyE5HKRT024R"
-        lazy val newCat = makeCategory(
-          LowestTempImpId + 1, sectionPageId = sectPage.pageId, parentId = Some(rootCat.id))
+    }
 
-        "re-import" in {
-          latestDumpToUpsert = initialDumpToUpsert.copy(
-            categories = initialDumpToUpsert.categories.toVector :+ newCat)
-          upsert(site.id, latestDumpToUpsert)
-        }
+    "re-import a dump with a new sub category, upserts the sub category" - {
+      var site: Site = null
+      val siteName = "re-imp-more-6094624"
 
-        "read back" in {
-          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
-        }
+      var expectedDump: SiteBackup = null
+      var actualDump: SiteBackup = null
+      var latestDumpToUpsert: SiteBackup = null
 
-        "find the new sub cat" in {
-          val newCatWithRealIds = newCat.copy(id = nextExpectedCategoryId())
-          expectedDump = expectedDump.copy(
-            categories = expectedDump.categories :+ newCatWithRealIds)
-          actualDump mustBe expectedDump
-        }
+      lazy val rootCat = actualDump.categories.find(_.parentId.isEmpty) getOrDie "TyE305HSDRA"
+      lazy val sectPage = actualDump.pages.headOption getOrDie "TyE5HKRT024R"
 
+      lazy val initialDumpToUpsert = SiteBackup.empty.copy(
+        categories = Vector(CategoryWithSectPageId333, CategoryWithSectPageId333SubCat),
+        pages = Vector(PageMeta333))
+
+      val expectedSectPageId = "1"
+
+      lazy val expectedDumpWithoutSiteMeta = initialDumpToUpsert.copy(
+        categories = Vector(
+          CategoryWithSectPageId333.copy(
+            id = 1, sectionPageId = expectedSectPageId, defaultSubCatId = Some(2)),
+          CategoryWithSectPageId333SubCat.copy(
+            id = 2, sectionPageId = expectedSectPageId, parentId = Some(1))),
+        pages = Vector(
+          PageMeta333.copy(
+            pageId = expectedSectPageId,
+            categoryId = Some(1),
+            numPostsTotal = 0)))
+
+      "import the items" in {
+        site = createSite(siteName)
+        upsert(site.id, initialDumpToUpsert)
       }
+
+      "load / recreate dump from database" in {
+        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+      }
+
+      "now they're all there" in {
+        expectedDump = expectedDumpWithoutSiteMeta.copy(
+          site = Some(SiteInclDetails(
+            id = actualDump.theSite.id,
+            pubId = actualDump.theSite.pubId,
+            status = SiteStatus.Active,
+            name = "imp-test-" + siteName,
+            createdAt = actualDump.theSite.createdAt,
+            createdFromIp = Some("1.2.3.4"),
+            creatorEmailAddress = None,
+            //numCategories = 2,
+            numPages = 1,
+            numPosts = 0,
+            numPostTextBytes = actualDump.theSite.numPostTextBytes,
+            nextPageId = 2,
+            quotaLimitMbs = Some(100),
+            hostnames = Vector(HostnameInclDetails(
+              hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+            version = 1,
+            numParticipants = 13)))
+        actualDump mustBe expectedDump
+      }
+
+      lazy val newCat = makeCategory(
+        LowestTempImpId + 1, sectionPageId = sectPage.pageId, parentId = Some(rootCat.id))
+            .copy(extImpId = Some("additional_cat_ext_imp_id"))
+
+      "add a sub category" in {
+        // categories = initialDumpToUpsert.categories.toVector :+ newCat)
+        upsert(site.id, SiteBackup.empty.copy(categories = Vector(newCat)))
+      }
+
+      "read back" in {
+        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+      }
+
+      "find the new sub cat" in {
+        val newCatWithRealIds = newCat.copy(id = 3)
+        expectedDump = expectedDump.copy(
+          categories = expectedDump.categories :+ newCatWithRealIds)
+        actualDump mustBe expectedDump
+      }
+
     }
 
 

@@ -32,7 +32,7 @@ import talkyard.server.JsX._
   *
   * Search for [readlater] for stuff ignored right now.
   */
-case class SiteBackupMaker(context: EdContext) {
+case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ...Maker?
 
   import context.globals
 
