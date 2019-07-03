@@ -13,6 +13,9 @@ tmp
 RUNNING_PID
 downloads/
 
+.bloop/
+.metals/
+
 # Docker volume contents:
 volumes/
 # The npm-gulp Docker container creates some cache dirs in its home dir:
