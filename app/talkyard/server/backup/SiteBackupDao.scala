@@ -95,7 +95,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       // ----- Participants
 
-      val extImpIds =
+      val ppsExtImpIds =
         siteData.guests.flatMap(_.extImpId)
         // ++ siteData.users.flatMap(_.extImpId)  later
         // ++ siteData.groups.flatMap(_.extImpId)  later
@@ -104,7 +104,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // as some of those in the siteData, then, they are to be updated, and we
       // won't create new participants, for them.
       val oldParticipantsByExtImpId: Map[ExtImpId, ParticipantInclDetails] =
-        tx.loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds)
+        tx.loadParticipantsInclDetailsByExtImpIdsAsMap(ppsExtImpIds)
 
       val ppsWithRealIdsByTempImpId = mutable.HashMap[UserId, ParticipantInclDetails]()
       // Later: if some guests have real ids already, lookup any existing users
@@ -266,6 +266,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                     bodyHiddenById = tempPost.bodyHiddenById.map(remappedPpTempId),
                     deletedById = tempPost.deletedById.map(remappedPpTempId))
 
+                  BUG // this ignores old already existing posts.
+                  // Instead, better reoad everything, like done in importCreateSite (0926575)?
+
                   pageMetaNumBumps = pageMetaNumBumps.copy(
                     //bumpedAt = When.fromMillis(math.max(
                     //  pageMetaNumBumps.bumpedAt.millis, postNewIdNr.createdAtMillis)),
@@ -340,7 +343,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                   approvedHtmlSanitized = Some(Jsoup.clean(
                     postRealNoHtml.approvedSource.get, Whitelist.basicWithImages)))
               }
+
             tx.insertPost(postReal)
+
+            // Index post too; insert it into the index queue. And update this test: [2WBKP05].
 
             postsRealByTempId.put(tempPost.id, postReal)
             postsRealByTempPagePostNr.put(tempPost.pagePostNr, postReal)
@@ -456,6 +462,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val realId = pageRealIdsByTempImpId.get(pageMetaTempId.pageId) getOrDie "TyE06DKWD24"
         val pageMetaNumBumps = pageNumBumpsByRealPageId.getOrElse(realId, PageMetaNumBumps())
         def bumpNums(pageMeta: PageMeta): PageMeta = {
+          // BUG this considers only new posts. Instead:
+          // val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
+          // and use it instead ?  (0926575)
           val b = pageMetaNumBumps
           pageMeta.copy(
             updatedAt = tx.now.toJavaDate,
@@ -529,65 +538,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             // Later, could update.
         }
       }
-
-
-      /* ----- Posts
-
-      siteData.posts foreach { postTempAll: Post =>
-        val oldPostSameExtImpId = postTempAll.extImpId.flatMap(oldPagesByExtImpId.get)
-        if (oldPostSameExtImpId.isDefined) {
-          // We've imported this external post already. For now, don't import again,
-          // just do nothing. Later: Could update [IMPUPD] the old post, depending
-          // on import flags like onConflict = DoNothing / UpdateAlways / UpdateIfNewer.
-        }
-        else {
-          val postTempPageId = postsRealIdNrsByTempId.get(postTempAll.id).getOrDie("TyE5FKBG025")
-          val tempPageId = postTempPageId.pageId
-          val realPageId = remappedPageTempId(postTempPageId.pageId)
-          val realPostNr = postTempPageId.nr
-          val oldPostSamePostNr = oldPostsByPagePostNr.get(PagePostNr(realPageId, postTempPageId.nr))
-          if (oldPostSamePostNr.isDefined) {
-            // Do nothing. The old post should be an already existing page title
-            // or body. Later, maybe update. [IMPUPD]
-            //
-            // (Details: There's an old post that doesn't have the same ext imp id, so it's not
-            // the same as the one we're importing. Still it has the same page id and
-            // post nr — although we've remapped the post nrs of the posts we're importing,
-            // to avoid conflicts. But we don't remap the title and body post nrs,
-            // which means we must be importing the title or body, and there's already
-            // a title or body in the db, for this page. This happens e.g. if we import
-            // old Disqus comments, to a page for which there's already a Talkyard
-            // embedded comments discussion. Then we can leave the already existing title
-            // and body untouched.)
-            dieIf(!PageParts.isArticleOrTitlePostNr(realPostNr),
-              "TyE502BKGD8", o"""Conflict when upserting post w real pageId $realPageId
-              postNr $realPostNr and temp pageId $tempPageId postNr ${postTempAll.nr}""")
-          }
-          else {
-            val parentPagePostNr = postTempPageId.parentNr.map { nr =>
-              val parentTempPageIdPostNr = PagePostNr(tempPageId, nr)
-              remappedPostNr(parentTempPageIdPostNr)
-            }
-            val postRealAll = postTempPageId.copy(
-              pageId = realPageId,
-              parentNr = parentPagePostNr,
-              // later: multireplyPostNrs
-              createdById = remappedPpTempId(postTempPageId.createdById),
-              currentRevisionById = remappedPpTempId(postTempPageId.currentRevisionById),
-              approvedById = postTempPageId.approvedById.map(remappedPpTempId),
-              lastApprovedEditById = postTempPageId.lastApprovedEditById.map(remappedPpTempId),
-              collapsedById = postTempPageId.collapsedById.map(remappedPpTempId),
-              closedById = postTempPageId.closedById.map(remappedPpTempId),
-              bodyHiddenById = postTempPageId.bodyHiddenById.map(remappedPpTempId),
-              deletedById = postTempPageId.deletedById.map(remappedPpTempId))
-
-            tx.insertPost(postRealAll)
-          }
-        }
-
-        // TODO:
-        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
-      }  */
     }
   }
 
@@ -692,8 +642,12 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         transaction.insertPermsOnPages(permission)
       }
       // Or will this be a bit slow? Kind of loads everything we just imported.
-      siteData.pages foreach { pageMeta =>
+      siteData.pages foreach { pageMeta =>  // (0926575)
         // [readlater] export & import page views too, otherwise page popularity here will be wrong.
+        // (So here we load all posts again — the ones we just inserted. Should be fine
+        // performance wise — it's just one db query, to load all posts, vs one per post,
+        // previously when inserting. At least not more than 2x slower, which should be ok
+        // (simplicity = more important).
         val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
         newDao.updatePagePopularity(pagePartsDao, transaction)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)

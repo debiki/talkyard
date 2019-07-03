@@ -73,15 +73,15 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def upsertDumpJson(): Action[JsValue] = ApiSecretPostJsonAction(
+  def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     val dump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       request.body, isE2eTest = false)
-    upsertDumpImpl(dump, request)
+    upsertSitePatchImpl(dump, request)
   }
 
 
-  private def upsertDumpImpl(dump: SiteBackup, request: DebikiRequest[_]) = {
+  private def upsertSitePatchImpl(dump: SiteBackup, request: DebikiRequest[_]) = {
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
@@ -101,6 +101,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
+    throwForbiddenIf(deleteOldSite is true, "TyE56AKSD2", "Deleting old sites not yet well tested enough")
     /*
     //val createdFromSiteId = Some(request.siteId)
     val response = importSiteImpl(
@@ -109,7 +110,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
-    val response = importSiteImpl(request, browserIdData, deleteOld = false, isTest = false)
+    val response = importSiteImpl(request, browserIdData, deleteOld = deleteOldSite is true,
+      isTest = false)
     response.withCookies(moreNewCookies: _*)
   }
 
