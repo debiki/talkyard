@@ -336,6 +336,12 @@ trait PagesDao {
       // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
       embeddingUrl.foreach(tx.insertAltPageIdIfFree(_, realPageId = pageId))
     }
+    // To, by default, make it simple to test things from localhost, and moving to
+    // a new address, store the discusion id by url path too, without origin. [06KWDNF2]
+    val embeddingPath = embeddingUrl.map(extractUrlPath)
+    if (altPageId != embeddingPath) {
+      embeddingPath.foreach(tx.insertAltPageIdIfFree(_, realPageId = pageId))
+    }
 
     // COULD generate notifications from here — currently done in the callers though.
 

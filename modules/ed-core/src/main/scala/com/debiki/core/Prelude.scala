@@ -224,6 +224,9 @@ object Prelude {
   def stripSchemeSlashSlash(url: String): String =
     url.replaceFirst("https://", "").replaceFirst("http://", "")
 
+  /** Returns '/' if there's no url path or the url is weird. */
+  def extractUrlPath(url: String) =
+    stripOrigin(url).getOrElse("/").takeWhile(c => c != '#' && c != '&');
 
   // This should match too much, if something is wrong/weird, rather than too little
   // (so don't use ValidHostAndPortRegexStr).

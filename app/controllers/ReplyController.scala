@@ -144,12 +144,22 @@ object EmbeddedCommentsPageCreator {
     (anyAltPageId orElse anyEmbeddingUrl).flatMap(request.dao.getRealPageId) foreach { pageId =>
       return (pageId, None)
     }
-    // Create a new embedded discussion page.
-    // It hasn't yet been created, and is needed, so we can associate the thing
-    // we're currently saving (e.g. a reply) with a page.
+
     val embeddingUrl = anyEmbeddingUrl getOrElse {
       throwNotFound("TyE0ID0EMBURL", "Page not found and no embedding url specified")
     }
+
+    // There could be a site setting to disable lookup by url path (without origin and
+    // query params), if the same Talkyard site is used for different blogs on different
+    // domains, with possibly similar url paths. [06KWDNF2]
+    val urlPath = extractUrlPath(embeddingUrl)
+    request.dao.getRealPageId(urlPath) foreach { pageId =>
+      return (pageId, None)
+    }
+
+    // Create a new embedded discussion page.
+    // It hasn't yet been created, and is needed, so we can associate the thing
+    // we're currently saving (e.g. a reply) with a page.
     val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
     (newPagePath.pageId, Some(newPagePath))
   }

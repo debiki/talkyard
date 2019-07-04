@@ -159,12 +159,21 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
   private def getAnyRealPageId(edPageId: Option[PageId], discussionId: Option[String],
         embeddingUrl: String, dao: SiteDao): Option[PageId] = {
-    // Lookup the page by real id, if specified, otherwise alt id, or embedding url.
+    // Lookup the page by Talkyard page id, if specified, otherwise
+    // use the discussion id, or the embedding url, or, if no match,
+    // the embedding url path (so works accross all origins).
+    // Trying with the full url (incl origin) before the url path only, can be good
+    // if the same Talkyard site provides comments for two different blogs?
+    // Then later there could be a config value that says the 2nd blog should
+    // lookup discussions by full url origin + path. [06KWDNF2]
     edPageId orElse {
       val altId =
         if (discussionId is "") embeddingUrl
         else discussionId.getOrElse(embeddingUrl)
-      dao.getRealPageId(altId)
+      dao.getRealPageId(altId) orElse {
+        val urlPath = extractUrlPath(embeddingUrl);
+        dao.getRealPageId(urlPath);
+      }
     }
   }
 
