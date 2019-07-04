@@ -75,6 +75,10 @@ const MaxNumFirstPosts = 10;
 
 const MaxEmailsPerUser = 5;  // also in scala [4GKRDF0]
 
+// If we try to load a user with this id, or a post with this nr, etc, then
+// something is amiss. Can then show and error or do nothing.
+const TooHighNumber = 100e6;  // [05RKVJWG2]
+
 const IgnoreThisError: ErrorPolicy = -112233;
 const ShowNoErrorDialog: ErrorPolicy = -112234;
 

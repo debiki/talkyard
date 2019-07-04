@@ -425,7 +425,14 @@ function findCommentToScrollTo() {
   if (commentNrHashMatch) {
     var commentNrStr = commentNrHashMatch[1];
     var commentNr = parseInt(commentNrStr);
-    postNrToFocus = commentNr + 1;  // comment nr = post nr - 1  [2PAWC0]
+    // If the comment nr is > 1e6, something is amiss. Probably the #comment-NNN
+    // url hash, is instead for a Disqus comment — which also happen to use
+    // that same hash frag, for refering to a comment via the url, and their
+    // comment ids are really large numbers, like 1e9.
+    if (0 < commentNr && commentNr < 1e6) { // also see TooHighNumber, [05RKVJWG2]
+      // The comment nr is post nr - 1  [2PAWC0].
+      postNrToFocus = commentNr + 1;
+    }
   }
 }
 

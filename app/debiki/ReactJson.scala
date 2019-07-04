@@ -356,7 +356,7 @@ class JsonMaker(dao: SiteDao) {
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(authzCtx.permissions),
-      "rootPostId" -> JsNumber(BigDecimal(renderParams.thePageRoot)),  // ? why BigDecimal ?
+      "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
       "siteSections" -> makeSiteSectionsJson(),

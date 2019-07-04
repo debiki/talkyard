@@ -558,7 +558,7 @@ const RootPostAndComments = createComponent({
   loadAndShowRootPost: function(event) {
     event.preventDefault();
     const store: Store = this.props.store;
-    ReactActions.loadAndShowPost(store.rootPostId);
+    ReactActions.loadAndShowPost(store.rootPostId);  // RENAME rootPostId to rootPostNr.
   },
 
   onAfterPageReplyClick: function(event, postType: PostType) {

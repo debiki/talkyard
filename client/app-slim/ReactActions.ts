@@ -614,7 +614,8 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
 function findIntInHashFrag(valuePrefix: string, theHash: string): PostNr | undefined {
   const index = theHash.indexOf(valuePrefix);
   const anyInt = index >= 0 ? parseInt(theHash.substr(index + valuePrefix.length, 999)) : undefined;
-  return _.isNaN(anyInt) ? undefined : anyInt;
+  return _.isNaN(anyInt) || anyInt < -TooHighNumber || TooHighNumber < anyInt ?
+      undefined : anyInt;
 }
 
 
