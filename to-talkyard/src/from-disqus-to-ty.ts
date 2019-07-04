@@ -19,10 +19,17 @@ let verbose: boolean | undefined;
 let errors = false;
 
 
+/**
+ * I think this is for "advanced" bloggers who split their blog comments in
+ * different blog topic categories.
+ */
 interface DisqusCategory {
 }
 
 
+/**
+ * There's one Disqus thread per blog posts. Each Disqus comment is in one thread.
+ */
 interface DisqusThread {
   disqusThreadId?: string;
   link?: string;
@@ -33,6 +40,9 @@ interface DisqusThread {
   isClosed?: boolean;
   isDeleted?: boolean;
   posts: DisqusComment[];
+  // category:  Skip. Mirroring Disqus comments categories to Talkyard seems
+  // complicated and no one has asked for that.
+  // message: Skip. Seems to be always empty.
 }
 
 
@@ -273,13 +283,15 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     const thread: DisqusThread = threadsByDisqusId[threadDisqusId];
     const pageCreatedAt: WhenMs = Date.parse(thread.createdAtIsoString);
-    const urlNoOrigin = thread.link.replace(/https?:\/\/[^/]+\//, '');  // dupl [305MBKR52]
+    const urlInclOrigin = thread.link;
+    const urlPath = urlInclOrigin.replace(/https?:\/\/[^/]+\//, '')  // dupl [305MBKR52]
+        .replace(/[#?].*$/, '');
 
     const tyPage: PageDumpV0 = {
       dbgSrc: 'ToTy',
       id: pageId,
       extImpId: threadDisqusId + DisqusIdSuffix,
-      altIds: [urlNoOrigin],
+      altIds: [urlInclOrigin, urlPath],
       pageType: c.TestPageRole.EmbeddedComments,
       version: 1,
       createdAt: pageCreatedAt,

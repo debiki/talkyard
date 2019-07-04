@@ -67,6 +67,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val oldPagesByExtImpId: Map[ExtImpId, PageMeta] =
         tx.loadPageMetasByExtImpIdAsMap(siteData.pages.flatMap(_.extImpId))
 
+        // .... hmm
+      val oldPagesByAltId: Map[AltPageId, PageId] =
+        tx.loadPageMetasByAltIdAsMap(siteData.pageIdsByAltIds.values.flatten)
+
       val pageRealIdsByTempImpId = mutable.HashMap[PageId, PageId]()
 
       def remappedPageTempId(tempId: PageId): PageId = {
@@ -81,6 +85,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val tempId = pageTempId.pageId
         val extImpId = pageTempId.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extImpId not yet implemented, page temp id: $tempId")
+
+        val anyPageByExtImpId = oldPagesByExtImpId.get(extImpId)
+        val anyPagesByAltIds = 
         val realId = oldPagesByExtImpId.get(extImpId).map(oldPage => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != oldPage.pageId,
             "TyE30TKKWFG3", o"""Imported page w extImpId '$extImpId' has real id $tempId
