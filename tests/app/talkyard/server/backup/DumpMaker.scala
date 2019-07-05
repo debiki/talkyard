@@ -30,6 +30,7 @@ trait DumpMaker {
   self: DaoAppSuite =>
 
 
+  /*
   def createSite(id: String): Site = {
     globals.systemDao.createAdditionalSite(
       pubId = s"imptest_$id", name = s"imp-test-$id", status = SiteStatus.Active,
@@ -38,7 +39,7 @@ trait DumpMaker {
       creatorId = SystemUserId, // not in use when createdFromSiteId is None
       browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
       deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
-  }
+  } */
 
 
   def upsert(siteId: SiteId, dump: SiteBackup) {
@@ -168,6 +169,10 @@ trait DumpMaker {
 
   lazy val Page333BodyPost: Post = makePost(
     LowestTempImpId + 2, pageId = PageTempImpId, nr = PageParts.BodyNr)
+
+  lazy val Page333Reply: Post = makePost(
+    LowestTempImpId + 3, pageId = PageTempImpId, nr = PageParts.FirstReplyNr,
+        parent = Some(Page333BodyPost))
 
   def makePost(id: PostId, pageId: PageId, nr: PostNr, parent: Option[Post] = None): Post = Post.create(
     uniqueId = id,

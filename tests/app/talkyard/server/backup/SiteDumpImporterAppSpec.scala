@@ -19,7 +19,8 @@ package talkyard.server.backup
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.DaoAppSuite
+import debiki.TextAndHtmlMaker
+import debiki.dao._
 import org.scalatest._
 
 
@@ -33,7 +34,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       val siteName = "empty-5079267"
 
       "import" in {
-        site = createSite(siteName)
+        site = createSite(siteName)._1
         upsert(site.id, SiteBackup.empty)
       }
 
@@ -43,20 +44,21 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           id = dump.theSite.id,
           pubId = dump.theSite.pubId,
           status = SiteStatus.Active,
-          name = "imp-test-" + siteName,
+          name = "site-" + siteName,
           createdAt = dump.theSite.createdAt,
           createdFromIp = Some("1.2.3.4"),
           creatorEmailAddress = None,
           nextPageId = 1,
           quotaLimitMbs = Some(100),
           hostnames = Vector(HostnameInclDetails(
-            hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+            hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
           version = 1,
           numParticipants = 13,
         )))
         dump mustBe expectedDump
       }
     }
+
 
     "import one item of each type into an empty site" - {
       var site: Site = null
@@ -117,7 +119,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       var actualDump: SiteBackup = null
 
       "import the items" in {
-        site = createSite(siteName)
+        site = createSite(siteName)._1
         upsert(site.id, initialDumpToUpsert)
       }
 
@@ -131,7 +133,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             id = actualDump.theSite.id,
             pubId = actualDump.theSite.pubId,
             status = SiteStatus.Active,
-            name = "imp-test-" + siteName,
+            name = "site-" + siteName,
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some("1.2.3.4"),
             creatorEmailAddress = None,
@@ -142,7 +144,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             nextPageId = 2,
             quotaLimitMbs = Some(100),
             hostnames = Vector(HostnameInclDetails(
-              hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 1,
             numParticipants = 14)))
         actualDump mustBe expectedDump
@@ -163,6 +165,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       }
 
     }
+
 
     "re-import a dump with a new sub category, upserts the sub category" - {
       var site: Site = null
@@ -194,7 +197,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             numPostsTotal = 0)))
 
       "import the items" in {
-        site = createSite(siteName)
+        site = createSite(siteName)._1
         upsert(site.id, initialDumpToUpsert)
       }
 
@@ -208,7 +211,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             id = actualDump.theSite.id,
             pubId = actualDump.theSite.pubId,
             status = SiteStatus.Active,
-            name = "imp-test-" + siteName,
+            name = "site-" + siteName,
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some("1.2.3.4"),
             creatorEmailAddress = None,
@@ -219,7 +222,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             nextPageId = 2,
             quotaLimitMbs = Some(100),
             hostnames = Vector(HostnameInclDetails(
-              hostname = "imp-test-" + siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 1,
             numParticipants = 13)))
         actualDump mustBe expectedDump
@@ -245,6 +248,96 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         actualDump mustBe expectedDump
       }
 
+    }
+
+
+    def createSiteWithOneCatAndPage(hostname: String): (Site, CreateForumResult, SiteDao) = {
+      val (site, dao) = createSite(hostname)
+      val owen = createPasswordOwner("owner_un", dao)
+      val forum: CreateForumResult = dao.createForum(
+          s"Forum $hostname", folder = "/", isForEmbCmts = false, Who(owen.id, browserIdData)
+          ) getOrDie "TyE305RTG3"
+
+      createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Forum Title"),
+        textAndHtmlMaker.testBody("Forum intro text."), SysbotUserId, browserIdData,
+        dao, Some(forum.defaultCategoryId))
+
+      return (site, forum, dao)
+    }
+
+
+    "Import new pages and replies" - {
+      lazy val (site, forum, dao) = createSiteWithOneCatAndPage("imp-pages-relpies")
+
+      "create site" in {
+        site // lazy creates it
+      }
+
+      "add a page with one reply" in {
+        // This binds extId "embedded_comments" with a temp in-patch id, in the site patch,
+        // to the emb comments category with a real id in the database.
+        // Later, when there's a PageMetaPatch class that can reference its category
+        // by ext id (and not just internal real id), this dummy category won't be needed.
+        val dummyCategory = makeCategory(
+          CategoryWithSectPageId333.id,
+          sectionPageId = forum.pagePath.pageId,
+          defSubCat = Some(forum.defaultCategoryId)
+          ).copy(extImpId = Some("embedded_comments"));
+
+        upsert(site.id, SiteBackup.empty.copy(
+          categories = Vector(dummyCategory),
+          pages = Vector(PageMeta333),
+          pagePaths = Vector(PagePathToPage333),
+          posts = Vector(Page333TitlePost, Page333BodyPost, Page333Reply)))
+/*
+        pages = Vector(
+          PageMeta333.copy(
+            categoryId = Some(forum.defaultCategoryId),
+            numPostsTotal = 3)),
+        pagePaths = Vector(
+          PagePathToPage333.copy(pageId = sectPageId)),
+        posts = Vector(
+          Page333TitlePost.copy(id = 1, pageId = sectPageId),
+          Page333BodyPost.copy(id = 2, pageId = sectPageId)))) */
+      }
+
+      var actualDump: SiteBackup = null
+      var actualNewPage: PageMeta = null
+      var actualPosts: Seq[Post] = null
+      var actualTitle: Post = null
+      var actualBody: Post = null
+      var actualReply: Post = null
+
+      "read back" in {
+        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+      }
+
+      "find the new page" in {
+        actualNewPage = actualDump.pages.find(_.categoryId is forum.defaultCategoryId
+          ) getOrDie "TyE05HKRT63B"
+      }
+
+      "find the title, body and reply" in {
+        actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
+        actualPosts.length mustBe 3
+        actualTitle = actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT"
+        actualBody = actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A"
+        actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG05RKG"
+      }
+
+      "with the correct text contents" in {
+        actualTitle.approvedHtmlSanitized mustBe Page333TitlePost.approvedHtmlSanitized
+        actualBody.approvedHtmlSanitized mustBe Page333BodyPost.approvedHtmlSanitized
+        actualReply.approvedHtmlSanitized mustBe Page333Reply.approvedHtmlSanitized
+      }
+    }
+
+
+    "Add more replies to an existing page, via page ext id" - {
+    }
+
+
+    "Add more replies to an existing page, via page alt id" - {
     }
 
 

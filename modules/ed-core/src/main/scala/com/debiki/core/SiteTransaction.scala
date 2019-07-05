@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -248,6 +248,7 @@ trait SiteTransaction {
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
+  def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {

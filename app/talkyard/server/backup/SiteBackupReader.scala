@@ -187,7 +187,8 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, guestEmailPrefs, users, categories, pages, paths, posts, permsOnPages)
+      guests, guestEmailPrefs, users, categories,
+      pages, paths, pageIdsByAltIds = Map.empty, posts, permsOnPages)
   }
 
 

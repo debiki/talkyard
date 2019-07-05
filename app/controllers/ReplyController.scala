@@ -18,6 +18,7 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}

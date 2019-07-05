@@ -490,6 +490,25 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
+  def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta] = {
+    if (altIds.isEmpty)
+      return Map.empty
+
+    val values: List[AnyRef] = siteId.asAnyRef :: altIds.toList
+    var sql = s"""
+        select g.page_id, ${_PageMetaSelectListItems}
+        from alt_page_ids a inner join pages3 g
+          on a.site_id = g.site_id and
+             a.real_page_id = g.page_id
+        where a.site_id = ?
+          and a.alt_page_id in (${ makeInListFor(altIds) })"""
+    runQueryBuildMap(sql, values, rs => {
+      val meta = _PageMeta(rs)
+      meta.extImpId.getOrDie("TyE7KRSHNG2") -> meta
+    })
+  }
+
+
   def updatePageMetaImpl(meta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
     transactionCheckQuota { transaction =>
       if (markSectionPageStale) {

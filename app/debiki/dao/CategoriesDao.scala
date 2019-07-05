@@ -55,9 +55,14 @@ case class CategoryToSave(
   includeInSummaries: IncludeInSummaries,
   description: String,
   createDeletedAboutTopic: Boolean = false,
+  extId: Option[ExtImpId] = None,
   anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
+
+  //require ok ext id
+  //require ok slug
+
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
@@ -68,6 +73,7 @@ case class CategoryToSave(
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,
+    extImpId = extId,
     sectionPageId = sectionPageId,
     parentId = Some(parentId),
     defaultSubCatId = None,
