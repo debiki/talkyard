@@ -251,95 +251,236 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
     }
 
 
-    def createSiteWithOneCatAndPage(hostname: String): (Site, CreateForumResult, SiteDao) = {
+    def createSiteWithOneCatAndPage(hostname: String)
+          : (Site, CreateForumResult, User, SiteDao) = {
       val (site, dao) = createSite(hostname)
       val owen = createPasswordOwner("owner_un", dao)
       val forum: CreateForumResult = dao.createForum(
-          s"Forum $hostname", folder = "/", isForEmbCmts = false, Who(owen.id, browserIdData)
+          s"Forum $hostname", folder = "/", isForEmbCmts = true, Who(owen.id, browserIdData)
           ) getOrDie "TyE305RTG3"
 
       createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Forum Title"),
         textAndHtmlMaker.testBody("Forum intro text."), SysbotUserId, browserIdData,
         dao, Some(forum.defaultCategoryId))
 
-      return (site, forum, dao)
+      (site, forum, owen, dao)
     }
 
 
     "Import new pages and replies" - {
-      lazy val (site, forum, dao) = createSiteWithOneCatAndPage("imp-pages-relpies")
+      lazy val (site, forum, owen, dao) = createSiteWithOneCatAndPage("imp-pages-relpies")
+      val upsertedPageExtId = "ups_ext_id"
+      val upsertedPageAltId = "ups_alt_id"
+      lazy val upsertedPageComplete = PageMeta333.copy(
+        extImpId = Some(upsertedPageExtId),
+        authorId = owen.id,
+        pageType = PageType.Discussion)
+      lazy val upsertedPageOnlyExtId = PageMeta333.copy(
+        extImpId = Some(upsertedPageExtId))
 
       "create site" in {
         site // lazy creates it
       }
 
-      "add a page with one reply" in {
-        // This binds extId "embedded_comments" with a temp in-patch id, in the site patch,
-        // to the emb comments category with a real id in the database.
-        // Later, when there's a PageMetaPatch class that can reference its category
-        // by ext id (and not just internal real id), this dummy category won't be needed.
-        val dummyCategory = makeCategory(
-          CategoryWithSectPageId333.id,
-          sectionPageId = forum.pagePath.pageId,
-          defSubCat = Some(forum.defaultCategoryId)
-          ).copy(extImpId = Some("embedded_comments"));
+      "add a page with one reply" - {
+        var patchToUpsert: SiteBackup = null
 
-        upsert(site.id, SiteBackup.empty.copy(
-          categories = Vector(dummyCategory),
-          pages = Vector(PageMeta333),
-          pagePaths = Vector(PagePathToPage333),
-          posts = Vector(Page333TitlePost, Page333BodyPost, Page333Reply)))
-/*
-        pages = Vector(
-          PageMeta333.copy(
-            categoryId = Some(forum.defaultCategoryId),
-            numPostsTotal = 3)),
-        pagePaths = Vector(
-          PagePathToPage333.copy(pageId = sectPageId)),
-        posts = Vector(
-          Page333TitlePost.copy(id = 1, pageId = sectPageId),
-          Page333BodyPost.copy(id = 2, pageId = sectPageId)))) */
+        "add the page and reply" in {
+          // This binds extId "embedded_comments" with a temp in-patch id, in the site patch,
+          // to the emb comments category with a real id in the database.
+          // Later, when there's a PageMetaPatch class that can reference its category
+          // by ext id (and not just internal real id), this dummy category won't be needed.
+          val dummyCategory = makeCategory(
+            CategoryWithSectPageId333.id,
+            sectionPageId = forum.pagePath.pageId,
+            defSubCat = Some(forum.defaultCategoryId)
+            ).copy(extImpId = Some("embedded_comments"))
+
+          patchToUpsert = SiteBackup.empty.copy(
+            categories = Vector(dummyCategory),
+            pages = Vector(upsertedPageComplete),
+            pageIdsByAltIds = Map(upsertedPageAltId -> upsertedPageComplete.pageId),
+            pagePaths = Vector(PagePathToPage333),
+            posts =
+                Vector(Page333TitlePost, Page333BodyPost, Page333Reply)
+                .map(_.copy(
+                  createdById = owen.id,
+                  currentRevisionById = owen.id)))
+
+          upsert(site.id, patchToUpsert)
+        }
+
+        "load the site contents, it looks ok" in {
+          loadDumpCheckLooksOk()
+        }
+
+        "re-insert the patch" in {
+          upsert(site.id, patchToUpsert)
+        }
+
+        "didn't change anything" in {
+          loadDumpCheckLooksOk()
+        }
+
+        def loadDumpCheckLooksOk() {
+          info("read back")
+          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+
+          info("find the new page")
+          val defaultCatPages = actualDump.pages.filter(_.categoryId is forum.defaultCategoryId)
+          val actualNewPage = defaultCatPages.find(_.authorId == owen.id) getOrDie "TyE306HMREDF25"
+
+          info("it has the correct ext id")
+          actualNewPage.extImpId mustBe Some(upsertedPageExtId)
+
+          info("it's in the General category, together with the category descr page and the new page")
+          // There're 3 pages in the category: the category description, the page
+          // created via createPage() above, and the forum welcome topic.
+          defaultCatPages.length mustBe 3
+          defaultCatPages.find(_.pageId == actualNewPage.pageId) getOrDie "TyE507KSPG2"
+
+          info("find the title, body and reply")
+          val actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
+          val actualTitle = actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT01"
+          val actualBody = actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A01"
+          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0501"
+          actualPosts.length mustBe 3
+
+          info("with the correct text contents")
+          actualTitle.currentSource mustBe Page333TitlePost.currentSource
+          actualBody.currentSource mustBe Page333BodyPost.currentSource
+          actualReply.currentSource mustBe Page333Reply.currentSource
+
+          info("those are te only posts with ext ids")
+          val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
+          postsWithExtImpId.length mustBe 3
+        }
       }
 
-      var actualDump: SiteBackup = null
-      var actualNewPage: PageMeta = null
-      var actualPosts: Seq[Post] = null
-      var actualTitle: Post = null
-      var actualBody: Post = null
-      var actualReply: Post = null
 
-      "read back" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+      "add a reply to a page, via the page's ext id" - {
+        var patchToUpsert: SiteBackup = null
+        lazy val reply2 = Page333Reply.copy(extImpId = Some("reply_2_ext_id"))
+
+        "import (upsert) a site patch with the reply" in {
+          patchToUpsert = SiteBackup.empty.copy(
+            pages = Vector(
+              // Needed so the new reply has a page to reference in the patch.
+              upsertedPageOnlyExtId),
+            //pageIdsByAltIds = Map(upsertedPageAltId -> PageMeta333.pageId),
+            posts =
+              Vector(
+                // The body post is needed (309360327), so the reply has a parent post
+                // to reference, in the patch. Later, with a PostPatch that can reference
+                // a parent page via ext id, then, can remove the body post here?
+                Page333BodyPost, reply2).map(_.copy(
+                  createdById = owen.id,
+                  currentRevisionById = owen.id)))
+
+          upsert(site.id, patchToUpsert)
+        }
+
+        "load the site contents, it looks ok" in {
+          loadDumpCheckLooksOk()
+        }
+
+        "re-upsert the new reply" in {
+          upsert(site.id, patchToUpsert)
+        }
+
+        "didn't change anything" in {
+          loadDumpCheckLooksOk()
+        }
+
+        def loadDumpCheckLooksOk() {
+          info("read back")
+          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+
+          info("find the page")
+          val actualNewPage = actualDump.pages.find(_.extImpId is upsertedPageExtId
+              ) getOrDie "TyE6PKDHAFF05"
+
+          info("find the title, body, old reply and new reply")
+          val actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
+          actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT02"
+          actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A02"
+          actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0502"
+          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr + 1) getOrDie "TyE5AP20Z"
+          actualPosts.length mustBe 4
+
+          info("with the correct text contents")
+          actualReply.currentSource mustBe reply2.currentSource
+
+          info("those are te only posts with ext ids")
+          val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
+          postsWithExtImpId.length mustBe 4
+        }
       }
 
-      "find the new page" in {
-        actualNewPage = actualDump.pages.find(_.categoryId is forum.defaultCategoryId
-          ) getOrDie "TyE05HKRT63B"
-      }
 
-      "find the title, body and reply" in {
-        actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
-        actualPosts.length mustBe 3
-        actualTitle = actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT"
-        actualBody = actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A"
-        actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG05RKG"
-      }
+      /*  no, this will lookup via ext id instead :- /
+      "Add more replies to the page, via page alt id" - {
+        var patchToUpsert: SiteBackup = null
+        lazy val reply3 = Page333Reply.copy(extImpId = Some("reply_3_alt_id"))
 
-      "with the correct text contents" in {
-        actualTitle.approvedHtmlSanitized mustBe Page333TitlePost.approvedHtmlSanitized
-        actualBody.approvedHtmlSanitized mustBe Page333BodyPost.approvedHtmlSanitized
-        actualReply.approvedHtmlSanitized mustBe Page333Reply.approvedHtmlSanitized
+        "import (upsert) a site patch with the reply" in {
+          patchToUpsert = SiteBackup.empty.copy(
+            pages = Vector(
+              // Needed so the new reply has a page to reference in the patch.
+              upsertedPageOnlyExtId),
+            pageIdsByAltIds = Map(upsertedPageAltId -> upsertedPageOnlyExtId.pageId),
+            posts =
+              Vector(
+                // Body post is needed, see (309360327).
+                Page333BodyPost, reply3).map(_.copy(
+                  createdById = owen.id,
+                  currentRevisionById = owen.id)))
+
+          upsert(site.id, patchToUpsert)
+        }
+
+        "load the site contents, it looks ok" in {
+          loadDumpCheckLooksOk()
+        }
+
+        "re-upsert the new reply" in {
+          upsert(site.id, patchToUpsert)
+        }
+
+        "didn't change anything" in {
+          loadDumpCheckLooksOk()
+        }
+
+        def loadDumpCheckLooksOk() {
+          info("read back")
+          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+
+          info("find the page, ext id shouldn't have changed")
+          val actualNewPage = actualDump.pages.find(_.extImpId is upsertedPageExtId
+                ) getOrDie "TyE5KBRT305"
+
+          info("find the title, body, old reply, reply via ext id, and via alt id")
+          val actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
+          actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT03"
+          actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A03"
+          actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0503"
+          actualPosts.find(_.nr == PageParts.FirstReplyNr + 1) getOrDie "TyE306RKKT4"
+          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr + 2) getOrDie "TyE0HBJSR"
+          actualPosts.length mustBe 5
+
+          info("with the correct text contents")
+          actualReply.currentSource mustBe reply3.currentSource
+
+          info("those are te only posts with ext ids")
+          val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
+          postsWithExtImpId.length mustBe 5
+        }
+      }*/
+
+
+      "Reject a page with mismatching ext id or alt id" - {
       }
     }
-
-
-    "Add more replies to an existing page, via page ext id" - {
-    }
-
-
-    "Add more replies to an existing page, via page alt id" - {
-    }
-
 
   }
 

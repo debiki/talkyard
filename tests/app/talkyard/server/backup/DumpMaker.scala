@@ -171,7 +171,7 @@ trait DumpMaker {
     LowestTempImpId + 2, pageId = PageTempImpId, nr = PageParts.BodyNr)
 
   lazy val Page333Reply: Post = makePost(
-    LowestTempImpId + 3, pageId = PageTempImpId, nr = PageParts.FirstReplyNr,
+    LowestTempImpId + 3, pageId = PageTempImpId, nr = LowestTempImpId + PageParts.FirstReplyNr,
         parent = Some(Page333BodyPost))
 
   def makePost(id: PostId, pageId: PageId, nr: PostNr, parent: Option[Post] = None): Post = Post.create(

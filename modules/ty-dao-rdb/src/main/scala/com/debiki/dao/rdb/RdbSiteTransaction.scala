@@ -497,7 +497,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     val values: List[AnyRef] = siteId.asAnyRef :: altIds.toList
     var sql = s"""
         select g.page_id, ${_PageMetaSelectListItems}
-        from alt_page_ids a inner join pages3 g
+        from alt_page_ids3 a inner join pages3 g
           on a.site_id = g.site_id and
              a.real_page_id = g.page_id
         where a.site_id = ?

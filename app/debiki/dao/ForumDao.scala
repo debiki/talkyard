@@ -219,7 +219,7 @@ trait ForumDao {
     createCategoryImpl(
       CategoryToSave(
         anyId = Some(defaultCategoryId),
-        extIt = Some(EmbeddedCommentsExtId),
+        extId = Some(EmbeddedCommentsExtId),
         sectionPageId = forumPageId,
         parentId = rootCategoryId,
         shallBeDefaultCategory = true,
