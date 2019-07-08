@@ -94,6 +94,7 @@ object PageMeta {
         authorId: UserId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
+        extId: Option[ExtImpId] = None,
         layout: Option[PageLayout] = None,
         plannedAt: Option[ju.Date] = None,
         deletedAt: Option[When] = None,
@@ -105,6 +106,7 @@ object PageMeta {
         publishDirectly: Boolean = false): PageMeta = {
     var result = PageMeta(
       pageId = pageId,
+      extImpId = extId,
       pageType = pageRole,
       version = 1,
       createdAt = creationDati,
@@ -223,7 +225,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
 
   require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, "DwE5JGY1")
   // If there are no replies, then there are no frequent posters.
-  require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, "DwE7UMF2")
+  require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, "TyE306HMSJ24")
   require(frequentPosterIds.length <= 3, "DwE6UMW3") // for now — change if needed
 
   require(version > 0, "DwE6KFU2")

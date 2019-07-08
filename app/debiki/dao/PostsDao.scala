@@ -1025,7 +1025,7 @@ trait PostsDao {
       val gone = tx.deleteUploadedFileReference(postToEdit.id, hashPathSuffix)
       if (!gone) {
         p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
-            ${postToEdit.id} [DwE7UMF2]""")
+            ${postToEdit.id} [TyE7UJRH03M]""")
       }
     }
   }

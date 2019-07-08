@@ -205,7 +205,8 @@ object EmbeddedCommentsPageCreator {
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
       showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
-      Who.System, request.spamRelatedStuff, altPageId = anyAltPageId, embeddingUrl = Some(embeddingUrl))
+      Who.System, request.spamRelatedStuff, altPageIds = anyAltPageId.toSet,
+      embeddingUrl = Some(embeddingUrl))
   }
 
 }

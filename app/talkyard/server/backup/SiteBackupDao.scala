@@ -70,6 +70,22 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val oldPagesByAltId: Map[AltPageId, PageMeta] =
         tx.loadPageMetasByAltIdAsMap(siteData.pageIdsByAltIds.keys)
 
+      val pageAltIdsByTempImpIds =
+        new mutable.HashMap[PageId, mutable.Set[AltPageId]] with mutable.MultiMap[PageId, AltPageId]
+
+      siteData.pageIdsByAltIds foreach { case (altId, pageId) => {
+        pageAltIdsByTempImpIds.addBinding(pageId, altId)
+      }}
+
+      // Check if alt ids in the database are for different pages than in the patch.
+      // (We do the same for ext ids, below (502958).)
+      oldPagesByAltId foreach { case (altPageId, pageMeta) =>
+        val pageIdInPatch = siteData.pageIdsByAltIds.get(altPageId) getOrDie "TyE305RKSTJ"
+        throwBadRequestIf(!isPageTempId(pageIdInPatch) && pageIdInPatch != pageMeta.pageId,
+          "TyE306AKTJWB", o"""Alt page id $altPageId in patch maps to real page id $pageIdInPatch,
+            but in the database, already maps to ${pageMeta.pageId}""")
+      }
+
       val pageRealIdsByTempImpId = mutable.HashMap[PageId, PageId]()
 
       def remappedPageTempId(tempId: PageId): PageId = {
@@ -80,22 +96,38 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      siteData.pages foreach { pageTempId: PageMeta =>
-        val tempId = pageTempId.pageId
-        val extImpId = pageTempId.extImpId getOrElse throwForbidden(
+      siteData.pages foreach { pageWithTempId: PageMeta =>
+        val tempId = pageWithTempId.pageId
+        val extImpId = pageWithTempId.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extImpId not yet implemented, page temp id: $tempId")
 
-        val anyPageByExtImpId = oldPagesByExtImpId.get(extImpId)
-        //val anyPagesByAltIds = 
-        val realId = oldPagesByExtImpId.get(extImpId).map(oldPage => {
+        val anyRealIdByExtId = oldPagesByExtImpId.get(extImpId).map(oldPage => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != oldPage.pageId,
+            // We do this check for alt ids too, above. (502958)
             "TyE30TKKWFG3", o"""Imported page w extImpId '$extImpId' has real id $tempId
                which differs from page ${oldPage.pageId} in the db, with the same extImpId""")
           oldPage.pageId
-        }).getOrElse({
+        })
+
+        val altIds = pageAltIdsByTempImpIds.getOrElse(tempId, Set.empty)
+
+        val anyRealMetasByAltId: Iterable[PageMeta] = altIds.flatMap(oldPagesByAltId.get)
+        val anyRealPageIdsFromAltIdAsSet = anyRealMetasByAltId.map(_.pageId).toSet
+        dieIf(anyRealPageIdsFromAltIdAsSet.size > 1, "TyE305RKJW23")
+        val anyRealPageIdFromAltId = anyRealPageIdsFromAltIdAsSet.headOption
+
+        throwBadRequestIf(anyRealIdByExtId.isDefined && anyRealPageIdFromAltId.isDefined &&
+          anyRealIdByExtId != anyRealPageIdFromAltId, "TyE04KRDNQ24", o"""Alt id and ext id
+          mismatch: Trying to upsert page with temp id $tempId, with alt ids $altIds.
+          In the database, those alt ids map to real page id ${anyRealPageIdFromAltId.get}
+          but the ext id maps to real page id ${anyRealIdByExtId.get}""")
+
+        val anyRealId = anyRealIdByExtId orElse anyRealPageIdFromAltId
+        val realId = anyRealId.getOrElse({
           tx.nextPageId()
         })
-        pageRealIdsByTempImpId.put(pageTempId.pageId, realId)
+
+        pageRealIdsByTempImpId.put(pageWithTempId.pageId, realId)
       }
 
 
@@ -273,7 +305,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                     deletedById = tempPost.deletedById.map(remappedPpTempId))
 
                   BUG // this ignores old already existing posts.
-                  // Instead, better reoad everything, like done in importCreateSite (0926575)?
+                  // Instead, better reload everything, like done in importCreateSite (0926575)?
 
                   pageMetaNumBumps = pageMetaNumBumps.copy(
                     //bumpedAt = When.fromMillis(math.max(
@@ -462,10 +494,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       // ----- Pages
 
-      siteData.pages foreach { pageMetaTempId: PageMeta =>
+      siteData.pages foreach { pageWithTempId: PageMeta =>
         // Later: update with any reassigned participant and post ids:
         //   answerPostId (complicated? need assign tempId —> real id to posts first, somewhere above)
-        val realId = pageRealIdsByTempImpId.get(pageMetaTempId.pageId) getOrDie "TyE06DKWD24"
+        val realId = pageRealIdsByTempImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
         val pageMetaNumBumps = pageNumBumpsByRealPageId.getOrElse(realId, PageMetaNumBumps())
         def bumpNums(pageMeta: PageMeta): PageMeta = {
           // BUG this considers only new posts. Instead:
@@ -478,7 +510,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             bumpedAt = When.anyJavaDateLatestOf(pageMeta.bumpedAt, b.lastApprovedReplyAt),
             lastApprovedReplyAt = b.lastApprovedReplyAt,
             lastApprovedReplyById = b.lastApprovedReplyById,
-            frequentPosterIds = b.frequentPosterIds,
+            //frequentPosterIds = b.frequentPosterIds,  bug: gets updated also if reply not approved
             numLikes = pageMeta.numLikes + b.numLikes,
             numWrongs = pageMeta.numWrongs + b.numWrongs,
             numBurys = pageMeta.numBurys + b.numBurys,
@@ -493,21 +525,27 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + b.numOrigPostRepliesVisible)
         }
 
+        val anyOldPage = pageWithTempId.extImpId.flatMap(oldPagesByExtImpId.get) orElse {
+          val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
+          val oldPages = pageAltIds.flatMap(oldPagesByAltId.get)
+          dieIf(oldPages.map(_.pageId).size > 1, "TyE05HKR3")
+          oldPages.headOption
+        }
 
-        pageMetaTempId.extImpId.flatMap(oldPagesByExtImpId.get) match {
+        anyOldPage match {
           case None =>
-            val pageMetaRealIds = pageMetaTempId.copy(
+            val pageWithRealIds = pageWithTempId.copy(
               pageId = realId,
-              categoryId = pageMetaTempId.categoryId.map(remappedCategoryTempId),
-              authorId = remappedPpTempId(pageMetaTempId.authorId),
-              lastApprovedReplyById = pageMetaTempId.lastApprovedReplyById.map(remappedPpTempId),
-              frequentPosterIds = pageMetaTempId.frequentPosterIds.map(remappedPpTempId))
-            val pageMetaOkNums = bumpNums(pageMetaRealIds)
-            tx.insertPageMetaMarkSectionPageStale(pageMetaOkNums, isImporting = true)
+              categoryId = pageWithTempId.categoryId.map(remappedCategoryTempId),
+              authorId = remappedPpTempId(pageWithTempId.authorId),
+              lastApprovedReplyById = pageWithTempId.lastApprovedReplyById.map(remappedPpTempId),
+              frequentPosterIds = pageWithTempId.frequentPosterIds.map(remappedPpTempId))
+            val pageWithOkNums = bumpNums(pageWithRealIds)
+            tx.insertPageMetaMarkSectionPageStale(pageWithOkNums, isImporting = true)
           case Some(oldPageMeta) =>
-            val pageMetaOkNums = bumpNums(oldPageMeta)
-            if (pageMetaOkNums != oldPageMeta) {
-              tx.updatePageMeta(pageMetaOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
+            val pageWithOkNums = bumpNums(oldPageMeta)
+            if (pageWithOkNums != oldPageMeta) {
+              tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
             }
             /* Later?:
             if (oldPageMeta.updatedAt.getTime < pageMetaTempIds.updatedAt.getTime) {
@@ -659,6 +697,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
         val numReplies = pagePartsDao.allPosts.count(_.isReply)
         val correctMeta = pageMeta.copy(
+
+          // Frequent posters, last approved reply by, and more?  forgotten here:
+
           numRepliesVisible = numReplies,
           numRepliesTotal = numReplies,
           numPostsTotal = pagePartsDao.numPostsTotal)

@@ -495,16 +495,18 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       return Map.empty
 
     val values: List[AnyRef] = siteId.asAnyRef :: altIds.toList
-    var sql = s"""
-        select g.page_id, ${_PageMetaSelectListItems}
+    val sql = s"""
+        select a.alt_page_id, g.page_id, ${_PageMetaSelectListItems}
         from alt_page_ids3 a inner join pages3 g
           on a.site_id = g.site_id and
              a.real_page_id = g.page_id
         where a.site_id = ?
           and a.alt_page_id in (${ makeInListFor(altIds) })"""
+
     runQueryBuildMap(sql, values, rs => {
       val meta = _PageMeta(rs)
-      meta.extImpId.getOrDie("TyE7KRSHNG2") -> meta
+      val altId = rs.getString("alt_page_id")
+      altId -> meta
     })
   }
 

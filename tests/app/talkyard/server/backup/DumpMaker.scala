@@ -141,11 +141,12 @@ trait DumpMaker {
 
   lazy val PageMeta333: PageMeta =
     makePageMeta(PageTempImpId, categoryId = Some(CategoryWithSectPageId333.id))
+    .copy(pageType = PageType.AboutCategory)
 
   def makePageMeta(id: PageId, categoryId: Option[CategoryId]) = PageMeta(
     pageId = id,
     extImpId = Some(s"page-$id-ext-imp-id"),
-    pageType = PageType.AboutCategory,
+    pageType = PageType.Discussion,
     version = 1,
     createdAt = globals.now().toJavaDate,
     updatedAt = globals.now().toJavaDate,

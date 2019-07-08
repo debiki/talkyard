@@ -251,30 +251,53 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
     }
 
 
-    def createSiteWithOneCatAndPage(hostname: String)
-          : (Site, CreateForumResult, User, SiteDao) = {
+    def createSiteWithOneCatAndPage(hostname: String, pageExtId: Option[ExtImpId] = None,
+          pageAltIds: Set[AltPageId] = Set.empty)
+          : (Site, CreateForumResult, PageId, Seq[Post], User, SiteDao) = {
       val (site, dao) = createSite(hostname)
       val owen = createPasswordOwner("owner_un", dao)
       val forum: CreateForumResult = dao.createForum(
           s"Forum $hostname", folder = "/", isForEmbCmts = true, Who(owen.id, browserIdData)
           ) getOrDie "TyE305RTG3"
 
-      createPage(PageType.Discussion, textAndHtmlMaker.testTitle("Forum Title"),
+      val pageId: PageId = createPage(
+        PageType.Discussion, textAndHtmlMaker.testTitle("Forum Title"),
         textAndHtmlMaker.testBody("Forum intro text."), SysbotUserId, browserIdData,
-        dao, Some(forum.defaultCategoryId))
+        dao, Some(forum.defaultCategoryId), extId = pageExtId, altIds = pageAltIds)
 
-      (site, forum, owen, dao)
+      val pagePosts = dao.readOnlyTransaction { tx => tx.loadPostsOnPage(pageId) }
+
+      (site, forum, pageId, pagePosts, owen, dao)
     }
 
 
+    def makeEmbeddedCommentsCategory(forum: CreateForumResult): Category =
+      // This binds extId "embedded_comments" with a temp in-patch id, in the site patch,
+      // to the emb comments category with a real id in the database.
+      // Later, when there's a PageMetaPatch class that can reference its category
+      // by ext id (and not just internal real id), this dummy category won't be needed.
+      makeCategory(
+        CategoryWithSectPageId333.id,
+        sectionPageId = forum.pagePath.pageId,
+        defSubCat = Some(forum.defaultCategoryId)
+      ).copy(extImpId = Some("embedded_comments"))
+
     "Import new pages and replies" - {
-      lazy val (site, forum, owen, dao) = createSiteWithOneCatAndPage("imp-pages-relpies")
+      val oldPageExtId = "old_page_ext_id"
+      val oldPageAltId = "old_page_alt_id"
+
+      lazy val (site, forum, _, _, owen, dao) =
+        createSiteWithOneCatAndPage("imp-pages-relpies", pageExtId = Some(oldPageExtId),
+          pageAltIds = Set(oldPageAltId))
+
       val upsertedPageExtId = "ups_ext_id"
       val upsertedPageAltId = "ups_alt_id"
+
       lazy val upsertedPageComplete = PageMeta333.copy(
         extImpId = Some(upsertedPageExtId),
         authorId = owen.id,
         pageType = PageType.Discussion)
+
       lazy val upsertedPageOnlyExtId = PageMeta333.copy(
         extImpId = Some(upsertedPageExtId))
 
@@ -286,15 +309,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         var patchToUpsert: SiteBackup = null
 
         "add the page and reply" in {
-          // This binds extId "embedded_comments" with a temp in-patch id, in the site patch,
-          // to the emb comments category with a real id in the database.
-          // Later, when there's a PageMetaPatch class that can reference its category
-          // by ext id (and not just internal real id), this dummy category won't be needed.
-          val dummyCategory = makeCategory(
-            CategoryWithSectPageId333.id,
-            sectionPageId = forum.pagePath.pageId,
-            defSubCat = Some(forum.defaultCategoryId)
-            ).copy(extImpId = Some("embedded_comments"))
+          val dummyCategory = makeEmbeddedCommentsCategory(forum)
 
           patchToUpsert = SiteBackup.empty.copy(
             categories = Vector(dummyCategory),
@@ -302,7 +317,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             pageIdsByAltIds = Map(upsertedPageAltId -> upsertedPageComplete.pageId),
             pagePaths = Vector(PagePathToPage333),
             posts =
-                Vector(Page333TitlePost, Page333BodyPost, Page333Reply)
+              Vector(Page333TitlePost, Page333BodyPost, Page333Reply)
                 .map(_.copy(
                   createdById = owen.id,
                   currentRevisionById = owen.id)))
@@ -374,8 +389,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
                 // to reference, in the patch. Later, with a PostPatch that can reference
                 // a parent page via ext id, then, can remove the body post here?
                 Page333BodyPost, reply2).map(_.copy(
-                  createdById = owen.id,
-                  currentRevisionById = owen.id)))
+                createdById = owen.id,
+                currentRevisionById = owen.id)))
 
           upsert(site.id, patchToUpsert)
         }
@@ -398,7 +413,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
           info("find the page")
           val actualNewPage = actualDump.pages.find(_.extImpId is upsertedPageExtId
-              ) getOrDie "TyE6PKDHAFF05"
+          ) getOrDie "TyE6PKDHAFF05"
 
           info("find the title, body, old reply and new reply")
           val actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
@@ -478,7 +493,107 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       }*/
 
 
-      "Reject a page with mismatching ext id or alt id" - {
+      /*
+      "Reject upserting a page with mismatching ext id or alt id" - {
+        lazy val oldPage = makePageMeta(
+          PageTempImpId, categoryId = Some(CategoryWithSectPageId333.id))
+          .copy(extImpId = Some(oldPageExtId))
+
+        "the alt id is different, ext id the same" in {
+          val patchToUpsert = SiteBackup.empty.copy(
+            categories = Vector(makeEmbeddedCommentsCategory(forum)),
+            pages = Vector(oldPage),
+            pageIdsByAltIds = Map("wrong_alt_id" -> oldPage.pageId))
+          val exception = intercept[Exception] {
+            upsert(site.id, patchToUpsert)
+          }
+        }
+
+        "the ext id is different, alt id the same" in {
+          val patchToUpsert = SiteBackup.empty.copy(
+            categories = Vector(makeEmbeddedCommentsCategory(forum)),
+            pages = Vector(oldPage.copy(extImpId = Some("wrong_ext_id"))),
+            pageIdsByAltIds = Map(oldPageAltId -> oldPage.pageId))
+          val exception = intercept[Exception] {
+            upsert(site.id, patchToUpsert)
+          }
+        }
+      } */
+    }
+
+
+
+    "add a reply to a page, via its alt id" - {
+      val oldPageAltId = "old_page_alt_id"
+      val upsertedExtId = "ups_ext_id"
+
+      lazy val (site, forum, oldPageId, oldPagePosts, owen, dao) =
+        createSiteWithOneCatAndPage("ups-reply-via-page-alt-id", pageExtId = None,
+          pageAltIds = Set(oldPageAltId))
+
+      lazy val upsertedPage = PageMeta333.copy(
+        extImpId = Some(upsertedExtId),
+        authorId = owen.id,
+        pageType = PageType.Discussion)
+
+      lazy val upsReply = Page333Reply.copy(extImpId = Some("reply_ext_id"))
+
+      var patchToUpsert: SiteBackup = null
+
+      "upsert a site patch with reply 3 and a page with an alt id matching an old page" in {
+        val dummyCategory = makeEmbeddedCommentsCategory(forum)
+        patchToUpsert = SiteBackup.empty.copy(
+          categories = Vector(dummyCategory),
+          pages = Vector(
+            upsertedPage),
+          pageIdsByAltIds = Map(oldPageAltId -> upsertedPage.pageId),
+          posts =
+            Vector(
+              Page333TitlePost, Page333BodyPost, upsReply).map(_.copy(
+              createdById = owen.id,
+              currentRevisionById = owen.id)))
+
+        upsert(site.id, patchToUpsert)
+      }
+
+      "load the site contents, it looks ok" in {
+        loadDumpCheckLooksOk()
+      }
+
+      "re-upsert everything ..." in {
+        upsert(site.id, patchToUpsert)
+      }
+
+      "... didn't cause any changes" in {
+        loadDumpCheckLooksOk()
+      }
+
+      def loadDumpCheckLooksOk() {
+        info("read back")
+        val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+
+        info("find the page")
+        val actualOldPage = actualDump.pages.find(_.pageId == oldPageId) getOrDie "TyE5KT5SHH6"
+
+        info("find the title, body, old reply and new reply")
+        val actualPosts = actualDump.posts.filter(_.pageId == actualOldPage.pageId)
+        val actualTitle = actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT04"
+        val actualBody = actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A04"
+        val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE4RD0LF"
+        actualPosts.length mustBe 3
+
+        info("the title and body text didn't change")
+        val oldTitle = oldPagePosts.find(_.isTitle) getOrDie "TyE06KFHE64"
+        val oldBody = oldPagePosts.find(_.isOrigPost) getOrDie "TyE06KFHE65"
+        actualTitle.currentSource mustBe oldTitle.currentSource
+        actualBody.currentSource mustBe oldBody.currentSource
+
+        info("the new reply has the correct text")
+        actualReply.currentSource mustBe upsReply.currentSource
+
+        info("the new reply is the only thing with an ext id")
+        val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
+        postsWithExtImpId.length mustBe 1
       }
     }
 
