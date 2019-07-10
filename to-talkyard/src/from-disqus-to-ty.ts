@@ -284,7 +284,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     const thread: DisqusThread = threadsByDisqusId[threadDisqusId];
     const pageCreatedAt: WhenMs = Date.parse(thread.createdAtIsoString);
     const urlInclOrigin = thread.link;
-    const urlPath = urlInclOrigin.replace(/https?:\/\/[^/]+\//, '')  // dupl [305MBKR52]
+    const urlPath = urlInclOrigin.replace(/https?:\/\/[^/]+\//, '/')  // dupl [305MBKR52]
         .replace(/[#?].*$/, '');
 
     const tyPage: PageDumpV0 = {

@@ -35,7 +35,7 @@ function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
     return;
   }
 
-  const urlNoOrigin = wpBlogPostAndComments.link.replace(/https?:\/\/[^/]+\//, '');  // dupl [305MBKR52]
+  const urlNoOrigin = wpBlogPostAndComments.link.replace(/https?:\/\/[^/]+\//, '/');  // dupl [305MBKR52]
 
   const pageUrl = wpBlogPostAndComments.link;
 

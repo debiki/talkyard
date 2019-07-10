@@ -32,7 +32,7 @@ let talkyardSiteData: SiteData;
 
 const wordpressXmlFilePath: string | undefined = args.wordpressCoreXmlExportFile;
 const disqusXmlFilePath: string | undefined = args.disqusXmlExportFile;
-const jsonDumpFilePath: string | undefined = args.jsonDumpFilePath;
+const jsonDumpFilePath: string | undefined = args.talkyardJsonPatchFile;
 
 let fileFormat;
 const DisqusFormat = 'DisqusFormt';
@@ -64,7 +64,7 @@ else {
     "No export file or json dump specified, one of:\n" +
     "  --wordpressCoreXmlExportFile=...\n" +
     "  --disqusXmlExportFile=...\n" +
-    "  --jsonDumpFilePath=...");
+    "  --talkyardJsonPatchFile=...");
 }
 
 const writeToPath: string | undefined = args.writeTo;
@@ -122,10 +122,14 @@ if (sendToOrigin) {
   console.log(`\nSending ${jsonString.length} JSON chars to: ${sendToOrigin} ...`);
   //const responseJson = postOrDie(
    //   url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
-  const response = postOrDie(sendToOrigin + '/-/v0/upsert-dump-json', talkyardSiteData);
+  const response = postOrDie(sendToOrigin + '/-/v0/upsert-patch-json', talkyardSiteData);
   console.log(`The server replied:\n\n${response.bodyString}\n`);
   if (response.statusCode !== 200)
-    throw `Error: Server status code ${response.statusCode}`;
+    throw `Error: Server status code ${response.statusCode}, ` +
+        `response body:\n` +
+        `------------------------------\n` +
+        response.bodyString + '\n' +
+        `------------------------------\n`;
 }
 
 

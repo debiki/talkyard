@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
+import { execSync} from 'child_process';
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
@@ -11,6 +12,10 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
+
+next__embing_pages_check_cmts_appear
+// s/wdio target/e2e/wdio.2chrome.conf.js   \
+//  --only embedded-comments-create-site-import-disqus.2browsers         --da
 
 declare let browser: any;
 declare let browserA: any;
@@ -26,6 +31,7 @@ let strangersBrowser;
 let data;
 let idAddress: IdAddress;
 let siteId: any;
+let talkyardSiteOrigin: string;
 
 const mariasCommentText = 'mariasCommentText';
 const owensCommentText = 'owensCommentText';
@@ -80,10 +86,16 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);
     owensBrowser.waitAndClick('#e2eContinue');
+    talkyardSiteOrigin = owensBrowser.origin();
   });
 
 
+  // ----- Prepare: Create embedding pages and API secret
+
   it("Owen clicks Blog = Something Else, to show the instructions", () => {
+    // ?? why this needed although didn' do; browser.tour.runToursAlthoughE2eTest() ??
+    owensBrowser.tour.exitTour();
+
     owensBrowser.waitAndClick('.e_SthElseB');
   });
 
@@ -110,6 +122,22 @@ ${htmlToPaste}
 </html>`);
   });
 
+  it("Owen creates an API secret: Goes to the admin area, the API tab", () => {
+    owensBrowser.adminArea.goToApi();
+  });
+
+  it("... generates the API secret", () => {
+    owensBrowser.adminArea.apiTab.generateSecret();
+  });
+
+  let apiSecret: string;
+
+  it("... copies the secret key", () => {
+    apiSecret = owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
+  });
+
+
+  // ----- Pre-check: There are no comments
 
   it("Maria opens the embedding page, not logged in", () => {
     mariasBrowser.go(data.embeddingUrl);
@@ -119,12 +147,17 @@ ${htmlToPaste}
   it("... it's empty", () => {
   });
 
-  it("Owen exports Disqus comments to a file: ./target/disqus-export.xml", () => {
+
+  // ----- Import comments
+
+  const disqusXmlDumpFilePath = dirPath + '/disqus-export.xml';
+  const talkyardPatchFilePath = dirPath + '/talkyard-disqus.typatch.json';
+
+  it(`Owen exports Disqus comments to a file: ${disqusXmlDumpFilePath}`, () => {
     const embeddingOrigin = data.embeddingUrl;
-    fs.writeFileSync(`${dirPath}/disqus-export.xml`, `
+    fs.writeFileSync(disqusXmlDumpFilePath, `
     <?xml version="1.0" encoding="utf-8"?>
     <disqus xmlns="http://disqus.com" xmlns:dsq="http://disqus.com/disqus-internals" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://disqus.com/api/schemas/1.0/disqus.xsd http://disqus.com/api/schemas/1.0/disqus-internals.xsd">
-    
     
     <category dsq:id="111">
     <forum>disqus_test_forum</forum>
@@ -132,12 +165,11 @@ ${htmlToPaste}
     <isDefault>true</isDefault>
     </category>
     
-    
-    <thread dsq:id="1111111111">
-    <id>${embeddingOrigin}/if</id>
+    <thread dsq:id="5555555555">
+    <id>${embeddingOrigin}five-replies</id>
     <forum>disqus_test_forum</forum>
     <category dsq:id="111" />
-    <link>${embeddingOrigin}/if</link>
+    <link>${embeddingOrigin}five-replies</link>
     <title>A Simple Title</title>
     <message />
     <createdAt>2019-01-02T11:00:00Z</createdAt>
@@ -152,11 +184,11 @@ ${htmlToPaste}
     <isDeleted>false</isDeleted>
     </thread>
     
-    <thread dsq:id="2222222222">
+    <thread dsq:id="1111111111">
     <id>node/2</id>
     <forum>disqus_test_forum</forum>
     <category dsq:id="111" />
-    <link>${embeddingOrigin}/2019/a-blog-post</link>
+    <link>${embeddingOrigin}2019/a-blog-post-one-reply</link>
     <title>A Blog Post</title>
     <message />
     <createdAt>2019-02-11T11:00:00Z</createdAt>
@@ -187,7 +219,7 @@ ${htmlToPaste}
     <isAnonymous>true</isAnonymous>
     </author>
     <ipAddress>110.175.1.2</ipAddress>
-    <thread dsq:id="2222222222" />
+    <thread dsq:id="1111111111" />
     </post>
     
     
@@ -204,7 +236,7 @@ ${htmlToPaste}
     <isAnonymous>true</isAnonymous>
     </author>
     <ipAddress>144.98.22.33</ipAddress>
-    <thread dsq:id="1111111111" />
+    <thread dsq:id="5555555555" />
     </post>
     
     <post dsq:id="100003">
@@ -219,7 +251,7 @@ ${htmlToPaste}
     <isAnonymous>true</isAnonymous>
     </author>
     <ipAddress>108.162.33.22</ipAddress>
-    <thread dsq:id="1111111111" />
+    <thread dsq:id="5555555555" />
     <parent dsq:id="100002" />
     </post>
     
@@ -235,13 +267,13 @@ ${htmlToPaste}
     <isAnonymous>true</isAnonymous>
     </author>
     <ipAddress>162.156.1.23</ipAddress>
-    <thread dsq:id="1111111111" />
+    <thread dsq:id="5555555555" />
     </post>
     
     <post dsq:id="100005">
     <id />
     <message><![CDATA[<p>Has anyone tried using the pets? The smaller, the less heavy, the higher we can reach.</p>]]></message>
-    <createdAt>2019-07-08T20:21;22Z</createdAt>
+    <createdAt>2019-07-08T20:21:22Z</createdAt>
     <isDeleted>false</isDeleted>
     <isSpam>false</isSpam>
     <author>
@@ -251,7 +283,7 @@ ${htmlToPaste}
     <username>h_kittycity</username>
     </author>
     <ipAddress>184.11.12.13</ipAddress>
-    <thread dsq:id="1111111111" />
+    <thread dsq:id="5555555555" />
     </post>
     
     <post dsq:id="100006">
@@ -267,20 +299,35 @@ ${htmlToPaste}
     <username>disqus_bWKGs23Rd4</username>
     </author>
     <ipAddress>111.112.113.114</ipAddress>
-    <thread dsq:id="1111111111" />
+    <thread dsq:id="5555555555" />
     </post>
     
     </disqus>
     `);
   });
 
-  it("... and converts to Talkyard format: ./target/talkyard-disqus.typatch.json", () => {
+  it(`... and converts to Talkyard format: ${talkyardPatchFilePath}`, () => {
+    execSync(
+        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+          `--disqusXmlExportFile=${disqusXmlDumpFilePath} ` +
+          `--writeTo=${talkyardPatchFilePath}`);
   });
 
   it("... and posts to the Talkyard server", () => {
+    const cmd =
+        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+          `--talkyardJsonPatchFile=${talkyardPatchFilePath} ` +
+          `--sysbotApiSecret=${apiSecret} ` +
+          `--sendTo=${talkyardSiteOrigin}`
+    logAndDie.logMessage(`Executing this:\n  ${cmd}`)
+    execSync(cmd);
   });
 
+
+  // ----- Comments appear?
+
   it("Maria refreshes the page", () => {
+    mariasBrowser.refresh();
   });
 
   it("... and sees a comment", () => {
