@@ -191,6 +191,9 @@ how to use docker-compose already.
        # ElasticSearch requires (at least) this, default = 65530
        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
        vm.max_map_count=262144
+       # Avoid a "User limit of inotify watches reached" error, when tailing logs:
+       # (the default is sometimes only 8192 which is too low)
+       fs.inotify.max_user_watches=16384
        EOF
 
     Reload the system config:
@@ -267,6 +270,11 @@ Shut down everything like so: `make dead`.
 
 Editing source code
 -----------------------------
+
+To edit Scala code, you can use IntelliJ IDEA, the free community edition.
+Don't forget to install a Java Development Kit (JDK); in Debian 9:
+
+    sudo apt install default-jdk  # installs JDK 8
 
 If you edit some code and reload the page in the browser, your changes will
 appear automatically: there's a Docker container, named Gulp, with Node.js
