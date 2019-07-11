@@ -13,9 +13,7 @@ import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-next__embing_pages_check_cmts_appear
-// s/wdio target/e2e/wdio.2chrome.conf.js   \
-//  --only embedded-comments-create-site-import-disqus.2browsers         --da
+// s/wdio target/e2e/wdio.2chrome.conf.js  --only embedded-comments-create-site-import-disqus.2browsers   --da
 
 declare let browser: any;
 declare let browserA: any;
@@ -33,8 +31,9 @@ let idAddress: IdAddress;
 let siteId: any;
 let talkyardSiteOrigin: string;
 
-const mariasCommentText = 'mariasCommentText';
-const owensCommentText = 'owensCommentText';
+const mariasReplyOne = 'mariasReplyOne';
+const mariasReplyTwo = 'mariasReplyTwo';
+
 
 const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
 
@@ -100,14 +99,26 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   });
 
 
-  it("He creates an embedding page", () => {
+  const fiveRepliesPageUrlPath = 'five-replies';
+  const oneReplyPageUrlPath = '2019/a-blog-post-one-reply';
+  const noDisqusRepliesPageUrlPath = 'no-dsq-comments';
+
+  it("He creates three embedding pages", () => {
+    // 2019 is for the oneReplyPageUrlPath.
+    if (!fs.existsSync(dirPath + '/2019')) {
+      fs.mkdirSync(dirPath + '/2019', { recursive: true, mode: 0o777 });
+    }
+    makeEmbeddingPage(fiveRepliesPageUrlPath);
+    makeEmbeddingPage(oneReplyPageUrlPath);
+    makeEmbeddingPage(noDisqusRepliesPageUrlPath);
+  });
+
+
+  function makeEmbeddingPage(urlPath: string) {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     console.log('htmlToPaste: ' + htmlToPaste);
-    if (!fs.existsSync(dirPath)) {  // —>  "FAIL: Error \n unknown error line"
-      fs.mkdirSync(dirPath, '0777');
-    }
-    fs.writeFileSync(`${dirPath}/index.html`, `
+    fs.writeFileSync(`${dirPath}/${urlPath}.html`, `
 <html>
 <head>
 <title>Embedded comments E2E test: Importing Disqus comments</title>
@@ -120,7 +131,7 @@ ${htmlToPaste}
 <p>/End of page.</p>
 </body>
 </html>`);
-  });
+  };
 
   it("Owen creates an API secret: Goes to the admin area, the API tab", () => {
     owensBrowser.adminArea.goToApi();
@@ -140,12 +151,26 @@ ${htmlToPaste}
   // ----- Pre-check: There are no comments
 
   it("Maria opens the embedding page, not logged in", () => {
-    mariasBrowser.go(data.embeddingUrl);
+    mariasBrowser.go(data.embeddingUrl + oneReplyPageUrlPath);
     mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
   it("... it's empty", () => {
+    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
+
+  it("... the five replies page is empty too", () => {
+    mariasBrowser.go(data.embeddingUrl + fiveRepliesPageUrlPath);
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
+  });
+
+  it("Maria posts a comment, and a reply to her comment", () => {
+    mariasBrowser.complex.replyToEmbeddingBlogPost(mariasReplyOne,
+        { signUpWithPaswordAfterAs: maria, needVerifyEmail: false });
+    mariasBrowser.complex.replyToPostNr(c.FirstReplyNr, mariasReplyTwo, { isEmbedded: true });
+  });
+
 
 
   // ----- Import comments
@@ -209,7 +234,7 @@ ${htmlToPaste}
     
     <post dsq:id="100001">
     <id>wp_id=528</id>
-    <message><![CDATA[<p>Year 2022 — Your cat asks you to wait for her to finish all the milk</p>]]></message>
+    <message><![CDATA[<p>Year 2030: Your cat asks you to wait for her to finish all the milk with dandelions</p>]]></message>
     <createdAt>2019-03-04T01:02:03Z</createdAt>
     <isDeleted>false</isDeleted>
     <isSpam>false</isSpam>

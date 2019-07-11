@@ -74,7 +74,7 @@ case class SiteBackupReader(context: EdContext) {
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
     val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, membersJson,
-        permsOnPagesJson, pagesJson, pathsJson,
+        permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         categoriesJson, postsJson) =
       try {
         (readOptJsObject(bodyJson, "meta"),
@@ -87,6 +87,7 @@ case class SiteBackupReader(context: EdContext) {
           readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
           readJsArray(bodyJson, "pagePaths", optional = true),
+          readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),
           readJsArray(bodyJson, "categories", optional = true),
           readJsArray(bodyJson, "posts", optional = true))
       }
@@ -162,6 +163,15 @@ case class SiteBackupReader(context: EdContext) {
               json: $json"""))
     }
 
+    val pageIdsByAltIds: Map[AltPageId, PageId] = Map(pageIdsByAltIdsJson.fields map {
+      case (altId, pageIdJs) =>
+        pageIdJs match {
+          case JsString(value) => altId -> value
+          case x => throwBadRequest(
+            "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")
+        }
+    }: _*)
+
     val categories: Seq[Category] = categoriesJson.value.zipWithIndex map { case (json, index) =>
       readCategoryOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
@@ -188,7 +198,7 @@ case class SiteBackupReader(context: EdContext) {
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
       guests, guestEmailPrefs, users, categories,
-      pages, paths, pageIdsByAltIds = Map.empty, posts, permsOnPages)
+      pages, paths, pageIdsByAltIds = pageIdsByAltIds, posts, permsOnPages)
   }
 
 

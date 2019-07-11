@@ -62,7 +62,7 @@ interface PageDumpV0 {
   dbgSrc?: string;
   id: PageId;
   extImpId?: ExtImpId; // RENAME to just  extId? because not *importing* when *upserting*
-  altIds: PageId[];
+  //altIds: PageId[];
   pageType: PageRole;
   version: number;
   createdAt: WhenMs;

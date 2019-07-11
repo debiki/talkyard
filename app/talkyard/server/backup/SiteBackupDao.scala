@@ -64,6 +64,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // Don't insert the pages here though — we haven't remapped the page's
       // category id or any answer post id temp import id, to real ids, yet.
 
+
+      // todo: check ok alt id
+
       val oldPagesByExtImpId: Map[ExtImpId, PageMeta] =
         tx.loadPageMetasByExtImpIdAsMap(siteData.pages.flatMap(_.extImpId))
 

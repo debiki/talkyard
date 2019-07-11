@@ -262,6 +262,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     guests: [],
     pages: [],
     pagePaths: [],
+    pageIdsByAltIds: {},
     posts: [],
     categories: [],
     permsOnPages: [],
@@ -291,7 +292,6 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       dbgSrc: 'ToTy',
       id: pageId,
       extImpId: threadDisqusId + DisqusIdSuffix,
-      altIds: [urlInclOrigin, urlPath],
       pageType: c.TestPageRole.EmbeddedComments,
       version: 1,
       createdAt: pageCreatedAt,
@@ -471,6 +471,8 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     tySiteData.pages.push(tyPage);
     tySiteData.pagePaths.push(tyPagePath);
+    tySiteData.pageIdsByAltIds[urlInclOrigin] = tyPage.id;
+    tySiteData.pageIdsByAltIds[urlPath] = tyPage.id;
     tySiteData.posts.push(tyTitle);
     tySiteData.posts.push(tyBody);
     tyComments.forEach(c => tySiteData.posts.push(c));
