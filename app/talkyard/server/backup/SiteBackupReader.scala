@@ -172,11 +172,18 @@ case class SiteBackupReader(context: EdContext) {
         }
     }: _*)
 
-    val categories: Seq[Category] = categoriesJson.value.zipWithIndex map { case (json, index) =>
+    val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
+    val categories = mutable.ArrayBuffer[Category]()
+
+    categoriesJson.value.zipWithIndex foreach { case (json, index) =>
       readCategoryOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "EsE5PYK2", o"""Invalid category json at index $index in the 'categories' list: $error,
               json: $json"""))
+        match {
+          case Left(c: Category) => categories.append(c)
+          case Right(p: CategoryPatch) => categoryPatches.append(p)
+        }
     }
 
     val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
@@ -197,7 +204,7 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, guestEmailPrefs, users, categories,
+      guests, guestEmailPrefs, users, categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds = pageIdsByAltIds, posts, permsOnPages)
   }
 
@@ -444,7 +451,7 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readCategoryOrBad(jsValue: JsValue, isE2eTest: Boolean): Category Or ErrorMessage = {
+  def readCategoryOrBad(jsValue: JsValue, isE2eTest: Boolean): Either[Category, CategoryPatch] Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -457,12 +464,20 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     try {
+      // For now (later, use a CategoryPatch class instead), if there's nothing but
+      // an id and an ext id, then required the id to be a temp import id,
+      // and load an old category, by external id:
+      if (jsObj.fields.length == 2) {
+        val extId = readOptString(jsObj, "extId")
+        return Good(Right(CategoryPatch(id, extImpId = extId)))
+      }
+
       val includeInSummariesInt = readOptInt(jsObj, "includeInSummaries")
           .getOrElse(IncludeInSummaries.Default.IntVal)
       val includeInSummaries = IncludeInSummaries.fromInt(includeInSummariesInt) getOrElse {
         return Bad(s"Invalid includeInSummaries: $includeInSummariesInt")
       }
-      Good(Category(
+      Good(Left(Category(
         id = id,
         extImpId = readOptString(jsObj, "extImpId"),
         sectionPageId = readString(jsObj, "sectionPageId"), // opt, use the one and only section
@@ -480,7 +495,7 @@ case class SiteBackupReader(context: EdContext) {
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),
         frozenAt = readOptDateMs(jsObj, "frozenAtMs"),
-        deletedAt = readOptDateMs(jsObj, "deletedAtMs")))
+        deletedAt = readOptDateMs(jsObj, "deletedAtMs"))))
     }
     catch {
       case ex: IllegalArgumentException =>

@@ -119,3 +119,6 @@ object Category {
 }
 
 
+case class CategoryPatch(
+  id: CategoryId, // later: optional
+  extImpId: Option[ExtImpId] = None)

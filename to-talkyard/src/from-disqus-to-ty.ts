@@ -255,6 +255,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
   let nextPageId  =  c.LowestExtImpId;
   let nextPostId  =  c.LowestExtImpId;
   let nextGuestId = -c.LowestExtImpId;
+  const categoryImpId = c.LowestExtImpId;
 
   const tySiteData: any = {
     groups: [],
@@ -297,7 +298,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       createdAt: pageCreatedAt,
       updatedAt: pageCreatedAt,
       publishedAt: pageCreatedAt,
-      categoryId: c.DefaultDefaultCategoryId,
+      categoryId: categoryImpId,
       embeddingPageUrl: thread.link,
       authorId: c.SystemUserId,
     };
@@ -476,6 +477,13 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     tySiteData.posts.push(tyTitle);
     tySiteData.posts.push(tyBody);
     tyComments.forEach(c => tySiteData.posts.push(c));
+
+    // A dummy category that maps the category import id to [the category
+    // in the database with ext id 'embedded_comments'].
+    tySiteData.categories.push({
+      id: categoryImpId,
+      extId: 'embedded_comments',
+    });
   });
 
   _.values(guestsByImpId).forEach(g => tySiteData.guests.push(g));

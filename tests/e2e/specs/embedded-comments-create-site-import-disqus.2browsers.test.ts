@@ -357,6 +357,7 @@ ${htmlToPaste}
 
   it("Maria goes to the one-imported-reply page", () => {
     mariasBrowser.go('/' + oneReplyPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
   it("... and sees a comment, imported from Disqus", () => {
@@ -376,15 +377,17 @@ ${htmlToPaste}
 
   it("... it's there after page reload", () => {
     mariasBrowser.refresh();
+    mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
 
   it("Maria goes to the page with many replies", () => {
     mariasBrowser.go('/' + fiveRepliesPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees three comments", () => {
+  it("... and sees her two comments, plus 4 imported", () => {
   });
 
   it("Maria replies to a comment", () => {

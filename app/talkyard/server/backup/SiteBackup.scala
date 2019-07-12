@@ -45,6 +45,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   guests: Seq[Guest],
   guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
   users: Seq[UserInclDetails],
+  categoryPatches: Seq[CategoryPatch],
   categories: Seq[Category],
   pages: Seq[PageMeta],
   pagePaths: Seq[PagePathWithId],
@@ -68,6 +69,7 @@ case object SiteBackup {
     pages = Vector.empty,
     pagePaths = Vector.empty,
     pageIdsByAltIds = Map.empty,
+    categoryPatches = Vector.empty,
     categories = Vector.empty,
     posts = Vector.empty,
     permsOnPages = Vector.empty)

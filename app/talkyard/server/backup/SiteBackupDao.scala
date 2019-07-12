@@ -414,6 +414,19 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
+      // Category patches: Remap temp imp ids to real ids, by looking up the external id.
+      siteData.categoryPatches foreach { catPatchWithTempId: CategoryPatch =>
+        val impId = catPatchWithTempId.id
+        val extId = catPatchWithTempId.extImpId getOrElse throwBadRequest(
+          "TyE2SDKLPX3", s"Category with id $impId needs an ext id")
+        throwBadRequestIf(impId < LowestTempImpId,
+          "TyE305KPWDJ", s"""Currently a category with real id $impId and extId '$extId',
+           should instead have a > 2e9 temp id""")
+        val oldCat = oldCategories.find(_.extImpId is extId) getOrElse throwBadRequest(
+          "TYE40GKRD81", s"No category in the database with ext id $extId")
+        categoriesRealIdsByTempImpId.put(impId, oldCat.id)
+      }
+
       // Remap ids.
       siteData.categories foreach { catTempId: Category =>
         val extImpId = catTempId.extImpId getOrElse throwForbidden(
