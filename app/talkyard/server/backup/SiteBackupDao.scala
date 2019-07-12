@@ -21,7 +21,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.EdHttp._
 import debiki.SpecialContentPages
-import debiki.dao.{PagePartsDao, SiteDao}
+import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import scala.collection.mutable
@@ -501,6 +501,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // Later: update with any reassigned participant and post ids:
         //   answerPostId (complicated? need assign tempId —> real id to posts first, somewhere above)
         val realId = pageRealIdsByTempImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
+        /*
         val pageMetaNumBumps = pageNumBumpsByRealPageId.getOrElse(realId, PageMetaNumBumps())
         def bumpNums(pageMeta: PageMeta): PageMeta = {
           // BUG this considers only new posts. Instead:
@@ -511,8 +512,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             updatedAt = tx.now.toJavaDate,
             //publishedAt = ???,
             bumpedAt = When.anyJavaDateLatestOf(pageMeta.bumpedAt, b.lastApprovedReplyAt),
-            lastApprovedReplyAt = b.lastApprovedReplyAt,
-            lastApprovedReplyById = b.lastApprovedReplyById,
+            lastApprovedReplyAt = When.anyJavaDateLatestOf(pageMeta.lastApprovedReplyAt, b.lastApprovedReplyAt),
+            lastApprovedReplyById = b.lastApprovedReplyById, // oops
             //frequentPosterIds = b.frequentPosterIds,  bug: gets updated also if reply not approved
             numLikes = pageMeta.numLikes + b.numLikes,
             numWrongs = pageMeta.numWrongs + b.numWrongs,
@@ -526,16 +527,17 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             numOrigPostBuryVotes = pageMeta.numOrigPostBuryVotes + b.numOrigPostBuryVotes,
             numOrigPostUnwantedVotes = pageMeta.numOrigPostUnwantedVotes + b.numOrigPostUnwantedVotes,
             numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + b.numOrigPostRepliesVisible)
-        }
+        } */
+
+        lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
 
         val anyOldPage = pageWithTempId.extImpId.flatMap(oldPagesByExtImpId.get) orElse {
-          val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
           val oldPages = pageAltIds.flatMap(oldPagesByAltId.get)
           dieIf(oldPages.map(_.pageId).size > 1, "TyE05HKR3")
           oldPages.headOption
         }
 
-        anyOldPage match {
+        val pageMetaWrongStats = anyOldPage match {
           case None =>
             val pageWithRealIds = pageWithTempId.copy(
               pageId = realId,
@@ -543,13 +545,16 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               authorId = remappedPpTempId(pageWithTempId.authorId),
               lastApprovedReplyById = pageWithTempId.lastApprovedReplyById.map(remappedPpTempId),
               frequentPosterIds = pageWithTempId.frequentPosterIds.map(remappedPpTempId))
-            val pageWithOkNums = bumpNums(pageWithRealIds)
-            tx.insertPageMetaMarkSectionPageStale(pageWithOkNums, isImporting = true)
+            //val pageWithOkNums = bumpNums(pageWithRealIds)
+            tx.insertPageMetaMarkSectionPageStale(pageWithRealIds, isImporting = true)
+            pageAltIds.foreach(tx.insertAltPageId(_, realId))
+            pageWithRealIds // pageWithOkNums
           case Some(oldPageMeta) =>
-            val pageWithOkNums = bumpNums(oldPageMeta)
+            /*val pageWithOkNums = bumpNums(oldPageMeta)
             if (pageWithOkNums != oldPageMeta) {
               tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
-            }
+            } */
+            oldPageMeta
             /* Later?:
             if (oldPageMeta.updatedAt.getTime < pageMetaTempIds.updatedAt.getTime) {
               val pageWithId = pageMetaTempIds.copy(pageId = oldPageMeta.pageId)
@@ -558,6 +563,22 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 markSectionPageStale = true)
             } */
         }
+
+        val pageDao = PageDao(pageMetaWrongStats.pageId, tx)
+        val pageMeta = pageMetaWrongStats.copyWithUpdatedStats(pageDao)
+
+        dao.updatePagePopularity(pageDao.parts, tx)
+        tx.updatePageMeta(pageMeta, oldMeta = pageMetaWrongStats, markSectionPageStale = true)
+
+        /*
+        // [readlater] export & import page views too, otherwise page popularity here will be wrong.
+        // (So here we load all posts again — the ones we just inserted. Should be fine
+        // performance wise — it's just one db query, to load all posts, vs one per post,
+        // previously when inserting. At least not more than 2x slower, which should be ok
+        // (simplicity = more important).
+        val pagePartsDao = PagePartsDao(pageMeta.pageId, tx)
+        dao.updatePagePopularity(pagePartsDao, tx)
+        */
       }
 
 

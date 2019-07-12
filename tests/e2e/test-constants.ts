@@ -98,7 +98,7 @@ export = {
   StaffId: 17,
   ModeratorsId: 18,
   AdminsId: 19,
-  DefaultDefaultCategoryId: 2,
+  DefaultDefaultCategoryId: 3,
   ReviewDecisionUndoTimoutSeconds: 12, // sync with Scala and React component [2PUKQB0]
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]

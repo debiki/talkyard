@@ -33,6 +33,7 @@ let talkyardSiteOrigin: string;
 
 const mariasReplyOne = 'mariasReplyOne';
 const mariasReplyTwo = 'mariasReplyTwo';
+const mariasReplyThreeToImportedComment = 'mariasReplyThreeToImportedComment';
 
 
 const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
@@ -178,6 +179,9 @@ ${htmlToPaste}
   const disqusXmlDumpFilePath = dirPath + '/disqus-export.xml';
   const talkyardPatchFilePath = dirPath + '/talkyard-disqus.typatch.json';
 
+  const year2030CommentText =
+    "Year 2030: Your cat asks you to wait for her to finish all the milk with dandelions";
+
   it(`Owen exports Disqus comments to a file: ${disqusXmlDumpFilePath}`, () => {
     const embeddingOrigin = data.embeddingUrl;
     fs.writeFileSync(disqusXmlDumpFilePath, `
@@ -234,7 +238,7 @@ ${htmlToPaste}
     
     <post dsq:id="100001">
     <id>wp_id=528</id>
-    <message><![CDATA[<p>Year 2030: Your cat asks you to wait for her to finish all the milk with dandelions</p>]]></message>
+    <message><![CDATA[<p>${year2030CommentText}</p>]]></message>
     <createdAt>2019-03-04T01:02:03Z</createdAt>
     <isDeleted>false</isDeleted>
     <isSpam>false</isSpam>
@@ -351,14 +355,33 @@ ${htmlToPaste}
 
   // ----- Comments appear?
 
-  it("Maria refreshes the page", () => {
+  it("Maria goes to the one-imported-reply page", () => {
+    mariasBrowser.go('/' + oneReplyPageUrlPath)
+  });
+
+  it("... and sees a comment, imported from Disqus", () => {
+    mariasBrowser.topic.assertNumRepliesVisible(11);
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+  });
+
+  it("... with the correct text", () => {
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, year2030CommentText);
+  });
+
+  it("She can post a reply", () => {
+    mariasBrowser.complex.replyToPostNr(
+        c.FirstReplyNr, mariasReplyThreeToImportedComment, { isEmbedded: true });
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+  });
+
+  it("... it's there after page reload", () => {
     mariasBrowser.refresh();
+    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
-  it("... and sees a comment", () => {
-  });
 
-  it("Maria goes to another page", () => {
+  it("Maria goes to the page with many replies", () => {
+    mariasBrowser.go('/' + fiveRepliesPageUrlPath)
   });
 
   it("... and sees three comments", () => {

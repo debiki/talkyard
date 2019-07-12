@@ -635,7 +635,8 @@ trait PagesDao {
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
         tx: SiteTransaction) {
     val page = PageDao(pageId, tx)
-    val newMeta = page.meta.copy(
+    var newMeta = page.meta.copyWithUpdatedStats(page) /*
+    var newMeta = page.meta.copy(  // code review: this = (...) is identical to [0969230876]
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,
@@ -653,7 +654,8 @@ trait PagesDao {
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
       answeredAt = page.anyAnswerPost.map(_.createdAt),
       answerPostId = page.anyAnswerPost.map(_.id),
-      version = page.version + 1)
+      version = page.version + 1)  */
+
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }

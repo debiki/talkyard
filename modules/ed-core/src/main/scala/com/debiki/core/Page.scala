@@ -224,6 +224,10 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
 
   require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, "DwE5JGY1")
+  require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), "TyE7WKG2AG4")
+  require(updatedAt.getTime >= createdAt.getTime, "TyE7WKG05KS")
+  require(publishedAt.forall(_.getTime >= createdAt.getTime), "TyE8GK405KS")
+  require(bumpedAt.forall(_.getTime >= createdAt.getTime), "TyE0NFATI3D")
   // If there are no replies, then there are no frequent posters.
   require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, "TyE306HMSJ24")
   require(frequentPosterIds.length <= 3, "DwE6UMW3") // for now — change if needed
@@ -362,6 +366,34 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
       doneAt = newDoneAt,
       closedAt = newClosedAt)
   }
+
+  def copyWithUpdatedStats(page: Page): PageMeta = {
+    var newMeta = copy(  // code review: this = (...) is identical to [0969230876]
+      lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
+      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
+      frequentPosterIds = page.parts.frequentPosterIds,
+      numLikes = page.parts.numLikes,
+      numWrongs = page.parts.numWrongs,
+      numBurys = page.parts.numBurys,
+      numUnwanteds = page.parts.numUnwanteds,
+      numRepliesVisible = page.parts.numRepliesVisible,
+      numRepliesTotal = page.parts.numRepliesTotal,
+      numPostsTotal = page.parts.numPostsTotal,
+      numOrigPostLikeVotes = page.parts.theBody.numLikeVotes,
+      numOrigPostWrongVotes = page.parts.theBody.numWrongVotes,
+      numOrigPostBuryVotes = page.parts.theBody.numBuryVotes,
+      numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
+      numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
+      answeredAt = page.anyAnswerPost.map(_.createdAt),
+      answerPostId = page.anyAnswerPost.map(_.id),
+      version = page.version + 1)
+
+    if (newMeta.numRepliesVisible > numRepliesVisible) {
+      newMeta = newMeta.copy(bumpedAt = page.parts.lastVisibleReply.map(_.createdAt))
+    }
+    newMeta
+  }
+
 }
 
 
