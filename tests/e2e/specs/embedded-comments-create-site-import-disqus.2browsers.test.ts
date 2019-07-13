@@ -34,6 +34,8 @@ let talkyardSiteOrigin: string;
 const mariasReplyOne = 'mariasReplyOne';
 const mariasReplyTwo = 'mariasReplyTwo';
 const mariasReplyThreeToImportedComment = 'mariasReplyThreeToImportedComment';
+const owensReplyToMaria = 'owensReplyToMaria';
+const owensReplyToSandra = 'owensReplyToSandra';
 
 
 const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
@@ -80,7 +82,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
     owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
-    const siteId = owensBrowser.getSiteId();
+    siteId = owensBrowser.getSiteId();
     const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
@@ -100,7 +102,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   });
 
 
-  const fiveRepliesPageUrlPath = 'five-replies';
+  const fourRepliesPageUrlPath = 'four-replies';
   const oneReplyPageUrlPath = '2019/a-blog-post-one-reply';
   const noDisqusRepliesPageUrlPath = 'no-dsq-comments';
 
@@ -109,7 +111,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
     if (!fs.existsSync(dirPath + '/2019')) {
       fs.mkdirSync(dirPath + '/2019', { recursive: true, mode: 0o777 });
     }
-    makeEmbeddingPage(fiveRepliesPageUrlPath);
+    makeEmbeddingPage(fourRepliesPageUrlPath);
     makeEmbeddingPage(oneReplyPageUrlPath);
     makeEmbeddingPage(noDisqusRepliesPageUrlPath);
   });
@@ -160,8 +162,8 @@ ${htmlToPaste}
     mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
-  it("... the five replies page is empty too", () => {
-    mariasBrowser.go(data.embeddingUrl + fiveRepliesPageUrlPath);
+  it("... the four-replies page is empty too", () => {
+    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath);
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
@@ -179,6 +181,7 @@ ${htmlToPaste}
   const disqusXmlDumpFilePath = dirPath + '/disqus-export.xml';
   const talkyardPatchFilePath = dirPath + '/talkyard-disqus.typatch.json';
 
+  const year2030AuthorEmail = 'e2e-test-sandra.sandell@example.com';
   const year2030CommentText =
     "Year 2030: Your cat asks you to wait for her to finish all the milk with dandelions";
 
@@ -186,19 +189,23 @@ ${htmlToPaste}
     const embeddingOrigin = data.embeddingUrl;
     fs.writeFileSync(disqusXmlDumpFilePath, `
     <?xml version="1.0" encoding="utf-8"?>
-    <disqus xmlns="http://disqus.com" xmlns:dsq="http://disqus.com/disqus-internals" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://disqus.com/api/schemas/1.0/disqus.xsd http://disqus.com/api/schemas/1.0/disqus-internals.xsd">
-    
+    <disqus
+        xmlns="http://disqus.com"
+        xmlns:dsq="http://disqus.com/disqus-internals"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://disqus.com/api/schemas/1.0/disqus.xsd http://disqus.com/api/schemas/1.0/disqus-internals.xsd">
+
     <category dsq:id="111">
     <forum>disqus_test_forum</forum>
     <title>General</title>
     <isDefault>true</isDefault>
     </category>
-    
+
     <thread dsq:id="5555555555">
-    <id>${embeddingOrigin}five-replies</id>
+    <id>${embeddingOrigin}${fourRepliesPageUrlPath}</id>
     <forum>disqus_test_forum</forum>
     <category dsq:id="111" />
-    <link>${embeddingOrigin}five-replies</link>
+    <link>${embeddingOrigin}${fourRepliesPageUrlPath}</link>
     <title>A Simple Title</title>
     <message />
     <createdAt>2019-01-02T11:00:00Z</createdAt>
@@ -212,7 +219,7 @@ ${htmlToPaste}
     <isClosed>false</isClosed>
     <isDeleted>false</isDeleted>
     </thread>
-    
+
     <thread dsq:id="1111111111">
     <id>node/2</id>
     <forum>disqus_test_forum</forum>
@@ -231,11 +238,10 @@ ${htmlToPaste}
     <isClosed>false</isClosed>
     <isDeleted>false</isDeleted>
     </thread>
-    
-    
+
+
     <!-- <posts> -->
-    
-    
+
     <post dsq:id="100001">
     <id>wp_id=528</id>
     <message><![CDATA[<p>${year2030CommentText}</p>]]></message>
@@ -243,16 +249,15 @@ ${htmlToPaste}
     <isDeleted>false</isDeleted>
     <isSpam>false</isSpam>
     <author>
-    <email>sandra.sandell@example.com</email>
+    <email>${year2030AuthorEmail}</email>
     <name>Sandra</name>
     <isAnonymous>true</isAnonymous>
     </author>
     <ipAddress>110.175.1.2</ipAddress>
     <thread dsq:id="1111111111" />
     </post>
-    
-    
-    
+
+
     <post dsq:id="100002">
     <id>wp_id=101223</id>
     <message><![CDATA[<p>Sir,<br>I constructed a Santa Sailing Ship and was surprised when it took me to the middle of the local lake here, instead of into Outer Space, the Santa Section.<br>See you in the Santa Section</p>]]></message>
@@ -267,7 +272,7 @@ ${htmlToPaste}
     <ipAddress>144.98.22.33</ipAddress>
     <thread dsq:id="5555555555" />
     </post>
-    
+
     <post dsq:id="100003">
     <id>wp_id=101389</id>
     <message><![CDATA[<p>Sir,<br>My santa ship was likewise unable to reach the escape velocity and take me away from here into Outer Space. This is because the sum stopped increasing without limits, and instead multiplied with the divisors, to the power of seventy-seven, a bizarre phenomenon. This requires research.<br>Regards,<br>and see you in Santa Space</p>]]></message>
@@ -283,7 +288,7 @@ ${htmlToPaste}
     <thread dsq:id="5555555555" />
     <parent dsq:id="100002" />
     </post>
-    
+
     <post dsq:id="100004">
     <id>wp_id=101428</id>
     <message><![CDATA[<p>This is amazing, and in a way surprising, and in another way, should have been expected. Without actually having build the machine, and not having read these instructions on building the machine, how could we then expect us to reach the escape velocity, before the squared spin of Earth is faster than Pi?  I'm convinced if we only carefully study The Instructions, and you and I do the math. It will work, like a ship in the lake, faster, faster, up, up, up.</p>]]></message>
@@ -298,7 +303,7 @@ ${htmlToPaste}
     <ipAddress>162.156.1.23</ipAddress>
     <thread dsq:id="5555555555" />
     </post>
-    
+
     <post dsq:id="100005">
     <id />
     <message><![CDATA[<p>Has anyone tried using the pets? The smaller, the less heavy, the higher we can reach.</p>]]></message>
@@ -314,7 +319,7 @@ ${htmlToPaste}
     <ipAddress>184.11.12.13</ipAddress>
     <thread dsq:id="5555555555" />
     </post>
-    
+
     <post dsq:id="100006">
     <id />
     <message><![CDATA[<p>Instructions not clear, might my long hair get caugth in the fan?</p>]]></message>
@@ -330,7 +335,22 @@ ${htmlToPaste}
     <ipAddress>111.112.113.114</ipAddress>
     <thread dsq:id="5555555555" />
     </post>
-    
+
+    <post dsq:id="100007">
+    <id />
+    <message><![CDATA[<p>Buy vi  gr  a</p>]]></message>
+    <createdAt>2019-08-10T11:12:13Z</createdAt>
+    <isDeleted>false</isDeleted>
+    <isSpam>true</isSpam>
+    <author>
+    <email>spammer@example.com</email>
+    <name>Spridio Spradio</name>
+    <isAnonymous>true</isAnonymous>
+    </author>
+    <ipAddress>111.112.113.444</ipAddress>
+    <thread dsq:id="5555555555" />
+    </post>
+
     </disqus>
     `);
   });
@@ -361,67 +381,100 @@ ${htmlToPaste}
   });
 
   it("... and sees a comment, imported from Disqus", () => {
-    mariasBrowser.topic.assertNumRepliesVisible(11);
     mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    mariasBrowser.topic.assertNumRepliesVisible(1);
   });
 
   it("... with the correct text", () => {
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, year2030CommentText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
   });
 
-  it("She can post a reply", () => {
+  it("She can post a reply, to the Disqus improted comment", () => {
     mariasBrowser.complex.replyToPostNr(
         c.FirstReplyNr, mariasReplyThreeToImportedComment, { isEmbedded: true });
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
-  it("... it's there after page reload", () => {
+  it("... the reply is there after page reload", () => {
     mariasBrowser.refresh();
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+  });
+
+  it("... the comment author (a guest user) gets a reply notf email", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, year2030AuthorEmail, [mariasReplyThreeToImportedComment], mariasBrowser);
+  });
+
+  it("Owen replies to Maria", () => {
+    owensBrowser.go(data.embeddingUrl + oneReplyPageUrlPath)
+    owensBrowser.complex.replyToPostNr(
+        c.FirstReplyNr + 1, owensReplyToMaria, { isEmbedded: true });
+  });
+
+  it("... and to Sandra the guest", () => {
+    owensBrowser.go(data.embeddingUrl + oneReplyPageUrlPath)
+    owensBrowser.complex.replyToPostNr(
+        c.FirstReplyNr, owensReplyToSandra, { isEmbedded: true });
+  });
+
+  it("... Sandra gets a nof email", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, year2030AuthorEmail, [owensReplyToSandra], owensBrowser);
+  });
+
+  let verifyEmailAddrLink: string;
+
+  it("... but Maria didn't get one yet — instead, the server waits for her to " +
+      "verify her email address", () => {
+    verifyEmailAddrLink = server.getVerifyEmailAddressLinkFromLastEmailTo(
+        siteId, maria.emailAddress, mariasBrowser);
+  });
+
+  it("... she clicks the link", () => {
+    mariasBrowser.go(verifyEmailAddrLink);
+  });
+
+  it("... *Thereafter* she gets the nof email about Owen's reply  TyT305RKTH4", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [owensReplyToMaria], mariasBrowser);
   });
 
 
   it("Maria goes to the page with many replies", () => {
-    mariasBrowser.go('/' + fiveRepliesPageUrlPath)
+    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath)
     mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
   it("... and sees her two comments, plus 4 imported", () => {
-  });
-
-  it("Maria replies to a comment", () => {
-  });
-
-  it("... the comment author (a guest user) gets a reply notf email", () => {
-  });
-
-  it("owen replies to Maria", () => {
-  });
-
-  it("... Maria gets a nof email", () => {
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasReplyOne);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyTwo);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "I constructed a Santa Sailing Ship");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 5, "tried using the pets");
+    mariasBrowser.topic.assertNumRepliesVisible(2 + 4);
   });
 
   it("Maria goes to a 3rd page", () => {
+    mariasBrowser.go('/' + noDisqusRepliesPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... it's empt (it should be)", () => {
+  it("... it's empty (it should be)", () => {
+    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
-  it("Maria returns to the previous page, with new comments", () => {
+  it("Maria returns to the page with the previously just one reply, imported from Disqus", () => {
+    mariasBrowser.go('/' + oneReplyPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees 5 comments (3 old, from Disqus, and 2 new)", () => {
+  it("... and sees 4 comments: 1 imported from Disqus, 1 is hers, and Owen's 2", () => {
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, owensReplyToMaria);
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, owensReplyToSandra);
+    mariasBrowser.topic.assertNumRepliesVisible(4);
   });
-
-
-  function isCommentsVisible(browser) {
-    return browser.isVisible('.dw-p');
-  }
-
-  function isReplyButtonVisible(browser) {
-    return browser.isVisible('.dw-a-reply');
-  }
 
 });
 

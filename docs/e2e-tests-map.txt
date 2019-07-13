@@ -707,6 +707,7 @@ email notifications:  (5ABKR024)
   watching:
   not until after email verified:
           - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
   unsubscribe:
           -  (7ABKR023)
 
@@ -732,6 +733,8 @@ server side rendering -
 
 import and export:  (impexp)
   site patch:
+          - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+  import Disqus comments:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
 
 
