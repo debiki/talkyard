@@ -449,9 +449,14 @@ ${htmlToPaste}
   it("... and sees her two comments, plus 4 imported", () => {
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasReplyOne);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyTwo);
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "I constructed a Santa Sailing Ship");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "a Santa Sailing Ship");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, "reach the escape velocity");
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, "in a way surprising");
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 5, "tried using the pets");
-    mariasBrowser.topic.assertNumRepliesVisible(2 + 4);
+  });
+
+  it("... but only those — not the isDeleted and the isSpam comments", () => {
+    mariasBrowser.topic.assertNumRepliesVisible(2 + 4   + 0  + 0);
   });
 
   it("Maria goes to a 3rd page", () => {

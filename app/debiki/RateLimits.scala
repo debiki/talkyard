@@ -226,9 +226,9 @@ object RateLimits {
   object UpsertSimple extends RateLimits {
     val key = "UpSm"
     val what = "Upserted things too many times"
-    def maxPerFifteenSeconds = 2
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 20
+    def maxPerFifteenSeconds = 10
+    def maxPerFifteenMinutes = 30
+    def maxPerDay = 90
     def maxPerDayNewUser = 0
   }
 

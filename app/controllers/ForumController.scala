@@ -98,7 +98,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def loadCategoryToEdit(categoryId: CategoryId): Action[Unit] = AdminGetAction { request =>
     import request.dao
     val (category, isDefault) = dao.getTheCategoryAndIsDefault(categoryId)
-    val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
+    val catJson = categoryToJson(
+      category, isDefault, recentTopics = Nil, pageStuffById = Map.empty, includeDetails = true)
     val (allPerms, groups) = dao.readOnlyTransaction { tx =>
       (tx.loadPermsOnPages(), tx.loadAllGroupsAsSeq())
     }
@@ -131,8 +132,11 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (categoryId == NoCategoryId)
       throwBadRequest("EdE5PJB2L", s"Bad category id: $NoCategoryId")
 
+    val extId = (categoryJson \  "extId").asOptStringNoneIfBlank
+
     val categoryData = CategoryToSave(
       anyId = Some(categoryId),
+      extId = extId,
       sectionPageId = sectionPageId,
       parentId = (categoryJson \ "parentId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
@@ -340,12 +344,13 @@ object ForumController {
 
 
   private def categoryToJson(category: Category, isDefault: Boolean,  // [JsObj]
-        recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff])
+        recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff],
+        includeDetails: Boolean = false)
         : JsObject = {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageType != PageType.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
-    JsonMaker.makeCategoryJson(category, isDefault, recentTopicsJson)
+    JsonMaker.makeCategoryJson(category, isDefault, recentTopicsJson, includeDetails = includeDetails)
   }
 
 

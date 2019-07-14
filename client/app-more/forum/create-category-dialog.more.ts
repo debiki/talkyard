@@ -88,8 +88,9 @@ const EditCategoryDialog = createClassAndFactory({
     else {
       const categoryId = -1; // then the server will give it a >= 1 id  [4GKWSR1]
       Server.loadGroups((groups: Group[]) => {
-        const newCategory: Category = {
+        const newCategory: CategoryPatch = {
           id: categoryId,
+          extId: '',
           name: '',
           slug: '',
           defaultTopicType: PageRole.Discussion,
@@ -254,10 +255,15 @@ const CategorySettings = createClassAndFactory({
     this.props.updateCategory({ includeInSummaries: newInclInSummaries });
   },
 
+  onExtIdChanged: function(event) {
+    this.props.updateCategory({ extId: event.target.value.trim() });
+  },
+
   render: function () {
     const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
     const page: Page = store.currentPage;
-    const category: Category = this.props.category;
+    const category: CategoryPatch = this.props.category;
     if (!category)
       return null;
 
@@ -359,6 +365,12 @@ const CategorySettings = createClassAndFactory({
           help: "Prevents topics from this category from being included in activity summary " +
               "emails." }));
 
+    const extIdInput = settings.enableApi === false ? null :
+      utils.FadeInOnClick({ clickToShowText: "External ID (optional)", clickToShowId: 'te_ShowExtId' },
+        Input({ type: 'text', label: "External ID", ref: 'extId', id: 'te_CatExtId',
+            value: category.extId, onChange: this.onExtIdChanged,
+            help: "An external ID, for example if you need to upsert things via Talkyard's API."}));
+
     let anyUndeleteInfoAndButton;
     let anyDeleteButton;
     if (this.props.isCreatingNewCategory) {
@@ -387,6 +399,7 @@ const CategorySettings = createClassAndFactory({
             positionInput,
             unlistCategoryTopicsInput,
             excludeFromSummariesInput,
+            extIdInput,
             anyDeleteButton);
   }
 });

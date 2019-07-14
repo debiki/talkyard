@@ -324,6 +324,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
     val statement = """
       update categories3 set
         page_id = ?, parent_id = ?, default_category_id = ?,
+        ext_imp_id = ?,
         name = ?, slug = ?, position = ?,
         description = ?, new_topic_types = ?,
         unlist_category = ?, unlist_topics = ?, incl_in_summaries = ?,
@@ -332,6 +333,7 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
       where site_id = ? and id = ?"""
     val values = List[AnyRef](
       category.sectionPageId, category.parentId.orNullInt, category.defaultSubCatId.orNullInt,
+      category.extImpId.orNullVarchar,
       category.name, category.slug, category.position.asAnyRef,
       category.description.orNullVarchar, topicTypesToVarchar(category.newTopicTypes),
       category.unlistCategory.asAnyRef, category.unlistTopics.asAnyRef, category.includeInSummaries.toInt.asAnyRef,

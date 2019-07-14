@@ -63,6 +63,8 @@ case class CategoryToSave(
   //require ok ext id
   //require ok slug
 
+  // ! + add ok chars db constraint, for ext id?  later, for slug too, but be sure to rm bad chars first.
+
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
@@ -472,6 +474,7 @@ trait CategoriesDao {
       // Could just remove all counts, who cares anyway
       require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
       val editedCategory = oldCategory.copy(
+        extImpId = editCategoryData.extId,
         name = editCategoryData.name,
         slug = editCategoryData.slug,
         position = editCategoryData.position,

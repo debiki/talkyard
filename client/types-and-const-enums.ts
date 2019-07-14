@@ -36,7 +36,8 @@ type AuditLogEntryId = number;
 type TagLabel = string;
 type ApiSecretNr = number;
 type WhenMs = number;
-type ExtImpId = string;
+type ExtId = string;
+type ExtImpId = ExtId; // RENAME to ExtId
 
 
 

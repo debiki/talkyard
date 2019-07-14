@@ -1100,6 +1100,8 @@ object JsonMaker {
       json += "ssoUrl" -> JsString(settings.ssoUrl)
     if (settings.ssoUrl.nonEmpty && settings.enableSso)
       json += "enableSso" -> JsTrue
+    if (settings.enableApi != D.enableApi)
+      json += "enableApi" -> JsBoolean(settings.enableApi)
     if (settings.enableForum != D.enableForum)
       json += "enableForum" -> JsBoolean(settings.enableForum)
     if (settings.enableTags != D.enableTags)
@@ -1430,7 +1432,7 @@ object JsonMaker {
 
 
   def makeCategoryJson(category: Category, isDefaultCategory: Boolean,
-        recentTopicsJson: Seq[JsObject] = null): JsObject = {
+        recentTopicsJson: Seq[JsObject] = null, includeDetails: Boolean = false): JsObject = {
     var json = Json.obj(
       "id" -> category.id,
       "name" -> category.name,
@@ -1453,6 +1455,9 @@ object JsonMaker {
     }
     if (category.isDeleted) {
       json += "isDeleted" -> JsTrue
+    }
+    if (includeDetails && category.extImpId.isDefined) {
+      json += "extId" -> JsString(category.extImpId.get)
     }
     json
   }
