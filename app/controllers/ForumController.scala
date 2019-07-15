@@ -162,6 +162,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     if (categoryData.slug.length > MaxSlugLength)
       throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
+      // + more tests, e.g. weird chars, whitespace in the middle?  [05970KF5]
 
     val permissions = ArrayBuffer[PermsOnPages]()
     permissionsJson.value foreach { permsJsValue: JsValue =>

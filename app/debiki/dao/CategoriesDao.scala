@@ -361,6 +361,12 @@ trait CategoriesDao {
   }
 
 
+  def getRootCategories(): immutable.Seq[Category] = {
+    val categoriesById = getAndRememberCategories()._1
+    categoriesById.values.filter(_.parentId isEmpty).toVector
+  }
+
+
   private def getRootCategoryForSectionPageId(sectionPageId: PageId): Option[Category] = {
     val categoriesById = getAndRememberCategories()._1
     for ((_, category) <- categoriesById) {

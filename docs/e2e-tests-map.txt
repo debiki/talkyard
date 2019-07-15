@@ -731,6 +731,10 @@ server side rendering -
     click tag:
     category dropdown:
 
+api:
+  upsert categories:
+          - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
+
 import and export:  (impexp)
   site patch:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75

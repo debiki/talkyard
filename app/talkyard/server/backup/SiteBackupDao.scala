@@ -374,9 +374,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 postTempParentNr.copy(parentNr = Some(parentPost.nr))
               }
 
-            // Sanitize html or convert from commonmark to html — good to wati with,
+            // Sanitize html or convert from commonmark to html — good to wait with,
             // until we're here, so we know the imported contents seems well structured?
-            // Need a way to specify if the source is in commonmark or html?
+            // Need a way to specify if the source is in commonmark or html?  [IMPCORH]
+            // Ought to assume it's always CommonMark, but then, importing things can
+            // take almost forever, if the site is large (CommonMark parser = slow).
             val postReal =
               if (postRealNoHtml.approvedSource.isEmpty) postRealNoHtml
               else {
@@ -416,13 +418,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       // Category patches: Remap temp imp ids to real ids, by looking up the external id.
       siteData.categoryPatches foreach { catPatchWithTempId: CategoryPatch =>
-        val impId = catPatchWithTempId.id
-        val extId = catPatchWithTempId.extImpId getOrElse throwBadRequest(
+        val impId = catPatchWithTempId.id getOrThrowBadRequest(
+          "TyE305KKS61", "Category with no id")
+        val extId = catPatchWithTempId.extImpId getOrThrowBadRequest(
           "TyE2SDKLPX3", s"Category with id $impId needs an ext id")
         throwBadRequestIf(impId < LowestTempImpId,
           "TyE305KPWDJ", s"""Currently a category with real id $impId and extId '$extId',
            should instead have a > 2e9 temp id""")
-        val oldCat = oldCategories.find(_.extImpId is extId) getOrElse throwBadRequest(
+        val oldCat = oldCategories.find(_.extImpId is extId) getOrThrowBadRequest(
           "TYE40GKRD81", s"No category in the database with ext id $extId")
         categoriesRealIdsByTempImpId.put(impId, oldCat.id)
       }

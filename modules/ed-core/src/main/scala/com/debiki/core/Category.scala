@@ -91,6 +91,7 @@ case class Category(  // [exp] ok use
 
   require(slug.nonEmpty, "EsE6MPFK2")
   require(slug.length <= MaxSlugLength, "EsE4ZXW2")  // what? I don't check werid chars? [05970KF5]
+                                                      // + name ok, extId, new topic type ids?
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
   require(!isRoot || defaultSubCatId.isDefined,
@@ -120,5 +121,11 @@ object Category {
 
 
 case class CategoryPatch(
-  id: CategoryId, // later: optional
-  extImpId: Option[ExtImpId] = None)
+  id: Option[CategoryId],
+  extImpId: Option[ExtImpId] = None,
+  parentRef: Option[String],
+  name: Option[String],
+  slug: Option[String],
+  description: Option[String],
+  position: Option[Int],
+)

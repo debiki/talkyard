@@ -52,9 +52,11 @@ case class SiteBackupReader(context: EdContext) {
   val MaxBytes = 1001000
 
 
-  def parseDumpJsonMaybeThrowBadRequest(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
+  def parseDumpJsonMaybeThrowBadRequest(siteId: SiteId, bodyJson: JsValue, simpleFormat: Boolean,
+          isE2eTest: Boolean): SiteBackup = {
     try {
-      SiteBackupReader(context).parseSiteJson(bodyJson, isE2eTest = isE2eTest)
+      if (simpleFormat) parseSimpleSitePatch(siteId, bodyJson)
+      else parseSiteJson(bodyJson, isE2eTest = isE2eTest)
     }
     catch {
       case ex: JsonUtils.BadJsonException =>
@@ -64,6 +66,38 @@ case class SiteBackupReader(context: EdContext) {
         throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
               invalid value combinations: ${ex.getMessage}""")
     }
+  }
+
+
+  def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
+    val categoriesJson =
+      try {
+        readJsArray(bodyJson, "categories", optional = true)
+      }
+      catch {
+        case ex: IllegalArgumentException =>
+          throwBadRequest("TyE306TMRT2", s"Invalid json: ${ex.getMessage}")
+      }
+
+    val categoryPatches = categoriesJson.value.zipWithIndex map { case (json, index) =>
+      readCategoryOrBad(json, mustBePatch = true, isE2eTest = false).getOrIfBad(error =>
+        throwBadReq(
+          "TyE205KTSK2", o"""Invalid category json at index $index in the 'categories' list: $error,
+              json: $json"""))
+      match {
+        case Left(c: Category) => die("TyE0662TKSR")
+        case Right(p: CategoryPatch) => p
+      }
+    }
+
+    val simplePatch = SimpleSitePatch(categoryPatches = categoryPatches)
+
+    // For now, pick the first random root category. Sub communities currently disabled. [4GWRQA28]
+    val rootCategory = context.globals.siteDao(siteId).getRootCategories().headOption.getOrElse {
+      throwForbidden("TyE6PKWTY4", "No root category has been created")
+    }
+    val completePatch = simplePatch.makeComplete(rootCategory, globals.now())
+    completePatch
   }
 
 
@@ -176,7 +210,7 @@ case class SiteBackupReader(context: EdContext) {
     val categories = mutable.ArrayBuffer[Category]()
 
     categoriesJson.value.zipWithIndex foreach { case (json, index) =>
-      readCategoryOrBad(json, isE2eTest).getOrIfBad(error =>
+      readCategoryOrBad(json, mustBePatch =  false, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "EsE5PYK2", o"""Invalid category json at index $index in the 'categories' list: $error,
               json: $json"""))
@@ -451,14 +485,16 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readCategoryOrBad(jsValue: JsValue, isE2eTest: Boolean): Either[Category, CategoryPatch] Or ErrorMessage = {
+  def readCategoryOrBad(jsValue: JsValue, mustBePatch: Boolean, isE2eTest: Boolean)
+        : Either[Category, CategoryPatch] Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
         return Bad(s"Not a json object, but a: " + classNameOf(bad))
     }
 
-    val id = try readInt(jsObj, "id") catch {
+
+    lazy val theId = try readInt(jsObj, "id") catch {
       case ex: IllegalArgumentException =>
         return Bad(s"Invalid category id: " + ex.getMessage)
     }
@@ -467,9 +503,19 @@ case class SiteBackupReader(context: EdContext) {
       // For now (later, use a CategoryPatch class instead), if there's nothing but
       // an id and an ext id, then required the id to be a temp import id,
       // and load an old category, by external id:
-      if (jsObj.fields.length == 2) {
+      if (mustBePatch || jsObj.fields.length == 2) {
+        val id = readOptInt(jsObj, "id")
         val extId = readOptString(jsObj, "extId")
-        return Good(Right(CategoryPatch(id, extImpId = extId)))
+        val parentRef = readOptString(jsObj, "parentRef")
+        val name = readOptString(jsObj, "name")
+        val position = readOptInt(jsObj, "position")
+        val slug = readOptString(jsObj, "slug")
+        val description = readOptString(jsObj, "description")
+        return Good(Right(CategoryPatch(
+          id, extImpId = extId, parentRef = parentRef, name = name, slug = slug,
+          description = description, position = position)))
+
+          // ?? Where check slug, name, extId etc are valid (not too long, no weird chars) ?? [05970KF5]
       }
 
       val includeInSummariesInt = readOptInt(jsObj, "includeInSummaries")
@@ -478,7 +524,7 @@ case class SiteBackupReader(context: EdContext) {
         return Bad(s"Invalid includeInSummaries: $includeInSummariesInt")
       }
       Good(Left(Category(
-        id = id,
+        id = theId,
         extImpId = readOptString(jsObj, "extImpId"),
         sectionPageId = readString(jsObj, "sectionPageId"), // opt, use the one and only section
         parentId = readOptInt(jsObj, "parentId"),
@@ -499,7 +545,7 @@ case class SiteBackupReader(context: EdContext) {
     }
     catch {
       case ex: IllegalArgumentException =>
-        Bad(s"Bad json for page id '$id': ${ex.getMessage}")
+        Bad(s"Bad json for page id '$theId': ${ex.getMessage}")
     }
   }
 

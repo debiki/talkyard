@@ -19,9 +19,13 @@ package talkyard.server.backup
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.dao.ForumDao
+import org.jsoup.Jsoup
+import org.jsoup.safety.Whitelist
+import scala.collection.mutable
 
 
-/** Later: This class should not contain complete items like Category an Post.
+/** Later: This class should not contain complete items like Category an Post. [PPATCHOBJS]
   * Instead, it should consist of CategoryToSave (exist) and PostToSave
   * (doesn't exist) and PageMetaToSave etc, where some fields can be left out.
   * That'd be useful if one wants to upsert something and overwrite only
@@ -46,7 +50,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
   users: Seq[UserInclDetails],
   categoryPatches: Seq[CategoryPatch],
-  categories: Seq[Category],
+  categories: Seq[Category],  // later, remove, see: [PPATCHOBJS]
   pages: Seq[PageMeta],
   pagePaths: Seq[PagePathWithId],
   pageIdsByAltIds: Map[AltPageId, PageId],
@@ -73,4 +77,147 @@ case object SiteBackup {
     categories = Vector.empty,
     posts = Vector.empty,
     permsOnPages = Vector.empty)
+}
+
+
+case class SimpleSitePatch(
+  categoryPatches: Seq[CategoryPatch]) {
+
+  def makeComplete(rootCategory: Category, now: When): SiteBackup = {
+    var nextCategoryId = LowestTempImpId
+    var nextPageId = LowestTempImpId
+    var nextPostId = LowestTempImpId
+
+    // This works with the current users of the API — namely, upserting categories.
+    val categories = mutable.ArrayBuffer[Category]()
+    val pages = mutable.ArrayBuffer[PageMeta]()
+    val pagePaths = mutable.ArrayBuffer[PagePathWithId]()
+    val permsOnPages = mutable.ArrayBuffer[PermsOnPages]()
+    val posts = mutable.ArrayBuffer[Post]()
+
+    for (categoryPatch <- categoryPatches) {
+      nextCategoryId += 1
+      nextPageId += 1
+      nextPostId += 1
+
+      val theCategorySlug = categoryPatch.slug getOrElse {
+        ??? // throwBadRequest("ZZZZ")
+      }
+
+      val theCategoryName = categoryPatch.name getOrElse {
+        ??? // throwBadRequest("ZZZZ")
+      }
+
+      val theCategoryDescription = categoryPatch.description getOrElse {
+        ??? // throwBadRequest("ZZZZ")
+      }
+
+      categories.append(Category(
+        id = nextCategoryId,
+        extImpId = categoryPatch.extImpId,
+        sectionPageId = rootCategory.sectionPageId,
+        parentId = Some(rootCategory.id),
+        defaultSubCatId = None,
+        name = theCategoryName,
+        slug = theCategorySlug,
+        position = categoryPatch.position getOrElse Category.DefaultPosition,
+        description = categoryPatch.description,
+        newTopicTypes = Vector(PageType.Question),  // for now
+        unlistCategory = false,
+        unlistTopics = false,
+        includeInSummaries = IncludeInSummaries.Default,
+        createdAt = now.toJavaDate,
+        updatedAt = now.toJavaDate))
+
+      pages.append(PageMeta.forNewPage(
+        extId = categoryPatch.extImpId.map(_ + "_about_page"),
+        pageId = nextPageId.toString,
+        pageRole = PageType.AboutCategory,
+        authorId = SysbotUserId,
+        creationDati = now.toJavaDate,
+        numPostsTotal = 2,
+        categoryId = Some(nextCategoryId),
+        publishDirectly = true))
+
+      pagePaths.append(PagePathWithId(
+        folder = "/",
+        pageId = nextPageId.toString,
+        showId = true,
+        pageSlug = "about-" + categoryPatch.slug.getOrElse("category"),
+        canonical = true))
+
+      // Assume the title source is html, not CommonMark. How can we know? [IMPCORH]
+      val nameSanitized = Jsoup.clean(theCategoryName, Whitelist.basic)
+      val descriptionSanitized = Jsoup.clean(theCategoryDescription, Whitelist.basicWithImages)
+
+      val titlePost = Post(
+        id = nextPostId,
+        extImpId = categoryPatch.extImpId.map(_ + "_about_page_title"),
+        pageId = nextPageId.toString,
+        nr = PageParts.TitleNr,
+        parentNr = None,
+        multireplyPostNrs = Set.empty,
+        tyype = PostType.Normal,
+        createdAt = now.toJavaDate,
+        createdById = SysbotUserId,
+        currentRevisionById = SysbotUserId,
+        currentRevStaredAt = now.toJavaDate,
+        currentRevLastEditedAt = None,
+        currentRevSourcePatch = None,
+        currentRevisionNr = FirstRevisionNr,
+        previousRevisionNr = None,
+        lastApprovedEditAt = None,
+        lastApprovedEditById = None,
+        numDistinctEditors = 1,
+        safeRevisionNr = Some(FirstRevisionNr),
+        approvedSource = categoryPatch.name,
+        approvedHtmlSanitized = Some( nameSanitized),
+        approvedAt = Some(now.toJavaDate),
+        approvedById = Some(SysbotUserId),
+        approvedRevisionNr = Some(FirstRevisionNr),
+        collapsedStatus = CollapsedStatus.Open,
+        collapsedAt = None,
+        collapsedById = None,
+        closedStatus = ClosedStatus.Open,
+        closedAt = None,
+        closedById = None,
+        bodyHiddenAt = None,
+        bodyHiddenById = None,
+        bodyHiddenReason = None,
+        deletedStatus = DeletedStatus.NotDeleted,
+        deletedAt = None,
+        deletedById = None,
+        pinnedPosition = None,
+        branchSideways = None,
+        numPendingFlags = 0,
+        numHandledFlags = 0,
+        numPendingEditSuggestions = 0,
+        numLikeVotes = 0,
+        numWrongVotes = 0,
+        numBuryVotes = 0,
+        numUnwantedVotes = 0,
+        numTimesRead = 0)
+
+      nextPostId += 1
+      val bodyPost = titlePost.copy(
+        id = nextPostId,
+        extImpId = categoryPatch.extImpId.map(_ + "_about_page_body"),
+        nr = PageParts.BodyNr,
+        approvedSource = categoryPatch.description,
+        approvedHtmlSanitized = Some(descriptionSanitized))
+
+      posts.append(titlePost)
+      posts.append(bodyPost)
+
+      permsOnPages.append(ForumDao.makeEveryonesDefaultCategoryPerms(nextCategoryId))
+      permsOnPages.append(ForumDao.makeStaffCategoryPerms(nextCategoryId))
+    }
+
+    SiteBackup.empty.copy(
+      categories = categories.toVector,
+      pages = pages.toVector,
+      pagePaths = pagePaths.toVector,
+      posts = posts.toVector,
+      permsOnPages = permsOnPages.toVector)
+  }
 }
