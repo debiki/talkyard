@@ -91,26 +91,26 @@ const AddPeopleDialog = createComponent({
 
   render: function () {
     if (this.state.isLoading)
-      return r.p({}, "Loading...");
+      return r.p({}, t.Loading);
 
     let content;
     if (this.state.isOpen) {
       content =
         r.div({ id: 'e2eAddUsD'},
           rb.ReactSelect({ multi: true, value: this.state.selectedLabelValues,
-            placeholder: "Select users",  // I18N
+            placeholder: t.sud.SelectUsers,
             options: makeLabelValues(this.state.allUsers, this.state.alreadyAddedIds),
             onChange: this.onSelectChange }));
     }
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esTsD' },
-        ModalHeader({}, ModalTitle({}, "Select users")),  // I18N
+        ModalHeader({}, ModalTitle({}, t.sud.SelectUsers)),
         ModalBody({}, content),
         ModalFooter({},
           PrimaryButton({ onClick: this.save, id: 'e2eAddUsD_SubmitB',
-              disabled: !this.state.selectedLabelValues.length }, "Add users"),
-          Button({ onClick: this.close }, "Cancel"))));
+              disabled: !this.state.selectedLabelValues.length }, t.sud.AddUsers),
+          Button({ onClick: this.close }, t.Cancel))));
   }
 });
 

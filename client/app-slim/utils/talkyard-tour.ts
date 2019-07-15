@@ -292,12 +292,16 @@ function TalkyardTour() {
   // If the elem the dialog should be placed at won't appear (maybe a tour
   // starts in the wrong situation, where it won't work), then after a while,
   // show an exit-tour button, so the tour won't block the screen forever.
+  //
+  // I18N: Translate "(Loading) The next step", "Next", "Prev", "Exit" but
+  // only for tours that aren't for admins. Hmm?
+  //
   const anyExitButton = !showExitButton ? null :
     r.div({ className: 's_Tour_D s_Tour_D-Exit' },
-      r.h3({ className: 's_Tour_D_Ttl' }, "Loading ..."),                   // I18N
-      r.p({ className: 's_Tour_D_Txt' }, "The next step in the tour ..."),  // I18N
+      r.h3({ className: 's_Tour_D_Ttl' }, t.Loading),
+      r.p({ className: 's_Tour_D_Txt' }, "The next step in the tour ..."),
       r.div({ className: 's_Tour_D_Bs' },
-        Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  }, "Exit tour")));  // I18N
+        Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  }, "Exit tour")));
 
   const tourDialogAndNextButton =
     r.div({ className: 's_Tour_D', ref: tourDialogRef },
@@ -305,13 +309,13 @@ function TalkyardTour() {
       r.p({ className: 's_Tour_D_Txt' }, step.text),
       r.div({ className: 's_Tour_D_Bs' },
         !canGoBack ? null :
-            Button({ onClick: goToPrevStep, className: 's_Tour_D_Bs_PrevB'  }, "Prev"),   // I18N
+            Button({ onClick: goToPrevStep, className: 's_Tour_D_Bs_PrevB'  }, "Prev"),
         PrimaryButton({ onClick: goToNextStep, className: 's_Tour_D_Bs_NextB',
-            disabled: nextDisabled }, isLastStep ? "Goodbye" : step.nextTitle || "Next"), // I18N
+            disabled: nextDisabled }, isLastStep ? "Goodbye" : step.nextTitle || "Next"),
         r.div({ className: 's_Tour_D_Bs_Ix' }, `${stepIx + 1}/${tour.steps.length}`),
         isLastStep ? null :
             Button({ onClick: exitTour, className: 's_Tour_D_Bs_ExitB'  },
-              isFirstStep ? "Exit tour" : "Exit")));  // I18N
+              isFirstStep ? "Exit tour" : "Exit")));
 
   const shallClickClass = step.waitForClick ? ' s_Tour-Click' : '';
   return r.div({ className: 's_Tour s_Tour-Step-' + (stepIx + 1) + shallClickClass },

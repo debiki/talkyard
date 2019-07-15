@@ -366,9 +366,9 @@ const ForumButtons = createComponent({
     // Latest / Top means? Therefore, if `!showTopicFilter`, type "Latest topics" instead of
     // just "Latest". (Also, since the filter button is absent, there's more space for this.)
     switch (sortOrderRoutePath) {
-      case RoutePathLatest: return showTopicFilter ? t.fb.Active : t.fb.ActiveTopics;
-      case RoutePathNew: return showTopicFilter ? t.fb.New : t.fb.NewTopics;
-      case RoutePathTop: return showTopicFilter ? t.fb.Top : t.fb.TopTopics;
+      case RoutePathLatest: return t.fb.Active;
+      case RoutePathNew: return t.fb.New;
+      case RoutePathTop: return t.fb.Top;
       default: return null;
     }
   },

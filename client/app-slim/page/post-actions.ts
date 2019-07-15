@@ -111,8 +111,9 @@ function makeReplyBtnTitle(store: Store, post: Post) {
           page.pageLayout !== TopicLayout.SplitDiscussionProgress ? null : r.span({},
             // This page has both a discussion and a progress section, so clarify
             // in which section the reply gets addded.  [SPLDSCPRG]
-            page.doingStatus >= PageDoingStatus.Started ? " (progress)" : " (discussion)"));  // I18N
-      // t.pa.ReplyToOp <— I18N REMOVE
+            ' (' + (
+                page.doingStatus >= PageDoingStatus.Started ?
+                    t.progressN : t.discussion) + ')'));
   }
 }
 
@@ -276,7 +277,7 @@ export const PostActions = createComponent({
                 const rect = cloneEventTargetRect(event);
                 morebundle.openChangePageDialog(rect, { page })
               }},
-            "Change ...");  // I18N
+            t.ChangeV + ' ...');
 
     let numLikesText;
     if (post.numLikeVotes) {

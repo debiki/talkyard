@@ -63,9 +63,9 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
   function makeGroupRows(groups: GroupAndStats[]) {
     return groups.map((gs: GroupAndStats) => {
       const numMembers = !gs.stats ? null :
-        r.span({}, gs.stats.numMembers + " members. ");  // I18N
+        r.span({}, t.gpp.NumMembers(gs.stats.numMembers) + '. ');
       const youreAMember = !_.includes(me.myGroupIds, gs.id) ? null :
-        r.span({}, "You're a member."); // I18N
+        r.span({}, t.gpp.YouAreMember);
 
       return (
         r.li({ key: gs.id, className: 's_Gs_G' },
@@ -87,10 +87,10 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
 
   return (
       r.div({ className: 'container s_GP' },
-        r.h3({}, "Custom groups:"),  // I18N
+        r.h3({}, t.gpp.CustomGroupsC),
         createGroupButton,
         r.ul({ className: 's_Gs s_Gs-Custom' }, makeGroupRows(customGroups)),
-        r.h3({}, "Built-in groups:"),  // I18N
+        r.h3({}, t.gpp.BuiltInGroupsC),
         r.ul({ className: 's_Gs s_Gs-BuiltIn' }, makeGroupRows(builtInGroups))));
 
 });

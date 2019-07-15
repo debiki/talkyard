@@ -301,9 +301,9 @@ export const TopBar = createComponent({
       if (path.search(UsersRoot) === 0 || path.search(GroupsRoot) === 0) {
         backToSiteButton = t.tb.BackFromUsr;
         customTitle = path === GroupsRoot
-            ? "Groups:" // I18N t.Groups;
+            ? t.GroupsC
             : (path.startsWith(GroupsRoot)
-                ? LinkUnstyled({ to: GroupsRoot }, "Groups:") // I18N t.Groups;
+                ? LinkUnstyled({ to: GroupsRoot }, t.GroupsC)
                 : t.tb.AbtUsr);
       }
       else if (path.search(SearchRootPath) === 0) {

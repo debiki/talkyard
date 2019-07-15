@@ -190,7 +190,7 @@ const UserPageComponent = createReactClass(<any> {
     const linkStart = pathToUser + '/';
 
     const membersNavItem = !user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'members', className: 'e_UP_MbrsB' }, "Members"); // I18N
+      LiNavLink({ to: linkStart + 'members', className: 'e_UP_MbrsB' }, t.Members);
 
     const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);

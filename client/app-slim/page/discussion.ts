@@ -123,8 +123,8 @@ export const TitleBodyComments = createComponent({
         props1 = activeProps;
       }
       return { id: 'TyH603B', version: 1, content: r.ol({ className: '' },
-          r.li(props1, questionIcon, "= a question"),  // I18N all these new brief icon explanations
-          r.li(props2, solvedIcon, "= has an accepted answer")) };
+          r.li(props1, questionIcon, '= ' + t.pds.aQuestion),
+          r.li(props2, solvedIcon, '= ' + t.pds.hasAccptAns)) };
     }
 
     if (page.pageRole === PageRole.Problem) {
@@ -141,10 +141,10 @@ export const TitleBodyComments = createComponent({
         props1 = activeProps;
       }
       return { id: 'TyH5KMA2', version: 1, content: r.ol({ className: '' },
-          r.li(props1, problemIcon, "= a problem"),
-          r.li(props2, plannedIcon, "= plan to fix"),
-          r.li(props3, startedIcon, "= started"),
-          r.li(props4, doneIcon, "= done")) };
+          r.li(props1, problemIcon, '= ' + t.pds.aProblem),
+          r.li(props2, plannedIcon, '= ' + t.pds.planToFix),
+          r.li(props3, startedIcon, '= ' + t.started),
+          r.li(props4, doneIcon, '= ' + t.done)) };
     }
 
     if (page.pageRole === PageRole.Idea) {
@@ -161,10 +161,10 @@ export const TitleBodyComments = createComponent({
         props1 = activeProps;
       }
       return { id: 'TyH4RD28', version: 1, content: r.ol({ className: '' },
-          r.li(props1, ideaIcon, "= an idea"),
-          r.li(props2, plannedIcon, "= plan to do"),
-          r.li(props3, startedIcon, "= started"),
-          r.li(props4, doneIcon, "= done")) };
+          r.li(props1, ideaIcon, '= ' + t.pds.anIdea),
+          r.li(props2, plannedIcon, '= ' + t.pds.planToDo),
+          r.li(props3, startedIcon, '= ' + t.started),
+          r.li(props4, doneIcon, '= ' + t.done)) };
     }
 
     if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]
@@ -424,6 +424,7 @@ export const Title = createComponent({
         tooltip = makeQuestionTooltipText(page.pageAnsweredAtMs) + ".\n";
       }
       else if (page_hasDoingStatus(page)) {
+        iconTooltip = t.cpd.ClickToChange;
         // (Some dupl code, see [5KEFEW2] in forum.ts.
         if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea) {
           if (page.pageDoneAtMs) {
@@ -431,21 +432,18 @@ export const Title = createComponent({
               ? t.d.TooltipProblFixed
               : t.d.TooltipDone;
             iconClass = 'icon-check';
-            iconTooltip = t.d.ClickStatusNew;
           }
           else if (page.pageStartedAtMs) {
             tooltip = page.pageRole === PageRole.Problem
               ? t.d.TooltipFixing
               : t.d.TooltipImplementing;
             iconClass = 'icon-check-empty';
-            iconTooltip = t.d.ClickStatusDone;
           }
           else if (page.pagePlannedAtMs) {
             tooltip = page.pageRole === PageRole.Problem
               ? t.d.TooltipProblPlanned
               : t.d.TooltipIdeaPlanned;
             iconClass = 'icon-check-dashed';
-            iconTooltip = t.d.ClickStatusStarted;
           }
           else  {
             tooltip = page.pageRole === PageRole.Problem
@@ -453,7 +451,6 @@ export const Title = createComponent({
               : t.d.TooltipIdea;
             iconClass = page.pageRole === PageRole.Problem ?
               'icon-attention-circled' : 'icon-idea';
-            iconTooltip = t.d.ClickStatusPlanned;
           }
         }
         else if (page.pageRole === PageRole.UsabilityTesting) {   // [plugin]
@@ -461,9 +458,6 @@ export const Title = createComponent({
               ? "This has been done. Feedback has been given.\n"
               : "Waiting for feedback.\n";
           iconClass = page.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
-          iconTooltip = page.pageDoneAtMs
-              ? "Click to change status to waiting-for-feedback"
-              : "Click to mark as done";
         }
         else {
           // CLEAN_UP reove this [4YK0F24]? No more page type to-do?
@@ -471,9 +465,6 @@ export const Title = createComponent({
               ? "This has been done or fixed.\n"
               : "This is about something to do or fix.\n";
           iconClass = page.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
-          iconTooltip = page.pageDoneAtMs
-              ? "Click to change status to not-yet-done"
-              : "Click to mark as done";
         }
         if (!isStaffOrMyPage) iconTooltip = null;
       }
@@ -840,13 +831,14 @@ const RootPostAndComments = createComponent({
     if (showDiscussionSectionDivider) {
       let expl: string = '';
       switch (page.pageRole) {
-        case PageRole.Idea: expl = "about how and if to do this idea"; break;  // I18N
-        case PageRole.Problem: expl = "about how and if to fix this"; break;  // I18N
-        case PageRole.ToDo: expl = "about how to do this"; break;  // I18N
+        case PageRole.Idea: expl = t.d.aboutThisIdea; break;
+        case PageRole.Problem: expl = t.d.aboutThisProbl; break;
+        // Weird disucssion title, if it's already a to-do? Skip?:
+        // case PageRole.ToDo: expl = "about how to do this"; break;  I1 8N
       }
       discussionSectionDivider = rFragment({},
         r.li({ className: 's_PgSct s_PgSct-Dsc', key: 'DiscSect' },
-          r.div({ className: 's_PgSct_Ttl' }, "Discussion"),
+          r.div({ className: 's_PgSct_Ttl' }, t.Discussion),
           r.div({ className: 's_PgSct_Dtl' }, expl)),
         r.li({},
           r.a({ className: 's_OpReB s_OpReB-Dsc icon-reply',
@@ -883,9 +875,9 @@ const RootPostAndComments = createComponent({
     if (showProgressSectionDivider) {
       let expl: string = '';
       switch (page.pageRole) {
-        case PageRole.Idea: expl = "with doing this idea"; break;  // I18N
-        case PageRole.Problem: expl = "with handling this problem"; break;  // I18N
-        case PageRole.ToDo: expl = "with doing this"; break;  // I18N
+        case PageRole.Idea: expl = t.d.withThisIdea; break;
+        case PageRole.Problem: expl = t.d.withThisProbl; break;
+        case PageRole.ToDo: expl = t.d.withThis; break;
       }
       progressSectionDivider =
         r.li({ className: 's_PgSct s_PgSct-Prg', key: 'ApBtmDv' },
@@ -924,7 +916,7 @@ const RootPostAndComments = createComponent({
               r.b({}, t.ReplyV),
               // If there are progress posts above, clarify that the reply will
               // appear in the discussion section (not in the progress section).
-              progressPosts.length ? r.span({}, " (discussion)") : null),  // I18N
+              progressPosts.length ? r.span({}, ' (' + t.discussion + ')') : null),
         r.a({ className: 's_OpReB s_OpReB-Prg icon-reply',
             onClick: makeOnClick(PostType.BottomComment) },
               /* This no longer needed? [DSCPRG] Keep for a while if want to add back
@@ -936,20 +928,17 @@ const RootPostAndComments = createComponent({
               }
               else {
                 morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1, defaultHide: false,
-                  content: rFragment({},
-                    r.p({}, t.d.BottomCmtExpl_1),
-                    r.p({}, t.d.BottomCmtExpl_2),
-                    r.p({}, t.d.BottomCmtExpl_3)),
+                  content: "... explain what a progr note is ..."
                   doAfter: doReply
                 });
               } */
           isThreadedDiscussion
-              ? r.span({}, "Add progress note") // [ADPRGNT] I18N
+              ? r.span({}, t.d.AddProgrNote) // [ADPRGNT]
               : rFragment({},
                   r.b({}, t.ReplyV),
                   // If isn't a FlatProgress topic (with only Progress posts), then,
                   // clarify that this button adds the reply in the progress section.
-                  isFlatProgress ? null : r.span({}, " (progress)")))); // I18N
+                  isFlatProgress ? null : r.span({}, ' (' + t.progressN + ')'))));
 
 
     // ----- The reslut

@@ -1298,7 +1298,7 @@ export const Editor = createComponent({
 
       similarTopicsTips = !hitList ? null :
         r.div({ className: 's_E_SimlTpcs' },
-          r.h4({}, "Similar topics:"),  // I18N
+          r.h4({}, t.e.SimilarTopicsC),
           r.a({ className: 'icon-cancel dw-hide s_E_SimlTpcs_HideB',
               onClick: () => this.setState({ showSimilarTopics: false }) },
             t.Hide),
@@ -1745,25 +1745,25 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   const draftNr: number | string = props.draftNr || '';
   const draftErrorStatusCode: number | undefined = props.draftErrorStatusCode;
 
-  switch (props.draftStatus) {  // I18N all draft statuses
+  switch (props.draftStatus) {
     case DraftStatus.NotLoaded: draftStatusText = t.e.LoadingDraftDots; break;
     case DraftStatus.NothingHappened: break;
-    case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
-    case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
-    case DraftStatus.Deleted: draftStatusText = `Draft ${draftNr} deleted.`; break;
-    case DraftStatus.ShouldSave: draftStatusText = `Will save draft ${draftNr} ...`; break;
-    case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;
+    case DraftStatus.EditsUndone: draftStatusText = t.e.DraftUnchanged; break;
+    case DraftStatus.Saved: draftStatusText = t.e.DraftSaved(draftNr); break;
+    case DraftStatus.Deleted: draftStatusText = t.e.DraftDeleted(draftNr); break;
+    case DraftStatus.ShouldSave: draftStatusText = t.e.WillSaveDraft(draftNr); break;
+    case DraftStatus.SavingSmall: draftStatusText = t.e.SavingDraft(draftNr); break;
     // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
-    case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
-    case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
+    case DraftStatus.SavingBig: draftStatusText = t.e.SavingDraft(draftNr); break;
+    case DraftStatus.Deleting: draftStatusText = t.e.DeletingDraft(draftNr); break;
     case DraftStatus.CannotSave:
       draftErrorClass = ' s_DfSts-Err';
       let details: string;
       if (draftErrorStatusCode === 403) details = "Access denied";
       else if (draftErrorStatusCode === 429) details = "Too many requests";
       else if (draftErrorStatusCode) details = "Error " + draftErrorStatusCode;
-      else details = "No internet connection";  // I18N reuse string
-      draftStatusText = "Cannot save draft: " + details;
+      else details = t.ni.NoInet;
+      draftStatusText = t.e.CannotSaveDraftC + ' ' + details;
       break;
   }
 

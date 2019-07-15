@@ -865,9 +865,8 @@ export function loadAndShowNewPage(newUrlPath, history) {
               preventClose: true,
               withCloseFn: fn => closeDialogFn = fn,
               body: rFragment({},
-                // I18N:
-                r.p({}, "This page has been deleted, or it never existed, or you may not access it."),
-                r.p({}, r.a({ onClick: goBack }, "Go back to last page"))) });
+                r.p({}, t.NoPageHere),
+                r.p({}, r.a({ onClick: goBack }, t.GoBackToLastPage))) });
           break;
         default:
           die(`${response.problemMessage} [${response.problemCode}]`);

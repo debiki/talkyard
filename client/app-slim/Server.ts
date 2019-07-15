@@ -1427,12 +1427,12 @@ export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => voi
     if (errorDetails.indexOf('_TyEPOSTGONE_') >= 0) {
       // Post deleted, and it's ok to tell the requester about this.
       e2eTestClass = 'e_PDd';
-      message = `That post, nr ${postNr}, has been deleted.`;  // I18N
+      message = t.PostDeleted(postNr);
     }
     else if (errorDetails.indexOf('_TyEBADPOSTNR') >= 0) {
       // No post with that nr, and it's ok to tell the requester about this.
       e2eTestClass = 'e_BadPNr';
-      message = `There's no post nr ${postNr} on this page. [TyEPOSTNR]`;  // I18N
+      message = t.NoSuchPost(postNr) + ' [TyEPOSTNR]';
     }
     else {
       // Show error dialog — don't return IgnoreThisError below.

@@ -31,6 +31,7 @@ var t_en_US: TalkyardTranslations = t = {
   Cancel: "Cancel",
   Categories: "Categories",
   Category: "Category",
+  ChangeV: "Change",
   Continue: "Continue",
   ClickToShow: "Click to show",
   ChangeDots: "Change ...",
@@ -44,6 +45,8 @@ var t_en_US: TalkyardTranslations = t = {
   Deleted: "Deleted",
   DirectMessage: "Direct message",
   Discussion: "Discussion",
+  discussion: "discussion",
+  done: "done",
   EditV: "Edit",
   Editing: "Editing",
   EmailAddress: "Email address",
@@ -51,6 +54,7 @@ var t_en_US: TalkyardTranslations = t = {
   EmailSentD: "Email sent.",
   Forum: "Forum",
   GetNotifiedAbout: "Get notified about",
+  GroupsC: "Groups:",
   Hide: "Hide",
   Home: "Home",
   Idea: "Idea",
@@ -62,6 +66,8 @@ var t_en_US: TalkyardTranslations = t = {
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
   Maybe: "Maybe",
+  Manage: "Manage",
+  Members: "Members",
   MessageN: "Message",
   MoreDots: "More...",
   Move: "Move",
@@ -80,6 +86,7 @@ var t_en_US: TalkyardTranslations = t = {
   onePerLine: "one per line",
   PreviewV: "Preview",
   Problem: "Problem",
+  progressN: "progress",
   Question: "Question",
   Recent: "Recent",
   Remove: "Remove",
@@ -95,6 +102,7 @@ var t_en_US: TalkyardTranslations = t = {
   SendMsg: "Send Message",
   SignUp: "Sign Up",
   Solution: "Solution",
+  started: "started",
   Summary: "Summary",
   Submit: "Submit",
   Tools: "Tools",
@@ -237,15 +245,12 @@ var t_en_US: TalkyardTranslations = t = {
     // Topic sort order
 
     Active: "Active first",      // MISSING didn't add "first" yet to transls
-    ActiveTopics: "Active topics", // REMOVE use "Active first" instead
     ActiveDescr: "Shows recently active topics first",
 
     New: "New",
-    NewTopics: "New topics",     // REMOVE no longer needed, after forum btns redone
     NewDescr: "Shows newest topics first",
 
     Top: "Popular",              // MISSING didn't rename from Top to Popular in transls
-    TopTopics: "Popular topics", // REMOVE not needed, after forum btns redone
     TopDescr: "Shows popular topics first",
 
     // Topic filter dropdown
@@ -256,7 +261,6 @@ var t_en_US: TalkyardTranslations = t = {
     ShowAllTopicsDescr: "Not deleted topics though",
 
     WaitingTopics: "Waiting topics",          // MISSING
-    OnlyWaiting: "Only waiting",
     OnlyWaitingDescr_1: "Shows only topics ", // MISSING changed "questions" to "topics"
     OnlyWaitingDescr_2: "waiting ",
     OnlyWaitingDescr_3: "for a solution or to be implemented and done",  // MISSING rewrote
@@ -459,6 +463,28 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
+  // Change page dialog
+  cpd: {
+    ClickToChange: "Click to change status",
+    ClickToViewAnswer: "Click to view answer",
+    ViewAnswer: "View answer",
+    ChangeStatusC: "Change status to:",
+    ChangeCatC: "Change category:",
+    ChangeTopicTypeC: "Change topic type:",
+  },
+
+
+  // Page doing status, PageDoingStatus
+  pds: {
+    aQuestion: "a question",
+    hasAccptAns: "has an accepted answer",
+    aProblem: "a problem",
+    planToFix: "plan to fix",
+    anIdea: "an idea",
+    planToDo: "plan to do",
+  },
+
+
   // Discussion / non-chat page
 
   d: {
@@ -476,8 +502,6 @@ var t_en_US: TalkyardTranslations = t = {
     ThisPageDeleted: "This page has been deleted",
     CatDeldPageToo: "Category deleted, so this page was deleted too",
 
-    AboutCat: "About category:",  // REMOVE
-
     ThreadDeld: "Thread deleted",
     CmntDeld: "Comment deleted",
     PostDeld: "Post deleted",
@@ -492,21 +516,22 @@ var t_en_US: TalkyardTranslations = t = {
     TooltipQuestSolved: "This is a solved question",
     TooltipQuestUnsolved: "This is an unsolved question",
 
+    StatusDone: "Done",
     TooltipProblFixed: "This has been fixed",
     TooltipDone: "This has been done",
-    ClickStatusNew: "Click to change status to new",
 
-    TooltipFixing: "We're currently fixing this",
-    TooltipImplementing: "We're currently implementing this",
-    ClickStatusDone: "Click to mark as done",
+    StatusStarted: "Started",
+    TooltipFixing: "We've started fixing this",      // MISSING "We're currently" —> "We've started"
+    TooltipImplementing: "We've started doing this", // MISSING  -""-
 
+    StatusPlanned: "Planned",
     TooltipProblPlanned: "We're planning to fix this",
-    TooltipIdeaPlanned: "We're planning to implement this",
-    ClickStatusStarted: "Click to mark as started",
+    TooltipIdeaPlanned: "We're planning to do this",   // or "to implement this"?
 
+    StatusNew: "New",
+    StatusNewDtl: "New topic, under discussion",
     TooltipUnsProbl: "This is an unsolved problem",
     TooltipIdea: "This is an idea",
-    ClickStatusPlanned: "Click to change status to planned",
 
     TooltipPersMsg: "Personal message",
     TooltipChat: "# means Chat Channel",
@@ -517,23 +542,6 @@ var t_en_US: TalkyardTranslations = t = {
 
     SolvedClickView_1: "Solved in post #",
     SolvedClickView_2: ", click to view",
-
-    AboveBestFirst: "Above: Replies, best first.",  // REMOVE
-    BelowCmtsEvents: "Below: Comments and events.", // REMOVE
-
-    // I18N _1 and _2 MISSING, all languages  [BTM2PRGR]
-    // REMOVE:
-    BottomCmtExpl_1: "You're adding a progress comment, to tell people how you're making progress " +
-      "towards answering the question / solving the problem / implementing the idea.",
-      //"or maybe why you postpone or close this topic.",
-    // REMOVE:
-    BottomCmtExpl_2: "Progress comments are appended at the bottom of the page.",
-      //"sorted by time (not Like votes).",
-    // REMOVE:
-    BottomCmtExpl_3: "To reply to someone, click Reply instead.",
-
-    AddComment: "Add comment",   // REMOVE
-    AddBottomComment: "Append reply", //"Add bottom comment", [BTM2PRGR]  I18N MISSING   REMOVE
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",
@@ -550,12 +558,21 @@ var t_en_US: TalkyardTranslations = t = {
     _and: " and",
 
     repliesTo: "replies to",
-    dashInReplyTo: "— in reply to",
     InReplyTo: "In reply to",
 
     ClickViewEdits: "Click to view old edits",
 
     By: "By ", // ... someones name
+
+    // Discussion ...
+    aboutThisIdea: "about how and if to do this idea",
+    aboutThisProbl: "about how and if to fix this",
+
+    AddProgrNote: "Add progress note",
+    // Progress ...
+    withThisIdea: "with doing this idea",
+    withThisProbl: "with handling this problem",
+    withThis: "with doing this",
   },
 
 
@@ -585,8 +602,6 @@ var t_en_US: TalkyardTranslations = t = {
   // Post actions
 
   pa: {
-    ReplyToOp: "Reply to the Original Post",  // REMOVE
-
     CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
     CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
         "it is off-topic or already answered in another topic.",
@@ -662,6 +677,7 @@ var t_en_US: TalkyardTranslations = t = {
     MoreNotfs: "View all notifications",
     DismNotfs: "Mark all as read",
     ViewProfile: "View your profile",
+    ViewGroups: "View groups",
     LogOut: "Log out",
     UnhideHelp: "Unhide help messages",
   },
@@ -701,6 +717,13 @@ var t_en_US: TalkyardTranslations = t = {
     Kbd_1: ", and ",
     // then the letter 'B' (regardless of language)
     Kbd_2: " to scroll back",
+  },
+
+
+  // Select users dialog
+  sud: {
+    SelectUsers: "Select users",
+    AddUsers: "Add users",
   },
 
 
@@ -915,6 +938,21 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
+  // Group profile page
+  gpp: {
+    GroupMembers: "Group mebers",
+    NoMembers: "No members.",
+    MayNotListMembers: "May not list members.",
+    AddMembers: "Add Members",
+    BuiltInCannotModify: "This is a built-in group; it cannot be modified.",
+    NumMembers: (num: number) => `${num} members`,
+    YouAreMember: "You're a member.",
+    CustomGroupsC: "Custom groups:",
+    BuiltInGroupsC: "Built-in groups:",
+    DeleteGroup: "Delete this group",
+  },
+
+
   // Create user dialog
 
   cud: {
@@ -1061,6 +1099,8 @@ var t_en_US: TalkyardTranslations = t = {
   // Editor
 
   e: {
+    SimilarTopicsC: "Similar topics:",
+
     //WritingSomethingWarning: "You were writing something?",
     UploadMaxOneFile: "Sorry but currently you can upload only one file at a time",
     PleaseFinishPost: "Please first finish writing your post",
@@ -1157,6 +1197,13 @@ var t_en_US: TalkyardTranslations = t = {
     CannotType: "You cannot type here.",
 
     LoadingDraftDots: "Loading any draft...",
+    DraftUnchanged: "Unchanged.",
+    CannotSaveDraftC: "Cannot save draft:",
+    DraftSaved: (nr: string | number) => `Draft ${nr} saved.`,
+    DraftDeleted: (nr: string | number) => `Draft ${nr} deleted.`,
+    WillSaveDraft: (nr: string | number) => `Will save draft ${nr} ...`,
+    SavingDraft: (nr: string | number) => `Saving draft ${nr} ...`,
+    DeletingDraft: (nr: string | number) => `Deleting draft ${nr} ...`,
   },
 
 
@@ -1208,7 +1255,13 @@ var t_en_US: TalkyardTranslations = t = {
     NoInet: "No internet connection",
     PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
     RefrNow: "Refresh now",
-  }
+  },
+
+
+  PostDeleted: (postNr: number) => `That post, nr ${postNr}, has been deleted.`,
+  NoSuchPost: (postNr: number) => `There's no post nr ${postNr} on this page.`,
+  NoPageHere: "This page has been deleted, or it never existed, or you may not access it.",
+  GoBackToLastPage: "Go back to last page",
 
 };
 

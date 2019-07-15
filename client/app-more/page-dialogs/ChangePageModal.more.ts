@@ -118,41 +118,41 @@ const ChangePageDialog = createComponent({
                   utils.makeShowPostFn(TitleNr, page.pageAnswerPostNr)(event);
                   this.close();
                 }},
-              "View answer"));  // I18N
+              t.cpd.ViewAnswer));
 
       changeStatusTitle = !canChangeDoingStatus ? null :
-          r.div({ className: 's_ExplDrp_Ttl' }, "Change status to:");  // I18N
+          r.div({ className: 's_ExplDrp_Ttl' }, t.cpd.ChangeStatusC);
 
       setNewListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active:  page.doingStatus === PageDoingStatus.Discussing,
-            title: r.span({ className: 'e_PgSt-New'  }, "New"),  // I18N
-            text: "New topic, under discussion",                // I18N
+            title: r.span({ className: 'e_PgSt-New'  }, t.d.StatusNew),
+            text: t.d.StatusNewDtl,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Discussing }) });
 
       setPlannedListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Planned,
-            title: r.span({ className: 'e_PgSt-Planned'  }, "Planned"), // I18N
-            text: "We're planning to do this",              // I18N "do" —> fix/implement if probl/feat
+            title: r.span({ className: 'e_PgSt-Planned'  }, t.d.StatusPlanned),
+            text: page.pageRole === PageRole.Problem ? t.d.TooltipProblPlanned : t.d.TooltipIdeaPlanned,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Planned }) });
 
       setStartedListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Started,
-            title: r.span({ className: 'e_PgSt-Started'  }, "Started"), // I18N
-            text: "We've started doing this",               // I18N "doing" —> fixing/implementing
+            title: r.span({ className: 'e_PgSt-Started'  }, t.d.StatusStarted),
+            text: page.pageRole === PageRole.Problem ? t.d.TooltipFixing : t.d.TooltipImplementing,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Started }) });
 
       setDoneListItem = !canChangeDoingStatus ? null :
           ExplainingListItem({
             active: page.doingStatus === PageDoingStatus.Done,
-            title: r.span({ className: 'e_PgSt-Done'  }, "Done"), // I18N
-            text: "This has been done",                  // I18N "done" —> fixed/implemented
+            title: r.span({ className: 'e_PgSt-Done'  }, t.d.StatusDone),
+            text: page.pageRole === PageRole.Problem ? t.d.TooltipProblFixed : t.d.TooltipDone,
             onSelect: () => savePage({ doingStatus: PageDoingStatus.Done }) });
 
       changeCategoryListItem = !canChangeCategory ? null : rFragment({},
-          r.div({ className: 's_ExplDrp_Ttl' }, "Change category:"),  // I18N
+          r.div({ className: 's_ExplDrp_Ttl' }, t.cpd.ChangeCatC),
           r.div({ className: 's_ExplDrp_ActIt' },
             editor.SelectCategoryDropdown({
                 store, selectedCategoryId: page.categoryId,
@@ -161,7 +161,7 @@ const ChangePageDialog = createComponent({
                 } })));
 
       changeTopicTypeListItem = !canChangePageType ? null : rFragment({},
-          r.div({ className: 's_ExplDrp_Ttl' }, "Change topic type:"),  // I18N
+          r.div({ className: 's_ExplDrp_Ttl' }, t.cpd.ChangeTopicTypeC),
           r.div({ className: 's_ExplDrp_ActIt' },
             editor.PageRoleDropdown({ pageRole: page.pageRole, pageExists: true, store,
                 onSelect: (newType: PageRole) => {

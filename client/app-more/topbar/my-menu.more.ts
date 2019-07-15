@@ -147,7 +147,7 @@ export const MyMenuContent = createFactory({
       const isMemberOfCustomGroup = _.some(me.myGroupIds, id => id >= LowestAuthenticatedUserId);
       viewUsersOrGroups = !isStaff(me) && !isMemberOfCustomGroup ? null :
           MenuItemsMany({},
-            LinkUnstyled({ to: GroupsRoot, id: 'te_VwGrps' }, "View groups")), // I18N
+            LinkUnstyled({ to: GroupsRoot, id: 'te_VwGrps' }, t.mm.ViewGroups)),
 
       viewDraftsAndBookmarks =
           MenuItemsMany({},

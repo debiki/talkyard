@@ -58,7 +58,7 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
     return t.Loading;
 
   if (!membersNullOrFalse)
-    return r.p({}, "May not list members."); // I18N
+    return r.p({}, t.gpp.MayNotListMembers);
 
   const members: Participant[] = membersNullOrFalse;
 
@@ -76,27 +76,27 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
 
   const addMembersButton = builtInOrNotStaff ? null :
       Button({ className: 'e_AddMbrsB', onClick: () => showAddMembersDialog() },
-        "Add Members");  // I18N
+        t.gpp.AddMembers);
 
   const memberElems = members.map((m: Participant) => {
      return r.li({ key: m.id, className: 's_G_Mbrs_Mbr' },
         LinkUnstyled({ to: UsersRoot + m.username, className: 's_G_Mbrs_Mbr_L' },
           UserName({ user: m, store, makeLink: false, onClick: null })),
         builtInOrNotStaff ? null :
-          utils.ModalDropdownButton({ title: "Manage ...", className: 'e_MngMbr' },  // I18N
+          utils.ModalDropdownButton({ title: t.Manage + " ...", className: 'e_MngMbr' },
             Button({ className: 'e_RmMbr', onClick: () => removeMember(m.id) },
-              "Remove")));   // I18N
+              t.Remove)));
   });
 
   const cannotModifyInfo = !member_isBuiltIn(group) ? null :
-      r.p({}, "This is a built-in group; it cannot be modified.");  // I18N
+      r.p({}, t.gpp.BuiltInCannotModify);
 
   const orNoMembers = members.length ? null :
-      r.p({ className: 's_G_NoMbrs'}, "No members.");  // I18N
+      r.p({ className: 's_G_NoMbrs'}, t.gpp.NoMembers);
 
   return rFragment({},
     cannotModifyInfo,
-    r.h3({}, "Group mebers"), // I18N
+    r.h3({}, t.gpp.GroupMembers),
     addMembersButton,
     r.ul({ className: 's_G_Mbrs' }, memberElems),
     orNoMembers);
