@@ -25,14 +25,18 @@ import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
 
 
-  def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData) {
+  def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData)
+        : SiteBackup = {
     dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
     val dao = globals.siteDao(siteId)
+    val upsertedCategories = ArrayBuffer[Category]()
+
     dao.readWriteTransaction { tx =>
 
       // Posts link to pages, and Question type pages link to the accepted answer post,
@@ -467,6 +471,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             parentId = catTempId.parentId.map(remappedCategoryTempId),
             defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
           tx.insertCategoryMarkSectionPageStale(catRealIds)
+          upsertedCategories.append(catRealIds)
         }
       }
 
@@ -623,6 +628,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
     }
+
+    // Categories is all the current Talkyard API consumers need. For the moment.
+    SiteBackup.empty.copy(
+      categories = upsertedCategories.toVector)
   }
 
 

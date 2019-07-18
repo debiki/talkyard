@@ -60,7 +60,9 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (!security.hasOkForbiddenPassword(request)) {
       request.context.rateLimiter.rateLimit(RateLimits.ExportSite, request)
     }
-    val json = SiteBackupMaker(context).createPostgresqlJsonBackup(request.siteId)
+    val json = context.globals.siteDao(request.siteId).readOnlyTransaction { tx =>
+      SiteBackupMaker.createPostgresqlJsonBackup(anyTx = Some(tx))
+    }
     Ok(json.toString()) as JSON
   }
 
@@ -70,7 +72,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     // Parse JSON, construct a dump "manually", and call
     // upsertDumpJsonImpl(dump, request)
     val simplePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
-      request.siteId, request.body, simpleFormat = true, isE2eTest = false)
+      siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
     upsertSitePatchImpl(simplePatch, request)
   }
 
@@ -78,7 +80,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     val dump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
-      request.siteId, request.body, simpleFormat = false, isE2eTest = false)
+      siteId = Some(request.siteId), request.body, simpleFormat = false, isE2eTest = false)
     upsertSitePatchImpl(dump, request)
   }
 
@@ -91,12 +93,12 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in dump")
     throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in dump")
 
-    doImportOrUpserts {
+    val upsertedThings = doImportOrUpserts {
       SiteBackupImporterExporter(globals).upsertIntoExistingSite(
           request.siteId, dump, request.theBrowserIdData)
     }
 
-    Ok
+    Ok(upsertedThings.toJson.toString()) as JSON
   }
 
 
@@ -145,7 +147,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val siteData = {
         val siteDump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
-          request.siteId, request.body, simpleFormat = false, isE2eTest = isTest)
+          siteId = None, request.body, simpleFormat = false, isE2eTest = isTest)
         throwBadRequestIf(siteDump.site.isEmpty, "TyE305MHKR2", "No site meta included in dump")
         throwBadRequestIf(siteDump.settings.isEmpty, "TyE5KW0PG", "No site settings included in dump")
         // Unless we're deleting any old site, don't import the new site's hostnames —

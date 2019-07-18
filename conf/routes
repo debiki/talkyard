@@ -255,8 +255,8 @@ GET   /-/export-site-json        talkyard.server.backup.SiteBackupController.exp
 # RENAME? to /-/create-site-from-dump? otherwise slightly unclear if gets imported to existing site?
 POST  /-/import-site-json        talkyard.server.backup.SiteBackupController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site-json   talkyard.server.backup.SiteBackupController.importTestSite
-POST  /-/v0/upsert-simple-json   talkyard.server.backup.SiteBackupController.upsertSimpleJson
-POST  /-/v0/upsert-patch-json    talkyard.server.backup.SiteBackupController.upsertPatchJson
+POST  /-/v0/upsert-simple        talkyard.server.backup.SiteBackupController.upsertSimpleJson
+POST  /-/v0/upsert-patch         talkyard.server.backup.SiteBackupController.upsertPatchJson
 
 
 POST /-/play-time               controllers.DebugTestController.playTime

@@ -84,7 +84,17 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
     statusCode: response.statusCode,
     headers: response.headers,
     bodyJson: function() {
-      return JSON.parse(responseBody);
+      let obj;
+      try {
+        obj = JSON.parse(responseBody);
+      }
+      catch (ex) {
+        die(`Error parsing response json: ${ex.toString()} [TyE204GKRTH4]`,
+          "--- The server's response: ------\n" +
+          responseBody + '\n' +
+          '---------------------------------\n');
+      }
+      return obj;
     }
   };
 }
@@ -405,6 +415,14 @@ function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, api
   return responseJson.loginSecret;
 }
 
+function upsertSimple(ps: { origin: string, requesterId: UserId, apiSecret: string,
+      data }): string {
+  const url = ps.origin + '/-/v0/upsert-simple';
+  const responseJson = postOrDie(
+      url, ps.data, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
+  return responseJson;
+}
+
 
 
 // ----- Export functions
@@ -438,6 +456,7 @@ export = {
   assertLastEmailMatches,
   apiV0: {
     upsertUserGetLoginSecret,
+    upsertSimple,
   },
 };
 

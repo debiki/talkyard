@@ -22,6 +22,8 @@ import com.debiki.core.Prelude._
 import debiki.dao.ForumDao
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
+import play.api.libs.json.JsObject
 import scala.collection.mutable
 
 
@@ -48,6 +50,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],
   guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
+  groups: Seq[Group],
   users: Seq[UserInclDetails],
   categoryPatches: Seq[CategoryPatch],
   categories: Seq[Category],  // later, remove, see: [PPATCHOBJS]
@@ -58,6 +61,10 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   permsOnPages: Seq[PermsOnPages]) {
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
+
+  def toJson: JsObject = {
+    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this))
+  }
 }
 
 
@@ -69,6 +76,7 @@ case object SiteBackup {
     summaryEmailIfActive = false, // for now [7FKB4Q1]
     guests = Vector.empty,
     guestEmailNotfPrefs = Map.empty,
+    groups = Vector.empty, // for now
     users = Vector.empty,
     pages = Vector.empty,
     pagePaths = Vector.empty,
@@ -83,7 +91,7 @@ case object SiteBackup {
 case class SimpleSitePatch(
   categoryPatches: Seq[CategoryPatch]) {
 
-  def makeComplete(rootCategory: Category, now: When): SiteBackup = {
+  def makeComplete(oldCats: Vector[Category], now: When): SiteBackup Or ErrorMessage = {
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
@@ -101,22 +109,44 @@ case class SimpleSitePatch(
       nextPostId += 1
 
       val theCategorySlug = categoryPatch.slug getOrElse {
-        ??? // throwBadRequest("ZZZZ")
+        return Bad("Category has no slug [TyE205MRDJ5]")
       }
 
       val theCategoryName = categoryPatch.name getOrElse {
-        ??? // throwBadRequest("ZZZZ")
+        return Bad(s"Category with slug '$theCategorySlug' has no name [TyE205MRDJ5]")
       }
 
       val theCategoryDescription = categoryPatch.description getOrElse {
-        ??? // throwBadRequest("ZZZZ")
+        return Bad(s"Category with slug '$theCategorySlug' has no description")
+      }
+
+      val parentCategory: Category = categoryPatch.parentRef map { ref =>
+        if (ref startsWith "extid:") {
+          val parentExtId = ref drop "extid:".length
+          oldCats.find(_.extImpId is parentExtId) getOrElse {
+            return Bad(s"Parent category not found: No category has ext id '$parentExtId' [TyE6WKTH2T5]")
+          }
+        }
+        else if (ref startsWith "tyid:") {
+          // Later: Lookup by internal id.
+          return Bad(s"'tyid:' refs not yet implemented [TyE205MRG4]")
+        }
+        else {
+          return Bad(s"Unknown ref type: '${ref.takeWhile(_ != ':')}' [TyE5RKD2LR46]")
+        }
+      } getOrElse {
+        // Find the root category. currently should be exactly one, since sub communities
+        // currently disabled. [4GWRQA28]
+        oldCats.find(_.parentId.isEmpty) getOrElse {
+          return Bad("No root category [TyE205KRTG4]")
+        }
       }
 
       categories.append(Category(
         id = nextCategoryId,
         extImpId = categoryPatch.extImpId,
-        sectionPageId = rootCategory.sectionPageId,
-        parentId = Some(rootCategory.id),
+        sectionPageId = parentCategory.sectionPageId,
+        parentId = Some(parentCategory.id),
         defaultSubCatId = None,
         name = theCategoryName,
         slug = theCategorySlug,
@@ -213,11 +243,13 @@ case class SimpleSitePatch(
       permsOnPages.append(ForumDao.makeStaffCategoryPerms(nextCategoryId))
     }
 
-    SiteBackup.empty.copy(
+    val result = SiteBackup.empty.copy(
       categories = categories.toVector,
       pages = pages.toVector,
       pagePaths = pagePaths.toVector,
       posts = posts.toVector,
       permsOnPages = permsOnPages.toVector)
+
+    Good(result)
   }
 }

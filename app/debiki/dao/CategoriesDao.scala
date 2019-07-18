@@ -132,6 +132,11 @@ trait CategoriesDao {
   }
 
 
+  def getAllCategories(): Vector[Category] = {
+    getAndRememberCategories()._1.values.toVector
+  }
+
+
   /** List categories in the site section (forum/blog/whatever) at page pageId.
     * Sorts by Category.position (hmm doesn't make much sense if there are sub categories [subcats]).
     */

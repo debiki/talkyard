@@ -28,7 +28,14 @@ let siteId;
 
 let forum: TwoPagesTestForum;  // or: LargeTestForum
 
-let discussionPageUrl: string;
+const CustPkgsCatName = "Custom Pkgs Cat Name"
+const CustPkgsExtId = 'cust_pkgs_cat_ext_id'
+
+const UpsCatOneName = 'Ups Category One';
+const UpsCatOneSlug = 'ups-category-one';
+const UpsCatOneExtId = 'ups_cat_one_ext_id';
+const UpsCatOneDescr = 'Upserted Cat One description text text text longer a bit longer.';
+
 
 
 describe("api-upsert-categories  TyT94DFKHQC24", () => {
@@ -37,12 +44,11 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       title: "Ups Cats E2E Test",
-      members: ['owen', 'maja'],
+      //members: ['owen', 'maja', 'maria'],
     });
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
-    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
   it("initialize people", () => {
@@ -58,17 +64,115 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     strangersBrowser = richBrowserB;
   });
 
-  it("Owen logs in to admin area, ... ", () => {
-    owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
-    owensBrowser.loginDialog.loginWithPassword(owen);
+
+  // ----- Owen enables API
+
+  it("Owen goes to the admin area, the Features settings", () => {
+    owensBrowser.adminArea.goToLoginSettings(siteIdAddress.origin, { loginAs: owen });
+    owensBrowser.waitAndClick('#e_A_Ss_Features');
   });
 
-  it("Maja logs in", () => {
+  it("... and enables the API", () => {
+    owensBrowser.waitAndClick('#te_EnblApi');
+    owensBrowser.adminArea.settings.clickSaveAll();
+  });
+
+  it("Owen goes to the API Secrets", () => {
+    owensBrowser.adminArea.goToApi();
+  });
+
+  it("... generates an API secret", () => {
+    owensBrowser.adminArea.apiTab.generateSecret();
+  });
+
+  let apiSecret: string;
+
+  it("... copies the secret key", () => {
+    apiSecret = owensBrowser.adminArea.apiTab.showAndCopyMostRecentSecret();
+  });
+
+
+  // ----- Creates a custom category
+
+  it("Owen creates a Customers' Packages category", () => {
+    owensBrowser.go('/categories');
+    owensBrowser.complex.createCategory({ name: CustPkgsCatName, extId: CustPkgsExtId });
+  });
+
+
+  // ----- Upserts category
+
+  let upsertResponse;
+  let upsertedCategory: TestCategory;
+
+  it("Owen upserts a category", () => {
+    const category = {  //: TestCategoryPatch
+      //id: c.LowestExtImpId + 1,
+      //sectionPageId: '???',
+      extId: UpsCatOneExtId,
+      parentRef: 'extid:' + CustPkgsExtId,
+      name: UpsCatOneName,
+      slug: UpsCatOneSlug,
+      defaultTopicType: PageRole.Question,
+      description: UpsCatOneDescr,
+      position: 55,
+    };
+    upsertResponse = server.apiV0.upsertSimple({
+        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        data: {
+          categories: [category],
+        }});
+  });
+
+  it("... gets back the upserted category in the server's response", () => {
+    assert.equal(upsertResponse.categories.length, 1);
+    upsertedCategory = upsertResponse.categories[0];
+    assert.equal(upsertedCategory.name, UpsCatOneName);
+    assert.equal(upsertedCategory.slug, UpsCatOneSlug);
+    assert.equal(upsertedCategory.extId, UpsCatOneExtId);
+    assert.equal(upsertedCategory.description, UpsCatOneDescr);
+  });
+
+  it("The category appears in the catedory list", () => {
+    owensBrowser.refresh();
+    // It doesn't — why not? It's in the database ,looks fine.
+  });
+
+  it("Owen upserts a 2nd", () => {
+  });
+
+  it("... gets it back in the response", () => {
+  });
+
+  it("Owen changes the name, slug and description of the 1st category", () => {
+  });
+
+  it("... the server replies; the category has now the new name, slug and descr", () => {
+  });
+
+
+  it("Maja goes to the categories list page", () => {
     majasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+  });
+
+
+  it("... she sees the upserted categories", () => {
+  });
+
+
+  it("Maja logs in", () => {
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
 
     // And if needed:
     //someone's-Browser.disableRateLimits();
+  });
+
+
+  it("... opens the 1st upserted category", () => {
+  });
+
+
+  it("... she can post a topic", () => {
   });
 
   // ...

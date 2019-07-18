@@ -422,6 +422,7 @@ object JsX {
   def JsCategoryInclDetails(category: Category): JsObject = {
     Json.obj(
       "id" -> category.id,  // : CategoryId,
+      "extId" -> JsStringOrNull(category.extImpId),
       "sectionPageId" -> category.sectionPageId,  // : PageId,
       // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
       // root category).

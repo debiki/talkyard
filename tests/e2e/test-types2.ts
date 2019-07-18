@@ -138,6 +138,7 @@ interface TestGuest {  // try to rename to Guest
 
 interface TestCategory {  // try to merge with Category in model.ts?
   id: number;
+  extId?: string;
   sectionPageId: string;
   parentId?: number;
   defaultCategoryId?: number;
@@ -154,6 +155,20 @@ interface TestCategory {  // try to merge with Category in model.ts?
   deletedAtMs?: number;
   unlistCategory?: boolean;
   unlistTopics?: boolean;
+}
+
+interface TestCategoryPatch {  // or Partial<TestCategory>?
+  id: number;
+  extId?: ExtId;
+  //sectionPageId: string;
+  parentId?: number;
+  parentRef?: string;
+  defaultCategoryId?: number;
+  name: string;
+  slug: string;
+  position?: number;
+  description?: string;
+  defaultTopicType: number;
 }
 
 

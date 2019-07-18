@@ -52,10 +52,10 @@ case class SiteBackupReader(context: EdContext) {
   val MaxBytes = 1001000
 
 
-  def parseDumpJsonMaybeThrowBadRequest(siteId: SiteId, bodyJson: JsValue, simpleFormat: Boolean,
+  def parseDumpJsonMaybeThrowBadRequest(siteId: Option[SiteId], bodyJson: JsValue, simpleFormat: Boolean,
           isE2eTest: Boolean): SiteBackup = {
     try {
-      if (simpleFormat) parseSimpleSitePatch(siteId, bodyJson)
+      if (simpleFormat) parseSimpleSitePatch(siteId getOrDie "TyE045ASDKH3", bodyJson)
       else parseSiteJson(bodyJson, isE2eTest = isE2eTest)
     }
     catch {
@@ -92,11 +92,16 @@ case class SiteBackupReader(context: EdContext) {
 
     val simplePatch = SimpleSitePatch(categoryPatches = categoryPatches)
 
+    val oldCats = context.globals.siteDao(siteId).getAllCategories()
     // For now, pick the first random root category. Sub communities currently disabled. [4GWRQA28]
     val rootCategory = context.globals.siteDao(siteId).getRootCategories().headOption.getOrElse {
       throwForbidden("TyE6PKWTY4", "No root category has been created")
     }
-    val completePatch = simplePatch.makeComplete(rootCategory, globals.now())
+    val completePatch = simplePatch.makeComplete(oldCats, globals.now()) match {
+      case Good(p) => p
+      case Bad(errorMessage) =>
+        throwBadRequest("TyE05JKRVHP8", s"Error interpreting patch: $errorMessage")
+    }
     completePatch
   }
 
@@ -117,7 +122,7 @@ case class SiteBackupReader(context: EdContext) {
           readJsArray(bodyJson, "guests", optional = true),
           readOptJsObject(bodyJson, "guestEmailPrefs"),
           readJsArray(bodyJson, "groups", optional = true),
-          readJsArray(bodyJson, "members", optional = true),
+          readJsArray(bodyJson, "members", optional = true),   // RENAME to "users"
           readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
           readJsArray(bodyJson, "pagePaths", optional = true),
@@ -175,6 +180,8 @@ case class SiteBackupReader(context: EdContext) {
         }
       }
     }
+
+    val groups = Vector.empty  // groupsJson, later
 
     val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
@@ -238,7 +245,7 @@ case class SiteBackupReader(context: EdContext) {
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, guestEmailPrefs, users, categoryPatches.toVector, categories.toVector,
+      guests, guestEmailPrefs, groups, users, categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds = pageIdsByAltIds, posts, permsOnPages)
   }
 

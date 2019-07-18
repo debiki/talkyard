@@ -36,15 +36,13 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
 
   import context.globals
 
-  private val AllForNow: Int = 100*1000
-
 
   def loadSiteDump(siteId: SiteId): SiteBackup = {
     globals.siteDao(siteId).readOnlyTransaction { tx =>
       val site: SiteInclDetails = tx.loadSiteInclDetails().getOrDie("TyE2RKKP85")
 
       //val anyEditeSiteSettings = tx.loadSiteSettings()
-      // how convert to SettingsToSave?
+      // how convert to SettingsToSave?   [06RKGF5]
       // or change to EditedSetings?
 
       val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
@@ -79,59 +77,92 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
         posts = posts)
     }
   }
+}
 
 
-  def createPostgresqlJsonBackup(siteId: SiteId): JsObject = {
+object SiteBackupMaker {
+
+  private val AllForNow: Int = 100*1000
+
+  /** Serializes (parts of) a site as json. Either loads everything from a database
+    * transaction, or wants a SitePatch with the data that is to be exported.
+    *
+    * (Some time later, for really large sites, might be better to load things directly
+    * from a db transaction, rather than creating an intermediate representation.)
+    */
+  def createPostgresqlJsonBackup(anyDump: Option[SiteBackup] = None,
+        anyTx: Option[SiteTransaction] = None): JsObject = {
+
+    require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
+
     val fields = mutable.HashMap.empty[String, JsValue]
-    globals.siteDao(siteId).readOnlyTransaction { tx =>
-      val site: SiteInclDetails = tx.loadSiteInclDetails().getOrDie("TyE2RKKP85")
-      fields("meta") =
-        JsSiteInclDetails(site)
+    lazy val tx = anyTx getOrDie "TyE06RKDJFD"
 
-      val anyEditeSiteSettings = tx.loadSiteSettings()
+      val anySite: Option[SiteInclDetails] =
+        anyDump.map(_.site) getOrElse Some(tx.loadSiteInclDetails().getOrDie("TyE2RKKP85"))
+      anySite foreach { site =>
+        fields("meta") =
+          JsSiteInclDetails(site)
+      }
+
+      val anyEditeSiteSettings =
+        if (anyDump.isDefined) None // for now, see above [06RKGF5]
+        else tx.loadSiteSettings()
       fields("settings") =
         anyEditeSiteSettings.map(Settings2.settingsToJson) getOrElse JsEmptyObj
 
-      val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn)
+      val guests: Seq[Guest] =
+        anyDump.map(_.guests) getOrElse tx.loadAllGuests().filter(!_.isBuiltIn)
       fields("guests") = JsArray(
         guests.map(JsGuestInclDetails(_, inclEmail = true)))
 
-      val groups = tx.loadAllGroupsAsSeq()
+      val groups =
+        anyDump.map(_.groups) getOrElse tx.loadAllGroupsAsSeq()
       fields("groups") = JsArray(
         groups.map(JsGroupInclDetails(_, inclEmail = true)))
 
-      val users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
+      val users =
+        anyDump.map(_.users) getOrElse tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
       fields("members") = JsArray(   // [dump] [exp] RENAME to "users', upd e2e tests
         users.map(JsUserInclDetails(_, groups = Nil, usersById = Map.empty, callerIsAdmin = true)))
 
-      val emailAddresses: Seq[UserEmailAddress] = tx.loadUserEmailAddressesForAllUsers()
+      val emailAddresses: Seq[UserEmailAddress] =
+        if (anyDump.isDefined) Vector.empty  // for now, not incl in dump
+        else tx.loadUserEmailAddressesForAllUsers()
       fields("memberEmailAddresses") = JsArray(
         emailAddresses map JsMemberEmailAddress)
 
-      val invites: Seq[Invite] = tx.loadAllInvites(limit = AllForNow)
+      val invites: Seq[Invite] =
+        if (anyDump.isDefined) Vector.empty  // for now, not incl in dump
+        else tx.loadAllInvites(limit = AllForNow)
       fields("invites") = JsArray(
         invites.map(JsInvite(_, shallHideEmailLocalPart = false)))
 
-      val pageMetas = tx.loadAllPageMetas()
+      val pageMetas: Seq[PageMeta] =
+        anyDump.map(_.pages) getOrElse tx.loadAllPageMetas()
       fields("pages") = JsArray(
         pageMetas.map(JsPageMeta))
 
-      val pagePaths = tx.loadAllPagePaths()
+      val pagePaths: Seq[PagePathWithId] =
+        anyDump.map(_.pagePaths) getOrElse tx.loadAllPagePaths()
       fields("pagePaths") = JsArray(
         pagePaths.map(JsPagePathWithId))
 
-      val categories = tx.loadCategoryMap().values.toSeq
+      val categories: Seq[Category] =
+        anyDump.map(_.categories) getOrElse tx.loadCategoryMap().values.toSeq
       fields("categories") = JsArray(
         categories.map(JsCategoryInclDetails))
 
-      val permsOnPages = tx.loadPermsOnPages()
+      val permsOnPages: Seq[PermsOnPages] =
+        anyDump.map(_.permsOnPages) getOrElse tx.loadPermsOnPages()
       fields("permsOnPages") = JsArray(
         permsOnPages map JsonMaker.permissionToJson)
 
-      val posts = tx.loadAllPosts()
+      val posts: Seq[Post] =
+        anyDump.map(_.posts) getOrElse tx.loadAllPosts()
       fields("posts") = JsArray(
         posts map JsPostInclDetails)
-    }
+
 
     JsObject(fields.toSeq)
   }

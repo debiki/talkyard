@@ -2563,10 +2563,14 @@ function pagesFor(browser) {
 
 
     categoryDialog: {
-      fillInFields: function(data) {
+      fillInFields: function(data: { name: string, setAsDefault?: boolean, extId?: string }) {
         api.waitAndSetValue('#e2eCatNameI', data.name);
         if (data.setAsDefault) {
           api.waitAndClick('#e2eSetDefCat');
+        }
+        if (data.extId) {
+          api.waitAndClick('#te_ShowExtId');
+          api.waitAndSetValue('#te_CatExtId', data.extId);
         }
       },
 
@@ -5251,9 +5255,9 @@ function pagesFor(browser) {
         }
       },
 
-      createCategory: (ps: { name: string }) => {
+      createCategory: (ps: { name: string, extId?: string }) => {
         api.forumButtons.clickCreateCategory();
-        api.categoryDialog.fillInFields({ name: ps.name });
+        api.categoryDialog.fillInFields(ps);
         api.categoryDialog.submit();
       },
 
