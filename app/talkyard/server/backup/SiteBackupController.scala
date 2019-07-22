@@ -67,7 +67,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def upsertSimpleJson(): Action[JsValue] = ApiSecretPostJsonAction(
+  def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertSimple, maxBytes = maxImportDumpBytes) { request =>
     // Parse JSON, construct a dump "manually", and call
     // upsertDumpJsonImpl(dump, request)

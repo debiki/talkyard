@@ -31,10 +31,29 @@ let forum: TwoPagesTestForum;  // or: LargeTestForum
 const CustPkgsCatName = "Custom Pkgs Cat Name"
 const CustPkgsExtId = 'cust_pkgs_cat_ext_id'
 
-const UpsCatOneName = 'Ups Category One';
+const UpsCatOnePosition = 55;
+const UpsCatOneName = 'Ups Category One position ' + UpsCatOnePosition;
 const UpsCatOneSlug = 'ups-category-one';
 const UpsCatOneExtId = 'ups_cat_one_ext_id';
-const UpsCatOneDescr = 'Upserted Cat One description text text text longer a bit longer.';
+const UpsCatOneDescr = 'Upserted Cat One description.';
+
+const UpsCatTwoPosition = 54;
+const UpsCatTwoName = 'Ups Category Two pos ' + UpsCatTwoPosition;
+const UpsCatTwoSlug = 'ups-category-two';
+const UpsCatTwoExtId = 'ups_cat_two_ext_id';
+const UpsCatTwoDescr = 'Upserted Cat Two description text text text longer a bit longer.';
+
+const UpsCatTwoEditedPos = 57;
+const UpsCatTwoEditedName = `Ups Cat 2 Edited pos ${UpsCatTwoEditedPos} was ${UpsCatTwoPosition}`;
+const UpsCatTwoEditedSlug = 'ups-category-ed-two';
+const UpsCatTwoEditedExtId = 'ups_cat_two_ext_id';
+const UpsCatTwoEditedDescr = 'Upserted Cat Two EDITED descr.';
+
+const UpsCatThreePosition = 56;
+const UpsCatThreeName = 'Ups Category Three pos ' + UpsCatThreePosition;
+const UpsCatThreeSlug = 'ups-category-three';
+const UpsCatThreeExtId = 'ups_cat_hree_ext_id';
+const UpsCatThreeDescr = 'Upserted Cat Three description.';
 
 
 
@@ -44,7 +63,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({
       title: "Ups Cats E2E Test",
-      //members: ['owen', 'maja', 'maria'],
+      members: ['owen', 'maja', 'maria', 'michael'],
     });
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
@@ -92,7 +111,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   });
 
 
-  // ----- Creates a custom category
+  // ----- Creating a custom category
 
   it("Owen creates a Customers' Packages category", () => {
     owensBrowser.go('/categories');
@@ -100,7 +119,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   });
 
 
-  // ----- Upserts category
+  // ----- Upserting a category
 
   let upsertResponse;
   let upsertedCategory: TestCategory;
@@ -114,7 +133,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
       name: UpsCatOneName,
       slug: UpsCatOneSlug,
       defaultTopicType: PageRole.Question,
-      description: UpsCatOneDescr,
+      description: UpsCatOneDescr,  // wasn't upserted   BUG
       position: 55,
     };
     upsertResponse = server.apiV0.upsertSimple({
@@ -133,49 +152,164 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.description, UpsCatOneDescr);
   });
 
-  it("The category appears in the catedory list", () => {
+  it("The upserted category is not yet visible", () => {
+    owensBrowser.forumCategoryList.waitForCategories();
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
+  });
+
+  it("... but Owen refreshes the page", () => {
     owensBrowser.refresh();
-    // It doesn't — why not? It's in the database ,looks fine.
   });
 
-  it("Owen upserts a 2nd", () => {
+  it("... now the upserted category appears in the catedory list", () => {
+    owensBrowser.forumCategoryList.waitForCategories();
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 5);
   });
 
-  it("... gets it back in the response", () => {
+  it("... all categories have the epected titles", () => {
+    const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    assert(isCategoryVisible(forum.categories.categoryA.name));
+    assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
+    assert(isCategoryVisible(forum.categories.specificCategory.name));
+    assert(isCategoryVisible(CustPkgsCatName));
+    assert(isCategoryVisible(UpsCatOneName));
   });
 
-  it("Owen changes the name, slug and description of the 1st category", () => {
+
+  // ----- Upserting many categories
+
+  it("Owen upserts two more", () => {
+    const upsCatTwo = {  //: TestCategoryPatch
+      extId: UpsCatTwoExtId,
+      parentRef: 'extid:' + CustPkgsExtId,
+      name: UpsCatTwoName,
+      slug: UpsCatTwoSlug,
+      defaultTopicType: PageRole.Question,
+      description: UpsCatTwoDescr,  // wasn't upserted   BUG
+      position: 54,
+    };
+    const upsCatThree = {  //: TestCategoryPatch
+      extId: UpsCatThreeExtId,
+      parentRef: 'extid:' + CustPkgsExtId,
+      name: UpsCatThreeName,
+      slug: UpsCatThreeSlug,
+      defaultTopicType: PageRole.Question,
+      description: UpsCatThreeDescr,  // wasn't upserted   BUG
+      position: 56,
+    };
+    upsertResponse = server.apiV0.upsertSimple({
+        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        data: {
+          categories: [upsCatTwo, upsCatThree],
+        }});
+  });
+
+  it("... gets back two upserted categories in the response", () => {
+    assert.equal(upsertResponse.categories.length, 2);
+  });
+
+  it("... the first one, UpsCatTwo, looks correct", () => {
+    upsertedCategory = upsertResponse.categories[0];
+    assert.equal(upsertedCategory.name, UpsCatTwoName);
+    assert.equal(upsertedCategory.slug, UpsCatTwoSlug);
+    assert.equal(upsertedCategory.extId, UpsCatTwoExtId);
+    assert.equal(upsertedCategory.description, UpsCatTwoDescr);
+    assert.equal(upsertedCategory.position, UpsCatTwoPosition);
+  });
+
+  it("... the 2nd, likewise", () => {
+    upsertedCategory = upsertResponse.categories[1];
+    assert.equal(upsertedCategory.name, UpsCatThreeName);
+    assert.equal(upsertedCategory.slug, UpsCatThreeSlug);
+    assert.equal(upsertedCategory.extId, UpsCatThreeExtId);
+    assert.equal(upsertedCategory.description, UpsCatThreeDescr);
+    assert.equal(upsertedCategory.position, UpsCatThreePosition);
+  });
+
+  it("Now there're 2 more categories", () => {
+    owensBrowser.refresh();
+    owensBrowser.forumCategoryList.waitForCategories();
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 7);
+  });
+
+  it("... all 7 categories have the epected titles", () => {
+    const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    assert(isCategoryVisible(forum.categories.categoryA.name));
+    assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
+    assert(isCategoryVisible(forum.categories.specificCategory.name));
+    assert(isCategoryVisible(CustPkgsCatName));
+    assert(isCategoryVisible(UpsCatOneName));
+    assert(isCategoryVisible(UpsCatTwoName));
+    assert(isCategoryVisible(UpsCatThreeName));
+  });
+
+
+  // ----- Edit category, by upserting
+
+  it("Owen upserts a new name, slug and description for the 2nd category", () => {
+    owensBrowser.debug();
+    const category = {  //: TestCategoryPatch
+      extId: UpsCatTwoEditedExtId,
+      parentRef: 'extid:' + CustPkgsExtId,
+      name: UpsCatTwoEditedName,
+      slug: UpsCatTwoEditedSlug,
+      defaultTopicType: PageRole.Question,
+      description: UpsCatTwoEditedDescr,  // wasn't upserted   BUG
+      position: UpsCatTwoEditedPos,
+    };
+    upsertResponse = server.apiV0.upsertSimple({
+        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        data: {
+          categories: [category],
+        }});
   });
 
   it("... the server replies; the category has now the new name, slug and descr", () => {
+    assert.equal(upsertResponse.categories.length, 1);
+    upsertedCategory = upsertResponse.categories[0];
+    assert.equal(upsertedCategory.name, UpsCatTwoEditedName);
+    assert.equal(upsertedCategory.slug, UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.extId, UpsCatTwoEditedExtId);
+    assert.equal(upsertedCategory.description, UpsCatTwoEditedDescr);
+    assert.equal(upsertedCategory.position, UpsCatTwoEditedPos);
   });
 
 
   it("Maja goes to the categories list page", () => {
-    majasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    majasBrowser.go(siteIdAddress.origin + '/categories');
   });
 
 
-  it("... she sees the upserted categories", () => {
+  it("... sees all 7 categories", () => {
+    majasBrowser.forumCategoryList.waitForCategories();
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 7);
+  });
+
+  it("... with the epected titles, incl cat two, edited", () => {
+    const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    assert(isCategoryVisible(forum.categories.categoryA.name));
+    assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
+    assert(isCategoryVisible(forum.categories.specificCategory.name));
+    assert(isCategoryVisible(CustPkgsCatName));
+    assert(isCategoryVisible(UpsCatOneName));
+    assert(isCategoryVisible(UpsCatTwoEditedName));
+    assert(isCategoryVisible(UpsCatThreeName));
   });
 
 
   it("Maja logs in", () => {
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
-
-    // And if needed:
-    //someone's-Browser.disableRateLimits();
   });
 
 
-  it("... opens the 1st upserted category", () => {
+  it("... opens the upserted and edited category 'two'", () => {
+    majasBrowser.forumCategoryList.openCategory(UpsCatTwoEditedName);
   });
 
 
-  it("... she can post a topic", () => {
+  it("Maja posts a topic in this ups & edited category", () => {
+    majasBrowser.complex.createAndSaveTopic({ title: "Maja's topic title", body: "Majas text text" });
   });
-
-  // ...
 
 });
 

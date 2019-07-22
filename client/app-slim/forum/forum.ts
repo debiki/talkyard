@@ -1088,6 +1088,8 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
   const me: Myself = store.me;
   const activeCategory: Category = props.activeCategory;
 
+  const rootCategory = store.currentCategories.find(c => !c.parentId);
+
   // ---- Dupl code [5BKZWY0] ------------------
   const categoryMenuItems = store.currentCategories.map((category: Category) => {
     return MenuItem({ key: category.id, active: activeCategory.id === category.id,
@@ -1402,6 +1404,7 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 }
 
 
+
 const LoadAndListCategories = createFactory({
   displayName: 'LoadAndListCategories',
 
@@ -1435,12 +1438,21 @@ const LoadAndListCategories = createFactory({
   },
 
   render: function() {
-    if (!this.state.categories)
+    const store: Store = this.props.store;
+    const categories: Category[] = this.state.categories;
+    if (!categories)
       return r.p({}, t.Loading);
 
-    const categoryRows = this.state.categories.map((category: Category) => {
+    const siteSection: SiteSection =
+        store.siteSections.find(s => s.pageId === store.currentPageId);
+
+    const topLevelCats = categories.filter(c => c.parentId === siteSection.rootCategoryId);
+
+    const categoryRows = topLevelCats.map((category: Category) => {
+      const childCategories = categories.filter(c => c.parentId === category.id);
       return CategoryRow({ store: this.props.store, location: this.props.location,
-          forumPath: this.props.forumPath, category: category, key: category.id });
+          forumPath: this.props.forumPath, category: category, childCategories, siteSection,
+          key: category.id });
     });
 
     let recentTopicsColumnTitle;
@@ -1483,6 +1495,16 @@ const CategoryRow = createComponent({
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const category: Category = this.props.category;
+    const childCategories: Category[] = this.props.childCategories;
+    const siteSection: SiteSection = this.props.siteSection;
+    const forumPath = this.props.forumPath;
+    const location = this.props.location;
+
+    const childCatsList = childCategories.map((childCat: Category) =>
+      r.li({ key: childCat.id },
+        CatLink({ category: childCat, forumPath, location,
+            className: 's_F_Cs_C_ChildCs_C' })));
+
     const recentTopicRows = category.recentTopics.map((topic: Topic) => {
       const pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       const numReplies = topic.numPosts - 1;
@@ -1504,7 +1526,7 @@ const CategoryRow = createComponent({
     let isDeletedText = category.isDeleted ?
         r.small({}, t.fc._deleted) : null;
 
-    const isDefault = category.isDefaultCategory && isStaff(me) ?
+    const isDefaultText = category.id === siteSection.defaultCategoryId && isStaff(me) ?
         r.small({}, t.fc._defCat) : null;
 
     const categoryIconClass = category_iconClass(category, store);
@@ -1517,12 +1539,13 @@ const CategoryRow = createComponent({
       r.tr({ className: 'esForum_cats_cat' + isNewClass + isDeletedClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
-            Link({ to: {
-                pathname: this.props.forumPath + RoutePathLatest + '/' + this.props.category.slug,
-                search: this.props.location.search }, className: categoryIconClass + 'forum-title' },
-              category.name, isDefault), isDeletedText),
+            CatLink({ category, forumPath, location, isDefaultText,
+                className: categoryIconClass + 'forum-title', }),
+            isDeletedText),
           r.p({ className: 'forum-description' }, category.description),
-          anyNotfLevel),
+          anyNotfLevel,
+          r.ol({ className: 's_F_Cs_C_ChildCs' },
+            childCatsList)),
         r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},
@@ -1530,6 +1553,16 @@ const CategoryRow = createComponent({
     }
 });
 
+
+function CatLink(props: { category: Category, forumPath: string, location,
+      className: string, isDefaultText? }) {
+  const forumPath = props.forumPath;
+  const category = props.category;
+  return Link({ to: {
+      pathname: forumPath + RoutePathLatest + '/' + category.slug,
+      search: props.location.search }, className: props.className },
+    category.name, props.isDefaultText);
+}
 
 
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,

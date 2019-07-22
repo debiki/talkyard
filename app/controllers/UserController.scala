@@ -1326,12 +1326,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val authContextForMember = dao.getForumAuthzContext(Some(member))
 
     val categoriesMemberMaySee = dao.listMaySeeCategoriesAllSections(
-      includeDeleted = false, authContextForMember).flatMap(_.categories)
+      includeDeleted = false, authContextForMember).flatMap(_.categoriesExclRoot)
 
     val categoryIdsMemberMaySee = categoriesMemberMaySee.map(_.id)  // (or use a set?)
 
     val categoriesRequesterMaySee = dao.listMaySeeCategoriesAllSections(
-      includeDeleted = false, request.authzContext).flatMap(_.categories)
+      includeDeleted = false, request.authzContext).flatMap(_.categoriesExclRoot)
 
     val (
       categoriesBothMaySee: Seq[Category],

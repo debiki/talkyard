@@ -462,17 +462,36 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // Upsert categories.
       siteData.categories foreach { catTempId: Category =>
         val realId = remappedCategoryTempId(catTempId.id)
-        val oldCat = oldCategoriesById.get(realId)
-        val alreadyExists = oldCat.isDefined
-        if (!alreadyExists) {
-          val catRealIds = catTempId.copy(
-            id = realId,
-            sectionPageId = remappedPageTempId(catTempId.sectionPageId),
-            parentId = catTempId.parentId.map(remappedCategoryTempId),
-            defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
-          tx.insertCategoryMarkSectionPageStale(catRealIds)
-          upsertedCategories.append(catRealIds)
+        val anyOldCat = oldCategoriesById.get(realId)
+        val catRealIds = anyOldCat match {
+          case None =>
+            SHOULD // verify parent cat has same section page id (!)
+            val catRealIds = catTempId.copy(
+              id = realId,
+              sectionPageId = remappedPageTempId(catTempId.sectionPageId),
+              parentId = catTempId.parentId.map(remappedCategoryTempId),
+              defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
+            tx.insertCategoryMarkSectionPageStale(catRealIds)
+            catRealIds
+          case Some(oldCat) =>
+            // if upsertMode == Overwrite
+
+            // To allow any of these changes, would need to verify that the new
+            // parent cat has the same section page id.
+            throwBadRequestIf(remappedPageTempId(catTempId.sectionPageId) != oldCat.sectionPageId,
+              "TyE205TSH5", "Cannot change section page id")
+            throwBadRequestIf(catTempId.parentId.map(remappedCategoryTempId) != oldCat.parentId,
+              "TyE205TSH6", "Cannot change parent category id")
+
+            val catRealIds = catTempId.copy(
+              id = oldCat.id,
+              sectionPageId = oldCat.sectionPageId,
+              parentId = oldCat.parentId,
+              defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
+            tx.updateCategoryMarkSectionPageStale(catRealIds)
+            catRealIds
         }
+        upsertedCategories.append(catRealIds)
       }
 
 
@@ -628,6 +647,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
     }
+
+    dao.emptyCache()
 
     // Categories is all the current Talkyard API consumers need. For the moment.
     SiteBackup.empty.copy(

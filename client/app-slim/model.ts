@@ -873,18 +873,22 @@ interface Ancestor {  // server side: [6FK02QFV]
 }
 
 
-interface Forum {
+interface Forum {  // merge into and replace with SiteSection?
   pageId: PageId;
   path: string;
   title: string;
   description: string;
+  rootCategoryId: CategoryId;
+  defaultCategoryId: CategoryId;
 }
 
 
-interface SiteSection {
+interface SiteSection {  // also see interface Forum just above
   pageId: PageId;
   path: string;
   pageRole: PageRole;
+  rootCategoryId: CategoryId;
+  defaultCategoryId: CategoryId;
 }
 
 

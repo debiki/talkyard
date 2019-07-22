@@ -657,6 +657,15 @@ export function store_findTheDefaultCategory(store: Store): Category | undefined
 }
 
 
+export function store_ancestorsOfRootFirst(store: Store, categoryId: CategoryId): Category[] {
+  const ancestors = [];
+  const cats = store.currentCategories;
+  let nextCatId = categoryId;
+  for (let i = 0; i < 10; ++i) {
+    const nextCat = cats.
+  }
+}
+
 export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
   return _.filter(store.currentCategories, (c: Category) => {
     if (c.isForumItself) return false;
