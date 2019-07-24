@@ -163,16 +163,18 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("... now the upserted category appears in the catedory list", () => {
     owensBrowser.forumCategoryList.waitForCategories();
-    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 5);
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
+    assert.equal(owensBrowser.forumCategoryList.numSubCategoriesVisible(), 1);
   });
 
   it("... all categories have the epected titles", () => {
     const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    const isSubCategoryVisible = owensBrowser.forumCategoryList.isSubCategoryVisible;
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
     assert(isCategoryVisible(CustPkgsCatName));
-    assert(isCategoryVisible(UpsCatOneName));
+    assert(isSubCategoryVisible(UpsCatOneName));
   });
 
 
@@ -229,18 +231,20 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   it("Now there're 2 more categories", () => {
     owensBrowser.refresh();
     owensBrowser.forumCategoryList.waitForCategories();
-    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 7);
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
+    assert.equal(owensBrowser.forumCategoryList.numSubCategoriesVisible(), 3);
   });
 
   it("... all 7 categories have the epected titles", () => {
     const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    const isSubCategoryVisible = owensBrowser.forumCategoryList.isSubCategoryVisible;
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
     assert(isCategoryVisible(CustPkgsCatName));
-    assert(isCategoryVisible(UpsCatOneName));
-    assert(isCategoryVisible(UpsCatTwoName));
-    assert(isCategoryVisible(UpsCatThreeName));
+    assert(isSubCategoryVisible(UpsCatOneName));
+    assert(isSubCategoryVisible(UpsCatTwoName));
+    assert(isSubCategoryVisible(UpsCatThreeName));
   });
 
 
@@ -282,18 +286,20 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("... sees all 7 categories", () => {
     majasBrowser.forumCategoryList.waitForCategories();
-    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 7);
+    assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
+    assert.equal(owensBrowser.forumCategoryList.numSubCategoriesVisible(), 3);
   });
 
   it("... with the epected titles, incl cat two, edited", () => {
     const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    const isSubCategoryVisible = owensBrowser.forumCategoryList.isSubCategoryVisible;
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
     assert(isCategoryVisible(CustPkgsCatName));
-    assert(isCategoryVisible(UpsCatOneName));
-    assert(isCategoryVisible(UpsCatTwoEditedName));
-    assert(isCategoryVisible(UpsCatThreeName));
+    assert(isSubCategoryVisible(UpsCatOneName));
+    assert(isSubCategoryVisible(UpsCatTwoEditedName));
+    assert(isSubCategoryVisible(UpsCatThreeName));
   });
 
 
@@ -303,7 +309,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
 
   it("... opens the upserted and edited category 'two'", () => {
-    majasBrowser.forumCategoryList.openCategory(UpsCatTwoEditedName);
+    majasBrowser.forumCategoryList.openSubCategory(UpsCatTwoEditedName);
   });
 
 

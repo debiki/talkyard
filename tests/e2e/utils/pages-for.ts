@@ -2524,6 +2524,7 @@ function pagesFor(browser) {
 
     forumCategoryList: {   // RENAME to categoryList
       categoryNameSelector: '.esForum_cats_cat .forum-title',
+      subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
       goHere: () => {
         api.go('/categories');
@@ -2538,11 +2539,29 @@ function pagesFor(browser) {
         return count(browser.elements(api.forumCategoryList.categoryNameSelector));
       },
 
+      numSubCategoriesVisible: function(): number {
+        return count(browser.elements(api.forumCategoryList.subCategoryNameSelector));
+      },
+
       isCategoryVisible: function(categoryName: string): boolean {
         return browser.isVisible(api.forumCategoryList.categoryNameSelector, categoryName);
       },
 
+      isSubCategoryVisible: function(categoryName: string): boolean {
+        return browser.isVisible(api.forumCategoryList.subCategoryNameSelector, categoryName);
+      },
+
       openCategory: function(categoryName: string) {
+        api.forumCategoryList._openCategoryImpl(
+            categoryName, api.forumCategoryList.categoryNameSelector);
+      },
+
+      openSubCategory: function(categoryName: string) {
+        api.forumCategoryList._openCategoryImpl(
+            categoryName, api.forumCategoryList.subCategoryNameSelector);
+      },
+
+      _openCategoryImpl: function(categoryName: string, selector: string) {
         api.rememberCurrentUrl();
         api.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
         api.waitForNewUrl();
