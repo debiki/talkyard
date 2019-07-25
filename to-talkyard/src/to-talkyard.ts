@@ -122,7 +122,7 @@ if (sendToOrigin) {
   console.log(`\nSending ${jsonString.length} JSON chars to: ${sendToOrigin} ...`);
   //const responseJson = postOrDie(
    //   url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
-  const response = postOrDie(sendToOrigin + '/-/v0/upsert-patch-json', talkyardSiteData);
+  const response = postOrDie(sendToOrigin + '/-/v0/upsert-patch', talkyardSiteData);
   console.log(`The server replied:\n\n${response.bodyString}\n`);
   if (response.statusCode !== 200)
     throw `Error: Server status code ${response.statusCode}, ` +
