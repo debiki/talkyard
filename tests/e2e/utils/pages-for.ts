@@ -2563,10 +2563,13 @@ function pagesFor(browser) {
 
       _openCategoryImpl: function(categoryName: string, selector: string) {
         api.rememberCurrentUrl();
-        api.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
+        api.waitForThenClickText(selector, categoryName);
         api.waitForNewUrl();
-        api.waitForVisible('.s_F_Ts_Cat_Ttl ');
-        api.assertTextMatches('.s_F_Ts_Cat_Ttl', categoryName);
+        api.waitForVisible('.s_F_Ts_Cat_Ttl');
+        const titleSelector = selector === api.forumCategoryList.subCategoryNameSelector
+            ? '.s_F_Ts_Cat_Ttl-SubCat'
+            : '.s_F_Ts_Cat_Ttl';
+        api.assertTextMatches(titleSelector, categoryName);
       },
 
       // RENAME to setNotfLevelForCategoryNr?

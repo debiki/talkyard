@@ -269,13 +269,6 @@ $tableHeaderFontSize = 14px;
 .s_F_Ts_Cat_SelectCatBs
   margin-bottom: 6px;
 
-/* Before, when wasn't a clickble button. (Delete this paragraph soon)
-.s_F_Ts_Cat_Ttl
-  margin: 5px 0 9px;
-  text-align: center;
-  font-size: 20px;
-  color: hsl(0, 0%, 33%); */
-
 .DW.DW .s_F_Ts_Cat_Ttl
   text-align: center;
   margin: 0;
@@ -288,7 +281,7 @@ $tableHeaderFontSize = 14px;
   font-weight: bold;
   color: hsl(0, 0%, 35%) !important;
 
-button.s_F_Ts_Cat_Ttl:not(:first-of-type)::before  // also see: [40792RHL3], the '—>'' arrow
+.s_F_Ts_Cat_Ttl-SubCat::before  // also see: [40792RHL3], the '—>'' arrow
   content: "→";
   color: hsl(0, 0%, 32%);
   display: inline-block;

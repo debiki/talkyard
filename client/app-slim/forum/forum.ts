@@ -1093,10 +1093,11 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
           onClick: () => props.setCategory(parentCatSlug) }, t.fb.AllCats));
 
     const activeCategoryIcon = category_iconClass(thisCat, store);
+    const subCatClass = isSubCat ? ' s_F_Ts_Cat_Ttl-SubCat' : '';
 
     const categoriesDropdownButton =
         ModalDropdownButton({
-            className: 'esForum_catsDrop active s_F_Ts_Cat_Ttl', pullLeft: true,
+            className: 'esForum_catsDrop active s_F_Ts_Cat_Ttl' + subCatClass, pullLeft: true,
             title: r.span({ className: activeCategoryIcon },
                   (thisCat ? thisCat.name : (isSubCat ? "All" : t.fb.AllCats)),  // I18N "All" —> t.fb.All
                   isLastCat ? r.span({ className: 'caret' }) : null) },

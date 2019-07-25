@@ -251,7 +251,6 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   // ----- Edit category, by upserting
 
   it("Owen upserts a new name, slug and description for the 2nd category", () => {
-    owensBrowser.debug();
     const category = {  //: TestCategoryPatch
       extId: UpsCatTwoEditedExtId,
       parentRef: 'extid:' + CustPkgsExtId,
