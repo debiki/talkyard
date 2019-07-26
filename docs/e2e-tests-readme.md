@@ -6,8 +6,8 @@ We use Webdriver.io and write the tests in Typescript. API for v4 (haven't upgra
 To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:
 
     java -version  # the Java version should be >= 1.8, I have never tested Java 1.9
-    node -v   # v8.15.0 works for me, and more recent versions too I would think
-    npm -v    #  6.4.1 works for me, and more recent versions too I would think
+    node -v   #  >= 10.0
+    npm -v    #  6.7 works for me, and more recent versions too I would think
 
 And you need Yarn: https://yarnpkg.com/en/docs/install
 And a compiler so you can build Fibers:

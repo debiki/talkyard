@@ -185,15 +185,19 @@ how to use docker-compose already.
 
        ###################################################################
        # Talkyard settings
-       #
+
        # Up the max backlog queue size (num connections per port), default = 128
        net.core.somaxconn=8192
+
        # ElasticSearch requires (at least) this, default = 65530
        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
        vm.max_map_count=262144
-       # Avoid a "User limit of inotify watches reached" error, when tailing logs:
-       # (the default is sometimes only 8192 which is too low)
-       fs.inotify.max_user_watches=16384
+
+       # VSCode wants to watch many files — without this, there'll be a
+       # "Unable to watch for file changes in this large workspace" error.
+       # Also an "User limit of inotify watches reached" error can happen, when
+       # tailing logs, if too few watches. (The default is sometimes only 8192.)
+       fs.inotify.max_user_watches=65536
        EOF
 
     Reload the system config:
