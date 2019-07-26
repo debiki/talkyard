@@ -165,6 +165,7 @@ trait PagesDao {
     require(!titleSource.isEmpty && !titleHtmlSanitized.isEmpty, "EsE7MGK24")
     require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
+    require(embeddingUrl.trimNoneIfBlank == embeddingUrl, "Cannot have blank emb urls [TyE75SPJBJ]")
 
     val pageSlug = anySlug.getOrElse({
         context.nashorn.slugifyTitle(titleSource)
@@ -337,7 +338,7 @@ trait PagesDao {
 
     altPageIds.foreach(tx.insertAltPageId(_, realPageId = pageId))
 
-    embeddingUrl.noneIfBlank foreach { embUrl =>
+    embeddingUrl.trimNoneIfBlank foreach { embUrl =>
       if (!altPageIds.contains(embUrl)) {
         // If the url already points to another embedded discussion, keep it pointing to the old one.
         // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
@@ -347,7 +348,7 @@ trait PagesDao {
       // a new address, store the discussion id by url path too, without origin. [06KWDNF2]
       // Maybe some time later, could add a conf val to disable this.
       val embeddingPath = extractUrlPath(embUrl)
-      if (!altPageIds.contains(embUrl)) {
+      if (!altPageIds.contains(embeddingPath)) {
         tx.insertAltPageIdIfFree(embeddingPath, realPageId = pageId)
       }
     }
