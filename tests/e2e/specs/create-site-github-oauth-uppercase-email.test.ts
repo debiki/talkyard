@@ -9,6 +9,7 @@ import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import createTestData = require('./create-site-impl');
+import c = require('../test-constants');
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logMessage = logAndDie.logMessage;
 
@@ -38,8 +39,24 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
         "githubUsernameMixedCase is not mixed case: " + username);
   });
 
+  it("The email addr local part is too long for a username [6AKBR20Q]", () => {
+    const emailAddr = settings.githubUsernameMixedCase;
+    const localPart = emailAddr.replace(/@.*$/, '');
+    console.log(`Email: ${emailAddr}, local part: ${localPart}, length: ${localPart.length}`);
+    assert(localPart.length > c.MaxUsernameLength);
+  });
+
   it('can create a new site as a GitHub user, when not logged in to GitHub', () => {
     makeForumWithGitHubAdminAccount({ alreadyLoggedInAtGitHub: false });
+  });
+
+  it('gets the correct username, truncted to MaxUsernameLength = 20, ' +
+        'although the email addr local part is longer [6AKBR20Q]', () => {
+    assert.equal(
+        pages.topbar.getMyUsername(),
+        settings.githubUsernameMixedCase
+            .replace(/-/g, '_')
+            .substr(0, c.MaxUsernameLength));
   });
 
   it('can actually use the GitHub admin account to create stuff', () => {

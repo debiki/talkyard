@@ -40,6 +40,7 @@ declare const SystemUserId;
 declare const MinMemberId;
 declare const LowestAuthenticatedUserId;
 declare const LowestNormalMemberId;
+declare const MaxUsernameLength;
 
 declare const MaxGuestId;
 declare const UnknownUserId;

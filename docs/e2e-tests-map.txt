@@ -66,6 +66,8 @@ login -
     forgot email address:
   mixed case OpenAuth email and username:
           - create-site-github-oauth-uppercase-email  TyT5AKR2Z95
+  to long username generated from email gets truncated to 20 chars = MaxUsernameLength
+          - create-site-github-oauth-uppercase-email  TyT5AKR2Z95  [6AKBR20Q]
   providers -
     google:
           - create-site-all-logins.test.ts  TyT5KBWAZ2
