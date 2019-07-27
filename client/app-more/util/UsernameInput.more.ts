@@ -52,7 +52,7 @@ export const UsernameInput = createClassAndFactory({
       defaultValue = defaultValue.replace(/[ _.-]+/g, '_');
     }
 
-    const maxLength = username.substr(0, 5) === '__sx_' ? 30 : 20; // [2QWGRC8P]
+    const maxLength = username.substr(0, 5) === '__sx_' ? 30 : MaxUsernameLength; // [2QWGRC8P]
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className,

@@ -327,7 +327,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     const usernameInputMaybe = isForGuest ? null :
         util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 1,
-          defaultValue: props.username,
+          defaultValue: (props.username || '').substr(0, MaxUsernameLength),
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
