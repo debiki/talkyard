@@ -57,7 +57,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       var isNewGuest = false
       for (i <- 1 to 2 if userId == 0) {
         runQuery("""
-          select u.user_id, u.ext_imp_id, u.created_at, g.email_notfs from users3 u
+          select u.user_id, u.ext_imp_id, u.created_at, gp.email_notfs from users3 u
             left join guest_prefs3 gp
                    on u.site_id = gp.site_id
                   and u.guest_email_addr = gp.email
