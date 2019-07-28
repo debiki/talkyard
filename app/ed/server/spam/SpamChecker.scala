@@ -231,6 +231,7 @@ class SpamChecker(
     }).recover({
       case ex: Exception =>
         p.Logger.error("Error verifying Akismet API key [TyE2AKB5R0]", ex)
+        akismetKeyIsValidPromise.success(false)
     })
   }
 

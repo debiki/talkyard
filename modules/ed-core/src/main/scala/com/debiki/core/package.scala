@@ -25,6 +25,7 @@ import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import com.debiki.core.PageParts.BodyNr
 import play.api.libs.json.JsObject
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 
@@ -925,6 +926,32 @@ package object core {
 
   def fileExists(path: String): Boolean =
     java.nio.file.Files.exists(java.nio.file.Paths.get(path))
+
+
+  /** Runs a bunch of futures, one at a time, and returns the results in a `Future[List[R]]`.
+    * If any computation fails, everything fails — so the caller might want to recover
+    * failures.
+    *
+    * See: https://stackoverflow.com/a/20415056/694469
+    * and: https://www.michaelpollmeier.com/
+    *                        execute-scala-futures-in-serial-one-after-the-other-non-blocking
+    */
+  def runFuturesSequentially[I, R](items: TraversableOnce[I])(
+        fn: I => Future[R])(execCtx: ExecutionContext): Future[immutable.Seq[R]] = {
+    val futureResults = items.foldLeft(Future.successful[List[R]](Nil)) {
+      (futureResultsThisFar: Future[List[R]], nextItem: I) =>
+        // Wait for futureResultsThisFar to complete:
+        futureResultsThisFar.flatMap { resultsThisFar =>
+          val futureNextResult: Future[R] = fn(nextItem)
+          // Compute the next item:
+          futureNextResult.map { nextResult =>
+            nextResult :: resultsThisFar
+          } (execCtx)  // it's the caller's responsibility to recover if fails?
+        } (execCtx)
+    }
+
+    futureResults.map(_.reverse)(execCtx)  // because of  ::  above
+  }
 
 
   /** If you're short of time, add e.g. an UNTESTED statement. The compiler
