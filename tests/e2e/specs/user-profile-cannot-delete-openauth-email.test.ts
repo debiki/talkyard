@@ -80,6 +80,7 @@ describe("user profile cannot delete openauth email:", () => {
   });
 
   it("... but cannot delete the original address, because it's used for OpenAuth login", () => {
+    gmailUsersBrowser.waitForGone('.e_RemoveEmB');
     assert(!gmailUsersBrowser.userProfilePage.preferences.emailsLogins.canRemoveEmailAddress());
   });
 
@@ -97,18 +98,23 @@ describe("user profile cannot delete openauth email:", () => {
 
   it("... makes it the primary email", () => {
     // No. 1 = the gmail address, no. 2 = address 2, no. 3 = address 3.
-    gmailUsersBrowser.waitAndClick('.s_UP_EmLg_EmL_It:last-child .e_MakeEmPrimaryB');
+    // No! Bad test. Now after I changed the email,  no. 3 is the gmail addr.
+    // So click the first instead.
+    // beore: gmailUsersBrowser.waitAndClick('.s_UP_EmLg_EmL_It:last-child .e_MakeEmPrimaryB');
+    // now instead:
+    gmailUsersBrowser.waitAndClick('.e_MakeEmPrimaryB', { clickFirst: true });
   });
 
   it("Now hen can remove address no. 2", () => {
-    gmailUsersBrowser.userProfilePage.preferences.emailsLogins.removeOneEmailAddress();
+    gmailUsersBrowser.userProfilePage.preferences.emailsLogins.removeFirstEmailAddrOutOf(1);
   });
 
   it("The gmail address and third address remains", () => {
     const text = gmailUsersBrowser.getText('.s_UP_EmLg_EmL');
+    logAndDie.logMessage(`Text: ${text}`)
     assert(text.search(settings.gmailEmail) >= 0);
     assert(text.search(emailAddress2) === -1);
-    assert(text.search(emailAddress3) > 0);
+    assert(text.search(emailAddress3) >= 0);
   });
 
   it("But hen still cannot delete the OpenAuth address", () => {

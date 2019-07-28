@@ -673,6 +673,9 @@ class SpamChecker(
     }
 
     val domainsToCheck = textAndHtml.linkDomains // TODO: scrubDomains(textAndHtml.linkDomains)...
+      // (Skip example.com, so can be used in e2e tests without the tests failing because of
+      // "spam" detected here.)
+      .filterNot(d => d.endsWith(".example.com") || d == "example.com")
     // ...unless removing hostnames and sub domains, the block list lookup might fail —
     // block lists tend to expect requests with sub domains stripped.
     // Read here; http://www.surbl.org/guidelines  about how to extract the base (registered)

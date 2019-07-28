@@ -105,7 +105,7 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
   });
 
   it("Mallory removes Maria's address", () => {
-    mallorysBrowser.userProfilePage.preferences.emailsLogins.removeOneEmailAddress();
+    mallorysBrowser.userProfilePage.preferences.emailsLogins.removeFirstEmailAddrOutOf(1);
   });
 
 
@@ -209,7 +209,7 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
 
   it("She removes her old address", () => {
     mariasBrowser.go(mariasEmailsUrl);
-    mariasBrowser.userProfilePage.preferences.emailsLogins.removeOneEmailAddress();
+    mariasBrowser.userProfilePage.preferences.emailsLogins.removeFirstEmailAddrOutOf(1);
   });
 
   it("But she cannot delete the only remaining address", () => {
