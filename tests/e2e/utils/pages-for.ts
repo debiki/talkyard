@@ -4154,10 +4154,16 @@ function pagesFor(browser) {
             return browser.isVisible('.e_RemoveEmB');
           },
 
-          removeOneEmailAddress: function() {
-            api.waitAndClick('.e_RemoveEmB');
-            while (browser.isVisible('.e_RemoveEmB')) {
-              browser.pause(200);
+          removeFirstEmailAddrOutOf: function(numCanRemoveTotal: number) {
+            for (let i = 0; api.count('.e_RemoveEmB') !== numCanRemoveTotal; ++i) {
+              browser.pause(PollMs);
+              if (i >= 10 && (i % 10) === 0) {
+                logAndDie.logWarning(`Waiting for ${numCanRemoveTotal} remove buttons ...`);
+              }
+            }
+            api.waitAndClick('.e_RemoveEmB', { clickFirst: true });
+            while (api.count('.e_RemoveEmB') !== numCanRemoveTotal - 1) {
+              browser.pause(PollMs);
             }
           },
 

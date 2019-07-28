@@ -24,13 +24,13 @@ let mariasBrowser;
 let idAddress: IdAddress;
 let forumTitle = "UTX All Logins Test Forum";
 
-const gmailUsersSiteHostname = 'gmail-user.ex.co';
+const gmailUsersSiteHostname = 'gmail-user.example.com';
 const gmailUser = {
   email: settings.gmailEmail,
   password: settings.gmailPassword,
   username: 'gmailuser' };
 
-const fbUsersSiteHostname = 'fb-user.ex.co';
+const fbUsersSiteHostname = 'fb.something.example.com';
 const fbUsersSiteInstrs = 'fbUsersSiteInstrs';
 const fbUsersFeedbackOne = 'fbUsersFeedbackOne';
 const fbUser = {
@@ -39,13 +39,13 @@ const fbUser = {
   username: 'fbuser'
 };
 
-const passwordUsersSiteHostname = 'pwd-user.ex.co';
-const passwordUsersSiteHostname2 = 'pwd-user-2.ex.co';
+const passwordUsersSiteHostname = 'pwd-user.example.com';
+const passwordUsersSiteHostname2 = 'pwd-user-2.example.com';
 const passwordUsersInstrs1 = 'passwordUsersInstrs1';
 const passwordUsersInstrs2 = 'passwordUsersInstrs2';
 const passwordUsersFeedbackToGmail = 'passwordUsersFeedbackToGmail';
 const passwordUser = {
-  email: 'pascal@paris.fr',
+  email: 'pascal@paris.example.com',
   password: 'publ-pa020',
   username: 'pascal',
   fullName: '',
