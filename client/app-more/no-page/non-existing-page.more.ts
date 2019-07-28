@@ -271,8 +271,16 @@ export var CreateForumPanel = createComponent({
   displayName: 'CreateForumPanel',
 
   getInitialState: function() {
+    // People have (on multitenant servers) already been asked for the local hostname,
+    // so they feel they've typed a "name" already. UX testing shows that they get
+    // confused if they need to type a "name" again here. So, by defualt, reuse the local
+    // hostname here. They can change the fourm page title later (via an edit icon).
+    const localHostname = location.hostname.split('.')[0];
+    const anyFirstChar = localHostname[0] || '';
+    const defaultTitle = anyFirstChar.toUpperCase() + localHostname.substr(1, 999);
+
     return {
-      title: '',
+      title: defaultTitle,
       useCategories: true,
       createSupportCategory: true,
       createIdeasCategory: true,
@@ -319,7 +327,7 @@ export var CreateForumPanel = createComponent({
     let nextButton;
 
     forumNameChoice = Input({ type: 'text', label: "Community name:",
-        placeholder: "Type a name here",
+        defaultValue: this.state.title,
         ref: 'forumName', onChange: this.handleChange });
 
     if (nextChoice === 1 && !this.state.title.trim()) {
@@ -396,7 +404,7 @@ export var CreateForumPanel = createComponent({
           (newStyle) => { return () => this.setState({ topicListStyle: newStyle }) };
 
       topicListStyleChoiceAndCreateButton =
-          r.div({ className: 'clearfix' },
+          r.div({ className: 's_NP_TopicListQ' },
             r.br(),
             r.div({ style: { float: 'left' }},
               r.p({}, r.b({}, "How shall the topic list look?")),

@@ -41,6 +41,21 @@
     .btn
       margin-right: 10px;
 
+  .input-group
+    width: 360px;
+
+.s_NP_TopicListQ
+  margin-top: 31px;
+  display: flex;
+  // Never flex-wrap to two lines.
+  // (Because: then, on mobile phones (where the wrap would happen),
+  // UX testing shows that people don't scroll down, so they won't see the preview,
+  // and won't understand what the radio button choices are for. Better show tiny small
+  // images, and then maybe they can rotate their phone into landscape, if they want
+  // to see better? Or make the images stupid-lightbox enlargeable.
+  // Plus, they can scroll horizontally and look at the image, it's not that small.)
+  flex-direction: row;
+
 .s_NoPage .radio
   margin-bottom: 7px;
 
@@ -50,7 +65,6 @@
   font-weight: bold;
 
 .s_NP_TopicsPreview
-  float: left;
   max-width: 700px;
   min-height: 700px; // avoids changing page height when changing preview image
   margin-left: 30px;
