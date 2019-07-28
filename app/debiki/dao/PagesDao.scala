@@ -255,7 +255,15 @@ trait PagesDao {
       numPostsTotal = 2, // title & body
       layout = layout,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      categoryId = anyCategoryId, embeddingUrl = None, publishDirectly = true,
+      categoryId = anyCategoryId,
+      // BUG the emb url changes, if the blog moves to another doamin, so this db field
+      // can get out of date. Remove it? and instead use the url in use, when a comment
+      // gets posted? But what about summary emails?
+      // Maybe remember each blog's last visited domain, and among the domains in the allowed
+      // domains list, use the most recently visited one? But what if a Ty site is used
+      // for different blogs?
+      embeddingUrl = embeddingUrl,
+      publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
 
     val anyReviewTask =
@@ -338,7 +346,7 @@ trait PagesDao {
 
     altPageIds.foreach(tx.insertAltPageId(_, realPageId = pageId))
 
-    embeddingUrl.trimNoneIfBlank foreach { embUrl =>
+    embeddingUrl foreach { embUrl =>
       if (!altPageIds.contains(embUrl)) {
         // If the url already points to another embedded discussion, keep it pointing to the old one.
         // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
