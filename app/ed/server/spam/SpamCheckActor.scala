@@ -25,7 +25,7 @@ import debiki.dao.SystemDao
 import play.{api => p}
 import scala.concurrent.duration._
 import debiki.Globals
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 
 
@@ -70,7 +70,7 @@ class SpamCheckActor(
 
   def globals: Globals = systemDao.globals
 
-  private implicit val execCtx: ExecutionContext = globals.executionContext
+  private val execCtx: ExecutionContext = globals.executionContext
 
   def receive: PartialFunction[Any, Unit] = {
     case CheckForSpam =>
@@ -89,20 +89,37 @@ class SpamCheckActor(
   private def checkMorePostsForSpam() {
     val spamCheckTasks = systemDao.loadStuffToSpamCheck(limit = batchSize)
     p.Logger.debug(s"Checking ${spamCheckTasks.length} spam check tasks ... [TyM70295MA4]")
-    spamCheckTasks foreach { task =>
+
+    val manyFutureResults: Seq[(SpamCheckTask, Future[SpamCheckResults])] = spamCheckTasks flatMap {
+        task =>
       val key = task.key
-      if (checkingNowCache.getIfPresent(key) eq null) {
+      if (checkingNowCache.getIfPresent(key) ne null) None   // [205FKPJ096]
+      else {
         checkingNowCache.put(key, DummyObject)
-        checkForSpam(task)
+        val futureSpamCheckResults = globals.spamChecker.detectPostSpam(task)  // errors handled below
+        Some(task -> futureSpamCheckResults)
       }
     }
+
+    // Handle the spam check results one at a time, although they're typically for different
+    // sites and we synchronize on site id — otherwise, tends to run into:
+    //   """PSQLException: ERROR:
+    //       could not serialize access due to read/write dependencies among transactions""".
+    runFuturesSequentially(manyFutureResults) { case (spamCheckTask, futureResults) =>
+      futureResults.map({ spamCheckResults =>
+        handleResults(spamCheckTask, spamCheckResults)
+      })(execCtx).recover({
+        case throwable: Throwable =>
+          // Noop. We'll retry later after the checkingNowCache item has expired. [205FKPJ096]
+          p.Logger.warn(s"Error executing spam check task [TyE306MWDNF2]", throwable)
+      }) (execCtx)
+    } (execCtx)
   }
 
   private val DummyObject = new Object
 
 
-  private def checkForSpam(spamCheckTask: SpamCheckTask) {
-    globals.spamChecker.detectPostSpam(spamCheckTask) map { spamCheckResults: SpamCheckResults =>
+  private def handleResults(spamCheckTask: SpamCheckTask, spamCheckResults: SpamCheckResults) {
       // We're not inside receive() any longer, so its try..catch is of no use now.
       try {
         systemDao.handleSpamCheckResults(spamCheckTask, spamCheckResults)
@@ -112,7 +129,6 @@ class SpamCheckActor(
           p.Logger.error(
               s"Error dealing with spam, post: ${spamCheckTask.postToSpamCheckShort} [EdE7GSB4]", ex)
       }
-    }
   }
 
 }
