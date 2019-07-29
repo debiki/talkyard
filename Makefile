@@ -137,6 +137,19 @@ $(zipped_bundles): $@
 	sudo s/d-gulp release
 
 
+# ----- To-Talkyard Javascript
+
+# For now:
+to-talkyard: to-talkyard/dist/to-talkyard/src/to-talkyard.js
+
+to-talkyard/dist/to-talkyard/src/to-talkyard.js:
+	echo "Building To-Talkyard ..."
+	set -x ;\
+	cd to-talkyard ;\
+	yarn ;\
+	yarn build ;\
+	echo "... Done building To-Talkyard."
+
 
 # ----- Clean (wip)
 
@@ -273,7 +286,7 @@ define if_selenium_not_running
   fi
 endef
 
-e2e-tests: invisible-selenium-server
+e2e-tests: invisible-selenium-server to_talkyard
 	s/run-e2e-tests.sh
 	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
 

@@ -339,7 +339,8 @@ Tests
 
 The end-to-end tests are written in TypeScript and uses Selenium and Webdriver.io.
 See the [end-to-end tests readme](./docs/e2e-tests-readme.md).
-And, if you want to test in a browser other than Chrome, see [Making *.localhost addresses work](./docs/wildcard-dot-localhost.md).
+And, you also need to [make *.localhost addresses work](./docs/wildcard-dot-localhost.md),
+because the e2e tests creates test sites at `*.localhost` sub domains.
 
 
 #### Security tests

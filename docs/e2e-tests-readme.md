@@ -20,6 +20,7 @@ Run tests like so:
 
         make up
 
+<!--
 1. In another shell, build a certain Fibers Node.js module, and start Selenium: (on the host,
    not in any Docker container)
    
@@ -43,8 +44,10 @@ Run tests like so:
     Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
     Yarn removes them. See https://github.com/yarnpkg/yarn/issues/1955
     That is, you need to run `s/selenium-install` again.
+     -->
 
 1. In yet another shell, run the test code. Do one of these:
+   (if there's an issue with node-fibers — then see the next step below)
 
         # Runs one test: (with "links" in the test file name)
         s/wdio target/e2e/wdio.conf.js --only links
@@ -66,6 +69,15 @@ Run tests like so:
     fix that by building the end-to-end test code:
 
         s/d-gulp build-e2e
+
+
+1. If this happens: `There is an issue with node-fibers ... ` and:
+   `node_modules/fibers/bin/linux-x64-67-glibc/fibers.node is missing`, then, try this:
+
+        yarn --force
+
+   That'll recompile the `fibers.node` binary, needed by wdio-mocha-framework.
+
 
 1. Some tests, e.g. `chat.2browsers.test.ts`, require two browsers. Then use the 2whatever config files, e.g.:
 

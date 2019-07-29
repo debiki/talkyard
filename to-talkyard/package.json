@@ -45,6 +45,7 @@
     "nodemon": "^1.18.10",
     "shelljs": "^0.8.1",
     "supertest": "^3.0.0",
+    "typescript": "^3.5",
     "ts-node": "^5.0.0",
     "tslint": "^5.9.1"
   }
