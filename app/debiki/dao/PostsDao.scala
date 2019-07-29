@@ -1745,6 +1745,7 @@ trait PostsDao {
       val toPage = PageDao(newParent.pageId, tx)
 
       // Don't create cycles.
+      TESTS_MISSING // try to create a cycle?
       if (newParentPost.pageId == postToMove.pageId) {
         val ancestorsOfNewParent = fromPage.parts.ancestorsOf(newParentPost.nr)
         if (ancestorsOfNewParent.exists(_.id == postToMove.id))

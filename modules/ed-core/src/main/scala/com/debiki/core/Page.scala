@@ -368,6 +368,9 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
   }
 
   def copyWithUpdatedStats(page: Page): PageMeta = {
+    val body = page.parts.body
+    def bodyVotes(fn: Post => Int): Int = body.map(fn) getOrElse 0
+
     var newMeta = copy(  // code review: this = (...) is identical to [0969230876]
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
@@ -379,10 +382,10 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
       numRepliesVisible = page.parts.numRepliesVisible,
       numRepliesTotal = page.parts.numRepliesTotal,
       numPostsTotal = page.parts.numPostsTotal,
-      numOrigPostLikeVotes = page.parts.theBody.numLikeVotes,
-      numOrigPostWrongVotes = page.parts.theBody.numWrongVotes,
-      numOrigPostBuryVotes = page.parts.theBody.numBuryVotes,
-      numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
+      numOrigPostLikeVotes = bodyVotes(_.numLikeVotes),
+      numOrigPostWrongVotes = bodyVotes(_.numWrongVotes),
+      numOrigPostBuryVotes = bodyVotes(_.numBuryVotes),
+      numOrigPostUnwantedVotes = bodyVotes(_.numUnwantedVotes),
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
       answeredAt = page.anyAnswerPost.map(_.createdAt),
       answerPostId = page.anyAnswerPost.map(_.id),

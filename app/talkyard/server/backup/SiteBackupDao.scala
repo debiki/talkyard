@@ -476,23 +476,54 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           case Some(oldCat) =>
             // if upsertMode == Overwrite
 
-            // To allow any of these changes, would need to verify that the new
-            // parent cat has the same section page id.
+            // To allow this would need to verify that the cat also gets moved to a
+            // new parent cat with the new section id. Or that the old parent's sect id
+            // also changes.
+            TESTS_MISSING // try change sect page id; verify that the server says No.
             throwBadRequestIf(remappedPageTempId(catTempId.sectionPageId) != oldCat.sectionPageId,
-              "TyE205TSH5", "Cannot change section page id")
-            throwBadRequestIf(catTempId.parentId.map(remappedCategoryTempId) != oldCat.parentId,
-              "TyE205TSH6", "Cannot change parent category id")
+              "TyE205TSH5", "Cannot change section page id, not implemented")
+
+            TESTS_MISSING // move page to new cat, with 1) same sect id (ok) and 2) a different (bad).
+            val anyNewParentCatRealId = catTempId.parentId.map(remappedCategoryTempId)
+            anyNewParentCatRealId match {
+              case None =>
+                // Keep old parent id, whatever it is.
+              case Some(newRealParentCatId) =>
+                val oldCatParentId = oldCat.parentId.getOrThrowBadRequest(
+                    "TyE5WKHS0DX4", o"""Upserted cat with temp id ${catTempId.id}
+                    has a parent cat, but the matching cat in the database, ${oldCat.id},
+                    has no parent.""")
+                val getsNewParentCat = newRealParentCatId != oldCatParentId
+                if (getsNewParentCat) {
+                  val oldParentCat = oldCategoriesById.get(oldCatParentId) getOrThrowBadRequest(
+                    "TyE395AKDPF3", s"Old parent cat $oldCatParentId not found")
+                  val newParentCat = oldCategoriesById.get(newRealParentCatId) getOrThrowBadRequest(
+                    "TyE7FKDTJ02RP", s"New parent cat with real id $newRealParentCatId not found")
+                  throwBadRequestIf(oldParentCat.sectionPageId != newParentCat.sectionPageId,
+                    "TyE205TSH6", o"""Cannot change category with temp id ${catTempId.id}
+                    by changing parent category from ${oldParentCat.id}
+                    in site section page id ${oldParentCat.sectionPageId}
+                    to category ${newParentCat.id} in *different* site section page id
+                    ${newParentCat.sectionPageId}""")
+                }
+            }
 
             val catRealIds = catTempId.copy(
               id = oldCat.id,
               sectionPageId = oldCat.sectionPageId,
-              parentId = oldCat.parentId,
+              parentId = anyNewParentCatRealId orElse oldCat.parentId,
               defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
             tx.updateCategoryMarkSectionPageStale(catRealIds)
             catRealIds
         }
         upsertedCategories.append(catRealIds)
       }
+
+      SECURITY; SHOULD // Verify all cats in a site section, has the same site section page id.
+      TESTS_MISSING // try to create cats with wrong section ids.
+
+      SECURITY; SHOULD // Check for category cycles; if any found, abort.
+      TESTS_MISSING // try to create a category cycle?
 
 
       // ----- Permissions
@@ -604,8 +635,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             } */
         }
 
+        COULD // skip this, if no posts and nothing on the page, has changed.
         val pageDao = PageDao(pageMetaWrongStats.pageId, tx)
-        val pageMeta = pageMetaWrongStats.copyWithUpdatedStats(pageDao)
+        val pageMeta = pageMetaWrongStats.copyWithUpdatedStats(pageDao)  // bumps version [306MDH26]
 
         dao.updatePagePopularity(pageDao.parts, tx)
         tx.updatePageMeta(pageMeta, oldMeta = pageMetaWrongStats, markSectionPageStale = true)
@@ -702,6 +734,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       createdFromSiteId = None)
 
     val newDao = globals.siteDao(site.id)
+
+    SECURITY; SHOULD // use upsertIntoExistingSite instead, and add post cycles nnd
+    // category cycles checks there.
 
     HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
     // And in the wrong transaction :-/

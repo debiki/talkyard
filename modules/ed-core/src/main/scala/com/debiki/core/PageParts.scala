@@ -61,7 +61,11 @@ object PageParts {
     */
   def findFrequentPosters(posts: Seq[Post], ignoreIds: Set[UserId]): Seq[UserId] = {
     val numPostsByUserId = mutable.HashMap[UserId, Int]().withDefaultValue(0)
-    for (post <- posts if !ignoreIds.contains(post.createdById)) {
+    for {
+      post <- posts
+      if post.isReply && post.isVisible
+      if !ignoreIds.contains(post.createdById)
+    } {
       val numPosts = numPostsByUserId(post.createdById)
       numPostsByUserId(post.createdById) = numPosts + 1
     }
@@ -148,6 +152,7 @@ abstract class PageParts {
   def thePostById(postId: PostId): Post = postById(postId).getOrDie(
     "EsE6YKG72", s"Post id $postId on page $pageId not found")
 
+  def body: Option[Post] = postByNr(BodyNr)
   def theBody: Post = thePostByNr(BodyNr)
   def theTitle: Post = thePostByNr(TitleNr)
 
@@ -196,7 +201,7 @@ abstract class PageParts {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
     // entries in the Users column in the forum topic list. [7UKPF26]
     PageParts.findFrequentPosters(this.allPosts,
-      ignoreIds = Set(theBody.createdById) ++ lastVisibleReply.map(_.createdById).toSet)
+      ignoreIds = body.map(_.createdById).toSet ++ lastVisibleReply.map(_.createdById).toSet)
   }
 
 

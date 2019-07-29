@@ -65,6 +65,10 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   def toJson: JsObject = {
     SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this))
   }
+
+  def withVersionPlusOne: SiteBackup = copy(
+    site = site.map(_.copy(version = site.getOrDie("TyE36FKPNS3").version + 1)))
+
 }
 
 

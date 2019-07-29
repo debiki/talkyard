@@ -52,7 +52,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           quotaLimitMbs = Some(100),
           hostnames = Vector(HostnameInclDetails(
             hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-          version = 1,
+          version = 1 + 1,  // + 1 because upserted something above
           numParticipants = 13,
         )))
         dump mustBe expectedDump
@@ -102,6 +102,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             id = nextExpectedCategoryId(), sectionPageId = sectPageId, parentId = Some(1))),
         pages = Vector(
           PageMeta333.copy(
+            version = 2,  // version bumped to 2 here [306MDH26]
             pageId = sectPageId,
             categoryId = Some(1),
             numPostsTotal = 2)),
@@ -145,7 +146,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             quotaLimitMbs = Some(100),
             hostnames = Vector(HostnameInclDetails(
               hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-            version = 1,
+            version = 2,
             numParticipants = 14)))
         actualDump mustBe expectedDump
       }
@@ -160,7 +161,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         }
 
         "nothing changed" in {
-          actualDump mustBe expectedDump
+          actualDump mustBe expectedDump.withVersionPlusOne.copy(
+            // Version bumped here: [306MDH26], currently also if page not changed.
+            pages = expectedDump.pages.map(p => p.copy(version =  p.version + 1)))
         }
       }
 
@@ -192,6 +195,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             id = 2, sectionPageId = expectedSectPageId, parentId = Some(1))),
         pages = Vector(
           PageMeta333.copy(
+            version = 2,  // version bumped to 2 here [306MDH26]
             pageId = expectedSectPageId,
             categoryId = Some(1),
             numPostsTotal = 0)))
@@ -223,7 +227,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             quotaLimitMbs = Some(100),
             hostnames = Vector(HostnameInclDetails(
               hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-            version = 1,
+            version = 2,
             numParticipants = 13)))
         actualDump mustBe expectedDump
       }
@@ -244,7 +248,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       "find the new sub cat" in {
         val newCatWithRealIds = newCat.copy(id = 3)
         expectedDump = expectedDump.copy(
+          // (Don't bump page version — the page was excluded in the 2nd upsert.)
           categories = expectedDump.categories :+ newCatWithRealIds)
+          .withVersionPlusOne
         actualDump mustBe expectedDump
       }
 
@@ -294,11 +300,13 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       val upsertedPageAltId = "ups_alt_id"
 
       lazy val upsertedPageComplete = PageMeta333.copy(
+        version = 2,  // version bumped to 2 here [306MDH26]
         extImpId = Some(upsertedPageExtId),
         authorId = owen.id,
         pageType = PageType.Discussion)
 
       lazy val upsertedPageOnlyExtId = PageMeta333.copy(
+        version = 2,  // version bumped to 2 here [306MDH26]
         extImpId = Some(upsertedPageExtId))
 
       "create site" in {
@@ -532,6 +540,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           pageAltIds = Set(oldPageAltId))
 
       lazy val upsertedPage = PageMeta333.copy(
+        version = 2,  // version bumped to 2 here [306MDH26]
         extImpId = Some(upsertedExtId),
         authorId = owen.id,
         pageType = PageType.Discussion)

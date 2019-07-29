@@ -541,6 +541,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       newMeta.categoryId.orNullInt,
       newMeta.embeddingPageUrl.orNullVarchar,
       newMeta.authorId.asAnyRef,
+      now.asTimestamp,
       newMeta.publishedAt.orNullTimestamp,
       // Always write to bumped_at so SQL queries that sort by bumped_at works.
       newMeta.bumpedOrPublishedOrCreatedAt.asTimestamp,
@@ -589,9 +590,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         category_id = ?,
         EMBEDDING_PAGE_URL = ?,
         author_id = ?,
-        -- now_utc can otherwise be < created_at, because created_at is from the JVM,
-        -- but now_utc from the database. COULD use the JVM's date here too, instead?
-        UPDATED_AT = greatest(created_at, now_utc()),
+        UPDATED_AT = greatest(created_at, ?),
         PUBLISHED_AT = ?,
         BUMPED_AT = ?,
         LAST_REPLY_AT = ?,
