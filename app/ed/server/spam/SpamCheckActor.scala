@@ -105,13 +105,17 @@ class SpamCheckActor(
     // sites and we synchronize on site id — otherwise, tends to run into:
     //   """PSQLException: ERROR:
     //       could not serialize access due to read/write dependencies among transactions""".
+    // at least if the server restarts, and there're lots of pending spam checks
+    // that would get handled all at once together.
     runFuturesSequentially(manyFutureResults) { case (spamCheckTask, futureResults) =>
       futureResults.map({ spamCheckResults =>
         handleResults(spamCheckTask, spamCheckResults)
       })(execCtx).recover({
         case throwable: Throwable =>
           // Noop. We'll retry later after the checkingNowCache item has expired. [205FKPJ096]
-          p.Logger.warn(s"Error executing spam check task [TyE306MWDNF2]", throwable)
+          // (Or could do exponential backoff? Skip this spam check forever after X attempts?)
+          p.Logger.warn(
+              s"Error executing this spam check task: $spamCheckTask [TyE306MWDNF2]", throwable)
       }) (execCtx)
     } (execCtx)
   }
