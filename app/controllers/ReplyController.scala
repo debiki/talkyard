@@ -180,9 +180,30 @@ object EmbeddedCommentsPageCreator {
                                           // But that's not backw compat?
 
           if (anyOtherIsNotUrl) {
-            // Skip this page id. It has a different discussion id; it's a different discussion.
+            // There's a page at the same url, but it has a different discussion id,
+            // so it's a different discussion.
+            // This means the blog uses different discussion ids for the same url
+            // — then we'll create different discussions, for the same url. To make it
+            // possible to embed different discussions at the same url — that was useful
+            // for someone's map application; he wanted to open Javascript popups with
+            // embedded comments for various locations at the map, each one with its
+            // own separate discussion and discussion id (but same page and url).
+            // So, proceed with calling
+            //   tryCreateEmbeddedCommentsPage()
+            // below.
           }
           else {
+            // Shouldn't altPageId now be added to the lookup ids for this emb disc?
+            // So this works:
+            // 1) Create discussion, no disc id, just url.
+            // 2) Edit the blog source, add ids to all discussions.
+            // 3) View the discussion. Now the new lookup id (alt id) gets sent to the server,
+            // which could remember it here?
+            // 4) Move the blog to a different domain.
+            // 5) Lookup — now, needs to have remembered the id in step 3,
+            // since now new url.
+            // However, 3 will happen only for blog posts one reloads, after having
+            // edited the blog and added ids.
             return (pageId, None)
           }
       }

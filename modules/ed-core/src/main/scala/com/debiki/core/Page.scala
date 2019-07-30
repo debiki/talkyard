@@ -371,7 +371,7 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
     val body = page.parts.body
     def bodyVotes(fn: Post => Int): Int = body.map(fn) getOrElse 0
 
-    var newMeta = copy(  // code review: this = (...) is identical to [0969230876]
+    var newMeta = copy(
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,

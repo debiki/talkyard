@@ -978,7 +978,7 @@ package object core {
   def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
-  def COULD_OPTIMIZE = ()
+  def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()

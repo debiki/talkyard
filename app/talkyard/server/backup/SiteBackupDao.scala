@@ -483,7 +483,12 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             throwBadRequestIf(remappedPageTempId(catTempId.sectionPageId) != oldCat.sectionPageId,
               "TyE205TSH5", "Cannot change section page id, not implemented")
 
-            TESTS_MISSING // move page to new cat, with 1) same sect id (ok) and 2) a different (bad).
+            BUG // harmless: Moving a sub cat to another cat, messes up the topic counts
+            // for the old and new parent cats. [NCATTOPS] Maybe remove category topic
+            // counts? Only remember current approx topic per day/week/etc?
+
+            TESTS_MISSING // move cat to new parent cat, with 1) same sect id (ok) and
+            // 2) a different (bad).
             val anyNewParentCatRealId = catTempId.parentId.map(remappedCategoryTempId)
             anyNewParentCatRealId match {
               case None =>

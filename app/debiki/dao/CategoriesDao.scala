@@ -31,6 +31,11 @@ case class SectionCategories(
   rootCategory: Category,
   categoriesExclRoot: immutable.Seq[Category]) {
 
+  categoriesExclRoot.find(_.id == rootCategory.id) foreach { badRootCat =>
+    throwIllegalArgument(o"""The root category $badRootCat is included in
+      categoriesExclRoot [TyE7WKTL02XT4]""")
+  }
+
   categoriesExclRoot.find(_.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>
     throwIllegalArgument(o"""Category $badCat has a different section page id
       than the root cat: $rootCategory [TyE05RMDRYDK4]""")
@@ -41,7 +46,7 @@ case class SectionCategories(
   }
 
   categoriesExclRoot.find(c => c.parentId.isNot(rootCategory.id) &&
-      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>
+      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>  // [On2]
     throwIllegalArgument(s"Category $badCat has a parent cat in a different site section [TyE4WHUS25]")
   }
 
@@ -77,10 +82,10 @@ case class CategoryToSave(
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
 
-  //require ok ext id
-  //require ok slug
+  //require ok ext id [05970KF5]
+  //require ok slug [05970KF5]
 
-  // ! + add ok chars db constraint, for ext id?  later, for slug too, but be sure to rm bad chars first.
+  // ! + add ok chars db constraint [05970KF5], for ext id?  later, for slug too, but be sure to rm bad chars first.
 
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
@@ -343,7 +348,6 @@ trait CategoriesDao {
     anyCategory map { category =>
       val anyRootCategory = rootCategories.find(_.sectionPageId == category.sectionPageId)
       (category, anyRootCategory getOrDie "TyE205KJF45")
-          //rootCategory.flatMap(_.defaultSubCatId is category.id)
     }
   }
 
@@ -495,7 +499,7 @@ trait CategoriesDao {
       val oldCategory = tx.loadCategory(categoryId).getOrElse(throwNotFound(
         "DwE5FRA2", s"Category not found, id: $categoryId"))
       // Currently cannot change parent category because then topic counts will be wrong.
-      // Could just remove all counts, who cares anyway
+      // Could just remove all counts, barely matters? [NCATTOPS]
       require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
       val editedCategory = oldCategory.copy(
         extImpId = editCategoryData.extId,
