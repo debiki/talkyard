@@ -56,16 +56,16 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
   function createPasswordTestData() {
     const testId = utils.generateTestId();
-    const embeddingHostPort = `test--ec-${testId}.localhost:8080`;
-    const localHostname     = `test--ec-${testId}-localhost-8080`;
+    const embeddingHostPort = `test--imp-dsq-${testId}.localhost:8080`;
+    const localHostname     = `test--imp-dsq-${testId}-localhost-8080`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
       testId: testId,
       embeddingUrl: `http://${embeddingHostPort}/`,
       origin: `http://comments-for-${localHostname}.localhost`,
-      orgName: "E2E Org Name",
-      fullName: 'E2E Test ' + testId,
+      orgName: "E2E Imp Dsq Test",
+      fullName: 'E2E Imp Dsq Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'owen_owner',
       password: 'publ-ow020',
@@ -104,15 +104,17 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
   const fourRepliesPageUrlPath = 'four-replies';
   const oneReplyPageUrlPath = '2019/a-blog-post-one-reply';
+  const pageCreatedLaterUrlPath = 'page-created-later';
   const noDisqusRepliesPageUrlPath = 'no-dsq-comments';
 
-  it("He creates three embedding pages", () => {
+  it("He creates four embedding pages", () => {
     // 2019 is for the oneReplyPageUrlPath.
     if (!fs.existsSync(dirPath + '/2019')) {
       fs.mkdirSync(dirPath + '/2019', { recursive: true, mode: 0o777 });
     }
     makeEmbeddingPage(fourRepliesPageUrlPath);
     makeEmbeddingPage(oneReplyPageUrlPath);
+    makeEmbeddingPage(pageCreatedLaterUrlPath);
     makeEmbeddingPage(noDisqusRepliesPageUrlPath);
   });
 
@@ -120,7 +122,6 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   function makeEmbeddingPage(urlPath: string) {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
-    console.log('htmlToPaste: ' + htmlToPaste);
     fs.writeFileSync(`${dirPath}/${urlPath}.html`, `
 <html>
 <head>
@@ -178,16 +179,28 @@ ${htmlToPaste}
 
   // ----- Import comments
 
-  const disqusXmlDumpFilePath = dirPath + '/disqus-export.xml';
-  const talkyardPatchFilePath = dirPath + '/talkyard-disqus.typatch.json';
+  const disqusXmlDumpFilePath  = dirPath + '/disqus-export.xml';
+  const disqusXmlDumpFilePath2 = dirPath + '/disqus-export-2.xml';
+  const talkyardPatchFilePath  = dirPath + '/talkyard-disqus.typatch.json';
+  const talkyardPatchFilePath2 = dirPath + '/talkyard-disqus-2.typatch.json';
 
   const year2030AuthorEmail = 'e2e-test-sandra.sandell@example.com';
   const year2030CommentText =
     "Year 2030: Your cat asks you to wait for her to finish all the milk with dandelions";
 
+  const oatMilkText = "With milk, did you mean Dandelion Milk, right. But not oat milk or soy milk";
+  const oatMilkAuthorEmail = "e2e-test-villy-vegan@example.com";
+
+  const commentOnPageCreatedLaterText = 'commentOnPageCreatedLaterText';
+
   it(`Owen exports Disqus comments to a file: ${disqusXmlDumpFilePath}`, () => {
+    createDisqusXmlDumpFile({ withExtraComments: false, dst: disqusXmlDumpFilePath });
+  });
+
+
+  function createDisqusXmlDumpFile(ps: { withExtraComments: boolean, dst: string }) {
     const embeddingOrigin = data.embeddingUrl;
-    fs.writeFileSync(disqusXmlDumpFilePath, `
+    fs.writeFileSync(ps.dst, `
     <?xml version="1.0" encoding="utf-8"?>
     <disqus
         xmlns="http://disqus.com"
@@ -239,6 +252,26 @@ ${htmlToPaste}
     <isDeleted>false</isDeleted>
     </thread>
 
+    ${ !ps.withExtraComments ? '' : `
+    <thread dsq:id="2222222222">
+    <id>node/2222</id>
+    <forum>disqus_test_forum</forum>
+    <category dsq:id="111" />
+    <link>${embeddingOrigin + pageCreatedLaterUrlPath}</link>
+    <title>Comments posted here later</title>
+    <message />
+    <createdAt>2019-08-01T00:01:02Z</createdAt>
+    <author>
+    <email>slow-commenter@example.com</email>
+    <name>Slow Commenter</name>
+    <isAnonymous>false</isAnonymous>
+    <username>slow_commenter</username>
+    </author>
+    <ipAddress>221.222.223.224</ipAddress>
+    <isClosed>false</isClosed>
+    <isDeleted>false</isDeleted>
+    </thread>
+    `}
 
     <!-- <posts> -->
 
@@ -257,6 +290,36 @@ ${htmlToPaste}
     <thread dsq:id="1111111111" />
     </post>
 
+    ${ !ps.withExtraComments ? '' : `
+    <post dsq:id="2011110002">
+    <id>wp_id=202</id>
+    <message><![CDATA[<p>${oatMilkText}</p>]]></message>
+    <createdAt>2019-08-04T01:02:03Z</createdAt>
+    ${ /* Let's skip the isDeleted and isSpam fields */ ''}
+    <author>
+    <email>${oatMilkAuthorEmail}</email>
+    <name>Villy Vegan</name>
+    <isAnonymous>true</isAnonymous>
+    </author>
+    <ipAddress>110.112.3.4</ipAddress>
+    <thread dsq:id="1111111111" />
+    </post>
+
+    <post dsq:id="2022220001">
+    <id>wp_id=9249358</id>
+    <message><![CDATA[<p>${commentOnPageCreatedLaterText}</p>]]></message>
+    <createdAt>2019-08-02T01:02:03Z</createdAt>
+    <isDeleted>false</isDeleted>
+    <isSpam>false</isSpam>
+    <author>
+    <email>slow-commenter@example.com</email>
+    <name>Slow Commenter</name>
+    <isAnonymous>true</isAnonymous>
+    </author>
+    <ipAddress>110.134.124.59</ipAddress>
+    <thread dsq:id="2222222222" />
+    </post>
+    `}
 
     <post dsq:id="100002">
     <id>wp_id=101223</id>
@@ -353,24 +416,34 @@ ${htmlToPaste}
 
     </disqus>
     `);
-  });
+  }
+
 
   it(`... and converts to Talkyard format: ${talkyardPatchFilePath}`, () => {
-    execSync(
-        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
-          `--disqusXmlExportFile=${disqusXmlDumpFilePath} ` +
-          `--writeTo=${talkyardPatchFilePath}`);
+    convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath, talkyardPatchFilePath);
   });
 
+  function convertDisqusFileToTalkyardFile(src: string, dst: string) {
+    execSync(
+        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+          `--disqusXmlExportFile=${src} ` +
+          `--writeTo=${dst}`);
+  }
+
+
   it("... and posts to the Talkyard server", () => {
+    postCommentsToTalkyard(talkyardPatchFilePath);
+  });
+
+  function postCommentsToTalkyard(filePath: string) {
     const cmd =
         'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
-          `--talkyardJsonPatchFile=${talkyardPatchFilePath} ` +
+          `--talkyardJsonPatchFile=${filePath} ` +
           `--sysbotApiSecret=${apiSecret} ` +
           `--sendTo=${talkyardSiteOrigin}`
     logAndDie.logMessage(`Executing this:\n  ${cmd}`)
     execSync(cmd);
-  });
+  }
 
 
   // ----- Comments appear?
@@ -392,13 +465,15 @@ ${htmlToPaste}
   it("She can post a reply, to the Disqus improted comment", () => {
     mariasBrowser.complex.replyToPostNr(
         c.FirstReplyNr, mariasReplyThreeToImportedComment, { isEmbedded: true });
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    mariasBrowser.topic.waitForPostAssertTextMatches(
+        c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
   it("... the reply is there after page reload", () => {
     mariasBrowser.refresh();
     mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
+    mariasBrowser.topic.waitForPostAssertTextMatches(
+        c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
   });
 
   it("... the comment author (a guest user) gets a reply notf email", () => {
@@ -413,7 +488,6 @@ ${htmlToPaste}
   });
 
   it("... and to Sandra the guest", () => {
-    owensBrowser.go(data.embeddingUrl + oneReplyPageUrlPath)
     owensBrowser.complex.replyToPostNr(
         c.FirstReplyNr, owensReplyToSandra, { isEmbedded: true });
   });
@@ -447,13 +521,17 @@ ${htmlToPaste}
   });
 
   it("... and sees her two comments, plus 4 imported", () => {
+    checkSantaSailingPageAfterDisqusImportNr(1);
+  });
+
+  function checkSantaSailingPageAfterDisqusImportNr(importNr: number) {
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, mariasReplyOne);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyTwo);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "a Santa Sailing Ship");
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, "reach the escape velocity");
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, "in a way surprising");
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 5, "tried using the pets");
-  });
+  }
 
   it("... but only those — not the isDeleted and the isSpam comments", () => {
     mariasBrowser.topic.assertNumRepliesVisible(2 + 4   + 0  + 0);
@@ -474,11 +552,96 @@ ${htmlToPaste}
   });
 
   it("... and sees 4 comments: 1 imported from Disqus, 1 is hers, and Owen's 2", () => {
+    checkCatsAndMilkPageAfterDisqusImportNr(1);
+  });
+
+  function checkCatsAndMilkPageAfterDisqusImportNr(importNr: number) {
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, mariasReplyThreeToImportedComment);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, owensReplyToMaria);
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 3, owensReplyToSandra);
-    mariasBrowser.topic.assertNumRepliesVisible(4);
+    let numTotal = 4;
+    if (importNr === 3) {
+      // Now we have re-run the import, and imported one more comment.
+      mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 4, oatMilkText);
+      numTotal += 1;
+    }
+    mariasBrowser.topic.assertNumRepliesVisible(numTotal);
+  }
+
+
+  // ----- Importing the same thing many times
+
+  it("Owen re-imports the same Disqus comments, again", () => {
+    postCommentsToTalkyard(talkyardPatchFilePath);
+  });
+
+  it("Maria refreshes the page", () => {
+    mariasBrowser.refresh();
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... nothing has changed — there are no duplicated Disqus comments", () => {
+    checkCatsAndMilkPageAfterDisqusImportNr(2);
+  });
+
+  it("She goes to the santa sailing page", () => {
+    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... it also didn't change after the re-import", () => {
+    checkSantaSailingPageAfterDisqusImportNr(2);
+  });
+
+
+  // ----- Importing the same thing plus **more** things
+
+  it(`Owen generates a new Disqus export file, with even more contents`, () => {
+    createDisqusXmlDumpFile({ withExtraComments: true, dst: disqusXmlDumpFilePath2 });
+  });
+
+  it(`... and converts to Talkyard format: ${talkyardPatchFilePath2}`, () => {
+    convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath2, talkyardPatchFilePath2);
+  });
+
+  it("Owen re-imports the Disqus comments, with an extra comment and a new page!! wow!", () => {
+    postCommentsToTalkyard(talkyardPatchFilePath2);
+  });
+
+  it("Maria returns to the cat and milk page", () => {
+    mariasBrowser.go('/' + oneReplyPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... and sees 5 comments: 1 + 1 new, from Disqus, her 1, and Owen's 2", () => {
+    checkCatsAndMilkPageAfterDisqusImportNr(3);
+  });
+
+  it("But on the santa sailing page ...", () => {
+    mariasBrowser.go(data.embeddingUrl + fourRepliesPageUrlPath);
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... nothing has changed", () => {
+    checkSantaSailingPageAfterDisqusImportNr(3);
+  });
+
+  it("Maria goes to a page created later", () => {
+    mariasBrowser.go('/' + pageCreatedLaterUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+  });
+
+  it("... and sees one comment, impored from Disqus, in the 3rd import run", () => {
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, commentOnPageCreatedLaterText);
+    mariasBrowser.topic.assertNumRepliesVisible(1);
+  });
+
+  it("The empty page is still empty. And will be, til the end of time", () => {
+    //server.playTimeMillis(EndOfUniverseMillis - nowMillis() - 1);
+    mariasBrowser.go('/' + noDisqusRepliesPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
 });

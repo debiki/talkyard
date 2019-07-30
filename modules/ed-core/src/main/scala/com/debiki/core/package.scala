@@ -59,6 +59,9 @@ package object core {
   type CategoryId = Int
   val NoCategoryId = 0
 
+  // The Discourse help forum currently has 28 categories so 100 is a lot.
+  val MaxCategories = 100
+
   type PublSiteId = String
 
   type SiteId = Int
@@ -339,6 +342,7 @@ package object core {
   def UnknownUserName: String = Participant.UnknownUserName
   def UnknownUserBrowserId: String = Participant.UnknownUserBrowserId
   def MaxGuestId: UserId = Participant.MaxGuestId
+  def MaxCustomGuestId: UserId = Participant.MaxCustomGuestId
   def LowestNonGuestId: UserId = Participant.LowestNonGuestId
   def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
 
@@ -961,6 +965,7 @@ package object core {
     */
   def UNTESTED = ()       // If the code might not work, e.g. has never been run.
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
+  def SHOULD_CODE_REVIEW = ()
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
   def SECURITY = ()       // Some security issue, not necessarily so very important
@@ -978,7 +983,7 @@ package object core {
   def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
-  def COULD_OPTIMIZE = ()
+  def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()

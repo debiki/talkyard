@@ -176,7 +176,7 @@ object PageMeta {
   * @param htmlHeadTitle Text for the html <title>...</title> tag.
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
   */
-case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
+case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
   extImpId: Option[ExtImpId] = None,
   pageType: PageType,
@@ -371,7 +371,9 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
     val body = page.parts.body
     def bodyVotes(fn: Post => Int): Int = body.map(fn) getOrElse 0
 
-    var newMeta = copy(  // code review: this = (...) is identical to [0969230876]
+    var newMeta = copy(
+      bumpedAt = When.anyJavaDateLatestOf(
+        bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
       frequentPosterIds = page.parts.frequentPosterIds,
@@ -391,31 +393,10 @@ case class PageMeta( // [exp] ok use. Missing, fine: num_replies_to_review  incl
       answerPostId = page.anyAnswerPost.map(_.id),
       version = page.version + 1)
 
-    if (newMeta.numRepliesVisible > numRepliesVisible) {
-      newMeta = newMeta.copy(bumpedAt = page.parts.lastVisibleReply.map(_.createdAt))
-    }
     newMeta
   }
 
 }
-
-
-case class PageMetaNumBumps(
-  lastApprovedReplyAt: Option[ju.Date] = None,
-  lastApprovedReplyById: Option[UserId] = None,
-  frequentPosterIds: Seq[UserId] = Seq.empty,
-  numLikes: Int = 0,
-  numWrongs: Int = 0,
-  numBurys: Int = 0,
-  numUnwanteds: Int = 0,
-  numRepliesVisible: Int = 0,
-  numRepliesTotal: Int = 0,
-  numPostsTotal: Int = 0,
-  numOrigPostLikeVotes: Int = 0,
-  numOrigPostWrongVotes: Int = 0,
-  numOrigPostBuryVotes: Int = 0,
-  numOrigPostUnwantedVotes: Int = 0,
-  numOrigPostRepliesVisible: Int = 0)
 
 
 

@@ -444,7 +444,7 @@ class JsonMaker(dao: SiteDao) {
 
 
   def makeSiteSectionsJson(): JsValue = {
-    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
+    SECURITY; COULD // not show any hidden/private site sections. Currently harmless though:
     // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
     SECURITY; SHOULD // not show any section, if not logged in, and login-required-to-read.
     /* later, something like:
@@ -455,10 +455,10 @@ class JsonMaker(dao: SiteDao) {
     val rootCats = dao.getRootCategories()
     val jsonObjs = for {
       rootCat <- rootCats
-      // (We're not in a transaction, the page might be gone [transaction])
+      // (We're not in a transaction, the page might be gone.)
       metaAndPath <- dao.getPagePathAndMeta(rootCat.sectionPageId)
     } yield {
-      Json.obj(
+      Json.obj(  // Typescript: SiteSection
         "pageId" -> metaAndPath.pageId,
         "path" -> metaAndPath.path.value,
         "pageRole" -> metaAndPath.pageType.toInt,
@@ -785,14 +785,6 @@ class JsonMaker(dao: SiteDao) {
     val sectCats =
       dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
     makeCategoriesJsonNoDbAccess(sectCats)
-    /*
-    if (categories.isEmpty)
-      return Json.arr()
-
-    val rootCat = categories.find(_.isRoot) getOrDie "TyE05WKDHJ5"
-    JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, rootCat.defaultSubCatId is category.id, rootCatId = rootCat.id)
-    }) */
   }
 
 
@@ -917,15 +909,6 @@ class JsonMaker(dao: SiteDao) {
         : JsArray = {
     val sectCats = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
     makeCategoriesJsonNoDbAccess(sectCats)
-    /*
-    if (categories.isEmpty)
-      return Json.arr()
-
-    val rootCat = categories.find(_.isRoot) getOrDie "TyE7WKTH67S5"
-    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, rootCat.defaultSubCatId is category.id, rootCatId = rootCat.id)
-    })
-    categoriesJson */
   }
 
 
@@ -1480,8 +1463,11 @@ object JsonMaker {
     if (category.isDeleted) {
       json += "isDeleted" -> JsTrue
     }
-    if (includeDetails && category.extImpId.isDefined) {
-      json += "extId" -> JsString(category.extImpId.get)
+    if (includeDetails) {
+      json += "sectionPageId" -> JsString(category.sectionPageId)
+      if (category.extImpId.isDefined) {
+        json += "extId" -> JsString(category.extImpId.get)
+      }
     }
     json
   }

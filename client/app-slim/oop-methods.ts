@@ -662,6 +662,7 @@ export function store_ancestorsCategoriesCurrLast(
   const ancestors = [];
   const cats: Category[] = store.currentCategories;
   let nextCatId = categoryId;
+  // Stop at 10 in case of cycles. Should never be more than 2 (base cat, sub cat).
   for (let i = 0; i < 10; ++i) {
     const nextCat = _.find(cats, c => c.id === nextCatId);  // [On2]
     if (!nextCat) {

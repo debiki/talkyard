@@ -152,7 +152,7 @@ trait PagesDao {
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
     val settings = loadWholeSiteSettings(tx)
 
-    // die unless ok extId
+    // die unless ok extId  [05970KF5]
 
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
       authorAndLevels, groupIds,
@@ -646,27 +646,7 @@ trait PagesDao {
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
         tx: SiteTransaction) {
     val page = PageDao(pageId, tx)
-    var newMeta = page.meta.copyWithUpdatedStats(page) /*
-    var newMeta = page.meta.copy(  // code review: this = (...) is identical to [0969230876]
-      lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
-      lastApprovedReplyById = page.parts.lastVisibleReply.map(_.createdById),
-      frequentPosterIds = page.parts.frequentPosterIds,
-      numLikes = page.parts.numLikes,
-      numWrongs = page.parts.numWrongs,
-      numBurys = page.parts.numBurys,
-      numUnwanteds = page.parts.numUnwanteds,
-      numRepliesVisible = page.parts.numRepliesVisible,
-      numRepliesTotal = page.parts.numRepliesTotal,
-      numPostsTotal = page.parts.numPostsTotal,
-      numOrigPostLikeVotes = page.parts.theBody.numLikeVotes,
-      numOrigPostWrongVotes = page.parts.theBody.numWrongVotes,
-      numOrigPostBuryVotes = page.parts.theBody.numBuryVotes,
-      numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
-      numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
-      answeredAt = page.anyAnswerPost.map(_.createdAt),
-      answerPostId = page.anyAnswerPost.map(_.id),
-      version = page.version + 1)  */
-
+    var newMeta = page.meta.copyWithUpdatedStats(page)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }

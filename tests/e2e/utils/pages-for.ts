@@ -2585,8 +2585,15 @@ function pagesFor(browser) {
 
 
     categoryDialog: {
-      fillInFields: function(data: { name: string, setAsDefault?: boolean, extId?: string }) {
-        api.waitAndSetValue('#e2eCatNameI', data.name);
+      fillInFields: function(data: { name?: string, slug?: string,
+            setAsDefault?: boolean, extId?: string }) {
+        if (data.name) {
+          api.waitAndSetValue('#e2eCatNameI', data.name);
+        }
+        if (data.slug) {
+          api.waitAndClick('#e2eShowCatSlug');
+          api.waitAndSetValue('#e2eCatSlug', data.slug);
+        }
         if (data.setAsDefault) {
           api.waitAndClick('#e2eSetDefCat');
         }

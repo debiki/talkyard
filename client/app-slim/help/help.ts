@@ -36,12 +36,12 @@ export function isHelpMessageClosedAnyVersion(store: Store, messageId: string): 
 
 export function isHelpMessageClosed(store: Store, message: HelpMessage) {
   if (!store.me) return false;
-  var closedVersion = store.me.closedHelpMessages[message.id];
+  const closedVersion = store.me.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
 }
 
 
-export var HelpMessageBox = createComponent({   // RENAME to TipsBox
+export const HelpMessageBox = createComponent({   // RENAME to TipsBox
   mixins: [StoreListenerMixin],
 
   getInitialState: function() {
@@ -53,26 +53,36 @@ export var HelpMessageBox = createComponent({   // RENAME to TipsBox
   },
 
   computeState: function() {
-    var message: HelpMessage = this.props.message;
+    const message: HelpMessage = this.props.message;
     const store: Store = ReactStore.allData();
-    var me: Myself = store.me;
+    const me: Myself = store.me;
     if (!store.userSpecificDataAdded) {
       // Don't want search engines to index help text.
       return { hidden: true };
     }
-    var closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
-    var thisMessClosedVersion = closedMessages[message.id];
+    const closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
+    const thisMessClosedVersion = closedMessages[message.id];
     return { hidden: thisMessClosedVersion === message.version };
   },
 
   hideThisHelp: function() {
     ReactActions.hideHelpMessages(this.props.message);
+
+    const store: Store = ReactStore.allData();
+    const me: Myself = store.me;
+    const closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
+    const numClosed = _.size(closedMessages);
+    const minNumClosedToShowUnhideTips = 3;
+
     // Wait a short while with opening this, so one first sees the effect of clicking Close.
-    if (this.props.showUnhideTips !== false) setTimeout(
-          () => morebundle.openHelpDialogUnlessHidden({
-      content: r.span({}, t.help.YouCanShowAgain_1, r.b({}, t.help.YouCanShowAgain_2), '.'),
-      id: '5YK7EW3',
-    }), 550);
+    // Also, wait until one has clicked 3? Close buttons — to me, it otherwise feels annoying
+    // that this tips pops up directly, and I have to close it too.
+    if (this.props.showUnhideTips !== false && numClosed >= minNumClosedToShowUnhideTips) {
+      setTimeout(() => morebundle.openHelpDialogUnlessHidden({
+        content: r.span({}, t.help.YouCanShowAgain_1, r.b({}, t.help.YouCanShowAgain_2), '.'),
+        id: '5YK7EW3',
+      }), 550);
+    }
   },
 
   render: function() {
@@ -82,16 +92,16 @@ export var HelpMessageBox = createComponent({   // RENAME to TipsBox
     // If there are more help dialogs afterwards, show a comment icon instead to give
     // the impression that we're talking with the computer. Only when no more help awaits,
     // show the close (well "cancel") icon.
-    var okayIcon = this.props.message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
-    var okayButton = this.props.message.alwaysShow
+    const okayIcon = this.props.message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
+    const okayButton = this.props.message.alwaysShow
         ? null
         : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
             this.props.message.okayText || t.Hide);
 
-    var className = this.props.className || this.props.message.className || '';
-    var largeClass = this.props.large ? ' dwHelp-large' : '';
-    var warningClass = this.props.message.isWarning ? ' esHelp-warning' : '';
-    var classes = className + ' dw-help' + largeClass + warningClass;
+    const className = this.props.className || this.props.message.className || '';
+    const largeClass = this.props.large ? ' dwHelp-large' : '';
+    const warningClass = this.props.message.isWarning ? ' esHelp-warning' : '';
+    const classes = className + ' dw-help' + largeClass + warningClass;
     return (
       r.div({ className: classes },
         r.div({ className: 'dw-help-text' },

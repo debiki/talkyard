@@ -217,8 +217,8 @@ object RateLimits {
     val key = "ExSt"
     val what = "Exported the site too many times"
     def maxPerFifteenSeconds = 1
-    def maxPerFifteenMinutes = 5
-    def maxPerDay = 8
+    def maxPerFifteenMinutes = 7
+    def maxPerDay = 12
     def maxPerDayNewUser = 0
   }
 
@@ -238,7 +238,7 @@ object RateLimits {
     val what = "Upserted dumps too many times"
     def maxPerFifteenSeconds = 1
     def maxPerFifteenMinutes = 5
-    def maxPerDay = 8
+    def maxPerDay = 9
     def maxPerDayNewUser = 0
   }
 

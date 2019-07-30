@@ -97,7 +97,7 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
-  def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
+  def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
@@ -247,7 +247,7 @@ trait SiteTransaction {
   def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
-  def loadPageMetasByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
+  def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
   def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
@@ -480,7 +480,7 @@ trait SiteTransaction {
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
         : immutable.Seq[MemberInclDetails]
 
-  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+  def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails]
 
   def loadOwner(): Option[UserInclDetails]

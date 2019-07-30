@@ -209,12 +209,18 @@ interface TalkyardTranslations {
   },
 
 
+  // Forum categories
+  fcs: {
+    All: string; // "All (categories)", shorter than AllCats
+  },
+
+
   // Forum buttons
   fb: {
     TopicList: string;
     from: String;
     in: String;
-    AllCats: string;
+    AllCats: string;  // REFACTOR move to  fcs  above
     Active: string;
     ActiveDescr: string;
     New: string;

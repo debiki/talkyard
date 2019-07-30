@@ -873,7 +873,7 @@ interface Ancestor {  // server side: [6FK02QFV]
 }
 
 
-interface Forum {  // merge into and replace with SiteSection?
+interface Forum {  // extend SiteSection? (then the server needs to add pageRole) or replace with?
   pageId: PageId;
   path: string;
   title: string;
@@ -1461,6 +1461,15 @@ interface LoadCategoryResponse {
   category: CategoryPatch;
   permissions: PermsOnPage[];
   groups: Group[];
+}
+
+
+interface SaveCategoryResponse {
+  publicCategories: Category[];     // right type?
+  restrictedCategories: Category[]; // right type?
+  myNewPermissions: PermsOnPage[];  // right type?
+  newCategoryId: CategoryId;
+  newCategorySlug: string;
 }
 
 

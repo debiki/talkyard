@@ -49,7 +49,8 @@ object PageParts {
 
 
   def lastVisibleReply(posts: Seq[Post]): Option[Post] = {
-    val replies: Seq[Post] = posts.filter(post => post.isReply && post.isVisible)
+    val replies: Seq[Post] = posts.filter(post =>
+      post.isReply && post.isVisible)  // (96502764)
     //replies.maxOptBy(_.createdAt.getTime) ?? why maxOptBy not found ??
     if (replies.isEmpty) None
     else Some(replies.maxBy(_.createdAt.getTime))
@@ -63,8 +64,8 @@ object PageParts {
     val numPostsByUserId = mutable.HashMap[UserId, Int]().withDefaultValue(0)
     for {
       post <- posts
-      if post.isReply && post.isVisible
-      if !ignoreIds.contains(post.createdById)
+      if post.isReply && post.isVisible  // (96502764)
+      if !ignoreIds.contains(post.createdById)  // [3296KGP]
     } {
       val numPosts = numPostsByUserId(post.createdById)
       numPostsByUserId(post.createdById) = numPosts + 1
@@ -199,7 +200,7 @@ abstract class PageParts {
 
   def frequentPosterIds: Seq[UserId] = {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
-    // entries in the Users column in the forum topic list. [7UKPF26]
+    // entries in the Users column in the forum topic list. [7UKPF26], and a test [206K94QTD]
     PageParts.findFrequentPosters(this.allPosts,
       ignoreIds = body.map(_.createdById).toSet ++ lastVisibleReply.map(_.createdById).toSet)
   }
@@ -267,8 +268,8 @@ abstract class PageParts {
     ancestorsOf(postNr).length
 
 
-  /** Ancestors, starting with postId's parent. */
-  def ancestorsOf(postNr: PostNr): List[Post] = {   // COULD change to Vector
+  /** Ancestors, starting with postId's parent. Dies if cycle. */
+  def ancestorsOf(postNr: PostNr): List[Post] = {   COULD_OPTIMIZE // change to ArrayBuffer + Vector
     var ancestors: List[Post] = Nil
     var curPost: Option[Post] = Some(thePostByNr(postNr))
     var numLaps = 0
@@ -278,7 +279,7 @@ abstract class PageParts {
     }) {
       numLaps += 1
       val theCurPost = curPost.get
-      // To mostly avoid O(n^2) time, don't check for cycles so very often.
+      // To mostly avoid O(n^2) time, don't check for cycles so very often. [On2]
       dieIf((numLaps % 1000) == 0 && ancestors.exists(_.nr == theCurPost.nr),
         "EsE7YKW2", s"Post cycle on page $pageId around post nr ${theCurPost.nr}")
       ancestors ::= theCurPost
@@ -294,6 +295,7 @@ abstract class PageParts {
 
     val postNrsVisited = mutable.HashSet[PostNr]()
 
+    // But this cycle check isn't needed? ancestorsOf won't return a cycle; it dieIf instead.
     def dieIfCycle(postNr: PostNr) {
       dieIf(postNrsVisited contains postNr,
         "TyEPSTANCCYCL", s"Post parent nrs form a cycle on page $pageId, these nrs: $postNrsVisited")

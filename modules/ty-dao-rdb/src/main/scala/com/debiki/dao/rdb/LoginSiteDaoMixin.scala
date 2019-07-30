@@ -57,7 +57,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       var isNewGuest = false
       for (i <- 1 to 2 if userId == 0) {
         runQuery("""
-          select u.user_id, u.ext_imp_id, u.created_at, gp.email_notfs from users3 u
+          select u.user_id, u.ext_id, u.created_at, gp.email_notfs from users3 u
             left join guest_prefs3 gp
                    on u.site_id = gp.site_id
                   and u.guest_email_addr = gp.email
@@ -65,6 +65,8 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           where u.site_id = ?
             and u.full_name = ?
             and u.guest_email_addr = ?
+            -- Users imported from e.g. Disqus have no browser id, and one shouldn't
+            -- be able to login as them. [494AYDNR]
             and u.guest_browser_id is not null
             and u.guest_browser_id = ?
           """,
@@ -72,7 +74,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
           rs => {
             if (rs.next) {
               userId = rs.getInt("USER_ID")
-              extImpId = getOptString(rs, "ext_imp_id")
+              extImpId = getOptString(rs, "ext_id")
               createdAt = Some(getWhen(rs, "created_at"))
               emailNotfsStr = rs.getString("EMAIL_NOTFS")
             }
@@ -90,11 +92,12 @@ trait LoginSiteDaoMixin extends SiteTransaction {
             insert into users3(
               site_id, user_id, created_at, full_name, guest_email_addr, guest_browser_id)
             select
-              ?, least(min(user_id) - 1, $MaxCustomGuestId), now_utc(), ?, ?, ?
+              ?, least(min(user_id) - 1, $MaxCustomGuestId), ?, ?, ?, ?
             from
               users3 where site_id = ?
             """,
-            List(siteId.asAnyRef, loginAttempt.name.trim, e2d(loginAttempt.email),
+            List(siteId.asAnyRef, now.asTimestamp,
+              loginAttempt.name.trim, e2d(loginAttempt.email),
               loginAttempt.guestBrowserId, siteId.asAnyRef))
           // (Could fix: `returning ID into ?`, saves 1 roundtrip.)
           // Loop one more lap to read ID.

@@ -180,8 +180,12 @@ export const ForumComponent = createReactClass(<any> {
     const activeCategory = this.getActiveCategory(currentCategorySlug);
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isGone) return;
-      dialog.open(activeCategory.id);
-      // BUG needs to call this.props.setCategory(edited-category.slug), if slug changed. [7AFDW01]
+      dialog.open(activeCategory.id, (serverResponse: SaveCategoryResponse) => {
+        const slugAfter = serverResponse.newCategorySlug;
+        if (slugAfter !== currentCategorySlug) {
+          this.setCategory(slugAfter);  // [7AFDW01]
+        }
+      });
     });
   },
 
@@ -461,7 +465,6 @@ const ForumButtons = createComponent({
       // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
       // just that we're going to show a restricted category, which isn't available before
       // user specific data added. (6KEWM02). )
-      // Or hen renamed the slug of an existing category. [7AFDW01]
       // Or hen is not allowed to access the category.
       return !store.userSpecificDataAdded ? null : r.p({},
           r.br(),
@@ -475,7 +478,7 @@ const ForumButtons = createComponent({
     const showsTopicList = !showsCategoryTree;
 
     const showFilterButton = settings_showFilterButton(settings, me);
-    const topicFilterFirst = me_uiPrefs(me).fbs !== UiPrefsForumButtons.CategoryDropdownFirst;
+    const topicFilterFirst = true; //me_uiPrefs(me).fbs !== UiPrefsForumButtons.CategoryDropdownFirst; CLEAN_UP
 
     // A tester got a little bit confused in the categories view, because it starts with
     // the filter-*topics* button. So insert this title, before, instead.
@@ -614,14 +617,14 @@ const ForumButtons = createComponent({
 
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
 
-    const filterAndSortButtons = topicFilterFirst
+    const filterAndSortButtons = /*topicFilterFirst
         ? r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
             anyPageTitle,
             topicFilterButton,
             latestNewTopButton,
             categoryTreeLink,
             topicListLink)
-        : r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
+        :*/ r.div({ className: 'esForum_catsNav s_F_BB-Topics_Filter' },
             anyPageTitle,
             topicFilterButton,
             latestNewTopButton,
@@ -780,8 +783,11 @@ const LoadAndListTopics = createFactory({
     const orderOffset: OrderOffset = this.getOrderOffset(nextProps);
     orderOffset.topicFilter = nextProps.queryParams.filter;
     if (isNewView) {
+      const thisElem = <HTMLElement> ReactDOM.findDOMNode(this);
       this.setState({
-        minHeight: (<HTMLElement> ReactDOM.findDOMNode(this)).clientHeight,
+        // Sometimes, there's no elem — happens if changing a category's slug. [7AFDW01]
+        // What do then? Hmm, min height 400px should fit in most devices?
+        minHeight: thisElem ? thisElem.clientHeight : 400,
         topics: null,
         showLoadMoreButton: false
       });
@@ -1053,6 +1059,10 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
   const activeCategory: Category = props.activeCategory;
 
   const catsActiveLast = store_ancestorsCategoriesCurrLast(store, activeCategory.id);
+
+  // catsActiveLast is empty, if we haven't selected any category. Then, currently,
+  // activeCategory is a dummy category for the whole site section. (What about
+  // using the root category (include it in the json from the server) instead?)
   const baseCat: Category = catsActiveLast[0] || activeCategory;
   const anySubCat: Category | undefined = catsActiveLast[1];
   const totalDepth = catsActiveLast.length;
@@ -1064,13 +1074,16 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
       store.currentCategories.filter(c =>
           // If we're showing all categories, the active category id is the root category,
           // then need to compare c.parnetId with the root category id:
+          // Otherwise, we want the siblings to baseCat, that is, the same parentId.
           activeCategory.isForumItself
               ? c.parentId === activeCategory.id
               : c.parentId === baseCat.parentId);
 
   const subCats = activeCategory.isForumItself
       ? []  // (otherwise would include all base cats again — the All Cats dummy id is the root id)
-      : store.currentCategories.filter(c => c.parentId === baseCat.id);
+      : store.currentCategories.filter(c =>
+          // (Cannot use `=== anySubCat.parentId` — maybe we haven't selected any sub cat.)
+          c.parentId === baseCat.id);
 
   const baseCatDropdown = makeCatDropdown(store, '', baseCats, baseCat, false, !subCats.length);
   const anySubCatDropdown = makeCatDropdown(store, baseCat.slug, subCats, anySubCat, true, true);
@@ -1089,17 +1102,17 @@ function CatNameDescr(props: { store: Store, activeCategory: Category,
     });
     categoryMenuItems.unshift(
         MenuItem({ key: -1,
-          active: thisCat && thisCat.isForumItself, // BUG doesn't work for sub cats?
+          active: thisCat && thisCat.isForumItself, // (this won't work for sub cats, barely matters)
           onClick: () => props.setCategory(parentCatSlug) }, t.fb.AllCats));
 
-    const activeCategoryIcon = category_iconClass(thisCat, store);
+    const activeCategoryIcon = !thisCat ? null : category_iconClass(thisCat, store);
     const subCatClass = isSubCat ? ' s_F_Ts_Cat_Ttl-SubCat' : '';
 
     const categoriesDropdownButton =
         ModalDropdownButton({
             className: 'esForum_catsDrop active s_F_Ts_Cat_Ttl' + subCatClass, pullLeft: true,
             title: r.span({ className: activeCategoryIcon },
-                  (thisCat ? thisCat.name : (isSubCat ? "All" : t.fb.AllCats)),  // I18N "All" —> t.fb.All
+                  thisCat ? thisCat.name : (isSubCat ? t.fcs.All : t.fb.AllCats),
                   isLastCat ? r.span({ className: 'caret' }) : null) },
           r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
               categoryMenuItems));

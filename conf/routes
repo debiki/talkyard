@@ -246,13 +246,25 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/upload-backup          talkyard.server.backup.SiteBackupController.uploadBackup
 #POST  /-/import-backup          talkyard.server.backup.SiteBackupController.importBackup
 
-# ? plus header  Accept: application/json,  or (later):  application/zip,  or  application/protobuf
-GET   /-/export-site             talkyard.server.backup.SiteBackupController.exportSiteJson
 
-# Deprecated?
+# (Site 121 currenlty uses)
+# Maybe should be POST instead so any <a href ...> won't accidentally trigger a full site dump?
 GET   /-/export-site-json        talkyard.server.backup.SiteBackupController.exportSiteJson
+#
+# Or incl the word 'dump', so one undersands can be used with /-/create-site-from-dump?
+# However, what if I add url params for exporting only parts of a site? Then, would get a patch, not dump.
+#OST  /-/export-site-dump-json   talkyard.server.backup.SiteBackupController.exportSiteJson
+#OST  /-/export-site-dump-zip    talkyard.server.backup.SiteBackupController.exportSiteZip
+#OST  /-/export-site-dump-protobuf talkyard.server.backup.SiteBackupController.exportSiteProtobuf
+#
+# Or?: no, instead, nice to have 'exort-' incl in the name? + GET = risky.
+#ET   /-/site-dump.json          talkyard.server.backup.SiteBackupController.exportSiteJson
+#ET ? /-/site-dump.zip           talkyard.server.backup.SiteBackupController.exportSiteZip
+#ET ? /-/site-dump.protobuf      talkyard.server.backup.SiteBackupController.exportSiteProtobuf
 
-# RENAME? to /-/create-site-from-dump? otherwise slightly unclear if gets imported to existing site?
+# RENAME? to /-/create-site-from-dump? otherwise unclear if gets imported to existing site,
+# or if creates a new site.
+# Remove '-json' suffix: The Content-Type can clarify if it's json, a zip or a protobuf.
 POST  /-/import-site-json        talkyard.server.backup.SiteBackupController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site-json   talkyard.server.backup.SiteBackupController.importTestSite
 POST  /-/v0/upsert-simple        talkyard.server.backup.SiteBackupController.upsertSimpleJson

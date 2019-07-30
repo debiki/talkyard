@@ -207,8 +207,8 @@ export const staffTours: StaffTours = {
       waitForClick: true,
     }, {
       pauseBeforeMs: 200,
-      title: "Admin Area link",
-      text: rFragment({}, "In the Admin Area, you configure settings.", r.br(), r.br(),
+      title: "Admin Area",
+      text: rFragment({}, "Go there, to configure settings.", r.br(), r.br(),
           "Bye for now."),
       placeAt: '.esMyMenu_admin',
       placeHow: PlaceHow.ToTheLeft,
@@ -253,8 +253,8 @@ export const staffTours: StaffTours = {
       waitForClick: true,
     }, {
       pauseBeforeMs: 300,
-      title: "Admin area link",
-      text: rFragment({}, "In the Admin Area, you configure settings.", r.br(), "Bye for now."),
+      title: "Admin area",
+      text: rFragment({}, "Go there, to configure settings.", r.br(), "Bye for now."),
       placeAt: '.esMyMenu_admin',
       placeHow: PlaceHow.ToTheLeft,
     }],

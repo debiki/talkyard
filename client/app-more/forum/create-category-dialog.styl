@@ -6,8 +6,21 @@
     &:first-of-type
       margin-top: 20px;
 
+  .input-group
+    width: 100%;
+
   input
-    max-width: 25ex;
+    max-width: 29ex;
+  // But the ext ids might be long:
+  input#te_CatExtId
+    max-width: calc(100% - 25px);
+
+  #te_ShowExtId code
+    margin-left: 1ex;
+    padding: 6px 6px 5px;
+    color: white;
+    background: hsl($uiHue, 70%, 20%);
+    font-family: monospace;
 
   .form-group
     margin-bottom: 18px;

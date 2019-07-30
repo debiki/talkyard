@@ -1,5 +1,10 @@
--- RENAME  users3.external_id  to ext_sso_id, there'll be ext_imp_id  too.
--- RENAME  default_category_id  to def_sub_cat_id
+-- RENAME  default_category_id  to def_sub_cat_id, no, def_descendant_cat_id
+-- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
+
+-- change users3.email_notfs to int, remove _toFlag [7KABKF2]
+
+alter table settings3 drop column embedded_comments_category_id;
+  -- add per category embedding origins instead. And use extid 'embedded_comments' category.
 
 drop table category_notf_levels3;
 drop table tag_notf_levels3;
@@ -23,6 +28,9 @@ NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_
 OpenAuthDetails(   // [exp] ok use, country, createdAt
 
 
+-- ?? delete page_id post_nr  from  post_actions ??
+
+-- Add fk  posts3.parent_nr —> posts3.nr  ?? or no?  better w/o, so can hard delete / purge?
 
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?

@@ -31,6 +31,20 @@ case class SectionCategories(
   rootCategory: Category,
   categoriesExclRoot: immutable.Seq[Category]) {
 
+  if (!rootCategory.isRoot) throwIllegalArgument(
+    "TyE5AKP036SSD", s"The root category thinks it's not a root category: $rootCategory")
+
+  categoriesExclRoot.find(_.id == rootCategory.id) foreach { badRootCat =>
+    throwIllegalArgument(
+      "TyE7WKTL02XT4", o"""A category with the same id as the root category is included
+        in categoriesExclRoot: $badRootCat""")
+  }
+
+  categoriesExclRoot.find(_.isRoot) foreach { badRootCat =>
+    throwIllegalArgument(
+      "TyE602GPK5R3", s"This category in categoriesExclRoot thinks it's a root cat: $badRootCat")
+  }
+
   categoriesExclRoot.find(_.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>
     throwIllegalArgument(o"""Category $badCat has a different section page id
       than the root cat: $rootCategory [TyE05RMDRYDK4]""")
@@ -41,7 +55,7 @@ case class SectionCategories(
   }
 
   categoriesExclRoot.find(c => c.parentId.isNot(rootCategory.id) &&
-      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>
+      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>  // [On2]
     throwIllegalArgument(s"Category $badCat has a parent cat in a different site section [TyE4WHUS25]")
   }
 
@@ -77,15 +91,15 @@ case class CategoryToSave(
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
 
-  //require ok ext id
-  //require ok slug
+  //require ok ext id [05970KF5]
+  //require ok slug [05970KF5]
 
-  // ! + add ok chars db constraint, for ext id?  later, for slug too, but be sure to rm bad chars first.
+  // ! + add ok chars db constraint [05970KF5], for ext id?  later, for slug too, but be sure to rm bad chars first.
 
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
-    textAndHtmlMaker.forTitle(s"Description of the $name category")
+    textAndHtmlMaker.forTitle(s"Description of the $name category")  // sync with the upserter [G204MF3]
 
   def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
     textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
@@ -343,7 +357,6 @@ trait CategoriesDao {
     anyCategory map { category =>
       val anyRootCategory = rootCategories.find(_.sectionPageId == category.sectionPageId)
       (category, anyRootCategory getOrDie "TyE205KJF45")
-          //rootCategory.flatMap(_.defaultSubCatId is category.id)
     }
   }
 
@@ -495,7 +508,7 @@ trait CategoriesDao {
       val oldCategory = tx.loadCategory(categoryId).getOrElse(throwNotFound(
         "DwE5FRA2", s"Category not found, id: $categoryId"))
       // Currently cannot change parent category because then topic counts will be wrong.
-      // Could just remove all counts, who cares anyway
+      // Could just remove all counts, barely matters? [NCATTOPS]
       require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
       val editedCategory = oldCategory.copy(
         extImpId = editCategoryData.extId,
@@ -571,9 +584,9 @@ trait CategoriesDao {
       }
     }
 
-    // Discourse currently has 28 categories so 65 is a lot.
     // Can remove this later, when I think I won't want to add more cat perms via db migrations.
-    throwForbiddenIf(categoryId > 65, "EdE7LKG2", "Too many categories, > 65") // see [B0GKWU52]
+    throwForbiddenIf(categoryId > MaxCategories,
+      "EdE7LKG2", s"Too many categories, > $MaxCategories") // see [B0GKWU52]
 
     val category = newCategoryData.makeCategory(categoryId, tx.now.toJavaDate)
     tx.insertCategoryMarkSectionPageStale(category)

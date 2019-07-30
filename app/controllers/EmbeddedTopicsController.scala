@@ -165,7 +165,41 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     // Trying with the full url (incl origin) before the url path only, can be good
     // if the same Talkyard site provides comments for two different blogs?
     // Then later there could be a config value that says the 2nd blog should
-    // lookup discussions by full url origin + path. [06KWDNF2]
+    // lookup discussions by full url origin + path.
+    //
+    // **Or** better? [COMCATS] The embeddeing page specifies a
+    // data-category-ref="extid:blog_cat_name"
+    // ??? what:\
+    //    and then Talkyard looks up the *per category* embedding origins for the blog
+    //    with ext id 'blog_cat_name', and in that category finds the
+    //    embeddded comments topic with a matching url path?
+    // Intsead:
+    //    and then Talkyard looks at all topics in that category, and finds the one
+    //    with a matching url path. Meaning, emb comments url paths would be unique
+    //    per category?
+    // And:
+    //    The cateory needs a way to construct urls back to the blog. So there needs to
+    //    be a per category embeddingOrigin setting?
+    ///   when generating links in notifiation emails.
+    //
+    // Per category embedding-origins give people a simple way to move a blog to a new domain,
+    // and tell Talkyard about the change once and only once — by updating the category
+    // and change its embedding domain.
+    // So, maybe add a new category setting? Namely embeddingDomain?
+    // Which must be one of the allowEmbeddingFrom domains.
+    // Maybe the extId isn't needed? Instead,
+    // if there's a multi-blog Talkyard site (i.e. a blog comments site that stores
+    // comments for many different blogs), then, a requirement can be that each blog
+    // stores comments in a different category? (could be sub categories) and
+    // each such category has an embeddingOrigin setting, and url paths need to be
+    // unique only within a category?
+    // I think a per category embeddingOrigin setting is all that's needed —
+    // the  data-category-ref="extid:category_ext_id" would only be needed if one
+    // wants to store comments for many different blogs in the same category?
+    // Or comments for different parts of the same domain, in different categories?
+    // ... but that sounds like a valid use case (!). So, maybe both
+    // embeddingOrigin and data-category-ref makes sense then.
+    //
     edPageId orElse {
       discussionId.trimNoneIfBlank match {
         case Some(id) =>

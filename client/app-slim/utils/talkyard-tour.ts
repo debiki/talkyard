@@ -150,7 +150,7 @@ function TalkyardTour() {
     let left;
     let top;
     let highlight = true;
-    const extraPadding = 13;
+    const extraPadding = 30;
 
     switch (step.placeHow) {
       case PlaceHow.ToTheLeft:
@@ -211,11 +211,11 @@ function TalkyardTour() {
         // Make the elem as bright as it can be, to indicate it *is* to be clicked.
         // Otherwise people frequently don't realize they shall click it.
         highlightElem.style.background = 'none';             // area to click
-        highlightElem.style.borderColor = 'rgba(0,0,0,0.4)'; // backdrop background
+        highlightElem.style.borderColor = 'rgba(0,0,0,0.6)'; // backdrop background
       }
       else {
         // Make the elem just a little bit dimmed out, to indicate it is *not* to be clicked.
-        highlightElem.style.background = 'rgba(0,0,0,0.05)';
+        highlightElem.style.background = 'rgba(0,0,0,0.15)';
         highlightElem.style.borderColor = 'rgba(0,0,0,0.28)';
       }
     }

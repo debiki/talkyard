@@ -1095,7 +1095,15 @@ class Config(conf: play.api.Configuration) {
   private def getBoolOrDefault[A](confName: String, default: Boolean): Boolean =
     conf.getOptional[Boolean](confName) getOrElse default
 
+  private def getStringOrEmpty[A](confName: String): String =
+    conf.getOptional[String](confName) getOrElse ""
+
   val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = false)
+
+  private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
+  def mayPatchSite(siteId: SiteId): Boolean =
+    siteId == FirstSiteId ||                        // <—— people's self hosted installations, fine
+      mayPatchSiteIds.contains("," + siteId + ",")  // <—— talkyard.net — restricted
 
   val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
   val maxImportDumpBytes: Int = getIntOrDefault("talkyard.maxImportDumpBytes", default = 50*1000*1000)
@@ -1162,8 +1170,27 @@ class Config(conf: play.api.Configuration) {
     val maxTestSitesTotal: Int = conf.getInt(s"$path.maxTestSitesTotal") getOrElse maxSitesTotal * 3
 
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
-    val quotaLimitMegabytes: Option[Int] =
+    def quotaLimitMegabytes(isForBlogComments: Boolean, isTestSite: Boolean): Option[Int] = {
+      val limitForRealSite =
+        if (!isForBlogComments) quotaLimitMegabytesForum
+        else {
+          quotaLimitMegabytesBlogComments orElse {
+            // Blogs are relatively small, so restrict them a bit more.
+            quotaLimitMegabytesForum.map(_ / 10)
+          }
+        }
+      val resultMaybeZero =
+        if (isTestSite) limitForRealSite.map(_ / 10)
+        else limitForRealSite
+      resultMaybeZero.map(Math.max(_, 1))
+    }
+
+    private val quotaLimitMegabytesForum: Option[Int] =
+      conf.getInt("talkyard.newSite.quotaLimitMegabytesForum") orElse
       conf.getInt("talkyard.newSite.quotaLimitMegabytes")
+
+    private val quotaLimitMegabytesBlogComments: Option[Int] =
+      conf.getInt("talkyard.newSite.quotaLimitMegabytesBlogComments")
   }
 
   object superAdmin {

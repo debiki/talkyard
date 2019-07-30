@@ -141,10 +141,12 @@ object EmbeddedCommentsPageCreator {
         return (pageId, None)
     }
 
-    throwBadRequestIf(anyEmbeddingUrl.exists(_ contains ' '),
+    throwBadRequestIf(anyEmbeddingUrl.exists(_ contains ' '),  // SHOULD instead, ensure no blanks? [05970KF5]
       "TyE4KLL2TJ", "Embedding url has whitespace")
     throwBadRequestIf(anyEmbeddingUrl.exists(_ contains '#'),
       "EdE0GK3P4", s"Don't include any URL #hash in the embedding page URL: ${anyEmbeddingUrl.get}")
+
+    SHOULD // check alt page id too — no blanks allowed? [05970KF5]
 
     anyAltPageId.flatMap(request.dao.getRealPageId) foreach { pageId =>
       return (pageId, None)
@@ -155,11 +157,11 @@ object EmbeddedCommentsPageCreator {
     }
 
     // Lookup by complete url, or, if no match, url path only (not query string
-    // — we don't know if it's related to identifying the embedding page or not).
+    // — we don't know if a query string is related to identifying the embedding page or not).
     val pageIdByUrl: Option[PageId] = request.dao.getRealPageId(embeddingUrl) orElse {
       // There could be a site setting to disable lookup by url path (without origin and
       // query params), if the same Talkyard site is used for different blogs on different
-      // domains, with possibly similar url paths. [06KWDNF2]
+      // domains, with possibly similar url paths. [06KWDNF2] [COMCATS]
       val urlPath = extractUrlPath(embeddingUrl)
       request.dao.getRealPageId(urlPath)
     }
@@ -169,7 +171,7 @@ object EmbeddedCommentsPageCreator {
         case None =>
           return (pageId, None)
         case Some(altPageId) =>
-          // If the page has a different discussion id than altPageId,
+          // If page pageId has a different discussion id than altPageId,
           // then it's for a different discussion and we shouldn't use it.
           val otherAltIdsSamePage = request.dao.getAltPageIdsForPageId(pageId)
           val anyOtherIsNotUrl = otherAltIdsSamePage.exists(otherId =>
@@ -180,9 +182,37 @@ object EmbeddedCommentsPageCreator {
                                           // But that's not backw compat?
 
           if (anyOtherIsNotUrl) {
-            // Skip this page id. It has a different discussion id; it's a different discussion.
+            // There's a page at the same url, but it has a different discussion id,
+            // so it's a different discussion.
+            // This means the blog uses different discussion ids for the same url
+            // — then we'll create different discussions, for the same url. To make it
+            // possible to embed different discussions at the same url — that was useful
+            // for someone's map application; he wanted to open Javascript popups with
+            // embedded comments for various locations at the map, each one with its
+            // own separate discussion and discussion id (but same page and url).
+            // So, proceed with calling
+            //   tryCreateEmbeddedCommentsPage()
+            // below.
           }
           else {
+            // Fine, we found a discussion with a matching url or url path. The page
+            // doesn't have a different discussion id, so it's *not* a different
+            // discussion. (All its alt ids are url or url paths, one of which matches
+            // the browser's current url). — So we'll use this discussion.
+
+            // Minor BUG maybe?:
+            // Shouldn't altPageId now be added to the lookup ids for this emb disc?
+            // So this works:
+            // 1) Create discussion, no disc id, just url.
+            // 2) Edit the blog source, add ids to all discussions.
+            // 3) View the discussion. Now the new lookup id (alt id) gets sent to the server,
+            // which could remember it here?
+            // 4) Move the blog to a different domain.
+            // 5) Lookup — now, needs to have remembered the id in step 3,
+            // since now new url.
+            // However, 3 will happen only for blog posts one reloads, after having
+            // edited the blog and added ids. So would be good to combine with: [COMCATS].
+
             return (pageId, None)
           }
       }

@@ -48,7 +48,8 @@ class DaoAppSuite(
   val butEnableJanitor: Boolean = false,
   val maxSitesTotal: Option[Int] = None,
   val minPasswordLength: Option[Int] = None,
-  val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis))
+  val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis),
+  val extraConfig: Map[String, String] = Map.empty)
   extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
 
   Globals.setIsProdForever(false)
@@ -95,7 +96,7 @@ class DaoAppSuite(
     minPasswordLength foreach { min =>
       configMap = configMap.updated("talkyard.minPasswordLength", min.toString)
     }
-    Configuration.from(configMap)
+    Configuration.from(extraConfig ++ configMap)
   }
 
 

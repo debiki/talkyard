@@ -736,8 +736,8 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 }
 
 
-/** (Could split into Guest and GuestInclDetails, where emailAddress and createdAt are
-  * the details. But no particular reason to do this — would maybe just add more code,
+/** (Could split into Guest and GuestInclDetails, where emailAddress, createdAt and extId
+  * are details. But no particular reason to do this — would maybe just add more code,
   * for no good reason.)
   *
   * Guests don't have any trust level, cannot get more than completely-new-user access.
@@ -818,8 +818,8 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 
 case class UserInclDetails(  // ok for export
   id: UserId,
-  extImpId: Option[ExtImpId] = None,
-  externalId: Option[String],   // RENAME to extSsoId, + in API protocol too? [395KSH20]
+  extImpId: Option[ExtImpId] = None,  // RENAME to extId
+  externalId: Option[String],   // RENAME to extSsoId NO, just 'ssoId', + in API protocol too? [395KSH20], no, just ssoId?
   fullName: Option[String],
   username: String,
   createdAt: When,
@@ -1290,7 +1290,7 @@ sealed abstract class EmailNotfPrefs(val IntVal: Int) {
   def toInt: Int = IntVal
 }
 
-object EmailNotfPrefs extends Enumeration {
+object EmailNotfPrefs {
   case object Receive extends EmailNotfPrefs(1)
   case object DontReceive extends EmailNotfPrefs(2)
   case object ForbiddenForever extends EmailNotfPrefs(3)
