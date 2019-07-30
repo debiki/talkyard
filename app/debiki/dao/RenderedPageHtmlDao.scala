@@ -77,7 +77,7 @@ trait RenderedPageHtmlDao {
             pageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
       val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString, jsonResult.version,
-        cachedHtmlContent, cachedVersion, jsonResult.pageTitle, jsonResult.customHeadTags,
+        cachedHtmlContent, cachedVersion, jsonResult.pageTitleUnsafe, jsonResult.customHeadTags,
         anyAltPageId = pageRequest.altPageId, anyEmbeddingUrl = pageRequest.embeddingUrl)
 
       // This is the html for the whole page: <html>, <head>, <body>, and <script>s,

@@ -148,10 +148,11 @@ export function store_canUndeletePage(store: Store): boolean {
 }
 
 
-export function store_canSelectPosts(store: Store): boolean {
-  const page: Page = store.currentPage;
-  return isStaff(store.me) && !store_isSection(store) && page.pageRole !== PageRole.CustomHtmlPage;
-}
+//export function store_canSelectPosts(store: Store): boolean {
+//  const page: Page = store.currentPage;
+//  return isStaff(store.me) && !isSection(page.pageRole) &&
+//      page.pageRole !== PageRole.CustomHtmlPage;
+//}
 
 
 // Returns the current category, or if none, the default category.
@@ -171,12 +172,6 @@ export function store_getCurrOrDefaultCat(store: Store): Category {
   // than just picking the default category in a random site section. [4GWRQA28]
   const categories = store.currentCategories.length ? store.currentCategories : store.allCategoriesHacky;
   return _.find(categories, (c: Category) => c.isDefaultCategory);
-}
-
-
-export function store_isSection(store: Store): boolean {
-  const page: Page = store.currentPage;
-  return page.pageRole !== PageRole.Blog && page.pageRole !== PageRole.Forum;
 }
 
 

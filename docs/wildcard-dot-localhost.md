@@ -1,5 +1,5 @@
 Making *.localhost addresses work
------------------------------
+=============================
 
 Chrome seems to handle `*.localhost` addresses in a good way, i.e. it sends the HTTP request
 to 127.0.0.1. However, for other browsers, and for test suites that send API requests
@@ -11,11 +11,15 @@ It'd been great if we could just have added a `127.0.0.1  *.localhost` entry to 
 But wildcard `/etc/hosts` entries are not allowed. Instead, we can ...
 
 
-#### Linux
+Linux
+-----------------------------
+
 
 Use dnsmasq (see http://serverfault.com/a/118589/44112 ).
 
-**Linux Mint and Ubuntu:** NetworkManager already runs its own instance of
+#### Linux Mint and Ubuntu
+
+NetworkManager already runs its own instance of
 dnsmasq. You can make `*.localhost` work like so: (do this only once)
 
     sudo sh -c 'echo "address=/localhost/127.0.0.1" >> /etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf'
@@ -26,7 +30,9 @@ Then restart NetworkManager:
 
 Wait half a minute, then this should work: `ping whatever.localhost`.
 
-**Debian:** Like Ubuntu, plus, you need this, to tell NetworkManager to use dnsmasq:
+#### Debian
+
+Like Ubuntu, plus, you need this, to tell NetworkManager to use dnsmasq:
 
     $ cat /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
 
@@ -35,7 +41,9 @@ Wait half a minute, then this should work: `ping whatever.localhost`.
     [main]
     dns=dnsmasq
 
-**Qubes OS:** Assuming you use a stand-alone Debian qube (i.e. VM) for developing
+#### Qubes OS
+
+Assuming you use a stand-alone Debian qube (i.e. VM) for developing
 Talkyard, then, follow the instructions for Debian just above. And, you also need
 to tell Qubes OS to actually start NetworkManager in the qube — starting it from
 inside the qube itself won't work. In dom0, do this:
@@ -45,7 +53,8 @@ inside the qube itself won't work. In dom0, do this:
 And apparently you need to reboot the qube too.
 
 
-#### Mac
+Mac
+-----------------------------
 
 Use dnsmasq (see http://serverfault.com/a/118589/44112 ).
 
@@ -61,6 +70,7 @@ I don't have a Mac, but this supposedly works:
     sudo port load dnsmasq
 
 
-#### Windows
+Windows
+-----------------------------
 
 I don't know. Ideas welcome

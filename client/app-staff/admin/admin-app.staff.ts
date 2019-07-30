@@ -1277,6 +1277,20 @@ const EmbeddedCommentsSettings = createFactory({
 
     return (
       r.div({},
+        // This setting should be for an Embedded Comments category, with
+        // ext id 'embedded_comments'. And maybe the 1st domain, can be considered
+        // the primary domain, used in all generated links? (e.g. a link to a comment
+        // in a reply notification email, or in some acitvity summary email.)
+        //
+        // Later on: Let ppl create other categories with different extId:s and
+        // different canonical embedding domains.
+        // This could be a "Multiblog" feature? which, if enabled, lets one
+        // map different categories w ext ids like "comments_for_blog_one" and "...blog_two"
+        // to different embedding domains. [COMCATS]
+        // And the embedding code, would have an attr like:
+        //    <div ... data-category-ref="extid:comments_for_blog_one">
+        // resulting in emb disc topics getting created in that category — and
+        // links in reply notf emails would point to the correct embdding origin.
         Setting2(props, { type: 'textarea', label: "Allow embedding from", id: 'e_AllowEmbFrom',
           className: 's_A_Ss_EmbOrig',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +

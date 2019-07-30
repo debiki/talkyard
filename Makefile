@@ -139,10 +139,9 @@ $(zipped_bundles): $@
 
 # ----- To-Talkyard Javascript
 
-# For now:
 to-talkyard: to-talkyard/dist/to-talkyard/src/to-talkyard.js
 
-to-talkyard/dist/to-talkyard/src/to-talkyard.js:
+to-talkyard/dist/to-talkyard/src/to-talkyard.js: $(shell find to-talkyard/src/)
 	echo "Building To-Talkyard ..."
 	set -x ;\
 	cd to-talkyard ;\

@@ -40,10 +40,7 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
   });
 
   it("The email addr local part is too long for a username [6AKBR20Q]", () => {
-    const emailAddr = settings.githubUsernameMixedCase;
-    const localPart = emailAddr.replace(/@.*$/, '');
-    console.log(`Email: ${emailAddr}, local part: ${localPart}, length: ${localPart.length}`);
-    assert(localPart.length > c.MaxUsernameLength);
+    assert(settings.githubUsernameMixedCase.length > c.MaxUsernameLength);
   });
 
   it('can create a new site as a GitHub user, when not logged in to GitHub', () => {

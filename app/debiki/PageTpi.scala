@@ -40,8 +40,8 @@ object PageTpi {
 object SiteTpi {
 
   def apply(request: DebikiRequest[_], json: Option[String] = None,
-        pageTitle: Option[String] = None, isAdminArea: Boolean = false) =
-    new SiteTpi(request, json, pageTitle = pageTitle, isAdminArea = isAdminArea)
+        pageTitleUnsafe: Option[String] = None, isAdminArea: Boolean = false) =
+    new SiteTpi(request, json, pageTitleUnsafe = pageTitleUnsafe, isAdminArea = isAdminArea)
 
 }
 
@@ -60,7 +60,7 @@ object SiteTpi {
 class SiteTpi protected (
   val debikiRequest: DebikiRequest[_],
   val json: Option[String] = None,
-  pageTitle: Option[String] = None,
+  pageTitleUnsafe: Option[String] = None,
   isAdminArea: Boolean = false) {
 
   def globals: Globals = debikiRequest.context.globals
@@ -89,20 +89,20 @@ class SiteTpi protected (
     // At UTX, the page title is the website being tested — which is confusing. Instead, always
     // show the UTX website title.
     val pageRole = anyCurrentPageRole orElse anyCurrentPageMeta.map(_.pageType)
-    val thePageTitle =
+    val thePageTitleUnsafe =
       if (anyCustomMetaTags.includesTitleTag) None
       else if (pageRole is PageType.UsabilityTesting) { // [plugin]
         Some("Usability Testing Exchange")
       }
       else anyCurrentPageMeta.map(_.htmlHeadTitle) match {
         case t @ Some(title) if title.length > 0 => t
-        case _ => pageTitle
+        case _ => pageTitleUnsafe
       }
     val theDescription =
       if (anyCustomMetaTags.includesDescription) None
       else anyCurrentPageMeta.map(_.htmlHeadDescription)
     xml.Unparsed(views.html.debikiMeta(
-      this, thePageTitle, description = theDescription, faviconUrl = siteSettings.faviconUrl).body)
+      this, thePageTitleUnsafe, description = theDescription, faviconUrl = siteSettings.faviconUrl).body)
   }
 
 
@@ -295,11 +295,11 @@ class PageTpi(
   private val jsonVersion: CachedPageVersion,
   private val cachedPageHtml: String,
   private val cachedVersion: CachedPageVersion,
-  private val pageTitle: Option[String],
+  private val pageTitleUnsafe: Option[String],
   override val anyCustomMetaTags: FindHeadTagsResult,
   override val anyAltPageId: Option[AltPageId],
   override val anyEmbeddingUrl: Option[String])
-  extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
+  extends SiteTpi(pageReq, json = None, pageTitleUnsafe = pageTitleUnsafe) {
 
   override def anyCurrentPageLayout = Some(pageReq.thePageMeta.layout)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)

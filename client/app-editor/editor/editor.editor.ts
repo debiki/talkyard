@@ -1292,7 +1292,7 @@ export const Editor = createComponent({
       const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.title);
       const searchUrl = '/-/search?q=' + urlEncodedQuery;
 
-      const hitList =
+      const hitList = !searchResults.pagesAndHits.length ? null :
           r.ul({},
             _.take(searchResults.pagesAndHits, 15).map((pageAndHits: PageAndHits) =>
               r.li({ key: pageAndHits.pageId, className: 's_E_SimlTpcs_L_It' },

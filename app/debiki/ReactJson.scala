@@ -54,7 +54,7 @@ class HowRenderPostInPage(
 case class PageToJsonResult(
   reactStoreJsonString: String,
   version: CachedPageVersion,
-  pageTitle: Option[String],
+  pageTitleUnsafe: Option[String],
   customHeadTags: FindHeadTagsResult,
   unapprovedPostAuthorIds: Set[UserId])
 
@@ -186,7 +186,7 @@ class JsonMaker(dao: SiteDao) {
         pageParts.allPosts // loads all posts, if needed
       }
 
-    val pageTitle = posts.find(_.isTitle).flatMap(_.approvedHtmlSanitized)
+    val pageTitleUnsafe = posts.find(_.isTitle).flatMap(_.approvedSource)
 
     // Meta tags allowed for custom HTML pages only, right now. Usually the homepage.
     // Only staff can edit custom html pages, currently, so reasonably safe, [2GKW0M]
@@ -376,7 +376,7 @@ class JsonMaker(dao: SiteDao) {
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(reactStoreJsonString, version, pageTitle, headTags, unapprovedPostAuthorIds)
+    PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags, unapprovedPostAuthorIds)
   }
 
 

@@ -85,7 +85,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         // So skip: Nashorn.renderPage(jsonStuff.reactStoreJsonString)
         val tpi = new PageTpi(pageRequest, jsonStuff.reactStoreJsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
-          jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,
+          jsonStuff.pageTitleUnsafe, jsonStuff.customHeadTags, anyAltPageId = discussionId,
           anyEmbeddingUrl = Some(embeddingUrl))
         val htmlString = views.html.templates.page(tpi).body
 

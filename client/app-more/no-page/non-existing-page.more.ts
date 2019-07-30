@@ -275,9 +275,16 @@ export var CreateForumPanel = createComponent({
     // so they feel they've typed a "name" already. UX testing shows that they get
     // confused if they need to type a "name" again here. So, by defualt, reuse the local
     // hostname here. They can change the fourm page title later (via an edit icon).
-    const localHostname = location.hostname.split('.')[0];
-    const anyFirstChar = localHostname[0] || '';
-    const defaultTitle = anyFirstChar.toUpperCase() + localHostname.substr(1, 999);
+    let defaultTitle = "Your Community";
+    // Later, instead include an isFirstSite bool in the json from the server?
+    // only when setting up the new sites, not later on (because would leak info the
+    // admins might want to keep private. eds.siteId will be deleted [5UKFBQW2])
+    const isMultitenant = eds.siteId !== 1;
+    if (isMultitenant) {
+      const localHostname = location.hostname.split('.')[0];
+      const anyFirstChar = localHostname[0] || '';
+      defaultTitle = anyFirstChar.toUpperCase() + localHostname.substr(1, 999);
+    }
 
     return {
       title: defaultTitle,

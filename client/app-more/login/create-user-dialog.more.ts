@@ -170,6 +170,9 @@ export var CreateUserDialogContent = createClassAndFactory({
     dieIf(this.props.isForPasswordUser && this.props.providerId, 'TyE7UKWQ3');
     // @endif
 
+    // Avoid the Create User button being disabled because username-too-long.
+    const usernameNotTooLong = (this.props.username || '').substr(0, MaxUsernameLength);
+
     return {
       okayStatuses: {
         // Full name / alias / display name, is required, for guests.
@@ -177,14 +180,13 @@ export var CreateUserDialogContent = createClassAndFactory({
         // providerId always missing in emb cmts openauth popup?
         email: this.props.providerId && !!this.props.email,
         // Guests have no username or password.
-        username: this.props.isForGuest || (
-            this.props.username && this.props.username.length >= 3), // [6KKAQDD0]
+        username: this.props.isForGuest || usernameNotTooLong.length >= 3, // [6KKAQDD0]
         password: !this.props.isForPasswordUser,
       },
       userData: {
         fullName: this.props.fullName,
         email: this.props.email,
-        username: this.props.username || '',
+        username: usernameNotTooLong,
       },
     };
   },
@@ -327,7 +329,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     const usernameInputMaybe = isForGuest ? null :
         util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 1,
-          defaultValue: (props.username || '').substr(0, MaxUsernameLength),
+          defaultValue: state.userData.username,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 

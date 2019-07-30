@@ -256,12 +256,14 @@ trait PagesDao {
       layout = layout,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId,
-      // BUG the emb url changes, if the blog moves to another doamin, so this db field
+      // BUG the emb url changes, if the blog moves to another domain, so this db field
       // can get out of date. Remove it? and instead use the url in use, when a comment
-      // gets posted? But what about summary emails?
+      // gets posted and generating notf emails?  But what about summary emails?
       // Maybe remember each blog's last visited domain, and among the domains in the allowed
-      // domains list, use the most recently visited one? But what if a Ty site is used
-      // for different blogs?
+      // domains list, use the most recently last visited one? But what if a Ty site is used
+      // for different blogs? Remember last-visited-domain, per individual blog post?
+      // Or maybe different blogs, should place their comments in different categories,
+      // and each category can have a primary / canonical embedding domain? [COMCATS]
       embeddingUrl = embeddingUrl,
       publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
