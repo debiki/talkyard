@@ -577,4 +577,40 @@ html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
   margin-right: 0;
 
 
+// Admin tips
+
+.s_AdmTps
+  display: flex;
+
+  .dw-help
+    margin: 8px 0 17px 0;
+    padding-bottom: 8px;
+    color: hsl(0, 0%, 6%);
+    background: hsl($yellowTipsHue, 96%, 89%);
+    box-shadow: 5px 5px 7px rgba(0,0,0,0.33);
+
+    &:not(:first-child)
+      margin-left: 18px;
+
+  .dw-help-text
+    font-size: 15px;
+    margin: 0 20px 0 0;
+    display: inline-block;
+    a
+      color: hsl(207, 100%, 41%);
+      font-weight: bold;
+      text-decoration: underline;
+      &:hover
+        color: hsl(207, 100%, 59%);
+
+  .dw-hide
+    float: none;
+    position: static;
+    top: auto;
+    margin-left: 3px;
+    color: hsl(207, 86%, 36%);
+    &::before
+      opacity: 0.75;
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

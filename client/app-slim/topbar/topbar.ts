@@ -386,6 +386,34 @@ export const TopBar = createComponent({
           */
           r.span({ className: 'esOpenWatchbarBtn_text' }, t.tb.WatchbBtn));
 
+    // ------- Admin tips
+
+    const showAdminTips = page.pageRole === PageRole.Forum && me.isAdmin &&
+        store.settings.enableForum !== false;
+
+    const adminGettingStartedTips = !showAdminTips ? null :
+        r.div({ className: 's_AdmTps container' },
+          help.HelpMessageBox({ message: <HelpMessage> {
+            id: '94ktj',
+            version: 1,
+            content: rFragment({},
+              r.i({}, "Admin to do: "),
+              "Configure ", r.a({ href: linkToAdminPage() }, "settings")),
+          }}),
+          help.HelpMessageBox({ message: <HelpMessage> {
+            id: '40ehw',
+            version: 1,
+            content: rFragment({},
+              "Create ",
+              r.a({ href: linkToGroups() }, "groups"), '?'),
+          }}),
+          help.HelpMessageBox({ message: <HelpMessage> {
+            id: '25fwk6',
+            version: 1,
+            content: rFragment({},
+              r.a({ href: linkToStaffInvitePage() }, "Invite people")),
+          }}));
+
 
     // ------- The result
 
@@ -434,14 +462,16 @@ export const TopBar = createComponent({
       // No, use position: fixed instead. CLEAN_UP 2016-10: remove `styles` + this.state.top & left
       //styles = { top: this.state.top, left: this.state.left }
     }
-    return (
+
+    return rFragment({},
       r.div({},
         placeholderIfFixed,
         r.div({ className: 'esTopbarWrap' + fixItClass },
           openWatchbarButton,
           openContextbarButton,
           r.div({ className: 'container' },
-            topbar))));
+            topbar))),
+      adminGettingStartedTips);
   }
 });
 

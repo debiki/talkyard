@@ -83,6 +83,10 @@ export function linkToStaffInvitePage(): string {
   return origin() + '/-/admin/users/invited';
 }
 
+export function linkToGroups(): string {
+  return origin() + '/-/groups/';
+}
+
 
 export function linkToUserProfilePage(user: Myself | Participant | UserId | string): string {
   return origin() + pathTo(user);

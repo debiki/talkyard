@@ -313,6 +313,7 @@ declare namespace debiki2 {
   function linkToReviewPage(): string;
   function linkToStaffInvitePage(): string;
   function externalLinkToAdminHelp(): string;
+  function linkToGroups(): string;
   function linkToMyDraftsEtc(store: Store): string;
   function linkToMyProfilePage(store: Store): string;
   function linkToUpload(origins: Origins, uploadsPath: string): string;
