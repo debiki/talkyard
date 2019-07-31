@@ -234,8 +234,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val postsRealByTempId = mutable.HashMap[PostId, Post]()
       val postsRealByTempPagePostNr = mutable.HashMap[PagePostNr, Post]()
 
-      val pageNumBumpsByRealPageId = mutable.HashMap[PageId, PageMetaNumBumps]()
-
       def remappedPostIdTempId(tempId: PostId): PostId = {
         if (tempId < LowestTempImpId) tempId
         else {
@@ -259,9 +257,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
         val postTempIdsToInsert = mutable.HashSet[PostId]()
 
-        var pageMetaNumBumps = PageMetaNumBumps()
-
-        val oldAndNewPosts: Seq[Post] = tempPosts map { tempPost =>
+        tempPosts foreach { tempPost =>
           throwBadRequestIf(tempPost.id < LowestTempImpId,
             "TyE30HRPG2", s"Upserting posts with real ids not yet implemented, post id: ${tempPost.id}")
 
@@ -311,24 +307,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                     bodyHiddenById = tempPost.bodyHiddenById.map(remappedPpTempId),
                     deletedById = tempPost.deletedById.map(remappedPpTempId))
 
-                  BUG // this ignores old already existing posts.
-                  // Instead, better reload everything, like done in importCreateSite (0926575)?
-
-                  pageMetaNumBumps = pageMetaNumBumps.copy(
-                    //bumpedAt = When.fromMillis(math.max(
-                    //  pageMetaNumBumps.bumpedAt.millis, postNewIdNr.createdAtMillis)),
-                    numRepliesVisible = ifThenIncr(
-                      tempPost.isReply && tempPost.isSomeVersionApproved,
-                      pageMetaNumBumps.numRepliesVisible),
-                    numRepliesTotal = ifThenIncr(
-                      tempPost.isReply,
-                      pageMetaNumBumps.numRepliesTotal),
-                    numPostsTotal =
-                      pageMetaNumBumps.numPostsTotal + 1,
-                    numOrigPostRepliesVisible = ifThenIncr(
-                      tempPost.isOrigPostReply && tempPost.isSomeVersionApproved,
-                      pageMetaNumBumps.numOrigPostRepliesVisible))
-
                   nextPostId += 1
                   postTempIdsToInsert += tempPost.id
                   postNewIdNr
@@ -337,27 +315,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
           postsRealByTempId.put(tempPost.id, realPostExclParentNr)
           postsRealByTempPagePostNr.put(tempPost.pagePostNr, realPostExclParentNr)
-          realPostExclParentNr
         }
-
-        val anyOldPageMeta = tx.loadPageMeta(realPageId)
-
-        val anyPageCreator: Option[UserId] = anyOldPageMeta.map(_.authorId) orElse {
-          oldAndNewPosts.find(_.nr == BodyNr).map(_.createdById)
-        }
-        val anyLastPost = maxOptBy(oldAndNewPosts.filter(_.isVisible))(_.createdAtMillis)
-        val anyLastAuthor = anyLastPost.map(_.createdById)
-
-        val frequentPosters = PageParts.findFrequentPosters(
-          oldAndNewPosts, ignoreIds = anyPageCreator.toSet ++ anyLastAuthor.toSet)
-
-        val lastVisibleReply = PageParts.lastVisibleReply(oldAndNewPosts)
-
-        pageNumBumpsByRealPageId.put(realPageId,
-          pageMetaNumBumps.copy(
-            lastApprovedReplyAt = lastVisibleReply.map(_.createdAt),
-            lastApprovedReplyById = lastVisibleReply.map(_.createdById),
-            frequentPosterIds = frequentPosters))
 
         // Update parent nrs, sanitize html, and upsert into db.
         tempPosts foreach { tempPost =>
@@ -577,33 +535,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // Later: update with any reassigned participant and post ids:
         //   answerPostId (complicated? need assign tempId —> real id to posts first, somewhere above)
         val realId = pageRealIdsByTempImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
-        /*
-        val pageMetaNumBumps = pageNumBumpsByRealPageId.getOrElse(realId, PageMetaNumBumps())
-        def bumpNums(pageMeta: PageMeta): PageMeta = {
-          // BUG this considers only new posts. Instead:
-          // val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
-          // and use it instead ?  (0926575)
-          val b = pageMetaNumBumps
-          pageMeta.copy(
-            updatedAt = tx.now.toJavaDate,
-            //publishedAt = ???,
-            bumpedAt = When.anyJavaDateLatestOf(pageMeta.bumpedAt, b.lastApprovedReplyAt),
-            lastApprovedReplyAt = When.anyJavaDateLatestOf(pageMeta.lastApprovedReplyAt, b.lastApprovedReplyAt),
-            lastApprovedReplyById = b.lastApprovedReplyById, // oops
-            //frequentPosterIds = b.frequentPosterIds,  bug: gets updated also if reply not approved
-            numLikes = pageMeta.numLikes + b.numLikes,
-            numWrongs = pageMeta.numWrongs + b.numWrongs,
-            numBurys = pageMeta.numBurys + b.numBurys,
-            numUnwanteds = pageMeta.numUnwanteds + b.numUnwanteds,
-            numRepliesVisible = pageMeta.numRepliesVisible + b.numRepliesVisible,
-            numRepliesTotal = pageMeta.numRepliesTotal + b.numRepliesTotal,
-            numPostsTotal = pageMeta.numPostsTotal + b.numPostsTotal,
-            numOrigPostLikeVotes = pageMeta.numOrigPostLikeVotes + b.numOrigPostLikeVotes,
-            numOrigPostWrongVotes = pageMeta.numOrigPostWrongVotes + b.numOrigPostWrongVotes,
-            numOrigPostBuryVotes = pageMeta.numOrigPostBuryVotes + b.numOrigPostBuryVotes,
-            numOrigPostUnwantedVotes = pageMeta.numOrigPostUnwantedVotes + b.numOrigPostUnwantedVotes,
-            numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + b.numOrigPostRepliesVisible)
-        } */
 
         lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
 
@@ -641,7 +572,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
 
         COULD // skip this, if no posts and nothing on the page, has changed.
-        val pageDao = PageDao(pageMetaWrongStats.pageId, tx)
+        val pageDao = PageDao(pageMetaWrongStats.pageId, tx) // (0926575)
         val pageMeta = pageMetaWrongStats.copyWithUpdatedStats(pageDao)  // bumps version [306MDH26]
 
         dao.updatePagePopularity(pageDao.parts, tx)

@@ -819,7 +819,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 case class UserInclDetails(  // ok for export
   id: UserId,
   extImpId: Option[ExtImpId] = None,
-  externalId: Option[String],   // RENAME to extSsoId, + in API protocol too? [395KSH20]
+  externalId: Option[String],   // RENAME to extSsoId, + in API protocol too? [395KSH20], no, just ssoId?
   fullName: Option[String],
   username: String,
   createdAt: When,
@@ -1290,7 +1290,7 @@ sealed abstract class EmailNotfPrefs(val IntVal: Int) {
   def toInt: Int = IntVal
 }
 
-object EmailNotfPrefs extends Enumeration {
+object EmailNotfPrefs {
   case object Receive extends EmailNotfPrefs(1)
   case object DontReceive extends EmailNotfPrefs(2)
   case object ForbiddenForever extends EmailNotfPrefs(3)

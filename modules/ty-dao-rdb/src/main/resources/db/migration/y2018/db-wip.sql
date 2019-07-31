@@ -1,5 +1,8 @@
 -- RENAME  users3.external_id  to ext_sso_id, there'll be ext_imp_id  too.
 -- RENAME  default_category_id  to def_sub_cat_id
+-- RENAME last_reply_at to last_approved_reply_at
+
+-- change users3.email_notfs to int, remove _toFlag [7KABKF2]
 
 drop table category_notf_levels3;
 drop table tag_notf_levels3;

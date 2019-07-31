@@ -146,6 +146,9 @@ const EditCategoryDialog = createClassAndFactory({
       });
       return ps;
     }
+
+    // REFACTOR use /-/v0/upsert-simple instead?
+
     //const isChangingSlug = this.state.originalSlug !== category.slug;
     ReactActions.saveCategory(category, falseToUndef(this.state.permissions), this.close, () => {
       this.setState({ isSaving: false });
@@ -279,7 +282,7 @@ const CategorySettings = createClassAndFactory({
           r.a({ href: linkToRedirToAboutCategoryPage(category.id), target: '_blank' },
             "Edit description ", r.span({ className: 'icon-link-ext' }))),
         r.span({ className: 'help-block' },
-          "Opens the category description page. Edit the first paragraph on that page."));
+          "Opens the category description page. On that page, click Edit."));
 
     const defaultTopicTypeInput =
       r.div({ className: 'form-group' },
@@ -365,8 +368,12 @@ const CategorySettings = createClassAndFactory({
           help: "Prevents topics from this category from being included in activity summary " +
               "emails." }));
 
+    const extIdTitle =
+        rFragment({},
+          "External ID (optional): ", category.extId ? r.code({}, category.extId) : 'None');
+
     const extIdInput = settings.enableApi === false ? null :
-      utils.FadeInOnClick({ clickToShowText: "External ID (optional)", clickToShowId: 'te_ShowExtId' },
+      utils.FadeInOnClick({ clickToShowText: extIdTitle, clickToShowId: 'te_ShowExtId' },
         Input({ type: 'text', label: "External ID", ref: 'extId', id: 'te_CatExtId',
             value: category.extId, onChange: this.onExtIdChanged,
             help: "An external ID, for example if you need to upsert things via Talkyard's API."}));

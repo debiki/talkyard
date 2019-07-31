@@ -281,6 +281,8 @@ $tableHeaderFontSize = 14px;
   font-weight: bold;
   color: hsl(0, 0%, 35%) !important;
 
+// harmless UX BUG: Use ::after instead, on the base cat, so this arrow
+// will be on the same row as the base cat (if flex wrap).
 .s_F_Ts_Cat_Ttl-SubCat::before  // also see: [40792RHL3], the '—>'' arrow
   content: "→";
   color: hsl(0, 0%, 32%);
