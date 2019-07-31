@@ -399,6 +399,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         createdAt: Math.min(anyDuplGuestCreatedAt || Infinity, postCreatedAt),
         fullName: disqusAuthor.name,
         emailAddress: disqusAuthor.email,
+        // guestBrowserId — there is no such thing in the Disqus xml dump. [494AYDNR]
         //postedFromIp: post.ipAddr
       };
 

@@ -1,36 +1,44 @@
 
-alter table users3 add column ext_imp_id varchar default null;
-alter table pages3 add column ext_imp_id varchar default null;
-alter table posts3 add column ext_imp_id varchar default null;
-alter table categories3 add column ext_imp_id varchar default null;
+alter table users3 rename external_id to sso_id;
+alter table users3 rename constraint users_c_extid_min_len to pps_c_ssoid_min_len;
+alter table users3 rename constraint users_c_extid_max_len to pps_c_ssoid_max_len
+alter table users3 rename constraint participants_c_group_no_external_id to pps_c_group_no_sso_id;
 
-alter table users3 add constraint participants_c_extimpid_len check (
-    length(ext_imp_id) between 1 and 100);
+alter index users_externalid_u rename to pps_u_ssoid;
 
-alter table users3 add constraint participants_c_extimpid_not_builtin check (
-    ext_imp_id is null or not user_id between -9 and 99);
+alter table users3 add column ext_id varchar default null;
+alter table pages3 add column ext_id varchar default null;
+alter table posts3 add column ext_id varchar default null;
+alter table categories3 add column ext_id varchar default null;
 
-alter table pages3 add constraint pages_c_extimpid_len check (
-    length(ext_imp_id) between 1 and 100);
+create or replace function is_valid_ext_id(text character varying) returns boolean
+  language plpgsql
+  as $_$
+begin
+  -- No whitespace. Max 128 chars (SHA-512 in hex).
+  return text ~ '^[^\s]+$' and length(text) between 1 and 128;
+end;
+$_$;
 
-alter table posts3 add constraint posts_c_extimpid_len check (
-    length(ext_imp_id) between 1 and 100);
+alter table users3 add constraint pps_c_extid_not_builtin check (
+    ext_id is null or not user_id between -9 and 99);
+alter table users3 add constraint pps_c_extid_len check (is_valid_ext_id(ext_id));
+alter table pages3 add constraint pages_c_extid_len check (is_valid_ext_id(ext_id));
+alter table posts3 add constraint posts_c_extid_len check (is_valid_ext_id(ext_id));
+alter table categories3 add constraint categories_c_extid_len check (is_valid_ext_id(ext_id));
 
-alter table categories3 add constraint categories_c_extimpid_len check (
-    length(ext_imp_id) between 1 and 100);
-
-create unique index users_u_extimpid on users3 (site_id, ext_imp_id);
-create unique index pages_u_extimpid on pages3 (site_id, ext_imp_id);
-create unique index posts_u_extimpid on posts3 (site_id, ext_imp_id);
-create unique index categories_u_extimpid on categories3 (site_id, ext_imp_id);
+create unique index users_u_extid on users3 (site_id, ext_id);
+create unique index pages_u_extid on pages3 (site_id, ext_id);
+create unique index posts_u_extid on posts3 (site_id, ext_id);
+create unique index categories_u_extid on categories3 (site_id, ext_id);
 
 
 drop index users_site_guest_u;
 
-create unique index users_site_guest_no_browser_id_u on users3 (site_id, full_name, guest_email_addr)
+create unique index pps_u_site_guest_no_browser_id on users3 (site_id, full_name, guest_email_addr)
   where guest_browser_id is null;
 
-create unique index users_site_guest_w_browser_id_u on users3 (
+create unique index pps_u_site_guest_w_browser_id on users3 (
     site_id, full_name, guest_email_addr, guest_browser_id)
   where guest_browser_id is not null;
 
@@ -39,31 +47,36 @@ alter table users3 drop constraint users_c_guest_nn;
 
 update users3 set primary_email_addr = null, password_hash = null
     where user_id < 0 and (primary_email_addr is not null or password_hash is not null);
-alter table users3 add constraint participants_c_guest_no_email_pwd check (
+alter table users3 add constraint pps_c_guest_no_email_pwd check (
     user_id > 0 or (
         primary_email_addr is null and
         password_hash is null));
 
 update users3 set is_admin = null, is_moderator = null, is_owner = null, is_superadmin = null
     where user_id < 0 and (
-        is_admin is not null or
+      -- So won't accidentally insert temp import ids into the database,
+-- without remapping to 1 .. 2e9 -1 numbers:
+
+alter table api_secrets3 add constraint apisecrets_c_nr_not_for_imp check (secret_nr < 2000000000);
+alter table audit_log3 add constraint auditlog_c_nr_not_for_imp check (audit_id < 2000000000);
+alter table categories3 add constraint categories_c_id_not_for_imp check (id < 2000000000);  is_admin is not null or
         is_moderator is not null or
         is_owner is not null or
         is_superadmin is not null);
-alter table users3 add constraint participants_c_guest_not_staff check (
+alter table users3 add constraint pps_c_guest_not_staff check (
     user_id > 0 or (
         is_admin is not true and
         is_moderator is not true and
         is_owner is not true and
         is_superadmin is not true));
 
-alter table users3 rename constraint dw1_users_avatars__c to participants_c_guest_no_avatar;
+alter table users3 rename constraint dw1_users_avatars__c to pps_c_guest_no_avatar;
 
 update users3 set trust_level = null where user_id < 0 and trust_level is not null;
-alter table users3 add constraint participants_c_guest_no_trust_level check (
+alter table users3 add constraint pps_c_guest_no_trust_level check (
     user_id > 0 or trust_level is null);
 
-alter table users3 add constraint participants_c_guest_not_nulls check (
+alter table users3 add constraint pps_c_guest_not_nulls check (
     user_id > 0 or (
         created_at is not null and
         full_name is not null and
@@ -71,7 +84,7 @@ alter table users3 add constraint participants_c_guest_not_nulls check (
 
 
 
--- So won't accidentally insert import ids into the database,
+-- So won't accidentally insert temp import ids into the database,
 -- without remapping to 1 .. 2e9 -1 numbers:
 
 alter table api_secrets3 add constraint apisecrets_c_nr_not_for_imp check (secret_nr < 2000000000);

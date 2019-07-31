@@ -736,8 +736,8 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
 }
 
 
-/** (Could split into Guest and GuestInclDetails, where emailAddress and createdAt are
-  * the details. But no particular reason to do this — would maybe just add more code,
+/** (Could split into Guest and GuestInclDetails, where emailAddress, createdAt and extId
+  * are details. But no particular reason to do this — would maybe just add more code,
   * for no good reason.)
   *
   * Guests don't have any trust level, cannot get more than completely-new-user access.

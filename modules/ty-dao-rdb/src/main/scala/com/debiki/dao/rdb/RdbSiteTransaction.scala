@@ -385,10 +385,10 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       var nextId: PageId = ""
       var numLaps = 0
       do {
+        numLaps += 1
+        dieIf(numLaps > 100, "TyE306KSH4", "Error generating page id, tried 100 times")
         nextId = nextPageIdImpl(connection)
         oldMeta = loadPageMeta(nextId)
-        numLaps += 1
-        dieIf(numLaps > 100, "TyE306KSH4", "Error generating page id, tried more than 100 times")
       }
       while (oldMeta.isDefined)
       nextId
@@ -482,7 +482,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         select g.page_id, ${_PageMetaSelectListItems}
         from pages3 g
         where g.site_id = ?
-          and g.ext_imp_id in (${ makeInListFor(extImpIds) })"""
+          and g.ext_id in (${ makeInListFor(extImpIds) })"""
     runQueryBuildMap(sql, values, rs => {
       val meta = _PageMeta(rs)
       meta.extImpId.getOrDie("TyE05HRD4") -> meta
@@ -1196,7 +1196,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       insert into pages3 (
         site_id,
         page_id,
-        ext_imp_id,
+        ext_id,
         version,
         page_role,
         category_id,

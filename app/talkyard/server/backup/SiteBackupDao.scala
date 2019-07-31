@@ -149,7 +149,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // as some of those in the siteData, then, they are to be updated, and we
       // won't create new participants, for them.
       val oldParticipantsByExtImpId: Map[ExtImpId, ParticipantInclDetails] =
-        tx.loadParticipantsInclDetailsByExtImpIdsAsMap(ppsExtImpIds)
+        tx.loadParticipantsInclDetailsByExtImpIdsAsMap_wrongGuestEmailNotfPerf(ppsExtImpIds)
 
       val ppsWithRealIdsByTempImpId = mutable.HashMap[UserId, ParticipantInclDetails]()
       // Later: if some guests have real ids already, lookup any existing users

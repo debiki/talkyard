@@ -160,7 +160,7 @@ object RdbUtil {
 
   val GroupSelectListItems = o"""
       user_id,
-      ext_imp_id,
+      ext_id,
       created_at,
       full_name,
       username,
@@ -178,12 +178,12 @@ object RdbUtil {
 
   val UserSelectListItemsNoGuests: String =
     s"""u.USER_ID u_id,
-      |u.ext_imp_id u_ext_imp_id,
+      |u.ext_id u_ext_id,
       |u.is_group u_is_group,
       |u.created_at u_created_at,
       |u.full_name u_full_name,
       |u.USERNAME u_username,
-      |u.external_id u_external_id,
+      |u.sso_id u_sso_id,
       |u.IS_APPROVED u_is_approved,
       |u.APPROVED_AT u_approved_at,
       |u.APPROVED_BY_ID u_approved_by_id,
@@ -226,7 +226,7 @@ object RdbUtil {
     // A bit dupl code. (703KWH4)
 
     val userId = rs.getInt("u_id")
-    val extImpId = getOptString(rs, "u_ext_imp_id")
+    val extImpId = getOptString(rs, "u_ext_id")
     val isGroup = rs.getBoolean("u_is_group")
     def createdAt = getWhen(rs, "u_created_at")
     val emailNotfPrefs = {
@@ -308,10 +308,10 @@ object RdbUtil {
 
 
   val CompleteUserSelectListItemsNoUserId = i"""
-    |ext_imp_id,
+    |ext_id,
     |is_group,
     |created_at,
-    |external_id,
+    |sso_id,
     |full_name,
     |primary_email_addr,
     |guest_email_addr,
@@ -356,11 +356,10 @@ object RdbUtil {
     s"user_id, $CompleteUserSelectListItemsNoUserId"
 
 
-  def getParticipantInclDetails(rs: js.ResultSet): ParticipantInclDetails = {
-    UNTESTED
+  def getParticipantInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet): ParticipantInclDetails = {
     val participantId = rs.getInt("user_id")
     if (participantId <= MaxGuestId) {
-      getGuestInclDetails(rs, participantId)
+      getGuestInclDetails_wrongGuestEmailNotfPerf(rs, participantId)
     }
     else {
       getMemberInclDetails(rs, Some(participantId))
@@ -387,16 +386,19 @@ object RdbUtil {
 
 
   /** Currently there's no GuestInclDetails, just a Guest and it includes everything. */
-  private def getGuestInclDetails(rs: js.ResultSet, theGuestId: UserId): Guest = {
+  private def getGuestInclDetails_wrongGuestEmailNotfPerf(rs: js.ResultSet, theGuestId: UserId): Guest = {
     // A bit dupl code. (703KWH4)
     val name = Option(rs.getString("full_name"))
     Guest(
       id = theGuestId,
-      extImpId = getOptString(rs, "ext_imp_id"),
+      extImpId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       guestName = dn2e(name.orNull),
       guestBrowserId = Option(rs.getString("guest_browser_id")),
       email = dn2e(rs.getString("guest_email_addr")),
+      // BUG should instead load the guests' email notf prefs from guest_prefs3.
+      // Currently harmless — but let's rename the fn so won't forget,
+      // to [_wrongGuestEmailNotfPerf].
       emailNotfPrefs = _toEmailNotfs(rs.getString("email_notfs")),
       country = dn2e(rs.getString("country")).trimNoneIfEmpty,
       lockedThreatLevel = getOptInt(rs, "locked_threat_level").flatMap(ThreatLevel.fromInt))
@@ -407,8 +409,8 @@ object RdbUtil {
     // A bit dupl code. (703KWH4)
     UserInclDetails(
       id = theUserId,
-      extImpId = getOptString(rs, "ext_imp_id"),
-      externalId = getOptString(rs, "external_id"),
+      extImpId = getOptString(rs, "ext_id"),
+      externalId = getOptString(rs, "sso_id"),
       fullName = Option(rs.getString("full_name")),
       username = rs.getString("username"),
       createdAt = getWhen(rs, "created_at"),
@@ -633,7 +635,7 @@ object RdbUtil {
 
 
   val _PageMetaSelectListItems = i"""
-      |g.ext_imp_id,
+      |g.ext_id,
       |g.version,
       |g.CREATED_AT,
       |g.UPDATED_AT,
@@ -700,7 +702,7 @@ object RdbUtil {
 
     PageMeta(
       pageId = if (pageId ne null) pageId else resultSet.getString("PAGE_ID"),
-      extImpId = getOptString(resultSet, "ext_imp_id"),
+      extImpId = getOptString(resultSet, "ext_id"),
       pageType = PageType.fromInt(resultSet.getInt("PAGE_ROLE")) getOrElse PageType.Discussion,
       version = resultSet.getInt("version"),
       categoryId = getOptionalIntNoneNot0(resultSet, "category_id"),

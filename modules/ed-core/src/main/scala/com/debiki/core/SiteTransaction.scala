@@ -480,7 +480,7 @@ trait SiteTransaction {
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
         : immutable.Seq[MemberInclDetails]
 
-  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+  def loadParticipantsInclDetailsByExtImpIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails]
 
   def loadOwner(): Option[UserInclDetails]

@@ -131,7 +131,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post] = {
-    loadPostsBySomeId("ext_imp_id", extImpIds, _.extImpId.getOrDie("TyE2GKGCU7L"))
+    loadPostsBySomeId("ext_id", extImpIds, _.extImpId.getOrDie("TyE2GKGCU7L"))
   }
 
 
@@ -374,7 +374,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       insert into posts3(
         site_id,
         unique_post_id,
-        ext_imp_id,
+        ext_id,
         page_id,
         post_nr,
         parent_nr,
@@ -623,7 +623,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   private def readPost(rs: js.ResultSet, pageId: Option[PageId] = None): Post = {
     Post(
       id = rs.getInt("UNIQUE_POST_ID"),
-      extImpId = getOptString(rs, "ext_imp_id"),
+      extImpId = getOptString(rs, "ext_id"),
       pageId = pageId.getOrElse(rs.getString("PAGE_ID")),
       nr = rs.getInt("post_nr"),
       parentNr = getOptionalInt(rs, "parent_nr"),

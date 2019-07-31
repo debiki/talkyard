@@ -485,7 +485,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       insert into users3(
         site_id,
         user_id,
-        ext_imp_id,
+        ext_id,
         created_at,
         full_name,
         guest_browser_id,
@@ -496,7 +496,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
       """
     val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.extImpId.orNullVarchar,
       guest.createdAt.asTimestamp, guest.guestName.trim,
-      guest.guestBrowserId.orNullVarchar, e2d(guest.email),
+      guest.guestBrowserId.orNullVarchar,  // absent if importing Disqus user [494AYDNR]
+      e2d(guest.email),
       _toFlag(guest.emailNotfPrefs),  // change to Int [7KABKF2]
       guest.lockedThreatLevel.map(_.toInt).orNullInt)
     runUpdateSingleRow(statement, values)
@@ -507,7 +508,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
     try {
       runUpdate("""
         insert into users3(
-            SITE_ID, USER_ID, external_id, full_name, USERNAME, CREATED_AT,
+            SITE_ID, USER_ID, ext_id, sso_id, full_name, USERNAME, CREATED_AT,
             primary_email_addr, EMAIL_NOTFS, EMAIL_VERIFIED_AT, EMAIL_FOR_EVERY_NEW_POST, PASSWORD_HASH,
             IS_APPROVED, APPROVED_AT, APPROVED_BY_ID,
             COUNTRY, IS_OWNER, IS_ADMIN, IS_MODERATOR,
@@ -523,7 +524,11 @@ trait UserSiteDaoMixin extends SiteTransaction {
             ?, ?, ?, ?,
             ?, ?)
         """,
-        List[AnyRef](siteId.asAnyRef, user.id.asAnyRef, user.externalId.orNullVarchar,
+        List[AnyRef](
+          siteId.asAnyRef,
+          user.id.asAnyRef,
+          user.extImpId.orNullVarchar,
+          user.externalId.orNullVarchar,
           user.fullName.orNullVarchar,
           user.username, user.createdAt.asTimestamp, user.primaryEmailAddress.trimNullVarcharIfBlank,
           _toFlag(user.emailNotfPrefs), o2ts(user.emailVerifiedAt),
@@ -822,8 +827,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUserInclDetailsByExternalId(externalId: String): Option[UserInclDetails] = {
-    loadMemberInclDetailsImpl("external_id", externalId)
+  def loadUserInclDetailsByExternalId(externalId: String): Option[UserInclDetails] = { // RENAME to ...BySsoId
+    loadMemberInclDetailsImpl("sso_id", externalId)
   }
 
 
@@ -887,7 +892,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
     val query = i"""
       select $UserSelectListItemsWithGuests
       from users3 u
-      left join guest_prefs3 e
+      left join guest_prefs3 e   -- should join like this, also here: [_wrongGuestEmailNotfPerf]
         on u.guest_email_addr = e.EMAIL and u.SITE_ID = e.SITE_ID
       where
         u.SITE_ID = ? and u.user_id <= ${Participant.MaxGuestId}
@@ -987,18 +992,19 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadParticipantsInclDetailsByExtImpIdsAsMap(extImpIds: Iterable[ExtImpId])
+  def loadParticipantsInclDetailsByExtImpIdsAsMap_wrongGuestEmailNotfPerf(
+        extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails] = {
-    UNTESTED
     if (extImpIds.isEmpty) return Map.empty
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
       from users3
-      where site_id = ? and ext_imp_id in (${makeInListFor(extImpIds)})
+      -- Should join w guest_prefs3 here to get guests' email notf prefs [_wrongGuestEmailNotfPerf]
+      where site_id = ? and ext_id in (${makeInListFor(extImpIds)})
       """
     val values = siteId.asAnyRef :: extImpIds.toList
     runQueryBuildMap(query, values, rs => {
-      val pp = getParticipantInclDetails(rs)
+      val pp = getParticipantInclDetails_wrongGuestEmailNotfPerf(rs)
       pp.extImpId.getOrDie("TyE205HKSD63") -> pp
     })
   }
@@ -1084,7 +1090,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
   def updateUserInclDetails(user: UserInclDetails): Boolean = {
     val statement = """
       update users3 set
-        external_id = ?,
+        ext_id = ?,
+        sso_id = ?,
         updated_at = now_utc(),
         full_name = ?,
         username = ?,
@@ -1126,6 +1133,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       """
 
     val values = List(
+      user.extImpId.orNullVarchar,
       user.externalId.orNullVarchar,
       user.fullName.orNullVarchar,
       user.username,
