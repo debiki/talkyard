@@ -180,8 +180,12 @@ export const ForumComponent = createReactClass(<any> {
     const activeCategory = this.getActiveCategory(currentCategorySlug);
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isGone) return;
-      dialog.open(activeCategory.id);
-      // BUG needs to call this.props.setCategory(edited-category.slug), if slug changed. [7AFDW01]
+      dialog.open(activeCategory.id, (serverResponse: SaveCategoryResponse) => {
+        const slugAfter = serverResponse.newCategorySlug;
+        if (slugAfter !== currentCategorySlug) {
+          this.setCategory(slugAfter);  // [7AFDW01]
+        }
+      });
     });
   },
 
@@ -780,8 +784,11 @@ const LoadAndListTopics = createFactory({
     const orderOffset: OrderOffset = this.getOrderOffset(nextProps);
     orderOffset.topicFilter = nextProps.queryParams.filter;
     if (isNewView) {
+      const thisElem = <HTMLElement> ReactDOM.findDOMNode(this);
       this.setState({
-        minHeight: (<HTMLElement> ReactDOM.findDOMNode(this)).clientHeight,
+        // Sometimes, there's no elem — happens if changing a category's slug. [7AFDW01]
+        // What do then? Hmm, min height 400px should fit in most devices?
+        minHeight: thisElem ? thisElem.clientHeight : 400,
         topics: null,
         showLoadMoreButton: false
       });

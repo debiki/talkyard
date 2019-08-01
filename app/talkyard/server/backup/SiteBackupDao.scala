@@ -417,6 +417,17 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         categoriesRealIdsByTempImpId.put(catTempId.id, realId)
       }
 
+      // Too many categories?
+      val numNewCats = siteData.categories.count(catTempId => {
+        val realId = remappedCategoryTempId(catTempId.id)
+        oldCategoriesById.get(realId).isEmpty
+      })
+      val numOldCats = oldCategories.size
+      throwForbiddenIf(numOldCats + numNewCats > MaxCategories,
+        "TyE05RKSDJ2", s"Too many categories: There are already $numOldCats categories, and " +
+          s"creating $numNewCats new categories, would result in more than $MaxCategories " +
+          "categories (the upper limit as of now).")
+
       // Upsert categories.
       siteData.categories foreach { catTempId: Category =>
         val realId = remappedCategoryTempId(catTempId.id)

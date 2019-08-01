@@ -1464,6 +1464,15 @@ interface LoadCategoryResponse {
 }
 
 
+interface SaveCategoryResponse {
+  publicCategories: Category[];     // right type?
+  restrictedCategories: Category[]; // right type?
+  myNewPermissions: PermsOnPage[];  // right type?
+  newCategoryId: CategoryId;
+  newCategorySlug: string;
+}
+
+
 interface SendInvitesResponse {
   willSendLater: boolean;
   invitesSent: Invite[];

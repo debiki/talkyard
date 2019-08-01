@@ -58,30 +58,43 @@ const EditCategoryDialog = createClassAndFactory({
   getInitialState: function () {
     return {
       isOpen: false,
-      store: ReactStore.allData(),
       defaultTopicType: PageRole.Discussion,
     };
   },
 
-  open: function(categoryId?: number) {
+  open: function(categoryId: number, onSaved: (r: SaveCategoryResponse) => void) {
+    const store: Store = ReactStore.allData();
     this.setState({
+      store,
       categoryId: categoryId,
       isOpen: true,
       isLoading: !!categoryId,
       isSaving: false,
       isCreating: !categoryId,
       isEditing: !!categoryId,
+      onSaved,
     });
     if (categoryId) {
       Server.loadCategory(categoryId, (response: LoadCategoryResponse) => {
+        const category: CategoryPatch = response.category;
+        // @ifdef DEBUG
+        dieIf(category.id !== categoryId, 'TyE502KJDT02');
+        dieIf(category.sectionPageId !== store.currentPageId, 'TyE502KJDT01');
+        dieIf(!(
+            // If is base cat, compare parentId with the root category id.
+            category.parentId === store.currentPage.categoryId ||
+            // If is sub cat, compare parentId with the base category ids.
+            _.find(store.currentCategories, c => category.parentId === c.id)), 'TyE206WKD50');
+        // @endif
+
         this.setState({
           isLoading: false,
           isCreatingNewCategory: false,
-          originalSlug: response.category.slug,
-          category: response.category,
+          originalSlug: category.slug,
+          category,
           permissions: response.permissions,
           groups: response.groups,
-          canChangeDefault: !response.category.isDefaultCategory || false,
+          canChangeDefault: !category.isDefaultCategory || false,
         });
       });
     }
@@ -91,6 +104,8 @@ const EditCategoryDialog = createClassAndFactory({
         const newCategory: CategoryPatch = {
           id: categoryId,
           extId: '',
+          parentId: ReactStore.getCategoryId(), // CLEAN_UP remove that fn, use instead: store.currentPage.categoryId
+          sectionPageId: store.currentPageId,
           name: '',
           slug: '',
           defaultTopicType: PageRole.Discussion,
@@ -117,18 +132,16 @@ const EditCategoryDialog = createClassAndFactory({
   close: function() {
     this.setState({
       isOpen: false,
+      isSaving: false,
+      isLoading: false,
+      store: null,
+      onSaved: null,
     });
   },
 
   save: function() {
     this.setState({ isSaving: true });
-    const store: Store = this.state.store;
     const stateCat: Category = this.state.category;
-    const category: Category = {
-      ...stateCat,
-      parentId: ReactStore.getCategoryId(), // CLEAN_UP remove that fn, use instead: store.currentPage.categoryId
-      sectionPageId: store.currentPageId,
-    };
     function falseToUndef(permissions: PermsOnPage[]) {
       const ps = _.clone(permissions);
       _.each(ps, (p: PermsOnPage) => {
@@ -150,10 +163,15 @@ const EditCategoryDialog = createClassAndFactory({
     // REFACTOR use /-/v0/upsert-simple instead?
 
     //const isChangingSlug = this.state.originalSlug !== category.slug;
-    ReactActions.saveCategory(category, falseToUndef(this.state.permissions), this.close, () => {
+    ReactActions.saveCategory(stateCat, falseToUndef(this.state.permissions),
+          (response: SaveCategoryResponse) => {
+      if (this.state.onSaved) {
+        this.state.onSaved(response);
+      }
+      this.close();
+    }, () => {
+      // If error.
       this.setState({ isSaving: false });
-      // BUG if isChangingSlug, needs to update the URL slug, otherwise there'll be an error
-      // when rendering the category topic list, with the old slug. [7AFDW01]
     });
   },
 
@@ -192,14 +210,14 @@ const EditCategoryDialog = createClassAndFactory({
   },
 
   render: function() {
-    const body = this.state.isLoading
+    const body = !this.state.isOpen ? null : (this.state.isLoading
       ? r.div({}, "Loading...")
       : rb.Tabs({ defaultActiveKey: 1, id: 't_CD_Tabs' },
           rb.Tab({ eventKey: 1, title: "Settings", className: 's_CD_Tabs_Stn' },
             CategorySettings({ ...this.state, updateCategory: this.updateCategory,
                 deleteCategory: this.deleteCategory, undeleteCategory: this.undeleteCategory })),
           rb.Tab({ eventKey: 2, title: "Security", className: 's_CD_Tabs_Sec' },
-            CategorySecurity({ ...this.state, updatePermissions: this.updatePermissions })));
+            CategorySecurity({ ...this.state, updatePermissions: this.updatePermissions }))));
 
     const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

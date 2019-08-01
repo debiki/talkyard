@@ -273,6 +273,7 @@ categories -
     custom name, custom everything:
   edit about topic:
   edit name, slug, topic types, position:
+          - api-upsert-categories.2browsers.test.ts  TyT703LTKQ38
   unlist:
   delete -
     gets marked as deleted for staff:
@@ -737,6 +738,8 @@ server side rendering -
     category dropdown:
 
 api:
+  ext id, weird chars and loong id:
+          - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   upsert categories:
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
 

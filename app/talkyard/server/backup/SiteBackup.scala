@@ -28,13 +28,13 @@ import scala.collection.mutable
 
 
 /** Later: This class should not contain complete items like Category an Post. [PPATCHOBJS]
-  * Instead, it should consist of CategoryToSave (exist) and PostToSave
-  * (doesn't exist) and PageMetaToSave etc, where some fields can be left out.
+  * Instead, it should consist of CategoryPatch (exist) and PostPatch and
+  * GuestPatch etc, where some fields can be left out.
   * That'd be useful if one wants to upsert something and overwrite only
   * some fields, and leave the others unchanged.
   *
   * So, all things need two representations: Thing and ThingPatch.
-  * Don't do this until people actually ask for this.
+  * But don't implement anything more than CategoryPatch, until people ask for that.
   *
   * Also, these ThingPatch should be able to refer to each other via
   * external ids, in a patch, so the Talkyard clients won't need to
@@ -67,7 +67,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   }
 
   def withVersionPlusOne: SiteBackup = copy(
-    site = site.map(_.copy(version = site.getOrDie("TyE36FKPNS3").version + 1)))
+    site = site.map(s => s.copy(version = s.version + 1)))
 
 }
 
@@ -139,11 +139,13 @@ case class SimpleSitePatch(
           return Bad(s"Unknown ref type: '${ref.takeWhile(_ != ':')}' [TyE5RKD2LR46]")
         }
       } getOrElse {
+        return Bad("No parentRef: 'extid:....' specified, that's not yet tested [TyE205WKDLF2]")
+        /* Later:
         // Find the root category. currently should be exactly one, since sub communities
         // currently disabled. [4GWRQA28]
         oldCats.find(_.parentId.isEmpty) getOrElse {
           return Bad("No root category [TyE205KRTG4]")
-        }
+        } */
       }
 
       categories.append(Category(
@@ -177,7 +179,7 @@ case class SimpleSitePatch(
         folder = "/",
         pageId = nextPageId.toString,
         showId = true,
-        pageSlug = "about-" + categoryPatch.slug.getOrElse("category"),
+        pageSlug = "about-" + theCategorySlug,
         canonical = true))
 
       // Assume the title source is html, not CommonMark. How can we know? [IMPCORH]

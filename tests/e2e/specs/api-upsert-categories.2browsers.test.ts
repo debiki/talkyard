@@ -28,31 +28,34 @@ let siteId;
 
 let forum: TwoPagesTestForum;  // or: LargeTestForum
 
-const CustPkgsCatName = "Custom Pkgs Cat Name"
-const CustPkgsExtId = 'cust_pkgs_cat_ext_id'
+const PackagesCatName = "Packages Category";
+const PackagesCatExtId = 'pkgs_cat_ext_id';
 
 const UpsCatOnePosition = 55;
 const UpsCatOneName = 'Ups Category One position ' + UpsCatOnePosition;
 const UpsCatOneSlug = 'ups-category-one';
 const UpsCatOneExtId = 'ups_cat_one_ext_id';
 const UpsCatOneDescr = 'Upserted Cat One description.';
+const UpsCatOneHandEditedName = 'UpsCatOneHandEditedName';
+const UpsCatOneHandEditedSlug = 'UpsCatOneHandEditedSlug';
 
 const UpsCatTwoPosition = 54;
 const UpsCatTwoName = 'Ups Category Two pos ' + UpsCatTwoPosition;
 const UpsCatTwoSlug = 'ups-category-two';
-const UpsCatTwoExtId = 'ups_cat_two_ext_id';
+const UpsCatTwoExtIdLoong =  // [TyT602RHK42JF]
+  'ups_cat_two_ext_id__100_chars_loooong__0123456789012345678901234567890123456789012345678901234567890';
 const UpsCatTwoDescr = 'Upserted Cat Two description text text text longer a bit longer.';
 
 const UpsCatTwoEditedPos = 57;
 const UpsCatTwoEditedName = `Ups Cat 2 Edited pos ${UpsCatTwoEditedPos} was ${UpsCatTwoPosition}`;
 const UpsCatTwoEditedSlug = 'ups-category-ed-two';
-const UpsCatTwoEditedExtId = 'ups_cat_two_ext_id';
 const UpsCatTwoEditedDescr = 'Upserted Cat Two EDITED descr.';
 
 const UpsCatThreePosition = 56;
 const UpsCatThreeName = 'Ups Category Three pos ' + UpsCatThreePosition;
 const UpsCatThreeSlug = 'ups-category-three';
-const UpsCatThreeExtId = 'ups_cat_hree_ext_id';
+const UpsCatThreeExtIdWeirdChars =  // [TyT602RHK42JF]
+    'ups_cat_3_ext_id:un?us-ual_chars__--and--__/+#t![h]{i}"(n)\'g,%s\\.åäö.汉语';
 const UpsCatThreeDescr = 'Upserted Cat Three description.';
 
 
@@ -115,7 +118,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("Owen creates a Customers' Packages category", () => {
     owensBrowser.go('/categories');
-    owensBrowser.complex.createCategory({ name: CustPkgsCatName, extId: CustPkgsExtId });
+    owensBrowser.complex.createCategory({ name: PackagesCatName, extId: PackagesCatExtId });
   });
 
 
@@ -126,14 +129,14 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("Owen upserts a category", () => {
     const category = {  //: TestCategoryPatch
-      //id: c.LowestExtImpId + 1,
-      //sectionPageId: '???',
+      // id: assigned by the server
+      // sectionPageId: will get copied from the parent category
       extId: UpsCatOneExtId,
-      parentRef: 'extid:' + CustPkgsExtId,
+      parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatOneName,
       slug: UpsCatOneSlug,
       defaultTopicType: PageRole.Question,
-      description: UpsCatOneDescr,  // wasn't upserted   BUG
+      description: UpsCatOneDescr,
       position: 55,
     };
     upsertResponse = server.apiV0.upsertSimple({
@@ -161,7 +164,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     owensBrowser.refresh();
   });
 
-  it("... now the upserted category appears in the catedory list", () => {
+  it("... now the upserted category appears in the category list", () => {
     owensBrowser.forumCategoryList.waitForCategories();
     assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
     assert.equal(owensBrowser.forumCategoryList.numSubCategoriesVisible(), 1);
@@ -173,7 +176,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
-    assert(isCategoryVisible(CustPkgsCatName));
+    assert(isCategoryVisible(PackagesCatName));
     assert(isSubCategoryVisible(UpsCatOneName));
   });
 
@@ -182,21 +185,21 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("Owen upserts two more", () => {
     const upsCatTwo = {  //: TestCategoryPatch
-      extId: UpsCatTwoExtId,
-      parentRef: 'extid:' + CustPkgsExtId,
+      extId: UpsCatTwoExtIdLoong,
+      parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatTwoName,
       slug: UpsCatTwoSlug,
       defaultTopicType: PageRole.Question,
-      description: UpsCatTwoDescr,  // wasn't upserted   BUG
+      description: UpsCatTwoDescr,
       position: 54,
     };
     const upsCatThree = {  //: TestCategoryPatch
-      extId: UpsCatThreeExtId,
-      parentRef: 'extid:' + CustPkgsExtId,
+      extId: UpsCatThreeExtIdWeirdChars,
+      parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatThreeName,
       slug: UpsCatThreeSlug,
-      defaultTopicType: PageRole.Question,
-      description: UpsCatThreeDescr,  // wasn't upserted   BUG
+      defaultTopicType: PageRole.Problem,
+      description: UpsCatThreeDescr,
       position: 56,
     };
     upsertResponse = server.apiV0.upsertSimple({
@@ -214,7 +217,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     upsertedCategory = upsertResponse.categories[0];
     assert.equal(upsertedCategory.name, UpsCatTwoName);
     assert.equal(upsertedCategory.slug, UpsCatTwoSlug);
-    assert.equal(upsertedCategory.extId, UpsCatTwoExtId);
+    assert.equal(upsertedCategory.extId, UpsCatTwoExtIdLoong);
     assert.equal(upsertedCategory.description, UpsCatTwoDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoPosition);
   });
@@ -223,7 +226,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     upsertedCategory = upsertResponse.categories[1];
     assert.equal(upsertedCategory.name, UpsCatThreeName);
     assert.equal(upsertedCategory.slug, UpsCatThreeSlug);
-    assert.equal(upsertedCategory.extId, UpsCatThreeExtId);
+    assert.equal(upsertedCategory.extId, UpsCatThreeExtIdWeirdChars);
     assert.equal(upsertedCategory.description, UpsCatThreeDescr);
     assert.equal(upsertedCategory.position, UpsCatThreePosition);
   });
@@ -241,23 +244,23 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
-    assert(isCategoryVisible(CustPkgsCatName));
+    assert(isCategoryVisible(PackagesCatName));
     assert(isSubCategoryVisible(UpsCatOneName));
     assert(isSubCategoryVisible(UpsCatTwoName));
     assert(isSubCategoryVisible(UpsCatThreeName));
   });
 
 
-  // ----- Edit category, by upserting
+  // ----- Edit upserted category, via API upsert
 
   it("Owen upserts a new name, slug and description for the 2nd category", () => {
     const category = {  //: TestCategoryPatch
-      extId: UpsCatTwoEditedExtId,
-      parentRef: 'extid:' + CustPkgsExtId,
+      extId: UpsCatTwoExtIdLoong,
+      parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatTwoEditedName,
       slug: UpsCatTwoEditedSlug,
-      defaultTopicType: PageRole.Question,
-      description: UpsCatTwoEditedDescr,  // wasn't upserted   BUG
+      defaultTopicType: PageRole.Idea,  // was: Question
+      description: UpsCatTwoEditedDescr,
       position: UpsCatTwoEditedPos,
     };
     upsertResponse = server.apiV0.upsertSimple({
@@ -272,11 +275,58 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     upsertedCategory = upsertResponse.categories[0];
     assert.equal(upsertedCategory.name, UpsCatTwoEditedName);
     assert.equal(upsertedCategory.slug, UpsCatTwoEditedSlug);
-    assert.equal(upsertedCategory.extId, UpsCatTwoEditedExtId);
+    assert.equal(upsertedCategory.extId, UpsCatTwoExtIdLoong);
     assert.equal(upsertedCategory.description, UpsCatTwoEditedDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoEditedPos);
   });
 
+
+  // ----- Edit upserted category, via UI edit dialog  [TyT703LTKQ38]
+
+  it("Owen goes to sub category one", () => {
+    owensBrowser.forumCategoryList.openSubCategory(UpsCatOneName);
+  });
+
+  it("... opens the Edit Category dialog", () => {
+    owensBrowser.forumButtons.clickEditCategory();
+  });
+
+  it("... changes the name and slug", () => {
+    owensBrowser.categoryDialog.fillInFields({
+      name: UpsCatOneHandEditedName,
+      slug: UpsCatOneHandEditedSlug,
+    });
+  });
+
+  it("... saves", () => {
+    owensBrowser.categoryDialog.submit();
+  });
+
+  it("The category name changes", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneHandEditedName + '666');
+  });
+
+  it("... and the browser url path changes, to the new category slug", () => {
+    const urlPath = owensBrowser.urlPath();
+    assert.equal(urlPath, '/latest/' + UpsCatOneHandEditedSlug.toLowerCase());
+  });
+
+  it("Owen reloads the page", () => {
+    owensBrowser.refresh();
+  });
+
+  it("... all fine, after reload", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneHandEditedName);
+  });
+
+  it("The category list page got updated, too", () => {
+    owensBrowser.forumCategoryList.goHere();
+    owensBrowser.forumCategoryList.waitForCategories();
+    assert(owensBrowser.forumCategoryList.isSubCategoryVisible(UpsCatOneHandEditedName));
+  });
+
+
+  // ----- Using an upserted category
 
   it("Maja goes to the categories list page", () => {
     majasBrowser.go(siteIdAddress.origin + '/categories');
@@ -295,8 +345,8 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert(isCategoryVisible(forum.categories.categoryA.name));
     assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
     assert(isCategoryVisible(forum.categories.specificCategory.name));
-    assert(isCategoryVisible(CustPkgsCatName));
-    assert(isSubCategoryVisible(UpsCatOneName));
+    assert(isCategoryVisible(PackagesCatName));
+    assert(isSubCategoryVisible(UpsCatOneHandEditedName));
     assert(isSubCategoryVisible(UpsCatTwoEditedName));
     assert(isSubCategoryVisible(UpsCatThreeName));
   });

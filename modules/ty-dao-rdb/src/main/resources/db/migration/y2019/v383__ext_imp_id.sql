@@ -1,7 +1,7 @@
 
-alter table users3 rename external_id to sso_id;
+alter table users3 rename column external_id to sso_id;
 alter table users3 rename constraint users_c_extid_min_len to pps_c_ssoid_min_len;
-alter table users3 rename constraint users_c_extid_max_len to pps_c_ssoid_max_len
+alter table users3 rename constraint users_c_extid_max_len to pps_c_ssoid_max_len;
 alter table users3 rename constraint participants_c_group_no_external_id to pps_c_group_no_sso_id;
 
 alter index users_externalid_u rename to pps_u_ssoid;
@@ -54,12 +54,7 @@ alter table users3 add constraint pps_c_guest_no_email_pwd check (
 
 update users3 set is_admin = null, is_moderator = null, is_owner = null, is_superadmin = null
     where user_id < 0 and (
-      -- So won't accidentally insert temp import ids into the database,
--- without remapping to 1 .. 2e9 -1 numbers:
-
-alter table api_secrets3 add constraint apisecrets_c_nr_not_for_imp check (secret_nr < 2000000000);
-alter table audit_log3 add constraint auditlog_c_nr_not_for_imp check (audit_id < 2000000000);
-alter table categories3 add constraint categories_c_id_not_for_imp check (id < 2000000000);  is_admin is not null or
+        is_admin is not null or
         is_moderator is not null or
         is_owner is not null or
         is_superadmin is not null);

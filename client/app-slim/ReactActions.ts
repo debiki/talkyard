@@ -130,8 +130,8 @@ export function logoutClientSideOnly() {
 
 
 export function saveCategory(category: Category, permissions: PermsOnPage[],
-      success: () => void, error: () => void) {
-  Server.saveCategory(category, permissions, (response) => {
+      success: (response: SaveCategoryResponse) => void, error: () => void) {
+  Server.saveCategory(category, permissions, (response: SaveCategoryResponse) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.CreateEditForumCategory,
       publicCategories: response.publicCategories,
@@ -139,7 +139,7 @@ export function saveCategory(category: Category, permissions: PermsOnPage[],
       myNewPermissions: response.myNewPermissions,
       newCategorySlug: response.newCategorySlug,
     });
-    success();
+    success(response);
   }, error);
 }
 

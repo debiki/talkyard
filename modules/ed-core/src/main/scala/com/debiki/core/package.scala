@@ -59,6 +59,9 @@ package object core {
   type CategoryId = Int
   val NoCategoryId = 0
 
+  // The Discourse help forum currently has 28 categories so 100 is a lot.
+  val MaxCategories = 100
+
   type PublSiteId = String
 
   type SiteId = Int

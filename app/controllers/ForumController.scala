@@ -218,7 +218,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
     val mkJson = dao.jsonMaker.makeCategoriesJson _
 
-    OkSafeJson(Json.obj(
+    OkSafeJson(Json.obj(  // Typescript: SaveCategoryResponse
       // 2 dupl lines [7UXAI1]
       "publicCategories" -> mkJson(category.id, dao.getForumPublicAuthzContext()),
       "restrictedCategories" -> mkJson(category.id, dao.getForumAuthzContext(requester)),

@@ -1552,7 +1552,7 @@ export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
 
 
 export function saveCategory(category: CategoryPatch, permissions: PermsOnPage[],
-      success: (response: any) => void, error?: () => void) {
+      success: (response: SaveCategoryResponse) => void, error?: () => void) {
   const data = {
     category: category,
     permissions: permissions,

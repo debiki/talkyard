@@ -171,7 +171,8 @@ ReactDispatcher.register(function(payload) {
       });
       // COULD sort perms somehow, how? And remove dupls? [4JKT2W1]
       store.me.permsOnPages = store.me.permsOnPages.concat(action.myNewPermissions);
-      // (If editing, only the slug might have been changed, not the id.)
+
+      // If creating a new cat, remember it, so can highlight it in the category list:
       store.newCategorySlug = action.newCategorySlug;
       // The newCategorySlug field scrolls to and highlights the new category. Only do that
       // during the first ten seconds after the category got created; then it's enough.
@@ -180,6 +181,9 @@ ReactDispatcher.register(function(payload) {
         store.newCategorySlug = null;
         // No need to trigger any event. The forum component will notice, later, lazily.
       }, 10*1000);
+
+      // Currently, if we changed the slug of an existing category, we update
+      // the url path here: [7AFDW01] instead.
       break;
 
     case ReactActions.actionTypes.PinPage:

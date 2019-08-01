@@ -1463,8 +1463,11 @@ object JsonMaker {
     if (category.isDeleted) {
       json += "isDeleted" -> JsTrue
     }
-    if (includeDetails && category.extImpId.isDefined) {
-      json += "extId" -> JsString(category.extImpId.get)
+    if (includeDetails) {
+      json += "sectionPageId" -> JsString(category.sectionPageId)
+      if (category.extImpId.isDefined) {
+        json += "extId" -> JsString(category.extImpId.get)
+      }
     }
     json
   }
