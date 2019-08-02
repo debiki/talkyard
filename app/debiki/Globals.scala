@@ -1162,8 +1162,27 @@ class Config(conf: play.api.Configuration) {
     val maxTestSitesTotal: Int = conf.getInt(s"$path.maxTestSitesTotal") getOrElse maxSitesTotal * 3
 
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
-    val quotaLimitMegabytes: Option[Int] =
+    def quotaLimitMegabytes(isForBlogComments: Boolean, isTestSite: Boolean): Option[Int] = {
+      val limitForRealSite =
+        if (!isForBlogComments) quotaLimitMegabytesForum
+        else {
+          quotaLimitMegabytesBlogComments orElse {
+            // Blogs are relatively small, so restrict them a bit more.
+            quotaLimitMegabytesForum.map(_ / 10)
+          }
+        }
+      val resultMaybeZero =
+        if (isTestSite) limitForRealSite.map(_ / 10)
+        else limitForRealSite
+      resultMaybeZero.map(Math.max(_, 1))
+    }
+
+    val quotaLimitMegabytesForum: Option[Int] =
+      conf.getInt("talkyard.newSite.quotaLimitMegabytesForum") orElse
       conf.getInt("talkyard.newSite.quotaLimitMegabytes")
+
+    val quotaLimitMegabytesBlogComments: Option[Int] =
+      conf.getInt("talkyard.newSite.quotaLimitMegabytesBlogComments")
   }
 
   object superAdmin {

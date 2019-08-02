@@ -90,7 +90,7 @@ case class CategoryToSave(
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
-    textAndHtmlMaker.forTitle(s"Description of the $name category")
+    textAndHtmlMaker.forTitle(s"Description of the $name category")  // sync with the upserter [G204MF3]
 
   def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
     textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]

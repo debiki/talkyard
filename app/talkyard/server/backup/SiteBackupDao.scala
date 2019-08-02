@@ -210,6 +210,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           case Some(oldGuestRealId: Guest) =>
             dieIf(oldGuestRealId.id <= -LowestTempImpId, "TyE046MKP01")
             dieIf(oldGuestRealId.extImpId != guestTempId.extImpId, "TyE046MKP02")
+            // Later, update guest, but when do this? If onConflict=Overwrite?  [YESUPSERT]
             //if (guestTempId.updatedAt.millis > oldGuestRealId.updatedAt.millis)
             //  val guestRealId = guestTempId.copy(id = oldGuestRealId.id)
             //  tx.updateGuest(guestRealId)
@@ -268,7 +269,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
           val realPostExclParentNr: Post = tempPost.extImpId.flatMap(oldPostsByExtImpId.get) match {
             case Some(oldPostRealIdNr: Post) =>
-              // Later: If has same id and nr, then could upsert.
+              // Later: If has same id and nr, then could upsert.  [YESUPSERT]
               // If different id or nr, then, error?
               oldPostRealIdNr
             case None =>
@@ -434,11 +435,21 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val anyOldCat = oldCategoriesById.get(realId)
         val catRealIds = anyOldCat match {
           case None =>
-            SHOULD // verify parent cat has same section page id (!)
+            val realSectPageId = remappedPageTempId(catTempId.sectionPageId)
+            val parentCatRealId = catTempId.parentId.map(remappedCategoryTempId)
+            val parentCat = parentCatRealId.flatMap(oldCategoriesById.get)
+            /* If is upserting into existing site, could:
+            throwBadRequestIf(parentCatRealId.isDefined && parentCat.isEmpty,
+                "TyE5AKTT20", s"Parent category not found, for category: $catTempId") */
+            throwBadRequestIf(parentCat.exists(_.sectionPageId != realSectPageId),
+              "TyE205WKT", o"""Parent category ${parentCat.get.id} has section page id
+              ${parentCat.get.sectionPageId} which is different from the upserted category
+              $catTempId whose real section page id is $realSectPageId""")
+            COULD // also verify that the page is a forum or blog or some valid site section type page.
             val catRealIds = catTempId.copy(
               id = realId,
-              sectionPageId = remappedPageTempId(catTempId.sectionPageId),
-              parentId = catTempId.parentId.map(remappedCategoryTempId),
+              sectionPageId = realSectPageId,
+              parentId = parentCatRealId,
               defaultSubCatId = catTempId.defaultSubCatId.map(remappedCategoryTempId))
             tx.insertCategoryMarkSectionPageStale(catRealIds)
             catRealIds
@@ -523,7 +534,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           })
 
         if (oldCategoryWithThisPerm.isDefined) {
-          // Then skip this permission, see above (305DKASP)
+          // Then skip this permission, see above (305DKASP),
+          // ... or if onConflit=Overwrite, then do overwrite?  [YESUPSERT]
         }
         else {
           val permissionRealIds = permissionTempIds.copy(
@@ -573,7 +585,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
             } */
             oldPageMeta
-            /* Later?:
+            /* Later?,  if onConflict=Overwrite, then update?  [YESUPSERT]
             if (oldPageMeta.updatedAt.getTime < pageMetaTempIds.updatedAt.getTime) {
               val pageWithId = pageMetaTempIds.copy(pageId = oldPageMeta.pageId)
               tx.updatePageMeta(pageWithId, oldMeta = oldPageMeta,
@@ -622,7 +634,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             tx.insertPagePath(pathRealId)
             pathRealId
           case Some(_ /* pathRealId */) =>
-            // Later, could update.
+            // Later, could update.  [YESUPSERT]
         }
       }
     }

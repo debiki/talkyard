@@ -303,7 +303,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   });
 
   it("The category name changes", () => {
-    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneHandEditedName + '666');
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneHandEditedName);
   });
 
   it("... and the browser url path changes, to the new category slug", () => {

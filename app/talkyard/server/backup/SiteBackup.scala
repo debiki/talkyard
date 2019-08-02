@@ -95,7 +95,7 @@ case object SiteBackup {
 case class SimpleSitePatch(
   categoryPatches: Seq[CategoryPatch]) {
 
-  def makeComplete(oldCats: Vector[Category], now: When): SiteBackup Or ErrorMessage = {
+  def makeComplete(oldCats: Seq[Category], now: When): SiteBackup Or ErrorMessage = {
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
@@ -136,7 +136,9 @@ case class SimpleSitePatch(
           return Bad(s"'tyid:' refs not yet implemented [TyE205MRG4]")
         }
         else {
-          return Bad(s"Unknown ref type: '${ref.takeWhile(_ != ':')}' [TyE5RKD2LR46]")
+          var refDots = ref.takeWhile(_ != ':') take 14
+          if (refDots.length >= 9) refDots = refDots.dropRight(1) + "..."
+          return Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyE5RKD2LR46]")
         }
       } getOrElse {
         return Bad("No parentRef: 'extid:....' specified, that's not yet tested [TyE205WKDLF2]")
@@ -183,8 +185,11 @@ case class SimpleSitePatch(
         canonical = true))
 
       // Assume the title source is html, not CommonMark. How can we know? [IMPCORH]
-      val nameSanitized = Jsoup.clean(theCategoryName, Whitelist.basic)
       val descriptionSanitized = Jsoup.clean(theCategoryDescription, Whitelist.basicWithImages)
+
+      // Sync the title with CategoryToSave [G204MF3]
+      val titleSource = s"Description of the $theCategoryName category"
+      val titleSanitized = Jsoup.clean(titleSource, Whitelist.basic)
 
       val titlePost = Post(
         id = nextPostId,
@@ -206,8 +211,8 @@ case class SimpleSitePatch(
         lastApprovedEditById = None,
         numDistinctEditors = 1,
         safeRevisionNr = Some(FirstRevisionNr),
-        approvedSource = categoryPatch.name,
-        approvedHtmlSanitized = Some( nameSanitized),
+        approvedSource = Some(titleSource),
+        approvedHtmlSanitized = Some(titleSanitized),
         approvedAt = Some(now.toJavaDate),
         approvedById = Some(SysbotUserId),
         approvedRevisionNr = Some(FirstRevisionNr),
@@ -239,7 +244,7 @@ case class SimpleSitePatch(
         id = nextPostId,
         extImpId = categoryPatch.extImpId.map(_ + "_about_page_body"),
         nr = PageParts.BodyNr,
-        approvedSource = categoryPatch.description,
+        approvedSource = Some(theCategoryDescription),
         approvedHtmlSanitized = Some(descriptionSanitized))
 
       posts.append(titlePost)

@@ -30,21 +30,9 @@ trait DumpMaker {
   self: DaoAppSuite =>
 
 
-  /*
-  def createSite(id: String): Site = {
-    globals.systemDao.createAdditionalSite(
-      pubId = s"imptest_$id", name = s"imp-test-$id", status = SiteStatus.Active,
-      hostname = Some(s"imp-test-$id"),
-      embeddingSiteUrl = None, organizationName = s"Imp Test Org $id",
-      creatorId = SystemUserId, // not in use when createdFromSiteId is None
-      browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-      deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
-  } */
-
-
-  def upsert(siteId: SiteId, dump: SiteBackup) {
+  def upsert(siteId: SiteId, patch: SiteBackup) {
     val importer = SiteBackupImporterExporter(globals)
-    importer.upsertIntoExistingSite(siteId, dump, browserIdData)
+    importer.upsertIntoExistingSite(siteId, patch, browserIdData)
   }
 
 
@@ -55,10 +43,11 @@ trait DumpMaker {
 
   def makeGuest(id: UserId): Guest = Guest(
     id = id,
-    extImpId = Some(s"guest_temp_imp_id_$id"),
+    extImpId = Some(s"guest_w_temp_imp_id_$id"),
     createdAt = globals.now(),
     guestName = s"Guest With Id $id",
-    guestBrowserId = Some(s"guest-br-id-$id"), email = s"guest-$id@x.co",
+    guestBrowserId = Some(s"guest-br-id-$id"),
+    email = s"guest-$id@x.co",
     emailNotfPrefs = EmailNotfPrefs.Unspecified)
 
 
@@ -68,9 +57,9 @@ trait DumpMaker {
   def makeUnapprovedUser(id: UserId) =
     UserInclDetails(
       id = id,
-      extImpId = Some(s"user-ext-imp-id-$id"),
-      externalId = Some(s"user-ext-sso-id-for-temp-id-$id"),
-      fullName = Some(s"User temp imp id $id Full Name"),
+      extImpId = Some(s"user-w-temp-imp-id-$id"),
+      externalId = Some(s"user-sso-id-for-temp-imp-id-$id"),
+      fullName = Some(s"User W Temp Imp Id $id Full Name"),
       username = s"usr_tid_$id",
       createdAt = globals.now(),
       isApproved = None,
@@ -80,15 +69,15 @@ trait DumpMaker {
       emailNotfPrefs = EmailNotfPrefs.Receive)
 
 
-  val PageTempImpId = "2000000333"
+  val AboutCatPageTempImpId333 = "2000000333"
 
 
   lazy val CategoryWithSectPageId333: Category =
-    makeCategory(LowestTempImpId + 1, PageTempImpId, defSubCat = Some(2))
+    makeCategory(LowestTempImpId + 1, AboutCatPageTempImpId333, defSubCat = Some(2))
 
   lazy val CategoryWithSectPageId333SubCat: Category = makeCategory(
     categoryId = CategoryWithSectPageId333.id + 1,
-    sectionPageId = PageTempImpId,
+    sectionPageId = AboutCatPageTempImpId333,
     parentId = Some(CategoryWithSectPageId333.id))
 
 
@@ -96,14 +85,14 @@ trait DumpMaker {
         parentId: Option[CategoryId] = None, defSubCat: Option[CategoryId] = None) =
     Category(
       id = categoryId,
-      extImpId = Some(s"cat-w-ext-imp-id-$categoryId"),
+      extImpId = Some(s"cat-w-temp-imp-id-$categoryId"),
       sectionPageId = sectionPageId,
       parentId = parentId,
       defaultSubCatId = defSubCat,
-      name = s"Category $categoryId Section Page $sectionPageId",
+      name = s"Category Imp Id $categoryId Section Page $sectionPageId",
       slug = s"category-$categoryId-w-sect-page-$sectionPageId",
       position = 1,
-      description = Some(s"Description of Category W Id $categoryId"),
+      description = Some(s"Description of Category W Temp Imp Id $categoryId"),
       newTopicTypes = Vector(PageType.Discussion),
       unlistCategory = false,
       unlistTopics = false,
@@ -113,7 +102,7 @@ trait DumpMaker {
 
 
 
-  lazy val MayAllPermsForCatWSectPageId333: PermsOnPages = makePermsOnPagesMayAllYes(
+  lazy val MayAllPermsForFullMembersOnSubCatWSectPageId333: PermsOnPages = makePermsOnPagesMayAllYes(
     LowestTempImpId + 1, forPeopleId = Group.FullMembersId,
     onCategoryId = Some(CategoryWithSectPageId333SubCat.id))
 
@@ -139,13 +128,13 @@ trait DumpMaker {
       maySeeOwn = Some(true))
 
 
-  lazy val PageMeta333: PageMeta =
-    makePageMeta(PageTempImpId, categoryId = Some(CategoryWithSectPageId333.id))
+  lazy val AboutCatPageMeta333: PageMeta =
+    makePageMeta(AboutCatPageTempImpId333, categoryId = Some(CategoryWithSectPageId333.id))
     .copy(pageType = PageType.AboutCategory)
 
   def makePageMeta(id: PageId, categoryId: Option[CategoryId]) = PageMeta(
     pageId = id,
-    extImpId = Some(s"page-$id-ext-imp-id"),
+    extImpId = Some(s"page-w-imp-id$id"),
     pageType = PageType.Discussion,
     version = 1,
     createdAt = globals.now().toJavaDate,
@@ -155,38 +144,41 @@ trait DumpMaker {
     categoryId = categoryId)
 
 
-  lazy val PagePathToPage333: PagePathWithId = makePagePath(pageId = PageTempImpId)
+  lazy val PagePathToPage333: PagePathWithId = makePagePath(pageId = AboutCatPageTempImpId333)
 
   def makePagePath(pageId: PageId) = PagePathWithId(
     folder = "/",
     pageId = pageId,
     showId = true,
-    pageSlug = s"page-$pageId-slug",
+    pageSlug = s"page-w-imp-id-$pageId-slug",
     canonical = true)
 
 
   lazy val Page333TitlePost: Post = makePost(
-    LowestTempImpId + 1, pageId = PageTempImpId, nr = PageParts.TitleNr)
+    LowestTempImpId + 1, pageId = AboutCatPageTempImpId333, nr = PageParts.TitleNr)
 
   lazy val Page333BodyPost: Post = makePost(
-    LowestTempImpId + 2, pageId = PageTempImpId, nr = PageParts.BodyNr)
+    LowestTempImpId + 2, pageId = AboutCatPageTempImpId333, nr = PageParts.BodyNr)
 
   lazy val Page333Reply: Post = makePost(
-    LowestTempImpId + 3, pageId = PageTempImpId, nr = LowestTempImpId + PageParts.FirstReplyNr,
+    LowestTempImpId + 3, pageId = AboutCatPageTempImpId333, nr = LowestTempImpId + PageParts.FirstReplyNr,
         parent = Some(Page333BodyPost))
 
-  def makePost(id: PostId, pageId: PageId, nr: PostNr, parent: Option[Post] = None): Post = Post.create(
-    uniqueId = id,
-    extImpId = Some(s"page-$pageId-post-id-$id-nr-$nr"),
-    pageId = pageId,
-    postNr = nr,
-    parent = parent,
-    multireplyPostNrs = Set.empty,
-    postType = PostType.Normal,
-    createdAt = globals.now().toJavaDate,
-    createdById = SystemUserId,
-    source = s"Page${PageTempImpId}BodyPost source text",
-    htmlSanitized = s"<p>Page${PageTempImpId}BodyPost source text</p>",
-    approvedById = None)
+  def makePost(id: PostId, pageId: PageId, nr: PostNr, parent: Option[Post] = None): Post = {
+    val text = s"Text text, page w imp id $AboutCatPageTempImpId333, post imp nr $nr"
+    Post.create(
+      uniqueId = id,
+      extImpId = Some(s"page-$pageId-post-w-imp-id-$id-imp-nr-$nr"),
+      pageId = pageId,
+      postNr = nr,
+      parent = parent,
+      multireplyPostNrs = Set.empty,
+      postType = PostType.Normal,
+      createdAt = globals.now().toJavaDate,
+      createdById = SystemUserId,
+      source = text,
+      htmlSanitized = s"<p>$text</p>",
+      approvedById = None)
+  }
 
 }

@@ -342,6 +342,7 @@ package object core {
   def UnknownUserName: String = Participant.UnknownUserName
   def UnknownUserBrowserId: String = Participant.UnknownUserBrowserId
   def MaxGuestId: UserId = Participant.MaxGuestId
+  def MaxCustomGuestId: UserId = Participant.MaxCustomGuestId
   def LowestNonGuestId: UserId = Participant.LowestNonGuestId
   def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
 

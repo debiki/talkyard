@@ -224,9 +224,13 @@ class SystemDao(
 
       // Keep all this in sync with createFirstSite(). (5DWSR42)
 
+      val maxQuota = config.createSite.quotaLimitMegabytes(
+        isForBlogComments = embeddingSiteUrl.isDefined,
+        isTestSite = isTestSiteOkayToDelete)
+
       val newSite = sysTx.createSite(id = None, pubId = pubId, name = name, status,
         creatorIp = browserIdData.ip,
-        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
+        quotaLimitMegabytes = maxQuota,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
 
