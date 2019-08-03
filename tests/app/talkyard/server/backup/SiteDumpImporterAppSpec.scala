@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.TextAndHtmlMaker
 import debiki.dao._
 import org.scalatest._
+import scala.collection.immutable
 
 
 class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with DumpMaker {
@@ -644,13 +645,14 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
     }
 
-    // CONTINUE HERE JRBKW29502565802094
 
-    def createSiteWithOneCatAndPage(hostname: String, pageExtId: Option[ExtImpId] = None,
+
+    def createSiteWithOneCatPageMember(hostname: String, pageExtId: Option[ExtImpId] = None,
           pageAltIds: Set[AltPageId] = Set.empty)
-          : (Site, CreateForumResult, PageId, Seq[Post], User, SiteDao) = {
+          : (Site, CreateForumResult, PageId, Seq[Post], User, User, SiteDao) = {
       val (site, dao) = createSite(hostname)
       val owen = createPasswordOwner("owner_un", dao)
+      val merrylMember = createPasswordUser("merryl_un", dao)
       val forum: CreateForumResult = dao.createForum(
           s"Forum $hostname", folder = "/", isForEmbCmts = true, Who(owen.id, browserIdData)
           ) getOrDie "TyE305RTG3"
@@ -662,7 +664,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
       val pagePosts = dao.readOnlyTransaction { tx => tx.loadPostsOnPage(pageId) }
 
-      (site, forum, pageId, pagePosts, owen, dao)
+      (site, forum, pageId, pagePosts, owen, merrylMember, dao)
     }
 
 
@@ -677,26 +679,34 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
         defSubCat = Some(forum.defaultCategoryId)
       ).copy(extImpId = Some("embedded_comments"))
 
-    "Import new pages and replies" - {
+
+    "Import new pages and replies, all posts approved" - {
+
       val oldPageExtId = "old_page_ext_id"
       val oldPageAltId = "old_page_alt_id"
 
-      lazy val (site, forum, _, _, owen, dao) =
-        createSiteWithOneCatAndPage("imp-pages-relpies", pageExtId = Some(oldPageExtId),
-          pageAltIds = Set(oldPageAltId))
+      lazy val (
+        site,
+        forum, _, _,
+        owen,
+        merrylMember,
+        dao) = createSiteWithOneCatPageMember(
+          "imp-pages-replies", pageExtId = Some(oldPageExtId), pageAltIds = Set(oldPageAltId))
 
-      val upsertedPageExtId = "ups_ext_id"
-      val upsertedPageAltId = "ups_alt_id"
+      val pageToUpsertExtId = "ups_ext_id"
+      val pageToUpsertAltId = "ups_alt_id"
 
-      lazy val upsertedPageComplete = AboutCatPageMeta333.copy(
+      lazy val pageToUpsert = AboutCatPageMeta333.copy(
         version = 2,  // version bumped to 2 here [306MDH26]
-        extImpId = Some(upsertedPageExtId),
+        extImpId = Some(pageToUpsertExtId),
         authorId = owen.id,
-        pageType = PageType.Discussion)
+        pageType = PageType.Idea)
 
-      lazy val upsertedPageOnlyExtId = AboutCatPageMeta333.copy(
-        version = 2,  // version bumped to 2 here [306MDH26]
-        extImpId = Some(upsertedPageExtId))
+      lazy val titleByOwen = Page333TitlePost.copy(createdById = owen.id, currentRevisionById = owen.id)
+      lazy val bodyByOwen = Page333BodyPost.copy(createdById = owen.id, currentRevisionById = owen.id)
+      lazy val replyByMember = Page333Reply.copy(
+        createdById = merrylMember.id, currentRevisionById = merrylMember.id)
+
 
       "create site" in {
         site // lazy creates it
@@ -710,14 +720,13 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
           patchToUpsert = SiteBackup.empty.copy(
             categories = Vector(dummyCategory),
-            pages = Vector(upsertedPageComplete),
-            pageIdsByAltIds = Map(upsertedPageAltId -> upsertedPageComplete.pageId),
+            pages = Vector(pageToUpsert),
+            pageIdsByAltIds = Map(pageToUpsertAltId -> pageToUpsert.pageId),
             pagePaths = Vector(PagePathToPage333),
             posts =
-              Vector(Page333TitlePost, Page333BodyPost, Page333Reply)
-                .map(_.copy(
-                  createdById = owen.id,
-                  currentRevisionById = owen.id)))
+              Vector(titleByOwen, bodyByOwen, replyByMember)
+                .map(p =>
+                  copyAsApproved(p, approvedById = owen.id, approvedAt = globals.now())))
 
           upsert(site.id, patchToUpsert)
         }
@@ -740,10 +749,18 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
           info("find the new page")
           val defaultCatPages = actualDump.pages.filter(_.categoryId is forum.defaultCategoryId)
-          val actualNewPage = defaultCatPages.find(_.authorId == owen.id) getOrDie "TyE306HMREDF25"
+          val actualNewPage =
+            actualDump.pages.find(_.extImpId is pageToUpsertExtId) getOrDie "TyE306HMREDF25"
 
-          info("it has the correct ext id")
-          actualNewPage.extImpId mustBe Some(upsertedPageExtId)
+          info("it has the correct author, num posts, frequent posters etc")
+          actualNewPage.authorId mustBe owen.id
+          actualNewPage.numRepliesVisible mustBe 1
+          actualNewPage.numPostsTotal mustBe 3 // title + body + reply
+          actualNewPage.lastApprovedReplyAt mustBe Some(Page333Reply.createdAt)
+          actualNewPage.lastApprovedReplyById mustBe Some(merrylMember.id)
+          actualNewPage.categoryId mustBe 'defined
+          actualNewPage.frequentPosterIds mustBe Vector.empty  // not updated until there're 2 replies
+
 
           info("it's in the General category, together with the category descr page and the new page")
           // There're 3 pages in the category: the category description, the page
@@ -758,19 +775,108 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0501"
           actualPosts.length mustBe 3
 
+          actualReply.parentNr mustBe Some(BodyNr)
+
+          info("with the correct authors")
+          actualTitle.createdById mustBe owen.id
+          actualBody.createdById mustBe owen.id
+          actualReply.createdById mustBe merrylMember.id
+
+          info("and currentRevisionById")
+          actualTitle.currentRevisionById mustBe owen.id
+          actualBody.currentRevisionById mustBe owen.id
+          actualReply.currentRevisionById mustBe merrylMember.id
+
+          info("and revision numbers")
+          actualTitle.currentRevisionNr mustBe 1
+          actualBody.currentRevisionNr mustBe 1
+          actualReply.currentRevisionNr mustBe 1
+          actualTitle.approvedRevisionNr mustBe Some(1)
+          actualBody.approvedRevisionNr mustBe Some(1)
+          actualReply.approvedRevisionNr mustBe Some(1)
+
+          info("and approvers")
+          actualTitle.approvedById mustBe Some(owen.id)
+          actualBody.approvedById mustBe Some(owen.id)
+          actualReply.approvedById mustBe Some(owen.id)
+
+          info("no edits")
+          actualTitle.lastApprovedEditById mustBe None
+          actualBody.lastApprovedEditById mustBe None
+          actualReply.lastApprovedEditById mustBe None
+
           info("with the correct text contents")
           actualTitle.currentSource mustBe Page333TitlePost.currentSource
           actualBody.currentSource mustBe Page333BodyPost.currentSource
           actualReply.currentSource mustBe Page333Reply.currentSource
+          actualTitle.approvedSource mustBe Some(actualTitle.currentSource)
+          actualBody.approvedSource mustBe Some(actualBody.currentSource)
+          actualReply.approvedSource mustBe Some(actualReply.currentSource)
+          // (This test just copies the current source to the approved html. (38WS6492))
+          actualTitle.approvedHtmlSanitized.get must include(actualTitle.currentSource)
+          actualBody.approvedHtmlSanitized.get must include(actualBody.currentSource)
+          actualReply.approvedHtmlSanitized.get must include(actualReply.currentSource)
 
-          info("those are te only posts with ext ids")
+          info("those are the only posts with ext ids")
           val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
           postsWithExtImpId.length mustBe 3
+        }
+
+        var merlinMember: User = null
+
+        "add a 2nd reply, via the page's ext id" in {
+          globals.testFastForwardTimeMillis(60 * 1000)
+
+          merlinMember = createPasswordUser("merlin_un", dao)
+
+          val dummyCategory = makeEmbeddedCommentsCategory(forum)
+          val now = globals.now()
+
+          val newReply = copyAsApproved(
+            Page333Reply.copy(
+              createdAt = now.toJavaDate,
+              currentRevStaredAt = now.toJavaDate,
+              extImpId = Some("merlin's-reply"),
+              createdById = merlinMember.id,
+              currentRevisionById = merlinMember.id),
+            approvedById = owen.id,
+            approvedAt = now)
+
+          patchToUpsert = SiteBackup.empty.copy(
+            categories = Vector(dummyCategory),
+            pages = Vector(pageToUpsert),
+            posts = Vector(
+              bodyByOwen, // needed (309360327)
+              newReply))
+
+          upsert(site.id, patchToUpsert)
+        }
+
+        "frequentPosterIds did get updated" in {
+          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+
+          info("find the new page")
+          val actualNewPage =
+            actualDump.pages.find(_.extImpId is pageToUpsertExtId) getOrDie "TyE306HMREDF25"
+
+          info("it has the correct num posts and frequent posters")
+          actualNewPage.authorId mustBe owen.id
+          actualNewPage.numRepliesVisible mustBe 2
+          actualNewPage.numPostsTotal mustBe 4 // title + body + reply + reply
+          // merlinMember is the latest poster, so won't be in the frequentPosterIds list.
+          // And merrylMember is *no longer* the latest poster, so *wil* be in the list. [206K94QTD]
+          actualNewPage.lastApprovedReplyById mustBe Some(merlinMember.id)
+          actualNewPage.frequentPosterIds mustBe Vector(merrylMember.id)
         }
       }
 
 
-      "add a reply to a page, via the page's ext id" - {
+      lazy val upsertedPageOnlyExtId = AboutCatPageMeta333.copy(
+        version = 2,  // version bumped to 2 here [306MDH26]
+        extImpId = Some(pageToUpsertExtId))
+
+
+      "add a 3nd reply" - {
         var patchToUpsert: SiteBackup = null
         lazy val reply2 = Page333Reply.copy(extImpId = Some("reply_2_ext_id"))
 
@@ -779,7 +885,6 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
             pages = Vector(
               // Needed so the new reply has a page to reference in the patch.
               upsertedPageOnlyExtId),
-            //pageIdsByAltIds = Map(upsertedPageAltId -> PageMeta333.pageId),
             posts =
               Vector(
                 // The body post is needed (309360327), so the reply has a parent post
@@ -809,7 +914,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
 
           info("find the page")
-          val actualNewPage = actualDump.pages.find(_.extImpId is upsertedPageExtId
+          val actualNewPage = actualDump.pages.find(_.extImpId is pageToUpsertExtId
           ) getOrDie "TyE6PKDHAFF05"
 
           info("find the title, body, old reply and new reply")
@@ -817,80 +922,21 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
           actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT02"
           actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A02"
           actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0502"
-          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr + 1) getOrDie "TyE5AP20Z"
-          actualPosts.length mustBe 4
+          actualPosts.find(_.nr == PageParts.FirstReplyNr + 1) getOrDie "TyE6TKFG0502"
+          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr + 2) getOrDie "TyE5AP20Z"
+          actualPosts.length mustBe 5
 
           info("with the correct text contents")
           actualReply.currentSource mustBe reply2.currentSource
 
           info("those are te only posts with ext ids")
           val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
-          postsWithExtImpId.length mustBe 4
+          postsWithExtImpId.length mustBe 5
         }
       }
 
 
-      /*  no, this will lookup via ext id instead :- /
-      "Add more replies to the page, via page alt id" - {
-        var patchToUpsert: SiteBackup = null
-        lazy val reply3 = Page333Reply.copy(extImpId = Some("reply_3_alt_id"))
-
-        "import (upsert) a site patch with the reply" in {
-          patchToUpsert = SiteBackup.empty.copy(
-            pages = Vector(
-              // Needed so the new reply has a page to reference in the patch.
-              upsertedPageOnlyExtId),
-            pageIdsByAltIds = Map(upsertedPageAltId -> upsertedPageOnlyExtId.pageId),
-            posts =
-              Vector(
-                // Body post is needed, see (309360327).
-                Page333BodyPost, reply3).map(_.copy(
-                  createdById = owen.id,
-                  currentRevisionById = owen.id)))
-
-          upsert(site.id, patchToUpsert)
-        }
-
-        "load the site contents, it looks ok" in {
-          loadDumpCheckLooksOk()
-        }
-
-        "re-upsert the new reply" in {
-          upsert(site.id, patchToUpsert)
-        }
-
-        "didn't change anything" in {
-          loadDumpCheckLooksOk()
-        }
-
-        def loadDumpCheckLooksOk() {
-          info("read back")
-          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
-
-          info("find the page, ext id shouldn't have changed")
-          val actualNewPage = actualDump.pages.find(_.extImpId is upsertedPageExtId
-                ) getOrDie "TyE5KBRT305"
-
-          info("find the title, body, old reply, reply via ext id, and via alt id")
-          val actualPosts = actualDump.posts.filter(_.pageId == actualNewPage.pageId)
-          actualPosts.find(_.nr == PageParts.TitleNr) getOrDie "TyE305KRBT03"
-          actualPosts.find(_.nr == PageParts.BodyNr) getOrDie "TyE05KT6A03"
-          actualPosts.find(_.nr == PageParts.FirstReplyNr) getOrDie "TyE6TKFG0503"
-          actualPosts.find(_.nr == PageParts.FirstReplyNr + 1) getOrDie "TyE306RKKT4"
-          val actualReply = actualPosts.find(_.nr == PageParts.FirstReplyNr + 2) getOrDie "TyE0HBJSR"
-          actualPosts.length mustBe 5
-
-          info("with the correct text contents")
-          actualReply.currentSource mustBe reply3.currentSource
-
-          info("those are te only posts with ext ids")
-          val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
-          postsWithExtImpId.length mustBe 5
-        }
-      }*/
-
-
-      /*
+      TESTS_MISSING /*
       "Reject upserting a page with mismatching ext id or alt id" - {
         lazy val oldPage = makePageMeta(
           PageTempImpId, categoryId = Some(CategoryWithSectPageId333.id))
@@ -922,15 +968,14 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
     "add a reply to a page, via its alt id" - {
       val oldPageAltId = "old_page_alt_id"
-      val upsertedExtId = "ups_ext_id"
 
-      lazy val (site, forum, oldPageId, oldPagePosts, owen, dao) =
-        createSiteWithOneCatAndPage("ups-reply-via-page-alt-id", pageExtId = None,
+      lazy val (site, forum, oldPageId, oldPagePosts, owen, _, dao) =
+        createSiteWithOneCatPageMember("ups-reply-via-page-alt-id", pageExtId = None,
           pageAltIds = Set(oldPageAltId))
 
-      lazy val upsertedPage = AboutCatPageMeta333.copy(
+      lazy val pageToUpsertAlreadyExists = AboutCatPageMeta333.copy(
         version = 2,  // version bumped to 2 here [306MDH26]
-        extImpId = Some(upsertedExtId),
+        extImpId = Some("ups_ext_id"),
         authorId = owen.id,
         pageType = PageType.Discussion)
 
@@ -938,16 +983,14 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
 
       var patchToUpsert: SiteBackup = null
 
-      "upsert a site patch with reply 3 and a page with an alt id matching an old page" in {
+      "upsert a site patch with a reply and a page with an alt id matching an old page" in {
         val dummyCategory = makeEmbeddedCommentsCategory(forum)
         patchToUpsert = SiteBackup.empty.copy(
           categories = Vector(dummyCategory),
-          pages = Vector(
-            upsertedPage),
-          pageIdsByAltIds = Map(oldPageAltId -> upsertedPage.pageId),
-          posts =
-            Vector(
-              Page333TitlePost, Page333BodyPost, upsReply).map(_.copy(
+          pages = Vector(pageToUpsertAlreadyExists),  // same alt id —> is considered same page
+          pageIdsByAltIds = Map(oldPageAltId -> pageToUpsertAlreadyExists.pageId),
+          posts = Vector(
+            Page333TitlePost, Page333BodyPost, upsReply).map(_.copy(
               createdById = owen.id,
               currentRevisionById = owen.id)))
 
@@ -995,6 +1038,17 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with D
       }
     }
 
+  }
+
+
+  def copyAsApproved(post: Post, approvedById: UserId, approvedAt: When): Post = {
+    post.copy(  // sync w real code [29LW05KS2]
+      approvedRevisionNr = Some(post.currentRevisionNr),
+      approvedAt = Some(approvedAt.toJavaDate),
+      approvedById = Some(approvedById),
+      approvedSource = Some(post.currentSource),
+      approvedHtmlSanitized = Some(s"<p>${post.currentSource}</p>"),  // just a test (38WS6492)
+      currentRevSourcePatch = None)
   }
 
 }

@@ -137,10 +137,12 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
       slug: UpsCatOneSlug,
       defaultTopicType: PageRole.Question,
       description: UpsCatOneDescr,
-      position: 55,
+      position: UpsCatOnePosition,
     };
     upsertResponse = server.apiV0.upsertSimple({
-        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        origin: siteIdAddress.origin,
+        requesterId: c.SysbotUserId,
+        apiSecret,
         data: {
           categories: [category],
         }});
@@ -149,15 +151,18 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   it("... gets back the upserted category in the server's response", () => {
     assert.equal(upsertResponse.categories.length, 1);
     upsertedCategory = upsertResponse.categories[0];
+    assert.equal(upsertedCategory.extId, UpsCatOneExtId);
     assert.equal(upsertedCategory.name, UpsCatOneName);
     assert.equal(upsertedCategory.slug, UpsCatOneSlug);
-    assert.equal(upsertedCategory.extId, UpsCatOneExtId);
+    //assert.equal(upsertedCategory.defaultTopicType, PageRole.Question); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatOneDescr);
+    assert.equal(upsertedCategory.position, UpsCatOnePosition);
   });
 
   it("The upserted category is not yet visible", () => {
     owensBrowser.forumCategoryList.waitForCategories();
     assert.equal(owensBrowser.forumCategoryList.numCategoriesVisible(), 4);
+    assert.equal(owensBrowser.forumCategoryList.numSubCategoriesVisible(), 0);
   });
 
   it("... but Owen refreshes the page", () => {
@@ -183,15 +188,15 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   // ----- Upserting many categories
 
-  it("Owen upserts two more", () => {
+  it("Owen upserts two more categories, in the same API request", () => {
     const upsCatTwo = {  //: TestCategoryPatch
       extId: UpsCatTwoExtIdLoong,
       parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatTwoName,
       slug: UpsCatTwoSlug,
-      defaultTopicType: PageRole.Question,
+      defaultTopicType: PageRole.Idea,
       description: UpsCatTwoDescr,
-      position: 54,
+      position: UpsCatTwoPosition,
     };
     const upsCatThree = {  //: TestCategoryPatch
       extId: UpsCatThreeExtIdWeirdChars,
@@ -200,10 +205,12 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
       slug: UpsCatThreeSlug,
       defaultTopicType: PageRole.Problem,
       description: UpsCatThreeDescr,
-      position: 56,
+      position: UpsCatThreePosition,
     };
     upsertResponse = server.apiV0.upsertSimple({
-        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        origin: siteIdAddress.origin,
+        requesterId: c.SysbotUserId,
+        apiSecret,
         data: {
           categories: [upsCatTwo, upsCatThree],
         }});
@@ -218,6 +225,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.name, UpsCatTwoName);
     assert.equal(upsertedCategory.slug, UpsCatTwoSlug);
     assert.equal(upsertedCategory.extId, UpsCatTwoExtIdLoong);
+    //assert.equal(upsertedCategory.defaultTopicType, PageRole.Idea); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatTwoDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoPosition);
   });
@@ -227,6 +235,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.name, UpsCatThreeName);
     assert.equal(upsertedCategory.slug, UpsCatThreeSlug);
     assert.equal(upsertedCategory.extId, UpsCatThreeExtIdWeirdChars);
+    //assert.equal(upsertedCategory.defaultTopicType, PageRole.Problem); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatThreeDescr);
     assert.equal(upsertedCategory.position, UpsCatThreePosition);
   });
@@ -259,12 +268,14 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
       parentRef: 'extid:' + PackagesCatExtId,
       name: UpsCatTwoEditedName,
       slug: UpsCatTwoEditedSlug,
-      defaultTopicType: PageRole.Idea,  // was: Question
+      defaultTopicType: PageRole.Problem,  // was: Idea
       description: UpsCatTwoEditedDescr,
       position: UpsCatTwoEditedPos,
     };
     upsertResponse = server.apiV0.upsertSimple({
-        origin: siteIdAddress.origin, requesterId: c.SysbotUserId, apiSecret,
+        origin: siteIdAddress.origin,
+        requesterId: c.SysbotUserId,
+        apiSecret,
         data: {
           categories: [category],
         }});
@@ -279,6 +290,33 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.description, UpsCatTwoEditedDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoEditedPos);
   });
+
+  it("... Owen relaods the page", () => {
+    owensBrowser.refresh();
+    owensBrowser.forumCategoryList.waitForCategories();
+  });
+
+  it("... the name did actually change", () => {
+    const isSubCategoryVisible = owensBrowser.forumCategoryList.isSubCategoryVisible;
+    assert(isSubCategoryVisible(UpsCatTwoEditedName));
+  });
+
+  it("... the other categories didn't get renamed", () => {
+    const isCategoryVisible = owensBrowser.forumCategoryList.isCategoryVisible;
+    const isSubCategoryVisible = owensBrowser.forumCategoryList.isSubCategoryVisible;
+    assert(isCategoryVisible(forum.categories.categoryA.name));
+    assert(isCategoryVisible(forum.categories.staffOnlyCategory.name));
+    assert(isCategoryVisible(forum.categories.specificCategory.name));
+    assert(isCategoryVisible(PackagesCatName));
+    assert(isSubCategoryVisible(UpsCatOneName));
+    assert(isSubCategoryVisible(UpsCatThreeName));
+  });
+
+  // TESTS_MISSING: verify description pagu updated —   [YESUPSERT]
+  // actually, not yet impl. Pages are currently only *in*serted;
+  // only categories can be *up*serted, for now.
+  // (So right now, one cannot upsert a new category description. Only
+  // change its name and url slug.)
 
 
   // ----- Edit upserted category, via UI edit dialog  [TyT703LTKQ38]
@@ -317,6 +355,8 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
   it("... all fine, after reload", () => {
     owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneHandEditedName);
+    const urlPath = owensBrowser.urlPath();
+    assert.equal(urlPath, '/latest/' + UpsCatOneHandEditedSlug.toLowerCase());
   });
 
   it("The category list page got updated, too", () => {
@@ -362,7 +402,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   });
 
 
-  it("Maja posts a topic in this ups & edited category", () => {
+  it("Maja can post a topic in this ups & edited category", () => {
     majasBrowser.complex.createAndSaveTopic({ title: "Maja's topic title", body: "Majas text text" });
   });
 

@@ -1442,7 +1442,7 @@ trait PostsDao {
 
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
     // or remove them.
-    val postAfter = postBefore.copy(
+    val postAfter = postBefore.copy(   // sync w test [29LW05KS2]
       safeRevisionNr =
         approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
       approvedRevisionNr = Some(postBefore.currentRevisionNr),
