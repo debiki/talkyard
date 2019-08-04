@@ -377,6 +377,9 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       const disqusAuthor = post.author;
 
       function makeNoUsernameExtId() {
+        // Ext ids can be any graphical characters (posix: [[:graph:]]), plus, spaces ' '
+        // are allowed inside an id, so, using the Disqus comment author names as part
+        // of the id, is fine. See db fn  is_valid_ext_id()   [05970KF5].
         return (
             (disqusAuthor.email || '')            + '|' +
             (disqusAuthor.isAnonymous ? 'a' : '') + '|' +

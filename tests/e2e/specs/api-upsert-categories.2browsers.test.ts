@@ -54,10 +54,12 @@ const UpsCatTwoEditedDescr = 'Upserted Cat Two EDITED descr.';
 const UpsCatThreePosition = 56;
 const UpsCatThreeName = 'Ups Category Three pos ' + UpsCatThreePosition;
 const UpsCatThreeSlug = 'ups-category-three';
-const UpsCatThreeExtIdWeirdChars =  // [TyT602RHK42JF]
-    'ups_cat_3_ext_id:un?us-ual_chars__--and--__/+#t![h]{i}"(n)\'g,%s\\.åäö.汉语';
-const UpsCatThreeDescr = 'Upserted Cat Three description.';
 
+// Ext ids can be any graphical characters (posix: [[:graph:]]), plus, spaces ' ' are allowed
+// inside an id.  [05970KF5]
+const UpsCatThreeExtIdWeirdChars =  // [TyT602RHK42JF]
+    'ups_cat_3_ext_id:un?us-ual_chars__--and--__/+#t![h]{i}"(n)\'g,%s\\.åäö.汉语 space';
+const UpsCatThreeDescr = 'Upserted Cat Three description.';
 
 
 describe("api-upsert-categories  TyT94DFKHQC24", () => {

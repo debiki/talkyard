@@ -15,9 +15,9 @@ create or replace function is_valid_ext_id(text character varying) returns boole
   language plpgsql
   as $_$
 begin
-  -- No start or end whitespace. No tabs or newlines inside (spaces = ok, so ids can be names).
+  -- No start or end whitespace. No tabs or newlines inside (spaces = ok, so can incl names). [05970KF5]
   -- Max 128 chars (SHA-512 in hex).
-  return text ~ '^[^\s\0]([^\f\n\r\t\v\0]*[^\s\0])?$' and length(text) between 1 and 128;
+  return text ~ '^[[:graph:]]([[:graph:] ]*[[:graph:]])?$' and length(text) between 1 and 128;
 end;
 $_$;
 
