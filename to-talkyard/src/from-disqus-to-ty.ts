@@ -78,7 +78,7 @@ let curPost: DisqusComment;
 const threadsByDisqusId: { [id: string]: DisqusThread } = {};
 const commentsByDisqusId: { [id: string]: DisqusComment } = {};
 
-const DisqusIdSuffix = ':dsq';
+const DisqusExtIdSuffix = ':dsq';
 
 
 parser.onopentag = function (tag: SaxTag) {
@@ -292,7 +292,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     const tyPage: PageDumpV0 = {
       dbgSrc: 'ToTy',
       id: pageId,
-      extImpId: threadDisqusId + DisqusIdSuffix,
+      extImpId: threadDisqusId + DisqusExtIdSuffix,
       pageType: c.TestPageRole.EmbeddedComments,
       version: 1,
       createdAt: pageCreatedAt,
@@ -319,7 +319,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     const tyTitle: PostDumpV0 = {
       id: nextPostId,
-      extImpId: threadDisqusId + ':title' + DisqusIdSuffix,
+      extImpId: threadDisqusId + ':title' + DisqusExtIdSuffix,
       pageId: tyPage.id,
       nr: c.TitleNr,
       postType: PostType.Normal,
@@ -338,7 +338,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     const tyBody: PostDumpV0 = {
       id: nextPostId,
-      extImpId: threadDisqusId + ':body' + DisqusIdSuffix,
+      extImpId: threadDisqusId + ':body' + DisqusExtIdSuffix,
       pageId: tyPage.id,
       nr: c.BodyNr,
       postType: PostType.Normal,
@@ -376,11 +376,16 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
       const disqusAuthor = post.author;
 
+      function makeNoUsernameExtId() {
+        return (
+            (disqusAuthor.email || '')            + '|' +
+            (disqusAuthor.isAnonymous ? 'a' : '') + '|' +
+            (disqusAuthor.name || ''));  // can contain '|' ?  So place last.
+      }
+
       // Same email, name and URL means it's most likely the same person.
-      const guestExtImpId = (
-          disqusAuthor.username ||
-          `${disqusAuthor.email || ''}|${disqusAuthor.name || ''}|${disqusAuthor.isAnonymous || ''}`)
-              + DisqusIdSuffix;
+      const guestExtImpId =
+          (disqusAuthor.username || makeNoUsernameExtId()) + DisqusExtIdSuffix;
 
       const anyDuplGuest = guestsByImpId[guestExtImpId];
       const anyDuplGuestCreatedAt = anyDuplGuest ? anyDuplGuest.createdAt : undefined;
@@ -407,7 +412,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
       const tyPost: PostDumpV0 = {
         id: nextPostId,
-        extImpId: post.disqusPostId + DisqusIdSuffix,
+        extImpId: post.disqusPostId + DisqusExtIdSuffix,
         pageId: tyPage.id,
         nr: nextPostNr,
         parentNr: undefined, // updated below
@@ -449,7 +454,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     // ----- Fill in parent post nrs
 
     tyComments.forEach(tyComment => {
-      const disqusId: string = tyComment.extImpId.slice(0, -DisqusIdSuffix.length);
+      const disqusId: string = tyComment.extImpId.slice(0, -DisqusExtIdSuffix.length);
       const disqusComment: DisqusComment = commentsByDisqusId[disqusId];
       dieIf(!disqusComment, 'ToTyE305DMRTK6');
       const disqusParentId = disqusComment.disqusParentPostId;
@@ -458,7 +463,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         dieIf(!disqusParent,
             `Parent Disqus comment not found, Disqus id: '${disqusParentId}' ` +
             `[ToTyEDSQ0DSQPRNT]`);
-        const parentExtImpId = disqusParentId + DisqusIdSuffix;
+        const parentExtImpId = disqusParentId + DisqusExtIdSuffix;
         const tyParent = tyComments.find(c => c.extImpId === parentExtImpId);
         dieIf(!tyParent,
             `Parent of Talkyard post nr ${tyComment.nr} w Disqus id '${disqusId}' not found, ` +
