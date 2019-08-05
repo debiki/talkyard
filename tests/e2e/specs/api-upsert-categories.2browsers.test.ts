@@ -314,11 +314,12 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert(isSubCategoryVisible(UpsCatThreeName));
   });
 
-  // TESTS_MISSING: verify description pagu updated —   [YESUPSERT]
+
+  // TESTS_MISSING: verify description page updated —   [YESUPSERT]
   // actually, not yet impl. Pages are currently only *in*serted;
   // only categories can be *up*serted, for now.
-  // (So right now, one cannot upsert a new category description. Only
-  // change its name and url slug.)
+  // (So right now, one cannot upsert a new category description.
+  // Changing its name and url slug works though.)
 
 
   // ----- Edit upserted category, via UI edit dialog  [TyT703LTKQ38]

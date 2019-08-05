@@ -63,15 +63,17 @@ case class SiteBackupReader(context: EdContext) {
         throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
       case ex: IllegalArgumentException =>
         // Some case class constructor failure.
-        throwBadRequest("EsE7BJSN4", o"""Error constructing things, probably because of
-              invalid value combinations: ${ex.getMessage}""")
+        throwBadRequest("EsE7BJSN4", o"""Invalid values, or combinations of values,
+           in the uploaded json: ${ex.getMessage}""")
     }
   }
 
 
-  def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
+  private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
     val categoriesJson =
+    // An extra more specific try...catch here, for better error messages.
       try {
+        // Right now, all people have asked for, is to upsert categories (via /-/v0/upsert-simple ).
         readJsArray(bodyJson, "categories", optional = true)
       }
       catch {
@@ -95,6 +97,7 @@ case class SiteBackupReader(context: EdContext) {
     val oldCats = context.globals.siteDao(siteId).getAllCategories()
     // For now, pick the first random root category. Sub communities currently disabled. [4GWRQA28]
     val rootCategory = context.globals.siteDao(siteId).getRootCategories().headOption.getOrElse {
+      // This means the site is currently empty, but we need something to insert the new contents into.
       throwForbidden("TyE6PKWTY4", "No root category has been created")
     }
     val completePatch = simplePatch.makeComplete(oldCats, globals.now()) match {
@@ -144,16 +147,20 @@ case class SiteBackupReader(context: EdContext) {
 
     val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
 
-    val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ json =>
+    val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ // [GSTPRFS]
+          json =>
       val emailsAndPrefs = json.fields.map(emailAddrAndPrefJsVal => {
         val email = emailAddrAndPrefJsVal._1
         val prefsJson = emailAddrAndPrefJsVal._2
         prefsJson match {
           case JsNumber(value) =>
-            val pref = EmailNotfPrefs.fromInt(value.toInt).getOrElse(EmailNotfPrefs.Unspecified)
+            val pref = EmailNotfPrefs.fromInt(value.toInt) getOrElse {
+              throwBadRequest("TyE205WMTD1", s"Invalid email notf prefs integer value: $value")
+            }
             email -> pref
-          case x => throwBadRequest("TyE506NP2", o"""Bad email notf pref value for email address
-            ${emailAddrAndPrefJsVal._1}: "${emailAddrAndPrefJsVal._2}"""")
+          case x => throwBadRequest(
+            "TyE506NP2", o"""Bad email notf pref value for email address $email: "$prefsJson"
+            has type: ${classNameOf(x)}""")
         }
       })
       Map(emailsAndPrefs: _*)
@@ -207,7 +214,10 @@ case class SiteBackupReader(context: EdContext) {
     val pageIdsByAltIds: Map[AltPageId, PageId] = Map(pageIdsByAltIdsJson.fields map {
       case (altId, pageIdJs) =>
         pageIdJs match {
-          case JsString(value) => altId -> value
+          case JsString(value) =>
+            SECURITY; SHOULD // verify id and value are ok, no weird chars or blanks?
+            // Review this for all imported things b.t.w.
+            altId -> value
           case x => throwBadRequest(
             "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")
         }
@@ -310,9 +320,12 @@ case class SiteBackupReader(context: EdContext) {
         createdAt = readWhen(jsObj, "createdAtMs"),
         guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
-        email = readString(jsObj, "emailAddress").trim,
-        emailNotfPrefs = readEmailNotfsPref(jsObj).getOrElse(
-          guestEmailPrefs.getOrElse(email, EmailNotfPrefs.Unspecified)),
+        email = email,
+        // Any value here, would get ignored. Instead, when finding a guest's email notf pref,
+        // we load guests' email notf prefs from another json object [GSTPRFS] and the
+        // guest_prefs3 db table — which works also if a human returns later and gets
+        // a different guest user account. (stored in guest_prefs3).
+        emailNotfPrefs = EmailNotfPrefs.Unspecified,
         country = readOptString(jsObj, "country"),
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
     }
@@ -344,7 +357,7 @@ case class SiteBackupReader(context: EdContext) {
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(UserInclDetails(
         id = id,
-        externalId = readOptString(jsObj, "externalId"),
+        externalId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId"
         username = username,
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readWhen(jsObj, "createdAtMs"),
@@ -507,9 +520,12 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     try {
-      // For now (later, use a CategoryPatch class instead), if there's nothing but
-      // an id and an ext id, then required the id to be a temp import id,
-      // and load an old category, by external id:
+      // For now, if there's nothing but an id and an ext id, then require the id
+      // to be a temp import id, and later when upserting into the db [3953KSH],
+      // load the old category with that external id — not for modifying it,
+      // but so we know which real category to upsert things inot.
+      // (But if mustBePatch, then we're in  /-/v0/upsert-simple and the fields
+      // descrbe how to update/create the category.)
       if (mustBePatch || jsObj.fields.length == 2) {
         val id = readOptInt(jsObj, "id")
         val extId = readOptString(jsObj, "extId")

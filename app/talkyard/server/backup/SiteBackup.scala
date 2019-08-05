@@ -27,7 +27,7 @@ import play.api.libs.json.JsObject
 import scala.collection.mutable
 
 
-/** Later: This class should not contain complete items like Category an Post. [PPATCHOBJS]
+/** Later: This class should not contain complete items like Category and Post. [PPATCHOBJS]
   * Instead, it should consist of CategoryPatch (exist) and PostPatch and
   * GuestPatch etc, where some fields can be left out.
   * That'd be useful if one wants to upsert something and overwrite only
@@ -39,6 +39,7 @@ import scala.collection.mutable
   * Also, these ThingPatch should be able to refer to each other via
   * external ids, in a patch, so the Talkyard clients won't need to
   * construct these patch > 2e9 "temporary import ids" — or "patch item id" ?
+  * See "LowestTempImpId".
   *
   */
 case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related classes too.
@@ -66,6 +67,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
     SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this))
   }
 
+  /** For tests. */
   def withVersionPlusOne: SiteBackup = copy(
     site = site.map(s => s.copy(version = s.version + 1)))
 
@@ -80,7 +82,7 @@ case object SiteBackup {
     summaryEmailIfActive = false, // for now [7FKB4Q1]
     guests = Vector.empty,
     guestEmailNotfPrefs = Map.empty,
-    groups = Vector.empty, // for now
+    groups = Vector.empty,
     users = Vector.empty,
     pages = Vector.empty,
     pagePaths = Vector.empty,
@@ -95,6 +97,14 @@ case object SiteBackup {
 case class SimpleSitePatch(
   categoryPatches: Seq[CategoryPatch]) {
 
+  /** Adds missing data to this SimplePatch so it becomes a "complete" SitePatch,
+    * which describes precisely what things and values to upsert.
+    *
+    * Example: A CategoryPatch has a 'description' field, and if it gets changed,
+    * makeComplete() adds a patch for the category's About page body post too — because
+    * that's where the description is kept (.i.e in the About page,
+    * the page body post text).
+    */
   def makeComplete(oldCats: Seq[Category], now: When): SiteBackup Or ErrorMessage = {
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
@@ -141,10 +151,11 @@ case class SimpleSitePatch(
           return Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyE5RKD2LR46]")
         }
       } getOrElse {
-        return Bad("No parentRef: 'extid:....' specified, that's not yet tested [TyE205WKDLF2]")
+        return Bad("No parentRef: 'extid:....' specified, that's not yet supported [TyE205WKDLF2]")
         /* Later:
-        // Find the root category. currently should be exactly one, since sub communities
-        // currently disabled. [4GWRQA28]
+        // Find the root category? Currently should be exactly one, since sub communities
+        // currently disabled. [4GWRQA28] Or maybe the root category should have a default ext id?
+        // like, "first_root_category" ?
         oldCats.find(_.parentId.isEmpty) getOrElse {
           return Bad("No root category [TyE205KRTG4]")
         } */
@@ -159,11 +170,11 @@ case class SimpleSitePatch(
         name = theCategoryName,
         slug = theCategorySlug,
         position = categoryPatch.position getOrElse Category.DefaultPosition,
-        description = categoryPatch.description,
-        newTopicTypes = Vector(PageType.Question),  // for now
-        unlistCategory = false,
-        unlistTopics = false,
-        includeInSummaries = IncludeInSummaries.Default,
+        description = Some(theCategoryDescription),
+        newTopicTypes = Vector(PageType.Question),       // for now
+        unlistCategory = false,                          // for now
+        unlistTopics = false,                            // for now
+        includeInSummaries = IncludeInSummaries.Default, // for now
         createdAt = now.toJavaDate,
         updatedAt = now.toJavaDate))
 

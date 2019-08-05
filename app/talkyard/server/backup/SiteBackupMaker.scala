@@ -96,10 +96,10 @@ object SiteBackupMaker {
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
 
     val fields = mutable.HashMap.empty[String, JsValue]
-    lazy val tx = anyTx getOrDie "TyE06RKDJFD"
+    def tx = anyTx getOrDie "TyE06RKDJFD"
 
       val anySite: Option[SiteInclDetails] =
-        anyDump.map(_.site) getOrElse Some(tx.loadSiteInclDetails().getOrDie("TyE2RKKP85"))
+        anyDump.map(_.site) getOrElse Some(tx.loadSiteInclDetails().getOrDie("TyE2S6WKDL"))
       anySite foreach { site =>
         fields("meta") =
           JsSiteInclDetails(site)
@@ -116,12 +116,12 @@ object SiteBackupMaker {
       fields("guests") = JsArray(
         guests.map(JsGuestInclDetails(_, inclEmail = true)))
 
-      val groups =
+      val groups: Seq[Group] =
         anyDump.map(_.groups) getOrElse tx.loadAllGroupsAsSeq()
       fields("groups") = JsArray(
         groups.map(JsGroupInclDetails(_, inclEmail = true)))
 
-      val users =
+      val users: Seq[UserInclDetails] =
         anyDump.map(_.users) getOrElse tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
       fields("members") = JsArray(   // [dump] [exp] RENAME to "users', upd e2e tests
         users.map(JsUserInclDetails(_, groups = Nil, usersById = Map.empty, callerIsAdmin = true)))

@@ -379,7 +379,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      // Category patches: Remap temp imp ids to real ids, by looking up the external id.
+      // Category patches: Remap temp imp ids to real ids, by looking up the external id. [3953KSH]
       siteData.categoryPatches foreach { catPatchWithTempId: CategoryPatch =>
         val impId = catPatchWithTempId.id getOrThrowBadRequest(
           "TyE305KKS61", "Category with no id")
