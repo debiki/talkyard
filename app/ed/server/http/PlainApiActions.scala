@@ -146,8 +146,8 @@ class PlainApiActions(
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
       }
-      val talkyardIdPrefix = "talkyardId="
-      val externalIdPrefix = "externalId="   // rename to extSsoId? no, just ssoid=... (cmp w extid:...)?, for consistency [395KSH20]. Or not?
+      val talkyardIdPrefix = "talkyardId="   // RENAME to 'tyid=...'
+      val externalIdPrefix = "externalId="   // RENAME to extSsoId? no, just ssoid=... (cmp w extid:...)?, for consistency [395KSH20]. Or not?
       val anyUser: Option[Participant] =
         if (username.startsWith(talkyardIdPrefix)) {
           val userIdStr = username.drop(talkyardIdPrefix.length)

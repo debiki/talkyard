@@ -73,7 +73,7 @@ case class SiteBackupReader(context: EdContext) {
     val categoriesJson =
       try { // (this extra try...catch is for better error messages)
         // Only categories.
-        // Right now, all people have asked for [SITE121], is to upsert categories
+        // Right now, all people have asked for, is to upsert categories
         // (via /-/v0/upsert-simple ).
         readJsArray(bodyJson, "categories", optional = true)
       }

@@ -183,7 +183,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       case "sso-upsert-user-generate-login-secret" |
         "upsert-external-user-generate-login-secret" =>  // deprecated name, remove
         val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y]
-          externalId = (body \ "externalUserId").as[String].trim,
+          externalId = (body \ "externalUserId").as[String].trim,   // RENAME to userSsoId? [395KSH20]
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
           username = (body \ "username").asOptStringNoneIfBlank,

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup  // RENAME to  talkyard.server.sitedump
+package talkyard.server.backup  // RENAME to  talkyard.server.sitepatch
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
@@ -33,6 +33,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
   def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData)
         : SiteBackup = {
+
+    SHOULD_CODE_REVIEW  // Auto tests work fine though.
+
+    // Tested e.g. here:
+    // - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
+    // - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+    // - SiteDumpImporterAppSpec  TyT2496ANPJ3
+
     dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
     val dao = globals.siteDao(siteId)
     val upsertedCategories = ArrayBuffer[Category]()
@@ -40,51 +48,81 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     dao.readWriteTransaction { tx =>
 
       // Posts link to pages, and Question type pages link to the accepted answer post,
-      // that is, can form a cycle.  And a root category links to the section index page,
-      // which links to the root category.
+      // that is, can form foreign key cycles.  And a root category links to the section
+      // index page, which links to the root category (also a cycle).
       tx.deferConstraints()
 
       // Real id = an id to something in the database.
       //
-      // External import id = the external id, in some external software system,
-      // of something we're inserting or updating.
+      // External id = some id in the external software system from which we're
+      // importing or upserting things. Could be Disqus comment ids, when importing
+      // Disqus comments. Or e.g. plugin names, for someone else's software app
+      // — and they want to upsert categories, one for each such plugin,
+      // so there can be one category, per plugin, in Talkyard, for discussing the plugin.
       //
+      // For now:
       // Temp import ids and nrs = ids and nrs > 2e9 that things in the siteData use
       // to link to each other. These ids are then remapped to low values, like 1, 2, 3, 4,
       // before actually inserting into the database. Exactly which low ids and nrs
       // the temp imp ids and nrs get remapped to, depend on what's in the db
       // already — we need to avoid conflicts.
+      // However, when constructing a site patch, outside Talkyard, one doesn't know
+      // which ids are in use already. Then, one uses these temp improt ids > 2e9,
+      // which won't conflict with anything already in the database — and gets
+      // remapped later to "real" ids.
+      //
+      // Later:
+      // Probably there'll be only ThingPatch items in a SitePatch, which
+      // refer to other items in the patch, via *references* and *external ids*,
+      // instead of the magic > 2e9 temp import ids.
+      // That's simpler, for clients that create dumps outside Talkyard
+      // (e.g. a Disqus importer) because then they won't need to generate > 2e9
+      // ids. instead they can just use the external ids and reference them
+      // directly — via  SomethingPatch.parentRef = "extid:some_external_id".
+      // And when Talkyard generates a dump of a site, Talkyard references the
+      // internal "real" ids:  SomethingPatch.parentRef = "tyid:internal_numeric_id".
+      //
+      // 'extid:' prefix = external id,
+      // 'tyid:' prefix = Talkyard internal id.
+      //
+      // (Then there's also 'ssoid:' but that's a different field, for User:s only,
+      // used for single sign-on.  'externalId' shoud be renamed to 'ssoid' [395KSH20])
 
 
       // ----- Page ids
       //
       // Start with remapping page temporary import ids to real page ids that don't
       // conflict with any existing pages, or are the same as already existing
-      // pages if the imported page(s) have matching external import ids.
-      // — Start with pages, because other things, like posts and categories,
-      // link to pages (posts are placed on a page, and root categories have
-      // a section page id).
+      // pages if the imported page(s) have matching external import ids
+      // (and thus should be updated, instead of inserted).
+      //
+      // We start with pages, because other things, like posts and categories,
+      // link to pages. (Posts are placed on a page, and root categories have
+      // a section page id.) So they all want to know the real page ids.
       //
       // Don't insert the pages here though — we haven't remapped the page's
-      // category id or any answer post id temp import id, to real ids, yet.
+      // category id or any answer post id temp import id, to real ids, yet,
+      // so we don't yet know what ids to use, to reference those things.
 
 
-      // todo: check ok alt id
+      SHOULD // check ok alt id  [05970KF5]
 
-      val oldPagesByExtImpId: Map[ExtImpId, PageMeta] =
+      val oldPagesByExtId: Map[ExtImpId, PageMeta] =
         tx.loadPageMetasByExtImpIdAsMap(siteData.pages.flatMap(_.extImpId))
 
       val oldPagesByAltId: Map[AltPageId, PageMeta] =
         tx.loadPageMetasByAltIdAsMap(siteData.pageIdsByAltIds.keys)
 
-      val pageAltIdsByTempImpIds =
+      val pageAltIdsByImpIds =
         new mutable.HashMap[PageId, mutable.Set[AltPageId]] with mutable.MultiMap[PageId, AltPageId]
 
-      siteData.pageIdsByAltIds foreach { case (altId, pageId) => {
-        pageAltIdsByTempImpIds.addBinding(pageId, altId)
+      siteData.pageIdsByAltIds foreach { case (altId, pageImpId) => {
+        pageAltIdsByImpIds.addBinding(pageImpId, altId)
       }}
 
-      // Check if alt ids in the database are for different pages than in the patch.
+      // Throw error, if any alt page ids in the patch, reference different pages,
+      // than what [the same alt ids already in the database] already point to.
+      // (Because then there's a conflict between the database, and the patch.)
       // (We do the same for ext ids, below (502958).)
       oldPagesByAltId foreach { case (altPageId, pageMeta) =>
         val pageIdInPatch = siteData.pageIdsByAltIds.get(altPageId) getOrDie "TyE305RKSTJ"
@@ -93,12 +131,12 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             but in the database, already maps to ${pageMeta.pageId}""")
       }
 
-      val pageRealIdsByTempImpId = mutable.HashMap[PageId, PageId]()
+      val pageRealIdsByImpId = mutable.HashMap[PageId, PageId]()
 
       def remappedPageTempId(tempId: PageId): PageId = {
         if (!isPageTempId(tempId)) tempId
         else {
-          pageRealIdsByTempImpId.getOrElse(tempId, throwBadRequest(
+          pageRealIdsByImpId.getOrElse(tempId, throwBadRequest(
             "TyE5DKGWT205", s"Page with temp id $tempId missing from the uploaded data"))
         }
       }
@@ -108,7 +146,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val extImpId = pageWithTempId.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extImpId not yet implemented, page temp id: $tempId")
 
-        val anyRealIdByExtId = oldPagesByExtImpId.get(extImpId).map(oldPage => {
+        val anyRealIdByExtId = oldPagesByExtId.get(extImpId).map(oldPage => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != oldPage.pageId,
             // We do this check for alt ids too, above. (502958)
             "TyE30TKKWFG3", o"""Imported page w extImpId '$extImpId' has real id $tempId
@@ -116,7 +154,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           oldPage.pageId
         })
 
-        val altIds = pageAltIdsByTempImpIds.getOrElse(tempId, Set.empty)
+        val altIds = pageAltIdsByImpIds.getOrElse(tempId, Set.empty)
 
         val anyRealMetasByAltId: Iterable[PageMeta] = altIds.flatMap(oldPagesByAltId.get)
         val anyRealPageIdsFromAltIdAsSet = anyRealMetasByAltId.map(_.pageId).toSet
@@ -134,7 +172,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           tx.nextPageId()
         })
 
-        pageRealIdsByTempImpId.put(pageWithTempId.pageId, realId)
+        pageRealIdsByImpId.put(pageWithTempId.pageId, realId)
       }
 
 
@@ -557,11 +595,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       siteData.pages foreach { pageWithTempId: PageMeta =>
         // Later: update with any reassigned participant and post ids:
         //   answerPostId (complicated? need assign tempId —> real id to posts first, somewhere above)
-        val realId = pageRealIdsByTempImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
+        val realId = pageRealIdsByImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
 
-        lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
+        lazy val pageAltIds = pageAltIdsByImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
 
-        val anyOldPage = pageWithTempId.extImpId.flatMap(oldPagesByExtImpId.get) orElse {
+        val anyOldPage = pageWithTempId.extImpId.flatMap(oldPagesByExtId.get) orElse {
           val oldPages = pageAltIds.flatMap(oldPagesByAltId.get)
           dieIf(oldPages.map(_.pageId).size > 1, "TyE05HKR3")
           oldPages.headOption

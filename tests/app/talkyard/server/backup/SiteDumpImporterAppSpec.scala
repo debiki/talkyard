@@ -25,7 +25,8 @@ import org.scalatest._
 import scala.collection.immutable
 
 
-class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false) with DumpMaker {
+class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // TyT2496ANPJ3
+  with DumpMaker {
 
   private def testForumQuotaLimit =
     globals.config.createSite.quotaLimitMegabytes(isForBlogComments = false, isTestSite = true)
