@@ -67,23 +67,33 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  // + API endpoint for listing categories, + use cache.
-
   def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertSimple, maxBytes = maxImportDumpBytes) { request =>
+    // Dangerous endpoint, DoS attack risk.
+    // As of 2019-08, site 121 at talkyard.net wants to try this. [SITE121]
+    throwForbiddenIf(globals.isProd && request.site.id != 121 && request.site.id != FirstSiteId &&
+      !security.hasOkForbiddenPassword(request),
+      "TyE306KDGL25", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
+
     // Parse JSON, construct a dump "manually", and call
     // upsertDumpJsonImpl(dump, request)
-    val simplePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+    val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
-    upsertSitePatchImpl(simplePatch, request)
+    upsertSitePatchImpl(sitePatch, request)
   }
 
 
   def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
-    val dump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+    // Dangerous endpoint, DoS attack risk.
+    // As of 2019-08, site 121 at talkyard.net wants to try this. [SITE121]
+    throwForbiddenIf(globals.isProd && request.site.id != 121 && request.site.id != FirstSiteId &&
+      !security.hasOkForbiddenPassword(request),
+      "TyE602AKFDG", "Not allowed. Ask for permission at https://www.talkyard.io/forum/ ")
+
+    val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = false, isE2eTest = false)
-    upsertSitePatchImpl(dump, request)
+    upsertSitePatchImpl(sitePatch, request)
   }
 
 
@@ -92,8 +102,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     // We don't want to change things like site hostname or settings, via this endpoint.
-    throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in dump")
-    throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in dump")
+    throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in patch")
+    throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in patch")
 
     val upsertedThings = doImportOrUpserts {
       SiteBackupImporterExporter(globals).upsertIntoExistingSite(

@@ -71,9 +71,10 @@ case class SiteBackupReader(context: EdContext) {
 
   private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
     val categoriesJson =
-    // An extra more specific try...catch here, for better error messages.
-      try {
-        // Right now, all people have asked for, is to upsert categories (via /-/v0/upsert-simple ).
+      try { // (this extra try...catch is for better error messages)
+        // Only categories.
+        // Right now, all people have asked for [SITE121], is to upsert categories
+        // (via /-/v0/upsert-simple ).
         readJsArray(bodyJson, "categories", optional = true)
       }
       catch {
