@@ -541,10 +541,11 @@ const NotfPrefsTab = createFactory({
               r.span({}, inheritedWhy))
           }));
 
+    const what = member.isGroup ? "group" : "user";
     const categoriesMayNotSee: Category[] = membersPrefs.categoriesMayNotSee;
     const categoriesMayNotSeeInfo = !categoriesMayNotSee.length ? null :
         r.div({ className: 's_UP_Prfs_Ntfs_NotSeeCats' },
-          r.p({}, "This member cannot see these categories, but you can:"),
+          r.p({}, `This ${what} cannot see these categories, but you can:`),
           r.ul({},
             categoriesMayNotSee.map(c => r.li({ key: c.id }, c.name))));
 

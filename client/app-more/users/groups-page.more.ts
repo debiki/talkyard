@@ -82,8 +82,20 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
     });
   }
 
-  const createGroupButton = !me.isAdmin ? null :
-      Button({ className: 's_GP_CrGB', onClick: callShowCreateDialog }, "Create group");
+  const createGroupButton = !me.isAdmin ? null : rFragment({},
+      // This text is maybe not so easy to understand — UX_TESTING_MISSING — but better
+      // than nothing I hope?
+      r.p({ className: 's_GP_Expl' },
+        "You can create custom groups. Examples: A group for your employees, " +
+        "another for your customers. Or different groups for your teachers and students? " +
+        "Volunteers, board members, donors?"),
+      r.p({ className: 's_GP_Expl' },
+        "Then, configure access permissions and notification settings, for everyone " +
+        "in a group, by configuring category permissions for the group " +
+        "(in the Edit Category dialogs). And by editing notification settings, in " +
+        "the group's profile pages (click a group name below, then click " +
+        "Preferences, then Notifications)."),
+      Button({ className: 's_GP_CrGB', onClick: callShowCreateDialog }, "Create group"));
 
   return (
       r.div({ className: 'container s_GP' },

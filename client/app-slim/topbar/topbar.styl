@@ -584,7 +584,7 @@ html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
 
   .dw-help
     margin: 8px 0 17px 0;
-    padding-bottom: 8px;
+    padding-top: 2px;
     color: hsl(0, 0%, 6%);
     background: hsl($yellowTipsHue, 96%, 89%);
     box-shadow: 5px 5px 7px rgba(0,0,0,0.33);
@@ -594,7 +594,7 @@ html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
 
   .dw-help-text
     font-size: 15px;
-    margin: 0 20px 0 0;
+    margin: 8px 20px 14px 0;  // so not too close to the close button (incl if line wrap)
     display: inline-block;
     a
       color: hsl(207, 100%, 41%);
@@ -604,11 +604,11 @@ html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
         color: hsl(207, 100%, 59%);
 
   .dw-hide
+    display: inline-block;
+    margin: 8px 0 6px 3px;
     float: none;
     position: static;
-    top: auto;
-    margin-left: 3px;
-    color: hsl(207, 86%, 36%);
+    color: hsl(207, 44%, 33%);
     &::before
       opacity: 0.75;
 
