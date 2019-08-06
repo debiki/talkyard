@@ -254,7 +254,6 @@ export function UserName(props: {
   const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
-  const guestMark = user_isGuest(user) ? ' ?' : '';
 
   let namePartOne;
   let namePartTwo;
@@ -266,7 +265,7 @@ export function UserName(props: {
     // because it's thin.
     const username = !user.username ? null : r.span({className: 'esP_By_F'}, user.username);
     const fullName = username ? null :
-        r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
+        r.span({ className: 'esP_By_U' + guestClass }, user.fullName);
     namePartOne = username;
     namePartTwo = fullName;
   }
@@ -275,7 +274,7 @@ export function UserName(props: {
     const skipName =
         !user.fullName || (props.avoidFullName && user.username) || user.username == user.fullName;
     const fullName = skipName ? undefined :
-        r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
+        r.span({ className: 'esP_By_U' + guestClass }, user.fullName);
     namePartOne = username;
     namePartTwo = fullName;
   }
@@ -285,7 +284,7 @@ export function UserName(props: {
     // @endif
 
     const fullName: any = !user.fullName || (props.avoidFullName && user.username) ? undefined :
-      r.span({ className: 'esP_By_F' + guestClass }, user.fullName + guestMark + ' ');
+      r.span({ className: 'esP_By_F' + guestClass }, user.fullName + (guestClass ? '' : ' '));
 
     const username = !user.username || isStackExchangeUser ? null :
       r.span({ className: 'esP_By_U' },

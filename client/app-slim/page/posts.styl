@@ -441,6 +441,9 @@ html:not(.mouse) .dw-rr
 .esP_By_F-G
   font-weight: normal;
   color: hsl(0, 0%, 11%);
+  &::after
+    // Supposed to show that the user might be anyone, e.g. email not verified.
+    content: ' ?';
 
 .esP_By_U
   font-weight: normal;
