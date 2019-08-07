@@ -25,12 +25,12 @@ $_$;
 
 alter table users3 add constraint pps_c_extid_not_builtin check (
     ext_id is null or not user_id between -9 and 99);
-alter table users3 add constraint pps_c_extid_len check (is_valid_ext_id(ext_id));
-alter table pages3 add constraint pages_c_extid_len check (is_valid_ext_id(ext_id));
-alter table posts3 add constraint posts_c_extid_len check (is_valid_ext_id(ext_id));
-alter table categories3 add constraint categories_c_extid_len check (is_valid_ext_id(ext_id));
+alter table users3 add constraint pps_c_extid_ok check (is_valid_ext_id(ext_id));
+alter table pages3 add constraint pages_c_extid_ok check (is_valid_ext_id(ext_id));
+alter table posts3 add constraint posts_c_extid_ok check (is_valid_ext_id(ext_id));
+alter table categories3 add constraint categories_c_extid_ok check (is_valid_ext_id(ext_id));
 
-create unique index users_u_extid on users3 (site_id, ext_id);
+create unique index pps_u_extid on users3 (site_id, ext_id);
 create unique index pages_u_extid on pages3 (site_id, ext_id);
 create unique index posts_u_extid on posts3 (site_id, ext_id);
 create unique index categories_u_extid on categories3 (site_id, ext_id);
@@ -38,7 +38,8 @@ create unique index categories_u_extid on categories3 (site_id, ext_id);
 
 drop index users_site_guest_u;
 
-create unique index pps_u_site_guest_no_browser_id on users3 (site_id, full_name, guest_email_addr)
+create unique index pps_u_site_guest_no_browser_id on users3 (
+    site_id, full_name, guest_email_addr)
   where guest_browser_id is null;
 
 create unique index pps_u_site_guest_w_browser_id on users3 (
@@ -83,15 +84,22 @@ alter table users3 add constraint pps_c_guest_not_nulls check (
 
 
 -- So won't accidentally insert temp import ids into the database,
--- without remapping to 1 .. 2e9 -1 numbers:
+-- without remapping  > 2e9 temp ids and nrs  down to real ids and nrs 1, 2, 3, 4 etc:
 
 alter table api_secrets3 add constraint apisecrets_c_nr_not_for_imp check (secret_nr < 2000000000);
-alter table audit_log3 add constraint auditlog_c_nr_not_for_imp check (audit_id < 2000000000);
+alter table audit_log3 add constraint auditlog_c_id_not_for_imp check (audit_id < 2000000000);
+alter table audit_log3 add constraint auditlog_c_postnr_not_for_imp check (post_nr < 2000000000);
+alter table audit_log3 add constraint auditlog_c_targetuserid_not_for_imp check (target_user_id < 2000000000);
+alter table audit_log3 add constraint auditlog_c_targetpostid_not_for_imp check (target_post_id < 2000000000);
+alter table audit_log3 add constraint auditlog_c_targetpostnr_not_for_imp check (target_post_nr < 2000000000);
 alter table categories3 add constraint categories_c_id_not_for_imp check (id < 2000000000);
 alter table drafts3 add constraint drafts_c_nr_not_for_imp check (draft_nr < 2000000000);
 alter table identities3 add constraint identities_c_id_not_for_imp check (id < 2000000000);
 alter table notifications3 add constraint notifications_c_id_not_for_imp check (notf_id < 2000000000);
+alter table page_users3 add constraint pageusers_c_lastviewedpostnr_not_for_imp check (last_viewed_post_nr < 2000000000);
+alter table page_users3 add constraint pageusers_c_lastreadpostnr_not_for_imp check (last_read_post_nr < 2000000000);
 alter table pages3 add constraint pages_c_id_not_for_imp check (page_id not like '200???????');
+alter table pages3 add constraint pages_c_answpostid_not_for_imp check (answer_post_id < 2000000000);
 alter table perms_on_pages3 add constraint permsonpages_c_id_not_for_imp check (perm_id < 2000000000);
 alter table post_actions3 add constraint postactions_c_actionid_not_for_imp check (action_id < 2000000000);
 alter table post_actions3 add constraint postactions_c_subid_not_for_imp check (sub_id < 2000000000);
@@ -100,7 +108,10 @@ alter table post_revisions3 add constraint postrevisions_c_revnr_not_for_imp che
 alter table posts3 add constraint posts_c_id_not_for_imp check (unique_post_id < 2000000000);
 alter table posts3 add constraint posts_c_nr_not_for_imp check (post_nr < 2000000000);
 alter table posts3 add constraint posts_c_parentnr_not_for_imp check (parent_nr < 2000000000);
+alter table posts3 add constraint posts_c_currevnr_not_for_imp check (curr_rev_nr < 2000000000);
 alter table review_tasks3 add constraint reviewtasks_c_id_not_for_imp check (id < 2000000000);
+alter table review_tasks3 add constraint reviewtasks_c_postnr_not_for_imp check (post_nr < 2000000000);
+alter table sites3 add constraint sites_c_id_not_for_imp check (id < 2000000000);
 alter table spam_check_queue3 add constraint spamcheckqueue_c_postid_not_for_imp check (post_id < 2000000000);
 alter table spam_check_queue3 add constraint spamcheckqueue_c_postrevnr_not_for_imp check (post_rev_nr < 2000000000);
 alter table spam_check_queue3 add constraint spamcheckqueue_c_postnr_not_for_imp check (post_nr < 2000000000);
@@ -110,7 +121,9 @@ alter table spam_check_queue3 add constraint spamcheckqueue_c_pageid_not_for_imp
 alter table spam_check_queue3 add constraint spamcheckqueue_r_sites foreign key (site_id) references sites3 (id) deferrable;
 alter table upload_refs3  add constraint uploadrefs_r_posts foreign key (site_id, post_id) references posts3 (site_id, unique_post_id) deferrable;
 
-alter table users3 add constraint participants_c_member_id_not_for_imp check (user_id < 2000000000);
-alter table users3 add constraint participants_c_guest_id_not_for_imp check (user_id > -2000000000);
+alter table user_stats3 add constraint ppstats_c_notfsnewsinceid_not_for_imp check (notfs_new_since_id < 2000000000);
+
+alter table users3 add constraint pps_c_member_id_not_for_imp check (user_id < 2000000000);
+alter table users3 add constraint pps_c_guest_id_not_for_imp check (user_id > -2000000000);
 
 

@@ -3,6 +3,9 @@
 
 -- change users3.email_notfs to int, remove _toFlag [7KABKF2]
 
+alter table settings3 drop column embedded_comments_category_id;
+  -- add per category embedding origins instead. And use extid 'embedded_comments' category.
+
 drop table category_notf_levels3;
 drop table tag_notf_levels3;
 drop table dw1_settings;
@@ -25,6 +28,9 @@ NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_
 OpenAuthDetails(   // [exp] ok use, country, createdAt
 
 
+-- ?? delete page_id post_nr  from  post_actions ??
+
+-- Add fk  posts3.parent_nr —> posts3.nr  ?? or no?  better w/o, so can hard delete / purge?
 
 -- v376:  Next time, if all fine:
 alter table users3 drop column email_for_every_new_post;  -- no, [REFACTORNOTFS] rename to mailing_list_mode and set to false everywhere?
