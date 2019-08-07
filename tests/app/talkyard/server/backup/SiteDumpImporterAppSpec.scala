@@ -387,7 +387,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         actualDump.pages.head
       }
 
+      // Testing weird chars. [TyT602RHK42JF]
       val baseCatExtId = "baseCatExtId-(20660367)-Weird-Chars-Åäö-[]{}_,.-*^`'+#?!"
+
       lazy val baseCat =
         CategoryWithSectPageId333SubCat.copy(extImpId = Some(baseCatExtId))
 

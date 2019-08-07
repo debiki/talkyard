@@ -605,7 +605,7 @@ ${htmlToPaste}
     convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath2, talkyardPatchFilePath2);
   });
 
-  it("Owen re-imports the Disqus comments, with an extra comment and a new page!", () => {
+  it("Owen re-imports the Disqus comments, with an extra comment and a new page!! wow!", () => {
     postCommentsToTalkyard(talkyardPatchFilePath2);
   });
 
@@ -614,7 +614,7 @@ ${htmlToPaste}
     mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees 5 comments: 1 + 1 imported from Disqus, 1 is hers, and Owen's 2", () => {
+  it("... and sees 5 comments: 1 + 1 new, from Disqus, her 1, and Owen's 2", () => {
     checkCatsAndMilkPageAfterDisqusImportNr(3);
   });
 
@@ -635,6 +635,13 @@ ${htmlToPaste}
   it("... and sees one comment, impored from Disqus, in the 3rd import run", () => {
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, commentOnPageCreatedLaterText);
     mariasBrowser.topic.assertNumRepliesVisible(1);
+  });
+
+  it("The empty page is still empty. And will be, til the end of time", () => {
+    //server.playTimeMillis(EndOfUniverseMillis - nowMillis() - 1);
+    mariasBrowser.go('/' + noDisqusRepliesPageUrlPath)
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForReplyButtonAssertNoComments();
   });
 
 });
