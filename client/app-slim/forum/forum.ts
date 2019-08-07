@@ -465,7 +465,6 @@ const ForumButtons = createComponent({
       // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
       // just that we're going to show a restricted category, which isn't available before
       // user specific data added. (6KEWM02). )
-      // Or hen renamed the slug of an existing category. [7AFDW01]
       // Or hen is not allowed to access the category.
       return !store.userSpecificDataAdded ? null : r.p({},
           r.br(),

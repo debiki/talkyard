@@ -1185,11 +1185,11 @@ class Config(conf: play.api.Configuration) {
       resultMaybeZero.map(Math.max(_, 1))
     }
 
-    val quotaLimitMegabytesForum: Option[Int] =
+    private val quotaLimitMegabytesForum: Option[Int] =
       conf.getInt("talkyard.newSite.quotaLimitMegabytesForum") orElse
       conf.getInt("talkyard.newSite.quotaLimitMegabytes")
 
-    val quotaLimitMegabytesBlogComments: Option[Int] =
+    private val quotaLimitMegabytesBlogComments: Option[Int] =
       conf.getInt("talkyard.newSite.quotaLimitMegabytesBlogComments")
   }
 

@@ -147,7 +147,7 @@ case class SimpleSitePatch(
         }
         else {
           var refDots = ref.takeWhile(_ != ':') take 14
-          if (refDots.length >= 9) refDots = refDots.dropRight(1) + "..."
+          if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
           return Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyE5RKD2LR46]")
         }
       } getOrElse {

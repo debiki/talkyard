@@ -127,5 +127,7 @@ case class CategoryPatch(
   name: Option[String],
   slug: Option[String],
   description: Option[String],
-  position: Option[Int],
-)
+  position: Option[Int]) {
+
+  // Check for weird chars in slug [05970KF5]
+}

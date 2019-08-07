@@ -818,8 +818,8 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 
 case class UserInclDetails(  // ok for export
   id: UserId,
-  extImpId: Option[ExtImpId] = None,
-  externalId: Option[String],   // RENAME to extSsoId, + in API protocol too? [395KSH20], no, just ssoId?
+  extImpId: Option[ExtImpId] = None,  // RENAME to extId
+  externalId: Option[String],   // RENAME to extSsoId NO, just 'ssoId', + in API protocol too? [395KSH20], no, just ssoId?
   fullName: Option[String],
   username: String,
   createdAt: When,

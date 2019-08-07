@@ -216,8 +216,8 @@ case class SiteBackupReader(context: EdContext) {
       case (altId, pageIdJs) =>
         pageIdJs match {
           case JsString(value) =>
-            SECURITY; SHOULD // verify id and value are ok, no weird chars or blanks?
-            // Review this for all imported things b.t.w.
+            SECURITY; SHOULD // verify id and value are ok, no weird chars or blanks?  [05970KF5]
+            // Review this for all imported things b.t.w.:  exd ids,  sso id,  emb urls,  page ids.
             altId -> value
           case x => throwBadRequest(
             "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")
@@ -325,7 +325,7 @@ case class SiteBackupReader(context: EdContext) {
         // Any value here, would get ignored. Instead, when finding a guest's email notf pref,
         // we load guests' email notf prefs from another json object [GSTPRFS] and the
         // guest_prefs3 db table — which works also if a human returns later and gets
-        // a different guest user account. (stored in guest_prefs3).
+        // a different guest user account but uses the same email address.
         emailNotfPrefs = EmailNotfPrefs.Unspecified,
         country = readOptString(jsObj, "country"),
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
@@ -358,7 +358,7 @@ case class SiteBackupReader(context: EdContext) {
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(UserInclDetails(
         id = id,
-        externalId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId"
+        externalId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId" [395KSH20]
         username = username,
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readWhen(jsObj, "createdAtMs"),
@@ -524,7 +524,7 @@ case class SiteBackupReader(context: EdContext) {
       // For now, if there's nothing but an id and an ext id, then require the id
       // to be a temp import id, and later when upserting into the db [3953KSH],
       // load the old category with that external id — not for modifying it,
-      // but so we know which real category to upsert things inot.
+      // but so we know which real category to upsert things into.
       // (But if mustBePatch, then we're in  /-/v0/upsert-simple and the fields
       // descrbe how to update/create the category.)
       if (mustBePatch || jsObj.fields.length == 2) {

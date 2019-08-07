@@ -216,9 +216,9 @@ object RateLimits {
   object ExportSite extends RateLimits {
     val key = "ExSt"
     val what = "Exported the site too many times"
-    def maxPerFifteenSeconds = 2
+    def maxPerFifteenSeconds = 1
     def maxPerFifteenMinutes = 7
-    def maxPerDay = 10
+    def maxPerDay = 12
     def maxPerDayNewUser = 0
   }
 

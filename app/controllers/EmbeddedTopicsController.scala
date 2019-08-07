@@ -165,7 +165,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     // Trying with the full url (incl origin) before the url path only, can be good
     // if the same Talkyard site provides comments for two different blogs?
     // Then later there could be a config value that says the 2nd blog should
-    // lookup discussions by full url origin + path. [06KWDNF2]
+    // lookup discussions by full url origin + path.
     //
     // **Or** better? [COMCATS] The embeddeing page specifies a
     // data-category-ref="extid:blog_cat_name"

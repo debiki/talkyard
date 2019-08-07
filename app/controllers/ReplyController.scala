@@ -141,10 +141,12 @@ object EmbeddedCommentsPageCreator {
         return (pageId, None)
     }
 
-    throwBadRequestIf(anyEmbeddingUrl.exists(_ contains ' '),
+    throwBadRequestIf(anyEmbeddingUrl.exists(_ contains ' '),  // SHOULD instead, ensure no blanks? [05970KF5]
       "TyE4KLL2TJ", "Embedding url has whitespace")
     throwBadRequestIf(anyEmbeddingUrl.exists(_ contains '#'),
       "EdE0GK3P4", s"Don't include any URL #hash in the embedding page URL: ${anyEmbeddingUrl.get}")
+
+    SHOULD // check alt page id too — no blanks allowed? [05970KF5]
 
     anyAltPageId.flatMap(request.dao.getRealPageId) foreach { pageId =>
       return (pageId, None)
@@ -155,11 +157,11 @@ object EmbeddedCommentsPageCreator {
     }
 
     // Lookup by complete url, or, if no match, url path only (not query string
-    // — we don't know if it's related to identifying the embedding page or not).
+    // — we don't know if a query string is related to identifying the embedding page or not).
     val pageIdByUrl: Option[PageId] = request.dao.getRealPageId(embeddingUrl) orElse {
       // There could be a site setting to disable lookup by url path (without origin and
       // query params), if the same Talkyard site is used for different blogs on different
-      // domains, with possibly similar url paths. [06KWDNF2]
+      // domains, with possibly similar url paths. [06KWDNF2] [COMCATS]
       val urlPath = extractUrlPath(embeddingUrl)
       request.dao.getRealPageId(urlPath)
     }
@@ -203,7 +205,7 @@ object EmbeddedCommentsPageCreator {
             // 5) Lookup — now, needs to have remembered the id in step 3,
             // since now new url.
             // However, 3 will happen only for blog posts one reloads, after having
-            // edited the blog and added ids.
+            // edited the blog and added ids. So would be good to combine with: [COMCATS].
             return (pageId, None)
           }
       }

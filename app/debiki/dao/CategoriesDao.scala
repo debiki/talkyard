@@ -31,9 +31,18 @@ case class SectionCategories(
   rootCategory: Category,
   categoriesExclRoot: immutable.Seq[Category]) {
 
+  if (!rootCategory.isRoot) throwIllegalArgument(
+    "TyE5AKP036SSD", s"The root category thinks it's not a root category: $rootCategory")
+
   categoriesExclRoot.find(_.id == rootCategory.id) foreach { badRootCat =>
-    throwIllegalArgument(o"""The root category $badRootCat is included in
-      categoriesExclRoot [TyE7WKTL02XT4]""")
+    throwIllegalArgument(
+      "TyE7WKTL02XT4", o"""A category with the same id as the root category is included
+        in categoriesExclRoot: $badRootCat""")
+  }
+
+  categoriesExclRoot.find(_.isRoot) foreach { badRootCat =>
+    throwIllegalArgument(
+      "TyE602GPK5R3", s"This category in categoriesExclRoot thinks it's a root cat: $badRootCat")
   }
 
   categoriesExclRoot.find(_.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>

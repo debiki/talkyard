@@ -147,6 +147,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         posts = Vector(Page333TitlePost, Page333BodyPost),
         permsOnPages = Vector(MayAllPermsForFullMembersOnSubCatWSectPageId333))
 
+      // This base category is in fact a root category though (it has no parent).
       val baseCatRealId = 1
       val subCatRealId = 2
       val sectPageRealId = "1"
@@ -314,7 +315,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         sectionPageId = sectPage.pageId,  // the real id (not temp imp id or ext id)
         parentId = Some(rootCat.id))      // also the real id (896053)
         .copy(
-          extImpId = Some("additional_cat_ext_imp_id"),
+          extImpId = Some("additional_cat_ext_id"),
             position = 123,
             newTopicTypes = Vector(PageType.Idea),
             unlistCategory = true,
@@ -478,7 +479,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var upsAboutCatPageBody: Post = null
 
       "find the newly ups cat" in {
-        upsCat = actualDump.categories.find(_.extImpId == newCatPatch.extImpId) getOrDie "TyE206KPL46"
+        val matchingCats = actualDump.categories.filter(_.extImpId == newCatPatch.extImpId)
+        matchingCats.size mustBe 1
+        upsCat = matchingCats.head
       }
 
       "... with the correct values" in {
@@ -489,10 +492,10 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "... and permissions for Everyone and Staff" in {
-        val twoUpsCatPerms = actualDump.permsOnPages.filter(_.onCategoryId is upsCat.id)
-        twoUpsCatPerms.length mustBe 2
-        upsCatPermsEveryone = twoUpsCatPerms.find(_.forPeopleId == Group.EveryoneId) getOrDie "TyE04792KDJ"
-        upsCatPermsStaff = twoUpsCatPerms.find(_.forPeopleId == Group.StaffId) getOrDie "TyEKWTG2KD2"
+        val perms = actualDump.permsOnPages.filter(_.onCategoryId is upsCat.id)
+        perms.length mustBe 2
+        upsCatPermsEveryone = perms.find(_.forPeopleId == Group.EveryoneId) getOrDie "TyE04792KDJ"
+        upsCatPermsStaff = perms.find(_.forPeopleId == Group.StaffId) getOrDie "TyEKWTG2KD2"
       }
 
       "... the permissions lets Everyone discuss" in {
@@ -506,7 +509,10 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "... there's an about page" in {
-        upsAboutCatPage = actualDump.pages.find(_.categoryId is upsCat.id) getOrDie "TyE03573FKGP"
+        val pagesInCat = actualDump.pages.filter(_.categoryId is upsCat.id)
+        pagesInCat.size mustBe 1
+        upsAboutCatPage = pagesInCat.head
+        upsAboutCatPage.pageType mustBe PageType.AboutCategory
       }
 
       "... with a title and body" in {
@@ -655,7 +661,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       val owen = createPasswordOwner("owner_un", dao)
       val merrylMember = createPasswordUser("merryl_un", dao)
       val forum: CreateForumResult = dao.createForum(
-          s"Forum $hostname", folder = "/", isForEmbCmts = true, Who(owen.id, browserIdData)
+          s"Forum $hostname", folder = "/",
+          isForEmbCmts = true, // —> the category gets ext id "embedded_comments"
+          Who(owen.id, browserIdData)
           ) getOrDie "TyE305RTG3"
 
       val pageId: PageId = createPage(
@@ -722,7 +730,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           patchToUpsert = SiteBackup.empty.copy(
             categories = Vector(dummyCategory),
             pages = Vector(pageToUpsert),
-            pageIdsByAltIds = Map(pageToUpsertAltId -> pageToUpsert.pageId),
+            pageIdsByAltIds = Map(pageToUpsertAltId -> pageToUpsert.pageId), // not needed here?
             pagePaths = Vector(PagePathToPage333),
             posts =
               Vector(titleByOwen, bodyByOwen, replyByMember)
@@ -864,8 +872,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           actualNewPage.authorId mustBe owen.id
           actualNewPage.numRepliesVisible mustBe 2
           actualNewPage.numPostsTotal mustBe 4 // title + body + reply + reply
-          // merlinMember is the latest poster, so won't be in the frequentPosterIds list.
-          // And merrylMember is *no longer* the latest poster, so *wil* be in the list. [206K94QTD]
+          // merlinMember is the latest poster, so is *not* in the frequentPosterIds list.
+          // And merrylMember is *no longer* the latest poster, so *is* in the list. [206K94QTD]
           actualNewPage.lastApprovedReplyById mustBe Some(merlinMember.id)
           actualNewPage.frequentPosterIds mustBe Vector(merrylMember.id)
         }
@@ -879,7 +887,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       "add a 3nd reply" - {
         var patchToUpsert: SiteBackup = null
-        lazy val reply2 = Page333Reply.copy(extImpId = Some("reply_2_ext_id"))
+        lazy val reply2 = Page333Reply.copy(
+          extImpId = Some("reply_2_ext_id"))  ; TESTS_MISSING // edit the suorce text
 
         "import (upsert) a site patch with the reply" in {
           patchToUpsert = SiteBackup.empty.copy(
@@ -892,8 +901,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
                 // to reference, in the patch. Later, with a PostPatch that can reference
                 // a parent page via ext id, then, can remove the body post here?
                 Page333BodyPost, reply2).map(_.copy(
-                createdById = owen.id,
-                currentRevisionById = owen.id)))
+                  createdById = owen.id,
+                  currentRevisionById = owen.id)))
 
           upsert(site.id, patchToUpsert)
         }
@@ -930,7 +939,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           info("with the correct text contents")
           actualReply.currentSource mustBe reply2.currentSource
 
-          info("those are te only posts with ext ids")
+          info("those are the only posts with ext ids")
           val postsWithExtImpId = actualDump.posts.filter(_.extImpId.isDefined)
           postsWithExtImpId.length mustBe 5
         }
@@ -991,7 +1000,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           pages = Vector(pageToUpsertAlreadyExists),  // same alt id —> is considered same page
           pageIdsByAltIds = Map(oldPageAltId -> pageToUpsertAlreadyExists.pageId),
           posts = Vector(
-            Page333TitlePost, Page333BodyPost, upsReply).map(_.copy(
+            Page333BodyPost, // needed, so the reply has sth to refer to
+            upsReply).map(_.copy(
               createdById = owen.id,
               currentRevisionById = owen.id)))
 

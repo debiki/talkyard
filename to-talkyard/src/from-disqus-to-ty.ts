@@ -19,6 +19,10 @@ let verbose: boolean | undefined;
 let errors = false;
 
 
+// SHOULD_CODE_REVIEW  e2e test works fine though:
+//    embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+
+
 /**
  * I think this is for "advanced" bloggers who split their blog comments in
  * different blog topic categories.
@@ -381,7 +385,7 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
         // are allowed inside an id, so, using the Disqus comment author names as part
         // of the id, is fine. See db fn  is_valid_ext_id()   [05970KF5].
         return (
-            (disqusAuthor.email || '')            + '|' +
+            (disqusAuthor.email || '')            + '|' +  // ?? abort if email contains '|' ??
             (disqusAuthor.isAnonymous ? 'a' : '') + '|' +
             (disqusAuthor.name || ''));  // can contain '|' ?  So place last.
       }

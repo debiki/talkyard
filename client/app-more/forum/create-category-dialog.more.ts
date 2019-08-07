@@ -71,7 +71,6 @@ const EditCategoryDialog = createClassAndFactory({
       isLoading: !!categoryId,
       isSaving: false,
       isCreating: !categoryId,
-      isEditing: !!categoryId,
       onSaved,
     });
     if (categoryId) {
@@ -131,9 +130,11 @@ const EditCategoryDialog = createClassAndFactory({
 
   close: function() {
     this.setState({
+      category: undefined,
       isOpen: false,
       isSaving: false,
       isLoading: false,
+      isCreating: undefined,
       store: null,
       onSaved: null,
     });
@@ -222,11 +223,11 @@ const EditCategoryDialog = createClassAndFactory({
     const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";
 
-    const saveCancel = this.state.isSaving
+    const saveCancel = this.state.isOpen ? null : (this.state.isSaving
       ? r.div({}, "Saving...")
       : r.div({},
         PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB' }, saveButtonTitle),
-        Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel"));
+        Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel")));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esCatDlg s_CD' },
