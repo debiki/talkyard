@@ -130,7 +130,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadPostsByExtImpIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post] = {
+  def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post] = {
     loadPostsBySomeId("ext_id", extImpIds, _.extImpId.getOrDie("TyE2GKGCU7L"))
   }
 

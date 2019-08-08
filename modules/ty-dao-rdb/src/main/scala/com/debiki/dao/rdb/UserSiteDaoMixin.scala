@@ -992,7 +992,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadParticipantsInclDetailsByExtImpIdsAsMap_wrongGuestEmailNotfPerf(
+  def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(
         extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails] = {
     if (extImpIds.isEmpty) return Map.empty

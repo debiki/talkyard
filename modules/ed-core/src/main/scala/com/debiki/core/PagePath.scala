@@ -35,7 +35,7 @@ case class PagePathWithId(  // better than PagePath? Has no site id, and always 
   def toOld(siteId: SiteId) = PagePath(
     siteId, folder, pageId = Some(pageId), showId = showId, pageSlug = pageSlug)
 
-  def value: String = toOld(9999999).value
+  def value: String = toOld(9999999 /* dummy site id, won't be used */).value
 
   def copyNoId = PagePathNoId(folder, showId, slug = pageSlug)
 }
