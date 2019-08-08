@@ -1197,7 +1197,9 @@ trait UserSiteDaoMixin extends SiteTransaction {
     try runUpdateSingleRow(statement, values)
     catch {
       case ex: js.SQLException =>
-        if (isUniqueConstrViolation(ex) && uniqueConstrViolatedIs("users_site_guest_u", ex))
+        if (isUniqueConstrViolation(ex) && (
+            uniqueConstrViolatedIs("pps_u_site_guest_no_browser_id", ex)
+            || uniqueConstrViolatedIs("pps_u_site_guest_w_browser_id", ex)))
           throw DbDao.DuplicateGuest
         else
           throw ex
