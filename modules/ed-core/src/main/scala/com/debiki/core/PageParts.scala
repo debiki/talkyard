@@ -65,7 +65,7 @@ object PageParts {
     for {
       post <- posts
       if post.isReply && post.isVisible  // (96502764)
-      if !ignoreIds.contains(post.createdById)
+      if !ignoreIds.contains(post.createdById)  // [3296KGP]
     } {
       val numPosts = numPostsByUserId(post.createdById)
       numPostsByUserId(post.createdById) = numPosts + 1

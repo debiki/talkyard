@@ -1,4 +1,6 @@
 
+$colorfulBorder = 310;
+
 .s_Tour
   z-index: 2000;
   position: relative;
@@ -7,6 +9,15 @@
     // We're waiting for a button-or-something click, rather than clicking
     // the Next button inside the instructions dialog. Dim the dialog, so
     // the focus will be more on that something-to-click.
+    //
+    // We'll also make the background darker (REALLYDARKBG) so this dialog will
+    // still be in the foreground — but the area to click, will be briiiighter.
+    //
+    // UX testing shows that without this, and the $colorfulBorder below,
+    // people often (like, 1 in 2) won't notice that a button is highlighted
+    // and that they're supposed to click it. Instead they think the tour is
+    // broken and click Exit.
+    //
     content: ' ';
     display: block;
     position: absolute;
@@ -30,10 +41,10 @@
 
 .s_Tour-Click
   .s_Tour_Highlight
-    border: 200vmax solid rgba(0, 0, 0, 0.56) !important;
+    border: 200vmax solid rgba(0, 0, 0, 0.56) !important;  // (REALLYDARKBG)
 
 .s_Tour_ClickHere
-  border: 13px solid hsl(310, 100%, 64%) !important; // 310 "stronger" than $uiHue
+  border: 13px solid hsl($colorfulBorder, 100%, 64%) !important;
   pointer-events: none;
 
 .s_Tour_ClickBlocker-Left-All

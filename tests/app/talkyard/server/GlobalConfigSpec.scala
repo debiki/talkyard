@@ -91,6 +91,21 @@ class GlobalConfigSpec extends FreeSpec with MustMatchers {
         conf.mayPatchSite(333) mustBe true
         conf.mayPatchSite(444) mustBe true
         conf.mayPatchSite(555) mustBe false
+        conf.mayPatchSite(-222) mustBe false
+        conf.mayPatchSite(-333) mustBe false
+        conf.mayPatchSite(-444) mustBe false
+      }
+
+      "test sites, negative ids" in {
+        val conf = makeConfig(Map("talkyard.mayPatchSiteIds" -> "-222,-333,-444"))
+        conf.mayPatchSite(-111) mustBe false
+        conf.mayPatchSite(-222) mustBe true
+        conf.mayPatchSite(-333) mustBe true
+        conf.mayPatchSite(-444) mustBe true
+        conf.mayPatchSite(-555) mustBe false
+        conf.mayPatchSite(+222) mustBe false
+        conf.mayPatchSite(+333) mustBe false
+        conf.mayPatchSite(+444) mustBe false
       }
     }
   }

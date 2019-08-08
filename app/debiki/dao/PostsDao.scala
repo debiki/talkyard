@@ -527,7 +527,7 @@ trait PostsDao {
     // COULD find the most recent posters in the last 100 messages only, because is chat.
     val newFrequentPosterIds: Seq[UserId] =
       PageParts.findFrequentPosters(page.parts.allPosts,  // skip newPost since we ignore ...
-        ignoreIds = Set(page.meta.authorId, authorId))    // the author here anyway [3296KGP]
+        ignoreIds = Set(page.meta.authorId, authorId))    // ...the author here anyway [3296KGP]
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(

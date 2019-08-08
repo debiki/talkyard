@@ -171,7 +171,7 @@ object EmbeddedCommentsPageCreator {
         case None =>
           return (pageId, None)
         case Some(altPageId) =>
-          // If the page has a different discussion id than altPageId,
+          // If page pageId has a different discussion id than altPageId,
           // then it's for a different discussion and we shouldn't use it.
           val otherAltIdsSamePage = request.dao.getAltPageIdsForPageId(pageId)
           val anyOtherIsNotUrl = otherAltIdsSamePage.exists(otherId =>
@@ -195,6 +195,14 @@ object EmbeddedCommentsPageCreator {
             // below.
           }
           else {
+            // Fine, we found a discussion with a matching url or url path.
+            // The page either doesn't have a different discussion id,
+            // so it's *not* a different discussion.
+            // (All its alt ids are url or url paths, one of which matches
+            // the browser's current url — this is fine, its still the right page).
+            // So we'll use this discussion.
+
+            // Minor BUG maybe?:
             // Shouldn't altPageId now be added to the lookup ids for this emb disc?
             // So this works:
             // 1) Create discussion, no disc id, just url.
@@ -206,6 +214,7 @@ object EmbeddedCommentsPageCreator {
             // since now new url.
             // However, 3 will happen only for blog posts one reloads, after having
             // edited the blog and added ids. So would be good to combine with: [COMCATS].
+
             return (pageId, None)
           }
       }

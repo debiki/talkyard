@@ -86,7 +86,7 @@ const DisqusThreadSuffix = ':thr';
 const DisqusTitleSuffix = ':ttl';
 const DisqusBodySuffix = ':bdy';
 const DisqusPostSuffix = ':pst';
-const DisqusAuthorSuffix = ':aut';
+const DisqusAuthorSuffix = ':atr';
 const DisqusExtIdSuffix = ':dsq';
 
 
