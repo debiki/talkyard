@@ -223,7 +223,7 @@ const EditCategoryDialog = createClassAndFactory({
     const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";
 
-    const saveCancel = this.state.isOpen ? null : (this.state.isSaving
+    const saveCancel = !this.state.isOpen ? null : (this.state.isSaving
       ? r.div({}, "Saving...")
       : r.div({},
         PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB' }, saveButtonTitle),
