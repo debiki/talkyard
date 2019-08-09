@@ -123,13 +123,13 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // than what [the same alt ids already in the database] already point to.
       // Because then there's a conflict between the database, and the patch.
       // We do the same for ext ids, below (502958).
-      // Or if 2) an alt id refers to page meta in the patch and database, with
-      // different ext ids (then don't know which of those ext id to use, or
+      // Or if 2) an alt id refers to pages in the patch and database, with the same ids,
+      // but different ext ids — then don't know which of those ext id to use, or
       // if the pages are even supposed to be the same or if there's some "bug"
-      // in the dump).
+      // in the patch.
       pagesInDbByAltId foreach { case (altPageId, pageInDb) =>
         val pageIdInPatch = siteData.pageIdsByAltIds.get(altPageId) getOrDie "TyE305RKSTJ"
-        throwBadRequestIf(!isPageTempId(pageIdInPatch) && pageIdInPatch != pageInDb.pageId,
+        throwBadRequestIf(!isPageTempId(pageIdInPatch) && pageIdInPatch != pageInDb.pageId, // (305WKD5)
           "TyE306AKTJWB", o"""Alt page id $altPageId in patch maps to real page id $pageIdInPatch,
             but in the database, already maps to ${pageInDb.pageId}""")
         val pageInPatch = siteData.pages.find(_.pageId == pageIdInPatch) getOrThrowBadRequest(
@@ -154,15 +154,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      siteData.pages foreach { pageWithTempId: PageMeta =>
-        val tempId = pageWithTempId.pageId
-        val extId = pageWithTempId.extImpId getOrElse throwForbidden(
+      siteData.pages foreach { pageInPatch: PageMeta =>
+        val tempId = pageInPatch.pageId
+        val extId = pageInPatch.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extId not implemented. Page temp imp id: $tempId")
 
         val pageIdInDbFromExtId = pagesInDbByExtId.get(extId).map(pageInDb => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != pageInDb.pageId,
             // We do this check for alt ids too, above. (502958)
-            "TyE30TKKWFG3", o"""Imported page w extId '$extId' has real id $tempId
+            "TyE30TKKWFG3", o"""Page in patch with page extId '$extId' has real page id $tempId
                which differs from page ${pageInDb.pageId} in the db, with the same extImpId""")
           pageInDb.pageId
         })
@@ -171,8 +171,22 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
         val pagesInDbFromAltId: Iterable[PageMeta] = altIds.flatMap(pagesInDbByAltId.get)
         val pageIdsInDbFromAltId = pagesInDbFromAltId.map(_.pageId).toSet
-        dieIf(pageIdsInDbFromAltId.size > 1, "TyE305RKJW23")
+        throwForbiddenIf(pageIdsInDbFromAltId.size > 1,
+          "TyE305RKJW23", o"""Page in patch with temp imp id $tempId has alt ids
+           $altIds, in the patch — but in the database, those alt ids map to
+           ${pageIdsInDbFromAltId.size} different pages, namely: $pageIdsInDbFromAltId
+           — so, the alt ids in the patch, conflict with those in the database.
+           Don't know what to do.""")
+
         val pageIdInDbFromAltId = pageIdsInDbFromAltId.headOption
+
+        pagesInDbFromAltId.headOption foreach { pageInDb =>
+          def errorMessage = s"in patch: $pageInPatch, in db: $pageInDb"
+          // This already tested above, (305WKD5)? So use dieIf here.
+          dieIf(!isPageTempId(tempId) && tempId != pageInDb.pageId, "TyE605MRDKJ2", errorMessage)
+          dieIf(pageInPatch.extImpId.isDefined && pageInDb.extImpId.isDefined &&
+            pageInPatch.extImpId != pageInDb.extImpId, "TyE5KSDGW204", errorMessage)
+        }
 
         throwBadRequestIf(pageIdInDbFromExtId.isDefined && pageIdInDbFromAltId.isDefined &&
           pageIdInDbFromExtId != pageIdInDbFromAltId, "TyE04KRDNQ24", o"""Alt id and ext id
@@ -185,7 +199,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           tx.nextPageId()
         })
 
-        pageRealIdsByImpId.put(pageWithTempId.pageId, realId)
+        pageRealIdsByImpId.put(pageInPatch.pageId, realId)
       }
 
 
@@ -243,31 +257,31 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      siteData.guests foreach { guestWithTempId: Guest =>
-        throwBadRequestIf(guestWithTempId.id > MaxCustomGuestId,
-          "TyE7WKR30RKSR", s"Not a guest id: ${guestWithTempId.id}")
+      siteData.guests foreach { guestInPatch: Guest =>
+        throwBadRequestIf(guestInPatch.id > MaxCustomGuestId,
+          "TyE7WKR30RKSR", s"Not a guest id: ${guestInPatch.id}")
 
         // For now, don't allow upserting via real ids, only via ext imp ids. (3607TK2)
-        throwForbiddenIf(guestWithTempId.id > -LowestTempImpId,
-          "TyE05KKST25", s"Upserting guest with real id ${guestWithTempId.id}: not yet implemented")
+        throwForbiddenIf(guestInPatch.id > -LowestTempImpId,
+          "TyE05KKST25", s"Upserting guest with real id ${guestInPatch.id}: not yet implemented")
 
         // We need an extId, so we won't duplicate this guest, if we import the same dump many times.
         // Later: Unless we upsert with a real id (3607TK2).
-        throwForbiddenIf(guestWithTempId.extImpId.isEmpty,
+        throwForbiddenIf(guestInPatch.extImpId.isEmpty,
           "TyE5HKW30R", o"""Upserting guests with no extId not implemented.
-          Guest temp imp id: ${guestWithTempId.id}""")
+          Guest temp imp id: ${guestInPatch.id}""")
 
-        val upsertedGuestRealId = guestWithTempId.extImpId.flatMap(ppsInDbByExtId.get) match {
+        val upsertedGuestRealId = guestInPatch.extImpId.flatMap(ppsInDbByExtId.get) match {
           case None =>
             // Insert a new guest.
-            val guestRealId = guestWithTempId.copy(id = nextGuestId)
+            val guestRealId = guestInPatch.copy(id = nextGuestId)
             nextGuestId -= 1
             tx.insertGuest(guestRealId)
             guestRealId
           case Some(guestInDb: Guest) =>
             // Update an exiting guest. Later. Now: noop.
             dieIf(guestInDb.id <= -LowestTempImpId, "TyE046MKP01")
-            dieIf(guestInDb.extImpId != guestWithTempId.extImpId, "TyE046MKP02")
+            dieIf(guestInDb.extImpId != guestInPatch.extImpId, "TyE046MKP02")
             // Later, update guest, but when do this? If url query:  [YESUPSERT]
             //  /-/v0/upsert-patch?onConflict = UpdateIfNewer / UpdateAlways / DoNothing ?
             //if (guestTempId.updatedAt.millis > oldGuestRealId.updatedAt.millis)
@@ -278,8 +292,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             guestInDb
         }
         dieIf(upsertedGuestRealId.id <= -LowestTempImpId,
-          "TyE305HKSD2", s"Guest id ${guestWithTempId.id} got remapped to ${upsertedGuestRealId.id}")
-        ppsWithRealIdsByTempImpId.put(guestWithTempId.id, upsertedGuestRealId)
+          "TyE305HKSD2", s"Guest id ${guestInPatch.id} got remapped to ${upsertedGuestRealId.id}")
+        ppsWithRealIdsByTempImpId.put(guestInPatch.id, upsertedGuestRealId)
       }
 
 
@@ -304,7 +318,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      siteData.posts.groupBy(_.pageId).foreach { case (tempPageId, tempPosts) =>
+      siteData.posts.groupBy(_.pageId).foreach { case (tempPageId, postsInPatch) =>
         val realPageId = remappedPageTempId(tempPageId)
         val postsInDbOnPage = tx.loadPostsOnPage(realPageId)  ; COULD_OPTIMIZE // don't need them all
         postsInDbOnPage foreach { postInDb =>
@@ -318,93 +332,102 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
         val postTempIdsToInsert = mutable.HashSet[PostId]()
 
-        tempPosts foreach { tempPost =>
-          throwBadRequestIf(tempPost.id < LowestTempImpId,
-            "TyE30HRPG2", s"Upserting posts with real ids not yet implemented, post id: ${tempPost.id}")
+        postsInPatch foreach { postInPatch =>
+          throwBadRequestIf(postInPatch.id < LowestTempImpId,
+            "TyE30HRPG2", s"Upserting posts with real ids not implemented, post id: ${postInPatch.id}")
 
           // We need an extId, so we won't recreate and duplicate the post, if we import
           // the same dump more than once.
           // Later: Unless the post has a real id < LowestTempImpId already (but not impl, see above).
-          throwBadRequestIf(tempPost.extImpId.isEmpty,
-            "TyE30HRPG8", s"Upserting posts with no extImpId not yet supported ${tempPost.id}")
+          throwBadRequestIf(postInPatch.extImpId.isEmpty,
+            "TyE30HRPG8", s"Upserting posts with no extImpId not yet supported ${postInPatch.id}")
 
-          val realPostExclParentNr: Post = tempPost.extImpId.flatMap(postsInDbByExtId.get) match {
-            case Some(oldPostRealIdNr: Post) =>
+          val realPostExclParentNr: Post = postInPatch.extImpId.flatMap(postsInDbByExtId.get) match {
+            case Some(postInDb: Post) =>
               // Later: If has same id and nr, then could upsert.  [YESUPSERT]
-              // If different id or nr, then, error? Unless id & nr in patch are temp imp ids.
-              oldPostRealIdNr
+              throwForbiddenIf(postInPatch.id < LowestTempImpId && postInPatch.id != postInDb.id,
+                "TyE4206KSW", o"""Post in patch has different real id, than post in db with same
+                ext id. In patch: $postInPatch, in db: $postInDb""")
+              throwForbiddenIf(postInPatch.nr < LowestTempImpId && postInPatch.nr != postInDb.nr,
+                "TyE6KG2XV46", o"""Post in patch has different real nr, than post in db with same
+                ext id. In patch: $postInPatch, in db: $postInDb""")
+              throwForbiddenIf(realPageId != postInDb.pageId,
+                "TyE7DWTX205H", o"""Post in patch has different real page id, than post in db with same
+                ext id. In patch, the post: $postsInPatch, maps to real page id: $realPageId.
+                Post in db: $postInDb, that is, a different page id: ${postInDb.pageId}""")
+              postInDb
             case None =>
               // Probably we need to remap the post nr to 2, 3, 4, 5 ... instead of a temp nr.
               // Unless has a real nr already, e.g. the title or body post nr.
               val realNr =
-                if (tempPost.nr < LowestTempImpId) tempPost.nr
+                if (postInPatch.nr < LowestTempImpId) postInPatch.nr
                 else {
                   nextReplyNr += 1
                   nextReplyNr - 1
                 }
 
               postsInDbByRealPagePostNr.get(PagePostNr(realPageId, realNr)) match {
-                case Some(oldPostSamePostNr: Post) =>
+                case Some(postInDbSameNr: Post) =>
                   // Do nothing. The old post should be an already existing page title
-                  // or body. Later, maybe update. [IMPUPD]
+                  // or body. Later, maybe update. [YESUPSERT]
                   // This happens if we import old Disqus comments, to a page for which
                   // there's already a Talkyard embedded comments discussion. Then we can
                   // leave the already existing title and body as is.
                   dieIf(!PageParts.isArticleOrTitlePostNr(realNr),
                     "TyE502BKGD8", o"""Unexpected conflict when upserting post w real
                     pageId $realPageId postNr $realNr and temp pageId $tempPageId
-                    postNr ${tempPost.nr} — there's already a post in the db with the same nr,
-                    and it's not the title or body post""")
-                  oldPostSamePostNr
+                    postNr ${postInPatch.nr} — there's already a post in the db with the same nr,
+                    and it's not the title or body post, and not same ext id (or no ext id)""")
+                  postInDbSameNr
                 case None =>
-                  val postNewIdNr: Post = tempPost.copy(
+                  val postNewIdNr: Post = postInPatch.copy(
                     pageId = realPageId,
                     id = nextPostId,
                     nr = realNr,
                     // parentNr — updated below
                     // later: multireplyPostNrs
-                    createdById = remappedPpTempId(tempPost.createdById),
-                    currentRevisionById = remappedPpTempId(tempPost.currentRevisionById),
-                    approvedById = tempPost.approvedById.map(remappedPpTempId),
-                    lastApprovedEditById = tempPost.lastApprovedEditById.map(remappedPpTempId),
-                    collapsedById = tempPost.collapsedById.map(remappedPpTempId),
-                    closedById = tempPost.closedById.map(remappedPpTempId),
-                    bodyHiddenById = tempPost.bodyHiddenById.map(remappedPpTempId),
-                    deletedById = tempPost.deletedById.map(remappedPpTempId))
+                    createdById = remappedPpTempId(postInPatch.createdById),
+                    currentRevisionById = remappedPpTempId(postInPatch.currentRevisionById),
+                    approvedById = postInPatch.approvedById.map(remappedPpTempId),
+                    lastApprovedEditById = postInPatch.lastApprovedEditById.map(remappedPpTempId),
+                    collapsedById = postInPatch.collapsedById.map(remappedPpTempId),
+                    closedById = postInPatch.closedById.map(remappedPpTempId),
+                    bodyHiddenById = postInPatch.bodyHiddenById.map(remappedPpTempId),
+                    deletedById = postInPatch.deletedById.map(remappedPpTempId))
 
                   nextPostId += 1
-                  postTempIdsToInsert += tempPost.id
+                  postTempIdsToInsert += postInPatch.id
                   postNewIdNr
               }
           }
 
-          postsRealByTempId.put(tempPost.id, realPostExclParentNr)
-          postsRealByTempPagePostNr.put(tempPost.pagePostNr, realPostExclParentNr)
+          postsRealByTempId.put(postInPatch.id, realPostExclParentNr)
+          postsRealByTempPagePostNr.put(postInPatch.pagePostNr, realPostExclParentNr)
         }
 
         // Update parent nrs, sanitize html, and upsert into db.
-        tempPosts foreach { tempPost =>
-          if (!postTempIdsToInsert.contains(tempPost.id)) {
+        postsInPatch foreach { postInPatch =>
+          if (!postTempIdsToInsert.contains(postInPatch.id)) {
             // Update? Later, not yet impl.  [YESUPSERT]
           }
           else {
-            val postTempParentNr = postsRealByTempPagePostNr.getOrElse(tempPost.pagePostNr,
+            val postTempParentNr = postsRealByTempPagePostNr.getOrElse(postInPatch.pagePostNr,
               throwBadRequest(
-                "TyE305KRTD3", o"""Post ${tempPost.pagePostNr} not found in site data
+                "TyE305KRTD3", o"""Post ${postInPatch.pagePostNr} not found in site data
                 (in postsRealByTempPagePostNr)"""))
-            dieIf(postTempParentNr.parentNr != tempPost.parentNr, "TyE306RKTJ2")
+            dieIf(postTempParentNr.parentNr != postInPatch.parentNr, "TyE306RKTJ2")
 
             val postRealIdsNrsNoHtml =
-              if (tempPost.parentNr.isEmpty) {
+              if (postInPatch.parentNr.isEmpty) {
                 postTempParentNr
               }
               else {
                 // Construct the parent post temp page id and nr, so we can look it up
                 // and find its real id and nr.
-                val parentPagePostNr = PagePostNr(tempPost.pageId, postTempParentNr.parentNr.get)
+                val parentPagePostNr = PagePostNr(postInPatch.pageId, postTempParentNr.parentNr.get)
 
                 // Might as well use tempPost.parentNr above?
-                dieIf(tempPost.parentNr != postTempParentNr.parentNr, "TyE35AKTSD305")
+                dieIf(postInPatch.parentNr != postTempParentNr.parentNr, "TyE35AKTSD305")
 
                 val parentPost = postsRealByTempPagePostNr.getOrElse(parentPagePostNr, throwBadRequest(
                   "TyE6AKD025", s"Parent post missing, temp page post nr $parentPagePostNr"))
@@ -433,8 +456,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             TESTS_MISSING // this test: [2WBKP05] commented out, assumes isn't indexed.
             tx.indexPostsSoon(postReal)
 
-            postsRealByTempId.put(tempPost.id, postReal)
-            postsRealByTempPagePostNr.put(tempPost.pagePostNr, postReal)
+            postsRealByTempId.put(postInPatch.id, postReal)
+            postsRealByTempPagePostNr.put(postInPatch.pagePostNr, postReal)
           }
         }
       }
@@ -460,17 +483,18 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       }
 
       // Category patches: Remap temp imp ids to real ids, by looking up the external id. [3953KSH]
-      siteData.categoryPatches foreach { catPatchWithTempId: CategoryPatch =>
-        val tempImpId = catPatchWithTempId.id getOrThrowBadRequest(
-          "TyE305KKS61", "Category with no id")
-        val extId = catPatchWithTempId.extImpId getOrThrowBadRequest(
-          "TyE2SDKLPX3", s"Category with id $tempImpId has no ext id")
+      siteData.categoryPatches foreach { catPatch: CategoryPatch =>
+        val tempImpId = catPatch.id getOrThrowBadRequest(
+          "TyE305KKS61", s"Category patch with no id: $catPatch")
+        val extId = catPatch.extImpId getOrThrowBadRequest(
+          "TyE2SDKLPX3", s"Category patch has no ext id: $catPatch")
         throwBadRequestIf(tempImpId < LowestTempImpId,
-          "TyE305KPWDJ", s"""Upserting real category ids is unimplemented. Category with
-           id: $tempImpId, extId: '$extId', should instead have a > 2e9 id (temp import id)""")
-        val oldCat = categoriesInDb.find(_.extImpId is extId) getOrThrowBadRequest(
-          "TYE40GKRD81", s"No category in the database with ext id $extId")
-        categoriesRealIdsByTempImpId.put(tempImpId, oldCat.id)
+          "TyE305KPWDJ", s"""Upserting real category ids is unimplemented. Category patch with
+           id: $tempImpId should instead have a > 2e9 id (temp import id).
+           The category: $catPatch""")
+        val catInDb = categoriesInDb.find(_.extImpId is extId) getOrThrowBadRequest(
+          "TYE40GKRD81", s"No category in the database with ext id $extId, for $catPatch")
+        categoriesRealIdsByTempImpId.put(tempImpId, catInDb.id)
       }
 
       // Remap ids.
@@ -528,15 +552,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             val anySectPageInDb = tx.loadPageMeta(realSectPageId)
             if (globals.isOrWasTest) {
-              // Unfortunately, I constructed the test so that an imported category's
+              // Unfortunately, I constructed a test [TyT95MKTQG2] so that an imported category's
               // section page id is an About page — which shouldn't be allowed.
               // But I don't want to rewrite the test now. So, skip the below check,
               // now when running tests.
             }
             else throwForbiddenIf(anySectPageInDb.exists(_.pageType != PageType.Forum),
               "TyE05KZGS4B", o"""Category with temp imp id ${catWithTempId.id} references
-              section page with temp imp id ${catWithTempId.sectionPageId} —>
-              real id $realSectPageId, but that page is not a forum, it is a
+              section page with temp imp id ${catWithTempId.sectionPageId} —> real id
+              $realSectPageId, but that page is not page type ${PageType.Forum}, it is a
               ${anySectPageInDb.get.pageType}""")
 
             val catRealIds = catWithTempId.copy(
@@ -656,13 +680,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       // ----- Pages
 
-      siteData.pages foreach { pageWithTempId: PageMeta =>
-        val realPageId = pageRealIdsByImpId.get(pageWithTempId.pageId) getOrDie "TyE06DKWD24"
+      siteData.pages foreach { pageInPatch: PageMeta =>
+        val realPageId = pageRealIdsByImpId.get(pageInPatch.pageId) getOrDie "TyE06DKWD24"
 
-        lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageWithTempId.pageId, Set.empty)
+        lazy val pageAltIds = pageAltIdsByTempImpIds.getOrElse(pageInPatch.pageId, Set.empty)
 
-        val anyPageInDb = pageWithTempId.extImpId.flatMap(pagesInDbByExtId.get) orElse {
+        val anyPageInDb = pageInPatch.extImpId.flatMap(pagesInDbByExtId.get) orElse {
           val pagesInDbWithMatchingAltIds = pageAltIds.flatMap(pagesInDbByAltId.get)
+          // We've already checked this, above, when remapping page ids.
           dieIf(pagesInDbWithMatchingAltIds.map(_.pageId).size > 1, "TyE05HKR3WH8")
           pagesInDbWithMatchingAltIds.headOption
         }
@@ -670,13 +695,13 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val pageWrongStats = anyPageInDb match {
           case None =>
             // Insert new page.
-            val pageWithRealIdsButWrongStats = pageWithTempId.copy(
+            val pageWithRealIdsButWrongStats = pageInPatch.copy(
               pageId = realPageId,
-              categoryId = pageWithTempId.categoryId.map(remappedCategoryTempId),
-              authorId = remappedPpTempId(pageWithTempId.authorId),
-              answerPostId = pageWithTempId.answerPostId.map(remappedPostIdTempId),
-              lastApprovedReplyById = pageWithTempId.lastApprovedReplyById.map(remappedPpTempId),
-              frequentPosterIds = pageWithTempId.frequentPosterIds.map(remappedPpTempId))
+              categoryId = pageInPatch.categoryId.map(remappedCategoryTempId),
+              authorId = remappedPpTempId(pageInPatch.authorId),
+              answerPostId = pageInPatch.answerPostId.map(remappedPostIdTempId),
+              lastApprovedReplyById = pageInPatch.lastApprovedReplyById.map(remappedPpTempId),
+              frequentPosterIds = pageInPatch.frequentPosterIds.map(remappedPpTempId))
 
             tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
             pageAltIds.foreach(tx.insertAltPageId(_, realPageId))
@@ -687,7 +712,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             if (pageWithOkNums != oldPageMeta) {
               tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
             } */
-            // The stats might be wrong — maybe we're inserting new posts.
+            // The stats might be wrong, after the upserts — maybe we're inserting new replies.
             pageInDb
             /* Later?,  if onConflict=Overwrite, then update?  [YESUPSERT]
             if (oldPageMeta.updatedAt.getTime < pageMetaTempIds.updatedAt.getTime) {
@@ -732,11 +757,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }): _*)
       }
 
-      siteData.pagePaths foreach { pathWithTempId: PagePathWithId =>
-        pathsInDbByPageTempId.get(pathWithTempId.pageId) match {
+      siteData.pagePaths foreach { pathInPatch: PagePathWithId =>
+        pathsInDbByPageTempId.get(pathInPatch.pageId) match {
           case None =>
-            val pathRealId = pathWithTempId.copy(
-              pageId = remappedPageTempId(pathWithTempId.pageId))
+            val pathRealId = pathInPatch.copy(
+              pageId = remappedPageTempId(pathInPatch.pageId))
 
             tx.insertPagePath(pathRealId)
             pathRealId
