@@ -353,7 +353,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 ext id. In patch: $postInPatch, in db: $postInDb""")
               throwForbiddenIf(realPageId != postInDb.pageId,
                 "TyE7DWTX205H", o"""Post in patch has different real page id, than post in db with same
-                ext id. In patch, the post: $postsInPatch, maps to real page id: $realPageId.
+                ext id. In patch, the post: $postInPatch, maps to real page id: $realPageId.
                 Post in db: $postInDb, that is, a different page id: ${postInDb.pageId}""")
               postInDb
             case None =>

@@ -195,12 +195,10 @@ object EmbeddedCommentsPageCreator {
             // below.
           }
           else {
-            // Fine, we found a discussion with a matching url or url path.
-            // The page either doesn't have a different discussion id,
-            // so it's *not* a different discussion.
-            // (All its alt ids are url or url paths, one of which matches
-            // the browser's current url — this is fine, its still the right page).
-            // So we'll use this discussion.
+            // Fine, we found a discussion with a matching url or url path. The page
+            // doesn't have a different discussion id, so it's *not* a different
+            // discussion. (All its alt ids are url or url paths, one of which matches
+            // the browser's current url). — So we'll use this discussion.
 
             // Minor BUG maybe?:
             // Shouldn't altPageId now be added to the lookup ids for this emb disc?
