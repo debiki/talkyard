@@ -599,23 +599,52 @@ forum software.
 License
 -----------------------------
 
-Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.talkyard.io/contact
+- AGPL, see below.
+- And dual licensed under AGPL and GPL, from 2025-01-01 00:00:01 UTC and onwards.
+- I (KajMagnus) bump the above becomes-dual-licensed date, with one year,
+  each year — for the most recent version of Talkyard.
+  Meaning, the most recent version of Talkyard, becomes GPLv2, always 5 years
+  into the future (as long as I bump the date regularly).
 
+AGPL:
 
-    Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
+```
+Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+```
 
+Plus GPLv2 or later, from 2025-01-01 and onwards:
+
+```
+Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
+
+This program is free software; from 2025-01-01 00:00:01 UTC and
+onwards, you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details,
+from 2025-01-01 00:00:01 UTC and onwards.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+```
 
 vim: list et ts=2 sw=2 tw=0 fo=r
