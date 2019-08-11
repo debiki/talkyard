@@ -15,22 +15,29 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Discussion software, a place for questions and answers, ideas and feedback.
+Discussion software. Open source, install yourself. There's SaaS hosting too.
 
 <!--
 Create a place to talk,
 where your audience find answers to their questions, and discuss ideas.<br>
 Place it at `talkyard.Your-Website.org`.
+
+ - **Solve problems** step by step, in traditional flat forum topics.
 -->
 
- - **Get unstuck** by finding answers in Question-Answers topics, like at StackOverflow.
- - **Discuss ideas** in open-ended topics, like at Reddit and Hacker News.
- - **Solve problems** step by step, in traditional flat forum topics.
- - **Collaborate** in real time chat, like Slack.
- - **Talk with your blog visitors** in embedded comments, like Disqus.
+ - **Save time.** People find help "instantly", in Question & Answers topics.
+ - **Crowdsource ideas and feedback.** Discuss, upvote, pick the right things to do.
+ - **Collaborate,** in team chats.
+ - **Talk with your blog readers,** in embedded comments.
 
-This is for development;
-**installation instructions** are elsewhere: https://github.com/debiki/talkyard-prod-one
+For your co-workers / customers /
+students / volunteers /
+contributors / users / community.
+Brings together the best from StackOverflow, Slack, Discourse, Reddit, HackerNews, Disqus.
+
+
+This Git repository is for *development*. **installation instructions** are elsewhere:<br>
+https://github.com/debiki/talkyard-prod-one
 
 <!--
 For your students / volunteers / colleagues / customers / donors /
@@ -72,27 +79,60 @@ You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</
 This is beta software; there might be bugs.
 
 
-### Screenshots
+Screenshots
+-----------
 
-**Topic list:**
+### Topic list:
 
 <!--
 ![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
  the old demo forum looks better? so use instead.  -->
 
-![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg)
+![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+<!--
+![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
+
+![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
 
 <br>
 
-**Question-Answers:**
+### Question-Answers:
 
+The good answers surface to the top.
 
+![Question and Answers](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2018-08-19-question-ex.jpeg "Question-Answers")
+<!--
+![Question and Answers](/images/web/ty-media/for-docs/2018-08-19-question-ex.jpeg?raw=true "Question-Answers") -->
+
+<!--
 ![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
+-->
+
+### Recent replies — find them:
+
+You leave for lunch, or go home over the night — and return to a Question-Answers topic the next day. Did someone post more replies, when you were away? You want to find and read?
+
+At StackOverflow, Reddit, HackerNews and everywhere else, it's hard to find them. You need to carefully scan the whole discussion from top to bottom. This can take an hour, e.g. a large discusson at Reddit or HN — often I just don't do this at all, becasue, too much work.
+
+Talkyard lets you directly find the most recent answers and replies, although the discussion is threaded: Open the sidebar, click the Recen tab, and find the most recent replies, click to scroll.
+
+<br>
+<br>
+
+![Recent replies](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-recent-replies-ex-anon-arw.jpg "Recent replies")
+
+<!--
+![Recent replies](/images/web/ty-media/for-docs/2019-08-10--recent-replies-ex-anon-arw.jpg?raw=true "Recent replies") -->
 
 <br>
 
-**Chat:**
+### Chat:
 
+Notifications via email, as of now. Some time later, there'll be a PWA mobile app with push notifications.
+
+<br>
+
+<!--
 Currently, Talkyard is a mobile friendly web app.
 Within half a year or a year (today is August 2018),
 the plan is that there'll be a white labelled mobile app.
@@ -100,8 +140,17 @@ Meaning, people will be able to install your community, on their mobile phones,
 as a separate app with your custom icon.
 Push notifications for Android
 (however, initially not for iPhone — iPhone currently cannot do PWA mobile app push notifications).
+-->
 
+![chat-topic](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2017-09-12-chat-ex.jpeg "A chat channel")
+
+<!--
+![chat-topic](/images/web/ty-media/for-docs/2017-09-12-chat-ex.jpeg?raw=true "A chat channel")
+-->
+
+<!--
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
+-->
 
 <br>
 <!--
@@ -112,37 +161,65 @@ Hacker News / Reddit style discussion:
 ![ed-discussion-semantics-of-upvote-2013](https://cloud.githubusercontent.com/assets/7477359/19650769/bea906aa-9a0a-11e6-8ea2-9ad771981f46.jpg)
 -->
 
+<!--
 **Admin-getting-started guide:**
 
 ![ed-admin-intro-guide](https://cloud.githubusercontent.com/assets/7477359/19679591/99a12098-9aa2-11e6-8b65-705c2548cbea.jpg)
-
 <br>
 
-**Users online:**
+### Users online:
 
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
 
 <br>
+-->
+
+### Blog comments:
+
+Like Disqus — but lightweight, no ads, no tracking. Configure in the Admin Area, the Settings tab, the Embedded Comments sub tab. — Read more about blog comments, and an optional hosting service, here: https://www.talkyard.io/blog-comments
+
+A Disqus importer was just completed, a bit untested though (Aug 2019) — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
+
+<br>
+
+![blog comments](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-02-21-blog-comments-ex-anon.jpg "Blog comments")
+<!--
+![blog comments](/images/web/ty-media/for-docs/2019-02-21-blog-comments-ex-anon.jpg?raw=true "Blog comments")
+-->
+<br>
+
+### Embarrassing questions, creative ideas:
+
+SOON IMPLEMENTED, but not yet (Aug 2019): Let your students ask anonymous questions. Maybe they feel ashamed for not knowing? — Or let your co-workers submit ideas and feedback, anonymously. Maybe they feel worried their ideas has crossed the border from Creative to Crazy? They can un-anonymize themselves later if they want to. (Anonymous posting first needs to be enabled, by admins. Here you can read more: https://www.talkyard.io/-239/is-there-anonymous-messages-support-for-the-full-talkyard )
+
+<br>
+
+![Post anonymously](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-editor-post-anonymously-ex-arw.jpg "Post anonymously")
+
+<hr>
+<br>
+
 
 
 Contributing
 -----------------------------
 
-Want to contribute? Feel free to say hello in our community: <https://www.talkyard.io/forum/>.
+Say hello in the community: <https://www.talkyard.io/forum/>.
+<!--
 Good for you if you ask the people there what is currently being worked on, so you won't
 accidentally re-implement something that's almost done already — people
 might be working in their own work-in-progress topic branches that you
-don't know about.
+don't know about. -->
 
-Here's how to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only).
+How to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only).
 
-You need to read and agree to our [Contributor License Agreement](./docs/CLA-v2.txt). You do that by
-reading it (please do — there's a human friendly intro) and appending a single line
+You need to agree to [this Contributor License Agreement](./docs/CLA-v2.txt). You do that by
+reading it (there's a human friendly intro) and appending a single line
 paragraph with your real name (no pseudonyms) and the following text, to all your commit messages:
 
 > I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v2.txt.
 
-Please squash your commits to just one (unless you're doing something complicated that's easier
+Please squash your commits to just one (unless you're doing something that's easier
 to review in separate commits).
 
 
@@ -151,7 +228,7 @@ to review in separate commits).
 Getting Started
 -----------------------------
 
-This is for **development**. To install and *use* the software, instead go here:
+This repo is for **development**. To install and *use* the software, instead go here:
 [talkyard-prod-one](https://github.com/debiki/talkyard-prod-one)
 
 
@@ -178,8 +255,9 @@ how to use docker-compose already.
 #### The instructions
 
 
-1. Append some settings to the system config so that ElasticSearch will work:
-   (run this as one single command, not one line at a time)
+1. Append some settings to the system config, so ElasticSearch will work.
+   ElasticSearch will get downloaded later, in a Docker image (don't install it yourself).
+   — Run this as one single command, not one line at a time:
 
        sudo tee -a /etc/sysctl.conf <<EOF
 
@@ -210,28 +288,31 @@ how to use docker-compose already.
        git clone https://github.com/debiki/talkyard.git talkyard
        cd talkyard
        apt install make jq
-       make up
+
+ 1. Start Talkyard:
+
+        make up
 
 
-1. Wait. `make up` takes a while: Git submodules and Node.js packages will get downloaded,
-   Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built. 
-   You can tail the log messages, by typing `make tail`,
-   or `sudo s/d logs -f`.  (s/d means "scripts" and "docker-compose")
+    And have a coffee; `make up` takes a while: Git submodules and Node.js packages will get downloaded,
+    Typescript, Stylus and Scala code gets compiled and packaged, Docker images get built.
+    You can tail the log messages, by typing `make tail`,
+    or `sudo s/d logs -f`.  (s/d means "scripts" and "docker-compose")
 
-   The following log message might take 10 - 20 minutes: (to download things)
+    The following log message might take 10 - 20 minutes: (to download things)
 
-       Loading project definition from /opt/talkyard/app/project
+        Loading project definition from /opt/talkyard/app/project
 
-   Wait for these "Server started" log messages to appear:
+    Wait for these "Server started" log messages to appear:
 
-       app_1     |
-       app_1     | --- (Running the application, auto-reloading is enabled) ---
-       app_1     |
-       app_1     | [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
-       app_1     | [info] p.c.s.NettyServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9443
-       app_1     |
-       app_1     | (Server started, use Ctrl+D to stop and go back to the console...)
-       app_1     |
+        app_1  |
+        app_1  | --- (Running the application, auto-reloading is enabled) ---
+        app_1  |
+        app_1  | [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+        app_1  | [info] p.c.s.NettyServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9443
+        app_1  |
+        app_1  | (Server started, use Ctrl+D to stop and go back to the console...)
+        app_1  |
 
 
 1. Point your browser to http://localhost/. This sends a request to the Docker container
@@ -275,22 +356,28 @@ Shut down everything like so: `make dead`.
 Editing source code
 -----------------------------
 
-To edit Scala code, you can use IntelliJ IDEA, the free community edition.
-Don't forget to install a Java Development Kit (JDK); in Debian 9:
+### Typescript
 
-    sudo apt install default-jdk  # installs JDK 8
+To edit Typescript code (in `client/app-*/`) you can use VSCode.
 
 If you edit some code and reload the page in the browser, your changes will
 appear automatically: there's a Docker container, named Gulp, with Node.js
-installed, which recompile Typescript and Stylus CSS. And a container,
-named App, which runs the Play Framework application server, and looks
-for changes to Scala files, recompiles and reloads.
-
+installed, which recompile Typescript and Stylus CSS. —
 If you edit Typescript, wait five seconds before you reload the page in
 the browser, otherwise the Typescript code might not yet have been transpiled.
 
-If you keep editing and reloading Scala files many many times, then eventually
-Play Framework runs out of memory. Restart it like so: `make restart`.
+### Scala
+
+To edit Scala code (in `app/*`), you can use IntelliJ IDEA, the free community edition.
+Don't forget to install a Java Development Kit (JDK) — in Debian 9:
+
+    sudo apt install default-jdk  # installs JDK 8
+
+There's a container, named *app*, which runs the Play Framework application server,
+and looks for changes to Scala files, recompiles and reloads.
+
+Unfortunately, if you keep editing and reloading Scala files many many times, then eventually
+Play Framework runs out of memory. Restart it like so: `make restart-app`.
 
 
 
