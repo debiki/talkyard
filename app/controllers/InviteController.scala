@@ -53,8 +53,45 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def sendInvites: Action[JsValue] = PostJsonAction(RateLimits.SendInvite, maxBytes = 10*1000) {
         request =>
     import request.{dao, theRequester => requester}
-    val toEmailAddressesRaw = (request.body \ "toEmailAddresses").as[Seq[String]]
-    val reinvite = (request.body \ "reinvite").asOpt[Boolean]
+    import request.body // Typescript: SendInvitesRequestBody
+
+    // A list like ["@group_name", "@other_group', ...].
+    val addToGroupsAtUsernames = (body \ "addToGroups").as[Seq[String]]
+
+    val startAtUrlPath = (body \ "startAtUrlPath").asOpt[String] // security check [40KRJTX35]
+    // For now:
+    throwForbiddenIf(startAtUrlPath.isDefined, "TyE035MKJ", "startAtUrlPath is unimplemented")
+
+    val toEmailAddressesRaw = (body \ "toEmailAddresses").as[Seq[String]]
+    val reinvite = (body \ "reinvite").asOpt[Boolean]
+
+    // If allowing many groups, remove headOption below, and, need a new db table? [05WMKG42].
+    throwForbiddenIf(addToGroupsAtUsernames.length > 1,
+      "TyE703SKHFLD2", o"""Can only invite to one single group, for now —
+      but you specified ${addToGroupsAtUsernames.length} groups.""")
+
+    addToGroupsAtUsernames.find(_.length <= 2).foreach(atName => throwForbidden(
+      "TyE393RKR4", s"Bad group name: $atName"))
+
+    val anyAddToGrupId: Option[UserId] = addToGroupsAtUsernames.headOption map {  // [05WMKG42]
+          atUsername =>
+      throwBadRequestIf(atUsername.charAt(0) != '@',
+        "TyE06RKHZHN3", s"Group usernames should be prefixed by '@', but this is not: '$atUsername'")
+      val groupName = atUsername drop 1
+      dao.readOnlyTransaction { tx =>
+        val member = tx.loadMemberByUsername(groupName).getOrThrowBadArgument(
+          "TyE204KARTGF", "addToGroup", s"Group not found: @$groupName")
+        member match {
+          case u: User =>
+            throwForbidden("TyE305MKSTR2", s"User @$groupName is a user, not a group")
+          case g: Group =>
+            // Later, do allow this? Need to write a bit extra code to properly init
+            // trust levels and is-admin and is-mod flags, then. [305FDF4R]
+            throwForbiddenIf(g.isBuiltIn, "TyE6WKG20RGV", s"Cannot invite to built-in group @$groupName")
+            g.id
+        }
+      }
+    }
 
     // If SSO enabled, people should be invited to the external SSO page instead. (4RBKA20).
     val settings = dao.getWholeSiteSettings()
@@ -66,6 +103,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // comments clarifying why someone gets added to a group, or something?
       addr.nonEmpty && addr.head != '#'
     } toSet
+
+    throwForbiddenIf(toEmailAddresses.isEmpty, "TyER0KVH40Z", "No email addresses specified")
 
     var index = 0
     toEmailAddresses foreach { toEmailAddress =>
@@ -84,7 +123,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
           s"You can invite at most 20 people at a time, for now (and max 120 per week)")
     }
     // Max 120 per week.
-    request.dao.readOnlyTransaction { tx =>
+    dao.readOnlyTransaction { tx =>
       COULD_OPTIMIZE // don't need to load all 120 invites
       val anyOldInviteNo120 = tx.loadAllInvites(120).drop(119).headOption
       anyOldInviteNo120 foreach { oldInvite =>
@@ -107,7 +146,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     for (toEmailAddress <- toEmailAddresses) {
       // Is toEmailAddress already a member or already invited?
       var skip = false
-      request.dao.readOnlyTransaction { tx =>
+      dao.readOnlyTransaction { tx =>
         def oldInvites: Seq[Invite] = oldInvitesCached getOrElse {
           oldInvitesCached = Some(tx.loadInvitesCreatedBy(createdById = request.theUserId))
           oldInvitesCached.get
@@ -129,7 +168,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         }
       }
       if (!skip) {
-        doSendInvite(toEmailAddress: String, request) match {
+        doSendInvite(toEmailAddress, anyAddToGrupId, request) match {
           case Good(invite) =>
             invitesSent.append(invite)
           case Bad(errorMessage) =>
@@ -148,13 +187,14 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def doSendInvite(toEmailAddress: String, request: DebikiRequest[_])
-        : Invite Or ErrorMessage = {
+  private def doSendInvite(toEmailAddress: String, addToGroupId: Option[UserId],
+        request: DebikiRequest[_]): Invite Or ErrorMessage = {
     val invite = Invite(
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
       createdById = request.theUserId,
-      createdAt = globals.now().toJavaDate)
+      createdAt = globals.now().toJavaDate,
+      addToGroupIds = addToGroupId.toSet)
 
     val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>
       Participant.makeOkayUsername(
@@ -167,6 +207,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         s"I cannot generate a username given email address: $toEmailAddress [TyE2ABKR04]")
     }
 
+    UX; COULD // incl any add-to-group name? Nice to know "You'll be added to the
+    // Students-2019 group" for example?
     val email = makeInvitationEmail(invite, inviterName = request.theMember.usernameParensFullName,
       probablyUsername = probablyUsername, siteHostname = request.host)
 

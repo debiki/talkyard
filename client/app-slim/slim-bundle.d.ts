@@ -21,6 +21,8 @@ declare const stringifyQueryString: (s: any) => string;
 
 declare const ReactStartedClass;
 
+declare const TooHighNumber;
+
 declare const EmptyPageId;
 declare const FirstSiteId;
 
@@ -362,7 +364,8 @@ declare namespace debiki2 {
     }
   }
   namespace pagedialogs {
-    var getServerErrorDialog;
+    function getServerErrorDialog(): any;
+    function showAndThrowClientSideError(errorMessage: string);
     var openSharePopup;
     const Facebook;
     const Twitter;

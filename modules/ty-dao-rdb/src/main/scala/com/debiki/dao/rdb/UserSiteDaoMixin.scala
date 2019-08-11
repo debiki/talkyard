@@ -42,12 +42,23 @@ trait UserSiteDaoMixin extends SiteTransaction {
   def insertInvite(invite: Invite) {
     val statement = """
       insert into invites3(
-        site_id, secret_key, email_address, created_by_id, created_at)
-      values (?, ?, ?, ?, ?)
+        site_id,
+        secret_key,
+        email_address,
+        start_at_url,
+        add_to_group_id,
+        created_by_id,
+        created_at)
+      values (?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
-      siteId.asAnyRef, invite.secretKey, invite.emailAddress,
-      invite.createdById.asAnyRef, invite.createdAt.asTimestamp)
+      siteId.asAnyRef,
+      invite.secretKey,
+      invite.emailAddress,
+      invite.startAtUrlPath.orNullVarchar,
+      invite.addToGroupIds.headOption.orNullInt, // [05WMKG42]
+      invite.createdById.asAnyRef,
+      invite.createdAt.asTimestamp)
 
     runUpdate(statement, values)
   }

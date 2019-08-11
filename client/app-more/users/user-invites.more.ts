@@ -229,10 +229,28 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
   },
 
   sendInvite: function() {
-    const addressesText = this.refs.emailInput.getValue();
+    const addressesText = this.refs.emailInput.getValue().trim();
     const addresses: string[] = addressesText.split('\n');
+    const maybeAddToGroup = (addresses[0] || '').trim();
+    let addToGroups = [];
+    const addToGroupsC = 'addToGroups:';
+
+    if (maybeAddToGroup.startsWith(addToGroupsC)) {
+      const atGroupnames = maybeAddToGroup.substr(addToGroupsC.length, 999).trim();
+      addToGroups = atGroupnames.split(/[\s,]+/);
+      addresses.splice(0, 1);
+    }
+
     const isResend: boolean = !!this.state.alreadyInvitedAddresses;
-    Server.sendInvites(addresses, isResend, (sendInvitesResponse: SendInvitesResponse) => {
+
+    const requestBody: SendInvitesRequestBody = {
+      toEmailAddresses: addresses,
+      addToGroups: addToGroups,
+      startAtUrlPath: undefined,  // not yet impl
+      reinvite: isResend,
+    };
+
+    Server.sendInvites(requestBody, (sendInvitesResponse: SendInvitesResponse) => {
       dieIf(sendInvitesResponse.willSendLater, 'TyE2ABKR03', "Unimpl");
       const invitesSent: Invite[] = sendInvitesResponse.invitesSent;
       this.state.addInvites(invitesSent);
@@ -265,6 +283,9 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
 
       if (numFailed >= 1) {
         let textareaValue = '';
+        if (addToGroups.length) {
+          textareaValue += 'addToGroups: ' + addToGroups.join(', ') + '\n';
+        }
         _.each(alreadyInvitedAddresses, addr => {
           textareaValue += addr + '\n';
         });
@@ -328,6 +349,14 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
           : t.upp.SendInv;
       content = rFragment({},
         r.p({}, info),
+        r.p({},
+          // This text is for everyone, shoudl be translated?
+          // Or who may add to gropus? Only staff? No, also grop managers (not impl)
+          // may add to groups. And maybe noral members too, just that joining-the-group
+          // needs to be approved by the members who join, and the group managers /
+          // staff, depending on the group settings.
+          "To have the invited people auto join a group, insert a very first line " +  // I18N
+          "with this text: ", r.code({}, 'addToGroups: @group_name'), " (including the @)."),
         // UX COULD reuse EmailInput —> PatternInput —> Input({ type: 'input' ... })
         // and add a multiline: true attr, and use type:textarea instead?
         Input({ type: 'textarea', label: t.EmailAddresses,

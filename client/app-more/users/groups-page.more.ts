@@ -65,7 +65,7 @@ export const ListGroupsComponent = React.createFactory<RouteChildProps>(function
       const numMembers = !gs.stats ? null :
         r.span({}, t.gpp.NumMembers(gs.stats.numMembers) + '. ');
       const youreAMember = !_.includes(me.myGroupIds, gs.id) ? null :
-        r.span({}, t.gpp.YouAreMember);
+        r.span({ className: 'e_YoureMbr' }, t.gpp.YouAreMember);
 
       return (
         r.li({ key: gs.id, className: 's_Gs_G' },

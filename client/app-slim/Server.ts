@@ -823,9 +823,11 @@ export function setPrimaryEmailAddresses(userId: UserId, emailAddress: string,
 }
 
 
-export function sendInvites(toEmailAddresses: string[], reinvite: boolean,
-      onDone: (invite: Invite) => void, onError: (failedRequest: HttpRequest) => ErrorPolicy) {
-  postJsonSuccess('/-/send-invites', onDone, onError, { toEmailAddresses, reinvite });
+export function sendInvites(
+      requestBody: SendInvitesRequestBody,
+      onDone: (response: SendInvitesResponse) => void,
+      onError: (failedRequest: HttpRequest) => ErrorPolicy) {
+  postJsonSuccess('/-/send-invites', onDone, onError, requestBody);
 }
 
 

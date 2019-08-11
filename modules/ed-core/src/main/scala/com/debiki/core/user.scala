@@ -42,6 +42,8 @@ object Presence {
   */
 case class Invite(   // [exp] ok use
   emailAddress: String,
+  startAtUrlPath: Option[String],
+  addToGroupIds: Set[UserId],
   secretKey: String,
   createdById: UserId,
   createdAt: ju.Date,
@@ -59,6 +61,21 @@ case class Invite(   // [exp] ok use
   require(invalidatedAt.oneIfDefined + deletedAt.oneIfDefined + acceptedAt.oneIfDefined <= 1, "DwE5WKJ2")
   require(deletedAt.isEmpty || deletedAt.get.getTime >= createdAt.getTime, "DwE6PK2")
   require(invalidatedAt.isEmpty || invalidatedAt.get.getTime >= createdAt.getTime, "DwE8UY0")
+
+  SECURITY; COULD // find a more 100% safe approach to verifying this is a local url path, [40KRJTX35]
+  // and cannot make the browser jump to a different server?
+  // Add a fn  isUrlPath maybe? that does some regex thing that disallows any unexpected chars?
+  require(startAtUrlPath.forall(_ startsWith "/"), "TyE40RKTG01")
+  require(startAtUrlPath.forall(p => !(p contains "//")), "TyE40RKTG02")
+  require(startAtUrlPath.forall(p => !(p contains ":")), "TyE40RKTG03")
+  require(startAtUrlPath.forall(p => extractUrlPath(p) == p), "TyE5KGW2XTJ")
+
+  // Group ids are > 0, and don't allow adding to built-in groups 10..19.
+  // Only custom groups, >= 100.  [305FDF4R]
+  require(addToGroupIds.forall(groupId => groupId >= LowestAuthenticatedUserId), "TyE6WKDJ025P01")
+  // For now:
+  require(addToGroupIds.size <= 1, "Adding to >= 1 group not yet implemented [TyE6WKDJ025P02]")
+
 
   def canBeOrHasBeenAccepted: Boolean = invalidatedAt.isEmpty && deletedAt.isEmpty
 
@@ -81,7 +98,7 @@ case class Invite(   // [exp] ok use
 
 
 object Invite {
-  def apply(emailAddress: String, secretKey: String,
+  def apply(emailAddress: String, addToGroupIds: Set[UserId], secretKey: String,
         createdById: UserId, createdAt: ju.Date): Invite = Invite(
     emailAddress = emailAddress,
     secretKey = secretKey,
@@ -91,7 +108,9 @@ object Invite {
     acceptedAt = None,
     deletedAt = None,
     deletedById = None,
-    invalidatedAt = None)
+    invalidatedAt = None,
+    startAtUrlPath = None,
+    addToGroupIds = addToGroupIds)
 }
 
 

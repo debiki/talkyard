@@ -136,6 +136,8 @@ object RdbUtil {
       |site_id,
       |secret_key,
       |email_address,
+      |start_at_url,
+      |add_to_group_id,
       |created_by_id,
       |created_at,
       |accepted_at,
@@ -148,6 +150,8 @@ object RdbUtil {
 
   def getInvite(rs: js.ResultSet) = Invite(
     emailAddress = rs.getString("email_address"),
+    startAtUrlPath = getOptString(rs, "start_at_url"),
+    addToGroupIds = getOptInt(rs, "add_to_group_id").toSet,
     secretKey = rs.getString("secret_key"),
     createdById = rs.getInt("created_by_id"),
     createdAt = getDate(rs, "created_at"),

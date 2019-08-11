@@ -250,7 +250,7 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
     othersBrowser.topbar.assertMyUsernameMatches(addr2Username);
   });
 
-  it("Owens refreshes, invites will be sorted by time", () => {
+  it("Owens refreshes, invites will be sorted by time", () => {   // [TyT402AKTS406]
     owensBrowser.refresh();
     // Will be:
     // Inv to addr 4                  index 1

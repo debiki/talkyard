@@ -114,6 +114,14 @@ trait UserDao {
       dieIfBad(Validation.checkUsername(username),
         "TyE4WKBA2", errMsg => s"I generated an invalid username given '$emailAddrBeforeAt': $errMsg")
 
+      val anyGroups: Option[Group] = invite.addToGroupIds.headOption flatMap { groupId =>
+        val group = tx.loadGroup(groupId).getOrDie( // there's a foreign key
+          "TyE305KD45", s"s$siteId: Group $groupId gone — cannot add invited member to group")
+        dieIf(group.isBuiltIn, "TyE05KRJR204")
+        if (group.isDeleted) None
+        else Some(group)
+      }
+
       // Invalidate other invites to the same user.
       val otherInvitesSameUser: Seq[Invite] = tx.loadInvitesSentTo(invite.emailAddress)
       for (otherInvite <- otherInvitesSameUser; if otherInvite.secretKey != invite.secretKey) {
@@ -146,12 +154,18 @@ trait UserDao {
       tx.upsertUserStats(UserStats.forNewUser(
         newUser.id, firstSeenAt = tx.now, emailedAt = Some(invite.createdWhen)))
       joinGloballyPinnedChats(newUser.briefUser, tx)
+      anyGroups.foreach { group =>
+        tx.addGroupMembers(group.id, Set(newUser.id))
+      }
       tx.updateInvite(invite)
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(newUser, browserIdData, tx.now))
       (newUser, invite, false)
     }
 
-    uncacheBuiltInGroups()  // later: uncache any groups this new member auto joined. [inv2groups]
+    uncacheBuiltInGroups()
+    result._2.addToGroupIds foreach { groupId =>
+      memCache.remove(groupMembersKey(groupId))  // [inv2groups]
+    }
 
     result
   }

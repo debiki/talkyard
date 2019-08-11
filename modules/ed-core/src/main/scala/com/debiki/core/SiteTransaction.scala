@@ -352,6 +352,9 @@ trait SiteTransaction {
       case group: Group => throw GotAGroupException(group.id)
     }
 
+  def loadGroup(groupId: UserId): Option[Group] =
+    loadGroupInclDetails(groupId) // right now, Group already includes all details
+
   def loadGroupInclDetails(groupId: UserId): Option[Group] =
     loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
       case m: UserInclDetails => throw GotANotGroupException(m.id)

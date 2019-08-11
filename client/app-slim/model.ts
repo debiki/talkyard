@@ -1473,6 +1473,13 @@ interface SaveCategoryResponse {
 }
 
 
+interface SendInvitesRequestBody {
+  toEmailAddresses: string[];
+  addToGroups: UserId[];
+  startAtUrlPath: undefined;  // not yet impl
+  reinvite: boolean;
+}
+
 interface SendInvitesResponse {
   willSendLater: boolean;
   invitesSent: Invite[];
