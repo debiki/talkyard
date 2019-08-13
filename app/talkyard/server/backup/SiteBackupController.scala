@@ -61,23 +61,27 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       request.context.rateLimiter.rateLimit(RateLimits.ExportSite, request)
     }
     val json = context.globals.siteDao(request.siteId).readOnlyTransaction { tx =>
-      SiteBackupMaker.createPostgresqlJsonBackup(anyTx = Some(tx))
+      SiteBackupMaker.createPostgresqlJsonBackup(anyTx = Some(tx), simpleFormat = false)
     }
     Ok(json.toString()) as JSON
   }
 
 
   def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
-          RateLimits.UpsertSimple, maxBytes = maxImportDumpBytes) { request =>
+          RateLimits.UpsertFew, maxBytes = maxImportDumpBytes) { request =>
     // Dangerous endpoint, DoS attack risk.
     throwForbiddenIf(globals.isProd && !security.hasOkForbiddenPassword(request) &&
-      !globals.config.mayPatchSite(request.siteId),
+      !globals.config.mayPatchSite(request.siteId),  // [UPSRTPERM]
       "TyE306KDGL25", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
 
     // Parse JSON, construct a dump "manually", and call
     // upsertDumpJsonImpl(dump, request)
     val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
+
+    if (sitePatch.hasManyThings) {
+      request.context.rateLimiter.rateLimit(RateLimits.UpsertMany, request)
+    }
     upsertSitePatchImpl(sitePatch, request)
   }
 
@@ -108,7 +112,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
           request.siteId, dump, request.theBrowserIdData)
     }
 
-    Ok(upsertedThings.toJson.toString()) as JSON
+    Ok(upsertedThings.toSimpleJson.toString()) as JSON
   }
 
 

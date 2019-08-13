@@ -19,6 +19,7 @@ package talkyard.server.backup
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.EdHttp.ResultException
 import debiki.TextAndHtmlMaker
 import debiki.dao._
 import org.scalatest._
@@ -56,7 +57,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           quotaLimitMbs = testForumQuotaLimit,
           hostnames = Vector(HostnameInclDetails(
             hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-          version = 1 + 1,  // + 1 because of upsert() above
+          version = 1,
           numParticipants = 13,  // 10 built-in groups, plus the System, Sysbot and Unknown users
         )))
         dump mustBe expectedDump
@@ -124,8 +125,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         }
 
         "nothing changed" in {
-          // Upserting bumps site version, currently also if nothing changes.
-          actualDump mustBe expectedDump.withVersionPlusOne
+          actualDump mustBe expectedDump
         }
       }
     }
@@ -143,7 +143,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           GuestWithAllFields.email -> EmailNotfPrefs.DontReceive),
         categories = Vector(CategoryWithSectPageId333, CategoryWithSectPageId333SubCat),
         pages = Vector(AboutCatPageMeta333),
-        pagePaths = Vector(PagePathToPage333),
+        pagePaths = Vector(AboutCatPagePath333),
         posts = Vector(Page333TitlePost, Page333BodyPost),
         permsOnPages = Vector(MayAllPermsForFullMembersOnSubCatWSectPageId333))
 
@@ -174,7 +174,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             categoryId = Some(baseCatRealId),
             numPostsTotal = 2)),  // title + body
         pagePaths = Vector(
-          PagePathToPage333.copy(pageId = sectPageRealId)),
+          AboutCatPagePath333.copy(pageId = sectPageRealId)),
         posts = Vector(
           Page333TitlePost.copy(id = firstPostRealId, pageId = sectPageRealId),
           Page333BodyPost.copy(id = secondPostRealId, pageId = sectPageRealId)),
@@ -228,9 +228,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         }
 
         "nothing changed" in {
-          actualDump mustBe expectedDump.withVersionPlusOne.copy(
-            // Version bumped here: [306MDH26], currently also if page not changed.
-            pages = expectedDump.pages.map(p => p.copy(version =  p.version + 1)))
+          actualDump mustBe expectedDump
         }
       }
 
@@ -253,9 +251,12 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         actualDump.pages.head
       }
 
-      lazy val initialDumpToUpsert = SiteBackup.empty.copy(
+      lazy val initialDumpToUpsertNoPagePath = SiteBackup.empty.copy(
         categories = Vector(CategoryWithSectPageId333, CategoryWithSectPageId333SubCat),
         pages = Vector(AboutCatPageMeta333))
+
+      lazy val initialDumpToUpsert = initialDumpToUpsertNoPagePath.copy(
+        pagePaths = Vector(AboutCatPagePath333))
 
       val expectedSectPageId = "1"
       val expBaseCatRealId = 1
@@ -280,10 +281,23 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             // in test mode.
             pageId = expectedSectPageId,
             categoryId = Some(expBaseCatRealId),
-            numPostsTotal = 0)))
+            numPostsTotal = 0)),
+        pagePaths = Vector(
+          AboutCatPagePath333.copy(pageId = expectedSectPageId)))
 
-      "import the items" in {
+      TESTS_MISSING // import without any section page at all?
+
+      "create site" in {
         site = createSite(siteName)._1
+      }
+
+      "import the items, but section page path missing, error" in {
+        intercept[ResultException] {
+          upsert(site.id, initialDumpToUpsertNoPagePath)
+        }
+      }
+
+      "import the items for real" in {
         upsert(site.id, initialDumpToUpsert)
       }
 
@@ -401,7 +415,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       lazy val initialDumpToUpsert = SiteBackup.empty.copy(
         categories = Vector(
           CategoryWithSectPageId333, baseCat),
-        pages = Vector(AboutCatPageMeta333))
+        pages = Vector(AboutCatPageMeta333),
+        pagePaths = Vector(AboutCatPagePath333))
 
       val expectedSectPageId = "1"
       val expBaseCatRealId = 1
@@ -421,7 +436,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             version = 2,  // version bumped to 2 here [306MDH26]
             pageId = expectedSectPageId,
             categoryId = Some(expBaseCatRealId),
-            numPostsTotal = 0)))
+            numPostsTotal = 0)),
+        pagePaths = Vector(
+          AboutCatPagePath333.copy(pageId = expectedSectPageId)))
 
       "import the items" in {
         site = createSite(siteName)._1
@@ -623,9 +640,10 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           catEditedTwice.position mustBe simpleEditCatPatch.position.get
         }
 
-        "the about cat page got bumped" in {
+        "the about cat page got bumped — no, wait, not yet impl" in {
           aboutPageEd2 = actualDump.pages.find(_.pageId == upsAboutCatPage.pageId) getOrDie "TyE5WKVS03"
-          aboutPageEd2.version mustBe upsAboutCatPage.version + 1
+          // Upsert-updating pages is not yet impl. Only upsert-inserting. So disable.
+          //aboutPageEd2.version mustBe upsAboutCatPage.version + 1
         }
 
         /* Not yet implemented:  [YESUPSERT]
@@ -738,7 +756,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             categories = Vector(dummyCategory),
             pages = Vector(pageToUpsert),
             pageIdsByAltIds = Map(pageToUpsertAltId -> pageToUpsert.pageId), // not needed here?
-            pagePaths = Vector(PagePathToPage333),
+            pagePaths = Vector(AboutCatPagePath333),
             posts =
               Vector(titleByOwen, bodyByOwen, replyByMember)
                 .map(p =>

@@ -63,14 +63,32 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
-  def toJson: JsObject = {
-    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this))
+  def toSimpleJson: JsObject = {
+    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = true)
+  }
+
+  def toPatchJson: JsObject = {
+    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = false)
   }
 
   /** For tests. */
   def withVersionPlusOne: SiteBackup = copy(
     site = site.map(s => s.copy(version = s.version + 1)))
 
+  def hasManyThings: Boolean = {
+    val many = 3  // one, two, many.
+    // Allow in total > many things, if things of each type is < many.
+    // So can /-/v0/upsert-simple a category, which results in 1 category,
+    // 1 about page, and 2 posts (about page title and body).
+    site.isDefined ||
+      settings.isDefined ||
+      (guests.length + groups.length + users.length) >= many ||
+      (categoryPatches.length + categories.length) >= many ||
+      pages.length >= many ||
+      pagePaths.length >= many ||
+      posts.length >= many * 2 ||  // since at least 2 posts per page: title and body
+      permsOnPages.length >= many
+  }
 }
 
 

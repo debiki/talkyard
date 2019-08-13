@@ -1015,8 +1015,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     })
   }
 
-  def loadPagePath(pageId: PageId): Option[PagePath] =
-    lookupPagePathImpl(pageId).map(_.toOld(siteId))
+
+  def loadPagePath(pageId: PageId): Option[PagePathWithId] =
+    lookupPagePathImpl(pageId)
 
 
   private def lookupPagePathImpl(pageId: PageId): Option[PagePathWithId] =

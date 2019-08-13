@@ -223,9 +223,27 @@ object RateLimits {
   }
 
 
-  object UpsertSimple extends RateLimits {
-    val key = "UpSm"
-    val what = "Upserted things too many times"
+  /** For upserting just one or two things, e.g. two categories.
+    *
+    * Sometimes an organization needs to quickly upsert many things, e.g. if they
+    * have 100 categories and want to do an initial of all categories, one
+    * category per request. — So allow somewhat high bursts.
+    *
+    * Also, one needs to ask for permission to use this endpoint. [UPSRTPERM]
+    */
+  object UpsertFew extends RateLimits {
+    val key = "UpFw"
+    val what = "Upserted a few things too many times"
+    def maxPerFifteenSeconds = 150  // fairly high burst
+    def maxPerFifteenMinutes = 600
+    def maxPerDay = 2400  // but not super many, per day
+    def maxPerDayNewUser = 0
+  }
+
+
+  object UpsertMany extends RateLimits {
+    val key = "UpMn"
+    val what = "Upserted many things too many times"
     def maxPerFifteenSeconds = 10
     def maxPerFifteenMinutes = 30
     def maxPerDay = 90

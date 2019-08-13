@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.{EffectiveSettings, JsonMaker, Settings2}
 import ed.server._
-import play.api.libs.json.{JsArray, JsObject, JsValue}
+import play.api.libs.json._
 import scala.collection.mutable
 import talkyard.server.JsX._
 
@@ -91,7 +91,7 @@ object SiteBackupMaker {
     * from a db transaction, rather than creating an intermediate representation.)
     */
   def createPostgresqlJsonBackup(anyDump: Option[SiteBackup] = None,
-        anyTx: Option[SiteTransaction] = None): JsObject = {
+        anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
 
@@ -151,7 +151,23 @@ object SiteBackupMaker {
       val categories: Seq[Category] =
         anyDump.map(_.categories) getOrElse tx.loadCategoryMap().values.toSeq
       fields("categories") = JsArray(
-        categories.map(JsCategoryInclDetails))
+        categories.map(category => {
+          var json = JsCategoryInclDetails(category)
+          if (simpleFormat) {
+            val sectionPagePath =
+              // We always include the section page path, added here: [8R392PFP0].
+              pagePaths.find(_.pageId == category.sectionPageId) getOrDie "TyE05WKTSDHSR"
+            val basePath = sectionPagePath.value
+            val basePathSlash = basePath.dropRightWhile(_ == '/') + '/'
+            json +=
+              "urlPaths" -> Json.obj(
+                // COULD rename latest/ to active/?  [394SMDLW20]
+                "active" -> JsString(basePathSlash + "latest/" + category.slug),
+                "top" -> JsString(basePathSlash + "top/" + category.slug),
+                "new" -> JsString(basePathSlash + "new/" + category.slug))
+          }
+          json
+        }))
 
       val permsOnPages: Seq[PermsOnPages] =
         anyDump.map(_.permsOnPages) getOrElse tx.loadPermsOnPages()

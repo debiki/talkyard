@@ -78,7 +78,7 @@ trait PagePathMetaDao {
     memCache.lookup(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
-        readOnlyTransaction(_.loadPagePath(pageId)))
+        readOnlyTransaction(_.loadPagePath(pageId) .map(_.toOld(siteId))))
   }
 
 
@@ -178,8 +178,8 @@ trait PagePathMetaDao {
   private def _removeCachedPathsTo(pageId: PageId) {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
-    readOnlyTransaction(_.loadPagePath(pageId)) foreach { oldPath =>
-      memCache.remove(_pathWithIdByPathKey(oldPath))
+    readOnlyTransaction(_.loadPagePath(pageId)) foreach { path =>
+      memCache.remove(_pathWithIdByPathKey(path.toOld(siteId)))
       memCache.remove(_pathByPageIdKey(pageId))
     }
 
@@ -201,11 +201,8 @@ trait PagePathMetaDao {
   }
 
 
-  // Might be a page from another site. (For example, we might be looking up
-  // an URL to find which page to include in an asset bundle — the page
-  // could be a public stylesheet from e.g. www.debik.com.)
   private def _pathWithIdByPathKey(pagePath: PagePath) =
-    MemCacheKey(pagePath.siteId, s"${pagePath.value}|PagePathByPath")
+    MemCacheKey(siteId, s"${pagePath.value}|PagePathByPath")
 
   private def _pathByPageIdKey(pageId: PageId) =
     MemCacheKey(siteId, s"$pageId|PagePathById")

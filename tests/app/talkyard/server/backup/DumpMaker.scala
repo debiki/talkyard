@@ -144,7 +144,7 @@ trait DumpMaker {
     categoryId = categoryId)
 
 
-  lazy val PagePathToPage333: PagePathWithId = makePagePath(pageId = AboutCatPageTempImpId333)
+  lazy val AboutCatPagePath333: PagePathWithId = makePagePath(pageId = AboutCatPageTempImpId333)
 
   def makePagePath(pageId: PageId) = PagePathWithId(
     folder = "/",

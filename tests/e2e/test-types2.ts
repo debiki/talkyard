@@ -157,6 +157,14 @@ interface TestCategory {  // try to merge with Category in model.ts?
   unlistTopics?: boolean;
 }
 
+interface SimpleCategory extends TestCategory {
+  urlPaths: {
+    active: string;
+    top: string;
+    new: string;
+  }
+}
+
 interface TestCategoryPatch {  // or Partial<TestCategory>?
   id: number;
   extId?: ExtId;

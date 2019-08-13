@@ -33,7 +33,7 @@ trait Page {
   def categoryId: Option[CategoryId] = meta.categoryId
   def pageType: PageType = meta.pageType
   def meta: PageMeta
-  def path: Option[PagePath]
+  def path: Option[PagePathWithId]
   def parts: PageParts
   def version: PageVersion
 

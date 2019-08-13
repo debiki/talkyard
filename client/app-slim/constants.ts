@@ -104,7 +104,7 @@ const GroupsRoot = '/-/groups/';
 const SearchRootPath = '/-/search';
 
 
-const RoutePathLatest = 'latest';
+const RoutePathLatest = 'latest';  // change to 'active'?  here too: [394SMDLW20] + 99 more places?
 const RoutePathNew = 'new';
 const RoutePathTop = 'top';
 const RoutePathCategories = 'categories';

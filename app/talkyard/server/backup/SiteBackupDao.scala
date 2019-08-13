@@ -24,6 +24,7 @@ import debiki.SpecialContentPages
 import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
+import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -42,8 +43,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
     val dao = globals.siteDao(siteId)
     val upsertedCategories = ArrayBuffer[Category]()
+    val pageIdsWithBadStats = mutable.HashSet[PageId]()
+    var wroteToDatabase = false
 
-    dao.readWriteTransaction { tx =>
+    val sectionPagePaths = dao.readWriteTransaction { tx =>
 
       // Posts link to pages, and Question type pages link to the accepted answer post,
       // that is, can form foreign key cycles.  And a root category links to the section
@@ -254,6 +257,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
         else {
           tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
+          wroteToDatabase = true
         }
       }
 
@@ -277,6 +281,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             val guestRealId = guestInPatch.copy(id = nextGuestId)
             nextGuestId -= 1
             tx.insertGuest(guestRealId)
+            wroteToDatabase = true
             guestRealId
           case Some(guestInDb: Guest) =>
             // Update an exiting guest. Later. Now: noop.
@@ -287,6 +292,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             //if (guestTempId.updatedAt.millis > oldGuestRealId.updatedAt.millis)
             //  val guestRealId = guestTempId.copy(id = oldGuestRealId.id)
             //  tx.updateGuest(guestRealId)
+            //  wroteToDatabase = true
             //  guestRealId
             //else
             guestInDb
@@ -451,6 +457,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             }
 
             tx.insertPost(postReal)
+            wroteToDatabase = true
+            pageIdsWithBadStats.add(postReal.pageId)
 
             // Full-text-search index this new post.
             TESTS_MISSING // this test: [2WBKP05] commented out, assumes isn't indexed.
@@ -540,6 +548,19 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val anyCatInDb = categoriesInDbById.get(realId)
         val catWithRealIds = anyCatInDb match {
           case None =>
+            // First check that there's a section page and page path, otherwise
+            // the category would be inaccessible.
+            val realSectPageInDb = tx.loadPageMeta(realSectPageId)
+            if (realSectPageInDb.isEmpty) {
+              val sectPageInPatch = siteData.pages.find(_.pageId == catWithTempId.sectionPageId)
+                  .getOrThrowBadRequest(
+                "TyE4SKD02RS", s"No section page included in patch, for category $catWithTempId")
+              val sectPagePath = siteData.pagePaths.find(_.pageId == sectPageInPatch.pageId)
+              throwBadRequestIf(sectPagePath.isEmpty,
+                "TyE5WKT0GRD6", o"""No page path included in patch, to section page for
+                category $catWithTempId""")
+            }
+
             val anyParentCatRealId = catWithTempId.parentId.map(remappedCategoryTempId)
             val anyParentCatInDb = anyParentCatRealId.flatMap(categoriesInDbById.get)
             /* If is upserting into existing site, could:
@@ -570,6 +591,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
             tx.insertCategoryMarkSectionPageStale(catRealIds)
+            wroteToDatabase = true
             catRealIds
 
           case Some(catInDb) =>
@@ -622,7 +644,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               parentId = anyNewParentCatRealId orElse catInDb.parentId,
               defaultSubCatId = catWithTempId.defaultSubCatId.map(remappedCategoryTempId))
 
-            tx.updateCategoryMarkSectionPageStale(catRealIds)
+            if (catRealIds != catInDb) {
+              tx.updateCategoryMarkSectionPageStale(catRealIds)
+              wroteToDatabase = true
+            }
             catRealIds
         }
 
@@ -673,6 +698,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             )
 
           tx.insertPermsOnPages(permissionRealIds)
+          wroteToDatabase = true
           nextPermId += 1
         }
       }
@@ -704,6 +730,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               frequentPosterIds = pageInPatch.frequentPosterIds.map(remappedPpTempId))
 
             tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
+            wroteToDatabase = true
+            pageIdsWithBadStats.add(realPageId)
             pageAltIds.foreach(tx.insertAltPageId(_, realPageId))
             pageWithRealIdsButWrongStats
 
@@ -711,6 +739,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             /*val pageWithOkNums = bumpNums(oldPageMeta)
             if (pageWithOkNums != oldPageMeta) {
               tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
+              wroteToDatabase = true
             } */
             // The stats might be wrong, after the upserts — maybe we're inserting new replies.
             pageInDb
@@ -720,15 +749,20 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               tx.updatePageMeta(pageWithId, oldMeta = oldPageMeta,
                 // Maybe not always needed:
                 markSectionPageStale = true)
+              wroteToDatabase = true
             } */
         }
 
-        COULD // skip this, if no posts and nothing on the page, has changed.
-        val pageDao = PageDao(pageWrongStats.pageId, tx) // (0926575)
-        val pageMeta = pageWrongStats.copyWithUpdatedStats(pageDao)  // bumps version [306MDH26]
+        // Update page stats, e.g. num posts.
+        if (pageIdsWithBadStats.contains(realPageId)) {
+          dieIf(!wroteToDatabase, "TyE0KSGF45")
 
-        dao.updatePagePopularity(pageDao.parts, tx)
-        tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true)
+          val pageDao = PageDao(pageWrongStats.pageId, tx) // (0926575)
+          val pageMeta = pageWrongStats.copyWithUpdatedStats(pageDao) // bumps version [306MDH26]
+
+          dao.updatePagePopularity(pageDao.parts, tx)
+          tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true)
+        }
 
         /*
         // [readlater] export & import page views too, otherwise page popularity here will be wrong.
@@ -738,6 +772,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // (simplicity = more important).
         val pagePartsDao = PagePartsDao(pageMeta.pageId, tx)
         dao.updatePagePopularity(pagePartsDao, tx)
+        wroteToDatabase = true
         */
       }
 
@@ -764,6 +799,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               pageId = remappedPageTempId(pathInPatch.pageId))
 
             tx.insertPagePath(pathRealId)
+            wroteToDatabase = true
             pathRealId
 
           case Some(_ /* pathsInDb */) =>
@@ -773,14 +809,35 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             // If there's any conflicting path in the db already:
             // - If it's non-canonical, delete it.
             // - If is canonical, and for a different page — that's a conflict, reply Forbidden.
+            // wroteToDatabase = true
         }
       }
+
+      // If we upserted categories, it's nice to include their related section page path,
+      // so the caller can know where they're located. [8R392PFP0]
+      val sectionPagePaths =
+        upsertedCategories.map(_.sectionPageId).to[immutable.Set].toVector map { sectionPageId =>
+          tx.loadPagePath(sectionPageId).getOrDie( // there's a foreign key
+            "TyE305RKTG42", {
+              val badCat = upsertedCategories.find(_.sectionPageId == sectionPageId).get
+              s"Section page id '$sectionPageId' not found for category $badCat"
+            })
+        }
+
+      sectionPagePaths
     }
 
-    dao.emptyCache()
+    // If any changes, just empty the whole cache (for this site). It's too complicated to
+    // figure out precisely which parts of the caches to invalidate.
+    if (wroteToDatabase) {
+      dao.emptyCache()
+    }
 
     // Categories is all the current Talkyard API consumers need. As of August 2019.
+    // The /-/v0/upsert-simple endpoint also wants the category locations (url paths),
+    // and for that, we need the forum section page paths, so included below.
     SiteBackup.empty.copy(
+      pagePaths = sectionPagePaths,
       categories = upsertedCategories.toVector)
   }
 

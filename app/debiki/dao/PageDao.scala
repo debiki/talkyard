@@ -30,7 +30,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
   def sitePageId = SitePageId(transaction.siteId, id)
 
   var _meta: Option[PageMeta] = null
-  var _path: Option[PagePath] = null
+  var _path: Option[PagePathWithId] = null
 
   val parts = PagePartsDao(id, transaction)
 
@@ -55,7 +55,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
   }
 
 
-  override def path: Option[PagePath] = {
+  override def path: Option[PagePathWithId] = {
     if (_path eq null) {
       _path = transaction.loadPagePath(id)
     }
@@ -88,7 +88,8 @@ case class NonExistingPage(
     embeddingUrl = Some(embeddingUrl),
     publishDirectly = true)
 
-  override def path: Option[PagePath] = Some(PagePath.fromIdOnly(siteId, pageId = EmptyPageId))
+  override def path: Option[PagePathWithId] =
+    Some(PagePathWithId.fromIdOnly(pageId = EmptyPageId, canonical = true))
 
   override def parts: PageParts = PreLoadedPageParts(EmptyPageId, allPosts = Nil)
 

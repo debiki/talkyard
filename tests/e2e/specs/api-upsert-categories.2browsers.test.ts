@@ -127,7 +127,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   // ----- Upserting a category
 
   let upsertResponse;
-  let upsertedCategory: TestCategory;
+  let upsertedCategory: SimpleCategory;
 
   it("Owen upserts a category", () => {
     const category = {  //: TestCategoryPatch
@@ -159,6 +159,10 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     //assert.equal(upsertedCategory.defaultTopicType, PageRole.Question); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatOneDescr);
     assert.equal(upsertedCategory.position, UpsCatOnePosition);
+    // This is included only in /-/v0/upsert-simple, but not  /-/v0/upsert-patch.
+    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatOneSlug);
+    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatOneSlug);
+    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatOneSlug);
   });
 
   it("The upserted category is not yet visible", () => {
@@ -230,6 +234,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     //assert.equal(upsertedCategory.defaultTopicType, PageRole.Idea); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatTwoDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoPosition);
+    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatTwoSlug);
+    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatTwoSlug);
+    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatTwoSlug);
   });
 
   it("... the 2nd, likewise", () => {
@@ -240,6 +247,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     //assert.equal(upsertedCategory.defaultTopicType, PageRole.Problem); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatThreeDescr);
     assert.equal(upsertedCategory.position, UpsCatThreePosition);
+    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatThreeSlug);
+    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatThreeSlug);
+    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatThreeSlug);
   });
 
   it("Now there're 2 more categories", () => {
@@ -291,6 +301,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.extId, UpsCatTwoExtIdLoong);
     assert.equal(upsertedCategory.description, UpsCatTwoEditedDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoEditedPos);
+    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatTwoEditedSlug);
   });
 
   it("... Owen relaods the page", () => {

@@ -275,7 +275,7 @@ trait SiteTransaction {
   def insertPagePath(pagePath: PagePathWithId): Unit
 
   def loadAllPagePaths(): immutable.Seq[PagePathWithId]
-  def loadPagePath(pageId: PageId): Option[PagePath]
+  def loadPagePath(pageId: PageId): Option[PagePathWithId]
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]  // rename? check? load? what?
   /**
     * Loads all PagePaths that map to pageId. The canonical path is placed first

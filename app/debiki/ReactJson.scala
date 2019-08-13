@@ -294,6 +294,9 @@ class JsonMaker(dao: SiteDao) {
     val horizontalLayout = page.pageType == PageType.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
 
+    val pagePath =
+      page.path getOrElse PagePathWithId.fromIdOnly(page.id, canonical = true)
+
     val pageJsonObj = Json.obj(
       "pageId" -> page.id,
       "pageVersion" -> page.meta.version,
@@ -302,7 +305,7 @@ class JsonMaker(dao: SiteDao) {
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "pageRole" -> JsNumber(page.pageType.toInt),
-      "pagePath" -> JsPagePath(page.path getOrElse PagePath.fromIdOnly(page.siteId, page.id)),
+      "pagePath" -> JsPagePathWithId(pagePath),
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
       "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),
