@@ -64,8 +64,8 @@ class UserSpec extends FreeSpec with MustMatchers {
     }*/
 
     "derive usernames from email addresses" - {
-      def derive(text: String ) =
-        Participant.makeOkayUsername(text, allowDotDash = false, _ => false)
+      def derive(text: String, allowDotDash: Boolean = false) =
+        Participant.makeOkayUsername(text, allowDotDash = allowDotDash, _ => false)
 
       "simple cases" in {
         derive("abcd").get mustBe "abcd"
@@ -181,9 +181,41 @@ class UserSpec extends FreeSpec with MustMatchers {
         derive("..--aa+bb--..").get mustBe "aa_bb"
       }
 
+      "trims totally, if only specials" in {
+        // This gets trimmed to "", and then, since forall(charIsNumOrDotDash)) [3935RKDD03],
+        // gets prefixed with 'n', and then, since too short, '23' is appended.
+        derive("..--++--..").get mustBe "n23"  // hmm maybe None wold be an ok answer too.
+        derive("") mustBe None
+      }
+
+      "both trims specials, and prefixes numbers with 'n'" in {
+        derive("1").get mustBe "n12"
+        derive("..1__").get mustBe "n12"
+        derive("+-2_-+").get mustBe "n22"
+        derive("__3").get mustBe "n32"
+        derive("3__").get mustBe "n32"
+        derive("A").get mustBe "A23"
+      }
+
       "combine adjacent underscores" in {
         derive("aa___b___c").get mustBe "aa_b_c"
         derive("++aa  + b - + . c_+--").get mustBe "aa_b_c"
+      }
+
+      "not cut at max length so ends with '_'" in {
+        Participant.MaxUsernameLength mustBe 20
+        // Cut at 20 chars —> ends at [a-zA-Z0-9], fine.
+        derive("name1.name2_name33_name4").get  mustBe "name1_name2_name33_n"
+        // Cut at 20 chars —> ends at '_', not allowed, so the last '_' should get trimmed:
+        derive("name1.name2_name334_name4").get mustBe "name1_name2_name334"
+        // Try also when allowing '.':
+        derive("name1.name2_name33_name4", allowDotDash = true).get  mustBe "name1.name2_name33_n"
+        derive("name1.name2_name334_name4", allowDotDash = true).get mustBe "name1.name2_name334"
+      }
+
+      "not cut at max length so ends with '_', test two" in {
+        Participant.MaxUsernameLength mustBe 20
+        derive("a23456789012345_7_9_longerThanMax___").get mustBe "a23456789012345_7_9"
       }
 
       "all at once" in {

@@ -493,6 +493,11 @@ case object Participant {
 
     // Later, allow starting with '_', and change here too: [ALWUNDS1]
     val usernameOkChars = usernameOkCharsNotTrimmed
+      // In case a name is like:  'n234567890123456789_longerThanMax___'
+      // we need to first cut away 'longerthanmax__' so this: '...789_' gets
+      // trimmed to '...789', instead of 'longerThanMax__' to 'longerThanMax'.
+      // So, take max length here:
+      .take(Participant.MaxUsernameLength)
       .dropWhile(!charIsAzOrNum(_))      // drops anything but  a-z  A-Z  0-9, for now. [UNPUNCT]
       .dropRightWhile(!charIsAzOrNum(_)) //
 
@@ -502,14 +507,17 @@ case object Participant {
     // a date instead? Not good for usability? And '12.34' is a weird name.
     // Let's prefix 'n', could mean "numeric name".
     val usernameNotOnlyDigits =
-      if (usernameOkChars.forall(charIsNumOrDotDash)) 'n' + usernameOkChars
-      else usernameOkChars
+      if (usernameOkChars.forall(charIsNumOrDotDash))  // [3935RKDD03]
+        ('n' + usernameOkChars).take(Participant.MaxUsernameLength)
+      else
+        usernameOkChars
 
     var usernameOkCharsLen =
-      (if (usernameNotOnlyDigits.length >= Participant.MinUsernameLength) usernameNotOnlyDigits
-      else (usernameNotOnlyDigits + "23456789") take Participant.MinUsernameLength)
-        .take(Participant.MaxUsernameLength)
-
+      if (usernameNotOnlyDigits.length >= Participant.MinUsernameLength)
+        usernameNotOnlyDigits
+      else
+        // Avoid '1', looks like 'l'.
+        (usernameNotOnlyDigits + "23456789") take Participant.MinUsernameLength
 
     // Not a file extension suffix? like .png or .jpg or .js?  Tested here: [5WKAJH20]
     if (allowDotDash) {
@@ -518,6 +526,7 @@ case object Participant {
       // Tika doesn't detect ".woff", weird? Maybe remove in Tika 1.9? [5AKR20]
       if (mimeType != "application/octet-stream" || usernameOkCharsLen.endsWith(".woff")) {
         // Then replace all dots with underscore.
+        // (They cannot be at the start or end, because of dropWhile and dropRightWhile above.)
         usernameOkCharsLen = ReplSpecialsWithUnderscoreRegex.replaceAllIn(usernameOkCharsLen, "_")
       }
     }
