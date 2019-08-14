@@ -285,7 +285,7 @@ define if_selenium_not_running
   fi
 endef
 
-e2e-tests: invisible-selenium-server to_talkyard
+e2e-tests: invisible-selenium-server to-talkyard
 	s/run-e2e-tests.sh
 	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
 
