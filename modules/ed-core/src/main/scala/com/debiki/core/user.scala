@@ -42,7 +42,7 @@ object Presence {
   */
 case class Invite(   // [exp] ok use
   emailAddress: String,
-  startAtUrlPath: Option[String],
+  startAtUrl: Option[String],
   addToGroupIds: Set[UserId],
   secretKey: String,
   createdById: UserId,
@@ -65,16 +65,27 @@ case class Invite(   // [exp] ok use
   SECURITY; COULD // find a more 100% safe approach to verifying this is a local url path, [40KRJTX35]
   // and cannot make the browser jump to a different server?
   // Add a fn  isUrlPath maybe? that does some regex thing that disallows any unexpected chars?
-  require(startAtUrlPath.forall(_ startsWith "/"), "TyE40RKTG01")
-  require(startAtUrlPath.forall(p => !(p contains "//")), "TyE40RKTG02")
-  require(startAtUrlPath.forall(p => !(p contains ":")), "TyE40RKTG03")
-  require(startAtUrlPath.forall(p => extractUrlPath(p) == p), "TyE5KGW2XTJ")
+  // Later: Allow urls to different origins, as long as they're one of the allowEmbeddingFrom origins
+  // (in case the Talkyard forum is embedded in an iframe in another site).
+  startAtUrl foreach { url =>
+    val uri = new java.net.URI(url)
+    require(uri.getPath == url, "TyU30TKSRGP01")
+    require(uri.getScheme eq null, "TyU30TKSRGP03")
+    require(uri.getAuthority eq null, "TyU30TKSRGP02")
+    require(uri.getQuery eq null, "TyU30TKSRGP04")
+    require(uri.getFragment eq null, "TyU30TKSRGP05")
+  }
+  // Paranoia:
+  require(startAtUrl.forall(_ startsWith "/"), "TyE40RKTG01")
+  require(startAtUrl.forall(p => !(p contains "//")), "TyE40RKTG02")
+  require(startAtUrl.forall(p => !(p contains ":")), "TyE40RKTG03")
+  require(startAtUrl.forall(p => extractUrlPath(p) == p), "TyE5KGW2XTJ")
 
   // Group ids are > 0, and don't allow adding to built-in groups 10..19.
   // Only custom groups, >= 100.  [305FDF4R]
   require(addToGroupIds.forall(groupId => groupId >= LowestAuthenticatedUserId), "TyE6WKDJ025P01")
   // For now:
-  require(addToGroupIds.size <= 1, "Adding to >= 1 group not yet implemented [TyE6WKDJ025P02]")
+  require(addToGroupIds.size <= 1, "Adding to > 1 group not yet implemented [TyE6WKDJ025P02]")
 
 
   def canBeOrHasBeenAccepted: Boolean = invalidatedAt.isEmpty && deletedAt.isEmpty
@@ -109,7 +120,7 @@ object Invite {
     deletedAt = None,
     deletedById = None,
     invalidatedAt = None,
-    startAtUrlPath = None,
+    startAtUrl = None,
     addToGroupIds = addToGroupIds)
 }
 

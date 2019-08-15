@@ -1475,8 +1475,8 @@ interface SaveCategoryResponse {
 
 interface SendInvitesRequestBody {
   toEmailAddresses: string[];
-  addToGroups: UserId[];
-  startAtUrlPath: undefined;  // not yet impl
+  addToGroups?: UserId[];
+  startAtUrl?: string;
   reinvite: boolean;
 }
 

@@ -159,9 +159,9 @@ interface TestCategory {  // try to merge with Category in model.ts?
 
 interface SimpleCategory extends TestCategory {
   urlPaths: {
-    active: string;
-    top: string;
-    new: string;
+    activeTopics: string;
+    topTopics: string;
+    newTopics: string;
   }
 }
 

@@ -642,7 +642,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
         "the about cat page got bumped — no, wait, not yet impl" in {
           aboutPageEd2 = actualDump.pages.find(_.pageId == upsAboutCatPage.pageId) getOrDie "TyE5WKVS03"
-          // Upsert-updating pages is not yet impl. Only upsert-inserting. So disable.
+          // Upsert-updating pages is not yet impl. Only upsert-inserting. So disable.  [YESUPSERT]
           //aboutPageEd2.version mustBe upsAboutCatPage.version + 1
         }
 

@@ -2418,8 +2418,9 @@ function pagesFor(browser) {
         api.waitForVisible('#e2eF_NoTopics');
       },
 
-      waitForCategoryName: (name: string) => {
-        api.waitAndGetElemIdWithText('.s_F_Ts_Cat_Ttl', name);
+      waitForCategoryName: (name: string, ps: { isSubCategory?: true } = {}) => {
+        const selector = ps.isSubCategory ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
+        api.waitAndGetElemIdWithText(selector, name);
       },
 
       waitForTopics: function() {

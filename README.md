@@ -618,6 +618,42 @@ server side code the `_` tells you that the error code is used in the frontend T
 so you cannot just change it.
 
 
+### Database tables, constraints, index names
+
+Add "as many constraints and foreign keys as you can". Knowing precisely what's in the
+database, makes data migrations safer & simpler. Don't forget to index
+foreign key columns. Type `ix: index-name` next to the foreign key constraints,
+so one directly sees that there's an index, and its name. All fk constraints should
+be deferrable.
+
+**Table names:** `some_table3`. The trailing digit "3" is for historical reasons —
+maybe change to "_t" instead? *Some* suffix is needed, so one can search
+for `table_name3` e.g. `pages3` and find only the *table*, instead of 999 999
+other unrelated "table_name" e.g. "pages" search hits.
+
+**Unique indexes:** `tablename_u_columnone_coltwo_three...`
+
+**Non-unique indexes:** `tablename_i_colone_coltwo_three...`
+
+**Foreign keys:** `tablename_colone_coltwo_..._r_othertable(_col_coltwo_...)`
+
+**Check constraints:** `tablename_c_...sth-to-check...` e.g. `pages_c_id_len` (length).
+
+It's nice to have these one letter object types: `_u`, `_i`, `_c` because then they're
+more full text searchable — e.g. find all usages of any (unique) indexes on a certain
+table, accross the whole code base. And you soon learn to recognize what they mean so you know
+what type of thing it is, without having to think or find out. Having them directly
+after the table name (without the '3' suffix) makes things nicely aligned & easy to scan,
+when typing `\d some_table_name` in the psql client.
+
+Maybe it'd be nice if all column names ended with "_c"? E.g. `username_c`.
+Because currently they're a bit hard to search for. Instead one needs to search
+for the table name, and then look for the column name, in the surrounding code.
+
+Most db things don't follow these naming standards, because I (KajMagnus) had different
+ideas in the past. Maybe one day, time to rename everything to the correct names?
+
+
 ### Hen and henbirds
 
 Source code comments should be concise, but writing "he or she" everywhere, when referring

@@ -41,20 +41,18 @@ case class PagePathWithId(  // better than PagePath? Has no site id, and always 
 }
 
 
-case class PagePathNoId(  // better than PagePath? Has no site id, and never a page id
-  folder: String,
-  showId: Boolean,
-  slug: String)
-
-
 object PagePathWithId {
-
   def fromIdOnly(pageId: PageId, canonical: Boolean): PagePathWithId = {
     PagePathWithId(folder = "/", pageId = pageId, showId = true, pageSlug = "",
       canonical = canonical)
   }
-
 }
+
+
+case class PagePathNoId(  // better than PagePath? Has no site id, and never a page id
+  folder: String,
+  showId: Boolean,
+  slug: String)
 
 
 /**

@@ -117,8 +117,9 @@ trait UserDao {
       val anyGroups: Option[Group] = invite.addToGroupIds.headOption flatMap { groupId =>
         val group = tx.loadGroup(groupId).getOrDie( // there's a foreign key
           "TyE305KD45", s"s$siteId: Group $groupId gone — cannot add invited member to group")
-        dieIf(group.isBuiltIn, "TyE05KRJR204")
+        dieIf(group.isBuiltIn, "TyE05KRJR204")  // [305FDF4R]
         if (group.isDeleted) None
+        else if (group.isStaff) None  // for now, may not join such groups [305FDF4R]
         else Some(group)
       }
 
@@ -162,7 +163,11 @@ trait UserDao {
       (newUser, invite, false)
     }
 
+    // It'd be a bit complicated to find out precisely which groups need to be uncached
+    // (depends on e.g. which trust level the user got — some groups can auto-grant
+    // a trust level (not yet impl)). So, for now, uncache all built-in groups.
     uncacheBuiltInGroups()
+
     result._2.addToGroupIds foreach { groupId =>
       memCache.remove(groupMembersKey(groupId))  // [inv2groups]
     }

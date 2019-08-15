@@ -160,9 +160,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.description, UpsCatOneDescr);
     assert.equal(upsertedCategory.position, UpsCatOnePosition);
     // This is included only in /-/v0/upsert-simple, but not  /-/v0/upsert-patch.
-    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatOneSlug);
-    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatOneSlug);
-    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatOneSlug);
+    assert.equal(upsertedCategory.urlPaths.activeTopics, '/latest/' + UpsCatOneSlug);
+    assert.equal(upsertedCategory.urlPaths.topTopics, '/top/' + UpsCatOneSlug);
+    assert.equal(upsertedCategory.urlPaths.newTopics, '/new/' + UpsCatOneSlug);
   });
 
   it("The upserted category is not yet visible", () => {
@@ -189,6 +189,44 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert(isCategoryVisible(forum.categories.specificCategory.name));
     assert(isCategoryVisible(PackagesCatName));
     assert(isSubCategoryVisible(UpsCatOneName));
+  });
+
+
+  it("Owen goest to the urlPaths.activeTopics category URL path", () => {
+    owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.activeTopics);
+  });
+  it("... sees the category name", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+  });
+  it("... sees an empty category topic list", () => {
+    owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+
+  it("Owen goes to the urlPaths.newTopics category URL path", () => {
+    owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.newTopics);
+  });
+  it("... and, again, sees the category name", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+  });
+  it("... and, again, sees an empty category topic list", () => {
+    owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+
+  it("Owen goes to the urlPaths.topTopics category URL path", () => {
+    owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.topTopics);
+  });
+  it("... here too, sees the category name", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatOneName, { isSubCategory: true });
+  });
+  it("... here too, sees an empty category topic list", () => {
+    owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("Owen returns to the category list page", () => {
+    owensBrowser.forumCategoryList.goHere();
+    owensBrowser.forumCategoryList.waitForCategories();
   });
 
 
@@ -234,9 +272,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     //assert.equal(upsertedCategory.defaultTopicType, PageRole.Idea); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatTwoDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoPosition);
-    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatTwoSlug);
-    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatTwoSlug);
-    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatTwoSlug);
+    assert.equal(upsertedCategory.urlPaths.activeTopics, '/latest/' + UpsCatTwoSlug);
+    assert.equal(upsertedCategory.urlPaths.topTopics, '/top/' + UpsCatTwoSlug);
+    assert.equal(upsertedCategory.urlPaths.newTopics, '/new/' + UpsCatTwoSlug);
   });
 
   it("... the 2nd, likewise", () => {
@@ -247,9 +285,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     //assert.equal(upsertedCategory.defaultTopicType, PageRole.Problem); TESTS_MISSING
     assert.equal(upsertedCategory.description, UpsCatThreeDescr);
     assert.equal(upsertedCategory.position, UpsCatThreePosition);
-    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatThreeSlug);
-    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatThreeSlug);
-    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatThreeSlug);
+    assert.equal(upsertedCategory.urlPaths.activeTopics, '/latest/' + UpsCatThreeSlug);
+    assert.equal(upsertedCategory.urlPaths.topTopics, '/top/' + UpsCatThreeSlug);
+    assert.equal(upsertedCategory.urlPaths.newTopics, '/new/' + UpsCatThreeSlug);
   });
 
   it("Now there're 2 more categories", () => {
@@ -301,13 +339,27 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     assert.equal(upsertedCategory.extId, UpsCatTwoExtIdLoong);
     assert.equal(upsertedCategory.description, UpsCatTwoEditedDescr);
     assert.equal(upsertedCategory.position, UpsCatTwoEditedPos);
-    assert.equal(upsertedCategory.urlPaths.active, '/latest/' + UpsCatTwoEditedSlug);
-    assert.equal(upsertedCategory.urlPaths.top, '/top/' + UpsCatTwoEditedSlug);
-    assert.equal(upsertedCategory.urlPaths.new, '/new/' + UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.urlPaths.activeTopics, '/latest/' + UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.urlPaths.topTopics, '/top/' + UpsCatTwoEditedSlug);
+    assert.equal(upsertedCategory.urlPaths.newTopics, '/new/' + UpsCatTwoEditedSlug);
   });
 
-  it("... Owen relaods the page", () => {
-    owensBrowser.refresh();
+  it("Owen goest to the urlPaths.activeTopics category URL path, for the now edited slug", () => {
+    owensBrowser.go(siteIdAddress.origin + upsertedCategory.urlPaths.activeTopics);
+  });
+  it("... and sees the category name, and empty topic list", () => {
+    owensBrowser.forumTopicList.waitForCategoryName(UpsCatTwoEditedName, { isSubCategory: true });
+    owensBrowser.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+
+  it("The previous category slug redirects to the new  [TyT503KRDH24]", () => {
+    // TESTS_MISSING not yet impl
+  });
+
+
+  it("... Owen returns to the category list page", () => {
+    owensBrowser.forumCategoryList.goHere();
     owensBrowser.forumCategoryList.waitForCategories();
   });
 

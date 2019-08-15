@@ -246,7 +246,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     const requestBody: SendInvitesRequestBody = {
       toEmailAddresses: addresses,
       addToGroups: addToGroups,
-      startAtUrlPath: undefined,  // not yet impl
+      startAtUrl: undefined,  // not yet impl
       reinvite: isResend,
     };
 
@@ -350,9 +350,9 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
       content = rFragment({},
         r.p({}, info),
         r.p({},
-          // This text is for everyone, shoudl be translated?
+          // This text is for everyone, should be translated?
           // Or who may add to gropus? Only staff? No, also grop managers (not impl)
-          // may add to groups. And maybe noral members too, just that joining-the-group
+          // may add to groups. And maybe normal members too, just that joining-the-group
           // needs to be approved by the members who join, and the group managers /
           // staff, depending on the group settings.
           "To have the invited people auto join a group, insert a very first line " +  // I18N

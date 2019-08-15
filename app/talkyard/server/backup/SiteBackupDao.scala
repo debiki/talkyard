@@ -415,6 +415,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         postsInPatch foreach { postInPatch =>
           if (!postTempIdsToInsert.contains(postInPatch.id)) {
             // Update? Later, not yet impl.  [YESUPSERT]
+            // if (any changes to save) {
+            //   ...
+            //   wroteToDatabase = true
+            //   pageIdsWithBadStats.add(postReal.pageId)
+            // }
           }
           else {
             val postTempParentNr = postsRealByTempPagePostNr.getOrElse(postInPatch.pagePostNr,
@@ -554,11 +559,17 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             if (realSectPageInDb.isEmpty) {
               val sectPageInPatch = siteData.pages.find(_.pageId == catWithTempId.sectionPageId)
                   .getOrThrowBadRequest(
-                "TyE4SKD02RS", s"No section page included in patch, for category $catWithTempId")
-              val sectPagePath = siteData.pagePaths.find(_.pageId == sectPageInPatch.pageId)
-              throwBadRequestIf(sectPagePath.isEmpty,
-                "TyE5WKT0GRD6", o"""No page path included in patch, to section page for
-                category $catWithTempId""")
+                "TyE4SKD02RS", s"No section page included in patch, for $catWithTempId")
+              val sectPagePaths = siteData.pagePaths.filter(_.pageId == sectPageInPatch.pageId)
+              throwBadRequestIf(sectPagePaths.isEmpty,
+                "TyE5WKT0GRD6", s"No page path included in patch, to section page for $catWithTempId")
+              val canonPaths = sectPagePaths.filter(_.canonical)
+              throwBadRequestIf(canonPaths.isEmpty,  // [602WKDJD2]
+                "TyE503RTDHG3", o"""No canonical page path included in patch,
+                to section page for $catWithTempId. Only non-canonical paths: $sectPagePaths""")
+              throwBadRequestIf(canonPaths.length > 1,
+                "TyE7WKS2S5B", o"""Many canonical page paths included in patch,
+                to section page for $catWithTempId. These paths: $canonPaths""")
             }
 
             val anyParentCatRealId = catWithTempId.parentId.map(remappedCategoryTempId)
@@ -740,6 +751,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             if (pageWithOkNums != oldPageMeta) {
               tx.updatePageMeta(pageWithOkNums, oldMeta = oldPageMeta, markSectionPageStale = true)
               wroteToDatabase = true
+              ? pageIdsWithBadStats.add(realPageId)
             } */
             // The stats might be wrong, after the upserts — maybe we're inserting new replies.
             pageInDb
@@ -750,6 +762,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 // Maybe not always needed:
                 markSectionPageStale = true)
               wroteToDatabase = true
+              ? pageIdsWithBadStats.add(realPageId)
             } */
         }
 
@@ -813,14 +826,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
-      // If we upserted categories, it's nice to include their related section page path,
-      // so the caller can know where they're located. [8R392PFP0]
+      // If we upserted categories, include their related section page path,
+      // so the caller gets to know where they're located. Needed by
+      // /-/v0/upsert-simple, for creating an API consumer friendly json response. [8R392PFP0]
       val sectionPagePaths =
         upsertedCategories.map(_.sectionPageId).to[immutable.Set].toVector map { sectionPageId =>
           tx.loadPagePath(sectionPageId).getOrDie( // there's a foreign key
             "TyE305RKTG42", {
               val badCat = upsertedCategories.find(_.sectionPageId == sectionPageId).get
-              s"Section page id '$sectionPageId' not found for category $badCat"
+              s"Section page id '$sectionPageId' not found for $badCat"
             })
         }
 

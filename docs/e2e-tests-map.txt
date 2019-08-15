@@ -149,6 +149,8 @@ profile page, a group:
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
 
 groups:
+  list members:
+          - invite-to-groups.2browsers.test.ts  TyT01AKTHSN63
   list/create/delete groups,
   conf group cat notf prefs,
   inherit group's notf prefs,
@@ -158,6 +160,7 @@ groups:
   add/remove members:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
 
   update when user deleted:
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
@@ -276,6 +279,8 @@ categories -
   edit about topic:
   edit name, slug, topic types, position:
           - api-upsert-categories.2browsers.test.ts  TyT703LTKQ38
+  edit slug —> old name redirects to new:
+          - api-upsert-categories.2browsers.test.ts  TyT503KRDH24  (not impl)
   unlist:
   delete -
     gets marked as deleted for staff:
@@ -284,6 +289,7 @@ categories -
     topics not found when searching:
     can undelete:
   permissions: see (1QRY7)
+  upsert categories:  (upscats)
 
 permissions -
   category -
@@ -742,7 +748,7 @@ server side rendering -
 api:
   ext id, weird chars and loong id:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
-  upsert categories:
+  upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
 
 import and export:  (impexp)

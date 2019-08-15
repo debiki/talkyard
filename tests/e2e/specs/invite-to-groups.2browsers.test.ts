@@ -44,7 +44,6 @@ const studentTwoUsername = 'e2e_test_stud_two';
 
 
 const teacherOneAddr = 'e2e-test--teacher-one@x.co';
-const teacherOneUsername = 'e2e_test_teacher_one';
 
 const teacherTwoAddr = 'e2e-test--teacher-two@x.co';
 const teacherTwoUsername = 'e2e_test_teacher_two';
@@ -88,6 +87,9 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
         { username: GroupTeachersUsername, fullName: GroupTeachersFullName });
   });
 
+
+  // ----- Invite to group
+
   it("Owen goes to the Invites tab", () => {
     owensBrowser.adminArea.goToUsersInvited(siteIdAddress.origin);
   });
@@ -111,7 +113,7 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
     assert(inviteLinkStudentOne);
   });
 
-  it("An email is sent to addr2-retry", () => {
+  it("... and to student two", () => {
     inviteLinkStudentTwo = waitForInviteEmail(siteId, studentTwoAddr, browserA);
     assert(inviteLinkStudentTwo);
   });
@@ -139,7 +141,7 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
   });
 
 
-  // ----- Already joined
+  // ----- Invite to group, error, try again
 
   it("Owen invites student two again, to the Students group", () => {
     owensBrowser.adminArea.users.invites.clickSendInvite();
@@ -201,15 +203,41 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
   */
 
 
-  it("Owen goes to the Invites tab", () => {
-    owensBrowser.adminArea.goToUsersInvited(siteIdAddress.origin);
-  });
+  // ----- Invalid invites
 
-  it("He tries to send invites to two teachers to join the Teachers group " +
-        "— but types a typo in 'addToGroups'", () => {
+  it("Owen now tries to invite the two teachers to the @admins group, not allowed", () => {
     owensBrowser.adminArea.users.invites.clickSendInvite();
     owensBrowser.inviteDialog.typeInvite(`
-        addToGroups_typo: @${GroupTeachersUsername}_typo
+        addToGroups: @admins
+        ${teacherOneAddr}
+        ${teacherTwoAddr}
+        `);
+    owensBrowser.inviteDialog.clickSubmit();
+  });
+
+  it("... there's an error; cannot invite to built-in groups. Owen closes the error dialog", () => {
+    owensBrowser.serverErrorDialog.waitAndAssertTextMatches('TyE6WG20GV_');
+    owensBrowser.serverErrorDialog.close();
+  });
+
+  it("He tries to invite the two teachers to join a *user*, that won't work", () => {
+    owensBrowser.inviteDialog.typeInvite(`
+        addToGroups: @owen_owner
+        ${teacherOneAddr}
+        ${teacherTwoAddr}
+        `);
+    owensBrowser.inviteDialog.clickSubmit();
+  });
+
+  it("... there's an error: a user is not a group. Owen closes the error dialog", () => {
+    owensBrowser.serverErrorDialog.waitAndAssertTextMatches('TyE305MKSTR2_');
+    owensBrowser.serverErrorDialog.close();
+  });
+
+  it("He tries to invite the teachers to the Teachers group " +
+        "— but types a typo in 'addToGroups'", () => {
+    owensBrowser.inviteDialog.typeInvite(`
+        addToGroups_typo: @${GroupTeachersUsername}
         ${teacherOneAddr}
         ${teacherTwoAddr}
         `);
@@ -217,7 +245,7 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
   });
 
   it("... there's an error, Owen closes the error dialog", () => {
-    //owensBrowser.serverErrorDialog. ??? waitForTooManyInvitesError();
+    //owensBrowser.serverErrorDialog.waitAndAssertTextMatches('???');
     owensBrowser.serverErrorDialog.close();
   });
 
@@ -226,14 +254,17 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
         addToGroups: @${GroupTeachersUsername}_typo
         ${teacherOneAddr}
         ${teacherTwoAddr}
-        `,
-        { numWillBeSent: 2 });
+        `);
     owensBrowser.inviteDialog.clickSubmit();
   });
 
   it("... there's an error, again, Owen closes the error dialog", () => {
+    owensBrowser.serverErrorDialog.waitAndAssertTextMatches('TyE204KARTGF_');
     owensBrowser.serverErrorDialog.close();
   });
+
+
+  // ----- Invite to a 2nd group
 
   it("He tries again — no typos this time", () => {
     owensBrowser.inviteDialog.typeAndSubmitInvite(`
@@ -259,18 +290,22 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
   });
 
   it("Teacher two accepts", () => {
+    othersBrowser.topbar.clickLogout();
     othersBrowser.go(inviteLinkTeacherTwo);
     othersBrowser.topbar.waitForMyMenuVisible();
     othersBrowser.topbar.assertMyUsernameMatches(teacherTwoUsername);
   });
 
-  it("... and hen became a member of the Teachers group", () => {
+  it("... and hen becomes a member of the Teachers group", () => {
     othersBrowser.topbar.navigateToGroups();
     // TESTS_MISSING: got added to the Teachers group, not Students?
     othersBrowser.waitForVisible('.e_YoureMbr');
     assert.equal(othersBrowser.count('.s_Gs-Custom .e_YoureMbr'), 1);
     assert.equal(othersBrowser.count('.e_YoureMbr'), 3); // New members, and Teachers
   });
+
+
+  // ----- Correct group member counts  [TyT01AKTHSN63]
 
   it("Owen goes to the groups page", () => {
     owensBrowser.adminArea.navToGroups();

@@ -150,7 +150,7 @@ object RdbUtil {
 
   def getInvite(rs: js.ResultSet) = Invite(
     emailAddress = rs.getString("email_address"),
-    startAtUrlPath = getOptString(rs, "start_at_url"),
+    startAtUrl = getOptString(rs, "start_at_url"),
     addToGroupIds = getOptInt(rs, "add_to_group_id").toSet,
     secretKey = rs.getString("secret_key"),
     createdById = rs.getInt("created_by_id"),

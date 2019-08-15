@@ -55,7 +55,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef,
       invite.secretKey,
       invite.emailAddress,
-      invite.startAtUrlPath.orNullVarchar,
+      invite.startAtUrl.orNullVarchar,
       invite.addToGroupIds.headOption.orNullInt, // [05WMKG42]
       invite.createdById.asAnyRef,
       invite.createdAt.asTimestamp)

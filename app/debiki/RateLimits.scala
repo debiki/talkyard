@@ -226,8 +226,9 @@ object RateLimits {
   /** For upserting just one or two things, e.g. two categories.
     *
     * Sometimes an organization needs to quickly upsert many things, e.g. if they
-    * have 100 categories and want to do an initial of all categories, one
-    * category per request. — So allow somewhat high bursts.
+    * have 100 categories and want to do an initial import of all categories, one
+    * category per request. — So allow somewhat high bursts (rather than
+    * forcing them to write custom bulk insert code).
     *
     * Also, one needs to ask for permission to use this endpoint. [UPSRTPERM]
     */

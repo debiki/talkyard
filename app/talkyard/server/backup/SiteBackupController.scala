@@ -74,8 +74,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       !globals.config.mayPatchSite(request.siteId),  // [UPSRTPERM]
       "TyE306KDGL25", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
 
-    // Parse JSON, construct a dump "manually", and call
-    // upsertDumpJsonImpl(dump, request)
+    // This parses JSON, and converts the simple patch contents to a "complete" patch
+    // that can be upserted.
     val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
 

@@ -90,7 +90,7 @@ object SiteBackupMaker {
     * (Some time later, for really large sites, might be better to load things directly
     * from a db transaction, rather than creating an intermediate representation.)
     */
-  def createPostgresqlJsonBackup(anyDump: Option[SiteBackup] = None,
+  def createPostgresqlJsonBackup(anyDump: Option[SiteBackup] = None,  // RENAME makeSiteJsonDump?
         anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
@@ -154,17 +154,18 @@ object SiteBackupMaker {
         categories.map(category => {
           var json = JsCategoryInclDetails(category)
           if (simpleFormat) {
-            val sectionPagePath =
-              // We always include the section page path, added here: [8R392PFP0].
-              pagePaths.find(_.pageId == category.sectionPageId) getOrDie "TyE05WKTSDHSR"
+            // We always include the section page path, added here: [8R392PFP0],
+            // and canonical: [602WKDJD2]
+            val sectionPagePath = pagePaths.find(p =>
+              p.pageId == category.sectionPageId && p.canonical) getOrDie "TyE05WKTSDHSR"
             val basePath = sectionPagePath.value
             val basePathSlash = basePath.dropRightWhile(_ == '/') + '/'
             json +=
               "urlPaths" -> Json.obj(
                 // COULD rename latest/ to active/?  [394SMDLW20]
-                "active" -> JsString(basePathSlash + "latest/" + category.slug),
-                "top" -> JsString(basePathSlash + "top/" + category.slug),
-                "new" -> JsString(basePathSlash + "new/" + category.slug))
+                "activeTopics" -> JsString(basePathSlash + "latest/" + category.slug),
+                "topTopics" -> JsString(basePathSlash + "top/" + category.slug),
+                "newTopics" -> JsString(basePathSlash + "new/" + category.slug))
           }
           json
         }))

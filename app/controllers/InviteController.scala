@@ -56,11 +56,17 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.body // Typescript: SendInvitesRequestBody
 
     // A list like ["@group_name", "@other_group', ...].
-    val addToGroupsAtUsernames = (body \ "addToGroups").as[Seq[String]]
+    val addToGroupsAtUsernames = (body \ "addToGroups").asOpt[Seq[String]] getOrElse Nil
 
-    val startAtUrlPath = (body \ "startAtUrlPath").asOpt[String] // security check [40KRJTX35]
-    // For now:
-    throwForbiddenIf(startAtUrlPath.isDefined, "TyE035MKJ", "startAtUrlPath is unimplemented")
+    val startAtUrl = (body \ "startAtUrl").asOpt[String] // security check [40KRJTX35]
+    // For now, require the URL to be a relative path, don't allow any origin.
+    // Later: Allow different origins, but only the ones in the allowEmbeddingFrom site setting.
+    throwForbiddenIf(startAtUrl.isDefined, "TyE035MKJ", "startAtUrl is unimplemented")
+    startAtUrl foreach { url =>
+      val uri = new java.net.URI(url)
+      throwForbiddenIf(uri.getPath != url,
+        "TyE305MFKTDR2", "startAtUrl must be a local url path, as of now")
+    }
 
     val toEmailAddressesRaw = (body \ "toEmailAddresses").as[Seq[String]]
     val reinvite = (body \ "reinvite").asOpt[Boolean]
@@ -70,25 +76,29 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "TyE703SKHFLD2", o"""Can only invite to one single group, for now —
       but you specified ${addToGroupsAtUsernames.length} groups.""")
 
-    addToGroupsAtUsernames.find(_.length <= 2).foreach(atName => throwForbidden(
-      "TyE393RKR4", s"Bad group name: $atName"))
+    // (Min length + 1 for the '@'.)
+    addToGroupsAtUsernames.find(_.length < Participant.MinUsernameLength + 1).foreach(atName =>
+      throwForbidden("TyE393RKR4", s"Bad group name: $atName"))
 
-    val anyAddToGrupId: Option[UserId] = addToGroupsAtUsernames.headOption map {  // [05WMKG42]
+    val anyAddToGrup: Option[Group] = addToGroupsAtUsernames.headOption map {  // [05WMKG42]
           atUsername =>
       throwBadRequestIf(atUsername.charAt(0) != '@',
         "TyE06RKHZHN3", s"Group usernames should be prefixed by '@', but this is not: '$atUsername'")
-      val groupName = atUsername drop 1
+      val username = atUsername drop 1
       dao.readOnlyTransaction { tx =>
-        val member = tx.loadMemberByUsername(groupName).getOrThrowBadArgument(
-          "TyE204KARTGF", "addToGroup", s"Group not found: @$groupName")
+        val member = tx.loadMemberByUsername(username).getOrThrowBadArgument(
+          "TyE204KARTGF_", "addToGroup", s"Group not found: @$username")
         member match {
           case u: User =>
-            throwForbidden("TyE305MKSTR2", s"User @$groupName is a user, not a group")
+            throwForbidden("TyE305MKSTR2_", s"User @$username is a user, not a group")
           case g: Group =>
             // Later, do allow this? Need to write a bit extra code to properly init
             // trust levels and is-admin and is-mod flags, then. [305FDF4R]
-            throwForbiddenIf(g.isBuiltIn, "TyE6WKG20RGV", s"Cannot invite to built-in group @$groupName")
-            g.id
+            def cannotInviteTo(what: String) =
+              s"Cannot invite to $what groups, but this is a $what group: @$username"
+            throwForbiddenIf(g.isBuiltIn, "TyE6WG20GV_", cannotInviteTo("built-in"))
+            throwForbiddenIf(g.isStaff, "TyE4FKS2PDHJ", cannotInviteTo("staff"))
+            g
         }
       }
     }
@@ -168,7 +178,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         }
       }
       if (!skip) {
-        doSendInvite(toEmailAddress, anyAddToGrupId, request) match {
+        doSendInvite(toEmailAddress, anyAddToGrup, request) match {
           case Good(invite) =>
             invitesSent.append(invite)
           case Bad(errorMessage) =>
@@ -187,14 +197,14 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def doSendInvite(toEmailAddress: String, addToGroupId: Option[UserId],
+  private def doSendInvite(toEmailAddress: String, addToGroup: Option[Group],
         request: DebikiRequest[_]): Invite Or ErrorMessage = {
     val invite = Invite(
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
       createdById = request.theUserId,
       createdAt = globals.now().toJavaDate,
-      addToGroupIds = addToGroupId.toSet)
+      addToGroupIds = addToGroup.map(_.id).toSet)
 
     val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>
       Participant.makeOkayUsername(
