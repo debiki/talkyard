@@ -152,8 +152,6 @@ trait PagesDao {
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
     val settings = loadWholeSiteSettings(tx)
 
-    // die unless ok extId  [05970KF5]
-
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
       authorAndLevels, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,

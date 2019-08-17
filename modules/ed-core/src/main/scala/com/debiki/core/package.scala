@@ -981,6 +981,7 @@ package object core {
   def AUDIT_LOG = ()      // Should add audit log entry
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.
+  def QUICK = ()          // Let's do now soon — won't take long.
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).

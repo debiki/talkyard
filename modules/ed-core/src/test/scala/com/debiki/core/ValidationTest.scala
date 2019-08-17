@@ -24,7 +24,7 @@ import org.scalatest._
 class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
 
 
-  "Validation can" - {
+  "Validation can check usernames" - {
     "allow normal usernames" in {
       Validation.checkUsername("killy_kat").isGood mustBe true
       Validation.checkUsername("mousemonster").isGood mustBe true
@@ -172,6 +172,103 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
       Validation.checkUsername("__").isBad mustBe true  // dupl non-alnum
       Validation.checkUsername("_.").isBad mustBe true  // dupl non-alnum
       Validation.checkUsername("..").isBad mustBe true  // dupl non-alnum
+    }
+  }
+
+
+  "Validation can check slugs" - {
+    import Validation.findCategorySlugProblem
+
+    "allow normal slugs" in {
+      findCategorySlugProblem("slug") mustBe None
+    }
+
+    "but not uppercase" in {
+      findCategorySlugProblem("sLUg") mustBe 'defined
+    }
+
+    "allow dashes" in {
+      findCategorySlugProblem("slug-dash") mustBe None
+      findCategorySlugProblem("slug-so-many-dashes-very") mustBe None
+    }
+
+    "but not double dashes in a row" in {
+      findCategorySlugProblem("slug--doubledash").get must include("TyECATSLGDD")
+    }
+
+    "allow short slugs but not empty" in {
+      findCategorySlugProblem("x") mustBe None
+      findCategorySlugProblem("").get must include("TyECATSLGEMP")
+    }
+
+    "allow long slugs but not too long" in {
+      findCategorySlugProblem(("a234567890" * 100).take(Category.MaxSlugLength)) mustBe None
+      findCategorySlugProblem(("a234567890" * 100).take(Category.MaxSlugLength + 1)
+        ).get must include("TyECATSLGLNG")
+    }
+
+    "disallow blanks" in {
+      findCategorySlugProblem(" slug").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug ").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("sl ug").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("sl\nug").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("sl\tug").get must include("TyECATSLGCHR")
+    }
+
+    "disallow non [a-z0-9-]" in {
+      findCategorySlugProblem("a-z0-9-is-fine") mustBe None
+      findCategorySlugProblem("汉字chinese").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slugåäö").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug{zz").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug.zz").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug#zz").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug?zz").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug/zz").get must include("TyECATSLGCHR")
+      findCategorySlugProblem("slug:zz").get must include("TyECATSLGCHR")
+    }
+
+    "disallow underscore, for now at least" in {
+      findCategorySlugProblem("slug_zz").get must include("TyECATSLGCHR")
+    }
+
+    "not start or end with dashes" in {
+      findCategorySlugProblem("-slug").get must include("TyECATSLGFST")
+      findCategorySlugProblem("slug-").get must include("TyECATSLGLST")
+    }
+
+    "there must be a letter, not only numbers and dashes" in {
+      findCategorySlugProblem("12345").get must include("TyECATSLGLTR")
+      findCategorySlugProblem("12345x") mustBe None
+      findCategorySlugProblem("12-45").get must include("TyECATSLGLTR")
+      findCategorySlugProblem("12-45x") mustBe None
+    }
+  }
+
+
+  "Validation can check external ids" - {
+    import Validation.findExtIdProblem
+
+    "disallow blank ext ids" in {
+      findExtIdProblem("") mustBe 'defined
+      // later:
+      //findExtIdProblem(" ") mustBe 'defined
+      //findExtIdProblem("   ") mustBe 'defined
+      //findExtIdProblem("\t") mustBe 'defined
+      //findExtIdProblem("\r") mustBe 'defined
+      //findExtIdProblem("\n") mustBe 'defined
+    }
+
+    "allow normal ext ids" in {
+      findExtIdProblem("extid") mustBe None
+      findExtIdProblem("1234567890") mustBe None
+    }
+
+    "allow 100 chars" in {
+      findExtIdProblem("1234567890" * 10) mustBe None
+    }
+
+    "but not 129 chars" in {
+      findExtIdProblem(("1234567890" * 13) dropRight 1) mustBe 'defined
     }
   }
 

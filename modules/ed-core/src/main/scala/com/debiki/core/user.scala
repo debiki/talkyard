@@ -894,11 +894,15 @@ case class UserInclDetails(  // ok for export
   deactivatedAt: Option[When] = None,
   deletedAt: Option[When] = None) extends MemberInclDetails with MemberMaybeDetails {
 
+  COULD; REFACTOR; QUICK // break out some of these tests to a fn shared with Group?
+
+  extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE2AKT057TM", s"Bad user extId: $problem")
+  }
+
   require(Participant.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
   require(externalId.forall(_.isTrimmedNonEmpty), "TyE5KBW0Z")
-  require(externalId.forall(extId => 1 <= extId.length), "TyE5AKBR20")
-  require(externalId.forall(extId => extId.length <= 200), "TyE5AKBR21")
   require(!username.contains(isBlank _), "EdE8FKY07")
   require(!primaryEmailAddress.contains(isBlank _), "EdE6FKU02")
   require(fullName == fullName.map(_.trim), "EdE3WKD5F")
@@ -1229,6 +1233,12 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   grantsTrustLevel: Option[TrustLevel] = None,
   uiPrefs: Option[JsObject] = None)
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
+
+  require(id >= Group.EveryoneId, "TyE4J5RKH24")
+
+  extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE5KSH2R7H", s"Bad group extId: $problem")
+  }
 
   require(!name.exists(_.trim.isEmpty), "TyE305MDW73")
   uiPrefs.flatMap(anyWeirdJsObjField) foreach { problemMessage =>

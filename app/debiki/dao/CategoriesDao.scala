@@ -89,12 +89,23 @@ case class CategoryToSave(
   extId: Option[ExtImpId] = None,
   anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
+  // -------Check cat slug, name, ext id: [05970KF5]----------------
+  // (dupl code, will disappear when replacing CategoryToSave with CategoryPatch)
+
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
 
-  //require ok ext id [05970KF5]
-  //require ok slug [05970KF5]
+  Validation.findCategoryNameProblem(name) foreach { problem =>
+    throwIllegalArgument("TyE305RKDTW01", s"Bad category name: $problem")
+  }
 
-  // ! + add ok chars db constraint [05970KF5], for ext id?  later, for slug too, but be sure to rm bad chars first.
+  Validation.findCategorySlugProblem(slug) foreach { problem =>
+    throwIllegalArgument("TyE305RKDTW02", s"Bad category slug: $problem")
+  }
+
+  extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE305RKDTW03", s"Bad category extId: $problem")
+  }
+  // ---------------------------------------------------------------
 
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 

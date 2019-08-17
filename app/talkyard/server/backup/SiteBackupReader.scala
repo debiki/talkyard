@@ -514,7 +514,6 @@ case class SiteBackupReader(context: EdContext) {
         return Bad(s"Not a json object, but a: " + classNameOf(bad))
     }
 
-
     lazy val theId = try readInt(jsObj, "id") catch {
       case ex: IllegalArgumentException =>
         return Bad(s"Invalid category id: " + ex.getMessage)
@@ -538,8 +537,6 @@ case class SiteBackupReader(context: EdContext) {
         return Good(Right(CategoryPatch(
           id, extImpId = extId, parentRef = parentRef, name = name, slug = slug,
           description = description, position = position)))
-
-          // ?? Where check slug, name, extId etc are valid (not too long, no weird chars) ?? [05970KF5]
       }
 
       val includeInSummariesInt = readOptInt(jsObj, "includeInSummaries")
@@ -547,14 +544,36 @@ case class SiteBackupReader(context: EdContext) {
       val includeInSummaries = IncludeInSummaries.fromInt(includeInSummariesInt) getOrElse {
         return Bad(s"Invalid includeInSummaries: $includeInSummariesInt")
       }
+
+      // ---- Remove this once only CategoryPatch above is used: [05970KF5] -----
+      // (dupl code, will disappear when replacing CategoryToSave with CategoryPatch)
+
+      require(theId != NoCategoryId, "EdE5LKAW0")
+
+      val extId = readOptString(jsObj, "extImpId")  // what? not "extId"?  RENAME
+      extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+        return Bad(problem)
+      }
+
+      val name =  readString(jsObj, "name")
+      Validation.findCategoryNameProblem(name) foreach { problem =>
+        return Bad(problem)
+      }
+
+      val slug = readString(jsObj, "slug")
+      Validation.findCategorySlugProblem(slug) foreach { problem =>
+        return Bad(problem)
+      }
+      // ------------------------------------------------------------------------
+
       Good(Left(Category(
         id = theId,
-        extImpId = readOptString(jsObj, "extImpId"),
+        extImpId = extId,
         sectionPageId = readString(jsObj, "sectionPageId"), // opt, use the one and only section
         parentId = readOptInt(jsObj, "parentId"),
         defaultSubCatId = readOptInt(jsObj, "defaultSubCatId", "defaultCategoryId"), // RENAME to ...SubCat...
-        name = readString(jsObj, "name"),
-        slug = readString(jsObj, "slug"),
+        name = name,
+        slug = slug,
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
         newTopicTypes = Nil, // fix later [readlater]

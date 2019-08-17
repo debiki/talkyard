@@ -126,7 +126,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       id: defaultCategoryId,
       parentCategoryId: rootCategoryId,
       name: "Default cat",
-      slug: 'defaultCat',
+      slug: 'default-cat',
       aboutPageText: "Default cat",
     });
 
@@ -134,14 +134,14 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       id: allSeeReplyCreateCatId,
       parentCategoryId: rootCategoryId,
       name: "allSeeReplyCreateCat",
-      slug: 'allSeeReplyCreateCat',
+      slug: 'allseereplycreatecat',
       aboutPageText: "About allSeeReplyCreateCat.",
     });
     forum.topics.allSeeReplyCreatePage = siteBuilder.addPage({
       dbgSrc: '382064001',
       id: 'allSeeReplyCreatePage',
       showId: false,
-      slug: 'allSeeReplyCreatePage',
+      slug: 'allseereplycreatepage',
       role: PageRole.Discussion,
       title: "Page allSeeReplyCreatePage Title",
       body: "Page allSeeReplyCreatePage text text text.",
@@ -163,7 +163,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       id: newSeeBasicReplyFullCreateCatId,
       parentCategoryId: rootCategoryId,
       name: "newSeeBasicReplyFullCreateCat",
-      slug: 'newSeeBasicReplyFullCreateCat',
+      slug: 'newseebasicreplyfullcreatecat',
       aboutPageText: "About newSeeBasicReplyFullCreateCat.",
     });
     siteBuilder.theSite.permsOnPages.push({
@@ -240,7 +240,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       dbgSrc: '382064002',
       id: 'newSeeBasicReplyFullCreatePageId',
       showId: false,
-      slug: 'newSeeBasicReplyFullCreatePageSlug',
+      slug: 'newseebasicreplyfullcreatepageslug',
       role: PageRole.Discussion,
       title: "Page newSeeBasicReplyFullCreatePage Title",
       body: "Page newSeeBasicReplyFullCreatePage text text text.",
@@ -263,14 +263,14 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       id: onlyStaffSeeCatId,
       parentCategoryId: rootCategoryId,
       name: "onlyStaffSeeCat",
-      slug: 'onlyStaffSeeCat',
+      slug: 'onlystaffseecat',
       aboutPageText: "About onlyStaffSeeCat.",
     });
     forum.topics.onlyStaffSeePage = siteBuilder.addPage({
       dbgSrc: '382064003',
       id: 'onlyStaffSeePageId',
       showId: false,
-      slug: 'onlyStaffSeePageSlug',
+      slug: 'onlystaffseepageslug',
       role: PageRole.Discussion,
       title: "Page onlyStaffSeePage Title",
       body: "Page onlyStaffSeePage text text text.",
@@ -297,14 +297,14 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
       id: onlyAdminsSeeCatId,
       parentCategoryId: rootCategoryId,
       name: "onlyAdminsSeeCat",
-      slug: 'onlyAdminsSeeCat',
+      slug: 'onlyadminsseecat',
       aboutPageText: "About onlyAdminsSeeCat.",
     });
     forum.topics.onlyAdminsSeePage = siteBuilder.addPage({
       dbgSrc: '382064004',
       id: 'onlyAdminsSeePageId',
       showId: false,
-      slug: 'onlyAdminsSeePageSlug',
+      slug: 'onlyadminsseepageslug',
       role: PageRole.Discussion,
       title: "Page onlyAdminsSeePage Title",
       body: "Page onlyAdminsSeePage text text text.",

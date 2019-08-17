@@ -203,10 +203,10 @@ object Prelude {
   // Copied from: http://stackoverflow.com/a/106223/694469
   // Supposedly adheres to http://tools.ietf.org/html/rfc952.
   // I appended "(:\d+)?" for the port number, so e.g. localhost:9000 works.
-  private val ValidHostAndPortRegexStr =
+  private val ValidHostAndPortRegexStr: String =
     """(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])(:\d+)?"""
 
-  private val ValidHostAndPortRegex = s"""^$ValidHostAndPortRegexStr$$""".r
+  private val ValidHostAndPortRegex: Regex = s"""^$ValidHostAndPortRegexStr$$""".r
 
   def isValidHostAndPort(hostAndPort: String): Boolean =
     ValidHostAndPortRegex.pattern.matcher(hostAndPort).matches
@@ -640,8 +640,11 @@ object Prelude {
   def charIsAzNumOrUnderscore(c: Char): Boolean =
     charIsAzOrNum(c) || c == '_'
 
+  def charIsAz(c: Char): Boolean =
+    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+
   def charIsAzOrNum(c: Char): Boolean =
-    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || charIsNum(c)
+    charIsAz(c) || charIsNum(c)
 
   def charIsNumOrDotDash(c: Char): Boolean = charIsNum(c) || c == '.' || c == '-'
 

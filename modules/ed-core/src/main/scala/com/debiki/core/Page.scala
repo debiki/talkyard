@@ -223,6 +223,11 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   htmlHeadDescription: String = "",
   numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
 
+
+  extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE5KT3RUD0", s"Bad page extId: $problem")
+  }
+
   require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, "DwE5JGY1")
   require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), "TyE7WKG2AG4")
   require(updatedAt.getTime >= createdAt.getTime, "TyE7WKG05KS")

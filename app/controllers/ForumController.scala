@@ -138,13 +138,13 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val extId = (categoryJson \  "extId").asOptStringNoneIfBlank
 
-    val categoryData = CategoryToSave(
+    val categoryData = try CategoryToSave(
       anyId = Some(categoryId),
       extId = extId,
       sectionPageId = sectionPageId,
       parentId = (categoryJson \ "parentId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
-      slug = (categoryJson \ "slug").as[String].toLowerCase,  // what? I don't restrict characters?? [05970KF5]
+      slug = (categoryJson \ "slug").as[String].toLowerCase,
       description = CategoriesDao.CategoryDescriptionSource,
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
@@ -152,21 +152,10 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       unlistCategory = unlistCategory,
       unlistTopics = unlistTopics,
       includeInSummaries = includeInSummaries)
-
-    import Category._
-
-    if (categoryData.name.isEmpty)
-      throwBadRequest("EsE5JGKU1", s"Please type a category name")
-
-    if (categoryData.name.length > MaxNameLength)
-      throwBadRequest("EsE8RSUY0", s"Too long category name: '${categoryData.name}'")
-
-    if (categoryData.slug.isEmpty)
-      throwBadRequest("EsE4PKL6", s"Please type a category slug")
-
-    if (categoryData.slug.length > MaxSlugLength)
-      throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
-      // + more tests, e.g. weird chars, whitespace in the middle?  [05970KF5]
+    catch {
+      case ex: IllegalArgumentException =>
+        throwBadRequest("TyEBADCATTOSAV", ex.getMessage)
+    }
 
     val permissions = ArrayBuffer[PermsOnPages]()
     permissionsJson.value foreach { permsJsValue: JsValue =>

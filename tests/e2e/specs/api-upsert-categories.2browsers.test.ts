@@ -37,7 +37,7 @@ const UpsCatOneSlug = 'ups-category-one';
 const UpsCatOneExtId = 'ups_cat_one_ext_id';
 const UpsCatOneDescr = 'Upserted Cat One description.';
 const UpsCatOneHandEditedName = 'UpsCatOneHandEditedName';
-const UpsCatOneHandEditedSlug = 'UpsCatOneHandEditedSlug';
+const UpsCatOneHandEditedSlug = 'upscatonehandeditedslug';
 
 const UpsCatTwoPosition = 54;
 const UpsCatTwoName = 'Ups Category Two pos ' + UpsCatTwoPosition;

@@ -46,6 +46,7 @@ object Validation {
     Good(name)
   }
 
+
   // CLEAN_UP don't return the email — looks as if it's maybe getting changed
   def checkEmail(email: String): String Or ErrorMessage = {
     if (!email.isEmpty && EmailOkCharsRegex.unapplySeq(email).isEmpty)
@@ -53,6 +54,7 @@ object Validation {
 
     Good(email)
   }
+
 
   def requireOkEmail(email: String, errorCode: String) {
     checkEmail(email) badMap { errorMessage =>
@@ -76,10 +78,11 @@ object Validation {
   val DeletedSuffixErrorMessage =
     s"The username contains the magic '${Member.DeletedUsernameSuffix}' suffix"
 
-  def justWeird(username: String, okayUsername: Option[String]): String = {
+  private def justWeird(username: String, okayUsername: Option[String]): String = {
     val tryInsteadWith = okayUsername.map(n => s"try instead with '$n'") getOrElse ""
     s"The username is weird: '$username', $tryInsteadWith [TyE2LKB57A]"
   }
+
 
   /** Allows only usernames like '123_some_username', 3 - 20 chars.
     */
@@ -127,4 +130,47 @@ object Validation {
     Good(username)
   }
 
+
+  val BadCategorySlugCharRegex: Regex = """.*([^a-z0-9-]).*""".r
+
+  def findCategorySlugProblem(slug: String): Option[ErrorMessage] = {
+    if (slug.isEmpty) return Some("Empty category slug [TyECATSLGEMP]")
+
+    if (slug.length > Category.MaxSlugLength) return Some(
+      s"Slug too long, max ${Category.MaxSlugLength} chars [TyECATSLGLNG]")
+
+    BadCategorySlugCharRegex.findGroupIn(slug) foreach { badChar =>
+      return Some(s"Bad category slug char: '$badChar', only [a-z0-9-] allowed [TyECATSLGCHR]")
+    }
+    if (slug.startsWith("-")) return Some("Category slug should not start with '-' [TyECATSLGFST]")
+    if (slug.endsWith("-")) return Some("Category slug should not end with '-' [TyECATSLGLST]")
+    if (slug.contains("--")) return Some("Category slug with double dashes '--' [TyECATSLGDD]")
+    if (!slug.exists(charIsAz)) return Some("Category slug has no letter [TyECATSLGLTR]")
+    None
+  }
+
+
+  def findCategoryNameProblem(name: String): Option[ErrorMessage] = {
+    if (name.isEmpty) return Some("No category name specified [TyECATNMEMP]")
+    if (name.length > Category.MaxNameLength) return Some(
+      s"Too long category name, longer than ${Category.MaxNameLength} chars [TyECATNMLEN]")
+
+    //For now:
+    None
+  }
+
+
+  val MaxExtIdLength: Int = 128  // sha512 in hex
+
+  def findExtIdProblem(extId: String): Option[ErrorMessage] = {  // [05970KF5]
+    if (extId.isEmpty) return Some("Empty external id [TyEEXTIDEMP]")
+    if (extId.length > MaxExtIdLength) return Some(
+      s"Too long external id, longer than $MaxExtIdLength chars [TyEEXTIDLNG]")
+
+    //For now: (there's a db constraint)
+    None
+    // \p{Graph}
+    // val p = java.util.regex.Pattern.compile("\\w+", java.util.regex.Pattern.UNICODE_CHARACTER_CLASS);
+    // db:   ~ '^[[:graph:]]([[:graph:] ]*[[:graph:]])?$' and length(text) between 1 and 128;
+    }
 }

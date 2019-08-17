@@ -62,7 +62,7 @@ class PageNotfPrefTxSpec extends DaoAppSuite() {
           sectionPageId = createForumResult.pagePath.pageId,
           parentId = createForumResult.staffCategoryId,
           name = "Other Category",
-          slug = "otherCategory",
+          slug = "other-category",
           description = "Descr, other cat",
           position = 11,
           newTopicTypes = List(PageType.Discussion),

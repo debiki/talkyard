@@ -511,8 +511,8 @@ object ForumDao {
 
   private val WelcomeToForumTopicPinOrder = 5
 
-  private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
-  private val RootCategorySlug = "(root-category)"  //
+  private val RootCategoryName = "(Root Category)"    // In Typescript test code too [7UKPX5]
+  private val RootCategorySlug = "root-category-001"  //
 
   private val UncategorizedCategoryName = "General" // I18N everywhere here
   private val UncategorizedCategorySlug = "general"

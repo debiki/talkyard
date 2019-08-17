@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import Prelude._
 import java.{util => ju}
 import scala.collection.immutable
 
@@ -89,9 +90,11 @@ case class Category(  // [exp] ok use
 
   import Category._
 
+  // Don't check for weird chars here — that might prevent loading [categories that
+  // already include weird chars] from the database. Instead, check when saving: [05970KF5]
   require(slug.nonEmpty, "EsE6MPFK2")
-  require(slug.length <= MaxSlugLength, "EsE4ZXW2")  // what? I don't check werid chars? [05970KF5]
-                                                      // + name ok, extId, new topic type ids?
+  require(slug.length <= MaxSlugLength, "EsE4ZXW2")
+
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
   require(!isRoot || defaultSubCatId.isDefined,
@@ -112,6 +115,7 @@ case class Category(  // [exp] ok use
 
 
 object Category {
+  val MinId = 1
   val MaxNameLength = 50
   val MaxSlugLength = 50
   val MaxDescriptionLength = 1000
@@ -129,5 +133,21 @@ case class CategoryPatch(
   description: Option[String],
   position: Option[Int]) {
 
-  // Check for weird chars in slug [05970KF5]
+  // -------Check cat slug, name, ext id: [05970KF5]----------------
+  // (dupl code, the *other* code will disappear when replacing CategoryToSave with CategoryPatch)
+
+  require(id.forall(_ >= Category.MinId), "TyE7KRDGTS25")
+
+  name.flatMap(Validation.findCategoryNameProblem) foreach { problem =>
+    throwIllegalArgument("TyE702RKDTW01", s"Bad category name: $problem")
+  }
+
+  slug.flatMap(Validation.findCategorySlugProblem) foreach { problem =>
+    throwIllegalArgument("TyE702RKDTW02", s"Bad category slug: $problem")
+  }
+
+  extImpId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE702RKDTW03", s"Bad category extId: $problem")
+  }
+  // ---------------------------------------------------------------
 }
