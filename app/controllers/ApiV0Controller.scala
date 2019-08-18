@@ -143,6 +143,15 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
 
         TemporaryRedirect(thenGoTo)
             .withCookies(sidAndXsrfCookies: _*)
+
+      // Later:
+      // /-/v0/comments-feed —> lists all recent blog comments   [CMTSFEED]
+      // /-/v0/comments-feed?forEmbeddingHost=www.myblog.com — if a multi-host blog
+      // Or:
+      // /-/v0/embedded-comments-feed ?  Probably better — "comment" can be interpreted
+      // as StackOverflow style "comments" below a Q&A answer post.
+      //
+      // Whilst this (/-/v0/feed) is about the Talkyard site only and links to it:
       case "feed" =>
         /*
         https://server.address/-/v0/recent-posts.rss

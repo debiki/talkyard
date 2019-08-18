@@ -56,13 +56,39 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
     if (!hostUrl.startsWith("http"))
       warnDbgDie("Bad host URL: "+ safed(hostUrl))
 
-    val baseUrl = hostUrl +"/"
-    def urlTo(pp: PagePath) = baseUrl + pp.value.dropWhile(_ == '/')
+    def atomEntryFor(post: Post, page: PageStuff): Option[NodeSeq] = {
+      if (post.isTitle) {
+        // Generate an entry only for the page body with the actual text — skip the title.
+        return None
+      }
+      if (page.pageRole == PageType.EmbeddedComments && post.isOrigPost) {
+        // Then this is an auto generated text like "Comments for ..." — pretty
+        // uninteresting; don't generate any entry.
+        return None
+      }
 
-    def atomEntryFor(post: Post, page: PageStuff): NodeSeq = {
       //val pageBodyAuthor =
       //      pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
-      val urlToPage = hostUrl + "/-" + page.pageId  // for now
+
+      val urlToPageAndPost = hostUrl + "/-" + page.pageId + "#post-" + post.nr  // for now
+
+      // If this is a blog comment, let's include a link to the comment over at the
+      // embedding site, in a rel=alternate link.
+      //
+      // Later: [CMTSFEED] Add a /-/v0/comments-feed that only includes blog comments, and
+      // in the primary <id> links, links to the *embedding* site. This feed bloggers
+      // can use, to embed a recent-comments feed in their blog — then, the recent
+      // comments entries will link to their *blog*, not the Talkyard site.
+      // But let the /-/v0/feed feed be about the Talkyard site, with links to
+      // the Talkyard site the <id> links (as is done now); only link to any
+      // embedding site in these secondary "alternate" links.
+      //
+      val commentNr = post.nr - 1 // the comment nr is post nr - 1  [2PAWC0].
+      val anyEmbeddedCommentUrl =
+        page.pageMeta.embeddingPageUrl.map(_ + "#comment-" + commentNr)
+      val anyAlternateUrlToEmbeddingPage = anyEmbeddedCommentUrl map { url =>
+        <link rel="alternate" href={url}/>
+      } getOrElse xml.Null
 
       // Convert HTML to XHTML.
       // Atom parsers wants xml — they apparently choke on unclosed html tags.
@@ -77,10 +103,10 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
         .escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml)
       val postXhtml: String = jsoupDoc.body().html()
 
-      <entry>{
+      val entry = <entry>{
         /* Identifies the entry using a universally unique and
         permanent URI. */}
-        <id>{urlToPage + "#post-" + post.nr}</id>{
+        <id>{urlToPageAndPost}</id>{
         /* Contains a human readable title for the entry. */}
         <title>{page.title}</title>{
         /* Indicates the last time the entry was modified in a
@@ -99,9 +125,9 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
         of the entry.  -- but that shouldn't be the ctime, the page
         shouldn't be published at creation.
         COULD indroduce a page's publishedTime? publishing time?
-        <published>{toIso8601T(ctime)}</published> */
-        /* Identifies a related Web page. */}
-        <link rel="alternate" href={urlToPage}/>{
+        <published>{toIso8601T(ctime)}</published> */ }{
+        /* Identifies a related Web page. */
+        anyAlternateUrlToEmbeddingPage }{
         /* Contains or links to the complete content of the entry. */}
         <content type="xhtml">
           <div xmlns="http://www.w3.org/1999/xhtml">
@@ -109,6 +135,8 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
           </div>
         </content>
       </entry>
+
+      Some(entry)
     }
 
     val feedUrl = hostUrl + routes.ApiV0Controller.getFromApi("feed")
@@ -133,7 +161,7 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
       <generator uri="https://www.talkyard.io">Talkyard</generator>
       {
         posts flatMap { post =>
-          pageStuffById.get(post.pageId) map { page =>
+          pageStuffById.get(post.pageId) flatMap { page =>
             atomEntryFor(post, page)
           }
         }
