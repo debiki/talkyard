@@ -146,21 +146,24 @@ class PlainApiActions(
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
       }
-      val talkyardIdPrefix = "talkyardId="   // RENAME to 'tyid=...'
-      val externalIdPrefix = "externalId="   // RENAME to extSsoId? no, just ssoid=... (cmp w extid:...)?, for consistency [395KSH20]. Or not?
+      val tyIdPrefix = "tyid="
+      val talkyardIdPrefix = "talkyardId="   // DEPRECATED 2019-08-18 v0.6.43
+      val ssoIdPrefix = "ssoid="
+      val externalIdPrefix = "externalId="   // DEPRECATED 2019-08-18 v0.6.43  [395KSH20]
       val anyUser: Option[Participant] =
-        if (username.startsWith(talkyardIdPrefix)) {
-          val userIdStr = username.drop(talkyardIdPrefix.length)
-          val userId = userIdStr.toIntOrThrow("TyEAPIUSERID", s"Talkyard user id is not a number: $userIdStr")
+        if (username.startsWith(tyIdPrefix) || username.startsWith(talkyardIdPrefix)) {
+          val userIdStr = username.dropWhile(_ != '=').drop(1)
+          val userId = userIdStr.toIntOrThrow(
+            "TyEAPIUSERID", s"Talkyard user id is not a number: $userIdStr")
           dao.getParticipant(userId)
         }
-        else if (username.startsWith(externalIdPrefix)) {
-          val externalId = username.drop(externalIdPrefix.length)
-          dao.getMemberByExternalId(externalId)
+        else if (username.startsWith(ssoIdPrefix) || username.startsWith(externalIdPrefix)) {
+          val ssoId = username.dropWhile(_ != '=').drop(1)
+          dao.getMemberBySsoId(ssoId)
         }
         else {
           throwBadRequest("TyESSOUSERNAME",
-              s"Username doesn't start with '$talkyardIdPrefix' or '$externalIdPrefix': $username")
+              s"Username doesn't start with '$tyIdPrefix' or '$ssoIdPrefix': $username")
         }
 
       val user = anyUser getOrElse throwNotFound("TySSO0USR", s"User not found: $username")
@@ -371,7 +374,10 @@ class PlainApiActions(
         }
       }
 
-      if (!allowAnyone && !isLogin) {
+      if (!allowAnyone && !isLogin
+          // HACK, CLEAN_UP, QUICK [SSOBUGHACK]
+          && request.path != "/-/v0/login-with-secret") {
+
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
         def goToHomepageOrIfXhrThen(block: => Unit) {

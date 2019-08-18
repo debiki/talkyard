@@ -855,14 +855,14 @@ trait UserDao {
   }
 
 
-  def getMemberByExternalId(externalId: String): Option[Participant] = {
+  def getMemberBySsoId(ssoId: String): Option[Participant] = {
     COULD_OPTIMIZE // can in-mem cache
-    loadMemberInclDetailsByExternalId(externalId).map(_.briefUser)
+    loadMemberInclDetailsBySsoId(ssoId).map(_.briefUser)
   }
 
 
-  def loadMemberInclDetailsByExternalId(externalId: String): Option[UserInclDetails] = {
-    readOnlyTransaction(_.loadUserInclDetailsByExternalId(externalId))
+  def loadMemberInclDetailsBySsoId(ssoId: String): Option[UserInclDetails] = {
+    readOnlyTransaction(_.loadUserInclDetailsBySsoId(ssoId))
   }
 
 

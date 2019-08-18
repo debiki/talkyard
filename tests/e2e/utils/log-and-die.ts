@@ -4,6 +4,7 @@ const boringColor = ansiColors.gray;
 const errorColor = ansiColors.bold.yellow.bgRed;
 const warningColor = ansiColors.bold.red;
 const unusualColor = ansiColors.black.bgGreen;
+const serverRequestColor = ansiColors.bold.cyan;
 
 
 const api = {
@@ -20,6 +21,9 @@ const api = {
   },
   logError: function (message: string) {
     console.log(errorColor(message));
+  },
+  logServerRequest: function(message: string) {
+    console.log(serverRequestColor(message));
   },
   printBoringToStdout: function(message: string) {
     process.stdout.write(boringColor(message));

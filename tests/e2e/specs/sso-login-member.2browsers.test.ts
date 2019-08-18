@@ -41,7 +41,7 @@ const mariasExternalId = 'mariasExternalId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
 
 
-describe("sso-real  TyT5HNATS20P", () => {
+describe("sso-login-member  TyT5HNATS20P", () => {
 
   it("import a site", () => {
     const builder = buildSite();

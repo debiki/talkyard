@@ -443,8 +443,11 @@ interface LargeTestForum extends EmptyTestForum {
 }
 
 
+// QUICK RENAME to SingleSignOnUser?  Because ExternalUser is instead nowadays for upserting
+// users via API — might possibly evolve a bit differently from the SSO api.
 interface ExternalUser {   // sync with Scala [7KBA24Y]
-  externalUserId: string;
+  ssoId: string;
+  //externalUserId: string; //  deprecated, 2019-08-18
   primaryEmailAddress: string;
   isEmailAddressVerified: boolean;
   username?: string;

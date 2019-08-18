@@ -48,7 +48,7 @@ let oneTimeLoginSecret: string;
 let returnToPathQueryEscHash: string;
 
 
-describe("sso-real  TyT5HNATS20P", () => {
+describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
 
   it("import a site", () => {
     const builder = buildSite();

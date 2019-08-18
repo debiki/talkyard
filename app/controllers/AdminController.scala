@@ -122,7 +122,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val origin = globals.originOf(request.host)
     val url = origin +
-      controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +
+      controllers.routes.ApiV0Controller.getFromApi("login-with-secret") +   // [305KDDN24]
       "?oneTimeSecret=" + secret + "&thenGoTo=/-/users/" + user.theUsername
 
     val email = Email(

@@ -40,7 +40,7 @@ const majasExternalId = 'majasExternalId';
 const majasReplyText = "I login as usual, although SSO is being tested.";
 
 
-describe("sso-real  TyT5HNATS20P", () => {
+describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
 
   it("import a site", () => {
     const builder = buildSite();

@@ -1,7 +1,7 @@
 
 ```
 {
-	"externalUserId": "ext2",
+	"ssoId": "ext2",
 	"primaryEmailAddress": "ext12x.co",
 	"isEmailAddressVerified": true,
 	"username": "ext2_un",

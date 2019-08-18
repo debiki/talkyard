@@ -838,7 +838,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUserInclDetailsByExternalId(externalId: String): Option[UserInclDetails] = { // RENAME to ...BySsoId
+  def loadUserInclDetailsBySsoId(externalId: String): Option[UserInclDetails] = {
     loadMemberInclDetailsImpl("sso_id", externalId)
   }
 

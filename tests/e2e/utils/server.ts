@@ -6,7 +6,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import utils = require('./utils');
 import c = require('../test-constants');
-import { logMessage, logWarning, die, dieIf } from './log-and-die';
+import { logMessage, logWarning, logServerRequest, die, dieIf } from './log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -14,7 +14,7 @@ const syncRequest = require('sync-request');
 
 let xsrfTokenAndCookies;
 
-let settings;
+let settings: TestSettings;
 
 function initOrDie(theSettings) {
   settings = theSettings;
@@ -62,7 +62,27 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
         'Cookie': xsrfTokenAndCookies[1]
       });
 
-  logMessage(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
+  logServerRequest(`POST ${url}, headers: ${ JSON.stringify(headers) } ... [TyME2EPOST]`);
+
+  // Log the request as a copy-pasteable cURL command, so one can re-run this server request
+  // manually, for testing & debugging.
+  let curlHeadersTexts = []
+  _.each(headers, (value, key) => {
+    dieIf(value.indexOf("'") >= 0, "Header value contains ' [TyE305KTH3KTS]");
+    curlHeadersTexts.push(`-H '${key}: ${value}'`);
+  });
+  let curlDataText = JSON.stringify(data).replace("'", "'\\''");
+  if (curlDataText.length > 1000 && settings.logLevel != 'verbose') {
+    // This is a bit much json, makes the logs annoyingly verbose. So truncate. Won't be
+    // copy-pasteable.
+    curlDataText = curlDataText.substr(0, 1000) + '\n       ...';
+  }
+  logServerRequest(`curl  \\
+    -X POST  \\
+    -H 'Content-Type: application/json'  \\
+    ${curlHeadersTexts.join('  \\\n    ')}  \\
+    -d '${curlDataText}'  \\
+    ${url}`);
 
   const response = syncRequest('POST', url + passwordParam, { json: data, headers: headers });
   const responseBody = getResponseBodyString(response);
@@ -102,7 +122,7 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
 
 function getOrDie(url) {
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2KU603]");
-  logMessage('GET ' + url);
+  logServerRequest('GET ' + url);
 
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
@@ -412,6 +432,10 @@ function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, api
       url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
   dieIf(!responseJson.loginSecret, "No login secret in API response [TyE4AKBA05]",
     showResponseBodyJson(responseJson));
+  logServerRequest("Now you can try:\n    " +
+      ps.origin + '/-/v0/login-with-secret' +
+      '?oneTimeSecret=' + responseJson.loginSecret +
+      '&thenGoTo=/');
   return responseJson.loginSecret;
 }
 

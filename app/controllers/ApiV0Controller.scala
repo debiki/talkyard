@@ -113,8 +113,14 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         backupController.exportSiteJsonImpl(request)
 
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
-      case "sso-login" |  // deprecated name, remove
+      case "sso-login" | // deprecated name, remove (because login secrets are generated
+           // in more ways than just sso. E.g. for one-time-login via email, [305KDDN24]).
            "login-with-secret" =>
+        // [SSOBUGHACK] This endpoint should not be inside ApiV0Controller.
+        // Instead, it needs to be in its own GetAction, with isLogin=true, so
+        // one can reach it also if login required to read content. Otherwise,
+        // if login required, then, SSO won'twork, because ... one would need to be
+        // logged in already, to login  :- P
 
         // Dupl code? Use this API endpoint also from impersonateWithKey?   [7AKBRW02]
 
@@ -191,8 +197,11 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     apiEndpoint match {
       case "sso-upsert-user-generate-login-secret" |
         "upsert-external-user-generate-login-secret" =>  // deprecated name, remove
-        val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y]
-          externalId = (body \ "externalUserId").as[String].trim,   // RENAME to userSsoId? [395KSH20]
+        val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
+          externalId =  // RENAME to ssoId
+            (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
+                  (body \ "externalUserId") // DEPRECATED 2019-08-18 v0.6.43
+                    .as[String]).trim,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
           username = (body \ "username").asOptStringNoneIfBlank,
@@ -213,7 +222,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           // Look up by email. If found, reuse account, set external id, and login.
           // Else, create new user with specified external id and email.
 
-          tx.loadUserInclDetailsByExternalId(extUser.externalId).map({ user =>  // (7KAB2BA)
+          tx.loadUserInclDetailsBySsoId(extUser.externalId).map({ user =>  // (7KAB2BA)
             dieIf(user.externalId isNot extUser.externalId, "TyE5KR02A")
             // TODO update fields, if different.
             if (extUser.primaryEmailAddress != user.primaryEmailAddress) {

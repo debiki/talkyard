@@ -71,7 +71,7 @@ const utils = {
   },
 
   makeExternalUserFor: (member: Member, opts: {
-    externalId: string,
+    externalId: string,  // RENAME QUICK to ssoId
     primaryEmailAddress?: string,
     isEmailAddressVerified?: boolean,
     username?: string,
@@ -82,7 +82,7 @@ const utils = {
     isModerator?: boolean,
   }): ExternalUser => {
     return {
-      externalUserId: opts.externalId,
+      ssoId: opts.externalId,
       primaryEmailAddress: firstDefinedOf(opts.primaryEmailAddress, member.emailAddress),
       isEmailAddressVerified: firstDefinedOf(opts.isEmailAddressVerified, !!member.emailVerifiedAtMs),
       username: firstDefinedOf(opts.username, member.username),

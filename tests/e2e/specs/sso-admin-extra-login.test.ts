@@ -30,7 +30,7 @@ let forum: LargeTestForum;
 let discussionPageUrl: string;
 
 
-describe("some-e2e-test [TyT1234ABC]", () => {
+describe("sso-admin-extra-login  TyT03WKDTRP50", () => {
 
   it("import a site", () => {
     const builder = buildSite();

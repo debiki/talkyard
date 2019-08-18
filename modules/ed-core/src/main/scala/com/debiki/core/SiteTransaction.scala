@@ -451,7 +451,7 @@ trait SiteTransaction {
 
   def loadUserByPrimaryEmailOrUsername(emailOrUsername: String): Option[User]
   def loadMemberByUsername(username: String): Option[Member]
-  def loadUserInclDetailsByExternalId(externalId: String): Option[UserInclDetails]
+  def loadUserInclDetailsBySsoId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
 
   def loadUsersWithPrefix(usernamePrefix: String): immutable.Seq[User]

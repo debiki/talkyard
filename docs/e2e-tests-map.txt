@@ -49,6 +49,7 @@ create account -
   reserved username:
 
 login -
+  single sign-on: (3093533)
   guest:  # copy-edit unsubscribe.2browsers.test.ts + use signUpLogInAs_Real_Guest
           - embedded-comments-guest-login-email-notf-unsbscribe.test.ts  TyT5WBK0267
   cookieless:
@@ -86,6 +87,14 @@ login -
           - settings-toggle-login-required.3browsers.test.ts  TyT4GKBW20
   login-required site, with openauth:
           - login-required-oauth-signup-login.test.ts  TyT406MRTJW2
+
+sso,
+single-sign-on:  (3093533)
+          - sso-test  TyT4ABKRW0268
+          - sso-login-member  TyT5HNATS20P
+          - sso-admin-extra-login.test.ts  TyT03WKDTRP50
+          - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
+          - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
 
 different users -
   login, logout, switch user:  almost all tests
