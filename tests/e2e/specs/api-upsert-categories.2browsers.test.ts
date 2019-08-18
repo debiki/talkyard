@@ -64,6 +64,11 @@ const UpsCatThreeDescr = 'Upserted Cat Three description.';
 
 describe("api-upsert-categories  TyT94DFKHQC24", () => {
 
+  if (settings.prod) {
+    console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
+    return;
+  }
+
   it("import a site", () => {
     const builder = buildSite();
     forum = builder.addTwoPagesForum({

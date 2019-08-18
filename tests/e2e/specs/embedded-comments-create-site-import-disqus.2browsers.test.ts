@@ -44,6 +44,11 @@ const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
 
 describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () => {
 
+  if (settings.prod) {
+    console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
+    return;
+  }
+
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     owensBrowser = _.assign(browserA, pagesFor(browserA));
