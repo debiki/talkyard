@@ -1669,6 +1669,10 @@ function pagesFor(browser) {
         assert(!browser.isVisible(api.userProfilePage.avatarAboutButtonsSelector));
       },
 
+      clickSingleSignOnButton: () => {
+        browser.waitAndClick('.s_LD_SsoB');
+      },
+
       createPasswordAccount: function(data: { fullName, username, email?, emailAddress?, password },
             shallBecomeOwner?: boolean, anyVerifyEmail?) {
 

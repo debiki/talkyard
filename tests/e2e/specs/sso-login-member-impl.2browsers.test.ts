@@ -8,6 +8,7 @@ import { buildSite } from '../utils/site-builder';
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import c = require('../test-constants');
+import { die, dieIf } from '../utils/log-and-die';
 
 declare var browser: any;
 declare var browserA: any;
@@ -41,7 +42,15 @@ const mariasExternalId = 'mariasExternalId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
 
 
-describe("sso-login-member  TyT5HNATS20P", () => {
+// Previously, there was a bug [SSOBUGHACK] when combining SSO with Login Required,
+// so let's test those combinations.
+
+function constructSsoLoginTest(testName: string, variants: {
+      loginRequired: boolean,
+      approvalRequired: boolean }) {  describe(testName, () => {  // I don't want to reindent now
+
+  dieIf(variants.approvalRequired,
+      "Not impl: variants.approvalRequired [TyE305KDKSHT20]")  // see (unimpl3904643)
 
   it("import a site", () => {
     const builder = buildSite();
@@ -92,17 +101,34 @@ describe("sso-login-member  TyT5HNATS20P", () => {
   it("... goes to the login settings", () => {
     owensBrowser.adminArea.goToLoginSettings();
   });
+
   it("... and types an SSO login URL", () => {
+    owensBrowser.scrollToBottom(); // just speeds the test up slightly
     owensBrowser.adminArea.settings.login.typeSsoUrl(ssoUrl);
   });
 
   it("... and enables SSO", () => {
+    owensBrowser.scrollToBottom(); // just speeds the test up slightly
     owensBrowser.adminArea.settings.login.setEnableSso(true);
   });
 
   it("... and saves the new settings", () => {
     owensBrowser.adminArea.settings.clickSaveAll();
   });
+
+
+  if (variants.loginRequired || variants.approvalRequired) {
+    it("Owen enables Login Requred and/or Approval Required", () => {
+      owensBrowser.scrollToTop(); // just speeds the test up slightly
+      if (variants.loginRequired) {
+        owensBrowser.adminArea.settings.login.setLoginRequired(true);
+      }
+      if (variants.approvalRequired) {
+        owensBrowser.adminArea.settings.login.setApproveUsers(true);
+      }
+      owensBrowser.adminArea.settings.clickSaveAll();
+    });
+  }
 
 
   // ------ Maria logs in via SSO
@@ -116,7 +142,18 @@ describe("sso-login-member  TyT5HNATS20P", () => {
   it("... clicks Log In, gets redirected to the SSO page", () => {
     mariasUrlBeforeLogin = mariasBrowser.url().value;
     mariasBrowser.rememberCurrentUrl();
-    mariasBrowser.topbar.clickLogin();   // [TyT2ABKR058TN2]
+
+    if (variants.loginRequired) {
+      // No topbar visible, unless logged in already. Instead, a "full screen"
+      // login button is all Maria sees.
+      mariasBrowser.loginDialog.clickSingleSignOnButton();
+    }
+    else {
+      // The forum is visible also without login, and in the topbar, there's a Login button,
+      // which redirects to the single-sign-on page.
+      mariasBrowser.topbar.clickLogin();   // [TyT2ABKR058TN2]
+    }
+
     mariasBrowser.waitForNewUrl();
   });
 
@@ -134,7 +171,6 @@ describe("sso-login-member  TyT5HNATS20P", () => {
 
   it("The remote server does an API request to Talkyard, to synchronize her account", () => {
     const externalMaria = utils.makeExternalUserFor(maria, { externalId: mariasExternalId });
-    console.log(`externalMaria: ${ JSON.stringify(externalMaria) }`);
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
         requesterId: c.SysbotUserId, apiSecret, externalUser: externalMaria });
   });
@@ -158,6 +194,27 @@ describe("sso-login-member  TyT5HNATS20P", () => {
     const url = mariasBrowser.url().value;
     assert.equal(url, discussionPageUrl);
   });
+
+
+  if (variants.approvalRequired) {
+    it("There's a message to Maria that she's not yet approved", () => {
+      mariasBrowser.assertMayNotLoginBecauseNotYetApproved();
+    });
+
+    it("Owen approves Maria to join the site", () => {
+      owensBrowser.adminArea.goToUsersEnabled();
+      owensBrowser.adminArea.users.switchToWaiting();
+      owensBrowser.adminArea.users.waiting.approveFirstListedUser();
+    });
+
+    it("Maria reloads the page", () => {
+      mariasBrowser.refresh();
+      // ... Oh she actually needs to login again. Thereafter, will work. (unimpl3904643)
+      // But right now, this blocks forever.
+      // TESTS_MISSING
+    });
+  }
+
 
   it("Maria is logged in now, as Maria", () => {
     const username = mariasBrowser.topbar.getMyUsername();
@@ -208,5 +265,6 @@ describe("sso-login-member  TyT5HNATS20P", () => {
   */
 
 
-});
+}); }
 
+export default constructSsoLoginTest;
