@@ -15,7 +15,7 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Discussion software. Open source, install yourself. There's SaaS hosting too.
+Forum software, brings together the best from StackOverflow, Discourse, Slack etc.
 
 <!--
 Create a place to talk,
@@ -26,18 +26,22 @@ Place it at `talkyard.Your-Website.org`.
 -->
 
  - **Save time.** People find help "instantly", in Question & Answers topics.
- - **Crowdsource ideas and feedback.** Discuss, upvote, pick the right things to do.
+ - **Crowdsource feedback and ideas.** Discuss, upvote, choose the right things to do.
  - **Collaborate,** in team chats.
  - **Talk with your blog readers,** in embedded comments.
 
 For your co-workers / customers /
 students / volunteers /
-contributors / users / community.
-Brings together the best from StackOverflow, Slack, Discourse, Reddit, HackerNews, Disqus.
+contributors / users.
+
+But how does it compare with
+StackOverflow for Teams, Discourse, Slack, Facebook Groups, Disqus?<br>
+— <a href="https://www.talkyard.io/compared-with">Find out here.</a>
 
 
-This Git repository is for *development*. **installation instructions** are elsewhere:<br>
-https://github.com/debiki/talkyard-prod-one
+This Git repository is for *development*.<br>
+**Installation instructions** are elsewhere: https://github.com/debiki/talkyard-prod-one.<br>
+There's a hosting service: https://www.talkyard.io.
 
 <!--
 For your students / volunteers / colleagues / customers / donors /
@@ -50,7 +54,7 @@ open source users / city / community. -->
 
 <!-- (The staff configure the topic type just once, in a per category setting.) -->
 
-[**Support forum here**](https://www.talkyard.io/forum/latest/support), at Talkyard<i></i>.io — and report bugs there too.
+[**Support forum here**](https://www.talkyard.io/forum/latest/support) (& live "demo"), at Talkyard<i></i>.io — and report bugs there too.
 
 <!--
 Use Talkyard for your workplace, as a self building FAQ. Or for customer support.
@@ -70,31 +74,21 @@ Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat
 And embedded comments for static websites / blogs.
 Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus. -->
 
-Screenshots a bit below.<br>
-See it live: https://www.talkyard.io/forum/latest<br>
-Read about it, and demo forums: https://www.talkyard.io
-
 You'll find **Docker image** build files in: <code>./images/<i>image-name</i>/</code>
 
 This is beta software; there might be bugs.
 
 
+<!-- Some Features -----------
+- Avoid mistakes: See if people disagree.
+- Anonymous questions: So people dare to ask embarassing questions, or post crazy creative ideas.
+- 
+- 
+-->
+
+
 Screenshots
 -----------
-
-### Topic list:
-
-<!--
-![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
- the old demo forum looks better? so use instead.  -->
-
-![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
-<!--
-![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
-
-![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
-
-<br>
 
 ### Question-Answers:
 
@@ -108,13 +102,24 @@ The good answers surface to the top.
 ![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
 -->
 
+### Avoid mistakes
+
+See if others disagree with something, so you can avoid following the wrong advice.
+
+<br>
+
+![Avoid mistakes](https://tyw-49f8.kxcdn.com/-/u/e7ef490a72/2/m/nu/zecljq7vwtuyxqfabsjwqzg6bfmyvr.jpg)
+
+<br>
+
+
 ### Recent replies — find them:
 
 You leave for lunch, or go home over the night — and return to a Question-Answers topic the next day. Did someone post more replies, when you were away? You want to find and read?
 
-At StackOverflow, Reddit, HackerNews and everywhere else, it's hard to find them. You need to carefully scan the whole discussion from top to bottom. This can take an hour, e.g. a large discusson at Reddit or HN — often I just don't do this at all, becasue, too much work.
+You can directly find the most recent answers and replies: Open the sidebar, click the Recent tab, and find the most recent replies, click to scroll.
 
-Talkyard lets you directly find the most recent answers and replies, although the discussion is threaded: Open the sidebar, click the Recen tab, and find the most recent replies, click to scroll.
+(But at StackOverflow, Reddit, HackerNews etc, it's hard to find them (since the discussions are threaded). You need to carefully scan the whole discussion from top to bottom.)
 
 <br>
 <br>
@@ -123,6 +128,20 @@ Talkyard lets you directly find the most recent answers and replies, although th
 
 <!--
 ![Recent replies](/images/web/ty-media/for-docs/2019-08-10--recent-replies-ex-anon-arw.jpg?raw=true "Recent replies") -->
+
+<br>
+
+### Topic list:
+
+<!--
+![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
+ the old demo forum looks better? so use instead.  -->
+
+![ideas-topics](https://raw.githubusercontent.com/debiki/talkyard-media/bf78d26ec3f4da976d9c694a660d40b718d86043/for-docs/2019-08-10-idea-topics-list-ex.jpg "Topics list")
+<!--
+![ideas-topics](/images/web/ty-media/for-docs/2019-08-10-idea-topics-list-ex.jpg?raw=true "Topics list")
+
+![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg) -->
 
 <br>
 
