@@ -5,7 +5,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: ${INTERNAL_NET_SUBNTET}
+        - subnet: ${INTERNAL_NET_SUBNET}
 
 services:
   web:
