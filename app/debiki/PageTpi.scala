@@ -144,6 +144,7 @@ class SiteTpi protected (
 
   def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
 
+  CLEAN_UP // isAdminApp not needed? already has isAdminArea.
   def debikiScriptsInHead(isInLoginWindow: Boolean = false, isAdminApp: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
@@ -238,9 +239,7 @@ class SiteTpi protected (
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    json getOrElse debikiRequest.dao.jsonMaker.makeSpecialPageJson(debikiRequest,
-      // The admin app is its own single-page-app and doesn't need the categories. [6TKQ20]
-      inclCategoriesJson = !isAdminArea).toString()
+    json getOrElse debikiRequest.dao.jsonMaker.makeSpecialPageJson(debikiRequest).toString()
 
 
   def assetUrl(fileName: String): String = assetUrlPrefix + fileName

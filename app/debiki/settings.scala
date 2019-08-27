@@ -519,7 +519,7 @@ object EffectiveSettings {
         .flatMap(_.split(" "))
         .filterNot(word => word.isEmpty)
 
-    // Exclude the url path = $3.
+    // Exclude the url path = $3.  [402KSHRJ3]
     val sourcesNoPath = ancestorSourcesMaybePath.map(UrlPathRegex.replaceAllIn(_, "$1$2"))
     sourcesNoPath foreach { source =>
       if (!okSources.contains(source)) {

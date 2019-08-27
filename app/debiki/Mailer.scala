@@ -145,6 +145,14 @@ object Mailer {
             check server identity: $checkServerIdentity,
             insecureTrustAllHosts: $insecureTrustAllHosts,
             from addr: $fromAddress [TyMEMAILCONF]""")
+        if (requireStartTls && connectWithTls) {
+          p.Logger.warn(o"""Weird email config: both require-STARTTLS and
+          connect-directly-with-TLS have been configured, but I can do only *one*
+          of those things. I'll try STARTTLS. but won't connect directly over TLS.
+          — In play-framework.conf, please comment out one of:
+          talkyard.smtp.requireStartTls and talkyard.smtp.connectWithTls.
+          (You can keep talkyard.smtp.enableStartTls though.) [TyEDBLMAILCONF]""")  // [DBLMAILCONF]
+        }
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory,
@@ -405,6 +413,7 @@ class Mailer(
     // 1. Apache Commons Email uses "SSL" in the name, although smtp servers accept
     // TLS and we use TLS only (we've disabled SSL [NOSSL]).
     // 2. If STARTTLS also configured, let it have priority? "Require" sounds important?
+    // However, we do log a warning about this ambiguous config:  [DBLMAILCONF].
     apacheCommonsEmail.setSSLOnConnect(!requireStartTls && connectWithTls)
 
     apacheCommonsEmail.setStartTLSEnabled(requireStartTls || enableStartTls)

@@ -94,7 +94,12 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
       case Some(realId) =>
         val pageMeta = dao.getThePageMeta(realId)
         if (pageMeta.pageType != PageType.EmbeddedComments)
-          throwForbidden("EdE2F6UHY3", "Not an embedded comments page")
+          throwForbidden("EdE2F6UHY3", "Not an embedded comments page",
+          o"""You cannot embed any type of page — only pages of type EmbeddedComments.
+          They get created automatically by Talkyard, when someone posts the first
+          comment on a blog post of yours. — If you want to give such a page
+          a specific id, you can use the data-discussion-id="..." html attribute in
+          the Talkyard html code snippet in your blog.""")
 
         val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.requester)
         if (!maySee)

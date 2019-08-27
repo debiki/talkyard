@@ -121,6 +121,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         // one can reach it also if login required to read content. Otherwise,
         // if login required, then, SSO won'twork, because ... one would need to be
         // logged in already, to login  :- P
+        // In a new controller: LoginWithSecretController ?
 
         // Dupl code? Use this API endpoint also from impersonateWithKey?   [7AKBRW02]
 
@@ -139,7 +140,33 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         // (if one follows a link with an "evil" go-next url param to the SSO login page,
         // which then redirects to this endpoint with that bad go-next url).
         val thenGoToUnsafe = getOnly("thenGoTo")
-        val thenGoToHashEncoded = thenGoToUnsafe.flatMap(Prelude.stripOrigin) getOrElse "/"
+
+        val thenGoToSafe = thenGoToUnsafe.map(url => {
+          TESTS_MISSING // 1) url path (already tested), 2) this server, 3) other server, forbidden,
+          // 4) other server in the Allow Embedding From list = ok, 5) = 4 with url path.
+
+          val isOk = LoginWithSecretController.isAllowedRedirectUrl(
+            url, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
+
+          // Later, but for now only in dev & test:
+          throwForbiddenIf(!globals.isProd && !isOk,
+            "TyEEXTREDIR", o"""Bad thenGoTo url: '$url' — it's to a different server
+              not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
+              This could be a phishing attempt.""")
+          // But for now, backw compat, but not programmer friendly: Remove this after
+          // some week, after having searched for BAD_REDIR_URL in the logs:
+          if (!isOk) {
+            val onlyPath = Prelude.stripOrigin(url)
+            Logger.warn(s"BAD_REDIR_URL: $url, changed to $onlyPath [TyE20549RKT4]")
+            onlyPath getOrElse "/"
+          }
+          else {
+            if (url.isEmpty) "/"
+            else url
+          }
+        })
+
+        val thenGoToHashEncoded = thenGoToSafe getOrElse "/"
 
         // The hash '#' in any '#post-NN' in the URL has been encoded (since the browser
         // would otherwise try to jump to the hash fragment, e.g. when going to a SSO login page).
@@ -331,6 +358,71 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       case _ =>
         throwForbidden("TyEAPIPST404", s"No such API endpoint: $apiEndpoint")
     }
+  }
+
+}
+
+
+object LoginWithSecretController {
+
+  /** allowEmbeddingFrom should be a <source> list for
+    * Content-Security-Policy frame-ancestors,
+    * of type host-source.
+    * Read more here:
+    *   https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+    *
+    * Let's ignore entries with wildcards, for simplicity, for now.
+    * If Talkyard runs over https, and 'http(s):' isn't specified for a <source>, then,
+    * as per the frame-ancestor rules, we'll try that source with https only (not http).
+    */
+  def isAllowedRedirectUrl(unsafeUrlMaybeEmpty: String, serverOrigin: String,
+        allowEmbeddingFrom: Seq[String], secure: Boolean): Boolean = {
+    // Tests here: LoginWithSecretControllerSpec [305KSTTH2]
+
+    // Content-Security-Policy frame-ancestors host-source shouldn't include any path.
+    // We remove paths here: [402KSHRJ3] so if they're sill present, that's a bug.
+    val sourceWithPath = allowEmbeddingFrom.find(_.indexOf("/", "https://".length) >= 0)
+    require(sourceWithPath.isEmpty, s"Source with path: ${sourceWithPath.get} [TyE204AKTDTH42]")
+
+    val unsafeUrl = if (unsafeUrlMaybeEmpty.isEmpty) "/" else unsafeUrlMaybeEmpty
+
+    // Local URL paths are fine.
+    val isUrlPath = {
+      val uri = new java.net.URI(unsafeUrl)
+      uri.getScheme == null && uri.getHost == null &&
+        uri.getRawAuthority == null && uri.getPath != null  // query & hash = fine
+    }
+
+    if (isUrlPath)
+      return true
+
+    // Full local server paths are fine too.
+    if (unsafeUrl == serverOrigin || unsafeUrl.startsWith(serverOrigin + "/"))
+      return true
+
+    // Now the server address must match one of the allow-embedding-from addresses
+    // (frame-ancestor sources):
+
+    val okayMatchingSource: Option[String] = allowEmbeddingFrom.find(frameAncestorSource => {
+      if (frameAncestorSource.startsWith("https://") || frameAncestorSource.startsWith("http://")) {
+        unsafeUrl.startsWith(frameAncestorSource + "/") || unsafeUrl == frameAncestorSource
+      }
+      else {
+        def withHttps = "https://" + frameAncestorSource
+        def withHttp = "http://" + frameAncestorSource
+        if (unsafeUrl.startsWith(withHttps + "/") || unsafeUrl == withHttps) {
+          true
+        }
+        else if (!secure) {
+          unsafeUrl.startsWith(withHttp + "/") || unsafeUrl == withHttp
+        }
+        else {
+          false
+        }
+      }
+    })
+
+    okayMatchingSource.isDefined
   }
 
 }

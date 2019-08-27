@@ -147,6 +147,7 @@ def mainSettings = List(
     sbtVersion,
     BuildInfoKey.action("dockerTag") {
       // Also in release.sh: [8GKB4W2]
+      // .!! returns a String with the command output, but .! returns the exit code.
       versionFileContents + '-' + "git rev-parse --short HEAD".!!.trim
     },
     BuildInfoKey.action("gitRevision") {
@@ -154,12 +155,16 @@ def mainSettings = List(
     },
     BuildInfoKey.action("gitBranch") {
       "git rev-parse --abbrev-ref HEAD".!!.trim
-    }),
-    // But this results in:java.io.IOException: Cannot run program "TZ=UTC"
-    /*
+    },
+    // The last commit date, UTC.
     BuildInfoKey.action("gitLastCommitDateUtc") {
-      "TZ=UTC git show --quiet --date='format-local:%Y-%m-%d %H:%M:%SZ' --format=\"%cd\"".!!.trim
-    }), */
+      // Linux only:
+      //"env TZ=UTC git show --quiet --date='format-local:%Y-%m-%d %H:%M:%SZ' --format=\"%cd\"".!!.trim
+      // Should work on Windows:
+      scala.sys.process.Process(
+        "git show --quiet --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=\"%cd\"".split(" "),
+        None, "TZ" -> "UTC").!!.trim
+    }),
     // Don't include, because then Play recompiles and reloads, whenever any [7UJ2Z5]
     // Git file status changes.
     //BuildInfoKey.action("gitStatus") {

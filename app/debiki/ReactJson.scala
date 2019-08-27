@@ -390,7 +390,7 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
+  def makeSpecialPageJson(request: DebikiRequest[_]): JsObject = {
     require(request.dao == dao, "TyE4JKTWQ0")
     val globals = request.context.globals
     val requester = request.requester
@@ -419,6 +419,7 @@ class JsonMaker(dao: SiteDao) {
       "pageMetaBriefById" -> JsObject(Nil),
       "strangersWatchbar" -> makeStrangersWatcbarJson(),
       "pagesById" -> Json.obj(),
+      // Special pages / the admin area don't need categories. [6TKQ20]
       "publicCategories" -> JsArray())
 
     result

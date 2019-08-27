@@ -60,7 +60,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def showTestSsoPage(): Action[Unit] = AsyncGetAction { apiReq =>
+  def showTestSsoPage(): Action[Unit] = AsyncGetActionIsLogin { apiReq =>
     showAdminAppPage(apiReq)
   }
 
