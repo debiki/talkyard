@@ -348,6 +348,31 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
+  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]] = {
+    import Participant.LowestAuthenticatedUserId
+    val query = s"""
+      select u.site_id, $CompleteUserSelectListItemsWithUserId
+      from users3 u
+      where (u.is_admin or u.is_moderator)
+        and not u.is_group
+        and u.user_id >= $LowestAuthenticatedUserId
+      """
+
+    val staffBySiteId =
+      new mutable.HashMap[SiteId, mutable.Set[UserInclDetails]]
+        with mutable.MultiMap[SiteId, UserInclDetails]
+
+    runQuery(query, Nil, rs => {
+      while (rs.next) {
+        val siteId = rs.getInt("site_id")
+        val user = getUserInclDetails(rs)
+        staffBySiteId.addBinding(siteId, user)
+      }
+    })
+    Map(staffBySiteId.mapValues(_.toVector).iterator.toSeq: _*)
+  }
+
+
   def loadStatsForUsersToMaybeEmailSummariesTo(now: When, limit: Int)
         : Map[SiteId, immutable.Seq[UserStats]] = {
     COULD_OPTIMIZE // if there are many sites, might load just one summary email, per site, for

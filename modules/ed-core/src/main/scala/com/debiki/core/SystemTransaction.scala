@@ -71,6 +71,11 @@ trait SystemTransaction {
   def deleteSiteById(siteId: SiteId): Boolean
 
 
+  // ----- Staff users
+
+  def loadStaffForAllSites(): Map[SiteId, Vector[UserInclDetails]]
+
+
   // ----- Summary emails, and notifications
 
   def loadStatsForUsersToMaybeEmailSummariesTo(now: When, limit: Int)

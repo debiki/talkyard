@@ -92,6 +92,13 @@ class SystemDao(
   def loadSites(): Seq[Site] =
     readOnlyTransaction(_.loadSites())
 
+  def loadSitesAndStaff(): (Seq[Site], Map[SiteId, Seq[UserInclDetails]]) =
+    readOnlyTransaction { tx =>
+      val sites = tx.loadSites()
+      val staff = tx.loadStaffForAllSites()
+      (sites, staff)
+    }
+
   def loadSitesWithIds(siteIds: Seq[SiteId]): Seq[Site] =
     readOnlyTransaction(_.loadSitesWithIds(siteIds))
 

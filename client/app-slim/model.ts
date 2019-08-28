@@ -1403,8 +1403,10 @@ interface SASite {
   id: number;
   status: SiteStatus;
   name: string;
+  hostnames: string[];
   canonicalHostname: string;
   createdAtMs: number;
+  staffUsers: UserInclDetails[];
 }
 
 

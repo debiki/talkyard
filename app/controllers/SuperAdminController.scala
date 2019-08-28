@@ -23,7 +23,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsArray, JsObject, JsString, Json}
 import play.api.mvc.ControllerComponents
 import talkyard.server.JsX._
 
@@ -69,24 +69,29 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   private def listSitesImpl(): p.mvc.Result = {
     // The most recent first.
-    val sites: Seq[Site] = globals.systemDao.loadSites().sortBy(-_.createdAt.toUnixMillis)
+    val (sitesUnsorted: Seq[Site], staffBySiteId) = globals.systemDao.loadSitesAndStaff()
+    val sitesNewFirst = sitesUnsorted.sortBy(-_.createdAt.toUnixMillis)
     OkSafeJson(Json.obj(
       "appVersion" -> globals.applicationVersion,
       "superadmin" -> Json.obj(
         "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
-        "sites" -> sites.map(siteToJson))))
+        "sites" -> sitesNewFirst.map(s => siteToJson(s, staffBySiteId.getOrElse(s.id, Nil))))))
   }
 
 
-  private def siteToJson(site: Site) = {
+  private def siteToJson(site: Site, staff: Seq[UserInclDetails]) = {
     Json.obj(
       "id" -> site.id,
       "pubId" -> site.pubId,
       "status" -> site.status.toInt,
+      "hostnames" -> JsArray(site.hostnames.map(h => JsString(h.hostname))),
       "canonicalHostname" -> JsStringOrNull(site.canonicalHostname.map(_.hostname)),
       "name" -> site.name,
-      "createdAtMs" -> site.createdAt.toUnixMillis)
+      "createdAtMs" -> site.createdAt.toUnixMillis,
+      "staffUsers" -> JsArray(staff.map(staffUser =>
+        JsUserInclDetails(
+          staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true))))
   }
 
 }

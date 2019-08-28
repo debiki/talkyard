@@ -83,9 +83,7 @@ const DashboardPanel = createFactory({
             r.tr({},
               r.th({}, "ID"),
               r.th({}, "Status"),
-              r.th({}, "Address"),
-              r.th({}, "Name"),
-              r.th({}, "Created At"))),
+              r.th({}, "Address, admins, etc"))),
           r.tbody({},
             sites))));
   }
@@ -114,9 +112,9 @@ const SiteTableRow = createComponent({
       newStatusButtonStatus = SiteStatus.Active;
       newStatusButtonText = "Activate again";
     }
-    let hostname = site.canonicalHostname;
-    if (!hostname && site.id === FirstSiteId) {
-      hostname = stuff.firstSiteHostname;
+    let canonHostname = site.canonicalHostname;
+    if (!canonHostname && site.id === FirstSiteId) {
+      canonHostname = stuff.firstSiteHostname;
     }
 
     // (Don't show a login button for the superadmin site itself, because already logged in.)
@@ -128,6 +126,24 @@ const SiteTableRow = createComponent({
               href: Server.makeImpersonateAtOtherSiteUrl(site.id, SystemUserId) },
             "Super admin");
 
+    const createdAtStr = moment(site.createdAtMs).toISOString().replace('T', ' ');
+
+    const oldHostnames = _.filter(site.hostnames, h => h != canonHostname);
+    const anyOldHostnames = !oldHostnames.length ? null :
+        r.div({},
+          r.p({}, "Old hostnames:"),
+          r.ul({},
+            oldHostnames.map(h => r.li({ key: h }, h))));
+
+    const staffUsers = !site.staffUsers.length ? null :
+        r.div({},
+          r.ul({},
+            site.staffUsers.map(staffUser => {
+              const admOrMod = staffUser.isAdmin ? 'admin' : 'moderator';
+              return r.li({ key: staffUser.username },
+                `${admOrMod} @${staffUser.username}, ${staffUser.email}, ${staffUser.fullName}`)
+            })));
+
     return (
       r.tr({},
         r.td({},
@@ -138,12 +154,12 @@ const SiteTableRow = createComponent({
               onClick: () => this.changeStatus(newStatusButtonStatus) },
             newStatusButtonText)),
         r.td({},
-          r.a({ href: '//' + hostname }, hostname),
-          loginButton),
-        r.td({},
-          site.name),
-        r.td({},
-          moment(site.createdAtMs).toISOString().replace('T', ' '))));
+          r.div({},
+            r.a({ href: '//' + canonHostname }, canonHostname),
+            loginButton,
+            createdAtStr),
+          anyOldHostnames,
+          staffUsers)));
   }
 });
 
