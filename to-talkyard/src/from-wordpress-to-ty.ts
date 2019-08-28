@@ -3,6 +3,7 @@
 
 import * as _ from 'lodash';
 import * as sax from 'sax';
+import { die } from '../../tests/e2e/utils/log-and-die';
 import c from '../../tests/e2e/test-constants';
 const strict = true; // set to false for html-mode
 const parser = sax.parser(strict, {});
@@ -35,7 +36,9 @@ function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
     return;
   }
 
-  const urlNoOrigin = wpBlogPostAndComments.link.replace(/https?:\/\/[^/]+\//, '/');  // dupl [305MBKR52]
+  die("Unimpl: use URL(...)  .pathname  instead");
+  const urlNoOrigin = wpBlogPostAndComments.link.replace(/https?:\/\/[^/?&#]+\/?/, '/');  // dupl [305MBKR52]
+        // ?  and:  .replace(/[#?].*$/, '');
 
   const pageUrl = wpBlogPostAndComments.link;
 

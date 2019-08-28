@@ -1944,6 +1944,9 @@ trait UserDao {
     user
   }
 
+  def deleteGuest(guestId: UserId, byWho: Who): Guest = {
+    ???  // don't forget to delete any ext imp id [03KRP5N2]
+  }
 
   def loadUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {

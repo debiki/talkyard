@@ -142,12 +142,12 @@ $(zipped_bundles): $@
 to-talkyard: to-talkyard/dist/to-talkyard/src/to-talkyard.js
 
 to-talkyard/dist/to-talkyard/src/to-talkyard.js: $(shell find to-talkyard/src/)
-	echo "Building To-Talkyard ..."
+	@echo "Building To-Talkyard ..."
+	@cd to-talkyard ;\
 	set -x ;\
-	cd to-talkyard ;\
 	yarn ;\
-	yarn build ;\
-	echo "... Done building To-Talkyard."
+	yarn build
+	@echo "... Done building To-Talkyard."
 
 
 # ----- Clean (wip)

@@ -149,7 +149,7 @@ interface NewTestPost {   // RENAME to PostToAdd  and move to  /tests/e2e/..some
 }
 
 
-interface PostDumpV0 {
+interface PostDumpV0 {   // RENAME to PostPatchV0
   id: PostId;
   extImpId?: ExtImpId;
   pageId: PageId;
@@ -198,7 +198,7 @@ interface PostDumpV0 {
   numTimesRead?: number;
 }
 
-interface GuestDumpV0 {
+interface GuestDumpV0 {   // RENAME to GuestPatchV0
   id: UserId;
   extImpId?: ExtImpId;
   createdAt: WhenMs;

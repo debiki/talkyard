@@ -29,7 +29,7 @@ const api = {
     process.stdout.write(boringColor(message));
   },
   die: function(message: string, details?: string) {
-    api.logError('\n' + message + (details ? '\n' + details : ''));
+    api.logError('\n' + message + (details ? '\n' + details : '') + '\n');
     throw Error(message);
   },
   dieIf: function(test: boolean, message: string, details?: string) {

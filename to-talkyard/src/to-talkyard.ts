@@ -1,18 +1,26 @@
 /// <reference path="to-talkyard.d.ts" />
 
-//   ./to-talkyard --*ExportFile=... [ --writeTo=file | --sendToServer=https://ty.example.com ]
-//
-// where --*ExportFile is one of:
-//    --wordpressCoreXmlExportFile
-//    --disqusXmlExportFile
-//
-// but right now:
-//
-//  nodejs dist/to-talkyard/src/to-talkyard.js --wordpressCoreXmlExportFile file.xml
-//  nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --writeTo=test.json
-//  nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --sendTo=localhost
-//
+/*
+Usage:
 
+./to-talkyard --*ExportFile=... [ --writeTo=file | --sendTo=SERVER_ORIGIN ]
+
+where --*ExportFile is one of:
+   --wordpressCoreXmlExportFile  (not yet impl)
+   --disqusXmlExportFile
+
+but right now:
+
+ nodejs dist/to-talkyard/src/to-talkyard.js --wordpressCoreXmlExportFile FILE_XML
+ nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --writeTo TEST_JSON
+ nodejs dist/to-talkyard/src/to-talkyard.js --disqusXmlExportFile file.xml --sendTo SERVER_ORIGIN
+
+ nodejs dist/to-talkyard/src/to-talkyard.js  \
+     --talkyardJsonPatchFile FILE_JSON  \
+     --sendTo=localhost  \
+     --sysbotApiSecret THE_SECRET
+
+*/
 
 import minimist from 'minimist';
 import syncRequest from 'sync-request';
@@ -33,6 +41,7 @@ let talkyardSiteData: SiteData;
 const wordpressXmlFilePath: string | undefined = args.wordpressCoreXmlExportFile;
 const disqusXmlFilePath: string | undefined = args.disqusXmlExportFile;
 const jsonDumpFilePath: string | undefined = args.talkyardJsonPatchFile;
+const primaryOrigin: string | undefined = args.primaryOrigin;
 
 let fileFormat;
 const DisqusFormat = 'DisqusFormt';
@@ -76,7 +85,13 @@ if (!_.isString(writeToPath) && !_.isString(sendToOrigin))
 
 
 if (_.isString(sendToOrigin) && !_.isString(sysbotApiSecret))
-  throw "Missing: --sysbotApiSecret=..., required together with --sendTo=...";
+  die("Missing: --sysbotApiSecret=..., required together with --sendTo=...");
+
+if (primaryOrigin && !primaryOrigin.startsWith('http'))
+  die("The --primaryOrigin should be like http(s)://server.address");
+
+if (primaryOrigin && _.filter(primaryOrigin, c => c === '/').length >= 3)
+  die("The --primaryOrigin should not include any URL path, only http(s)://host.");
 
 
 if (!talkyardSiteData) {
@@ -96,7 +111,7 @@ if (!talkyardSiteData) {
       [talkyardSiteData, errors] = fromWordPressToTalkyard(fileText, { verbose });
       break;
     case DisqusFormat:
-      [talkyardSiteData, errors] = fromDisqusToTalkyard(fileText, { verbose });
+      [talkyardSiteData, errors] = fromDisqusToTalkyard(fileText, { verbose, primaryOrigin });
       break;
     default:
       die('ToTyE305MKF');
