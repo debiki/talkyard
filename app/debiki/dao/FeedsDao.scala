@@ -29,34 +29,43 @@ trait FeedsDao {
 
 
   memCache.onPageCreated { sitePageId =>
-    memCache.remove(feedKey)
+    memCache.remove(siteFeedKey)
+    memCache.remove(commentsFeedKey)
   }
 
   memCache.onPageSaved { sitePageId =>
-    memCache.remove(feedKey)
+    memCache.remove(siteFeedKey)
+    memCache.remove(commentsFeedKey)
   }
 
 
-  def getAtomFeedXml(): xml.Node = {
+  def getAtomFeedXml(onlyEmbeddedComments: Boolean): xml.Node = {
+    val key = onlyEmbeddedComments ? commentsFeedKey | siteFeedKey
     memCache.lookup[xml.Node](
-      feedKey,
+      key,
       orCacheAndReturn = {
-        Some(loadAtomFeedXml())
+        Some(loadAtomFeedXml(onlyEmbeddedComments = onlyEmbeddedComments))
       }) getOrDie "TyE5KBR7JQ0"
   }
 
 
-  def loadAtomFeedXml(): xml.Node = {
+  def loadAtomFeedXml(onlyEmbeddedComments: Boolean): xml.Node = {
     // ----- Dupl code [4AKB2F0]
     val postsInclForbidden = readOnlyTransaction { tx =>
-      tx.loadPostsSkipTitles(limit = 25, OrderBy.MostRecentFirst, byUserId = None)
+      if (onlyEmbeddedComments) {
+        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = 25, OrderBy.MostRecentFirst)
+      }
+      else {
+        tx.loadPostsSkipTitles(limit = 25, OrderBy.MostRecentFirst, byUserId = None)
+      }
     }
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)
     val postsOneMaySee = for {
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
-      if maySeePostUseCache(post, pageMeta, user = None, maySeeUnlistedPages = false)._1.may
+      if maySeePostUseCache(
+        post, pageMeta, user = None, maySeeUnlistedPages = onlyEmbeddedComments)._1.may
     } yield post
     val pageIds = postsOneMaySee.map(_.pageId).distinct
     val pageStuffById = getPageStuffById(pageIds)
@@ -66,11 +75,13 @@ trait FeedsDao {
       throwNotFound("TyE0FEEDPOSTS", "No posts found, or they are private")
 
     val origin = theSiteOrigin()
-    debiki.AtomFeedXml.renderFeed(origin, postsOneMaySee, pageStuffById)
+    debiki.AtomFeedXml.renderFeed(origin, postsOneMaySee, pageStuffById,
+      isForEmbeddedComments = onlyEmbeddedComments)
   }
 
 
-  private def feedKey = MemCacheKey(siteId, "FeedKey")
+  private def siteFeedKey = MemCacheKey(siteId, "FeedKey")
+  private def commentsFeedKey = MemCacheKey(siteId, "CmtsFeedKey")
 
 }
 

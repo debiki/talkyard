@@ -47,8 +47,8 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
    * feedMtime: Indicates the last time the feed was modified
    * in a significant way.
    */
-  def renderFeed(hostUrl: String, posts: immutable.Seq[Post], pageStuffById: Map[PageId, PageStuff]
-        ): Node = {
+  def renderFeed(hostUrl: String, posts: immutable.Seq[Post], pageStuffById: Map[PageId, PageStuff],
+        isForEmbeddedComments: Boolean): Node = {
 
     // Based on the Atom XML shown here:
     //   http://exploring.liftweb.net/master/index-15.html#toc-Section-15.7
@@ -86,9 +86,24 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
       val commentNr = post.nr - 1 // the comment nr is post nr - 1  [2PAWC0].
       val anyEmbeddedCommentUrl =
         page.pageMeta.embeddingPageUrl.map(_ + "#comment-" + commentNr)
-      val anyAlternateUrlToEmbeddingPage = anyEmbeddedCommentUrl map { url =>
-        <link rel="alternate" href={url}/>
-      } getOrElse xml.Null
+
+      val (idElem, altLinkElem) =
+        if (isForEmbeddedComments) {
+          // Then the primary link, <id>, should be to the embedding site, typically a blog.
+          // So blog readers go to the blog, if they click a link.
+          // However, some old pages have pages3.embedding_url = null — then, use the
+          // Talkyard site link instead.
+          val embUrl = anyEmbeddedCommentUrl getOrElse urlToPageAndPost
+          (<id>{embUrl}</id>,
+              <link rel="alternate" href={urlToPageAndPost}/>)
+        }
+        else {
+          // Then the primary link, <id>, should be to Talkyard.
+          (<id>{urlToPageAndPost}</id>,
+            anyEmbeddedCommentUrl map { url =>
+              <link rel="alternate" href={url}/>
+            } getOrElse xml.Null)
+        }
 
       // Convert HTML to XHTML.
       // Atom parsers wants xml — they apparently choke on unclosed html tags.
@@ -106,7 +121,7 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
       val entry = <entry>{
         /* Identifies the entry using a universally unique and
         permanent URI. */}
-        <id>{urlToPageAndPost}</id>{
+        { idElem }{
         /* Contains a human readable title for the entry. */}
         <title>{page.title}</title>{
         /* Indicates the last time the entry was modified in a
@@ -127,7 +142,7 @@ object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
         COULD indroduce a page's publishedTime? publishing time?
         <published>{toIso8601T(ctime)}</published> */ }{
         /* Identifies a related Web page. */
-        anyAlternateUrlToEmbeddingPage }{
+        altLinkElem }{
         /* Contains or links to the complete content of the entry. */}
         <content type="xhtml">
           <div xmlns="http://www.w3.org/1999/xhtml">

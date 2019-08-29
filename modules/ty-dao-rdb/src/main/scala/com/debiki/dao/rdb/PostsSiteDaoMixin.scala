@@ -259,6 +259,26 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post] = {
+    dieIf(orderBy != OrderBy.MostRecentFirst, "TyE60RKTJF4", "Unimpl")
+    val query = s"""
+      select po.* from posts3 po inner join pages3 pg using (site_id, page_id)
+      where pg.site_id = ?
+        and pg.page_role = ${PageType.EmbeddedComments.toInt}
+        and po.post_nr <> $TitleNr
+        and po.post_nr <> $BodyNr
+        and (po.type is null or po.type = ${PostType.Normal.toInt})
+        and po.deleted_at is null
+        and po.hidden_at is null
+        and po.approved_at is not null
+        order by created_at desc limit $limit
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      readPost(rs)
+    })
+  }
+
+
   def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int)
         : Map[PageId, immutable.Seq[Post]] = {
     if (pageIds.isEmpty)

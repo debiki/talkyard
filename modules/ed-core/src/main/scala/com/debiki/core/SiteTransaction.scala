@@ -115,6 +115,7 @@ trait SiteTransaction {
 
   def loadPostsToReview(): immutable.Seq[Post]
   def loadPostsSkipTitles(limit: Int, orderBy: OrderBy, byUserId: Option[UserId]): immutable.Seq[Post]
+  def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
     val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))

@@ -76,6 +76,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
 
     throwForbiddenIf(!settings.enableApi, "TyEAPIDSBLD", "API disabled")
 
+    val EmbeddedCommentsFeedPath = "embedded-comments-feed"
+
     apiEndpoint match {
 
       // Move export-site-json to SiteBackupController, an ApiSecretPostJsonAction, instead.
@@ -185,7 +187,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       // as StackOverflow style "comments" below a Q&A answer post.
       //
       // Whilst this (/-/v0/feed) is about the Talkyard site only and links to it:
-      case "feed" =>
+      case "feed" | EmbeddedCommentsFeedPath =>
+        val onlyEmbeddedComments = apiEndpoint == EmbeddedCommentsFeedPath
         /*
         https://server.address/-/v0/recent-posts.rss
         https://server.address/-/v0/feed?
@@ -204,7 +207,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             dao.listPagePaths(
               Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
          */
-        val atomXml = dao.getAtomFeedXml()
+        val atomXml = dao.getAtomFeedXml(onlyEmbeddedComments = onlyEmbeddedComments)
         OkXml(atomXml, "application/atom+xml; charset=UTF-8")
       case _ =>
         throwForbidden("TyEAPIGET404", s"No such API endpoint: $apiEndpoint")
