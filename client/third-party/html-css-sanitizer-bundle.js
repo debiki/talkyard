@@ -4934,7 +4934,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       label: ['for'],
       input: ['type', 'name', 'placeholder', 'readonly', 'disabled', 'size', 'maxlength',
         'autocomplete', 'pattern', 'title', 'required', 'step', 'min', 'max', 'multiple', 'list',
-        'width', 'height', 'value'],
+        'width', 'height', 'value', 'checked'],
         // skip?: formtarget
       textarea: ['name'],
       button: ['type'],
