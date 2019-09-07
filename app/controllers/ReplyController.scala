@@ -43,7 +43,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
-    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
@@ -58,7 +58,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
     val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-      anyPageId = anyPageId, anyAltPageId = anyAltPageId,
+      anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
       anyEmbeddingUrl = anyEmbeddingUrl, request)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
@@ -133,7 +133,7 @@ object EmbeddedCommentsPageCreator {
 
   def getOrCreatePageId(  // [4AMJX7]
         anyPageId: Option[PageId],
-        anyAltPageId: Option[String],
+        anyDiscussionId: Option[String],
         anyEmbeddingUrl: Option[String],
         request: DebikiRequest[_]): (PageId, Option[PagePathWithId]) = {
     anyPageId foreach { pageId =>
@@ -148,9 +148,24 @@ object EmbeddedCommentsPageCreator {
 
     SHOULD // check alt page id too — no blanks allowed? [05970KF5]
 
-    anyAltPageId.flatMap(request.dao.getRealPageId) foreach { pageId =>
-      return (pageId, None)
-    }
+    // A bit dupl knowledge. [205KST526]
+    anyDiscussionId.foreach(discussionId => {
+      // Discussion ids are prefixed by 'diid:' so they have their own namespace
+      // and won't clash with any url, e.g. if they start with '/' they'd be mistaken
+      // for urls, without the 'diid' prefix..
+      request.dao.getRealPageId("diid:" + discussionId) foreach { pageId =>
+        return (pageId, None)
+      }
+      // Old, backw compat: Try without 'diid:' prefix [J402RKDT]. This won't be needed,
+      // later after old discussion ids that aren't urls, have been migrated to
+      // include the 'diid:" prefix. — This migration is a tiny bit risky, in that
+      // if an id does start with '/', it'll be mistaken for being an url path, and
+      // won't get migrated. Apparently not an issue, as of Sept -19 (there are no
+      // such discussion ids in the hosted blog comments sites).
+      request.dao.getRealPageId(discussionId) foreach { pageId =>
+        return (pageId, None)
+      }
+    })
 
     val embeddingUrl = anyEmbeddingUrl getOrElse {
       throwNotFound("TyE0ID0EMBURL", "Page not found by id, and no embedding url specified")
@@ -167,7 +182,7 @@ object EmbeddedCommentsPageCreator {
     }
 
     pageIdByUrl foreach { pageId =>
-      anyAltPageId match {
+      anyDiscussionId match {
         case None =>
           return (pageId, None)
         case Some(altPageId) =>
@@ -221,13 +236,13 @@ object EmbeddedCommentsPageCreator {
     // Create a new embedded discussion page.
     // It hasn't yet been created, and is needed, so we can associate the thing
     // we're currently saving (e.g. a reply) with a page.
-    val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
+    val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyDiscussionId)
     (newPagePath.pageId, Some(newPagePath))
   }
 
 
   private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String,
-        anyAltPageId: Option[String]): PagePathWithId = {
+        anyDiscussionId: Option[String]): PagePathWithId = {
     import request.{dao, requester, context}
 
     // (Security, fine: I don't think we need to verify that there is actually a page at
@@ -265,7 +280,7 @@ object EmbeddedCommentsPageCreator {
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
       showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
-      Who.System, request.spamRelatedStuff, altPageIds = anyAltPageId.toSet,
+      Who.System, request.spamRelatedStuff, altPageIds = anyDiscussionId.toSet,
       embeddingUrl = Some(embeddingUrl))
   }
 

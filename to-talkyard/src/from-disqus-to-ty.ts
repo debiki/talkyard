@@ -24,12 +24,27 @@ interface DisqusCategory {
  * There's one Disqus thread per blog post. Each Disqus comment is in one thread.
  * <thread dsq:id="...">....</thread>
  *
+ * The <id> is for example:
+ *   <id>ghost-7ca248aaa53a3675cc82205g</id>
+ * if generated via Ghost, or sometimes just:
+ *   <id>ghost-1234</id>.
+ * In other cases, looks a bit like an url: (but with a space (!))
+ *   <id>1234 https://blogname.com/?p=1234</id>
+ * — seems WordPress generates such ids? because I find: "wpengine" and "wordpress.com":
+ *   <id>1600 http://blogname1.wpengine.com/?p=1600</id>
+ *   <id>189 https://otherblog.wordpress.com/2011/02/03/201102some-thing-html</id>
+ * Other <id> samples:
+ *   <id>1234</id>  (just a number)
+ *   <id>4f322553469275452a2cf27d</id>  (a hex)
+ * Often, there's no id:
+ *   <id />
+ *
  * Currently ignored:
  * <forum>(string)     — all comments need to be from the same Disqus "forum",
  * <category dsq:id="..."/>   — ... and from the same Disqus category, for now.
- * <id>
  */
 interface DisqusThread {
+  idTag?: string;
   disqusThreadId?: string;
   link?: string;
   title?: string;
@@ -62,6 +77,7 @@ interface DisqusThread {
  * of <id> or <parent>.
  */
 interface DisqusComment {
+  idTag?: string;
   // <thread dsq:id="...">
   disqusThreadId?: string;
   // The dsq:id="..." attribute on the <post> itself.
@@ -108,6 +124,7 @@ interface DisqusAuthor {
 let depth = 0;
 let numCategories = 0;
 let curTagName: string;
+let parentTagNameDebug: string;
 
 let curCategory: DisqusCategory;
 let curThread: DisqusThread;
@@ -142,6 +159,7 @@ parser.onopentag = function (tag: SaxTag) {
   if (!verbose) process.stdout.write('.');
 
   depth += 1;
+  parentTagNameDebug = curTagName || parentTagNameDebug;
   curTagName = tag.name;
   const anyDisqusId = tag.attributes['dsq:id'];
   let openedThing: DisqusCategory | DisqusThread | DisqusComment;
@@ -195,6 +213,16 @@ parser.onopentag = function (tag: SaxTag) {
       dieIf(!curComment, 'ToTyE205MBRKDG');
       curComment.disqusParentCommentId = anyDisqusId;
       break;
+    case 'message':
+    case 'id':
+      // We should be in a <disqus><thread><id> or <message>, depth 3,
+      // or a <post> instead of a <thread> — Disqus' XSD requires this.
+      const what = () => `Unexpected <${tag.name}> in a <${parentTagNameDebug}>`;
+      dieIf(depth !== 3, 'ToTyE602RKDJF3');
+      dieIf(!curThread && !curComment, 'ToTy306HWJL', what());
+      dieIf(!!curThread && !!curComment, 'ToTyE86FKHR6');
+      // The tag value is the text inside the tag, and handled by handleText() below.
+      break;
   }
 
   logVerbose(`new thing: ${JSON.stringify(openedThing)}`);
@@ -209,9 +237,13 @@ function handleText(textOrCdata: string) {
   logVerbose(`handleText: "${textOrCdata}"`);
   if (curCategory)
     return;
-  const postOrThread = curComment || curThread;
-  const author: DisqusAuthor | undefined = postOrThread ? postOrThread.author : undefined;
+  const commentOrThread = curComment || curThread;
+  const author: DisqusAuthor | undefined = commentOrThread ? commentOrThread.author : undefined;
   switch (curTagName) {
+    case 'id':
+      dieIf(!commentOrThread, 'ToTyE6FKT20XD45');
+      commentOrThread.idTag = (commentOrThread.idTag || '') + textOrCdata;
+      break;
     case 'link':
       dieIf(!curThread, 'ToTyE20MKDK5');
       curThread.link = textOrCdata;
@@ -221,16 +253,16 @@ function handleText(textOrCdata: string) {
       curThread.title = (curThread.title || '') + textOrCdata;
       break;
     case 'message':
-      dieIf(!postOrThread, 'ToTyE6AMBS20NS');
-      postOrThread.message = (postOrThread.message || '') + textOrCdata;
+      dieIf(!commentOrThread, 'ToTyE6AMBS20NS');
+      commentOrThread.message = (commentOrThread.message || '') + textOrCdata;
       break;
     case 'createdAt':
-      dieIf(!postOrThread, 'ToTyE5BSKW05');
-      postOrThread.createdAtIsoString = textOrCdata;
+      dieIf(!commentOrThread, 'ToTyE5BSKW05');
+      commentOrThread.createdAtIsoString = textOrCdata;
       break;
     case 'ipAddress':
-      dieIf(!postOrThread, 'ToTyE5BMR0256');
-      postOrThread.ipAddr = textOrCdata;
+      dieIf(!commentOrThread, 'ToTyE5BMR0256');
+      commentOrThread.ipAddr = textOrCdata;
       break;
     case 'email':
       dieIf(!author, 'ToTyE7DMRNJ20');
@@ -249,12 +281,12 @@ function handleText(textOrCdata: string) {
       author.isAnonymous = textOrCdata === 'true';
       break;
     case 'isDeleted':
-      dieIf(!postOrThread, 'ToTyE7MSSD4');
-      postOrThread.isDeleted = textOrCdata === 'true';
+      dieIf(!commentOrThread, 'ToTyE7MSSD4');
+      commentOrThread.isDeleted = textOrCdata === 'true';
       break;
     case 'isClosed':
-      dieIf(!postOrThread, 'ToTyE4ABMF025');
-      postOrThread.isClosed = textOrCdata === 'true';
+      dieIf(!commentOrThread, 'ToTyE4ABMF025');
+      commentOrThread.isClosed = textOrCdata === 'true';
       break;
     case 'isSpam':
       dieIf(!curComment, 'ToTyE5MSBWG03');
@@ -590,6 +622,23 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     tySiteData.pages.push(tyPage);
     tySiteData.pagePaths.push(tyPagePath);
 
+
+    // Map discussion id to page:  [docs-3035KSSD2]
+    //
+    // ("Thread" id, in Disqus terminology.)
+    // These ids can be a bit weird, e.g. include spaces. They were generated
+    // by maybe WordPress, or Ghost, or whatever else, [52TKRG40]
+    // and inserted into Disqus — and now imported from Disqus to Talkyard.
+    // Prefix with 'diid:' so the ids get their own namespace, and won't
+    // be mistaken for urls (which Talkyard stores in the same db table).
+
+    if (thread.idTag) {
+      tySiteData.pageIdsByAltIds['diid:' + thread.idTag] = tyPage.id;
+    }
+
+
+    // Map full URL to page:
+
     // This cannot happen? Disqus never maps the same full URL to different threads.
     const duplPageIdByUrlInclOrig = tySiteData.pageIdsByAltIds[urlInclOrigin];
     dieIf(duplPageIdByUrlInclOrig,
@@ -598,16 +647,26 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
 
     tySiteData.pageIdsByAltIds[urlInclOrigin] = tyPage.id;
 
-    // This happens though, if a Disqus export file has comments for blog two posts
-    // on different domains, but with the same url path. Then, typically,
-    // it's the same blog, just that it's been hosted on differet domains, and
+
+    // Map URL path to page too.
+
+    // So comments are found, also if the blog moves to a new domain. [TyT205AKST35]
+
+    // Tricky: Paths to two *different* discussions can be the same, if a
+    // Disqus export file has comments for blog two
+    // posts on different domains, but with the same url path. Then, typically,
+    // it's the same blog, just that it's been hosted on different domains, and
     // people posted comments on the first domain, creating a Disqus thread there,
     // and then on the 2nd domain, creating a duplicated thread for the in fact
     // same blog post, there.
     // For now, if this happens let's require the human to choose one of
-    // the dommains, via --primaryOrigin. Later, maybe there could be advanced
+    // the dommains, via --primaryOrigin. Later, there could 1) be advanced
     // params to merge the different (duplicated?) discussions together to
-    // one single discussion (so no comments are lost).
+    // one single discussion (so no comments are lost). Or 2)
+    // the human could use Talkard's interface later, to move everything
+    // to the same page. Maybe there could be an embedded discussions pages
+    // list that helps with identfying these problems? (shows dupl / similar urls
+    // for separate pages that should *probably* be the same?)
     const duplPageIdByUrlPath = tySiteData.pageIdsByAltIds[urlPath];
     let skipPath = false;
     if (duplPageIdByUrlPath) {

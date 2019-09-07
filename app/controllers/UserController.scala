@@ -1121,7 +1121,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
 
     // If is a not-yet-created embedded comments page:
-    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
 
     def participant = dao.getTheParticipant(memberId)
@@ -1144,7 +1144,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (anyPageId: Option[PageId], isNewEmbCmtsPage: Boolean) =
       if (anyPageIdMaybeEmptyPage is EmptyPageId) {
         val (newPageId: PageId, newPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-          anyPageId = Some(EmptyPageId), anyAltPageId = anyAltPageId,
+          anyPageId = Some(EmptyPageId), anyDiscussionId = anyDiscussionId,
           anyEmbeddingUrl = anyEmbeddingUrl, request)
         (Some(newPageId), true)
       }

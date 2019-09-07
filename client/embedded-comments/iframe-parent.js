@@ -57,8 +57,12 @@ function loadCommentsCreateEditor() {
 
   var discussionTitle = commentsElem.getAttribute('data-iframe-title');
 
+  // The discussion id might include a bit weird chars — it might have been imported
+  // from WordPress or Ghost or Disqus [52TKRG40], and e.g. WordPress.com inserted spaces
+  // in their ids — which can have gotten imported to Disqus, and now from Disqus to Ty.
+  // But at least don't allow newlines and tabs? That'd probably be some weird bug?
   var discussionId = commentsElem.getAttribute('data-discussion-id');
-  if (/[#?& \t\n]/.test(discussionId)) {
+  if (/[\t\r\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
     debugLog(errorMessage);
     throw Error(errorMessage);

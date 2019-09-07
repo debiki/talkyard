@@ -50,7 +50,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
-    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
     val voteStr = (body \ "vote").as[String]
@@ -92,7 +92,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-      anyPageId = anyPageId, anyAltPageId = anyAltPageId,
+      anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
       anyEmbeddingUrl = anyEmbeddingUrl, request)
 
     if (delete) {

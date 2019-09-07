@@ -109,6 +109,8 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
   const fourRepliesPageUrlPath = 'four-replies';
   const oneReplyPageUrlPath = '2019/a-blog-post-one-reply';
+  const oneReplyPageDiscussionId = 'node/2 With Spaces.';
+  const oneReplyPageViaDiscussionIdPagePath = 'whatever-different-url-path';
   const pageCreatedLaterUrlPath = 'page-created-later';
   const noDisqusRepliesPageUrlPath = 'no-dsq-comments';
 
@@ -121,12 +123,17 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
     makeEmbeddingPage(oneReplyPageUrlPath);
     makeEmbeddingPage(pageCreatedLaterUrlPath);
     makeEmbeddingPage(noDisqusRepliesPageUrlPath);
+    makeEmbeddingPage(oneReplyPageViaDiscussionIdPagePath, oneReplyPageDiscussionId);
   });
 
 
-  function makeEmbeddingPage(urlPath: string) {
+  function makeEmbeddingPage(urlPath: string, discussionId?: string) {
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
-    const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
+    let htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
+    if (discussionId) {
+      htmlToPaste = htmlToPaste.replace(
+          ` data-discussion-id=""`, ` data-discussion-id="${discussionId}"`)
+    }
     fs.writeFileSync(`${dirPath}/${urlPath}.html`, `
 <html>
 <head>
@@ -135,8 +142,13 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 <!-- #59a3fc is supposedly Diqus' standard color. -->
 <body style="background: #59a3fc; color: #000; font-family: monospace; font-weight: bold">
 <p>This is an embedded comments E2E test page, for testing Disqus comments import.
-  Ok to delete. 6039hKSPJ3. The comments:</p>
+  Ok to delete. 6039hKSPJ3.<br>
+URL path: ${urlPath}<br>
+Discussion id: ${discussionId ? `"${discussionId}"` : '(none)'}<br>
+The comments:</p>
+<hr>
 ${htmlToPaste}
+<hr>
 <p>/End of page.</p>
 </body>
 </html>`);
@@ -205,6 +217,7 @@ ${htmlToPaste}
 
   function createDisqusXmlDumpFile(ps: { withExtraComments: boolean, dst: string }) {
     const embeddingOrigin = data.embeddingUrl;
+    const olderWrongOrigin = 'https://older.wrong.blog.address.com/';
     fs.writeFileSync(ps.dst, `
     <?xml version="1.0" encoding="utf-8"?>
     <disqus
@@ -220,10 +233,10 @@ ${htmlToPaste}
     </category>
 
     <thread dsq:id="5555555555">
-    <id>${embeddingOrigin}${fourRepliesPageUrlPath}</id>
+    <id>${embeddingOrigin + fourRepliesPageUrlPath}</id>
     <forum>disqus_test_forum</forum>
     <category dsq:id="111" />
-    <link>${embeddingOrigin}${fourRepliesPageUrlPath}</link>
+    <link>${embeddingOrigin + fourRepliesPageUrlPath}</link>
     <title>A Simple Title</title>
     <message />
     <createdAt>2019-01-02T11:00:00Z</createdAt>
@@ -239,10 +252,17 @@ ${htmlToPaste}
     </thread>
 
     <thread dsq:id="1111111111">
-    <id>node/2</id>
+    <id>${
+      // Talkyard should map this discussion id to the page, so the comments stay the
+      // same, also if they're origially from say WordPress, then Disqus, then Talkyard,
+      // with possibly different origins and url paths.
+      oneReplyPageDiscussionId}</id>
     <forum>disqus_test_forum</forum>
     <category dsq:id="111" />
-    <link>${embeddingOrigin}2019/a-blog-post-one-reply</link>
+    <link>${
+      // Talkyard should match via URL paths, so although the origin here is "wrong",
+      // the comments should still appear on the right page.  [TyT205AKST35]
+      olderWrongOrigin + oneReplyPageUrlPath}</link>
     <title>A Blog Post</title>
     <message />
     <createdAt>2019-02-11T11:00:00Z</createdAt>
@@ -455,10 +475,37 @@ ${htmlToPaste}
 
   it("Maria goes to the one-imported-reply page", () => {
     mariasBrowser.go('/' + oneReplyPageUrlPath)
-    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
 
-  it("... and sees a comment, imported from Disqus", () => {
+  it("... there's no discussion id on this page", () => {
+    const source = mariasBrowser.getSource();
+    assert(source.indexOf(oneReplyPageDiscussionId) === -1);
+    assert(source.indexOf('data-discussion-id=""') >= 0);
+  });
+
+  it("... and sees a comment, imported from Disqus " +
+        "— matched by url path, althoug origins differ", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    mariasBrowser.topic.assertNumRepliesVisible(1);
+  });
+
+  it("... with the correct text", () => {
+    mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, year2030CommentText);
+  });
+
+  it("Works also via discussion id, from the <id> tag: Maria goes to the page " +
+      `with disc id "${oneReplyPageDiscussionId}", but the "wrong" url path`, () => {
+    mariasBrowser.go('/' + oneReplyPageViaDiscussionIdPagePath)
+  });
+
+  it("... the discussion id is indeed here", () => {
+    const source = mariasBrowser.getSource();
+    assert(source.indexOf(`data-discussion-id="${oneReplyPageDiscussionId}"`) >= 0);
+  });
+
+  it("... Maria sees the same comment, the one imported from Disqus", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     mariasBrowser.topic.assertNumRepliesVisible(1);
   });

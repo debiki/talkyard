@@ -211,7 +211,11 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           // If this finds nothing, then, don't try matching by embeddingUrl. — If the
           //  discussion id is different, it's a different discussion, regardless of
           // if the embedding url matches something or not.
-          dao.getRealPageId(id)
+          // A bit dupl knowledge. [205KST526]
+          dao.getRealPageId("diid:" + id) orElse {
+            // Backw compat: Old ids weren't prefixed with 'diid:'.
+            dao.getRealPageId(id)
+          }
         case None =>
           dao.getRealPageId(embeddingUrl) orElse {
             val urlPath = extractUrlPath(embeddingUrl)

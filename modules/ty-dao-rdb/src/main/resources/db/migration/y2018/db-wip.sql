@@ -1,3 +1,23 @@
+---------------
+-- Prefix alt page ids with:  'diid:'  unless is http(s)://... or url path:  /...  [J402RKDT]
+-- From edc:
+> select distinct alt_page_id from alt_page_ids3 where alt_page_id like '%:%' and alt_page_id not like 'http:%'  and alt_page_id not like 'https:%';
+ alt_page_id
+-------------
+(0 rows)
+
+> select distinct alt_page_id from alt_page_ids3 where alt_page_id like '/%';
+--  —> they all look like url paths
+
+-- But in case somethign's wrong, copy to other table:
+create table disc_keys_old as select * from alt_page_ids3;
+rename table alt_page_ids3 to discussion_keys;
+-- where a key is either:  'diid: ....'  (discussion id)
+-- or  https?://...
+-- or  //host/....
+-- or an url path:   /....
+---------------
+
 -- RENAME  default_category_id  to def_sub_cat_id, no, def_descendant_cat_id
 -- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
 
