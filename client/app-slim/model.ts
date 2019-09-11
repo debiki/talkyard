@@ -825,6 +825,7 @@ interface SettingsVisibleClientSide {
   doubleTypePassword?: boolean;         // default: false
   ssoUrl?: string;                      // default: undefined
   enableSso?: boolean;                  // default: undefined —> false
+  effectiveSsoLoginRequiredLogoutUrl?: boolean;  // default: undefined —> empty
   enableApi?: boolean;                  // default: undefined —> true
   minPasswordLength?: number;           // default: 10
   enableForum?: boolean;                // default: true
@@ -1280,6 +1281,7 @@ interface Settings {
   enableSso: boolean;
   ssoUrl: string;
   ssoNotApprovedUrl: string;
+  ssoLoginRequiredLogoutUrl: string;
 
   // Moderation
   numFirstPostsToAllow: number;

@@ -483,13 +483,14 @@ const LoginAndSignupSettings = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     const enableSso = valueOf(s => s.enableSso);
+    const loginRequired = valueOf(s => s.userMustBeAuthenticated);
     const allowSignup = valueOf(s => s.allowSignup);
     const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
     const featureFlags = valueOf(s => s.featureFlags);
 
     const canEnableGuestLogin =
-      !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
+      !valueOf(s => s.userMustBeApproved) && !loginRequired &&
         valueOf(s => s.allowSignup) && !requireVerifiedEmail && !enableSso;  // && !invite-only (6KWU20)
 
     const missingServerSiteHint = (isConfiguredOnServer: boolean) => isConfiguredOnServer ? '' :
@@ -773,6 +774,21 @@ const LoginAndSignupSettings = createFactory({
             if (!target.value || !target.value.trim()) {
               newSettings.enableSso = false;
             }
+          }
+        }),
+
+        // Ignored, without SSO and login-required-to-read. [350RKDDF5]
+        !enableSso || !loginRequired ? null : Setting2(props, {
+          type: 'text', label: "SSO After Logout URL",
+          className: 'e_SsoAftLgoUrl',
+          help: rFragment({},
+            r.p({},
+              "Where to send a user after they have logged out. " +
+              "Also, if specified, a *not*-logged-in user will get redirected directly " +
+              "to your SSO login page, without having to click any login button.")),
+          getter: (s: Settings) => s.ssoLoginRequiredLogoutUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.ssoLoginRequiredLogoutUrl = target.value;
           }
         }),
 

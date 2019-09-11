@@ -262,6 +262,10 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
     if (authenticationRequired) {
       if (!user.exists(_.isAuthenticated)) {
+        // If SSO enabled and siteSettings.ssoLoginRequiredLogoutUrl defined, then
+        // could redirect here directly to the SSO url. However, then we'd need
+        // a certain makeSsoUrl() here too — but it's in Javascript only.
+        // So instead we do any such redirect in Javascript. [COULDSSOREDIR]
         return Future.successful(Ok(views.html.login.loginPopup(
           SiteTpi(request),
           mode = "LoginToAuthenticate",

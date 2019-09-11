@@ -371,6 +371,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-test.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-member.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-required.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-required-w-logout-url.2browsers $args
   # unimpl:  s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-approval-required.2browsers $args
   # unimpl:  s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-login-and-approval-required.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only sso-admin-extra-login $args

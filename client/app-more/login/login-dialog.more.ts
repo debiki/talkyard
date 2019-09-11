@@ -244,6 +244,22 @@ const LoginDialog = createClassAndFactory({
 export const LoginDialogContent = createClassAndFactory({
   displayName: 'LoginDialogContent',
 
+  componentDidMount: function() {
+    const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
+
+    // Redirect directly to any SSO page, if 1) SSO enabled and 2) login is required,
+    // and 3) a [navigate elsewhere after logout] url has been configured (to avoid
+    // possibly instant login after logout),
+    // so one won't see an empty page with just a "Log In" button (the .s_LD_SsoB button).
+    // This redirect could be done server side, here: [COULDSSOREDIR]. However, then
+    // makeSsoUrl() would need to be available server side too.
+    if (settings.effectiveSsoLoginRequiredLogoutUrl) {
+      const ssoUrl = makeSsoUrl(store, location.toString());
+      location.assign(ssoUrl);
+    }
+  },
+
   render: function() {
     const store: Store = this.props.store;
     const loginReason = this.props.loginReason;

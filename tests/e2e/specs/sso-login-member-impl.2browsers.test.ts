@@ -47,6 +47,7 @@ const mariasReplyText = "I login as usual, although SSO is being tested.";
 
 function constructSsoLoginTest(testName: string, variants: {
       loginRequired: boolean,
+      ssoLoginRequiredLogoutUrl?: string,
       approvalRequired: boolean }) {  describe(testName, () => {  // I don't want to reindent now
 
   dieIf(variants.approvalRequired,
@@ -126,6 +127,11 @@ function constructSsoLoginTest(testName: string, variants: {
       if (variants.approvalRequired) {
         owensBrowser.adminArea.settings.login.setApproveUsers(true);
       }
+      if (variants.ssoLoginRequiredLogoutUrl) {
+        owensBrowser.scrollToBottom(); // speeds the test up
+        owensBrowser.adminArea.settings.login.setSsoLoginRequiredLogoutUrl(
+            variants.ssoLoginRequiredLogoutUrl);
+      }
       owensBrowser.adminArea.settings.clickSaveAll();
     });
   }
@@ -133,20 +139,31 @@ function constructSsoLoginTest(testName: string, variants: {
 
   // ------ Maria logs in via SSO
 
+  const willBeInstantRedirect = variants.loginRequired && variants.ssoLoginRequiredLogoutUrl;
+
   it("Maria goes to the discussion page", () => {
-    mariasBrowser.go(discussionPageUrl);
+    // (Don't try to disable rate limits, if there'll be an instant redirect
+    // — that'd cause "Error: unable to set cookie". )
+    mariasBrowser.go(discussionPageUrl, { useRateLimits: willBeInstantRedirect });
   });
 
   let mariasUrlBeforeLogin;
 
-  it("... clicks Log In, gets redirected to the SSO page", () => {
+  it("... (maybe clicks Log In, and) gets redirected to the SSO page", () => {
     mariasUrlBeforeLogin = mariasBrowser.url().value;
-    mariasBrowser.rememberCurrentUrl();
+    mariasBrowser.rememberCurrentUrl();  // (is wrong if willBeInstantRedirect, fine)
 
     if (variants.loginRequired) {
-      // No topbar visible, unless logged in already. Instead, a "full screen"
-      // login button is all Maria sees.
-      mariasBrowser.loginDialog.clickSingleSignOnButton();
+      if (variants.ssoLoginRequiredLogoutUrl) {
+        // Should get auto redirected to the SSO url, at a different origin.
+        // So url() above is the wrong url, instead:
+        mariasUrlBeforeLogin = discussionPageUrl;
+      }
+      else {
+        // No topbar visible, because not logged in yet. Instead, a "full screen"
+        // login button is all Maria sees.
+        mariasBrowser.loginDialog.clickSingleSignOnButton();
+      }
     }
     else {
       // The forum is visible also without login, and in the topbar, there's a Login button,
@@ -154,7 +171,8 @@ function constructSsoLoginTest(testName: string, variants: {
       mariasBrowser.topbar.clickLogin();   // [TyT2ABKR058TN2]
     }
 
-    mariasBrowser.waitForNewUrl();
+    mariasBrowser.waitForNewOrigin(
+        willBeInstantRedirect ? discussionPageUrl : undefined);
   });
 
   it("... and gets to the dummy external login page, at localhost:8080", () => {
@@ -221,10 +239,29 @@ function constructSsoLoginTest(testName: string, variants: {
     assert.equal(username, 'maria');
   });
 
-  /*
-  it("... she logs out", () => {
-    mariasBrowser.topbar.clickLogout();
+
+  it("Maria logs out", () => {
+    mariasBrowser.rememberCurrentUrl();
+    mariasBrowser.topbar.clickLogout({ waitForLoginButton: !variants.loginRequired });
   });
+
+  if (variants.ssoLoginRequiredLogoutUrl) {
+    it("... and gets sent to the  ssoLoginRequiredLogoutUrl  page ", () => {
+      mariasBrowser.waitForNewOrigin();
+      assert.equal(mariasBrowser.url().value, variants.ssoLoginRequiredLogoutUrl);
+    });
+  }
+  else if (variants.loginRequired) {
+    it("... and the SSO login button appears", () => {
+      mariasBrowser.loginDialog.waitForSingleSignOnButton();
+    });
+  }
+  else {
+    // clickLogout() has already verified that a Log In button has appeared.
+  }
+
+
+  /*
 
   it("... clicks reply", () => {
     mariasBrowser.topic.clickReplyToOrigPost();

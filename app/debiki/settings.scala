@@ -80,6 +80,18 @@ trait AllSettings {
   // account hasn't been approved (or has been rejected), then the user is sent to this page.
   def ssoNotApprovedUrl: String
 
+  // If login required and SSO enabled, and one logs out, then both 1 and 2 happen:
+  //
+  // 1. If one clicks Logout, one gets logged out and threafter redirected to this URL.
+  //
+  // 2. I one is *not* logged in, one gets sent directly to the SSO login url.
+  // However, doing this without a logout URL, then, if clicking Logout,
+  // one would get sent to the SSO url and then maybe automatically logged in over there,
+  // and then sent back to Talkyard, now logged in. — So one couldn't log out.
+  // Instead, after logout, needs to be sent to somewhere else.
+  //
+  def ssoLoginRequiredLogoutUrl: String
+
   REFACTOR // ----- These could be moved to per member uiPrefs fields. ------------
   def forumMainView: String
   def forumTopicsSortButtons: String
@@ -188,6 +200,7 @@ trait AllSettings {
     enableSso = Some(self.enableSso),
     ssoUrl = Some(self.ssoUrl),
     ssoNotApprovedUrl = Some(self.ssoNotApprovedUrl),
+    ssoLoginRequiredLogoutUrl = Some(self.ssoLoginRequiredLogoutUrl),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
     forumCategoryLinks = Some(self.forumCategoryLinks),
@@ -296,6 +309,7 @@ object AllSettings {
     val enableSso = false
     val ssoUrl = ""
     val ssoNotApprovedUrl = ""
+    val ssoLoginRequiredLogoutUrl = ""
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
@@ -405,6 +419,7 @@ case class EffectiveSettings(
   def enableSso: Boolean = firstInChain(_.enableSso) getOrElse default.enableSso
   def ssoUrl: String = firstInChain(_.ssoUrl) getOrElse default.ssoUrl
   def ssoNotApprovedUrl: String = firstInChain(_.ssoNotApprovedUrl) getOrElse default.ssoNotApprovedUrl
+  def ssoLoginRequiredLogoutUrl: String = firstInChain(_.ssoLoginRequiredLogoutUrl) getOrElse default.ssoLoginRequiredLogoutUrl
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
   def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
@@ -468,6 +483,12 @@ case class EffectiveSettings(
   def coreMemberFlagWeight: Float = firstInChain(_.coreMemberFlagWeight) getOrElse default.coreMemberFlagWeight
 
   def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5] and then remove, use only userMustBeAuthenticated but rename to mustLoginToRead
+
+  def effectiveSsoLoginRequiredLogoutUrl: Option[String] =  // [350RKDDF5]
+    if (enableSso && userMustBeAuthenticated && ssoLoginRequiredLogoutUrl.nonEmpty)
+      Some(ssoLoginRequiredLogoutUrl)
+    else
+      None
 
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:
@@ -608,6 +629,7 @@ object Settings2 {
       "enableSso" -> JsBooleanOrNull(s.enableSso),
       "ssoUrl" -> JsStringOrNull(s.ssoUrl),
       "ssoNotApprovedUrl" -> JsStringOrNull(s.ssoNotApprovedUrl),
+      "ssoLoginRequiredLogoutUrl" -> JsStringOrNull(s.ssoLoginRequiredLogoutUrl),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
       "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
@@ -699,6 +721,7 @@ object Settings2 {
     enableSso = anyBool(json, "enableSso", d.enableSso),
     ssoUrl = anyString(json, "ssoUrl", d.ssoUrl),
     ssoNotApprovedUrl = anyString(json, "ssoNotApprovedUrl", d.ssoNotApprovedUrl),
+    ssoLoginRequiredLogoutUrl = anyString(json, "ssoLoginRequiredLogoutUrl", d.ssoLoginRequiredLogoutUrl),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
     forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),

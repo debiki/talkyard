@@ -85,6 +85,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         enable_sso,
         sso_url,
         sso_not_approved_url,
+        sso_login_required_logout_url,
         forum_main_view,
         forum_topics_sort_buttons,
         forum_category_links,
@@ -138,7 +139,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -170,6 +171,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.enableSso.getOrElse(None).orNullBoolean,
       editedSettings2.ssoUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.ssoNotApprovedUrl.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.ssoLoginRequiredLogoutUrl.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumMainView.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumTopicsSortButtons.getOrElse(None).trimOrNullVarchar,
       editedSettings2.forumCategoryLinks.getOrElse(None).trimOrNullVarchar,
@@ -268,6 +270,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("enable_sso", s.enableSso.map(_.orNullBoolean))
     maybeSet("sso_url", s.ssoUrl.map(_.trimOrNullVarchar))
     maybeSet("sso_not_approved_url", s.ssoNotApprovedUrl.map(_.trimOrNullVarchar))
+    maybeSet("sso_login_required_logout_url", s.ssoLoginRequiredLogoutUrl.map(_.trimOrNullVarchar))
     maybeSet("forum_main_view", s.forumMainView.map(_.trimOrNullVarchar))
     maybeSet("forum_topics_sort_buttons", s.forumTopicsSortButtons.map(_.trimOrNullVarchar))
     maybeSet("forum_category_links", s.forumCategoryLinks.map(_.trimOrNullVarchar))
@@ -366,6 +369,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       enableSso = getOptBoolean(rs, "enable_sso"),
       ssoUrl = getOptString(rs, "sso_url"),
       ssoNotApprovedUrl = getOptString(rs, "sso_not_approved_url"),
+      ssoLoginRequiredLogoutUrl = getOptString(rs, "sso_login_required_logout_url"),
       forumMainView = getOptString(rs, "forum_main_view"),
       forumTopicsSortButtons = getOptString(rs, "forum_topics_sort_buttons"),
       forumCategoryLinks = getOptString(rs, "forum_category_links"),

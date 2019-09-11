@@ -130,7 +130,7 @@ case class SiteBackupReader(context: EdContext) {
           readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
           readJsArray(bodyJson, "pagePaths", optional = true),
-          readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),
+          readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),  // RENAME to "pageIdsByLookupKeys"
           readJsArray(bodyJson, "categories", optional = true),
           readJsArray(bodyJson, "posts", optional = true))
       }

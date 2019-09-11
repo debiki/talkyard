@@ -111,6 +111,15 @@ trait AuthzSiteDaoMixin {
     if (user.exists(_.isAdmin))
       return (true, "")
 
+    val settings = getWholeSiteSettings()
+    if (settings.userMustBeAuthenticated) {
+      if (!user.exists(u => u.isAuthenticated))
+        return (false, "TyMLOGINREQ")
+
+      if (settings.userMustBeApproved && !user.exists(_.isApprovedOrStaff))
+        return (false, "TyMNOTAPPR")
+    }
+
     val groupIds: immutable.Seq[UserId] =
       anyTransaction.map(_.loadGroupIdsMemberIdFirst(user)) getOrElse {
         getGroupIdsOwnFirst(user)

@@ -96,8 +96,8 @@ function pagesFor(browser) {
       return origin.replace(/https?:\/\//, '');
     },
 
-    _findOrigin: (): string => {
-      const url = browser.url().value;
+    _findOrigin: (anyUrl?: string): string => {
+      const url = anyUrl || browser.url().value;
       const matches = url.match(/(https?:\/\/[^\/]+)\//);
       if (!matches) {
         throw Error('NoOrigin');
@@ -245,6 +245,16 @@ function pagesFor(browser) {
     waitForNewUrl: function() {
       assert(!!api._currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
       while (api._currentUrl === browser.url().value) {
+        browser.pause(250);
+      }
+      api._currentUrl = '';
+    },
+
+    waitForNewOrigin: function(anyCurrentUrl?: string) {
+      const currentUrl = anyCurrentUrl || api._currentUrl;
+      assert(!!currentUrl, "Please call browser.rememberCurrentUrl() first [TyE603RK54]");
+      const curOrigin = api._findOrigin(currentUrl);
+      while (curOrigin === api.origin()) {
         browser.pause(250);
       }
       api._currentUrl = '';
@@ -1315,6 +1325,7 @@ function pagesFor(browser) {
         if (options.waitForLoginButton === false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
+          // Or we got redirected to an SSO login window.
         } else {
           api.waitUntilModalGone();
           api.topbar.waitUntilLoginButtonVisible();
@@ -1671,6 +1682,10 @@ function pagesFor(browser) {
 
       clickSingleSignOnButton: () => {
         browser.waitAndClick('.s_LD_SsoB');
+      },
+
+      waitForSingleSignOnButton: () => {
+        browser.waitForVisible('.s_LD_SsoB');
       },
 
       createPasswordAccount: function(data: { fullName, username, email?, emailAddress?, password },
@@ -4404,6 +4419,12 @@ function pagesFor(browser) {
             api.scrollIntoViewInPageColumn('.e_SsoUrl input');
             api.waitUntilDoesNotMove('.e_SsoUrl input');
             api.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
+          },
+
+          setSsoLoginRequiredLogoutUrl: (url: string) => {
+            api.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
+            api.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
+            api.waitAndSetValue('.e_SsoAftLgoUrl input', url, { checkAndRetry: true });
           },
 
           setEnableSso: (enabled: boolean) => {

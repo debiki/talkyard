@@ -127,14 +127,19 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
         dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
     }
 
-    if (request.isAjax) {
-      def homepagePath = JsString("/")
-      // Keep the xsrf cookie, so login dialog works:
-      OkSafeJson(Json.obj("goToUrl" -> (if (stayOnSamePage) JsNull else homepagePath)))
-        .discardingCookies(DiscardingSessionCookie)
-    }
-    else
-      TemporaryRedirect("/")
+    def goToNext = request.siteSettings.effectiveSsoLoginRequiredLogoutUrl getOrElse "/"
+
+    val response =
+      if (request.isAjax) {
+        OkSafeJson(
+          Json.obj(
+            "goToUrl" -> (if (stayOnSamePage) JsNull else JsString(goToNext))))
+      }
+      else
+        TemporaryRedirect(goToNext)
+
+    // Keep the xsrf cookie, so the login dialog will work.
+    response.discardingCookies(DiscardingSessionCookie)
   }
 
 

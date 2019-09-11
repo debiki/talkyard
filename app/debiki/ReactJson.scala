@@ -1098,6 +1098,9 @@ object JsonMaker {
       json += "ssoUrl" -> JsString(settings.ssoUrl)
     if (settings.ssoUrl.nonEmpty && settings.enableSso)
       json += "enableSso" -> JsTrue
+    if (settings.effectiveSsoLoginRequiredLogoutUrl.nonEmpty)
+      json += "effectiveSsoLoginRequiredLogoutUrl" ->
+          JsString(settings.effectiveSsoLoginRequiredLogoutUrl.get)
     if (settings.enableApi != D.enableApi)
       json += "enableApi" -> JsBoolean(settings.enableApi)
     if (settings.enableForum != D.enableForum)
