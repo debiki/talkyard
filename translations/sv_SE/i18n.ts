@@ -964,13 +964,14 @@ var t_sv_SE: TalkyardTranslations = t = {
   cud: {
     CreateUser: "Create User",
     CreateAccount: "Create Account",
-    LoginAsGuest: "Login as Guest",
-    EmailPriv: "Email: (will be kept private)",
-    EmailOptPriv: "Email: (optional, will be kept private)",
+    EmailC: "Email:",
+    keptPriv: "will be kept private",
+    forNotfsKeptPriv: "for reply notifications, kept private",
     EmailVerifBy_1: "Your email has been verified by ",
     EmailVerifBy_2: ".",
-    Username: "Username: (unique and short)",
-    FullName: "Full name: (optional)",
+    UsernameC: "Username:",
+    FullNameC: "Full name:",
+    optName: "optional",
 
     OrCreateAcct_1: "Or ",
     OrCreateAcct_2: "create an account",
@@ -1044,9 +1045,9 @@ var t_sv_SE: TalkyardTranslations = t = {
     ElseGoToHome_2: "go to the homepage.",
 
     CreateAcconut: "Create account",
+    ContinueWithDots: "Continue with ...",
     SignUp: "Sign up",
     LogIn: "Log in",
-    with_: "with ",
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
     AuthRequired: "Authentication required to access this site",
@@ -1067,7 +1068,8 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     OrCreateAcctHere: "Or create account:",
     OrTypeName: "Or type your name:",
-    OrFillIn: "Or fill in:",
+    OrLogIn: "Or log in:",
+    YourNameQ: "Your name?",
 
     BadCreds: "Wrong username or password",
 

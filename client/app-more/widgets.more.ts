@@ -33,6 +33,21 @@ namespace rb {
 const r = ReactDOMFactories;
 
 
+const notBold = { style: {
+  fontWeight: 'normal',
+  marginLeft: '3px',
+  opacity: 0.93,
+}};
+
+export const FullNameLabel = rFragment({},
+  t.cud.FullNameC, r.span(notBold, ' (' + t.cud.optName + ')'));
+
+export const emailLabel = (isForGuest: boolean) => rFragment({},
+  t.cud.EmailC, r.span(notBold, ' (',
+    isForGuest ? t.cud.forNotfsKeptPriv : t.cud.keptPriv,
+    ')'));
+
+
 // (Or move to slim-bundle? So the search results page can be generated server side.)
 //
 export var Expandable = (

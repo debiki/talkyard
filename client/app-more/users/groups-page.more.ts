@@ -180,11 +180,11 @@ const CreateGroupDialog = React.createFactory<{}>(function() {
 
   if (isOpen) {
     contents = rFragment({},
-        util.UsernameInput({ label: t.cud.Username, id: 'te_CrGD_Un', tabIndex: 1,
+        util.UsernameInput({ label: t.cud.UsernameC, id: 'te_CrGD_Un', tabIndex: 1,
           defaultValue: '', isForGroup: true,
           onChangeValueOk: (value, isOk) => setUsername({ value, isOk })
         }),
-        util.FullNameInput({ label: t.cud.FullName, id: 'te_CrGD_FN', tabIndex: 1,
+        util.FullNameInput({ label: FullNameLabel, id: 'te_CrGD_FN', tabIndex: 1,
           defaultValue: '',
           onChangeValueOk: (value, isOk) => setFullName({ value, isOk }) }));
 

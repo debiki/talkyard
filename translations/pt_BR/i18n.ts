@@ -182,7 +182,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     // This shown just below the username input:
     UnUnqShrt_1: "Your ",
     UnUnqShrt_2: "@username",
-    UnUnqShrt_3: ", unique and short",
+    UnUnqShrt_3: ", único e curto",
 
     // Generic messages for all input fields:
     TooShort: (minLength: number) => `Should be at least ${minLength} characters`,
@@ -966,13 +966,14 @@ var t_pt_BR: TalkyardTranslations = t = {
   cud: {
     CreateUser: "Criar Usuário",
     CreateAccount: "Criar Conta",
-    LoginAsGuest: "Fazer login como convidado",
-    EmailPriv: "Email: (será mantido privado)",
-    EmailOptPriv: "Email: (opcional, será mantido privado)",
+    EmailC: "Email:",
+    keptPriv: "será mantido privado",
+    forNotfsKeptPriv: "para notificações de resposta, mantido privado",  // MAYBE I used Google Translate
     EmailVerifBy_1: "Seu email foi verificado por ",
     EmailVerifBy_2: ".",
-    Username: "Nome de usuário: (único e curto)",
-    FullName: "Nome completo: (opcional)",
+    UsernameC: "Nome de usuário:",
+    FullNameC: "Nome completo:",
+    optName: "opcional",
 
     OrCreateAcct_1: "Ou ",
     OrCreateAcct_2: "crie uma conta",
@@ -1046,9 +1047,9 @@ var t_pt_BR: TalkyardTranslations = t = {
     ElseGoToHome_2: "ir à página inicial.",
 
     CreateAcconut: "Criar conta",
+    ContinueWithDots: "Continue com ...",  // MAYBE
     SignUp: "Cadastrar-se",
     LogIn: "Fazer login",
-    with_: "com ",
     LogInWithPwd: "Login com Senha",
     CreateAdmAcct: "Criar conta de administrador:",
     AuthRequired: "Autenticação obrigatória para acessar este site",
@@ -1069,7 +1070,8 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     OrCreateAcctHere: "Ou crei uma conta:",
     OrTypeName: "Ou digite seu nome:",
-    OrFillIn: "Ou preencha:",
+    OrLogIn: "Ou faça login:", // was: "Ou preencha:"" = "fill in".  MAYBE
+    YourNameQ: "Seu nome?",  // MAYBE
 
     BadCreds: "Nome de usuário ou senha incorretos",
 

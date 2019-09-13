@@ -316,7 +316,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     const wrongAddr = this.state.theWrongEmailAddress;
 
     const emailInput =
-        EmailInput({ label: emailOptional ? t.cud.EmailOptPriv : t.cud.EmailPriv, id: 'e2eEmail',
+        EmailInput({ label: emailLabel(isForGuest), id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
@@ -328,7 +328,7 @@ export var CreateUserDialogContent = createClassAndFactory({
               null : "Use the email address you specified in the config file." });
 
     const usernameInputMaybe = isForGuest ? null :
-        util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 1,
+        util.UsernameInput({ label: t.cud.UsernameC, id: 'e2eUsername', tabIndex: 1,
           defaultValue: state.userData.username,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
@@ -339,7 +339,7 @@ export var CreateUserDialogContent = createClassAndFactory({
             setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) });
 
     const fullNameInput =
-      FullNameInput({ label: isForGuest ? t.NameC : t.cud.FullName, ref: 'fullName',
+      FullNameInput({ label: isForGuest ? t.NameC : FullNameLabel, ref: 'fullName',
         minLength: isForGuest ? 2 : undefined, // guests have no username to show instead
         id: 'e2eFullName', defaultValue: props.fullName, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
@@ -376,7 +376,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         orCreateAccountMaybe,
         //orLoginAsGuestMaybe,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            tabIndex: 2 }, isForGuest ? t.cud.LoginAsGuest : t.cud.CreateAccount)));
+            tabIndex: 2 }, isForGuest ? t.Submit : t.cud.CreateAccount)));
   }
 });
 

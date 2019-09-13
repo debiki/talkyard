@@ -826,13 +826,14 @@ interface TalkyardTranslations {
   cud: {
     CreateUser: string;
     CreateAccount: string;
-    LoginAsGuest: string;
-    EmailPriv: string;
-    EmailOptPriv: string;
+    EmailC: string;
+    keptPriv: string;
+    forNotfsKeptPriv: string;
     EmailVerifBy_1: string;
     EmailVerifBy_2: string;
-    Username: string;
-    FullName: string;
+    UsernameC: string;
+    FullNameC: string;
+    optName: string;
 
     OrCreateAcct_1: string,
     OrCreateAcct_2: string,
@@ -885,9 +886,9 @@ interface TalkyardTranslations {
     ElseGoToHome_2: string;
 
     CreateAcconut: string;
+    ContinueWithDots: string;
     SignUp: string;
     LogIn: string;
-    with_: string;
     LogInWithPwd: string;
     CreateAdmAcct: string;
     AuthRequired: string;
@@ -908,7 +909,8 @@ interface TalkyardTranslations {
 
     OrCreateAcctHere: string;
     OrTypeName: string;
-    OrFillIn: string;
+    OrLogIn: string;
+    YourNameQ: string;
 
     BadCreds: string;
 

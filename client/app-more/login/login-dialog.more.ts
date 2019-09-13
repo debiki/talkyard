@@ -153,7 +153,9 @@ const LoginDialog = createClassAndFactory({
   },
 
   switchBetweenLoginAndSignUp: function() {
-    this.setState({ isSignUp: !this.state.isSignUp });
+    // Don't switch back to guest login, after a "sign up instead" click
+    // — that'd be confusing? Guest login is no real signup.
+    this.setState({ isSignUp: !this.state.isSignUp, isForGuest: false });
   },
 
   switchBetweenGuestAndPassword: function() {
@@ -353,9 +355,7 @@ export const LoginDialogContent = createClassAndFactory({
     const ss = store.settings;
 
     const anyOpenAuth = ss.enableGoogleLogin || ss.enableFacebookLogin ||
-        ss.enableTwitterLogin || ss.enableGitHubLogin;
-
-    const spaceDots = anyOpenAuth ? ' ...' : '';
+        ss.enableTwitterLogin || ss.enableGitHubLogin || ss.enableLinkedInLogin;
 
     let content;
     if (settings.enableSso) {
@@ -368,31 +368,36 @@ export const LoginDialogContent = createClassAndFactory({
     else {
       content = rFragment({},
         becomeOwnerInstructions,
-        r.p({ id: 'dw-lgi-or-login-using' },
-          // I18N UX "Continue with" converts better than Sign Up or Log In, says
-          // Facebook brand guidelines. So, could rephrase this later:
-            (isSignUp ? t.ld.SignUp : t.ld.LogIn) + ' ' + t.ld.with_ + spaceDots),
-        r.div({ id: 'dw-lgi-other-sites' },
-          !ss.enableGoogleLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-google', 'Google')),
-          !ss.enableFacebookLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', rFragment({},
-                // Need to follow Facebook's brand guidelines. [FBBRAND]
-                FacebookLogoImage, "Facebook"))),
-          !ss.enableTwitterLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
-          !ss.enableGitHubLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
-          !ss.enableLinkedInLogin ? null :
-              OpenAuthButton(makeOauthProps('icon-linkedin', 'LinkedIn')),
-          // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
-          ),
-
-        !anyOpenAuth || (isSignUp && ss.allowLocalSignup === false) ? null :
+        !anyOpenAuth ? null : rFragment({},
           r.p({ id: 'dw-lgi-or-login-using' },
-            isSignUp
-              ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
-              : t.ld.OrFillIn),
+            // "Continue with" converts better than "Sign Up" or "Log In", says
+            // Facebook's brand guidelines.
+            t.ld.ContinueWithDots),
+          r.div({ id: 'dw-lgi-other-sites' },
+            !ss.enableGoogleLogin ? null :
+                OpenAuthButton(makeOauthProps('icon-google', 'Google')),
+            !ss.enableFacebookLogin ? null :
+                OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', rFragment({},
+                  // Need to follow Facebook's brand guidelines. [FBBRAND]
+                  FacebookLogoImage, "Facebook"))),
+            !ss.enableTwitterLogin ? null :
+                OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
+            !ss.enableGitHubLogin ? null :
+                OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
+            !ss.enableLinkedInLogin ? null :
+                OpenAuthButton(makeOauthProps('icon-linkedin', 'LinkedIn')),
+            // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
+            )),
+
+        isSignUp && ss.allowLocalSignup === false ? null : (
+          r.p({ id: 'dw-lgi-or-login-using' },
+            anyOpenAuth
+              ? (isSignUp
+                  ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
+                  : t.ld.OrLogIn)
+              : (isSignUp
+                  ? (isForGuest ? t.ld.YourNameQ : t.ld.SignUp)
+                  : t.ld.LogIn))),
 
         switchToOtherDialogInstead,
         loginForm,
