@@ -124,6 +124,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       case None =>
         true
       case Some(urlPath) =>
+        // May-not-see tested here: [TyT503KRDHJ2]. (May-see: Tested "everywhere".)
         dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
     }
 

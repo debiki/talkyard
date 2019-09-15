@@ -62,7 +62,15 @@ describe(`${testName}  TyT406MRTJW2`, () => {
   });
 
   it("Logs out", () => {
+    browser.rememberCurrentUrl();
+    assert.equal(browser.urlPath(), '/-1/i-am-the-goog-of-email');
     browser.topbar.clickLogout({ waitForLoginButton: false });
+  });
+
+  it("... gets redirected to the homepage, because may not see the topic, [TyT503KRDHJ2] " +
+      "and leaving the url visible in the address bar could reveal that the topic exists", () => {
+    browser.waitForNewUrl();
+    assert.equal(browser.urlPath(), '/');
   });
 
 
@@ -82,6 +90,18 @@ describe(`${testName}  TyT406MRTJW2`, () => {
 
   it("... gets logged in with the correct username", () => {
     browser.topbar.assertMyUsernameMatches('gmail_user');
+  });
+
+
+  it("Sees the topic in the topic list", () => {
+    browser.forumTopicList.waitForTopics();
+    browser.forumTopicList.assertNumVisible(1);
+    browser.forumTopicList.assertTopicVisible(googleUSersTopic.title);
+  });
+
+
+  it("... opens it", () => {
+    browser.forumTopicList.goToTopic(googleUSersTopic.title);
   });
 
 
