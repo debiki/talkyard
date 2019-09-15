@@ -680,7 +680,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
 
     def createSiteWithOneCatPageMember(hostname: String, pageExtId: Option[ExtImpId] = None,
-          pageAltIds: Set[AltPageId] = Set.empty)
+          pageDiscussionIds: Set[AltPageId] = Set.empty)
           : (Site, CreateForumResult, PageId, Seq[Post], User, User, SiteDao) = {
       val (site, dao) = createSite(hostname)
       val owen = createPasswordOwner("owner_un", dao)
@@ -694,7 +694,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       val pageId: PageId = createPage(
         PageType.Discussion, textAndHtmlMaker.testTitle("Forum Title"),
         textAndHtmlMaker.testBody("Forum intro text."), SysbotUserId, browserIdData,
-        dao, Some(forum.defaultCategoryId), extId = pageExtId, altIds = pageAltIds)
+        dao, Some(forum.defaultCategoryId), extId = pageExtId, discussionIds = pageDiscussionIds)
 
       val pagePosts = dao.readOnlyTransaction { tx => tx.loadPostsOnPage(pageId) }
 
@@ -717,7 +717,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
     "Import new pages and replies, all posts approved" - {
 
       val oldPageExtId = "old_page_ext_id"
-      val oldPageAltId = "old_page_alt_id"
+      val oldPageDiscId = "old_page_disc_id"
 
       lazy val (
         site,
@@ -725,7 +725,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         owen,
         merrylMember,
         dao) = createSiteWithOneCatPageMember(
-          "imp-pages-replies", pageExtId = Some(oldPageExtId), pageAltIds = Set(oldPageAltId))
+          "imp-pages-replies", pageExtId = Some(oldPageExtId), pageDiscussionIds = Set(oldPageDiscId))
 
       val pageToUpsertExtId = "ups_ext_id"
       val pageToUpsertAltId = "ups_alt_id"
@@ -991,7 +991,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
           val patchToUpsert = SiteBackup.empty.copy(
             categories = Vector(makeEmbeddedCommentsCategory(forum)),
             pages = Vector(oldPage.copy(extImpId = Some("wrong_ext_id"))),
-            pageIdsByAltIds = Map(oldPageAltId -> oldPage.pageId))
+            pageIdsByAltIds = Map("diid:" + oldPageDiscId -> oldPage.pageId))
           val exception = intercept[Exception] {
             upsert(site.id, patchToUpsert)
           }
@@ -1001,12 +1001,12 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
 
 
-    "add a reply to a page, via its alt id" - {
-      val oldPageAltId = "old_page_alt_id"
+    "add a reply to a page, via its discussion id" - {
+      val oldPageDiscId = "old_page_disc_id"
 
       lazy val (site, forum, oldPageId, oldPagePosts, owen, _, dao) =
         createSiteWithOneCatPageMember("ups-reply-via-page-alt-id", pageExtId = None,
-          pageAltIds = Set(oldPageAltId))
+              pageDiscussionIds = Set(oldPageDiscId))
 
       lazy val pageToUpsertAlreadyExists = AboutCatPageMeta333.copy(
         version = 2,  // version bumped to 2 here [306MDH26]
@@ -1023,7 +1023,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         patchToUpsert = SiteBackup.empty.copy(
           categories = Vector(dummyCategory),
           pages = Vector(pageToUpsertAlreadyExists),  // same alt id —> is considered same page
-          pageIdsByAltIds = Map(oldPageAltId -> pageToUpsertAlreadyExists.pageId),
+          pageIdsByAltIds = Map("diid:" + oldPageDiscId -> pageToUpsertAlreadyExists.pageId),
           posts = Vector(
             Page333BodyPost, // needed, so the reply has sth to refer to
             upsReply).map(_.copy(

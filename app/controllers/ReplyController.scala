@@ -150,6 +150,10 @@ object EmbeddedCommentsPageCreator {
 
     // A bit dupl knowledge. [205KST526]
     anyDiscussionId.foreach(discussionId => {
+      throwBadRequestIf(discussionId.startsWith("diid:"),
+        "TyE205WKDH46", o"""The 'diid:' prefix is reserved. It gets added server side;
+          don't include client side.""")
+
       // Discussion ids are prefixed by 'diid:' so they have their own namespace
       // and won't clash with any url, e.g. if they start with '/' they'd be mistaken
       // for urls, without the 'diid' prefix..
@@ -280,7 +284,7 @@ object EmbeddedCommentsPageCreator {
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
       showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
-      Who.System, request.spamRelatedStuff, altPageIds = anyDiscussionId.toSet,
+      Who.System, request.spamRelatedStuff, discussionIds = anyDiscussionId.toSet,
       embeddingUrl = Some(embeddingUrl))
   }
 

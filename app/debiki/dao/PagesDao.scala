@@ -55,7 +55,7 @@ trait PagesDao {
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
-        altPageIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
+        discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtImpId] = None): PagePathWithId = {
 
     if (pageRole.isSection) {
@@ -81,6 +81,8 @@ trait PagesDao {
     if (titleTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
+    dieIf(discussionIds.exists(_.startsWith("diid:")), "TyE0KRTDT53J")
+
     quickCheckIfSpamThenThrow(byWho, bodyTextAndHtml, spamRelReqStuff)
 
     val pagePath = readWriteTransaction { tx =>
@@ -89,7 +91,7 @@ trait PagesDao {
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
-        tx, altPageIds = altPageIds, embeddingUrl = embeddingUrl, extId = extId)
+        tx, discussionIds = discussionIds, embeddingUrl = embeddingUrl, extId = extId)
 
       val notifications = notfGenerator(tx).generateForNewPost(
         PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml), anyReviewTask)
@@ -137,7 +139,7 @@ trait PagesDao {
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
-      altPageIds: Set[AltPageId] = Set.empty,
+      discussionIds: Set[AltPageId] = Set.empty,
       embeddingUrl: Option[String] = None,
       extId: Option[String] = None,
       createAsDeleted: Boolean = false): (PagePathWithId, Post, Option[ReviewTask]) = {
@@ -344,10 +346,10 @@ trait PagesDao {
       tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
 
-    altPageIds.foreach(tx.insertAltPageId(_, realPageId = pageId))
+    discussionIds.foreach(id => tx.insertAltPageId("diid:" + id, realPageId = pageId))
 
     embeddingUrl foreach { embUrl =>
-      if (!altPageIds.contains(embUrl)) {
+      if (!discussionIds.contains(embUrl)) {
         // If the url already points to another embedded discussion, keep it pointing to the old one.
         // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
         tx.insertAltPageIdIfFree(embUrl, realPageId = pageId)
@@ -356,7 +358,7 @@ trait PagesDao {
       // a new address, store the discussion id by url path too, without origin. [06KWDNF2]
       // Maybe some time later, could add a conf val to disable this.
       val embeddingPath = extractUrlPath(embUrl)
-      if (!altPageIds.contains(embeddingPath)) {
+      if (!discussionIds.contains(embeddingPath)) {
         tx.insertAltPageIdIfFree(embeddingPath, realPageId = pageId)
       }
     }
