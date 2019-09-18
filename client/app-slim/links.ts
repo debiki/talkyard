@@ -29,11 +29,11 @@
 
 // In embedded comments, need incl the Talkyard server url, otherwise links will [EMBCMTSORIG]
 // resolve to the embeddING server.
-// Hack. Currently there's always exactly one store, and it always has remoteOriginOrEmpty set.
+// Hack. Currently there's always exactly one store, and it always has embeddedOriginOrEmpty set.
 export function origin(): string {
   // This needs to happen in a function, so gets reevaluated server side, where the same script
   // engine gets reused, for rendering pages at different sites, different origins.
-  return (<any> window).theStore.remoteOriginOrEmpty;  // [ONESTORE]
+  return (<any> window).theStore.embeddedOriginOrEmpty;  // [ONESTORE]
 }
 
 
@@ -211,7 +211,7 @@ export function linkToUpload(origins: Origins, uploadsPath: string): string {
   // If there's a CDN, always access uploaded pics via the CDN. Or,
   // if we're in an embedded comments discussion, access the pics via the Talkyard
   // server's origin = the remote origin. Otherwise, no origin needed (empty string).
-  const origin = origins.anyCdnOrigin || origins.remoteOriginOrEmpty;
+  const origin = origins.anyCdnOrigin || origins.embeddedOriginOrEmpty;
   const uploadsUrlBasePath = '/-/u/';
   return origin + uploadsUrlBasePath + origins.pubSiteId + '/' + uploadsPath;
 }

@@ -99,7 +99,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         and cdn_origin = ?
       """
     val values = List(siteId.asAnyRef, pageId.asAnyRef, params.widthLayout.toInt.asAnyRef,
-      params.isEmbedded.asAnyRef, params.remoteOriginOrEmpty, params.cdnOriginOrEmpty)
+      params.isEmbedded.asAnyRef, params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty)
     runQueryFindOneOrNone(query, values, rs => {
       val cachedHtml = rs.getString("cached_html")
       val cachedVersion = getCachedPageVersion(rs)
@@ -142,7 +142,7 @@ trait PagesSiteDaoMixin extends SiteTransaction {
     runUpdateSingleRow(insertStatement, List(
       siteId.asAnyRef, pageId,
       params.widthLayout.toInt.asAnyRef, params.isEmbedded.asAnyRef,
-      params.remoteOriginOrEmpty, params.cdnOriginOrEmpty,
+      params.embeddedOriginOrEmpty, params.cdnOriginOrEmpty,
       version.siteVersion.asAnyRef, version.pageVersion.asAnyRef, version.appVersion,
       version.reactStoreJsonHash, reactStorejsonString, html))
   }

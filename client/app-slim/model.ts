@@ -744,7 +744,7 @@ interface PageMeta {
 
 
 interface Origins {
-  remoteOriginOrEmpty: string;
+  embeddedOriginOrEmpty: string;
   anyCdnOrigin?: string;
   pubSiteId: string;
 }

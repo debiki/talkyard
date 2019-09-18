@@ -116,7 +116,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "EmptySiteJ",
       "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "remoteOriginOrEmpty" -> "",
+      "embeddedOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
@@ -344,7 +344,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> renderParams.isEmbedded,
       // For embedded comments pages, relative links don't work — then need to include
       // the Talkyard server origin in the links. [REMOTEORIGIN]
-      "remoteOriginOrEmpty" -> renderParams.remoteOriginOrEmpty,
+      "embeddedOriginOrEmpty" -> renderParams.embeddedOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
@@ -400,7 +400,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "remoteOriginOrEmpty" -> "",
+      "embeddedOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),

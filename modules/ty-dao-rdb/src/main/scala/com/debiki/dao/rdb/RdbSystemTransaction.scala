@@ -547,7 +547,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
     val values = List(sitePageId.siteId.asAnyRef, sitePageId.siteId.asAnyRef,
         sitePageId.pageId.asAnyRef, renderParams.isEmbedded.asAnyRef,
-        renderParams.widthLayout.toInt.asAnyRef, renderParams.remoteOriginOrEmpty,
+        renderParams.widthLayout.toInt.asAnyRef, renderParams.embeddedOriginOrEmpty,
         renderParams.cdnOriginOrEmpty)
 
     runQueryFindOneOrNone(query, values, rs => {
@@ -610,7 +610,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
         where p.page_role <> ${PageType.EmbeddedComments.toInt}
           and h.is_embedded = false
           and width_layout in (${WidthLayout.Tiny.toInt}, ${WidthLayout.Medium.toInt})
-          -- Remote origin only used, for embedded pages. [REMOTEORIGIN]
+          -- The server's origin needs to be specified only for embedded pages. [REMOTEORIGIN]
           and h.origin = ''
           and h.cdn_origin = ?
         limit $limit

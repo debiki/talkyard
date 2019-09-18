@@ -35,7 +35,7 @@ object RenderedPageHtmlDao {
     val pageId = sitePageId.pageId
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
     val embedded = if (pageRenderParams.isEmbedded) "emb" else "dir"
-    // Here the origin matters (don't use .remoteOriginOrEmpty) because it's used
+    // Here the origin matters (don't use .embeddedOriginOrEmpty) because it's used
     // in inline scripts [INLTAGORIG]. A change doesn't require a server restart (e.g. one might
     // might move one's site to a custom domain, at runtime), so need to incl in the key.
     val origin = pageRenderParams.origin

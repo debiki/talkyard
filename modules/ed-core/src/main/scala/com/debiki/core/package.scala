@@ -415,7 +415,7 @@ package object core {
     anyPageQuery: Option[PageQuery]) {
 
     def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
-    def remoteOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
+    def embeddedOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
     def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
   }
 
