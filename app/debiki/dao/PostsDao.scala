@@ -640,9 +640,13 @@ trait PostsDao {
     val theApprovedHtmlSanitized = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8")
     val newCombinedText = textEndingWithNumNewlines(theApprovedSource, 2) + textAndHtml.text
 
-    val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(newCombinedText, followLinks = false)
-
     val pageMeta = tx.loadThePageMeta(lastPost.pageId)
+
+    val postRenderSettings = makePostRenderSettings(pageMeta.pageType)
+    val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(
+      newCombinedText,
+      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+      followLinks = false)
 
     val editedPost = lastPost.copy(
       approvedSource = Some(combinedTextAndHtml.text),
@@ -1434,8 +1438,7 @@ trait PostsDao {
       throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
 
     // ------ The post
-
-    val renderSettings = PostRendererSettings(pageMeta.pageType, thePubSiteId())
+    val renderSettings = makePostRenderSettings(pageMeta.pageType)
     COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. [4WKAB02]
     val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
       IfCached.Die("TyE2BKYUF4"))
@@ -1541,7 +1544,7 @@ trait PostsDao {
 
       // ----- A post
 
-      val renderSettings = PostRendererSettings(pageMeta.pageType, thePubSiteId())
+      val renderSettings = makePostRenderSettings(pageMeta.pageType)
       COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. + [4WKAB02]x
       val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
         IfCached.Die("TyE2PKL99"))

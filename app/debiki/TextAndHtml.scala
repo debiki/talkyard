@@ -84,18 +84,25 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
     val links: immutable.Seq[String],
     val linkDomains: immutable.Set[String],
     val linkIpAddresses: immutable.Seq[String],
+    val embeddedOriginOrEmpty: String,
     val isTitle: Boolean,
     val followLinks: Boolean,
     val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
 
     def append(text: String): TextAndHtml = {
-      append(new TextAndHtmlMaker(pubSiteId, nashorn).apply(
-        text, isTitle = isTitle, followLinks = followLinks,
+      append(new TextAndHtmlMaker(pubSiteId = pubSiteId, nashorn).apply(
+        text, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+        isTitle = isTitle, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs))
     }
 
     def append(moreTextAndHtml: TextAndHtml): TextAndHtml = {
       val more = moreTextAndHtml.asInstanceOf[TextAndHtmlImpl]
+      if (!nashorn.globals.isProd) {
+        dieIf(followLinks != more.followLinks, "TyE306MKSLN2")
+        dieIf(embeddedOriginOrEmpty != more.embeddedOriginOrEmpty, "TyE306MKSLN3")
+      }
+
       new TextAndHtmlImpl(
         text + "\n" + more.text,
         safeHtml + "\n" + more.safeHtml,
@@ -103,6 +110,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
         (links.toSet ++ more.links.toSet).to[immutable.Seq],
         linkDomains ++ more.linkDomains,
         (linkIpAddresses.toSet ++ more.linkIpAddresses.toSet).to[immutable.Seq],
+        embeddedOriginOrEmpty = embeddedOriginOrEmpty,
         isTitle = isTitle && more.isTitle,
         followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
@@ -116,7 +124,9 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
           // Don't let people @mention anyone when submitting forms?  (5LKATS0)
           // @mentions are only for members who post comments & topics to each other, right.
           usernameMentions = Set.empty,
-          Nil, Set.empty, Nil, false, false, false)
+          links = Nil, linkDomains = Set.empty,
+          linkIpAddresses = Nil, embeddedOriginOrEmpty = "",
+          isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
     }
   }
 
@@ -125,32 +135,36 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
     CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
       new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
           usernameMentions = Set.empty, // (5LKATS0)
-          Nil, Set.empty, Nil, false, false, false)
+          Nil, Set.empty, Nil, embeddedOriginOrEmpty = "", false, false, false)
     }
   }
 
 
   def forTitle(title: String): TextAndHtml =
-    apply(title, isTitle = true, followLinks = false, allowClassIdDataAttrs = false)
+    apply(title, embeddedOriginOrEmpty = "",
+      isTitle = true, followLinks = false, allowClassIdDataAttrs = false)
 
-
-  def forBodyOrComment(text: String, followLinks: Boolean = false,
-        allowClassIdDataAttrs: Boolean = false): TextAndHtml =
-    apply(text, isTitle = false, followLinks = followLinks,
+  def forBodyOrComment(text: String, embeddedOriginOrEmpty: String = "",
+        followLinks: Boolean = false, allowClassIdDataAttrs: Boolean = false): TextAndHtml =
+    apply(text, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+      isTitle = false, followLinks = followLinks,
       allowClassIdDataAttrs = allowClassIdDataAttrs)
 
   // COULD escape all CommonMark so becomes real plain text
   def forBodyOrCommentAsPlainTextWithLinks(text: String): TextAndHtml =
-    apply(text, isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
+    apply(text, embeddedOriginOrEmpty = "",
+      isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
 
   def forHtmlAlready(html: String): TextAndHtml = {
     findLinksEtc(html, RenderCommonmarkResult(html, Set.empty),
+        embeddedOriginOrEmpty = "",
         followLinks = false, allowClassIdDataAttrs = false)
   }
 
   private def apply(
     text: String,
     isTitle: Boolean,
+    embeddedOriginOrEmpty: String,
     followLinks: Boolean,
     allowClassIdDataAttrs: Boolean): TextAndHtml = {
 
@@ -159,19 +173,23 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       val safeHtml = nashorn.sanitizeHtml(text, followLinks = false)
       new TextAndHtmlImpl(text, safeHtml, links = Nil, usernameMentions = Set.empty,
         linkDomains = Set.empty,
-        linkIpAddresses = Nil, isTitle = true, followLinks = followLinks,
+        linkIpAddresses = Nil,
+        embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+        isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
     else {
       val renderResult = nashorn.renderAndSanitizeCommonMark(
         text, pubSiteId = pubSiteId,
+        embeddedOriginOrEmpty = embeddedOriginOrEmpty,
         allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
-      findLinksEtc(text, renderResult, followLinks = followLinks,
-        allowClassIdDataAttrs = allowClassIdDataAttrs)
+      findLinksEtc(text, renderResult, embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+        followLinks = followLinks, allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
 
   private def findLinksEtc(text: String, renderResult: RenderCommonmarkResult,
+        embeddedOriginOrEmpty: String,
         followLinks: Boolean, allowClassIdDataAttrs: Boolean): TextAndHtmlImpl = {
       val links = findLinks(renderResult.safeHtml)
       var linkDomains = Set[String]()
@@ -184,6 +202,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
             // Relative link? Ignore.
           }
           else if (domainOrAddress contains ":") {
+            // Java's getHost() returns the hostname, no port. Instead, getAuthority()
+            // includess any port (but not http(s)://).
             die("DwE6GKW2")
           }
           else if (domainOrAddress.startsWith("[")) {
@@ -204,7 +224,9 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       }
       new TextAndHtmlImpl(text, renderResult.safeHtml, usernameMentions = renderResult.mentions,
         links = links, linkDomains = linkDomains,
-        linkIpAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
+        linkIpAddresses = linkAddresses,
+        embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+        isTitle = false, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
   }
 
@@ -216,7 +238,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def test(text: String, isTitle: Boolean): TextAndHtml = {
     dieIf(Globals.isProd, "EsE7GPM2")
     new TextAndHtmlImpl(text, text, links = Nil, usernameMentions = Set.empty,
-      linkDomains = Set.empty, linkIpAddresses = Nil, isTitle = isTitle, followLinks = false,
+      linkDomains = Set.empty, linkIpAddresses = Nil,
+      embeddedOriginOrEmpty = "", isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }
 
@@ -226,7 +249,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def wrapInParagraphNoMentionsOrLinks(text: String, isTitle: Boolean): TextAndHtml = {
     new TextAndHtmlImpl(text, s"<p>$text</p>", usernameMentions = Set.empty,
       links = Nil, linkDomains = Set.empty,
-      linkIpAddresses = Nil, isTitle = isTitle, followLinks = false,
+      linkIpAddresses = Nil, embeddedOriginOrEmpty = "",
+      isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }
 

@@ -51,7 +51,9 @@ case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
   * creates new threads, or has 50 - 100 'play-akka.actor.default-dispatcher-NN'
   * threads, and it doesn't make sense to create engines for that many threads.
   */
-class Nashorn(globals: Globals) {
+class Nashorn(
+  // CLEAN_UP don't expose. Barely matters.
+  val globals: Globals) {
 
   private val logger = play.api.Logger
 
@@ -201,16 +203,37 @@ class Nashorn(globals: Globals) {
 
 
   def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PublSiteId,
+        embeddedOriginOrEmpty: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): RenderCommonmarkResult = {
     if (isTestSoDisableScripts)
       return RenderCommonmarkResult("Scripts disabled [EsM5GY52]", Set.empty)
 
-    // Won't work in embedded comments pages, if there's no cdn? because then no origin
-    // included —> the embedd*ing* server's address used instead, but that's the wrong server.
-    // But on non-embedded pages, use local upload links? So will work also if moves
-    // server to other address?
-    BUG; SHOULD // use embedded comments page type? And then always incl origin? [6JKD2A] ok hack for now.
-    val uploadsUrlPrefix = cdnOrigin.getOrElse("") + ed.server.UploadsUrlBasePath + pubSiteId + '/'
+    // For <iframe> embedded discussions, need include the full link to the
+    // Talkyard server — because relative links would be interpreted
+    // relative the embedd*ing* website's origin, and thus point to the
+    // wrong server. That's why we need embeddedOriginOrEmpty.
+    //
+    // However, on non-embedded pages, use local upload links. So will work also if
+    // moves server to other address.
+    //
+    // The uploadsUrlPrefix will be wrong, if 1) a CDN is in use but the CDN moves to
+    // a new address, or 2) no CDN so the links point to the Talkyard server,
+    // but the Talkyard server moves to a new address.
+    //
+    // The Talkyard server knows if it moves to a different address,
+    // and could scan all comments lazily before showing them again — and
+    // re-generate them as needed, with a new and correct CDN origin or embedded origin.
+    // If takes long (like, a second) to re-render, then, can show the old broken
+    // links until done, should look fine a second later after page reload.
+    // [lazy-upd-link-origins]
+
+    // For @mentions: [6JKD2A] ok hack for now — COULD start using
+    // embeddedOriginOrEmpty for mentions too?
+
+    val uploadsUrlPrefix =
+      cdnOrigin.getOrElse(
+        embeddedOriginOrEmpty) +
+          ed.server.UploadsUrlBasePath + pubSiteId + '/'
     val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
 
     val (safeHtmlNoOneboxes, mentions) = withJavascriptEngine(engine => {

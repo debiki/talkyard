@@ -56,7 +56,9 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
+    val postRenderSettings = dao.makePostRenderSettings(pageRole)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
+      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
     val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)

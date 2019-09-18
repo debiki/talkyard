@@ -23,6 +23,7 @@ import debiki.Nashorn
 
 
 case class PostRendererSettings(
+  embeddedOriginOrEmpty: String,
   pageRole: PageType,
   pubSiteId: PublSiteId)
 
@@ -63,8 +64,11 @@ class PostRenderer(private val nashorn: Nashorn) {
     else {
       // Reuse @mentions? [4WKAB02]
       val renderResult = nashorn.renderAndSanitizeCommonMark(
-          post.currentSource, pubSiteId = settings.pubSiteId,
-          allowClassIdDataAttrs = isBody, followLinks = followLinks)
+          post.currentSource,
+          pubSiteId = settings.pubSiteId,
+          embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,
+          allowClassIdDataAttrs = isBody,
+          followLinks = followLinks)
       renderResult.safeHtml
     }
   }

@@ -33,7 +33,7 @@ import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 import ed.server.summaryemails.SummaryEmailsDao
-import talkyard.server.PostRenderer
+import talkyard.server.{PostRenderer, PostRendererSettings}
 
 
 
@@ -111,7 +111,23 @@ class SiteDao(
 
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
+
+  REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)
+  // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
+  // so won't need to always use makePostRenderSettings() below before
+  // using textAndHtmlMaker?
   def textAndHtmlMaker = new TextAndHtmlMaker(this.thePubSiteId(), context.nashorn)
+
+  def makePostRenderSettings(pageType: PageType): PostRendererSettings = {
+    val embeddedOriginOrEmpty =
+      if (pageType == PageType.EmbeddedComments) theSiteOrigin()
+      else ""
+    PostRendererSettings(
+      embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+      pageRole = pageType,
+      thePubSiteId())
+  }
+
   def notfGenerator(tx: SiteTransaction) = NotificationGenerator(tx, context.nashorn, globals.config)
   def getLengthLimits(): debiki.LengthLimits.type = debiki.LengthLimits
 

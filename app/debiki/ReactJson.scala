@@ -74,8 +74,6 @@ object FindHeadTagsResult {
 //
 class JsonMaker(dao: SiteDao) {
 
-  private def pubSiteId = dao.thePubSiteId()
-
 
   /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts)
     * only with contents everyone may see.
@@ -552,8 +550,10 @@ class JsonMaker(dao: SiteDao) {
     val howRender = new HowRenderPostInPage(summarize = summarize, jsSummary = jsSummary,
         squash = squash, childrenSorted = childrenSorted)
 
+    val postRenderSettings = dao.makePostRenderSettings(page.pageType)
+
     val renderer = RendererWithSettings(
-      dao.context.postRenderer, PostRendererSettings(page.pageType, pubSiteId))
+      dao.context.postRenderer, postRenderSettings)
 
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
       tags = tags, howRender, renderer)
@@ -562,7 +562,8 @@ class JsonMaker(dao: SiteDao) {
 
   def postToJsonOutsidePage(post: Post, pageRole: PageType, showHidden: Boolean, includeUnapproved: Boolean,
         tags: Set[TagLabel]): JsObject = {
-    val renderer = RendererWithSettings(dao.context.postRenderer, PostRendererSettings(pageRole, pubSiteId))
+    val postRenderSettings = dao.makePostRenderSettings(pageRole)
+    val renderer = RendererWithSettings(dao.context.postRenderer, postRenderSettings)
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
       tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), renderer)
   }
@@ -882,8 +883,9 @@ class JsonMaker(dao: SiteDao) {
 
     val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
       val tags = tagsByPostId(post.id)
+      val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
       val renderer = RendererWithSettings(
-        dao.context.postRenderer, PostRendererSettings(pageMeta.pageType, pubSiteId))
+        dao.context.postRenderer, postRenderSettings)
       post.nr.toString ->
         postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
           tags = tags, new HowRenderPostInPage(false, JsNull, false,

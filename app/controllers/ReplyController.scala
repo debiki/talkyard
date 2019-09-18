@@ -79,7 +79,11 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
-    val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
+    val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
+    val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+      text,
+      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+      followLinks = false)
 
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, deleteDraftNr, request.who, request.spamRelatedStuff)
@@ -115,8 +119,12 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")
 
-    // Don't follow links in chat mesages — chats don't work with search engines anyway.
-    val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
+    // Don't follow links in chat messages — chats don't work with search engines anyway.
+    val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
+    val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+      text,
+      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+      followLinks = false)
     val result = dao.insertChatMessage(
       textAndHtml, pageId = pageId, deleteDraftNr, request.who, request.spamRelatedStuff)
 
@@ -282,7 +290,8 @@ object EmbeddedCommentsPageCreator {
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
-      bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
+      bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+        s"Comments for: $embeddingUrl"),
       showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
       Who.System, request.spamRelatedStuff, discussionIds = anyDiscussionId.toSet,
       embeddingUrl = Some(embeddingUrl))

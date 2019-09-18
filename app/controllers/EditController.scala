@@ -192,8 +192,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
+    val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val newTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
       newText,
+      embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       allowClassIdDataAttrs = postNr == PageParts.BodyNr,
       // When follow links? Previously:
       // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff

@@ -217,7 +217,8 @@ trait UploadsDao {
       if (post.nr == PageParts.TitleNr) Nil
       else {
         val renderResult = context.nashorn.renderAndSanitizeCommonMark(
-            post.currentSource, pubSiteId = pubId, allowClassIdDataAttrs = false, followLinks = false)
+            post.currentSource, pubSiteId = pubId, embeddedOriginOrEmpty = "",
+            allowClassIdDataAttrs = false, followLinks = false)
         findUploadRefsInText(renderResult.safeHtml, pubId)
       }
     approvedRefs ++ currentRefs
