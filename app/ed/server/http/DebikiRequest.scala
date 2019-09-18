@@ -154,7 +154,7 @@ abstract class DebikiRequest[A] {
   def cdnOrSiteOrigin: String =
     globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + host)
 
-  def scheme: String = if (request.secure) "https" else "http"
+  def scheme: String = if (globals.secure) "https" else "http"
 
   def host: String = request.host
   def hostname: String = request.host.span(_ != ':')._1

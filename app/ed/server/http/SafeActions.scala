@@ -206,8 +206,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
   private def internalError(request: Request[_], throwable: Throwable,
         errorCode: String) = {
-    val scheme = if (request.secure) "https://" else "http://"
-    val url = request.method + " " + scheme + request.host + request.uri
+    val url = request.method + " //" + request.host + request.uri
     p.Logger.error(s"Replying internal error to: $url [$errorCode]",
       throwable)
     Results.InternalServerError(i"""500 Internal Server Error
@@ -239,8 +238,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
 
   private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
-    val scheme = if (request.secure) "https://" else "http://"
-    val url = request.method + " " + scheme + request.host + request.uri
+    val url = request.method + " //" + request.host + request.uri
     var rootCause = throwable
     var loopLimit = 99
     while ((rootCause.getCause ne null) && loopLimit > 0) {

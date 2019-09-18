@@ -214,7 +214,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
          |OAuth login origin: ${globals.anyLoginOrigin}
          |
          |Request host: ${request.host}
-         |Request secure: ${request.request.secure}
+         |Request secure: ${request.request.secure} (but Globals.secure used instead)
          |
          |Site canonical hostname: ${canonicalHostname.map(_.hostname)}
          |Site canonical hostname origin: ${canonicalHostname.map(globals.originOf)}

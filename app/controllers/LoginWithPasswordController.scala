@@ -126,7 +126,18 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
+    CLEAN_UP // remove daoFor, use request.dao instead. Just look in the logs that this'll
+    // work fine for sure (shouldn't be any "TyEWEIRDDAO" in the logs).
     val dao = daoFor(request.request)
+    if (dao.siteId != request.dao.siteId) {
+      if (globals.isProd) {
+        play.api.Logger.warn("Weird: dao.siteId != request.dao.siteId  [TyEWEIRDDAO]")
+      }
+      else {
+        die("TyE305AKTFWJ2", "Wrong dao, *harmmless* but why?")
+      }
+    }
+
     val siteSettings = dao.getWholeSiteSettings()
 
     throwForbiddenIf(siteSettings.enableSso,

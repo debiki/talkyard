@@ -642,20 +642,19 @@ class Globals(
     * site address.
     */
   def lookupSiteOrThrow(request: RequestHeader): SiteBrief = {
-    lookupSiteOrThrow(request.secure, request.host, request.uri)
+    lookupSiteOrThrow(host = request.host, request.uri)
   }
 
 
   def lookupSiteOrThrow(url: String): SiteBrief = {
     val (scheme, separatorHostPathQuery) = url.span(_ != ':')
-    val secure = scheme == "https"
     val (host, pathAndQuery) =
       separatorHostPathQuery.drop(3).span(_ != '/') // drop(3) drops "://"
-    lookupSiteOrThrow(secure, host = host, pathAndQuery)
+    lookupSiteOrThrow(host = host, pathAndQuery)
   }
 
 
-  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String): SiteBrief = {
+  def lookupSiteOrThrow(host: String, pathAndQuery: String): SiteBrief = {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
