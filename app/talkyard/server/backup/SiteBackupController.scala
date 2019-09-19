@@ -197,6 +197,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     Ok(Json.obj(
       "id" -> newSite.id,
+      "pubId" -> newSite.pubId,
       "origin" -> JsStringOrNull(anyHostname),
       "siteIdOrigin" -> globals.siteByIdOrigin(newSite.id))) as JSON
   }

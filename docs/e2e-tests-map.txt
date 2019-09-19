@@ -458,12 +458,16 @@ embedded comments:
           - embedded-comments-scroll  TyT2K4DHR49   MISSING
   import from Disqus xml export file:  (impexp)
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
+  image links work although <base> tag: (EMBORG)
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
   upload jpg, png:
   upload video:
   upload pdf, tar.gz:
+  embedded origin added,  (EMBORG)
+  pub site id added:
+          - embedded-comments-uploads-origin.test.ts  TyT603RKDJA6
 
 recent comments:
 

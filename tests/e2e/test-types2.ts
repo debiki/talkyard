@@ -366,6 +366,7 @@ interface TestPost {  // later: try to unify with Post?
 
 interface IdAddress {
   id: SiteId;
+  pubId: string;
   origin?: string; // e.g. kittens-forum.example.com
   siteIdOrigin: string; // e.g. site-123.example.com
 }

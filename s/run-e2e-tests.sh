@@ -403,6 +403,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-vote-first $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-conf-notf-pref-first $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-uploads-origin $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)
 

@@ -6,6 +6,7 @@ import fs = require('fs');
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
 import make = require('../utils/make');
+import c = require('../test-constants');
 
 declare let browser: any;
 
@@ -106,7 +107,7 @@ describe("emb cmts edit and vote", () => {
   it("She can edit it, also after reloading the page (old comment, old page)", () => {
     majasBrowser.refresh();
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.clickEditoPostNr(2);
+    majasBrowser.topic.clickEditoPostNr(c.FirstReplyNr);
     majasBrowser.switchToEmbeddedEditorIrame();
     majasBrowser.editor.editText(majasFirstCommentEditedTwice);
     majasBrowser.editor.save();

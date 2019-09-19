@@ -844,6 +844,28 @@ function pagesFor(browser) {
     },
 
 
+    waitUntilHtmlMatches: function(selector, regexOrStr) {
+      const regex = _.isString(regexOrStr)
+          ? new RegExp(regexOrStr, 's')  // s makes '.' match newlines
+          : regexOrStr;
+
+      browser.waitForExist(selector);
+
+      for (let i = 0; true; ++i) {
+        const html = browser.getHTML(selector);
+        const matches = regex.test(html);
+        if (matches)
+          break;
+
+        browser.pause(PollMs);
+        if (i > 10 && (i % 10 === 0)) {
+          console.log(`Waiting for '${selector}' to match ${regexOrStr},\n` +
+            `but the html is:\n-----${html}\n----`);
+        }
+      }
+    },
+
+
     waitAndAssertVisibleTextMatches: function(selector, regex) {
       if (_.isString(regex)) regex = new RegExp(regex);
       const text = api.waitAndGetVisibleText(selector);
@@ -2705,7 +2727,7 @@ function pagesFor(browser) {
         // For some reason, FF is so fast, so typing the title now after new page load, fails
         // the first time  [6AKBR45] [E2EBUG] — but only in an invisible browser, and within
         // fractions of a second after page load, so hard to fix. As of 2019-01.
-        utils.tryManyTimes("Type direct message title", 2, () => {
+        utils.tryManyTimes("Clearing the title field", 2, () => {
           api.editor.editTitle(' ');
         });
       },
@@ -2793,8 +2815,8 @@ function pagesFor(browser) {
 
 
     editor: {
-      editTitle: function(title) {
-        api.waitAndSetValue('.esEdtr_titleEtc_title', title);
+      editTitle: function(title, opts: { checkAndRetry?: true } = {}) {
+        api.waitAndSetValue('.esEdtr_titleEtc_title', title, opts);
       },
 
       isTitleVisible: function() {
@@ -2905,6 +2927,12 @@ function pagesFor(browser) {
       waitForDraftTextToLoad: function(text: string) {
         api.waitUntilValueIs('.editor-area textarea', text);
       },
+
+      preview: {
+        waitUntilPreviewHtmlMatches: function(text: string) {
+          api.waitUntilHtmlMatches('#t_E_Preview', text);
+        },
+      }
     },
 
 
@@ -3021,6 +3049,11 @@ function pagesFor(browser) {
           browser.waitForVisible(api.topic.postBodySelector(postNr));
           api.topic.assertPostTextMatches(postNr, text);
         });
+      },
+
+      waitUntilPostHtmlMatches: function(postNr, text: string) {
+        const selector = api.topic.postBodySelector(postNr);
+        api.waitUntilHtmlMatches(selector, text)
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {

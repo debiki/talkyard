@@ -154,7 +154,9 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("... she deletes the title", () => {
-    mariasBrowser.editor.editTitle('  ');
+    // 2019-09: editTitle('  ') didn't remove all chars. In Chrome. Weird. So retry. [E2EBUG]
+    // Maybe have waitAndSetValue() always inspect the result and retry?
+    mariasBrowser.editor.editTitle('  ', { checkAndRetry: true });
   });
 
   it("... so now the draft gets deleted", () => {
