@@ -3319,27 +3319,42 @@ function pagesFor(browser) {
 
       openChangePageDialog: () => {
         api.waitAndClick('.dw-a-change');
-        browser.waitForVisible('.s_ChPgD');
+        browser.waitForVisible('.s_ChPgD .esDropModal_content ');
+        browser.waitForVisible('.modal-backdrop');
       },
 
       isChangePageDialogOpen: () => {
-        return browser.isVisible('.s_ChPgD');
+        return browser.isVisible('.s_ChPgD .esDropModal_content ');
       },
 
       waitUntilChangePageDialogGone: () => {
-        api.waitUntilGone('.s_ChPgD');
+        api.waitUntilGone('.s_ChPgD .esDropModal_content ');
+        api.waitUntilGone('.modal-backdrop');
       },
 
       closeChangePageDialog: () => {
+        dieIf(!api.topic.isChangePageDialogOpen(), 'TyE5AKTDFF2');
         // Don't: api.waitAndClick('.modal-backdrop');
         // That might block forever, waiting for the dialog that's in front of the backdrop
         // to stop occluding (parts of) the backdrop.
         // Instead:
-        if (!browser.isVisible('.modal-backdrop'))
-          return;
-        // Click the upper left corner — if any dialog is open, it'd be somewhere in the middle
-        // and the upper left corner, shouldn't hit it.
-        browser.leftClick('.modal-backdrop', 10, 10);
+        while (true) {
+          // This no longer works, why not? Chrome 77. The click has no effect —
+          // maybe it doesn't click at 10,10 any longer? Or what?
+          //if (browser.isVisible('.modal-backdrop')) {
+          //  // Click the upper left corner — if any dialog is open, it'd be somewhere in
+          //  // the middle and the upper left corner, shouldn't hit it.
+          //  browser.leftClick('.modal-backdrop', 10, 10);
+          //}
+          // Instead: (and is this even slightly better?)
+          if (browser.isVisible('.esDropModal_CloseB')) {
+            browser.click('.esDropModal_CloseB');
+          }
+          if (!api.topic.isChangePageDialogOpen())
+            break;
+          browser.pause(PollMs);
+        }
+        api.waitUntilModalGone();
       },
 
       closeTopic: function() {
