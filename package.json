@@ -67,7 +67,7 @@
     "merge2": "^1.2.3",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
-    "selenium-standalone": "^6.15.4",
+    "selenium-standalone": "^6.16.0",
     "sync-request": "^6.0.0",
     "typescript": "^3.5",
     "wdio-dot-reporter": "^0.0.10",
