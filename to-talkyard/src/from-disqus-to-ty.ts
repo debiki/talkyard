@@ -399,6 +399,38 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
       return;
 
 
+    // ----- Discussion start date
+
+    // Surprisingly, Disqus can set a thread's (i.e. a blog post discussion's)
+    // creation date-time to *after* the first comment got posted (and approved,
+    // since the comment was by the blog author henself).
+    // Example: (note: the same thread id)
+    //  <thread dsq:id="2233445566">
+    //     <createdAt>2008-03-12T00:00:00Z</createdAt>
+    //     ...
+    //  <post>
+    //     <createdAt>2008-03-11T17:00:00Z</createdAt>
+    //     <thread dsq:id="2233445566" />
+    //     ...
+    //
+    // (Disqus maybe rounded up to the next day? To store a date, not a timestamp?)
+    //
+    // But Talkyard doesn't allow comments dated before the discussion existed.
+    // So, find the oldest date among all comments, and the thread itself,
+    // and use that date, as the discussion creation date.
+
+    let pageCreatedAt: WhenMs = Date.parse(thread.createdAtIsoString);
+
+    thread.comments.forEach((comment: DisqusComment) => {
+      if (comment.createdAtIsoString) {
+        const commentCreatedAt = Date.parse(comment.createdAtIsoString);
+        if (commentCreatedAt < pageCreatedAt) {
+          pageCreatedAt = commentCreatedAt;
+        }
+      }
+    });
+
+
     // ----- Page
 
     // Create a Talkyard EmbeddedComments discussion page for this Disqus
@@ -407,7 +439,6 @@ function buildTalkyardSite(threadsByDisqusId: { [id: string]: DisqusThread }): a
     const pageId: PageId = '' + nextPageId;
     nextPageId += 1;
 
-    const pageCreatedAt: WhenMs = Date.parse(thread.createdAtIsoString);
     const urlInclOrigin = thread.link;
     const urlObj = new URL(urlInclOrigin);
     const urlPath = urlObj.pathname;

@@ -228,55 +228,57 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
     throwIllegalArgument("TyE5KT3RUD0", s"Bad page extId: $problem")
   }
 
-  require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, "DwE5JGY1")
-  require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), "TyE7WKG2AG4")
-  require(updatedAt.getTime >= createdAt.getTime, "TyE7WKG05KS")
-  require(publishedAt.forall(_.getTime >= createdAt.getTime), "TyE8GK405KS")
-  require(bumpedAt.forall(_.getTime >= createdAt.getTime), "TyE0NFATI3D")
-  // If there are no replies, then there are no frequent posters.
-  require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, "TyE306HMSJ24")
-  require(frequentPosterIds.length <= 3, "DwE6UMW3") // for now — change if needed
+  private def wp = s"page id: '$pageId', ext id: '$extImpId'"  // "which page"
 
-  require(version > 0, "DwE6KFU2")
-  require(pageType != PageType.AboutCategory || categoryId.isDefined, "DwE5PKI8")
-  require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
-  require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
-  require(numLikes >= 0, "DwE6PKF3")
-  require(numWrongs >= 0, "DwE9KEFW2")
-  require(numBurys >= 0, "DwE2KEP4")
-  require(numUnwanteds >= 0, "DwE4JGY7")
-  require(numPostsTotal >= numRepliesTotal, s"Fail: $numPostsTotal >= $numRepliesTotal [EdE2WTK4L]")
-  require(numOrigPostLikeVotes >= 0, "DwE5KJF2")
-  require(numOrigPostLikeVotes <= numLikes, s"Fail: $numOrigPostLikeVotes <= $numLikes [EdE5KJF2B]")
-  require(numOrigPostWrongVotes >= 0, "DwE4WKEQ1")
-  require(numOrigPostWrongVotes <= numWrongs, s"Fail: $numOrigPostWrongVotes <= $numWrongs [EdE4WKEQ1B]")
-  require(numOrigPostBuryVotes >= 0, "DwE8KGY4")
-  require(numOrigPostBuryVotes <= numBurys, s"Fail: $numOrigPostBuryVotes <= $numBurys [EdE8KGY4B]")
-  require(numOrigPostUnwantedVotes >= 0, "DwE0GFW8")
+  require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, s"[DwE5JGY1] $wp")
+  require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), s"[TyE7WKG2AG4] $wp")
+  require(updatedAt.getTime >= createdAt.getTime, s"[TyE7WKG05KS] $wp")
+  require(publishedAt.forall(_.getTime >= createdAt.getTime), s"[TyE8GK405KS] $wp")
+  require(bumpedAt.forall(_.getTime >= createdAt.getTime), s"[TyE0NFATI3D] $wp")
+  // If there are no replies, then there are no frequent posters.
+  require(lastApprovedReplyById.isDefined || frequentPosterIds.isEmpty, s"[TyE306HMSJ24] $wp")
+  require(frequentPosterIds.length <= 3, s"[DwE6UMW3] $wp") // for now — change if needed
+
+  require(version > 0, s"[DwE6KFU2] $wp")
+  require(pageType != PageType.AboutCategory || categoryId.isDefined, s"[DwE5PKI8] $wp")
+  require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), s"[DwE4kEYF2] $wp")
+  require(pinOrder.isEmpty == pinWhere.isEmpty, s"[DwE36FK2] $wp")
+  require(numLikes >= 0, s"[DwE6PKF3] $wp")
+  require(numWrongs >= 0, s"[DwE9KEFW2] $wp")
+  require(numBurys >= 0, s"[DwE2KEP4] $wp")
+  require(numUnwanteds >= 0, s"[DwE4JGY7] $wp")
+  require(numPostsTotal >= numRepliesTotal, s"Fail: $numPostsTotal >= $numRepliesTotal [EdE2WTK4L] $wp")
+  require(numOrigPostLikeVotes >= 0, s"[DwE5KJF2] $wp")
+  require(numOrigPostLikeVotes <= numLikes, s"Fail: $numOrigPostLikeVotes <= $numLikes [EdE5KJF2B] $wp")
+  require(numOrigPostWrongVotes >= 0, s"[DwE4WKEQ1] $wp")
+  require(numOrigPostWrongVotes <= numWrongs, s"Fail: $numOrigPostWrongVotes <= $numWrongs [EdE4WKEQ1B] $wp")
+  require(numOrigPostBuryVotes >= 0, s"[DwE8KGY4] $wp")
+  require(numOrigPostBuryVotes <= numBurys, s"Fail: $numOrigPostBuryVotes <= $numBurys [EdE8KGY4B] $wp")
+  require(numOrigPostUnwantedVotes >= 0, s"[DwE0GFW8] $wp")
   require(numOrigPostUnwantedVotes <= numUnwanteds,
-    s"Fail: $numOrigPostUnwantedVotes <= $numUnwanteds [EdE4GKY8]")
-  require(numOrigPostRepliesVisible >= 0, "DwE0GY42")
+    s"Fail: $numOrigPostUnwantedVotes <= $numUnwanteds [EdE4GKY8] $wp")
+  require(numOrigPostRepliesVisible >= 0, s"[DwE0GY42] $wp")
   require(numOrigPostRepliesVisible <= numRepliesVisible,
-    s"Fail: $numOrigPostRepliesVisible <= $numRepliesVisible [EsE0GY42B]")
+    s"Fail: $numOrigPostRepliesVisible <= $numRepliesVisible [EsE0GY42B] $wp")
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
   require(numRepliesTotal >= numRepliesVisible,
-    s"Fail: $numRepliesTotal >= $numRepliesVisible [DwE4REQ2]")
+    s"Fail: $numRepliesTotal >= $numRepliesVisible [DwE4REQ2] $wp")
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
-  require(answeredAt.isEmpty || createdAt.getTime <= answeredAt.get.getTime, "DwE4KG22")
-  require(plannedAt.isEmpty || createdAt.getTime <= plannedAt.get.getTime, "DwE0FUY2")
-  require(startedAt.isEmpty || createdAt.getTime <= startedAt.get.getTime, "DwE5JRQ0")
-  require(doneAt.isEmpty || createdAt.getTime <= doneAt.get.getTime, "DwE4PUG2")
-  require(closedAt.isEmpty || createdAt.getTime <= closedAt.get.getTime, "DwE7KPE8")
-  require(lockedAt.isEmpty || createdAt.getTime <= lockedAt.get.getTime, "DwE3KWV6")
-  require(frozenAt.isEmpty || createdAt.getTime <= frozenAt.get.getTime, "DwE4YUF8")
-  require(doneAt.isEmpty || !plannedAt.exists(_.getTime > doneAt.get.getTime), "DwE6K8PY2")
-  require(doneAt.isEmpty || !startedAt.exists(_.getTime > doneAt.get.getTime), "EdE6K8PY3")
+  require(answeredAt.isEmpty || createdAt.getTime <= answeredAt.get.getTime, s"[DwE4KG22] $wp")
+  require(plannedAt.isEmpty || createdAt.getTime <= plannedAt.get.getTime, s"[DwE0FUY2] $wp")
+  require(startedAt.isEmpty || createdAt.getTime <= startedAt.get.getTime, s"[DwE5JRQ0] $wp")
+  require(doneAt.isEmpty || createdAt.getTime <= doneAt.get.getTime, s"[DwE4PUG2] $wp")
+  require(closedAt.isEmpty || createdAt.getTime <= closedAt.get.getTime, s"[DwE7KPE8] $wp")
+  require(lockedAt.isEmpty || createdAt.getTime <= lockedAt.get.getTime, s"[DwE3KWV6] $wp")
+  require(frozenAt.isEmpty || createdAt.getTime <= frozenAt.get.getTime, s"[DwE4YUF8] $wp")
+  require(doneAt.isEmpty || !plannedAt.exists(_.getTime > doneAt.get.getTime), s"[DwE6K8PY2] $wp")
+  require(doneAt.isEmpty || !startedAt.exists(_.getTime > doneAt.get.getTime), s"[EdE6K8PY3] $wp")
   // A topic that has been fixed or solved, should be in the closed state. [5AKBS2]
-  require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "TyE5AKBS2")
+  require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, s"[TyE5AKBS2] $wp")
   // A locked or frozen topic, should be closed too.
-  require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, "DwE6UMP3")
-  require(answeredAt.isEmpty == answerPostId.isEmpty, "DwE2PYU5")
-  require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02]")
+  require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, s"[DwE6UMP3] $wp")
+  require(answeredAt.isEmpty == answerPostId.isEmpty, s"[DwE2PYU5] $wp")
+  require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02] $wp")
 
   def isPinned: Boolean = pinOrder.isDefined
   def isClosed: Boolean = closedAt.isDefined

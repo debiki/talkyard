@@ -194,7 +194,7 @@ case class SiteBackupReader(context: EdContext) {
     val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
-            "EsE0GY72", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
+            "TyE06KWT24", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
                 json: $json"""))
     }
 
@@ -314,20 +314,20 @@ case class SiteBackupReader(context: EdContext) {
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
-      val email = readString(jsObj, "emailAddress").trim
+      val email = readOptString(jsObj, "emailAddress").trimNoneIfBlank
       Good(Guest(
         id = id,
         extImpId = readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
-        email = email,
+        email = email getOrElse "",
         // Any value here, would get ignored. Instead, when finding a guest's email notf pref,
         // we load guests' email notf prefs from another json object [GSTPRFS] and the
         // guest_prefs3 db table — which works also if a human returns later and gets
         // a different guest user account but uses the same email address.
         emailNotfPrefs = EmailNotfPrefs.Unspecified,
-        country = readOptString(jsObj, "country"),
+        country = readOptString(jsObj, "country").trimNoneIfBlank,
         lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt)))
     }
     catch {
