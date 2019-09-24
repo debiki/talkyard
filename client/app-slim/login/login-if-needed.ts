@@ -177,6 +177,8 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
     }
     else {
       // (Also see LoginWithOpenIdController, search for [509KEF31].)
+      // Note: This calls handleLoginResponse() in the *opener*, but not in
+      // this window (which is just a login popup).
       window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
       // This should be a login popup. Close the whole popup window.
       close();

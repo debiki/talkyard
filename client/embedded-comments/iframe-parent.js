@@ -309,6 +309,15 @@ function onMessage(event) {
           messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
         }
       }
+      try {
+        const sessionStr = sessionStorage.getItem('talkyardSession', event.data);
+        if (sessionStr) {
+          const session = JSON.parse(sessionStr);
+          sendToComments(`["resumeOldSession", "${session.currentPageSessionId}"]`);
+        }
+      }
+      catch (ex) {
+      }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
       iframe = findIframeThatSent(event);
@@ -344,6 +353,11 @@ function onMessage(event) {
       */
     case 'justLoggedIn':
       iframe = findIframeThatSent(event);
+      try {
+        sessionStorage.putItem('talkyardSession', event.data);
+      }
+      catch (ex) {
+      }
       if (iframe === commentsIframe) {
         sendToEditor(event.data);
       }
@@ -352,6 +366,11 @@ function onMessage(event) {
       }
       break;
     case 'logoutClientSideOnly':
+      try {
+        sessionStorage.removeItem('talkyardSession');
+      }
+      catch (ex) {
+      }
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
         sendToEditor(event.data);

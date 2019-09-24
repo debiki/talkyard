@@ -69,14 +69,9 @@ d.i.createLoginPopup = function(url) {
   // **Old comment?: OpenID no longer in use:**
   // """... or by `loginAndContinue`
   // in debiki-login-dialog.ls in a login popup window, see [509KEF31]. """
-  d.i.handleLoginResponse = function(result) {
+  d.i.handleLoginResponse = function(result /* : LoginPopupLoginResponse */) {
     try {
-      if (!_.isUndefined(result.currentPageSessionId)) {
-        // See makeUpdNoCookiesTempSessionIdFn() in Server.ts.
-        var mainWin = debiki2.getMainWin();
-        var typs = mainWin.typs;
-        typs.currentPageSessionId = result.currentPageSessionId;  // [NOCOOKIES]
-      }
+      Server.makeUpdNoCookiesTempSessionIdFn(() => {})(result); // [NOCOOKIES]
     }
     catch (ex) {
       console.warn("Error remembering temp session id", ex);
