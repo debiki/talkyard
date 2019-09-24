@@ -482,8 +482,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         // This request is a redirect from e.g. Gmail or Facebook login, so there's no
         // AvoidCookiesHeaderName header that tells us if we are in an iframe and maybe cannot
         // use cookies (because of e.g. Safari's "Intelligent Tracking Prevention").
-        // However, we've remembered already, in a 1st party cookie, if 3rd party
-        // iframe cookies not work.
+        // However, we've remembered already, in a 1st party cookie (in the login popup?),
+        // if 3rd party iframe cookies not work.
         maybeCannotUseCookies ||=
           request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 

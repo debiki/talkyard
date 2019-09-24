@@ -730,7 +730,7 @@ export function loginAsGuest(name: string, email: string,
 }
 
 
-function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void) {
+export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void) {
   return function(response) {
     // Update the current page session id, so we'll remember the current session  [NOCOOKIES]
     // until the page closes / reloads — so we stay logged in (until page closes) also if

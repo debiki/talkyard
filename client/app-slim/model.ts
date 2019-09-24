@@ -1506,10 +1506,18 @@ interface EditPageResponse {
 }
 
 
-interface GuestLoginResponse {
+interface LoginPopupLoginResponse {
+  status: 'LoginOk' | 'LoginFailed';
+  queryString?: string;
+  currentPageSessionId: string;  // RENAME to embeddedSessionId? [05KSHFJ5]
+}
+
+interface GuestLoginResponse {   // RENAME to SignupOrGuestOrPasswordLoginResponse?
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
-  currentPageSessionId?: string;
+  currentPageSessionId?: string;  // RENAME to embeddedSessionId? [05KSHFJ5] Because ...
+  // ... might no longer be only for the current page — if also remembered in localStorage
+  // in the embedd*ing* site, so lasts accross page reloads.
 }
 
 
