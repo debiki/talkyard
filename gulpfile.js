@@ -594,18 +594,25 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
 
 
 gulp.task('compile-stylus', () => {
-  var stylusOpts = {
+  const stylusOptsLeftToRight = {
     linenos: true,
     import: [
       currentDirectorySlash + 'client/app-slim/mixins.styl',
       currentDirectorySlash + 'client/app-slim/variables.styl']
   };
 
-  function makeStyleStream(sourceFiles) {
+  const stylusOptsRightToLeft = {
+        ...stylusOptsLeftToRight,
+        import: [
+          currentDirectorySlash + 'client/app-slim/right-to-left.styl',
+          ...stylusOptsLeftToRight],
+      };
+
+  function makeStyleStream(sourceFiles, stylusOpts, rtlSuffix) {
     return gulp.src(sourceFiles)
       .pipe(plumber())
       .pipe(stylus(stylusOpts))
-      .pipe(concat('styles-bundle.css'))
+      .pipe(concat(`styles-bundle${rtlSuffix}.css`))
       .pipe(save('111'))
         .pipe(gzip())
         .pipe(gulp.dest(webDestVersioned))
@@ -617,8 +624,7 @@ gulp.task('compile-stylus', () => {
       .pipe(gulp.dest(webDestVersioned));
   }
 
-  return (
-    makeStyleStream([
+  const files = [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
@@ -633,7 +639,11 @@ gulp.task('compile-stylus', () => {
         'client/app-slim/**/*.styl',
         'client/app-more/**/*.styl',
         'client/app-editor/**/*.styl',
-        'client/app-staff/**/*.styl']));
+        'client/app-staff/**/*.styl'];
+
+  return merge2(
+      makeStyleStream(files, stylusOptsLeftToRight, ''),
+      makeStyleStream(files, stylusOptsRightToLeft, '.rtl'));
 });
 
 
