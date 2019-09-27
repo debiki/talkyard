@@ -190,6 +190,12 @@ class SiteTpi protected (
     else ""
   }
 
+  def dotRtl: String = {
+    // For now, just inline this knowledge here. Refactor-move elsewhere later.
+    if (siteSettings.languageCode == "he_IL") ".rtl"
+    else ""
+  }
+
   def minMaxCss: String = PageTpi.minMaxCss
   def minMaxJs: String = PageTpi.minMaxJs
 

@@ -475,10 +475,9 @@ class Nashorn(
     var javascriptStream: jio.InputStream = null
     try {
       // Add translations, required by the render-page-code later when it runs.
-      def addTranslation(langCode: String, rightToLeft: Boolean = false) {
-        val dotRtl = if (rightToLeft) ".rtl" else ""
+      def addTranslation(langCode: String) {
         val translScript = loadAssetAsString(
-          s"translations/$langCode/i18n${dotRtl}${min}.js", isTranslation = true)
+          s"translations/$langCode/i18n$min.js", isTranslation = true)
         scriptBuilder.append(translScript)
       }
 
@@ -487,7 +486,7 @@ class Nashorn(
       addTranslation("sv_SE")
       addTranslation("pt_BR")
       addTranslation("pl_PL")
-      addTranslation("he_IL", rightToLeft = true)
+      addTranslation("he_IL")
 
       // Add render page code.
       val rendererScript = loadAssetAsString(s"server-bundle$min.js", isTranslation = false)

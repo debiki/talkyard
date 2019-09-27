@@ -1,0 +1,69 @@
+// For right-to-left languages, like Arabic, Hebrew, Kurdish, Urdu.
+// The gulpfile removes __RTL_LEFT_IS_RIGHT__ — we insert it here,
+// to stop Stylus from double-applying both margin-right() and then
+// margin-left() which undoes margin-right().
+
+
+float(vvvalue, important = null)
+  if vvvalue == left
+    float__RTL_LEFT_IS_RIGHT__: right important;
+  else if vvvalue == right
+    float__RTL_LEFT_IS_RIGHT__: left important;
+  else
+    float__RTL_LEFT_IS_RIGHT__: arguments;
+
+
+text-align(vvvalue, important = null)
+  if vvvalue == left
+    text-align__RTL_LEFT_IS_RIGHT__: right important;
+  else if vvvalue == right
+    text-align__RTL_LEFT_IS_RIGHT__: left important;
+  else
+    text-align__RTL_LEFT_IS_RIGHT__: arguments;
+
+
+right()
+  left__RTL_LEFT_IS_RIGHT__: arguments;
+
+left()
+  right__RTL_LEFT_IS_RIGHT__: arguments;
+  
+
+margin-right()
+  margin-__RTL_LEFT_IS_RIGHT__left: arguments;
+
+margin-left()
+  margin-__RTL_LEFT_IS_RIGHT__right: arguments;
+
+
+padding-right()
+  padding-__RTL_LEFT_IS_RIGHT__left: arguments;
+
+padding-left()
+  padding-__RTL_LEFT_IS_RIGHT__right: arguments;
+
+
+// Todo:  !important  ?
+margin(top, right = null, bottom = null, left = null)
+  if left != null
+    margin__RTL_LEFT_IS_RIGHT__: top left bottom right;  // flip left and right
+  else if bottom != null
+    margin__RTL_LEFT_IS_RIGHT__: top right bottom;
+  else if right != null
+    margin__RTL_LEFT_IS_RIGHT__: top right;
+  else
+    margin__RTL_LEFT_IS_RIGHT__: top;
+
+
+// Todo:  !important  ?
+padding(top, right = null, bottom = null, left = null)
+  if left != null
+    padding__RTL_LEFT_IS_RIGHT__: top left bottom right;  // flip left and right
+  else if bottom != null
+    padding__RTL_LEFT_IS_RIGHT__: top right bottom;
+  else if right != null
+    padding__RTL_LEFT_IS_RIGHT__: top right;
+  else
+    padding__RTL_LEFT_IS_RIGHT__: top;
+
+  

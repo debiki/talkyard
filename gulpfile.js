@@ -32,6 +32,7 @@ const stylus = require('gulp-stylus');
 const cleanCSS = require('gulp-clean-css');
 const concat = require('gulp-concat');
 const insert = require('gulp-insert');
+const replace = require('gulp-replace');
 const del = require('del');
 const rename = require("gulp-rename");
 const gzip = require('gulp-gzip');
@@ -604,14 +605,16 @@ gulp.task('compile-stylus', () => {
   const stylusOptsRightToLeft = {
         ...stylusOptsLeftToRight,
         import: [
-          currentDirectorySlash + 'client/app-slim/right-to-left.styl',
-          ...stylusOptsLeftToRight],
+          currentDirectorySlash + 'client/right-to-left-mixins.styl',
+          ...stylusOptsLeftToRight.import],
       };
 
   function makeStyleStream(sourceFiles, stylusOpts, rtlSuffix) {
     return gulp.src(sourceFiles)
       .pipe(plumber())
       .pipe(stylus(stylusOpts))
+      // Make the .rtl styles work by removing this hacky text.
+      .pipe(replace('__RTL_LEFT_IS_RIGHT__', ''))
       .pipe(concat(`styles-bundle${rtlSuffix}.css`))
       .pipe(save('111'))
         .pipe(gzip())
@@ -643,7 +646,8 @@ gulp.task('compile-stylus', () => {
 
   return merge2(
       makeStyleStream(files, stylusOptsLeftToRight, ''),
-      makeStyleStream(files, stylusOptsRightToLeft, '.rtl'));
+      makeStyleStream(
+          [...files, 'client/right-to-left-props.styl'], stylusOptsRightToLeft, '.rtl'));
 });
 
 

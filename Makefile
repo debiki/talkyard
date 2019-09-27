@@ -133,7 +133,7 @@ zipped_bundles:=\
   images/app/assets/translations/en_US/i18n.js \
   images/app/assets/translations/en_US/i18n.min.js \
   images/app/assets/translations/he_IL/i18n.js \
-  images/app/assets/translations/he_IL/i18n.min.js
+  images/app/assets/translations/he_IL/i18n.min.js \
   images/app/assets/translations/pl_PL/i18n.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 
