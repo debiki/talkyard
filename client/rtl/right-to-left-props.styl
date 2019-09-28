@@ -1,143 +1,24 @@
 
+// Flip some icons left-to-right.
 .dw-arw,
-.icon-reply::before {
-    transform: scaleX(-1);
-}
+.icon-wrench::before,
+.icon-reply::before,
+.icon-right-open:before,
+.icon-left-open:before
+  transform: scaleX(-1);
+
+.esTopbar_ancestors > li:not(:last-child)::after
+  content: "←" !important;
+
+p, li, span, div, a, button, table
+  direction: rtl;
 
 
-p, li, span, div, a, button, table, th {
-    direction: rtl;
-}
-th {
-    //auto_rtl  text-align: right;
-}
+.dw-p-hd
+  display: flex;
+  flex-direction: row;  // ? not  row-reverse ??
 
 
-.esForumIntro_btns {
-    //auto_rtl  display: flex;
-    //auto_rtl  flex-direction: row-reverse;
-}
-
-
-.dw-p-hd {
-    display: flex;
-    flex-direction: row;
-}
-
-
-.esDropModal_CloseB {
-    //auto_rtl  right: auto;
-    //auto_rtl  left: 0;
-}
-
-// forum btns
-.dw-forum-actionbar button {
-    //auto_rtl  float: left;
-}
-.DW.DW.DW .esForum_filterBtn {
-    //auto_rtl  float: right;
-}
-.esForum_catsNav_btn.btn,
-.esForum_catsNav_sort
-    //auto_rtl  float: right;
-
-
-.esWB_CreateB {
-    //auto_rtl  float: right;
-    //auto_rtl  float: left;
-}
-
-.esForum_catsDrop .caret
-    //margin-left: 7px;
-    //auto_rtl  margin: 0 7px 0 0;
-
-.dw-topic-list tbody tr.esForum_topics_topic td .dw-p-excerpt
-
-.icon-check-empty::before   etc
-
-.dw-topic-list tbody tr.esForum_topics_topic td.dw-tpc-title .icon-pin:before
-    //auto_rtl  padding: 0 0 0 20px;
-
-.dw-tpc-title {
-    //auto_rtl  padding: 13px 30px 5px 8px!important;  // >
-    //auto_rtl  padding: 13px 8px 5px 30px!important;
-}
-
-
-.esTopbar .dw-topbar-title {
-    //auto_rtl  float: right;
-}
-.esTopbar .esTopbar_right {
-    //auto_rtl  float: left;
-}
-
-
-.esMyMenu .esAvtr
-    //auto_rtl  margin-right: 5px;
-    //auto_rtl  margin: 0 0 0 5px;
-
-.esAvtr-tny
-    //auto_rtl  margin: 0 0 0 8px;
-.esPresence_icon
-    //auto_rtl  left: 9px;
-    //auto_rtl  right: auto;
-
-li {
-    //auto_rtl  margin-left: 2.2em;
-    //auto_rtl  margin-bottom: .6em;
-    //auto_rtl  margin-left: auto;
-    //auto_rtl  margin-right: 2.2em;
-}
-
-
-
-.esTopbar_ancestors
-    //auto_rtl  float: left;
-    //auto_rtl  left: -8px;
-    //auto_rtl  float: right;
-    //auto_rtl  left: auto;
-    //auto_rtl  right: -8px;
-
-.DW.DW .dw-ar-t>.dw-p-as
-    //auto_rtl  float: right;
-    //auto_rtl  float: left;
-
-.dw-p-bd-blk {
-    /* margin: 0; */
-    /* float: left; */
-    /* clear: left; */
-    /* width: 100%; */
-}
-
-.dw-t .edAvtr {
-    //auto_rtl  float: left;
-    //position: absolute;
-    //..
-    //auto_rtl  left: auto;
-    //auto_rtl  right: -1px;
-}
-.ed-w-avtr>.dw-p, .ed-w-avtr>.dw-single-and-multireplies
-    //auto_rtl  margin-left: 60px;
-    //auto_rtl  margin-left: auto;
-    //auto_rtl  margin-right: 60px;
-
-
-.dw-p-as.dw-as.esPA {
+.dw-p-as.dw-as.esPA
     display: flex;
     flex-direction: row-reverse;
-}
-
-
-
-.s_MP
-    //auto_rtl  margin-left: auto;
-    //auto_rtl  margin-right: 13px;
-
-.s_MP .esAvtr
-    //auto_rtl  position: relative !important;    ??
-
-
-.dw-depth-0.dw-t {
-    //auto_rtl  float: right;
-}
-

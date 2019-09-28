@@ -191,7 +191,7 @@ class SiteTpi protected (
   }
 
   def dotRtl: String = {
-    // For now, just inline this knowledge here. Refactor-move elsewhere later.
+    // For now, just inline this knowledge here. Refactor-move elsewhere later. [5JUKQR2]
     if (siteSettings.languageCode == "he_IL") ".rtl"
     else ""
   }

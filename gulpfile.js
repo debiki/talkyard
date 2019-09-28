@@ -605,13 +605,26 @@ gulp.task('compile-stylus', () => {
   const stylusOptsRightToLeft = {
         ...stylusOptsLeftToRight,
         import: [
-          currentDirectorySlash + 'client/right-to-left-mixins.styl',
+          currentDirectorySlash + 'client/rtl/right-to-left-mixins.styl',
           ...stylusOptsLeftToRight.import],
       };
 
-  function makeStyleStream(sourceFiles, stylusOpts, rtlSuffix) {
-    return gulp.src(sourceFiles)
-      .pipe(plumber())
+  function makeStyleStream(rtlSuffix) {
+    const sourceFiles = makeFileList(!!rtlSuffix);
+    const stylusOpts = rtlSuffix ? stylusOptsRightToLeft : stylusOptsLeftToRight;
+
+    let stream = gulp.src(sourceFiles)
+        .pipe(plumber());
+
+    if (rtlSuffix) {
+      // Then the file list includes Bootstrap CSS files, softlinked with a .styl
+      // suffix so Stylus processes them and flips left to right. However,
+      // the filter: ... property tends to cause Stylus parsing errors, so remove it.
+      stream = stream.
+          pipe(replace(/(filter:.*;)/g, '/* $1   — tends to break Stylus [TyM02WAFKJB5] */'))
+    }
+
+    stream = stream
       .pipe(stylus(stylusOpts))
       // Make the .rtl styles work by removing this hacky text.
       .pipe(replace('__RTL_LEFT_IS_RIGHT__', ''))
@@ -625,9 +638,11 @@ gulp.task('compile-stylus', () => {
       .pipe(rename({ extname: '.min.css' }))
       .pipe(gzip())
       .pipe(gulp.dest(webDestVersioned));
+    return stream;
   }
 
-  const files = [
+  const makeFileList = (rtl) => {
+    const files = [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
@@ -644,10 +659,22 @@ gulp.task('compile-stylus', () => {
         'client/app-editor/**/*.styl',
         'client/app-staff/**/*.styl'];
 
+    if (rtl) {
+      // Use softlinks with .styl suffix instead, so Stylus will process these
+      // files and use the RTL mixins to replace margin-left and float:left etc
+      // with margin-right and float:right etc.
+      files[0] = 'client/rtl/bootstrap.styl';
+      files[1] = 'client/rtl/react-textarea-autocomplete.styl';
+      files[2] = 'client/rtl/react-select.styl';
+      files[3] = 'client/rtl/resizable.styl';
+      files.push('client/rtl/right-to-left-props.styl');
+    }
+    return files;
+  }
+
   return merge2(
-      makeStyleStream(files, stylusOptsLeftToRight, ''),
-      makeStyleStream(
-          [...files, 'client/right-to-left-props.styl'], stylusOptsRightToLeft, '.rtl'));
+      makeStyleStream(''),
+      makeStyleStream('.rtl'));
 });
 
 
