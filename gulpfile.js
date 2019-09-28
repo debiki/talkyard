@@ -627,7 +627,7 @@ gulp.task('compile-stylus', () => {
     stream = stream
       .pipe(stylus(stylusOpts))
       // Make the .rtl styles work by removing this hacky text.
-      .pipe(replace('__RTL_LEFT_IS_RIGHT__', ''))
+      .pipe(replace('__RTL__', ''))
       .pipe(concat(`styles-bundle${rtlSuffix}.css`))
       .pipe(save('111'))
         .pipe(gzip())

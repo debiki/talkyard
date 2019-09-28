@@ -55,9 +55,11 @@ export const ModalDropdownButton = createComponent({
   },
 
   openDropdown: function() {
+    let pullLeft = this.props.pullLeft;
+    if (eds.isRtl) pullLeft = !pullLeft;
     var rect = (<HTMLElement> ReactDOM.findDOMNode(this.refs.openButton)).getBoundingClientRect();
     this.setState({ modalCreated: true, isOpen: true,
-      buttonX: this.props.pullLeft ? rect.left : rect.right, buttonY: rect.bottom });
+      buttonX: pullLeft ? rect.left : rect.right, buttonY: rect.bottom });
   },
 
   closeDropdown: function() {
@@ -227,6 +229,7 @@ export const DropdownModal = createComponent({
       let atX = this.props.atX;
       let atY = this.props.atY;
       let pullLeft = this.props.pullLeft;
+      if (eds.isRtl) pullLeft = !pullLeft;
 
       const rect: ClientRect = this.props.atRect;
       if (rect) {

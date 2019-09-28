@@ -54,6 +54,7 @@ interface ServerVars {
   isInLoginPopup: boolean;
   isInIframe: boolean;
   isInAdminArea: boolean;
+  isRtl: boolean;  // right-to-left language? then right-pull menus instead of left-pull
 
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;

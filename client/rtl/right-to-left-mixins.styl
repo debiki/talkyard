@@ -1,90 +1,99 @@
 // For right-to-left languages, like Arabic, Hebrew, Kurdish, Urdu.
 //
-// The gulpfile removes __RTL_LEFT_IS_RIGHT__ — we insert it here,
+// The gulpfile removes __RTL__ — we insert it here,
 // to stop Stylus from applying both e.g. margin-right() and then
 // margin-left() on the result — which would undo margin-right().
 
 // TODO:
 // border
-// border-left
-// border-right
 // border-top-left-radius  & right ?
 // border-bottom-left-radius  & right ?
-// border-left-width:
-// border-left-color:
 // box-shadow
 
-// But skip:
-// transition:   ... left ...   — doesn't really matter?
+// But skip these; they barely matter?
+// transition:   ... left ...
 // background-image:   something( ... left ...)
 
 
 float(how, important = null)
   if how == left
-    float__RTL_LEFT_IS_RIGHT__: right important;
+    float__RTL__: right important;
   else if how == right
-    float__RTL_LEFT_IS_RIGHT__: left important;
+    float__RTL__: left important;
   else
-    float__RTL_LEFT_IS_RIGHT__: arguments;
+    float__RTL__: arguments;
 
 
 clear(how, important = null)
   if how == left
-    clear__RTL_LEFT_IS_RIGHT__: right important;
+    clear__RTL__: right important;
   else if how == right
-    clear__RTL_LEFT_IS_RIGHT__: left important;
+    clear__RTL__: left important;
   else
-    clear__RTL_LEFT_IS_RIGHT__: arguments;
+    clear__RTL__: arguments;
 
 
 text-align(how, important = null)
   if how == left
-    text-align__RTL_LEFT_IS_RIGHT__: right important;
+    text-align__RTL__: right important;
   else if how == right
-    text-align__RTL_LEFT_IS_RIGHT__: left important;
+    text-align__RTL__: left important;
   else
-    text-align__RTL_LEFT_IS_RIGHT__: arguments;
+    text-align__RTL__: arguments;
 
 
 right()
-  left__RTL_LEFT_IS_RIGHT__: arguments;
+  left__RTL__: arguments;
 
 left()
-  right__RTL_LEFT_IS_RIGHT__: arguments;
+  right__RTL__: arguments;
   
 
 margin-right()
-  margin-left__RTL_LEFT_IS_RIGHT__: arguments;
+  margin-left__RTL__: arguments;
 
 margin-left()
-  margin-right__RTL_LEFT_IS_RIGHT__: arguments;
+  margin-right__RTL__: arguments;
 
 
 padding-right()
-  padding-left__RTL_LEFT_IS_RIGHT__: arguments;
+  padding-left__RTL__: arguments;
 
 padding-left()
-  padding-right__RTL_LEFT_IS_RIGHT__: arguments;
+  padding-right__RTL__: arguments;
+
+
+border-right()
+  border-left__RTL__: arguments;
+
+border-left()
+  border-right__RTL__: arguments;
+
+
+border-right-width()
+  border-left-width__RTL__: arguments;
+
+border-left-width()
+  border-right-width__RTL__: arguments;
+
+
+border-right-color()
+  border-left-color__RTL__: arguments;
+
+border-left-color()
+  border-right-color__RTL__: arguments;
 
 
 margin(top, right = null, bottom = null, left = null, important = null)
-  if important != null
-    margin__RTL_LEFT_IS_RIGHT__: top left bottom right important;
-  else if left != null && left != !important
-    margin__RTL_LEFT_IS_RIGHT__: top left bottom right;
+  if left != null && left != !important
+    margin__RTL__: top left bottom right important;
   else
-    margin__RTL_LEFT_IS_RIGHT__: arguments;
+    margin__RTL__: arguments;
 
 
-// Todo:  !important  ?
-padding(top, right = null, bottom = null, left = null)
-  if left != null
-    padding__RTL_LEFT_IS_RIGHT__: top left bottom right;  // flip left and right
-  else if bottom != null
-    padding__RTL_LEFT_IS_RIGHT__: top right bottom;
-  else if right != null
-    padding__RTL_LEFT_IS_RIGHT__: top right;
+padding(top, right = null, bottom = null, left = null, important = null)
+  if left != null && left != !important
+    padding__RTL__: top left bottom right important;
   else
-    padding__RTL_LEFT_IS_RIGHT__: top;
+    padding__RTL__: arguments;
 
-  
