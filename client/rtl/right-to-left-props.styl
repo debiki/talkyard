@@ -1,0 +1,28 @@
+// Could keep scrollbars on the right [306KTSWJ5] — apparently that's preferrable
+// for rtl languages too, see:
+//   https://ux.stackexchange.com/questions/24437/scrollbars-in-right-to-left-layout
+// — they say: scrollbars is a *digital* context, not a reading context,
+// and then people are used to the scrollbars being to the right.
+// Also works better for right handed people — won't need to reach accross
+// the phone / tablet, to scroll with their fingers.
+
+// Flip some icons left-to-right.
+.dw-arw,
+.icon-wrench::before,
+.icon-reply::before,
+.icon-right-open:before,
+.icon-left-open:before
+  transform: scaleX(-1);
+
+.esTopbar_ancestors > li:not(:last-child)::after,  // topbar category list
+.s_F_Ts_Cat_Ttl-SubCat::before  // topic list category dropdowns
+  content: "←" !important;
+
+p, li, span, div, a, button, table
+  direction: rtl;
+
+.dw-p-hd
+  display: flex;
+  // Combined with direction: rtl, this lays out things from right-to-left
+  // (the flex direction takes rtl into account).
+  flex-direction: row;

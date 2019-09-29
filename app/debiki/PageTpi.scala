@@ -190,6 +190,14 @@ class SiteTpi protected (
     else ""
   }
 
+  def isRtlLanguage: Boolean = {
+    // For now, just inline this knowledge here. Refactor-move elsewhere later. [5JUKQR2]
+    // The admin area is English only — so, no RTL, there.
+    siteSettings.languageCode == "he_IL" && !isAdminArea
+  }
+
+  def dotRtl: String = if (isRtlLanguage) ".rtl" else ""
+
   def minMaxCss: String = PageTpi.minMaxCss
   def minMaxJs: String = PageTpi.minMaxJs
 

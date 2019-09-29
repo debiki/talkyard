@@ -32,6 +32,7 @@ const stylus = require('gulp-stylus');
 const cleanCSS = require('gulp-clean-css');
 const concat = require('gulp-concat');
 const insert = require('gulp-insert');
+const replace = require('gulp-replace');
 const del = require('del');
 const rename = require("gulp-rename");
 const gzip = require('gulp-gzip');
@@ -594,18 +595,41 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
 
 
 gulp.task('compile-stylus', () => {
-  var stylusOpts = {
+  const stylusOptsLeftToRight = {
     linenos: true,
     import: [
       currentDirectorySlash + 'client/app-slim/mixins.styl',
       currentDirectorySlash + 'client/app-slim/variables.styl']
   };
 
-  function makeStyleStream(sourceFiles) {
-    return gulp.src(sourceFiles)
-      .pipe(plumber())
+  const stylusOptsRightToLeft = {
+        ...stylusOptsLeftToRight,
+        import: [
+          currentDirectorySlash + 'client/rtl/right-to-left-mixins.styl',
+          ...stylusOptsLeftToRight.import],
+      };
+
+  function makeStyleStream(rtlSuffix) {
+    const sourceFiles = makeFileList(!!rtlSuffix);
+    const stylusOpts = rtlSuffix ? stylusOptsRightToLeft : stylusOptsLeftToRight;
+
+    let stream = gulp.src(sourceFiles)
+        .pipe(plumber());
+
+    if (rtlSuffix) {
+      // Then the file list includes Bootstrap CSS files, softlinked with a .styl
+      // suffix so Stylus processes them and flips left to right. However,
+      // in the Bootstrap CSS, there's some filter: ... styles, which tend to cause
+      // Stylus parsing errors, so remove them. (I think they aren't needed.)
+      stream = stream.
+          pipe(replace(/(\sfilter:.*;)/g, '/* $1   — tends to break Stylus [TyM502WAJB5] */'))
+    }
+
+    stream = stream
       .pipe(stylus(stylusOpts))
-      .pipe(concat('styles-bundle.css'))
+      // Make the .rtl styles work by removing this hacky text.
+      .pipe(replace('__RTL__', ''))
+      .pipe(concat(`styles-bundle${rtlSuffix}.css`))
       .pipe(save('111'))
         .pipe(gzip())
         .pipe(gulp.dest(webDestVersioned))
@@ -615,10 +639,11 @@ gulp.task('compile-stylus', () => {
       .pipe(rename({ extname: '.min.css' }))
       .pipe(gzip())
       .pipe(gulp.dest(webDestVersioned));
+    return stream;
   }
 
-  return (
-    makeStyleStream([
+  const makeFileList = (rtl) => {
+    const files = [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
@@ -633,7 +658,25 @@ gulp.task('compile-stylus', () => {
         'client/app-slim/**/*.styl',
         'client/app-more/**/*.styl',
         'client/app-editor/**/*.styl',
-        'client/app-staff/**/*.styl']));
+        'client/app-staff/**/*.styl'];
+
+    if (rtl) {
+      // Use softlinks with .styl suffix instead, so Stylus will process these
+      // files and use the RTL mixins to replace margin-left and float:left etc
+      // with margin-right and float:right etc.
+      files[0] = 'client/rtl/bootstrap.styl';
+      files[1] = 'client/rtl/react-textarea-autocomplete.styl';
+      files[2] = 'client/rtl/react-select.styl';
+      files[3] = 'client/rtl/resizable.styl';
+      // Add a few rtl specifig styles, e.g. mirroring icons from left to right.
+      files.push('client/rtl/right-to-left-props.styl');
+    }
+    return files;
+  }
+
+  return merge2(
+      makeStyleStream(''),
+      makeStyleStream('.rtl'));
 });
 
 

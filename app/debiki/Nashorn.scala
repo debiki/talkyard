@@ -486,6 +486,7 @@ class Nashorn(
       addTranslation("sv_SE")
       addTranslation("pt_BR")
       addTranslation("pl_PL")
+      addTranslation("he_IL")
 
       // Add render page code.
       val rendererScript = loadAssetAsString(s"server-bundle$min.js", isTranslation = false)

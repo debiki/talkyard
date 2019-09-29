@@ -1,0 +1,105 @@
+// For right-to-left languages, like Arabic, Persian, Hebrew, Kurdish, Urdu.
+//
+// These mixins override float: left/right, padding, padding-left,
+// margin, left: ..., right: ..., and swap left and right, and
+// in that way makes everything flow from right to left.
+// Also the scrollbars — maybe better to keep them to the right though,
+// see [306KTSWJ5].
+//
+// The gulpfile removes __RTL__ — we insert it here,
+// to stop Stylus from applying both e.g. margin-right() and then
+// margin-left() on the result — which would undo margin-right().
+
+// COULD flip these too:
+// border
+// border-top-left-radius  & right ?
+// border-bottom-left-radius  & right ?
+// box-shadow
+
+// But skip these; they barely matter?
+// transition:   ... left ...
+// background-image:   something( ... left ...)
+
+
+float(how, important = null)
+  if how == left
+    float__RTL__: right important;
+  else if how == right
+    float__RTL__: left important;
+  else
+    float__RTL__: arguments;
+
+
+clear(how, important = null)
+  if how == left
+    clear__RTL__: right important;
+  else if how == right
+    clear__RTL__: left important;
+  else
+    clear__RTL__: arguments;
+
+
+text-align(how, important = null)
+  if how == left
+    text-align__RTL__: right important;
+  else if how == right
+    text-align__RTL__: left important;
+  else
+    text-align__RTL__: arguments;
+
+
+right()
+  left__RTL__: arguments;
+
+left()
+  right__RTL__: arguments;
+  
+
+margin-right()
+  margin-left__RTL__: arguments;
+
+margin-left()
+  margin-right__RTL__: arguments;
+
+
+padding-right()
+  padding-left__RTL__: arguments;
+
+padding-left()
+  padding-right__RTL__: arguments;
+
+
+border-right()
+  border-left__RTL__: arguments;
+
+border-left()
+  border-right__RTL__: arguments;
+
+
+border-right-width()
+  border-left-width__RTL__: arguments;
+
+border-left-width()
+  border-right-width__RTL__: arguments;
+
+
+border-right-color()
+  border-left-color__RTL__: arguments;
+
+border-left-color()
+  border-right-color__RTL__: arguments;
+
+
+margin(top, right = null, bottom = null, left = null, important = null)
+  if left != null && left != !important
+    margin__RTL__: top left bottom right important;
+  else
+    margin__RTL__: arguments;
+
+
+padding(top, right = null, bottom = null, left = null, important = null)
+  if left != null && left != !important
+    padding__RTL__: top left bottom right important;
+  else
+    padding__RTL__: arguments;
+
