@@ -223,10 +223,18 @@ const EditCategoryDialog = createClassAndFactory({
     const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";
 
+    const perms: PermsOnPage[] = this.state.permissions || [];
+    const uninitedPerm = _.find(perms, (p: PermsOnPage) =>  {
+      return p.forPeopleId < 10;  // EveryoneId ?
+    });
+
+    const canSave = !uninitedPerm;
+
     const saveCancel = !this.state.isOpen ? null : (this.state.isSaving
       ? r.div({}, "Saving...")
       : r.div({},
-        PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB' }, saveButtonTitle),
+        PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB', disabled: !canSave },
+          saveButtonTitle),
         Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel")));
 
     return (

@@ -74,7 +74,11 @@ Run tests like so:
 1. If this happens: `There is an issue with node-fibers ... ` and:
    `node_modules/fibers/bin/linux-x64-67-glibc/fibers.node is missing`, then, try this:
 
-        yarn --force
+        sudo chown -R $USER.$USER node_modules/  # just in case
+        yarn --force  # rebuilds Fibers for your OS and kernel version
+        # In the previous step, Yarn probably deleted the Selenium drivers,
+        # so need to download them again:
+        s/selenium-install
 
    That'll recompile the `fibers.node` binary, needed by wdio-mocha-framework.
 

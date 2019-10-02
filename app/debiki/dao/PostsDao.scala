@@ -24,7 +24,6 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.EdHttp._
-import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
 import play.{api => p}

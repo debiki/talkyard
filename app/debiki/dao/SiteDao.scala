@@ -128,7 +128,9 @@ class SiteDao(
       thePubSiteId())
   }
 
-  def notfGenerator(tx: SiteTransaction) = NotificationGenerator(tx, context.nashorn, globals.config)
+  def notfGenerator(tx: SiteTransaction) =
+    NotificationGenerator(tx, this, context.nashorn, globals.config)
+
   def getLengthLimits(): debiki.LengthLimits.type = debiki.LengthLimits
 
   import context.security.throwIndistinguishableNotFound

@@ -25,7 +25,6 @@ import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
 import ed.server.auth.{Authz, ForumAuthzContext}
-import ed.server.notf.NotificationGenerator
 import ed.server.spam.SpamChecker
 import java.{util => ju}
 import scala.collection.{immutable, mutable}

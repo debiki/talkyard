@@ -946,7 +946,7 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   // Group profile page
   gpp: {
-    GroupMembers: "Group mebers",
+    GroupMembers: "Group members",
     NoMembers: "No members.",
     MayNotListMembers: "May not list members.",
     AddMembers: "Add Members",

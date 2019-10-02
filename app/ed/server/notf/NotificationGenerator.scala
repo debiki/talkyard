@@ -31,7 +31,13 @@ import scala.util.matching.Regex
   * Also finds out what not-yet-sent notifications to delete if a post is deleted, or if
   * the post is edited and a @mention removed.
   */
-case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: debiki.Config) {
+case class NotificationGenerator(
+  // This is a bit weird: getting both a tx and a dao. Maybe instead NotificationGenerator
+  // should be part of the dao it too?
+  tx: SiteTransaction,
+  dao: debiki.dao.SiteDao,
+  nashorn: Nashorn,
+  config: debiki.Config) {
 
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
@@ -110,7 +116,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           NotificationType.DirectReply, newPost, page.categoryId, replyingToUser)
     }
 
-    // Later: Indirect rely notifications.
+    // Later: Indirect reply notifications.
     NotfLevel.Normal // = notifies about replies in one's sub threads (not implemented)
     NotfLevel.Hushed // = notifies only about direct replies
 
@@ -194,14 +200,24 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     // If, however, the most *silent* setting "won", so *no* notfs were sent, then one wouldn't
     // have the chance to realize that there're conflicting notf prefs (because one didn't
     // get any notfs).
-    //
+
     val memberIdsHandled = mutable.HashSet[UserId]()
+
+    // Page.
     val notfPrefsOnPage = tx.loadPageNotfPrefsOnPage(page.id)
     makeNewPostSubscrNotfFor(notfPrefsOnPage, newPost, minNotfLevel, memberIdsHandled)
+
+    // Parent category.
     val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
     makeNewPostSubscrNotfFor(notfPrefsOnCategory, newPost, minNotfLevel, memberIdsHandled)
+
+    // Grandparent category?
+
+    // Tags.
     // notPrefsOnTags = ... (later)
     //makeNewPostSubscrNotfFor(notPrefsOnTags, NotificationType.PostTagged, newPost ...)
+
+    // Whole site.
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
     makeNewPostSubscrNotfFor(notfPrefsOnSite, newPost, minNotfLevel, memberIdsHandled)
 
@@ -248,6 +264,13 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       }
     }
 
+    // Sync w (2069RSK25).
+    val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF3"
+    val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(toUserMaybeGroup),
+        maySeeUnlistedPages = true)
+    if (!maySeePost.may)
+      return
+
     val (toUserIds: Set[UserId], moreExactNotfType) =
       if (!toUserMaybeGroup.isGroup) {
         (Set(toUserMaybeGroup.id), notfType)
@@ -289,7 +312,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
         // If loading e.g. the AllMembers group, all higher trust level groups get loaded too,
         // because they're members of the AllMembers group. [NESTDGRPS]
-        groupMembers = groupMembers.filterNot(_.isGroup)
+        groupMembers = groupMembers.filter(!_.isGroup)
         // Alternatively:
         /*
         groupMembers.find(_.isGroup).foreach(group =>
@@ -313,13 +336,16 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       if toUserId <= MaxGuestId || Participant.LowestNormalMemberId <= toUserId
       if !sentToUserIds.contains(toUserId)
     } {
-      // Generate notifications, regardless of email settings, so they can be shown in the user's inbox.
+      // Generate notifications, regardless of email settings, so shown in the user's inbox.
       // We won't send any *email* though, if the user has unsubscribed from such emails.
 
       // Look at the user's notf level, to find out if hen has muted notifications,
       // on the current page / category / whole site.
-      BUG; SHOULD // also consider ancestor group notf levels — maybe a group hen is in, has muted the topic?
-      // Or the user has muted the category, but a group hen is in, has unmuted this particular topic?
+      BUG; SHOULD // also consider ancestor group notf levels — maybe a group hen is in,
+      // has muted the topic? Then, should generate no notf (unless the user henself has
+      // un-muted the topic).
+      // Or the user has muted the category, but a group hen is in, has unmuted this topic?
+      // (Then, since topics are more specific, structure wise, we should generate a notf.)
 
       COULD; NotfLevel.Hushed // Also consider the type of notf: is it a direct message? Then send
       // if >= Hushed. If is a subthread indirect reply? Then don't send if == Hushed.
@@ -354,11 +380,21 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
 
+    // Sync w (2069RSK25).
+    val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
+    def maySeePost(pp: Participant): Boolean = {
+      val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(pp),
+          maySeeUnlistedPages = true)
+      maySeePost.may
+    }
+
     // Individual users' preferences override group preferences, on the same
     // specificity level (prefs per page,  or per category,  or whole site).
     for {
       notfPref: PageNotfPref <- notfPrefs
       member <- membersById.get(notfPref.peopleId)
+      maySee = maySeePost(member)
+      if maySee
     } {
       if (debiki.Globals.isDevOrTest) {
         // A member can have only one notf pref per page or category or whole site.
@@ -377,8 +413,20 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       maybeGroup <- membersById.get(notfPref.peopleId)
       if maybeGroup.isGroup
       group = maybeGroup
+      groupMaySee = maySeePost(group)
+      if groupMaySee  // or ...
       groupMembers = tx.loadGroupMembers(group.id)
       member <- groupMembers
+      // ... or what if a group has enabled site wide notfs, and cannot see category C,
+      // but user U is in that group *can* see C — then, should U get notified
+      // about topics in C or not? For now: No. Let group notf settings affect only
+      // categories the group itself can see (rather than what the group members can see,
+      // — which might be more than what the group can see). I think it'd be a bit
+      // unexpected if changing a group's notf settings, affects categories that
+      // are listed as cannot-see on the group's page?
+      // So skip this:
+      //   memberMaySee = maySeePost(member)
+      //   if groupMaySee || memberMaySee
     } {
       maybeMakeNotfs(member, notfPref)
     }

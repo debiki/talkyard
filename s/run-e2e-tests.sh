@@ -283,6 +283,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-prefs-inherit-own.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-prefs-inherit-group.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-prefs-custom-groups.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notf-prefs-private-groups.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only notfs-page-gone.2browsers $args
   # Later:
