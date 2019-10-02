@@ -773,7 +773,9 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
       update hosts3 set canonical = 'D'
       where site_id = ? and canonical = 'C'
       """
-    runUpdateExactlyOneRow(statement, List(siteId.asAnyRef))
+    // (Don't require exactly one updated row — because on self hosted installations,
+    // the hosts3 table is empty and instead the  talkyard.hostname  conf val is used.)
+    runUpdate(statement, List(siteId.asAnyRef))
   }
 
 
