@@ -290,11 +290,11 @@ how to use docker-compose already.
        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
        vm.max_map_count=262144
 
-       # VSCode wants to watch many files — without this, there'll be a
-       # "Unable to watch for file changes in this large workspace" error.
+       # VSCode and IntelliJ Idea want to watch many files — without this, there'll be
+       # a "Unable to watch for file changes in this large workspace" error in VSCode.
        # Also an "User limit of inotify watches reached" error can happen, when
        # tailing logs, if too few watches. (The default is sometimes only 8192.)
-       fs.inotify.max_user_watches=65536
+       fs.inotify.max_user_watches=524288
        EOF
 
     Reload the system config:
