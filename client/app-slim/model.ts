@@ -1044,6 +1044,11 @@ interface UserInclDetailsWithStats extends UserInclDetails {
   anyUserStats?: UserStats;
 }
 
+// rename to ParticipantDetailsStatsGroups?
+interface UserDetailsStatsGroups extends UserInclDetailsWithStats {
+  groupIdsMaySee: UserId[];
+}
+
 
 interface UiPrefs {
   fbs?: UiPrefsForumButtons;

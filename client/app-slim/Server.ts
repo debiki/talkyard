@@ -768,10 +768,11 @@ export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone:
 
 // BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
+// instead return  UserInclDetailsWithStats ? UserDetailsStatsGroups
 export function loadUserAnyDetails(userIdOrUsername: UserId | string,
-      doneCallback: (user: UserInclDetails, stats: UserStats) => void, error?: () => void) {
+      onDone: (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => void, error?: () => void) {
   get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
-    doneCallback(response.user, response.stats);
+    onDone(response.user, response.groupsMaySee);
   }, error);
 }
 

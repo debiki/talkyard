@@ -101,7 +101,8 @@ const AboutUserDialog = createComponent({
   },
 
   loadUser: function(idOrUsername: number | string) {
-    Server.loadUserAnyDetails(idOrUsername, (user: UserInclDetails) => {
+    Server.loadUserAnyDetails(idOrUsername,
+          (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
       if (this.isGone) return;
       if (!this.state.post) {
         this.setState({ user: user });

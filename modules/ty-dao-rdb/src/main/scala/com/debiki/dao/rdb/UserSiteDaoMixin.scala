@@ -370,14 +370,14 @@ trait UserSiteDaoMixin extends SiteTransaction {
       case g: Group => getBuiltInGroupIdsForGroup(g)
     }
 
-    val customGroups = loadCustomGroupsFor(ppt)
+    val customGroups = loadCustomGroupsFor(ppt.id)
     // More specific first: the user henself, then custom groups. And AllMembers and Everyone
     // last — the least specific groups.
     ppt.id +: (customGroups ++ builtInGroups)
   }
 
 
-  private def loadCustomGroupsFor(ppt: Participant): Vector[UserId] = {
+  private def loadCustomGroupsFor(pptId: UserId): Vector[UserId] = {
     val query = s"""
         select group_id
         from group_participants3
@@ -385,7 +385,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
           and participant_id = ?
           and is_member
         """
-    runQueryFindMany(query, List(siteId.asAnyRef, ppt.id.asAnyRef), rs => {
+    runQueryFindMany(query, List(siteId.asAnyRef, pptId.asAnyRef), rs => {
       rs.getInt("group_id")
     })
   }

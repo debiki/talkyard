@@ -810,6 +810,8 @@ case class Guest(   // [exp] ok
   def usernameOrGuestName: String = guestName
   def nameOrUsername: String = guestName
 
+  def noDetails: Participant = this
+
   require(isOkayGuestId(id), s"Bad guest id: $id [TyE4GYUK21]")
   require(guestName == guestName.trim, "Name starts or ends with whitespace [TyE5YGUK3]")
   require(guestName.nonEmpty, "Name is empty [TyEJ4KEPF8]")
@@ -824,6 +826,7 @@ sealed trait ParticipantInclDetails {
   def extImpId: Option[ExtImpId]
   def createdAt: When
   def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
+  def noDetails: Participant
 }
 
 
@@ -1057,6 +1060,8 @@ case class UserInclDetails(  // ok for export
       )
   }
 
+  def noDetails: Participant = briefUser
+
   def briefUser = User(
     id = id,
     fullName = fullName,
@@ -1257,6 +1262,8 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   override def isBuiltIn: Boolean = super.isBuiltIn
   def isApproved: Option[Boolean] = Some(true)
   def suspendedTill: Option[ju.Date] = None
+
+  def noDetails: Participant = this
 
   override def isGroup = true
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember

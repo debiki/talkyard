@@ -55,12 +55,9 @@ export const UserProfileAdminView = createFactory({
     if (this.isGone) return;
     this.setState({ user: null });
     const params = this.props.match.params;
-    Server.loadUserAnyDetails(params.userId, (user: UserInclDetails, stats: UserStats) => {
+    Server.loadUserAnyDetails(params.userId, (user: UserDetailsStatsGroups) => {
       if (this.isGone) return;
-      this.setState({
-        user: user,
-        stats: stats,
-      });
+      this.setState({ user });
     });
   },
 

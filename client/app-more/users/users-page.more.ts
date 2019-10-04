@@ -122,12 +122,14 @@ const UserPageComponent = createReactClass(<any> {
     const shallComposeMessage =
       this.props.location.hash.indexOf(FragActionHashComposeMessage) >= 0;
 
-    Server.loadUserAnyDetails(usernameOrId, (user: UserInclDetails, stats: UserStats) => {
+    Server.loadUserAnyDetails(usernameOrId,
+          (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
+      const stats = user.anyUserStats;  // check server side nver null
       this.nowLoading = null;
       if (this.isGone) return;
       // This setState will trigger a rerender immediately, because we're not in a React event handler.
       // But when rerendering here, the url might still show a user id, not a username. (5GKWS20)
-      this.setState({ user: user, stats: stats });
+      this.setState({ user, stats, groupsMaySee });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
       // name, user.username will be the current name — then show current name in the url [8KFU24R].
       // Also 2) if user id specified, and the user is a member (they have usernames) show
@@ -174,7 +176,7 @@ const UserPageComponent = createReactClass(<any> {
   render: function() {
     const store: Store = this.state.store;
     const me: Myself = store.me;
-    const user: UserInclDetails = this.state.user;  // ParticipantAnyDetails = better class?
+    const user: UserDetailsStatsGroups = this.state.user;  // ParticipantAnyDetails = better class?
     const usernameOrId = this.props.match.params.usernameOrId;
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
@@ -211,6 +213,7 @@ const UserPageComponent = createReactClass(<any> {
       store: store,
       me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
+      groupsMaySee: this.state.groupsMaySee,
       match: this.props.match,
       stats: this.state.stats,
       reloadUser: this.loadUserAnyDetails,
@@ -335,7 +338,8 @@ const AvatarAboutAndButtons = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const user: UserInclDetails = this.props.user;
+    const user: UserDetailsStatsGroups = this.props.user;
+    const groupsMaySee = this.props.groupsMaySee;
     const stats: UserStats = this.props.stats;
     const me: Myself = this.props.me;
     const isGone = user_isGone(user);
@@ -402,6 +406,22 @@ const AvatarAboutAndButtons = createComponent({
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
           t.SendMsg);
 
+    let maxTrustLevelGroup = Groups.AllMembersId;
+    user.groupIdsMaySee.forEach(id => {
+      if (id <= Groups.CoreMembersId && id > maxTrustLevelGroup) {
+        maxTrustLevelGroup = id;
+      }
+    });
+
+    const groupsOnlyOneTrustLevelGroup =
+      _.filter(user.groupIdsMaySee, (groupId) =>
+            (user.isAdmin && groupId === Groups.AdminsId) ||
+            (user.isModerator && groupId === Groups.ModeratorsId) ||
+            groupId > Groups.MaxBuiltInGroupId);
+
+    groupsOnlyOneTrustLevelGroup.unshift(maxTrustLevelGroup);
+    groupsOnlyOneTrustLevelGroup.sort((a, b) => a - b);
+
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
       // This + display: table-row makes the avatar image take less space,
@@ -429,7 +449,20 @@ const AvatarAboutAndButtons = createComponent({
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.upp.LastSeenC + moment(stats.lastSeenAt).fromNow()),
           r.div({ className: 's_UP_Ab_Stats_Stat' },
-            t.upp.TrustLevelC + trustLevel_toString(user.effectiveTrustLevel))));
+            t.GroupsC,
+            r.ul({ className: 's_UP_Ab_Stats_Stat_Groups' },
+              groupsOnlyOneTrustLevelGroup.map(groupId => {
+                const group = _.find(groupsMaySee, g => g.id === groupId);
+                return !group ? null :
+                  r.li({ key: groupId, className: 's_UP_Ab_Stats_Stat_Groups_Group' },
+                    Link({ to: linkToUserProfilePage(group) }, group.fullName));
+              }))),
+          ));
+        // Need not show trust level — one will know what the trust level is,
+        // by looking at the groups? The first group is always one's trust level's auto group.
+        // So, don't need this any more:
+        //   r.div({ className: 's_UP_Ab_Stats_Stat' },
+        //     t.upp.TrustLevelC + trustLevel_toString(user.effectiveTrustLevel))));
   }
 });
 

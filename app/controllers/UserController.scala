@@ -102,33 +102,41 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Loads a member or group, incl details, or a guest (then there are no details).
     */
   def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
-    val (userJson, anyStatsJson, userId) = Try(who.toInt).toOption match {
+    import request.{dao, requesterOrUnknown}
+    var (userJson, anyStatsJson, ppt) = Try(who.toInt).toOption match {
       case Some(id) => loadUserJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
         who, includeStats = true, request)
     }
+    val groupsMaySee = dao.getGroupsReqrMaySee(requesterOrUnknown)
+    val pptGroupIdsMaybeRestr = dao.getOnesGroupIds(ppt)
+    val pptGroupIds = pptGroupIdsMaybeRestr.filter(id => groupsMaySee.exists(g => g.id == id))
     // Maybe? No, stats is ok to show? Could possibly add another conf val, hmm.
     /*val stats =
       if (maySeeActivity(userId, request.requester, request.dao)) anyStatsJson
       else JsNull */
-    OkSafeJson(Json.obj("user" -> userJson, "stats" -> anyStatsJson))
+    userJson += "anyUserStats" -> anyStatsJson
+    userJson += "groupIdsMaySee" -> JsArray(pptGroupIds.map(id => JsNumber(id)))
+    OkSafeJson(Json.obj(
+      "user" -> userJson,
+      "groupsMaySee" -> groupsMaySee.map(JsGroup)))
   }
 
 
   // A tiny bit dupl code [5YK02F4]
   private def loadUserJsonAnyDetailsById(userId: UserId, includeStats: Boolean,
-        request: DebikiRequest[_]): (JsObject, JsValue, UserId) = {
+        request: DebikiRequest[_]): (JsObject, JsValue, Participant) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
     request.dao.readOnlyTransaction { tx =>
       val stats = includeStats ? tx.loadUserStats(userId) | None
-      val usersJson =
+      val (pptJson, ppt) =
         if (Participant.isRoleId(userId)) {
           val memberOrGroup = tx.loadTheMemberInclDetails(userId)
           val groups = tx.loadGroups(memberOrGroup)
-          memberOrGroup match {
+          val json = memberOrGroup match {
             case m: UserInclDetails =>
               JsUserInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
@@ -136,14 +144,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff)
           }
+          (json, memberOrGroup)
         }
         else {
-          val user = tx.loadTheGuest(userId)
-          jsonForGuest(user, Map.empty, callerIsStaff = callerIsStaff,
+          val guest = tx.loadTheGuest(userId)
+          val json = jsonForGuest(guest, Map.empty, callerIsStaff = callerIsStaff,
             callerIsAdmin = callerIsAdmin)
-
+          (json, guest)
         }
-      (usersJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), userId)
+      dieIf(ppt.id != userId, "TyE36WKDJ03")
+      (pptJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), ppt.noDetails)
     }
   }
 
@@ -151,7 +161,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   // A tiny bit dupl code [5YK02F4]
   private def loadMemberOrGroupJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_])
-        : (JsObject, JsValue, UserId) = {
+        : (JsObject, JsValue, Participant) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
 
@@ -198,11 +208,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val userJson = JsUserInclDetails(
             member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
+          (userJson, stats.map(JsUserStats(_, isStaffOrSelf)).getOrElse(JsNull), member.noDetails)
         case group: Group =>
           val groupJson = jsonForGroupInclDetails(
             group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
-          (groupJson, JsNull, group.id)
+          (groupJson, JsNull, group)
       }
     }
   }

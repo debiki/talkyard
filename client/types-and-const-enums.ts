@@ -289,6 +289,7 @@ const enum Groups {
   StaffId = 17,
   ModeratorsId = 18,
   AdminsId = 19,
+  MaxBuiltInGroupId = AdminsId,
 }
 
 
