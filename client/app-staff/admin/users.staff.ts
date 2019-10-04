@@ -119,12 +119,17 @@ function ThreatsUsersPanel(props) {
 }
 
 
+
+// COULD break out and reuse in  user-invites.more.ts ?  [3GK0YU2]
+//
 const InvitedUsersPanel = createFactory({
   displayName: 'InvitedUsersPanel',
 
   getInitialState: function() {
     return {
-      invites: null
+      invites: null,
+      onlyPending: false,
+      onlyOnePerPerson: true,
     };
   },
 
@@ -153,6 +158,8 @@ const InvitedUsersPanel = createFactory({
     const settings: SettingsVisibleClientSide = store.settings;
     const disableInvites = settings.ssoUrl;
     const invites: Invite[] = this.state.invites;
+    const onlyPending = this.state.onlyPending;
+    const onlyOnePerPerson = this.state.onlyOnePerPerson;
     let introText;
     let listOfInvites;
     if (!_.isArray(invites)) {
@@ -162,7 +169,26 @@ const InvitedUsersPanel = createFactory({
       introText = _.isEmpty(invites) ?
           "No invites sent." : "People who have been invited to this site:";
       const nowMs = Date.now();
-      listOfInvites = invites.map((invite: Invite) => users.InviteRowWithKey(
+      const ppIds = {};
+      const invitesFiltered = _.filter(invites, (invite: Invite) => {
+        if (onlyOnePerPerson) {
+          // Show any accepted invite first, or if none accepted,
+          // then show the most recent sent. Already sorted by time, right.
+          // (Harmless bug: Will show two invites, if the user accepted an old
+          // invite, after a new was sent.)
+          if (ppIds[invite.invitedEmailAddress] && !invite.acceptedAtEpoch)
+            return false;
+          ppIds[invite.invitedEmailAddress] = true;
+        }
+
+        if (onlyPending) {
+          if ((invite.acceptedAtEpoch || invite.invalidatedAtEpoch))
+            return false;
+        }
+        return true;
+      });
+
+      listOfInvites = invitesFiltered.map((invite: Invite) => users.InviteRowWithKey(
           { invite, store, nowMs, showSender: true }));
     }
 
@@ -171,11 +197,21 @@ const InvitedUsersPanel = createFactory({
 
     // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]
     return (
-      r.div({},
+      r.div({ className: 's_AA_Us_Inv' },
         Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB', disabled: disableInvites },
           "Invite people" + (disableInvites ? " — disabled, SSO in use" : '')),
         r.div({ className: 'esAdminSectionIntro' },
-          r.p({}, introText)),
+          r.h3({}, introText)),
+
+        Input({ type: 'checkbox', label: "Hide old invites, show only pending", id: 'e_OnlPend',
+          checked: onlyPending, onChange: () => this.setState({ onlyPending: !onlyPending }),
+          }),
+
+        Input({ type: 'checkbox', label: "Show only most recent invite, per person", id: 'e_OnePerP',
+          checked: onlyOnePerPerson, onChange: () => this.setState({
+              onlyOnePerPerson: !onlyOnePerPerson }),
+          }),
+
         // Dupl table headers [3GK0YU2]
         r.table({ className: 'dw-invites-table' },
           r.thead({},

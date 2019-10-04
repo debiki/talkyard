@@ -33,6 +33,8 @@ const ModalFooter = rb.ModalFooter;
 const EmailInput = util.EmailInput;
 
 
+// A bit dupl code — see [3GK0YU2] in the staff bundle.
+//
 export const UserInvites = createFactory({
   displayName: 'UserInvites',
 
