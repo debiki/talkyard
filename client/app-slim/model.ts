@@ -152,6 +152,10 @@ interface PostToReview {
   bodyHiddenReason?: string;
   deletedAtMs?: WhenMs;
   deletedById?: UserId;
+  numLikeVotes: number;
+  numWrongVotes: number;
+  numBuryVotes: number;
+  numUnwantedVotes: number;
 }
 
 

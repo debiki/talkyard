@@ -1503,7 +1503,11 @@ object JsonMaker {
           "bodyHiddenById" -> JsNumberOrNull(post.bodyHiddenById),
           "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason),
           "deletedAtMs" -> JsDateMsOrNull(post.deletedAt),
-          "deletedById" -> JsNumberOrNull(post.deletedById))
+          "deletedById" -> JsNumberOrNull(post.deletedById),
+          "numLikeVotes" -> JsNumber(post.numLikeVotes),
+          "numWrongVotes" -> JsNumber(post.numWrongVotes),
+          "numBuryVotes" -> JsNumber(post.numBuryVotes),
+          "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes))
     }
     Json.obj(  // typescript interface ReviewTask
       "id" -> stuff.id,

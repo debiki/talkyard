@@ -62,7 +62,9 @@ esA             = Admin Area
 esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 esA_Rvw         = Admin Area, Review section
-esA_Rvw_Task    = Admin Area, Review section, a review task
+esA_Rvw_Task    = Admin Area, Review section, a review task — NO, instead...
+s_RT            = Review Task   <—— ... this
+s_RT_Vts        = Review Task, Votes
 s_A_Us          = Admin area, Users section
 s_A_Us_Inv      = Admin area, Users section, Invites
 

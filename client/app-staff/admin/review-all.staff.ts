@@ -431,6 +431,23 @@ const ReviewTask = createComponent({
       ' e_RT-Ix-' + (this.props.taskIndex + 1); // let's start at 1? Simpler when writing e2e code?
     const e2eClasses = pageIdPostNrIndexClass + isDeletedClass + isWaitingClass;
 
+    const numVotes =
+        post.numLikeVotes + post.numWrongVotes + post.numBuryVotes + post.numUnwantedVotes;
+    // COULD make the vote counts clickable, and show who liked / disagreed etc
+    // — reuse openLikesDialog().
+    const votes = !numVotes ? null :
+        r.div({ className: 's_RT_Vts' },
+          r.span({}, "Votes: "),
+          r.ul({},
+            !post.numLikeVotes ? null :
+                r.li({ className: 's_RT_Vts_Vt' }, `${post.numLikeVotes} Like`),
+            !post.numWrongVotes ? null :
+                r.li({ className: 's_RT_Vts_Vt' }, `${post.numWrongVotes} Disagree`),
+            !post.numBuryVotes ? null :
+                r.li({ className: 's_RT_Vts_Vt' }, `${post.numBuryVotes} Bury`),
+            !post.numUnwantedVotes ? null :
+                r.li({ className: 's_RT_Vts_Vt' }, `${post.numUnwantedVotes} Unwanted`)));
+
     return (
       r.div({ className: 'esReviewTask' + manyWhysClass + e2eClasses },
         r.div({},
@@ -449,6 +466,7 @@ const ReviewTask = createComponent({
           r.div({ className: 'esReviewTask_it' },
             anyPageTitleToReview,
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
+        votes,
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
           taskInvalidatedInfo,
