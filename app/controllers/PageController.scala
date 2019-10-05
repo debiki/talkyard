@@ -26,7 +26,7 @@ import ed.server.auth.Authz
 import ed.server.http._
 import java.{util => ju}
 import javax.inject.Inject
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX.JsLongOrNull
 
@@ -91,6 +91,96 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))
+  }
+
+
+  def listPageIdsUrls(pageId: Option[PageId]): Action[Unit] = AdminGetAction { request =>
+    import request.dao
+    import talkyard.server.JsX._
+
+    val pageMetas = pageId match {
+      case Some(id) => Seq(dao.getThePageMeta(id))
+      case None => dao.readOnlyTransaction { tx =>
+        tx.loadAllPageMetas(limit = Some(333)) // [333PAGES] for now. Later, use some query params / search?
+      }
+    }
+
+    // Maybe should load everything from db instead? Need to edit some queries,
+    // so loads all-pages-needed at once (instead of one query per page).
+    //
+    val idsUrlsJsonForPages = pageMetas map { pageMeta =>
+      val thePageId = pageMeta.pageId
+      val lookupIds = dao.getAltPageIdsForPageId(thePageId)  // slow, doesn't yet cache [306FKTGP03]
+      val pagePath = dao.getPagePath(thePageId)
+      val pageStuff = dao.getPageStuffById(Seq(thePageId))
+      val (discussionIds, embUrls) = lookupIds.partition(_.startsWith("diid:"))
+      val json = Json.obj(  // Typescript: LoadPageIdsUrlsResponse
+        "pageId" -> thePageId,
+        "extId" -> JsStringOrNull(pageMeta.extImpId),
+        "title" -> JsStringOrNull(pageStuff.get(thePageId).map(_.title)),
+        "canonUrlPath" -> JsStringOrNull(pagePath.map(_.value)),
+        "redirdUrlPaths" -> Json.arr(), // later [0WSKD46] url paths that get redirected to the canon url path.
+          // lookupPagePathAndRedirects(pageId: PageId): List[PagePathWithId]
+          // But better do that for all pages, in one query — rather than 999 queries for 999 pages
+        "canonEmbUrl" -> JsStringOrNull(pageMeta.embeddingPageUrl),
+        "embeddingUrls" -> JsArray(embUrls.toSeq map JsString),
+        "discussionIds" -> JsArray(
+          discussionIds.toSeq.map(id => JsString(id drop "diid:".length))))
+      json
+    }
+
+    OkSafeJson(JsArray(idsUrlsJsonForPages))
+  }
+
+
+  def savePageIdsUrls: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
+    import request.{dao, body}
+    val pageId = (body \ "pageId").as[PageId]
+    val extId = (body \ "extId").asOpt[String].trimNoneIfBlank
+    val canonEmbUrl = (body \ "canonEmbUrl").asOpt[String].trimNoneIfBlank
+    val discussionIds = (body \ "discussionIds").as[Set[String]]
+
+    val embUrls = (body \ "embeddingUrls").as[Set[String]]
+    (embUrls ++ canonEmbUrl.toSet).find(url => {
+      COULD // do sth more advanced
+      !url.startsWith("/") && !url.startsWith("http://") && !url.startsWith("https://")
+    }) foreach { badUrl =>
+      throwBadRequest("TyE305KSJ24", s"Not a URL: $badUrl")
+    }
+
+    val lookupKeys  = embUrls ++ discussionIds.map("diid:" + _)
+
+    dao.readWriteTransaction { tx =>
+      val pageMeta = tx.loadThePageMeta(pageId)
+      val anyDupl = lookupKeys.flatMap({ key =>
+        tx.loadRealPageId(key) flatMap { otherPageId =>
+          if (otherPageId == pageId) None
+          else Some(key, otherPageId)
+        }
+      }).headOption
+      anyDupl foreach { case (key, otherPageId) =>
+        throwForbidden("TyE305KRSH2", s"Key $key maps to other page id: $otherPageId")
+      }
+      val oldKeys = tx.listAltPageIds(pageId)
+      val deletedKeys = oldKeys -- lookupKeys
+      val newKeys = lookupKeys -- oldKeys
+      deletedKeys.foreach(k => {
+        tx.deleteAltPageId(k)
+      })
+      newKeys.foreach(k => {
+        tx.insertAltPageId(k, pageId)
+      })
+
+      if (pageMeta.embeddingPageUrl != canonEmbUrl || pageMeta.extImpId != extId) {
+        tx.updatePageMeta(
+          pageMeta.copy(
+            extImpId = extId,
+            embeddingPageUrl = canonEmbUrl),
+          oldMeta = pageMeta,
+          markSectionPageStale = false)
+      }
+    }
+    Ok
   }
 
 

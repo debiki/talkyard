@@ -226,6 +226,15 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def deleteAltPageId(altPageId: AltPageId) {
+    UNTESTED
+    val statement = s"""
+      delete from alt_page_ids3 where site_id = ? and alt_page_id = ?
+      """
+    runUpdateSingleRow(statement, List(siteId.asAnyRef, altPageId))
+  }
+
+
   def listAltPageIds(realPageId: PageId): Set[AltPageId] = {
     val sql = s"""
       select alt_page_id

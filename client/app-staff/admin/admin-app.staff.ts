@@ -20,6 +20,7 @@
 /// <reference path="review-posts.staff.ts" />
 /// <reference path="api-panel.staff.ts" />
 /// <reference path="users.staff.ts" />
+/// <reference path="contents-panel.staff.ts" />
 /// <reference path="users-one.staff.ts" />
 /// <reference path="hostname-editor.staff.ts" />
 
@@ -234,7 +235,7 @@ const AdminAppComponent = createReactClass(<any> {
     return !_.isEmpty(this.state.editedSettings);
   },
 
-  removeUnchangedSettings: function(settings: Settings) {
+  removeUnchangedSettings: function(settings: PartialSettings) {
     _.each(settings, (value, name) => {
       const currentValue = this.state.currentSettings[name];
       if (currentValue === value) {
@@ -276,6 +277,9 @@ const AdminAppComponent = createReactClass(<any> {
     const settingsLink = me.isAdmin ?
         LiNavLink({ to: ar + 'settings', className: 'e_StngsB' }, "Settings") : null;
 
+    const contentsLink = me.isAdmin && currentSettings.showExperimental ?
+        LiNavLink({ to: ar + 'contents', className: 'e_LnFB' }, "Contents") : null;
+
     const customizeLink = me.isAdmin ?
         LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;
 
@@ -290,7 +294,7 @@ const AdminAppComponent = createReactClass(<any> {
           Button({ onClick: this.undoSettings,
             className: 'esA_SaveBar_UndoAllB' }, "Undo all changes" )));
 
-    const childProps = {
+    const childProps: AdminPanelProps = {
       store: store,
       loadAllSettingsIfNeeded: this.loadAllSettingsIfNeeded,
       defaultSettings: this.state.defaultSettings,
@@ -312,6 +316,7 @@ const AdminAppComponent = createReactClass(<any> {
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
+        Route({ path: ar + 'contents', render: () => ContentsPanel(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
         Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
@@ -323,6 +328,7 @@ const AdminAppComponent = createReactClass(<any> {
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             settingsLink,
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
+            contentsLink,
             customizeLink,
             apiLink,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),

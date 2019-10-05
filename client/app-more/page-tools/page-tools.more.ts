@@ -20,7 +20,7 @@
 /// <reference path="../help/help-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagetools {
+   namespace debiki2.pagetools {
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
@@ -105,12 +105,18 @@ const PageToolsDialog = createComponent({
     const undeletePageButton = !store_canUndeletePage(store) ?  null :
       Button({ onClick: this.undeletePage, className: 'e_RstrPg' }, "Restore Topic");
 
+    const idsAndUrlsButton = page.pageRole !== PageRole.EmbeddedComments ?  null :
+      Button({ onClick: () => openEmbeddingUrlAndIdsDialog(page), className: 'e_RstrPg' },
+        "IDs and URLs ...");
+
     const buttons = r.div({},
       //selectPostsButton,
       pinPageButton,
       unpinPageButton,
       deletePageButton,
-      undeletePageButton);
+      undeletePageButton,
+      idsAndUrlsButton,
+      );
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
@@ -188,6 +194,102 @@ const PinPageDialog = createComponent({
           Button({ onClick: this.close }, "Cancel"))));
   }
 });
+
+
+
+let pageIdsUrlsDiagElm;
+let setPageIdsUrlsDiagPageId;
+
+export function openEmbeddingUrlAndIdsDialog(pageId: PageId) {
+  if (!pageIdsUrlsDiagElm) {
+    pageIdsUrlsDiagElm = ReactDOM.render(React.createFactory(PageIdsUrlsDiag)(), utils.makeMountNode());
+  }
+  setPageIdsUrlsDiagPageId(pageId);
+}
+
+
+export const PageIdsUrlsDiag = React.createFactory(function() {
+  const [pageIdOrNull, setPageId] =  React.useState<Page>(null);
+  setPageIdsUrlsDiagPageId = setPageId;
+
+  const pageIdRef = React.useRef(pageIdOrNull);
+  const [pageIdsUrls, setIdsUrls] = React.useState<PageIdsUrls>(null);
+  const [origIdsUrls, setOrig] = React.useState<PageIdsUrls>(null);
+  const [savingState, setSavingState] = React.useState('');
+
+  React.useEffect(() => {
+    pageIdRef.current = pageIdOrNull;
+    if (pageIdOrNull) Server.loadPageEmbUrlsIds(pageIdOrNull, (response: PageIdsUrls[]) => {
+      if (pageIdRef.current !== pageIdOrNull) return;
+      setIdsUrls(response[0]);
+      setOrig(response[0]);
+    });
+    return () => pageIdRef.current = null;
+  }, [pageIdOrNull]);
+
+  if (!pageIdOrNull || !pageIdsUrls)
+    return null;
+
+  const closeFn = () => setPageId(null);
+  const saveFn = () => {
+    setSavingState("Saving ...");
+    Server.savePageEmbUrlsIds(pageIdsUrls, () => {
+      setSavingState("Saved.");
+      setOrig(pageIdsUrls);
+    });
+  };
+
+  const makeUpdateFn = (what: keyof PageIdsUrls, splitOnNewline?: true) => {
+    return (event) => {
+      setSavingState("Save");
+      const value = event.target.value
+      const nextState = { ...pageIdsUrls };
+      nextState[what] = splitOnNewline ? value.split(/\n/) : value;
+      setIdsUrls(nextState);
+    };
+  }
+
+  const nothingChanged = _.isEqual(pageIdsUrls, origIdsUrls);
+
+  return (
+      Modal({ show: true, onHide: closeFn, dialogClassName: 's_PageIdsD' },
+        ModalHeader({}, ModalTitle({}, "Page IDs and URLs")),
+        ModalBody({},
+          r.p({}, "IDs and URLs associated with this page."),
+          r.form({},
+            r.p({},
+              r.b({}, "Page ID: "), r.code({}, pageIdsUrls.pageId), r.br(),
+              !eds.isInAdminArea ? null : // then we're on the page already
+                rFragment({},
+                  r.b({}, "Page URL path: "),
+                  r.a({ href: pageIdsUrls.canonUrlPath, target: '_blank' },
+                    r.code({}, pageIdsUrls.canonUrlPath)))),
+              // Other url paths ... later [0WSKD46]
+            Input({ label: "External ID",
+                help: "Use this ID to refer to this page, in API requests.",
+                value: pageIdsUrls.extId || '',
+                onChange: makeUpdateFn('extId'),
+                }),
+            Input({ label: "Link-To URL",
+                help: "Blog comments reply notification emails will link to this address.",
+                value: pageIdsUrls.canonEmbUrl || '',
+                onChange: makeUpdateFn('canonEmbUrl')
+                }),
+            Input({ type: 'textarea',  label: "Embedding URLs, one per line",
+                help: "A blog post at any of these URLs, can embed this page.",
+                value: pageIdsUrls.embeddingUrls.join('\n'),
+                onChange: makeUpdateFn('embeddingUrls', true)
+                }),
+            Input({ type: 'textarea', label: "Discussion IDs, one per line",
+                help: "A blog post with any of these discussion IDs, can embed this page.",
+                value: pageIdsUrls.discussionIds.join('\n'),
+                onChange: makeUpdateFn('discussionIds', true)
+                }))),
+        ModalFooter({},
+          PrimaryButton({ onClick: saveFn, disabled: nothingChanged }, savingState || "Save"),
+          Button({ onClick: closeFn }, nothingChanged ? "Close" : "Cancel"))));
+});
+
 
 
 //------------------------------------------------------------------------------

@@ -175,6 +175,8 @@ POST  /-/undelete-category      controllers.ForumController.undeleteCategory
 GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(categoryId: Option[Int])
 
 POST  /-/create-page            controllers.PageController.createPage
+GET   /-/list-page-ids-urls     controllers.PageController.listPageIdsUrls(pageId: Option[String])
+POST  /-/save-page-ids-urls     controllers.PageController.savePageIdsUrls
 POST  /-/pin-page               controllers.PageController.pinPage
 POST  /-/unpin-page             controllers.PageController.unpinPage
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed

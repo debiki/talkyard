@@ -235,7 +235,7 @@ trait SiteTransaction {
 
   def nextPageId(): PageId
 
-  def loadAllPageMetas(): immutable.Seq[PageMeta]
+  def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta]
@@ -270,6 +270,7 @@ trait SiteTransaction {
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId)
   def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId)
+  def deleteAltPageId(altPageId: AltPageId)
   def listAltPageIds(realPageId: PageId): Set[AltPageId]
   def loadRealPageId(altPageId: AltPageId): Option[PageId]
 

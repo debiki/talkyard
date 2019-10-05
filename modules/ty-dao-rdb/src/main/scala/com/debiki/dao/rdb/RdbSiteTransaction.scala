@@ -407,8 +407,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def loadAllPageMetas(): immutable.Seq[PageMeta] =
-    loadPageMetaImpl(pageIds = Nil, all = true).values.to[immutable.Seq]
+  def loadAllPageMetas(limit: Option[Int] = None): immutable.Seq[PageMeta] =
+    loadPageMetaImpl(pageIds = Nil, all = true, limit = limit).values.to[immutable.Seq]
 
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta] =
@@ -431,7 +431,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def loadPageMetaImpl(pageIds: Iterable[PageId], all: Boolean = false,
-        anySiteId: Option[SiteId] = None): Map[PageId, PageMeta] = {
+        anySiteId: Option[SiteId] = None, limit: Option[Int] = None): Map[PageId, PageMeta] = {
     if (!all && pageIds.isEmpty)
       return Map.empty
 
@@ -442,6 +442,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         select g.PAGE_ID, ${_PageMetaSelectListItems}
         from pages3 g
         where g.SITE_ID = ?
+        ${ limit.map(theLimit => s"limit $theLimit") getOrElse "" }
         """
     if (!all) {
       sql += s" and g.PAGE_ID in (${ makeInListFor(pageIds) })"

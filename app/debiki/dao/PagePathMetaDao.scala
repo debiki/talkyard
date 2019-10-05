@@ -168,7 +168,7 @@ trait PagePathMetaDao {
 
 
   def getAltPageIdsForPageId(realPageId: PageId): Set[AltPageId] = {
-    COULD_OPTIMIZE // cache this?
+    COULD_OPTIMIZE // cache this?  [306FKTGP03]
     readOnlyTransaction { tx =>
       tx.listAltPageIds(realPageId)
     }

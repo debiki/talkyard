@@ -1596,6 +1596,18 @@ export function createPage(data, success: (newPageId: string) => void) {
 }
 
 
+export function loadPageEmbUrlsIds(pageId: PageId | null,
+      onDone: (response: LoadPageIdsUrlsResponse) => void) {
+  const queryParams = pageId ? 'pageId=' + pageId : '';
+  get(`/-/list-page-ids-urls?${queryParams}`, onDone);
+}
+
+
+export function savePageEmbUrlsIds(data: PageIdsUrls, onDone: () => void) {
+  postJsonSuccess('/-/save-page-ids-urls', onDone, data);
+}
+
+
 export function loadPageJson(path: string, success: (response) => void) {
   console.log(`Loading page: ${path} [TyMLDPG]`);
   get(path + '?json', response => {

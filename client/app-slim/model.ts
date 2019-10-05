@@ -747,6 +747,20 @@ interface PageMeta {
 }
 
 
+// Discussion ids, external id, embedding urls.
+//
+interface PageIdsUrls {
+  pageId: PageId;
+  extId?: ExtId;
+  title: string;
+  canonUrlPath: string;
+  redirdUrlPaths: string[];
+  canonEmbUrl?: string;
+  embeddingUrls: string[];
+  discussionIds: string[];
+}
+
+
 interface Origins {
   embeddedOriginOrEmpty: string;
   anyCdnOrigin?: string;
@@ -1365,6 +1379,9 @@ interface Settings {
 }
 
 
+type PartialSettings = Partial<Settings>;
+
+
 interface TagsStuff {
   tagsAndStats?: TagAndStats[];
   myTagNotfLevels?: { [tagLabel: string]: PageNotfLevel };
@@ -1401,6 +1418,24 @@ interface ApiSecret {
   isDeleted: boolean;
   secretKey: string;
 }
+
+
+
+// ----- Admin Area
+
+interface AdminPanelProps {
+  store: Store;
+  loadAllSettingsIfNeeded: () => void;
+  defaultSettings: Settings;
+  currentSettings: Settings;
+  editedSettings: PartialSettings;
+  hosts: Host[];
+  removeUnchangedSettings: (settings: PartialSettings) => void;
+  setEditedSettings: (newSettings: PartialSettings) => void;
+}
+
+
+// ----- Super Admin
 
 
 interface SuperAdminStuff {
@@ -1461,6 +1496,10 @@ interface GuestLoginResponse {
   emailVerifiedAndLoggedIn: boolean;
   currentPageSessionId?: string;
 }
+
+
+type LoadPageIdsUrlsResponse = PageIdsUrls[];
+
 
 interface LoadTopicsResponse {
   categoryId?: CategoryId;
