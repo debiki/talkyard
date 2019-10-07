@@ -156,15 +156,15 @@ object EmbeddedCommentsPageCreator {
 
     SHOULD // check alt page id too — no blanks allowed? [05970KF5]
 
-    // A bit dupl knowledge. [205KST526]
     anyDiscussionId.foreach(discussionId => {
-      throwBadRequestIf(discussionId.startsWith("diid:"),
-        "TyE205WKDH46", o"""The 'diid:' prefix is reserved. It gets added server side;
-          don't include client side.""")
+      Validation.findDiscussionIdProblem(discussionId) foreach { problem =>
+        throwBadRequest("TyE205WKDH46", problem)
+      }
 
       // Discussion ids are prefixed by 'diid:' so they have their own namespace
       // and won't clash with any url, e.g. if they start with '/' they'd be mistaken
       // for urls, without the 'diid' prefix..
+      // A bit dupl knowledge. [205KST526]
       request.dao.getRealPageId("diid:" + discussionId) foreach { pageId =>
         return (pageId, None)
       }

@@ -124,7 +124,7 @@ const UserPageComponent = createReactClass(<any> {
 
     Server.loadUserAnyDetails(usernameOrId,
           (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
-      const stats = user.anyUserStats;  // check server side nver null
+      const stats: UserStats | undefined = user.anyUserStats;
       this.nowLoading = null;
       if (this.isGone) return;
       // This setState will trigger a rerender immediately, because we're not in a React event handler.
@@ -340,7 +340,7 @@ const AvatarAboutAndButtons = createComponent({
     const store: Store = this.props.store;
     const user: UserDetailsStatsGroups = this.props.user;
     const groupsMaySee = this.props.groupsMaySee;
-    const stats: UserStats = this.props.stats;
+    const stats: UserStats | undefined = this.props.stats;
     const me: Myself = this.props.me;
     const isGone = user_isGone(user);
     let suspendedInfo;
@@ -408,19 +408,18 @@ const AvatarAboutAndButtons = createComponent({
 
     let maxTrustLevelGroup = Groups.AllMembersId;
     user.groupIdsMaySee.forEach(id => {
-      if (id <= Groups.CoreMembersId && id > maxTrustLevelGroup) {
+      // Staff users are included in all built-in groups. [COREINCLSTAFF]
+      if (maxTrustLevelGroup < id && id <= Groups.MaxBuiltInGroupId) {
         maxTrustLevelGroup = id;
       }
     });
 
-    const groupsOnlyOneTrustLevelGroup =
-      _.filter(user.groupIdsMaySee, (groupId) =>
-            (user.isAdmin && groupId === Groups.AdminsId) ||
-            (user.isModerator && groupId === Groups.ModeratorsId) ||
-            groupId > Groups.MaxBuiltInGroupId);
-
-    groupsOnlyOneTrustLevelGroup.unshift(maxTrustLevelGroup);
-    groupsOnlyOneTrustLevelGroup.sort((a, b) => a - b);
+    const groupsOnlyOneBuiltIn =
+      _.filter(user.groupIdsMaySee, (id) => id > Groups.MaxBuiltInGroupId);
+    // Maybe lower id groups tend to be more interesting? Got created first.
+    groupsOnlyOneBuiltIn.sort((a, b) => a - b);
+    // Place the built-in group first — it shows the trust level, and if is staff.
+    groupsOnlyOneBuiltIn.unshift(maxTrustLevelGroup);
 
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
@@ -451,7 +450,7 @@ const AvatarAboutAndButtons = createComponent({
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.GroupsC,
             r.ul({ className: 's_UP_Ab_Stats_Stat_Groups' },
-              groupsOnlyOneTrustLevelGroup.map(groupId => {
+              groupsOnlyOneBuiltIn.map(groupId => {
                 const group = _.find(groupsMaySee, g => g.id === groupId);
                 return !group ? null :
                   r.li({ key: groupId, className: 's_UP_Ab_Stats_Stat_Groups_Group' },
@@ -459,7 +458,7 @@ const AvatarAboutAndButtons = createComponent({
               }))),
           ));
         // Need not show trust level — one will know what the trust level is,
-        // by looking at the groups? The first group is always one's trust level's auto group.
+        // by looking at the groups; the first group shows one's trust level's auto group.
         // So, don't need this any more:
         //   r.div({ className: 's_UP_Ab_Stats_Stat' },
         //     t.upp.TrustLevelC + trustLevel_toString(user.effectiveTrustLevel))));

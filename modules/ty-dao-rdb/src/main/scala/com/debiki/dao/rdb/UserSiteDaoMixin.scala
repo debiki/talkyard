@@ -203,6 +203,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
         // also basic members, full members, ect, and staff. The group has a different name
         // ("All Members") from the trust level ("New Members"), because it'd be confusing
         // if a group named New Members also included e.g. long time full members.
+        // Staff members are included in all groups [COREINCLSTAFF], regardless
+        // of their trust levels.
         s"coalesce(u.locked_trust_level, u.trust_level) >= ?  or  ($isStaffTest)"
       }
 

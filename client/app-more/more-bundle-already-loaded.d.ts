@@ -127,5 +127,5 @@ declare namespace debiki2.users {
 
 declare namespace debiki2.pagetools {
   function getPageToolsDialog();
-  function openEmbeddingUrlAndIdsDialog(pageId: PageId);
+  function openPageIdsUrlsDialog(pageId: PageId);
 }

@@ -133,29 +133,44 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def savePageIdsUrls: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def savePageIdsUrls: Action[JsValue] = StaffPostJsonAction(maxBytes = 2000) { request =>
     import request.{dao, body}
     val pageId = (body \ "pageId").as[PageId]
     val extId = (body \ "extId").asOpt[String].trimNoneIfBlank
     val canonEmbUrl = (body \ "canonEmbUrl").asOpt[String].trimNoneIfBlank
     val discussionIds = (body \ "discussionIds").as[Set[String]]
-
     val embUrls = (body \ "embeddingUrls").as[Set[String]]
-    (embUrls ++ canonEmbUrl.toSet).find(url => {
-      COULD // do sth more advanced
-      !url.startsWith("/") && !url.startsWith("http://") && !url.startsWith("https://")
-    }) foreach { badUrl =>
-      throwBadRequest("TyE305KSJ24", s"Not a URL: $badUrl")
+
+    extId.foreach(id => {
+      Validation.findExtIdProblem(id) foreach { problem =>
+        throwBadRequest("TyEEXTID0382", problem)
+      }
+    })
+
+    discussionIds.foreach(id => {
+      Validation.findDiscussionIdProblem(id) foreach { problem =>
+        throwBadRequest("TyEDIID03962", problem)
+      }
+    })
+
+    (embUrls ++ canonEmbUrl.toSet) foreach { url =>
+      Validation.findUrlProblem(url, allowQuery = true) foreach { problem =>
+        throwBadRequest("TyEURL69285", problem)
+      }
     }
 
     val lookupKeys  = embUrls ++ discussionIds.map("diid:" + _)
 
+    val max = Validation.MaxDiscussionIdsAndEmbUrlsPerPage
+    throwForbiddenIf(lookupKeys.size > max,
+      "TyE304SR5A2", s"More than $max embedding URLs and discussion ids")
+
     dao.readWriteTransaction { tx =>
       val pageMeta = tx.loadThePageMeta(pageId)
       val anyDupl = lookupKeys.flatMap({ key =>
-        tx.loadRealPageId(key) flatMap { otherPageId =>
-          if (otherPageId == pageId) None
-          else Some(key, otherPageId)
+        tx.loadRealPageId(key) flatMap { maybeDifferentPageId =>
+          if (maybeDifferentPageId == pageId) None
+          else Some(key, maybeDifferentPageId)
         }
       }).headOption
       anyDupl foreach { case (key, otherPageId) =>

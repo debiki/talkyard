@@ -704,6 +704,8 @@ notifications:
           - notfs-mark-all-as-read  TyT5BKAR24H
   mark post one views as seen:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
+  about topics one may not see:
+          - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
 
 live notifications -
   works after many long-polls:

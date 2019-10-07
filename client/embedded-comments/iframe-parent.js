@@ -75,7 +75,7 @@ function loadCommentsCreateEditor() {
     edPageId = commentsElem.getAttribute('data-talkyard-page-id');
   }
   var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
-  var htmlClassParam = htmlClass ? 'htmlClass=' + htmlClass : '';
+  var htmlClassParam = htmlClass ? '&htmlClass=' + htmlClass : '';
 
   var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam + htmlClassParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;

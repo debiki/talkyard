@@ -32,10 +32,12 @@ const michaelsGroupFullName = 'Michaels Group Full Name';
 
 const topicOneTitle = 'topicOneTitle SpecCat';
 const topicOneBody = 'topicOneBody SpecCat';
-const topicTwoTitleOnlyMichael = 'topicTwoTitle DefCat';
-const topicTwoBodyOnlyMichael = 'topicTwoBody only Michael';
+const topicTwoTitleOnlyMichael = 'topicTwoTitleOnlyMichael DefCat';
+const topicTwoBodyOnlyMichael = 'topicTwoBodyOnlyMichael only Michael';
 
 const mentionMichael = '@michael';
+const mentionMaria = '@maria';
+
 const topicThreeTitle = 'topicThreeTitle';
 const topicThreeBodyMentionsMichael = `topicThreeBodyMentionsMichael ${mentionMichael} hello`;
 
@@ -45,8 +47,8 @@ const topicFourBodyToBoth = 'topicFourBodyToBoth';
 const topicFiveTitleMariaOnly = 'topicFiveTitleMariaOnly';
 const topicFiveBodyMariaOnly = 'topicFiveBodyMariaOnly';
 
-const topicSixTitle = 'topicSixTitle';
-const topicSixBodyMentionsMichael = `topicSixTitleMentionsMichael ${mentionMichael} hi`;
+const owensReplyMentionsMichaelMaria =
+    `owensReplyMentionsMichaelMaria ${mentionMichael} ${mentionMaria} hi`;
 
 let numEmailsToMaria = 0;
 let numEmailsToMichael = 0;
@@ -58,7 +60,7 @@ let siteId;
 let forum: TwoPagesTestForum;
 
 
-describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
+describe("notf-prefs-private-groups  TyT406WMDKG26", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -87,19 +89,19 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
   });
 
 
-  // ------- Create group, add people, subscr to category NewTopics
+  // ------- Create group, add people, subscr to categories
 
   it("Owen logs in to the groups page", () => {
     owensBrowser.groupListPage.goHere(siteIdAddress.origin);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
 
-  it("... creates Custom Group One", () => {
+  it("... creates Maria's Group", () => {
     owensBrowser.groupListPage.createGroup({
         username: mariasGroupUsername, fullName: mariasGroupFullName });
   });
 
-  it("... adds Maria to Custom Group One", () => {
+  it("... adds Maria", () => {
     owensBrowser.userProfilePage.groupMembers.addOneMember(maria.username);
   });
 
@@ -117,7 +119,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
     owensBrowser.userProfilePage.navBackToGroups();
   });
 
-  it("... creates Custom Group Two", () => {
+  it("... creates Michael's Group", () => {
     owensBrowser.groupListPage.createGroup({
         username: michaelsGroupUsername, fullName: michaelsGroupFullName });
   });
@@ -255,7 +257,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
     owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
 
-  it("... and Michael's groups", () => {
+  it("... and Michael's group", () => {
     owensBrowser.userProfilePage.openNotfPrefsFor(michaelsGroupUsername);
     owensBrowser.userProfilePage.preferences.notfs.setSiteNotfLevel(c.TestPageNotfLevel.NewTopics);
   });
@@ -303,6 +305,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
   });
 
   it(`Owen again posts a topic in Category A`, () => {
+    // This tests  [2069RSK25-B]: topic subscrptions.
     owensBrowser.forumTopicList.goHere({ categorySlug: forum.categories.categoryA.slug });
     owensBrowser.complex.createAndSaveTopic({
         title: topicFiveTitleMariaOnly, body: topicFiveBodyMariaOnly });
@@ -328,10 +331,9 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
     assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  it(`Owen tries again, even @mentions Michael`, () => {
-    owensBrowser.forumTopicList.goHere({ categorySlug: forum.categories.categoryA.slug });
-    owensBrowser.complex.createAndSaveTopic({
-        title: topicSixTitle, body: topicSixBodyMentionsMichael });
+  it(`Owen tries again, replies and @mentions Michael and Maria`, () => {
+    // This tests  [2069RSK25-A]: direct replies and @mentions.
+    owensBrowser.complex.replyToOrigPost(owensReplyMentionsMichaelMaria);
     numEmailsToMaria += 1;
     numEmailsToMichael += 0;
     numEmailsTotal += 1;
@@ -339,18 +341,18 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
 
   it("... but to no avail: Maria gets notified", () => {
     server.waitUntilLastEmailMatches(
-        siteId, maria.emailAddress, topicSixBodyMentionsMichael, browser);
+        siteId, maria.emailAddress, owensReplyMentionsMichaelMaria, browser);
   });
 
   it(`... once`, () => {
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), numEmailsToMaria);
   });
 
-  it("... not Michael,  no no not not", () => {
+  it("... not Michael", () => {
     assert.equal(server.countLastEmailsSentTo(siteId, michael.emailAddress), numEmailsToMichael);
   });
 
-  it("... num emails sent is correct, yes yes", () => {
+  it("... num emails sent is correct", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });

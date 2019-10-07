@@ -165,12 +165,59 @@ object Validation {
   def findExtIdProblem(extId: String): Option[ErrorMessage] = {  // [05970KF5]
     if (extId.isEmpty) return Some("Empty external id [TyEEXTIDEMP]")
     if (extId.length > MaxExtIdLength) return Some(
-      s"Too long external id, longer than $MaxExtIdLength chars [TyEEXTIDLNG]")
+      s"Too long external id, longer than $MaxExtIdLength chars: '$extId' [TyEEXTIDLNG]")
 
     //For now: (there's a db constraint)
     None
     // \p{Graph}
     // val p = java.util.regex.Pattern.compile("\\w+", java.util.regex.Pattern.UNICODE_CHARACTER_CLASS);
     // db:   ~ '^[[:graph:]]([[:graph:] ]*[[:graph:]])?$' and length(text) between 1 and 128;
+  }
+
+
+  val MaxDiscussionIdsAndEmbUrlsPerPage = 40
+
+  val MaxDiscussionIdLength: Int = 100
+
+  def findDiscussionIdProblem(discId: String): Option[ErrorMessage] = {  // [05970KF5]
+    if (discId.isEmpty) return Some("Empty discussion id [TyE305KATJKRP]")
+    if (discId.length > MaxDiscussionIdLength) return Some(
+      s"Too long discussion id, longer than $MaxDiscussionIdLength chars: '$discId' [TyE5TEJ205]")
+    // A bit dupl knowledge. [205KST526]
+    if (discId.startsWith("diid:")) return Some(
+      o"""The 'diid:' prefix is reserved. It gets added server side;
+          don't include client side: '$discId' [TyE6FMHAPL2]""")
+    None
+  }
+
+
+  val MaxUrlLength: Int = 400
+
+  def findUrlProblem(url: String, allowQuery: Boolean, allowHash: Boolean = false)
+        : Option[ErrorMessage] = {  // [05970KF5]
+    if (url.isEmpty) return Some("Empty url [TyE502FTHL42]")
+    if (url.length > MaxUrlLength) return Some(
+      s"Too long url, longer than $MaxUrlLength chars: '$url' [TyE2RTJW40T]")
+
+    val isHttpUrl = url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")
+    val isPath = url.startsWith("/") && !isHttpUrl
+
+    if (!isHttpUrl && !isPath)
+      return Some(s"Not a 'http(s)://...' or '//host/path' or '/a/path' URL: '$url' [TyE6RKBA28]")
+
+    try {
+      val jUri = new java.net.URI(url)
+      if (!allowQuery && jUri.getQuery != null)
+        return Some(s"URL contains query string, it should not: '$url' [TyE406MRKS2]")
+
+      if (!allowHash && jUri.getRawFragment != null)
+        return Some(s"URL contains hash, it should not: '$url' [TyE7MKCHRTBC2]")
     }
+    catch {
+      case ex: Exception =>
+        return Some(s"Bad URL, error: ${ex.toString}, the url: '$url' [TyE40GMRKVG4]")
+    }
+
+    None
+  }
 }

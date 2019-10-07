@@ -1062,7 +1062,7 @@ case class UserInclDetails(  // ok for export
 
   def noDetails: Participant = briefUser
 
-  def briefUser = User(
+  def briefUser = User(   // RENAME? to just noDetails? see above
     id = id,
     fullName = fullName,
     theUsername = username,

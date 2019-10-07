@@ -78,6 +78,7 @@ const PageToolsDialog = createComponent({
 
   render: function () {
     const store: Store = this.state.store;
+    const me: Myself = store.me;
     const page: Page = store.currentPage;
     const childProps = {
       store: store,
@@ -105,8 +106,8 @@ const PageToolsDialog = createComponent({
     const undeletePageButton = !store_canUndeletePage(store) ?  null :
       Button({ onClick: this.undeletePage, className: 'e_RstrPg' }, "Restore Topic");
 
-    const idsAndUrlsButton = page.pageRole !== PageRole.EmbeddedComments ?  null :
-      Button({ onClick: () => openEmbeddingUrlAndIdsDialog(page), className: 'e_RstrPg' },
+    const idsAndUrlsButton = page.pageRole !== PageRole.EmbeddedComments || !me.isAdmin ?  null :
+      Button({ onClick: () => openPageIdsUrlsDialog(page.pageId), className: 'e_PgIdsUrls' },
         "IDs and URLs ...");
 
     const buttons = r.div({},
@@ -197,10 +198,12 @@ const PinPageDialog = createComponent({
 
 
 
+// REFACTOR CLEAN_UP could break out the beelow dialog to separate file
+
 let pageIdsUrlsDiagElm;
 let setPageIdsUrlsDiagPageId;
 
-export function openEmbeddingUrlAndIdsDialog(pageId: PageId) {
+export function openPageIdsUrlsDialog(pageId: PageId) {
   if (!pageIdsUrlsDiagElm) {
     pageIdsUrlsDiagElm = ReactDOM.render(React.createFactory(PageIdsUrlsDiag)(), utils.makeMountNode());
   }
@@ -209,20 +212,24 @@ export function openEmbeddingUrlAndIdsDialog(pageId: PageId) {
 
 
 export const PageIdsUrlsDiag = React.createFactory(function() {
-  const [pageIdOrNull, setPageId] =  React.useState<Page>(null);
+  const [pageIdOrNull, setPageId] =  React.useState<PageId | null>(null);
   setPageIdsUrlsDiagPageId = setPageId;
 
-  const pageIdRef = React.useRef(pageIdOrNull);
-  const [pageIdsUrls, setIdsUrls] = React.useState<PageIdsUrls>(null);
-  const [origIdsUrls, setOrig] = React.useState<PageIdsUrls>(null);
-  const [savingState, setSavingState] = React.useState('');
+  const pageIdRef = React.useRef<PageId | null>(pageIdOrNull);
+  const [pageIdsUrls, setIdsUrls] = React.useState<PageIdsUrls | null>(null);
+  const [origIdsUrls, setOrig] = React.useState<PageIdsUrls | null>(null);
+  const [savingState, setSavingState] = React.useState<string>("Save");
 
   React.useEffect(() => {
     pageIdRef.current = pageIdOrNull;
-    if (pageIdOrNull) Server.loadPageEmbUrlsIds(pageIdOrNull, (response: PageIdsUrls[]) => {
+    if (pageIdOrNull) Server.loadPageIdsUrls(pageIdOrNull, (response: PageIdsUrls[]) => {
       if (pageIdRef.current !== pageIdOrNull) return;
-      setIdsUrls(response[0]);
-      setOrig(response[0]);
+      const idsUrls = response[0];
+      // @ifdef DEBUG
+      dieIf(idsUrls.pageId !== pageIdOrNull, 'TyE05WKDHFJ4');
+      // @endif
+      setIdsUrls(idsUrls);
+      setOrig(idsUrls);
     });
     return () => pageIdRef.current = null;
   }, [pageIdOrNull]);
@@ -233,7 +240,11 @@ export const PageIdsUrlsDiag = React.createFactory(function() {
   const closeFn = () => setPageId(null);
   const saveFn = () => {
     setSavingState("Saving ...");
-    Server.savePageEmbUrlsIds(pageIdsUrls, () => {
+    Server.savePageIdsUrls(pageIdsUrls, () => {
+      if (pageIdRef.current !== pageIdsUrls.pageId) {
+        setSavingState("Save");
+        return;
+      }
       setSavingState("Saved.");
       setOrig(pageIdsUrls);
     });
@@ -266,7 +277,7 @@ export const PageIdsUrlsDiag = React.createFactory(function() {
                     r.code({}, pageIdsUrls.canonUrlPath)))),
               // Other url paths ... later [0WSKD46]
             Input({ label: "External ID",
-                help: "Use this ID to refer to this page, in API requests.",
+                help: "You can use this ID to refer to this page, in API requests.",
                 value: pageIdsUrls.extId || '',
                 onChange: makeUpdateFn('extId'),
                 }),
@@ -286,7 +297,7 @@ export const PageIdsUrlsDiag = React.createFactory(function() {
                 onChange: makeUpdateFn('discussionIds', true)
                 }))),
         ModalFooter({},
-          PrimaryButton({ onClick: saveFn, disabled: nothingChanged }, savingState || "Save"),
+          PrimaryButton({ onClick: saveFn, disabled: nothingChanged }, savingState),
           Button({ onClick: closeFn }, nothingChanged ? "Close" : "Cancel"))));
 });
 

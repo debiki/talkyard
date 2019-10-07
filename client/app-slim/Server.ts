@@ -768,7 +768,6 @@ export function removeGroupMembers(groupId: UserId, memberIds: UserId[], onDone:
 
 // BUG might get a Guest or Group, not always a UserInclDetails. SHOULD find for usages & fix.
 // (Some callers, but not all, can deal with Group or Guest.)
-// instead return  UserInclDetailsWithStats ? UserDetailsStatsGroups
 export function loadUserAnyDetails(userIdOrUsername: UserId | string,
       onDone: (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => void, error?: () => void) {
   get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
@@ -1596,14 +1595,14 @@ export function createPage(data, success: (newPageId: string) => void) {
 }
 
 
-export function loadPageEmbUrlsIds(pageId: PageId | null,
+export function loadPageIdsUrls(pageId: PageId | null,
       onDone: (response: LoadPageIdsUrlsResponse) => void) {
   const queryParams = pageId ? 'pageId=' + pageId : '';
   get(`/-/list-page-ids-urls?${queryParams}`, onDone);
 }
 
 
-export function savePageEmbUrlsIds(data: PageIdsUrls, onDone: () => void) {
+export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
   postJsonSuccess('/-/save-page-ids-urls', onDone, data);
 }
 

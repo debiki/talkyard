@@ -169,20 +169,20 @@ const InvitedUsersPanel = createFactory({
       introText = _.isEmpty(invites) ?
           "No invites sent." : "People who have been invited to this site:";
       const nowMs = Date.now();
-      const ppIds = {};
+      const idsDone = {};
       const invitesFiltered = _.filter(invites, (invite: Invite) => {
         if (onlyOnePerPerson) {
           // Show any accepted invite first, or if none accepted,
           // then show the most recent sent. Already sorted by time, right.
           // (Harmless bug: Will show two invites, if the user accepted an old
           // invite, after a new was sent.)
-          if (ppIds[invite.invitedEmailAddress] && !invite.acceptedAtEpoch)
+          if (idsDone[invite.invitedEmailAddress] && !invite.acceptedAtEpoch)
             return false;
-          ppIds[invite.invitedEmailAddress] = true;
+          idsDone[invite.invitedEmailAddress] = true;
         }
 
         if (onlyPending) {
-          if ((invite.acceptedAtEpoch || invite.invalidatedAtEpoch))
+          if (invite.acceptedAtEpoch || invite.invalidatedAtEpoch)
             return false;
         }
         return true;

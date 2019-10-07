@@ -218,6 +218,8 @@ case class SiteBackupReader(context: EdContext) {
           case JsString(value) =>
             SECURITY; SHOULD // verify id and value are ok, no weird chars or blanks?  [05970KF5]
             // Review this for all imported things b.t.w.:  exd ids,  sso id,  emb urls,  page ids.
+            // And verify not too many, per page — see:
+            Validation.MaxDiscussionIdsAndEmbUrlsPerPage
             altId -> value
           case x => throwBadRequest(
             "TyE406TNW2", s"For alt page id '$altId', the page id is invalid: '$x'")

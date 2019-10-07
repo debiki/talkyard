@@ -119,6 +119,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     userJson += "groupIdsMaySee" -> JsArray(pptGroupIds.map(id => JsNumber(id)))
     OkSafeJson(Json.obj(
       "user" -> userJson,
+      // COULD_OPTIMIZE: need only include user's groups — or always incl in the
+      // volatile json? [305STGW2] — so need not incl here again?
       "groupsMaySee" -> groupsMaySee.map(JsGroup)))
   }
 

@@ -278,7 +278,7 @@ const AdminAppComponent = createReactClass(<any> {
         LiNavLink({ to: ar + 'settings', className: 'e_StngsB' }, "Settings") : null;
 
     const contentsLink = me.isAdmin && currentSettings.showExperimental ?
-        LiNavLink({ to: ar + 'contents', className: 'e_LnFB' }, "Contents") : null;
+        LiNavLink({ to: ar + 'contents', className: 'e_ContB' }, "Contents") : null;
 
     const customizeLink = me.isAdmin ?
         LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;

@@ -211,7 +211,7 @@ case class NotificationGenerator(
     val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
     makeNewPostSubscrNotfFor(notfPrefsOnCategory, newPost, minNotfLevel, memberIdsHandled)
 
-    // Grandparent category?
+    // Grandparent category? [subcats]
 
     // Tags.
     // notPrefsOnTags = ... (later)
@@ -264,7 +264,11 @@ case class NotificationGenerator(
       }
     }
 
-    // Sync w (2069RSK25).
+    // Access control.
+    // Sync w [2069RSK25]. Test: [2069RSK25-A]
+    // (If this is a group and it may not see the post, then don't generate any
+    // notfs on behalf of this group, even if there're individual group *members*
+    // who may see the post (because of other groups they're in). [5AKTG7374])
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF3"
     val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(toUserMaybeGroup),
         maySeeUnlistedPages = true)
@@ -380,7 +384,7 @@ case class NotificationGenerator(
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
 
-    // Sync w (2069RSK25).
+    // Sync w [2069RSK25].  Test: [2069RSK25-B]
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
     def maySeePost(pp: Participant): Boolean = {
       val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(pp),
@@ -418,13 +422,14 @@ case class NotificationGenerator(
       groupMembers = tx.loadGroupMembers(group.id)
       member <- groupMembers
       // ... or what if a group has enabled site wide notfs, and cannot see category C,
-      // but user U is in that group *can* see C — then, should U get notified
-      // about topics in C or not? For now: No. Let group notf settings affect only
-      // categories the group itself can see (rather than what the group members can see,
+      // but user U is in that group *can* see C (because of other group hen is in)
+      // — then, should U get notified about topics in C or not?
+      // For now: No. Let group notf settings affect only categories the group itself
+      // can see (rather than what the group members can see,
       // — which might be more than what the group can see). I think it'd be a bit
       // unexpected if changing a group's notf settings, affects categories that
       // are listed as cannot-see on the group's page?
-      // So skip this:
+      // So skip this: [5AKTG7374]
       //   memberMaySee = maySeePost(member)
       //   if groupMaySee || memberMaySee
     } {

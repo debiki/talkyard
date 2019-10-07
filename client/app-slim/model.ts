@@ -338,6 +338,7 @@ interface Myself extends OwnPageNotfPrefs {
   restrictedTopics: Topic[];
   restrictedTopicsUsers: Participant[];
   restrictedCategories: Category[];
+  // groupsMaySee: Group[]; // groups oneself may see [305STGW2]
 
   pageHelpMessage?: HelpMessage;
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
@@ -747,7 +748,8 @@ interface PageMeta {
 }
 
 
-// Discussion ids, external id, embedding urls.
+// Discussion ids, external id, embedding urls. And the canonical url path,
+// plus any url paths that redirect to the canonical path.
 //
 interface PageIdsUrls {
   pageId: PageId;

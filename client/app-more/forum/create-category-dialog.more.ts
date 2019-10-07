@@ -225,7 +225,7 @@ const EditCategoryDialog = createClassAndFactory({
 
     const perms: PermsOnPage[] = this.state.permissions || [];
     const uninitedPerm = _.find(perms, (p: PermsOnPage) =>  {
-      return p.forPeopleId < 10;  // EveryoneId ?
+      return p.forPeopleId < Groups.EveryoneId;
     });
 
     const canSave = !uninitedPerm;

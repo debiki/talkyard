@@ -6,12 +6,13 @@
 const r = ReactDOMFactories;
 
 
-export const ContentsPanel = React.createFactory<AdminPanelProps>(function(props: AdminPanelProps) {
+export const ContentsPanel = React.createFactory<AdminPanelProps>(
+      function(props: AdminPanelProps) {
 
-  const [pageIdsUrls, setIdsUrls] = React.useState<PageIdsUrls[]>(null);
+  const [pageIdsUrls, setIdsUrls] = React.useState<PageIdsUrls[] | null>(null);
 
   React.useEffect(() => {
-    Server.loadPageEmbUrlsIds(null, (response: PageIdsUrls[]) => {
+    Server.loadPageIdsUrls(null, (response: PageIdsUrls[]) => {
       setIdsUrls(response);
     });
   }, []);
@@ -36,7 +37,7 @@ export const ContentsPanel = React.createFactory<AdminPanelProps>(function(props
       Button({ onClick: () => {
           // This reloads the ids and urls for the page — that's good, so we'll get
           // up-to-date values and so reduce risk for The Lost Update Bug.
-          debiki2.pagetools.openEmbeddingUrlAndIdsDialog(idsUrls.pageId)
+          debiki2.pagetools.openPageIdsUrlsDialog(idsUrls.pageId)
         }},
         "Edit"),
       );

@@ -72,7 +72,7 @@ object TrustLevel {
     case Group.CoreMembersId => TrustLevel.CoreMember
     case _ =>
       // Skip: Group.EveryoneId, ModeratorsId, AdminsId, because StrangerDummyLevel and
-      // moderators and admins aren't trust levels.
+      // moderators and admins aren't trust levels. [COREINCLSTAFF]
       // Instead, strangers have no trust level at all. And a staff members, can have trust
       // level just Basic or Core Member or whatever.
       return None
