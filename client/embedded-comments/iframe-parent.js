@@ -56,6 +56,7 @@ function loadCommentsCreateEditor() {
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
   var discussionTitle = commentsElem.getAttribute('data-iframe-title');
+  var htmlClass = commentsElem.getAttribute('data-iframe-html-class');
 
   // The discussion id might include a bit weird chars — it might have been imported
   // from WordPress or Ghost or Disqus [52TKRG40], and e.g. WordPress.com inserted spaces
@@ -74,8 +75,9 @@ function loadCommentsCreateEditor() {
     edPageId = commentsElem.getAttribute('data-talkyard-page-id');
   }
   var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
+  var htmlClassParam = htmlClass ? 'htmlClass=' + htmlClass : '';
 
-  var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam;
+  var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam + htmlClassParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
   var loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
   if (loadWeinre) {

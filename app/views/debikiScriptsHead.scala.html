@@ -143,6 +143,21 @@ if (_narrow) {
   _store.shallSidebarsOverlayPage = true;
 }
 
+@* This lets an embedding page, e.g. a blog post, add a CSS class to the HTML tag,
+so it can change the colors, e.g. use a Dark or a Bright theme — which might be
+per user customizable over at the blog.  This won't work in IE: no URL object.
+COULD use a polyfill: https://github.com/ungap/url-search-params,
+see: https://stackoverflow.com/a/979995/694469  for more details. *@
+try {
+  var _searchParams = new URLSearchParams(location.search);
+  var _class = _searchParams.get('htmlClass');
+  if (_class) {
+    _doc.className += ' ' + _class.replace(/[^a-zA-Z0-9_-]/g, ' ');
+  }
+}
+catch (ignored) {
+}
+
 @* Show the watchbar, unless we're on an info page. But do show it, if it's open already,
  also on info pages. Otherwise people get confused when they click a recent page in the
  watchbar, and then it (the watchbar) just disappears (closes). *@
