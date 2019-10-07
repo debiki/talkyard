@@ -62,17 +62,31 @@ function readGitHash() {
 }
 
 
-const version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
-const versionTag = version + '-' + readGitHash();  // also in Bash and Scala [8GKB4W2]
+let version;
+let versionTag;
 
-const preprocessProdContext = { TALKYARD_VERSION: versionTag };
+let preprocessProdContext;
 
 // Here we'll place the generated js, min.js and min.js.gz files. [GZPATHS]
 const webDest = 'images/web/assets';
-const webDestVersioned = `${webDest}/${version}`;
-const webDestTranslations = `${webDestVersioned}/translations`;
+let webDestVersioned;
+let webDestTranslations;
 const serverDest = 'images/app/assets';
-const serverDestTranslations = `${serverDest}/translations`;
+let serverDestTranslations;
+
+
+function updateVersionVars() {
+  version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
+  versionTag = version + '-' + readGitHash();  // also in Bash and Scala [8GKB4W2]
+
+  preprocessProdContext = { TALKYARD_VERSION: versionTag };
+
+  webDestVersioned = `${webDest}/${version}`;
+  webDestTranslations = `${webDestVersioned}/translations`;
+  serverDestTranslations = `${serverDest}/translations`;
+}
+
+updateVersionVars();
 
 
 /*
@@ -689,6 +703,20 @@ function logChangeFn(fileType) {
 }
 
 
+gulp.task('updateVersion', (done) => {
+  updateVersionVars();
+  done();
+});
+
+
+gulp.task('updateVersionGenBundles', gulp.series(
+  'updateVersion',
+  'compileConcatAllScripts',
+  'compile-stylus',
+  'minifyTranslations',
+));
+
+
 gulp.task('default', gulp.series(
   'compileConcatAllScripts',
   'compile-stylus',
@@ -745,6 +773,10 @@ gulp.task('watch', gulp.series('default', (done) => {
   gulp.watch('tests/e2e/**/*.ts',
       gulp.series('build-e2e'))
     .on('change', logChangeFn('End-to-End test files'));
+
+  gulp.watch([versionFilePath],
+      gulp.series('updateVersionGenBundles'))
+    .on('change', logChangeFn("Version changed"));
 
   //gulp.watch(_2dTsProj.src(), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript')); [SLIMTYPE]
 
