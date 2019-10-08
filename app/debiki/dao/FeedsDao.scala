@@ -65,7 +65,7 @@ trait FeedsDao {
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
       if maySeePostUseCache(
-        post, pageMeta, user = None, maySeeUnlistedPages = onlyEmbeddedComments)._1.may
+        post, pageMeta, ppt = None, maySeeUnlistedPages = onlyEmbeddedComments)._1.may
     } yield post
     val pageIds = postsOneMaySee.map(_.pageId).distinct
     val pageStuffById = getPageStuffById(pageIds)

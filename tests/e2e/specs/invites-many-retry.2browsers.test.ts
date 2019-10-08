@@ -194,7 +194,27 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
     owensBrowser.inviteDialog.cancel();
   });
 
-  it("Now: the invite list lists all invites, in the correct statuses", () => {
+  it("Now: the invite list lists all invites, in the correct statuses " +
+      "— but only once per user: addr2Retry just once", () => {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
+      email: addr2Retry, accepted: false,
+    });
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(2, {
+      email: addr1Accepts, acceptedByUsername: addr1Username,
+    });
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(3, {
+      email: addr3, accepted: false,
+    });
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(4, {
+      email: addr4, accepted: false,
+    });
+  });
+
+  it("Owen unchecks the Show-one-per-user filter", () => {
+    owensBrowser.invitedUsersList.setShowOnePerUserOnly(false);
+  });
+
+  it("Now: the invite list lists *all* invites, incl addr2Retry twice", () => {
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
       email: addr2Retry, accepted: false,
     });
@@ -258,6 +278,25 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
     // Inv to addr 2 = accepted       index 3
     // Inv to addr 2 = invalidated    index 4
     // Inv to addr 1 = accepted       index 5
+  });
+
+  it("Owen hides old invites, shows only pending", () => {
+    owensBrowser.invitedUsersList.setHideOld(true);
+  });
+
+  it("... Owens now sees only one invite, waiting to be accepted", () => {
+    owensBrowser.invitedUsersList.waitAssertInviteRowPresent(1, {
+      email: addr4, accepted: false,
+    });
+  });
+
+  it("... but no other invites; they're filtered away", () => {
+    assert.equal(owensBrowser.invitedUsersList.countNumInvited(), 1);
+  });
+
+  it("Owen shows all invites", () => {
+    owensBrowser.invitedUsersList.setHideOld(false);
+    owensBrowser.invitedUsersList.setShowOnePerUserOnly(false);
   });
 
   it("... in Owens browser, the most recent addr2 invite now appears as accepted", () => {

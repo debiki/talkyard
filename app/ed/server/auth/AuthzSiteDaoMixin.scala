@@ -172,43 +172,48 @@ trait AuthzSiteDaoMixin {
     */
   def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[Participant])
         : (MaySeeOrWhyNot, String) = {
-    maySeePostImpl(pageId, postNr, user, anyPost = None, anyTransaction = None)
+    maySeePostImpl(pageId, postNr, user, anyPost = None, anyTx = None)
   }
 
 
-  def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[Participant],
+  def maySeePostUseCache(post: Post, pageMeta: PageMeta, ppt: Option[Participant],
                          maySeeUnlistedPages: Boolean): (MaySeeOrWhyNot, String) = {
-    maySeePostImpl(pageId = null, postNr = PageParts.NoNr, user, anyPost = Some(post),
+    maySeePostImpl(pageId = null, postNr = PageParts.NoNr, ppt, anyPost = Some(post),
       anyPageMeta = Some(pageMeta), maySeeUnlistedPages = maySeeUnlistedPages,
-      anyTransaction = None)
+      anyTx = None)
   }
 
 
-  def throwIfMayNotSeePost(post: Post, author: Option[Participant])(transaction: SiteTransaction) {
-    val (result, debugCode) =
-      maySeePostImpl(post.pageId, postNr = PageParts.NoNr, author, anyPost = Some(post),
-        anyTransaction = Some(transaction))
+  def throwIfMayNotSeePost(post: Post, ppt: Option[Participant])(tx: SiteTransaction) {
+    val (result, debugCode) = maySeePost(post, ppt, maySeeUnlistedPages = true)(tx)
     if (!result.may)
       throwIndistinguishableNotFound(s"EdE4KFA20-$debugCode")
   }
 
 
-  private def maySeePostImpl(pageId: PageId, postNr: PostNr, user: Option[Participant],
+  def maySeePost(post: Post, ppt: Option[Participant], maySeeUnlistedPages: Boolean)
+        (tx: SiteTransaction): (MaySeeOrWhyNot, String) = {
+    maySeePostImpl(post.pageId, postNr = PageParts.NoNr, ppt, anyPost = Some(post),
+      anyTx = Some(tx))
+  }
+
+
+  private def maySeePostImpl(pageId: PageId, postNr: PostNr, ppt: Option[Participant],
                              anyPost: Option[Post], anyPageMeta: Option[PageMeta] = None,
-                             maySeeUnlistedPages: Boolean = true, anyTransaction: Option[SiteTransaction])
+                             maySeeUnlistedPages: Boolean = true, anyTx: Option[SiteTransaction])
         : (MaySeeOrWhyNot, String) = {
 
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
     require(anyPost.isDefined == (postNr == PageParts.NoNr), "TyE3DJ8A0")
 
     val pageMeta = anyPageMeta getOrElse {
-      anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
+      anyTx.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
         // Apparently the page was just deleted.
         return (MaySeeOrWhyNot.NopeUnspecified, "5KFUP2R0-Page-Not-Found")
       }
     }
 
-    val (maySeePage, debugCode) = maySeePageImpl(pageMeta, user, anyTransaction,
+    val (maySeePage, debugCode) = maySeePageImpl(pageMeta, ppt, anyTx,
           maySeeUnlisted = maySeeUnlistedPages)
     if (!maySeePage)
       return (MaySeeOrWhyNot.NopeUnspecified, s"$debugCode-ABX94WN")
@@ -228,7 +233,7 @@ trait AuthzSiteDaoMixin {
 
     // Staff may see all posts, if they may see the page. [5I8QS2A]
     def isStaffOrAuthor =
-      user.exists(_.isStaff) || user.exists(_.id == post.createdById)
+      ppt.exists(_.isStaff) || ppt.exists(_.id == post.createdById)
 
     if (post.isDeleted && !isStaffOrAuthor)
       return (MaySeeOrWhyNot.NopePostDeleted, "6PKJ2RU-Post-Deleted")
@@ -246,7 +251,7 @@ trait AuthzSiteDaoMixin {
     val requester = getTheParticipant(forWho.id)
     val (result, debugCode) =
       maySeePostImpl(post.pageId, postNr = PageParts.NoNr, Some(requester), anyPost = Some(post),
-        anyTransaction = None)
+        anyTx = None)
     if (!result.may)
       throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")
   }

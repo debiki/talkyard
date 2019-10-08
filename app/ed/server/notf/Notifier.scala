@@ -134,7 +134,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val aDayAgo = now.minusDays(1)
     val aWeekAgo = now.minusDays(7)
     val dao = siteDaoFactory.newSiteDao(UtxSiteId)
-    var usersById: Map[UserId, Participant] = null
+    var usersById: Map[UserId, ParticipantInclDetails] = null
     val userIdsNoReminder = dao.readOnlyTransaction { tx =>
       val topics: Seq[PagePathAndMeta] =
         tx.loadPagesInCategories(
@@ -145,7 +145,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
             includeAboutCategoryPages = false),
           limit = 100)
       val createdByUserIds = topics.map(_.meta.authorId).toSet
-      usersById = tx.loadParticipantsAsMap(createdByUserIds)
+      usersById = tx.loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(createdByUserIds)
       val emailsSentToAuthors: Map[UserId, Seq[Email]] = tx.loadEmailsSentTo(
         createdByUserIds, after = aWeekAgo, emailType = EmailType.HelpExchangeReminder)
       createdByUserIds filterNot { userId =>
@@ -153,9 +153,16 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       }
     }
 
-    for (userId <- userIdsNoReminder ; user <- usersById.get(userId) ; if user.email.nonEmpty ;
-          userName <- user.anyName orElse user.anyUsername ;
-          if userId <= 101 || globals.conf.getBoolean("utx.reminders.enabled").is(true)) { HACK; SHOULD // remove when done testing live
+    for {
+      userId <- userIdsNoReminder
+      userWithDetails: ParticipantInclDetails <- usersById.get(userId)
+      // Completely stop sending reminders soon, so people won't flag as spam.
+      if now.daysSince(userWithDetails.createdAt) < 21
+      user = userWithDetails.noDetails  // weird. Maybe copy fns to InclDetails class too? Oh well
+      if user.email.nonEmpty
+      userName <- user.anyName orElse user.anyUsername
+      if userId <= 101 || globals.conf.getBoolean("utx.reminders.enabled").is(true)
+    } { HACK; SHOULD // remove when done testing live
       val UtxTestQueueCategoryId = 5
 
       val email = Email.newWithId(

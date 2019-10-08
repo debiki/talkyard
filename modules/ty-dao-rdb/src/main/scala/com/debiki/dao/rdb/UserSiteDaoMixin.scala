@@ -1005,20 +1005,35 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(
+        ids: Iterable[UserId]): immutable.Map[UserId, ParticipantInclDetails] = {
+    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[UserId](
+      ids.map(_.asAnyRef), "user_id", _.id)
+  }
+
+
   def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(
         extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails] = {
-    if (extImpIds.isEmpty) return Map.empty
+    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[ExtImpId](
+      extImpIds, "ext_id", _.extImpId.getOrDie("TyE205HKSD63"))
+  }
+
+
+  def loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[ID](
+        ids: Iterable[AnyRef], columnName: String, idFn: ParticipantInclDetails => ID)
+        : immutable.Map[ID, ParticipantInclDetails] = {
+    if (ids.isEmpty) return Map.empty
     val query = s"""
       select $CompleteUserSelectListItemsWithUserId
       from users3
       -- Should join w guest_prefs3 here to get guests' email notf prefs [_wrongGuestEmailNotfPerf]
-      where site_id = ? and ext_id in (${makeInListFor(extImpIds)})
+      where site_id = ? and $columnName in (${makeInListFor(ids)})
       """
-    val values = siteId.asAnyRef :: extImpIds.toList
+    val values = siteId.asAnyRef :: ids.toList
     runQueryBuildMap(query, values, rs => {
       val pp = getParticipantInclDetails_wrongGuestEmailNotfPerf(rs)
-      pp.extImpId.getOrDie("TyE205HKSD63") -> pp
+      idFn(pp) -> pp
     })
   }
 

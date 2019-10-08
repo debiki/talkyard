@@ -203,14 +203,15 @@ const InvitedUsersPanel = createFactory({
         r.div({ className: 'esAdminSectionIntro' },
           r.h3({}, introText)),
 
-        Input({ type: 'checkbox', label: "Hide old invites, show only pending", id: 'e_OnlPend',
-          checked: onlyPending, onChange: () => this.setState({ onlyPending: !onlyPending }),
-          }),
+        Input({ type: 'checkbox', className: 'e_OnlPend',
+            label: "Hide old invites, show only pending",
+            checked: onlyPending,
+            onChange: () => this.setState({ onlyPending: !onlyPending }) }),
 
-        Input({ type: 'checkbox', label: "Show only most recent invite, per person", id: 'e_OnePerP',
-          checked: onlyOnePerPerson, onChange: () => this.setState({
-              onlyOnePerPerson: !onlyOnePerPerson }),
-          }),
+        Input({ type: 'checkbox', className: 'e_OnePerP',
+            label: "Show most recent invite only, per person",
+            checked: onlyOnePerPerson,
+            onChange: () => this.setState({ onlyOnePerPerson: !onlyOnePerPerson }) }),
 
         // Dupl table headers [3GK0YU2]
         r.table({ className: 'dw-invites-table' },

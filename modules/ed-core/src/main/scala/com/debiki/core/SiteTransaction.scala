@@ -485,6 +485,9 @@ trait SiteTransaction {
   def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
         : immutable.Seq[MemberInclDetails]
 
+  def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(ids: Iterable[UserId])
+        : immutable.Map[UserId, ParticipantInclDetails]
+
   def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtImpId])
         : immutable.Map[ExtImpId, ParticipantInclDetails]
 

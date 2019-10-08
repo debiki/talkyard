@@ -5019,6 +5019,14 @@ function pagesFor(browser) {
         api.waitForExist('.s_InvsL');
       },
 
+      setHideOld: (value: boolean) => {
+        setCheckbox('.e_OnlPend input', value);
+      },
+
+      setShowOnePerUserOnly: (value: boolean) => {
+        setCheckbox('.e_OnePerP input', value);
+      },
+
       assertHasAcceptedInvite: (username: string) => {
         api.assertAnyTextMatches(api.invitedUsersList.invitedUserSelector, username);
       },

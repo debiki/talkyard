@@ -270,8 +270,8 @@ case class NotificationGenerator(
     // notfs on behalf of this group, even if there're individual group *members*
     // who may see the post (because of other groups they're in). [5AKTG7374])
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF3"
-    val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(toUserMaybeGroup),
-        maySeeUnlistedPages = true)
+    val (maySeePost, whyNot) = dao.maySeePost(newPost, Some(toUserMaybeGroup),
+        maySeeUnlistedPages = true)(tx)
     if (!maySeePost.may)
       return
 
@@ -386,10 +386,10 @@ case class NotificationGenerator(
 
     // Sync w [2069RSK25].  Test: [2069RSK25-B]
     val pageMeta = tx.loadPageMeta(newPost.pageId) getOrDie "TyE05WKSJF2"
-    def maySeePost(pp: Participant): Boolean = {
-      val (maySeePost, whyNot) = dao.maySeePostUseCache(newPost, pageMeta, Some(pp),
-          maySeeUnlistedPages = true)
-      maySeePost.may
+    def maySeePost(ppt: Participant): Boolean = {
+      val (maySee, whyNot) = dao.maySeePost(
+          newPost, Some(ppt), maySeeUnlistedPages = true)(tx)
+      maySee.may
     }
 
     // Individual users' preferences override group preferences, on the same

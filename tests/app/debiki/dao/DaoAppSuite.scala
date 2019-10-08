@@ -192,17 +192,25 @@ class DaoAppSuite(
   def createPasswordUser(username: String, dao: SiteDao,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
-        createdAt: Option[When] = None, emailVerified: Boolean = false): User = {
+        createdAt: Option[When] = None, emailVerified: Boolean = false,
+        extId: Option[ExtImpId] = None): User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $username"), username = username, email = s"$username@x.co",
       password = Some(s"public-$username"), createdAt = theCreatedAt,
-      isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get,
+      isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel,
+      extId = extId).get,
       browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(member.id, theCreatedAt.toJavaDate)
     }
     member
+  }
+
+
+  def createGroup(dao: SiteDao, username: String, fullName: Option[String],
+      createdAt: Option[When] = None, firstSeenAt: Option[When] = None): Group = {
+    dao.createGroup(username, fullName, Who(SystemUserId, browserIdData)).get
   }
 
 

@@ -20,7 +20,7 @@ package com.debiki.core
 import com.google.{common => guava}
 import java.net.InetAddress
 import java.{net => jn, util => ju}
-import org.scalactic.{ErrorMessage, Or}
+import org.scalactic.{Bad, ErrorMessage, Or}
 import scala.collection.{immutable, mutable}
 import Prelude._
 import Participant._
@@ -164,13 +164,14 @@ case class NewPasswordUserData(
   username: String,
   email: String,
   password: Option[String],
-  externalId: Option[String],
+  externalId: Option[String],  // RENAME to ssoId
   createdAt: When,
   firstSeenAt: Option[When],
   isAdmin: Boolean,
   isOwner: Boolean,
   isModerator: Boolean = false,
   emailVerifiedAt: Option[When] = None,
+  extId: Option[ExtImpId] = None,
   trustLevel: TrustLevel = TrustLevel.NewMember,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) {
 
@@ -179,6 +180,7 @@ case class NewPasswordUserData(
 
   def makeUser(userId: UserId) = UserInclDetails(
     id = userId,
+    extImpId = extId,
     externalId = externalId,
     fullName = name,
     username = username,
@@ -210,12 +212,16 @@ object NewPasswordUserData {
   def create(
         name: Option[String], username: String, email: String,
         password: Option[String] = None,
-        externalId: Option[String] = None,
+        extId: Option[ExtImpId] = None,
+        externalId: Option[String] = None, // RENAME to ssoId   SECURITY validate?
         createdAt: When,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
         emailVerifiedAt: Option[When] = None,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): NewPasswordUserData Or ErrorMessage = {
+    extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+      return Bad(problem)
+    }
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
@@ -227,7 +233,7 @@ object NewPasswordUserData {
         password = password, externalId = externalId, createdAt = createdAt,
         firstSeenAt = Some(createdAt),  // for now
         isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
-        emailVerifiedAt = emailVerifiedAt,
+        emailVerifiedAt = emailVerifiedAt, extId = extId,
         trustLevel, threatLevel)
     }
   }
@@ -861,7 +867,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 case class UserInclDetails(  // ok for export
   id: UserId,
   extImpId: Option[ExtImpId] = None,  // RENAME to extId
-  externalId: Option[String],   // RENAME to extSsoId NO, just 'ssoId', + in API protocol too? [395KSH20], no, just ssoId?
+  externalId: Option[String],   // RENAME to 'ssoId', + in API protocol too? [395KSH20], no, just ssoId?
   fullName: Option[String],
   username: String,
   createdAt: When,
