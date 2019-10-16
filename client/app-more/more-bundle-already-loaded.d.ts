@@ -129,3 +129,10 @@ declare namespace debiki2.pagetools {
   function getPageToolsDialog();
   function openPageIdsUrlsDialog(pageId: PageId);
 }
+
+declare namespace tyEs6 {
+  const DatePicker;
+  namespace dateFns {
+    function formatDistance();
+  }
+}

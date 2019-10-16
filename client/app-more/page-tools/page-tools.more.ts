@@ -220,6 +220,8 @@ export const PageIdsUrlsDiag = React.createFactory(function() {
   const [origIdsUrls, setOrig] = React.useState<PageIdsUrls | null>(null);
   const [savingState, setSavingState] = React.useState<string>("Save");
 
+  const [startDate, setStartDate] = React.useState(new Date());
+
   React.useEffect(() => {
     pageIdRef.current = pageIdOrNull;
     if (pageIdOrNull) Server.loadPageIdsUrls(pageIdOrNull, (response: PageIdsUrls[]) => {
@@ -262,11 +264,22 @@ export const PageIdsUrlsDiag = React.createFactory(function() {
 
   const nothingChanged = _.isEqual(pageIdsUrls, origIdsUrls);
 
+  const datePickerTest = window['tyEs6'].DatePicker({
+    selected: startDate,
+    onChange: date => setStartDate(date),
+    showTimeSelect: true,
+    timeFormat: 'HH:mm',
+    timeIntervals: 15,
+    timeCaption: "time",
+    dateFormat: 'MMMM d, yyyy h:mm aa',
+  });
+
   return (
       Modal({ show: true, onHide: closeFn, dialogClassName: 's_PageIdsD' },
         ModalHeader({}, ModalTitle({}, "Page IDs and URLs")),
         ModalBody({},
           r.p({}, "IDs and URLs associated with this page."),
+          datePickerTest,
           r.form({},
             r.p({},
               r.b({}, "Page ID: "), r.code({}, pageIdsUrls.pageId), r.br(),

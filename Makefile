@@ -137,7 +137,30 @@ zipped_bundles:=\
   images/app/assets/translations/pl_PL/i18n.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 
-minified-asset-bundles: node_modules $(zipped_bundles)
+#parcel_bundles:=\
+# target/client/app-more/parcel-index.ts
+
+minified-asset-bundles: node_modules $(parcel_bundles) $(zipped_bundles)
+
+parcel: target/client/more-parcel-bundle.min.js
+
+
+# ( --experimental-scope-hoisting means tree shaking.)
+# Let's re-bundle if any version of any dependency changes, so cannot accidentally
+# forget and continue using an old version.
+#
+target/client/more-parcel-bundle.min.js: client/app-more/parcel-bundle-index.ts yarn.lock
+	./node_modules/.bin/parcel \
+	    build \
+	      --out-dir target/client/ \
+		  --out-file more-parcel-bundle.min.js  \
+		  --experimental-scope-hoisting  \
+		  --no-minify \
+		client/app-more/parcel-bundle-index.ts
+
+
+#$(parcel_bundles): $@
+#	npx parcel build client/*/parcel-index.ts
 
 $(zipped_bundles): $@
 	sudo s/d-gulp release

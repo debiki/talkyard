@@ -12,6 +12,7 @@
         "**/*.ts",
     ],
     "exclude": [
+        "parcel-bundle-index.ts",
         "more-bundle-already-loaded.d.ts",
         "**/*.spec.ts",
         "**/*.test.ts"

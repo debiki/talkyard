@@ -208,6 +208,7 @@ var moreJsFiles = [
       'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
       'node_modules/react-select/dist/react-select.js',                 // <– react-select
       'node_modules/moment/min/moment.min.js',
+      'target/client/more-parcel-bundle.min.js',
       'target/client/more-typescript.js'];
 
 /*
@@ -662,6 +663,7 @@ gulp.task('compile-stylus', () => {
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
+        'node_modules/react-datepicker/dist/react-datepicker.css',  // [305RKTFA]
         'client/third-party/stupid-lightbox.css',
         'client/app-slim/theme.styl',
         'client/app-slim/third-party.styl',
