@@ -231,7 +231,14 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   private def wp = s"page id: '$pageId', ext id: '$extImpId'"  // "which page"
 
   require(lastApprovedReplyAt.isDefined == lastApprovedReplyById.isDefined, s"[DwE5JGY1] $wp")
+
+  BUG // when importing blog comments from elsewhere, they might have been creted
+  // before the Talkyard page, and can have earlier replied-at tmestamps.
+  // (They were posted earlier, but not created *in Talkyard* until later.)
+  SHOULD // remove this constraint? And also the dw1_pages_createdat_replyat__c_le
+  // database constraint.
   require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), s"[TyE7WKG2AG4] $wp")
+
   require(updatedAt.getTime >= createdAt.getTime, s"[TyE7WKG05KS] $wp")
   require(publishedAt.forall(_.getTime >= createdAt.getTime), s"[TyE8GK405KS] $wp")
   require(bumpedAt.forall(_.getTime >= createdAt.getTime), s"[TyE0NFATI3D] $wp")

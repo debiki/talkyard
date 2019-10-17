@@ -42,6 +42,7 @@ const wordpressXmlFilePath: string | undefined = args.wordpressCoreXmlExportFile
 const disqusXmlFilePath: string | undefined = args.disqusXmlExportFile;
 const jsonDumpFilePath: string | undefined = args.talkyardJsonPatchFile;
 const primaryOrigin: string | undefined = args.primaryOrigin;
+const pretty: string | undefined = args.pretty;
 
 let fileFormat;
 const DisqusFormat = 'DisqusFormt';
@@ -123,7 +124,7 @@ if (!talkyardSiteData) {
 
 
 dieIf(!talkyardSiteData, 'ToTyE7DKD025');
-const jsonString = JSON.stringify(talkyardSiteData, undefined, 2);
+const jsonString = JSON.stringify(talkyardSiteData, undefined, pretty ? 2 : undefined);
 
 process.stdout.write("\n\nDone processing.");
 
