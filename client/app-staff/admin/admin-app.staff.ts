@@ -1349,7 +1349,13 @@ interface BlogInstrProps {
 
 
 function GhostInstructions(props: BlogInstrProps) {
-  const tagParams: BlogTagProps = { ...props, discussionId: 'ghost-{{comment_id}}' };
+  // Don't prefix the id with "ghost-", althoug Ghost's default theme, Casper, does
+  // this — because then, if importing old discussions from Disqus or WordPress,
+  // those discussions won't be found, since they lack the "ghost-" prefix.
+  // Ghost's docs: https://ghost.org/docs/api/v2/handlebars-themes/context/post/#comment-id >
+  // Casper (don't do what Casper does):
+  //   https://github.com/TryGhost/Casper/blob/d92dda3523c27d68fa78088cd1138300b96bc7c8/post.hbs#L83
+  const tagParams: BlogTagProps = { ...props, discussionId: '{{comment_id}}' };
   return rFragment({},
       r.div({},
         "In your Ghost blog's theme, insert the below HTML, " +
