@@ -164,9 +164,10 @@ object JsX {
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
         callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-        anyStats: Option[UserStats] = None)
+        anyStats: Option[UserStats] = None, inclPasswordHash: Boolean = false)
       : JsObject = {
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
+    dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
     var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
       "externalId" -> JsStringOrNull(user.externalId),
@@ -202,6 +203,8 @@ object JsX {
       userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)  // RENAME emailAddr...
       userJson += "emailVerifiedAt" -> JsDateMsOrNull(user.emailVerifiedAt)
       userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
+      if (inclPasswordHash)
+        userJson += "passwordHash" -> JsStringOrNull(user.passwordHash)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       if (groups.nonEmpty) userJson += "summaryEmailIntervalMins" ->
         JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))

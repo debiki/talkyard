@@ -124,7 +124,8 @@ object SiteBackupMaker {
       val users: Seq[UserInclDetails] =
         anyDump.map(_.users) getOrElse tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
       fields("members") = JsArray(   // [dump] [exp] RENAME to "users', upd e2e tests
-        users.map(JsUserInclDetails(_, groups = Nil, usersById = Map.empty, callerIsAdmin = true)))
+        users.map(JsUserInclDetails(
+          _, groups = Nil, usersById = Map.empty, callerIsAdmin = true, inclPasswordHash = true)))
 
       val emailAddresses: Seq[UserEmailAddress] =
         if (anyDump.isDefined) Vector.empty  // for now, not incl in dump

@@ -210,8 +210,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       val ppsExtIds =
         siteData.guests.flatMap(_.extImpId)
-        // ++ siteData.users.flatMap(_.extImpId)  later
-        // ++ siteData.groups.flatMap(_.extImpId)  later
+        // ++ siteData.users.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
+        // ++ siteData.groups.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
 
       // If there're participants in the database with the same external ids
       // as some of those in the siteData, then, they are to be updated, and we
@@ -927,7 +927,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       }
 
       siteData.users foreach { user =>
-        transaction.insertMember(user)
+        transaction.insertMember(user)  // [UPSMEMBRNOW]
         // [readlater] import page notf prefs [2ABKS03R]
         // [readlater] export & import username usages & emails, later. For now, create new here.
         user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)

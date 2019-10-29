@@ -113,6 +113,18 @@ describe("some-e2e-test  TyT1234ABC", () => {
     //someone's-Browser.disableRateLimits();
   });
 
+  // For embedded comments:
+  it("Creates an embedding page", () => {
+    /*
+    const dir = 'target';
+    fs.writeFileSync(`${dir}/page-a-slug`, makeHtml('b3c-aaa', '#500'));
+    fs.writeFileSync(`${dir}/page-b-slug}`, makeHtml('b3c-bbb', '#040'));
+    function makeHtml(pageName: string, bgColor: string): string {
+      return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
+    }
+    */
+  });
+
   // ...
 
 });

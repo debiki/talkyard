@@ -3072,6 +3072,15 @@ function pagesFor(browser) {
         api.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
       },
 
+      refreshUntilPostAppears: function(postNr: PostNr, ps: { isEmbedded?: true } = {}) {
+        if (ps.isEmbedded) browser.switchToEmbeddedCommentsIrame();
+        while (!browser.isVisible(api.topic.postBodySelector(postNr))) {
+          browser.pause(RefreshPollMs);
+          browser.refresh();
+          if (ps.isEmbedded) browser.switchToEmbeddedCommentsIrame();
+        }
+      },
+
       refreshUntilPostTextMatches: function(postNr: PostNr, regex) {
         if (_.isString(regex)) regex = new RegExp(regex);
         while (true) {

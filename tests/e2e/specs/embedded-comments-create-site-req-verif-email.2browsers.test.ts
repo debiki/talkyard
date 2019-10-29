@@ -103,6 +103,7 @@ describe("embedded comments, new site", () => {
 
 
   it("... and creates an embedding page", () => {
+    // Dupl code [046KWESJJLI3].
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     console.log('htmlToPaste: ' + htmlToPaste);

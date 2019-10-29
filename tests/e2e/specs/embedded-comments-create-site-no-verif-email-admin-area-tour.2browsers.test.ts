@@ -134,9 +134,10 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
 
   it("He creates an embedding page", () => {
+    // Dupl code [046KWESJJLI3].
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
-    console.log('htmlToPaste: ' + htmlToPaste);
+    //console.log('htmlToPaste: ' + htmlToPaste);
     const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
     if (!fs.existsSync(dirPath)) {  // —>  "FAIL: Error \n unknown error line"
       fs.mkdirSync(dirPath, '0777');

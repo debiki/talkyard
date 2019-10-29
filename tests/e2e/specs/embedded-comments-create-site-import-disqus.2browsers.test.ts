@@ -128,6 +128,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
 
   function makeEmbeddingPage(urlPath: string, discussionId?: string) {
+    // Dupl code [046KWESJJLI3].
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     let htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     if (discussionId) {
