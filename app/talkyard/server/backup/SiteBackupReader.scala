@@ -19,6 +19,7 @@ package talkyard.server.backup
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import com.debiki.dao.rdb.PostsSiteDaoMixin
 import debiki.JsonUtils._
 import debiki._
 import debiki.EdHttp._
@@ -31,6 +32,7 @@ import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.collection.mutable
+import scala.collection.immutable
 import talkyard.server.JsX
 
 
@@ -116,9 +118,9 @@ case class SiteBackupReader(context: EdContext) {
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
-    val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, membersJson,
-        permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
-        categoriesJson, postsJson) =
+    val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, groupPpsJson,
+        usersJson, pptStatsJson, ppVisitStatsJson, usernameUsagesJson, identitiesJson,
+        invitesJson, notificationsJson, memberEmailAddressesJson, pageNotfPrefsJson) =
       try {
         (readOptJsObject(bodyJson, "meta"),
           readOptJsObject(bodyJson, "settings"),
@@ -126,13 +128,35 @@ case class SiteBackupReader(context: EdContext) {
           readJsArray(bodyJson, "guests", optional = true),
           readOptJsObject(bodyJson, "guestEmailPrefs"),
           readJsArray(bodyJson, "groups", optional = true),
+          readJsArray(bodyJson, "groupPps", optional = true),
           readJsArray(bodyJson, "members", optional = true),   // RENAME to "users"
-          readJsArray(bodyJson, "permsOnPages", optional = true),
+          readJsArray(bodyJson, "ppStats", optional = true),
+          readJsArray(bodyJson, "ppVisitStats", optional = true),
+          readJsArray(bodyJson, "usernameUsages", optional = true),
+          readJsArray(bodyJson, "identities", optional = true),
+          readJsArray(bodyJson, "invites", optional = true),
+          readJsArray(bodyJson, "notifications", optional = true),
+          readJsArray(bodyJson, "memberEmailAddresses", optional = true),
+          readJsArray(bodyJson, "pageNotfPrefs", optional = true))
+      }
+      catch {
+        case ex: IllegalArgumentException =>
+          throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
+      }
+
+    // Need to split into this 2nd  ( ... ) = try { ... }  because max 22 elems in a tuple.
+
+    val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
+        categoriesJson, postsJson, postActionsJson, reviewTasksJson) =
+      try {
+        (readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
           readJsArray(bodyJson, "pagePaths", optional = true),
           readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),  // RENAME to "pageIdsByLookupKeys"
           readJsArray(bodyJson, "categories", optional = true),
-          readJsArray(bodyJson, "posts", optional = true))
+          readJsArray(bodyJson, "posts", optional = true),
+          readJsArray(bodyJson, "postActions", optional = true),
+          readJsArray(bodyJson, "reviewTasks", optional = true))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -177,7 +201,12 @@ case class SiteBackupReader(context: EdContext) {
     HACK // just loading Everyone's summary email interval. [7FKB4Q1]
     var summaryEmailIntervalMins = SummaryEmails.DoNotSend
     var summaryEmailIfActive = false
-    groupsJson.value.zipWithIndex foreach { case (json, index) =>
+
+    val groups: Seq[Group] = groupsJson.value.zipWithIndex map { case (json, index) =>
+      val group = readGroupOrBad(json).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE603KHUR6", o"""Invalid Group json at index $index in the 'groups' list:
+              $errorMessage, json: $json"""))
       val groupId = readInt(json, "id")
       if (groupId == Group.EveryoneId) {
         (json \ "summaryEmailIntervalMins").asOpt[Int] foreach { mins =>
@@ -187,15 +216,70 @@ case class SiteBackupReader(context: EdContext) {
           summaryEmailIfActive = value
         }
       }
+      group
     }
 
-    val groups = Vector.empty  // groupsJson, later
+    val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.zipWithIndex map { case (json, index) =>
+      readGroupParticipantOrBad(json).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE5RKTGF03", o"""Invalid GroupParticipant json at index $index in the 'groupPps' list: $errorMessage,
+                json: $json"""))
+    }
 
-    val users: Seq[UserInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
+    val users: Seq[UserInclDetails] = usersJson.value.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "TyE06KWT24", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
                 json: $json"""))
+    }
+
+    val ppStats: Seq[UserStats] = pptStatsJson.value.zipWithIndex map { case (json, index) =>
+      readPptStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
+                json: $json"""))
+    }
+
+    val ppVisitStats:  Seq[UserVisitStats] = ppVisitStatsJson.value.zipWithIndex map { case (json, index) =>
+      readPpVisitStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid visit stats json at index $index in the 'ppVisitStats' list: $errorMessage,
+                json: $json"""))
+    }
+
+    val usernameUsages: Seq[UsernameUsage] = usernameUsagesJson.value.zipWithIndex map { case (json, index) =>
+      readUsernameUsageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid username usage json at index $index in
+               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+    }
+
+    val memberEmailAddrs: Seq[UserEmailAddress] = memberEmailAddressesJson.value.zipWithIndex map { case (json, index) =>
+      readMemberEmailAddrOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid member email addr json at index $index in
+               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+    }
+
+    val identities: Seq[Identity] = identitiesJson.value.zipWithIndex map { case (json, index) =>
+      readIdentityOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+          throwBadReq(
+            "TyE06KWT24", o"""Invalid identity json at index $index in
+                   the 'identities' list: $errorMessage, json: $json"""))
+    }
+
+    val invites: Seq[Invite] = invitesJson.value.zipWithIndex map { case (json, index) =>
+      readInviteOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid invite json at index $index in
+                   the 'identities' list: $errorMessage, json: $json"""))
+    }
+
+    val notifications: Seq[Notification] = notificationsJson.value.zipWithIndex map { case (json, index) =>
+      readNotfOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid notification json at index $index in
+                   the 'notifications' list: $errorMessage, json: $json"""))
     }
 
     val pages: Seq[PageMeta] = pagesJson.value.zipWithIndex map { case (json, index) =>
@@ -226,6 +310,13 @@ case class SiteBackupReader(context: EdContext) {
         }
     }: _*)
 
+    val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.zipWithIndex map { case (json, index) =>
+      readPageNotfPrefOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE06KWT24", o"""Invalid member email addr json at index $index in
+               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+    }
+
     val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
     val categories = mutable.ArrayBuffer[Category]()
 
@@ -247,6 +338,13 @@ case class SiteBackupReader(context: EdContext) {
               json: $json"""))
     }
 
+    val postActions: Seq[PostAction] = postActionsJson.value.zipWithIndex map { case (json, index) =>
+      readPostActionOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE4KGU0", o"""Invalid post action json at index $index in
+              the 'postActions' list: $error, json: $json"""))
+    }
+
     val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.zipWithIndex map {
           case (json, index) =>
       readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
@@ -255,11 +353,24 @@ case class SiteBackupReader(context: EdContext) {
               $error, json: $json"""))
     }
 
+    val reviewTasks: Seq[ReviewTask] = reviewTasksJson.value.zipWithIndex map {
+          case (json, index) =>
+      readReivewTaskOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE5JGLRK01", o"""Invalid ReviewTask json at index $index in the 'permsOnPage' list:
+              $error, json: $json"""))
+    }
+
     SiteBackup(siteToSave, settings,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
-      guests, guestEmailPrefs, groups, users, categoryPatches.toVector, categories.toVector,
-      pages, paths, pageIdsByAltIds = pageIdsByAltIds, posts, permsOnPages)
+      guests, guestEmailPrefs, groups,
+      groupParticipants,
+      users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,
+      identities, invites, notifications,
+      categoryPatches.toVector, categories.toVector,
+      pages, paths, pageIdsByAltIds, pageNotfPrefs,
+      posts, postActions, permsOnPages, reviewTasks)
   }
 
 
@@ -339,6 +450,105 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
+  def readIdentityOrBad(jsValue: JsValue, isE2eTest: Boolean): Identity Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Identity entry is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val identityId: IdentityId = try readString(jsObj, "identityId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid identity id: " + ex.getMessage)
+    }
+
+    try {
+      val oauDetails = OpenAuthDetails(
+        providerId = readString(jsObj, "providerId"),
+        providerKey = readString(jsObj, "providerKey"),
+        firstName = readOptString(jsObj, "firstName"),
+        lastName = readOptString(jsObj, "lastName"),
+        fullName = readOptString(jsObj, "fullName"),
+        email = readOptString(jsObj, "email"),
+        avatarUrl = readOptString(jsObj, "avatarUrl"))
+      val identity = OpenAuthIdentity(
+        id = identityId,
+        userId = readInt(jsObj, "userId"),
+        openAuthDetails = oauDetails)
+      Good(identity)
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for identity id $identityId': ${ex.getMessage}")
+    }
+  }
+
+
+  def readGroupOrBad(jsValue: JsValue): Group Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Group json is not an object, but a: " + classNameOf(bad))
+    }
+    val id = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid group id: " + ex.getMessage)
+    }
+    try {
+      val grantsTrustLevelInt = readOptInt(jsObj, "grantsTrustLevel")
+      val grantsTrustLevel = grantsTrustLevelInt map { levelInt =>
+        TrustLevel.fromInt(levelInt) getOrElse {
+          return Bad(s"Bad trust level: $grantsTrustLevelInt")
+        }
+      }
+      Good(Group(
+        id = id,
+        theUsername = readString(jsObj, "username"),
+        name = readOptString(jsObj, "fullName"),
+        extImpId = readOptString(jsObj, "extImpId"),
+        createdAt = readWhen(jsObj, "createdAtMs"),
+        tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
+        smallAvatar = None,  // [readlater] Option[UploadRef]
+        summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
+        summaryEmailIfActive = readOptBool(jsObj, "summaryEmailIfActive"),
+        grantsTrustLevel = grantsTrustLevel,
+        uiPrefs = (jsObj \ "uiPrefs").asOpt[JsObject]))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for guest id $id: ${ex.getMessage}")
+    }
+  }
+
+
+  def readGroupParticipantOrBad(jsValue: JsValue): GroupParticipant Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"GroupParticipant is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val groupId = try readInt(jsObj, "groupId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid user id: " + ex.getMessage)
+    }
+
+    try {
+      Good(GroupParticipant(
+        groupId = groupId,
+        ppId = readInt(jsObj, "ppId"),
+        isMember = readBoolean(jsObj, "isMember"),
+        isManager = readBoolean(jsObj, "isManager"),
+        isAdder = readBoolean(jsObj, "isAdder"),
+        isBouncer = readBoolean(jsObj, "isAdder")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for GroupParticipant id $groupId': ${ex.getMessage}")
+    }
+  }
+
+
   def readUserOrBad(jsValue: JsValue, isE2eTest: Boolean): UserInclDetails Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
@@ -401,6 +611,223 @@ case class SiteBackupReader(context: EdContext) {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for user id $id, username '$username': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPptStatsOrBad(jsValue: JsValue, isE2eTest: Boolean): UserStats Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Ppt stats entry is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val userId = try readInt(jsObj, "userId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid user id: " + ex.getMessage)
+    }
+
+    val tourTipsSeen = (jsObj \ "tourTipsSeen").asOpt[immutable.Seq[TourTipsId]]
+
+    try {
+      Good(UserStats(
+        userId = userId,
+        lastSeenAt = readWhen(jsObj, "lastSeenAt"),
+        lastPostedAt = readOptWhen(jsObj, "lastPostedAt"),
+        lastEmailedAt = readOptWhen(jsObj, "lastEmailedAt"),
+        lastSummaryEmailAt = readOptWhen(jsObj, "lastSummaryEmailAt"),
+        nextSummaryEmailAt = readOptWhen(jsObj, "nextSummaryEmailAt"),
+        emailBounceSum = readFloat(jsObj, "emailBounceSum"),
+        firstSeenAtOr0 = readWhen(jsObj, "firstSeenAt"),
+        firstNewTopicAt = readOptWhen(jsObj, "firstNewTopicAt"),
+        firstDiscourseReplyAt = readOptWhen(jsObj, "firstDiscourseReplyAt"),
+        firstChatMessageAt = readOptWhen(jsObj, "firstChatMessageAt"),
+        topicsNewSince = readWhen(jsObj, "topicsNewSince"),
+        notfsNewSinceId = readInt(jsObj, "notfsNewSinceId"),
+        numDaysVisited = readInt(jsObj, "numDaysVisited"),
+        numSecondsReading = readInt(jsObj, "numSecondsReading"),
+        numDiscourseRepliesRead = readInt(jsObj, "numDiscourseRepliesRead"),
+        numDiscourseRepliesPosted = readInt(jsObj, "numDiscourseRepliesPosted"),
+        numDiscourseTopicsEntered = readInt(jsObj, "numDiscourseTopicsEntered"),
+        numDiscourseTopicsRepliedIn = readInt(jsObj, "numDiscourseTopicsRepliedIn"),
+        numDiscourseTopicsCreated = readInt(jsObj, "numDiscourseTopicsCreated"),
+        numChatMessagesRead = readInt(jsObj, "numChatMessagesRead"),
+        numChatMessagesPosted = readInt(jsObj, "numChatMessagesPosted"),
+        numChatTopicsEntered = readInt(jsObj, "numChatTopicsEntered"),
+        numChatTopicsRepliedIn = readInt(jsObj, "numChatTopicsRepliedIn"),
+        numChatTopicsCreated = readInt(jsObj, "numChatTopicsCreated"),
+        numLikesGiven = readInt(jsObj, "numLikesGiven"),
+        numLikesReceived = readInt(jsObj, "numLikesReceived"),
+        numSolutionsProvided = readInt(jsObj, "numSolutionsProvided"),
+        tourTipsSeen = tourTipsSeen,
+        mayBeNegative = false))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for ppt stats for user id $userId: ${ex.getMessage}")
+    }
+  }
+
+
+  def readPpVisitStatsOrBad(jsValue: JsValue, isE2eTest: Boolean): UserVisitStats Or ErrorMessage  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"PpVisitStats is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val ppId = try readInt(jsObj, "userId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid user id: " + ex.getMessage)
+    }
+
+    try {
+      Good(UserVisitStats(
+        userId = ppId,
+        visitDate = readWhenDay(jsObj, "visitDate"),
+        numSecondsReading = readInt(jsObj, "numSecondsReading"),
+        numDiscourseRepliesRead = readInt(jsObj, "numDiscourseRepliesRead"),
+        numDiscourseTopicsEntered = readInt(jsObj, "numDiscourseTopicsEntered"),
+        numChatMessagesRead = readInt(jsObj, "numChatMessagesRead"),
+        numChatTopicsEntered = readInt(jsObj, "numChatTopicsEntered")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for ParticipantVisitStats id $ppId': ${ex.getMessage}")
+    }
+  }
+
+
+  def readUsernameUsageOrBad(json: JsValue, isE2eTest: Boolean): UsernameUsage Or ErrorMessage  = {
+    val jsObj = json match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"UsernameUsage is not a json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      Good(UsernameUsage(
+        usernameLowercase = readString(jsObj, "usernameLowercase"),
+        inUseFrom = readWhen(jsObj, "inUseFrom"),
+        inUseTo = readOptWhen(jsObj, "inUseTo"),
+        userId = readInt(jsObj, "userId"),
+        firstMentionAt = readOptWhen(jsObj, "firstMentionAt")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for UsernameUsage: ${ex.getMessage}")
+    }
+  }
+
+
+  def readMemberEmailAddrOrBad(json: JsValue, isE2eTest: Boolean): UserEmailAddress Or ErrorMessage  = {
+    val jsObj = json match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"UserEmailAddress is not a json object, but a: " + classNameOf(bad))
+    }
+    try {
+      Good(UserEmailAddress(
+        userId = readInt(jsObj, "userId"),
+        emailAddress = readString(jsObj, "emailAddress"),
+        addedAt = readWhen(jsObj, "addedAt"),
+        verifiedAt = readOptWhen(jsObj, "verifiedAt")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for UserEmailAddress: ${ex.getMessage}")
+    }
+  }
+
+
+  def readPageNotfPrefOrBad(json: JsValue, isE2eTest: Boolean): PageNotfPref Or ErrorMessage  = {
+    val jsObj = json match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"PageNotfPref is not a json object, but a: " + classNameOf(bad))
+    }
+    try {
+      val notfLevelInt = readInt(jsObj, "notfLevel")
+      val notfLevel = NotfLevel.fromInt(notfLevelInt) getOrElse {
+        return Bad(s"Not a notf level: $notfLevelInt")
+      }
+      Good(PageNotfPref(
+        peopleId = readInt(jsObj, "memberId"),
+        notfLevel,
+        pageId = readOptString(jsObj, "pageId"),
+        pagesInCategoryId = readOptInt(jsObj, "pagesInCategoryId"),
+        //pagesWithTagLabelId: Option[TagLabelId] = None, — later
+        wholeSite = readBoolean(jsObj, "wholeSite")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for PageNotfPref: ${ex.getMessage}")
+    }
+  }
+
+
+  def readInviteOrBad(json: JsValue, isE2eTest: Boolean): Invite Or ErrorMessage  = {
+    val jsObj = json match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Invite is not a json object, but a: " + classNameOf(bad))
+    }
+    try {
+      val addToGroupsJsArr = (jsObj \ "addToGroupIds").asOpt[Seq[UserId]]
+      val addToGroupIds: Set[UserId] = addToGroupsJsArr.getOrElse(Nil).toSet
+      Good(Invite(
+        emailAddress = readString(jsObj, "invitedEmailAddress"),
+        startAtUrl = readOptString(jsObj, "startAtUrl"),
+        addToGroupIds = addToGroupIds,
+        secretKey = readString(jsObj, "secretKey"),
+        createdById = readInt(jsObj, "invitedById"),
+        createdAt = readDateMs(jsObj, "invitedAt"),
+        acceptedAt = readOptDateMs(jsObj, "acceptedAt"),
+        userId = readOptInt(jsObj, "becameUserId"),
+        deletedAt = readOptDateMs(jsObj, "deletedAt"),
+        deletedById = readOptInt(jsObj, "deletedById"),
+        invalidatedAt = readOptDateMs(jsObj, "invalidatedAt")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for Invite: ${ex.getMessage}")
+    }
+  }
+
+
+  def readNotfOrBad(json: JsValue, isE2eTest: Boolean): Notification Or ErrorMessage  = {
+    val jsObj = json match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Notification is not a json object, but a: " + classNameOf(bad))
+    }
+    val notfId = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid notf id: " + ex.getMessage)
+    }
+    try {
+      val notfTypeInt = readInt(jsObj, "notfType")
+      val notfType = NotificationType.fromInt(notfTypeInt) getOrElse {
+        return Bad(s"Bad notf type: $notfTypeInt")
+      }
+      val notfEmailStatusInt = readInt(jsObj, "emailStatus")
+      val notfEmailStatus =  NotfEmailStatus.fromInt(notfEmailStatusInt) getOrElse {
+        return Bad(s"Bad not email status: $notfEmailStatusInt")
+      }
+      Good(Notification.NewPost(
+        notfType,
+        id = notfId,
+        createdAt = readDateMs(jsObj, "createdAtMs"),
+        uniquePostId = readInt(jsObj, "postId"),
+        byUserId = readInt(jsObj, "byUserId"),
+        toUserId = readInt(jsObj, "toUserId"),
+        emailId = readOptString(jsObj, "emailId"), // OOPS, FK :- (
+        emailStatus = notfEmailStatus,
+        seenAt = readOptDateMs(jsObj, "seenAt")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for Notification: ${ex.getMessage}")
     }
   }
 
@@ -679,6 +1106,36 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
+  def readPostActionOrBad(jsValue: JsValue, isE2eTest: Boolean): PostAction Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val postId = try readInt(jsObj, "postId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid post id: " + ex.getMessage)
+    }
+
+    try {
+      val actionTypeInt  = readInt(jsObj, "actionType")
+      val actionType  = PostsSiteDaoMixin.fromActionTypeInt(actionTypeInt)
+      Good(PostAction(
+        postId,
+        pageId = readString(jsObj, "pageId"),
+        postNr = readInt(jsObj, "postNr"),
+        doerId = readInt(jsObj, "doerId"),
+        doneAt = readWhen(jsObj, "doneAt"),
+        actionType))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for post action for post id '$postId': ${ex.getMessage}")
+    }
+  }
+
+
   def readPermsOnPageOrBad(jsValue: JsValue, isE2eTest: Boolean): PermsOnPages Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
@@ -715,6 +1172,51 @@ case class SiteBackupReader(context: EdContext) {
 
   def readEmailNotfsPref(jsObj: JsObject): Option[EmailNotfPrefs] =
     readOptInt(jsObj, "emailNotfPrefs").flatMap(EmailNotfPrefs.fromInt)
+
+
+  def readReivewTaskOrBad(jsValue: JsValue, isE2eTest: Boolean): ReviewTask Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"ReviewTask json is not an object, but a: " + classNameOf(bad))
+    }
+    val id = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid ReviewTask id: " + ex.getMessage)
+    }
+    try {
+      val reviewReasonsLong = readLong(jsObj, "reasonsLong")
+      val reviewReasons = ReviewReason.fromLong(reviewReasonsLong)
+      val reviewDecisionInt = readOptInt(jsObj, "decision")
+      val reviewDecision = reviewDecisionInt.map(value =>
+        ReviewDecision.fromInt(value) getOrElse {
+          return Bad(s"Bad ReviewTask decision int: $value")
+        })
+
+      Good(ReviewTask(
+        id = id,
+        reasons = reviewReasons,
+        createdById = readInt(jsObj, "createdById"),
+        createdAt = readDateMs(jsObj, "createdAtMs"),
+        createdAtRevNr = readOptInt(jsObj, "createdAtRevNr"),
+        moreReasonsAt = readOptDateMs(jsObj, "moreReasonsAt"),
+        //moreReasonsAtRevNr: Option[ju.Date] = None,
+        decidedAt = readOptDateMs(jsObj, "decidedAt"),
+        completedAt = readOptDateMs(jsObj, "completedAt"),
+        decidedAtRevNr = readOptInt(jsObj, "decidedAtRevNr"),
+        decidedById = readOptInt(jsObj, "decidedById"),
+        invalidatedAt = readOptDateMs(jsObj, "invalidatedAt"),
+        decision = reviewDecision,
+        maybeBadUserId = readInt(jsObj, "maybeBadUserId"),
+        pageId = readOptString(jsObj, "pageId"),
+        postId = readOptInt(jsObj, "postId"),
+        postNr = readOptInt(jsObj, "postNr")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for ReviewTask id $id: ${ex.getMessage}")
+    }
+  }
 
 
   /* Later: Need to handle file uploads / streaming, so can import e.g. images.

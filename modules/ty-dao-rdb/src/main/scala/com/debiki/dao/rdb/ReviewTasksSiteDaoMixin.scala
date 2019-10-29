@@ -175,6 +175,14 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllReviewTasks(): Seq[ReviewTask] = {
+    val query = "select * from review_tasks3 where site_id = ?"
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      readReviewTask(rs)
+    })
+  }
+
+
   override def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy)
         : Seq[ReviewTask] = {
     val desc = orderBy.isDescending ? "desc" | ""

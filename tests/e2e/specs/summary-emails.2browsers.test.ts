@@ -15,7 +15,7 @@ declare let browserB: any;
 
 const everyoneGroup: GroupInclDetails = {
   id: c.EveryoneId,
-  createdAtMs: 1234,
+  createdAtMs: c.MinUnixMillis,
   isGroup: true,
   username: 'everyone',
   fullName: 'Everyone',

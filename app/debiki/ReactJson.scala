@@ -1325,7 +1325,8 @@ object JsonMaker {
 
 
   private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
-    postsById: Map[PostId, Post], usersById: Map[UserId, Participant]): Option[JsObject] = {
+        postsById: Map[PostId, Post], usersById: Map[UserId, Participant]): Option[JsObject] = {
+    // Related code, for site patches: JsNotf [305RKDAP25]
     Some(notf match {
       case notf: Notification.NewPost =>
         val post = postsById.getOrElse(notf.uniquePostId, {
@@ -1483,6 +1484,7 @@ object JsonMaker {
 
 
   def reviewStufToJson(stuff: ReviewStuff): JsValue = {
+    // Related code: JsReviewTask [073SMDR26]
     val anyPost = stuff.post match {
       case None => JsNull
       case Some(post) =>

@@ -25,6 +25,8 @@ import debiki.EdHttp.ResultException
 import org.scalatest._
 import java.{io => jio}
 
+import talkyard.server.DeleteWhatSite
+
 
 class UploadsDaoSpec extends FreeSpec with MustMatchers {
 
@@ -399,7 +401,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         hostname = Some("site-two"),
         embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,
         browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-        deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
+        deleteWhatSite = DeleteWhatSite.NoSite, pricePlan = "Unknown", createdFromSiteId = None)
 
       info("create user (owner), site 2")
       val dao2 = globals.siteDao(site2.id)

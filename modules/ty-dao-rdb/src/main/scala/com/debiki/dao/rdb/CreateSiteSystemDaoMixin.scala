@@ -65,7 +65,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       catch {
         case ex: js.SQLException =>
           if (!isUniqueConstrViolation(ex)) throw ex
-          throw SiteAlreadyExistsException(newSiteNoId)
+          throw SiteAlreadyExistsException(newSiteNoId, ex.getMessage)
       }
 
     newSite

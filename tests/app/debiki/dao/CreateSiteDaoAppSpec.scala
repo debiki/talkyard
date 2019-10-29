@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core.DbDao._
 import com.debiki.core._
+import talkyard.server.DeleteWhatSite
 
 
 class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
@@ -30,7 +31,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
         isTestSite: Boolean = false): Site = {
     require(prefix % 20 == 0) // else prefix + number just below won't be a nice looking number
     val theFingerprint = if (browserFingerprint == -1) prefix + number else browserFingerprint
-    val thePrefix = s"crst-$prefix-$number"
+    val thePrefix = s"e2e-test-crst-$prefix-$number"
     val theLocalHostname = localHostname getOrElse thePrefix
     val theHostname = hostname getOrElse s"$theLocalHostname.example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
@@ -40,7 +41,8 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
-      deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = Some(FirstSiteId))
+      deleteWhatSite = DeleteWhatSite.SameHostname,
+      pricePlan = "Unknown", createdFromSiteId = Some(FirstSiteId))
   }
 
 

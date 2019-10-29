@@ -48,6 +48,9 @@ NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_
 OpenAuthDetails(   // [exp] ok use, country, createdAt
 
 
+-- Remove email "identities" from identities3?
+-- Replace w separate email login-secrets table?  [EMLLGISCRT]
+
 -- ?? delete page_id post_nr  from  post_actions ??
 
 -- Add fk  posts3.parent_nr —> posts3.nr  ?? or no?  better w/o, so can hard delete / purge?

@@ -20,6 +20,8 @@ package com.debiki.dao.rdb
 import com.debiki.core._
 import Rdb._
 
+import scala.collection.mutable.ArrayBuffer
+
 
 /** Keeps track of which usernames have been used already in the past, in case
   * people change their usernames. If a username has been @mentioned, reusing it
@@ -79,15 +81,27 @@ trait UsernamesSiteDaoMixin extends SiteTransaction {
 
 
   def loadUsernameUsages(username: String): Seq[UsernameUsage] = {
+    loadUsernameUsagesImpl(Some(username))
+  }
+
+  def loadAllUsernameUsages(): Seq[UsernameUsage] = {
+    loadUsernameUsagesImpl(None)
+  }
+
+  def loadUsernameUsagesImpl(username: Option[String]): Seq[UsernameUsage] = {
     // [CANONUN] Also search for canonical version of username, e.g. "us-er.na___me" —> "us_er_na_me".
     //val canonicalUsername = User.makeUsernameCanonical(username)
+    val values = ArrayBuffer(siteId.asAnyRef)
+    val andUsernameEq = username map { un =>
+      values.append(un.toLowerCase) // canonicalUsername)
+      "and username_lowercase = ?"
+    } getOrElse ""
     val query = s"""
       select * from usernames3
       where site_id = ?
-        and username_lowercase = ? $orderBy"""
+         $andUsernameEq $orderBy"""
         // and (username_lowercase = ? or username_lowercase = ?) $orderBy"""
-    val values = List(siteId.asAnyRef, username.toLowerCase)  // canonicalUsername)
-    runQueryFindMany(query, values, readUsernameUsage)
+    runQueryFindMany(query, values.toList, readUsernameUsage)
   }
 
 

@@ -19,8 +19,7 @@ package talkyard.server.backup
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.ForumController
-import debiki.{EffectiveSettings, JsonMaker, Settings2}
+import debiki.{JsonMaker, Settings2}
 import ed.server._
 import play.api.libs.json._
 import scala.collection.mutable
@@ -42,17 +41,19 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
       val site: SiteInclDetails = tx.loadSiteInclDetails().getOrDie("TyE2RKKP85")
 
       //val anyEditeSiteSettings = tx.loadSiteSettings()
+      // settings = ... ?
       // how convert to SettingsToSave?   [06RKGF5]
-      // or change to EditedSetings?
+      // or change to EditedSettings?
+      // Maybe remove EditedSettings, and use only SettingsToSave instead,
+      // with all inner Options being Some?  So that:
+      //   EditedSettings = SettingsToSave[Option[Some[...]]]
 
       val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
       val guestEmailNotfPrefs: Map[String, EmailNotfPrefs] = tx.loadAllGuestEmailNotfPrefsByEmailAddr()
 
       val users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn).sortBy(_.id)
 
-      // memberEmailAddresses: Seq[UserEmailAddress] = tx.loadUserEmailAddressesForAllUsers()
-
-      // invites: Seq[Invite] = tx.loadAllInvites(limit = AllForNow)
+      val pptStats = tx.loadAllUserStats()
 
       val pageMetas = tx.loadAllPageMetas().sortBy(_.pageId)
 
@@ -64,17 +65,23 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
 
       val posts = tx.loadAllPosts().sortBy(_.id)
 
+      val postActions: Seq[PostAction] = tx.loadAllPostActions()
+
       SiteBackup.empty.copy(
         site = Some(site),
-        // groups = tx.loadAllGroupsAsSeq().sortBy(_.id),
+        // settings = settings,
+        groups = tx.loadAllGroupsAsSeq().sortBy(_.id),
         users = users,
+        pptStats = pptStats,
         guests = guests,
         guestEmailNotfPrefs = guestEmailNotfPrefs,
         categories = categories,
         pages = pageMetas,
         pagePaths = pagePaths,
+        pageIdsByAltIds = tx.loadAllAltPageIds(),
         permsOnPages = permsOnPages,
-        posts = posts)
+        posts = posts,
+        postActions = postActions)
     }
   }
 }
@@ -121,32 +128,74 @@ object SiteBackupMaker {
       fields("groups") = JsArray(
         groups.map(JsGroupInclDetails(_, inclEmail = true)))
 
+      val groupPps: Seq[GroupParticipant] =
+        anyDump.map(_.groupPps) getOrElse tx.loadGroupParticipantsAllCustomGroups()
+      fields("groupPps") = JsArray(groupPps.map(JsGroupParticipant))
+
       val users: Seq[UserInclDetails] =
         anyDump.map(_.users) getOrElse tx.loadAllUsersInclDetails().filter(!_.isBuiltIn)
       fields("members") = JsArray(   // [dump] [exp] RENAME to "users', upd e2e tests
-        users.map(JsUserInclDetails(_, groups = Nil, usersById = Map.empty, callerIsAdmin = true)))
+        users.map(JsUserInclDetails(
+          _, groups = Nil, usersById = Map.empty, callerIsAdmin = true, inclPasswordHash = true)))
+
+      val pptStats: Seq[UserStats] = anyDump.map(_.pptStats) getOrElse tx.loadAllUserStats()
+      fields("ppStats") = JsArray(pptStats.map(JsUserStats(_, isStaffOrSelf = true)))
+
+      val pptVisitStats: Seq[UserVisitStats] =
+        anyDump.map(_.pptVisitStats) getOrElse tx.loadAllUserVisitStats()
+      fields("ppVisitStats") = JsArray(pptVisitStats.map(JsUserVisitStats))
+
+      val usernameUsages: Seq[UsernameUsage] =
+        anyDump.map(_.usernameUsages) getOrElse tx.loadAllUsernameUsages()
+      fields("usernameUsages") = JsArray(usernameUsages.map(JsUsernameUsage))
+
+      val identities: Seq[Identity] =
+        anyDump.map(_.identities) getOrElse tx.loadAllIdentities()
+      fields("identities") = JsArray(
+        // Skip OpenID, they're defunct anyway. And skip email identities,
+        // maybe even remove them later? They're a bit weird. Instead,
+        // a new table with email login secrets? [EMLLGISCRT]
+        identities.filter(_.isInstanceOf[OpenAuthIdentity]).map(JsIdentity))
+
+      val invites: Seq[Invite] = anyDump.map(_.invites) getOrElse tx.loadAllInvites(limit = 99999)
+      fields("invites") = JsArray(invites.map(JsInvite(_, shallHideEmailLocalPart = false)))
+
+      val notifications: Seq[Notification] =
+        anyDump.map(_.notifications) getOrElse tx.loadAllNotifications()
+      fields("notifications") = JsArray(notifications.map(JsNotf))
 
       val emailAddresses: Seq[UserEmailAddress] =
-        if (anyDump.isDefined) Vector.empty  // for now, not incl in dump
-        else tx.loadUserEmailAddressesForAllUsers()
-      fields("memberEmailAddresses") = JsArray(
-        emailAddresses map JsMemberEmailAddress)
+        anyDump.map(_.memberEmailAddrs) getOrElse tx.loadUserEmailAddressesForAllUsers()
+      fields("memberEmailAddresses") = JsArray(emailAddresses map JsMemberEmailAddress)
 
-      val invites: Seq[Invite] =
-        if (anyDump.isDefined) Vector.empty  // for now, not incl in dump
-        else tx.loadAllInvites(limit = AllForNow)
-      fields("invites") = JsArray(
-        invites.map(JsInvite(_, shallHideEmailLocalPart = false)))
-
-      val pageMetas: Seq[PageMeta] =
-        anyDump.map(_.pages) getOrElse tx.loadAllPageMetas()
-      fields("pages") = JsArray(
-        pageMetas.map(JsPageMeta))
+      val pageNotfPrefs: Seq[PageNotfPref] =
+        anyDump.map(_.pageNotfPrefs) getOrElse tx.loadAllPageNotfPrefs()
+      fields("pageNotfPrefs") = JsArray(pageNotfPrefs.map(JsPageNotfPref))
 
       val pagePaths: Seq[PagePathWithId] =
         anyDump.map(_.pagePaths) getOrElse tx.loadAllPagePaths()
       fields("pagePaths") = JsArray(
         pagePaths.map(JsPagePathWithId))
+
+      val pageMetas: Seq[PageMeta] =
+        anyDump.map(_.pages) getOrElse tx.loadAllPageMetas()
+      fields("pages") = JsArray(
+        pageMetas.map(pageMeta => {
+          var json = JsPageMeta(pageMeta)
+          if (simpleFormat) {
+            val canonicalPath = pagePaths.find(p =>
+              p.pageId == pageMeta.pageId && p.canonical) getOrDie "TyE6WKSJ02X4"
+            "urlPaths" -> Json.obj(
+              "canonical" -> canonicalPath.value)
+          }
+          json
+        }))
+
+      val pageIdsByAltId: Map[AltPageId, PageId] =
+        anyDump.map(_.pageIdsByAltIds) getOrElse tx.loadAllAltPageIds()
+      fields("pageIdsByAltIds") = JsObject(
+        pageIdsByAltId.map(
+          (kv: (AltPageId, PageId)) => kv._1.toString -> JsString(kv._2)))
 
       val categories: Seq[Category] =
         anyDump.map(_.categories) getOrElse tx.loadCategoryMap().values.toSeq
@@ -180,6 +229,14 @@ object SiteBackupMaker {
       fields("posts") = JsArray(
         posts map JsPostInclDetails)
 
+      val postsActions: Seq[PostAction] =
+        anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()
+      fields("postActions") = JsArray(
+        postsActions map JsPostAction)
+
+      val reviewTasks: Seq[ReviewTask] =
+        anyDump.map(_.reviewTasks) getOrElse tx.loadAllReviewTasks()
+      fields("reviewTasks") = JsArray(reviewTasks.map(JsReviewTask))
 
     JsObject(fields.toSeq)
   }

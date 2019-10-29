@@ -27,7 +27,7 @@ import SystemDao._
 import debiki.Globals
 import ed.server.spam.ClearCheckingSpamNowCache
 import play.api.libs.json.{JsObject, Json}
-import talkyard.server.JsX
+import talkyard.server.{DeleteWhatSite, JsX}
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -166,7 +166,7 @@ class SystemDao(
     browserIdData: BrowserIdData,
     isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean,
-    deleteOldSite: Boolean,
+    deleteWhatSite: DeleteWhatSite,
     pricePlan: PricePlan,
     createdFromSiteId: Option[SiteId]): Site = {
 
@@ -186,13 +186,24 @@ class SystemDao(
 
     // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
     try dangerous_readWriteTransaction { sysTx =>
-      if (deleteOldSite) {
-        dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8")
-        dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4")
-
+      if (deleteWhatSite != DeleteWhatSite.NoSite) {
         val anySitesToDeleteMaybeDupls: Vec[Site] =
-          if (hostname.isEmpty) Vector.empty else
-            sysTx.loadSiteByHostname(hostname.get).toVector ++ sysTx.loadSiteByName(name).toVector
+        deleteWhatSite match {
+          case DeleteWhatSite.SameHostname =>
+            dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8",
+              s"Not an e2e test hostname: $hostname")
+            dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4",
+              s"Not an e2e test name: $name")
+            if (hostname.isEmpty) Vector.empty
+            else {
+              sysTx.loadSiteByHostname(hostname.get).toVector ++
+                  sysTx.loadSiteByName(name).toVector
+            }
+          case DeleteWhatSite.WithId(theId) =>
+            sysTx.loadSite(theId).toVector
+          case DeleteWhatSite.NoSite =>
+            die("TyE502MWKDT45")
+        }
 
         val anySitesToDelete = anySitesToDeleteMaybeDupls.distinct
         val deletedAlready = mutable.HashSet[SiteId]()
@@ -323,8 +334,9 @@ class SystemDao(
       newSite.copy(hostnames = newSiteHost.toList)
     }
     catch {
-      case ex @ DbDao.SiteAlreadyExistsException(site) =>
-        play.api.Logger.error(s"Cannot create site, dupl key error [TyE4ZKTP01]: $site")
+      case ex @ DbDao.SiteAlreadyExistsException(site, details) =>
+        play.api.Logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
+           details: $details""")
         throw ex
     }
   }

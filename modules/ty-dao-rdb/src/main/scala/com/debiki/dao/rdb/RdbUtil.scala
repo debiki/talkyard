@@ -271,7 +271,7 @@ object RdbUtil {
         uiPrefs = getOptJsObject(rs, "ui_prefs"),
         summaryEmailIntervalMins = None,
         summaryEmailIfActive = None,
-        grantsTrustLevel = None)
+        grantsTrustLevel = None) // later:  grants_trust_level)
     else User(
       id = userId,
       fullName = name,
@@ -299,6 +299,7 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     Group(
       id = rs.getInt("user_id"),
+      extImpId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       theUsername = rs.getString("username"),
       name = getOptString(rs, "full_name"),
@@ -307,7 +308,7 @@ object RdbUtil {
       uiPrefs = getOptJsObject(rs, "ui_prefs"),
       summaryEmailIntervalMins = getOptInt(rs, "summary_email_interval_mins"),
       summaryEmailIfActive = getOptBool(rs, "summary_email_if_active"),
-      grantsTrustLevel = getOptInt(rs, "locked_trust_level").flatMap(TrustLevel.fromInt))
+      grantsTrustLevel = None) // later: getOptInt(rs, "grants_trust_level").flatMap(TrustLevel.fromInt))
   }
 
 
@@ -565,7 +566,6 @@ object RdbUtil {
 
 
   def getNotification(rs: js.ResultSet): Notification = {
-    val siteId = rs.getInt("site_id")
     val notfId = rs.getInt("notf_id")
     val notfTypeInt = rs.getInt("notf_type")
     val createdAt = getDate(rs, "created_at")
@@ -589,7 +589,6 @@ object RdbUtil {
            NotificationType.DirectReply | NotificationType.Mention | NotificationType.Message |
            NotificationType.NewPost | NotificationType.PostTagged =>
         Notification.NewPost(
-          siteId = siteId,
           id = notfId,
           notfType = notfType,
           createdAt = createdAt,

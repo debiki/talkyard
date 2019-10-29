@@ -28,6 +28,7 @@ import org.owasp.encoder.Encode
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
+import talkyard.server.DeleteWhatSite
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
@@ -138,7 +139,11 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     }
 
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-    val deleteOldSite = isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname)
+    val deleteWhatSite =
+      if (isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname))
+        DeleteWhatSite.SameHostname
+      else
+        DeleteWhatSite.NoSite
 
     val goToUrl: String =
       try {
@@ -150,7 +155,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           browserIdData = request.theBrowserIdData, organizationName = organizationName,
           isTestSiteOkayToDelete = isTestSiteOkayToDelete,
           skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
-          deleteOldSite = deleteOldSite, pricePlan = pricePlan,
+          deleteWhatSite = deleteWhatSite, pricePlan = pricePlan,
           createdFromSiteId = Some(request.siteId))
 
         val newSiteOrigin = globals.originOf(hostname)
@@ -179,8 +184,9 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         newSiteOrigin
       }
       catch {
-        case DbDao.SiteAlreadyExistsException(site) =>
-          throwForbidden("TyE4ZKTP02", "A site with that name or id has already been created")
+        case DbDao.SiteAlreadyExistsException(site, details) =>
+          throwForbidden("TyE4ZKTP02", o"""A site with that name or id has already been created,
+              details: $details""")
         case _: DbDao.TooManySitesCreatedByYouException =>
           throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
         case DbDao.TooManySitesCreatedInTotalException =>

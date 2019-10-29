@@ -55,6 +55,7 @@ describe("embedded comments, new site", () => {
 
 
   function createPasswordTestData() {
+      // Dupl code [502KGAWH0]
     const testId = utils.generateTestId();
     const embeddingHostPort = `test--ec-${testId}.localhost:8080`;
     const localHostname     = `test--ec-${testId}-localhost-8080`;
@@ -75,6 +76,7 @@ describe("embedded comments, new site", () => {
   }
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
+      // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
@@ -103,6 +105,7 @@ describe("embedded comments, new site", () => {
 
 
   it("... and creates an embedding page", () => {
+    // Dupl code [046KWESJJLI3].
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     console.log('htmlToPaste: ' + htmlToPaste);

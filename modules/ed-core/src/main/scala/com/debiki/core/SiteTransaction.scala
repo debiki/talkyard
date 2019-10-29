@@ -179,9 +179,10 @@ trait SiteTransaction {
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
+  def loadAllPostActions(): immutable.Seq[PostAction]
+  def insertPostAction(postAction: PostAction)
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
-  def insertVote(uniquePostId: PostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
   /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02] */
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId]
 
@@ -192,6 +193,7 @@ trait SiteTransaction {
 
 
   def loadUserStats(userId: UserId): Option[UserStats]
+  def loadAllUserStats(): immutable.Seq[UserStats]
   def upsertUserStats(userStats: UserStats)
 
   /** Also updates the user stats, but avoids races about writing to unrelated fields. */
@@ -209,6 +211,7 @@ trait SiteTransaction {
   def reconsiderSendingSummaryEmailsToEveryone()
 
 
+  def loadAllUserVisitStats(): immutable.Seq[UserVisitStats] // <——
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
   def upsertUserVisitStats(visitStats: UserVisitStats)
 
@@ -230,7 +233,6 @@ trait SiteTransaction {
   def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
 
   def loadFlagsFor(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[PostFlag]
-  def insertFlag(uniquePostId: PostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId)
 
   def nextPageId(): PageId
@@ -273,6 +275,7 @@ trait SiteTransaction {
   def deleteAltPageId(altPageId: AltPageId)
   def listAltPageIds(realPageId: PageId): Set[AltPageId]
   def loadRealPageId(altPageId: AltPageId): Option[PageId]
+  def loadAllAltPageIds(): Map[AltPageId, PageId]
 
   def insertPagePath(pagePath: PagePathWithId): Unit
 
@@ -333,6 +336,7 @@ trait SiteTransaction {
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
   def loadIdentities(userId: UserId): immutable.Seq[Identity]
+  def loadAllIdentities(): immutable.Seq[Identity]
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
   def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId)
@@ -408,6 +412,7 @@ trait SiteTransaction {
   def updateUsernameUsage(usage: UsernameUsage)
   def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
+  def loadAllUsernameUsages(): Seq[UsernameUsage]
   def isUsernameInUse(username: String): Boolean = loadUsernameUsages(username).nonEmpty
 
   def loadParticipant(userId: UserId): Option[Participant]
@@ -494,6 +499,7 @@ trait SiteTransaction {
   def loadOwner(): Option[UserInclDetails]
 
   def loadGroupMembers(groupId: UserId): Vector[Participant]
+  def loadGroupParticipantsAllCustomGroups(): Vector[GroupParticipant]
   /** Returns the ids of the members that got added (i.e. who were not already members). */
   def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId]
   def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId])
@@ -534,6 +540,7 @@ trait SiteTransaction {
   // [REFACTORNOTFS] break out to a Dao, and load just for this member, but also all groups it's in?
   def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId]): PageNotfLevels
 
+  def loadAllPageNotfPrefs(): Seq[PageNotfPref]
   def loadPageNotfPrefsOnPage(pageId: PageId): Seq[PageNotfPref]
   def loadPageNotfPrefsOnCategory(categoryId: CategoryId): Seq[PageNotfPref]
   def loadPageNotfPrefsOnSite(): Seq[PageNotfPref]
@@ -554,6 +561,7 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
+  def loadAllReviewTasks(): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
   def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
@@ -565,6 +573,8 @@ trait SiteTransaction {
   def updateNotificationSkipEmail(notifications: Seq[Notification])
   def markNotfsAsSeenSkipEmail(userId: UserId, notfId: Option[NotificationId])
   def markNotfsForPostIdsAsSeenSkipEmail(userId: UserId, postIds: Set[PostId]): Int
+
+  def loadAllNotifications(): Seq[Notification]
 
   /** This skips review tasks notfs — they're shown in the admin area instead, the review tab. */
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,

@@ -705,9 +705,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  /* rm xx
   def insertVote(uniquePostId: PostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
     insertPostAction(uniquePostId, pageId, postNr, actionType = voteType, doerId = voterId)
-  }
+  } */
 
 
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
@@ -725,18 +726,29 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction] = {
-    loadActionsOnPageImpl(pageId, userId = None)
+    loadActionsOnPageImpl(Some(pageId), userId = None)
   }
 
 
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction] = {
-    loadActionsOnPageImpl(pageId, userId = Some(userId))
+    loadActionsOnPageImpl(Some(pageId), userId = Some(userId))
   }
 
 
-  private def loadActionsOnPageImpl(pageId: PageId, userId: Option[UserId])
+  def loadAllPostActions(): immutable.Seq[PostAction] = {
+    loadActionsOnPageImpl(pageId = None, userId = None)
+  }
+
+
+  private def loadActionsOnPageImpl(pageId: Option[PageId], userId: Option[UserId])
         : immutable.Seq[PostAction] = {
-    val values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId)
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+    val andPageIdEq = pageId match {
+      case None => ""
+      case Some(id) =>
+        values.append(id)
+        s"and page_id = ?"
+    }
     val andCreatedBy = userId match {
       case None => ""
       case Some(id) =>
@@ -744,15 +756,15 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         "and created_by_id = ?"
     }
     val query = s"""
-      select unique_post_id, post_nr, type, created_at, created_by_id
+      select unique_post_id, page_id, post_nr, type, created_at, created_by_id
       from post_actions3
-      where site_id = ? and page_id = ? $andCreatedBy
+      where site_id = ? $andPageIdEq $andCreatedBy
       """
     runQueryFindMany(query, values.toList, rs => {
       val theUserId = rs.getInt("created_by_id")
       PostAction(
         uniqueId = rs.getInt("unique_post_id"),
-        pageId = pageId,
+        pageId = rs.getString("page_id"),
         postNr = rs.getInt("post_nr"),
         doneAt = getWhen(rs, "created_at"),
         doerId = theUserId,
@@ -816,9 +828,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  /* xx rm
   def insertFlag(uniquePostId: PostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId) {
     insertPostAction(uniquePostId, pageId, postNr, actionType = flagType, doerId = flaggerId)
-  }
+  } */
 
 
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
@@ -832,14 +845,29 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def insertPostAction(uniquePostId: PostId, pageId: PageId, postNr: PostNr, actionType: PostActionType, doerId: UserId) {
+  def insertPostAction(postAction: PostAction) {
+    postAction match {
+      case vote: PostVote =>
+        insertPostAction(
+          postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
+          actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt)
+      case flag: PostFlag =>
+        insertPostAction(
+          postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
+          actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
+    }
+  }
+
+
+  private def insertPostAction(postId: PostId, pageId: PageId, postNr: PostNr,
+        actionType: PostActionType, doerId: UserId, doneAt: When) {
     val statement = """
       insert into post_actions3(site_id, unique_post_id, page_id, post_nr, type, created_by_id,
           created_at, sub_id)
-      values (?, ?, ?, ?, ?, ?, now_utc(), 1)
+      values (?, ?, ?, ?, ?, ?, ?, 1)
       """
-    val values = List[AnyRef](siteId.asAnyRef, uniquePostId.asAnyRef, pageId, postNr.asAnyRef,
-      toActionTypeInt(actionType), doerId.asAnyRef)
+    val values = List[AnyRef](siteId.asAnyRef, postId.asAnyRef, pageId, postNr.asAnyRef,
+      toActionTypeInt(actionType), doerId.asAnyRef, doneAt.asTimestamp)
     val numInserted =
       try { runUpdate(statement, values) }
       catch {
@@ -971,6 +999,7 @@ object PostsSiteDaoMixin {
   }).asAnyRef
 
 
+  REFACTOR // move to:  PostActionType.from(Int): PostActionType  [402KTHRNPQw]
   def fromActionTypeInt(value: Int): PostActionType = value match {
     case VoteValueLike => PostVoteType.Like
     case VoteValueWrong => PostVoteType.Wrong

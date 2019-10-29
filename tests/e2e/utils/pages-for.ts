@@ -1,6 +1,8 @@
 import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');
+import path = require('path');
+import fs = require('fs');
 import settings = require('./settings');
 import server = require('./server');
 import utils = require('../utils/utils');
@@ -17,6 +19,15 @@ const PollMs = 100;
 const RefreshPollMs = 250;
 const PollExpBackoff = 1.33;
 const PollMaxMs = 5000;
+
+
+const enum IsWhere {
+  Nowhere = 0,
+  Forum = 1,
+  EmbeddingPage = 2,
+  EmbCommentsIframe = 3,
+  EmbEditorIframe = 4,
+};
 
 
 type ElemRect = { x: number, y: number, width: number, height: number };
@@ -84,6 +95,8 @@ function pagesFor(browser) {
   const origWaitForExist = browser.waitForExist;
 
   const hostsVisited = {};
+  let isWhere: IsWhere = IsWhere.Nowhere;
+  let isOnEmbeddedCommentsPage = false;
 
   const api = {
 
@@ -122,7 +135,12 @@ function pagesFor(browser) {
     },
 
 
+    // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
     go: (url, opts: { useRateLimits?: boolean } = {}) => {
+      api.go2(url, { ...opts, waitForPageType: false });
+    },
+
+    go2: (url, opts: { useRateLimits?: boolean, waitForPageType?: false } = {}) => {
       let shallDisableRateLimits = false;
 
       if (url[0] === '/') {
@@ -145,6 +163,20 @@ function pagesFor(browser) {
 
       logMessage(`Go: ${url}${shallDisableRateLimits ? " & disable rate limits" : ''}`);
       browser.url(url);
+
+      // Wait for some Talkyard thing to appear, so we'll know what type of page this is.
+      if (opts.waitForPageType === false) {
+        // Backw compat.
+        isOnEmbeddedCommentsPage = false;
+      }
+      else {
+        // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
+        // -one's-email-addr page.
+        api.waitForExist('.DW, .talkyard-comments, .btn');
+        isOnEmbeddedCommentsPage = browser.isExisting('.talkyard-comments');
+        isWhere = isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
+      }
+
 
       if (shallDisableRateLimits) {
         api.disableRateLimits();
@@ -172,6 +204,54 @@ function pagesFor(browser) {
       dieIf(!result || _.isNaN(parseInt(result.value)),
           "Error getting site id, result: " + JSON.stringify(result));
       return result.value;
+    },
+
+
+    createSiteAsOwen: (ps: { shortName: String, longName: string }) => {
+      // Dupl code [502SKHFSKN53]
+      const data = api.createPasswordTestData(ps);
+      api.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
+      api.disableRateLimits();
+      api.createSite.fillInFieldsAndSubmit(data);
+      // New site; disable rate limits here too.
+      api.disableRateLimits();
+
+      api.createSite.clickOwnerSignupButton();
+      api.loginDialog.createPasswordAccount(data, true);
+      const siteId = api.getSiteId();
+      const email = server.getLastEmailSenTo(siteId, data.email, api);
+      const link = utils.findFirstLinkToUrlIn(
+        data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+      api.go(link);
+      api.waitAndClick('#e2eContinue');
+      const talkyardSiteOrigin = api.origin();
+      return {
+        data,
+        testId: data.testId,
+        siteId,
+        talkyardSiteOrigin,
+      }
+    },
+
+
+    createPasswordTestData: (ps: { shortName: String, longName: string }) => {
+      // Dupl code [502KGAWH0]
+      const testId = utils.generateTestId();
+      const embeddingHostPort = `test--${ps.shortName}-${testId}.localhost:8080`;
+      const localHostname = `test--${ps.shortName}-${testId}-localhost-8080`;
+      //const localHostname = settings.localHostname ||
+      //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+      return {
+        testId: testId,
+        embeddingUrl: `http://${embeddingHostPort}/`,
+        origin: `http://comments-for-${localHostname}.localhost`,
+        orgName: ps.longName + " Org Name",
+        // The owner:
+        fullName: ps.longName + " test id " + testId,
+        email: settings.testEmailAddressPrefix + testId + '@example.com',
+        username: 'owen_owner',
+        password: 'publ-ow020',
+      }
     },
 
 
@@ -262,6 +342,7 @@ function pagesFor(browser) {
 
 
     // Could rename to isInTalkyardIframe.
+    // NO, use isWhere instead — just remember in which frame we are, instead of polling. ?
     isInIframe: (): boolean => {
       const result = browser.execute(function() {
         return window['eds'] && window['eds'].isInIframe;
@@ -274,6 +355,7 @@ function pagesFor(browser) {
       if (api.isInIframe()) {
         browser.frameParent();
         logMessage("Switched to parent frame.");
+        isWhere = IsWhere.EmbeddingPage;
       }
     },
 
@@ -292,6 +374,13 @@ function pagesFor(browser) {
     },
 
 
+    switchToEmbCommentsIframeIfNeeded: () => {
+      if (isWhere >= IsWhere.EmbeddingPage && isWhere !== IsWhere.EmbCommentsIframe) {
+        api.switchToEmbeddedCommentsIrame();
+      }
+    },
+
+
     switchToEmbeddedCommentsIrame: function() {
       api.switchToAnyParentFrame();
       // Remove these out commented lines, after 2019-07-01?:
@@ -305,6 +394,8 @@ function pagesFor(browser) {
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       api.waitForExist('iframe#ed-embedded-editor');
       api.switchToFrame('iframe#ed-embedded-comments');
+      api.waitForExist('.DW');
+      isWhere = IsWhere.EmbCommentsIframe;
     },
 
 
@@ -313,6 +404,7 @@ function pagesFor(browser) {
       // Let's wait for the comments iframe, so it can receive any messages from the editor iframe.
       api.waitForExist('iframe#ed-embedded-comments');
       api.switchToFrame('iframe#ed-embedded-editor');
+      isWhere = IsWhere.EmbEditorIframe;
     },
 
 
@@ -764,6 +856,15 @@ function pagesFor(browser) {
       api._waitForClickable(selector, opts);
       browser.setValue(selector, ["Control","v"]);
     },
+
+
+    waitAndSelectFile: (selector: string, fileNameInTargetDir: string) => {
+      // Step up from  target/e2e/utils/  to  target/:
+      const pathToUpload = path.join(__dirname, '..', '..', fileNameInTargetDir);
+      logAndDie.logMessage("Selecting file: " + pathToUpload.toString());
+      browser.chooseFile(selector, pathToUpload);
+    },
+
 
     waitAndSetValue: (selector: string, value: string | number,
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
@@ -2979,6 +3080,7 @@ function pagesFor(browser) {
       },
 
       setPageNotfLevel: (notfLevel: PageNotfLevel) => {
+        api.switchToEmbCommentsIframeIfNeeded();
         api.metabar.openMetabarIfNeeded();
         api.waitAndClick('.dw-notf-level');
         api.notfLevelDropdown.clickNotfLevel(notfLevel);
@@ -3072,6 +3174,16 @@ function pagesFor(browser) {
 
       waitUntilPostTextMatches: function(postNr: PostNr, text: string) {
         api.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
+      },
+
+      refreshUntilPostAppears: function(postNr: PostNr, ps: { isEmbedded?: true } = {}) {
+        if (ps.isEmbedded) api.switchToEmbeddedCommentsIrame();
+        while (!browser.isVisible(api.topic.postBodySelector(postNr))) {
+          browser.refresh();
+          // Pause *after* the refresh, so there's some time for the post to get loaded & appear.
+          browser.pause(RefreshPollMs);
+          if (ps.isEmbedded) api.switchToEmbeddedCommentsIrame();
+        }
       },
 
       refreshUntilPostTextMatches: function(postNr: PostNr, regex) {
@@ -3215,8 +3327,15 @@ function pagesFor(browser) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
       },
 
-      makeLikeVoteSelector: (postNr: PostNr): string => {
-        return `#post-${postNr} + .esPA .dw-a-like`;
+      makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: true } = {}): string => {
+        // Embedded comments pages lack the orig post — instead, there's the
+        // blog post, on the embedding page.
+        const startSelector = isOnEmbeddedCommentsPage && postNr === c.BodyNr
+            ? '.dw-ar-t > ' :`#post-${postNr} + `;
+        let result = startSelector + '.esPA .dw-a-like';
+console.log("makeLikeVoteSelector —> " + result);
+        if (ps.byMe) result += '.dw-my-vote'
+        return result;
       },
 
       clickLikeVote: function(postNr: PostNr) {
@@ -3225,6 +3344,7 @@ function pagesFor(browser) {
       },
 
       clickLikeVoteForBlogPost: function() {
+        api.switchToEmbCommentsIframeIfNeeded();
         api.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
       },
 
@@ -3244,8 +3364,17 @@ function pagesFor(browser) {
       },
 
       isPostLikedByMe: function(postNr: PostNr) {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
-        return browser.isVisible(likeVoteSelector + '.dw-my-vote');
+        return api.topic.isPostLiked(postNr, { byMe: true });
+      },
+
+      isPostLiked: (postNr: PostNr, ps: { byMe?: true } = {}) => {
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr, ps);
+        return browser.isVisible(likeVoteSelector);
+      },
+
+      waitForLikeVote: (postNr: PostNr, ps: { byMe?: true } = {}) => {
+        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr, ps);
+        api.waitForVisible(likeVoteSelector);
       },
 
       toggleDisagreeVote: function(postNr: PostNr) {
@@ -3284,6 +3413,7 @@ function pagesFor(browser) {
       clickFlagPost: function(postNr: PostNr) {
         api.topic.clickMoreForPostNr(postNr);
         api.waitAndClick('.icon-flag');  // for now, later: e_...
+        // This opens  api.flagDialog.
       },
 
       deletePost: function(postNr: PostNr) {
@@ -4357,6 +4487,11 @@ function pagesFor(browser) {
         api.adminArea.users.invites.waitUntilLoaded();
       },
 
+      goToBackupsTab: (origin?: string, opts: { loginAs? } = {}) => {
+        api.adminArea._goToMaybeLogin(origin, '/-/admin/backup', opts);
+        api.adminArea.backupsTab.waitUntilLoaded();
+      },
+
       goToApi: function(origin?: string, opts: { loginAs? } = {}) {
         api.go((origin || '') + '/-/admin/api');
         if (opts.loginAs) {
@@ -4371,6 +4506,13 @@ function pagesFor(browser) {
           api.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.review.waitUntilLoaded();
+      },
+
+      _goToMaybeLogin: (origin: string, endpoint: string, opts: { loginAs? } = {}) => {
+        api.go((origin || '') + endpoint);
+        if (opts.loginAs) {
+          api.loginDialog.loginWithPassword(opts.loginAs);
+        }
       },
 
       goToAdminExtraLogin: (origin?: string) => {
@@ -4488,6 +4630,25 @@ function pagesFor(browser) {
             api.waitAndClickFirst('.e_SsoTestL');
             api.waitForNewUrl();
           }
+        },
+
+        embedded: {
+          goHere: (origin?: string) => {
+            api.go((origin || '') + '/-/admin/settings/embedded-comments');
+          },
+
+          setAllowEmbeddingFrom: (value: string) => {
+            api.waitAndSetValue('#e_AllowEmbFrom', value);
+          },
+
+          createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string, browser }) => {
+            browser.waitForVisible('#e_EmbCmtsHtml');
+            const htmlToPaste = browser.getText('#e_EmbCmtsHtml');
+            const pageHtml = utils.makeEmbeddedCommentsHtml({
+                htmlToPaste, discussionId: ps.discussionId,
+                pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
+            fs.writeFileSync(`target/${ps.urlPath}.html`, pageHtml);
+          },
         },
 
         advanced: {
@@ -4823,6 +4984,20 @@ function pagesFor(browser) {
         }
       },
 
+      backupsTab: {
+        waitUntilLoaded: () => {
+          api.waitForVisible('.s_A_Bkp');
+        },
+
+        clickRestore: () => {
+          api.waitAndClick('.e_RstBkp');
+        },
+
+        selectFileToRestore: (fileNameInTargetDir: string) => {
+          api.waitAndSelectFile('.e_SelFil', fileNameInTargetDir);
+        },
+      },
+
       apiTab: {
         waitUntilLoaded: () => {
           api.waitForVisible('.s_A_Api');
@@ -4839,6 +5014,10 @@ function pagesFor(browser) {
       },
 
       review: {
+        goHere: (origin?: string, opts: { loginAs? } = {}) => {
+          api.adminArea.goToReview(origin, opts);
+        },
+
         waitUntilLoaded: function() {
           api.waitForVisible('.s_A_Rvw');
           //----
@@ -4927,8 +5106,12 @@ function pagesFor(browser) {
           return browser.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
-        waitForTextToReview: function(text) {
-          api.waitUntilTextMatches('.esReviewTask_it', text);
+        waitForTextToReview: function(text, ps: { index?: number } = {}) {
+          let selector = '.esReviewTask_it';
+          if (ps.index !== undefined) {
+            selector = `.e_RT-Ix-${ps.index} ${selector}`;
+          }
+          api.waitUntilTextMatches(selector, text);
         },
 
         // RENAME to countReviewTasks? and add countReviewTasksWaiting?
@@ -5453,7 +5636,7 @@ function pagesFor(browser) {
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
-        api.editor.editText(text, { timeoutMs: 2000 });
+        api.editor.editText(text, { timeoutMs: 3000 });
         logMessage("editor iframe: Saving ...");
         api.editor.save();
 

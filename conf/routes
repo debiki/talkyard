@@ -247,6 +247,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/delete-backup          talkyard.server.backup.SiteBackupController.deleteBackup
 #POST  /-/upload-backup          talkyard.server.backup.SiteBackupController.uploadBackup
 #POST  /-/import-backup          talkyard.server.backup.SiteBackupController.importBackup
+POST   /-/restore-backup-overwrite-site talkyard.server.backup.SiteBackupController.restoreBackupOverwriteSite
 
 
 # (Site 121 currenlty uses)

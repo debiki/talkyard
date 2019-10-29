@@ -749,7 +749,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     catch {
       case ex: js.SQLException =>
         if (!isUniqueConstrViolation(ex)) throw ex
-        throw SiteAlreadyExistsException(changedSite)
+        throw SiteAlreadyExistsException(changedSite, ex.getMessage)
     }
   }
 

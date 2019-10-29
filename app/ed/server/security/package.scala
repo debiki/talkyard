@@ -360,18 +360,18 @@ class EdSecurity(globals: Globals) {
     * really intended to be public, for tests only (or, if not 'public...', it shouldn't be there).
     */
   def throwIfBadPassword(passwordHash: String, isTest: Boolean) {
-    val array = passwordHash.split(":")
+    val array = passwordHash.split(':')
     if (array.length != 2)
       throwIllegalArgument("EsE2YPU5", "Bad password hash: no prefix")
-    val prefix = array(0)
+    val prefix = array(0) + ":"
     val hash = array(1)
 
-    if (prefix == DbDao.CleartextPrefix && !hash.startsWith("public"))
-      throwIllegalArgument("EsE2YPU5",
+    if (prefix == DbDao.CleartextPrefix && !isTest && !hash.startsWith("public"))
+      throwIllegalArgument("TyE502TKRD2",
         "Cleartext password does not start with 'public'")
 
     if (!isTest && prefix != DbDao.ScryptPrefix)
-      throwIllegalArgument("EsE5YMP2", "Password type not allowed: " + prefix.dropRight(1))
+      throwIllegalArgument("EsE5YMP2", "Password type not allowed: " + prefix)
   }
 
 

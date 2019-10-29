@@ -381,7 +381,7 @@ case object Participant {
       id == UnknownUserId
 
   def isBuiltInGroup(id: UserId): Boolean =
-    Group.AllMembersId <= id && id <= Group.AdminsId
+    Group.EveryoneId <= id && id <= Group.AdminsId
 
   def isBuiltInParticipant(id: UserId): Boolean = MaxCustomGuestId < id && id < LowestAuthenticatedUserId
 
@@ -1342,6 +1342,23 @@ object Group {
 
   dieUnless(AllMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")
+}
+
+
+case class GroupParticipant(
+  groupId: GroupId,
+  ppId: UserId,
+  isMember: Boolean,
+  isManager: Boolean,
+  isAdder: Boolean,
+  isBouncer: Boolean) {
+
+  require(groupId != ppId, "TyE05WTKJR4")
+  require(groupId >= Group.AllMembersId, "TyE3062SKJL7")
+  require(ppId >= LowestMemberId, "TyE3062SKJL4")
+  // For now:
+  require(isMember, "TyE406KTDR2")
+  require(!isManager && !isAdder && !isBouncer, "TyE406KTDR3")
 }
 
 

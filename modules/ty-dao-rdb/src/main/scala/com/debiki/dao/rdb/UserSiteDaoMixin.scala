@@ -246,6 +246,23 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadGroupParticipantsAllCustomGroups(): Vector[GroupParticipant] = {
+    val query = s"""
+      select * from group_participants3
+      where site_id = ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      GroupParticipant(
+        groupId = getInt(rs, "group_id"),
+        ppId = getInt(rs, "participant_id"),
+        isMember = getBool(rs, "is_member"),
+        isManager = getBool(rs, "is_manager"),
+        isAdder = getBool(rs, "is_adder"),
+        isBouncer = getBool(rs, "is_bouncer"))
+    })
+  }
+
+
   def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId] = {
     dieIf(groupId < Participant.LowestAuthenticatedUserId, "TyE5RKMZ25")
     val idsAdded = ArrayBuffer[UserId]()
@@ -306,11 +323,31 @@ trait UserSiteDaoMixin extends SiteTransaction {
 
   def insertGroup(group: Group) {
     val sql = """
-      insert into users3(site_id, user_id, username, full_name, created_at, is_group)
-      values (?, ?, ?, ?, ?, true)
+      insert into users3(
+        site_id,
+        user_id,
+        ext_id,
+        username,
+        full_name,
+        created_at,
+        summary_email_interval_mins,
+        summary_email_if_active,
+        -- grants_trust_level,  — later
+        ui_prefs,
+        is_group)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, true)
       """
-    val values = List(siteId.asAnyRef, group.id.asAnyRef, group.theUsername, group.name.orNullVarchar,
-      now.asTimestamp)
+    val values = List(
+      siteId.asAnyRef,
+      group.id.asAnyRef,
+      group.extImpId.orNullVarchar,
+      group.theUsername,
+      group.name.orNullVarchar,
+      group.createdAt.asTimestamp,
+      group.summaryEmailIntervalMins.orNullInt,
+      group.summaryEmailIfActive.orNullBoolean,
+      //group.grantsTrustLevel.map(_.toInt).orNullInt,
+      group.uiPrefs.orNullJson)
     runUpdateExactlyOneRow(sql, values)
   }
 
@@ -338,20 +375,24 @@ trait UserSiteDaoMixin extends SiteTransaction {
     val statement = """
       update users3 set
         updated_at = now_utc(),
+        ext_id = ?,
         full_name = ?,
         username = ?,
         summary_email_interval_mins = ?,
         summary_email_if_active = ?,
+        -- grants_trust_level = ?,  — later
         ui_prefs = ?
       where site_id = ?
         and user_id = ?
       """
 
     val values = List(
+      group.extImpId.orNullVarchar,
       group.anyName.orNullVarchar,
       group.theUsername,
       group.summaryEmailIntervalMins.orNullInt,
       group.summaryEmailIfActive.orNullBoolean,
+      //group.grantsTrustLevel.map(_.toInt).orNullInt,
       group.uiPrefs.orNullJson,
       siteId.asAnyRef,
       group.id.asAnyRef)
@@ -669,16 +710,29 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllIdentities(): immutable.Seq[Identity] = {
+    loadIdentitiesImpl(userId = None)
+  }
+
+
   def loadIdentities(userId: UserId): immutable.Seq[Identity] = {
+    loadIdentitiesImpl(Some(userId))
+  }
+
+
+  private def loadIdentitiesImpl(userId: Option[UserId]): immutable.Seq[Identity] = {
+    val values = ArrayBuffer(siteId.asAnyRef)
+    val andIdEq = userId.map(id => {
+      values.append(id.asAnyRef)
+      "and i.user_id = ?"
+    }) getOrElse ""
     val query = s"""
         select $IdentitySelectListItems
         from identities3 i
-        where i.site_id = ?
-          and i.user_id = ?
-        """
-    runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef), rs => {
+        where i.site_id = ? $andIdEq"""
+    runQueryFindMany(query, values.toList, rs => {
       val identity = readIdentity(rs)
-      dieIf(identity.userId != userId, "TyE2WKBGE5")
+      dieIf(userId.exists(_ != identity.userId), "TyE2WKBGE5")
       identity
     })
   }

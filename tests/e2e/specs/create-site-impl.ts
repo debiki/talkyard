@@ -6,6 +6,7 @@ import settings = require('../utils/settings');
 
 
 function createPasswordTestData() {
+  // Dupl code [502KGAWH0]
   const testId = utils.generateTestId();
   const localHostname = settings.localHostname ||
                       settings.testLocalHostnamePrefix + 'create-site-' + testId;

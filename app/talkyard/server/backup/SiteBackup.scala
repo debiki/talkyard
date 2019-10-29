@@ -25,6 +25,7 @@ import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json.JsObject
 import scala.collection.mutable
+import scala.collection.immutable
 
 
 /** Later: This class should not contain complete items like Category and Post. [PPATCHOBJS]
@@ -51,15 +52,49 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],
   guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
+  // Includes built-in groups — they can be renamed or have their settings changed,
+  // and if restoring a dump to a new site, such changes should be remembered.
   groups: Seq[Group],
+  groupPps: Seq[GroupParticipant],
   users: Seq[UserInclDetails],
+  pptStats: Seq[UserStats],
+  pptVisitStats: Seq[UserVisitStats],
+  usernameUsages: Seq[UsernameUsage],
+  memberEmailAddrs: Seq[UserEmailAddress],
+  identities: Seq[Identity],
+  invites: Seq[Invite],
+  notifications: Seq[Notification],
   categoryPatches: Seq[CategoryPatch],
   categories: Seq[Category],  // later, remove, see: [PPATCHOBJS]
   pages: Seq[PageMeta],
   pagePaths: Seq[PagePathWithId],
   pageIdsByAltIds: Map[AltPageId, PageId],
+  pageNotfPrefs: Seq[PageNotfPref],
   posts: Seq[Post],
-  permsOnPages: Seq[PermsOnPages]) {
+  postActions: Seq[PostAction],
+  permsOnPages: Seq[PermsOnPages],
+  reviewTasks: Seq[ReviewTask]) {
+
+  /* MISSING:
+ public | api_secrets3            | table    | edc
+ public | audit_log3              | table    | edc
+ public | backup_test_log3        | table    | edc
+ public | blocks3                 | table    | edc
+ public | category_notf_levels3   | table    | edc -- remove?
+ public | drafts3                 | table    | edc
+ public | emails_out3             | table    | edc
+ public | index_queue3            | table    | edc
+ public | page_html3              | table    | edc
+ public | page_popularity_scores3 | table    | edc
+ public | page_users3             | table    | edc
+ public | post_read_stats3        | table    | edc
+ public | post_revisions3         | table    | edc
+ public | post_tags3              | table    | edc
+ public | spam_check_queue3       | table    | edc
+ public | tag_notf_levels3        | table    | edc
+ public | upload_refs3            | table    | edc
+ public | uploads3                | table    | edc
+  */
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
@@ -83,11 +118,23 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
     site.isDefined ||
       settings.isDefined ||
       (guests.length + groups.length + users.length) >= many ||
+      groupPps.size >= many ||
+      pptStats.length >= many ||
+      pptVisitStats.length >= many ||
+      usernameUsages.length >= many ||
+      memberEmailAddrs.length >= many ||
+      identities.length >= many ||
+      invites.length >= many ||
+      notifications.length >= many ||
       (categoryPatches.length + categories.length) >= many ||
       pages.length >= many ||
       pagePaths.length >= many ||
+      pageIdsByAltIds.size >= many ||
+      pageNotfPrefs.length >= many ||
       posts.length >= many * 2 ||  // since at least 2 posts per page: title and body
-      permsOnPages.length >= many
+      postActions.length >= many ||
+      permsOnPages.length >= many ||
+      reviewTasks.length >= many
   }
 }
 
@@ -102,13 +149,24 @@ case object SiteBackup {
     guestEmailNotfPrefs = Map.empty,
     groups = Vector.empty,
     users = Vector.empty,
+    groupPps = Vector.empty,
+    pptStats = Vector.empty,
+    pptVisitStats = Vector.empty,
+    usernameUsages = Vector.empty,
+    memberEmailAddrs = Vector.empty,
+    identities = Vector.empty,
+    invites = Vector.empty,
+    notifications = Vector.empty,
     pages = Vector.empty,
     pagePaths = Vector.empty,
     pageIdsByAltIds = Map.empty,
+    pageNotfPrefs = Vector.empty,
     categoryPatches = Vector.empty,
     categories = Vector.empty,
     posts = Vector.empty,
-    permsOnPages = Vector.empty)
+    postActions = Vector.empty,
+    permsOnPages = Vector.empty,
+    reviewTasks = Vector.empty)
 }
 
 

@@ -1470,6 +1470,20 @@ interface Rect {
 // ----- Server requests and responses
 
 
+/// The browser gives you a Response, but that's not an object so { ...response } won't work.
+/// This is however a real object, with the reponse payload included in 'responseText':
+interface ResponseObj {
+  headers: Headers; // does this still work, after being copied to other obj?
+  ok: boolean;
+  redirected: boolean;
+  status: number;
+  statusText: string;
+  type: string;
+  url: string;
+  responseText: string;
+}
+
+
 interface EditPageRequestData {
     //pageId: PageId; — filled in By Server.ts
     newTitle?: string;
@@ -1554,7 +1568,7 @@ interface UserAccountEmailAddr {
   verifiedAt?: WhenMs;
 }
 
-interface UserAccountLoginMethod {
+interface UserAccountLoginMethod {  // Maybe repl w Identity = Scala: JsIdentity?
   loginType: string;
   provider: string;
   email?: string;
