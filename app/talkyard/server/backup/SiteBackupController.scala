@@ -26,7 +26,8 @@ import ed.server.http.DebikiRequest
 import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result}
+import talkyard.server.DeleteWhatSite
 import talkyard.server.JsX.JsStringOrNull
 
 
@@ -104,8 +105,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     // We don't want to change things like site hostname or settings, via this endpoint.
-    throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in patch")
-    throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in patch")
+    //throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in patch")
+    //throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in patch")
 
     val upsertedThings = doImportOrUpserts {
       SiteBackupImporterExporter(globals).upsertIntoExistingSite(
@@ -116,10 +117,77 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
+  import play.{api => p}
+  import play.api.mvc._
+  /*
+  Simpler, from the docs:
+  https://www.playframework.com/documentation/2.7.x/ScalaFileUpload
+  def upload = Action(parse.temporaryFile) { request =>
+    request.body.moveFileTo(Paths.get("/tmp/picture/uploaded"), replace = true)
+    Ok("File uploaded")
+  }
+
+
+  def restoreBackupOverwriteSite: Action[Either[MaxSizeExceeded, MultipartFormData[p.libs.Files.TemporaryFile]]] =
+        PostFilesAction(RateLimits.UploadFile, maxBytes = maxImportDumpBytes) { request =>
+
+    if (!request.theUser.isAdmin)
+      throwForbidden("TyE406MWKDGF", o"""Not admin""")
+
+    // Dupl code [5039RKJW45] ---------
+    val multipartFormData = request.body match {
+      case Left(maxExceeded: mvc.MaxSizeExceeded) =>
+        throwForbidden("TyE305MKBFWH", o"""Backup file too large: I got ${maxExceeded.length} bytes,
+      but size limit is $maxImportDumpBytes bytes""")
+      case Right(data) =>
+        data
+    }
+
+    val numFilesUploaded = multipartFormData.files.length
+    if (numFilesUploaded != 1)
+      throwBadRequest("TyE50SDDPRD", s"Upload exactly one file please — I got $numFilesUploaded files")
+
+    val files = multipartFormData.files.filter(_.key == "file")
+    if (files.length != 1)
+      throwBadRequest("TyE205MRKDHFT", s"Use the multipart form data key name 'file' please")
+
+    val file = files.head
+    // ----------- / Dupl code
+
+    val tempFile = file.ref
+    val path: java.nio.file.Path = tempFile.path
+
+    val jsonStr = com.google.common.io.Files.asCharSource(
+      tempFile.file, java.nio.charset.Charset.forName("UTF-8")).read()
+
+    val json = p.libs.json.Json.parse(jsonStr)
+
+    im portOverwriteImpl(request.underlying, json)
+  } */
+
+
+  def restoreBackupOverwriteSite(): Action[JsValue] = AdminPostJsonAction(
+        /* RateLimits.UpsertDump, */
+        maxBytes = maxImportDumpBytes) { request =>
+    // Dangerous endpoint, DoS attack risk.
+    throwForbiddenIf(
+      globals.isProd
+      && request.siteId != globals.defaultSiteId
+      && !security.hasOkForbiddenPassword(request)
+      && !globals.config.mayPatchSite(request.siteId),
+     "TyE7MKSDFTS20", "Not allowed, may currently only restore to the default site")
+    importOverwriteImpl(request.underlying, request.body,
+      DeleteWhatSite.WithId(request.siteId), isTest = false)
+  }
+
+
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
+
     throwForbiddenIf(deleteOldSite is true, "TyE56AKSD2", "Deleting old sites not yet well tested enough")
+    val deleteWhatSite = DeleteWhatSite.NoSite
+
     /*
     //val createdFromSiteId = Some(request.siteId)
     val response = importSiteImpl(
@@ -128,8 +196,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
-    val response = importSiteImpl(request, browserIdData, deleteOld = deleteOldSite is true,
-      isTest = false)
+    val response = importSiteImpl(request.body, browserIdData, deleteWhatSite, isTest = false)
     response.withCookies(moreNewCookies: _*)
   }
 
@@ -139,10 +206,17 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
     globals.testResetTime()
+    importOverwriteImpl(request, request.body, DeleteWhatSite.SameHostname, isTest = true)
+  }
+
+
+  private def importOverwriteImpl(request: play.api.mvc.Request[_], json: JsValue,
+        deleteWhatSite: DeleteWhatSite, isTest: Boolean)
+        : Result = {
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
-    val response = importSiteImpl(request, browserIdData, deleteOld = true, isTest = true)
+    val response = importSiteImpl(json, browserIdData, deleteWhatSite, isTest = isTest)
     response.withCookies(moreNewCookies: _*)
   }
 
@@ -152,22 +226,28 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   private var numImporingNow = 0
 
 
-  private def importSiteImpl(request: mvc.Request[JsValue], browserIdData: BrowserIdData,
-        deleteOld: Boolean, isTest: Boolean): mvc.Result = {
-    dieIf(deleteOld && !isTest, "TyE5FKWU02", "Can only delete old site, if is testing")
+  private def importSiteImpl(json: JsValue, browserIdData: BrowserIdData,
+      deleteWhatSite: DeleteWhatSite, isTest: Boolean): mvc.Result = {
 
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     val siteData = {
         val siteDump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
-          siteId = None, request.body, simpleFormat = false, isE2eTest = isTest)
+          siteId = None, json, simpleFormat = false, isE2eTest = isTest)
         throwBadRequestIf(siteDump.site.isEmpty, "TyE305MHKR2", "No site meta included in dump")
         throwBadRequestIf(siteDump.settings.isEmpty, "TyE5KW0PG", "No site settings included in dump")
         // Unless we're deleting any old site, don't import the new site's hostnames —
         // they can cause unique key errors. The site owner can instead add the right
         // hostnames via the admin interface later.
-        if (deleteOld) siteDump // won't be any unique key error
+        if (deleteWhatSite != DeleteWhatSite.NoSite) {
+          // Shouldn't be any unique key error. Can still happen though, if on a
+          // multi forum server, one restores a backup for *another* site with
+          // the hostname of that other site, to the current site. That'd be
+          // a user error though and shouldn't work. For now, a unique key
+          // error will be fine?
+          siteDump
+        }
         else {
           // Later: Could import the hostnames, if currently absent in the database?
           // However, maybe sometimes people import the same site many times, to test if works?
@@ -184,12 +264,13 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     val siteMeta = siteData.site.getOrDie("TyE04HKRG53")
 
     throwForbiddenIf(
-      deleteOld && !siteMeta.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
+      deleteWhatSite == DeleteWhatSite.SameHostname
+        && !siteMeta.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
       "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${Hostname.E2eTestPrefix}")
 
     val newSite = doImportOrUpserts {
       SiteBackupImporterExporter(globals).importCreateSite(
-        siteData, browserIdData, deleteOldSite = deleteOld)
+        siteData, browserIdData, deleteWhatSite)
     }
 
     val anyHostname = newSite.canonicalHostname.map(
@@ -212,6 +293,11 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       numImporingNow += 1
       try {
         block
+      }
+      catch {
+        case DbDao.SiteAlreadyExistsException(site, details) =>
+          throwForbidden("TyE6DKDT025", o"""There's another site with that name already,
+            details: $details""")
       }
       finally {
         numImporingNow -= 1

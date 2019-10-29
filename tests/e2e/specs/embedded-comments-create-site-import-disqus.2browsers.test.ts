@@ -60,6 +60,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
 
   function createPasswordTestData() {
+    // Dupl code [502KGAWH0]
     const testId = utils.generateTestId();
     const embeddingHostPort = `test--imp-dsq-${testId}.localhost:8080`;
     const localHostname     = `test--imp-dsq-${testId}-localhost-8080`;
@@ -78,6 +79,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   }
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
+    // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
@@ -128,6 +130,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
 
   function makeEmbeddingPage(urlPath: string, discussionId?: string) {
+    // Dupl code [046KWESJJLI3].
     owensBrowser.waitForVisible('#e_EmbCmtsHtml');
     let htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
     if (discussionId) {

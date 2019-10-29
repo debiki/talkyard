@@ -27,6 +27,7 @@ import org.jsoup.safety.Whitelist
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import talkyard.server.DeleteWhatSite
 
 
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
@@ -40,7 +41,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     // - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
     // - SiteDumpImporterAppSpec  TyT2496ANPJ3
 
-    dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
+    //dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
     val dao = globals.siteDao(siteId)
     val upsertedCategories = ArrayBuffer[Category]()
     val pageIdsWithBadStats = mutable.HashSet[PageId]()
@@ -161,6 +162,16 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val tempId = pageInPatch.pageId
         val extId = pageInPatch.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extId not implemented. Page temp imp id: $tempId")
+          // Aha? If site meta is incl, then, lazy create an extId here:
+          // publ-site-id:page-id:pge  ?
+          // & users:
+          // publ-sit-id:user-id:grp/usr/gst
+          // & cats:
+          // publ-sit-id:category-id:cat
+          // No, skip the suffixes 'pge', 'grp', etc — don't want dupl pubid:userid:STH,
+          // so don't incl STH.
+
+          // URL param:  ?  importWhat=EmbeddedComments  ?
 
         val pageIdInDbFromExtId = pagesInDbByExtId.get(extId).map(pageInDb => {
           throwBadRequestIf(!isPageTempId(tempId) && tempId != pageInDb.pageId,
@@ -210,8 +221,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       val ppsExtIds =
         siteData.guests.flatMap(_.extImpId)
-        // ++ siteData.users.flatMap(_.extImpId)  later
-        // ++ siteData.groups.flatMap(_.extImpId)  later
+        // ++ siteData.users.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
+        // ++ siteData.groups.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
 
       // If there're participants in the database with the same external ids
       // as some of those in the siteData, then, they are to be updated, and we
@@ -856,8 +867,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
   }
 
 
-  def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData, deleteOldSite: Boolean)
-        : Site = {
+  def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData,
+        deleteWhatSite: DeleteWhatSite): Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
       // Special pages shouldn't be reachable via any page path. Others, should.
@@ -897,7 +908,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       browserIdData = browserIdData,
       isTestSiteOkayToDelete = true,
       skipMaxSitesCheck = true,
-      deleteOldSite = deleteOldSite,
+      deleteWhatSite,
       pricePlan = "Unknown",  // [4GKU024S]
       createdFromSiteId = None)
 
@@ -915,49 +926,128 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
       summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
 
-    newDao.readWriteTransaction { transaction =>
+    newDao.readWriteTransaction { tx =>
       // We might import a forum or a forum category, and then the categories reference the
       // forum page, and the forum page references to the root category.
-      transaction.deferConstraints()
+      tx.deferConstraints()
 
-      transaction.upsertSiteSettings(siteSettings)
+      tx.upsertSiteSettings(siteSettings)
 
       siteData.guests foreach { guest: Guest =>
-        transaction.insertGuest(guest)
+        tx.insertGuest(guest)
+      }
+
+      siteData.guestEmailNotfPrefs foreach { case (emailAddr, pref) =>
+        tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
+      }
+
+      siteData.groups foreach { group: Group =>
+        // Dupl code, also for users' usernames. (603WKH7)
+        val usernameToInsert = siteData.usernameUsages.find(
+          _.usernameLowercase == group.theUsername.toLowerCase)
+        throwBadRequestIf(usernameToInsert.isEmpty,
+          "TyE06WKDL6", s"""Group ${group.idSpaceName}'s username
+            missing in siteData.usernameUsages""")
+        if (group.isBuiltIn) {
+          // Then it's in the database already. But maybe its name or settings has been changed?
+          tx.updateGroup(group)
+        }
+        else {
+          tx.insertGroup(group)
+        }
+      }
+
+      siteData.groupPps foreach { groupPp: GroupParticipant =>
+        unimplementedIf(!groupPp.isMember, "adding non-members [TyE305RKJ7]")
+        unimplementedIf(groupPp.isBouncer || groupPp.isAdder || groupPp.isManager,
+          "adding group bouncers, adders and managers [TyE305RKJ8]")
+        tx.addGroupMembers(groupPp.groupId, Set(groupPp.ppId))
       }
 
       siteData.users foreach { user =>
-        transaction.insertMember(user)
-        // [readlater] import page notf prefs [2ABKS03R]
-        // [readlater] export & import username usages & emails, later. For now, create new here.
-        user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
-        transaction.insertUsernameUsage(UsernameUsage(
-          usernameLowercase = user.usernameLowercase, // [CANONUN]
-          inUseFrom = transaction.now, userId = user.id))
-        // [readlater] export & import UserStats. For now, create new "empty" here.
-        transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
-          emailedAt = None))
-        newDao.joinGloballyPinnedChats(user.briefUser, transaction)
+        // Make it slightly simpler to construct site patches, by automatically
+        // generating UsernameUsage and UserEmailAddress and UserStats entries if needed.
+        if (user.primaryEmailAddress.nonEmpty &&
+            !siteData.memberEmailAddrs.exists(_.emailAddress == user.primaryEmailAddress)) {
+          user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
+        }
+        if (!siteData.usernameUsages.exists(_.usernameLowercase == user.usernameLowercase)) {
+          tx.insertUsernameUsage(UsernameUsage(
+            usernameLowercase = user.usernameLowercase, // [CANONUN]
+            inUseFrom = tx.now, userId = user.id))
+        }
+        if (!siteData.pptStats.exists(_.userId == user.id)) {
+           tx.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = tx.now,
+             emailedAt = None))
+        }
+        tx.insertMember(user)  // [UPSMEMBRNOW]
+        newDao.joinGloballyPinnedChats(user.briefUser, tx)
       }
+
+      siteData.pptStats foreach { pptStats: UserStats =>
+        tx.upsertUserStats(pptStats)
+      }
+
+      siteData.pptVisitStats foreach { visitStats: UserVisitStats =>
+        tx.upsertUserVisitStats(visitStats)
+      }
+
+      siteData.usernameUsages foreach { usernameUsage: UsernameUsage =>
+        tx.insertUsernameUsage(usernameUsage)
+      }
+
+      siteData.memberEmailAddrs foreach { meEmAddr: UserEmailAddress =>
+        tx.insertUserEmailAddress(meEmAddr)
+      }
+
+      siteData.identities foreach { identity: Identity =>
+        tx.insertIdentity(identity)
+      }
+
+      siteData.invites foreach { invite: Invite =>
+        tx.insertInvite(invite)
+      }
+
+      tx.saveDeleteNotifications(
+        Notifications(toCreate = siteData.notifications))
+
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()
-        transaction.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
+        tx.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
       }
+
       siteData.pagePaths foreach { path =>
-        transaction.insertPagePath(path)
+        tx.insertPagePath(path)
       }
+
+      siteData.pageIdsByAltIds foreach { case (altPageId: AltPageId, pageId: PageId) =>
+        tx.insertAltPageId(altPageId, realPageId = pageId)
+      }
+
+      siteData.pageNotfPrefs foreach { notfPref: PageNotfPref =>
+        tx.upsertPageNotfPref(notfPref)
+      }
+
       siteData.categories foreach { categoryMeta =>
         //val newId = transaction.nextCategoryId()
-        transaction.insertCategoryMarkSectionPageStale(categoryMeta)
+        tx.insertCategoryMarkSectionPageStale(categoryMeta)
       }
+
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
-        transaction.insertPost(post)
+        tx.insertPost(post)
         // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
       }
-      siteData.permsOnPages foreach { permission =>
-        transaction.insertPermsOnPages(permission)
+
+      siteData.postActions foreach { postAction =>
+        //val newId = transaction. ?
+        tx.insertPostAction(postAction)
       }
+
+      siteData.permsOnPages foreach { permission =>
+        tx.insertPermsOnPages(permission)
+      }
+
       // Or will this be a bit slow? Kind of loads everything we just imported.
       siteData.pages foreach { pageMeta =>  // (0926575)
         // [readlater] export & import page views too, otherwise page popularity here will be wrong.
@@ -965,8 +1055,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // performance wise — it's just one db query, to load all posts, vs one per post,
         // previously when inserting. At least not more than 2x slower, which should be ok
         // (simplicity = more important).
-        val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
-        newDao.updatePagePopularity(pagePartsDao, transaction)
+        val pagePartsDao = PagePartsDao(pageMeta.pageId, tx)
+        newDao.updatePagePopularity(pagePartsDao, tx)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
         val numReplies = pagePartsDao.allPosts.count(_.isReply)
         val correctMeta = pageMeta.copy(
@@ -976,7 +1066,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           numRepliesVisible = numReplies,
           numRepliesTotal = numReplies,
           numPostsTotal = pagePartsDao.numPostsTotal)
-        transaction.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
+        tx.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
+      }
+
+      siteData.reviewTasks foreach { reviewTask: ReviewTask =>
+        tx.upsertReviewTask(reviewTask)
       }
     }
 

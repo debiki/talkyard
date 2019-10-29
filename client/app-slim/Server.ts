@@ -132,6 +132,65 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
+export function uploadFiles(endpoint: string, files: any, onDone, onError) {
+  dieIf(files.length > 1, 'TyE06WKTDN23');
+  const headers = {};
+  headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');
+  // 'Content-Type': 'application/json'
+  fetch(endpoint, {
+    method: 'POST',
+    body: files[0],
+    headers,
+  })
+  .then((response: Response) => {
+    console.log("Uploaded file. [TyM306KWRDF2]");
+    // Clone the respones, otherwie `.text()` fails with a
+    // "TypeError: Failed to execute 'text' on 'Response': body stream is locked" error,
+    // if one has Dev Tools open and inspects the response in Dev Tools.
+    return response.clone().text().then(
+      responseText => cloneReponseToObj(response, responseText));
+  })
+  .then((respObj: ResponseObj) => {
+    if (respObj.status !== 200) {
+      const errCode = 'TyEBADFETCHRESP';
+      const message = `Status ${respObj.status} error when uploading file ` +
+          `to ${endpoint} [${errCode}]:\n\n${respObj.responseText}`;
+      console.error(message);
+      pagedialogs.getServerErrorDialog().open(respObj);
+      onError(message);
+      return errCode;
+    }
+    else {
+      // Remove any AngularJS safe json prefix. [5LKW02D4]
+      const jsonStr = respObj.responseText.replace(/^\)]}',\n/, '');
+      const json = JSON.parse(jsonStr);
+      onDone(json);
+      return json;
+    }
+  })
+  .catch(error => {
+    console.error(`Error uploading file to ${endpoint} [TyE7FKSH260]`, error);
+    pagedialogs.getServerErrorDialog().open(error);
+    onError(error);
+    return error;
+  });
+}
+
+
+function cloneReponseToObj(response: Response, responseText: string): ResponseObj {
+  return {
+    headers: response.headers,
+    ok: response.ok,
+    redirected: response.redirected,
+    status: response.status,
+    statusText: response.statusText,
+    type: response.type,
+    url: response.url,
+    responseText,
+  };
+}
+
+
 function trySendBeacon(url, data) {
   // sendBeacon is not supported in Safari and iOS as of Feb 2017 ... and Aug 2018.
   let sendBeacon = navigator['sendBeacon'];

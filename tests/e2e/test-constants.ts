@@ -110,5 +110,9 @@ export = {
   AlwaysSpamText: '--viagra-test-123--',
   AlwaysSpamEmailAddr: 'akismet-guaranteed-spam@example.com',
   SafeBrowsingMalwareLink: 'http://malware.testing.google.test/testing/malware/*',
+
+  EmbCommentsJsonExport: 'target/emb-comments-site-dump.json',
+  EmbCommentsJsonExportCopy: 'target/emb-comments-site-dump.COPY.json',
+  EmbCommentsJsonExportCopyFileName: 'emb-comments-site-dump.COPY.json',
 };
 

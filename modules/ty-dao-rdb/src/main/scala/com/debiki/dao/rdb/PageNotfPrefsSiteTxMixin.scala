@@ -138,6 +138,10 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
   }
 
 
+  def loadAllPageNotfPrefs(): Seq[PageNotfPref] = {
+    loadPageNotfPrefsOnSth(null, null)
+  }
+
   def loadPageNotfPrefsOnPage(pageId: PageId): Seq[PageNotfPref] = {
     loadPageNotfPrefsOnSth("page_id", pageId)
   }
@@ -152,13 +156,18 @@ trait PageNotfPrefsSiteTxMixin extends SiteTransaction {
 
   private def loadPageNotfPrefsOnSth(thingColumnName: String, thingColumnValue: AnyRef)
       : Seq[PageNotfPref] = {
+    val values = ArrayBuffer(siteId.asAnyRef)
+    val andThingEq =
+      if (thingColumnName eq null) ""
+      else {
+        values.append(thingColumnValue)
+        s"and $thingColumnName = ?"
+      }
     val query = s"""
       select * from page_notf_prefs3
-      where site_id = ?
-        and $thingColumnName = ?
+      where site_id = ? $andThingEq
       """
-    val values = List(siteId.asAnyRef, thingColumnValue)
-    runQueryFindMany(query, values, readNotfPref)
+    runQueryFindMany(query, values.toList, readNotfPref)
   }
 
 

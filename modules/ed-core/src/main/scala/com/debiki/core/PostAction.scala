@@ -22,10 +22,11 @@ import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
 
-sealed abstract class PostActionType
+sealed abstract class PostActionType { def toInt: Int }
+// fromInt: see  [402KTHRNPQw]
 
 
-sealed abstract class PostVoteType(val IntVal: Int) extends PostActionType { def toInt = IntVal }
+sealed abstract class PostVoteType(val IntVal: Int) extends PostActionType { def toInt: Int = IntVal }
 object PostVoteType {
   // dupl numbers [2PKWQUT0] perhaps use 1,2,4,8 instead? [8FEX1Q4]
   case object Like extends PostVoteType(41)

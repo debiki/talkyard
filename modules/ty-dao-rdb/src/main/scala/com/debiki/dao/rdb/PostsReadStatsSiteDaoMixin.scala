@@ -132,6 +132,17 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
+  def loadAllUserStats(): immutable.Seq[UserStats] = {
+    val query = s"""
+      select * from user_stats3
+      where site_id = ?
+        -- Exclude built-in users like System:
+        and (user_id <= $MaxCustomGuestId or $LowestAuthenticatedUserId <= user_id)
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), getUserStats)
+  }
+
+
   def upsertUserStats(userStats: UserStats) {
     // Dupl code, also in Scala [7FKTU02], perhaps add param `addToOldStats: Boolean`?
     val statement = s"""
@@ -284,16 +295,34 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
   }
 
 
+  def loadAllUserVisitStats(): immutable.Seq[UserVisitStats] = {
+    loadUserVisitStatsImpl(None)
+  }
+
+
   def loadUserVisitStats(memberId: UserId): immutable.Seq[UserVisitStats] = {
-    require(memberId >= LowestNonGuestId, "EdE84SZMI8")
-    val query = """
+    loadUserVisitStatsImpl(Some(memberId))
+  }
+
+
+  def loadUserVisitStatsImpl(memberId: Option[UserId]): immutable.Seq[UserVisitStats] = {
+    require(memberId.forall(_ >= LowestNonGuestId), "EdE84SZMI8")
+    val values = ArrayBuffer(siteId.asAnyRef)
+
+    val andUserIdEq = memberId map { id =>
+      values.append(id.asAnyRef)
+      "and user_id = ?"
+    } getOrElse ""
+
+    val query = s"""
       select * from user_visit_stats3
-      where site_id = ? and user_id = ?
+      where site_id = ? $andUserIdEq
       order by visit_date desc
       """
-    runQueryFindMany(query, List(siteId.asAnyRef, memberId.asAnyRef), rs => {
+
+    runQueryFindMany(query, values.toList, rs => {
       UserVisitStats(
-        userId = memberId,
+        userId = rs.getInt("user_id"),
         visitDate = getWhen(rs, "visit_date").toDays,
         numSecondsReading = rs.getInt("num_seconds_reading"),
         numDiscourseRepliesRead = rs.getInt("num_discourse_replies_read"),

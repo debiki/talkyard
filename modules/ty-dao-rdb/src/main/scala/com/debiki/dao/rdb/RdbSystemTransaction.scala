@@ -511,9 +511,10 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
     runQuery(query, values, rs => {
       while (rs.next) {
+        val siteId = rs.getInt("site_id")
         val notf = getNotification(rs)
-        val notfsForTenant: Vector[Notification] = notfsByTenant(notf.siteId)
-        notfsByTenant = notfsByTenant + (notf.siteId -> (notfsForTenant :+ notf))
+        val notfsForTenant: Vector[Notification] = notfsByTenant(siteId)
+        notfsByTenant = notfsByTenant + (siteId -> (notfsForTenant :+ notf))
       }
     })
 

@@ -261,6 +261,20 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllAltPageIds(): Map[AltPageId, PageId] = {
+    val sql = s"""
+      select alt_page_id, real_page_id
+      from alt_page_ids3
+      where site_id = ?
+      """
+    runQueryBuildMap(sql, List(siteId.asAnyRef), rs => {
+      val altId = rs.getString("alt_page_id")
+      val realId = rs.getString("real_page_id")
+      altId -> realId
+    })
+  }
+
+
   override def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr] = {
     // Tested here: [7WKABZP2]
     if (postIds.isEmpty)

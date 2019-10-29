@@ -65,42 +65,41 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
 
-  def createDefaultGroupsAndPermissions(tx: SiteTransaction) {
+  def makeDefaultGroups(now: When): Seq[Group] = {
     import Group._
-    val now = tx.now
 
     val Everyone = Group(
-      EveryoneId, "everyone", Some("Everyone"), createdAt = now, grantsTrustLevel = None)
+      EveryoneId, "everyone", Some("Everyone"), createdAt = now) // , grantsTrustLevel = None)
     val New = Group(
-      AllMembersId, "all_members", Some("All Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.NewMember))
+      AllMembersId, "all_members", Some("All Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.NewMember))
     val Basic = Group(
-      BasicMembersId, "basic_members", Some("Basic Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.BasicMember))
+      BasicMembersId, "basic_members", Some("Basic Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.BasicMember))
     val Full = Group(
-      FullMembersId, "full_members", Some("Full Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.FullMember))
+      FullMembersId, "full_members", Some("Full Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.FullMember))
     val Trusted = Group(
-      TrustedMembersId, "trusted_members", Some("Trusted Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.TrustedMember))
+      TrustedMembersId, "trusted_members", Some("Trusted Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.TrustedMember))
     val Regular = Group(
       // RENAME to  "Trusted Regulars"  [RENREGLS]
-      RegularMembersId, "regular_members", Some("Regular Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.RegularMember))
+      RegularMembersId, "regular_members", Some("Regular Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.RegularMember))
     val Core = Group(
-      CoreMembersId, "core_members", Some("Core Members"), createdAt = now, grantsTrustLevel = Some(TrustLevel.CoreMember))
+      CoreMembersId, "core_members", Some("Core Members"), createdAt = now) // , grantsTrustLevel = Some(TrustLevel.CoreMember))
     val Staff = Group(
-      StaffId, "staff", Some("Staff"), createdAt = now, grantsTrustLevel = None)
+      StaffId, "staff", Some("Staff"), createdAt = now) // , grantsTrustLevel = None)
     val Moderators = Group(
-      ModeratorsId, "moderators", Some("Moderators"), createdAt = now, grantsTrustLevel = None)
+      ModeratorsId, "moderators", Some("Moderators"), createdAt = now) // , grantsTrustLevel = None)
     val Admins = Group(
-      AdminsId, "admins", Some("Admins"), createdAt = now, grantsTrustLevel = None)
+      AdminsId, "admins", Some("Admins"), createdAt = now) // , grantsTrustLevel = None)
 
-    insertGroupAndUsernameUsage(Everyone, tx)
-    insertGroupAndUsernameUsage(New, tx)
-    insertGroupAndUsernameUsage(Basic, tx)
-    insertGroupAndUsernameUsage(Full, tx)
-    insertGroupAndUsernameUsage(Trusted, tx)
-    insertGroupAndUsernameUsage(Regular, tx)
-    insertGroupAndUsernameUsage(Core, tx)
-    insertGroupAndUsernameUsage(Staff, tx)
-    insertGroupAndUsernameUsage(Moderators, tx)
-    insertGroupAndUsernameUsage(Admins, tx)
+    Vector(
+      Everyone, New, Basic, Full, Trusted, Regular, Core, Staff, Moderators, Admins)
+  }
+
+
+  def createDefaultGroupsAndPermissions(tx: SiteTransaction) {
+    val groups = makeDefaultGroups(tx.now)
+    groups foreach { g =>
+      insertGroupAndUsernameUsage(g, tx)
+    }
   }
 
 

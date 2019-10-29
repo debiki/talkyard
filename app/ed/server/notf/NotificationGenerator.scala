@@ -69,7 +69,6 @@ case class NotificationGenerator(
         avoidDuplEmailToUserIds += staffUser.id
         notfsToCreate += Notification.NewPost(
           NotificationType.NewPostReviewTask,
-          siteId = tx.siteId,
           id = bumpAndGetNextNotfId(),
           createdAt = newPost.createdAt,
           uniquePostId = newPost.id,
@@ -300,7 +299,6 @@ case class NotificationGenerator(
           sentToUserIds += groupId
           notfsToCreate += Notification.NewPost(
             notfType,
-            siteId = tx.siteId,
             id = bumpAndGetNextNotfId(),
             createdAt = newPost.createdAt,
             uniquePostId = newPost.id,
@@ -362,7 +360,6 @@ case class NotificationGenerator(
         sentToUserIds += toUserId
         notfsToCreate += Notification.NewPost(
           notfType,
-          siteId = tx.siteId,
           id = bumpAndGetNextNotfId(),
           createdAt = newPost.createdAt,
           uniquePostId = newPost.id,
@@ -465,7 +462,6 @@ case class NotificationGenerator(
       sentToUserIds += member.id
       notfsToCreate += Notification.NewPost(
         NotificationType.NewPost,
-        siteId = tx.siteId,
         id = bumpAndGetNextNotfId(),
         createdAt = newPost.createdAt,
         uniquePostId = newPost.id,

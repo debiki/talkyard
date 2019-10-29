@@ -21,6 +21,7 @@
 /// <reference path="api-panel.staff.ts" />
 /// <reference path="users.staff.ts" />
 /// <reference path="contents-panel.staff.ts" />
+/// <reference path="backup-panel.staff.ts" />
 /// <reference path="users-one.staff.ts" />
 /// <reference path="hostname-editor.staff.ts" />
 
@@ -283,6 +284,9 @@ const AdminAppComponent = createReactClass(<any> {
     const customizeLink = me.isAdmin ?
         LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;
 
+    const backupLink = me.isAdmin && currentSettings.showExperimental ?
+        LiNavLink({ to: ar + 'backup', className: 'e_BkpB' }, "Backup") : null;
+
     const apiLink = me.isAdmin && currentSettings.enableApi ?
       LiNavLink({ to: ar + 'api', className: 'e_ApiB' }, "API") : null;
 
@@ -318,6 +322,7 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
         Route({ path: ar + 'contents', render: () => ContentsPanel(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
+        Route({ path: ar + 'backup', render: () => BackupPanel(childProps) }),
         Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
         Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
 
@@ -330,6 +335,7 @@ const AdminAppComponent = createReactClass(<any> {
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
             contentsLink,
             customizeLink,
+            backupLink,
             apiLink,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
           childRoutes,

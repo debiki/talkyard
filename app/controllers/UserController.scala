@@ -481,7 +481,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         case x =>
           (classNameOf(x), None)
       }
-      Json.obj(  // UserAccountLoginMethod
+      Json.obj(  // Typescript: UserAccountLoginMethod
+        // COULD instead use: JsIdentity  ?
         "loginType" -> classNameOf(identity),
         "provider" -> provider,
         "email" -> JsStringOrNull(email))

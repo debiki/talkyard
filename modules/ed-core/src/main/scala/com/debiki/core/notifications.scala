@@ -107,7 +107,6 @@ object NotificationType {
 
 
 sealed abstract class Notification {
-  def siteId: SiteId
   def id: NotificationId
   def createdAt: ju.Date
   def tyype: NotificationType
@@ -124,7 +123,6 @@ object Notification {
     */
   case class NewPost(  // [exp] fine, del from db: delete:  page_id  action_type  action_sub_id
     notfType: NotificationType,
-    siteId: SiteId,
     id: NotificationId,
     createdAt: ju.Date,
     uniquePostId: PostId,

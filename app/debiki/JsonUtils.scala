@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core.Prelude._
-import com.debiki.core.When
+import com.debiki.core.{When, WhenDay}
 import java.{util => ju}
 import play.api.libs.json._
 
@@ -86,7 +86,38 @@ object JsonUtils {
   }
 
 
-  def readInt(json: JsValue, fieldName: String, altName: String = "", default: Option[Int] = None): Int =
+  def readFloat(json: JsValue, fieldName: String, altName: String = "", default: Option[Float] = None): Float =
+    readOptFloat(json, fieldName).orElse(readOptFloat(json, altName)).map(_.toFloat).orElse(default)
+      .getOrElse(throwMissing("TyE06KPW2", fieldName))
+
+
+  def readOptFloat(json: JsValue, fieldName: String, altName: String = ""): Option[Float] = {
+    readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)) map { valueAsLong =>
+      if (valueAsLong > Float.MaxValue)
+        throwBadJson("TyE603WMDC7", s"$fieldName is too large for an Float: $valueAsLong")
+      if (valueAsLong < Float.MinValue)
+        throwBadJson("TyE20XKD38", s"$fieldName is too small for an Float: $valueAsLong")
+      valueAsLong.toInt
+    }
+  }
+
+
+  def readDouble(json: JsValue, fieldName: String, altName: String = "", default: Option[Double] = None): Double =
+    readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)).orElse(default)
+      .getOrElse(throwMissing("TyE078RVF3", fieldName))
+
+
+  def readOptDouble(json: JsValue, fieldName: String, altName: String = ""): Option[Double] = {
+    (json \ fieldName).validateOpt[Double] match {
+      case JsSuccess(value, _) => value
+      case JsError(errors) =>
+        throwBadJson("TyE603RMDJV", s"'$fieldName' is not a Double: " + errors.toString())
+    }
+  }
+
+
+  def readInt(json: JsValue, fieldName: String, altName: String = "",
+        default: Option[Int] = None): Int =
     readOptInt(json, fieldName).orElse(readOptInt(json, altName)).orElse(default)
       .getOrElse(throwMissing("EsE5KPU3", fieldName))
 
@@ -130,6 +161,10 @@ object JsonUtils {
 
   def readWhen(json: JsValue, fieldName: String): When =
     When.fromDate(readDateMs(json, fieldName: String))
+
+
+  def readWhenDay(json: JsValue, fieldName: String): WhenDay =
+    WhenDay.fromDate(readDateMs(json, fieldName: String))
 
 
   def readOptWhen(json: JsValue, fieldName: String): Option[When] =

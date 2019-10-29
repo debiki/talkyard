@@ -109,6 +109,18 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllNotifications(): Seq[Notification] = {
+    val query = s"""
+      select * from notifications3
+      where site_id = ?
+      """
+    val values = List(siteId.asAnyRef)
+    runQueryFindMany(query, values, rs => {
+      RdbUtil.getNotification(rs)
+    })
+  }
+
+
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,
         skipDeleted: Boolean, upToWhen: Option[ju.Date]): Seq[Notification] = {
     val notfsBySiteId = asSystem.loadNotfsImpl(   // COULD specify consumers

@@ -45,21 +45,26 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       "read back, it's empty" in {
         val dump = SiteBackupMaker(context = context).loadSiteDump(site.id)
-        val expectedDump = SiteBackup.empty.copy(site = Some(SiteInclDetails(
-          id = dump.theSite.id,
-          pubId = dump.theSite.pubId,
-          status = SiteStatus.Active,
-          name = "site-" + siteName,
-          createdAt = dump.theSite.createdAt,
-          createdFromIp = Some(browserIdData.ip),
-          creatorEmailAddress = None,
-          nextPageId = 1,
-          quotaLimitMbs = testForumQuotaLimit,
-          hostnames = Vector(HostnameInclDetails(
-            hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
-          version = 1,
-          numParticipants = 13,  // 10 built-in groups, plus the System, Sysbot and Unknown users
-        )))
+        val expectedDump = SiteBackup.empty.copy(
+          site =
+            Some(SiteInclDetails(
+              id = dump.theSite.id,
+              pubId = dump.theSite.pubId,
+              status = SiteStatus.Active,
+              name = "site-" + siteName,
+              createdAt = dump.theSite.createdAt,
+              createdFromIp = Some(browserIdData.ip),
+              creatorEmailAddress = None,
+              nextPageId = 1,
+              quotaLimitMbs = testForumQuotaLimit,
+              hostnames = Vector(HostnameInclDetails(
+                hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+              version = 1,
+              numParticipants = 13  // 10 built-in groups, plus the System, Sysbot and Unknown users
+            )),
+          // Built-in groups are included in the dump, because they can be renamed.
+          groups =
+            CreateSiteDao.makeDefaultGroups(context.globals.now()))
         dump mustBe expectedDump
       }
     }
@@ -81,7 +86,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             id = { dieIf(MaxCustomGuestId != -10, "TyE3935PN64G"); MaxCustomGuestId },
             // This is the default, overrides the value in the Guest
             // instance imported above: (50525205)
-            emailNotfPrefs = EmailNotfPrefs.Unspecified)))
+            emailNotfPrefs = EmailNotfPrefs.Unspecified)),
+        groups =
+          CreateSiteDao.makeDefaultGroups(context.globals.now()))
 
       var expectedDump: SiteBackup = null
       var actualDump: SiteBackup = null
@@ -162,6 +169,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             // This is from guestEmailNotfPrefs, and overrides the value in the Guest
             // instance imported above: (50525205)
             emailNotfPrefs = EmailNotfPrefs.DontReceive)),
+        groups =
+          CreateSiteDao.makeDefaultGroups(context.globals.now()),
         categories = Vector(
           CategoryWithSectPageId333.copy(
             id = baseCatRealId, sectionPageId = sectPageRealId, defaultSubCatId = Some(subCatRealId)),
@@ -264,6 +273,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       val expUpsCatRealId = 3
 
       lazy val expectedDumpWithoutSiteMeta = initialDumpToUpsert.copy(
+        groups =
+          CreateSiteDao.makeDefaultGroups(context.globals.now()),
         categories = Vector(
           CategoryWithSectPageId333.copy(
             id = expBaseCatRealId, sectionPageId = expectedSectPageId,
@@ -424,6 +435,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       val expUpsCatRealId = 3
 
       lazy val expectedDumpWithoutSiteMeta = initialDumpToUpsert.copy(
+        groups =
+          CreateSiteDao.makeDefaultGroups(context.globals.now()),
         categories = Vector(
           CategoryWithSectPageId333.copy(
             id = expBaseCatRealId, sectionPageId = expectedSectPageId,

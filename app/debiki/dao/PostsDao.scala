@@ -1677,7 +1677,9 @@ trait PostsDao {
       }
 
       try {
-        tx.insertVote(post.id, pageId, postNr, voteType, voterId = voterId)
+        tx.insertPostAction(
+          PostVote(post.id, pageId = post.pageId, postNr = post.nr, doneAt = tx.now,
+            voterId = voterId, voteType))
       }
       catch {
         case DbDao.DuplicateVoteException =>
@@ -1913,7 +1915,9 @@ trait PostsDao {
         tx.updatePost(postAfter)
       }
 
-      tx.insertFlag(postBefore.id, pageId, postNr, flagType, flaggerId)
+      tx.insertPostAction(
+        PostFlag(postBefore.id, pageId = pageId, postNr = postNr,
+          doneAt = tx.now, flaggerId = flaggerId, flagType = flagType))
       tx.upsertReviewTask(reviewTask)
       (postAfter, shallHide)
     }

@@ -25,9 +25,11 @@ import org.scalatest._
 import org.scalatestplus.play.{BaseOneAppPerSuite, BaseOneAppPerTest, FakeApplicationFactory}
 import DaoAppSuite._
 import java.io.File
+
 import play.api.inject.DefaultApplicationLifecycle
 import play.api._
 import play.core.DefaultWebCommands
+import talkyard.server.DeleteWhatSite
 
 
 
@@ -129,7 +131,7 @@ class DaoAppSuite(
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
       creatorId = UnknownUserId, browserIdData,
       isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-      deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
+      deleteWhatSite = DeleteWhatSite.NoSite, pricePlan = "Unknown", createdFromSiteId = None)
     val dao = globals.siteDao(site.id)
     if (settings != SettingsToSave()) {
       dao.readWriteTransaction { tx =>

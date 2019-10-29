@@ -239,6 +239,7 @@ package object core {
     override def toString: String = unixDays.toString + "days"
   }
 
+
   object WhenDay {
     def fromDate(date: ju.Date): WhenDay = fromMillis(date.getTime)
     def fromDays(unixDays: Int) = new WhenDay(unixDays)
@@ -345,6 +346,7 @@ package object core {
   def MaxCustomGuestId: UserId = Participant.MaxCustomGuestId
   def LowestNonGuestId: UserId = Participant.LowestNonGuestId
   def LowestTalkToMemberId: UserId = Participant.LowestTalkToMemberId
+  def LowestAuthenticatedUserId: UserId = Participant.LowestAuthenticatedUserId
 
   val FirstRevisionNr: Int = PostRevision.FirstRevisionNr
 

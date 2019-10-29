@@ -21,7 +21,10 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.JsonUtils
 import java.{util => ju}
+
+import com.debiki.core.Notification.NewPost
 import play.api.libs.json._
+
 import scala.collection.immutable
 
 
@@ -83,12 +86,14 @@ object JsX {
   }
 
 
-  def JsInvite(invite: Invite, shallHideEmailLocalPart: Boolean): JsObject = {
+  def JsInvite(invite: Invite, shallHideEmailLocalPart: Boolean, inclSecret: Boolean = false): JsObject = {
     val safeEmail =
       if (shallHideEmailLocalPart) hideEmailLocalPart(invite.emailAddress)
       else invite.emailAddress
-    Json.obj(   // change Typescript interface Invite to this [REFINVFLDS]
+    var json = Json.obj(   // change Typescript interface Invite to this [REFINVFLDS]
       "invitedEmailAddress" -> safeEmail,
+      "startAtUrl" -> invite.startAtUrl,
+      "addToGroupIds" -> JsArray(invite.addToGroupIds.toSeq.map(id => JsNumber(id))),
       "invitedById" -> invite.createdById,
       "invitedAt" -> invite.createdAt.getTime,
       "acceptedAt" -> JsDateMsOrNull(invite.acceptedAt),
@@ -96,6 +101,10 @@ object JsX {
       "deletedAt" -> JsDateMsOrNull(invite.deletedAt),
       "deletedById" -> JsNumberOrNull(invite.deletedById),
       "invalidatedAt" -> JsDateMsOrNull(invite.invalidatedAt))
+    if (inclSecret) {
+      json += "secretKey" -> JsString(invite.secretKey)
+    }
+    json
   }
 
 
@@ -164,9 +173,10 @@ object JsX {
         usersById: Map[UserId, User], // CLEAN_UP remove, send back a user map instead
         groups: immutable.Seq[Group],
         callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
-        anyStats: Option[UserStats] = None)
+        anyStats: Option[UserStats] = None, inclPasswordHash: Boolean = false)
       : JsObject = {
     def callerIsStaff_ = callerIsAdmin || callerIsStaff
+    dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
     var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
       "externalId" -> JsStringOrNull(user.externalId),
@@ -202,6 +212,8 @@ object JsX {
       userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)  // RENAME emailAddr...
       userJson += "emailVerifiedAt" -> JsDateMsOrNull(user.emailVerifiedAt)
       userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
+      if (inclPasswordHash)
+        userJson += "passwordHash" -> JsStringOrNull(user.passwordHash)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       if (groups.nonEmpty) userJson += "summaryEmailIntervalMins" ->
         JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))
@@ -239,6 +251,7 @@ object JsX {
 
 
   def JsUserStats(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
+    val tourTipsIds: immutable.Seq[String] = stats.tourTipsSeen getOrElse Nil
     var result = Json.obj(
       "userId" -> stats.userId,
       "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
@@ -261,7 +274,8 @@ object JsX {
       "numChatTopicsCreated" -> stats.numChatTopicsCreated,
       "numLikesGiven" -> stats.numLikesGiven,
       "numLikesReceived" -> stats.numLikesReceived,
-      "numSolutionsProvided" -> stats.numSolutionsProvided)
+      "numSolutionsProvided" -> stats.numSolutionsProvided,
+      "tourTipsSeen" -> JsArray(tourTipsIds.map(JsString)))
     if (isStaffOrSelf) {
       result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
       result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
@@ -274,11 +288,56 @@ object JsX {
   }
 
 
+  def JsUserVisitStats(stats: UserVisitStats): JsObject = {
+    Json.obj(
+      "userId" -> stats.userId,
+      "visitDate" -> JsWhenDayMs(stats.visitDate),
+      "numSecondsReading" -> stats.numSecondsReading,
+      "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
+      "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
+      "numChatMessagesRead" -> stats.numChatMessagesRead,
+      "numChatTopicsEntered" -> stats.numChatTopicsEntered)
+  }
+
+
+  def JsUsernameUsage(usernameUsage: UsernameUsage): JsObject = {
+    Json.obj(
+      "usernameLowercase" -> usernameUsage.usernameLowercase,
+      "inUseFrom" -> JsWhenMs(usernameUsage.inUseFrom),
+      "inUseTo" -> JsWhenMsOrNull(usernameUsage.inUseTo),
+      "userId" -> usernameUsage.userId,
+      "firstMentionAt" -> JsWhenMsOrNull(usernameUsage.firstMentionAt))
+  }
+
+
+  def JsIdentity(identity: Identity): JsObject = {
+    identity match {
+      case oauIdty: OpenAuthIdentity =>
+        val details = oauIdty.openAuthDetails
+        Json.obj(
+          "identityType" -> "OpenAuth",
+          "id" -> oauIdty.id,
+          "userId" -> oauIdty.userId,
+          "providerId" -> details.providerId,
+          "providerKey" -> details.providerKey,
+          "firstName" -> JsStringOrNull(details.firstName),
+          "lastName" -> JsStringOrNull(details.lastName),
+          "fullName" -> JsStringOrNull(details.fullName),
+          "email" -> JsStringOrNull(details.email),
+          "avatarUrl" -> JsStringOrNull(details.avatarUrl))
+      case identityOpenId: IdentityOpenId =>
+        unimplemented("IdentityOpenId to json [TyE305KRT01]")
+      case identityEmailId: IdentityEmailId =>
+        unimplemented("IdentityEmailIdT to json [yE305KRT02]")
+    }
+  }
+
+
   def JsGroup(group: Group): JsObject = {
     var json = Json.obj(
       "id" -> group.id,
       "username" -> group.theUsername,
-      "fullName" -> group.name,
+      "fullName" -> JsStringOrNull(group.name),
       "isGroup" -> JsTrue)
       // "grantsTrustLevel" -> group.grantsTrustLevel)
     group.tinyAvatar foreach { uploadRef =>
@@ -301,6 +360,10 @@ object JsX {
 
   def JsGroupInclDetails(group: Group, inclEmail: Boolean): JsObject = {
     var json = JsGroup(group)
+    json += "extImpId" -> JsStringOrNull(group.extImpId)
+    json += "createdAt" -> JsWhenMs(group.createdAt)
+    // "tinyAvatar"
+    // "smallAvatar"
     json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
     json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
     json += "grantsTrustLevel" -> JsNumberOrNull(group.grantsTrustLevel.map(_.toInt))
@@ -309,12 +372,41 @@ object JsX {
   }
 
 
+  def JsGroupParticipant(groupPp: GroupParticipant): JsObject = {
+    Json.obj(
+      "groupId" -> groupPp.groupId,
+      "ppId" -> groupPp.ppId,
+      "isMember" -> groupPp.isMember,
+      "isManager" -> groupPp.isManager,
+      "isAdder" -> groupPp.isAdder,
+      "isBouncer" -> groupPp.isBouncer)
+  }
+
   def JsMemberEmailAddress(member: UserEmailAddress): JsObject = {
     Json.obj(
       "userId" -> member.userId,
       "emailAddress" -> member.emailAddress,
       "addedAt" -> JsWhenMs(member.addedAt),
       "verifiedAt" -> JsWhenMsOrNull(member.verifiedAt))
+  }
+
+
+  def JsNotf(notf: Notification): JsObject = {
+    // Related code, for the web app: makeNotificationsJson [305RKDAP25]
+    var json = Json.obj(
+      "id" -> notf.id,
+      "createdAt" -> JsDateMs(notf.createdAt),
+      "notfType" -> notf.tyype.toInt,
+      "toUserId" -> notf.toUserId,
+      "emailId" -> JsStringOrNull(notf.emailId),
+      "emailStatus" -> notf.emailStatus.toInt,
+      "seenAt" -> JsDateMsOrNull(notf.seenAt))
+    notf match {
+      case np: NewPost =>
+        json += "postId" -> JsNumber(np.uniquePostId)
+        json += "byUserId" -> JsNumber(np.byUserId)
+    }
+    json
   }
 
 
@@ -419,6 +511,17 @@ object JsX {
   }
 
 
+  def JsPostAction(postAction: PostAction): JsObject = {
+    Json.obj(
+      "postId" -> postAction.uniqueId,
+      "pageId" -> postAction.pageId,
+      "postNr" -> postAction.postNr,
+      "doneAt" -> JsWhenMs(postAction.doneAt),
+      "doerId" -> postAction.doerId,
+      "actionType" -> postAction.actionType.toInt)
+  }
+
+
   def JsCategoryInclDetails(category: Category): JsObject = {
     Json.obj(
       "id" -> category.id,  // : CategoryId,
@@ -494,8 +597,7 @@ object JsX {
   def JsSpamCheckResult(spamCheckResult: SpamCheckResult): JsObject = {
     var result = Json.obj(
       "spamCheckerDomain" -> spamCheckResult.spamCheckerDomain,
-      "isSpam" -> spamCheckResult.isSpam,  // read here: [02MRHL2]
-    )
+      "isSpam" -> spamCheckResult.isSpam)  // read here: [02MRHL2]
     spamCheckResult match {
       case spamFoundResult: SpamCheckResult.SpamFound =>
         result += "isCertain" -> JsBoolean(spamFoundResult.isCertain)
@@ -534,6 +636,9 @@ object JsX {
 
   def JsWhenMs(when: When) =
     JsNumber(when.unixMillis)
+
+  def JsWhenDayMs(when: WhenDay) =
+    JsNumber(when.unixDays.toLong * MillisPerDay)
 
   def readJsWhen(json: JsObject, field: String): When =
     JsonUtils.readWhen(json, field)
@@ -604,6 +709,29 @@ object JsX {
       "deletedAt" -> JsWhenMsOrNull(apiSecret.deletedAt),
       "isDeleted" -> apiSecret.isDeleted,
       "secretKey" -> JsString(apiSecret.secretKey))
+  }
+
+
+  def JsReviewTask(reviewTask: ReviewTask): JsObject = {
+    // Related code: JsReviewTask [073SMDR26]
+    Json.obj(
+      "id" -> reviewTask.id,
+      "reasonsLong" -> ReviewReason.toLong(reviewTask.reasons),
+      "createdById" -> reviewTask.createdById,
+      "createdAt" -> JsDateMs(reviewTask.createdAt),
+      "createdAtRevNr" -> JsNumberOrNull(reviewTask.createdAtRevNr),
+      "moreReasonsAt" -> JsDateMsOrNull(reviewTask.moreReasonsAt),
+      //moreReasonsAtRevNr: Option[ju.Date] = None,
+      "decidedAt" -> JsDateMsOrNull(reviewTask.decidedAt),
+      "completedAt" -> JsDateMsOrNull(reviewTask.completedAt),
+      "decidedAtRevNr" -> JsNumberOrNull(reviewTask.decidedAtRevNr),
+      "decidedById" -> JsNumberOrNull(reviewTask.decidedById),
+      "invalidatedAt" -> JsDateMsOrNull(reviewTask.invalidatedAt),
+      "decision" -> JsNumberOrNull(reviewTask.decision.map(_.toInt)),
+      "maybeBadUserId" -> JsNumber(reviewTask.maybeBadUserId),
+      "pageId" -> JsStringOrNull(reviewTask.pageId),
+      "postId" -> JsNumberOrNull(reviewTask.postId),
+      "postNr" -> JsNumberOrNull(reviewTask.postNr))
   }
 
 }

@@ -50,10 +50,11 @@ object Site {
   def isOkayName(siteName: String): Boolean =
     OkWebsiteNameRegex matches siteName
 
-  /** Shouldn't need more than 60 chars hostname? Even if 'comments-for-...(domain-with-dashes)'
-    * local hostnames.
+  /** Shouldn't need more than 70 chars hostname? Even if 'comments-for-...(domain-with-dashes)'
+    * local hostnames. — The e2e tests sometimes generate long names though [502KHSRG52]
+    * so actually sometimes need 70 chars.
     */
-  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,58}[a-z0-9]""".r
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,68}[a-z0-9]""".r
 
 }
 
@@ -235,7 +236,8 @@ object Hostname {
   val EmbeddedCommentsHostnamePrefix = "comments-for-"   // also in info message [7PLBKA24]
 
   def isE2eTestHostname(hostname: String): Boolean =
-    hostname.startsWith(Hostname.E2eTestPrefix) ||
+    hostname.endsWith("example.com") ||
+      hostname.startsWith(Hostname.E2eTestPrefix) ||
       hostname.startsWith(EmbeddedCommentsHostnamePrefix + E2eTestPrefix)
 }
 

@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.EdHttp.throwForbiddenIf
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
