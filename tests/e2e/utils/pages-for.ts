@@ -790,6 +790,8 @@ function pagesFor(browser) {
           //browser.setValue(selector, value);
           // This does nothing, in Chrome:
           //browser.clearElement(selector);
+          // GitHub issue and a more recent & better workaround?:
+          //  https://github.com/webdriverio/webdriverio/issues/3024#issuecomment-542888255
           // Instead, delete any previous text (hit backspace 9999 times), before typing
           // the new value.
           const oldValue = browser.getValue(selector);
