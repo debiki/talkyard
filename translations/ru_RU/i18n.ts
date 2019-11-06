@@ -204,29 +204,29 @@ var t_ru_RU: TalkyardTranslations = t = {
     NewTopicsWithTag: "Вы будете получать уведомления о новых темах с этим тегом.",
     NewTopicsWholeSite: "Вы будете получать уведомления о всех новых темах.",
 
-    Tracking: "Tracking",
+    Tracking: "Отслеживать",
 
-    Normal: "Normal",
-    NormalDescr: "You'll be notified if someone talks to you, also indirectly, e.g. a " +
-        "reply to a reply to you.",
+    Normal: "Обычный",
+    NormalDescr: "Вы будете уведомлены, если кто-то говорит с вами, также косвенно, например, " +
+        "ответить на ответ вам.",
     //NormalTopic_1: "You'll be notified if someone talks to you, or mentions your ",
     //NormalTopic_2: "@name",
 
-    Hushed: "Hushed",
-    HushedDescr: "You'll be notified only if someone talks directly to you.",
+    Hushed: "Замяли",
+    HushedDescr: "Вы будете уведомлены, только если кто-то говорит напрямую с вами.",
 
-    Muted: "Muted",
-    MutedTopic: "No notifications.",   // MISSING removed "about this topic"
+    Muted: "Приглушенный",
+    MutedTopic: "Нет уведомлений.",   // MISSING removed "about this topic"
   },
 
 
   // Forum intro text
 
   fi: {
-    Edit: "Edit",
-    Hide_1: "Hide",
-    Hide_2: ", click ",
-    Hide_3: " to reopen",
+    Edit: "Ред.",
+    Hide_1: "Скрыть",
+    Hide_2: ", щелчок ",
+    Hide_3: " вновь открыть",
   },
 
 
