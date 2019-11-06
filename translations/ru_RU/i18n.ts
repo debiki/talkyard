@@ -367,78 +367,78 @@ var t_ru_RU: TalkyardTranslations = t = {
   tb: {
 
     // Opens the right hand sidebar and litst the most recent posts in the current topic.
-    RecentPosts: "Recent posts",
+    RecentPosts: "Недавние Посты",
 
     // Open right-hand-sidebar button tooltip, if mouse-hovering online-user-count.
-    NumOnlChat: " online in this chat",    // example: "5 online in this chat"
-    NumOnlForum: " online in this forum",
+    NumOnlChat: " онлайн в этом чате",    // example: "5 online in this chat"
+    NumOnlForum: " онлайн на этом форуме",
 
     // Open left-sidebar button title.
-    WatchbBtn: "Your topics",
+    WatchbBtn: "Ваши темы",
 
     // Tooltip, shown if mouse-hovering the open-left-sidebar button.
-    WatchbToolt: "Your recent topics, joined chats, direct messages",
+    WatchbToolt: "Ваши последние темы, присоединенные чаты, прямые сообщения",
 
     // Title shown on user profile pages.
-    AbtUsr: "About User",
+    AbtUsr: "О пользователе",
 
     // Shortcuts to leave the user profile page, or staff area, and go back to the discussion topics.
-    BackFromUsr: "Back from user profile",
-    BackFromAdm: "Back from admin area",
+    BackFromUsr: "Вернуться из профиля пользователя",
+    BackFromAdm: "Вернуться из админки",
 
     // Title shown on full text search page.
-    SearchPg: "Search Page",
+    SearchPg: "Страница поиска",
   },
 
 
   // Watchbar (the sidebar to the left)
 
   wb: {
-    AddCommunity: "Add ...",
-    RecentlyViewed: "Recently viewed topics",  // MISSING " topics"
-    JoinedChats: "Joined Chats",
-    ChatChannels: "Chat Channels",
-    CreateChat: "Create chat channel",
-    DirectMsgs: "Direct Messages",
-    NoChats: "None",    // meaning: "No chat messages"
-    NoDirMsgs: "None",  // meaning: "No direct messages"
+    AddCommunity: "Добавить ...",
+    RecentlyViewed: "Недавно просмотренные темы",  // MISSING " topics"
+    JoinedChats: "Вступившие в Чаты",
+    ChatChannels: "Каналы чата",
+    CreateChat: "Создать канал чата",
+    DirectMsgs: "Прямые сообщения",
+    NoChats: "Нет",    // meaning: "No chat messages"
+    NoDirMsgs: "Нет",  // meaning: "No direct messages"
 
     // The click-topic dropdown menu:
-    TopicActions: "Topic actions",
-    ViewPeopleHere: "View people here",
-    ViewAddRemoveMembers: "View / add / remove members",
-    ViewChatMembers: "View chat members",
-    EditChat: "Edit chat description",
+    TopicActions: "Тематические действия",
+    ViewPeopleHere: "Посмотреть людей здесь",
+    ViewAddRemoveMembers: "Просмотреть / добавить / удалить участников",
+    ViewChatMembers: "Просмотр участников чата",
+    EditChat: "Изменить описание чата",
     //EditChat: "Edit chat title and purpose", // Keep, in case adds back edit-title input
-    LeaveThisChat: "Leave this chat",
-    LeaveThisCommunity: "Leave this community",
-    JoinThisCommunity: "Join this community",
+    LeaveThisChat: "Покинуть этот чат",
+    LeaveThisCommunity: "Покинуть это сообщество",
+    JoinThisCommunity: "Присоединяйтесь к этому сообществу",
   },
 
 
   // Contextbar (the sidebar to the right)
 
   cb: {
-    RecentComments: "Recent comments in this topic:",
-    NoComments: "No comments.",
+    RecentComments: "Последние комментарии в этой теме:",
+    NoComments: "Комментариев нет.",
 
-    YourBookmarks: "Your bookmarks:",
+    YourBookmarks: "Ваши закладки:",
 
-    UsersOnline: "Users online:",
-    UsersOnlineForum: "Users online in this forum:",
-    UsersInThisChat: "Users in this chat:",
-    UsersInThisTopic: "Users in this topic:",
+    UsersOnline: "Пользователи онлайн:",
+    UsersOnlineForum: "Пользователи онлайн на этом форуме:",
+    UsersInThisChat: "Пользователи в этом чате:",
+    UsersInThisTopic: "Пользователи в этой теме:",
 
-    GettingStartedGuide: "Admin Guide", // MISSING in other langs, was: "Getting Started Guide".
-    AdminGuide: "Admin Guide",          // ... but what? It's here already, just reuse this transl field
-    Guide: "Guide",
+    GettingStartedGuide: "Руководство Админа", // MISSING in other langs, was: "Getting Started Guide".
+    AdminGuide: "Руководство Админа",          // ... but what? It's here already, just reuse this transl field
+    Guide: "Руководство",
 
     // How to hide the sidebar.
-    CloseShortcutS: "Close (keyboard shortcut: S)",
+    CloseShortcutS: "Закрыть (сочетание клавиш: S)",
 
     // ----- Online users list / Users in current topic
 
-    AddPeople: "Add more people",
+    AddPeople: "Добавить больше людей",
 
     // Shown next to one's own username, in a list of users.
     thatsYou: "that's you",
