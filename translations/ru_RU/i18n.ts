@@ -754,86 +754,86 @@ var t_ru_RU: TalkyardTranslations = t = {
   upp: {
     // ----- Links
 
-    Preferences: "Preferences",
-    Invites: "Invites",
-    DraftsEtc: "Drafts etc",
+    Preferences: "Предпочтения",
+    Invites: "Пригласить",
+    DraftsEtc: "Черновики",
     About: "About",
-    Privacy: "Privacy",
-    Account: "Account",
-    Interface: "Interface",
+    Privacy: "Конфиденциальность",
+    Account: "Аккаунт",
+    Interface: "Интерфейс",
 
     // ----- Overview stats
 
-    JoinedC: "Joined: ",
-    PostsMadeC: "Posts made: ",
-    LastPostC: "Last post: ",
-    LastSeenC: "Last seen: ",
-    TrustLevelC: "Trust level: ",
+    JoinedC: "Регистрация: ",
+    PostsMadeC: "Посты сделаны: ",
+    LastPostC: "Последний пост: ",
+    LastSeenC: "В последний раз смотрел: ",
+    TrustLevelC: "Уровень доверия: ",
 
     // ----- Action buttons
 
     // ----- Profile pic
 
-    UploadPhoto: "Upload photo",
-    ChangePhoto: "Change photo",
-    ImgTooSmall: "Image too small: should be at least 100 x 100",
+    UploadPhoto: "Загрузить фото",
+    ChangePhoto: "Изменить фото",
+    ImgTooSmall: "Изображение слишком маленькое: должно быть не менее 100 х 100",
 
     // ----- Activity
 
-    OnlyStaffCanSee: "Only staff and trusted core members, can see this.",
-    OnlyMbrsCanSee: "Only people who have been active members for a while can see this.",
-    Nothing: "Nothing to show",
-    Posts: "Posts",
-    NoPosts: "No posts.",
-    Topics: "Topics",
-    NoTopics: "No topics.",
+    OnlyStaffCanSee: "Могут видеть только сотрудники и доверенные основные участники.",
+    OnlyMbrsCanSee: "Только люди, которые были активными участниками некоторое время, могут видеть это.",
+    Nothing: "Нечего показать",
+    Posts: "Посты",
+    NoPosts: "Нет Постов.",
+    Topics: "Темы",
+    NoTopics: "Нет Тем.",
 
     // ----- User status
 
-    UserBanned: "This user is banned",
-    UserSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
-    ReasonC: "Reason: ",
+    UserBanned: "Пользователь забанен",
+    UserSuspended: (dateUtc: string) => `Пользователь приостановлен до ${dateUtc} UTC`,
+    ReasonC: "Причина: ",
 
-    DeactOrDeld: "Has been deactivated or deleted.",
-    isGroup: " (a group)",
-    isGuest: " — a guest user, could be anyone",
-    isMod: " – moderator",
-    isAdmin: " – administrator",
-    you: "(you)",
+    DeactOrDeld: "Был деактивирован или удален.",
+    isGroup: " (группа)",
+    isGuest: " — гостем, может быть кто угодно",
+    isMod: " – модератор",
+    isAdmin: " – администратор",
+    you: "(ты)",
 
     // ----- Notifications page
 
-    NoNotfs: "No notifications",
-    NotfsToYouC: "Notifications to you:",
-    NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
-    DefNotfsSiteWide: "Default notifications, site wide",
+    NoNotfs: "Нет уведомлений",
+    NotfsToYouC: "Уведомления для вас:",
+    NotfsToOtherC: (name: string) => `Уведомления для ${name}:`,
+    DefNotfsSiteWide: "Уведомления по умолчанию для всего сайта",
     // The "for" in:  "Default notifications, site wide, for (someone's name)".
     forWho: "for",
 
     // ----- Drafts Etc page
 
-    NoDrafts: "No drafts",
-    YourDraftsC: "Your drafts:",
-    DraftsByC: (name: string) => `Drafts by ${name}:`,
+    NoDrafts: "Нет Черновиков",
+    YourDraftsC: "Ваши черновики:",
+    DraftsByC: (name: string) => `Черновики ${name}:`,
 
     // ----- Invites page
 
-    InvitesIntro: "Here you can invite people to join this site. ",
-    InvitesListedBelow: "Invites that you have already sent are listed below.",
-    NoInvites: "You have not invited anyone yet.",
+    InvitesIntro: "Здесь вы можете пригласить людей присоединиться к этому сайту. ",
+    InvitesListedBelow: "Приглашения, которые вы уже отправили, перечислены ниже.",
+    NoInvites: "Вы еще никого не пригласили.",
 
-    InvitedEmail: "Invited email",
-    WhoAccepted: "Member who accepted",
-    InvAccepted: "Invitation accepted",
-    InvSent: "Invitation sent",
-    JoinedAlready: "Joined already",
+    InvitedEmail: "Приглашенный email",
+    WhoAccepted: "Участник, который принял",
+    InvAccepted: "Приглашение принято",
+    InvSent: "Приглашение отправлено",
+    JoinedAlready: "Уже присоединился",
 
-    SendAnInv: "Invite people", // was: "Send an Invite",   MISSING I18N all other langs
-    SendInv: "Send invites",   // MISSING I18N is just "Send invite" (singularis) in all other langs
+    SendAnInv: "Пригласить людей", // was: "Send an Invite",   MISSING I18N all other langs
+    SendInv: "Отправить приглашения",   // MISSING I18N is just "Send invite" (singularis) in all other langs
     SendInvExpl:  // MISSING I18N changed to pluralis
-        "We'll send your friends a brief email. They'll click a link " +
-        "to join immediately, no login required. " +
-        "They'll become normal members, not moderators or admins.",
+        "Мы отправим вашим друзьям краткое email. They'll click a link " +
+        "присоединиться немедленно, не требуется вход в систему. " +
+        "Они станут обычными участниками, а не модераторами или администраторами.",
     //EnterEmail: "Enter email(s)",
     InvDone: "Done. I'll send them an email.",
     NoOneToInv: "No one to invite.",
