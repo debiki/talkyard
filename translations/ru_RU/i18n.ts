@@ -233,7 +233,7 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Forum categories
 
   fcs: {
-    All: "All", // "All (categories)", shorter than AllCats
+    All: "Все", // "All (categories)", shorter than AllCats
   },
 
 
@@ -241,43 +241,43 @@ var t_ru_RU: TalkyardTranslations = t = {
 
   fb: {
 
-    TopicList: "Topic list",
+    TopicList: "Список тем",
 
     // Select category dropdown
 
-    from: "from",  // MISSING used like so:  "From <Category Name>" or "From All Categories"
-    in: "in",      // MISSING used like so:  "in <Category Name>" or "in All Categories"
-    AllCats: "All categories",
+    from: "с",  // MISSING used like so:  "From <Category Name>" or "From All Categories"
+    in: "в",      // MISSING used like so:  "in <Category Name>" or "in All Categories"
+    AllCats: "Все категории",
 
     // Topic sort order
 
-    Active: "Active first",      // MISSING didn't add "first" yet to transls
-    ActiveDescr: "Shows recently active topics first",
+    Active: "Активен первым",      // MISSING didn't add "first" yet to transls
+    ActiveDescr: "Сначала показать последние активные темы",
 
-    New: "New",
-    NewDescr: "Shows newest topics first",
+    New: "Новый",
+    NewDescr: "Сначала показать новые темы",
 
-    Top: "Popular",              // MISSING didn't rename from Top to Popular in transls
-    TopDescr: "Shows popular topics first",
+    Top: "Популярные",              // MISSING didn't rename from Top to Popular in transls
+    TopDescr: "Сначала показать популярные темы",
 
     // Topic filter dropdown
 
-    AllTopics: "All topics",
+    AllTopics: "Все темы",
 
-    ShowAllTopics: "Show all topics",
-    ShowAllTopicsDescr: "Not deleted topics though",
+    ShowAllTopics: "Показать все темы",
+    ShowAllTopicsDescr: "Не удаленные темы, хотя",
 
-    WaitingTopics: "Waiting topics",          // MISSING
-    OnlyWaitingDescr_1: "Shows only topics ", // MISSING changed "questions" to "topics"
-    OnlyWaitingDescr_2: "waiting ",
-    OnlyWaitingDescr_3: "for a solution or to be implemented and done",  // MISSING rewrote
+    WaitingTopics: "Ожидание темы",          // MISSING
+    OnlyWaitingDescr_1: "Показывает только темы ", // MISSING changed "questions" to "topics"
+    OnlyWaitingDescr_2: "ожидания ",
+    OnlyWaitingDescr_3: "для решения или для реализации и выполнения",  // MISSING rewrote
 
-    YourTopics: "Your topics",       // MISSING
-    AssignedToYou: "Assigned to you", // MISSING
+    YourTopics: "Ваши темы",       // MISSING
+    AssignedToYou: "Назначено вам", // MISSING
 
-    DeletedTopics: "Show deleted",   // MISSING
-    ShowDeleted: "Show deleted",
-    ShowDeletedDescr: "Shows all topics, including deleted topics",
+    DeletedTopics: "Показать удаленные",   // MISSING
+    ShowDeleted: "Показать удаленные",
+    ShowDeletedDescr: "Показать все темы, включая удаленные темы",
 
     // Rightmost buttons
 
