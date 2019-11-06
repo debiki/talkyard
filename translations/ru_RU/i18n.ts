@@ -835,38 +835,38 @@ var t_ru_RU: TalkyardTranslations = t = {
         "присоединиться немедленно, не требуется вход в систему. " +
         "Они станут обычными участниками, а не модераторами или администраторами.",
     //EnterEmail: "Enter email(s)",
-    InvDone: "Done. I'll send them an email.",
-    NoOneToInv: "No one to invite.",
-    InvNotfLater: "I'll notify you later, when I've invited them.",
-    AlreadyInvSendAgainQ: "These have been invited already — maybe you'd like to invite them again?",
-    InvErr_1: "These resulted in ",
-    InvErr_2: "errors",
+    InvDone: "Готово. Я отправлю им email.",
+    NoOneToInv: "Никого не приглашать.",
+    InvNotfLater: "Я сообщу тебе позже, когда я их пригласил.",
+    AlreadyInvSendAgainQ: "Они уже были приглашены - может быть, вы хотели бы пригласить их снова?",
+    InvErr_1: "Это привело к ",
+    InvErr_2: "ошибке",
     InvErr_3: ":",
-    TheseJoinedAlrdyC: "These have joined already, so I didn't invite them:",
-    ResendInvsQ: "Re-send invitations to these people? They have been invited already.",
-    InvAgain: "Invite again",
+    TheseJoinedAlrdyC: "Они уже присоединились, поэтому я не пригласил их:",
+    ResendInvsQ: "Повторно отправить приглашения этим людям? Их уже пригласили.",
+    InvAgain: "Пригласить снова",
 
     // ----- Preferences, About
 
-    AboutYou: "About you",
-    WebLink: "Any website or page of yours.",
+    AboutYou: "О вас",
+    WebLink: "Любой ваш сайт или страница.",
 
-    NotShownCannotChange: "Not shown publicly. Cannot be changed.",
+    NotShownCannotChange: "Не показывается публично. Не может быть изменено.",
 
     // The full name or alias:
-    NameOpt: "Name (optional)",
+    NameOpt: "Имя (необязательно)",
 
-    NotShown: "Not shown publicly.",
+    NotShown: "Не показывается публично.",
 
     // The username:
-    MayChangeFewTimes: "You may change it only a few times.",
-    notSpecified: "(not specified)",
-    ChangeUsername_1: "You may change your username only a few times.",
-    ChangeUsername_2: "Changing it too often can make others confused — " +
-        "they won't know how to @mention you.",
+    MayChangeFewTimes: "Вы можете изменить это только несколько раз.",
+    notSpecified: "(не определено)",
+    ChangeUsername_1: "Вы можете изменить свое имя пользователя только несколько раз.",
+    ChangeUsername_2: "Слишком частое изменение может запутать других — " +
+        "они не будут знать, как вас упомянуть.",
 
-    NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
-    NotfAboutNewTopics: "Be notified about new topics (unless you mute the category)",
+    NotfAboutAll: "Получать уведомления о каждом новом сообщении (если вы не отключите тему или категорию)",
+    NotfAboutNewTopics: "Получать уведомления о новых темах (если вы не заглушите категорию)",
 
     ActivitySummaryEmails: "Activity summary emails",
 
