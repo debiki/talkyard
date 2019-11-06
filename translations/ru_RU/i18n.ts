@@ -593,7 +593,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     // If is a direct message topic, members listed below this text.
     Msg: "Сообщение",
 
-    SmrzRepls: "Summarize Replies",
+    SmrzRepls: "Подытожить ответы",
 
     // Don't bother about being correct with "1 reply", "2,3,4 replies".
     // Just write "replies" always instead? (also if only one)
@@ -609,51 +609,51 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Post actions
 
   pa: {
-    CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
-    CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
-        "it is off-topic or already answered in another topic.",
-    CloseToDoTooltip: "Close this To-Do if it does not need to be done or fixed.",
-    CloseTopicTooltip: "Close this topic if it needs no further consideration.",
+    CloseOwnQuestionTooltip: "Закройте этот вопрос, если вам больше не нужен ответ.",
+    CloseOthersQuestionTooltip: "Закройте этот вопрос, если он не нуждается в ответе, например, если " +
+        "это не по теме или уже ответили в другой теме.",
+    CloseToDoTooltip: "Закройте это задание, если это не нужно делать или исправлять.",
+    CloseTopicTooltip: "Закройте эту тему, если она не нуждается в дальнейшем рассмотрении.",
 
-    AcceptBtnExpl: "Accept this as the answer to the question or problem",
-    SolutionQ: "Solution?",
-    ClickUnaccept: "Click to un-accept this answer",
-    PostAccepted: "This post has been accepted as the answer",
+    AcceptBtnExpl: "Примите это как ответ на вопрос или проблему",
+    SolutionQ: "Решение?",
+    ClickUnaccept: "Нажмите, чтобы отменить этот ответ",
+    PostAccepted: "Пост был принят в качестве ответа",
 
-    NumLikes: (num: number) => num === 1 ? "1 Like" : num + " Likes",
-    NumDisagree: (num: number) => num + " Disagree",
-    NumBury: (num: number) => num === 1 ? "1 Bury" : num + " Burys",
-    NumUnwanted: (num: number) => num === 1 ? "1 Unwanted" : num + " Unwanteds",
+    NumLikes: (num: number) => num === 1 ? "1 Нравится" : num + " Нравится",
+    NumDisagree: (num: number) => num + " не соглашаться",
+    NumBury: (num: number) => num === 1 ? "1 Закопал" : num + " Закопали",
+    NumUnwanted: (num: number) => num === 1 ? "1 Против" : num + " Против",
 
-    MoreVotes: "More votes...",
-    LikeThis: "Like this",
-    LinkToPost: "Link to this post",
-    Report: "Report",
-    ReportThisPost: "Report this post",
-    Admin: "Admin",
-    DiscIx: "Discussions index",
+    MoreVotes: "Больше голосов...",
+    LikeThis: "Нравится",
+    LinkToPost: "Ссылка на этот пост",
+    Report: "Сообщить",
+    ReportThisPost: "Сообщить об этом сообщении",
+    Admin: "Админ",
+    DiscIx: "Указатель дискуссий",
 
-    Disagree: "Disagree",
-    DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
-    Bury: "Bury",
-    BuryExpl: "Click to sort other posts before this post. Only the forum staff can see your vote.",
-    Unwanted: "Unwanted",
-    UnwantedExpl: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author. Only the forum staff can see your vote.",
+    Disagree: "Не согласен",
+    DisagreeExpl: "Нажмите здесь, чтобы не согласиться с этим сообщением или предупредить других о фактических ошибках.",
+    Bury: "Похронить",
+    BuryExpl: "Нажмите, чтобы отсортировать другие сообщения перед этим сообщением. Только сотрудники форума могут видеть ваш голос.",
+    Unwanted: "Ненужный",
+    UnwantedExpl: "Если вы не хотите этот пост на этом сайте. Это уменьшило бы мое доверие " +
+            "в посте автора. Только сотрудники форума могут видеть ваш голос.",
 
-    AddTags: "Add/remove tags",
+    AddTags: "Добавить/Удалить теги",
     UnWikify: "Un-Wikify",
     Wikify: "Wikify",
-    PinDeleteEtc: "Pin / Delete / Category ...",
+    PinDeleteEtc: "Прикрипить / Удалить / Категория ...",
   },
 
 
   // Share dialog
 
   sd: {
-    Copied: "Copied.",
-    CtrlCToCopy: "Hit CTRL+C to copy.",
-    ClickToCopy: "Click to copy link.",
+    Copied: "Скопировать.",
+    CtrlCToCopy: "Нажмите CTRL + C, чтобы скопировать.",
+    ClickToCopy: "Нажмите, чтобы скопировать ссылку.",
   },
 
 
