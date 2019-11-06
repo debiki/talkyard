@@ -324,39 +324,39 @@ var t_ru_RU: TalkyardTranslations = t = {
 
     // These are shown as mouse-hover tooltips, or mobile-phone-touch-tips, over the user
     // avatar icons, in the forum topic list.
-    createdTheTopic: "created the topic",
-    frequentPoster: "frequent poster",
-    mostRecentPoster: "most recent poster",
+    createdTheTopic: "создал тему",
+    frequentPoster: "частый постер",
+    mostRecentPoster: "самый последний постер",
 
-    inC: "in: ",
+    inC: "в: ",
 
-    TitleFixed: "This has been fixed",
-    TitleDone: "This has been done",
-    TitleStarted: "We've started this",
-    TitleStartedFixing: "We've started fixing this",
-    TitleUnsolved: "This is an unsolved problem",
-    TitleIdea: "This is an idea",
-    TitlePlanningFix: "We're planning to fix this",
-    TitlePlanningDo: "We're planning to do this",
-    TitleChat: "This is a chat channel",
-    TitlePrivateChat: "This is a private chat channel",
-    TitlePrivateMessage: "A private message",
-    TitleInfoPage: "This is an info page",
-    TitleDiscussion: "A discussion",
-    IsPinnedGlobally: "\nIt has been pinned, so it's listed first.",
-    IsPinnedInCat: "\nIt has been pinned in its category, so is listed first, in its category.",
+    TitleFixed: "Было исправлено",
+    TitleDone: "Было сделано",
+    TitleStarted: "Мы начали это",
+    TitleStartedFixing: "Мы начали это исправлять",
+    TitleUnsolved: "Нерешенная проблема",
+    TitleIdea: "Идея",
+    TitlePlanningFix: "Мы планируем это исправить",
+    TitlePlanningDo: "Мы планируем сделать это",
+    TitleChat: "Канал чата",
+    TitlePrivateChat: "Частный канал чата",
+    TitlePrivateMessage: "Личное сообщение",
+    TitleInfoPage: "Информационная страница",
+    TitleDiscussion: "Обсуждение",
+    IsPinnedGlobally: "\nОн был закреплен, поэтому он указан первым.",
+    IsPinnedInCat: "\nОн был закреплен в своей категории, поэтому занял первое место в своей категории.",
   },
 
 
   // Forum categories list
 
   fc: {
-    RecentTopicsWaiting: "Recent topics (those waiting)",
-    RecentTopicsInclDel: "Recent topics (including deleted)",
-    RecentTopics: "Recent topics",
-    _replies: " replies",
-    _deleted: " (deleted)",
-    _defCat: " (default category)",
+    RecentTopicsWaiting: "Последние темы (что ждут)",
+    RecentTopicsInclDel: "Последние темы (включая удаленные)",
+    RecentTopics: "Последние темы",
+    _replies: " ответы",
+    _deleted: " (удален)",
+    _defCat: " (категория по умолчанию)",
   },
 
 
