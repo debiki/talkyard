@@ -660,92 +660,92 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Chat
 
   c: {
-    About_1: "This is the ",
-    About_2: " chat channel, created by ",
-    ScrollUpViewComments: "Scroll up to view older comments",
-    Purpose: "Purpose:",
-    edit: "edit",
-    'delete': "delete",
-    MessageDeleted: "(Message deleted)",
-    JoinThisChat: "Join this chat",
-    PostMessage: "Post message",
-    AdvancedEditor: "Advanced editor",
-    TypeHere: "Type here. You can use Markdown and HTML.",
+    About_1: "Это ",
+    About_2: " канал чата, созданный ",
+    ScrollUpViewComments: "Прокрутите вверх, чтобы просмотреть старые комментарии",
+    Purpose: "Цель:",
+    edit: "ред.",
+    'delete': "удалить",
+    MessageDeleted: "(Сообщение удалено)",
+    JoinThisChat: "Присоединяйтесь к чату",
+    PostMessage: "Отправить сообщение",
+    AdvancedEditor: "Расширенный редактор",
+    TypeHere: "Введите здесь. Вы можете использовать Markdown и HTML.",
   },
 
 
   // My Menu
 
   mm: {
-    NeedsReview: "Needs review ",
-    AdminHelp: "Admin help ",
-    StaffHelp: "Staff help ",
-    DraftsEtc: "Drafts, bookmarks, tasks",
-    MoreNotfs: "View all notifications",
-    DismNotfs: "Mark all as read",
-    ViewProfile: "View your profile",
-    ViewGroups: "View groups",
-    LogOut: "Log out",
-    UnhideHelp: "Unhide help messages",
+    NeedsReview: "Нужен обзор ",
+    AdminHelp: "Справка Админа ",
+    StaffHelp: "Помощь персонала ",
+    DraftsEtc: "Черновики, закладки, задания",
+    MoreNotfs: "Посмотреть все уведомления",
+    DismNotfs: "отметить все как прочитанное",
+    ViewProfile: "Просмотр вашего профиля",
+    ViewGroups: "Просмотр групп",
+    LogOut: "Выйти",
+    UnhideHelp: "Показать справочные сообщения",
   },
 
 
   // Scroll buttons
 
   sb: {
-    ScrollToC: "Scroll to:",
-    Scroll: "Scroll",
+    ScrollToC: "Прокрутить до:",
+    Scroll: "Прокрутить",
 
     // The Back button, and the letter B is a keyboard shortcut.
     // If in your language, "Back" doesn't start with 'B', then instead
     // set Back_1 to '' (empty text), and Back_2 to:  "Back (B)" — and "Back" (but not "B")
     // translated to your language.
-    Back_1: "B",
-    Back_2: "ack",
-    BackExpl: "Scroll back to your previous position on this page",
+    Back_1: "",
+    Back_2: "Назад (B)",
+    BackExpl: "Вернитесь к своей предыдущей позиции на этой странице.",
 
     // These are useful on mobile — then, no keybard with Home (= scroll to top) and End buttons.
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
     // top, and 2 to see the first reply, and B to go back, F forward, so on.
-    PgTop: "Page top",
-    PgTopHelp: "Go to the top of the page. Keyboard shortcut: 1",
-    Repl: "Replies",
-    ReplHelp: "Go to the Replies section. Shortcut: 2",
-    Progr: "Progress",
+    PgTop: "Верх страницы",
+    PgTopHelp: "Перейти к началу страницы. Клавиша: 1",
+    Repl: "Ответы",
+    ReplHelp: "Перейдите в раздел Ответы. Клавиша: 2",
+    Progr: "Прогресс",
     // The Progress section is at the end of the page, and there, things like
     // "Alice changed status to Doing" and "Alise marked this as Done" and "Topic closed by ..."
     // are shown. (And, optionally, comments by staff or the people working with the issue.)
-    ProgrHelp: "Go to the Progress section. Shortcut: 3",
-    PgBtm: "Page bottom",
-    Btm: "Bottom",
-    BtmHelp: "Go to the bottom of the page. Shortcut: 4",
+    ProgrHelp: "Перейти в раздел Прогресс. Клавиша: 3",
+    PgBtm: "Вниз страницы",
+    Btm: "Низ",
+    BtmHelp: "Перейти в конец страницы. Клавиша: 4",
 
     // "Keyboard shrotcuts: ..., and B to scroll back"
-    Kbd_1: ", and ",
+    Kbd_1: ", и ",
     // then the letter 'B' (regardless of language)
-    Kbd_2: " to scroll back",
+    Kbd_2: " прокрутить назад",
   },
 
 
   // Select users dialog
   sud: {
-    SelectUsers: "Select users",
-    AddUsers: "Add users",
+    SelectUsers: "Выберите пользователей",
+    AddUsers: "Добавить пользователей",
   },
 
 
   // About user dialog
 
   aud: {
-    IsMod: "Is moderator.",
-    IsAdm: "Is administrator.",
-    IsDeld: "Is deactivated or deleted.",
-    ThisIsGuest: "This is a guest user, could in fact be anyone.",
-    ViewInAdm: "View in Admin Area",
-    ViewProfl: "View Profile",
-    ViewComments: "View other comments",
-    RmFromTpc: "Remove from topic",
-    EmAdrUnkn: "Email address unknown — this guest won't be notified about replies.",
+    IsMod: "Модератор.",
+    IsAdm: "Администратор.",
+    IsDeld: "Деактивирован или удален.",
+    ThisIsGuest: "Гостем, может быть кто угодно.",
+    ViewInAdm: "Посмотреть в админке",
+    ViewProfl: "Просмотреть профиль",
+    ViewComments: "Посмотреть другие комментарии",
+    RmFromTpc: "Удалить из темы",
+    EmAdrUnkn: "Email адрес неизвестен - этот гость не будет уведомлен об ответах.",
   },
 
 
