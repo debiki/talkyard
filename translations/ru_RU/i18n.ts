@@ -281,15 +281,15 @@ var t_ru_RU: TalkyardTranslations = t = {
 
     // Rightmost buttons
 
-    ViewCategories: "View categories",  // MISSING
-    EditCat: "Edit Category",
-    CreateCat: "Create Category",
-    CreateTopic: "Create Topic",
-    PostIdea: "Post an Idea",
-    AskQuestion: "Ask a Question",
-    ReportProblem: "Report a Problem",
-    CreateMindMap: "Create Mind Map",
-    CreatePage: "Create Page",
+    ViewCategories: "Посмотреть категории",  // MISSING
+    EditCat: "Изменить Категорию",
+    CreateCat: "Создать Категорию",
+    CreateTopic: "Создать Тему",
+    PostIdea: "Добавить Идею",
+    AskQuestion: "Задать вопрос",
+    ReportProblem: "Сообщить о проблеме",
+    CreateMindMap: "Создать Mind Map",
+    CreatePage: "Создать Страницу",
 
   },
 
@@ -297,30 +297,30 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Forum topic list
 
   ft: {
-    ExplIcons: "Explain icons...",
-    IconExplanation: "Icon explanation:",
-    ExplGenDisc: "A general discussion.",
-    ExplQuestion: "A question with no accepted answer.",
-    ExplAnswer: "A question with an accepted answer.",
-    ExplIdea: "An idea / suggestion.",
-    ExplProblem: "A problem.",
-    ExplPlanned: "Something we're planning to do or fix.",
-    ExplDone: "Something that's been done or fixed.",
-    ExplClosed: "Topic closed.",
-    ExplPinned: "Topic always listed first (perhaps only in its own category).",
+    ExplIcons: "Поясняющие иконки...",
+    IconExplanation: "Поясняющие иконки:",
+    ExplGenDisc: "Общее обсуждение.",
+    ExplQuestion: "Вопрос без ответа.",
+    ExplAnswer: "Вопрос с принятым ответом.",
+    ExplIdea: "Идея / предложение.",
+    ExplProblem: "Проблема.",
+    ExplPlanned: "Что-то, что мы планируем сделать или исправить.",
+    ExplDone: "Что-то, что было сделано или исправлено.",
+    ExplClosed: "Тема закрыта.",
+    ExplPinned: "Тема всегда указана первой (возможно, только в своей категории).",
 
-    PopularTopicsComma: "Popular topics, ",
-    TopFirstAllTime: "Shows the most popular topics first, all time.",
-    TopFirstPastDay: "Shows topics popular during the past day.",
+    PopularTopicsComma: "Популярные темы, ",
+    TopFirstAllTime: "Сначала показать самые популярные темы, за все время.",
+    TopFirstPastDay: "Показать темы, популярные за прошедший день.",
 
-    CatHasBeenDeleted: "This category has been deleted",
+    CatHasBeenDeleted: "Эта категория была удалена",
 
-    TopicsActiveFirst: "Topics, recently active first",
-    TopicsNewestFirst: "Topics, newest first",
+    TopicsActiveFirst: "Темы, недавно активные в первую очередь",
+    TopicsNewestFirst: "Темы, сначала новые",
 
-    CreatedOn: "Created on ",
-    LastReplyOn: "\nLast reply on ",
-    EditedOn: "\nEdited on ",
+    CreatedOn: "Создано на ",
+    LastReplyOn: "\nПоследний ответить на ",
+    EditedOn: "\nОтредактировано на ",
 
     // These are shown as mouse-hover tooltips, or mobile-phone-touch-tips, over the user
     // avatar icons, in the forum topic list.
