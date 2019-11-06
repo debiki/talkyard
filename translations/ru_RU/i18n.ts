@@ -124,39 +124,39 @@ var t_ru_RU: TalkyardTranslations = t = {
   Guest:  "Гость",
   NewMember: "Новый участник",
   BasicMember: "Основной участник",
-  FullMember: "Full участник",
+  FullMember: "Полноценный участник",
   TrustedMember: "Доверенный участник",
   RegularMember: "Доверенный постоянный",  // MISSING renamed Regular Member —> Trusted Regular [RENREGLS]
   CoreMember: "Основной участник",
 
   // Periods.
-  PastDay: "Past Day",
-  PastWeek: "Past Week",
-  PastMonth: "Past Month",
-  PastQuarter: "Past Quarter",
-  PastYear: "Past Year",
-  AllTime: "All Time",
+  PastDay: "Вчера",
+  PastWeek: "Прошлая Неделя",
+  PastMonth: "Прошлый Месяц",
+  PastQuarter: "Прошлый Квартал",
+  PastYear: "Прошлый Год",
+  AllTime: "Все Время",
 
   // Time ago letters.
   // English examples: "3d" in forum topic list means 3 days ago. "5h" is 5 hours.
-  monthsLtr: "mon",  // months
-  daysLtr: "d",      // days
-  hoursLtr: "h",     // hours
-  minsLtr: "m",      // minutes
-  secsLtr: "s",      // seconds
+  monthsLtr: "м",  // months
+  daysLtr: "д",      // days
+  hoursLtr: "ч",     // hours
+  minsLtr: "м",      // minutes
+  secsLtr: "с",      // seconds
 
   // Time ago, long text versions.
   daysAgo: (numDays: number) =>
-    numDays === 1 ? "1 day ago" : `${numDays} days ago`,
+    numDays === 1 ? "1 день назад" : `${numDays} дней назад`,
 
   hoursAgo: (numHours: number) =>
-    numHours === 1 ? "1 hour ago" : `${numHours} hours ago`,
+    numHours === 1 ? "1 час назад" : `${numHours} часов назад`,
 
   minutesAgo: (numMins: number) =>
-    numMins === 1 ? "1 minute ago" : `${numMins} minutes ago`,
+    numMins === 1 ? "1 минуту назад" : `${numMins} минут назад`,
 
   secondsAgo: (numSecs: number) =>
-    numSecs === 1 ? "1 second ago" : `${numSecs} seconds ago`,
+    numSecs === 1 ? "1 секунду назад" : `${numSecs} секунд назад`,
 
 
   // Input fields, e.g. email, name etc.
