@@ -506,80 +506,80 @@ var t_ru_RU: TalkyardTranslations = t = {
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
     ThisTopicClosed_2: ". Вы все еще можете оставлять комментарии.",   // SYNC removed "won't make ... bump ..."
 
-    ThisPageDeleted: "This page has been deleted",
+    ThisPageDeleted: "Эта страница была удалена",
     CatDeldPageToo: "Категория удалена, поэтому эта страница также была удалена",
 
-    ThreadDeld: "Thread deleted",
-    CmntDeld: "Comment deleted",
-    PostDeld: "Post deleted",
-    DiscDeld: "Discussion deleted",
-    PageDeld: "Page deleted",
-    TitlePendAppr: "Title pending approval",
-    TextPendingApproval: "Text pending approval",
+    ThreadDeld: "Тема удалена",
+    CmntDeld: "Комментарий удален",
+    PostDeld: "Пост удален",
+    DiscDeld: "Обсуждение удалено",
+    PageDeld: "Страница удалена",
+    TitlePendAppr: "Название в ожидании утверждения",
+    TextPendingApproval: "Текст в ожидании утверждения",
 
-    TooltipQuestClosedNoAnsw: "This question has been closed without any accepted answer.",
-    TooltipTopicClosed: "This topic is closed.",
+    TooltipQuestClosedNoAnsw: "Вопрос был закрыт без принятого ответа.",
+    TooltipTopicClosed: "Тема закрыта.",
 
-    TooltipQuestSolved: "This is a solved question",
-    TooltipQuestUnsolved: "This is an unsolved question",
+    TooltipQuestSolved: "Решенный вопрос",
+    TooltipQuestUnsolved: "Нерешенный вопрос",
 
-    StatusDone: "Done",
-    TooltipProblFixed: "This has been fixed",
-    TooltipDone: "This has been done",
+    StatusDone: "Готово",
+    TooltipProblFixed: "Исправлено",
+    TooltipDone: "Сделано",
 
-    StatusStarted: "Started",
-    TooltipFixing: "We've started fixing this",      // MISSING "We're currently" —> "We've started"
-    TooltipImplementing: "We've started doing this", // MISSING  -""-
+    StatusStarted: "Началось",
+    TooltipFixing: "Мы начали исправлять",      // MISSING "We're currently" —> "We've started"
+    TooltipImplementing: "Мы начали делать", // MISSING  -""-
 
-    StatusPlanned: "Planned",
-    TooltipProblPlanned: "We're planning to fix this",
-    TooltipIdeaPlanned: "We're planning to do this",   // or "to implement this"?
+    StatusPlanned: "Запланированные",
+    TooltipProblPlanned: "Мы планируем исправить",
+    TooltipIdeaPlanned: "Мы планируем сделать",   // or "to implement this"?
 
-    StatusNew: "New",
-    StatusNewDtl: "New topic, under discussion",
-    TooltipUnsProbl: "This is an unsolved problem",
-    TooltipIdea: "This is an idea",
+    StatusNew: "НОвый",
+    StatusNewDtl: "Новая тема, обсуждается",
+    TooltipUnsProbl: "Нерешенная проблема",
+    TooltipIdea: "Эта идея",
 
-    TooltipPersMsg: "Personal message",
-    TooltipChat: "# means Chat Channel",
-    TooltipPrivChat: "This is a private chat channel",
+    TooltipPersMsg: "Личное сообщение",
+    TooltipChat: "# означает канал чата",
+    TooltipPrivChat: "Это частный канал чата",
 
-    TooltipPinnedGlob: "\nPinned globally.",
-    TooltipPinnedCat: "\nPinned in this category.",
+    TooltipPinnedGlob: "\nПрикреплено глобально.",
+    TooltipPinnedCat: "\nЗакреплено в этой категории.",
 
-    SolvedClickView_1: "Solved in post #",
-    SolvedClickView_2: ", click to view",
+    SolvedClickView_1: "Решено в посте #",
+    SolvedClickView_2: ", нажмите, чтобы посмотреть",
 
-    PostHiddenClickShow: "Post hidden; click to show",
-    ClickSeeMoreRepls: "Click to show more replies",
-    ClickSeeMoreComments: "Click to show more comments",
-    ClickSeeThisComment: "Click to show this comment",
-    clickToShow: "click to show",
+    PostHiddenClickShow: "Сообщение скрыто; нажмите, чтобы показать",
+    ClickSeeMoreRepls: "Нажмите, чтобы показать больше ответов",
+    ClickSeeMoreComments: "Нажмите, чтобы показать больше комментариев",
+    ClickSeeThisComment: "Нажмите, чтобы показать этот комментарий",
+    clickToShow: "нажмите, чтобы показать",
 
-    ManyDisagree: "Many disagree with this:",
-    SomeDisagree: "Some disagree with this:",
+    ManyDisagree: "Многие с этим не согласны:",
+    SomeDisagree: "Некоторые не согласны с этим:",
 
-    CmtPendAppr: "Comment pending approval, posted ",
-    CmtBelowPendAppr: (isYour) => (isYour ? "Your" : "The") + " comment below is pending approval.",
+    CmtPendAppr: "Комментарий в ожидании одобрения, опубликовано ",
+    CmtBelowPendAppr: (isYour) => (isYour ? "Ваш" : "") + " комментарий ниже ожидает одобрения.",
 
-    _and: " and",
+    _and: " и",
 
-    repliesTo: "replies to",
-    InReplyTo: "In reply to",
+    repliesTo: "ответы на",
+    InReplyTo: "В ответ на",
 
-    ClickViewEdits: "Click to view old edits",
+    ClickViewEdits: "Нажмите, чтобы посмотреть старые правки",
 
-    By: "By ", // ... someones name
+    By: " ", // ... someones name
 
     // Discussion ...
-    aboutThisIdea: "about how and if to do this idea",
-    aboutThisProbl: "about how and if to fix this",
+    aboutThisIdea: "о том, как и если сделать эту идею",
+    aboutThisProbl: "о том, как и если это исправить",
 
-    AddProgrNote: "Add progress note",
+    AddProgrNote: "Добавить заметку о прогрессе",
     // Progress ...
-    withThisIdea: "with doing this idea",
-    withThisProbl: "with handling this problem",
-    withThis: "with doing this",
+    withThisIdea: "с выполнением этой идеи",
+    withThisProbl: "с решением этой проблемы",
+    withThis: "с этим",
   },
 
 
@@ -588,10 +588,10 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Shown between the original post and all replies.
 
   mb: {
-    NotfsAbtThisC: "Notifications about this topic:",
+    NotfsAbtThisC: "Уведомления на эту тему:",
 
     // If is a direct message topic, members listed below this text.
-    Msg: "Message",
+    Msg: "Сообщение",
 
     SmrzRepls: "Summarize Replies",
 
