@@ -441,54 +441,54 @@ var t_ru_RU: TalkyardTranslations = t = {
     AddPeople: "Добавить больше людей",
 
     // Shown next to one's own username, in a list of users.
-    thatsYou: "that's you",
+    thatsYou: "это ты",
 
     // Info about which people are online.
     // Example, in English: "Online users: You, and 5 people who have not logged in"
-    OnlyYou: "Only you, it seems",
-    YouAnd: "You, and ",
+    OnlyYou: "Кажется, только ты",
+    YouAnd: "Ты и ",
     NumStrangers: (numStrangers: number) => {
-      const people = numStrangers === 1 ? " person" : " people";
-      const have = numStrangers === 1 ? "has" : "have";
-      return numStrangers + people + " who " + have + " not logged in";
+      const people = numStrangers === 1 ? " человек" : " люди";
+      const have = numStrangers === 1 ? "имеет" : "имеют";
+      return numStrangers + people + " кто " + have + " не вошел";
     },
 
     // ----- Recent comments list
 
     // This explains how the Recent tab in the sidebar works.
 
-    RepliesToTheLeft: "The replies to the left are sorted by ",
-    bestFirst: "best-first.",
-    ButBelow: "But below ",
-    insteadBy: " the same replies are instead sorted by ",
-    newestFirst: "newest-first.",
+    RepliesToTheLeft: "Ответы слева отсортированы по ",
+    bestFirst: "самый первый.",
+    ButBelow: "Но ниже ",
+    insteadBy: " одни и те же ответы сортируются по ",
+    newestFirst: "новые впереди.",
 
-    SoIfLeave: "So if you leave, and come back here later, below you'll find ",
-    allNewReplies: "all new replies.",
-    Click: "Click",
-    aReplyToReadIt: " a reply below to read it — because only an excerpt is shown, below.",
+    SoIfLeave: "Так что если вы уйдете и вернетесь сюда позже, ниже вы найдете ",
+    allNewReplies: "все новые ответы.",
+    Click: "Нажмите",
+    aReplyToReadIt: " ответ ниже, чтобы его прочитать - потому что только выдержка показана ниже.",
   },
 
 
   // Change page dialog
   cpd: {
-    ClickToChange: "Click to change status",
-    ClickToViewAnswer: "Click to view answer",
-    ViewAnswer: "View answer",
-    ChangeStatusC: "Change status to:",
-    ChangeCatC: "Change category:",
-    ChangeTopicTypeC: "Change topic type:",
+    ClickToChange: "Нажмите, чтобы изменить статус",
+    ClickToViewAnswer: "Нажмите, чтобы посмотреть ответ",
+    ViewAnswer: "Посмотреть ответ",
+    ChangeStatusC: "Изменить статус на:",
+    ChangeCatC: "Изменить категорию:",
+    ChangeTopicTypeC: "Изменить тип темы:",
   },
 
 
   // Page doing status, PageDoingStatus
   pds: {
-    aQuestion: "a question",
-    hasAccptAns: "has an accepted answer",
-    aProblem: "a problem",
-    planToFix: "plan to fix",
-    anIdea: "an idea",
-    planToDo: "plan to do",
+    aQuestion: "вопрос",
+    hasAccptAns: "имеет принятый ответ",
+    aProblem: "проблема",
+    planToFix: "планирую исправить",
+    anIdea: "идея",
+    planToDo: "планирую сделать",
   },
 
 
@@ -498,16 +498,16 @@ var t_ru_RU: TalkyardTranslations = t = {
     // These texts are split into parts 1,2 or 1,2,3 ec, because in between the texts,
     // icons are shown, to help people understand what those icons mean.
 
-    ThisFormClosed_1: "This form has been ",
+    ThisFormClosed_1: "Эта форма была ",
     // A Topic-has-been-Closed icon shown here, between text parts 1 (just above) and 2 (below).
-    ThisFormClosed_2: "closed; you can no longer fill it in and post it.",
+    ThisFormClosed_2: "закрыто; Вы больше не можете заполнить и опубликовать его.",
 
-    ThisTopicClosed_1: "This topic has been ",
+    ThisTopicClosed_1: "Эта тема была ",
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
-    ThisTopicClosed_2: ". You can still post comments.",   // SYNC removed "won't make ... bump ..."
+    ThisTopicClosed_2: ". Вы все еще можете оставлять комментарии.",   // SYNC removed "won't make ... bump ..."
 
     ThisPageDeleted: "This page has been deleted",
-    CatDeldPageToo: "Category deleted, so this page was deleted too",
+    CatDeldPageToo: "Категория удалена, поэтому эта страница также была удалена",
 
     ThreadDeld: "Thread deleted",
     CmntDeld: "Comment deleted",
