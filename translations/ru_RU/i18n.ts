@@ -163,28 +163,28 @@ var t_ru_RU: TalkyardTranslations = t = {
 
   inp: {
     // Email address input field:
-    EmReq: "Email required",
-    NoSpcs: "No spaces please",
-    InvldAddr: "Not a valid email address",
-    NoBadChrs: "No weird characters please",
+    EmReq: "Требуется Email",
+    NoSpcs: "Без пробелов, пожалуйста",
+    InvldAddr: "Неверный email",
+    NoBadChrs: "Без странных символов, пожалуйста",
 
     // Full name input field:
-    NotOnlSpcs: "Not just spaces please",
-    NoAt: "No @ please",
+    NotOnlSpcs: "Без пробелов, пожалуйста",
+    NoAt: "Без @ пожалуйста",
 
     // Username input field:
-    NoDash: "No dashes (-) please",
-    DontInclAt: "Don't include the @",
-    StartEndLtrDgt: "Start and end with a letter or a digit",
-    OnlLtrNumEtc: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+    NoDash: "Без тире (-) пожалуйста",
+    DontInclAt: "Не вставляйте @",
+    StartEndLtrDgt: "В начали и в конце должна быть буква или цифра.",
+    OnlLtrNumEtc: "Только буквы (a-z, A-Z) и цифры, и _ (нижнее подчеркивание)",
     // This shown just below the username input:
-    UnUnqShrt_1: "Your ",
+    UnUnqShrt_1: "Твой ",
     UnUnqShrt_2: "@username",
-    UnUnqShrt_3: ", unique and short",
+    UnUnqShrt_3: ", уникальный и короткий",
 
     // Generic messages for all input fields:
-    TooShort: (minLength: number) => `Should be at least ${minLength} characters`,
-    TooLong: (maxLength: number) => `Too long. Should be at most ${maxLength} characters`,
+    TooShort: (minLength: number) => `Должно быть минимум ${minLength} символов`,
+    TooLong: (maxLength: number) => `Слишком длинный. Должно быть максимум ${maxLength} символов`,
   },
 
 
