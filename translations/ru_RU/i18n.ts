@@ -931,75 +931,75 @@ var t_ru_RU: TalkyardTranslations = t = {
 
 
     // Delete account:
-    DangerZone: "Danger zone",
-    DeleteAccount: "Delete account",
+    DangerZone: "Опасная зона",
+    DeleteAccount: "Удалить аккаунт",
     DeleteYourAccountQ:
-        "Delete your account? We'll remove your name, forget your email address, password and " +
-        "any online identities (like Facebook or Twitter login). " +
-        "You won't be able to login again. This cannot be undone.",
+        "Удалить ваш аккаунт? Мы удалим ваше имя, забудем ваш адрес электронной почты, пароль и " +
+        "любые онлайн-идентификаторы (например, Facebook или Twitter). " +
+        "Вы не сможете снова войти. И это не может быть отменено.",
     DeleteUserQ:
-        "Delete this user? We'll remove the name, forget the email address, password and " +
-        "online identities (like Facebook or Twitter login). " +
-        "The user won't be able to login again. This cannot be undone.",
-    YesDelete: "Yes, delete",
+        "Удалить этого пользователя? Мы удалим имя, забудем адрес электронной почты, пароль и " +
+        "онлайн-идентификаторы (например, Facebook или Twitter). " +
+        "Пользователь не сможет снова войти. И это не может быть отменено.",
+    YesDelete: "Да, удалить",
   },
 
 
   // Group profile page
   gpp: {
-    GroupMembers: "Group members",
-    NoMembers: "No members.",
-    MayNotListMembers: "May not list members.",
-    AddMembers: "Add Members",
-    BuiltInCannotModify: "This is a built-in group; it cannot be modified.",
-    NumMembers: (num: number) => `${num} members`,
-    YouAreMember: "You're a member.",
-    CustomGroupsC: "Custom groups:",
-    BuiltInGroupsC: "Built-in groups:",
-    DeleteGroup: "Delete this group",
+    GroupMembers: "Участники группы",
+    NoMembers: "Нет участников.",
+    MayNotListMembers: "Может не быть списка участников.",
+    AddMembers: "Добавить участников",
+    BuiltInCannotModify: "Встроенная группа; не может быть изменена.",
+    NumMembers: (num: number) => `${num} участников`,
+    YouAreMember: "Вы участник.",
+    CustomGroupsC: "Пользовательские группы:",
+    BuiltInGroupsC: "Встроенные группы:",
+    DeleteGroup: "Удалить эту группу",
   },
 
 
   // Create user dialog
 
   cud: {
-    CreateUser: "Create User",
-    CreateAccount: "Create Account",
+    CreateUser: "Создать пользователя",
+    CreateAccount: "Регистрация",
     EmailC: "Email:",
-    keptPriv: "will be kept private",
-    forNotfsKeptPriv: "for reply notifications, kept private",
-    EmailVerifBy_1: "Your email has been verified by ",
+    keptPriv: "будет храниться в тайне",
+    forNotfsKeptPriv: "для ответных уведомлений, закрытых",
+    EmailVerifBy_1: "Ваш адрес электронной почты был подтвержден ",
     EmailVerifBy_2: ".",
-    UsernameC: "Username:",
-    FullNameC: "Full name:",
-    optName: "optional",
+    UsernameC: "Имя:",
+    FullNameC: "Полное имя:",
+    optName: "по желанию",
 
-    OrCreateAcct_1: "Or ",
-    OrCreateAcct_2: "create an account",
-    OrCreateAcct_3: " with ",
+    OrCreateAcct_1: "Или ",
+    OrCreateAcct_2: "завести аккаунт",
+    OrCreateAcct_3: "с участием ",
     OrCreateAcct_4: "@username",
-    OrCreateAcct_5: " & password",
+    OrCreateAcct_5: " & пароль",
 
-    DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
+    DoneLoggedIn: "Аккаунт создан. Вы вошли.",  // COULD say if verif email sent too?
     AlmostDone:
-        "Almost done! You just need to confirm your email address. We have " +
-        "sent an email to you. Please click the link in the email to activate " +
-        "your account. You can close this page.",
+        "Почти сделано! Вам просто нужно подтвердить свой адрес электронной почты. У нас есть " +
+        "отправил вам электронное письмо. Пожалуйста, нажмите на ссылку в письме, чтобы активировать " +
+        "ваш аккаунт. Вы можете закрыть эту страницу.",
   },
 
 
   // Accept terms and privacy policy?
 
   terms: {
-    TermsAndPrivacy: "Terms and Privacy",
+    TermsAndPrivacy: "Условия и Конфиденциальность",
 
-    Accept_1: "Do you accept our ",
-    TermsOfService: "Terms of Service",
-    TermsOfUse: "Terms of Use",
-    Accept_2: " and ",
-    PrivPol: "Privacy Policy",
+    Accept_1: "Вы принимаете наши ",
+    TermsOfService: "Условия Использования",
+    TermsOfUse: "Условия Эксплуатации",
+    Accept_2: " и ",
+    PrivPol: "Политику конфиденциальности",
     Accept_3_User: "?",
-    Accept_3_Owner: " for site owners?",  // (see just below)
+    Accept_3_Owner: " для владельцев сайтов?",  // (see just below)
 
     // About "for site owners?" above:
     // That's if someone creates his/her own community, via this software provided as
@@ -1007,7 +1007,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     // Terms-of-Service to agree with, since being a community maintainer/owner, is different
     // (more responsibility) than just signing up to post comments.
 
-    YesAccept: "Yes I accept",
+    YesAccept: "Да я принимаю",
   },
 
 
