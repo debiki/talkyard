@@ -779,7 +779,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     ImgTooSmall: "Изображение слишком маленькое: должно быть не менее 100 х 100",
 
     // ----- Activity
-
+    
     OnlyStaffCanSee: "Могут видеть только сотрудники и доверенные основные участники.",
     OnlyMbrsCanSee: "Только люди, которые были активными участниками некоторое время, могут видеть это.",
     Nothing: "Нечего показать",
@@ -811,7 +811,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     forWho: "for",
 
     // ----- Drafts Etc page
-
+    
     NoDrafts: "Нет Черновиков",
     YourDraftsC: "Ваши черновики:",
     DraftsByC: (name: string) => `Черновики ${name}:`,
@@ -821,7 +821,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     InvitesIntro: "Здесь вы можете пригласить людей присоединиться к этому сайту. ",
     InvitesListedBelow: "Приглашения, которые вы уже отправили, перечислены ниже.",
     NoInvites: "Вы еще никого не пригласили.",
-
+    
     InvitedEmail: "Приглашенный email",
     WhoAccepted: "Участник, который принял",
     InvAccepted: "Приглашение принято",
@@ -1099,73 +1099,73 @@ var t_ru_RU: TalkyardTranslations = t = {
 
   // Help message dialog
   help: {
-    YouCanShowAgain_1: "You can show help messages again, if you are logged in, by " +
-        "clicking your name and then ",
-    YouCanShowAgain_2: "Unhide help messages",
+    YouCanShowAgain_1: "Вы можете снова видеть справочные сообщения, если вы вошли в систему, " +
+        "щелкнув свое имя, а затем ",
+    YouCanShowAgain_2: "Показать справочные сообщения",
   },
 
 
   // Editor
 
   e: {
-    SimilarTopicsC: "Similar topics:",
+    SimilarTopicsC: "Похожие темы:",
 
     //WritingSomethingWarning: "You were writing something?",
-    UploadMaxOneFile: "Sorry but currently you can upload only one file at a time",
-    PleaseFinishPost: "Please first finish writing your post",
-    PleaseFinishChatMsg: "Please first finish writing your chat message",
-    PleaseFinishMsg: "Please first finish writing your message",
-    PleaseSaveEdits: "Please first save your current edits",
-    PleaseSaveOrCancel: "Please first either save or cancel your new topic",
-    CanContinueEditing: "You can continue editing your text, if you open the editor again.",
+    UploadMaxOneFile: "Извините, но в настоящее время вы можете загружать только один файл за раз",
+    PleaseFinishPost: "Пожалуйста, сначала закончите писать свой пост",
+    PleaseFinishChatMsg: "Пожалуйста, сначала закончите писать свое сообщение в чате",
+    PleaseFinishMsg: "Пожалуйста, сначала закончите писать свое сообщение",
+    PleaseSaveEdits: "Пожалуйста, сначала сохраните ваши текущие изменения",
+    PleaseSaveOrCancel: "Пожалуйста, сначала сохраните или отмените новую тему",
+    CanContinueEditing: "Вы можете продолжить редактировать свой текст, если снова откроете редактор.",
         //"(But the text will currently be lost if you leave this page.)",
-    PleaseDontDeleteAll: "Please don't delete all text. Write something.",
-    PleaseWriteSth: "Please write something.",
-    PleaseWriteTitle: "Please write a topic title.",
-    PleaseWriteMsgTitle: "Please write a message title.",
-    PleaseWriteMsg: "Please write a message.",
+    PleaseDontDeleteAll: "Пожалуйста, не удаляйте весь текст. Напиши что-нибудь.",
+    PleaseWriteSth: "Пожалуйста, напишите что-нибудь.",
+    PleaseWriteTitle: "Пожалуйста, напишите название темы.",
+    PleaseWriteMsgTitle: "Пожалуйста, напишите название сообщения.",
+    PleaseWriteMsg: "Пожалуйста, напишите сообщение.",
 
-    exBold: "bold text",
-    exEmph: "emphasized text",
-    exPre: "preformatted text",
-    exQuoted: "quoted text",
-    ExHeading: "Heading",
+    exBold: "жирный текст",
+    exEmph: "выделенный текст",
+    exPre: "преформатированный текст",
+    exQuoted: "цитируемый текст",
+    ExHeading: "Заголовок",
 
-    TitlePlaceholder: "Type a title — what is this about, in one brief sentence?",
+    TitlePlaceholder: "Введите название - что это, в одном коротком предложении?",
 
-    EditPost_1: "Edit ",
-    EditPost_2: "post ",
+    EditPost_1: "Ред. ",
+    EditPost_2: "пост ",
 
-    TypeChatMsg: "Type a chat message:",
-    YourMsg: "Your message:",
-    CreateTopic: "Create new topic",
-    CreateCustomHtml: "Create a custom HTML page (add your own <h1> title)",
-    CreateInfoPage: "Create an info page",
-    CreateCode: "Create a source code page",
-    AskQuestion: "Ask a question",
-    ReportProblem: "Report a problem",
-    SuggestIdea: "Suggest an idea",
-    NewChat: "New chat channel title and purpose",
-    NewPrivChat: "New private chat title and purpose",
-    AppendComment: "Append a comment at the bottom of the page:",
+    TypeChatMsg: "Введите сообщение чата:",
+    YourMsg: "Твое сообщение:",
+    CreateTopic: "Создать новую тему",
+    CreateCustomHtml: "Создать пользовательскую HTML-страницу (добавь свой <h1> заголовок)",
+    CreateInfoPage: "Создать информационную страницу",
+    CreateCode: "Создать страницу с исходным кодом",
+    AskQuestion: "Задайте вопрос",
+    ReportProblem: "Сообщить о проблеме",
+    SuggestIdea: "Предложить идею",
+    NewChat: "Название и назначение нового канала чата",
+    NewPrivChat: "Название и цель нового приватного чата",
+    AppendComment: "Добавить комментарий внизу страницы:",
 
-    ReplyTo: "Reply to ",
-    ReplyTo_theOrigPost: "the Original Post",
-    ReplyTo_post: "post ",
+    ReplyTo: "Ответить на ",
+    ReplyTo_theOrigPost: "Оригинальный Пост",
+    ReplyTo_post: "пост ",
 
-    PleaseSelectPosts: "Please select one or more posts to reply to.",
+    PleaseSelectPosts: "Пожалуйста, выберите одно или несколько сообщений для ответа.",
 
-    Save: "Save",
-    edits: "edits",
+    Save: "Сохранить",
+    edits: "ред.",
 
-    PostReply: "Post reply",
+    PostReply: "Ответить",
 
-    Post: "Post",
-    comment: "comment",
-    question: "question",
+    Post: "Пост",
+    comment: "комментарий",
+    question: "вопрос",
 
-    PostMessage: "Post message",
-    SimpleEditor: "Simple editor",
+    PostMessage: "Отправить сообщение",
+    SimpleEditor: "Простой редактор",
 
     Send: "Send",
     message: "message",
