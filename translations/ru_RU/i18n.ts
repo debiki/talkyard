@@ -868,66 +868,66 @@ var t_ru_RU: TalkyardTranslations = t = {
     NotfAboutAll: "Получать уведомления о каждом новом сообщении (если вы не отключите тему или категорию)",
     NotfAboutNewTopics: "Получать уведомления о новых темах (если вы не заглушите категорию)",
 
-    ActivitySummaryEmails: "Activity summary emails",
+    ActivitySummaryEmails: "Emails с описанием активности",
 
     EmailSummariesToGroup:
-        "When members of this group don't visit here, then, by default, email them " +
-        "summaries of popular topics and other stuff.",
+        "Когда члены этой группы не заходят сюда, по умолчанию отправьте им электронное письмо " +
+        "Сводка популярных тем и прочего.",
     EmailSummariesToMe:
-        "When I don't visit here, email me " +
-        "summaries of popular topics and other stuff.",
+        "Когда я не посещаю здесь, напишите мне " +
+        "Сводка популярных тем и прочего.",
 
-    AlsoIfTheyVisit: "Email them also if they visit here regularly.",
-    AlsoIfIVisit: "Email me also if I visit here regularly.",
+    AlsoIfTheyVisit: "Напишите им также, если они посещают здесь регулярно.",
+    AlsoIfIVisit: "Напишите мне также, если я посещаю здесь регулярно.",
 
-    HowOftenWeSend: "How often shall we send these emails?",
-    HowOftenYouWant: "How often do you want these emails?",
+    HowOftenWeSend: "Как часто отправлять письма?",
+    HowOftenYouWant: "Как часто вы хотите получать письма?",
 
     // ----- Preferences, Privacy
 
-    HideActivityStrangers_1: "Hide your recent activity for strangers and new members?",
-    HideActivityStrangers_2: "(But not for those who have been active members for a while.)",
-    HideActivityAll_1: "Hide your recent activity for everyone?",
-    HideActivityAll_2: "(Except for staff and trusted core members.)",
+    HideActivityStrangers_1: "Скрыть свою недавнюю активность для незнакомцев и новых членов?",
+    HideActivityStrangers_2: "(Но не для тех, кто некоторое время был активным участником.)",
+    HideActivityAll_1: "Скрыть свою недавнюю активность для всех?",
+    HideActivityAll_2: "(За исключением администрации и доверенных основных членов.)",
 
     // ----- Preferences, Account
 
     // About email address:
-    EmailAddresses: "Email addresses",
-    PrimaryDot: "Primary. ",
-    VerifiedDot: "Verified. ",
-    NotVerifiedDot: "Not verified. ",
-    ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
-    MakePrimary: "Make Primary",
-    AddEmail: "Add email address",
-    TypeNewEmailC: "Type a new email address:",
-    MaxEmailsInfo: (numMax: number) => `(You cannot add more than ${numMax} addresses.)`,
-    EmailAdded_1: "Added. We've sent you a verification email — ",
-    EmailAdded_2: "check your email inbox.",
-    SendVerifEmail: "Send verification email",
+    EmailAddresses: "Email адрес",
+    PrimaryDot: "Основной. ",
+    VerifiedDot: "Подтвержденный. ",
+    NotVerifiedDot: "Не подтверждено. ",
+    ForLoginWithDot: (provider: string) => `Для входа через ${provider}. `,
+    MakePrimary: "Сделать основной",
+    AddEmail: "Добавить email адрес",
+    TypeNewEmailC: "Введите новый email адрес:",
+    MaxEmailsInfo: (numMax: number) => `(Вы не можете добавить больше, чем ${numMax} адресов.)`,
+    EmailAdded_1: "Добавлен. Мы отправили вам письмо с подтверждением — ",
+    EmailAdded_2: "проверьте свою электронную почту.",
+    SendVerifEmail: "Отправить письмо с подтверждением",
 
     EmailStatusExpl:
-        "('Primary' means you can login via this address, and we send notifications to it. " +
-        "'Verified' means you clicked a verification link in an address verification email.)",
+        "('Основной' означает, что вы можете войти через этот адрес, и мы отправляем на него уведомления. " +
+        "'Подтвержден' означает, что вы нажали ссылку для подтверждения в электронном письме с подтверждением адреса.)",
 
     // Password:
-    ChangePwdQ: "Change password?",
-    CreatePwdQ: "Create password?",
-    WillGetPwdRstEml: "You'll get a reset password email.",
+    ChangePwdQ: "Измени пароль?",
+    CreatePwdQ: "Создать пароль?",
+    WillGetPwdRstEml: "Вы получите код для сброса пароля по электронной почте.",
     // This is the "None" in:  "Password: None"
-    PwdNone: "None",
+    PwdNone: "Нет",
 
     // Logins:
-    LoginMethods: "Login methods",
-    commaAs: ", as: ",
+    LoginMethods: "Способы входа",
+    commaAs: ", как: ",
 
     // One's data:
-    YourContent: "Your content",
-    DownloadPosts: "Download posts",
-    DownloadPostsHelp: "Creates a JSON file with a copy of topics and comments you've posted.",
-    DownloadPersData: "Download personal data",
-    DownloadPersDataHelp: "Creates a JSON file with a copy of your personal data, e.g. your name " +
-        "(if you specified a name) and email address.",
+    YourContent: "Ваш контент",
+    DownloadPosts: "Скачать посты",
+    DownloadPostsHelp: "Создает JSON файл с копией опубликованных вами тем и комментариев.",
+    DownloadPersData: "Скачать личные данные",
+    DownloadPersDataHelp: "Создает файл JSON с копией ваших личных данных, например, твое имя " +
+        "(если вы указали имя) и адрес электронной почты.",
 
 
     // Delete account:
