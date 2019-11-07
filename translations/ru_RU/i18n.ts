@@ -1014,21 +1014,21 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Password input
 
   pwd: {
-    PasswordC: "Password:",
-    StrengthC: "Strength: ",
-    FairlyWeak: "Fairly weak.",
-    toShort: "too short",
-    TooShort: (minLength: number) => `Too short. Should be at least ${minLength} characters`,
-    PlzInclDigit: "Please include a digit or special character",
-    TooWeak123abc: "Too weak. Don't use passwords like '12345' or 'abcde'.",
-    AvoidInclC: "Avoid including (parts of) your name or email in the password:",
+    PasswordC: "Пароль:",
+    StrengthC: "Сложность: ",
+    FairlyWeak: "Очень слабый.",
+    toShort: "слишком короткий",
+    TooShort: (minLength: number) => `Слишком короткий. Должно быть хотя бы ${minLength} символов`,
+    PlzInclDigit: "Пожалуйста, включите цифру или специальный символ",
+    TooWeak123abc: "Слишком слабый. Не используйте пароли, такие как '12345' или 'abcde'.",
+    AvoidInclC: "Не используйте в пароле ваше имя или адрес электронной почты:",
   },
 
 
   // Login dialog
 
   ld: {
-    NotFoundOrPrivate: "Page not found, or Access Denied.",
+    NotFoundOrPrivate: "Страница не найдена или Доступ запрещен.",
 
     // This is if you're admin, and click the Impersonate button to become someone else
     // (maybe to troubleshoot problems with his/her account s/he has asked for help about),
@@ -1037,21 +1037,21 @@ var t_ru_RU: TalkyardTranslations = t = {
     // impersonated cannot access) — then, that error message is shown: You're not allowed
     // to login as *someone else* to access that part of the community, until you've first
     // stopped impersonating the first user. (Otherwise, everything gets too complicated.)
-    IsImpersonating: "You're impersonating someone, who might not have access to all parts " +
-        "of this website.",
+    IsImpersonating: "Вы выдает себя за кого-то, кто не может иметь доступ к этой части " +
+        "сайта.",
 
-    IfYouThinkExistsThen: "If you think the page exists, log in as someone who may access it. ",
-    LoggedInAlready: "(You are logged in already, but perhaps it's the wrong account?) ",
-    ElseGoToHome_1: "Otherwise, you can ",
-    ElseGoToHome_2: "go to the homepage.",
+    IfYouThinkExistsThen: "Если вы считаете, что страница существует, войдите в систему как пользователь, который может получить к ней доступ. ",
+    LoggedInAlready: "(Вы уже вошли в систему, но, возможно, это не та учетная запись?) ",
+    ElseGoToHome_1: "В противном случае вы можете ",
+    ElseGoToHome_2: "перейти на главную страницу.",
 
-    CreateAcconut: "Create account",
-    ContinueWithDots: "Continue with ...",
-    SignUp: "Sign up",
-    LogIn: "Log in",
-    LogInWithPwd: "Log in with Password",
-    CreateAdmAcct: "Create admin account:",
-    AuthRequired: "Authentication required to access this site",
+    CreateAcconut: "Регистрация",
+    ContinueWithDots: "Продолжить с ...",
+    SignUp: "Зарегистрироваться",
+    LogIn: "Войти",
+    LogInWithPwd: "Войти с паролем",
+    CreateAdmAcct: "Создать аккаунт администратора:",
+    AuthRequired: "Требуется аутентификация для доступа к сайту",
     LogInToLike: "Log in to Like this post",
     LogInToSubmit: "Log in and submit",
     LogInToComment: "Log in to write a comment",
