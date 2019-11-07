@@ -1052,48 +1052,48 @@ var t_ru_RU: TalkyardTranslations = t = {
     LogInWithPwd: "Войти с паролем",
     CreateAdmAcct: "Создать аккаунт администратора:",
     AuthRequired: "Требуется аутентификация для доступа к сайту",
-    LogInToLike: "Log in to Like this post",
-    LogInToSubmit: "Log in and submit",
-    LogInToComment: "Log in to write a comment",
-    LogInToCreateTopic: "Log in to create topic",
+    LogInToLike: "Войдите, чтобы поставить Нравится посту",
+    LogInToSubmit: "Войдите и отправьте",
+    LogInToComment: "Войдите, чтобы оставить комментарий",
+    LogInToCreateTopic: "Войдите, чтобы создать тему",
 
-    AlreadyHaveAcctQ: "You have an account? ",  // MISSING changed "Already have...?" to "You have...?"
+    AlreadyHaveAcctQ: "У вас есть аккаунт? ",  // MISSING changed "Already have...?" to "You have...?"
     LogInInstead_1: "",
-    LogInInstead_2: "Log in",   // "Log in" (this is a button)
-    LogInInstead_3: " instead", // "instead"
+    LogInInstead_2: "Войти",   // "Log in" (this is a button)
+    LogInInstead_3: " вместо", // "instead"
 
-    NewUserQ: "New user? ",
+    NewUserQ: "Новый пользователь? ",
     SignUpInstead_1: "",
-    SignUpInstead_2: "Sign up",
-    SignUpInstead_3: " instead",
+    SignUpInstead_2: "Зарегистрироваться",
+    SignUpInstead_3: " вместо",
 
-    OrCreateAcctHere: "Or create account:",
-    OrTypeName: "Or type your name:",
-    OrLogIn: "Or log in:",
-    YourNameQ: "Your name?",
+    OrCreateAcctHere: "Или создать аккаунт:",
+    OrTypeName: "Или введите свое имя:",
+    OrLogIn: "Или войти:",
+    YourNameQ: "Твое имя?",
 
-    BadCreds: "Wrong username or password",
+    BadCreds: "Неверное имя пользователя или пароль",
 
-    UsernameOrEmailC: "Username or email:",
-    PasswordC: "Password:",
-    ForgotPwd: "Did you forget your password?",
+    UsernameOrEmailC: "Имя пользователя или адрес email:",
+    PasswordC: "Пароль:",
+    ForgotPwd: "Вы забыли свой пароль?",
 
-    NoPwd: "You have not yet chosen a password.",
-    CreatePwd: "Create password",
+    NoPwd: "Вы еще не выбрали пароль.",
+    CreatePwd: "Создать пароль",
   },
 
 
   // Flag dialog
 
   fd: {
-    PleaseTellConcerned: "Please tell us what you are concerned about.",
-    ThanksHaveReported: "Thanks. You have reported it. The forum staff will take a look.",
-    ReportComment: "Report Comment",
+    PleaseTellConcerned: "Пожалуйста, расскажите нам, что вас беспокоит.",
+    ThanksHaveReported: "Благодарю. Вы сообщили об этом. Сотрудники форума посмотрят.",
+    ReportComment: "Пожаловаться на комментарий",
     // Different reasons one can choose among when reporting a comment:
-    OptPersonalData: "This post contains personal data, for example someones' real name.",
-    OptOffensive: "This post contains offensive or abusive content.",
-    OptSpam: "This post is an unwanted advertisement.",
-    OptOther: "Notify staff about this post for some other reason.",
+    OptPersonalData: "Этот пост содержит личные данные, например, чье-то настоящее имя.",
+    OptOffensive: "Этот пост содержит оскорбительное или оскорбительное содержание.",
+    OptSpam: "Этот пост является нежелательной рекламой.",
+    OptOther: "Сообщить сотрудникам об этой посте по какой-то другой причине.",
   },
 
 
