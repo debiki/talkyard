@@ -1167,109 +1167,109 @@ var t_ru_RU: TalkyardTranslations = t = {
     PostMessage: "Отправить сообщение",
     SimpleEditor: "Простой редактор",
 
-    Send: "Send",
-    message: "message",
+    Send: "Отправить",
+    message: "сообщение",
 
-    Create: "Create",
-    page: "page",
-    chat: "chat",
-    idea: "idea",
-    topic: "topic",
+    Create: "Создать",
+    page: "страницу",
+    chat: "чат",
+    idea: "идею",
+    topic: "тему",
 
-    Submit: "Submit",
-    problem: "problem",
+    Submit: "Отправить",
+    problem: "проблема",
 
-    ViewOldEdits: "View old edits",
+    ViewOldEdits: "Посмотреть старые правки",
 
-    UploadBtnTooltip: "Upload a file or image",
-    BoldBtnTooltip: "Make text bold",
-    EmBtnTooltip: "Emphasize",
-    QuoteBtnTooltip: "Quote",
-    PreBtnTooltip: "Preformatted text",
-    HeadingBtnTooltip: "Heading",
+    UploadBtnTooltip: "Загрузить файл или изображение",
+    BoldBtnTooltip: "Сделать текст жирным",
+    EmBtnTooltip: "Подчеркнуть",
+    QuoteBtnTooltip: "Цитата",
+    PreBtnTooltip: "Предварительно отформатированный текст",
+    HeadingBtnTooltip: "Заголовок",
 
-    TypeHerePlaceholder: "Type here. You can use Markdown and HTML. Drag and drop to paste images.",
+    TypeHerePlaceholder: "Введите здесь. Вы можете использовать Markdown и HTML. Перетащите, чтобы вставить изображения.",
 
-    Maximize: "Maximize",
-    ToNormal: "Back to normal",
-    TileHorizontally: "Tile horizontally",
+    Maximize: "Максимизация",
+    ToNormal: "Вернуться к нормальному",
+    TileHorizontally: "Плитка горизонтально",
 
-    PreviewC: "Preview:",
-    TitleExcl: " (title excluded)",
-    ShowEditorAgain: "Show editor again",
-    Minimize: "Minimize",
+    PreviewC: "Превью:",
+    TitleExcl: " (название исключено)",
+    ShowEditorAgain: "Показать редактор снова",
+    Minimize: "Минимизировать",
 
-    IPhoneKbdSpace_1: "(This gray space is reserved",
-    IPhoneKbdSpace_2: "for the iPhone keyboard.)",
+    IPhoneKbdSpace_1: "(Это серое пространство зарезервировано",
+    IPhoneKbdSpace_2: "для клавиатуры iPhone.)",
 
-    PreviewInfo: "Here you can preview how your post will look.",
-    CannotType: "You cannot type here.",
+    PreviewInfo: "Здесь вы можете просмотреть, как будет выглядеть ваш пост.",
+    CannotType: "Вы не можете здесь печатать.",
 
-    LoadingDraftDots: "Loading any draft...",
-    DraftUnchanged: "Unchanged.",
-    CannotSaveDraftC: "Cannot save draft:",
-    DraftSaved: (nr: string | number) => `Draft ${nr} saved.`,
-    DraftDeleted: (nr: string | number) => `Draft ${nr} deleted.`,
-    WillSaveDraft: (nr: string | number) => `Will save draft ${nr} ...`,
-    SavingDraft: (nr: string | number) => `Saving draft ${nr} ...`,
-    DeletingDraft: (nr: string | number) => `Deleting draft ${nr} ...`,
+    LoadingDraftDots: "Загрузка любого черновика ...",
+    DraftUnchanged: "Без изменений.",
+    CannotSaveDraftC: "Не удается сохранить черновик:",
+    DraftSaved: (nr: string | number) => `Черновик ${nr} сохранен.`,
+    DraftDeleted: (nr: string | number) => `Черновик ${nr} удален.`,
+    WillSaveDraft: (nr: string | number) => `Сохранит черновик ${nr} ...`,
+    SavingDraft: (nr: string | number) => `Сохранение черновика ${nr} ...`,
+    DeletingDraft: (nr: string | number) => `Удаление черновика ${nr} ...`,
   },
 
 
   // Select category dropdown
 
   scd: {
-    SelCat: "Select category",
+    SelCat: "Выберите категорию",
   },
 
   // Page type dropdown
 
   pt: {
-    SelectTypeC: "Select topic type:",
-    DiscussionExpl: "A discussion about something.",
-    QuestionExpl: "One answer can be marked as the accepted answer.",
-    ProblExpl: "If something is broken or doesn't work. Can be marked as fixed/solved.",
-    IdeaExpl: "A suggestion. Can be marked as done/implemented.",
-    ChatExpl: "A perhaps never-ending conversation.",
-    PrivChatExpl: "Only visible to people that get invited to join the chat.",
+    SelectTypeC: "Выберите тип темы:",
+    DiscussionExpl: "Дискуссия о чем-то.",
+    QuestionExpl: "Один ответ может быть помечен как принятый ответ.",
+    ProblExpl: "Если что-то сломано или не работает. Может быть помечен как исправленный/решенный.",
+    IdeaExpl: "Предложение. Может быть помечено как выполненное/выполненное.",
+    ChatExpl: "Возможно, бесконечный разговор.",
+    PrivChatExpl: "Видны только тем, кого пригласили присоединиться к чату.",
 
-    CustomHtml: "Custom HTML page",
-    InfoPage: "Info page",
-    Code: "Code",
-    EmbCmts: "Embedded comments",
+    CustomHtml: "Пользовательская HTML-страница",
+    InfoPage: "Информационная страница",
+    Code: "Код",
+    EmbCmts: "Встроенные комментарии",
     About: "About",
-    PrivChat: "Private Chat",
-    Form: "Form",
+    PrivChat: "Приватный чат",
+    Form: "Форма",
   },
 
 
   // Join sub community dialog
 
   jscd: {
-    NoMoreToJoin: "No more communities to join.",
-    SelCmty: "Select community ...",
+    NoMoreToJoin: "Нет больше сообществ, чтобы присоединиться.",
+    SelCmty: "Выберите сообщество ...",
   },
 
 
   // Search dialogs and the search page.
 
   s: {
-    TxtToFind: "Text to search for",
+    TxtToFind: "Текст для поиска",
   },
 
 
   // No internet
 
   ni: {
-    NoInet: "No internet connection",
-    PlzRefr: "Refresh page to see any latest changes. (There was a disconnection)",
-    RefrNow: "Refresh now",
+    NoInet: "Подключение к Интернету отсутствует",
+    PlzRefr: "Обновите страницу, чтобы увидеть последние изменения. (Было отключение)",
+    RefrNow: "Обновить сейчас",
   },
 
 
-  PostDeleted: (postNr: number) => `That post, nr ${postNr}, has been deleted.`,
-  NoSuchPost: (postNr: number) => `There's no post nr ${postNr} on this page.`,
-  NoPageHere: "This page has been deleted, or it never existed, or you may not access it.",
-  GoBackToLastPage: "Go back to last page",
+  PostDeleted: (postNr: number) => `Пост, номер ${postNr}, был удален.`,
+  NoSuchPost: (postNr: number) => `На этой странице нет поста, номер ${postNr}.`,
+  NoPageHere: "Эта страница была удалена, или ее никогда не было, или вы не можете получить к ней доступ.",
+  GoBackToLastPage: "Вернуться на последнюю страницу",
 
 };
