@@ -34,6 +34,9 @@ import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 import ed.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import talkyard.server.PostRendererSettings
 
 
 
@@ -477,14 +480,50 @@ object SiteDao {
   private val SoftMaxOldHostnames = 5
   private val WaitUntilAnotherHostnameInterval = 60
 
-  private val locksBySiteId = mutable.HashMap[SiteId, Object]()
+  private val locksBySiteId = mutable.HashMap[SiteId, ReentrantLock]()
 
   def siteCacheKey(siteId: SiteId) = MemCacheKey(siteId, "|SiteId")
 
-  def synchronizeOnSiteId[R](siteId: SiteId)(block: => R): R = {
-    val lock = locksBySiteId.getOrElseUpdate(siteId, new Object)
-    lock.synchronized {
+
+  def synchronizeOnManySiteIds[R](siteIds: Set[SiteId])(block: => R): R = {
+    // Lock in same order, to avoid deadlocks.
+    val idsSorted = siteIds.toSeq.sorted
+    syncManyImpl(idsSorted) {
       block
+    }
+  }
+
+
+  private def syncManyImpl[R](siteIds: Seq[SiteId])(block: => R): R = {
+    if (siteIds.isEmpty) {
+      block
+    }
+    else {
+      val lockNowId = siteIds.head
+      val lockLaterId = siteIds.tail
+      synchronizeOnSiteId(lockNowId) {
+        syncManyImpl(lockLaterId) {
+          block
+        }
+      }
+    }
+  }
+
+
+  def synchronizeOnSiteId[R](siteId: SiteId)(block: => R): R = {
+    val lock = locksBySiteId.getOrElseUpdate(siteId, new ReentrantLock)
+    // Wait for fairly long (some seconds) in case a garbage collection takes long.
+    // (Previously we waited forever here — so a few seconds should be fine.)
+    if (lock.tryLock(3L, TimeUnit.SECONDS)) {
+      try {
+        block
+      }
+      finally {
+        lock.unlock()
+      }
+    }
+    else {
+      throw new RuntimeException(s"Couldn't lock site $siteId for updates [TyE0SITELOCK]")
     }
   }
 

@@ -184,9 +184,15 @@ class SystemDao(
       config.createSite.maxSitesTotal + 5
     }
 
-    // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
-    try dangerous_readWriteTransaction { sysTx =>
-      if (deleteWhatSite != DeleteWhatSite.NoSite) {
+    // During e2e tests, find out which test sites to delete, to make the hostname
+    // or something available again. But don't delete them immediately — first
+    // acquire a SiteDao mutex, to avoid PostgreSQL deadlocks if the tx here deletes
+    // the site, but another server request and tx tries to update the same site.
+    val anySitesToDelete: Vector[Site] = try readOnlyTransaction { sysTx =>
+      if (deleteWhatSite == DeleteWhatSite.NoSite) {
+        Vector.empty
+      }
+      else {
         val anySitesToDeleteMaybeDupls: Vec[Site] =
         deleteWhatSite match {
           case DeleteWhatSite.SameHostname =>
@@ -205,7 +211,16 @@ class SystemDao(
             die("TyE502MWKDT45")
         }
 
-        val anySitesToDelete = anySitesToDeleteMaybeDupls.distinct
+        anySitesToDeleteMaybeDupls.distinct
+      }
+    }
+
+
+    SiteDao.synchronizeOnManySiteIds(anySitesToDelete.map(_.id).toSet) {
+          // Not dangerous: We've locked any sites we'll delete, already.
+          try dangerous_readWriteTransaction { sysTx =>
+      if (anySitesToDelete.nonEmpty) {
+
         val deletedAlready = mutable.HashSet[SiteId]()
 
         val anyDeletedHostnames: Seq[String] = anySitesToDelete flatMap { siteToDelete =>
@@ -338,7 +353,7 @@ class SystemDao(
         play.api.Logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
-    }
+    } }
   }
 
 
