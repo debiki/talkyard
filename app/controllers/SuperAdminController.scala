@@ -23,8 +23,8 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
-import play.api.mvc.ControllerComponents
+import play.api.libs.json._
+import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX._
 
 
@@ -65,6 +65,27 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
     globals.systemDao.updateSites(siteData)
     listSitesImpl()
   }
+
+
+  import context.safeActions.ExceptionAction
+
+  def deleteHosts: Action[JsValue] = ExceptionAction(cc.parsers.json(1000)) { request =>
+    // Currently only for e2e tests.
+    throwForbiddenIf(!edContext.security.hasOkE2eTestPassword(request),
+      "TyE502TMKJJR3", "Wrong e2e test password")
+
+    val hosts = (request.body \ "hosts").as[Seq[String]]
+
+    throwForbiddenIf(hosts.exists(!_.startsWith("e2e-test-")),
+      "TyE602MWKDL35", "Not e2e test site, doesn't start with e2e-test-")
+
+    edContext.globals.systemDao.deleteHostnames(hosts)
+    Ok
+  }
+
+
+  // Also:
+  // def deleteHostnames: Action[JsValue]  in SettingsController [502KPJGJ6]
 
 
   private def listSitesImpl(): p.mvc.Result = {

@@ -315,6 +315,7 @@ GET   /-/superadmin/             controllers.SuperAdminController.superAdminApp(
 GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(clientRoute)
 GET   /-/list-sites              controllers.SuperAdminController.listSites
 POST  /-/update-sites            controllers.SuperAdminController.updateSites
+POST  /-/delete-hosts            controllers.SuperAdminController.deleteHosts
 
 GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret

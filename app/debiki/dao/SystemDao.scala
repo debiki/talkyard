@@ -112,6 +112,11 @@ class SystemDao(
     }
   }
 
+  def deleteHostnames(hostnames: Seq[String]) {
+    dangerous_readWriteTransaction { tx => // only for e2e tests currently
+      tx.deleteHosts(hostnames)
+    }
+  }
 
   private def createFirstSite(): Site = {
     val pubId =

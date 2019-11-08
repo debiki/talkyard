@@ -197,6 +197,11 @@ function deleteOldTestSite(localHostname: string) {
 }
 
 
+function deleteHosts(hosts: string[]) {
+  postOrDie(settings.mainSiteOrigin + '/-/delete-hosts', { hosts });
+}
+
+
 function playTimeSeconds(seconds: number) {
   const url = settings.mainSiteOrigin + '/-/play-time';
   postOrDie(url, { seconds: seconds });
@@ -456,6 +461,7 @@ export = {
   importRealSiteData,
   importSiteData: importTestSiteData,
   deleteOldTestSite,
+  deleteHosts,
   playTimeSeconds,
   playTimeMinutes,
   playTimeHours,

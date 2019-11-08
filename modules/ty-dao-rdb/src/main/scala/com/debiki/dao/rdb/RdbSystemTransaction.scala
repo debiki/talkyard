@@ -323,6 +323,15 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
+  def deleteHosts(hosts: Seq[String]) {
+    if (hosts.isEmpty) return
+    val statement = s"""
+      delete from hosts3 where host in (${makeInListFor(hosts)})
+      """
+    runUpdate(statement, hosts.toList)
+  }
+
+
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
     runQuery("""
         select t.SITE_ID TID,
