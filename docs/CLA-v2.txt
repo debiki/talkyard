@@ -90,5 +90,3 @@ MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 
 
 vim: tw=76 list et
-
-I, Lenko Evgeny Sergeevich eugeneogru@gmail.com, agree to the Contributor License Agreement, docs/CLA-v2.txt.
