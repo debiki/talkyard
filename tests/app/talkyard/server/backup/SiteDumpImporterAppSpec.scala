@@ -26,6 +26,8 @@ import org.scalatest._
 import scala.collection.immutable
 
 
+// OOPS FAILS
+
 class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // TyT2496ANPJ3
   with DumpMaker {
 
@@ -411,6 +413,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var actualDump: SiteBackup = null
       var latestDumpToUpsert: SiteBackup = null
 
+      lazy val siteDao = globals.siteDao(actualDump.site.get.id)
+
       lazy val rootCat = actualDump.categories.find(_.parentId.isEmpty) getOrDie "TyE305HSDRA"
       lazy val sectPage = {
         actualDump.pages.length mustBe 1
@@ -497,7 +501,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       "add a sub category" in {
         val simplePatch = SimpleSitePatch(categoryPatches = Vector(newCatPatch))
-        val completePatch = simplePatch.makeComplete(actualDump.categories, globals.now())
+        val completePatch = simplePatch.makeComplete(siteDao)
           .getOrIfBad(errorMessage => die("TyE36502SJ", s"Error making complete patch: $errorMessage"))
         upsert(site.id, completePatch)
       }
@@ -631,7 +635,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
         "upsert-edit the new sub cat" in {
           val simplePatch = SimpleSitePatch(categoryPatches = Vector(simpleEditCatPatch))
-          val completePatch = simplePatch.makeComplete(actualDump.categories, globals.now())
+          val completePatch = simplePatch.makeComplete(siteDao)
             .getOrIfBad(errorMessage => die("TyE502WKG", s"Error making complete patch: $errorMessage"))
           upsert(site.id, completePatch)
         }

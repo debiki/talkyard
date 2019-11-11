@@ -23,6 +23,7 @@ import debiki.EdHttp._
 import debiki.{TextAndHtml, TextAndHtmlMaker}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
+import org.scalactic.{ErrorMessage, Good, Or}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
@@ -171,6 +172,18 @@ trait CategoriesDao {
 
   def getCategory(categoryId: CategoryId): Option[Category] = {
     getCategoryAndRoot(categoryId).map(_._1)
+  }
+
+
+  def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage = {
+    val cats = getAllCategories()
+    parseRef(ref) map {
+      case ParsedRef.ExternalId(extId) =>
+        cats.find(_.extImpId is extId)
+      case ParsedRef.TalkyardId(tyId) =>
+        val catId = tyId.toIntOption getOrElse { return Good(None) }
+        cats.find(_.id == catId)
+    }
   }
 
 

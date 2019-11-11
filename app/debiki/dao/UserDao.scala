@@ -760,6 +760,19 @@ trait UserDao {
   }
 
 
+  def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage = {
+    parseRef(ref) map {
+      case ParsedRef.ExternalId(extId) =>
+        getParticipantByExtId(extId)
+      case ParsedRef.SingleSignOnId(ssoId) =>
+        getMemberBySsoId(ssoId)
+      case ParsedRef.TalkyardId(tyId) =>
+        val id = tyId.toIntOption getOrElse { return Good(None) }
+        getParticipant(id)
+    }
+  }
+
+
   def getTheGroupOrThrowClientError(groupId: UserId): Group = {
     COULD // instead lookup all groups: allGroupsKey  [LDALGRPS]
     throwBadRequestIf(groupId <= MaxGuestId, "TyE30KMRAK", s"User id $groupId is a guest id")
@@ -858,6 +871,11 @@ trait UserDao {
   def getMemberBySsoId(ssoId: String): Option[Participant] = {
     COULD_OPTIMIZE // can in-mem cache
     loadMemberInclDetailsBySsoId(ssoId).map(_.briefUser)
+  }
+
+
+  def getParticipantByExtId(extId: ExtId): Option[Participant] = {
+    readOnlyTransaction(_.loadUserInclDetailsByExtId(extId)).map(_.briefUser)
   }
 
 

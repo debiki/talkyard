@@ -146,7 +146,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
           request.theUserAndLevels, dao.getOnesGroupIds(requester),
           post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
-          permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+          permissions = dao.getPermsOnPages(categoriesRootLast)), "TyEZBXK3M3")
       }
     }
     else {

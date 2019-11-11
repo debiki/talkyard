@@ -88,7 +88,34 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
-  type ExtImpId = String
+
+  type ExtImpId = String  // RENAME to ExtId
+  type ExtId = String
+
+  type Ref = String
+  sealed abstract class ParsedRef
+  object ParsedRef {
+    case class ExternalId(value: ExtId) extends ParsedRef
+    case class SingleSignOnId(value: ExtId) extends ParsedRef
+    case class TalkyardId(value: String) extends ParsedRef
+  }
+
+  def parseRef(ref: Ref): ParsedRef Or ErrorMessage = {
+    if (ref startsWith "extid:") {
+      val extId = ref drop "extid:".length
+      Good(ParsedRef.ExternalId(extId))
+    }
+    else if (ref startsWith "tyid:") {
+      val tyId = ref drop "tyid:".length
+      Good(ParsedRef.TalkyardId(tyId))
+    }
+    else {
+      var refDots = ref.takeWhile(_ != ':') take 14
+      if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
+      Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyEREFTYPE]")
+    }
+  }
+
 
   val LowestTempImpId: Int = 2*1000*1000*1000
   val FirstTempImpId: Int = LowestTempImpId + 1

@@ -72,12 +72,13 @@ case class SiteBackupReader(context: EdContext) {
 
 
   private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
-    val categoriesJson =
+    val (categoriesJson, pagesJson) =
       try { // (this extra try...catch is for better error messages)
         // Only categories.
         // Right now, all people have asked for, is to upsert categories
         // (via /-/v0/upsert-simple ).
-        readJsArray(bodyJson, "categories", optional = true)
+        (readJsArray(bodyJson, "categories", optional = true),
+          readJsArray(bodyJson, "pages", optional = true))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -95,15 +96,19 @@ case class SiteBackupReader(context: EdContext) {
       }
     }
 
-    val simplePatch = SimpleSitePatch(categoryPatches = categoryPatches)
-
-    val oldCats = context.globals.siteDao(siteId).getAllCategories()
-    // For now, pick the first random root category. Sub communities currently disabled. [4GWRQA28]
-    val rootCategory = context.globals.siteDao(siteId).getRootCategories().headOption.getOrElse {
-      // This means the site is currently empty, but we need something to insert the new contents into.
-      throwForbidden("TyE6PKWTY4", "No root category has been created")
+    val pagePatches: Seq[SimplePagePatch] = pagesJson.value.zipWithIndex map { case (json, index) =>
+      readSimplePagePatchOrBad(json).getOrIfBad(error =>
+        throwBadReq(
+          "TyE8KXLMT43", o"""Invalid SimplePagePatch json at
+              index $index in the 'categories' list: $error, json: $json"""))
     }
-    val completePatch = simplePatch.makeComplete(oldCats, globals.now()) match {
+
+    val simplePatch = SimpleSitePatch(
+      categoryPatches,
+      pagePatches)
+
+    val dao = context.globals.siteDao(siteId)
+    val completePatch = simplePatch.loadThingsAndMakeComplete(dao) match {
       case Good(p) => p
       case Bad(errorMessage) =>
         throwBadRequest("TyE05JKRVHP8", s"Error interpreting patch: $errorMessage")
@@ -909,6 +914,32 @@ case class SiteBackupReader(context: EdContext) {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for page id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readSimplePagePatchOrBad(jsValue: JsValue): SimplePagePatch Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a SimplePagePatch json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      val pageType = readOptInt(jsObj, "pageType") map { value =>
+        PageType.fromInt(value).getOrThrowBadJson("pageType")
+      }
+      Good(SimplePagePatch(
+        extId = readString(jsObj, "extId"),
+        pageType = pageType,
+        categoryRef = readOptString(jsObj, "categoryRef"),
+        authorRef = readOptString(jsObj, "authorRef"),
+        title = readString(jsObj, "title"),
+        body = readString(jsObj, "body")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad SimplePagePatch json: ${ex.getMessage}")
     }
   }
 
