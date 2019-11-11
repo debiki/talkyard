@@ -462,6 +462,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             // Need a way to specify if the source is in commonmark or html?  [IMPCORH]
             // Ought to assume it's always CommonMark, but then, importing things can
             // take almost forever, if the site is large (CommonMark parser = slow).
+            // Answer: Just add a field approvedSourceMarkupLang: 'Html' or 'Commonmark'
+            // or just  markupLang: ...  ?
             //
             val postReal = postRealIdsNrsNoHtml.approvedSource match {
               case None => postRealIdsNrsNoHtml

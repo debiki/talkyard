@@ -19,7 +19,9 @@ package talkyard.server.backup
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.ForumDao
+import debiki.dao.{ForumDao, ReadOnySiteDao, SiteDao}
+import debiki.EdHttp.throwForbidden
+import org.apache.logging.log4j.util.ReadOnlyStringMap
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -170,8 +172,25 @@ case object SiteBackup {
 }
 
 
+
 case class SimpleSitePatch(
-  categoryPatches: Seq[CategoryPatch]) {
+  categoryPatches: Seq[CategoryPatch] = Nil,
+  pagePatches: Seq[SimplePagePatch] = Nil) {
+
+
+  def loadThingsAndMakeComplete(dao: SiteDao): SiteBackup Or ErrorMessage = {
+    val oldCats = dao.getAllCategories()
+    // For now, pick the first random root category. Sub communities currently
+    // disabled. [4GWRQA28]
+    dao.getRootCategories().headOption.getOrElse {
+      // This means the site is currently empty, but we need something
+      // to insert the new contents into.
+      throwForbidden("TyE6PKWTY4", "No root category has been created")
+    }
+    //makeComplete(oldCats, dao.globals.now())
+    makeComplete(dao)
+  }
+
 
   /** Adds missing data to this SimplePatch so it becomes a "complete" SitePatch,
     * which describes precisely what things and values to upsert.
@@ -181,10 +200,11 @@ case class SimpleSitePatch(
     * that's where the description is kept (.i.e in the About page,
     * the page body post text).
     */
-  def makeComplete(oldCats: Seq[Category], now: When): SiteBackup Or ErrorMessage = {
+  def makeComplete(dao: ReadOnySiteDao): SiteBackup Or ErrorMessage = {
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
+    val now = dao.now()
 
     // This works with the current users of the API — namely, upserting categories.
     val categories = mutable.ArrayBuffer[Category]()
@@ -193,10 +213,11 @@ case class SimpleSitePatch(
     val permsOnPages = mutable.ArrayBuffer[PermsOnPages]()
     val posts = mutable.ArrayBuffer[Post]()
 
+
+    // ----- Upsert categories, and description pages
+
     for (categoryPatch <- categoryPatches) {
       nextCategoryId += 1
-      nextPageId += 1
-      nextPostId += 1
 
       val theCategorySlug = categoryPatch.slug getOrElse {
         return Bad("Category has no slug [TyE205MRDJ5]")
@@ -211,6 +232,12 @@ case class SimpleSitePatch(
       }
 
       val parentCategory: Category = categoryPatch.parentRef map { ref =>
+        dao.getCategoryByRef(ref) getOrIfBad { problem =>
+          return Bad(s"Bad category ref: '$ref', the problem: $problem [TyE5FKDLW206]")
+        } getOrElse {
+          return Bad(s"Category not found: '$ref' [TyE8KFUW240]")
+        }
+        /*
         if (ref startsWith "extid:") {
           val parentExtId = ref drop "extid:".length
           oldCats.find(_.extImpId is parentExtId) getOrElse {
@@ -225,7 +252,7 @@ case class SimpleSitePatch(
           var refDots = ref.takeWhile(_ != ':') take 14
           if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
           return Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyE5RKD2LR46]")
-        }
+        } */
       } getOrElse {
         return Bad("No parentRef: 'extid:....' specified, that's not yet supported [TyE205WKDLF2]")
         /* Later:
@@ -254,41 +281,103 @@ case class SimpleSitePatch(
         createdAt = now.toJavaDate,
         updatedAt = now.toJavaDate))
 
-      pages.append(PageMeta.forNewPage(
-        extId = categoryPatch.extImpId.map(_ + "_about_page"),
-        pageId = nextPageId.toString,
-        pageRole = PageType.AboutCategory,
+      permsOnPages.append(ForumDao.makeEveryonesDefaultCategoryPerms(nextCategoryId))
+      permsOnPages.append(ForumDao.makeStaffCategoryPerms(nextCategoryId))
+
+      appendPage(
+        pageExtId = categoryPatch.extImpId.map(_ + "_about_page"),
+        pageType = PageType.AboutCategory,
+        pageSlug = "about-" + theCategorySlug,
         authorId = SysbotUserId,
+        categoryId = Some(nextCategoryId),
+        titlePostExtId = categoryPatch.extImpId.map(_ + "_about_page_title"),
+        titleHtmlUnsafe = s"Description of the $theCategoryName category",
+        bodyPostExtId = categoryPatch.extImpId.map(_ + "_about_page_body"),
+        bodyHtmlUnsafe = theCategoryDescription)
+    }
+
+
+    // ----- Upsert pages
+
+    for (pagePatch: SimplePagePatch <- pagePatches) {
+      val category: Option[Category] = pagePatch.categoryRef.map { ref =>
+        dao.getCategoryByRef(ref) getOrIfBad { problem =>
+          return Bad(s"Bad category ref: '$ref', the problem: $problem [TyE8SKHNWJ2]")
+        } getOrElse {
+          return Bad(s"Category not found: '$ref' [TyE2UPMSD064]")
+        }
+      }
+      val author: Option[Participant] = pagePatch.authorRef.map { ref =>
+        dao.getParticipantByRef(ref) getOrIfBad { problem =>
+          return Bad(s"Bad author ref: '$ref', the problem: $problem [TyE5KD2073]")
+        } getOrElse {
+          return Bad(s"Author not found: '$ref' [TyE6WUKJC]")
+        }
+      }
+      val pageSlug = dao.nashorn.slugifyTitle(pagePatch.title)
+      appendPage(
+        pageExtId = Some(pagePatch.extId),
+        pageType = pagePatch.pageType getOrElse PageType.Discussion,
+        pageSlug = pageSlug,
+        authorId = author.map(_.id) getOrElse SysbotUserId,
+        categoryId = category.map(_.id),
+        titlePostExtId = Some(pagePatch.extId + "_title"),
+        titleHtmlUnsafe = pagePatch.title,
+        bodyPostExtId = Some(pagePatch.extId + "_body"),
+        bodyHtmlUnsafe = pagePatch.body)
+    }
+
+
+    def appendPage(
+      pageExtId: Option[ExtId],
+      pageType: PageType,
+      pageSlug: String,
+      authorId: UserId,
+      categoryId: Option[CategoryId],
+      titleHtmlUnsafe: String,
+      titlePostExtId: Option[ExtId],
+      bodyHtmlUnsafe: String,
+      bodyPostExtId: Option[ExtId],
+    ) {
+      nextPageId += 1
+
+      pages.append(PageMeta.forNewPage(
+        extId = pageExtId,
+        pageId = nextPageId.toString,
+        pageRole = pageType,
+        authorId = authorId,
         creationDati = now.toJavaDate,
         numPostsTotal = 2,
-        categoryId = Some(nextCategoryId),
+        categoryId = categoryId,
         publishDirectly = true))
 
       pagePaths.append(PagePathWithId(
         folder = "/",
         pageId = nextPageId.toString,
         showId = true,
-        pageSlug = "about-" + theCategorySlug,
+        pageSlug = pageSlug,
         canonical = true))
 
-      // Assume the title source is html, not CommonMark. How can we know? [IMPCORH]
-      val descriptionSanitized = Jsoup.clean(theCategoryDescription, Whitelist.basicWithImages)
+      // Assume the title source is html, not CommonMark.
+      // Later, could add a field descriptionMarkupLang: 'Html' or 'Commonmark'? [IMPCORH]
+      val bodyHtmlSanitized = Jsoup.clean(bodyHtmlUnsafe, Whitelist.basicWithImages)
 
       // Sync the title with CategoryToSave [G204MF3]
-      val titleSource = s"Description of the $theCategoryName category"
-      val titleSanitized = Jsoup.clean(titleSource, Whitelist.basic)
 
+      val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
+
+      nextPostId += 1
       val titlePost = Post(
         id = nextPostId,
-        extImpId = categoryPatch.extImpId.map(_ + "_about_page_title"),
+        extImpId = titlePostExtId,
         pageId = nextPageId.toString,
         nr = PageParts.TitleNr,
         parentNr = None,
         multireplyPostNrs = Set.empty,
         tyype = PostType.Normal,
         createdAt = now.toJavaDate,
-        createdById = SysbotUserId,
-        currentRevisionById = SysbotUserId,
+        createdById = authorId,
+        currentRevisionById = authorId,
         currentRevStaredAt = now.toJavaDate,
         currentRevLastEditedAt = None,
         currentRevSourcePatch = None,
@@ -298,8 +387,8 @@ case class SimpleSitePatch(
         lastApprovedEditById = None,
         numDistinctEditors = 1,
         safeRevisionNr = Some(FirstRevisionNr),
-        approvedSource = Some(titleSource),
-        approvedHtmlSanitized = Some(titleSanitized),
+        approvedSource = Some(titleHtmlUnsafe),
+        approvedHtmlSanitized = Some(titleHtmlSanitized),
         approvedAt = Some(now.toJavaDate),
         approvedById = Some(SysbotUserId),
         approvedRevisionNr = Some(FirstRevisionNr),
@@ -329,17 +418,15 @@ case class SimpleSitePatch(
       nextPostId += 1
       val bodyPost = titlePost.copy(
         id = nextPostId,
-        extImpId = categoryPatch.extImpId.map(_ + "_about_page_body"),
+        extImpId = bodyPostExtId,
         nr = PageParts.BodyNr,
-        approvedSource = Some(theCategoryDescription),
-        approvedHtmlSanitized = Some(descriptionSanitized))
+        approvedSource = Some(bodyHtmlUnsafe),
+        approvedHtmlSanitized = Some(bodyHtmlSanitized))
 
       posts.append(titlePost)
       posts.append(bodyPost)
-
-      permsOnPages.append(ForumDao.makeEveryonesDefaultCategoryPerms(nextCategoryId))
-      permsOnPages.append(ForumDao.makeStaffCategoryPerms(nextCategoryId))
     }
+
 
     val result = SiteBackup.empty.copy(
       categories = categories.toVector,

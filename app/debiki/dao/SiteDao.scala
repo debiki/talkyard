@@ -33,7 +33,7 @@ import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 import ed.server.summaryemails.SummaryEmailsDao
-import talkyard.server.{PostRenderer, PostRendererSettings}
+import org.scalactic.{ErrorMessage, Or}
 
 
 
@@ -53,6 +53,15 @@ class SiteDaoFactory (
 
 }
 
+
+trait ReadOnySiteDao {
+  def getCategoryByRef(ref: String): Option[Category] Or ErrorMessage
+  def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage
+
+  def now(): When
+
+  def nashorn: Nashorn
+}
 
 
 /** A data access object for site specific data. Data could be loaded
@@ -78,6 +87,7 @@ class SiteDao(
   private val elasticSearchClient: es.client.Client,
   val config: Config)
   extends AnyRef
+  with ReadOnySiteDao
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
@@ -111,6 +121,10 @@ class SiteDao(
 
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
+
+  def now(): When = globals.now()
+  def nashorn: Nashorn = context.nashorn
+
 
   REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,

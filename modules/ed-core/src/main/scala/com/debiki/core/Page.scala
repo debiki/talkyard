@@ -413,6 +413,22 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 }
 
 
+case class SimplePagePatch(
+  extId: ExtImpId,
+  pageType: Option[PageType],
+  categoryRef: Option[String],
+  authorRef: Option[String],
+  title: String,
+  body: String
+  // later: bodyMarkupLang: Option[MarkupLang]
+  ) {
+
+  Validation.findExtIdProblem(extId) foreach { problem =>
+    throwIllegalArgument("TyE8FKDXT2", s"Bad page extId: $problem")
+  }
+}
+
+
 
 sealed abstract class PageType(
   protected val IntValue: Int,
