@@ -34,7 +34,9 @@ import scala.concurrent.duration._
 object Notifier {
 
   val MaxNotificationsPerEmail = 5
-  val MaxEmailBodyLength = 3000
+
+  // There's a db constraint, emailsout_c_bodyhtml_len, that limits the length of the emails.
+  val MaxEmailBodyLength = 15000
 
   /** Hacks, for Usability Testing Exchange (UTX). [plugin] */
   val UtxSiteId = 94

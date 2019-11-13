@@ -122,8 +122,26 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     // I'm a bit worried that there's any bug that results in XSS attacks,
     // which would then target the user's email account (!).
     //val (html, _) = HtmlPageSerializer._markupTextOf(post, origin)
-    val ellipsis = (markupSource.length > maxNotificationLength) ? "..." | ""
-    val html = Text(markupSource.take(maxNotificationLength) + ellipsis)
+
+    // Sometimes a single char expands to many chars, e.g. '"' expands to '&quot;'
+    // — take this into account, when truncating the email so it won't get
+    // too long for the database. Because sometimes people post JSON snippets
+    // (e.g. in a community about software) and then there can be *really*
+    // many '"' quotes, making the text almost 2 times longer in one case, look:
+    // """
+    // I have made a macro:
+    // {&quot;command&quot;:{&quot;data&quot;:{&quot;root&quot;:{&quot;
+    // _type&quot;:&quot;BlockNode&quot; ...
+    // """
+    //
+    // Later, maybe there're better ways to do this? Escape less (don't need
+    // to escape quotes?) or find out the actual length, after html
+    // encoding, and don't "extra truncate" unless actually needed?
+    // But for now:
+    val maxLenBeforeEscapes = maxNotificationLength / "&quot;".length
+
+    val ellipsis = (markupSource.length > maxLenBeforeEscapes) ? "..." | ""
+    val html = Text(markupSource.take(maxLenBeforeEscapes) + ellipsis)
 
     val (whatHappened, dotOrComma, inPostWrittenBy) = notf.notfType match {
       case NotificationType.Message =>
