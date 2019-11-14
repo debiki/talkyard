@@ -324,8 +324,18 @@ function pagesFor(browser) {
 
     waitForNewUrl: function() {
       assert(!!api._currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
+      api.repeatUntilAtNewUrl(() => {});
+    },
+
+    repeatUntilAtNewUrl: function(fn: () => void) {
+      if (!api._currentUrl) {
+        api.rememberCurrentUrl();
+      }
+      fn();
       while (api._currentUrl === browser.url().value) {
-        browser.pause(250);
+        browser.pause(125);
+        fn();
+        browser.pause(125);
       }
       api._currentUrl = '';
     },
@@ -2447,6 +2457,13 @@ function pagesFor(browser) {
         // Stays at the same url.
         api.waitForVisible("#e2eRPP_PasswordChanged");
       },
+
+      navToHomepage: () => {
+        logAndDie.logMessage("Following homepage link...");
+        api.repeatUntilAtNewUrl(() => {
+          api.waitAndClick('a[href="/"]');
+        });
+      },
     },
 
 
@@ -2707,9 +2724,9 @@ function pagesFor(browser) {
       },
 
       _openCategoryImpl: function(categoryName: string, selector: string) {
-        api.rememberCurrentUrl();
-        api.waitForThenClickText(selector, categoryName);
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitForThenClickText(selector, categoryName);
+        });
         api.waitForVisible('.s_F_Ts_Cat_Ttl');
         const titleSelector = selector === api.forumCategoryList.subCategoryNameSelector
             ? '.s_F_Ts_Cat_Ttl-SubCat'
@@ -3842,14 +3859,14 @@ console.log("makeLikeVoteSelector —> " + result);
       },
 
       goToSearchResult: function(linkText?: string) {
-        api.rememberCurrentUrl();
-        if (!linkText) {
-          api.waitAndClick('.esSERP_Hit_PageTitle a');
-        }
-        else {
-          api.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
-        }
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          if (!linkText) {
+            api.waitAndClick('.esSERP_Hit_PageTitle a');
+          }
+          else {
+            api.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+          }
+        });
       },
     },
 
@@ -3917,9 +3934,9 @@ console.log("makeLikeVoteSelector —> " + result);
       },
 
       _navigateBackToUsersOrGroupsList: (isGroup: boolean) => {
-        api.rememberCurrentUrl();
-        api.waitAndClick('.esTopbar_custom_title a');
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitAndClick('.esTopbar_custom_title a');
+        });
         if (api.urlPath().startsWith(c.GroupsUrlPrefix)) {
           assert(isGroup);
           api.groupListPage.waitUntilLoaded();
@@ -4166,9 +4183,9 @@ console.log("makeLikeVoteSelector —> " + result);
         },
 
         openPageNotfWithText: function(text) {
-          api.rememberCurrentUrl();
-          api.waitForThenClickText('.esNotf_page', text);
-          api.waitForNewUrl();
+          api.repeatUntilAtNewUrl(() => {
+            api.waitForThenClickText('.esNotf_page', text);
+          });
         },
 
         assertMayNotSeeNotfs: function() {
@@ -4202,9 +4219,9 @@ console.log("makeLikeVoteSelector —> " + result);
         },
 
         openDraftIndex: function(index) {
-          api.rememberCurrentUrl();
-          api.waitAndClickNth('.s_Dfs_Df', index);
-          api.waitForNewUrl();
+          api.repeatUntilAtNewUrl(() => {
+            api.waitAndClickNth('.s_Dfs_Df', index);
+          });
         },
       },
 
@@ -4451,9 +4468,9 @@ console.log("makeLikeVoteSelector —> " + result);
       },
 
       clickLeaveAdminArea: function() {
-        api.rememberCurrentUrl();
-        api.waitAndClick('.esTopbar_custom_backToSite');
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitAndClick('.esTopbar_custom_backToSite');
+        });
       },
 
       goToLoginSettings: function(origin?: string, opts: { loginAs? } = {}) {
@@ -4474,9 +4491,9 @@ console.log("makeLikeVoteSelector —> " + result);
       },
 
       navToGroups: function() {
-        api.rememberCurrentUrl();
-        api.waitAndClick('.e_GrpsB');
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitAndClick('.e_GrpsB');
+        });
       },
 
       goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
@@ -4626,9 +4643,9 @@ console.log("makeLikeVoteSelector —> " + result);
           },
 
           goToSsoTestPage: () => {
-            api.rememberCurrentUrl();
-            api.waitAndClickFirst('.e_SsoTestL');
-            api.waitForNewUrl();
+            api.repeatUntilAtNewUrl(() => {
+              api.waitAndClickFirst('.e_SsoTestL');
+            });
           }
         },
 

@@ -89,7 +89,7 @@ describe("user-profile-change-password.test.ts  TyT6HJ2RD1", () => {
   });
 
   it("Maria goes back to the homepage", () => {
-    mariasBrowser.waitAndClick('a[href="/"]');
+    mariasBrowser.chooseNewPasswordPage.navToHomepage();
   });
 
   it("Maria logs out", () => {
@@ -191,7 +191,7 @@ describe("user-profile-change-password.test.ts  TyT6HJ2RD1", () => {
   });
 
   it("Maria returns to the homepage, again", () => {
-    mariasBrowser.waitAndClick('a[href="/"]');
+    mariasBrowser.chooseNewPasswordPage.navToHomepage();
   });
 
   it("... she's now logged in as Maria (not Owen)", () => {
