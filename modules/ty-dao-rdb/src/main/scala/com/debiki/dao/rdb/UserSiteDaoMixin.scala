@@ -164,7 +164,11 @@ trait UserSiteDaoMixin extends SiteTransaction {
       case Group.StaffId =>
         loadMembersOfBuiltInGroup(staffOnly = true)
       case Group.EveryoneId =>
-        loadMembersOfBuiltInGroup(everyone = true)
+        // Bug fix: Previously one could configure notifications for Everyone,
+        // but that triggered an unimplementedIf(...) below  [502RKGWT50].
+        // Instead, load the AllMembers group, which should be the same.
+        // Don't: loadMembersOfBuiltInGroup(everyone = true)
+        loadMembersOfBuiltInGroup(builtInGroup = Some(Group.AllMembersId))
       case trustLevelGroupId if trustLevelGroupId >= Group.AllMembersId
                               && trustLevelGroupId <= Group.CoreMembersId =>
         loadMembersOfBuiltInGroup(builtInGroup = Some(trustLevelGroupId))
@@ -181,7 +185,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
 
     import Group.{AdminsId, ModeratorsId => ModsId}
 
-    // Currently no good reason to load everyone incl *guests*.
+    // Currently no good reason to load everyone incl *guests*. [502RKGWT50]
     unimplementedIf(everyone || builtInGroup.is(Group.EveryoneId),
       "Loading Everyone group members [TyE2ABKR05]")
 
