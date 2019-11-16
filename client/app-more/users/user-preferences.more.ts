@@ -490,6 +490,20 @@ const NotfPrefsTab = createFactory({
     if (!isOkMember)
       return r.p({}, 'Built-in special user, or guest. [TyE2PKT0684]');
 
+    // It makes no sense to configure all members both via the Everyone group,
+    // and via the All Members group — which are essentially both the same,
+    // for all members.  Also, there's a server side  unimplementedIf,
+    // if trying to load Everyone members. [502RKGWT50]
+    if (member.id === Groups.EveryoneId &&
+        // So admins who might have configured "weird" Everyone notfs can undo that:
+        location.hash.indexOf('configEveryone=true') === -1)
+      return r.p({},
+        r.span({ className: 's_ConfAllMemInst' },
+          "Go ",
+          Link({ to: `/-/groups/${Groups.AllMembersId}/preferences/notifications` }, "here"),
+          " instead,"),
+        " and configure notifications for the All Members group.");
+
     const forWho = isMe ? '' : rFragment({},
         `, ${t.upp.forWho} `, r.b({}, member.username));
 
