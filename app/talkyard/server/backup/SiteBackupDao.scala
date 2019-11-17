@@ -945,11 +945,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       siteData.groups foreach { group: Group =>
         // Dupl code, also for users' usernames. (603WKH7)
-        val usernameToInsert = siteData.usernameUsages.find(
-          _.usernameLowercase == group.theUsername.toLowerCase)
-        throwBadRequestIf(usernameToInsert.isEmpty,
-          "TyE06WKDL6", s"""Group ${group.idSpaceName}'s username
-            missing in siteData.usernameUsages""")
+        val usernameLowercase = group.theUsername.toLowerCase // [CANONUN]
+        if (!siteData.usernameUsages.exists(_.usernameLowercase == usernameLowercase)) {
+          tx.insertUsernameUsage(UsernameUsage(
+            usernameLowercase, inUseFrom = tx.now, userId = group.id))
+        }
         if (group.isBuiltIn) {
           // Then it's in the database already. But maybe its name or settings has been changed?
           tx.updateGroup(group)
@@ -973,6 +973,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
             !siteData.memberEmailAddrs.exists(_.emailAddress == user.primaryEmailAddress)) {
           user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
         }
+        // Dupl code, also for groups' usernames. (603WKH7)
         if (!siteData.usernameUsages.exists(_.usernameLowercase == user.usernameLowercase)) {
           tx.insertUsernameUsage(UsernameUsage(
             usernameLowercase = user.usernameLowercase, // [CANONUN]
@@ -982,8 +983,16 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
            tx.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = tx.now,
              emailedAt = None))
         }
-        tx.insertMember(user)  // [UPSMEMBRNOW]
-        newDao.joinGloballyPinnedChats(user.briefUser, tx)
+        if (user.isBuiltIn) {
+          UNTESTED
+          // Already auto-created, but maybe it's been renamed? E.g. the "System" user
+          // but in a different language?
+          tx.updateMemberInclDetails(user)
+        }
+        else {
+          tx.insertMember(user) // [UPSMEMBRNOW]
+          newDao.joinGloballyPinnedChats(user.briefUser, tx)
+        }
       }
 
       siteData.pptStats foreach { pptStats: UserStats =>

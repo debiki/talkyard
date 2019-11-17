@@ -73,6 +73,7 @@ const TestPageNotfLevel = {
 
 
 export = {
+  MinUnixMillis: 100000000000,  // [MINMILLIS]
   LowestTempImpId: 2 * 1000 * 1000 * 1000 + 1, //2000000001,
   TestPageRole,
   TestPageNotfLevel,

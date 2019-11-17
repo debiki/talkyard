@@ -53,6 +53,7 @@ val appDependencies = Seq(
   // OpenAuth and OpenID etc Authentication.
   // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
   // would require everyone that uses Talkyard to reconfigure their Google auth app.
+// Oopos
   "com.mohiva" %% "play-silhouette" % "5.0.5",              // 5.0.7 is newest, as of 19-04-06
   "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.5",   // 5.0.7 is newest, as of 19-04-06
   // PostgreSQL JDBC client driver

@@ -94,6 +94,10 @@ interface SiteData2 {   // [3SD5PB7]
 
 interface GroupInclDetails {
   id: UserId;
+  createdAtMs: WhenMs;
+  isGroup: true;
+  username: string;
+  fullName?: string;
   summaryEmailIntervalMins?: number;
   summaryEmailIfActive?: boolean;
 }

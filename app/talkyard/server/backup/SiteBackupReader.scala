@@ -511,7 +511,7 @@ case class SiteBackupReader(context: EdContext) {
         theUsername = readString(jsObj, "username"),
         name = readOptString(jsObj, "fullName"),
         extImpId = readOptString(jsObj, "extImpId"),
-        createdAt = readWhen(jsObj, "createdAt"), // ??
+        createdAt = readWhen(jsObj, "createdAtMs"),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
         summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
@@ -822,7 +822,7 @@ case class SiteBackupReader(context: EdContext) {
       Good(Notification.NewPost(
         notfType,
         id = notfId,
-        createdAt = readDateMs(jsObj, "createdAt"),
+        createdAt = readDateMs(jsObj, "createdAtMs"),
         uniquePostId = readInt(jsObj, "postId"),
         byUserId = readInt(jsObj, "byUserId"),
         toUserId = readInt(jsObj, "toUserId"),
@@ -1228,7 +1228,7 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         reasons = reviewReasons,
         createdById = readInt(jsObj, "createdById"),
-        createdAt = readDateMs(jsObj, "createdAt"),
+        createdAt = readDateMs(jsObj, "createdAtMs"),
         createdAtRevNr = readOptInt(jsObj, "createdAtRevNr"),
         moreReasonsAt = readOptDateMs(jsObj, "moreReasonsAt"),
         //moreReasonsAtRevNr: Option[ju.Date] = None,

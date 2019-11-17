@@ -33,7 +33,7 @@ object JsonUtils {
 
   // This is year 5138 in Unix time in seconds, but year 1973 in milliseconds.
   // If we see any unix time greater than this, we'll assume it's in millis, otherwise, seconds.
-  private val UnixMillisSomeDayIn1973 = 100000000000L
+  private val UnixMillisSomeDayIn1973 = 100000000000L  // [MINMILLIS]
 
 
   def readJsObject(json: JsValue, fieldName: String): JsObject =
