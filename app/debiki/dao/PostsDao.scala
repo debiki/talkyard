@@ -210,7 +210,7 @@ trait PostsDao {
       targetPageId = anyParent.map(_.pageId),
       targetUniquePostId = anyParent.map(_.id),
       targetPostNr = anyParent.map(_.nr),
-      targetUserId = anyParent.map(_.createdById))
+      targetUserId = anyParent.map(_.createdById))   // writtenById  ( & insertedBy? maybe both?)
 
     val anyReviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
@@ -450,7 +450,7 @@ trait PostsDao {
       // render a little bit faster.
       val anyLastMessage = page.parts.lastPostButNotOrigPost
       val anyLastMessageSameUserRecently = anyLastMessage filter { post =>
-        post.createdById == authorId &&
+        post.createdById == authorId &&   // both insertedById and writtenById must match?
           tx.now.millis - post.createdAt.getTime < LastChatMessageRecentMs
       }
 

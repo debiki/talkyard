@@ -594,7 +594,7 @@ trait PagesDao {
       // pending spam check task, so a training sample gets sent to any spam check services.
       tx.loadOrigPost(pageMeta.pageId) foreach { origPost =>
         TESTS_MISSING
-        val postAuthor = tx.loadTheParticipant(origPost.createdById)
+        val postAuthor = tx.loadTheParticipant(origPost.createdById)   // writtenById
         updateSpamCheckTaskBecausePostDeleted(origPost, postAuthor, deleter = deleter, tx)
       }
 

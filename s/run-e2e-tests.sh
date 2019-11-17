@@ -268,6 +268,7 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-profile-change-things.2browsers $args
 
+## continue here
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only custom-forms.3browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only authz-view-as-stranger $args

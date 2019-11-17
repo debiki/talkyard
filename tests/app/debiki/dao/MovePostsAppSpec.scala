@@ -218,8 +218,8 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         bumpedAt = fromPageMetaAfter.bumpedAt,
         // The System user = OP author, so skipped. The moved post = skipped since is most recent.
         frequentPosterIds = Nil,
-        lastApprovedReplyAt = Some(postAfter.createdAt),
-        lastApprovedReplyById = Some(postAfter.createdById),
+        lastApprovedReplyAt = Some(postAfter.createdAt),    // ?? wants insertion or authoring date?
+        lastApprovedReplyById = Some(postAfter.createdById),    //writtenById
         numOrigPostRepliesVisible = toPageMetaBefore.numRepliesVisible + 0, // not an OP reply
         numRepliesVisible = toPageMetaBefore.numRepliesVisible + 1,
         numRepliesTotal = toPageMetaBefore.numRepliesTotal + 1,

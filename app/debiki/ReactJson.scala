@@ -235,7 +235,7 @@ class JsonMaker(dao: SiteDao) {
 
     val userIdsToLoad = mutable.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
-    userIdsToLoad ++= relevantPosts.map(_.createdById)
+    userIdsToLoad ++= relevantPosts.map(_.createdById)    //writtenById
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -375,7 +375,7 @@ class JsonMaker(dao: SiteDao) {
       reactStoreJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
-    val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
+    val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet    //writtenById
 
     PageToJsonResult(reactStoreJsonString, version, pageTitleUnsafe, headTags, unapprovedPostAuthorIds)
   }
@@ -893,7 +893,7 @@ class JsonMaker(dao: SiteDao) {
             Nil), renderer)
     }
 
-    val authors = transaction.loadParticipants(posts.map(_.createdById).toSet)
+    val authors = transaction.loadParticipants(posts.map(_.createdById).toSet)    //writtenById
     val authorsJson = JsArray(authors map JsUser)
     (JsObject(postIdsAndJson), authorsJson)
   }
@@ -922,7 +922,7 @@ class JsonMaker(dao: SiteDao) {
     val post = dao.loadPost(pageId, postNr) getOrElse {
       return None
     }
-    val author = dao.getParticipant(post.createdById) getOrElse {
+    val author = dao.getParticipant(post.createdById) getOrElse {    //writtenById
       // User was just deleted? Race condition.
       UnknownParticipant
     }
@@ -945,7 +945,7 @@ class JsonMaker(dao: SiteDao) {
     val tagsByPostId = transaction.loadTagsByPostId(postIds)
     val pageIds = posts.map(_.pageId).toSet
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
-    val authorIds = posts.map(_.createdById).toSet
+    val authorIds = posts.map(_.createdById).toSet    //writtenById
     val authors = transaction.loadParticipants(authorIds)
     makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors, appVersion = appVersion)(
       transaction)
@@ -954,7 +954,7 @@ class JsonMaker(dao: SiteDao) {
 
   def makeStorePatch(post: Post, author: Participant, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
-    require(post.createdById == author.id, "EsE5PKY2")
+    require(post.createdById == author.id, "EsE5PKY2")    //writtenById
     val (postJson, pageVersion) = postToJson(
       post.nr, pageId = post.pageId, includeUnapproved = true, showHidden = showHidden)
     makeStorePatch(PageIdVersion(post.pageId, pageVersion), appVersion = dao.globals.applicationVersion,
@@ -972,8 +972,8 @@ class JsonMaker(dao: SiteDao) {
     dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
         just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
     val tags = transaction.loadTagsForPost(post.id)
-    val author = transaction.loadTheParticipant(post.createdById)
-    require(post.createdById == author.id, "EsE4JHKX1")
+    val author = transaction.loadTheParticipant(post.createdById)    //writtenById
+    require(post.createdById == author.id, "EsE4JHKX1")    //writtenById
     val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
     makeStorePatch(PageIdVersion(post.pageId, page.version), appVersion = appVersion,
       posts = Seq(postJson), users = Seq(JsUser(author)))
@@ -1492,7 +1492,7 @@ object JsonMaker {
           "pageId" -> post.pageId,
           "nr" -> post.nr,
           "uniqueId" -> post.id,
-          "createdById" -> post.createdById,
+          "createdById" -> post.createdById,    //  + writtenById  more important
           "currentSource" -> post.currentSource,
           "currRevNr" -> post.currentRevisionNr,
           "currRevComposedById" -> post.currentRevisionById,
@@ -1559,7 +1559,7 @@ object JsonMaker {
       "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumber(post.tyype.toInt),
-      "authorId" -> JsNumber(post.createdById),
+      "authorId" -> JsNumber(post.createdById),    //writtenById
       "createdAtMs" -> JsDateMs(post.createdAt),
       "approvedAtMs" -> JsDateMsOrNull(post.approvedAt),
       "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),

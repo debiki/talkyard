@@ -318,8 +318,10 @@ case class Post(   // [exp] ok use
   parentNr: Option[PostNr],
   multireplyPostNrs: immutable.Set[PostNr],
   tyype: PostType,
-  createdAt: ju.Date,
-  createdById: UserId,
+  createdAt: ju.Date,   // RENAME to insertedAt? Maybe rename all createdAt to insertedAt everywhere?
+  createdById: UserId,  // RENAME to insertedById?
+  //writtenAt: When,
+  //writtenById: UserId,
   currentRevisionById: UserId,
   currentRevStaredAt: ju.Date,
   currentRevLastEditedAt: Option[ju.Date],
@@ -367,7 +369,7 @@ case class Post(   // [exp] ok use
 
   require(currentRevStaredAt.getTime >= createdAt.getTime, "DwE8UFYM5")
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
-  require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")
+  require(currentRevisionById == createdById || currentRevisionNr > FirstRevisionNr, "DwE0G9W2")    //writtenById  ??  currentRevisionById needed becaus ... what?
 
   require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
   if (lastApprovedEditAt.isDefined && currentRevLastEditedAt.isDefined) {
@@ -711,7 +713,7 @@ object Post {
       multireplyPostNrs = multireplyPostNrs,
       tyype = postType,
       createdAt = createdAt,
-      createdById = createdById,
+      createdById = createdById,    //  + writtenById = ...
       currentRevisionById = createdById,
       currentRevStaredAt = createdAt,
       currentRevLastEditedAt = None,
