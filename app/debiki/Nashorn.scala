@@ -486,6 +486,7 @@ class Nashorn(
       addTranslation("sv_SE")
       addTranslation("pt_BR")
       addTranslation("pl_PL")
+      addTranslation("ru_RU")
       addTranslation("he_IL")
 
       // Add render page code.

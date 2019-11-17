@@ -47,7 +47,7 @@ var t_ru_RU: TalkyardTranslations = t = {
   Discussion: "Обсуждение",
   discussion: "обсуждение",
   done: "готово",
-  EditV: "Ред.",
+  EditV: "Ред",
   Editing: "Редактировать",
   EmailAddress: "Email адрес",
   EmailAddresses: "Email адрес",
@@ -175,7 +175,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     // Username input field:
     NoDash: "Без тире (-) пожалуйста",
     DontInclAt: "Не вставляйте @",
-    StartEndLtrDgt: "В начали и в конце должна быть буква или цифра.",
+    StartEndLtrDgt: "В начали и в конце должна быть буква или цифра",
     OnlLtrNumEtc: "Только буквы (a-z, A-Z) и цифры, и _ (нижнее подчеркивание)",
     // This shown just below the username input:
     UnUnqShrt_1: "Твой ",
@@ -195,7 +195,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     EveryPostInTopic: "Вы будете уведомлены обо всех новых ответах в этой теме.",
     EveryPostInCat: "Вы будете уведомлены обо всех новых темах и ответах в этой категории.",
     EveryPostInTopicsWithTag: "Вы будете уведомлены о новых темах с этим тегом, и все ответах в этих темах.",
-    EveryPostWholeSite: "Вы будете получать уведомления обо всех новых темах и ответах, где угодно",
+    EveryPostWholeSite: "Вы будете получать уведомления обо всех новых темах и ответах, где угодно.",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
@@ -223,7 +223,7 @@ var t_ru_RU: TalkyardTranslations = t = {
   // Forum intro text
 
   fi: {
-    Edit: "Ред.",
+    Edit: "Ред",
     Hide_1: "Скрыть",
     Hide_2: ", щелчок ",
     Hide_3: " вновь открыть",
@@ -664,7 +664,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     About_2: " канал чата, созданный ",
     ScrollUpViewComments: "Прокрутите вверх, чтобы просмотреть старые комментарии",
     Purpose: "Цель:",
-    edit: "ред.",
+    edit: "ред",
     'delete': "удалить",
     MessageDeleted: "(Сообщение удалено)",
     JoinThisChat: "Присоединяйтесь к чату",
@@ -702,7 +702,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     // translated to your language.
     Back_1: "",
     Back_2: "Назад (B)",
-    BackExpl: "Вернитесь к своей предыдущей позиции на этой странице.",
+    BackExpl: "Вернитесь к своей предыдущей позиции на этой странице",
 
     // These are useful on mobile — then, no keybard with Home (= scroll to top) and End buttons.
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
@@ -976,7 +976,7 @@ var t_ru_RU: TalkyardTranslations = t = {
 
     OrCreateAcct_1: "Или ",
     OrCreateAcct_2: "завести аккаунт",
-    OrCreateAcct_3: "с участием ",
+    OrCreateAcct_3: " с участием ",
     OrCreateAcct_4: "@username",
     OrCreateAcct_5: " & пароль",
 
@@ -1133,7 +1133,7 @@ var t_ru_RU: TalkyardTranslations = t = {
 
     TitlePlaceholder: "Введите название - что это, в одном коротком предложении?",
 
-    EditPost_1: "Ред. ",
+    EditPost_1: "Ред ",
     EditPost_2: "пост ",
 
     TypeChatMsg: "Введите сообщение чата:",
@@ -1156,7 +1156,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     PleaseSelectPosts: "Пожалуйста, выберите одно или несколько сообщений для ответа.",
 
     Save: "Сохранить",
-    edits: "ред.",
+    edits: "ред",
 
     PostReply: "Ответить",
 
