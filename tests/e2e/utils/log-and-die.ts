@@ -19,6 +19,15 @@ const api = {
   logWarning: function (message: string) {
     console.log(warningColor(message));
   },
+  logException: function (message, ex?) {
+    if (!ex) {
+      ex = message;
+      message = "The exception:";
+    }
+    if (message) console.log(message);
+    const exceptionIndented = '   ' + ex.toString().replace(/\n/g, "\n   ");
+    console.log(warningColor(exceptionIndented));
+  },
   logError: function (message: string) {
     console.log(errorColor(message));
   },

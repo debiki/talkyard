@@ -161,8 +161,19 @@ function pagesFor(browser) {
         }
       }
 
-      logMessage(`Go: ${url}${shallDisableRateLimits ? " & disable rate limits" : ''}`);
-      browser.url(url);
+      const message = `Go: ${url}${shallDisableRateLimits ? " & disable rate limits" : ''}`;
+      logMessage(message);
+      try {
+        browser.url(url);
+      }
+      catch (ex) {
+        // Suddenly, Nov 2019, there's this pointless exception that breaks the test:
+        //    """Error: unknown error: cannot determine loading status"
+        //    unhandled inspector error: {"code":-32000,"
+        //         message":"Inspected target navigated or closed"}"""
+        logAndDie.logWarning(`Exception caught and ignored when navigating to ${url}:`)
+        logAndDie.logException('', ex);
+      }
 
       // Wait for some Talkyard thing to appear, so we'll know what type of page this is.
       if (opts.waitForPageType === false) {
@@ -391,7 +402,7 @@ function pagesFor(browser) {
     },
 
 
-    switchToEmbeddedCommentsIrame: function() {
+    switchToEmbeddedCommentsIrame: (ps: { waitForContent?: false } = {}) => {
       api.switchToAnyParentFrame();
       // Remove these out commented lines, after 2019-07-01?:
       // These pause() avoids: "FAIL: Error: Remote end send an unknown status code", in Chrome, [E2EBUG]
@@ -404,7 +415,9 @@ function pagesFor(browser) {
       // Let's wait for the editor iframe, so Reply buttons etc will work.
       api.waitForExist('iframe#ed-embedded-editor');
       api.switchToFrame('iframe#ed-embedded-comments');
-      api.waitForExist('.DW');
+      if (ps.waitForContent !== false) {
+        api.waitForExist('.DW');
+      }
       isWhere = IsWhere.EmbCommentsIframe;
     },
 
@@ -909,7 +922,9 @@ function pagesFor(browser) {
           // DO_AFTER 2019-07-01 see if this Chrome weirdness workaround is still needed.
           browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
 
-          if (!opts.checkAndRetry) break;
+          if (!opts.checkAndRetry) {
+            break;
+          }
           browser.pause(200);
           const valueReadBack = browser.getValue(selector);
           if (('' + value) === valueReadBack) {
@@ -2042,7 +2057,7 @@ function pagesFor(browser) {
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("filling in username ...");
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username, { checkAndRetry: true });
         api.loginDialog.clickSubmit();
         logMessage("accepting terms ...");
         api.loginDialog.acceptTerms(ps.shallBecomeOwner);
@@ -2339,6 +2354,7 @@ function pagesFor(browser) {
         }
         catch (ex) {
           logMessage("Didn't need to click Allow button: Exception caught, login popup closed itself?");
+          logAndDie.logException(ex);
         }
 
         if (!isInPopupAlready) {

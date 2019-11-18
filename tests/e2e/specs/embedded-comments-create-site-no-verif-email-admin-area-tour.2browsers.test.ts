@@ -223,7 +223,7 @@ ${htmlToPaste}
     assert(source.indexOf('27KT5QAX29') >= 0);
     // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
     // policy forbids embedding from this domain.
-    owensBrowser.switchToEmbeddedCommentsIrame();
+    owensBrowser.switchToEmbeddedCommentsIrame({ waitForContent: false });
     // Give any stuff that appears although it shouldn't, some time to load.
     owensBrowser.pause(500);
     assert(!isCommentsVisible(owensBrowser));

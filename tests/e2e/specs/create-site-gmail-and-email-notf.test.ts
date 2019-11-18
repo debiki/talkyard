@@ -69,15 +69,21 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
   });
 
   function makeForumWithGmailAdminAccount() {
+    logMessage("Generate test data ...");
     const data = createTestData();
     data.email = settings.gmailEmail;
     data.password = settings.gmailPassword;
+    logMessage("Go to create site page ...");
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits(); // there're signup rate limits
+    logMessage("Fill in fields and submit...");
     pages.createSite.fillInFieldsAndSubmit(data);
+    logMessage("Click sign up as owner ...");
     pages.createSite.clickOwnerSignupButton();
     pages.disableRateLimits();  // new domain, disable rate limits again
+    logMessage("Continue with Gmail ...");
     pages.loginDialog.createGmailAccount(data, { shallBecomeOwner: true });
+    logMessage("Create forum ......");
     pages.createSomething.createForum("Gmail Forum Title");
   }
 

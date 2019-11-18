@@ -1,4 +1,5 @@
 /// <reference path="../../client/app-slim/constants.ts" />
+/// <reference path="../../client/types-and-const-enums.ts" />
 
 type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
 

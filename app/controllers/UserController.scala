@@ -227,7 +227,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "isGroup" -> JsTrue,
       //"createdAtEpoch" -> JsWhen(group.createdAt),
       "username" -> group.theUsername,
-      "fullName" -> group.name)
+      "fullName" -> JsStringOrNull(group.name))
     if (callerIsStaff) {
       json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
       json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)

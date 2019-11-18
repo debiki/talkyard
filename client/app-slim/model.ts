@@ -986,7 +986,6 @@ interface Member extends Participant {
 
 
 interface Group extends Member {
-  fullName: string;
   isGroup: true;
   isGuest?: false;
   // "grantsTrustLevel" — later
@@ -1021,7 +1020,6 @@ interface MemberInclDetails extends Member {
 interface GroupInclDetails extends MemberInclDetails, Group {
   isGroup: true;
   //"createdAtEpoch" -> JsWhen(group.createdAt),
-  fullName: string;
 }
 
 
