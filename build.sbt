@@ -53,9 +53,33 @@ val appDependencies = Seq(
   // OpenAuth and OpenID etc Authentication.
   // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
   // would require everyone that uses Talkyard to reconfigure their Google auth app.
-// Oopos
-  "com.mohiva" %% "play-silhouette" % "5.0.5",              // 5.0.7 is newest, as of 19-04-06
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.5",   // 5.0.7 is newest, as of 19-04-06
+  // The PR that switches to the People API:
+  //   https://github.com/mohiva/play-silhouette/pull/549/files
+  // To start using it, one just upgrades to >= 5.0.7.
+  // This will cause this error before the API has been enabled:
+  /*
+  app_1  | [error] application - Error during OAuth2 authentication with Silhouette [TYE0AUUNKN]
+  app_1  | com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException: [Silhouette][google] Error retrieving profile information. Error code: 403, message: People API has not been used in project 731449476019 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/people.googleapis.com/overview?project=731449476019 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+
+  So, go there, and click Create Credentials (a button to the right).
+  Select:
+   - People API
+   - Web Server
+   - User Data
+
+   Then you'll see an OAuth Consent Screen.
+
+   Then fill in  https://your-talkyard-server/-/login-auth-callback/google
+   as an "Authorized redirect URIs".
+   (Skip the "Authorized JavaScript origins" section.)
+
+   Then you'll see a client ID and secret — copy-paste them into
+   the  google.clientID="..."  and  google.clientSecret="..." fields
+   in /opt/talkyard/conf/play-framework.conf.
+
+   */
+  "com.mohiva" %% "play-silhouette" % "5.0.7",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.7",
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
