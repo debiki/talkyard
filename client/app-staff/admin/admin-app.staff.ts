@@ -727,6 +727,18 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        enableSso || !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable LinkedIn signup",
+          className: 'e_A_Ss_S-EnableLinkedInCB',
+          help: "Lets people sign up and login with their LinkedIn account." +
+              missingServerSiteHint(defaultSettings.enableLinkedInLogin),
+          mustBeConfiguredOnServer: true,
+          getter: (s: Settings) => s.enableLinkedInLogin,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableLinkedInLogin = target.checked;
+          }
+        }),
+
 
         // ---- Email domain whitelist and blacklist
 

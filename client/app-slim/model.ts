@@ -1293,6 +1293,7 @@ interface Settings {
   enableFacebookLogin: boolean;
   enableTwitterLogin: boolean;
   enableGitHubLogin: boolean;
+  enableLinkedInLogin: boolean;
   requireVerifiedEmail: boolean;
   emailDomainBlacklist: string;
   emailDomainWhitelist: string;
