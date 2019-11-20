@@ -30,7 +30,7 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
   });
 
   it('can create a new site as a Gmail user, when not logged in to Gmail', () => {
-    makeForumWithGmailAdminAccount();
+    makeForumWithGmailAdminAccount({ alreadyLoggedIn: false });
   });
 
   it('can actually use the Gmail admin account to create stuff', () => {
@@ -64,26 +64,18 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
 
   it('can create a new site as a Gmail user, when already logged in to Gmail', () => {
     // Now we're logged in already, so the Gmail login flow is / might-be slightly different.
-    makeForumWithGmailAdminAccount();
+    makeForumWithGmailAdminAccount({ alreadyLoggedIn: true });
     pages.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithGmailAdminAccount() {
-    logMessage("Generate test data ...");
-    const data = createTestData();
-    data.email = settings.gmailEmail;
-    data.password = settings.gmailPassword;
-    logMessage("Go to create site page ...");
-    browser.go(utils.makeCreateSiteWithFakeIpUrl());
-    browser.disableRateLimits(); // there're signup rate limits
-    logMessage("Fill in fields and submit...");
-    pages.createSite.fillInFieldsAndSubmit(data);
-    logMessage("Click sign up as owner ...");
-    pages.createSite.clickOwnerSignupButton();
-    pages.disableRateLimits();  // new domain, disable rate limits again
-    logMessage("Continue with Gmail ...");
-    pages.loginDialog.createGmailAccount(data, { shallBecomeOwner: true });
-    logMessage("Create forum ......");
+  function makeForumWithGmailAdminAccount(ps: { alreadyLoggedIn: boolean }) {
+    const data = createTestData({
+      newSiteOwner: NewSiteOwnerType.GmailAccount,
+      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+    });
+    console.log("Create new site:");
+    browser.createNewSite(data);
+    console.log("Create forum:");
     pages.createSomething.createForum("Gmail Forum Title");
   }
 

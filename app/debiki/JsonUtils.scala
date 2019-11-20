@@ -87,27 +87,28 @@ object JsonUtils {
 
 
   def readFloat(json: JsValue, fieldName: String, altName: String = "", default: Option[Float] = None): Float =
-    readOptFloat(json, fieldName).orElse(readOptFloat(json, altName)).map(_.toFloat).orElse(default)
-      .getOrElse(throwMissing("TyE06KPW2", fieldName))
+    readOptFloat(json, fieldName, altName = altName).orElse(default)
+      .getOrElse(throwMissing("TyE06KA2P2", fieldName))
 
 
   def readOptFloat(json: JsValue, fieldName: String, altName: String = ""): Option[Float] = {
-    readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)) map { valueAsLong =>
-      if (valueAsLong > Float.MaxValue)
-        throwBadJson("TyE603WMDC7", s"$fieldName is too large for an Float: $valueAsLong")
-      if (valueAsLong < Float.MinValue)
-        throwBadJson("TyE20XKD38", s"$fieldName is too small for an Float: $valueAsLong")
-      valueAsLong.toInt
+    readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)) map { valAsDouble =>
+      if (valAsDouble > Float.MaxValue)
+        throwBadJson("TyE603WMDC7", s"$fieldName is too large for a Float: $valAsDouble")
+      if (valAsDouble < Float.MinValue)
+        throwBadJson("TyE20XKD38", s"$fieldName is too small for a Float: $valAsDouble")
+      valAsDouble.toFloat
     }
   }
 
 
-  def readDouble(json: JsValue, fieldName: String, altName: String = "", default: Option[Double] = None): Double =
+  def readDouble(json: JsValue, fieldName: String, altName: String = "",
+        default: Option[Double] = None): Double =
     readOptDouble(json, fieldName).orElse(readOptDouble(json, altName)).orElse(default)
       .getOrElse(throwMissing("TyE078RVF3", fieldName))
 
 
-  def readOptDouble(json: JsValue, fieldName: String, altName: String = ""): Option[Double] = {
+  def readOptDouble(json: JsValue, fieldName: String): Option[Double] = {
     (json \ fieldName).validateOpt[Double] match {
       case JsSuccess(value, _) => value
       case JsError(errors) =>

@@ -705,12 +705,6 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  /* rm xx
-  def insertVote(uniquePostId: PostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
-    insertPostAction(uniquePostId, pageId, postNr, actionType = voteType, doerId = voterId)
-  } */
-
-
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId] = {
     TESTS_MISSING
     val query = """
@@ -828,12 +822,6 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  /* xx rm
-  def insertFlag(uniquePostId: PostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId) {
-    insertPostAction(uniquePostId, pageId, postNr, actionType = flagType, doerId = flaggerId)
-  } */
-
-
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId) {
     val statement = s"""
       update post_actions3
@@ -848,18 +836,18 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   def insertPostAction(postAction: PostAction) {
     postAction match {
       case vote: PostVote =>
-        insertPostAction(
+        insertPostActionImpl(
           postId = vote.uniqueId, pageId = vote.pageId, postNr = vote.postNr,
           actionType = vote.voteType, doerId = vote.doerId, doneAt = vote.doneAt)
       case flag: PostFlag =>
-        insertPostAction(
+        insertPostActionImpl(
           postId = flag.uniqueId, pageId = flag.pageId, postNr = flag.postNr,
           actionType = flag.flagType, doerId = flag.doerId, doneAt = flag.doneAt)
     }
   }
 
 
-  private def insertPostAction(postId: PostId, pageId: PageId, postNr: PostNr,
+  private def insertPostActionImpl(postId: PostId, pageId: PageId, postNr: PostNr,
         actionType: PostActionType, doerId: UserId, doneAt: When) {
     val statement = """
       insert into post_actions3(site_id, unique_post_id, page_id, post_nr, type, created_by_id,

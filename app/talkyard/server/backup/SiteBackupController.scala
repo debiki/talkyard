@@ -104,10 +104,6 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
-    // We don't want to change things like site hostname or settings, via this endpoint.
-    //throwBadRequestIf(dump.site.isDefined, "TyE5AKB025", "Don't include site meta in patch")
-    //throwBadRequestIf(dump.settings.isDefined, "TyE6AKBF02", "Don't include site settings in patch")
-
     val upsertedThings = doImportOrUpserts {
       SiteBackupImporterExporter(globals).upsertIntoExistingSite(
           request.siteId, dump, request.theBrowserIdData)
@@ -117,58 +113,21 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  import play.{api => p}
-  import play.api.mvc._
   /*
-  Simpler, from the docs:
-  https://www.playframework.com/documentation/2.7.x/ScalaFileUpload
+  How to upload a single file, as per the Play Framework docs:
+    (https://www.playframework.com/documentation/2.7.x/ScalaFileUpload)
+
   def upload = Action(parse.temporaryFile) { request =>
     request.body.moveFileTo(Paths.get("/tmp/picture/uploaded"), replace = true)
     Ok("File uploaded")
   }
 
-
-  def restoreBackupOverwriteSite: Action[Either[MaxSizeExceeded, MultipartFormData[p.libs.Files.TemporaryFile]]] =
-        PostFilesAction(RateLimits.UploadFile, maxBytes = maxImportDumpBytes) { request =>
-
-    if (!request.theUser.isAdmin)
-      throwForbidden("TyE406MWKDGF", o"""Not admin""")
-
-    // Dupl code [5039RKJW45] ---------
-    val multipartFormData = request.body match {
-      case Left(maxExceeded: mvc.MaxSizeExceeded) =>
-        throwForbidden("TyE305MKBFWH", o"""Backup file too large: I got ${maxExceeded.length} bytes,
-      but size limit is $maxImportDumpBytes bytes""")
-      case Right(data) =>
-        data
-    }
-
-    val numFilesUploaded = multipartFormData.files.length
-    if (numFilesUploaded != 1)
-      throwBadRequest("TyE50SDDPRD", s"Upload exactly one file please — I got $numFilesUploaded files")
-
-    val files = multipartFormData.files.filter(_.key == "file")
-    if (files.length != 1)
-      throwBadRequest("TyE205MRKDHFT", s"Use the multipart form data key name 'file' please")
-
-    val file = files.head
-    // ----------- / Dupl code
-
-    val tempFile = file.ref
-    val path: java.nio.file.Path = tempFile.path
-
-    val jsonStr = com.google.common.io.Files.asCharSource(
-      tempFile.file, java.nio.charset.Charset.forName("UTF-8")).read()
-
-    val json = p.libs.json.Json.parse(jsonStr)
-
-    im portOverwriteImpl(request.underlying, json)
-  } */
+  Or, uploading many files, see: [5039RKJW45]
+  */
 
 
-  def restoreBackupOverwriteSite(): Action[JsValue] = AdminPostJsonAction(
-        /* RateLimits.UpsertDump, */
-        maxBytes = maxImportDumpBytes) { request =>
+  def restoreBackupOverwriteSite(): Action[JsValue] = AdminPostJsonAction2(
+        RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     // Dangerous endpoint, DoS attack risk.
     throwForbiddenIf(
       globals.isProd

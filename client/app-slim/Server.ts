@@ -132,11 +132,10 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
-export function uploadFiles(endpoint: string, files: any, onDone, onError) {
-  dieIf(files.length > 1, 'TyE06WKTDN23');
+export function uploadFiles(endpoint: string, files: any[], onDone, onError) {
+  dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);
   const headers = {};
   headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');
-  // 'Content-Type': 'application/json'
   fetch(endpoint, {
     method: 'POST',
     body: files[0],

@@ -50,6 +50,62 @@ interface TestCounters {
 
 
 
+const enum SiteType {
+  Forum = 1,
+  EmbeddedCommments = 2,
+};
+
+
+interface NewSiteResult {
+  data: NewSiteData;
+  testId: string;
+  siteId: number;
+  talkyardSiteOrigin: string;
+}
+
+
+type NewSiteData = NewSiteDataForForum | NewSiteDataForEmbeddedComments;
+
+interface NewSiteDataSharedFields {
+  testId: string;
+  siteType: SiteType;
+  localHostname?: string;
+  orgName?: string;
+  origin?: string;
+  embeddingUrl?: string;
+
+  newSiteOwner: NewSiteOwnerType;
+  alreadyLoggedInAtIdProvider?: boolean;
+
+  fullName: string;
+  email: string;
+  username: string;
+  password: string;
+}
+
+
+interface NewSiteDataForForum extends NewSiteDataSharedFields {
+  siteType: SiteType.Forum;
+  embeddingUrl?: undefined;
+}
+
+
+interface NewSiteDataForEmbeddedComments extends NewSiteDataSharedFields {
+  siteType: SiteType.EmbeddedCommments;
+  embeddingUrl: string;
+}
+
+
+const enum NewSiteOwnerType {
+  OwenOwner = 1,
+  GmailAccount = 2,
+  FacebookAccount = 3,
+  GitHubAccount = 4,
+  LinkedInAccount = 5,
+}
+
+
+
 interface SiteData2 {   // [3SD5PB7]
   meta: SiteMeta;
   settings: {

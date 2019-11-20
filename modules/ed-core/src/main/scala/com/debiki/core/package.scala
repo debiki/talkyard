@@ -93,10 +93,11 @@ package object core {
   type ExtId = String
 
   type Ref = String
+
   sealed abstract class ParsedRef
   object ParsedRef {
     case class ExternalId(value: ExtId) extends ParsedRef
-    case class SingleSignOnId(value: ExtId) extends ParsedRef
+    case class SingleSignOnId(value: String) extends ParsedRef
     case class TalkyardId(value: String) extends ParsedRef
   }
 
@@ -104,6 +105,10 @@ package object core {
     if (ref startsWith "extid:") {
       val extId = ref drop "extid:".length
       Good(ParsedRef.ExternalId(extId))
+    }
+    else if (ref startsWith "ssoid:") {
+      val ssoId = ref drop "ssoid:".length
+      Good(ParsedRef.SingleSignOnId(ssoId))
     }
     else if (ref startsWith "tyid:") {
       val tyId = ref drop "tyid:".length

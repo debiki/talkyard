@@ -1237,6 +1237,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   name: Option[String],
   extImpId: Option[ExtImpId] = None,
   createdAt: When = When.Genesis,  // for now
+  // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   summaryEmailIntervalMins: Option[Int] = None,
@@ -1655,6 +1656,7 @@ object BrowserIdData {
 case class UserStats(
   userId: UserId,
   // SHOULD update based on browser activity
+  // Change to Option? If user upserted via API but has never actually visited the forum?
   lastSeenAt: When = When.fromMillis(0),
   // Later: lastSeenAtIp, lastBrowserIdCookie, lastBrowserFingerprint?
   // Then also include that lastX stuff in the download-my-personal-data response [6LKKEZW2].

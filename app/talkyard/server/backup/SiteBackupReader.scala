@@ -23,14 +23,10 @@ import com.debiki.dao.rdb.PostsSiteDaoMixin
 import debiki.JsonUtils._
 import debiki._
 import debiki.EdHttp._
-import debiki.dao.PagePartsDao
 import ed.server._
 import java.{util => ju}
-import javax.inject.Inject
 import org.scalactic._
-import play.api._
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
 import scala.collection.mutable
 import scala.collection.immutable
 import talkyard.server.JsX
@@ -100,7 +96,7 @@ case class SiteBackupReader(context: EdContext) {
       readSimplePagePatchOrBad(json).getOrIfBad(error =>
         throwBadReq(
           "TyE8KXLMT43", o"""Invalid SimplePagePatch json at
-              index $index in the 'categories' list: $error, json: $json"""))
+              index $index in the 'pages' list: $error, json: $json"""))
     }
 
     val simplePatch = SimpleSitePatch(
@@ -165,14 +161,14 @@ case class SiteBackupReader(context: EdContext) {
       }
       catch {
         case ex: IllegalArgumentException =>
-          throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
+          throwBadRequest("TyE6UJGKT03", s"Invalid json: ${ex.getMessage}")
       }
 
     val siteToSave: Option[SiteInclDetails] =
       try siteMetaJson.map(readSiteMeta)
       catch {
         case ex: IllegalArgumentException =>
-          throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
+          throwBadRequest("TyE50%KS26", s"Invalid 'site' object json: ${ex.getMessage}")
       }
 
     val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
@@ -204,6 +200,7 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     HACK // just loading Everyone's summary email interval. [7FKB4Q1]
+    CLEAN_UP // no longer needed? — now groups are loaded & updated
     var summaryEmailIntervalMins = SummaryEmails.DoNotSend
     var summaryEmailIfActive = false
 
@@ -224,11 +221,12 @@ case class SiteBackupReader(context: EdContext) {
       group
     }
 
-    val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.zipWithIndex map { case (json, index) =>
+    val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.zipWithIndex map {
+          case (json, index) =>
       readGroupParticipantOrBad(json).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE5RKTGF03", o"""Invalid GroupParticipant json at index $index in the 'groupPps' list: $errorMessage,
-                json: $json"""))
+          "TyE5RKTGF03", o"""Invalid GroupParticipant json at index $index
+              in the 'groupPps' list: $errorMessage, json: $json"""))
     }
 
     val users: Seq[UserInclDetails] = usersJson.value.zipWithIndex map { case (json, index) =>
@@ -241,57 +239,58 @@ case class SiteBackupReader(context: EdContext) {
     val ppStats: Seq[UserStats] = pptStatsJson.value.zipWithIndex map { case (json, index) =>
       readPptStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
+          "TyE76K0RKD2", o"""Invalid UserStats json at index $index in the 'ppStats' list: $errorMessage,
                 json: $json"""))
     }
 
-    val ppVisitStats:  Seq[UserVisitStats] = ppVisitStatsJson.value.zipWithIndex map { case (json, index) =>
+    val ppVisitStats:  Seq[UserVisitStats] = ppVisitStatsJson.value.zipWithIndex map {
+          case (json, index) =>
       readPpVisitStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid visit stats json at index $index in the 'ppVisitStats' list: $errorMessage,
-                json: $json"""))
+          "TyE4WKT02S", o"""Invalid UserVisitStats json at index $index
+            in the 'ppVisitStats' list: $errorMessage, json: $json"""))
     }
 
     val usernameUsages: Seq[UsernameUsage] = usernameUsagesJson.value.zipWithIndex map { case (json, index) =>
       readUsernameUsageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid username usage json at index $index in
-               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+          "TyE5RKTUG05", o"""Invalid UsernameUsage json at index $index in
+               the 'usernameUsages' list: $errorMessage, json: $json"""))
     }
 
     val memberEmailAddrs: Seq[UserEmailAddress] = memberEmailAddressesJson.value.zipWithIndex map { case (json, index) =>
       readMemberEmailAddrOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid member email addr json at index $index in
-               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+          "TyE20UWKD45", o"""Invalid UserEmailAddress json at index $index in
+               the 'memberEmailAddresses' list: $errorMessage, json: $json"""))
     }
 
     val identities: Seq[Identity] = identitiesJson.value.zipWithIndex map { case (json, index) =>
       readIdentityOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
-            "TyE06KWT24", o"""Invalid identity json at index $index in
-                   the 'identities' list: $errorMessage, json: $json"""))
+            "TyE5KD2PJ", o"""Invalid Identity json at index $index in
+              the 'identities' list: $errorMessage, json: $json"""))
     }
 
     val invites: Seq[Invite] = invitesJson.value.zipWithIndex map { case (json, index) =>
       readInviteOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid invite json at index $index in
-                   the 'identities' list: $errorMessage, json: $json"""))
+          "TyE783RKTWP3", o"""Invalid invite json at index $index in
+             the 'invites' list: $errorMessage, json: $json"""))
     }
 
     val notifications: Seq[Notification] = notificationsJson.value.zipWithIndex map { case (json, index) =>
       readNotfOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid notification json at index $index in
-                   the 'notifications' list: $errorMessage, json: $json"""))
+          "TyE60KRTD3", o"""Invalid Notification json at index $index in
+             the 'notifications' list: $errorMessage, json: $json"""))
     }
 
     val pages: Seq[PageMeta] = pagesJson.value.zipWithIndex map { case (json, index) =>
       readPageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "EsE2GKB0", o"""Invalid page json at index $index in the 'pages' list: $errorMessage
-              json: $json"""))
+          "TyE402GKB0", o"""Invalid PageMeta json at index $index
+            in the 'pages' list: $errorMessage json: $json"""))
     }
 
     val paths: Seq[PagePathWithId] = pathsJson.value.zipWithIndex map { case (json, index) =>
@@ -315,11 +314,12 @@ case class SiteBackupReader(context: EdContext) {
         }
     }: _*)
 
-    val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.zipWithIndex map { case (json, index) =>
+    val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.zipWithIndex map {
+          case (json, index) =>
       readPageNotfPrefOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
-          "TyE06KWT24", o"""Invalid member email addr json at index $index in
-               the 'ppVisitStats' list: $errorMessage, json: $json"""))
+          "TyE5WKTU025", o"""Invalid PageNotfPref json at index $index in
+               the 'pageNotfPrefs' list: $errorMessage, json: $json"""))
     }
 
     val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
@@ -339,14 +339,14 @@ case class SiteBackupReader(context: EdContext) {
     val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
       readPostOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
-          "EsE4KGU0", o"""Invalid post json at index $index in the 'posts' list: $error,
-              json: $json"""))
+          "TyE205KUD24", o"""Invalid Post json at index $index
+            in the 'posts' list: $error, json: $json"""))
     }
 
     val postActions: Seq[PostAction] = postActionsJson.value.zipWithIndex map { case (json, index) =>
       readPostActionOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
-          "EsE4KGU0", o"""Invalid post action json at index $index in
+          "TyE205KRU", o"""Invalid PostActio json at index $index in
               the 'postActions' list: $error, json: $json"""))
     }
 
@@ -354,7 +354,7 @@ case class SiteBackupReader(context: EdContext) {
           case (json, index) =>
       readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
-          "EsE5JGLRK01", o"""Invalid PermsOnPage json at index $index in the 'permsOnPage' list:
+          "TyE50RTG4", o"""Invalid PermsOnPage json at index $index in the 'permsOnPage' list:
               $error, json: $json"""))
     }
 
@@ -362,7 +362,7 @@ case class SiteBackupReader(context: EdContext) {
           case (json, index) =>
       readReivewTaskOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
-          "EsE5JGLRK01", o"""Invalid ReviewTask json at index $index in the 'permsOnPage' list:
+          "TyE7JGL3K0J", o"""Invalid ReviewTask json at index $index in the 'reviewTasks' list:
               $error, json: $json"""))
     }
 
@@ -430,8 +430,6 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     try {
-      val passwordHash = readOptString(jsObj, "passwordHash")
-      passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       val email = readOptString(jsObj, "emailAddress").trimNoneIfBlank
       Good(Guest(
         id = id,
@@ -468,13 +466,17 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     try {
+      val identityType = readString(jsObj, "identityType")
+      if (identityType != "OAuth") {
+        return Bad("Only OpenAuth identities supported right now [TyE06@T32]")
+      }
       val oauDetails = OpenAuthDetails(
         providerId = readString(jsObj, "providerId"),
         providerKey = readString(jsObj, "providerKey"),
         firstName = readOptString(jsObj, "firstName"),
         lastName = readOptString(jsObj, "lastName"),
         fullName = readOptString(jsObj, "fullName"),
-        email = readOptString(jsObj, "email"),
+        email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
         avatarUrl = readOptString(jsObj, "avatarUrl"))
       val identity = OpenAuthIdentity(
         id = identityId,
@@ -510,7 +512,7 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         theUsername = readString(jsObj, "username"),
         name = readOptString(jsObj, "fullName"),
-        extImpId = readOptString(jsObj, "extImpId"),
+        extImpId = readOptString(jsObj, "extImpId"),  // RENAME to extId
         createdAt = readWhen(jsObj, "createdAtMs"),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
@@ -521,7 +523,7 @@ case class SiteBackupReader(context: EdContext) {
     }
     catch {
       case ex: IllegalArgumentException =>
-        Bad(s"Bad json for guest id $id: ${ex.getMessage}")
+        Bad(s"Bad json for group id $id: ${ex.getMessage}")
     }
   }
 
@@ -535,7 +537,7 @@ case class SiteBackupReader(context: EdContext) {
 
     val groupId = try readInt(jsObj, "groupId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid user id: " + ex.getMessage)
+        return Bad(s"Invalid GroupParticipant group id: " + ex.getMessage)
     }
 
     try {
@@ -545,7 +547,7 @@ case class SiteBackupReader(context: EdContext) {
         isMember = readBoolean(jsObj, "isMember"),
         isManager = readBoolean(jsObj, "isManager"),
         isAdder = readBoolean(jsObj, "isAdder"),
-        isBouncer = readBoolean(jsObj, "isAdder")))
+        isBouncer = readBoolean(jsObj, "isBouncer")))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -624,12 +626,12 @@ case class SiteBackupReader(context: EdContext) {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
-        return Bad(s"Ppt stats entry is not a json object, but a: " + classNameOf(bad))
+        return Bad(s"UserStats entry is not a json object, but a: " + classNameOf(bad))
     }
 
     val userId = try readInt(jsObj, "userId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid user id: " + ex.getMessage)
+        return Bad(s"Invalid UserStats user id: " + ex.getMessage)
     }
 
     val tourTipsSeen = (jsObj \ "tourTipsSeen").asOpt[immutable.Seq[TourTipsId]]
@@ -669,7 +671,7 @@ case class SiteBackupReader(context: EdContext) {
     }
     catch {
       case ex: IllegalArgumentException =>
-        Bad(s"Bad json for ppt stats for user id $userId: ${ex.getMessage}")
+        Bad(s"Bad json for UserStats for user id $userId: ${ex.getMessage}")
     }
   }
 
@@ -678,12 +680,12 @@ case class SiteBackupReader(context: EdContext) {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
-        return Bad(s"PpVisitStats is not a json object, but a: " + classNameOf(bad))
+        return Bad(s"UserVisitStats is not a json object, but a: " + classNameOf(bad))
     }
 
     val ppId = try readInt(jsObj, "userId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid user id: " + ex.getMessage)
+        return Bad(s"Invalid UserVisitStats user id: " + ex.getMessage)
     }
 
     try {
@@ -698,7 +700,7 @@ case class SiteBackupReader(context: EdContext) {
     }
     catch {
       case ex: IllegalArgumentException =>
-        Bad(s"Bad json for ParticipantVisitStats id $ppId': ${ex.getMessage}")
+        Bad(s"Bad json for UserVisitStats id $ppId': ${ex.getMessage}")
     }
   }
 
@@ -758,7 +760,7 @@ case class SiteBackupReader(context: EdContext) {
       }
       Good(PageNotfPref(
         peopleId = readInt(jsObj, "memberId"),
-        notfLevel,
+        notfLevel = notfLevel,
         pageId = readOptString(jsObj, "pageId"),
         pagesInCategoryId = readOptInt(jsObj, "pagesInCategoryId"),
         //pagesWithTagLabelId: Option[TagLabelId] = None, — later
@@ -808,7 +810,7 @@ case class SiteBackupReader(context: EdContext) {
     }
     val notfId = try readInt(jsObj, "id") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid notf id: " + ex.getMessage)
+        return Bad(s"Invalid Notification id: " + ex.getMessage)
     }
     try {
       val notfTypeInt = readInt(jsObj, "notfType")
@@ -932,8 +934,10 @@ case class SiteBackupReader(context: EdContext) {
       Good(SimplePagePatch(
         extId = readString(jsObj, "extId"),
         pageType = pageType,
-        categoryRef = readOptString(jsObj, "categoryRef"),
-        authorRef = readOptString(jsObj, "authorRef"),
+        categoryRef = Some(readString(jsObj, "categoryRef")),
+        // Better require an author name — hard to *start* requiring it in the future,
+        // but easy to *stop* requiring it.
+        authorRef = Some(readString(jsObj, "authorRef")),
         title = readString(jsObj, "title"),
         body = readString(jsObj, "body")))
     }
@@ -1146,7 +1150,7 @@ case class SiteBackupReader(context: EdContext) {
 
     val postId = try readInt(jsObj, "postId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid post id: " + ex.getMessage)
+        return Bad(s"Invalid PostAction post id: " + ex.getMessage)
     }
 
     try {

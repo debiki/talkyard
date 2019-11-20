@@ -13,15 +13,15 @@ const texts = {
   mariasReplyOne: 'mariasReplyOne',
   mariasReplyTwoWithImage: 'mariasReplyTwoWithImage',
   michaelsReply: 'michaelsReply',
-  owensReplyMentiosMariaMichael: 'owensReplyMentiosMariaMichael @maria @michael',
+  owensReplyMentionsMariaMichael: 'owensReplyMentionsMariaMichael @maria @michael',
 };
 
 function createEmbeddingPages(browser) {
   const mkPage = browser.adminArea.settings.embedded.createSaveEmbeddingPage;
-  mkPage({ urlPath: slugs.threeRepliesPageSlug, browser });
-  mkPage({ urlPath: slugs.replyWithImagePageSlug, browser });
-  mkPage({ urlPath: slugs.onlyLikeVotePageSlug, browser });
-  mkPage({ urlPath: slugs.onlySubscrNotfsPageSlug, browser });
+  mkPage({ urlPath: slugs.threeRepliesPageSlug });
+  mkPage({ urlPath: slugs.replyWithImagePageSlug });
+  mkPage({ urlPath: slugs.onlyLikeVotePageSlug });
+  mkPage({ urlPath: slugs.onlySubscrNotfsPageSlug });
 }
 
 

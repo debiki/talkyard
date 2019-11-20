@@ -20,14 +20,12 @@ package talkyard.server.backup
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{ForumDao, ReadOnySiteDao, SiteDao}
-import debiki.EdHttp.throwForbidden
-import org.apache.logging.log4j.util.ReadOnlyStringMap
+import debiki.EdHttp.throwForbiddenIf
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json.JsObject
 import scala.collection.mutable
-import scala.collection.immutable
 
 
 /** Later: This class should not contain complete items like Category and Post. [PPATCHOBJS]
@@ -120,6 +118,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
     site.isDefined ||
       settings.isDefined ||
       (guests.length + groups.length + users.length) >= many ||
+      guestEmailNotfPrefs.size >= many ||
       groupPps.size >= many ||
       pptStats.length >= many ||
       pptVisitStats.length >= many ||
@@ -179,15 +178,11 @@ case class SimpleSitePatch(
 
 
   def loadThingsAndMakeComplete(dao: SiteDao): SiteBackup Or ErrorMessage = {
-    val oldCats = dao.getAllCategories()
     // For now, pick the first random root category. Sub communities currently
-    // disabled. [4GWRQA28]
-    dao.getRootCategories().headOption.getOrElse {
-      // This means the site is currently empty, but we need something
-      // to insert the new contents into.
-      throwForbidden("TyE6PKWTY4", "No root category has been created")
-    }
-    //makeComplete(oldCats, dao.globals.now())
+    // disabled. [4GWRQA28]  But the site must not be empty — we need something
+    // to insert the new contents into:
+    throwForbiddenIf(dao.getRootCategories().isEmpty,
+      "TyE6PKWTY4", "No root category has been created")
     makeComplete(dao)
   }
 
@@ -237,22 +232,6 @@ case class SimpleSitePatch(
         } getOrElse {
           return Bad(s"Category not found: '$ref' [TyE8KFUW240]")
         }
-        /*
-        if (ref startsWith "extid:") {
-          val parentExtId = ref drop "extid:".length
-          oldCats.find(_.extImpId is parentExtId) getOrElse {
-            return Bad(s"Parent category not found: No category has ext id '$parentExtId' [TyE6WKTH2T5]")
-          }
-        }
-        else if (ref startsWith "tyid:") {
-          // Later: Lookup by internal id.
-          return Bad(s"'tyid:' refs not yet implemented [TyE205MRG4]")
-        }
-        else {
-          var refDots = ref.takeWhile(_ != ':') take 14
-          if (refDots.length >= 14) refDots = refDots.dropRight(1) + "..."
-          return Bad(s"Unknown ref type: '$refDots', should be e.g. 'extid:...' [TyE5RKD2LR46]")
-        } */
       } getOrElse {
         return Bad("No parentRef: 'extid:....' specified, that's not yet supported [TyE205WKDLF2]")
         /* Later:
@@ -291,6 +270,7 @@ case class SimpleSitePatch(
         authorId = SysbotUserId,
         categoryId = Some(nextCategoryId),
         titlePostExtId = categoryPatch.extImpId.map(_ + "_about_page_title"),
+        // Sync the title with CategoryToSave [G204MF3]
         titleHtmlUnsafe = s"Description of the $theCategoryName category",
         bodyPostExtId = categoryPatch.extImpId.map(_ + "_about_page_body"),
         bodyHtmlUnsafe = theCategoryDescription)
@@ -300,6 +280,7 @@ case class SimpleSitePatch(
     // ----- Upsert pages
 
     for (pagePatch: SimplePagePatch <- pagePatches) {
+      untested("TyE052SKGBS", "Upserting SimplePagePatch") // [TyT603PKRAEPGJ5]
       val category: Option[Category] = pagePatch.categoryRef.map { ref =>
         dao.getCategoryByRef(ref) getOrIfBad { problem =>
           return Bad(s"Bad category ref: '$ref', the problem: $problem [TyE8SKHNWJ2]")
@@ -358,12 +339,9 @@ case class SimpleSitePatch(
         pageSlug = pageSlug,
         canonical = true))
 
-      // Assume the title source is html, not CommonMark.
-      // Later, could add a field descriptionMarkupLang: 'Html' or 'Commonmark'? [IMPCORH]
+      // Assume the page title and body source is html, not CommonMark.
+      // Later, could add a field title/bodyMarkupLang: 'Html' or 'Commonmark'? [IMPCORH]
       val bodyHtmlSanitized = Jsoup.clean(bodyHtmlUnsafe, Whitelist.basicWithImages)
-
-      // Sync the title with CategoryToSave [G204MF3]
-
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1

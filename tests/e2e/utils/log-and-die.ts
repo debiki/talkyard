@@ -2,6 +2,7 @@ const ansiColors = require('ansi-colors');
 
 const boringColor = ansiColors.gray;
 const errorColor = ansiColors.bold.yellow.bgRed;
+const exceptionColor = ansiColors.bold.yellow;
 const warningColor = ansiColors.bold.red;
 const unusualColor = ansiColors.black.bgGreen;
 const serverRequestColor = ansiColors.bold.cyan;
@@ -26,7 +27,7 @@ const api = {
     }
     if (message) console.log(message);
     const exceptionIndented = '   ' + ex.toString().replace(/\n/g, "\n   ");
-    console.log(warningColor(exceptionIndented));
+    console.log(exceptionColor(exceptionIndented));
   },
   logError: function (message: string) {
     console.log(errorColor(message));

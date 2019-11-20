@@ -296,16 +296,16 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
 
 
   def loadAllUserVisitStats(): immutable.Seq[UserVisitStats] = {
-    loadUserVisitStatsImpl(None)
+    loadVisitStatsImpl(None)
   }
 
 
   def loadUserVisitStats(memberId: UserId): immutable.Seq[UserVisitStats] = {
-    loadUserVisitStatsImpl(Some(memberId))
+    loadVisitStatsImpl(Some(memberId))
   }
 
 
-  def loadUserVisitStatsImpl(memberId: Option[UserId]): immutable.Seq[UserVisitStats] = {
+  private def loadVisitStatsImpl(memberId: Option[UserId]): immutable.Seq[UserVisitStats] = {
     require(memberId.forall(_ >= LowestNonGuestId), "EdE84SZMI8")
     val values = ArrayBuffer(siteId.asAnyRef)
 

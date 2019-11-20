@@ -6,17 +6,12 @@ import { execSync } from 'child_process';
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
-import api = require('../utils/log-and-die');
 import * as embPages from './embedded-comments-create-site-export-json.2browsers.pages';
-
-
-// s/wdio target/e2e/wdio.2chrome.conf.js  --only embedded-comments-create-site-export-import.2browsers   --da
 
 declare let browser: any;
 declare let browserA: any;
@@ -31,18 +26,11 @@ let michael: Member;
 let michaelsBrowser;
 let strangersBrowser;
 
-let data;
-let idAddress: IdAddress;
 let siteId: any;
-let talkyardSiteOrigin: string;
 
 const owensReplyGensNotfToMaria = 'owensReplyGensNotfToMaria';
 const owensReplyTwoMentionsMichaelMaria = 'owensReplyTwoMentionsMichaelMaria @michael @maria';
 
-
-// dupl code! [5GKWXT20]
-
-// describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () => {
 
 function constructEmbCommentsImportTest(testName: string, variants: {
   // One and only one of these:
@@ -104,8 +92,9 @@ function constructEmbCommentsImportTest(testName: string, variants: {
 
       it("Imports the site", () => {
         // Avoid unique key errors.
-        siteDump.meta.pubId = siteDump.meta.pubId + '_copy';
-        siteDump.meta.name = siteDump.meta.name + '_copy';
+        const testId = utils.generateTestId();
+        siteDump.meta.pubId = siteDump.meta.pubId + '_copy_' + testId;
+        siteDump.meta.name = siteDump.meta.name + '_copy_' + testId;
         newSiteIdAddr = server.importRealSiteData(siteDump);
         siteId = newSiteIdAddr.id;
         console.log("Import site response: " + JSON.stringify(newSiteIdAddr));
@@ -177,12 +166,11 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       let testId;
 
       it("Owen creates a 2nd embedded comments site", () => {
-        const result = owensBrowser.createSiteAsOwen({
+        const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
             shortName: 'emb-rst', longName: "Emb Restore Site" });
-        data = result.data;
+        const result: NewSiteResult = owensBrowser.createNewSite(newSiteData);
         siteId = result.siteId;
         testId = result.testId;
-        talkyardSiteOrigin = result.talkyardSiteOrigin;
       });
 
       it("Owen goes to the Backups admin area tab", () => {
@@ -216,6 +204,12 @@ function constructEmbCommentsImportTest(testName: string, variants: {
 
       it("There's a Done Restoing Backup message", () => {
         owensBrowser.waitForExist('.e_RstrDne');
+      });
+
+      it("Owen remains logged in?  Or needs to login again?", () => {
+        owensBrowser.refresh();
+        // Hmm, currently:
+        owensBrowser.topbar.assertMyUsernameMatches(owen.username);
       });
     }
     else if (variants.importToExistingEmptyForumSiteViaApi) {
@@ -299,7 +293,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       mariasBrowser.topic.waitForPostAssertTextMatches(
           c.FirstReplyNr + 1, embPages.texts.mariasReplyOne);
       mariasBrowser.topic.waitForPostAssertTextMatches(
-          c.FirstReplyNr + 2, embPages.texts.owensReplyMentiosMariaMichael);
+          c.FirstReplyNr + 2, embPages.texts.owensReplyMentionsMariaMichael);
     });
 
 

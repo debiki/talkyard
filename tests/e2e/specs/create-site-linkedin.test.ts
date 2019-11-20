@@ -26,7 +26,7 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () =>
   });
 
   it('can create a new site as a LinkedIn user, when not logged in to LinkedIn', () => {
-    makeForumWithLinkedInAdminAccount();
+    makeForumWithLinkedInAdminAccount({ alreadyLoggedIn: false });
   });
 
   it('can actually use the LinkedIn admin account to create stuff', () => {
@@ -36,19 +36,18 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () =>
 
   it('can create a new site as LinkedIn user, when already logged in to LinkedIn', () => {
     // Now we're logged in already, so the LinkedIn login flow is / might-be slightly different.
-    makeForumWithLinkedInAdminAccount();
+    makeForumWithLinkedInAdminAccount({ alreadyLoggedIn: true });
     pages.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithLinkedInAdminAccount() {
-    const data = createTestData();
-    data.email = settings.linkedinEmail;
-    data.password = settings.linkedinPassword;
-    browser.go(utils.makeCreateSiteWithFakeIpUrl());
-    browser.disableRateLimits(); // there're signup rate limits
-    pages.createSite.fillInFieldsAndSubmit(data);
-    pages.createSite.clickOwnerSignupButton();
-    pages.loginDialog.createLinkedInAccount(data, true);
+  function makeForumWithLinkedInAdminAccount(ps: { alreadyLoggedIn: boolean }) {
+    const data = createTestData({
+      newSiteOwner: NewSiteOwnerType.LinkedInAccount,
+      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+    });
+    console.log("Create new site:");
+    browser.createNewSite(data);
+    console.log("Create forum:");
     pages.createSomething.createForum("Linkedin Forum Title");
   }
 

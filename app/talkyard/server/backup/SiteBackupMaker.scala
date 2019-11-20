@@ -123,6 +123,9 @@ object SiteBackupMaker {
       fields("guests") = JsArray(
         guests.map(JsGuestInclDetails(_, inclEmail = true)))
 
+      // guestEmailNotfPrefs missing?
+      // fields("guestEmailPrefs") =  ...
+
       val groups: Seq[Group] =
         anyDump.map(_.groups) getOrElse tx.loadAllGroupsAsSeq()
       fields("groups") = JsArray(
@@ -185,8 +188,7 @@ object SiteBackupMaker {
           if (simpleFormat) {
             val canonicalPath = pagePaths.find(p =>
               p.pageId == pageMeta.pageId && p.canonical) getOrDie "TyE6WKSJ02X4"
-            "urlPaths" -> Json.obj(
-              "canonical" -> canonicalPath.value)
+            json += "urlPath" -> JsString(canonicalPath.value)
           }
           json
         }))

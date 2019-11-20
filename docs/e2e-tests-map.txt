@@ -463,6 +463,7 @@ embedded comments:
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
   upload jpg, png:
+          - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
   upload video:
   upload pdf, tar.gz:
   embedded origin added,  (EMBORG)
@@ -768,13 +769,31 @@ api:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
+  import pages:
+    TESTS_MISSING: /-/upsert-simple  TyT603PKRAEPGJ5
 
-import and export:  (impexp)
+import,
+export and restore:  (impexp)
   site patch:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
   import Disqus comments:
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
-
+  export json:
+    embedded comments:
+          - embedded-comments-create-site-export-json.2browsers.test.ts TyT7FKDJF3
+  things remembered after exp-imp:
+          - embedded-comments-restore-overwrite-site.2browsers.test.ts  TyT5WKTJL025
+          - embedded-comments-import-json-create-new-site.2browsers.test.ts  TyT4SLCD24S
+  exp imp images:
+          - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
+  TESTS_MISSING:
+    not yet enabled: 
+          - embedded-comments-import-json-to-existing-emb-cmts-site.2browsers.test.ts  TyT7WKGKS269
+  TESTS_MISSING:
+    - Login w Gmail, FB, Twitter, LinkedIn, GitHub. Export, import. Still works?
+    - Usernames, email addrs, stats, page visit stats, latest post — remembered accross exp-imp?
+    - Edit built-in user's or group's name, remembered accross restore.
+    - guestEmailPrefs, not yet incl in export
 
 
 Tests to create:

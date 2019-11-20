@@ -5,17 +5,26 @@ import settings = require('../utils/settings');
 
 
 
-function createPasswordTestData() {
+function createPasswordTestData(ps: {
+  newSiteOwner?: NewSiteOwnerType,
+  alreadyLoggedInAtIdProvider?: boolean,
+} = {}): NewSiteData {
+
   // Dupl code [502KGAWH0]
   const testId = utils.generateTestId();
   const localHostname = settings.localHostname ||
                       settings.testLocalHostnamePrefix + 'create-site-' + testId;
   return {
+    siteType: SiteType.Forum,
     testId: testId,
     localHostname: localHostname,
     origin: utils.makeSiteOrigin(localHostname),
-    originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
+    //originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
     orgName: "E2E Org Name",
+    newSiteOwner: ps.newSiteOwner ||
+        // Backw compat, old tests:
+        NewSiteOwnerType.OwenOwner,
+    alreadyLoggedInAtIdProvider: ps.alreadyLoggedInAtIdProvider,
     fullName: 'E2E Test ' + testId,
     email: settings.testEmailAddressPrefix + testId + '@example.com',
     // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]

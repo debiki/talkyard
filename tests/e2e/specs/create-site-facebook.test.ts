@@ -14,9 +14,6 @@ const logMessage = logAndDie.logMessage;
 
 declare let browser: any;
 
-const newMembersEmail = 'e2e-test--mia@example.com';
-const newMembersTopicTitle = 'newMembersTopicTitle';
-const newMembersTopicText = 'newMembersTopicText';
 
 describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () => {
 
@@ -30,7 +27,7 @@ describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () =>
   });
 
   it('can create a new site as a Facebook user, when not logged in to FB', () => {
-    makeForumWithFacebookAdminAccount();
+    makeForumWithFacebookAdminAccount({ alreadyLoggedIn: false });
   });
 
   it('can actually use the FB admin account to create stuff', () => {
@@ -40,19 +37,18 @@ describe('create-site-facebook  @createsite @login @facebook  TyT8KA9AW3', () =>
 
   it('can create a new site as Facebook user, when already logged in to FB', () => {
     // Now we're logged in already, so the Facebook login flow is / might-be slightly different.
-    makeForumWithFacebookAdminAccount();
+    makeForumWithFacebookAdminAccount({ alreadyLoggedIn: true });
     pages.topbar.clickLogout(); // (6HRWJ3)
   });
 
-  function makeForumWithFacebookAdminAccount() {
-    const data = createTestData();
-    data.email = settings.facebookAdminEmail;
-    data.password = settings.facebookAdminPassword;
-    browser.go(utils.makeCreateSiteWithFakeIpUrl());
-    browser.disableRateLimits(); // there're signup rate limits
-    pages.createSite.fillInFieldsAndSubmit(data);
-    pages.createSite.clickOwnerSignupButton();
-    pages.loginDialog.createFacebookAccount(data, true);
+  function makeForumWithFacebookAdminAccount(ps: { alreadyLoggedIn: boolean }) {
+    const data = createTestData({
+      newSiteOwner: NewSiteOwnerType.FacebookAccount,
+      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+    });
+    console.log("Create new site:");
+    browser.createNewSite(data);
+    console.log("Create forum:");
     pages.createSomething.createForum("Facebook Forum Title");
   }
 

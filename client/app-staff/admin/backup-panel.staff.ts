@@ -27,7 +27,7 @@ export const BackupPanel = React.createFactory<AdminPanelProps>(
         r.p({},
           LinkButton({ download: true, className: 'e_DnlBkp', href: '/-/export-site-json' },
             "Download backup"),
-          Button({ onClick: openPageIdsUrlsDialog, className: 'e_RstBkp' },
+          Button({ onClick: openBackupDialog, className: 'e_RstBkp' },
             "Restore backup"))));
 });
 
@@ -35,12 +35,10 @@ export const BackupPanel = React.createFactory<AdminPanelProps>(
 var importBackupDiagElm;
 var setImportBackupDiagOpen;
 
-export function openPageIdsUrlsDialog() {
+export function openBackupDialog() {
   if (!importBackupDiagElm) {
     importBackupDiagElm = ReactDOM.render(ImportBackupDiag(), utils.makeMountNode());
   }
-  //React.createFactory(ImportBackupDiag)()
-  // Why setTimeout needed here, but no where else in similar places?
   setImportBackupDiagOpen(true);
 }
 
@@ -49,14 +47,14 @@ const ImportBackupDiag = React.createFactory(function() {
   const [isOpen, setOpen] =  React.useState(false);
   const [resultJson, setResultJson] =  React.useState<any>(null);
   setImportBackupDiagOpen = setOpen;
-  const closeFn = () => setImportBackupDiagOpen(false);
+  const closeFn = () => setOpen(false);
   const doUpload = (event) => {
     // selectedFile: event.target.files[0],
     //formData.append('file', event.target.files[0]); //this.state.selectedFile)
     Server.uploadFiles('/-/restore-backup-overwrite-site', event.target.files, json => {
       setResultJson(json);
     }, error => {
-      
+      // Server.uploadFiles() has shown an error dialog already.
     });
   };
 

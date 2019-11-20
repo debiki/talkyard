@@ -211,7 +211,7 @@ trait SiteTransaction {
   def reconsiderSendingSummaryEmailsToEveryone()
 
 
-  def loadAllUserVisitStats(): immutable.Seq[UserVisitStats] // <——
+  def loadAllUserVisitStats(): immutable.Seq[UserVisitStats]
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
   def upsertUserVisitStats(visitStats: UserVisitStats)
 

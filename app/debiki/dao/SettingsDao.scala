@@ -73,6 +73,7 @@ trait SettingsDao {
         !getEnabled(newSettings) && getEnabled(oldSettings)
 
       def throwIfLogsInWith(loginMethodName: String) {
+        // But if has pwd, allow disabling.
         if (identities.exists(_.loginMethodName.toLowerCase contains loginMethodName.toLowerCase))
           throwBadRequest("TyE5UKDWSQ2", o"""Currently you cannot disable login with $loginMethodName
             — you use it yourself to login""")

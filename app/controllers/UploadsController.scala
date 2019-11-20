@@ -53,7 +53,8 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       throwForbidden("DwE7UMF2", o"""Only authenticated users (but not guests) may upload files.
           Please login via for example Google or Facebook, or create a password account""")
 
-    // Dupl code [5039RKJW45] ---------
+    // [5039RKJW45]
+
     // COULD try to detect if the client cancelled the upload. Currently, if the browser
     // called xhr.abort(), we'll still get to here, and `data` below will be the data
     // uploaded thus far, i.e. not the whole file. Fortunately, it'll never get used
@@ -76,7 +77,6 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       throwBadRequest("EdE7UYMF3", s"Use the multipart form data key name 'file' please")
 
     val file = files.head
-    // ----------- / Dupl code
 
     val uploadRef = request.dao.addUploadedFile(
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)

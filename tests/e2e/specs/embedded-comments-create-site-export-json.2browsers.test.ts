@@ -2,19 +2,15 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
-import { execSync } from 'child_process';
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
+import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 import * as embPages from './embedded-comments-create-site-export-json.2browsers.pages';
-
-// s/wdio target/e2e/wdio.2chrome.conf.js  --only embedded-comments-create-site-export-import.2browsers   --da
 
 declare let browser: any;
 declare let browserA: any;
@@ -29,17 +25,12 @@ let michael: Member;
 let michaelsBrowser;
 let strangersBrowser;
 
-let data;
-let idAddress: IdAddress;
+let data: NewSiteData;
 let siteId: any;
 let talkyardSiteOrigin: string;
 
 
-const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
-
-// dupl code! [5GKWXT20]
-
-describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () => {
+describe("embedded comments export json  TyT7FKDJF3", () => {
 
   if (settings.prod) {
     console.log("Skipping this spec — the server needs to have upsert conf vals enabled."); // E2EBUG
@@ -59,8 +50,9 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
-    const result = owensBrowser.createSiteAsOwen({
-        shortName: 'emb-exp', longName: "Emb Cmts Exp"});
+    const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
+        shortName: 'emb-exp', longName: "Emb Cmts Exp" });
+    const result = owensBrowser.createNewSite(newSiteData);
     data = result.data;
     siteId = result.siteId;
     talkyardSiteOrigin = result.talkyardSiteOrigin;
@@ -121,12 +113,12 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   });
 
   it("... and posts a reply, @mentions both Michael and Maria", () => {
-    owensBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.owensReplyMentiosMariaMichael);
+    owensBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.owensReplyMentionsMariaMichael);
   });
 
   it(`Maria gets a reply notf email, Michael doesn't (didn't verify his email)`, () => {
     server.waitUntilLastEmailMatches(
-        siteId, maria.emailAddress, embPages.texts.owensReplyMentiosMariaMichael, mariasBrowser);
+        siteId, maria.emailAddress, embPages.texts.owensReplyMentionsMariaMichael, mariasBrowser);
     // Email addr verif email + reply notf = 2.
     assert.equal(server.countLastEmailsSentTo(siteId, maria.emailAddress), 2);
   });
@@ -141,7 +133,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   });
 
   it("... posts a comment with an image", () => {
-    // TESTS_MISSING
+    // TESTS_MISSING: no image uploaded [402KGS4RQ]
     mariasBrowser.complex.replyToEmbeddingBlogPost(embPages.texts.mariasReplyTwoWithImage);
   });
 

@@ -92,7 +92,7 @@ object JsX {
       else invite.emailAddress
     var json = Json.obj(   // change Typescript interface Invite to this [REFINVFLDS]
       "invitedEmailAddress" -> safeEmail,
-      "startAtUrl" -> invite.startAtUrl,
+      "startAtUrl" -> JsStringOrNull(invite.startAtUrl),
       "addToGroupIds" -> JsArray(invite.addToGroupIds.toSeq.map(id => JsNumber(id))),
       "invitedById" -> invite.createdById,
       "invitedAt" -> invite.createdAt.getTime,
@@ -315,8 +315,8 @@ object JsX {
       case oauIdty: OpenAuthIdentity =>
         val details = oauIdty.openAuthDetails
         Json.obj(
-          "identityType" -> "OpenAuth",
-          "id" -> oauIdty.id,
+          "identityType" -> "OAuth",
+          "identityId" -> oauIdty.id,
           "userId" -> oauIdty.userId,
           "providerId" -> details.providerId,
           "providerKey" -> details.providerKey,
@@ -713,7 +713,7 @@ object JsX {
 
 
   def JsReviewTask(reviewTask: ReviewTask): JsObject = {
-    // Related code: JsReviewTask [073SMDR26]
+    // Related code: reviewStufToJson [073SMDR26]
     Json.obj(
       "id" -> reviewTask.id,
       "reasonsLong" -> ReviewReason.toLong(reviewTask.reasons),

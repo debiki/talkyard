@@ -186,8 +186,9 @@ class SystemDao(
 
     // During e2e tests, find out which test sites to delete, to make the hostname
     // or something available again. But don't delete them immediately — first
-    // acquire a SiteDao mutex, to avoid PostgreSQL deadlocks if the tx here deletes
-    // the site, but another server request and tx tries to update the same site.
+    // acquire a SiteDao mutex (we'll do, a bit below), to avoid PostgreSQL
+    // deadlocks if the transaction here deletes the site, but another request
+    // tries to update the same site, in a parallel transaction.
     val anySitesToDelete: Vector[Site] = try readOnlyTransaction { sysTx =>
       if (deleteWhatSite == DeleteWhatSite.NoSite) {
         Vector.empty
@@ -198,8 +199,9 @@ class SystemDao(
           case DeleteWhatSite.SameHostname =>
             dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8",
               s"Not an e2e test hostname: $hostname")
+            // This test works for site names too (not only hostnames).
             dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4",
-              s"Not an e2e test name: $name")
+              s"Not an e2e test site name: $name")
             if (hostname.isEmpty) Vector.empty
             else {
               sysTx.loadSiteByHostname(hostname.get).toVector ++

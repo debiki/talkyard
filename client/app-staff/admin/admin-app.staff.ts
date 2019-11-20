@@ -507,7 +507,7 @@ const LoginAndSignupSettings = createFactory({
 
     const missingServerSiteHint = (isConfiguredOnServer: boolean) => isConfiguredOnServer ? '' :
         " Cannot be enabled, because has not been configured server side, " +
-        "in /opt/talkyard/conf/app/play.conf.";
+        "in /opt/talkyard/conf/play-framework.conf.";
 
     const ssoTestPageLink = r.a({ href: '/-/sso-test', className: 'e_SsoTestL' }, "/-/sso-test");
     const adminLoginLink = r.a({ href: '/-/admin-login', className: 'e_AdmLgiL' }, "/-/admin-login");

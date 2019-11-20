@@ -41,7 +41,6 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     // - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
     // - SiteDumpImporterAppSpec  TyT2496ANPJ3
 
-    //dieIf(siteData.site.map(_.id) isSomethingButNot siteId, "TyE35HKSE")
     val dao = globals.siteDao(siteId)
     val upsertedCategories = ArrayBuffer[Category]()
     val pageIdsWithBadStats = mutable.HashSet[PageId]()
@@ -162,6 +161,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         val tempId = pageInPatch.pageId
         val extId = pageInPatch.extImpId getOrElse throwForbidden(
           "TyE305KBSG", s"Inserting pages with no extId not implemented. Page temp imp id: $tempId")
+          // Old: --------
           // Aha? If site meta is incl, then, lazy create an extId here:
           // publ-site-id:page-id:pge  ?
           // & users:
@@ -170,6 +170,12 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           // publ-sit-id:category-id:cat
           // No, skip the suffixes 'pge', 'grp', etc — don't want dupl pubid:userid:STH,
           // so don't incl STH.
+          // / Old --------
+          // Instead, if upserting one site into another — it's not possible to know how
+          // the human wants existing pages to get merged with each other, or not at all?
+          // More info about how to resolve conflicts, is needed?
+          // E.g. merge categories with the same url slug.  But don't merge pages with the
+          // same slug? (that's is how Discourse merges sites — i.e. categories, not pages).
 
           // URL param:  ?  importWhat=EmbeddedComments  ?
 
@@ -223,6 +229,11 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         siteData.guests.flatMap(_.extImpId)
         // ++ siteData.users.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
         // ++ siteData.groups.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
+      // For now:
+      unimplementedIf(siteData.users.nonEmpty, "Upserting users into existing site [TyE057WKRP2]")
+      unimplementedIf(siteData.groups.nonEmpty, "Upserting groups into existing site [TyE057WKRP3]")
+      // — right now, only Guests supported, and that's all that's needed, for
+      // importing Disqus or WordPress etc blog comments.
 
       // If there're participants in the database with the same external ids
       // as some of those in the siteData, then, they are to be updated, and we
@@ -950,6 +961,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           tx.insertUsernameUsage(UsernameUsage(
             usernameLowercase, inUseFrom = tx.now, userId = group.id))
         }
+        // Also auto-gen UserEmailAddress if missing, if adding group email inbox later. [306KWUSSJ24]
         if (group.isBuiltIn) {
           // Then it's in the database already. But maybe its name or settings has been changed?
           tx.updateGroup(group)

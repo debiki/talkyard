@@ -58,8 +58,8 @@ class SiteDaoFactory (
 
 
 trait ReadOnySiteDao {
-  def getCategoryByRef(ref: String): Option[Category] Or ErrorMessage
-  def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage
+  def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage
+  def getParticipantByRef(ref: Ref): Option[Participant] Or ErrorMessage
 
   def now(): When
 
@@ -500,9 +500,9 @@ object SiteDao {
     }
     else {
       val lockNowId = siteIds.head
-      val lockLaterId = siteIds.tail
+      val lockLaterIds = siteIds.tail
       synchronizeOnSiteId(lockNowId) {
-        syncManyImpl(lockLaterId) {
+        syncManyImpl(lockLaterIds) {
           block
         }
       }

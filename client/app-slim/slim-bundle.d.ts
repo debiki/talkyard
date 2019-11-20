@@ -307,6 +307,7 @@ declare namespace debiki2 {
   function linkToUserProfilePage(idOrUsername: Myself | Participant | UserId | string): string;
   function pathTo(user: Participant | Myself | UserId | string): string;
   function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
+  function linkToMembersNotfPrefs(userIdOrUsername: UserId | string): string;
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;

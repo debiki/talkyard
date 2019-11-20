@@ -94,14 +94,20 @@ class EdController(cc: ControllerComponents, val context: EdContext)
     PlainApiAction(cc.parsers.text(maxLength = maxBytes),
       rateLimits, allowAnyone = allowAnyone)(f)
 
+  SECURITY // add rate limits for staff too
   def StaffPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
       cc.parsers.json(maxLength = maxBytes))(f)
 
-  SECURITY // add rate limits for admins
+  SECURITY // add rate limits for admins — use AdminPostJsonAction2, then remove this & rm '2' from name.
   def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionAdminOnly(
       NoRateLimits, cc.parsers.json(maxLength = maxBytes))(f)
+
+  def AdminPostJsonAction2(rateLimits: RateLimits, maxBytes: Int)(
+        f: JsonPostRequest => Result): Action[JsValue] =
+    PlainApiActionAdminOnly(
+      rateLimits, cc.parsers.json(maxLength = maxBytes))(f)
 
   def ApiSecretPostJsonAction(rateLimits: RateLimits, maxBytes: Int)(
         f: JsonPostRequest => Result): Action[JsValue] =

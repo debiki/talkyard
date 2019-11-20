@@ -218,24 +218,75 @@ function pagesFor(browser) {
     },
 
 
-    createSiteAsOwen: (ps: { shortName: String, longName: string }) => {
+    createNewSite: (data: NewSiteData): NewSiteResult => {
       // Dupl code [502SKHFSKN53]
-      const data = api.createPasswordTestData(ps);
-      api.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
-      api.disableRateLimits();
-      api.createSite.fillInFieldsAndSubmit(data);
-      // New site; disable rate limits here too.
+      let url;
+      if (data.siteType === SiteType.Forum) {
+        console.log("Go to create Forum site page ...");
+        url = utils.makeCreateSiteWithFakeIpUrl();
+      }
+      else {
+        console.log("Go to create Embedded Comments site page ...");
+        url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
+      }
+      api.go2(url);
       api.disableRateLimits();
 
-      api.createSite.clickOwnerSignupButton();
-      api.loginDialog.createPasswordAccount(data, true);
+      console.log("Fill in fields and submit...");
+      api.createSite.fillInFieldsAndSubmit(data);
+
+      // New site; disable rate limits here too.
+      api.disableRateLimits();
       const siteId = api.getSiteId();
-      const email = server.getLastEmailSenTo(siteId, data.email, api);
-      const link = utils.findFirstLinkToUrlIn(
-        data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-      api.go(link);
-      api.waitAndClick('#e2eContinue');
       const talkyardSiteOrigin = api.origin();
+
+      console.log("Click sign up as owner ...");
+      api.createSite.clickOwnerSignupButton();
+
+      console.log("... sign up as owner ...");
+      switch (data.newSiteOwner) {
+        case NewSiteOwnerType.OwenOwner:
+          api.loginDialog.createPasswordAccount(data, true);
+          const email = server.getLastEmailSenTo(siteId, data.email, api);
+          const link = utils.findFirstLinkToUrlIn(
+            data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+          api.go(link);
+          api.waitAndClick('#e2eContinue');
+          break;
+        case NewSiteOwnerType.GmailAccount:
+          api.loginDialog.createGmailAccount({
+            email: settings.gmailEmail,
+            password: settings.gmailPassword,
+            username: data.username,
+          }, { shallBecomeOwner: true });
+          break;
+        case NewSiteOwnerType.FacebookAccount:
+          api.loginDialog.createFacebookAccount({
+            email: settings.facebookAdminEmail,
+            password: settings.facebookAdminPassword,
+            username: data.username,
+          }, true);
+          break;
+        case NewSiteOwnerType.GitHubAccount:
+          api.loginDialog.createGitHubAccount({
+              username: settings.githubUsernameMixedCase,
+              password: settings.githubPassword,
+              shallBecomeOwner: true,
+              alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
+          break;
+        case NewSiteOwnerType.LinkedInAccount:
+          api.loginDialog.createLinkedInAccount({
+            email: settings.linkedinEmail,
+            password: settings.linkedinPassword,
+            username: data.username,
+            shallBecomeOwner: true,
+            alreadyLoggedInAtLinkedIn: data.alreadyLoggedInAtIdProvider,
+          });
+          break;
+        default:
+          die("Unimpl [TyE50KUKTYS25]");
+      }
+
       return {
         data,
         testId: data.testId,
@@ -245,7 +296,8 @@ function pagesFor(browser) {
     },
 
 
-    createPasswordTestData: (ps: { shortName: String, longName: string }) => {
+    makeNewSiteDataForEmbeddedComments: (ps: { shortName: String, longName: string })
+          : NewSiteData => {
       // Dupl code [502KGAWH0]
       const testId = utils.generateTestId();
       const embeddingHostPort = `test--${ps.shortName}-${testId}.localhost:8080`;
@@ -254,10 +306,12 @@ function pagesFor(browser) {
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
       return {
         testId: testId,
+        siteType: SiteType.EmbeddedCommments,
         embeddingUrl: `http://${embeddingHostPort}/`,
         origin: `http://comments-for-${localHostname}.localhost`,
         orgName: ps.longName + " Org Name",
         // The owner:
+        newSiteOwner: NewSiteOwnerType.OwenOwner,
         fullName: ps.longName + " test id " + testId,
         email: settings.testEmailAddressPrefix + testId + '@example.com',
         username: 'owen_owner',
@@ -1345,7 +1399,7 @@ function pagesFor(browser) {
     },
 
     createSite: {
-      fillInFieldsAndSubmit: function(data) {
+      fillInFieldsAndSubmit: function(data: NewSiteData) {
         if (data.embeddingUrl) {
           api.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
@@ -1366,12 +1420,15 @@ function pagesFor(browser) {
 
 
     createSomething: {
-      createForum: function(forumTitle) {
+      createForum: (forumTitle: string) => {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
         // api.waitAndClick('#e2eCreateForum');
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
-        api.waitAndSetValue('input[type="text"]', forumTitle);
+        logMessage(`Typig forum title: "${forumTitle}" ...`);
+        utils.tryManyTimes("Type forum name", 3, () => {
+          api.waitAndSetValue('input[type="text"]', forumTitle, { timeoutMs: 2000 });
+        });
         // Click Next, Next ... to accept all default choices.
         /*  [NODEFCATS]
         api.waitAndClick('.e_Next');
@@ -1381,10 +1438,13 @@ function pagesFor(browser) {
         api.waitAndClick('.e_Next');
         browser.pause(200);
         */
+        logMessage(`Clicking Next ...`);
         api.waitAndClick('.e_Next');
         browser.pause(200);
+        logMessage(`Creating the forum ...`);
         api.waitAndClick('#e2eDoCreateForum');
         const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
+        logMessage(`Done? The forum title is: "${actualTitle}"`);
         assert.equal(actualTitle, forumTitle);
       },
     },
@@ -2283,24 +2343,25 @@ function pagesFor(browser) {
       },
 
 
-      createLinkedInAccount: function(data: { email: string, password: string, username: string },
-            shallBecomeOwner?: boolean, anyWelcomeDialog?) {
-        api.loginDialog.loginWithLinkedIn(data);
+      createLinkedInAccount: function(ps: { email: string, password: string, username: string,
+        shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) {
+        api.loginDialog.loginWithLinkedIn({ email: ps.email, password: ps.password });
         // This should be the first time we login with LinkedInd at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing LinkedIn user's new username...");
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
         api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(shallBecomeOwner);
+        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
         // LinkedIn email addresses might not have been verified (or?) so need
         // to click an email addr verif link.
         const siteId = api.getSiteId();
-        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, data.email, browser);
-        browser.go(link);
+        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, ps.email, browser);
+        api.go2(link);
         api.waitAndClick('#e2eContinue');
       },
+
 
       loginWithLinkedIn: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
@@ -2329,6 +2390,7 @@ function pagesFor(browser) {
 
         logMessage("typing LinkedIn user's email and password...");
         browser.pause(340); // so less risk LinkedIn thinks this is a computer?
+        // This is over at LinkedIn, and, as username, one can type one's email.
         api.waitAndSetValue('#username', data.email);
         browser.pause(380);
         api.waitAndSetValue('#password', data.password);
@@ -3366,7 +3428,6 @@ function pagesFor(browser) {
         const startSelector = isOnEmbeddedCommentsPage && postNr === c.BodyNr
             ? '.dw-ar-t > ' :`#post-${postNr} + `;
         let result = startSelector + '.esPA .dw-a-like';
-console.log("makeLikeVoteSelector —> " + result);
         if (ps.byMe) result += '.dw-my-vote'
         return result;
       },
@@ -4674,7 +4735,7 @@ console.log("makeLikeVoteSelector —> " + result);
             api.waitAndSetValue('#e_AllowEmbFrom', value);
           },
 
-          createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string, browser }) => {
+          createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string }) => {
             browser.waitForVisible('#e_EmbCmtsHtml');
             const htmlToPaste = browser.getText('#e_EmbCmtsHtml');
             const pageHtml = utils.makeEmbeddedCommentsHtml({

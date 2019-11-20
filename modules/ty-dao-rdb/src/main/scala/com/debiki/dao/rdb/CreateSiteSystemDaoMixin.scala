@@ -173,7 +173,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     val site = loadSites().find(_.name == name) getOrElse {
       return None
     }
-    deleteSiteById(site.id)
+    deleteSiteById(site.id)  // not locked :- (   dangerous_readWriteTransaction, BUG tx race, rollback risk
     Some(site)
   }
 

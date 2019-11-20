@@ -63,7 +63,7 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
 
   it('can create a new site as GitHub user, when already logged in to GitHub', () => {
     // Now we're logged in already, so the GitHub login flow is / might-be slightly different.
-    makeForumWithGitHubAdminAccount({ alreadyLoggedInAtGitHub: true });
+    makeForumWithGitHubAdminAccount({ alreadyLoggedIn: true });
   });
 
   it("Goes to profile page, views account info", () => {
@@ -82,16 +82,14 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
         settings.githubEmailMixedCase.toLowerCase(), { shallBeVerified: true });
   });
 
-  function makeForumWithGitHubAdminAccount(ps: { alreadyLoggedInAtGitHub: boolean }) {
-    const data = createTestData();
-    data.email = settings.githubEmailMixedCase;
-    browser.go(utils.makeCreateSiteWithFakeIpUrl());
-    browser.disableRateLimits(); // there're signup rate limits
-    pages.createSite.fillInFieldsAndSubmit(data);
-    pages.createSite.clickOwnerSignupButton();
-    pages.loginDialog.createGitHubAccount({
-        username: settings.githubUsernameMixedCase, password: settings.githubPassword,
-        shallBecomeOwner: true, alreadyLoggedInAtGitHub: ps.alreadyLoggedInAtGitHub });
+  function makeForumWithGitHubAdminAccount(ps: { alreadyLoggedIn: boolean }) {
+    const data = createTestData({
+      newSiteOwner: NewSiteOwnerType.GitHubAccount,
+      alreadyLoggedInAtIdProvider: ps.alreadyLoggedIn,
+    });
+    console.log("Create site:");
+    browser.createNewSite(data);
+    console.log("Create forum:");
     pages.createSomething.createForum("GitHub Forum Title");
   }
 

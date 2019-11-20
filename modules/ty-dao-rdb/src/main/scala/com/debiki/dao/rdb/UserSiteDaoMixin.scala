@@ -251,6 +251,10 @@ trait UserSiteDaoMixin extends SiteTransaction {
 
 
   def loadGroupParticipantsAllCustomGroups(): Vector[GroupParticipant] = {
+    // (We need not filter away anything here, because:
+    // Membership in built-in trust level groups and staff groups isn't stored
+    // in the group_participants3 table — instead, it's just a trust_level field
+    // in the users3 table, and the is_admin / is_moderator fields.)
     val query = s"""
       select * from group_participants3
       where site_id = ?

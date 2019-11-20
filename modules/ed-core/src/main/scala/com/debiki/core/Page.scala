@@ -237,6 +237,13 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   // (They were posted earlier, but not created *in Talkyard* until later.)
   SHOULD // remove this constraint? And also the dw1_pages_createdat_replyat__c_le
   // database constraint.
+  // Real solution: Split this timestamp into two:  writtenAt, and insertedAt.
+  // And, writtenAt can be older than the page creation time, and is what's shown
+  // as written-at date on the html page.  Whilst  insertedAt must be more recent
+  // than the page, and is what's used for sorting comments so one finds those
+  // one hasn't read yet. (Like Git's authored-at date and commited-at dates.)
+  // See this branch:  b6fb20d4880cbf2c861  "W author & insertion date."
+  //
   require(lastApprovedReplyAt.forall(_.getTime >= createdAt.getTime), s"[TyE7WKG2AG4] $wp")
 
   require(updatedAt.getTime >= createdAt.getTime, s"[TyE7WKG05KS] $wp")
@@ -416,8 +423,8 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 case class SimplePagePatch(
   extId: ExtImpId,
   pageType: Option[PageType],
-  categoryRef: Option[String],
-  authorRef: Option[String],
+  categoryRef: Option[Ref],
+  authorRef: Option[Ref],
   title: String,
   body: String
   // later: bodyMarkupLang: Option[MarkupLang]
