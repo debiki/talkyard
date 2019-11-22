@@ -20,7 +20,7 @@ const api = {
   logWarning: function (message: string) {
     console.log(warningColor(message));
   },
-  logException: function (message, ex?) {
+  logException: function (message: any, ex?: any) {
     if (!ex) {
       ex = message;
       message = "The exception:";
