@@ -464,6 +464,9 @@ trait SiteTransaction {
 
   def loadUsersWithPrefix(usernamePrefix: String): immutable.Seq[User]
 
+  def loadAdmins(): immutable.Seq[User] =
+    loadStaffUsers().filter(_.isAdmin)
+
   def loadStaffUsers(): immutable.Seq[User] =
     loadUsers(PeopleQuery(
       orderOffset = PeopleOrderOffset.BySignedUpAtDesc, // order doesn't matter

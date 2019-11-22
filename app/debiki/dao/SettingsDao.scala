@@ -67,16 +67,30 @@ trait SettingsDao {
         throwBadRequest("EsE40GY28", s"Bad settings: $error")
       }
 
-      lazy val identities = tx.loadIdentities(byWho.id)
+      lazy val admins = tx.loadAdmins()
+      lazy val adminsAndIdentities: Seq[(User, Seq[Identity])] =
+        admins.map(admin => admin -> tx.loadIdentities(admin.id))
 
       def turnsOff(getEnabled: EffectiveSettings => Boolean) =
         !getEnabled(newSettings) && getEnabled(oldSettings)
 
+      // Prevent admins from accidentally locking themselves or other admins out.
       def throwIfLogsInWith(loginMethodName: String) {
-        // But if has pwd, allow disabling.
-        if (identities.exists(_.loginMethodName.toLowerCase contains loginMethodName.toLowerCase))
-          throwBadRequest("TyE5UKDWSQ2", o"""Currently you cannot disable login with $loginMethodName
-            — you use it yourself to login""")
+        val loginMethodLowercase = loginMethodName.toLowerCase
+        for {
+          (admin, identities) <- adminsAndIdentities
+          if admin.passwordHash.isEmpty
+          // COULD check if there're other login methods this admin can use — that
+          // is, if identities.length >= 2, and the other methods aren't disabled.
+          if identities.exists(_.loginMethodName.toLowerCase contains loginMethodLowercase)
+        } {
+          val (whoUses, henHasNot) =
+            if (admin.id == byWho.id) ("you use", "you haven't")
+            else (s"admin ${admin.idSpaceName} uses", "s/he hasn't")
+          throwBadRequest("TyEADM0LGI", o"""Currently you cannot disable login
+             with $loginMethodName — $whoUses it to login,
+             and $henHasNot configured password login""")
+        }
       }
 
       import com.mohiva.play.silhouette.impl.providers
