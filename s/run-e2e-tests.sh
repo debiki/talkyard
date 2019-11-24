@@ -416,6 +416,12 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-w-sso-upsert-pages.2browsers $args
 
 
+  # Embedded forum
+  # ------------
+
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-login $args
+
+
   # Embedded comments
   # ------------
 

@@ -17,7 +17,7 @@
 
 @* TODO RENAME to loginPopupCallbackPage.scala.html ?  *@
 
-@(currentPageSessionId: String)
+@(weakSessionId: String)
 
 <!DOCTYPE html>
 <html>
@@ -26,8 +26,9 @@
 function returnToOpener() {
   // A Chrome 63 bug previously required a try-catch workaround here. [4PKGTEW20].
   window.opener.debiki.internal.handleLoginResponse({
+    @* Typescript interface: LoginPopupLoginResponse  *@
     queryString: (window.location+'').split('?')[1],
-    currentPageSessionId: '@currentPageSessionId',  // [NOCOOKIES]
+    weakSessionId: '@weakSessionId',  // [NOCOOKIES]
     status: 'LoginOk'
   });
   window.close();

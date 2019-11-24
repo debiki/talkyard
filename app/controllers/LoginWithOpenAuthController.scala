@@ -462,7 +462,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     var maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
-    def currentPageSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
+    def weakSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
 
     val response =
       if (isAjax(request.underlying)) {
@@ -475,22 +475,22 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // In case we're in a login popup for [an embedded <iframe> with cookies disabled],
           // send the session id in the response body, so the <iframe> can access it
           // and remember it for the current page load.
-          "currentPageSessionId" -> JsString(currentPageSessionIdOrEmpty))) // [NOCOOKIES]
+          "weakSessionId" -> JsString(weakSessionIdOrEmpty))) // [NOCOOKIES]
       }
       else {
         // In case we need to do a cookieless login:
         // This request is a redirect from e.g. Gmail or Facebook login, so there's no
         // AvoidCookiesHeaderName header that tells us if we are in an iframe and maybe cannot
         // use cookies (because of e.g. Safari's "Intelligent Tracking Prevention").
-        // However, we've remembered already, in a 1st party cookie, if 3rd party
-        // iframe cookies not work.
+        // However, we've remembered already, in a 1st party cookie (in the login popup?),
+        // if 3rd party iframe cookies not work.
         maybeCannotUseCookies ||=
           request.cookies.get(AvoidCookiesCookieName).map(_.value) is EdSecurity.Avoid
 
         val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
         def loginPopupCallback: Result =
           Ok(views.html.login.loginPopupCallback(
-            currentPageSessionId = currentPageSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
+            weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
 
         request.cookies.get(ReturnToUrlCookieName) match {  // [49R6BRD2]
           case Some(returnToUrlCookie) =>

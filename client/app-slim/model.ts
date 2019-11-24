@@ -1506,10 +1506,24 @@ interface EditPageResponse {
 }
 
 
-interface GuestLoginResponse {
+interface LoginPopupLoginResponse {
+  status: 'LoginOk' | 'LoginFailed';
+  queryString?: string;
+
+  // Will have fewer capabilities than a "real" session when opening the Talkyard site
+  // directly as the main window (rather than embedded somewhere).
+  // Because there's a small risk that "foreign" Javascript on the embedding
+  // page steals the session id (it'd be stored in sessionStorage or localStorage).
+  //
+  // Needed because Safari and FF block 3rd party cookies, see: docs/safari-itp-firefox-etp.md.
+  //
+  weakSessionId?: string;  // [NOCOOKIES]
+}
+
+interface GuestLoginResponse {   // RENAME to SignupOrGuestOrPasswordLoginResponse?
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
-  currentPageSessionId?: string;
+  weakSessionId?: string;
 }
 
 

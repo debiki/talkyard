@@ -71,7 +71,7 @@ function handleLoginInOtherBrowserTab() {
     }
     else {
       const mainWin = debiki2.getMainWin();
-      if (mainWin.typs.currentPageSessionId) {
+      if (mainWin.typs.weakSessionId) {
         // We're logged in, cookieless. Fine. [NOCOOKIES]
       }
       else {

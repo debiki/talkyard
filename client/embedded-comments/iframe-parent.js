@@ -33,6 +33,17 @@ var editorIframe;
 var editorWrapper;
 var editorPlaceholder;
 
+// We store a weak session in localStorage, if 3rd party cookies disabled.
+// It's fairly ok to use localStorage in our case, see:
+//   ../../docs/session-in-local-storage.md
+//
+// [NOCOOKIES] [weaksid] ADD_TO_DOCS The session is (will be) "weak", in
+// the sense that, even if you're admin, you cannot use it to go to the admin area
+// and do things there. Then instead you need to login directly to the Talkyard
+// server, rather than on the embedding site via the iframe — so an XSS
+// vulnerability on the embeddin site (the blog) won't give admin access.
+var theStorage = localStorage;
+
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
 
@@ -311,6 +322,23 @@ function onMessage(event) {
           messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
         }
       }
+      var sessionStr;
+      try {
+        sessionStr = theStorage.getItem('talkyardSession');
+      }
+      catch (ex) {
+        debugLog(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
+      }
+      try {
+        if (sessionStr) {
+          const session = JSON.parse(sessionStr);
+          sendToComments(`["resumeWeakSession", "${session.weakSessionId}"]`);
+        }
+      }
+      catch (ex) {
+        debugLog(
+            `Error parsing 'talkyardSession', this: "${sessionStr}" [TyEPARSEWKSID]`, ex);
+      }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
       iframe = findIframeThatSent(event);
@@ -346,6 +374,19 @@ function onMessage(event) {
       */
     case 'justLoggedIn':
       iframe = findIframeThatSent(event);
+      try {
+        const item = {
+          pubSiteId: eventData.pubSiteId,
+          weakSessionId: eventData.weakSessionId,
+        };
+        // (This writes back the same session, if we just sent a 'resumeWeakSession'
+        // message to the iframe  — because it then sends back 'justLoggedIn', after
+        // having logged in. Fine. )
+        theStorage.setItem('talkyardSession', JSON.stringify(item));
+      }
+      catch (ex) {
+        debugLog(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
+      }
       if (iframe === commentsIframe) {
         sendToEditor(event.data);
       }
@@ -354,6 +395,12 @@ function onMessage(event) {
       }
       break;
     case 'logoutClientSideOnly':
+      try {
+        theStorage.removeItem('talkyardSession');
+      }
+      catch (ex) {
+        debugLog(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
+      }
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
         sendToEditor(event.data);

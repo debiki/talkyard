@@ -441,7 +441,7 @@ const OpenAuthButton = createClassAndFactory({
       // to include the session id in the response body, so we can access it browser side.
       // Also see Server.ts. [NOCOOKIES]
       const mainWin = getMainWin();
-      if (mainWin.typs.xsrfTokenIfNoCookies) {
+      if (mainWin.typs.xsrfTokenIfNoCookies || !mainWin.typs.canUseCookies) {
         getSetCookie('TyCoAvoidCookies', 'Avoid');
       }
       window.location.assign(url);

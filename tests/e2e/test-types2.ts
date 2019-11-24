@@ -172,6 +172,16 @@ interface TestApiSecret {
 }
 
 
+interface TestApiSecret {
+  nr: ApiSecretNr;
+  userId?: UserId;
+  createdAt: WhenMs;
+  deletedAt?: WhenMs;
+  isDeleted: boolean;
+  secretKey: string;
+}
+
+
 interface GroupInclDetails {
   id: UserId;
   createdAtMs: WhenMs;

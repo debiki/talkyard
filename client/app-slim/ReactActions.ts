@@ -80,9 +80,15 @@ export function loadMyself(afterwardsCallback?) {
 
   Server.loadMyself((user) => {
     if (isInSomeEmbCommentsIframe()) {
-      // Tell the embedded comments or embedded editor iframe that we just logged in.
+      // Tell the embedded comments or embedded editor iframe that we just logged in,
+      // also include the session id, so Talkyard's script on the embedding page
+      // can remember it — because cookies and localstorage in am iframe typically
+      // don't work, because of trigger happy tracker blockers (they block too much).
+      const mainWin = getMainWin();
+      const typs: PageSession = mainWin.typs;
+      const weakSessionId = typs.weakSessionId;
       window.parent.postMessage(JSON.stringify([
-        'justLoggedIn', { user }]),  // [JLGDIN]
+        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId }]),  // [JLGDIN]
         eds.embeddingOrigin);
     }
     setNewMe(user);

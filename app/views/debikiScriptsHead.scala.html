@@ -245,7 +245,8 @@ var debiki = { internal: {}, v0: { util: {}} };
 
 @* Talkyard per page load session data (if we avoid cookies). [NOCOOKIES]   rename to  tyd?  see above *@
 var typs = {
-  xsrfTokenIfNoCookies: _volatileData.xsrfTokenIfNoCookies
+  xsrfTokenIfNoCookies: _volatileData.xsrfTokenIfNoCookies,
+  canUseCookies: navigator.cookieEnabled
 };
 
 @* API, for custom scripts, e.g. MathJax. Type declaration in model.ts [5ABJH72]. *@
