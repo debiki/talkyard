@@ -1530,13 +1530,17 @@ interface LoginPopupLoginResponse {
       - The link (which link? The ad link?) has a query string or url fragment,
         indicating some tracking params are sent.
 
-    ITP 2.3: Deletes local storage etc of target website, if via link w query params?:
+    ITP 2.3: Deletes local storage etc of target website, if via link w query params?
     https://www.cognetik.com/blog/new-changes-and-challenges-for-analysts-safari-introduces-itp-2-3/
+    Because trackers started using LocalStorage instead of cookies.
 
     Safari 13 on macOS includes ITP Debug Mode
     """
     website.example will be marked for non-cookie website data deletion if the user is navigated from a domain classified with cross-site tracking capabilities to a final URL with a query string and/or a fragment identifier, such as website.example?clickID=0123456789
     """
+
+    https://digiday.com/marketing/wtf-apples-itp-2-3-update/:
+    If Safari sees that a company that it classifies as a cross-site tracker has decorated the link that a person clicks to visit another website, then it will delete all the non-cookie-based website data for that website from the person’s browser after seven days in which the person has continued to use Safari but not visited the site since clicking that link
      */
 }
 
