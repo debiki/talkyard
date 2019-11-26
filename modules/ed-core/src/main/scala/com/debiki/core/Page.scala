@@ -430,6 +430,8 @@ case class SimplePagePatch(
   // later: bodyMarkupLang: Option[MarkupLang]
   ) {
 
+  throwIllegalArgumentIf(title.isEmpty, "TyE306GXF24", "Page title is empty")
+  throwIllegalArgumentIf(body.isEmpty, "TyE306GXF25", "Page body is empty")
   Validation.findExtIdProblem(extId) foreach { problem =>
     throwIllegalArgument("TyE8FKDXT2", s"Bad page extId: $problem")
   }
@@ -831,7 +833,7 @@ case class PageQuery(  // also see PeopleQuery
 sealed abstract class PageOrderOffset
 
 object PageOrderOffset {
-  case object Any extends PageOrderOffset
+  //case object Any extends PageOrderOffset
   case object ByPath extends PageOrderOffset
   case object ByPublTime extends PageOrderOffset
   case object ByPinOrderLoadOnlyPinned extends PageOrderOffset

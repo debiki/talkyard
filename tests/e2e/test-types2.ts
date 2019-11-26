@@ -296,6 +296,7 @@ interface CategoryJustAdded {
 }
 
 
+type PageJustAdded = any;
 /*
 interface PageJustAdded {
   id: string;

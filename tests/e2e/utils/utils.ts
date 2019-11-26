@@ -1,6 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
+import * as assert from 'assert';
 import { logUnusual, dieIf } from './log-and-die';
 
 
@@ -71,7 +72,7 @@ const utils = {
   },
 
   makeExternalUserFor: (member: Member, opts: {
-    externalId: string,  // RENAME QUICK to ssoId
+    ssoId: string;
     primaryEmailAddress?: string,
     isEmailAddressVerified?: boolean,
     username?: string,
@@ -82,7 +83,7 @@ const utils = {
     isModerator?: boolean,
   }): ExternalUser => {
     return {
-      ssoId: opts.externalId,
+      ssoId: opts.ssoId,
       primaryEmailAddress: firstDefinedOf(opts.primaryEmailAddress, member.emailAddress),
       isEmailAddressVerified: firstDefinedOf(opts.isEmailAddressVerified, !!member.emailVerifiedAtMs),
       username: firstDefinedOf(opts.username, member.username),
@@ -123,6 +124,52 @@ ${ htmlToPaste ? htmlToPaste : `
 </body>
 </html>`;
   },
+
+  checkNewPageFields: (page, ps: { categoryId: CategoryId, authorId: UserId }) => {
+    assert.equal(page.htmlTagCssClasses, "");
+    assert.equal(page.hiddenAt, null);
+    assert(!!page.createdAtMs);
+    assert(!!page.publishedAtMs);
+    assert.equal(page.numLikes, 0);
+    assert.equal(page.numWrongs, 0);
+    assert.equal(page.numBurys, 0);
+    assert.equal(page.numUnwanteds, 0);
+    assert.equal(page.numOrigPostLikeVotes, 0);
+    assert.equal(page.numOrigPostWrongVotes, 0);
+    assert.equal(page.numOrigPostBuryVotes, 0);
+    assert.equal(page.numOrigPostUnwantedVotes, 0);
+    assert.equal(page.numPostsTotal, 2);
+    assert.equal(page.numRepliesTotal, 0);
+    assert.equal(page.numRepliesVisible, 0);
+    assert.equal(page.numOrigPostRepliesVisible, 0);
+    assert.equal(page.answeredAt, null);
+    assert.equal(page.lockedAt, null);
+    assert.equal(page.plannedAt, null);
+    assert.equal(page.startedAt, null);
+    assert.equal(page.pinOrder, null);
+    assert.equal(page.lastApprovedReplyById, null);
+    assert(!!page.updatedAtMs);
+    assert.equal(page.bumpedAtMs, null);
+    assert.equal(page.doingStatus, 1);
+    assert.equal(page.closedAt, null);
+    assert.equal(page.htmlHeadDescription, "");
+    assert.equal(page.doneAt, null);
+    assert.equal(page.authorId, ps.authorId);
+    assert.equal(page.version, 1);
+    assert.equal(page.answerPostId, null);
+    assert.equal(page.layout, 0);
+    assert.equal(page.htmlHeadTitle, "");
+    assert.equal(page.deletedAt, null);
+    assert.equal(page.pinWhere, null);
+    assert.equal(page.embeddingPageUrl, null);
+    assert.equal(page.lastApprovedReplyAt, null);
+    assert(!!page.frequentPosterIds);
+    assert.equal(page.frequentPosterIds.length, 0);
+    assert.equal(page.unwantedAt, null);
+    assert.equal(page.frozenAt, null);
+    assert.equal(page.categoryId, ps.categoryId);
+  },
+
 
   tryManyTimes: (what, maxNumTimes, fn) => {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {

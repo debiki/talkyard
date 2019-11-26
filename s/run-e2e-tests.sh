@@ -367,6 +367,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only group-permissions-similar-topics.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-upsert-categories.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-upsert-pages.2browsers $args
 
   # wip:
   # settings-allow-local-signup
@@ -405,6 +406,12 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only sso-admin-extra-login $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-all-ways-to-login.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only sso-access-denied-login.2browsers $args
+
+
+  # API + SSO
+  # ------------
+
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-w-sso-upsert-pages.2browsers $args
 
 
   # Embedded comments

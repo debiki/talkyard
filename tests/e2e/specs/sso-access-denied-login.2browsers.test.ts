@@ -146,7 +146,7 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
   let oneTimeLoginSecret: string;
 
   it("The remote server sends an API request to Talkyard, to synchronize Mons' account", () => {
-    const externalMons = utils.makeExternalUserFor(mons, { externalId: monsExternalId });
+    const externalMons = utils.makeExternalUserFor(mons, { ssoId: monsExternalId });
     console.log(`externalMons: ${ JSON.stringify(externalMons) }`);
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
         requesterId: c.SysbotUserId, apiSecret, externalUser: externalMons });

@@ -158,6 +158,12 @@ object Prelude {
         : Unit =
     if (value.isBad) die(errorCode, if (mkMessage ne null) mkMessage(value.swap.get) else null)
 
+  def throwIllegalArgumentIf(condition: Boolean, errorCode: String,
+        problem: => String = null) {
+    if (condition)
+      illArgErr(errorCode, problem)
+  }
+
   def throwIllegalArgument(errorCode: String, problem: => String = null): Nothing =
     illArgErr(errorCode, problem)
 

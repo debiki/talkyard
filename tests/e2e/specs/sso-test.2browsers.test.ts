@@ -38,7 +38,7 @@ const ssoUrl =
 const ssoUrlVarsReplaced =
     `http://localhost:8080/sso-test-login-page.html?returnTo=${c.SsoTestPath}&test=123`;
 
-const owensExternalId = 'owensExternalId';
+const owensSsoId = 'owensSsoId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
 
 
@@ -163,7 +163,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
   let oneTimeLoginSecret: string;
 
   it("The remote server does an API request to Talkyard, to synchronize his account", () => {
-    const externalOwen = utils.makeExternalUserFor(owen, { externalId: owensExternalId });
+    const externalOwen = utils.makeExternalUserFor(owen, { ssoId: owensSsoId });
     console.log(`externalOwen: ${ JSON.stringify(externalOwen) }`);
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
         requesterId: c.SysbotUserId, apiSecret, externalUser: externalOwen });

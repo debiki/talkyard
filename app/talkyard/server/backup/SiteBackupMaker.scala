@@ -201,7 +201,7 @@ object SiteBackupMaker {
         pageMetas.map(pageMeta => {
           var json = JsPageMeta(pageMeta)
           if (simpleFormat) {
-            val canonicalPath = pagePaths.find(p =>
+            val canonicalPath: PagePathWithId = pagePaths.find(p =>
               p.pageId == pageMeta.pageId && p.canonical) getOrDie "TyE6WKSJ02X4"
             json += "urlPath" -> JsString(canonicalPath.value)
           }

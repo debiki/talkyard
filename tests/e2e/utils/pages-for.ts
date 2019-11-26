@@ -1464,9 +1464,9 @@ function pagesFor(browser) {
       },
 
       clickBack: function() {
-        api.rememberCurrentUrl();
-        api.waitAndClick('.esTopbar_custom_backToSite');
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitAndClick('.esTopbar_custom_backToSite');
+        });
       },
 
       clickHome: function() {
@@ -1482,9 +1482,9 @@ function pagesFor(browser) {
       },
 
       clickAncestor: function(categoryName: string) {
-        api.rememberCurrentUrl();
-        api.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
-        api.waitForNewUrl();
+        api.repeatUntilAtNewUrl(() => {
+          api.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
+        });
       },
 
       // COULD FASTER_E2E_TESTS can set  wait:false at most places
@@ -2649,8 +2649,9 @@ function pagesFor(browser) {
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
-      goHere: (ps: { categorySlug?: string } = {}) => {
-        api.go('/latest/' + (ps.categorySlug || ''));
+      goHere: (ps: { origin?: string, categorySlug?: string } = {}) => {
+        const origin = ps.origin || '';
+        api.go(origin + '/latest/' + (ps.categorySlug || ''));
       },
 
       waitUntilKnowsIsEmpty: function() {
@@ -2715,24 +2716,30 @@ function pagesFor(browser) {
         api.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
       },
 
-      goToTopic: function(title: string) {
+      goToTopic: (title: string) => {   // RENAME to navToTopic
+        api.forumTopicList.navToTopic(title);
+      },
+
+      navToTopic: (title: string) => {
         api.rememberCurrentUrl();
         api.waitForThenClickText(api.forumTopicList.titleSelector, title);
         api.waitForNewUrl();
         api.assertPageTitleMatches(title);
       },
 
-      assertNumVisible: function(howMany: number) {
+      assertNumVisible: (howMany: number, ps: { wait?: boolean } = {}) => {
+        if (ps.wait) {
+          api.forumTopicList.waitForTopics();
+        }
         api.assertExactly(howMany, '.e2eTopicTitle');
       },
 
       assertTopicTitlesAreAndOrder: function(titles: string[]) {
-        console.log('Not tested: assertTopicTitlesAreAndOrder');
         const els = <any> browser.$$(api.forumTopicList.titleSelector);
         for (let i = 0; i < titles.length; ++i) {
           const titleShouldBe = titles[i];
           const actualTitleElem = els[i];
-          if (actualTitleElem) {
+          if (!actualTitleElem) {
             assert(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
           }
           const actualTitle = actualTitleElem.getText();
@@ -2766,8 +2773,8 @@ function pagesFor(browser) {
       categoryNameSelector: '.esForum_cats_cat .forum-title',
       subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
-      goHere: () => {
-        api.go('/categories');
+      goHere: (origin?: string) => {
+        api.go((origin || '') + '/categories');
         api.forumCategoryList.waitForCategories();
       },
 

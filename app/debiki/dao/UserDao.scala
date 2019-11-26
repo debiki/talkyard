@@ -761,14 +761,16 @@ trait UserDao {
 
 
   def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage = {
-    parseRef(ref) map {
+    parseRef(ref, allowParticipantRef = true) map {
       case ParsedRef.ExternalId(extId) =>
         getParticipantByExtId(extId)
-      case ParsedRef.SingleSignOnId(ssoId) =>
-        getMemberBySsoId(ssoId)
       case ParsedRef.TalkyardId(tyId) =>
         val id = tyId.toIntOption getOrElse { return Good(None) }
         getParticipant(id)
+      case ParsedRef.SingleSignOnId(ssoId) =>
+        getMemberBySsoId(ssoId)
+      case ParsedRef.Username(username) =>
+        getMemberByUsername(username)
     }
   }
 
@@ -865,6 +867,17 @@ trait UserDao {
       // Don't need to cache this? Only called when logging in.
       tx.loadUserByPrimaryEmailOrUsername(emailOrUsername)
     }
+  }
+
+
+  def getMemberByUsername(username: String): Option[Member] = {
+    // The username shouldn't include '@'. Also, if there's a '@', might be
+    // an email addr not a username.
+    if (username.contains('@')) {
+      return None
+    }
+    COULD_OPTIMIZE // can in-mem cache
+    loadMemberByEmailOrUsername(username)
   }
 
 

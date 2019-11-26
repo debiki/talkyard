@@ -183,8 +183,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
     var values = Vector[AnyRef]()
 
     val (orderBy, offsetTestAnd) = pageQuery.orderOffset match {
-      case PageOrderOffset.Any =>
-        ("", "")
+      //case PageOrderOffset.Any =>
+        //("", "")
       case PageOrderOffset.ByPublTime =>
         ("order by g.published_at desc", "")
       case PageOrderOffset.ByBumpTime(anyDate) =>
@@ -248,7 +248,9 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
           g.page_role not in (${PageType.Forum.toInt}, ${PageType.AboutCategory.toInt}) and
           g.category_id in (${ makeInListFor(categoryIds) })
           $andNotDeleted
-        $orderBy
+        -- Also sort by id, so things API upserted with the same time stamp
+        -- get a consistent sort order.
+        $orderBy, t.page_id desc
         limit $limit"""
 
     runQueryFindMany(sql, values.toList, rs => {

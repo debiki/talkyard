@@ -177,7 +177,7 @@ trait CategoriesDao {
 
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage = {
     val cats = getAllCategories()
-    parseRef(ref) map {
+    parseRef(ref, allowParticipantRef = false) map {
       case ParsedRef.ExternalId(extId) =>
         cats.find(_.extImpId is extId)
       case ParsedRef.TalkyardId(tyId) =>

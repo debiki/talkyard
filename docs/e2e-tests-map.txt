@@ -98,6 +98,7 @@ single-sign-on:  (3093533)
           - sso-admin-extra-login.test.ts  TyT03WKDTRP50
           - sso-all-ways-to-login.2browsers.test.ts  TyT7FKRTTSR024
           - sso-access-denied-login.2browsers.test.ts  TyT4AKT02DKJ41
+          - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
 
 different users -
   login, logout, switch user:  almost all tests
@@ -311,6 +312,7 @@ permissions -
 
 topics -
   go back to forum:
+          - api-upsert-pages.2browsers.test.ts  TyT602FKUDLSV
   create topic -
     in no category:  create-site-all-logins, part of create-with-password-account (7UC2)
     in a category:
@@ -343,6 +345,8 @@ topics -
   to-do:
     cycle done/pending:
   report:
+  bump topic, so first in category topic list:
+          - api-upsert-pages.2browsers.test.ts  TyT602FKUDLSV
 
 
 editor -
@@ -770,7 +774,11 @@ api:
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
   import pages:
-    TESTS_MISSING: /-/upsert-simple  TyT603PKRAEPGJ5
+          - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
+  upsert-edit pages:
+          - TESTS_MISSING  TyT650KWUDEPJ03g
+  with sso enabled:
+          - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
 
 import,
 export and restore:  (impexp)

@@ -290,7 +290,6 @@ case class SimpleSitePatch(
     // ----- Upsert pages
 
     for (pagePatch: SimplePagePatch <- pagePatches) {
-      untested("TyE052SKGBS", "Upserting SimplePagePatch") // [TyT603PKRAEPGJ5]
       val category: Option[Category] = pagePatch.categoryRef.map { ref =>
         dao.getCategoryByRef(ref) getOrIfBad { problem =>
           return Bad(s"Bad category ref: '$ref', the problem: $problem [TyE8SKHNWJ2]")

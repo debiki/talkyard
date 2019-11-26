@@ -38,7 +38,7 @@ const ssoUrl =
 const ssoUrlVarsReplaced = (path: string): string =>
     `http://localhost:8080/sso-dummy-login.html?returnPath=${path}`;
 
-const mariasExternalId = 'mariasExternalId';
+const mariasSsoId = 'mariasSsoId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
 
 
@@ -188,7 +188,7 @@ function constructSsoLoginTest(testName: string, variants: {
   let oneTimeLoginSecret: string;
 
   it("The remote server does an API request to Talkyard, to synchronize her account", () => {
-    const externalMaria = utils.makeExternalUserFor(maria, { externalId: mariasExternalId });
+    const externalMaria = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
         requesterId: c.SysbotUserId, apiSecret, externalUser: externalMaria });
   });

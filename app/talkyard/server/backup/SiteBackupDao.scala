@@ -43,6 +43,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
     val dao = globals.siteDao(siteId)
     val upsertedCategories = ArrayBuffer[Category]()
+    val upsertedPages = ArrayBuffer[PageMeta]()
+    val upsertedPagePaths = ArrayBuffer[PagePathWithId]()
     val pageIdsWithBadStats = mutable.HashSet[PageId]()
     var wroteToDatabase = false
 
@@ -766,6 +768,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
             wroteToDatabase = true
+            upsertedPages.append(pageWithRealIdsButWrongStats)
             pageIdsWithBadStats.add(realPageId)
             pageAltIds.foreach(tx.insertAltPageId(_, realPageId))
             pageWithRealIdsButWrongStats
@@ -777,6 +780,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               wroteToDatabase = true
               ? pageIdsWithBadStats.add(realPageId)
             } */
+            upsertedPages.append(pageInDb)
             // The stats might be wrong, after the upserts — maybe we're inserting new replies.
             pageInDb
             /* Later?,  if onConflict=Overwrite, then update?  [YESUPSERT]
@@ -837,9 +841,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             tx.insertPagePath(pathRealId)
             wroteToDatabase = true
+            upsertedPagePaths.append(pathRealId)
             pathRealId
 
-          case Some(_ /* pathsInDb */) =>
+          case Some(pathsInDb) =>
+            // Remember the canonical path, needed for the /-/upsert-simple API response.
+            val canonicalPath: Option[PagePathWithId] = pathsInDb.find(_.canonical)
+            canonicalPath.foreach(p => upsertedPagePaths.append(p))
+
             // Later: What do now? Insert the new path? And if it's canonical,  [YESUPSERT]
             // then keep all old paths in the db, and have them redirect to this new path?
             // Change any old canonical, to redirect instead?
@@ -871,11 +880,12 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       dao.emptyCache()
     }
 
-    // Categories is all the current Talkyard API consumers need. As of August 2019.
+    // Categories and pages is what the current Talkyard API consumers need. As of November 2019.
     // The /-/v0/upsert-simple endpoint also wants the category locations (url paths),
-    // and for that, we need the forum section page paths, so included below.
+    // so, we need the forum section page paths, so included below.
     SiteBackup.empty.copy(
-      pagePaths = sectionPagePaths,
+      pages = upsertedPages,
+      pagePaths = (upsertedPagePaths ++ sectionPagePaths).distinct,
       categories = upsertedCategories.toVector)
   }
 

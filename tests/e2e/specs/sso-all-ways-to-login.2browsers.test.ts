@@ -40,7 +40,7 @@ const ssoUrlVarsReplaced = (path: string): string =>
     `http://localhost:8080/sso-dummy-login.html?returnPath=${path}`;
 
 
-const mariasExternalId = 'mariasExternalId';
+const mariasSsoId = 'mariasSsoId';
 let mariasExternalData;
 
 let urlBeforeLogin: string;
@@ -124,7 +124,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
     michaelsBrowser = richBrowserB;
     strangersBrowser = richBrowserB;
 
-    mariasExternalData = utils.makeExternalUserFor(maria, { externalId: mariasExternalId });
+    mariasExternalData = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
     console.log(`mariasExternalData: ${ JSON.stringify(mariasExternalData) }`);
   });
 

@@ -99,20 +99,31 @@ package object core {
     case class ExternalId(value: ExtId) extends ParsedRef
     case class SingleSignOnId(value: String) extends ParsedRef
     case class TalkyardId(value: String) extends ParsedRef
+    case class Username(value: String) extends ParsedRef
   }
 
-  def parseRef(ref: Ref): ParsedRef Or ErrorMessage = {
+  def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrorMessage = {
+    val returnBadIfIsToParticipant = () =>
+      if (!allowParticipantRef)
+        return Bad("Refs to participants not allowed here, got: " + ref)
+
     if (ref startsWith "extid:") {
       val extId = ref drop "extid:".length
       Good(ParsedRef.ExternalId(extId))
     }
     else if (ref startsWith "ssoid:") {
+      returnBadIfIsToParticipant()
       val ssoId = ref drop "ssoid:".length
       Good(ParsedRef.SingleSignOnId(ssoId))
     }
     else if (ref startsWith "tyid:") {
       val tyId = ref drop "tyid:".length
       Good(ParsedRef.TalkyardId(tyId))
+    }
+    else if (ref startsWith "username:") {
+      returnBadIfIsToParticipant()
+      val username = ref drop "username:".length
+      Good(ParsedRef.Username(username))
     }
     else {
       var refDots = ref.takeWhile(_ != ':') take 14
