@@ -115,17 +115,18 @@ case class SiteBackupReader(context: EdContext) {
 
   def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
 
-    // When importing API secrets has been impl, then upd this test:
+    // When importing API secrets has been impl **EDIT: NOT DONE** then upd this test:
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
     // an API secret (then, get to test the import-secrets code, + the test gets faster).
 
-    val (siteMetaJson, settingsJson, guestsJson, anyGuestEmailPrefsJson, groupsJson, groupPpsJson,
+    val (siteMetaJson, settingsJson, apiSecretsJson,
+        guestsJson, anyGuestEmailPrefsJson, groupsJson, groupPpsJson,
         usersJson, pptStatsJson, ppVisitStatsJson, usernameUsagesJson, identitiesJson,
         invitesJson, notificationsJson, memberEmailAddressesJson, pageNotfPrefsJson) =
       try {
         (readOptJsObject(bodyJson, "meta"),
           readOptJsObject(bodyJson, "settings"),
-          // + API secrets [5ABKR2038]
+          readJsArray(bodyJson, "apiSecrets", optional = true),
           readJsArray(bodyJson, "guests", optional = true),
           readOptJsObject(bodyJson, "guestEmailPrefs"),
           readJsArray(bodyJson, "groups", optional = true),
@@ -172,6 +173,14 @@ case class SiteBackupReader(context: EdContext) {
       }
 
     val settings = settingsJson.map(Settings2.settingsToSaveFromJson(_, globals))
+
+    val apiSecrets: Seq[ApiSecret] = apiSecretsJson.value.zipWithIndex map {
+          case (json, index) =>
+      readApiSecretOrBad(json).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "TyE305KTW5", o"""Invalid ApiSecret json at index $index
+            in the 'apiSecrets' list: $errorMessage, json: $json"""))
+    }
 
     val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ // [GSTPRFS]
           json =>
@@ -366,7 +375,7 @@ case class SiteBackupReader(context: EdContext) {
               $error, json: $json"""))
     }
 
-    SiteBackup(siteToSave, settings,
+    SiteBackup(siteToSave, settings, apiSecrets,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
       guests, guestEmailPrefs, groups,
@@ -414,6 +423,29 @@ case class SiteBackupReader(context: EdContext) {
       quotaLimitMbs = None,
       version = readInt(jsObject, "version"),
       hostnames = hostnames.toList)
+  }
+
+
+  def readApiSecretOrBad(jsValue: JsValue): ApiSecret Or ErrorMessage  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"ApiSecret is not a json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      Good(ApiSecret(
+        nr = readInt(jsObj, "nr"),
+        userId = readOptInt(jsObj, "userId"),
+        createdAt = readWhen(jsObj, "createdAt"),
+        deletedAt = readOptWhen(jsObj, "deletedAt"),
+        isDeleted = readBoolean(jsObj, "isDeleted"),
+        secretKey = readString(jsObj, "secretKey")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for ApiSecret: ${ex.getMessage}")
+    }
   }
 
 

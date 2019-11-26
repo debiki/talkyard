@@ -946,9 +946,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       tx.upsertSiteSettings(siteSettings)
 
-      siteData.guests foreach { guest: Guest =>
-        tx.insertGuest(guest)
-      }
+      siteData.apiSecrets foreach tx.insertApiSecret
+
+      siteData.guests foreach tx.insertGuest
 
       siteData.guestEmailNotfPrefs foreach { case (emailAddr, pref) =>
         tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)

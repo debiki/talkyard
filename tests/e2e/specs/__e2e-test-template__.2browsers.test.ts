@@ -7,7 +7,7 @@ import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
-import logAndDie = require('../utils/log-and-die');
+import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 declare var browser: any;

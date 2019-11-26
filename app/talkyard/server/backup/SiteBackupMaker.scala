@@ -118,6 +118,10 @@ object SiteBackupMaker {
       fields("settings") =
         anyEditeSiteSettings.map(Settings2.settingsToJson) getOrElse JsEmptyObj
 
+      val apiSecrets: Seq[ApiSecret] =
+        anyDump.map(_.apiSecrets) getOrElse tx.listApiSecretsRecentlyCreatedFirst(9999)
+      fields("apiSecrets") = JsArray(apiSecrets.map(JsApiSecret))
+
       val guests: Seq[Guest] =
         anyDump.map(_.guests) getOrElse tx.loadAllGuests().filter(!_.isBuiltIn)
       fields("guests") = JsArray(

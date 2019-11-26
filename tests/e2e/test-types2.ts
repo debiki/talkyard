@@ -127,9 +127,11 @@ interface SiteData2 {   // [3SD5PB7]
     numFlagsToHidePost?: number;
     numFlagsToBlockNewUser?: number;
     numFlaggersToBlockNewUser?: number;
+    enableApi?: boolean;
     ssoUrl?: string;
     enableSso?: boolean;
   };
+  apiSecrets: TestApiSecret[];
   groups: GroupInclDetails[];
   members: Member[];
   identities: any;
@@ -146,6 +148,16 @@ interface SiteData2 {   // [3SD5PB7]
   uploads: any;
   auditLog: any;
   reviewTasks: any;
+}
+
+
+interface TestApiSecret {
+  nr: ApiSecretNr;
+  userId?: UserId;
+  createdAt: WhenMs;
+  deletedAt?: WhenMs;
+  isDeleted: boolean;
+  secretKey: string;
 }
 
 
@@ -196,6 +208,9 @@ interface TestGuest {  // try to rename to Guest
   isGuest: boolean;
   guestBrowserId: string;
 }
+
+
+type PermsOnPage = any;  // copy from client/app-slim/model.ts  ??
 
 
 interface TestCategory {  // try to merge with Category in model.ts?

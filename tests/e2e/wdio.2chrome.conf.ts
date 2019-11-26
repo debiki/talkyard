@@ -1,18 +1,19 @@
 import wdioConf = require('./wdio.conf');
-import settings = require('./utils/settings');
-var config = <any> wdioConf.config;
 
-// This makes Webdriver.io start 2 instances of Chrome, so that they can be tested at the
-// same time, e.g. create a chat forum topic, and chatting with each other.
+const config = <any> wdioConf.config;
+const defCaps = config.capabilities[0];
+
+// This makes Webdriver.io start 2 browser instances, doing different things
+// at the same time, e.g. two browsers typing different chat messages to each other.
 config.capabilities = {
   browserA: {
     desiredCapabilities: {
-      browserName: settings.browserName,
+      ...defCaps
     }
   },
   browserB: {
     desiredCapabilities: {
-      browserName: settings.browserName,
+      ...defCaps
     }
   }
 };

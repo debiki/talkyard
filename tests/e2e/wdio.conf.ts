@@ -20,7 +20,7 @@ const browserNameAndOpts: any = {
 // If adding chromeOptions when the browserName is 'firefox', then *Chrome* will get used.
 // So don't. Webdriver.io/Selenium bug? (April 29 2018)
 if (browserNameAndOpts.browserName == 'chrome') {
-  browserNameAndOpts.chromeOptions = {
+  const opts: any = {
     args: ['--disable-notifications'],
   };
   if (settings.block3rdPartyCookies) {
@@ -31,12 +31,14 @@ if (browserNameAndOpts.browserName == 'chrome') {
     //   http://chromedriver.chromium.org/capabilities
     //   https://chromium.googlesource.com/chromium/src/+/lkgr/docs/user_data_dir.md#linux )
     // It's a json file, with lots of settings, one of which is for 3rd party cookies.
-    browserNameAndOpts.chromeOptions.prefs = {
+    opts.prefs = {
       profile: {
         block_third_party_cookies: true,
       }
     };
   }
+  browserNameAndOpts.chromeOptions = opts;          // Webdriver.io v4
+  browserNameAndOpts['goog:chromeOptions'] = opts;  // Webdriver.io v5 ?
 }
 else {
   // This supposedly works in FF: "network.cookie.cookieBehavior": 1

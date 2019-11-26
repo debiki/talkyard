@@ -79,7 +79,7 @@ function runE2eTest {
   echo "Next test: $cmd"
 
   # Sometimes, randomly?, there's some weird port conflict causing this to fail & hang forever.
-  # So timeout after 3 minutes. The slow tests take about one minute.
+  # So timeout after 3 minutes. The slow tests take about one minute, so 3 minutes is a lot.
   # Also, kill any wdio things that have failed to stop, and might block a/the port.
   wdio_ps=$(ps aux | grep node | egrep 'wdio(.[0-9a-z]+)?.conf.js' | grep "wdio-test $testStartId")
   if [ -n "$wdio_ps" ] ; then
@@ -100,55 +100,82 @@ function runE2eTest {
     # if the test breaks directly *again*, then apparently the failure / race-condition is easy
     # to reproduce, so I'll be able to fix it :-)
     echo
-    echo "*** Test failed. Waiting a few seconds, then trying again ... [EdME2ETRYAGAIN] ***"
+    echo "*** Test failed 1/3. Waiting a few seconds, then will retry ... [EdME2ETRY1] ***"
     echo
     sleep 7
-    site_nr=`printf '%d' $(($site_nr + 1))`
-    local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
-    cmd="$@ --deleteOldSite --localHostname=$local_hostname"
+    # --- Why I did this again ?? -----
+    #site_nr=`printf '%d' $(($site_nr + 1))`
+    #local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
+    #cmd="$@ --deleteOldSite --localHostname=$local_hostname"
+    # ---------------------------------
     echo "Again: $cmd"
+
     $cmd
+
     if [ $? -ne 0 ]; then
-      log_message "Failed: $cmd" >> $failfile
-      log_message "Test failed twice, aborting." >> $failfile
-      cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
+      # Eh. Well, try a 3rd time. Not so easy to make all e2e tests stable, and
+      # sometimes the work 30 times in a row, when I'm there at the computer, trying to
+      # find out why they fail ... And then I start building a new server and run the
+      # tests "for real" as part of the build process ... And then they start failing!
+      # But not 3 times in a row?
+      log_message "Failed 2nd time: $cmd" >> $failfile
+      # Try again, so some harmless race condition I haven't thought about that breaks the test,
+      # won't result in a false failures. Usually a race condition breaks the tests only very
+      # infrequently, so it's "impossible" to reproduce manually, and thus hard to fix. However,
+      # if the test breaks directly *again*, then apparently the failure / race-condition is easy
+      # to reproduce, so I'll be able to fix it :-)
       echo
+      echo "*** Test failed 2/3. Waiting a few seconds, then trying one last time ... [EdME2ETRY2] ***"
       echo
-      echo "*** ERROR [TyEE2E] ***"
-      echo
-      echo "This end-to-end test failed twice:"
-      echo
-      echo "  $cmd"
-      echo
-      echo
-      echo "Run it with debug flags, and try to fix it:"
-      echo
-      # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
-      # (But first add a cname entry for -manual.)
-      cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
-      # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
-      # root first su:s to another user. Check the --is-root command line flag instead.
-      #if [ -z "$is_root" ]; then
-        echo "  $cmd_with_debug"
-      #else
-      #  echo "  su $my_username -c '$cmd_with_debug'"
-      #  echo
-      #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
-      #fi
-      echo
-      echo
-      echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
-      echo "(Because the likelihood that a tests fails twice, is then 1/33/33 ~= 1/1000,"
-      echo "so, with 100 such e2e tests, it's 90% probability of no double failures.)"
-      echo
-      echo "  rm e2e.log ;  for x in {1..33}; do echo \$x: ; $cmd |& tee -a e2e.log ; done"
-      echo "  egrep -i -C10 '^error' e2e.log | gvim -"
-      echo
-      echo
-      echo
-      exit 1
+      sleep 7
+
+      $cmd
+
+      if [ $? -ne 0 ]; then
+        log_message "Failed: $cmd" >> $failfile
+        log_message "Test failed twice, aborting." >> $failfile
+        cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
+        echo
+        echo
+        echo "*** ERROR [TyEE2E] ***"
+        echo
+        echo "This end-to-end test failed trice:"
+        echo
+        echo "  $cmd"
+        echo
+        echo
+        echo "Run it with debug flags, and try to fix it:"
+        echo
+        # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
+        # (But first add a cname entry for -manual.)
+        cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
+        # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
+        # root first su:s to another user. Check the --is-root command line flag instead.
+        #if [ -z "$is_root" ]; then
+          echo "  $cmd_with_debug"
+        #else
+        #  echo "  su $my_username -c '$cmd_with_debug'"
+        #  echo
+        #  echo "Note: you are root. Don't forget 'su $my_username' (included above already)."
+        #fi
+        echo
+        echo
+        echo "Once it works, run it 33 times, and if it's flaky and fails once, that's ok:"
+        echo "(Because the likelihood that a tests fails twice, is then 1/33/33 ~= 1/1000,"
+        echo "so, with 100 such e2e tests, it's 90% probability of no double failures.)"
+        echo
+        echo "  rm e2e.log ;  for x in {1..33}; do echo \$x: ; $cmd |& tee -a e2e.log ; done"
+        echo "  egrep -i -C10 '^error' e2e.log | gvim -"
+        echo
+        echo
+        echo
+        exit 1
+      else
+        echo "Ok, on the 3rd attempt. [TyME2ERETRYOK3]"
+        echo
+      fi
     else
-      echo "Ok, on the 2nd attempt. [EdM3BVP7]"
+      echo "Ok, on the 2nd attempt. [TyME2ERETRYOK2]"
       echo
     fi
   else

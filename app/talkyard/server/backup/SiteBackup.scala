@@ -48,6 +48,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
                         // whilst a SiteDump is a SitePatch that includes the whole site.
   site: Option[SiteInclDetails],
   settings: Option[SettingsToSave],
+  apiSecrets: Seq[ApiSecret],
   summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
   summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],
@@ -144,6 +145,7 @@ case object SiteBackup {
   val empty = SiteBackup(
     site = None,
     settings = None,
+    apiSecrets = Vector.empty,
     summaryEmailIntervalMins = 60, // for now [7FKB4Q1]
     summaryEmailIfActive = false, // for now [7FKB4Q1]
     guests = Vector.empty,
