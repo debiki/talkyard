@@ -828,6 +828,12 @@ export const Editor = createComponent({
     const store: Store = this.state.store;
     let postType: PostType;
 
+    function getPostId(postNr: PostNr): PostId {
+      dieIf(!store.currentPage, 'TyE603KWUDB4');
+      const post = store.currentPage.postsByNr[postNr];
+      return post.uniqueId;
+    }
+
     if (this.state.editingPostNr) {
       locator.draftType = DraftType.Edit;
       locator.pageId = this.state.editorsPageId;
@@ -836,9 +842,9 @@ export const Editor = createComponent({
     }
     else if (this.state.replyToPostNrs && this.state.replyToPostNrs.length) {
       locator.draftType = DraftType.Reply;
-      // post id will be looked up server side. [4BKG0BKR0]
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
+      locator.postId = getPostId(locator.postNr);
       postType = PostType.Normal;
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
       if (eds.embeddingUrl) {
@@ -847,9 +853,9 @@ export const Editor = createComponent({
     }
     else if (this.state.isWritingChatMessage) {
       locator.draftType = DraftType.Reply;
-      // post id will be looked up server side. [4BKG0BKR0]
       locator.pageId = this.state.editorsPageId;
       locator.postNr = BodyNr;
+      locator.postId = getPostId(locator.postNr);
       postType = PostType.ChatMessage;
     }
     else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {

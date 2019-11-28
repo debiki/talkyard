@@ -1047,14 +1047,20 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         tx.insertAltPageId(altPageId, realPageId = pageId)
       }
 
+      siteData.pagePopularityScores foreach tx.upsertPagePopularityScore
+
       siteData.pageNotfPrefs foreach { notfPref: PageNotfPref =>
         tx.upsertPageNotfPref(notfPref)
       }
+
+      siteData.pageParticipants foreach tx.insertPageParticipant
 
       siteData.categories foreach { categoryMeta =>
         //val newId = transaction.nextCategoryId()
         tx.insertCategoryMarkSectionPageStale(categoryMeta)
       }
+
+      siteData.drafts foreach tx.upsertDraft
 
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()

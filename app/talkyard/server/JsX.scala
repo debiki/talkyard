@@ -691,6 +691,20 @@ object JsX {
   }
 
 
+  def JsPagePopularityScores(scores: PagePopularityScores): JsObject = {
+    Json.obj(
+      "pageId" -> scores.pageId,
+      "updatedAt" -> JsWhenMs(scores.updatedAt),
+      "algorithmVersion" -> scores.algorithmVersion,
+      "dayScore" -> scores.dayScore,
+      "weekScore" -> scores.weekScore,
+      "monthScore" -> scores.monthScore,
+      "quarterScore" -> scores.quarterScore,
+      "yearScore" -> scores.yearScore,
+      "allScore" -> scores.allScore)
+  }
+
+
   def JsPageNotfPref(notfPref: PageNotfPref): JsObject = {
     Json.obj(  // PageNotfPref
       "memberId" -> notfPref.peopleId,
@@ -698,6 +712,27 @@ object JsX {
       "pageId" -> notfPref.pageId,
       "pagesInCategoryId" -> notfPref.pagesInCategoryId,
       "wholeSite" -> notfPref.wholeSite)
+  }
+
+
+  def JsPageParticipant(pagePp: PageParticipant): JsObject = {
+    val readingProgress = pagePp.readingProgress
+    Json.obj(
+    "pageId" -> pagePp.pageId,
+    "userId" -> pagePp.userId,
+    "addedById" -> JsNumberOrNull(pagePp.addedById),
+    "removedById" -> JsNumberOrNull(pagePp.removedById),
+    "inclInSummaryEmailAtMins" -> pagePp.inclInSummaryEmailAtMins,
+
+    "firstVisitedAt" -> JsWhenMs(readingProgress.firstVisitedAt),
+    "lastVisitedAt" -> JsWhenMs(readingProgress.lastVisitedAt),
+    "lastViewedPostNr" -> JsNumber(readingProgress.lastViewedPostNr),
+    "lastReadAt" -> JsWhenMsOrNull(readingProgress.lastReadAt),
+    "lastPostNrsReadRecentFirst" -> JsArray(
+      readingProgress.lastPostNrsReadRecentFirst.map(rp => JsNumber(rp))),
+    "lowPostNrsRead" -> JsArray(
+      readingProgress.lowPostNrsRead.toSeq.map(x => JsNumber(x))),
+    "secondsReading" -> readingProgress.secondsReading)
   }
 
 

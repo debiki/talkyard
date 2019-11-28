@@ -148,13 +148,26 @@ trait PagesSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAllPagePopularityScores(): Seq[PagePopularityScores] = {
+    val sql = s"""
+      select * from page_popularity_scores3
+      where site_id = ?
+      """
+    runQueryFindMany(sql, List(siteId.asAnyRef), parsePagePopularityScore)
+  }
+
+
   def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores] = {
     val sql = s"""
       select * from page_popularity_scores3
       where site_id = ?
         and page_id = ?
       """
-    runQueryFindOneOrNone(sql, List(siteId.asAnyRef, pageId), rs => {
+    runQueryFindOneOrNone(sql, List(siteId.asAnyRef, pageId), parsePagePopularityScore)
+  }
+
+
+  private def parsePagePopularityScore(rs: js.ResultSet): PagePopularityScores = {
       PagePopularityScores(
         pageId = rs.getString("page_id"),
         updatedAt = getWhen(rs, "updated_at"),
@@ -165,7 +178,6 @@ trait PagesSiteDaoMixin extends SiteTransaction {
         quarterScore = rs.getFloat("quarter_score"),
         yearScore = rs.getFloat("year_score"),
         allScore = rs.getFloat("all_score"))
-    })
   }
 
 

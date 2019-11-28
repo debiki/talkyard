@@ -70,24 +70,26 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   pages: Seq[PageMeta],
   pagePaths: Seq[PagePathWithId],
   pageIdsByAltIds: Map[AltPageId, PageId],
+  pagePopularityScores: Seq[PagePopularityScores],
   pageNotfPrefs: Seq[PageNotfPref],
+  pageParticipants: Seq[PageParticipant],
+  drafts: Seq[Draft],
   posts: Seq[Post],
   postActions: Seq[PostAction],
   permsOnPages: Seq[PermsOnPages],
   reviewTasks: Seq[ReviewTask]) {
 
   /* MISSING:
- public | api_secrets3            | table    | edc
  public | audit_log3              | table    | edc
  public | backup_test_log3        | table    | edc
  public | blocks3                 | table    | edc
  public | category_notf_levels3   | table    | edc -- remove?
- public | drafts3                 | table    | edc
+ public | drafts3                 | table    | edc <—–
  public | emails_out3             | table    | edc
  public | index_queue3            | table    | edc
  public | page_html3              | table    | edc
- public | page_popularity_scores3 | table    | edc
- public | page_users3             | table    | edc
+ public | page_popularity_scores3 | table    | edc <——
+ public | page_users3             | table    | edc <——
  public | post_read_stats3        | table    | edc
  public | post_revisions3         | table    | edc
  public | post_tags3              | table    | edc
@@ -132,7 +134,10 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
       pages.length >= many ||
       pagePaths.length >= many ||
       pageIdsByAltIds.size >= many ||
+      pagePopularityScores.size >= many ||
       pageNotfPrefs.length >= many ||
+      pageParticipants.size >= many ||
+      drafts.length >= many ||
       posts.length >= many * 2 ||  // since at least 2 posts per page: title and body
       postActions.length >= many ||
       permsOnPages.length >= many ||
@@ -163,9 +168,12 @@ case object SiteBackup {
     pages = Vector.empty,
     pagePaths = Vector.empty,
     pageIdsByAltIds = Map.empty,
+    pagePopularityScores = Vector.empty,
     pageNotfPrefs = Vector.empty,
+    pageParticipants = Vector.empty,
     categoryPatches = Vector.empty,
     categories = Vector.empty,
+    drafts = Vector.empty,
     posts = Vector.empty,
     postActions = Vector.empty,
     permsOnPages = Vector.empty,

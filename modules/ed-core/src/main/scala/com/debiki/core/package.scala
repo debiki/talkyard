@@ -684,6 +684,20 @@ package object core {
   }
 
 
+  /** All columns in table page_users3.
+    * Except for these, which will be removed: (instead, there's the page_notf_prefs3 table)
+    * notf_level = null,
+    * notf_reason = null
+    */
+  case class PageParticipant(
+    pageId: PageId,
+    userId: UserId,
+    addedById: Option[UserId],
+    removedById: Option[UserId],
+    inclInSummaryEmailAtMins: Int,
+    readingProgress: PageReadingProgress)
+
+
   /**
     * @param firstVisitedAt The first time the user visited the page, perhaps without reading.
     * @param lastVisitedAt The last time the user visited the page, perhaps without reading.

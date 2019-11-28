@@ -63,6 +63,8 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
 
       val permsOnPages = tx.loadPermsOnPages()
 
+      val drafts = tx.loadAllDrafts()
+
       val posts = tx.loadAllPosts().sortBy(_.id)
 
       val postActions: Seq[PostAction] = tx.loadAllPostActions()
@@ -80,6 +82,7 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
         pagePaths = pagePaths,
         pageIdsByAltIds = tx.loadAllAltPageIds(),
         permsOnPages = permsOnPages,
+        drafts = drafts,
         posts = posts,
         postActions = postActions)
     }
@@ -175,9 +178,17 @@ object SiteBackupMaker {
         anyDump.map(_.memberEmailAddrs) getOrElse tx.loadUserEmailAddressesForAllUsers()
       fields("memberEmailAddresses") = JsArray(emailAddresses map JsMemberEmailAddress)
 
+      val pagePopularityScores: Seq[PagePopularityScores] =
+        anyDump.map(_.pagePopularityScores) getOrElse tx.loadAllPagePopularityScores()
+      fields("pagePopularityScores") = JsArray(pagePopularityScores.map(JsPagePopularityScores))
+
       val pageNotfPrefs: Seq[PageNotfPref] =
         anyDump.map(_.pageNotfPrefs) getOrElse tx.loadAllPageNotfPrefs()
       fields("pageNotfPrefs") = JsArray(pageNotfPrefs.map(JsPageNotfPref))
+
+       val pageParticipants: Seq[PageParticipant] =
+         anyDump.map(_.pageParticipants) getOrElse tx.loadAllPageParticipantsAllPages()
+      fields("pageParticipants") = JsArray(pageParticipants map JsPageParticipant)
 
       val pagePaths: Seq[PagePathWithId] =
         anyDump.map(_.pagePaths) getOrElse tx.loadAllPagePaths()
@@ -230,10 +241,11 @@ object SiteBackupMaker {
       fields("permsOnPages") = JsArray(
         permsOnPages map JsonMaker.permissionToJson)
 
-      val posts: Seq[Post] =
-        anyDump.map(_.posts) getOrElse tx.loadAllPosts()
-      fields("posts") = JsArray(
-        posts map JsPostInclDetails)
+      val drafts: Seq[Draft] = anyDump.map(_.drafts) getOrElse tx.loadAllDrafts()
+      fields("drafts") = JsArray( drafts map JsDraft)
+
+      val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPosts()
+      fields("posts") = JsArray( posts map JsPostInclDetails)
 
       val postsActions: Seq[PostAction] =
         anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()

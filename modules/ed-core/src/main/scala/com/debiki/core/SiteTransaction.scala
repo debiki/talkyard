@@ -127,6 +127,7 @@ trait SiteTransaction {
   def nextDraftNr(userId: UserId): DraftNr
   def upsertDraft(draft: Draft)
   def deleteDraft(userId: UserId, draftNr: DraftNr): Boolean
+  def loadAllDrafts(): immutable.Seq[Draft]
   def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
   def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
@@ -166,8 +167,12 @@ trait SiteTransaction {
   def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: PageReadingProgress)
   def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When)
 
+  def loadAllPageParticipantsAllPages(): Seq[PageParticipant]
+  def insertPageParticipant(pagePp: PageParticipant)
+
   def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
 
+  def loadAllPagePopularityScores(): Seq[PagePopularityScores]
   def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores]
   def upsertPagePopularityScore(scores: PagePopularityScores)
 

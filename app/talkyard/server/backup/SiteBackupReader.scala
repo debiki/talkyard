@@ -17,6 +17,7 @@
 
 package talkyard.server.backup
 
+import com.debiki.core
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import com.debiki.dao.rdb.PostsSiteDaoMixin
@@ -29,6 +30,7 @@ import org.scalactic._
 import play.api.libs.json._
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.util.Try
 import talkyard.server.JsX
 
 
@@ -149,13 +151,17 @@ case class SiteBackupReader(context: EdContext) {
     // Need to split into this 2nd  ( ... ) = try { ... }  because max 22 elems in a tuple.
 
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
-        categoriesJson, postsJson, postActionsJson, reviewTasksJson) =
+        pagePopularityScoresJson, pageParticipantsJson,
+        categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
           readJsArray(bodyJson, "pagePaths", optional = true),
           readOptJsObject(bodyJson, "pageIdsByAltIds") getOrElse JsObject(Nil),  // RENAME to "pageIdsByLookupKeys"
+          readJsArray(bodyJson, "pagePopularityScores", optional = true),
+          readJsArray(bodyJson, "pageParticipants", optional = true),
           readJsArray(bodyJson, "categories", optional = true),
+          readJsArray(bodyJson, "drafts", optional = true),
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
           readJsArray(bodyJson, "reviewTasks", optional = true))
@@ -323,12 +329,30 @@ case class SiteBackupReader(context: EdContext) {
         }
     }: _*)
 
+    val pagePopularityScores: Seq[PagePopularityScores] =
+          pagePopularityScoresJson.value.zipWithIndex map {
+      case (json, index) =>
+        readPagePopularityScoresOrBad(json).getOrIfBad(errorMessage =>
+          throwBadReq(
+            "TyE703KUTTU25", o"""Invalid PagePopularityScores json at index $index in
+               the 'pagePopularityScores' list: $errorMessage, json: $json"""))
+    }
+
     val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.zipWithIndex map {
           case (json, index) =>
       readPageNotfPrefOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE5WKTU025", o"""Invalid PageNotfPref json at index $index in
                the 'pageNotfPrefs' list: $errorMessage, json: $json"""))
+    }
+
+
+    val pageParticipants: Seq[PageParticipant] = pageParticipantsJson.value.zipWithIndex map {
+      case (json, index) =>
+        readPageParticipantOrBad(json).getOrIfBad(errorMessage =>
+          throwBadReq(
+            "TyE703RKVH295", o"""Invalid PageParticipant json at index $index in
+             the 'pageParticipants' list: $errorMessage, json: $json"""))
     }
 
     val categoryPatches = mutable.ArrayBuffer[CategoryPatch]()
@@ -344,6 +368,15 @@ case class SiteBackupReader(context: EdContext) {
           case Right(p: CategoryPatch) => categoryPatches.append(p)
         }
     }
+
+    val drafts: Seq[Draft] = draftsJson.value.zipWithIndex map {
+      case (json, index) =>
+        readDraftOrBad(json).getOrIfBad(errorMessage =>
+          throwBadReq(
+            "TyE70KSTUD6Z", o"""Invalid Draft json at index $index in
+             the 'drafts' list: $errorMessage, json: $json"""))
+    }
+
 
     val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
       readPostOrBad(json, isE2eTest).getOrIfBad(error =>
@@ -383,8 +416,9 @@ case class SiteBackupReader(context: EdContext) {
       users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,
       identities, invites, notifications,
       categoryPatches.toVector, categories.toVector,
-      pages, paths, pageIdsByAltIds, pageNotfPrefs,
-      posts, postActions, permsOnPages, reviewTasks)
+      pages, paths, pageIdsByAltIds, pagePopularityScores,
+      pageNotfPrefs, pageParticipants,
+      drafts, posts, postActions, permsOnPages, reviewTasks)
   }
 
 
@@ -779,6 +813,37 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
+  def readPagePopularityScoresOrBad(jsValue: JsValue): PagePopularityScores Or ErrorMessage  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"PageParticipant is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val pageId = try readString(jsObj, "pageId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid PagePopularityScores page id: " + ex.getMessage)
+    }
+
+    try {
+      Good(PagePopularityScores(
+        pageId = pageId,
+        updatedAt = readWhen(jsObj, "updatedAt"),
+        algorithmVersion = readInt(jsObj, "algorithmVersion"),
+        dayScore = readFloat(jsObj, "dayScore"),
+        weekScore = readFloat(jsObj, "weekScore"),
+        monthScore = readFloat(jsObj, "monthScore"),
+        quarterScore = readFloat(jsObj, "quarterScore"),
+        yearScore = readFloat(jsObj, "yearScore"),
+        allScore = readFloat(jsObj, "allScore")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for PagePopularityScore page id $pageId': ${ex.getMessage}")
+    }
+  }
+
+
   def readPageNotfPrefOrBad(json: JsValue, isE2eTest: Boolean): PageNotfPref Or ErrorMessage  = {
     val jsObj = json match {
       case x: JsObject => x
@@ -801,6 +866,45 @@ case class SiteBackupReader(context: EdContext) {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for PageNotfPref: ${ex.getMessage}")
+    }
+  }
+
+
+  def readPageParticipantOrBad(jsValue: JsValue): PageParticipant Or ErrorMessage  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"PageParticipant is not a json object, but a: " + classNameOf(bad))
+    }
+
+    val ppId = try readInt(jsObj, "userId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid UserVisitStats user id: " + ex.getMessage)
+    }
+
+    try {
+      val readingProgress = PageReadingProgress(
+        firstVisitedAt = readWhen(jsObj, "firstVisitedAt"),
+        lastVisitedAt = readWhen(jsObj, "lastVisitedAt"),
+        lastViewedPostNr = readInt(jsObj, "lastViewedPostNr"),
+        lastReadAt = readOptWhen(jsObj, "lastReadAt"),
+        lastPostNrsReadRecentFirst =
+          (jsObj \ "lastPostNrsReadRecentFirst").as[Vector[PostNr]],
+        lowPostNrsRead =
+          (jsObj \ "lowPostNrsRead").as[Set[PostNr]],
+        secondsReading = readInt(jsObj, "secondsReading"),
+      )
+      Good(PageParticipant(
+        pageId = readString(jsObj, "pageId"),
+        userId = readInt(jsObj, "userId"),
+        addedById = readOptInt(jsObj, "addedById"),
+        removedById = readOptInt(jsObj, "removedById"),
+        inclInSummaryEmailAtMins = readInt(jsObj, "inclInSummaryEmailAtMins"),
+        readingProgress = readingProgress))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for PageParticipant id $ppId': ${ex.getMessage}")
     }
   }
 
@@ -1086,6 +1190,71 @@ case class SiteBackupReader(context: EdContext) {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for page id '$theId': ${ex.getMessage}")
     }
+  }
+
+
+  def readDraftOrBad(jsValue: JsValue, authorId: Option[UserId] = None)
+        : Draft Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val draftNr =
+      try {
+        (jsObj \ "draftNr").asOpt[DraftNr].getOrElse(NoDraftNr)
+      }
+      catch {
+        case ex: IllegalArgumentException =>
+          return Bad(s"Invalid draft nr: " + ex.getMessage)
+      }
+
+    val draft: Draft = try {
+      val locatorJson = (jsObj \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
+        "TyE4AKBP20", "No draft locator: forWhat missing")
+
+      val draftTypeInt = readInt(locatorJson, "draftType")
+      val draftType = DraftType.fromInt(draftTypeInt) getOrThrowBadArgument(
+        "TyE4AKBP22", s"Draft type not specified: ${locatorJson.toString}")
+
+      // This currently rejects drafts for the very first comment, on an embedded comments page
+      // — because the page hasn't yet been created, so there's no page id, so no locator can
+      // be constructed. UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
+      val draftLocator = Try(
+        DraftLocator(
+          draftType,
+          categoryId = readOptInt(locatorJson, "categoryId"),
+          toUserId = readOptInt(locatorJson, "toUserId"),
+          postId = readOptInt(locatorJson, "postId"),
+          pageId = readOptString(locatorJson, "pageId"),
+          postNr = readOptInt(locatorJson, "postNr"))) getOrIfFailure { ex =>
+        return Bad(s"Bad DraftLocator json: ${ex.getMessage} [TyE603KUTDGJ]")
+      }
+
+      val now = globals.now()
+
+      Draft(
+        byUserId = authorId getOrElse readInt(jsObj, "byUserId"),
+        draftNr = draftNr,
+        forWhat = draftLocator,
+        createdAt = now,
+        lastEditedAt = None, // createdAt will be used, if overwriting [5AKJWX0]
+        deletedAt = readOptWhen(jsObj, "deletedAt"),
+        topicType = readOptInt(jsObj, "topicType").flatMap(PageType.fromInt),
+        postType = readOptInt(jsObj, "postType").flatMap(PostType.fromInt),
+        title = readOptString(jsObj, "title").map(_.trim).getOrElse(""),
+        text = readString(jsObj, "text").trim())
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Bad json for Draft nr '$draftNr': ${ex.getMessage}")
+    }
+
+    if (draft.text.isEmpty && draft.title.isEmpty)
+      return Bad("Draft empty. Delete it instead [TyE4RBK02R9]")
+
+    Good(draft)
   }
 
 

@@ -120,6 +120,14 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  override def loadAllDrafts(): immutable.Seq[Draft] = {
+    val query = s"""
+      select * from drafts3 where site_id = ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef), readDraft)
+  }
+
+
   override def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft] = {
     val query = s"""
       select * from drafts3 where site_id = ? and by_user_id = ? and draft_nr = ?

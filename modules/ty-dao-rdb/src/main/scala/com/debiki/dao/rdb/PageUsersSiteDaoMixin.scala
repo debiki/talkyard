@@ -29,6 +29,18 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
+  /** Loads all fields.
+    */
+  def loadAllPageParticipantsAllPages(): Seq[PageParticipant] = {
+    Nil  // for now  ???
+  }
+
+
+  def insertPageParticipant(pageParticipant: PageParticipant) {
+    ???
+  }
+
+
   override def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean = {
     val statement = """
       insert into page_users3 (site_id, page_id, user_id, joined_by_id)

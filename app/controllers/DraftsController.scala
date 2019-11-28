@@ -62,63 +62,12 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(0 <= requester.id && requester.id <= 9, "TyE2ABKG5",
       "Special users may not save drafts")
 
-    val locatorJson = (body \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
-      "TyE4AKBP20", "No draft locator: forWhat missing")
-
-    val draftNr = (body \ "draftNr").asOpt[DraftNr].getOrElse(NoDraftNr)
-    val draftTypeInt = (locatorJson \ "draftType").as[Int]
-    val draftType = DraftType.fromInt(draftTypeInt) getOrThrowBadArgument(
-      "TyE4AKBP22", s"Draft type not specified: ${locatorJson.toString}")
-
-    var anyPost: Option[Post] = None
-
-    val pageId = (locatorJson \ "pageId").asOpt[PageId]
-    val postNr = (locatorJson \ "postNr").asOpt[PostNr]
-    val postId = (locatorJson \ "postId").asOpt[PostId] orElse {
-      if (pageId.isDefined && postNr.isDefined) {
-        // The browser could maybe incl the post id, for new replies, [4BKG0BKR0]
-        // so won't need to look it up here. But actually need to look it up anyway (7RWBJ3).
-        anyPost = dao.loadPost(pageId.get, postNr.get)
-        anyPost.map(_.id)
-      }
-      else {
-        None
-      }
-    }
-
-    // This currently rejects drafts for the very first comment, on an embedded comments page
-    // — because the page hasn't yet been created, so there's no page id, so no locator can
-    // be constructed. UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
-    val draftLocator = Try(
-      DraftLocator(
-        draftType,
-        categoryId = (locatorJson \ "categoryId").asOpt[CategoryId],
-        toUserId = (locatorJson \ "toUserId").asOpt[UserId],
-        postId = postId,
-        pageId = pageId,
-        postNr = postNr)) getOrIfFailure { ex =>
-      throwBadRequest("TyEBDDRFTLC", ex.getMessage)
-    }
-
     val now = globals.now()
-
-    val draft = Try(
-      Draft(
-        byUserId = requester.id,
-        draftNr = draftNr,
-        forWhat = draftLocator,
-        createdAt = now,
-        lastEditedAt = None, // createdAt will be used, if overwriting [5AKJWX0]
-        deletedAt = (body \ "deletedAt").asOptWhen,
-        topicType = (body \ "topicType").asOpt[Int].flatMap(PageType.fromInt),
-        postType = (body \ "postType").asOpt[Int].flatMap(PostType.fromInt),
-        title = (body \ "title").asOptStringNoneIfBlank.getOrElse(""),
-        text = (body \ "text").as[String].trim())) getOrIfFailure { ex =>
-      throwBadRequest("TyEBDDRFTDT", ex.getMessage)
+    val talkyardJsonParser = talkyard.server.backup.SiteBackupReader(context)
+    val draft = talkyardJsonParser.readDraftOrBad(
+        body, Some(requester.id)) getOrIfBad { problem =>
+      throwBadRequest("TyE603KUDKG2", s"Bad Draft json, problem: $problem")
     }
-
-    throwBadRequestIf(draft.text.isEmpty && draft.title.isEmpty,
-      "TyE4RBK02R9", "Draft empty. Delete it instead")
 
     if (draft.isNewTopic) {
       // For now, authorize this later, when posting topic. The user can just pick another category,
@@ -127,9 +76,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
     else if (draft.isReply || draft.isEdit) {
       // Maybe good to know, directly, if not allowed to reply to or edit this post?
-
-      val post = anyPost orElse dao.loadPostByUniqueId(  // (7RWBJ3)
-        draftLocator.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
+      val post = dao.loadPostByUniqueId(
+        draft.forWhat.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
       val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE2AKBRE5")
       val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
