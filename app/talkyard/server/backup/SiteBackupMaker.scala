@@ -203,7 +203,9 @@ object SiteBackupMaker {
           if (simpleFormat) {
             val canonicalPath: PagePathWithId = pagePaths.find(p =>
               p.pageId == pageMeta.pageId && p.canonical) getOrDie "TyE6WKSJ02X4"
-            json += "urlPath" -> JsString(canonicalPath.value)
+            json +=
+              "urlPaths" -> Json.obj(
+                "canonical" -> JsString(canonicalPath.value))
           }
           json
         }))
@@ -238,23 +240,21 @@ object SiteBackupMaker {
 
       val permsOnPages: Seq[PermsOnPages] =
         anyDump.map(_.permsOnPages) getOrElse tx.loadPermsOnPages()
-      fields("permsOnPages") = JsArray(
-        permsOnPages map JsonMaker.permissionToJson)
+      fields("permsOnPages") = JsArray(permsOnPages map JsonMaker.permissionToJson)
 
       val drafts: Seq[Draft] = anyDump.map(_.drafts) getOrElse tx.loadAllDrafts()
-      fields("drafts") = JsArray( drafts map JsDraft)
+      fields("drafts") = JsArray(drafts map JsDraft)
 
       val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPosts()
-      fields("posts") = JsArray( posts map JsPostInclDetails)
+      fields("posts") = JsArray(posts map JsPostInclDetails)
 
       val postsActions: Seq[PostAction] =
         anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()
-      fields("postActions") = JsArray(
-        postsActions map JsPostAction)
+      fields("postActions") = JsArray(postsActions map JsPostAction)
 
       val reviewTasks: Seq[ReviewTask] =
         anyDump.map(_.reviewTasks) getOrElse tx.loadAllReviewTasks()
-      fields("reviewTasks") = JsArray(reviewTasks.map(JsReviewTask))
+      fields("reviewTasks") = JsArray(reviewTasks map JsReviewTask)
 
     JsObject(fields.toSeq)
   }

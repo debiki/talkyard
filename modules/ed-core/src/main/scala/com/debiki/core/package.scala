@@ -103,26 +103,32 @@ package object core {
   }
 
   def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrorMessage = {
-    val returnBadIfIsToParticipant = () =>
+    val returnBadIfDisallowParticipant = () =>
       if (!allowParticipantRef)
         return Bad("Refs to participants not allowed here, got: " + ref)
+    // Usernames and Talkyard internal ids don't contain '@'.
+    val returnBadIfContainsAt = (value: String) =>
+      if (value contains '@')
+        return Bad("Ref contains '@': " + ref)
 
     if (ref startsWith "extid:") {
       val extId = ref drop "extid:".length
       Good(ParsedRef.ExternalId(extId))
     }
     else if (ref startsWith "ssoid:") {
-      returnBadIfIsToParticipant()
+      returnBadIfDisallowParticipant()
       val ssoId = ref drop "ssoid:".length
       Good(ParsedRef.SingleSignOnId(ssoId))
     }
     else if (ref startsWith "tyid:") {
       val tyId = ref drop "tyid:".length
+      returnBadIfContainsAt(tyId)
       Good(ParsedRef.TalkyardId(tyId))
     }
     else if (ref startsWith "username:") {
-      returnBadIfIsToParticipant()
+      returnBadIfDisallowParticipant()
       val username = ref drop "username:".length
+      returnBadIfContainsAt(username)
       Good(ParsedRef.Username(username))
     }
     else {

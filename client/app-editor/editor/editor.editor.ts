@@ -828,9 +828,12 @@ export const Editor = createComponent({
     const store: Store = this.state.store;
     let postType: PostType;
 
-    function getPostId(postNr: PostNr): PostId {
-      dieIf(!store.currentPage, 'TyE603KWUDB4');
-      const post = store.currentPage.postsByNr[postNr];
+    function getPostId(pageId: PageId, postNr: PostNr): PostId {
+      // (The page might not be the current page, if the editor is open and we've
+      // temporarily jumped to a different page or user's profile maybe.)
+      const page: Page = store.pagesById[pageId];
+      dieIf(!page, 'TyE603KWUDB4');
+      const post = page.postsByNr[postNr];
       return post.uniqueId;
     }
 
@@ -844,7 +847,7 @@ export const Editor = createComponent({
       locator.draftType = DraftType.Reply;
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
-      locator.postId = getPostId(locator.postNr);
+      locator.postId = getPostId(locator.pageId, locator.postNr);
       postType = PostType.Normal;
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
       if (eds.embeddingUrl) {
@@ -855,7 +858,7 @@ export const Editor = createComponent({
       locator.draftType = DraftType.Reply;
       locator.pageId = this.state.editorsPageId;
       locator.postNr = BodyNr;
-      locator.postId = getPostId(locator.postNr);
+      locator.postId = getPostId(locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
     }
     else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {

@@ -817,7 +817,7 @@ case class SiteBackupReader(context: EdContext) {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
-        return Bad(s"PageParticipant is not a json object, but a: " + classNameOf(bad))
+        return Bad(s"PagePopularityScores is not a json object, but a: " + classNameOf(bad))
     }
 
     val pageId = try readString(jsObj, "pageId") catch {
@@ -879,7 +879,7 @@ case class SiteBackupReader(context: EdContext) {
 
     val ppId = try readInt(jsObj, "userId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid UserVisitStats user id: " + ex.getMessage)
+        return Bad(s"Invalid PageParticipant user id: " + ex.getMessage)
     }
 
     try {
@@ -896,7 +896,7 @@ case class SiteBackupReader(context: EdContext) {
       )
       Good(PageParticipant(
         pageId = readString(jsObj, "pageId"),
-        userId = readInt(jsObj, "userId"),
+        userId = ppId,
         addedById = readOptInt(jsObj, "addedById"),
         removedById = readOptInt(jsObj, "removedById"),
         inclInSummaryEmailAtMins = readInt(jsObj, "inclInSummaryEmailAtMins"),
@@ -1211,12 +1211,14 @@ case class SiteBackupReader(context: EdContext) {
       }
 
     val draft: Draft = try {
-      val locatorJson = (jsObj \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
-        "TyE4AKBP20", "No draft locator: forWhat missing")
+      val locatorJson = (jsObj \ "forWhat").asOpt[JsObject] getOrElse {
+        return Bad("No draft locator: forWhat missing [TyE4AKBP250]")
+      }
 
       val draftTypeInt = readInt(locatorJson, "draftType")
-      val draftType = DraftType.fromInt(draftTypeInt) getOrThrowBadArgument(
-        "TyE4AKBP22", s"Draft type not specified: ${locatorJson.toString}")
+      val draftType = DraftType.fromInt(draftTypeInt) getOrElse {
+        return Bad(s"Draft type not specified: ${locatorJson.toString} [TyE4AKBP2GK2]")
+      }
 
       // This currently rejects drafts for the very first comment, on an embedded comments page
       // — because the page hasn't yet been created, so there's no page id, so no locator can
@@ -1232,14 +1234,15 @@ case class SiteBackupReader(context: EdContext) {
         return Bad(s"Bad DraftLocator json: ${ex.getMessage} [TyE603KUTDGJ]")
       }
 
-      val now = globals.now()
-
       Draft(
         byUserId = authorId getOrElse readInt(jsObj, "byUserId"),
         draftNr = draftNr,
         forWhat = draftLocator,
-        createdAt = now,
-        lastEditedAt = None, // createdAt will be used, if overwriting [5AKJWX0]
+        createdAt =
+          readOptWhen(jsObj, "createdAt").getOrElse(globals.now()),
+        lastEditedAt =
+          // However, createdAt will be used, by the db, if overwriting [5AKJWX0]
+          readOptWhen(jsObj, "lastEditedAt"),
         deletedAt = readOptWhen(jsObj, "deletedAt"),
         topicType = readOptInt(jsObj, "topicType").flatMap(PageType.fromInt),
         postType = readOptInt(jsObj, "postType").flatMap(PostType.fromInt),

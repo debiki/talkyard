@@ -66,7 +66,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val talkyardJsonParser = talkyard.server.backup.SiteBackupReader(context)
     val draft = talkyardJsonParser.readDraftOrBad(
         body, Some(requester.id)) getOrIfBad { problem =>
-      throwBadRequest("TyE603KUDKG2", s"Bad Draft json, problem: $problem")
+      throwBadRequest("TyEBDDRFTDT", s"Bad Draft json, problem: $problem")
     }
 
     if (draft.isNewTopic) {

@@ -72,7 +72,7 @@ const utils = {
   },
 
   makeExternalUserFor: (member: Member, opts: {
-    ssoId: string;
+    ssoId: string,
     primaryEmailAddress?: string,
     isEmailAddressVerified?: boolean,
     username?: string,
@@ -125,11 +125,18 @@ ${ htmlToPaste ? htmlToPaste : `
 </html>`;
   },
 
+
   checkNewPageFields: (page, ps: { categoryId: CategoryId, authorId: UserId }) => {
     assert.equal(page.htmlTagCssClasses, "");
     assert.equal(page.hiddenAt, null);
     assert(!!page.createdAtMs);
     assert(!!page.publishedAtMs);
+    assert(!!page.updatedAtMs);
+    assert.equal(page.authorId, ps.authorId);
+    // The version number is 2 (not 1 becuse the page gets re-saved with correct
+    // stats and a version bump, after the initial insert (with wrong stats)). [306MDH26]
+    assert.equal(page.version, 2);
+    assert.equal(page.categoryId, ps.categoryId);
     assert.equal(page.numLikes, 0);
     assert.equal(page.numWrongs, 0);
     assert.equal(page.numBurys, 0);
@@ -142,32 +149,28 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.equal(page.numRepliesTotal, 0);
     assert.equal(page.numRepliesVisible, 0);
     assert.equal(page.numOrigPostRepliesVisible, 0);
+    assert.equal(page.lastApprovedReplyById, null);
+    assert.equal(page.lastApprovedReplyAt, null);
+    assert.equal(page.pinOrder, null);
+    assert.equal(page.pinWhere, null);
     assert.equal(page.answeredAt, null);
+    assert.equal(page.answerPostId, null);
     assert.equal(page.lockedAt, null);
     assert.equal(page.plannedAt, null);
     assert.equal(page.startedAt, null);
-    assert.equal(page.pinOrder, null);
-    assert.equal(page.lastApprovedReplyById, null);
-    assert(!!page.updatedAtMs);
     assert.equal(page.bumpedAtMs, null);
     assert.equal(page.doingStatus, 1);
-    assert.equal(page.closedAt, null);
-    assert.equal(page.htmlHeadDescription, "");
     assert.equal(page.doneAt, null);
-    assert.equal(page.authorId, ps.authorId);
-    assert.equal(page.version, 1);
-    assert.equal(page.answerPostId, null);
-    assert.equal(page.layout, 0);
-    assert.equal(page.htmlHeadTitle, "");
-    assert.equal(page.deletedAt, null);
-    assert.equal(page.pinWhere, null);
-    assert.equal(page.embeddingPageUrl, null);
-    assert.equal(page.lastApprovedReplyAt, null);
-    assert(!!page.frequentPosterIds);
-    assert.equal(page.frequentPosterIds.length, 0);
+    assert.equal(page.closedAt, null);
     assert.equal(page.unwantedAt, null);
     assert.equal(page.frozenAt, null);
-    assert.equal(page.categoryId, ps.categoryId);
+    assert.equal(page.deletedAt, null);
+    assert.equal(page.htmlHeadDescription, "");
+    assert.equal(page.htmlHeadTitle, "");
+    assert.equal(page.layout, 0);
+    assert.equal(page.embeddingPageUrl, null);
+    assert(!!page.frequentPosterIds);
+    assert.equal(page.frequentPosterIds.length, 0);
   },
 
 

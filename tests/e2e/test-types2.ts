@@ -132,22 +132,33 @@ interface SiteData2 {   // [3SD5PB7]
     enableSso?: boolean;
   };
   apiSecrets: TestApiSecret[];
-  groups: GroupInclDetails[];
-  members: Member[];
-  identities: any;
   guests: TestGuest[];
-  permsOnPages: PermsOnPage[];
+  groups: GroupInclDetails[];
+  groupPps: any[];
+  members: Member[];
+  ppStats: any[];
+  ppVisitStats: any[];
+  usernameUsages: any[];
+  identities: any[];
+  invites: any[];
+  memberEmailAddresses: any[];
   blocks: any;
-  invites: any;
   categories: TestCategory[];
+  pagePopularityScores: any[];
+  pageNotfPrefs: any[];
+  pageParticipants: any[];
   pages: Page[];
   pagePaths: PagePathWithId[];
+  pageIdsByAltIds: { [lookupId: string]: string };
+  permsOnPages: PermsOnPage[];
+  drafts: any[];
   posts: TestPost[];
+  postActions: any[];
   emailsOut: any;
-  notifications: any;
-  uploads: any;
-  auditLog: any;
-  reviewTasks: any;
+  notifications: any[];
+  //uploads: any[];
+  //auditLog: any[];
+  reviewTasks: any[];
 }
 
 

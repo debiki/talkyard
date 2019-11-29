@@ -717,22 +717,24 @@ object JsX {
 
   def JsPageParticipant(pagePp: PageParticipant): JsObject = {
     val readingProgress = pagePp.readingProgress
-    Json.obj(
-    "pageId" -> pagePp.pageId,
-    "userId" -> pagePp.userId,
-    "addedById" -> JsNumberOrNull(pagePp.addedById),
-    "removedById" -> JsNumberOrNull(pagePp.removedById),
-    "inclInSummaryEmailAtMins" -> pagePp.inclInSummaryEmailAtMins,
 
-    "firstVisitedAt" -> JsWhenMs(readingProgress.firstVisitedAt),
-    "lastVisitedAt" -> JsWhenMs(readingProgress.lastVisitedAt),
-    "lastViewedPostNr" -> JsNumber(readingProgress.lastViewedPostNr),
-    "lastReadAt" -> JsWhenMsOrNull(readingProgress.lastReadAt),
-    "lastPostNrsReadRecentFirst" -> JsArray(
-      readingProgress.lastPostNrsReadRecentFirst.map(rp => JsNumber(rp))),
-    "lowPostNrsRead" -> JsArray(
-      readingProgress.lowPostNrsRead.toSeq.map(x => JsNumber(x))),
-    "secondsReading" -> readingProgress.secondsReading)
+    Json.obj(
+      "pageId" -> pagePp.pageId,
+      "userId" -> pagePp.userId,
+      "addedById" -> JsNumberOrNull(pagePp.addedById),
+      "removedById" -> JsNumberOrNull(pagePp.removedById),
+      "inclInSummaryEmailAtMins" -> pagePp.inclInSummaryEmailAtMins,
+
+      // Reading progress:
+      "firstVisitedAt" -> JsWhenMs(readingProgress.firstVisitedAt),
+      "lastVisitedAt" -> JsWhenMs(readingProgress.lastVisitedAt),
+      "lastViewedPostNr" -> JsNumber(readingProgress.lastViewedPostNr),
+      "lastReadAt" -> JsWhenMsOrNull(readingProgress.lastReadAt),
+      "lastPostNrsReadRecentFirst" -> JsArray(
+        readingProgress.lastPostNrsReadRecentFirst.map(rp => JsNumber(rp))),
+      "lowPostNrsRead" -> JsArray(
+        readingProgress.lowPostNrsRead.toSeq.map(x => JsNumber(x))),
+      "secondsReading" -> readingProgress.secondsReading)
   }
 
 

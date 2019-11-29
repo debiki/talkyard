@@ -25,7 +25,7 @@ let strangersBrowser;
 let siteIdAddress: IdAddress;
 let siteId;
 
-let forum: TwoPagesTestForum;  // or: LargeTestForum
+let forum: TwoPagesTestForum;
 
 const apiSecret: TestApiSecret = {
   nr: 1,
@@ -47,12 +47,12 @@ const majasSsoId = 'majasSsoId';
 
 const pageOneToUpsertMajasSsoId = {
   // id: assigned by the server
-  extId: 'ups_paage_one_ext_id',
+  extId: 'ups_page_one_ext_id',
   pageType: c.TestPageRole.Idea,
   categoryRef: 'extid:' + categoryExtId,
   authorRef: 'ssoid:' + majasSsoId,
-  title: 'UpsPageOneTitle',
-  body: 'UpsPageOneBody',
+  title: 'UpsPageOneTitle ByMaja SsoId',
+  body: 'UpsPageOneBody ByMaja SsoId',
 };
 
 const pageTwoToUpsertMajasExtId = {
@@ -60,8 +60,8 @@ const pageTwoToUpsertMajasExtId = {
   pageType: c.TestPageRole.Problem,
   categoryRef: 'extid:' + categoryExtId,
   authorRef: 'extid:' + majasExternalId,
-  title: 'UpsPageTwoTitle',
-  body: 'UpsPageTwoBody',
+  title: 'UpsPageTwoTitle ByMaja ExtId',
+  body: 'UpsPageTwoBody ByMaja ExtId',
 };
 
 
@@ -86,12 +86,14 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
     const site: SiteData2 = forum.siteData;
     site.settings.enableApi = true;
     site.apiSecrets = [apiSecret];
+
+    // Oops this currently won't work — owen logs in without SSO, in this test.
+    // TESTS_MISSING — not real SSO [T703KUDHRPJ4]. But this is good enough.
+    //site.settings.ssoUrl = ssoUrl;
+    //site.settings.enableSso = true;
+
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
-
-    site.settings.enableSso = true;
-    site.settings.ssoUrl = ssoUrl;
-
   });
 
   it("initialize people", () => {
@@ -111,7 +113,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
 
   let oneTimeLoginSecret;
 
-  it("Upsert Maja, an external user, and get a one-time-login-key", () => {
+  it("Upsert Maja, and get a one-time-login-key", () => {
     const externalMaja = utils.makeExternalUserFor(maja, { ssoId: majasSsoId });
 
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
@@ -138,7 +140,10 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   });
 
 
-  // ----- Assign ext id to a category
+  // ----- Assign ext id to a category   (dupl code [05KUDTEDW24])
+
+  // TESTS_MISSING  this ext id could be included when importing the site dump  TyT60FKTEXK53,
+  // would be good to test, + this e2e test will take less time.
 
   it("Owen goes to Category A, logs in", () => {
     owensBrowser.forumTopicList.goHere({
@@ -183,7 +188,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
     assert.equal(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.equal(firstUpsertedPage.urlPath, '/-1/upspageonetitle');
+    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle-bymaja-ssoid');
 
     assert.equal(firstUpsertedPage.id, "1");
     assert.equal(firstUpsertedPage.pageType, c.TestPageRole.Idea);
@@ -227,13 +232,13 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
 
   it("... and author, that is, Maja", () => {
     const atUsername = owensBrowser.topic.getTopicAuthorUsernameInclAt();
-    assert.equal(atUsername, '@666' + maja.username);
+    assert.equal(atUsername, '@' + maja.username);
   });
 
 
   it("Owen goes to the page URL path from the topic response", () => {
     owensBrowser.go2('/');
-    owensBrowser.go2(siteIdAddress.origin + firstUpsertedPage.urlPath);
+    owensBrowser.go2(siteIdAddress.origin + firstUpsertedPage.urlPaths.canonical);
   });
 
   it("... and, again, sees the correct page title and body", () => {
@@ -268,7 +273,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   }
   it("... it looks fine", () => {
     const upsPage = upsertResponse.pages[0];
-    assert.equal(upsPage.urlPath, expectedUrlPath(upsPage, pageTwoToUpsertMajasExtId.title));
+    assert.equal(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageTwoToUpsertMajasExtId.title));
     assert.equal(upsPage.pageType, c.TestPageRole.Question);
     checkNewPageFields(upsPage, {
       categoryId: forum.categories.categoryA.id,
@@ -312,7 +317,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   });
 
   it("Owen goest to the urlPaths.activeTopics category URL path, for the now edited slug", () => {
-    owensBrowser.go(siteIdAddress.origin + upsEditedPageTwo.urlPath);
+    owensBrowser.go(siteIdAddress.origin + upsEditedPageTwo.urlPaths.canonical);
   });
 
   it("... and sees the new title and body", () => {

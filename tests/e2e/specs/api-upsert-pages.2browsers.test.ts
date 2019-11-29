@@ -25,7 +25,7 @@ let strangersBrowser;
 let siteIdAddress: IdAddress;
 let siteId;
 
-let forum: TwoPagesTestForum;  // or: LargeTestForum
+let forum: TwoPagesTestForum;
 
 const apiSecret: TestApiSecret = {
   nr: 1,
@@ -40,7 +40,7 @@ const categoryExtId = 'cat_ext_id';
 
 const pageOneToUpsert = {
   // id: assigned by the server
-  extId: 'ups_paage_one_ext_id',
+  extId: 'ups_page_one_ext_id',
   pageType: c.TestPageRole.Idea,
   categoryRef: 'extid:' + categoryExtId,
   authorRef: 'username:owen_owner',
@@ -113,7 +113,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   });
 
 
-  // ----- Assign ext id to a category
+  // ----- Assign ext id to a category   (dupl code [05KUDTEDW24])
 
   it("Owen goes to Category A, logs in", () => {
     owensBrowser.forumTopicList.goHere({
@@ -157,7 +157,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     assert.equal(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.equal(firstUpsertedPage.urlPath, '/-1/upspageonetitle');
+    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle');
 
     assert.equal(firstUpsertedPage.id, "1");
     assert.equal(firstUpsertedPage.pageType, c.TestPageRole.Idea);
@@ -203,7 +203,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   it("Owen goes to the page URL path from the topic response", () => {
     owensBrowser.go2('/');
-    owensBrowser.go2(siteIdAddress.origin + firstUpsertedPage.urlPath);
+    owensBrowser.go2(siteIdAddress.origin + firstUpsertedPage.urlPaths.canonical);
   });
 
   it("... and, again, sees the correct page title and body", () => {
@@ -237,7 +237,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   }
   it("... the first one looks correct", () => {
     const upsPage = upsertResponse.pages[0];
-    assert.equal(upsPage.urlPath, expectedUrlPath(upsPage, pageTwoToUpsert.title));
+    assert.equal(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageTwoToUpsert.title));
     assert.equal(upsPage.pageType, c.TestPageRole.Question);
     utils.checkNewPageFields(upsPage, {
       categoryId: forum.categories.categoryA.id,
@@ -247,7 +247,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   it("... the 2nd, likewise", () => {
     const upsPage = upsertResponse.pages[1];
-    assert.equal(upsPage.urlPath, expectedUrlPath(upsPage, pageThreeToUpsert.title));
+    assert.equal(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageThreeToUpsert.title));
     assert.equal(upsPage.pageType, c.TestPageRole.Problem);
     utils.checkNewPageFields(upsPage, {
       categoryId: forum.categories.categoryA.id,
@@ -292,7 +292,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   });
 
   it("Owen goest to the urlPaths.activeTopics category URL path, for the now edited slug", () => {
-    owensBrowser.go(siteIdAddress.origin + upsEditedPageTwo.urlPath);
+    owensBrowser.go(siteIdAddress.origin + upsEditedPageTwo.urlPaths.canonical);
   });
 
   it("... and sees the new title and body", () => {

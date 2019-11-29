@@ -773,12 +773,13 @@ api:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
-  import pages:
+  upsert pages:
           - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
   upsert-edit pages:
           - TESTS_MISSING  TyT650KWUDEPJ03g
   with sso enabled:
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
+            but not 100% real SSO, TESTS_MISSING, T703KUDHRPJ4
 
 import,
 export and restore:  (impexp)
@@ -802,6 +803,7 @@ export and restore:  (impexp)
     - Usernames, email addrs, stats, page visit stats, latest post — remembered accross exp-imp?
     - Edit built-in user's or group's name, remembered accross restore.
     - guestEmailPrefs, not yet incl in export
+    - Include category ext id in imported dump. Also speeds up test. TyT60FKTEXK53
 
 
 Tests to create:

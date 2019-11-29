@@ -768,7 +768,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             tx.insertPageMetaMarkSectionPageStale(pageWithRealIdsButWrongStats, isImporting = true)
             wroteToDatabase = true
-            upsertedPages.append(pageWithRealIdsButWrongStats)
+            // We update  upsertedPages below, after page meta stats has been updated.
             pageIdsWithBadStats.add(realPageId)
             pageAltIds.foreach(tx.insertAltPageId(_, realPageId))
             pageWithRealIdsButWrongStats
@@ -803,6 +803,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
           dao.updatePagePopularity(pageDao.parts, tx)
           tx.updatePageMeta(pageMeta, oldMeta = pageWrongStats, markSectionPageStale = true)
+          upsertedPages.append(pageMeta)
         }
 
         /*

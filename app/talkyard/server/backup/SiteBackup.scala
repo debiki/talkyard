@@ -84,12 +84,9 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
  public | backup_test_log3        | table    | edc
  public | blocks3                 | table    | edc
  public | category_notf_levels3   | table    | edc -- remove?
- public | drafts3                 | table    | edc <—–
  public | emails_out3             | table    | edc
  public | index_queue3            | table    | edc
  public | page_html3              | table    | edc
- public | page_popularity_scores3 | table    | edc <——
- public | page_users3             | table    | edc <——
  public | post_read_stats3        | table    | edc
  public | post_revisions3         | table    | edc
  public | post_tags3              | table    | edc
@@ -120,6 +117,7 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
     // 1 about page, and 2 posts (about page title and body).
     site.isDefined ||
       settings.isDefined ||
+      apiSecrets.size >= many ||
       (guests.length + groups.length + users.length) >= many ||
       guestEmailNotfPrefs.size >= many ||
       groupPps.size >= many ||
@@ -297,6 +295,7 @@ case class SimpleSitePatch(
           return Bad(s"Category not found: '$ref' [TyE2UPMSD064]")
         }
       }
+
       val author: Option[Participant] = pagePatch.authorRef.map { ref =>
         dao.getParticipantByRef(ref) getOrIfBad { problem =>
           return Bad(s"Bad author ref: '$ref', the problem: $problem [TyE5KD2073]")
@@ -304,7 +303,9 @@ case class SimpleSitePatch(
           return Bad(s"Author not found: '$ref' [TyE6WUKJC]")
         }
       }
+
       val pageSlug = dao.nashorn.slugifyTitle(pagePatch.title)
+
       appendPage(
         pageExtId = Some(pagePatch.extId),
         pageType = pagePatch.pageType getOrElse PageType.Discussion,
