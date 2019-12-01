@@ -573,7 +573,7 @@ const RootPostAndComments = createComponent({
             JSON.stringify(['editorToggleReply', [BodyNr, inclInReply]]), eds.embeddingOrigin);
       }
       else {
-        editor.toggleWriteReplyToPost(BodyNr, inclInReply, postType);
+        editor.toggleWriteReplyToPostNr(BodyNr, inclInReply, postType);
       }
     });
   },

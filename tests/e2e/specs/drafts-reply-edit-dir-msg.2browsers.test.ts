@@ -148,6 +148,13 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
 
   // ----- Drafts for direct messages
 
+  /*
+  it("Bump the server time, so the next draft becomes the most recent one", () => {
+    // Otherwise the drafts sort order won't be "correct", and a test
+    // will fail (0386725). [DRAFTWAIT]
+    server.playTimeMinutes(10);
+  }); */
+
   it("Maria starts typing a direct message to Michael", () => {
     mariasBrowser.pageTitle.openAboutAuthorDialog();
     mariasBrowser.aboutUserDialog.clickSendMessage();
@@ -185,7 +192,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
     mariasBrowser.refresh();
   });
 
-  it("Maria clicks the most recent draft: the direct message to Michael", () => {
+  it("Maria clicks the most recent draft: the direct message to Michael  (0386725)", () => {
     mariasBrowser.userProfilePage.waitUntilUsernameIs(maria.username);
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(3);
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);

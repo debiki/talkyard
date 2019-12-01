@@ -171,6 +171,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, body}
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
+    val anyPostId: Option[PostId] = (body \ "postId").asOpt[PostId]
     val newText = (body \ "text").as[String]
     val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
@@ -182,8 +183,18 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     _throwIfTooMuchData(newText, request)
 
-    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdEZWBR81")
-    val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdEBKWRWY9")
+    val (pageMeta, post) = anyPostId match {
+      case Some(postId) =>
+        val post = dao.loadPostByUniqueId(postId) getOrElse throwIndistinguishableNotFound("TyE506JKUT")
+        val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE506JKU2")
+        (pageMeta, post)
+      case None =>
+        // Old, remove [idnotnr]
+        val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdEZWBR81")
+        val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdEBKWRWY9")
+        (pageMeta, post)
+    }
+
     val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayEditPost(

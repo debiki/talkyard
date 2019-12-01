@@ -172,7 +172,7 @@ const ChatMessage = createComponent({
   edit: function() {
     this.setState({ isEditing: true });
     const post: Post = this.props.post;
-    editor.openEditorToEditPost(post.nr, (wasSaved, text) => {
+    editor.openEditorToEditPostNr(post.nr, (wasSaved, text) => {
       this.setState({ isEditing: false });
     });
   },
@@ -329,11 +329,13 @@ const ChatMessageEditor = createComponent({
 
       const store: Store = this.props.store;
       const page: Page = store.currentPage;
+      const bodyPostId = page.postsByNr[BodyNr].uniqueId;
 
       const draftLocator: DraftLocator = {
         draftType: DraftType.Reply,
         pageId: page.pageId,
         postNr: BodyNr,
+        postId: bodyPostId,
       };
       this.setState({ scriptsLoaded: true });
       Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment, page.categoryId, page.pageRole,
@@ -380,14 +382,21 @@ const ChatMessageEditor = createComponent({
     if (draftStatus <= DraftStatus.NeedNotSave)
       return;
 
+    const forWhat: DraftLocator = {
+      draftType: DraftType.Reply,
+      pageId: store.currentPageId,
+      postNr: BodyNr,
+    };
+
+    if (store.currentPage) {
+      const post = store.currentPage.postsByNr[BodyNr];
+      forWhat.postId = post ? post.uniqueId : undefined;
+    }
+
     const draftOldOrEmpty: Draft = oldDraft || {
       byUserId: me.id,
       draftNr: NoDraftNr,
-      forWhat: {
-        draftType: DraftType.Reply,
-        pageId: store.currentPageId,
-        postNr: BodyNr,
-      },
+      forWhat,
       createdAt: getNowMs(),
       postType: PostType.ChatMessage,
       text: '',

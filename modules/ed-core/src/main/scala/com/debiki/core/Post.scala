@@ -286,7 +286,7 @@ case class Draft(
   text: String) {
 
   require(draftNr >= 1 || draftNr == NoDraftNr, "TyEBDDRFT01")
-  require(lastEditedAt.isEmpty || createdAt.millis <= lastEditedAt.get.millis, "TyEBDDRFT03")
+  require(lastEditedAt.isEmpty || createdAt.millis <= lastEditedAt.get.millis, "TyEEDITBEFCREA")
   require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyEBDDRFT05")
   require(lastEditedAt.isEmpty || deletedAt.isEmpty ||
       lastEditedAt.get.millis <= deletedAt.get.millis, "TyEBDDRFT06")

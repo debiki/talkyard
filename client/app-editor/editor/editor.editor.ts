@@ -338,7 +338,7 @@ export const Editor = createComponent({
     return link;
   },
 
-  toggleWriteReplyToPost: function(postNr: number, inclInReply: boolean, anyPostType?: number) {
+  toggleWriteReplyToPostNr: function(postNr: PostNr, inclInReply: boolean, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
 
@@ -390,6 +390,7 @@ export const Editor = createComponent({
       pageId: store.currentPageId,
       postNr: postNrs[0], // for now
     };
+    draftLocator.postId = getPostId(store, draftLocator.pageId, draftLocator.postNr);
     if (eds.embeddingUrl) {
       draftLocator.embeddingUrl = eds.embeddingUrl;
     }
@@ -412,6 +413,12 @@ export const Editor = createComponent({
       this.showEditor({ scrollToShowPostNr: response.postNr });
       const store: Store = this.state.store;
       const draft: Draft | undefined = response.draft;
+
+      // In case the draft was created when one wasn't logged in, then, now, set a user id.
+      if (draft && store.me) {
+        draft.byUserId = store.me.id;
+      }
+
       // This can fail, if the post was moved by staff to a different page? Then it
       // gets a new postNr. Then do what? Show a "this post was moved to: ..." dialog?
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
@@ -828,15 +835,6 @@ export const Editor = createComponent({
     const store: Store = this.state.store;
     let postType: PostType;
 
-    function getPostId(pageId: PageId, postNr: PostNr): PostId {
-      // (The page might not be the current page, if the editor is open and we've
-      // temporarily jumped to a different page or user's profile maybe.)
-      const page: Page = store.pagesById[pageId];
-      dieIf(!page, 'TyE603KWUDB4');
-      const post = page.postsByNr[postNr];
-      return post.uniqueId;
-    }
-
     if (this.state.editingPostNr) {
       locator.draftType = DraftType.Edit;
       locator.pageId = this.state.editorsPageId;
@@ -847,7 +845,7 @@ export const Editor = createComponent({
       locator.draftType = DraftType.Reply;
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
-      locator.postId = getPostId(locator.pageId, locator.postNr);
+      locator.postId = getPostId(store, locator.pageId, locator.postNr);
       postType = PostType.Normal;
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
       if (eds.embeddingUrl) {
@@ -858,7 +856,7 @@ export const Editor = createComponent({
       locator.draftType = DraftType.Reply;
       locator.pageId = this.state.editorsPageId;
       locator.postNr = BodyNr;
-      locator.postId = getPostId(locator.pageId, locator.postNr);
+      locator.postId = getPostId(store, locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
     }
     else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {
@@ -1781,6 +1779,21 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
 
   return !draftStatusText ? null :
        r.span({ className: 's_DfSts e_DfSts-' + props.draftStatus + draftErrorClass }, draftStatusText);
+}
+
+
+function getPostId(store:Store, pageId: PageId, postNr: PostNr): PostId | undefined {
+  // If we're on a blog bost with embedded comments, then, the Talkyard embedded
+  // comments page might not yet have been created.
+  if (!pageId)
+    return undefined;
+
+  // (The page might not be the current page, if the editor is open and we've
+  // temporarily jumped to a different page or user's profile maybe.)
+  const page: Page = store.pagesById[pageId];
+  dieIf(!page, 'TyE603KWUDB4');
+  const post = page.postsByNr[postNr];
+  return post.uniqueId;
 }
 
 

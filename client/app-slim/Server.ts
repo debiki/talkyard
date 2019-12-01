@@ -1178,15 +1178,16 @@ export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: 
       categoryId: number, pageRole: PageRole,
       success: (guidelinesSafeHtml: string, draft?: Draft) => void) {
 
-  const dloc = draftLocator;
-  const draftTypeParam = '&draftType=' + dloc.draftType;
-  const pageIdParam = dloc.pageId ? '&pageId=' + dloc.pageId : '';
-  const postNrParam = dloc.postNr ? '&postNr=' + dloc.postNr : '';
-  const toUserIdParam = dloc.toUserId ? '&toUserId=' + dloc.toUserId : '';
+  const loc = draftLocator;
+  const draftTypeParam = '&draftType=' + loc.draftType;
+  const pageIdParam = loc.pageId ? '&pageId=' + loc.pageId : '';
+  const postNrParam = loc.postNr ? '&postNr=' + loc.postNr : '';
+  const postIdParam = loc.postId ? '&postId=' + loc.postId : '';
+  const toUserIdParam = loc.toUserId ? '&toUserId=' + loc.toUserId : '';
   const categoryParam = categoryId ? '&categoryId=' + categoryId : '';
 
   const url = `/-/load-draft-and-guidelines?writingWhat=${writingWhat}&pageRole=${pageRole}` +
-    draftTypeParam + pageIdParam + postNrParam + toUserIdParam + categoryParam;
+    draftTypeParam + pageIdParam + postNrParam + postIdParam + toUserIdParam + categoryParam;
 
   get(url, (response) => {
     success(response.guidelinesSafeHtml, response.drafts[0]); // for now, just pick the first

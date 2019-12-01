@@ -274,7 +274,7 @@ export function editPostWithNr(postNr: number) {
     }
     else {
       // Right now, we don't need to use the Store for this.
-      debiki2.editor.openEditorToEditPost(postNr);
+      debiki2.editor.openEditorToEditPostNr(postNr);
     }
   });
 }
@@ -522,7 +522,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         else {
           // Normal = incl in draft + url?
           Server.loadEditorAndMoreBundles(function() {
-            debiki2.editor.toggleWriteReplyToPost(postNr, true, PostType.Normal);
+            debiki2.editor.toggleWriteReplyToPostNr(postNr, true, PostType.Normal);
           });
         }
         break;

@@ -30,14 +30,14 @@ function ensureEditorCreated(success: (editor: any) => void) {
 }
 
 
-export function toggleWriteReplyToPost(postId: number, inclInReply: boolean, anyPostType?: number) {
+export function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean, anyPostType?: number) {
   ensureEditorCreated(editor => {
-    editor.toggleWriteReplyToPost(postId, inclInReply, anyPostType);
+    editor.toggleWriteReplyToPostNr(postNr, inclInReply, anyPostType);
   });
 }
 
 
-export function openEditorToEditPost(postId: number, onDone?) {
+export function openEditorToEditPostNr(postId: number, onDone?) {
   ensureEditorCreated(editor => {
     editor.editPost(postId, onDone);
   });

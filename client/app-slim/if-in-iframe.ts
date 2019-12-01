@@ -76,9 +76,9 @@ function onMessage(event) {
     case 'editorToggleReply':
       // This message is sent from an embedded comments page to the embedded editor.
       // It opens the editor to write a reply to `postId`.
-      var postId = eventData[0];
+      var postNr = eventData[0];
       var inclInReply = eventData[1];
-      debiki2.editor.toggleWriteReplyToPost(postId, inclInReply, PostType.Normal);
+      debiki2.editor.toggleWriteReplyToPostNr(postNr, inclInReply, PostType.Normal);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments
@@ -93,8 +93,8 @@ function onMessage(event) {
       break;
     case 'editorEditPost':
       // Sent from an embedded comments page to the embedded editor.
-      var postId = eventData;
-      debiki2.ReactActions.editPostWithNr(postId);
+      var postNr = eventData;
+      debiki2.ReactActions.editPostWithNr(postNr);
       break;
     case 'handleEditResult':
       // This is sent from the embedded editor back to an embedded comments page.

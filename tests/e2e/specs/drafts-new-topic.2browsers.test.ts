@@ -85,6 +85,13 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.waitForDraftSaved();
   });
 
+  /*
+  it("... waits for a while", () => {
+    // Otherwise the server might think the edits happenend before the draft
+    // had been created. [DRAFTWAIT]
+    server.playTimeMinutes(10);
+  }); */
+
   it("She refreshes the page", () => {
     mariasBrowser.refresh();
   });
@@ -110,6 +117,13 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.cancelNoHelp();
   });
 
+  /*
+  it("... waits for a while", () => {
+    // Otherwise the server might think the edits happenend before the draft
+    // had been created. [DRAFTWAIT]
+    server.playTimeMinutes(10);
+  }); */
+
   it("... refreshes the page", () => {
     mariasBrowser.refresh();
   });
@@ -131,6 +145,14 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
   it("... immediately refreshes the page — this saves a draft, with a beacon  TyT5ABKR20", () => {
     mariasBrowser.refresh();
   });
+
+  /*
+  it("... waits for a while", () => {
+    // Otherwise the server might think the edits happenend before the draft
+    // had been created. [DRAFTWAIT]
+    server.playTimeMinutes(10);
+    mariasBrowser.refresh();
+  }); */
 
   it("... the saved edits appear, when she starts typing again, again", () => {
     mariasBrowser.forumButtons.clickCreateTopic();

@@ -187,7 +187,7 @@ export const PostActions = createComponent({
             JSON.stringify(['editorToggleReply', [post.nr, inclInReply]]), eds.embeddingOrigin);
       }
       else {
-        debiki2.editor.toggleWriteReplyToPost(post.nr, inclInReply, newPostType);
+        debiki2.editor.toggleWriteReplyToPostNr(post.nr, inclInReply, newPostType);
       }
     }, true);
   },

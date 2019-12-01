@@ -1193,8 +1193,7 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def readDraftOrBad(jsValue: JsValue, authorId: Option[UserId] = None)
-        : Draft Or ErrorMessage = {
+  def readDraftOrBad(jsValue: JsValue, now: Option[When] = None): Draft Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -1235,14 +1234,17 @@ case class SiteBackupReader(context: EdContext) {
       }
 
       Draft(
-        byUserId = authorId getOrElse readInt(jsObj, "byUserId"),
+        byUserId = readInt(jsObj, "byUserId",
+          // For now, because currently not always incl when upserting from editor.
+          // Gets filled in by the server anyway [602KDGRE20]
+          default = Some(NoUserId)),
         draftNr = draftNr,
         forWhat = draftLocator,
         createdAt =
-          readOptWhen(jsObj, "createdAt").getOrElse(globals.now()),
+          now getOrElse readOptWhen(jsObj, "createdAt").getOrElse(globals.now()),
         lastEditedAt =
           // However, createdAt will be used, by the db, if overwriting [5AKJWX0]
-          readOptWhen(jsObj, "lastEditedAt"),
+          now orElse readOptWhen(jsObj, "lastEditedAt"),
         deletedAt = readOptWhen(jsObj, "deletedAt"),
         topicType = readOptInt(jsObj, "topicType").flatMap(PageType.fromInt),
         postType = readOptInt(jsObj, "postType").flatMap(PostType.fromInt),

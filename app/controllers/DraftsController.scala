@@ -62,22 +62,41 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(0 <= requester.id && requester.id <= 9, "TyE2ABKG5",
       "Special users may not save drafts")
 
+    // Better use the server time? In case the client's clock is wrong? [SERVERTIME]
+    // Also, without this, some e2e tests fail (race conditions [DRAFTWAIT]).
     val now = globals.now()
     val talkyardJsonParser = talkyard.server.backup.SiteBackupReader(context)
-    val draft = talkyardJsonParser.readDraftOrBad(
-        body, Some(requester.id)) getOrIfBad { problem =>
+    var draft = talkyardJsonParser.readDraftOrBad(body, Some(now)) getOrIfBad { problem =>
       throwBadRequest("TyEBDDRFTDT", s"Bad Draft json, problem: $problem")
     }
 
+    throwForbiddenIf(
+      !globals.isProd &&  // enable later, a bit untested
+      draft.byUserId != NoUserId && draft.byUserId != requester.id,
+      "TyE50652TKDU3", o"""Cannot save a draft on behalf of another user:
+        requester.id = ${requester.id}, but draft.byUserId = ${draft.byUserId}""")
+
+    draft = draft.copy(
+      byUserId = requester.id)  // [602KDGRE20]
+
+    // Early access control, if possible:
+    //
     if (draft.isNewTopic) {
       // For now, authorize this later, when posting topic. The user can just pick another category,
       // in the categories dropdown, if current category turns out to be not allowed, when
       // trying to post.
     }
+    else if (draft.isReply && !draft.forWhat.postId.isDefined) {
+      // We're replying to a post that doesn't yet exits. This happens
+      // if one clicks Reply on an embedded comments page that hasn't yet
+      // been lazy-created — it won't get created until the first reply has been
+      // posted, or there's a Like vote, etc.
+      // For now: Don't do any access control check, until later.
+    }
     else if (draft.isReply || draft.isEdit) {
       // Maybe good to know, directly, if not allowed to reply to or edit this post?
-      val post = dao.loadPostByUniqueId(
-        draft.forWhat.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
+      val post = dao.loadPostByUniqueId(draft.forWhat.postId.get
+        ) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
       val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE2AKBRE5")
       val categoriesRootLast = dao.getAncestorCategoriesRootLast(pageMeta.categoryId)
 

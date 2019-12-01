@@ -189,9 +189,9 @@ declare namespace debiki2 {
     var SelectCategoryDropdown;
 
     // from editor-bundle-not-yet-loaded.ts:
-    function toggleWriteReplyToPost(postId: number, inclInReply: boolean, anyPostType?: number);
-    function openEditorToEditPost(postId: number, onDone?);
-    function editNewForumPage(categoryId: number, role: PageRole);
+    function toggleWriteReplyToPostNr(postNr: PostNr, inclInReply: boolean, anyPostType?: number);
+    function openEditorToEditPostNr(postNr: PostNr, onDone?);
+    function editNewForumPage(categoryId: CategoryId, role: PageRole);
     function openToEditChatTitleAndPurpose();
     function openToWriteChatMessage(text: string, onDone);
     function openToWriteMessage(userId: UserId);
