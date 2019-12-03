@@ -114,7 +114,6 @@ function runE2eTest {
 
     if [ $? -ne 0 ]; then
       # Eh. Well, try a 3rd time. Not so easy to make all e2e tests stable, and
-<<<<<<< HEAD
       # sometimes they work 30 times in a row, when I'm there at the computer, trying to
       # find out why they fail ... And then I start building a new server and run the
       # tests "for real" as part of the build process ... And then they start failing!
@@ -127,18 +126,6 @@ function runE2eTest {
       # So, trying many times, is ok. (We're not building the Space Shuttle)
       #
       log_message "Failed 2nd time: $cmd" >> $failfile
-=======
-      # sometimes the work 30 times in a row, when I'm there at the computer, trying to
-      # find out why they fail ... And then I start building a new server and run the
-      # tests "for real" as part of the build process ... And then they start failing!
-      # But not 3 times in a row?
-      log_message "Failed 2nd time: $cmd" >> $failfile
-      # Try again, so some harmless race condition I haven't thought about that breaks the test,
-      # won't result in a false failures. Usually a race condition breaks the tests only very
-      # infrequently, so it's "impossible" to reproduce manually, and thus hard to fix. However,
-      # if the test breaks directly *again*, then apparently the failure / race-condition is easy
-      # to reproduce, so I'll be able to fix it :-)
->>>>>>> w: Emb forum, iframe, no 3rd cookies.  + API secrets.
       echo
       echo "*** Test failed 2/3. Waiting a few seconds, then trying one last time ... [EdME2ETRY2] ***"
       echo
@@ -148,11 +135,7 @@ function runE2eTest {
 
       if [ $? -ne 0 ]; then
         log_message "Failed: $cmd" >> $failfile
-<<<<<<< HEAD
         log_message "Test failed trice, aborting." >> $failfile
-=======
-        log_message "Test failed twice, aborting." >> $failfile
->>>>>>> w: Emb forum, iframe, no 3rd cookies.  + API secrets.
         cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
         echo
         echo
