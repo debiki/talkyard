@@ -351,7 +351,13 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
     console.log("Service worker controllerchange event [TyMSWCTRCHG]");
   });
 
-  navigator.serviceWorker.register(`${eds.cdnOrServerOrigin}/talkyard-service-worker.${eds.minMaxJs}`)
+  // The service worker script must be from the same origin — otherwise an attacker
+  // can use an XSS exploit to register an evil.com/service-worker.js script that could thereafter
+  // intercept all requests, and might be hard to get rid of, even after having fixed
+  // the XSS problem. See:
+  // https://github.com/w3c/ServiceWorker/issues/940#issuecomment-280964703
+  //
+  navigator.serviceWorker.register(`/talkyard-service-worker.${eds.minMaxJs}`)
       .then(function(registration) {
         console.log("Service worker registered. [TyMSWREGOK]");
         registration.onupdatefound = function() {
