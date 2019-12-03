@@ -311,14 +311,22 @@ function onMessage(event) {
           messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
         }
       }
+      let sessionStr;
       try {
-        const sessionStr = sessionStorage.getItem('talkyardSession', event.data);
+        sessionStr = sessionStorage.getItem('talkyardSession');
+      }
+      catch (ex) {
+        debugLog(`Error getting 'talkyardSession' from  sessionStorage [TyEGETWKSID]`, ex);
+      }
+      try {
         if (sessionStr) {
           const session = JSON.parse(sessionStr);
-          sendToComments(`["resumeOldSession", "${session.currentPageSessionId}"]`);
+          sendToComments(`["resumeWeakSession", "${session.weakSessionId}"]`);
         }
       }
       catch (ex) {
+        debugLog(
+            `Error parsing 'talkyardSession', this: "${sessionStr}" [TyEPARSEWKSID]`, ex);
       }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
@@ -356,9 +364,17 @@ function onMessage(event) {
     case 'justLoggedIn':
       iframe = findIframeThatSent(event);
       try {
-        sessionStorage.putItem('talkyardSession', event.data);
+        const item = {
+          pubSiteId: eventData.pubSiteId,
+          weakSessionId: eventData.weakSessionId,
+        };
+        // (This writes back the same session, if we just sent a 'resumeWeakSession'
+        // message to the iframe  — because it then sends back 'justLoggedIn', after
+        // having logged in. Fine. )
+        sessionStorage.setItem('talkyardSession', JSON.stringify(item));
       }
       catch (ex) {
+        debugLog(`Error setting 'talkyardSession' in  sessionStorage [TyESETWKSID]`, ex);
       }
       if (iframe === commentsIframe) {
         sendToEditor(event.data);
@@ -372,6 +388,7 @@ function onMessage(event) {
         sessionStorage.removeItem('talkyardSession');
       }
       catch (ex) {
+        debugLog(`Error removing 'talkyardSession' from  sessionStorage [TyERMWKSID]`, ex);
       }
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {

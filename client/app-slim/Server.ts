@@ -409,7 +409,7 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
   // @endif
 
   const currentPageXsrfToken = win.typs.xsrfTokenIfNoCookies;
-  const currentPageSid = win.typs.currentPageSessionId;
+  const currentPageSid = win.typs.weakSessionId;
 
   if (currentPageXsrfToken) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
@@ -740,7 +740,7 @@ export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void
     // should set the session id in the main embedded window, that is, the one with all comments.
     const mainWin = getMainWin();
     const typs: PageSession = mainWin.typs;
-    typs.currentPageSessionId = response.currentPageSessionId;
+    typs.weakSessionId = response.weakSessionId;
     // We'll tell any other iframes that we logged in, via a 'justLoggedIn' message. [JLGDIN]
     if (onDone) {
       onDone(response);
@@ -750,12 +750,12 @@ export function makeUpdNoCookiesTempSessionIdFn<R>(onDone: (response: R) => void
 
 
 export function logout(success: () => void) {
-  // SECURITY COULD delete cookies and typs.currentPageSessionId also if server offline?
+  // SECURITY COULD delete cookies and typs.weakSessionId also if server offline?
   const currentUrlPath = location.pathname.toString();
   postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
     const mainWin = getMainWin();
     const typs: PageSession = mainWin.typs;
-    delete typs.currentPageSessionId;
+    delete typs.weakSessionId;
     if (response.goToUrl && response.goToUrl !== currentUrlPath) {
       location.assign(response.goToUrl);  // [9UMD24]
       // Stop here, otherwise success() below might do location.reload(), which apparently

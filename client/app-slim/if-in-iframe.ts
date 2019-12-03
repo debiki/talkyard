@@ -53,9 +53,9 @@ function onMessage(event) {
   }
 
   switch (eventName) {
-    case 'resumeOldSession':
+    case 'resumeWeakSession':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
-      typs.currentPageSessionId = eventData;
+      typs.weakSessionId = eventData;
       debiki2.ReactActions.loadMyself();
     case 'justLoggedIn':
       debiki2.ReactActions.setNewMe(eventData.user);

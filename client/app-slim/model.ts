@@ -1509,10 +1509,15 @@ interface EditPageResponse {
 interface LoginPopupLoginResponse {
   status: 'LoginOk' | 'LoginFailed';
   queryString?: string;
-  currentPageSessionId: string;  // RENAME to embeddedSessionId? [05KSHFJ5] [NOCOOKIES]
+  weakSessionId: string;  // REN AME to embeddedSessionId? [05KSHFJ5] [NOCOOKIES]
      // + make these session ids "weaker" than session ids in a top level main win —
      // because there's a small risk that "foreign" Javascript on the embedding
      // pages steal the session id (it'd be stored in LocalStorage).
+     //
+     // DONE but I renamed it to  weakSessionId instead, to show it'll have
+     // fewer capabilities than a "real" session when opening the Talkyard site
+     // directly as the main window (rather than embedded somewhere).
+     //
      /* Document somewhere:
      ITP 2.0 (June 2018): Apple blocks what it think is third-party tracking cookies immediately.
      Previously, with ITP 1.0, those cookies were allowed for 24 hours.
@@ -1547,9 +1552,7 @@ interface LoginPopupLoginResponse {
 interface GuestLoginResponse {   // RENAME to SignupOrGuestOrPasswordLoginResponse?
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
-  currentPageSessionId?: string;  // RENAME to embeddedSessionId? [05KSHFJ5] Because ...
-  // ... might no longer be only for the current page — if also remembered in localStorage
-  // in the embedd*ing* site, so lasts accross page reloads.
+  weakSessionId?: string;  // [05KSHFJ5]
 }
 
 

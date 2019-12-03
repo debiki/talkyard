@@ -62,7 +62,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val response = anyReturnToUrl match {
       case None =>
         OkSafeJson(Json.obj(
-          "currentPageSessionId" -> JsString(
+          "weakSessionId" -> JsString(
             if (maybeCannotUseCookies) sid.value else ""))) // [NOCOOKIES]
       case Some(url) =>
         // (We aren't in an iframe — we don't login and *redirect* in iframes. So cookies
@@ -256,7 +256,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       val responseJson = Json.obj(
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
         "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined),
-        "currentPageSessionId" -> JsString(
+        "weakSessionId" -> JsString(
             if (maybeCannotUseCookies) anySid.map(_.value).getOrElse("") else "")) // [NOCOOKIES]
 
       OkSafeJson(responseJson).withCookies(loginCookies: _*)

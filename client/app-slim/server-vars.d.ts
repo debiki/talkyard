@@ -5,7 +5,15 @@ declare const talkyard: TalkyardApi;
 
 interface PageSession  {
   xsrfTokenIfNoCookies: string | undefined;
-  currentPageSessionId: string | undefined;
+
+  // Initialized when the page loads, by checking navigator.cookieEnabled.
+  canUseCookies?: boolean;
+
+  // This session id is available to client side Javascript, and can be stolen
+  // if there's an XSS vulnerability. So, it's going to have fewer capabilities
+  // than a http-only session when the Talkyard site is opened as the main window
+  // (rather than embedded in an iframe).  ADD_TO_DOCS
+  weakSessionId: string | undefined;
 }
 
 declare const typs: PageSession;

@@ -86,9 +86,9 @@ export function loadMyself(afterwardsCallback?) {
       // don't work, because of trigger happy tracker blockers (they block too much).
       const mainWin = getMainWin();
       const typs: PageSession = mainWin.typs;
-      const currentPageSessionId = typs.currentPageSessionId;
+      const weakSessionId = typs.weakSessionId;
       window.parent.postMessage(JSON.stringify([
-        'justLoggedIn', { user, currentPageSessionId, pubSiteId: eds.pubSiteId }]),  // [JLGDIN]
+        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId }]),  // [JLGDIN]
         eds.embeddingOrigin);
     }
     setNewMe(user);

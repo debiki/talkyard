@@ -102,7 +102,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
         // This'll work only for the current page load. And happens only for embedded comments pages,
         // and then this is typically totally fine (people rarely post blog comments, and if they
         // do, probably they reply to only one blog post).
-        responseJson += "currentPageSessionId" -> JsString(sid.value)  // [NOCOOKIES]
+        responseJson += "weakSessionId" -> JsString(sid.value)  // [NOCOOKIES]
       }
 
       val response = OkSafeJson(responseJson)

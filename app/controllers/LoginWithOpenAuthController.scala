@@ -462,7 +462,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     var maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
-    def currentPageSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
+    def weakSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
 
     val response =
       if (isAjax(request.underlying)) {
@@ -475,7 +475,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // In case we're in a login popup for [an embedded <iframe> with cookies disabled],
           // send the session id in the response body, so the <iframe> can access it
           // and remember it for the current page load.
-          "currentPageSessionId" -> JsString(currentPageSessionIdOrEmpty))) // [NOCOOKIES]
+          "weakSessionId" -> JsString(weakSessionIdOrEmpty))) // [NOCOOKIES]
       }
       else {
         // In case we need to do a cookieless login:
@@ -490,7 +490,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
         def loginPopupCallback: Result =
           Ok(views.html.login.loginPopupCallback(
-            currentPageSessionId = currentPageSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
+            weakSessionId = weakSessionIdOrEmpty).body) as HTML // [NOCOOKIES]
 
         request.cookies.get(ReturnToUrlCookieName) match {  // [49R6BRD2]
           case Some(returnToUrlCookie) =>
