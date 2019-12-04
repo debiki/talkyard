@@ -84,6 +84,7 @@ export = {
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
+  UnknownUserId: -3,
   NoUserId: 0,
   SystemUserId: 1,
   SysbotUserId: 2,

@@ -117,7 +117,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
     const externalMaja = utils.makeExternalUserFor(maja, { ssoId: majasSsoId });
 
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret: apiSecret.secretKey, externalUser: externalMaja });
+        apiRequesterId: c.SysbotUserId, apiSecret: apiSecret.secretKey, externalUser: externalMaja });
   });
 
   it("... gets back a one time login secret", () => {
@@ -174,7 +174,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   it("Upsert a page", () => {
     upsertResponse = server.apiV0.upsertSimple({
       origin: siteIdAddress.origin,
-      requesterId: c.SysbotUserId,
+      apiRequesterId: c.SysbotUserId,
       apiSecret: apiSecret.secretKey,
       data: {
         pages: [pageOneToUpsertMajasSsoId],
@@ -254,7 +254,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   it("Owen upserts two pages, in the same API request", () => {
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret: apiSecret.secretKey,
         data: {
           pages: [pageTwoToUpsertMajasExtId],
@@ -302,7 +302,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   it("Owen edit-upserts the 2nd page: a new name, slug, etc", () => {
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret: apiSecret.secretKey,
         data: {
           pages: [pageTwoEditedToUpsert],

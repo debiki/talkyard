@@ -190,7 +190,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
 
   it("The remote server does an API request to Talkyard, to synchronize her account", () => {
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret, externalUser: mariasExternalData });
+        apiRequesterId: c.SysbotUserId, apiSecret, externalUser: mariasExternalData });
   });
 
   it("... gets back a one time login secret", () => {
@@ -243,7 +243,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
 
   it("The remote server does an SSO API request to Talkyard, gets a one-time login secret", () => {
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-      requesterId: c.SysbotUserId, apiSecret, externalUser: mariasExternalData });
+      apiRequesterId: c.SysbotUserId, apiSecret, externalUser: mariasExternalData });
     assert(oneTimeLoginSecret);
   });
 

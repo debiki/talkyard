@@ -20,7 +20,7 @@ package talkyard.server.backup  // RENAME to  talkyard.server.sitepatch
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.EdHttp._
-import debiki.SpecialContentPages
+import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
@@ -484,7 +484,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
                 postRealIdsNrsNoHtml.copy(
                   approvedHtmlSanitized = Some(
                     Jsoup.clean(
-                      approvedSource, Whitelist.basicWithImages)))
+                      approvedSource, TextAndHtml.relaxedHtmlTagWhitelist)))
             }
 
             tx.insertPost(postReal)

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{ForumDao, ReadOnySiteDao, SiteDao}
 import debiki.EdHttp.throwForbiddenIf
+import debiki.TextAndHtml
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -351,7 +352,8 @@ case class SimpleSitePatch(
 
       // Assume the page title and body source is html, not CommonMark.
       // Later, could add a field title/bodyMarkupLang: 'Html' or 'Commonmark'? [IMPCORH]
-      val bodyHtmlSanitized = Jsoup.clean(bodyHtmlUnsafe, Whitelist.basicWithImages)
+      //
+      val bodyHtmlSanitized = Jsoup.clean(bodyHtmlUnsafe, TextAndHtml.relaxedHtmlTagWhitelist)
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1

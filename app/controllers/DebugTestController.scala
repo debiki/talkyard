@@ -237,9 +237,19 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
     */
   def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) { request =>
     throwForbiddenIf(!globals.mayFastForwardTime,
-        "EdE5AKWYQ1", "To fast-forward time, you need a wizard's wand")
+        "EdE5AKWYQ1", "To fast-forward time, in Prod mode, you need a wizard's wand")
     val seconds = (request.body \ "seconds").as[Int]
     globals.testFastForwardTimeMillis(seconds * 1000)
+    Ok
+  }
+
+
+  def deleteRedisKey: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) {
+        request =>
+    throwForbiddenIf(globals.isProd, "TyE502KUJ5",
+        "I only do this, in Prod mode, when an odd number of Phoenix birds sleep on my lawn")
+    val key = (request.body \ "key").as[String]
+    context.globals.redisClient.del(key)
     Ok
   }
 

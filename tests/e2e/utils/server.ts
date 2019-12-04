@@ -42,8 +42,9 @@ function initOrDie(theSettings) {
 }
 
 
-function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
-      retryIfXsrfTokenExpired?: Boolean } = {}): { statusCode: number, headers, bodyJson } {
+function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: string,
+      retryIfXsrfTokenExpired?: boolean, fail?: boolean } = {})
+      : { statusCode: number, headers, bodyText: string, bodyJson: () => any } {
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
 
   const passwordParam =
@@ -52,10 +53,10 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
   // Authentication headers.
   // Either use Bausic Authentication, if we're doing an API request with an API secret,
   // or include an xsrf cookie if something else.
-  const headers = opts.apiUserId
+  const headers = opts.apiRequesterId
     ? {
         'Authorization': 'Basic ' +
-            utils.encodeInBase64(`talkyardId=${opts.apiUserId}:${opts.apiSecret}`)
+            utils.encodeInBase64(`talkyardId=${opts.apiRequesterId}:${opts.apiSecret}`)
       }
     : (!xsrfTokenAndCookies ? {} : {
         'X-XSRF-TOKEN': xsrfTokenAndCookies[0],
@@ -97,12 +98,20 @@ function postOrDie(url, data, opts: { apiUserId?: number, apiSecret?: string,
     return postOrDie(url, data, { ...opts, retryIfXsrfTokenExpired: false });
   }
 
-  dieIf(response.statusCode !== 200, "POST request failed to " + url + " [EsE5GPK02]",
-      showResponse(response));
+  if (opts.fail) {
+    dieIf(response.statusCode === 200,
+      "POST request should have gotten back an error code, to " +
+          url + " [TyE507KDF2P]", showResponse(response, true));
+  }
+  else {
+    dieIf(response.statusCode !== 200,
+        "POST request failed to " + url + " [EsE5GPK02]", showResponse(response));
+  }
 
   return {
     statusCode: response.statusCode,
     headers: response.headers,
+    bodyText: responseBody,
     bodyJson: function() {
       let obj;
       try {
@@ -153,10 +162,11 @@ function getResponseBodyString(response): string {  // dupl [304KWPD50]
 }
 
 
-function showResponse(response) {
+function showResponse(response, shouldHaveFailed?: boolean) {
   const bodyString = getResponseBodyString(response);
+  const not = shouldHaveFailed ? " *not*" : '';
   return (
-      "Response status code: " + response.statusCode + " (should have been 200)\n" +
+      `Response status code: ${response.statusCode} (should have been ${not} 200)\n` +
       showResponseBodyJson(bodyString));
 }
 
@@ -206,6 +216,11 @@ function playTimeSeconds(seconds: number) {
 function playTimeMinutes(minutes: number) { playTimeSeconds(minutes * 60); }
 function playTimeHours(hours: number) { playTimeSeconds(hours * 3600); }
 function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
+
+
+function deleteRedisKey(key: string) {
+  postOrDie(settings.mainSiteOrigin + '/-/delete-redis-key', { key });
+}
 
 
 function getTestCounters(): TestCounters {
@@ -425,13 +440,21 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 
 // ----- API v0
 
-function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, apiSecret: string,
-      externalUser: ExternalUser }): string {
+function upsertUserGetLoginSecret(ps: { origin: string, apiRequesterId?: UserId, apiSecret: string,
+      externalUser: ExternalUser, fail?: boolean }): string {
   const url = ps.origin + '/-/v0/sso-upsert-user-generate-login-secret';
-  const responseJson = postOrDie(
-      url, ps.externalUser, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
+  const response = postOrDie(
+      url, ps.externalUser, {
+        fail: ps.fail,
+        apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
+        apiSecret: ps.apiSecret });
+
+  if (ps.fail)
+    return response.bodyText;
+
+  const responseJson = response.bodyJson();
   dieIf(!responseJson.loginSecret, "No login secret in API response [TyE4AKBA05]",
-    showResponseBodyJson(responseJson));
+      showResponseBodyJson(responseJson));
   logServerRequest("Now you can try:\n    " +
       ps.origin + '/-/v0/login-with-secret' +
       '?oneTimeSecret=' + responseJson.loginSecret +
@@ -439,12 +462,15 @@ function upsertUserGetLoginSecret(ps: { origin: string, requesterId: UserId, api
   return responseJson.loginSecret;
 }
 
-function upsertSimple(ps: { origin: string, requesterId: UserId, apiSecret: string,
-      data }): string {
+function upsertSimple(ps: { origin: string, apiRequesterId: UserId, apiSecret: string, fail?: boolean,
+      data }): string | any {
   const url = ps.origin + '/-/v0/upsert-simple';
-  const responseJson = postOrDie(
-      url, ps.data, { apiUserId: c.SysbotUserId, apiSecret: ps.apiSecret }).bodyJson();
-  return responseJson;
+  const response = postOrDie(
+      url, ps.data, {
+        fail: ps.fail,
+        apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
+        apiSecret: ps.apiSecret });
+  return ps.fail ? response.bodyText : response.bodyJson();
 }
 
 
@@ -460,6 +486,7 @@ export = {
   playTimeMinutes,
   playTimeHours,
   playTimeDays,
+  deleteRedisKey,
   getTestCounters,
   getLastEmailSenTo,
   countLastEmailsSentTo,

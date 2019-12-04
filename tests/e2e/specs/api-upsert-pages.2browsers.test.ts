@@ -48,13 +48,28 @@ const pageOneToUpsert = {
   body: 'UpsPageOneBody',
 };
 
+const script_gets_removed = 'script_gets_removed';
+
 const pageTwoToUpsert = {
   extId: 'UpsPageTwoExtId',
   pageType: c.TestPageRole.Question,
   categoryRef: 'extid:' + categoryExtId,
   authorRef: 'username:owen_owner',
   title: 'UpsPageTwoTitle',
-  body: 'UpsPageTwoBody',
+  body: `UpsPageTwoBody
+    <h1>h1_stays</h1>
+    <h4>h4_stays</h4>
+    <b>bold_stays</b>
+    <p>para_stays</p>
+    <pre>pre_stays</pre>
+    <code>code_stays</code>
+    <a rel="nofollow" href="http://link_url_stays.example.com">link_text_stays</a>
+    <img alt="img_alt_stays" src="https://nice.example.com/img.jpg">
+    <blockquote>blockquote_stays</blockquote>
+    <ul><li>list_stays</li></ul>
+    <table><tbody><td>table_stays</td></tbody></table>
+    <script src="http://evil.example.com/so_evil_script.js">${script_gets_removed}</script>
+    last_line_stays`,
 };
 
 const pageTwoEditedToUpsert = {
@@ -143,7 +158,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("Upsert a page", () => {
     upsertResponse = server.apiV0.upsertSimple({
       origin: siteIdAddress.origin,
-      requesterId: c.SysbotUserId,
+      apiRequesterId: c.SysbotUserId,
       apiSecret: apiSecret.secretKey,
       data: {
         pages: [pageOneToUpsert],
@@ -218,7 +233,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("Owen upserts two pages, in the same API request", () => {
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret: apiSecret.secretKey,
         data: {
           pages: [pageTwoToUpsert, pageThreeToUpsert],
@@ -271,13 +286,52 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
 
 
+  // ----- The HTML got sanitized but not too much
+
+  it("Owen opens the upserted & upsert-edited page two", () => {
+    owensBrowser.forumTopicList.navToTopic(pageTwoToUpsert.title
+        //  later: pageTwoEditedToUpsert.title);
+        );
+  });
+
+  it("... the upserted HTML tags are there", () => {
+    owensBrowser.topic.waitUntilPostHtmlMatches(c.BodyNr, [
+        '<h1>h1_stays</h1>',
+        '<h4>h4_stays</h4>',
+        '<b>bold_stays</b>',
+        '<p>para_stays</p>',
+        '<pre>pre_stays</pre>',
+        '<code>code_stays</code>',
+        '<pre>pre_stays</pre>',
+        'link_url_stays',
+        'nofollow',
+        '<a rel="nofollow" href="http://link_url_stays.example.com">link_text_stays</a>',
+        'img_alt_stays',
+        '<img alt="img_alt_stays" src="https://nice.example.com/img.jpg">',
+        /<blockquote>[\s]*blockquote_stays[\s]*<\/blockquote>/,
+        /<ul>[\s]*<li>[\s]*list_stays[\s]*<\/li>[\s]*<\/ul>/,
+        /<table>[\s]*<tbody>[\s]*<tr>[\s]*<td>[\s]*table_stays[\s]*<\/td>[\s]*<\/tr>[\s]*<\/tbody>[\s]*<\/table>/,
+        'last_line_stays']);
+  });
+
+  it("... but not the <script> tag; it got removed by the sanitizer", () => {
+    owensBrowser.topic.assertPostHtmlDoesNotMatch(c.BodyNr, [
+        script_gets_removed,
+        '<script',
+        '</script>',
+        'evil.example.com',
+        'so_evil_script']);
+  });
+
+
+
   // ----- Edit page, via upsert API
 
   /* Not yet implemented  TyT650KWUDEPJ03g
   it("Owen edit-upserts the 2nd page: a new name, slug, etc", () => {
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret: apiSecret.secretKey,
         data: {
           pages: [pageTwoEditedToUpsert],
@@ -331,12 +385,6 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   // ----- Actually use upserted page, via UI
 
-  it("Owen opens the upserted & upsert-edited page two", () => {
-    owensBrowser.forumTopicList.navToTopic(pageTwoToUpsert.title
-        //  later: pageTwoEditedToUpsert.title);
-        );
-  });
-
   const PageTwoTitleManuallyEdited = 'PageTwoTitleManuallyEdited';
   const PageTwoBodyManuallyEdited = 'PageTwoBodyManuallyEdited';
   const PageTwoReply = 'PageTwoReply';
@@ -346,7 +394,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   });
 
   it("... and text", () => {
-    owensBrowser.complex.editPageBody(PageTwoBodyManuallyEdited);
+    owensBrowser.complex.editPageBody(PageTwoBodyManuallyEdited, { append: true });
   });
 
   it("... and posts a reply", () => {

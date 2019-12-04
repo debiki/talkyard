@@ -945,7 +945,7 @@ function pagesFor(browser) {
 
     waitAndSetValue: (selector: string, value: string | number,
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
-            okayOccluders?: string } = {}) => {
+            okayOccluders?: string, append?: boolean } = {}) => {
       //browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
       //                    // (maybe add waitUntilDoesNotMove ?)
       //// Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
@@ -973,8 +973,13 @@ function pagesFor(browser) {
           // Instead, delete any previous text (hit backspace 9999 times), before typing
           // the new value.
           const oldValue = browser.getValue(selector);
-          // DO_AFTER 2019-07-01 see if this Chrome weirdness workaround is still needed.
-          browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
+          if (opts.append) {
+            browser.addValue(selector, value);
+          }
+          else {
+            // DO_AFTER 2019-07-01 see if this Chrome weirdness workaround is still needed.
+            browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
+          }
 
           if (!opts.checkAndRetry) {
             break;
@@ -1026,25 +1031,51 @@ function pagesFor(browser) {
     },
 
 
-    waitUntilHtmlMatches: function(selector, regexOrStr) {
-      const regex = _.isString(regexOrStr)
-          ? new RegExp(regexOrStr, 's')  // s makes '.' match newlines
-          : regexOrStr;
-
+    waitUntilHtmlMatches: function(selector, regexOrStr: string | RegExp | any[]) {
       browser.waitForExist(selector);
 
       for (let i = 0; true; ++i) {
         const html = browser.getHTML(selector);
-        const matches = regex.test(html);
-        if (matches)
+        const anyMiss = api._findHtmlMatchMiss(html, true, regexOrStr);
+        if (!anyMiss)
           break;
 
         browser.pause(PollMs);
         if (i > 10 && (i % 10 === 0)) {
-          console.log(`Waiting for '${selector}' to match ${regexOrStr},\n` +
+          console.log(`Waiting for '${selector}' to match: \`${anyMiss}'\n` +
             `but the html is:\n-----${html}\n----`);
         }
       }
+    },
+
+
+    _findHtmlMatchMiss: (html: string, shouldMatch: boolean, regexOrStr: string | RegExp | any[])
+          : string | null => {
+
+      const matchMiss = shouldMatch ? "match" : "miss";
+      if (settings.logLevel === 'verbose') {
+        logAndDie.logMessage(
+          `Finding ${matchMiss}es in this html:\n------\n${html}\n------`);
+      }
+
+      const regexOrStrs = _.isArray(regexOrStr) ? regexOrStr : [regexOrStr];
+      for (let i = 0; i < regexOrStrs.length; ++i) {
+        const ros = regexOrStrs[i];
+        const regex = _.isString(ros)
+            ? new RegExp(ros, 's')  // s makes '.' match newlines
+            : ros;
+        const doesMatch = regex.test(html);
+
+        if (settings.logLevel === 'verbose') {
+          logAndDie.logMessage(
+              `Should ${matchMiss}: ${regex}, does ${matchMiss}: ` +
+                `${ shouldMatch ? doesMatch : !doesMatch }`);
+        }
+
+        if (shouldMatch != doesMatch)
+          return ros;
+      }
+      return null;
     },
 
 
@@ -3046,7 +3077,8 @@ function pagesFor(browser) {
         return text.search(title) >= 0;
       },
 
-      editText: function(text, opts: { timeoutMs?: number, checkAndRetry?: true } = {}) {
+      editText: function(text, opts: {
+          timeoutMs?: number, checkAndRetry?: true, append?: boolean } = {}) {
         api.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 
@@ -3257,9 +3289,19 @@ function pagesFor(browser) {
         });
       },
 
-      waitUntilPostHtmlMatches: function(postNr, text: string) {
+      waitUntilPostHtmlMatches: (postNr, regexOrString: string | RegExp | any[]) => {
         const selector = api.topic.postBodySelector(postNr);
-        api.waitUntilHtmlMatches(selector, text)
+        api.waitUntilHtmlMatches(selector, regexOrString)
+      },
+
+      assertPostHtmlDoesNotMatch: (postNr, regexOrString: string | RegExp | any[]) => {
+        const selector = api.topic.postBodySelector(postNr);
+        const html = browser.getHTML(selector);
+        const badMatch = api._findHtmlMatchMiss(html, false, regexOrString);
+        if (badMatch) {
+          assert(false,
+              `Found text that shouldn't be there [TyE53DTEGJ4]:\n\n  ${badMatch}\n`);
+        }
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
@@ -5700,16 +5742,16 @@ function pagesFor(browser) {
         api.assertPageTitleMatches(newTitle);
       },
 
-      editPageBody: function(newText: string) {
+      editPageBody: function(newText: string, opts: { append?: boolean } = {}) {
         api.topic.clickEditOrigPost();
-        api.editor.editText(newText);
+        api.editor.editText(newText, opts);
         api.editor.save();
         api.assertPageBodyMatches(newText);
       },
 
-      editPostNr: function(postNr: PostNr, newText: string) {
+      editPostNr: function(postNr: PostNr, newText: string, opts: { append?: boolean } = {}) {
         api.topic.clickEditoPostNr(postNr);
-        api.editor.editText(newText);
+        api.editor.editText(newText, opts);
         api.editor.save();
         api.topic.waitUntilPostTextMatches(postNr, newText);
       },

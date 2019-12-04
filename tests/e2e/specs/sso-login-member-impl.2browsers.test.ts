@@ -192,11 +192,8 @@ function constructSsoLoginTest(testName: string, variants: {
   it("The remote server does an API request to Talkyard, to synchronize her account", () => {
     const externalMaria = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret, externalUser: externalMaria });
+        apiRequesterId: c.SysbotUserId, apiSecret, externalUser: externalMaria });
   });
-
-  // + try with the wrong secret
-  // + try with the wrong requester id, like System
 
   it("... gets back a one time login secret", () => {
     console.log(`Got back login secret: ${ oneTimeLoginSecret }`);
@@ -295,7 +292,7 @@ function constructSsoLoginTest(testName: string, variants: {
   it("The one-time-login-secret cannot be used again", () => {
     owensBrowser.apiV0.loginWithSecret({
         origin: siteIdAddress.origin, oneTimeSecret: oneTimeLoginSecret, thenGoTo: '/-/sso-test' });
-    owensBrowser.assertPageHtmlSourceMatches_1('TyELGISECR_');
+    owensBrowser.assertPageHtmlSourceMatches_1('TyELGISECR_');  + E1_, E2_,  E3_
   });
 
   it("... but he can still login with password, as usual", () => {

@@ -44,7 +44,7 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
   });
 
   it('can create a new site as a GitHub user, when not logged in to GitHub', () => {
-    makeForumWithGitHubAdminAccount({ alreadyLoggedInAtGitHub: false });
+    makeForumWithGitHubAdminAccount({ alreadyLoggedIn: false });
   });
 
   it('gets the correct username, truncted to MaxUsernameLength = 20, ' +

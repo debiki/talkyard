@@ -166,7 +166,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
     const externalOwen = utils.makeExternalUserFor(owen, { ssoId: owensSsoId });
     console.log(`externalOwen: ${ JSON.stringify(externalOwen) }`);
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret, externalUser: externalOwen });
+        apiRequesterId: c.SysbotUserId, apiSecret, externalUser: externalOwen });
   });
 
   it("... gets back a one time login secret", () => {

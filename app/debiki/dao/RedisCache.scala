@@ -25,6 +25,7 @@ import redis.api.Limit
 import scala.concurrent._
 import scala.concurrent.duration._
 import RedisCache._
+import org.scalactic.{Bad, Good, Or}
 
 
 object RedisCache {
@@ -40,9 +41,16 @@ object RedisCache {
   // some page being swapped to disk?
   val DefaultTimeout: FiniteDuration = 10 seconds
 
-  val SingleSignOnSecretExpireSeconds = 10 * 60
+  val SingleSignOnSecretExpireSeconds: Long = 10 * 60L
 }
 
+
+sealed abstract class RemoteRedisClientError
+object RemoteRedisClientError {
+  case object ValueNeverExisted extends RemoteRedisClientError
+  case object ValueExpired extends RemoteRedisClientError
+  case class DoubleKeyUsage(count: Int) extends RemoteRedisClientError
+}
 
 
 class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val now: () => When) {
@@ -148,25 +156,69 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  // One time login with secret
+  // One-time login with secret
   //-------------
+
+  private val LoginSecretOffset = 1000 * 1000
+  private val UsageCountExpireSeconds = SingleSignOnSecretExpireSeconds * 20
 
   def saveOneTimeLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None) {
     val key = ssoUserBySecretKey(siteId, secretKey)
-    redis.set(key, userId, exSeconds = Some(expireSeconds getOrElse SingleSignOnSecretExpireSeconds))
+    val usageCountKey = ssoSecretUsageCountBySecretKey(siteId, secretKey)
+    val expSecs: Long = expireSeconds getOrElse SingleSignOnSecretExpireSeconds
+    redis.set(key, userId, exSeconds = Some(expSecs))
+    redis.set(usageCountKey, LoginSecretOffset, exSeconds = Some(expSecs + UsageCountExpireSeconds))
   }
 
-  def getOneTimeLoginUserIdDestroySecret(secretKey: String): Option[UserId] = {
+  def getOneTimeLoginUserIdDestroySecret(secretKey: String)
+        : UserId Or RemoteRedisClientError = {
     val key = ssoUserBySecretKey(siteId, secretKey)
+    val usageCountKey = ssoSecretUsageCountBySecretKey(siteId, secretKey)
     // Could do this in a transaction? [REDITX]
     val futureString: Future[Option[ByteString]] = redis.get(key)
     redis.del(key)
+    val futureUsageCountLong: Future[Long] = redis.incr(usageCountKey)
     val anyString: Option[ByteString] =
       try Await.result(futureString, DefaultTimeout)
       catch {
-        case _: TimeoutException => die("Ty4ABKT20", "Redis timeout, for sso user id by secret")
+        case _: TimeoutException =>
+          die("Ty4ABKT20", "Redis timeout, for user id by one-time-login-secret")
       }
-    anyString.map(_.utf8String.toInt)
+    val result = anyString match {
+      case Some(value) =>
+        val userId: UserId = value.utf8String.toInt
+        Good(userId)
+      case None =>
+        try {
+          val usageCount = Await.result(futureUsageCountLong, DefaultTimeout).toInt
+          // In case the key-value just got lazy-created:
+          redis.expire(usageCountKey, UsageCountExpireSeconds)
+          if (usageCount <= LoginSecretOffset) {
+            // This means the usage count key-value didn't exist, so it got
+            // created, its value set to 0 and bumped to 1 and up. Indicates that
+            // the (login-secret, user-id) never got inserted into the cache.
+            Bad(RemoteRedisClientError.ValueNeverExisted)
+          }
+          else if (usageCount == LoginSecretOffset + 1) {
+            // The usage count key-value did exist — but the (login-secret, user-id)
+            // entry did not; it must have expired.
+            Bad(RemoteRedisClientError.ValueExpired)
+          }
+          else {
+            // This means we inserted the value into the cache, and keep reusing it,
+            // although it's a one-time login secret. (Possibly after it has expired.)
+            // So, return DoubleKeyUsage.
+            // Subtract LoginSecretOffset, because we started counting at LoginSecretOffset
+            // to know if the key-value got auto-created at 0, or if we created it.
+            Bad(RemoteRedisClientError.DoubleKeyUsage(usageCount - LoginSecretOffset))
+          }
+        }
+        catch {
+          case _: TimeoutException =>
+            die("Ty50G7KUTD3", "Redis timeout, for one-time-login-secret usage count")
+        }
+    }
+    result
   }
 
 
@@ -185,7 +237,10 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   private def usersOnlineKey(siteId: SiteId) = s"$siteId-uo"
   private def strangersOnlineByIpKey(siteId: SiteId) = s"$siteId-soip"
 
-  private def ssoUserBySecretKey(siteId: SiteId, secret: String) = s"$siteId-sso-$secret"
+  private def ssoUserBySecretKey(siteId: SiteId, secret: String) =
+    s"$siteId-sso-$secret"  // also in an e2e test [0639WKUJR45]
+  private def ssoSecretUsageCountBySecretKey(siteId: SiteId, secret: String) =
+    s"$siteId-sso-$secret-uc"
 }
 
 

@@ -29,6 +29,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import scala.util.Try
 import Utils.OkXml
+import debiki.dao.RemoteRedisClientError
 
 
 // How test API?
@@ -128,10 +129,26 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         // Dupl code? Use this API endpoint also from impersonateWithKey?   [7AKBRW02]
 
         val oneTimeSecret = getOnlyOrThrow("oneTimeSecret", "TyE7AKK25")
-        val anyUserId = dao.redisCache.getOneTimeLoginUserIdDestroySecret(oneTimeSecret)
-        val userId = anyUserId getOrElse {
-          throwForbidden("TyELGISECR_", "Non-existing or expired or already used one time secret")
+        val userIdOrError = dao.redisCache.getOneTimeLoginUserIdDestroySecret(oneTimeSecret)
+        val userId = userIdOrError match {
+          case Good(id) => id
+          case Bad(problem) =>
+            // It's fine to tell people exactly what the problem is? If they indeed have
+            // a real one-time login secret, then they know for sure already that it's
+            // a real one? The secrets cannot be guessed, so the only way to get one,
+            // is by eavesdropping somehow — and an attacker probably knows if hen has
+            // done that or not.
+            val (subCode, errorDetails) = problem match {
+              case RemoteRedisClientError.DoubleKeyUsage(numTimes) =>
+                ("EMANY_", s"Attempting to use a *one*-time login secret $numTimes times")
+              case RemoteRedisClientError.ValueExpired =>
+                ("EEXP_", "One-time login secret expired; you need to make use of it sooner")
+              case RemoteRedisClientError.ValueNeverExisted =>
+                ("ENONE_", "I don't remember having created that one-time login secret")
+            }
+            throwForbidden(s"TyELGISECR_$subCode", errorDetails)
         }
+
         // The System user should only do things based on Talkyard's source code. [SYS0LGI]
         throwForbiddenIf(userId == SystemUserId, "TyELGISYS", "Cannot login as System.")
         val user = dao.getTheUser(userId)

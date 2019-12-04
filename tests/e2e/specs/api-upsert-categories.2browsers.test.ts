@@ -148,7 +148,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     };
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret,
         data: {
           categories: [category],
@@ -258,7 +258,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     };
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret,
         data: {
           categories: [upsCatTwo, upsCatThree],
@@ -329,7 +329,7 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
     };
     upsertResponse = server.apiV0.upsertSimple({
         origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId,
+        apiRequesterId: c.SysbotUserId,
         apiSecret,
         data: {
           categories: [category],

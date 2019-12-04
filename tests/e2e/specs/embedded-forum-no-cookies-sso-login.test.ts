@@ -55,7 +55,7 @@ const apiSecret: TestApiSecret = {
 const ssoUrl =
     `http://localhost:8080/${ssoDummyLoginSlug}?returnPath=\${talkyardPathQueryEscHash}`;
 
-const mariasExternalId = 'mariasExternalId';
+const mariasSsoId = 'mariasSsoId';
 
 
 describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
@@ -184,9 +184,9 @@ iframe {
 
   it("The remote server does an API request to Talkyard, to synchronize her account", () => {
 mariasBrowser.debug();
-    const externalMaria = utils.makeExternalUserFor(maria, { externalId: mariasExternalId });
+    const externalMaria = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret: apiSecret.secretKey, externalUser: externalMaria });
+        apiRequesterId: c.SysbotUserId, apiSecret: apiSecret.secretKey, externalUser: externalMaria });
   });
 
   it("... gets back a one time login secret", () => {

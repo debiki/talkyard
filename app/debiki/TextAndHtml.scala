@@ -62,7 +62,15 @@ sealed trait TextAndHtml {
 
   def append(moreTextAndHtml: TextAndHtml): TextAndHtml
   def append(text: String): TextAndHtml
+}
 
+
+object TextAndHtml {
+  def relaxedHtmlTagWhitelist: org.jsoup.safety.Whitelist = {
+    // The caller need to insert  rel=nofollow  henself, see the docs:
+    // https://jsoup.org/apidocs/org/jsoup/safety/Whitelist.html#relaxed--
+    org.jsoup.safety.Whitelist.relaxed().addAttributes("a", "rel")
+  }
 }
 
 

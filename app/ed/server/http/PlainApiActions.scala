@@ -166,20 +166,20 @@ class PlainApiActions(
               s"Username doesn't start with '$tyIdPrefix' or '$ssoIdPrefix': $username")
         }
 
-      val user = anyUser getOrElse throwNotFound("TySSO0USR", s"User not found: $username")
+      val user = anyUser getOrElse throwNotFound("TyAPI0USR_", s"User not found: $username")
 
       apiSecret.userId match {
         case None =>
           // Fine, this key lets one do things as any user.
         case Some(userId) =>
           throwForbiddenIf(userId != user.id,
-            "TyEAPIWRNGUSR", s"The specified user does not own the API secret: $username")
+            "TyEAPIWRNGUSR_", s"The specified user does not own the API secret: $username")
       }
 
       throwForbiddenIf(user.id == SystemUserId,
-        "TyEAPISYSUSR", s"Call the API as Sysbot (id 2), not System (id 1)")
+        "TyEAPISYSUSR_", s"Call the API as Sysbot (id 2), not System (id 1)")
       throwForbiddenIf(user.id < Group.EveryoneId && user.id != SysbotUserId,
-        "TyEAPIBADUSR", s"Not allowed to call the API as user ${user.usernameOrGuestName}")
+        "TyEAPIBADUSR_", s"Not allowed to call the API as user ${user.usernameOrGuestName}")
 
       runBlockIfAuthOk(request, site, dao, Some(user),
           SidOk("_api_secret_", 0, Some(user.id)), XsrfOk("_api_secret_"), None, block)

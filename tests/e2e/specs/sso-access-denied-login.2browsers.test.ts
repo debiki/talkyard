@@ -70,6 +70,8 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
 
   // ----- Owen enables SSO  LATER import instead, once supported  [5ABKR2038]
 
+  // Dupl code [40954RKSTDG2]
+
   it("Owen goes to the admin area, the API tab", () => {
     owensBrowser.adminArea.goToApi(siteIdAddress.origin, { loginAs: owen });
   });
@@ -149,7 +151,7 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
     const externalMons = utils.makeExternalUserFor(mons, { ssoId: monsExternalId });
     console.log(`externalMons: ${ JSON.stringify(externalMons) }`);
     oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        requesterId: c.SysbotUserId, apiSecret, externalUser: externalMons });
+        apiRequesterId: c.SysbotUserId, apiSecret, externalUser: externalMons });
   });
 
   it("... gets back a one time login secret", () => {

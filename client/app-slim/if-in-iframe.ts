@@ -57,6 +57,7 @@ function onMessage(event) {
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
       typs.weakSessionId = eventData;
       debiki2.ReactActions.loadMyself();
+      break;
     case 'justLoggedIn':
       debiki2.ReactActions.setNewMe(eventData.user);
       break;
