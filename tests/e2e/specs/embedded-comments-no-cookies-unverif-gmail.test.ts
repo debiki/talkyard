@@ -53,6 +53,7 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
     site.settings.mayPostBeforeEmailVerified = true;
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
+    server.skipRateLimits(siteId);
   });
 
   it("create an embedding page b3c-ggg", () => {
@@ -83,16 +84,26 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
     gmannesBrowser.loginDialog.createGmailAccount({
             email: settings.gmailEmail, password: settings.gmailPassword, username: 'gmanne' },
             { isInPopupAlready: true, anyWelcomeDialog: 'THERE_WILL_BE_NO_WELCOME_DIALOG' });
-    gmannesBrowser.switchBackToFirstTabOrWindow();
   });
 
   it("... the comment appears", () => {
+    gmannesBrowser.switchBackToFirstTabOrWindow();
     gmannesBrowser.switchToEmbeddedCommentsIrame();
     gmannesBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     gmannesBrowser.topic.assertPostTextMatches(c.FirstReplyNr, gmailCommentOne);
   });
 
-  it("After page refresh, he's logged out", () => {
+  it("After page refresh, Gmanne remains logged in — session saved in storage", () => {
+    gmannesBrowser.refresh();
+    gmannesBrowser.switchToEmbeddedCommentsIrame();
+    assert.equal(gmannesBrowser.metabar.getMyUsernameInclAt(), '@gmanne');
+  });
+
+  it("He logs out", () => {
+    gmannesBrowser.metabar.clickLogout();
+  });
+
+  it("... after page refresh, he is still logged out", () => {
     gmannesBrowser.refresh();
     gmannesBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });

@@ -254,6 +254,18 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
+  def skipRateLimitsForThisSite: Action[JsValue] =
+        PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
+    val okTestPassword = !context.security.hasOkE2eTestPassword(request.underlying)
+    throwForbiddenIf(globals.isProd && !okTestPassword,
+      "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
+        "my kitchen window and I'm not hungry")
+    val siteId = (request.body \ "siteId").as[SiteId]
+    globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
+    Ok
+  }
+
+
   def createDeadlock: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     throwForbiddenIf(globals.isProd, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()

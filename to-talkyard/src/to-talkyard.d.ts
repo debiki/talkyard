@@ -43,6 +43,7 @@ interface PageToAdd {
 }
 
 
+/* Already in  test-types2.ts
 interface PageJustAdded {
   id: string;
   folder: string;
@@ -55,7 +56,7 @@ interface PageJustAdded {
   authorId: number,
   createdAtMs: number;
   updatedAtMs: number;
-}
+} */
 
 
 interface PageDumpV0 {

@@ -118,6 +118,10 @@ function pagesFor(browser) {
       return matches[1];
     },
 
+    urlNoHash: (): string => {
+      return browser.url().value.replace(/#.*$/, '');;
+    },
+
     urlPathQueryHash: (): string => {
       const result = browser.execute(function() {
         return location.pathname + location.search + location.hash;
@@ -203,7 +207,9 @@ function pagesFor(browser) {
     },
 
 
-    disableRateLimits: function() {
+    disableRateLimits: () => {
+      // Old, before I added the no-3rd-party-cookies tests.
+      // Maybe instead always: server.skipRateLimits(siteId)  ?
       browser.setCookie({ name: 'esCoE2eTestPassword', value: settings.e2eTestPassword });
     },
 
@@ -3190,6 +3196,14 @@ function pagesFor(browser) {
         api.waitForVisible('.dw-a-logout');
       },
 
+      getMyFullName: (): string => {
+        return api.waitAndGetVisibleText('.s_MB_Name .esP_By_F');
+      },
+
+      getMyUsernameInclAt: (): string => {
+        return api.waitAndGetVisibleText('.s_MB_Name .esP_By_U');
+      },
+
       clickLogout: () => {
         api.waitAndClick('.esMetabar .dw-a-logout');
         api.waitUntilGone('.esMetabar .dw-a-logout');
@@ -4539,7 +4553,16 @@ function pagesFor(browser) {
     },
 
 
-    hasVerifiedEmailPage: {
+    hasVerifiedSignupEmailPage: {
+      clickContinue: () => {
+        browser.repeatUntilAtNewUrl(() => {
+          browser.waitAndClick('#e2eContinue');
+        });
+      }
+    },
+
+
+    hasVerifiedEmailPage: {  // for additional addresses, RENAME?
       waitUntilLoaded: function(opts: { needToLogin: boolean }) {
         api.waitForVisible('.e_HasVerifiedEmail');
         api.waitForVisible('.e_ViewProfileL');

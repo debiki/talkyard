@@ -942,6 +942,8 @@ class Globals(
 
 
   def now(): When = {
+    // [E2EBUG]: This won't work when running many e2e tests in parallel.
+    // But can make this work, by letting the time offset be per site.
     val millisNow =
       if (!isInitialized || !mayFastForwardTime) System.currentTimeMillis()
       else {

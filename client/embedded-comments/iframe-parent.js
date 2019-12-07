@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014, 2017-2018 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2014, 2017-2019 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,16 +15,52 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+declare const debiki: any | undefined;
+declare const Bliss: any | undefined;
+declare const smoothScroll: any;
+
+interface WindowWithTalkyardProps {
+  talkyardDebug: boolean | number | undefined;
+  edRemoveCommentsAndEditor: () => void;
+  edReloadCommentsAndEditor: () => void;
+  talkyardRemoveCommentsAndEditor: () => void;
+  talkyardReloadCommentsAndEditor: () => void;
+}
+
+// Seems need to add  import * as ...  and import  embedding-page.d.ts [052MKHGJw3]
+// to be able to add fields to `window` — but then also need to add a bundler
+// like Parcel (see commit 2284759b01e9aa "Bundle ES6 libs with Parcel" in
+// branch origin/topic-events) so  `import ...` works — *lots* of changes.
+// For now, instead:
+const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
+
+
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
-var debugLog = window.talkyardDebug === false || window.talkyardDebug === 0 || !window.console ?
-    function() {} : window.console.log;
+const debugLog: (...args) => void =
+    windowWithTalkyardProps.talkyardDebug === false ||
+    windowWithTalkyardProps.talkyardDebug === 0 ||
+    !window.console
+    ? function() {}
+    : function() {
+      // Clone the function arguments array.
+      var args = [].slice.call(arguments);
+      // Add a prefix to the 1st arg, the actuall message.
+      // (Subsequent args could be an exception to log, not sure exactly what.)
+      var arg0 = args[0];
+      arg0 = "Talkyard comments: " + arg0;
+      args.splice(0, 1, arg0);
+      // And log the message.
+      console.log.apply(console, args);
+    };
 
-debugLog("iframe-parent: start (disable logging by setting talkyardDebug = false)");
+debugLog("Starting... (disable logging by setting talkyardDebug = false)");
 
 var d = { i: debiki.internal };
 var serverOrigin = d.i.commentsServerOrigin;
 
+var oneTimeLoginSecret;
 var postNrToFocus;
 
 var commentsIframe;
@@ -49,7 +85,7 @@ addEventListener('message', onMessage, false);
 
 
 function loadCommentsCreateEditor() {
-  debugLog("iframe-parent: loadCommentsCreateEditor()");
+  debugLog("loadCommentsCreateEditor()");
   // Create <iframe>s for embedded comments and an embedded editor.
   // Show a "Loading comments..." message until comments loaded.
   // For now, choose the first .talkyard-comments only, because
@@ -61,7 +97,7 @@ function loadCommentsCreateEditor() {
   if (!commentsElems.length)
     return;
   var commentsElem = commentsElems[0];
-  debugLog("iframe-parent: found commentsElem");
+  debugLog("found commentsElem");
 
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
@@ -122,7 +158,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.start(commentsIframe, commentsElem);
-  debugLog("iframe-parent: inserted commentsIframe");
+  debugLog("inserted commentsIframe");
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -157,7 +193,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorWrapper, document.body);
-  debugLog("iframe-parent: inserted editorWrapper");
+  debugLog("inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   if (loadWeinre) {
@@ -180,15 +216,16 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorIframe, editorWrapper);
-  debugLog("iframe-parent: inserted editorIframe");
+  debugLog("inserted editorIframe");
 
+  findOneTimeLoginSecret();
   findCommentToScrollTo();
   makeEditorResizable();
 }
 
 
 function removeCommentsAndEditor() {
-  debugLog("iframe-parent: removeCommentsAndEditor()");
+  debugLog("removeCommentsAndEditor()");
   if (commentsIframe) {
     commentsIframe.remove();
     commentsIframe = null;
@@ -311,33 +348,59 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'iframeInited':
-      debugLog("iframe-parent: got 'iframeInited' message");
+      debugLog("got 'iframeInited' message");
       iframe = findIframeThatSent(event);
-      if (iframe === commentsIframe) {
-        commentsIframeInited = true;
-        // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
-        // know where. So tell the iframe to send back a 'scrollComments' message to us,
-        // with info about how to scroll.
-        if (postNrToFocus) {
-          messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
+
+      if (iframe !== commentsIframe)
+        return;
+
+      debugLog("it's the comments iframe");
+      commentsIframeInited = true;
+
+      // Any comment to scroll into view?
+      //
+      // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
+      // know where. So tell the iframe to send back a 'scrollComments' message to us,
+      // with info about how to scroll.
+      if (postNrToFocus) {
+        messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
+      }
+
+      // Can we login? Already logged in?
+      //
+      if (oneTimeLoginSecret) {
+        // Tell the comments iframe to login, using our one-time secret.  [306KUD244]
+        sendToComments(`["loginWithOneTimeSecret", "${oneTimeLoginSecret}"]`);
+      }
+      else {
+        // Resume any old session.
+        //
+        // The comments iframe will message us back if we can log in / are logged in,
+        // and then we'll tell the editor iframe about that,
+        // and we'll also remember the session again. (3548236)
+        //
+        // However, if the login fails (e.g. account suspended or self-deleted),
+        // then we won't remember the session again — so that after page reload,
+        // any resume-session error message won't re-appear.
+        //
+        var sessionStr;
+        try {
+          sessionStr = theStorage.getItem('talkyardSession');
+          theStorage.removeItem('talkyardSession');  // see above (3548236)
         }
-      }
-      var sessionStr;
-      try {
-        sessionStr = theStorage.getItem('talkyardSession');
-      }
-      catch (ex) {
-        debugLog(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
-      }
-      try {
+        catch (ex) {
+          debugLog(`Error getting 'talkyardSession' from theStorage [TyEGETWKSID]`, ex);
+        }
         if (sessionStr) {
-          const session = JSON.parse(sessionStr);
-          sendToComments(`["resumeWeakSession", "${session.weakSessionId}"]`);
+          try {
+            const session = JSON.parse(sessionStr);
+            sendToComments(`["resumeWeakSession", "${session.weakSessionId}"]`);
+          }
+          catch (ex) {
+            debugLog(
+                `Error parsing 'talkyardSession', this: "${sessionStr}" [TyEPARSEWKSID]`, ex);
+          }
         }
-      }
-      catch (ex) {
-        debugLog(
-            `Error parsing 'talkyardSession', this: "${sessionStr}" [TyEPARSEWKSID]`, ex);
       }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
@@ -379,10 +442,18 @@ function onMessage(event) {
           pubSiteId: eventData.pubSiteId,
           weakSessionId: eventData.weakSessionId,
         };
-        // (This writes back the same session, if we just sent a 'resumeWeakSession'
-        // message to the iframe  — because it then sends back 'justLoggedIn', after
-        // having logged in. Fine. )
-        theStorage.setItem('talkyardSession', JSON.stringify(item));
+        if (!item.weakSessionId ||
+            // This'd be a bug elsewhere:
+            item.weakSessionId === 'undefined') {
+          debugLog(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
+          debugger;
+        }
+        else {
+          // This re-inserts our session (3548236), if we just sent a 'resumeWeakSession'
+          // message to the iframe and then removed it from theStorage  — because
+          // the comments iframe sends back 'justLoggedIn', after having logged in.
+          theStorage.setItem('talkyardSession', JSON.stringify(item));
+        }
       }
       catch (ex) {
         debugLog(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
@@ -473,8 +544,25 @@ function sendToEditor(message) {
 }
 
 
+function findOneTimeLoginSecret() {
+  // This need not be at the start of the hash fragment — but if there's anything before
+  // or after, needs to be separated with one of [#&].
+  var loginSecretHashMatch = window.location.hash.match(
+      /[#&]talkyardOneTimeLoginSecret=([a-zA-Z0-9]+)([#&].*)?$/);
+  if (loginSecretHashMatch) {
+    oneTimeLoginSecret = loginSecretHashMatch[1];
+    // Remove the login secret from the url, because it works only once — and if
+    // someone copies the url with this soon-used-up secret in, the server
+    // will reply Error and Talkyard would show an error message in the browser.
+    debugLog("Found one time login secret, removing from url: " + oneTimeLoginSecret);
+    window.location.hash = window.location.hash.replace(
+        'talkyardOneTimeLoginSecret=' + oneTimeLoginSecret, '');
+  }
+}
+
+
 function findCommentToScrollTo() {
-  var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)$/);  // [2PAWC0]
+  var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
   if (commentNrHashMatch) {
     var commentNrStr = commentNrHashMatch[1];
     var commentNr = parseInt(commentNrStr);
@@ -627,9 +715,9 @@ loadCommentsCreateEditor();
 // Some static sites, like Gatsby.js, don't reload whole pages, instead they load json, un/re-mount
 // React componets and do history.push, to render the new page. Then a way is needed
 // to load the comments for the new URL.
-window.edRemoveCommentsAndEditor = removeCommentsAndEditor;  // old name [2EBG05]
-window.edReloadCommentsAndEditor = loadCommentsCreateEditor; // old name [2EBG05]
-window.talkyardRemoveCommentsAndEditor = removeCommentsAndEditor;
-window.talkyardReloadCommentsAndEditor = loadCommentsCreateEditor;
+windowWithTalkyardProps.edRemoveCommentsAndEditor = removeCommentsAndEditor;  // old name [2EBG05]
+windowWithTalkyardProps.edReloadCommentsAndEditor = loadCommentsCreateEditor; // old name [2EBG05]
+windowWithTalkyardProps.talkyardRemoveCommentsAndEditor = removeCommentsAndEditor;
+windowWithTalkyardProps.talkyardReloadCommentsAndEditor = loadCommentsCreateEditor;
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

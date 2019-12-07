@@ -75,7 +75,11 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     def getOnlyOrThrow(queryParam: String, errorCode: String): String =
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
-    throwForbiddenIf(!settings.enableApi, "TyEAPIDSBLD", "API disabled")
+    // Let's always allow one-time login — works only if this server has generated a secret.
+    val isOneTimeLogin = apiEndpoint == "login-with-secret"
+
+    throwForbiddenIf(!settings.enableApi && !isOneTimeLogin,
+      "TyEAPIDSBLD", "API disabled")
 
     val EmbeddedCommentsFeedPath = "embedded-comments-feed"
 
@@ -149,52 +153,64 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             throwForbidden(s"TyELGISECR_$subCode", errorDetails)
         }
 
-        // The System user should only do things based on Talkyard's source code. [SYS0LGI]
+        // The Sy tem user should only do things based on Talkyard's source code. [SYS0LGI]
         throwForbiddenIf(userId == SystemUserId, "TyELGISYS", "Cannot login as System.")
         val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
-        val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
+        val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
 
-        // Remove server origin, so one cannot somehow get redirected to a phishing website
-        // (if one follows a link with an "evil" go-next url param to the SSO login page,
-        // which then redirects to this endpoint with that bad go-next url).
-        val thenGoToUnsafe = getOnly("thenGoTo")
+        val response = if (request.isAjax) {
+          // ?? Set cookies ??
+          // so admin gets logged in ??
+          // Can one delete cookies, if in iframe and cookies blocked?  so can logout
+          OkSafeJson(Json.obj(
+            // Not yet weak but later. [weaksid]
+            "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
+        }
+        else {
+          // Remove server origin, so one cannot somehow get redirected to a phishing website
+          // (if one follows a link with an "evil" go-next url param to the SSO login page,
+          // which then redirects to this endpoint with that bad go-next url).
+          val thenGoToUnsafe = getOnly("thenGoTo")
 
-        val thenGoToSafe = thenGoToUnsafe.map(url => {
-          TESTS_MISSING // 1) url path (already tested), 2) this server, 3) other server, forbidden,
-          // 4) other server in the Allow Embedding From list = ok, 5) = 4 with url path.
+          val thenGoToSafe = thenGoToUnsafe.map(url => {
+            TESTS_MISSING // 1) url path (already tested), 2) this server, 3) other server, forbidden,
+            // 4) other server in the Allow Embedding From list = ok, 5) = 4 with url path.
 
-          val isOk = LoginWithSecretController.isAllowedRedirectUrl(
-            url, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
+            val isOk = LoginWithSecretController.isAllowedRedirectUrl(
+              url, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
 
-          // Later, but for now only in dev & test:
-          throwForbiddenIf(!globals.isProd && !isOk,
-            "TyEEXTREDIR", o"""Bad thenGoTo url: '$url' — it's to a different server
-              not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
-              This could be a phishing attempt.""")
-          // But for now, backw compat, but not programmer friendly: Remove this after
-          // some week, after having searched for BAD_REDIR_URL in the logs:
-          if (!isOk) {
-            val onlyPath = Prelude.stripOrigin(url)
-            Logger.warn(s"BAD_REDIR_URL: $url, changed to $onlyPath [TyE20549RKT4]")
-            onlyPath getOrElse "/"
-          }
-          else {
-            if (url.isEmpty) "/"
-            else url
-          }
-        })
+            // Later, but for now only in dev & test:
+            throwForbiddenIf(!globals.isProd && !isOk,
+              "TyEEXTREDIR", o"""Bad thenGoTo url: '$url' — it's to a different server
+                not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
+                This could be a phishing attempt.""")
+            // But for now, backw compat, but not programmer friendly: Remove this after
+            // some week, after having searched for BAD_REDIR_URL in the logs:
+            if (!isOk) {
+              val onlyPath = Prelude.stripOrigin(url)
+              Logger.warn(s"BAD_REDIR_URL: $url, changed to $onlyPath [TyE20549RKT4]")
+              onlyPath getOrElse "/"
+            }
+            else {
+              if (url.isEmpty) "/"
+              else url
+            }
+          })
 
-        val thenGoToHashEncoded = thenGoToSafe getOrElse "/"
+          val thenGoToHashEncoded = thenGoToSafe getOrElse "/"
 
-        // The hash '#' in any '#post-NN' in the URL has been encoded (since the browser
-        // would otherwise try to jump to the hash fragment, e.g. when going to a SSO login page).
-        // Unencode it back to a hash '#'.
-        CLEAN_UP; RENAME // __dwHash__ to __escHash__.  'dw' = really old.
-        val thenGoTo = thenGoToHashEncoded.replaceAllLiterally("__dwHash__", "#")
+          // The hash '#' in any '#post-NN' in the URL has been encoded (since the browser
+          // would otherwise try to jump to the hash fragment, e.g. when going to a SSO login page).
+          // Unencode it back to a hash '#'.
+          CLEAN_UP; RENAME // __dwHash__ to __escHash__.  'dw' = really old.
+          val thenGoTo = thenGoToHashEncoded.replaceAllLiterally("__dwHash__", "#")
 
-        TemporaryRedirect(thenGoTo)
-            .withCookies(sidAndXsrfCookies: _*)
+          TemporaryRedirect(thenGoTo)
+              .withCookies(sidAndXsrfCookies: _*)
+        }
+
+        response
 
       // Later:
       // /-/v0/comments-feed —> lists all recent blog comments   [CMTSFEED]

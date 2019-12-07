@@ -30,6 +30,7 @@ const embeddingOrigin = 'http://e2e-test-embdb3cve.localhost:8080';
 const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
 const pageBbbSlug = 'emb-cmts-b3c-bbb.html';
 
+const pageAaaUrl = embeddingOrigin + '/' + pageAaaSlug;
 
 describe("emb cmts no cookies verif email   TyT795KB69285", () => {
 
@@ -45,6 +46,7 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     site.settings.allowEmbeddingFrom = embeddingOrigin;
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
+    server.skipRateLimits(siteId);
   });
 
   it("create two embedding pages b3c-aaa & b3c-bbb", () => {
@@ -57,7 +59,7 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("Maria opens embedding page aaa", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + pageAaaSlug);
+    mariasBrowser.go(pageAaaUrl);
   });
 
   it("... Signs up", () => {
@@ -69,25 +71,41 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("... clicks an email verif link", () => {
+    // This'll run this server side code: [TyT072FKHRPJ5]
+
     const email = server.getLastEmailSenTo(siteId, maria.emailAddress, mariasBrowser);
     const link = utils.findFirstLinkToUrlIn(
         idAddress.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     mariasBrowser.go(link);
-    mariasBrowser.waitAndClick('#e2eContinue');
+    mariasBrowser.repeatUntilAtNewUrl(() => {
+      mariasBrowser.waitAndClick('#e2eContinue');
+    });
   });
 
-  it("... clicks Reply", () => {
+  it("... gets redirected back to the blog", () => {
+    assert.equal(mariasBrowser.urlNoHash(), pageAaaUrl);
+  });
+
+  it("... now logged in", () => {
     mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.metabar.waitUntilLoggedIn()
+  });
+
+  it("... as Maria", () => {
+    assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
+  });
+
+  it("Maria clicks Reply", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
   });
 
-  it("... and currently needs to log in again", () => {
+  it("... NO:  and currently needs to log in again", () => {
     // COULD avoid this 2nd login, by incl a one-time login secret in URL to the embedding page.
     // In the #hash fragment then? Since shouldn't be sent to the server powering the blog,
     // but instead read by Talkyard's javascript and passed on to the iframe, which in turn
     // sends it to the server, just once, and gets back a login session — and the server
-    // invalidates the secret.  [0439BAS2]
-    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+    // invalidates the secret.  [0439BAS2]  DONE
+    //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
   it("... writes and submits a comment", () => {
@@ -115,8 +133,8 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
   });
 
-  it("... needs to log in again, because cookies blocked", () => {
-    mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
+  it("... NO: needs to log in again, because cookies blocked", () => {
+    //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
   it("... types and submits the 2nd comment", () => {
@@ -131,17 +149,22 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentTwoPageBbb);
   });
 
-  it("After page refresh, she's logged out again", () => {
+  it("After page refresh, she's still logged in", () => {
     mariasBrowser.refresh();
-    mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
+    //mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
+  });
+
+  it("She logs out", () => {
+    mariasBrowser.metabar.clickLogout();
   });
 
   it("She clicks Reply to post a 3rd comment", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
   });
 
-  it("... needs to log in, for the 3rd time", () => {
+  it("... needs to log in", () => {
     mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 

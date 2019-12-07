@@ -60,7 +60,8 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
-    if (security.hasOkE2eTestPassword(request.underlying))
+    if (request.shallSkipRateLimitsBecauseIsTest ||
+        security.hasOkE2eTestPassword(request.underlying))
       return
 
     if (rateLimits.noRequestsAllowed(isNewUser = false)) {

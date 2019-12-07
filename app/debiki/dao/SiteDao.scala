@@ -471,6 +471,19 @@ class SiteDao(
   def loadEmailById(emailId: String): Option[Email] =
     readOnlyTransaction(_.loadEmailById(emailId))
 
+
+  // ----- Testing
+
+  def skipRateLimitsBecauseIsTest() {
+    memCache.put(
+      MemCacheKey(siteId, "skip-rate-limits"),
+      MemCacheValueIgnoreVersion("y"))
+  }
+
+  def shallSkipRateLimitsBecauseIsTest: Boolean = {
+    memCache.lookup[String](MemCacheKey(siteId, "skip-rate-limits")).isDefined
+  }
+
 }
 
 

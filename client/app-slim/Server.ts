@@ -406,12 +406,15 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
     console.log("Window.opener.typs: Threw exception. Was opened from a cross-origin window?");
   }
   console.log("Main win name: " + win.name);
+  console.log("Main win typs: " + JSON.stringify(win.typs));
   // @endif
 
   const currentPageXsrfToken = win.typs.xsrfTokenIfNoCookies;
   const currentPageSid = win.typs.weakSessionId;
 
-  if (currentPageXsrfToken) {
+  if (currentPageXsrfToken ||  // a bit fragile?
+      !win.typs.canUseCookies  // this is more stable?
+      ) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
     // Not sure if can have been set to xsrf cookie value already? So skip if set.
     if (!headers[XsrfTokenHeaderName]) {
@@ -683,6 +686,7 @@ function handleReviewTasksResponse(response, success) {
 
 export function createOauthUser(data, onDone: (response) => void,
       error: (failedRequest: HttpRequest) => ErrorPolicy) {
+  // ([5028KTDN306]: This immediately remembers any weakSessionId, no need to do again.)
   postJsonSuccess(
       '/-/login-oauth-create-user', makeUpdNoCookiesTempSessionIdFn(onDone), error, data);
 }
@@ -727,6 +731,13 @@ export function loginAsGuest(name: string, email: string,
     name: name,
     email: email
   });
+}
+
+
+export function loginWithOneTimeSecret(oneTimeLoginSecret: string,
+    onDone: (weakSesionId: string) => void) {
+  get(`/-/v0/login-with-secret?oneTimeSecret=${oneTimeLoginSecret}`,
+      makeUpdNoCookiesTempSessionIdFn(onDone));
 }
 
 
@@ -1006,6 +1017,13 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 
 
 export function loadMyself(callback: (user: any) => void) {
+  // @ifdef DEBUG
+  const typs = getMainWin().typs;
+  if (typs.canUseCookies && !typs.weakSesionIde) {
+    console.error(`Cannot load myself: No cookies, no session: ${typs} [TyE603FKNFD5]`);
+    debugger;
+  }
+  // @endif
   // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
   get(`/-/load-my-page-data?pageId=${getPageId()}`, callback);
 }

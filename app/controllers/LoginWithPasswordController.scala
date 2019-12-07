@@ -280,15 +280,46 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       throwInternalError("DwE7GJ0", "I've deleted the account")
     }
 
-    // Log the user in.
     dao.pubSub.userIsActive(request.siteId, user, request.theBrowserIdData)
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, user.id)
-    val newSessionCookies = sidAndXsrfCookies
 
-    val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None
+    // Log the user in. If hen is logging in from an embedding page,
+    // e.g. a blog post that uses Talkyard for blog comments,
+    // then create a one-time login secret and include in the url when
+    // redirecting the user back to the blog post — Talkyard's
+    // Javascript over at the blog will then handle login, there
+    // (but setting a cookie directly for the Talkyard server won't work
+    // on Safari or FF, because of ITP and ETP tracking prevention
+    // that blocks cookies in iframes).
+
+    val returnToOtherServer =
+      (returnToUrl.startsWith("http://") ||
+        returnToUrl.startsWith("https://") ||
+        returnToUrl.startsWith("//")) && !returnToUrl.startsWith(request.origin)
+
+    val (newCookies, anyReturnToUrl) =
+      if (returnToOtherServer) {
+        // Talkyard is embedded somewhere? Then cookies generally won't work:
+        // they'd be 3rd party, in an iframe, would get blocked by Safari and FF.
+        // Tested here: [TyT072FKHRPJ5].
+        dieIf(returnToUrl.isEmpty, "TyE06KFUD2")
+        val loginSecret = nextRandomString()
+        dao.redisCache.saveOneTimeLoginSecret(loginSecret, user.id,
+          // The subsequent steps will be automatic, by the browser [306KUD244],
+          // so we can set a short expire time (no need to wait for the human to do
+          // anything). In dev mode though, allow time for debugging & breakpoints.
+          expireSeconds = Some(context.globals.isProd ? 10 | 10*60))
+        // This might result in two '#' in the URL, should be fine.
+        (Nil, Some(returnToUrl + s"#talkyardOneTimeLoginSecret=$loginSecret"))
+      }
+      else {
+        val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, user.id)
+        val anyReturnToUrl: Option[String] =
+          if (returnToUrl.nonEmpty) Some(returnToUrl) else None
+        (sidAndXsrfCookies, anyReturnToUrl)
+      }
 
     Ok(views.html.createaccount.welcomePage(SiteTpi(request), anyReturnToUrl))
-      .withCookies(newSessionCookies: _*)
+      .withCookies(newCookies: _*)
   }
 
 

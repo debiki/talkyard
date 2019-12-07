@@ -196,6 +196,8 @@ abstract class DebikiRequest[A] {
 
   def httpVersion: String = request.version
 
+  def shallSkipRateLimitsBecauseIsTest: Boolean =
+    dao.shallSkipRateLimitsBecauseIsTest
 
   def parseThePageQuery(): PageQuery =
     parsePageQuery() getOrElse throwBadRequest(

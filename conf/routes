@@ -290,6 +290,7 @@ GET  /-/ping-cache-db-10        controllers.DebugTestController.pingCacheAndData
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 POST /-/delete-redis-key        controllers.DebugTestController.deleteRedisKey
+POST /-/skip-rate-limits        controllers.DebugTestController.skipRateLimitsForThisSite
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)

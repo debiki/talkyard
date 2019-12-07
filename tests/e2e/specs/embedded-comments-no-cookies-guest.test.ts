@@ -50,6 +50,7 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     site.settings.mayPostBeforeEmailVerified = true;
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
+    server.skipRateLimits(siteId);
   });
 
   it("create an embedding page b3c-aaa", () => {
@@ -85,7 +86,17 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     mariasBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasCommentOnePageAaa);
   });
 
-  it("After page refresh, she's logged out", () => {
+  it("After page refresh, she's still logged in — because session saved in storage", () => {
+    guestsBrowser.refresh();
+    guestsBrowser.switchToEmbeddedCommentsIrame();
+    assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
+  });
+
+  it("She logs out", () => {
+    mariasBrowser.metabar.clickLogout();
+  });
+
+  it("After page refresh, she's still logged out", () => {
     mariasBrowser.refresh();
     mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
@@ -98,10 +109,12 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     guestsBrowser.editor.save();
   });
 
+  const graeddelinaGuest = "Graeddelina Guest";
+
   it("... logs in as guest, when submitting", () => {
     guestsBrowser.swithToOtherTabOrWindow();
     guestsBrowser.disableRateLimits();
-    guestsBrowser.loginDialog.signUpLogInAs_Real_Guest("Graeddelina Guest");
+    guestsBrowser.loginDialog.signUpLogInAs_Real_Guest(graeddelinaGuest);
     guestsBrowser.switchBackToFirstTabOrWindow();
   });
 
@@ -111,7 +124,17 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, guestCommentOne);
   });
 
-  it("After page refresh, she's logged out, because no cookies", () => {
+  it("After page refresh, she's still logged in, because session saved in storage", () => {
+    guestsBrowser.refresh();
+    guestsBrowser.switchToEmbeddedCommentsIrame();
+    assert.equal(mariasBrowser.metabar.getMyFullName(), graeddelinaGuest);
+  });
+
+  it("She logs out", () => {
+    mariasBrowser.metabar.clickLogout();
+  });
+
+  it("After page refresh, she's still logged out", () => {
     guestsBrowser.refresh();
     guestsBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });

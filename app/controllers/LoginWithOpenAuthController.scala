@@ -462,7 +462,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     var maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
 
-    def weakSessionIdOrEmpty = if (maybeCannotUseCookies) sid.value else ""
+    def weakSessionIdOrEmpty =
+      if (maybeCannotUseCookies)
+        sid.value
+      else
+        ""
 
     val response =
       if (isAjax(request.underlying)) {

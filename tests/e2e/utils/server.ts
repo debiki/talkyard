@@ -207,6 +207,11 @@ function deleteOldTestSite(localHostname: string) {
 }
 
 
+function skipRateLimits(siteId: SiteId) {
+  postOrDie(settings.mainSiteOrigin + '/-/skip-rate-limits', { siteId });
+}
+
+
 function playTimeSeconds(seconds: number) {
   const url = settings.mainSiteOrigin + '/-/play-time';
   postOrDie(url, { seconds: seconds });
@@ -482,6 +487,7 @@ export = {
   importRealSiteData,
   importSiteData: importTestSiteData,
   deleteOldTestSite,
+  skipRateLimits,
   playTimeSeconds,
   playTimeMinutes,
   playTimeHours,

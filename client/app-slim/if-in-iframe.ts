@@ -53,6 +53,14 @@ function onMessage(event) {
   }
 
   switch (eventName) {
+    case 'loginWithOneTimeSecret':
+      dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE50KH4');
+      const oneTimeLoginSecret = eventData;
+      Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
+        // typs.weakSessionId has been updated already by the above login fn.
+        debiki2.ReactActions.loadMyself();
+      });
+      break;
     case 'resumeWeakSession':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
       typs.weakSessionId = eventData;

@@ -179,6 +179,16 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
       // (Also see LoginWithOpenIdController, search for [509KEF31].)
       // Note: This calls handleLoginResponse() in the *opener*, but not in
       // this window (which is just a login popup).
+
+      // No need to pass any weakSessionId to handleLoginResponse() — we've
+      // updated mainWin.typs already, directly when we got back the server's
+      // response, see: [5028KTDN306]. Let's check:
+      // @ifdef DEBUG
+      const typs: PageSession = getMainWin().typs;
+      dieIf(!typs.canUseCookies && !typs.weakSessionId,
+          `No weak session:  ${JSON.stringify(typs)}  [TyE50286KT]`);
+      // @endif
+
       window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
       // This should be a login popup. Close the whole popup window.
       close();

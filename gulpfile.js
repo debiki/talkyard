@@ -258,7 +258,7 @@ var embeddedJsFiles = [
       //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
       //'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
       'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
-      'target/client/embedded-comments/iframe-parent.js',
+      'target/client/blog-comments-typescript.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
 
@@ -413,6 +413,7 @@ var slimTypescriptProject = typeScript.createProject("client/app-slim/tsconfig.j
 var moreTypescriptProject = typeScript.createProject("client/app-more/tsconfig.json");
 var staffTypescriptProject = typeScript.createProject("client/app-staff/tsconfig.json");
 var editorTypescriptProject = typeScript.createProject("client/app-editor/tsconfig.json");
+var blogCommentsTypescriptProject = typeScript.createProject("client/embedded-comments/tsconfig.json");
 /*
 var _2dTypescriptProject = typeScript.createProject({  // [SLIMTYPE]
   target: 'ES5',
@@ -475,6 +476,10 @@ gulp.task('compileEditorTypescript', () => {
   return compileOtherTypescript(editorTypescriptProject);
 });
 
+gulp.task('compileBlogCommentsTypescript', () => {
+  return compileOtherTypescript(blogCommentsTypescriptProject);
+});
+
 gulp.task('compileAllTypescript', () => {
   return merge2(  // can speed up with gulp.parallel?  (GLPPPRL)
       compileServerTypescriptConcatJavascript(),
@@ -494,7 +499,8 @@ var compileTsTaskNames = [
   'compileMoreTypescript',
   //'compile2dTypescript', [SLIMTYPE]
   'compileStaffTypescript',
-  'compileEditorTypescript'];
+  'compileEditorTypescript',
+  'compileBlogCommentsTypescript'];
 
 for (var i = 0; i < compileTsTaskNames.length; ++i) {
   var compileTaskName = compileTsTaskNames[i];
@@ -508,6 +514,12 @@ for (var i = 0; i < compileTsTaskNames.length; ++i) {
 
 
 gulp.task('compileConcatAllScripts', gulp.series('wrapJavascript', 'compileAllTypescript', () => {
+  return makeConcatWebScriptsStream();
+}));
+
+
+// Skips compilation.
+gulp.task('concatAllScripts', gulp.series(() => {
   return makeConcatWebScriptsStream();
 }));
 
@@ -755,6 +767,10 @@ gulp.task('watch', gulp.series('default', (done) => {
   gulp.watch(['client/app-editor/**/*.ts'],
       gulp.series('compileEditorTypescript-concatScripts'))
     .on('change', logChangeFn('Editor typescript'));
+
+  gulp.watch(['client/embedded-comments/**/*.js', 'client/embedded-comments/**/*.ts'],
+      gulp.series('compileBlogCommentsTypescript-concatScripts'))
+    .on('change', logChangeFn('Blog comments typescript'));
 
   gulp.watch('client/**/*.js',
       gulp.series('wrap-javascript-concat-scripts'))

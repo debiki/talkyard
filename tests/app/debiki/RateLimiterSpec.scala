@@ -56,6 +56,7 @@ class RateLimiterSpec extends DaoAppSuite with MockitoSugar {
     when(requestMock.ip).thenReturn(theIp)
     when(requestMock.user).thenReturn(anyUser)
     when(requestMock.siteId).thenReturn(theSiteId)
+    when(requestMock.shallSkipRateLimitsBecauseIsTest).thenReturn(false)
     when(requestMock.underlying).thenReturn(p.test.FakeRequest(method = "GET", uri = "/dummy",
       headers = FakeHeaders(), body = AnyContentAsEmpty, remoteAddress = theIp))
     requestMock

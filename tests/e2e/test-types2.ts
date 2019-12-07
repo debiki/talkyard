@@ -207,7 +207,7 @@ interface SiteMeta {
 interface Member {
   id: number;
   username: string;
-  fullName: string;
+  fullName?: string;
   createdAtMs: number;
   emailAddress?: string;
   emailVerifiedAtMs?: number;
@@ -317,8 +317,6 @@ interface CategoryJustAdded {
 }
 
 
-type PageJustAdded = any;
-/*
 interface PageJustAdded {
   id: string;
   folder: string;
@@ -331,7 +329,7 @@ interface PageJustAdded {
   authorId: number;
   createdAtMs: number;
   updatedAtMs: number;
-}*/
+}
 
 
 interface PageIdWhen {

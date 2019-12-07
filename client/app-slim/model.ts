@@ -1026,7 +1026,7 @@ interface GroupInclDetails extends MemberInclDetails, Group {
 interface UserInclDetails extends MemberInclDetails {
   externalId?: string;
   createdAtEpoch: number;  // change to millis
-  fullName: string;
+  fullName?: string;
   email: string;
   emailVerifiedAtMs?: WhenMs;
   // mailingListMode: undefined | true;  // default false  — later

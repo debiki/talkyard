@@ -38,6 +38,9 @@ export function showAndThrowClientSideError(errorMessage: string) {
   setTimeout(function() {
     getServerErrorDialog().openForBrowserError(errorMessage);
   }, 1);
+  // @ifdef DEBUG
+  debugger;
+  // @endif
   throw new Error(errorMessage);
 }
 
