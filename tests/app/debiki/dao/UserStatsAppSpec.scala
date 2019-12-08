@@ -185,7 +185,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
       val startMs = System.currentTimeMillis()
       var newStats = loadUserStats(member1.id)(dao)
       newStats.lastEmailedAt mustBe empty
-      while (newStats.lastEmailedAt.isEmpty && System.currentTimeMillis() - startMs < 10000) {
+      while (newStats.lastEmailedAt.isEmpty && (System.currentTimeMillis() - startMs) < 20*1000) {
+        Thread.sleep(250) // millis
         newStats = loadUserStats(member1.id)(dao)
       }
       newStats.lastEmailedAt mustBe Some(currentTime)
