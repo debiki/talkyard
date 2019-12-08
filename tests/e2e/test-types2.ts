@@ -231,9 +231,6 @@ interface TestGuest {  // try to rename to Guest
 }
 
 
-type PermsOnPage = any;  // copy from client/app-slim/model.ts  ??
-
-
 interface TestCategory {  // try to merge with Category in model.ts?
   id: number;
   extId?: string;

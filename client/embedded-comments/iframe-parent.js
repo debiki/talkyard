@@ -64,8 +64,10 @@ var oneTimeLoginSecret;
 var postNrToFocus;
 
 var commentsIframe;
-var commentsIframeInited;
+var commentsIframeInited;  // dupl, remove, use Arr instead (contents dyn upd)
+var commentsIframeInitedArr = [false];
 var editorIframe;
+var editorIframeInitedArr = [false];
 var editorWrapper;
 var editorPlaceholder;
 
@@ -230,12 +232,14 @@ function removeCommentsAndEditor() {
     commentsIframe.remove();
     commentsIframe = null;
     commentsIframeInited = false;
+    commentsIframeInitedArr = [false];
   }
   if (editorIframe) {
     editorIframe.remove();
     editorIframe = null;
     editorWrapper.remove();
     editorWrapper = null;
+    editorIframeInitedArr = [false];
   }
 }
 
@@ -261,6 +265,9 @@ jQuery(function($) {   // xx
 
 
 function messageCommentsIframeNewWinTopSize() {
+  // Dupl code (6029084583).
+  // Remove this; reuse sendToIframeImpl instead?
+
   if (!commentsIframe) {
     // Not yet created, or maybe got deleted by some other Javascript.
     return;
@@ -351,11 +358,14 @@ function onMessage(event) {
       debugLog("got 'iframeInited' message");
       iframe = findIframeThatSent(event);
 
-      if (iframe !== commentsIframe)
+      if (iframe !== commentsIframe) {
+        editorIframeInitedArr = [true];
         return;
+      }
 
       debugLog("it's the comments iframe");
       commentsIframeInited = true;
+      commentsIframeInitedArr = [true];
 
       // Any comment to scroll into view?
       //
@@ -530,17 +540,46 @@ function findIframeThatSent(event) {
 }
 
 
+const pendingMainIframeMessages = [];
+
 function sendToComments(message) {
-  if (commentsIframe) {
-    commentsIframe.contentWindow.postMessage(message, serverOrigin);
-  }
+  sendToIframeImpl(
+      commentsIframe, commentsIframeInitedArr, pendingMainIframeMessages, message);
 }
 
 
+const pendingEditorIframeMessages = [];
+
 function sendToEditor(message) {
-  if (editorIframe) {
-    editorIframe.contentWindow.postMessage(message, serverOrigin);
+  sendToIframeImpl(
+      editorIframe, editorIframeInitedArr, pendingEditorIframeMessages, message);
+}
+
+function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
+      message: any | null) {
+  // Dupl code (6029084583).
+
+  // Sometimes one iframe comes alive and wants to message the other one,
+  // before it's ready.
+  // [E2EBUG] it's not impossible that an e2e test browser super quickly clicks something,
+  // before any pending message has been delivered? (This'd be harmless — would only
+  // affect e2e tests; humans aren't that fast.)
+  if (message) {
+    pendingMessages.push(message);
   }
+  if (!initedArr[0]) {
+    setTimeout(function() {
+      sendToIframeImpl(iframe, initedArr, pendingMessages, null);
+    }, 500);
+    return;
+  }
+
+  for (let i = 0; i < pendingMessages.length; ++i) {
+    const m = pendingMessages[i];
+    iframe.contentWindow.postMessage(m, serverOrigin);
+  }
+  // Empty the array.
+  pendingMessages.length = 0;
 }
 
 
