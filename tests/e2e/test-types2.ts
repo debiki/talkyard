@@ -211,6 +211,7 @@ interface Member {
   createdAtMs: number;
   emailAddress?: string;
   emailVerifiedAtMs?: number;
+  emailNotfPrefs?: EmailNotfPrefs;
   passwordHash?: string;
   password?: string;
   isOwner?: boolean;

@@ -66,8 +66,9 @@ const make = {
     return site;
   },
 
-  memberOwenOwner: function(): Member {
+  memberOwenOwner: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "owen_owner",
       fullName: "Owen Owner",
@@ -81,8 +82,9 @@ const make = {
     };
   },
 
-  memberAdminAdam: function(): Member {
+  memberAdminAdam: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "admin_adam",
       fullName: "Admin Adam",
@@ -95,8 +97,9 @@ const make = {
     };
   },
 
-  memberAdminAlice: function(): Member {
+  memberAdminAlice: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "admin_alice",
       fullName: "Admin Alice",
@@ -109,8 +112,9 @@ const make = {
     };
   },
 
-  memberModeratorModya: function(): Member {
+  memberModeratorModya: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "mod_modya",
       fullName: "Mod Modya",
@@ -123,8 +127,9 @@ const make = {
     };
   },
 
-  memberModeratorMons: function(): Member {
+  memberModeratorMons: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "mod_mons",
       fullName: "Mod Mons",
@@ -137,8 +142,9 @@ const make = {
     };
   },
 
-  memberMaja: function(): Member {
+  memberMaja: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "maja",
       fullName: "Maja Gräddnos",
@@ -150,8 +156,9 @@ const make = {
     };
   },
 
-  memberMaria: function(): Member {
+  memberMaria: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "maria",
       fullName: "Maria",
@@ -163,8 +170,9 @@ const make = {
     };
   },
 
-  memberMichael: function(): Member {
+  memberMichael: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "michael",
       fullName: "Michael",
@@ -176,8 +184,9 @@ const make = {
     };
   },
 
-  memberTrillian: function(): Member {
+  memberTrillian: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "trillian",
       fullName: "Trillian Trusted Member",
@@ -190,8 +199,9 @@ const make = {
     };
   },
 
-  memberRegina: function(): Member {
+  memberRegina: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "regina",
       fullName: "Regina Regular Member",
@@ -204,8 +214,9 @@ const make = {
     };
   },
 
-  memberCorax: function(): Member {
+  memberCorax: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "Corax",
       fullName: "Corax Core Member",
@@ -218,8 +229,9 @@ const make = {
     };
   },
 
-  memberMallory: function(): Member {
+  memberMallory: function(template: Partial<Member> = {}): Member {
     return {
+      ...template,
       id: getAndBumpNextUserId(),
       username: "mallory",
       fullName: "Malicious Mallory",

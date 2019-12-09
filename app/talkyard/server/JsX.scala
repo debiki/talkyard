@@ -214,6 +214,7 @@ object JsX {
       userJson += "hasPassword" -> JsBoolean(user.passwordHash.isDefined)
       if (inclPasswordHash)
         userJson += "passwordHash" -> JsStringOrNull(user.passwordHash)
+      userJson += "emailNotfPrefs" -> JsNumber(user.emailNotfPrefs.toInt)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       if (groups.nonEmpty) userJson += "summaryEmailIntervalMins" ->
         JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))

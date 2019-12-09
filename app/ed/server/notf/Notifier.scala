@@ -242,9 +242,10 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     for {
       (siteId, siteNotfs) <- notfsBySiteId
       notfsByUserId: Map[UserId, Seq[Notification]] = siteNotfs.groupBy(_.toUserId)
-      (userId, userNotfs) <- notfsByUserId
+      (userId, userNotfsMaybeInclSeen) <- notfsByUserId
     }{
-      logger.debug(s"Sending ${userNotfs.size} notifications to user $userId, site $siteId...")
+      logger.debug(
+        s"s$siteId: Sending up to ${userNotfsMaybeInclSeen.size} notifications to user $userId...")
 
       val siteDao = siteDaoFactory.newSiteDao(siteId)
 
@@ -254,12 +255,21 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
       val anyUser = siteDao.getParticipant(userId)
 
+      // Maybe the user just changed hens settings and no longer wants to get notified
+      // about posts hen has read already?
+      val skipSeen = anyUser.exists(_.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways)
+      val (notfsToSkip, notfsToSend) = userNotfsMaybeInclSeen.span { notf =>
+        notf.seenAt.isDefined && skipSeen
+      }
+
+      siteDao.updateNotificationSkipEmail(notfsToSkip)
+
       // Send email, or remember why we didn't and don't try again.
-      val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
+      val anyProblem = trySendToSingleUser(userId, anyUser, notfsToSend, siteDao)
 
       anyProblem foreach { problem =>
-        System.err.println("Not sendnig email to user $userId, site $siteId; problem: $problem")
-        siteDao.updateNotificationSkipEmail(userNotfs)
+        System.err.println(s"s$siteId: Skipping email to user $userId, problem: $problem")
+        siteDao.updateNotificationSkipEmail(notfsToSend)
       }
     }
   }
@@ -283,6 +293,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // wants to be notified of replies. I think most people want that? And if they
     // don't, there's an unsubscription link in the email.
     if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
+        user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways &&
         user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
       return Some("User declines emails")
     }

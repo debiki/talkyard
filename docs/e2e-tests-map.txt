@@ -436,6 +436,7 @@ chat -
   add/remove member:  private-chat.3browsers.test.ts
   join/leave channel:       ==
   private chat:             ==
+          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
   shows last 50 messages:
   pin globally —> appears in watchbar:  (6KWQ2)
   create, when in no site section:
@@ -702,6 +703,8 @@ restart server -
 
 notifications:
   about review tasks:   — see (502M7)
+  about chat replies:
+          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
   via email:  (5ABKR024)
   mute topic:
   mute category:
@@ -740,7 +743,9 @@ email notifications:  (5ABKR024)
           - new-user-review-ok.2browsers.test.ts  TyT39657MRDT2
   watching everything:
           - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
-  new reply:
+  new discourse reply:
+  new chat reply:
+          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
   mention:
           - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
   watching:

@@ -36,13 +36,7 @@ let owensQuestionAnswer = "Yes if the number of questions is a prime number. 2, 
 let siteId;
 
 
-describe("private chat", () => {
-
-  if (settings.prod) {
-    console.log("Skipping this spec — it needs 1 unimp feature to become stable"); // see [E2EBUG] below
-    // ... and it's annoying if the build sometimes fails because not-yet-implemented.
-    return;
-  }
+describe("private chat direct message notfs  TyT602RKDL42", () => {
 
   it("initialize people", () => {
     everyone = _.assign(browser, pagesFor(browser));
@@ -59,10 +53,17 @@ describe("private chat", () => {
     let site: SiteData = make.forumOwnedByOwen('formal-priv-msg', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
+
+    const owen = site.members[0];
+    assert.equal(owen.username, 'owen_owner');
+    owen.emailNotfPrefs = EmailNotfPrefs.ReceiveAlways;  // (6029WKHU4)
+
     memberAlice = make.memberAdminAlice();
     site.members.push(memberAlice);
     site.members.push(make.memberMichael());
-    site.members.push(make.memberMaria());
+    site.members.push(make.memberMaria({
+      emailNotfPrefs: EmailNotfPrefs.ReceiveAlways, // (6029WKHU4)
+    }));
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
   });
@@ -134,7 +135,7 @@ describe("private chat", () => {
         siteId, maria.emailAddress, [messageTitle, owensAnswer], browser);
   });
 
-  it("Maria leaves", () => {
+  it("... goes to another page", () => {
     maria.go('/');
   });
 
@@ -147,15 +148,17 @@ describe("private chat", () => {
     owen.topic.waitForPostNrVisible(4);
   });
 
-  it("... he also got an email about Maria's reply", () => {   // [E2EBUG] fails ~ 20% of the time:
-          // no email sent to Owen
-          // ... because emails don't get sent, if one has seen the notification
-          // in the top bar already.
-          // See  [notf-email-if-active] in the Scala code, and NotfEmailStatus.Skipped.
-          // Fix, by adding a "Send email notifications also when I'm here and reading"
-          // setting, and enable for both Owen and Maria (she also sometimes won't get the email)
-          // in this e2e test.
-    // This tests notfs when one clicks Reply for a particular post.
+  it("... he also got an email about Maria's reply", () => {
+    // This tests notfs when one replies to a particular post.
+
+    // This can break, unless Owen always gets notified via email,
+    // also about replies he has seen already.
+    // That's configured for this test, here: (6029WKHU4).
+    //
+    // (He's looking at the page where Maria's reply appears, so normally
+    // he wouldn't get notified via email since the browser notices
+    // that he has read it already.)
+
     server.waitUntilLastEmailMatches(
         siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);
   });

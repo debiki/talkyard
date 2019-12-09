@@ -228,18 +228,18 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def markNotfsAsSeenSkipEmail(userId: UserId, anyNotfId: Option[NotificationId]) {
-    markNotfsAsSeenSkipEmailImpl(userId, anyNotfId = anyNotfId)
+  def markNotfsAsSeen(userId: UserId, anyNotfId: Option[NotificationId], skipEmails: Boolean) {
+    markNotfsAsSeenSkipEmailImpl(userId, anyNotfId = anyNotfId, skipEmails = skipEmails)
   }
 
 
-  def markNotfsForPostIdsAsSeenSkipEmail(userId: UserId, postIds: Set[PostId]): Int = {
-    markNotfsAsSeenSkipEmailImpl(userId, anyPostIds = Some(postIds))
+  def markNotfsForPostIdsAsSeen(userId: UserId, postIds: Set[PostId], skipEmails: Boolean): Int = {
+    markNotfsAsSeenSkipEmailImpl(userId, anyPostIds = Some(postIds), skipEmails = skipEmails)
   }
 
 
   private def markNotfsAsSeenSkipEmailImpl(userId: UserId, anyNotfId: Option[NotificationId] = None,
-        anyPostIds: Option[Set[PostId]] = None): Int = {
+        anyPostIds: Option[Set[PostId]] = None, skipEmails: Boolean): Int = {
 
     import NotfEmailStatus._
 
@@ -256,7 +256,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
       values.appendAll(postIds.map(_.asAnyRef))
       s"unique_post_id in (${ makeInListFor(postIds) })"
     })).getOrElse({
-      // Tested here: [TyT4KA2PU6]
+      // This marks all one's notf as read. Tested here: [TyT4KA2PU6]
       "true"
     })
 
@@ -271,21 +271,33 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     // And do two queries, to list notfs.
     // That's simpler to understand than this  case-when-then — when will that index get used ??
 
+    val (commaChangeEmailStatusFromUndecidedToSkipped, orEmailStatusUndecided) =
+      if (!skipEmails) {
+        // This `[notf-email-if-active]
+        ("", "")
+      }
+      else {
+        (i""" ,
+          email_status =
+            case
+              when email_status = ${Undecided.toInt} then ${Skipped.toInt}
+              else email_status
+            end
+          """,
+          s"or email_status = ${Undecided.toInt}")
+    }
+
     val statement = i"""
       update notifications3 set
         seen_at =
           case
             when seen_at is null then now_utc()
             else seen_at
-          end,
-        email_status =
-          case
-            when email_status = ${Undecided.toInt} then ${Skipped.toInt /* [notf-email-if-active] */}
-            else email_status
           end
+        $commaChangeEmailStatusFromUndecidedToSkipped
       where site_id = ?
         and to_user_id = ?
-        and (seen_at is null or email_status = ${Undecided.toInt})
+        and (seen_at is null $orEmailStatusUndecided)
         and ($differentTests)
       """
     runUpdate(statement, values.toList)

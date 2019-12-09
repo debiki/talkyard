@@ -1,3 +1,8 @@
+-- I deleted constraint:
+--  alter table users3 drop constraint dw1_users_emlntf__c;
+-- later, change col type to Int, add 0 < ... < 1000 constraint?
+
+
 ---------------
 -- Prefix alt page ids with:  'diid:'  unless is http(s)://... or url path:  /...  [J402RKDT]
 -- From edc:

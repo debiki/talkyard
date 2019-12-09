@@ -580,8 +580,10 @@ trait SiteTransaction {
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)
   def updateNotificationSkipEmail(notifications: Seq[Notification])
-  def markNotfsAsSeenSkipEmail(userId: UserId, notfId: Option[NotificationId])
-  def markNotfsForPostIdsAsSeenSkipEmail(userId: UserId, postIds: Set[PostId]): Int
+
+  /** To mark all as seen, use notfId None. */
+  def markNotfsAsSeen(userId: UserId, notfId: Option[NotificationId], skipEmails: Boolean)
+  def markNotfsForPostIdsAsSeen(userId: UserId, postIds: Set[PostId], skipEmails: Boolean): Int
 
   def loadAllNotifications(): Seq[Notification]
 

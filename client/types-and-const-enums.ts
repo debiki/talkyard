@@ -135,6 +135,14 @@ const enum NotificationType {
 }
 
 
+const enum EmailNotfPrefs {
+  ReceiveAlways = 5,
+  Receive = 1,
+  DontReceive = 2,
+  ForbiddenForever = 3,
+  Unspecified = 4,
+}
+
 
 const enum IncludeInSummaries {
   Default = 0,

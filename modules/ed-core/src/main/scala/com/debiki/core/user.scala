@@ -1371,16 +1371,18 @@ sealed abstract class EmailNotfPrefs(val IntVal: Int) {
 }
 
 object EmailNotfPrefs {
-  case object Receive extends EmailNotfPrefs(1)
+  case object ReceiveAlways extends EmailNotfPrefs(5) // change to 1, bump others += 1
+  case object Receive extends EmailNotfPrefs(1)       // RENAME to ReceiveIfAway
   case object DontReceive extends EmailNotfPrefs(2)
   case object ForbiddenForever extends EmailNotfPrefs(3)
   case object Unspecified extends EmailNotfPrefs(4)
 
   def fromInt(value: Int): Option[EmailNotfPrefs] = Some(value match {
-    case Receive.IntVal => EmailNotfPrefs.Receive
-    case DontReceive.IntVal =>  EmailNotfPrefs.DontReceive
-    case ForbiddenForever.IntVal =>  EmailNotfPrefs.ForbiddenForever
-    case Unspecified.IntVal =>  EmailNotfPrefs.Unspecified
+    case ReceiveAlways.IntVal => ReceiveAlways
+    case Receive.IntVal => Receive
+    case DontReceive.IntVal =>  DontReceive
+    case ForbiddenForever.IntVal =>  ForbiddenForever
+    case Unspecified.IntVal =>  Unspecified
     case _ => return None
   })
 }

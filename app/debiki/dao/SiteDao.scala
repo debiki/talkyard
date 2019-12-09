@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import ed.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
+
 import scala.collection.immutable
 import scala.collection.mutable
 import SiteDao._
@@ -36,6 +37,8 @@ import ed.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+
+import com.debiki.core
 import talkyard.server.PostRendererSettings
 
 
@@ -407,11 +410,17 @@ class SiteDao(
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
-  def markAllNotfsAsSeen(userId: UserId): Unit =
-    readWriteTransaction(_.markNotfsAsSeenSkipEmail(userId, None))
+  def markAllNotfsAsSeen(userId: UserId) {
+    val user = loadTheUserInclDetailsById(userId)
+    readWriteTransaction(_.markNotfsAsSeen(userId, None,
+      skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
+  }
 
-  def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit =
-    readWriteTransaction(_.markNotfsAsSeenSkipEmail(userId, Some(notfId)))
+  def markNotificationAsSeen(userId: UserId, notfId: NotificationId) = {
+    val user = loadTheUserInclDetailsById(userId)
+    readWriteTransaction(_.markNotfsAsSeen(userId, Some(notfId),
+      skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
+  }
 
 
   // ----- API secrets

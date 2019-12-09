@@ -790,6 +790,7 @@ object RdbUtil {
 
   def _toFlag(prefs: EmailNotfPrefs): AnyRef = prefs match {
     case EmailNotfPrefs.Unspecified => NullVarchar
+    case EmailNotfPrefs.ReceiveAlways => "A"
     case EmailNotfPrefs.Receive => "R"
     case EmailNotfPrefs.DontReceive => "N"
     case EmailNotfPrefs.ForbiddenForever => "F"
@@ -802,6 +803,7 @@ object RdbUtil {
 
   def _toEmailNotfs(flag: String): EmailNotfPrefs = flag match {
     case null => EmailNotfPrefs.Unspecified
+    case "A" => EmailNotfPrefs.ReceiveAlways
     case "R" => EmailNotfPrefs.Receive
     case "N" => EmailNotfPrefs.DontReceive
     case "F" => EmailNotfPrefs.ForbiddenForever

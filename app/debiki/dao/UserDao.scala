@@ -1340,7 +1340,8 @@ trait UserDao {
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.  (5ABKR20L)
 
-      val numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeenSkipEmail(user.id, postIdsSeen)
+      val numMoreNotfsSeen = tx.markNotfsForPostIdsAsSeen(
+        user.id, postIdsSeen, skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways)
 
       tx.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
       tx.upsertUserStats(statsAfter)
