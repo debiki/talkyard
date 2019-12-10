@@ -11,6 +11,11 @@ if [ `id -u` -eq 0 ]; then
   exit 1
 fi
 
+# Make `command | tee -a logfile` preserve the command's exit status.
+set -o pipefail
+
+mkdir -p logs/
+
 offset=0
 every=1
 
@@ -52,7 +57,7 @@ function log_message {
   echo "`date --iso-8601=seconds --utc`: $1"
 }
 
-failfile=tests/e2e-failures.txt
+failfile=logs/e2e-failures.txt
 echo "" >> $failfile
 log_message "Running: $*" >> $failfile
 
@@ -73,10 +78,12 @@ function runE2eTest {
   # '-e 2 -o 0' and '-e 2 -o 1' at the same time.
 
   # Incl $testStartId so ps-grep-kill below kills only wdio processes we start here.
+  test_log_file="logs/e2e-details-$testStartId.log"
   cmd="$@ --deleteOldSite --localHostname=$local_hostname --dummy-wdio-test $testStartId"
 
-  echo "—————————————————————————————————————————————————————————"
-  echo "Next test: $cmd"
+  echo "————————————————————————————————————————————————————————————————————"
+  echo "Next test:  $cmd"
+  echo
 
   # Sometimes, randomly?, there's some weird port conflict causing this to fail & hang forever.
   # So timeout after 3 minutes. The slow tests take about one minute, so 3 minutes is a lot.
@@ -90,15 +97,22 @@ function runE2eTest {
     kill $wdio_ps_ids
   fi
 
-  timeout --foreground 180 $cmd
+  timeout --foreground 180 $cmd  |& tee -a $test_log_file  # note: pipefail enabled
 
   if [ $? -ne 0 ]; then
     log_message "Failed: $cmd" >> $failfile
+    log_message "See logs: $test_log_file" >> $failfile
+
+
+    see_log_file="Log file:  $test_log_file"
+
     # Try again, so some harmless race condition I haven't thought about that breaks the test,
     # won't result in a false failures. Usually a race condition breaks the tests only very
     # infrequently, so it's "impossible" to reproduce manually, and thus hard to fix. However,
     # if the test breaks directly *again*, then apparently the failure / race-condition is easy
     # to reproduce, so I'll be able to fix it :-)
+    echo
+    echo "$see_log_file"
     echo
     echo "*** Test failed 1/3. Waiting a few seconds, then will retry ... [EdME2ETRY1] ***"
     echo
@@ -108,9 +122,12 @@ function runE2eTest {
     #local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
     #cmd="$@ --deleteOldSite --localHostname=$local_hostname"
     # ---------------------------------
-    echo "Again: $cmd"
+    echo
+    echo "Again:"
+    echo "    $cmd"
+    echo
 
-    $cmd
+    $cmd  |& tee -a $test_log_file  # note: pipefail enabled
 
     if [ $? -ne 0 ]; then
       # Eh. Well, try a 3rd time. Not so easy to make all e2e tests stable, and
@@ -127,11 +144,16 @@ function runE2eTest {
       #
       log_message "Failed 2nd time: $cmd" >> $failfile
       echo
+      echo "$see_log_file"
+      echo
       echo "*** Test failed 2/3. Waiting a few seconds, then trying one last time ... [EdME2ETRY2] ***"
       echo
       sleep 7
+      echo "Last attempt:"
+      echo "    $cmd"
+      echo
 
-      $cmd
+      $cmd  |& tee -a $test_log_file  # note: pipefail enabled
 
       if [ $? -ne 0 ]; then
         log_message "Failed: $cmd" >> $failfile
@@ -140,6 +162,8 @@ function runE2eTest {
         echo
         echo
         echo "*** ERROR [TyEE2E] ***"
+        echo
+        echo "$see_log_file"
         echo
         echo "This end-to-end test failed trice:"
         echo
@@ -183,6 +207,8 @@ function runE2eTest {
   else
     echo "Ok. [EdM4RZW0J]"
     echo
+    # The log file is uninteresting, since all went fine.
+    rm -f $test_log_file
   fi
 }
 
