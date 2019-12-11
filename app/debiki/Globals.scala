@@ -1109,6 +1109,15 @@ class Config(conf: play.api.Configuration) {
   val mayImportSite: Boolean = getBoolOrDefault("talkyard.mayImportSite", default = false)
   val maxImportDumpBytes: Int = getIntOrDefault("talkyard.maxImportDumpBytes", default = 50*1000*1000)
 
+  val oneTimeSecretSecondsToLive: Long = getIntOrDefault(
+    "talkyard.oneTimeSecretSecondsToLive",
+    // Typically, the subsequent steps will be automatic, by the browser [306KUD244],
+    // so we can set a short expire time (no need to wait for the human to do
+    // anything). In dev mode though, allow time for debugging & breakpoints.
+    // Short time-to-live is good, mitigates session fixation attacks?
+    // Maybe just 15 seconds would be better? Let's wait with that.
+    default = if (isProd) 30 else 30 * 60).toLong
+
   val featureFlags: Map[String, FeatureOnOff] = {
     val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank
     Map.empty  // for now

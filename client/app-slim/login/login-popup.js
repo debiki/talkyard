@@ -71,12 +71,14 @@ d.i.createLoginPopup = function(url) {
   // in debiki-login-dialog.ls in a login popup window, see [509KEF31]. """
   d.i.handleLoginResponse = function(result /* : LoginPopupLoginResponse */) {
     try {
-      // Sometimes we've remembered any weakSessionId alraedy namely if
-      // we sent a create-new-user request from the login popup — then we got back
-      // any weakSessionId in an ajax reply and could remember it directly.
-      // Then weakSessionId is undefined here. [5028KTDN306]
+      // Sometimes we've remembered any weakSessionId already, namely if
+      // we sent a create-new-user ajax request from the login popup — then we got back
+      // any weakSessionId and could remember it directly.
+      // Then weakSessionId is undefined here, [5028KTDN306] and then don't
+      // overwrite the main win's session id with undefined.
       if (result.weakSessionId) {
-        debiki2.Server.makeUpdNoCookiesTempSessionIdFn(() => {})(result); // [NOCOOKIES]
+        // Remember the session in getMainWin().typs.weakSessionId:
+        debiki2.Server.makeUpdNoCookiesTempSessionIdFn(function() {})(result); // [NOCOOKIES]
       }
     }
     catch (ex) {

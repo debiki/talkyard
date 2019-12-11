@@ -107,6 +107,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val oneTimeSecret = nextRandomString()
 
     dao.redisCache.saveOneTimeLoginSecret(
+      // Set a long timeout, so the admin has time to open and read the email.
       oneTimeSecret, admin.id, expireSeconds = Some(MaxResetPasswordEmailAgeInHours * 3600))
 
     sendOneTimeLoginEmail(

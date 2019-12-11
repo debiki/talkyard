@@ -275,29 +275,6 @@ function constructSsoLoginTest(testName: string, variants: {
 
   + check stays logged in
 
-
-
-
-  Owen
-
-  it("He clicks the Back-to-login-settings link, and gets back to the settings area, as admin", () => {
-    owensBrowser.waitAndClick('.e_BkToStngs');
-    owensBrowser.adminArea.waitAssertVisible();  // if can see, means is still admin
-  });
-
-  it("... logs out", () => {
-    owensBrowser.topbar.clickLogout();
-  });
-
-  it("The one-time-login-secret cannot be used again", () => {
-    owensBrowser.apiV0.loginWithSecret({
-        origin: siteIdAddress.origin, oneTimeSecret: oneTimeLoginSecret, thenGoTo: '/-/sso-test' });
-    owensBrowser.assertPageHtmlSourceMatches_1('TyELGISECR_');  + E1_, E2_,  E3_
-  });
-
-  it("... but he can still login with password, as usual", () => {
-    owensBrowser.adminArea.goToLoginSettings('', { loginAs: owen });
-  });
   */
 
 

@@ -93,6 +93,7 @@ function pagesFor(browser) {
   const origWaitForEnabled = browser.waitForEnabled;
   const origWaitForText = browser.waitForText;
   const origWaitForExist = browser.waitForExist;
+  const origRefresh = browser.refresh;
 
   const hostsVisited = {};
   let isWhere: IsWhere = IsWhere.Nowhere;
@@ -136,6 +137,14 @@ function pagesFor(browser) {
       });
       dieIf(!result || !result.value, 'TyE4RHKS0295');
       return result.value;
+    },
+
+
+    // Change all refresh() to refresh2, then remove '2' from name.
+    // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
+    refresh2: () => {
+      origRefresh.apply(browser, arguments);
+      api.__updateIsWhere();
     },
 
 
@@ -185,17 +194,22 @@ function pagesFor(browser) {
         isOnEmbeddedCommentsPage = false;
       }
       else {
-        // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
-        // -one's-email-addr page.
-        api.waitForExist('.DW, .talkyard-comments, .btn');
-        isOnEmbeddedCommentsPage = browser.isExisting('.talkyard-comments');
-        isWhere = isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
+        api.__updateIsWhere();
       }
 
 
       if (shallDisableRateLimits) {
         api.disableRateLimits();
       }
+    },
+
+
+    __updateIsWhere: () => {
+      // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
+      // -one's-email-addr page.
+      api.waitForExist('.DW, .talkyard-comments, .btn');
+      isOnEmbeddedCommentsPage = browser.isExisting('.talkyard-comments');
+      isWhere = isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
     },
 
 
@@ -741,7 +755,7 @@ function pagesFor(browser) {
         assert.equal(length, 1, errors);
       }
       /*
-      // DO_AFTER 2019-07-01 remove this out commented code.
+      // DO_AFTER 2019-07-01, no, Webdriverio v5: remove this out commented code.
       // Oddly enough, sometimes the overlay covers the page here, although
       // we just waited for it to go away.  [7UKDWP2] [7JUKDQ4].
       // Happens in FF only (May 2018) — maybe FF is so fast so the first test
@@ -983,7 +997,7 @@ function pagesFor(browser) {
             browser.addValue(selector, value);
           }
           else {
-            // DO_AFTER 2019-07-01 see if this Chrome weirdness workaround is still needed.
+            // DO_AFTER 2019-07-01, no, Webdriverio v5: see if this Chrome weirdness workaround is still needed.
             browser.setValue(selector, '\uE003'.repeat(oldValue.length) + value);
           }
 
@@ -1078,6 +1092,7 @@ function pagesFor(browser) {
                 `${ shouldMatch ? doesMatch : !doesMatch }`);
         }
 
+        // If incorrect match/miss, return the failing regex.
         if (shouldMatch != doesMatch)
           return ros;
       }
@@ -3417,6 +3432,7 @@ function pagesFor(browser) {
       },
 
       clickReplyToEmbeddingBlogPost: function() {
+        api.switchToEmbCommentsIframeIfNeeded();
         api.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
       },
 

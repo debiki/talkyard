@@ -38,6 +38,10 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
   if (!settings.include3rdPartyDependentTests)
     return;
 
+  it("ensure cookies disabled?", () => {
+    assert(settings.block3rdPartyCookies);
+  });
+
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     gmannesBrowser = everyonesBrowsers;
@@ -97,6 +101,10 @@ describe("emb cmts no cookies unverif gmail   TyT6224BKA253", () => {
     gmannesBrowser.refresh();
     gmannesBrowser.switchToEmbeddedCommentsIrame();
     assert.equal(gmannesBrowser.metabar.getMyUsernameInclAt(), '@gmanne');
+  });
+
+  it("... the comment is still there", () => {
+    gmannesBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, gmailCommentOne);
   });
 
   it("He logs out", () => {

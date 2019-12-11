@@ -43,22 +43,6 @@ interface PageToAdd {
 }
 
 
-/* Already in  test-types2.ts
-interface PageJustAdded {
-  id: string;
-  folder: string;
-  showId: boolean;
-  slug: string;
-  role: number;
-  title: string;
-  body: string;
-  categoryId: number;
-  authorId: number,
-  createdAtMs: number;
-  updatedAtMs: number;
-} */
-
-
 interface PageDumpV0 {
   dbgSrc?: string;
   id: PageId;

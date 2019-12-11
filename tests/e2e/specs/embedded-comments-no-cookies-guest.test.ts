@@ -32,6 +32,11 @@ const pageAaaSlug = 'emb-cmts-b3c-aaa.html';
 
 
 describe("emb cmts no cookies   TyT295KBF6301", () => {
+    // COULD RENAME: embedded-comments-no-cookies-unverif-email-guest.test.ts
+
+  it("ensure cookies disabled?", () => {
+    assert(settings.block3rdPartyCookies);
+  });
 
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
@@ -60,6 +65,9 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
       return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
     }
   });
+
+
+  // ----- Signup as member, post with unverified email
 
   it("Maria opens embedding page aaa", () => {
     mariasBrowser.go(embeddingOrigin + '/' + pageAaaSlug);
@@ -100,6 +108,9 @@ describe("emb cmts no cookies   TyT295KBF6301", () => {
     mariasBrowser.refresh();
     mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
+
+
+  // ----- Guest login, post with unverified email
 
   it("A guest, Graeddelina, appears and clicks Reply", () => {
     guestsBrowser.switchToEmbeddedCommentsIrame();

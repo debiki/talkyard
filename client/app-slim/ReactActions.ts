@@ -82,8 +82,8 @@ export function loadMyself(afterwardsCallback?) {
     if (isInSomeEmbCommentsIframe()) {
       // Tell the embedded comments or embedded editor iframe that we just logged in,
       // also include the session id, so Talkyard's script on the embedding page
-      // can remember it — because cookies and localstorage in am iframe typically
-      // don't work, because of trigger happy tracker blockers (they block too much).
+      // can remember it — because cookies and localstorage in an iframe typically
+      // get disabled by tracker blockers (they block 3rd party cookies).
       const mainWin = getMainWin();
       const typs: PageSession = mainWin.typs;
       const weakSessionId = typs.weakSessionId;
@@ -131,7 +131,7 @@ export function logoutClientSideOnly() {
   // logged out: (not really needed, because we reload() below)
   Server.abortAnyLongPollingRequest();
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
-  location.reload();
+  location.reload(); // [502098SK]
 }
 
 

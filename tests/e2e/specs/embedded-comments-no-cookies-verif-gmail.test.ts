@@ -37,6 +37,10 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
   if (!settings.include3rdPartyDependentTests)
     return;
 
+  it("ensure cookies disabled?", () => {
+    assert(settings.block3rdPartyCookies);
+  });
+
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     gmannesBrowser = everyonesBrowsers;

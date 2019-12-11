@@ -34,6 +34,10 @@ const pageAaaUrl = embeddingOrigin + '/' + pageAaaSlug;
 
 describe("emb cmts no cookies verif email   TyT795KB69285", () => {
 
+  it("ensure cookies disabled?", () => {
+    assert(settings.block3rdPartyCookies);
+  });
+
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     mariasBrowser = everyonesBrowsers;
@@ -59,11 +63,10 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("Maria opens embedding page aaa", () => {
-    mariasBrowser.go(pageAaaUrl);
+    mariasBrowser.go2(pageAaaUrl);
   });
 
   it("... Signs up", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
     mariasBrowser.swithToOtherTabOrWindow();
     mariasBrowser.loginDialog.createPasswordAccount(maria);
@@ -72,6 +75,11 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
 
   it("... clicks an email verif link", () => {
     // This'll run this server side code: [TyT072FKHRPJ5]
+    //
+    // The server redirects the browser back to the blog post, pageAaaUrl, and
+    // includes a one-time login secret in the url hash, which our javascript
+    // on that embedding page then find, and sends to the iframe, which in turn
+    // sends it to the server, and gets back a login session id.
 
     const email = server.getLastEmailSenTo(siteId, maria.emailAddress, mariasBrowser);
     const link = utils.findFirstLinkToUrlIn(
@@ -95,17 +103,8 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
   });
 
-  it("Maria clicks Reply", () => {
+  it("Maria clicks Reply — no need to log in again", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
-  });
-
-  it("... NO:  and currently needs to log in again", () => {
-    // COULD avoid this 2nd login, by incl a one-time login secret in URL to the embedding page.
-    // In the #hash fragment then? Since shouldn't be sent to the server powering the blog,
-    // but instead read by Talkyard's javascript and passed on to the iframe, which in turn
-    // sends it to the server, just once, and gets back a login session — and the server
-    // invalidates the secret.  [0439BAS2]  DONE
-    //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
   it("... writes and submits a comment", () => {
@@ -123,18 +122,13 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   it("she goes to page bbb", () => {
     let source = mariasBrowser.getSource();
     assert(source.indexOf('b3c-aaa') > 0);
-    mariasBrowser.go(embeddingOrigin + '/' + pageBbbSlug);
+    mariasBrowser.go2(embeddingOrigin + '/' + pageBbbSlug);
     source = mariasBrowser.getSource();
     assert(source.indexOf('b3c-bbb') > 0);
   });
 
-  it("Posts a 2nd comment", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+  it("Posts a 2nd comment, no need to login — session remembered in storage", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
-  });
-
-  it("... NO: needs to log in again, because cookies blocked", () => {
-    //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
   it("... types and submits the 2nd comment", () => {
@@ -150,14 +144,19 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("After page refresh, she's still logged in", () => {
-    mariasBrowser.refresh();
+    mariasBrowser.refresh2();
     mariasBrowser.switchToEmbeddedCommentsIrame();
     assert.equal(mariasBrowser.metabar.getMyUsernameInclAt(), '@maria');
-    //mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 
   it("She logs out", () => {
     mariasBrowser.metabar.clickLogout();
+    mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
+  });
+
+  it("... after refresh, she is still logged out", () => {
+    mariasBrowser.refresh2();
+    mariasBrowser.complex.waitForNotLoggedInInEmbeddedCommentsIframe();
   });
 
   it("She clicks Reply to post a 3rd comment", () => {

@@ -247,7 +247,8 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   def deleteRedisKey: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) {
         request =>
     throwForbiddenIf(globals.isProd, "TyE502KUJ5",
-        "I only do this, in Prod mode, when an odd number of Phoenix birds sleep on my lawn")
+        "I only do this, in Prod mode, when an odd number of " +
+          "Phoenix birds sleep at my fireplace")
     val key = (request.body \ "key").as[String]
     context.globals.redisClient.del(key)
     Ok
@@ -256,10 +257,10 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   def skipRateLimitsForThisSite: Action[JsValue] =
         PostJsonAction(RateLimits.BrowserError, maxBytes = 50) { request =>
-    val okTestPassword = !context.security.hasOkE2eTestPassword(request.underlying)
-    throwForbiddenIf(globals.isProd && !okTestPassword,
+    val okE2ePassword = context.security.hasOkE2eTestPassword(request.underlying)
+    throwForbiddenIf(globals.isProd && !okE2ePassword,
       "TyE8WTHFJ25", "I only do this, in Prod mode, if I can see two moons from " +
-        "my kitchen window and I'm not hungry")
+        "my kitchen window and at least two of my pigeons tell me I should.")
     val siteId = (request.body \ "siteId").as[SiteId]
     globals.siteDao(siteId).skipRateLimitsBecauseIsTest()
     Ok

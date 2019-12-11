@@ -64,9 +64,16 @@ function onMessage(event) {
     case 'resumeWeakSession':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
       typs.weakSessionId = eventData;
+      // This will send 'justLoggedIn' to the editor iframe, so it'll get updated too.
       debiki2.ReactActions.loadMyself();
       break;
     case 'justLoggedIn':
+      // The getMainWin().typs.weakSessionId has been updated already, by
+      // makeUpdNoCookiesTempSessionIdFn() or in the 'case:' just above, lets check:
+      // @ifdef DEBUG
+      const mainWin: MainWin = getMainWin();
+      dieIf(!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid'), 'TyE3065KDTH2');
+      // @endif
       debiki2.ReactActions.setNewMe(eventData.user);
       break;
     case 'logoutClientSideOnly':

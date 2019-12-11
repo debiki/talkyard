@@ -202,6 +202,10 @@ If moves CDN to a different address, or moves Talkyard server to a new address,
 then, lazily regenerate html with the correct addresses, for links to uploaded
 images etc.
 
+[serversid]
+Server side sesison ids, maybe in Redis? So can log ppl out, without having access
+to their browsers to delete session cookies.
+
 [weaksid]
 
 SECURITY Use HMAC. Not SHAX. Need not fix urgently. Prevents extension attacks
@@ -213,3 +217,5 @@ https://news.ycombinator.com/item?id=19862002
 SECURITY: https://news.ycombinator.com/item?id=19856419 "HTTP headers for the responsible developer"
 https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
 
+
+[external-server-js]

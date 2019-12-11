@@ -82,3 +82,16 @@ Then reload `sysctl.conf`, like so: `sysctl --system`. (Persists across reboots.
 See https://stackoverflow.com/questions/22475849/node-js-error-enospc and
 https://github.com/npm/npm/issues/1131#issuecomment-253065331
 
+
+### Downloading backups
+
+You can tell rsync to not download only the current month's backups, e.g.:
+
+```
+rsync -av  \
+  --prune-empty-dirs  --include='*2019-12*' --include='*/' --exclude='*' \
+  -e 'ssh -i ~/.ssh/id_rsa.pub' \
+  root@...:/.../backups/  \
+  /home/user/...-backups
+```
+

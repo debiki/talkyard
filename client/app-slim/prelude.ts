@@ -155,10 +155,15 @@ export function isInSomeEmbCommentsIframe(): boolean {
  * are made from the editor iframe and login popup wins too, not just the main
  * comments win.
  */
-export function getMainWin(): any {
+export function getMainWin(): MainWin {
   const lookingForName = 'edComments';
-  if (window.name === lookingForName)
-    return window;
+
+  if (window.name === lookingForName) {
+    // @ifdef DEBUG
+    dieIf(!window['typs'], 'TyE7S2063D');
+    // @endif
+    return <MainWin> window;
+  }
 
   // This is the main window already, unless we're on an embedded comments page or in a login popup.
   let win = window;
@@ -186,7 +191,11 @@ export function getMainWin(): any {
     win = win.parent[lookingForName];
   }
 
-  return win;
+  // @ifdef DEBUG
+  dieIf(!win['typs'], 'TyE5KTGW0256');
+  // @endif
+
+  return <MainWin> win;
 }
 
 

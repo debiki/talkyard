@@ -245,19 +245,22 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           (None, Nil)
       }
 
-      // If anySid is absent because one needs to verify one's email before logging in,
-      // and this is for embedded blog comments and 3rd party cookies are blocked — then,
-      // to post a comment, currently one will need to login again, after having
-      // verified one's email.
-      UX; COULD // It'd be nice if the verify-email-addr link included a hash fragment
-      // with a one-time-secret that was read by Talkyards javascript on the embedding
-      // page, passed on to the iframe, which then sent it to the server once
-      // to get a session id — without logging in again.  [0439BAS2]
+      val weakSessionId =
+        if (!maybeCannotUseCookies) "" else {
+          // If anySid is absent because one needs to verify one's email before logging in,
+          // and this is for embedded blog comments, and 3rd party cookies are blocked — then,
+          // when one clicks the verify-email-address link, one will get redirected
+          // back to the blog, with a one-time-login-secret included the hash fragment.
+          // Talkyard's javascript on the embedding blog post page then sends this secret
+          // to the iframe, which sends it to the server, and gets back a session id
+          // — without logging in again. [TyT072FKHRPJ5]
+          anySid.map(_.value).getOrElse("") // [NOCOOKIES]
+        }
+
       val responseJson = Json.obj(
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
         "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined),
-        "weakSessionId" -> JsString(
-            if (maybeCannotUseCookies) anySid.map(_.value).getOrElse("") else "")) // [NOCOOKIES]
+        "weakSessionId" -> JsString(weakSessionId))
 
       OkSafeJson(responseJson).withCookies(loginCookies: _*)
     }
@@ -291,10 +294,16 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     // on Safari or FF, because of ITP and ETP tracking prevention
     // that blocks cookies in iframes).
 
+    val isOk = LoginWithSecretController.isAllowedRedirectUrl(
+      returnToUrl, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
+
+    throwForbiddenIf(!globals.isProd && !isOk,  // also see [306SKTGR43]
+      "TyEEXTREDIR2", o"""Bad returnToUrl url: '$returnToUrl' — it's to a different server
+          not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
+          This could be a phishing attempt.""")
+
     val returnToOtherServer =
-      (returnToUrl.startsWith("http://") ||
-        returnToUrl.startsWith("https://") ||
-        returnToUrl.startsWith("//")) && !returnToUrl.startsWith(request.origin)
+      urlIsToDifferentOrigin(returnToUrl, thisServerOrigin = request.origin)
 
     val (newCookies, anyReturnToUrl) =
       if (returnToOtherServer) {
@@ -303,12 +312,14 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         // Tested here: [TyT072FKHRPJ5].
         dieIf(returnToUrl.isEmpty, "TyE06KFUD2")
         val loginSecret = nextRandomString()
-        dao.redisCache.saveOneTimeLoginSecret(loginSecret, user.id,
-          // The subsequent steps will be automatic, by the browser [306KUD244],
-          // so we can set a short expire time (no need to wait for the human to do
-          // anything). In dev mode though, allow time for debugging & breakpoints.
-          expireSeconds = Some(context.globals.isProd ? 10 | 10*60))
-        // This might result in two '#' in the URL, should be fine.
+
+        dao.redisCache.saveOneTimeLoginSecret(
+          loginSecret, user.id, Some(globals.config.oneTimeSecretSecondsToLive))
+
+        // This might result in two '#' in the URL (if there's a #comment-123 already),
+        // should be fine. Don't include a real session id, instead, Talkyard
+        // javascript on the destination page will send the one-time secret to
+        // the server, and get back a session id. [306KUD244]
         (Nil, Some(returnToUrl + s"#talkyardOneTimeLoginSecret=$loginSecret"))
       }
       else {

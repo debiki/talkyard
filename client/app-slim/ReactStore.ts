@@ -141,6 +141,10 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.Logout:
+      // Not really needed, because logoutClientSideOnly() does reload() [502098SK]
+      // — but let's clear this anyway:
+      delete typs.weakSessionId;
+
       // (Perhaps the server should instead include a 'reloadPage' param in the /-/logout response?)
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();

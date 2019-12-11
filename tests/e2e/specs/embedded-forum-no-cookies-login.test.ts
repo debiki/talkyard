@@ -46,6 +46,8 @@ let discussionPageUrl: string;
 describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
   it("import a site", () => {
+    lad.die('Unimpl [395023PFS]');
+
     const builder = buildSite();
     forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
@@ -57,6 +59,7 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
     site.settings.allowEmbeddingFrom = embeddingOrigin;
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
+    server.skipRateLimits(siteId);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 

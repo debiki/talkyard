@@ -446,7 +446,8 @@ function runAllE2eTests {
   # Embedded forum
   # ------------
 
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-login $args
+  #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-login $args
+  #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-sso-login $args
 
 
   # Embedded comments

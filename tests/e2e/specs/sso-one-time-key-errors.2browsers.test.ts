@@ -222,7 +222,6 @@ describe("sso-one-time-key-errors   TyT5025BDUJQP4R", () => {
   it("... doesn't work", () => {
     source = majasBrowser.getSource();
     assert(source.indexOf('TyELGISECR_') >= 0);
-    assert(source.indexOf('TyELGISECR_') >= 0);
   });
 
   it("... the message says the key has expired (we deleted it)", () => {
@@ -316,6 +315,14 @@ describe("sso-one-time-key-errors   TyT5025BDUJQP4R", () => {
     assert(source.indexOf('EMANY_') >= 0);
     assert(source.indexOf('EEXP_') === -1);
     assert(source.indexOf('ENONE_') === -1);
+  });
+
+  it("She can however go back and post a 2nd reply", () => {
+    majasBrowser.back();
+    majasBrowser.refresh();
+    const text = "Maja's second reply";
+    majasBrowser.complex.replyToOrigPost(text);
+    majasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 1, text);
   });
 
 });

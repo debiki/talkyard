@@ -200,8 +200,8 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
             Bad(RemoteRedisClientError.ValueNeverExisted)
           }
           else if (usageCount == LoginSecretOffset + 1) {
-            // The usage count key-value did exist — but the (login-secret, user-id)
-            // entry did not; it must have expired.
+            // There is a usage count key-value — but there wasn't any (login-secret, user-id)
+            // entry; it must have expired.
             Bad(RemoteRedisClientError.ValueExpired)
           }
           else {

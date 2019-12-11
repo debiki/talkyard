@@ -61,6 +61,8 @@ const mariasSsoId = 'mariasSsoId';
 describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
 
   it("import a site", () => {
+    lad.die('Unimpl [8608RKTHS]');
+
     const builder = buildSite();
     forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
       title: "Some E2E Test",
@@ -76,6 +78,7 @@ describe("embedded-forum-no-cookies-login  TyT5029FKRDE", () => {
     site.apiSecrets = [apiSecret];
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
+    server.skipRateLimits(siteId);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 

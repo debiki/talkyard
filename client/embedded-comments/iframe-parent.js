@@ -39,15 +39,15 @@ const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
 const debugLog: (...args) => void =
-    windowWithTalkyardProps.talkyardDebug === false ||
-    windowWithTalkyardProps.talkyardDebug === 0 ||
-    !window.console
+    (windowWithTalkyardProps.talkyardDebug === false ||
+        windowWithTalkyardProps.talkyardDebug === 0 ||
+        !window.console)
     ? function() {}
     : function() {
       // Clone the function arguments array.
       var args = [].slice.call(arguments);
       // Add a prefix to the 1st arg, the actuall message.
-      // (Subsequent args could be an exception to log, not sure exactly what.)
+      // (Subsequent args could be an exception to log, who knows.)
       var arg0 = args[0];
       arg0 = "Talkyard comments: " + arg0;
       args.splice(0, 1, arg0);
@@ -79,7 +79,7 @@ var editorPlaceholder;
 // the sense that, even if you're admin, you cannot use it to go to the admin area
 // and do things there. Then instead you need to login directly to the Talkyard
 // server, rather than on the embedding site via the iframe — so an XSS
-// vulnerability on the embeddin site (the blog) won't give admin access.
+// vulnerability on the embedding site (the blog) cannot give admin access.
 var theStorage = localStorage;
 
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
@@ -372,6 +372,9 @@ function onMessage(event) {
       // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
       // know where. So tell the iframe to send back a 'scrollComments' message to us,
       // with info about how to scroll.
+      //
+      // (Could wait until after has resumed any old session? See below. Barely matters.)
+      //
       if (postNrToFocus) {
         messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
       }
@@ -452,11 +455,12 @@ function onMessage(event) {
           pubSiteId: eventData.pubSiteId,
           weakSessionId: eventData.weakSessionId,
         };
-        if (!item.weakSessionId ||
-            // This'd be a bug elsewhere:
-            item.weakSessionId === 'undefined') {
+        const isUndef = item.weakSessionId === 'undefined'; // this'd be a bug elsewhere
+        if (!item.weakSessionId || isUndef) {
           debugLog(`weakSessionId missing [TyE0WKSID]: ${JSON.stringify(eventData)}`);
-          debugger;
+          if (isUndef) {
+            debugger;
+          }
         }
         else {
           // This re-inserts our session (3548236), if we just sent a 'resumeWeakSession'
@@ -560,10 +564,10 @@ function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
   // Dupl code (6029084583).
 
   // Sometimes one iframe comes alive and wants to message the other one,
-  // before it's ready.
+  // before that other iframe is ready.
   // [E2EBUG] it's not impossible that an e2e test browser super quickly clicks something,
-  // before any pending message has been delivered? (This'd be harmless — would only
-  // affect e2e tests; humans aren't that fast.)
+  // before any pending message has been delivered?  This'd be harmless — would only
+  // affect e2e tests; humans aren't that fast.
   if (message) {
     pendingMessages.push(message);
   }
@@ -573,7 +577,6 @@ function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
     }, 500);
     return;
   }
-
   for (let i = 0; i < pendingMessages.length; ++i) {
     const m = pendingMessages[i];
     iframe.contentWindow.postMessage(m, serverOrigin);

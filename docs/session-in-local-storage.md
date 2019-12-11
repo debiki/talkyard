@@ -31,4 +31,7 @@ single shared web browser instance that othres can reuse after you. — So I
 think this isn't that much of a problem (any longer), compared to the
 inconvenience of people getting "randomly" logged out when they open
 the same page in a different brower tab (`sessionStorage` doesn't work
-accross different tabs in the same browser).
+accross different tabs in the same browser).  ...
+... But now a few days ago, at a university, I noticed that apparently
+the students keep reusing each other's Windows sessions, and possibly
+browser session too.

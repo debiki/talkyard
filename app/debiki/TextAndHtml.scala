@@ -66,6 +66,12 @@ sealed trait TextAndHtml {
 
 
 object TextAndHtml {
+
+  // Or could instead use  Nashorn.sanitizeHtml(text: String, followLinks: Boolean) ?
+  // But it's slow, if importing a whole site. How deal with this?
+  // Maybe just let admins-that-import-a-site set a flag that everything has been
+  // sanitized already?_ COULD move server side js to external Nodejs or V8
+  // processes? So as not to block a thread here, running Nashorn? [external-server-js]
   def relaxedHtmlTagWhitelist: org.jsoup.safety.Whitelist = {
     // The caller need to insert  rel=nofollow  henself, see the docs:
     // https://jsoup.org/apidocs/org/jsoup/safety/Whitelist.html#relaxed--

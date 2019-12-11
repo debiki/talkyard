@@ -48,6 +48,7 @@ const pageOneToUpsert = {
   body: 'UpsPageOneBody',
 };
 
+const evil_example_com = 'evil.example.com';
 const script_gets_removed = 'script_gets_removed';
 
 const pageTwoToUpsert = {
@@ -68,7 +69,7 @@ const pageTwoToUpsert = {
     <blockquote>blockquote_stays</blockquote>
     <ul><li>list_stays</li></ul>
     <table><tbody><td>table_stays</td></tbody></table>
-    <script src="http://evil.example.com/so_evil_script.js">${script_gets_removed}</script>
+    <script src="http://${evil_example_com}/so_evil_script.js">${script_gets_removed}</script>
     last_line_stays`,
 };
 
@@ -319,7 +320,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
         script_gets_removed,
         '<script',
         '</script>',
-        'evil.example.com',
+        evil_example_com,
         'so_evil_script']);
   });
 

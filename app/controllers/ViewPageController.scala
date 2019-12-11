@@ -408,6 +408,11 @@ object ViewPageController {
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
       "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 
+    // (If the requester is logged in so we could load a real 'me' here,
+    // then, somehow the browser sent the server the session id, so no need to
+    // include it in the response — the browser knows already.
+    // However if this is the first page the user looks at, not yet logged in,
+    // then, it might have no xsrf token — need to include. (But not session id.)
     xsrfTokenIfNoCookies foreach { token =>
       volatileJson = volatileJson + ("xsrfTokenIfNoCookies" -> JsString(token))   // [NOCOOKIES]
     }

@@ -218,6 +218,53 @@ object Prelude {
     ValidHostAndPortRegex.pattern.matcher(hostAndPort).matches
 
 
+  def urlIsToDifferentOrigin(url: String, thisServerOrigin: String): Boolean = {
+    val urlUri = new java.net.URI(url)
+
+    require(thisServerOrigin.contains("//"),
+      s"Not an origin: '$thisServerOrigin' [TyE02WKL62GJ]")
+
+    // Only an URL path? Then it's the same server.
+    if (urlUri.getHost == null) {
+      assert(urlUri.getScheme == null)
+      assert(urlUri.getPort == -1)
+      return false
+    }
+
+    val thisUri = new java.net.URI(thisServerOrigin)
+    if (urlUri.getHost != thisUri.getHost)
+      return true
+
+    if (urlUri.getScheme != null && urlUri.getScheme != thisUri.getScheme)
+      return true
+    // Else: The browser will default to the same scheme, i.e. use thisUri's scheme.
+
+    def getPortOrDefault(uri: java.net.URI): Int = {
+      if (uri.getPort != -1) uri.getPort
+      else {
+        if (uri.getScheme == "http") 80
+        else if (uri.getScheme == "https") 443
+        else -1
+      }
+    }
+
+    val urlPort = getPortOrDefault(urlUri)
+    val thisPort = getPortOrDefault(thisUri)
+
+    val thisUsesStandardPort =
+      (thisPort == 80 && thisUri.getScheme == "http") ||
+        (thisPort == 443 && thisUri.getScheme == "https")
+
+    if (urlUri.getScheme == null && urlPort == -1 && thisUsesStandardPort)
+      return false  // then will default to same port
+
+    if (urlPort != thisPort)
+      return true
+
+    false
+  }
+
+
   /**
    * Strips "http(s)://server:port" from an URL. Returns None if "htt(s)://server"
    * was absent, or if there was nothing after the origin.

@@ -409,12 +409,11 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
   console.log("Main win typs: " + JSON.stringify(win.typs));
   // @endif
 
-  const currentPageXsrfToken = win.typs.xsrfTokenIfNoCookies;
-  const currentPageSid = win.typs.weakSessionId;
+  const typs: PageSession = win.typs;
+  const currentPageXsrfToken = typs.xsrfTokenIfNoCookies;
+  const currentPageSid = typs.weakSessionId;
 
-  if (currentPageXsrfToken ||  // a bit fragile?
-      !win.typs.canUseCookies  // this is more stable?
-      ) {
+  if (!win_canUseCookies(win)) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
     // Not sure if can have been set to xsrf cookie value already? So skip if set.
     if (!headers[XsrfTokenHeaderName]) {
@@ -1018,8 +1017,8 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 
 export function loadMyself(callback: (user: any) => void) {
   // @ifdef DEBUG
-  const typs = getMainWin().typs;
-  if (typs.canUseCookies && !typs.weakSesionIde) {
+  const typs: PageSession = getMainWin().typs;
+  if (!typs.canUseCookies && !typs.weakSessionId) {
     console.error(`Cannot load myself: No cookies, no session: ${typs} [TyE603FKNFD5]`);
     debugger;
   }

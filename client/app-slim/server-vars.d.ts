@@ -12,11 +12,25 @@ interface PageSession  {
   // This session id is available to client side Javascript, and can be stolen
   // if there's an XSS vulnerability. So, it's going to have fewer capabilities
   // than a http-only session when the Talkyard site is opened as the main window
-  // (rather than embedded in an iframe).  ADD_TO_DOCS
+  // (rather than embedded in an iframe).
+  //
+  // It's needed because Safari and FF blocks 3rd party cookies, so
+  // we need to remember the login session in a non-cookie somehow.
+  //
+  // ADD_TO_DOCS
+  //
   weakSessionId: string | undefined;
 }
 
+// REMOVE? shouldn't access, if in emb cmts editor or login popup,
+// instead, should use getMainWin().typs.
 declare const typs: PageSession;
+
+interface __MainWinInterface extends Window {
+  typs: PageSession;
+}
+
+type MainWin = __MainWinInterface & typeof globalThis;
 
 
 // These variables are initialized in a certain <head><script>.  [5JWKA27]

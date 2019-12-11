@@ -76,6 +76,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       getOnly(queryParam) getOrThrowBadArgument(errorCode, queryParam)
 
     // Let's always allow one-time login — works only if this server has generated a secret.
+    // Needed for embedded comments signup-login to work if 3rd party cookies blocked. [306KUD244]
     val isOneTimeLogin = apiEndpoint == "login-with-secret"
 
     throwForbiddenIf(!settings.enableApi && !isOneTimeLogin,
@@ -153,16 +154,20 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             throwForbidden(s"TyELGISECR_$subCode", errorDetails)
         }
 
-        // The Sy tem user should only do things based on Talkyard's source code. [SYS0LGI]
+        // The System user should only do things based on Talkyard's source code. [SYS0LGI]
         throwForbiddenIf(userId == SystemUserId, "TyELGISYS", "Cannot login as System.")
+
+        // The Sysbot user should only do things based API requests.
+        throwForbiddenIf(userId == SysbotUserId, "TyELGIBOT", "Cannot login as Sysbot.")
+
         val user = dao.getTheUser(userId)
         dao.pubSub.userIsActive(siteId, user, request.theBrowserIdData)
         val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(siteId, user.id)
 
         val response = if (request.isAjax) {
-          // ?? Set cookies ??
-          // so admin gets logged in ??
-          // Can one delete cookies, if in iframe and cookies blocked?  so can logout
+          // As of 2019-12: This is embedded comments login, when 3rd party cookies blocked. [306KUD244]
+          SECURITY // a session cookie will get attached too — would be good if it could
+          // be deleted server side. [serversid]
           OkSafeJson(Json.obj(
             // Not yet weak but later. [weaksid]
             "weakSessionId" -> JsString(sid.value)))  // [NOCOOKIES]
@@ -180,9 +185,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             val isOk = LoginWithSecretController.isAllowedRedirectUrl(
               url, request.origin, request.siteSettings.allowEmbeddingFromBetter, globals.secure)
 
-            // Later, but for now only in dev & test:
+            // Later, but for now only in dev & test:  (also see: [306SKTGR43])
             throwForbiddenIf(!globals.isProd && !isOk,
-              "TyEEXTREDIR", o"""Bad thenGoTo url: '$url' — it's to a different server
+              "TyEEXTREDIR1", o"""Bad thenGoTo url: '$url' — it's to a different server
                 not in the Allow-Embedding-From list ( /-/admin/settings/embedded-comments ).
                 This could be a phishing attempt.""")
             // But for now, backw compat, but not programmer friendly: Remove this after
@@ -207,10 +212,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           val thenGoTo = thenGoToHashEncoded.replaceAllLiterally("__dwHash__", "#")
 
           TemporaryRedirect(thenGoTo)
-              .withCookies(sidAndXsrfCookies: _*)
         }
 
-        response
+        response.withCookies(sidAndXsrfCookies: _*)
 
       // Later:
       // /-/v0/comments-feed —> lists all recent blog comments   [CMTSFEED]
@@ -386,7 +390,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         }
 
         val secret = nextRandomString()
-        dao.redisCache.saveOneTimeLoginSecret(secret, user.id)
+        val expireSeconds = Some(globals.config.oneTimeSecretSecondsToLive)
+
+        dao.redisCache.saveOneTimeLoginSecret(secret, user.id, expireSeconds)
         OkApiJson(Json.obj(
           "loginSecret" -> secret,
           "ssoLoginSecret" -> secret))  // REMOVE deprecated old name

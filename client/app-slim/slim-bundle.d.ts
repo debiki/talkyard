@@ -110,7 +110,8 @@ declare namespace ed {
 
 declare namespace debiki2 {
 
-  function getMainWin(): { typs: PageSession };
+  function getMainWin(): MainWin;
+  function win_canUseCookies(win: MainWin): boolean;
 
   function getNowMs(): WhenMs;
 

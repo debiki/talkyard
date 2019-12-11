@@ -32,6 +32,16 @@
 //------------------------------------------------------------------------------
 
 
+export function win_canUseCookies(win: MainWin): boolean {
+  return (
+      // This first test is if the server got no cookies, although it should have
+      // gotten some cookie. Is this a bit fragile? Not sure if always works.
+      !win.typs.xsrfTokenIfNoCookies &&
+      // This is more reliable?
+      win.typs.canUseCookies);
+}
+
+
 export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
   const idPathRegex = new RegExp(`^.*/-${pageId}(/.*)?$`);  // [2WBG49]
   return idPathRegex.test(urlPath);
