@@ -26,7 +26,7 @@
     "create-react-class": "^15.6.2",
     "eventemitter3": "^3.0.1",
     "fileapi": "^2.0.21",
-    "jquery": "^2.2.4",
+    "jquery": "^3.4.0",
     "jquery-resizable": "=1.0.6",
     "keymaster": "^1.6.2",
     "markdown-it": "^8.4.2",
