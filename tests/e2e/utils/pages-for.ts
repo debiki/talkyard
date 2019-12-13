@@ -142,7 +142,7 @@ function pagesFor(browser) {
 
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
-    refresh2: () => {
+    refresh2: function() {
       origRefresh.apply(browser, arguments);
       api.__updateIsWhere();
     },

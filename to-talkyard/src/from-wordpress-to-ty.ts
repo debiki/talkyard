@@ -57,6 +57,8 @@ function addBlogPostAndComments(wpBlogPostAndComments: WpBlogPostAndComments) {
     authorId: c.SystemUserId,
   };
 
+type PageJustAdded = any;
+
   throw 'Unimpl [ToTyE305MRDT395]';
   const pageJustAdded: PageJustAdded = builder.addPage(pageToAdd);
 

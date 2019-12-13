@@ -68,7 +68,7 @@
     "merge2": "^1.2.3",
     "minimist": "^1.2.0",
     "request": "^2.88.0",
-    "selenium-standalone": "^6.16.0",
+    "selenium-standalone": "^6.17.0",
     "stylus": "^0.54.7",
     "sync-request": "^6.0.0",
     "typescript": "^3.5",

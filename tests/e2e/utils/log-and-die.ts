@@ -36,7 +36,7 @@ const api = {
     console.log(serverRequestColor(message));
   },
   logServerResponse: function(text: string, ps: { boring: boolean } = { boring: true }) {
-    const color = ps.boring? boringColor : ansiColors.white;
+    const color = ps.boring ? boringColor : ansiColors.white;
     console.log(color(`The server says:\n----\n${text.trim()}\n----`));
   },
   printBoringToStdout: function(message: string) {
