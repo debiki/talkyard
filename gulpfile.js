@@ -488,7 +488,8 @@ gulp.task('compileAllTypescript', () => {
       compileOtherTypescript(moreTypescriptProject),
       //compileOtherTypescript(_2dTypescriptProject), // [SLIMTYPE]
       compileOtherTypescript(staffTypescriptProject),
-      compileOtherTypescript(editorTypescriptProject));
+      compileOtherTypescript(editorTypescriptProject),
+      compileOtherTypescript(blogCommentsTypescriptProject));
 });
 
 
