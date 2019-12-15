@@ -259,8 +259,11 @@ RUN rm -fr \
   nginx.conf.default
 
 
-COPY 502.html             /opt/nginx/html/502.html
-COPY 503.html             /opt/nginx/html/503.html
+COPY 502.html             /opt/nginx/html/
+COPY 503.html             /opt/nginx/html/
+
+COPY robots.txt           /opt/talkyard/
+COPY security.txt         /opt/talkyard/
 
 # For development. Another directory gets mounted in prod, see <talkyard-prod-one>/docker-compose.yml.
 COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/

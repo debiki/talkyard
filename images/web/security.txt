@@ -1,0 +1,6 @@
+# For issues with this particular website, e.g. a page or category that ought to be private:
+# Contact the admins here, send them a private message.
+
+# For issues with the underlying discussion software powering this site, Talkyard:
+Contact: mailto:security@talkyard.io
+Contact: https://www.talkyard.io/contact
