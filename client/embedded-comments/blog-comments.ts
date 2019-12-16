@@ -60,6 +60,22 @@ debugLog("Starting... (disable logging by setting talkyardDebug = false)");
 var d = { i: debiki.internal };
 var serverOrigin = d.i.commentsServerOrigin;
 
+// HTTPS problem? Talkyard must use HTTPS, if the blog uses HTTPS,
+// otherwise there'll be an insecure-content-blocked error.
+// If not http, then it must be https, right? Or '//' which is ok, will
+// use the same protocol as the blog.
+const iframeIsHttps = serverOrigin.indexOf('http://') === -1;
+const blogIsHttps = location.origin.indexOf('https://') >= 0;
+const insecureContenError = blogIsHttps && !iframeIsHttps;
+const insecureContentErrorMessage = !insecureContenError ? '' : (
+    "PROBLEM: This website uses HTTPS but your Talkyard server uses HTTP. " +
+    "Most browsers therefore won't show the Talkyard blog comments iframe, " +
+    "and they'll log an 'insecure content blocked' error. " +
+    "— You need to configure your Talkyard server to use HTTPS. [TyEEMBHTTPS]");
+if (insecureContentErrorMessage) {
+  debugLog(insecureContentErrorMessage);
+}
+
 var oneTimeLoginSecret;
 var postNrToFocus;
 
@@ -161,6 +177,21 @@ function loadCommentsCreateEditor() {
 
   Bliss.start(commentsIframe, commentsElem);
   debugLog("inserted commentsIframe");
+
+  if (insecureContentErrorMessage) {
+    const insecureContentErrorElem = Bliss.create('div', {
+      textContent: insecureContentErrorMessage,
+      style: {
+        padding: '20px',
+        margin: '20px 10px',
+        width: 'calc(100% - 60px)',  // (20 + 10) * 2 = 60
+        background: 'hsl(0,100%,33%)', // dark red
+        color: 'yellow',
+        fontWeight: 'bold',
+      },
+    });
+    Bliss.start(insecureContentErrorElem, commentsElem);
+  }
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
