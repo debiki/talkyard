@@ -22,7 +22,7 @@ if there was a classification error.)
 If many posts by a new user are classified as spam. Or if staff deletes most of hens
 posts, during review. Then mark user as a moderate threat. [DETCTTHRT]
 
-[privacy-badger]:
+FIXED, now uses 1st party cookie or storage: [privacy-badger]:
 Privacy Badger doesn't like transient session cookies, currently.
 (See https://github.com/EFForg/privacybadger/issues/2003#issuecomment-391745819  bullet point 3. )
 So maybe change from csrf Double Submit Cookie, to Encrypted Token Pattern?
@@ -216,6 +216,12 @@ https://news.ycombinator.com/item?id=19862002
 
 SECURITY: https://news.ycombinator.com/item?id=19856419 "HTTP headers for the responsible developer"
 https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+
+[like-notfs]
+Send notifications about getting a Like.
+
+[refactor-notfs]
+Remove Nchan. Use Rust + server-sent-events instead.
 
 
 [external-server-js]

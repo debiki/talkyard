@@ -344,7 +344,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
     majasBrowser.forumButtons.clickCreateTopic();
   });
 
-  let majasTitle = "How does one " + SharedText;
+  let majasTitle = "How do kittens " + SharedText;
 
   it("... surprisingly, she types a title with a word from all 3 topics", () => {
     majasBrowser.editor.editTitle(majasTitle);

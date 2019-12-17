@@ -108,9 +108,9 @@ trait MessagesDao {
       }
     }
 
+    // (Tested here: [TyTPAGENOTF])
     pubSub.publish(
-      // pagePath.pageId is pointless (since the page is new) — send the forum page id instead?
-      pubsub.NewPageMessage(siteId, pagePath.pageId, pageRole, notfs), byId = sentById)
+      pubsub.NewPageMessage(siteId, notfs), byId = sentById)
 
     pagePath
   }

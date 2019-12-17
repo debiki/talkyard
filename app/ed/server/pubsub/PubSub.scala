@@ -41,11 +41,8 @@ sealed trait Message {
 }
 
 
-// Remove? Use StorePatchMessage instead?
 case class NewPageMessage(
   siteId: SiteId,
-  pageId: PageId,
-  pageRole: PageType,
   notifications: Notifications) extends Message {
 
   def toJson: JsValue = JsNull
@@ -349,8 +346,14 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         traceLog(message.siteId, lazyMessage)
 
         sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
+
+      case newPageMessage: NewPageMessage =>
+        COULD // send a patch to everyone looking at the topic list, so they'll
+        // notice this new topic. (Unless it's private.)
+        // Exclude private page members though — they got notified above,
+        // via the notifications list.
       case x =>
-        unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")  // BUG sometimes happens, harmless?
+        unimplemented(s"Publishing ${classNameOf(x)} [TyEPUBWHAT]")
     }
   }
 

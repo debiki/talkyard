@@ -706,6 +706,7 @@ restart server -
   restart everything at once -
     ... same tests as above ...
 
+notfs,
 notifications:
   about review tasks:   — see (502M7)
   about chat replies:
@@ -722,6 +723,7 @@ notifications:
   about topics one may not see:
           - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
 
+live notfs,
 live notifications -
   works after many long-polls:
     - basic-chat.2browsers.test.ts  [8T5WKBQT]
@@ -731,6 +733,8 @@ live notifications -
     And can patch: var orig = xhr.method; xhr.method = function(){ ... else return orig.apply(this, arguments); };
        — just call onerror in the patch?
     Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
+  new page, added to:
+          - chat-create-from-direct-message  TyTPAGENOTF
 
 notf prefs inherited:
   one's own, from site, to cat, to topic:
