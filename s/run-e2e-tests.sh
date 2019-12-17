@@ -271,6 +271,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-admin --waitforTimeout=42000 $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-member $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-stranger $args
+  # Also:  embedded-comments-navigation-as-guest  further below.
+
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only votes-and-best-first $args
 
@@ -452,6 +454,9 @@ function runAllE2eTests {
 
   # Embedded comments
   # ------------
+
+  # Also see navigation-as-* above.
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-navigation-as-guest $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-req-verif-email.2browsers $args

@@ -1,19 +1,25 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
+import fs = require('fs');
 import assert = require('assert');
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
 import { buildSite } from '../utils/site-builder';
-import logMessageModule = require('../utils/log-and-die');
+import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
-const logMessage = logMessageModule.logMessage;
+import utils = require('../utils/utils');
+const logMessage = lad.logMessage;
 
 declare let browser: any;
 
 let forum: LargeTestForum;
 
 let usersBrowser;
+
+let initResult: InitResult;
+let who: string;
+
 let memberName: string;
 let member;
 let memberIsAdmin: boolean;
@@ -46,18 +52,46 @@ function assertPublicTopicsVisible(browser) {
 }
 
 
+interface InitResult {
+  member?: string;  // RENAME to 'username'
+  fullName?: string;
+  memberIsAdmin?: true;
+  isGuest?: true;
+}
 
-function makeWholeSpec(initFn) {
-  const initResult = initFn(browser);
+
+function makeWholeSpec(initFn: (browser) => InitResult) {
+  initResult = initFn(browser);
   memberName = initResult.member;
   usersBrowser = _.assign(browser, pagesFor(browser));
   memberIsAdmin = initResult.memberIsAdmin;
+  let willBeLoggedIn = false;
+
+  // Only for testing guests. -----
+  const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
+  const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
+  const pageSlug = 'emb-cmts-guest.html';
+  const pageUrl = embeddingOrigin + '/' + pageSlug;
+  // ------------------------------
+
   forum = buildSite().addLargeForum({
     title: forumTitle,
     members: ['alice', 'maria', 'michael'],
   });
 
-  const who = (memberIsAdmin ? "admin " : (memberName ? "member " : "a stranger")) + (memberName || '');
+  if (initResult.isGuest) {
+    // Create an embedded comments site.
+    forum.siteData.meta.localHostname = localHostname;
+    forum.siteData.settings.allowEmbeddingFrom = embeddingOrigin;
+    forum.siteData.settings.allowGuestLogin = true;
+  }
+
+  who = (
+      memberIsAdmin ? "admin " : (
+        memberName ? "member " : (
+          initResult.isGuest ? "guest " : "a stranger"))) + (
+      memberName || initResult.fullName || '');
+
 
   describe(`Navigation as ${who}:`, () => {
 
@@ -71,9 +105,59 @@ function makeWholeSpec(initFn) {
     });
 
     if (memberName) {
-      it("login", () => {
+      willBeLoggedIn = true;
+
+      it(`login as member ${memberName}`, () => {
         member = forum.members[memberName];
         usersBrowser.complex.loginWithPasswordViaTopbar(member);
+      });
+    }
+    else if (initResult.isGuest) {
+      // Need to create an embedding page, to login as Guest there, by clickng Reply.
+      willBeLoggedIn = true;
+
+      it("Creates an embedding page", () => {
+        fs.writeFileSync(`target/emb-comments`, makeHtml('b3c-aaa', '#500'));
+        function makeHtml(pageName: string, bgColor: string): string {
+          return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
+        }
+      });
+
+      it(`... opens it`, () => {
+        usersBrowser.go(pageUrl);
+      });
+
+      it(`... logs in as guest ${initResult.fullName}`, () => {
+        // This opens a guest login dialog: (but the Sign Up button doesn't)
+        //usersBrowser.forumButtons.clickCreateTopic();
+        logMessage("comments iframe: Clicking Reply ...");
+        usersBrowser.switchToEmbeddedCommentsIrame();
+        usersBrowser.topic.clickReplyToEmbeddingBlogPost();
+
+        logMessage("login popup: Logging in as guest ...");
+        usersBrowser.swithToOtherTabOrWindow();
+        usersBrowser.disableRateLimits();
+        usersBrowser.loginDialog.signUpLogInAs_Real_Guest(initResult.fullName);
+        usersBrowser.switchBackToFirstTabOrWindow();
+      });
+
+      it(`Click one's user profile link...`, () => {
+        usersBrowser.switchToEmbeddedCommentsIrame();
+        //usersBrowser.go(idAddress.origin);
+        usersBrowser.waitAndClick('.s_MB_Name');
+      });
+
+      it(`... switches to a new tab, which should show hens profile`, () => {
+        const numTabs = usersBrowser.numBrowserTabs();
+        assert(numTabs >= 2); // more than two, if we're debugging and have opened more tabs
+        usersBrowser.swithToOtherTabOrWindow();
+      });
+
+      addOwnProfileTest("0: ");
+
+      it(`... closes that tab, switches back to the first`, () => {
+        usersBrowser.close();
+        usersBrowser.swithToOtherTabOrWindow();
       });
     }
 
@@ -81,6 +165,7 @@ function makeWholeSpec(initFn) {
       // This makes all different 'describe...' below work, also if the first one is skipped.
       usersBrowser.go('/' + forum.topics.byMariaCategoryA.slug);
     });
+
 
     // ------- Test the forum
 
@@ -124,6 +209,7 @@ function makeWholeSpec(initFn) {
         addForumTests("5: ");
       }
     });
+
 
     // ------- Test a topic
 
@@ -172,9 +258,9 @@ function makeWholeSpec(initFn) {
     });
 
 
-    // ------- Test user profile
+    // ------- Test nav to other user's profile
 
-    describe("Test navigation to user profile", () => {
+    describe("Test navigation to other user's profile", () => {
 
       it("start at forum, to test Maria's profile page", () => {
         usersBrowser.go(idAddress.origin);
@@ -228,9 +314,47 @@ function makeWholeSpec(initFn) {
     });
 
 
+    // ------- Test nav to own profile
+
+    if (willBeLoggedIn) describe("Test nav to own profile", () => {
+
+      it("start at forum, MyMenu nav to own profile page", () => {
+        usersBrowser.go2(idAddress.origin);
+        usersBrowser.topbar.clickGoToProfile();
+      });
+      addOwnProfileTest("1: ");
+
+      it("start at discussion topic, MyMenu nav to own profile page", () => {
+        usersBrowser.go2('/' + forum.topics.byMariaCategoryANr2.slug);
+        usersBrowser.topbar.clickGoToProfile();
+      });
+      addOwnProfileTest("2: ");
+
+      it("start at another user's profile, MyMenu nav to own profile", () => {
+        usersBrowser.go2('/-/users/michael');
+        usersBrowser.topbar.clickGoToProfile();
+      });
+      addOwnProfileTest("3: ");
+
+      it("start at search page, MyMenu nav to own profile", () => {
+        usersBrowser.goToSearchPage();
+        usersBrowser.topbar.clickGoToProfile();
+      });
+      addOwnProfileTest("4: ");
+
+      if (memberIsAdmin) {
+        it("start at admin page, MyMenu nav to own profile", () => {
+          usersBrowser.adminArea.goToReview();
+          usersBrowser.topbar.clickGoToProfile();
+        });
+        addOwnProfileTest("5: ");
+      }
+    });
+
+
     // ------- Create topic, then test everything
 
-    if (memberName) describe("Test new topic, and navigation from it to everything", () => {
+    if (willBeLoggedIn) describe("Test new topic, and navigation from it to everything", () => {
 
       it("go to forum, create a topic", () => {
         usersBrowser.go(idAddress.origin);
@@ -382,7 +506,31 @@ function addMariasProfileTets(testPrefix) {
     usersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(
         forum.topics.byMariaCategoryA.title);
   });
+}
 
+
+// BREAK OUT, add to assert?
+function assertIncludes(text: string, expectedSubstring: string, message?: string) {
+  // Could make this work w regexs too.
+  const ix = text.indexOf(expectedSubstring);
+  assert.ok(ix >= 0, message || `This: "${expectedSubstring}" is missing from: "${text}"`);
+}
+
+
+function addOwnProfileTest(prefix: string) {
+  it(prefix + "... the profile page shows the correct user: " + who, () => {
+    const upp = usersBrowser.userProfilePage;
+    let n = 0;
+    if (initResult.fullName) {
+      assertIncludes(upp.waitAndGetFullName(), initResult.fullName);
+      n += 1;
+    }
+    if (initResult.member) {
+      assertIncludes(upp.waitAndGetUsername(), initResult.member);
+      n += 1;
+    }
+    lad.dieIf(!n, `Broken e2e test: No user profile tests [TyE305KD5JM4]`);
+  });
 }
 
 
@@ -426,7 +574,6 @@ function addSearchPageTests(searchPhrase) {
     const text = browser.$('.esSERP_Hit_Text').getText();
     assert(text === newTopicText, `Found text: "${text}", should have been: "${newTopicText}"`);
   });
-
 }
 
 

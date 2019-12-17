@@ -4077,8 +4077,12 @@ function pagesFor(browser) {
         api.waitAndGetElemIdWithText('.esUP_Un', username);
       },
 
-      waitAndGetUsername: () => {
+      waitAndGetUsername: (): string => {
         return api.waitAndGetVisibleText('.esUP_Un');
+      },
+
+      waitAndGetFullName: (): string => {
+        return api.waitAndGetVisibleText('.esUP_FN');
       },
 
       waitUntilDeletedOrDeactivated: () => {

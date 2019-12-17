@@ -110,6 +110,7 @@ navigation:
           - navigation-as-stranger.test.ts  TyT5WKAB024
           - navigation-as-member.test.ts  TyT2ABKR593
           - navigation-as-admin.test.ts  TyT7WAAR2J4
+          - embedded-comments-navigation-as-guest.test.ts  TyT2P067WKT2
 
 unapproved comments -
           - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20

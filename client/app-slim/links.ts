@@ -138,7 +138,8 @@ export function linkToMyDraftsEtc(store: Store): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return linkToUserProfilePage(store.me.username);
+  // Guests have no username — instead, use their participant id.
+  return linkToUserProfilePage(store.me.username || store.me.id);
 }
 
 
