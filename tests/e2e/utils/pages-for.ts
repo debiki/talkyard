@@ -3476,6 +3476,19 @@ function pagesFor(browser) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
       },
 
+      waitForViewEditsButton: (postNr: PostNr) => {
+        api.waitForVisible(`#post-${postNr} .esP_viewHist`);
+      },
+
+      isViewEditsButtonVisible: (postNr: PostNr): boolean => {
+        return browser.isVisible(`#post-${postNr} .esP_viewHist`);
+      },
+
+      openEditHistory: (postNr: PostNr) => {
+        api.waitAndClick(`#post-${postNr} .esP_viewHist`);
+        api.editHistoryDialog.waitUntilVisible();
+      },
+
       clickMoreForPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
       },
@@ -5508,15 +5521,47 @@ function pagesFor(browser) {
 
     movePostDialog: {
       moveToOtherSection: () => {
-        browser.waitAndClick('.s_MPD_OtrSct .btn');
-        browser.waitAndClick('.esStupidDlg a');
+        api.waitAndClick('.s_MPD_OtrSct .btn');
+        api.waitAndClick('.esStupidDlg a');
       },
 
       pastePostLinkMoveToThere: () => {
-        browser.waitAndPasteClipboard('#te_MvPI');
-        browser.waitAndClick('.e_MvPB');
+        api.waitAndPasteClipboard('#te_MvPI');
+        api.waitAndClick('.e_MvPB');
       }
     },
+
+
+    editHistoryDialog: {
+      close: () => {
+        api.waitAndClick('.dw-edit-history .modal-footer .btn');
+        api.waitUntilGone('.dw-edit-history');
+      },
+
+      countDiffs: (): number => {
+        return api.count('.dw-edit-history pre');
+      },
+
+      waitUntilVisible: () => {
+        api.waitForVisible('.dw-edit-history');
+        api.waitUntilDoesNotMove('.dw-edit-history');
+      },
+
+      waitGetAuthorAndDiff: (editEntryNr: number): EditHistoryEntry => {
+        dieIf(editEntryNr < 1, "First edit diff entry is nr 1, not 0 [TyE20KGUTf06]");
+        // Nr 1 is a help text, nr 2 is the first diff entry — so add +1.
+        const selector =
+            `.dw-edit-history .modal-body > div > .ed-revision:nth-child(${editEntryNr + 1})`;
+        browser.waitForVisible(selector);
+        const authorUsername = api.waitAndGetVisibleText(selector + ' .dw-username');
+        const diffHtml = browser.getHTML(selector + ' pre');
+        return {
+          authorUsername,
+          diffHtml,
+        }
+      },
+    },
+
 
     serverErrorDialog: {
       waitForNotLoggedInError: function() {

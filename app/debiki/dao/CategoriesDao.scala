@@ -304,7 +304,7 @@ trait CategoriesDao {
         groupIds = authzCtx.groupIdsUserIdFirst,
         pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
         categoriesRootLast = categories,
-        permissions = authzCtx.permissions,
+        tooManyPermissions = authzCtx.tooManyPermissions,
         maySeeUnlisted = false) // pageQuery.pageFilter.includesUnlisted
       may == MayMaybe.Yes
     }

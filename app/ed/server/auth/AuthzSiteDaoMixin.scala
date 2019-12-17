@@ -160,7 +160,7 @@ trait AuthzSiteDaoMixin {
       }
 
     Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIdsUserIdFirst, memberIds,
-        categories, authzContext.permissions, maySeeUnlisted) match {
+        categories, authzContext.tooManyPermissions, maySeeUnlisted) match {
       case Yes => (true, "")
       case mayNot: NoMayNot => (false, mayNot.code)
       case mayNot: NoNotFound => (false, mayNot.debugCode)

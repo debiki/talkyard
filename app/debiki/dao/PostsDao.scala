@@ -736,7 +736,7 @@ trait PostsDao {
         editorAndLevels, tx.loadGroupIdsMemberIdFirst(editor),
         postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
         inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId),
-        permissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
+        tooManyPermissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -1895,7 +1895,7 @@ trait PostsDao {
         flagger, tx.loadGroupIdsMemberIdFirst(flagger),
         postBefore, pageMeta, tx.loadAnyPrivateGroupTalkMembers(pageMeta),
         inCategoriesRootLast = categories,
-        permissions = tx.loadPermsOnPages()), "EdEZBXKSM2")
+        tooManyPermissions = tx.loadPermsOnPages()), "EdEZBXKSM2")
 
       dieIf(postBefore.isDeleted, "TyE2FKG69")
       dieIf(pageMeta.isDeleted, "TyE4FKBFA2")

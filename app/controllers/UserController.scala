@@ -1267,7 +1267,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIdsOwnFirst(request.user),
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     val names = dao.listUsernames(pageId = pageId, prefix = prefix)

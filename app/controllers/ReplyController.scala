@@ -71,7 +71,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEZBXK3M2")
 
     REFACTOR; COULD // intstead: [5FLK02]
@@ -116,7 +116,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theUserAndLevels, dao.getOnesGroupIds(request.theMember),
       PostType.ChatMessage, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")
 
     // Don't follow links in chat messages — chats don't work with search engines anyway.
@@ -284,7 +284,7 @@ object EmbeddedCommentsPageCreator {
       request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),
       pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
       "EdE7USC2R8")
 
     dao.createPage(pageRole, PageStatus.Published,

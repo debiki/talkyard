@@ -106,14 +106,14 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
           request.theUserAndLevels, dao.getOnesGroupIds(requester),
           postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
-          permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+          tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
       }
       else {
         throwNoUnless(Authz.mayEditPost(
           request.theUserAndLevels, dao.getOnesGroupIds(requester),
           post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
           inCategoriesRootLast = categoriesRootLast,
-          permissions = dao.getPermsOnPages(categoriesRootLast)), "TyEZBXK3M3")
+          tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "TyEZBXK3M3")
       }
     }
     else {

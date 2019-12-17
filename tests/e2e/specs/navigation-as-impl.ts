@@ -3,6 +3,7 @@
 import * as _ from 'lodash';
 import fs = require('fs');
 import assert = require('assert');
+import tyAssert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
 import { buildSite } from '../utils/site-builder';
@@ -509,12 +510,6 @@ function addMariasProfileTets(testPrefix) {
 }
 
 
-// BREAK OUT, add to assert?
-function assertIncludes(text: string, expectedSubstring: string, message?: string) {
-  // Could make this work w regexs too.
-  const ix = text.indexOf(expectedSubstring);
-  assert.ok(ix >= 0, message || `This: "${expectedSubstring}" is missing from: "${text}"`);
-}
 
 
 function addOwnProfileTest(prefix: string) {
@@ -522,11 +517,11 @@ function addOwnProfileTest(prefix: string) {
     const upp = usersBrowser.userProfilePage;
     let n = 0;
     if (initResult.fullName) {
-      assertIncludes(upp.waitAndGetFullName(), initResult.fullName);
+      tyAssert.includes(upp.waitAndGetFullName(), initResult.fullName);
       n += 1;
     }
     if (initResult.member) {
-      assertIncludes(upp.waitAndGetUsername(), initResult.member);
+      tyAssert.includes(upp.waitAndGetUsername(), initResult.member);
       n += 1;
     }
     lad.dieIf(!n, `Broken e2e test: No user profile tests [TyE305KD5JM4]`);

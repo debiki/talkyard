@@ -83,7 +83,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,

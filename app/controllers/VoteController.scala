@@ -123,7 +123,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao.getGroupIdsOwnFirst(requester),
       dao.getAnyPrivateGroupTalkMembers(pageMeta),
       categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)),
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2QVBF06")
 
     val theVoteType = PostVoteType.fromInt(voteType) getOrElse throwBadArgument("EdE2QTKB40", "voteType")

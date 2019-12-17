@@ -277,6 +277,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only votes-and-best-first $args
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only editor-onebox $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only view-edit-history.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only direct-messages-notfs.3browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only chat-basic.2browsers $args

@@ -61,7 +61,7 @@ class FlagController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theMember, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val postsHidden = try {
       dao.flagPost(pageId = pageId, postNr = postNr, flagType,

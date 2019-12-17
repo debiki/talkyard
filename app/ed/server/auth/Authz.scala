@@ -36,23 +36,22 @@ object MayMaybe {
 sealed abstract class AuthzContext {
   def requester: Option[Participant]
   def groupIdsUserIdFirst: immutable.Seq[GroupId]
-  def permissions: immutable.Seq[PermsOnPages]
+  def tooManyPermissions: immutable.Seq[PermsOnPages]
   def isStaff: Boolean = requester.exists(_.isStaff)
   def isAdmin: Boolean = requester.exists(_.isAdmin)
 
-  // For now: If is stranger, then requester = None, and only allowed group id = Everyone.
   if (requester.isEmpty) {
-    permissions foreach { permission =>
-      require(permission.forPeopleId == Group.EveryoneId,
-        s"Bad permission, not for Everyone: $permission [EdE2QSRB7]")
-    }
+    // Strangers cannot be members of any group except for the Everyone group.
+    require(groupIdsUserIdFirst == List(Group.EveryoneId))
+    // It's fine, though, if tooManyPermissions includes permissions for
+    // other groups — such permissions get excluded, later [7RBBRY2].
   }
 }
 
 case class ForumAuthzContext(
   requester: Option[Participant],
   groupIdsUserIdFirst: immutable.Seq[GroupId],
-  permissions: immutable.Seq[PermsOnPages]) extends AuthzContext {
+  tooManyPermissions: immutable.Seq[PermsOnPages]) extends AuthzContext {
 
   def groupIdsEveryoneLast: immutable.Seq[GroupId] = {
     if (requester.exists(_.isGroup)) {
@@ -108,12 +107,12 @@ object Authz {
     anySlug: Option[String],
     anyFolder: Option[String],
     inCategoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     val mayWhat = checkPermsOnPages(Some(user), groupIds, pageMeta = None, pageMembers = None,
-      inCategoriesRootLast, permissions)
+      inCategoriesRootLast, tooManyPermissions)
 
     def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
       inCategoriesRootLast.isEmpty
@@ -159,11 +158,11 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     pageMembers: Set[UserId],
     categoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages],
+    tooManyPermissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Boolean = true): MayMaybe = {
 
     val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), Some(pageMembers),
-      categoriesRootLast, permissions, maySeeUnlisted = maySeeUnlisted)
+      categoriesRootLast, tooManyPermissions, maySeeUnlisted = maySeeUnlisted)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0SEE-${mayWhat.debugCode}")
@@ -175,7 +174,7 @@ object Authz {
   def maySeeCategory(authzCtx: AuthzContext, categoriesRootLast: immutable.Seq[Category])
         : MayWhat = {
     checkPermsOnPages(authzCtx.requester, authzCtx.groupIdsUserIdFirst,
-      pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.permissions,
+      pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.tooManyPermissions,
       maySeeUnlisted = false)
   }
 
@@ -188,13 +187,13 @@ object Authz {
     replyToPosts: immutable.Seq[Post],
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     SHOULD // be check-perms-on pageid + postnr, not just page
     val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
@@ -237,14 +236,14 @@ object Authz {
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     if (post.isDeleted)
       return NoNotFound("EdEM0EDPOSTDELD")
 
     val user = userAndLevels.user
     val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
@@ -278,7 +277,7 @@ object Authz {
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     if (post.isDeleted)
       return NoMayNot("TyEM0FLGDELDPST", "You cannot flag deleted posts")
@@ -296,7 +295,7 @@ object Authz {
 
     SHOULD // be maySeePost pageid, postnr, not just page
     val mayWhat = checkPermsOnPages(Some(member), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound("EdEM0FLG0SEE")
@@ -310,12 +309,12 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     pageMeta: PageMeta,
     inCategoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    tooManyPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), None, inCategoriesRootLast,
-      permissions)
+      tooManyPermissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound("EdEM0FRM0SEE")
@@ -351,7 +350,7 @@ object Authz {
     pageMeta: Option[PageMeta],
     pageMembers: Option[Set[UserId]],
     categoriesRootLast: immutable.Seq[Category],
-    permissions: immutable.Seq[PermsOnPages],
+    tooManyPermissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Boolean = true): MayWhat = {
 
     if (user.exists(_.isAdmin))
@@ -404,7 +403,7 @@ object Authz {
       }
     }
 
-    val relevantPermissions = permissions filter { permission =>  // [7RBBRY2]
+    val relevantPermissions = tooManyPermissions filter { permission =>  // [7RBBRY2]
       groupIds.contains(permission.forPeopleId)
     }
 

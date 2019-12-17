@@ -352,6 +352,7 @@ topics -
           - api-upsert-pages.2browsers.test.ts  TyT602FKUDLSV
 
 
+edit,
 editor -
   edit post:
           - drafts-reply-edit-dir-msg.2browsers.test.ts   TyT5A2HSL8
@@ -362,6 +363,9 @@ editor -
     ...
   similar topics:
             - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+  ninja-edit,
+  view edit history:
+            - view-edit-history.2browsers.test.ts  TyT60RKDWL25
 
 
 mentions:

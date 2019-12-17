@@ -220,7 +220,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
     val randomString = parts(3)
     val correctCookieValue = concatAndHash(oldUserId, viewAsGroupOnly, unixSeconds, randomString)
     if (value != correctCookieValue)
-      throwForbidden("EsE6YKP2", s"Bad hash")
+      throwForbidden("TyE6YKP2JW3", s"Bad hash")
 
     val ageSeconds = globals.now().numSeconds - unixSeconds
     (ageSeconds, oldUserId)

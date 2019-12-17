@@ -138,7 +138,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val draftLocator = DraftLocator(
       DraftType.Edit,
@@ -201,7 +201,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theUserAndLevels, dao.getOnesGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
+      tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
     val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
     val newTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(

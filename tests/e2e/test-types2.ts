@@ -459,6 +459,13 @@ interface TestPost {  // later: try to unify with Post?
 }
 
 
+interface EditHistoryEntry {
+  authorUsername?: string;
+  authorFullName?: string;
+  diffHtml: string;
+}
+
+
 interface IdAddress {
   id: SiteId;
   pubId: string;

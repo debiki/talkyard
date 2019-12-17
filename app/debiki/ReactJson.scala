@@ -356,7 +356,7 @@ class JsonMaker(dao: SiteDao) {
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
-      "me" -> noUserSpecificData(authzCtx.permissions),
+      "me" -> noUserSpecificData(authzCtx.tooManyPermissions),
       "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
@@ -597,7 +597,7 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
 
-    val permissions = pageRequest.authzContext.permissions
+    val permissions = pageRequest.authzContext.tooManyPermissions
 
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
     if (pageRequest.pageExists) {
@@ -630,7 +630,7 @@ class JsonMaker(dao: SiteDao) {
     val requester = request.user getOrElse {
       return JsNull
     }
-    val permissions = authzContext.permissions
+    val permissions = authzContext.tooManyPermissions
     val watchbar = dao.getOrCreateWatchbar(requester.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val restrictedCategories = JsArray()

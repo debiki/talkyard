@@ -72,6 +72,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
+    server.skipRateLimits(siteId);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
@@ -108,9 +109,6 @@ describe("some-e2e-test  TyT1234ABC", () => {
   it("Maria logs in", () => {
     mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-
-    // And if needed:
-    //someone's-Browser.disableRateLimits();
   });
 
   // For embedded comments:
