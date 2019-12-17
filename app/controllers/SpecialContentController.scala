@@ -74,7 +74,7 @@ class SpecialContentController @Inject()(cc: ControllerComponents, edContext: Ed
     val rootPageId = (request.body \ "rootPageId").as[PageId]
     val contentId = (request.body \ "contentId").as[PageId]
     val useDefaultText = (request.body \ "useDefaultText").as[Boolean]
-    val anyNewText = (request.body \ "anyCustomText").asOpt[String]
+    val anyNewText = (request.body \ "anyCustomText").asOptStringNoneIfBlank
 
     request.dao.saveSpecialContent(rootPageId, contentId, anyNewText, useDefaultText,
       editorId = request.theUserId)

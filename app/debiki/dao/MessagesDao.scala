@@ -108,9 +108,11 @@ trait MessagesDao {
       }
     }
 
+    COULD // notify toUserIds [refactor-notfs]  about this new chat having been created for them.
+    /* This doesn't work, NewPageMessage isn't implemented:
     pubSub.publish(
       // pagePath.pageId is pointless (since the page is new) — send the forum page id instead?
-      pubsub.NewPageMessage(siteId, pagePath.pageId, pageRole, notfs), byId = sentById)
+      pubsub.NewPageMessage(siteId, pagePath.pageId, pageRole, notfs), byId = sentById) */
 
     pagePath
   }

@@ -69,9 +69,9 @@ trait SpecialContentDao {
     if (anyNewSource.isDefined && resetToDefaultContent)
       throwBadReq("DwE5FSW0", "Both new-text and reset-to-default-content specified")
 
-    val newSource = anyNewSource getOrElse {
+    val newSource = anyNewSource.trimNoneIfBlank getOrElse {
       if (resetToDefaultContent) SpecialContentPages.UseDefaultContentMark
-      else throwBadReq("DwE2GY05", "No new text specified")
+      else throwBadReq("TyE0SPECTXT", "No new text specified")
     }
 
     val pageId = s"$rootPageId$contentId"

@@ -29,16 +29,21 @@ export var SpecialContent = createComponent({
   componentDidMount: function() {
     Server.loadSpecialContent(this.props.rootPageId, this.props.contentId, content => {
       this.setState({
-        content: content,
+        content,
         editedText: this.savedText(content)
       });
     });
   },
 
   saveEdits: function() {
-    let content = { ...this.state.content, anyCustomText: this.state.editedText };
-    Server.saveSpecialContent(content, () => {
-      this.setState({ content: content });
+    let anyCustomText = this.state.editedText;
+    if (anyCustomText) anyCustomText = anyCustomText.trim();
+    let contentToSave = { ...this.state.content, anyCustomText };
+    Server.saveSpecialContent(contentToSave, () => {
+      this.setState({
+        content: contentToSave,
+        editedText: this.savedText(contentToSave),
+      });
       this.cancelForgotToSaveWarning();
     });
   },
