@@ -115,6 +115,7 @@ export function makeNoPageData(): MyPageData {
   return {
     dbgSrc: 'MyNP',
     pageId: EmptyPageId,
+    myDrafts: <Draft[]> [],
     myPageNotfPref: <PageNotfPref> undefined,
     groupsPageNotfPrefs: <PageNotfPref[]> [],
     votes: {},
@@ -729,6 +730,8 @@ export var StoreListenerMixin = {
   },
 
   componentWillUnmount: function() {
+    // BUG, harmless: [MIXINBUG] onChange might get invoked, just after the component
+    // got unmounted, but before we remove the listener here.
     ReactStore.removeChangeListener(this.onChange);
   }
 };
@@ -799,7 +802,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // (Top level embedded comments have no parent post — there's no Original Post.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
-    sortPostNrsInPlaceBestFirst(page.parentlessReplyNrsSorted, page.postsByNr);
+    sortPostNrsInPlaceBestFirst(page. parentlessReplyNrsSorted, page.postsByNr);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -1046,6 +1049,9 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     var postA: Post = postsByNr[nrA];
     var postB: Post = postsByNr[nrB];
 
+    // Wip: Place previews first.
+
+
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
     if (!postA && !postB)
@@ -1228,6 +1234,23 @@ function patchTheStore(storePatch: StorePatch) {
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
     store.me = <Myself> _.assign(store.me || {}, storePatch.me);
+  }
+
+  if (storePatch.updateEditPreview) {
+    const replyPreviews = store.replyPreviewsByPostId ?? {};
+    const p = storePatch.updateEditPreview;
+    replyPreviews[p.postId] = p;
+    // [redux] modifying the store in place, again.
+    store.replyPreviewsByPostId = replyPreviews;
+
+    // Quick-update this — otherwise, the UI might always freeze, if typing
+    // fast on a low-end mobile?
+    // Maybe cannot quick-update though, if there're more things in the patch.
+    // @ifdef DEBUG
+    dieIf(_.size(storePatch) > 1, 'TyED205MWUG6');
+    // @endif
+    store.quickUpdate = true;
+    store.postsToUpdate[p.postId] = true;
   }
 
   if (storePatch.publicCategories) {

@@ -136,6 +136,22 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  override def loadDraftsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[Draft] = {
+    UNTESTED
+    val query = s"""
+      select d.* from drafts3 d inner join posts3 p
+        on d.site_id = p.site_id
+        and d.post_id = p.unique_post_id
+      where d.site_id = ?
+        and d.by_user_id = ?
+        and d.deleted_at is null
+        and d.draft_type in (${DraftType.Edit.toInt}, ${DraftType.Reply.toInt})
+        and p.page_id = ?
+        order by coalesce(d.last_edited_at, d.created_at) desc"""
+    runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef, pageId), readDraft)
+  }
+
+
   override def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft] = {
     val values = ArrayBuffer[AnyRef](
       siteId.asAnyRef, userId.asAnyRef, draftLocator.draftType.toInt.asAnyRef)

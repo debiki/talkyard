@@ -1061,6 +1061,7 @@ const Thread = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const me: Myself = store.me;
     const page: Page = store.currentPage;
     const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
     const post: Post = postsByNr[this.props.postId];
@@ -1069,11 +1070,18 @@ const Thread = createComponent({
       return null;
     }
 
+    const anyReplyPreview = null; /*store.replyPreviewsByPostId[post.uniqueId];
+    const replyPrevwElem = !anyReplyPreview ? null :
+        r.li({ className: 's_R_Pv', key: 'Prevw' },
+          anyReplyPreview.safeHtml
+              ? JSON.stringify(anyReplyPreview.safeHtml)
+              : "(Your reply will appear here)"); */
+
     const parentPost = postsByNr[post.parentNr];
     const deeper = this.props.depth + 1;
     const isFlat = this.props.isFlat;
     const isMindMap = page.pageRole === PageRole.MindMap;
-    const thisAndSiblingsSideways = this.props.is2dTreeColumn && isMindMap;
+    const thisAndSiblingsSideways: boolean = this.props.is2dTreeColumn && isMindMap;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -1190,6 +1198,12 @@ const Thread = createComponent({
 
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
+    const drafts: Draft[] = me.myDataByPageId?.[store.currentPageId]?.myDrafts ?? [];
+    const anyEditDraft = _.find(drafts, d =>
+        d.forWhat.draftType === DraftType.Edit && d.forWhat.postId === post.uniqueId);
+    const anyReplyDraft = anyReplyPreview ? null : _.find(drafts, d =>
+        d.forWhat.draftType === DraftType.Reply && d.forWhat.postId === post.uniqueId);
+
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
           is2dColumnClass + branchSidewaysClass + collapsedClass + avatarClass },
@@ -1197,7 +1211,9 @@ const Thread = createComponent({
         anyWrongWarning,
         anyAvatar,
         Post(postProps),
+        anyEditDraft ? r.pre({}, JSON.stringify(anyEditDraft)) : null,
         actions,
+        anyReplyDraft ? r.pre({}, JSON.stringify(anyReplyDraft)) : null,
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },

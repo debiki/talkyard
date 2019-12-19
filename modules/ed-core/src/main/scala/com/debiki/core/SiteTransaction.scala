@@ -129,6 +129,7 @@ trait SiteTransaction {
   def deleteDraft(userId: UserId, draftNr: DraftNr): Boolean
   def loadAllDrafts(): immutable.Seq[Draft]
   def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
+  def loadDraftsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[Draft]
   def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
 

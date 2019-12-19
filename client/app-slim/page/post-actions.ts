@@ -188,6 +188,75 @@ export const PostActions = createComponent({
       }
       else {
         debiki2.editor.toggleWriteReplyToPostNr(post.nr, inclInReply, newPostType);
+
+        // So won't overlap with post nrs and ids.
+        const previewOffset = -1000 * 1000 * 1000;
+
+        const previewPostIdNr =
+            previewOffset -
+            // Different previews when replying to different posts.
+            post.nr * 100 -
+            // Different previews for progress orig-post reply, and discussion orig-post reply.
+            newPostType;
+
+        const now = getNowMs();
+
+        const patch = {
+          pageVersionsByPageId: {},
+          postsByPageId: {},
+        } as StorePatch;
+
+        const previewPost: Post = {
+          uniqueId: previewPostIdNr,
+          nr: previewPostIdNr,
+          parentNr: post.nr,
+          multireplyPostNrs: [], //PostNr[];
+          postType: newPostType,
+          authorId: store.me.id,
+          createdAtMs: now,
+          //approvedAtMs?: number;
+          //lastApprovedEditAtMs: number;
+          numEditors: 1,
+          numLikeVotes: 0,
+          numWrongVotes: 0,
+          numBuryVotes: 0,
+          numUnwantedVotes: 0,
+          numPendingEditSuggestions: 0,
+          //summarize: boolean;
+          //summary?: string;
+          //squash: boolean;
+          //isBodyHidden?: boolean;
+          //isTreeDeleted: boolean;
+          //isPostDeleted: boolean;
+          //// === true means totally collapsed. === 'Truncated' means collapsed but parts of post shown.
+          //isTreeCollapsed: any; // COULD rename
+          //isPostCollapsed: boolean;
+          //isTreeClosed: boolean;
+          //isApproved: boolean;
+          //pinnedPosition: number;
+          //branchSideways: number;
+          //likeScore: number;
+          childNrsSorted: [],
+          //unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
+          sanitizedHtml: "Your reply will appear here",
+          //tags?: string[];
+          //numPendingFlags?: number;
+          //numHandledFlags?: number;
+        } as Post;
+      
+        patch.postsByPageId[page.pageId] = [previewPost];
+        patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+
+        ReactActions.patchTheStore(patch); /*{
+          postsByPageId,
+          /  *
+          updateEditPreview: {
+            postId: post.uniqueId,
+            postType: newPostType,
+            isReplying: true,
+            safeHtml: undefined, // didn't write anythign yet
+          },
+        } as StorePatch);*/
       }
     }, true);
   },

@@ -80,6 +80,7 @@ export const Editor = createComponent({
       draft: null,
       draftStatus: DraftStatus.NotLoaded,
       safePreviewHtml: '',
+      anyPostType: undefined,
       replyToPostNrs: [],
       editingPostNr: null,
       editingPostUid: null,  // CLEAN_UP RENAME to ...PostId not ...Uid
@@ -338,7 +339,8 @@ export const Editor = createComponent({
     return link;
   },
 
-  toggleWriteReplyToPostNr: function(postNr: PostNr, inclInReply: boolean, anyPostType?: number) {
+  toggleWriteReplyToPostNr: function(postNr: PostNr, inclInReply: boolean,
+        anyPostType?: PostType) {
     if (this.alertBadState('WriteReply'))
       return;
 
@@ -750,10 +752,30 @@ export const Editor = createComponent({
       allowClassAndIdAttr: true, // or only if isEditingBody?
       allowDataAttr: isEditingBody
     };
-    const htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
+
+    const safeHtml = markdownToSafeHtml(
+        this.state.text, window.location.host, sanitizerOpts);
+
     this.setState({
-      safePreviewHtml: htmlText
-    }, anyCallback);
+      safePreviewHtml: safeHtml,
+    }, () => {
+      const postNrs: PostNr[] = this.state.replyToPostNrs;
+      if (postNrs.length === 1) {
+        // Could debounce this even more:
+        // Show an inline preview, where the reply will appear.
+        const store: Store = this.state.store;
+        const post = store.currentPage.postsByNr[postNrs[0]];
+        ReactActions.patchTheStore({
+          updateEditPreview: {
+            postType: this.state.anyPostType,
+            postId: post.uniqueId,
+            isReplying: true,
+            safeHtml,
+          },
+        } as StorePatch);
+      }
+      anyCallback?.();
+    });
   },
 
   searchForSimilarTopics: function() {
@@ -841,7 +863,7 @@ export const Editor = createComponent({
       locator.postId = this.state.editingPostUid;
       locator.postNr = this.state.editingPostNr;
     }
-    else if (this.state.replyToPostNrs && this.state.replyToPostNrs.length) {
+    else if (this.state.replyToPostNrs?.length) {  // can remove '?.', never undef?
       locator.draftType = DraftType.Reply;
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one

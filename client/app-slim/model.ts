@@ -280,6 +280,7 @@ interface PagePostNrId {
 interface MyPageData {
   dbgSrc?: string;
   pageId: PageId;
+  myDrafts: Draft[];
   // The user's own notification preference, for this page. Hen can change this setting.
   myPageNotfPref?: PageNotfPref;
   // Notification preferences, for the groups one is a member of, for this page. The user cannot change
@@ -811,6 +812,8 @@ interface Store extends Origins {
   numOnlineStrangers?: number;
   userIdsOnline?: { [userId: number]: boolean }; // this is a set; all values are true
 
+  replyPreviewsByPostId: { [postId: string]: EditPreview };
+
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
@@ -1271,10 +1274,20 @@ interface StorePatch {
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
+  updateEditPreview?: EditPreview;
+
   // If doing something resulted in a new page being created, and we should continue on that page.
   // E.g. if posting the first reply, in an embedded comments discussion (then a page for the
   // discussion gets created, lazily).
   newlyCreatedPageId?: PageId;
+}
+
+
+interface EditPreview {
+  postId: PostId;
+  postType: PostType;
+  isReplying: true;  // for now
+  safeHtml?: string;
 }
 
 

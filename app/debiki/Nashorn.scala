@@ -440,6 +440,7 @@ class Nashorn(
         |      postNrsAutoReadNow: [],
         |      marksByPostId: {},
         |    };
+        |    theStore.replyPreviewsByPostId = {};
         |
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en_US' for English.
         |    // And they all set a global 'var t' to themselves (t is declared in those files).
