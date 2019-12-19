@@ -22,7 +22,7 @@ L  = list
 It = list item
 D  = dialog,  e.g. AbtUsrD
 Dd = deleted
-Dl = delete
+Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
 CB = checkbox
@@ -213,10 +213,13 @@ esTg            = a single tag
 
 Ttl             = title
 
-esC             = chat
+esC             = chat, no, instead...
+s_C             = chat       <— ... use this
 esC_M           = chat message
-esC_M_Ed        = chat message edit button
-esC_M_More      = chat message more actions button
+s_C_M-Dd        = chat message, deleted
+s_C_M_B         = chat message button
+s_C_M_B-Ed      = chat message edit button
+s_C_M_B-Dl      = chat message delete button
 
 esSA            = super admin
 

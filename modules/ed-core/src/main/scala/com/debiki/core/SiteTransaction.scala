@@ -569,7 +569,7 @@ trait SiteTransaction {
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
-  def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
+  def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask]
   def loadAllReviewTasks(): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
   def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]

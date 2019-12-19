@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import java.{sql => js, util => ju}
 import Rdb._
 import RdbUtil.makeInListFor
+import scala.collection.mutable.ArrayBuffer
 
 
 /** Loads and saves ReviewTask:s.
@@ -163,13 +164,22 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
-  override def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask] = {
+  override def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask] = {
+    val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
+
+    val andCreatedBefore = olderOrEqualTo map { date =>
+      values.append(date.asTimestamp)
+      "and created_at <= ?"
+    } getOrElse ""
+
+    values.append(limit.asAnyRef)
+
     // Sort by id, desc, if same timestamp, because higher id likely means more recent.
     val query = i"""
-      select * from review_tasks3 where site_id = ? and created_at <= ?
+      select * from review_tasks3 where site_id = ? $andCreatedBefore
       order by created_at desc, id desc limit ?
       """
-    runQueryFindMany(query, List(siteId.asAnyRef, olderOrEqualTo, limit.asAnyRef), rs => {
+    runQueryFindMany(query, values.toList, rs => {
       readReviewTask(rs)
     })
   }

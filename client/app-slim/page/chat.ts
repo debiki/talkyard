@@ -196,10 +196,10 @@ const ChatMessage = createComponent({
     const mayEditDelete = post.postType === PostType.ChatMessage && !state.isEditing && (
         isMine || isStaff(me));
     headerProps.stuffToAppend = !mayEditDelete ? [] : [
-        r.button({ className: 'esC_M_EdB icon-edit' + isMineClass, key: 'e', onClick: this.edit },
+        r.button({ className: 's_C_M_B s_C_M_B-Ed icon-edit' + isMineClass, key: 'e', onClick: this.edit },
           t.c.edit),
         // (Don't show a trash icon, makes the page look too cluttered.)
-        r.button({className: 'esC_M_EdB' + isMineClass, key: 'd', onClick: this.delete_ }, t.c.delete)];
+        r.button({className: 's_C_M_B s_C_M_B-Dl' + isMineClass, key: 'd', onClick: this.delete_ }, t.c.delete)];
 
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
@@ -216,7 +216,7 @@ const ChatMessage = createComponent({
 function DeletedChatMessage(props) {
   const post: Post = props.post;
   return (
-    r.div({ className: 'esC_M', id: 'post-' + post.nr, key: props.key },
+    r.div({ className: 'esC_M s_C_M-Dd', id: 'post-' + post.nr, key: props.key },
       r.div({ className: 'dw-p-bd' },
         r.div({ className: 'dw-p-bd-blk' },
           t.c.MessageDeleted))));

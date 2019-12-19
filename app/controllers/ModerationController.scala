@@ -56,7 +56,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   private def loadReviewTasksdReplyJson(request: ApiRequest[_]): mvc.Result = {
     val (reviewStuff, reviewTaskCounts, usersById, pageMetaById) = request.dao.loadReviewStuff(
-      olderOrEqualTo = globals.now().toJavaDate, limit = 100, request.who)
+      olderOrEqualTo = None, limit = 100, request.who)
     OkSafeJson(
       Json.obj(
         "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson)),

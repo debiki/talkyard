@@ -846,6 +846,16 @@ function pagesFor(browser) {
       });
     },
 
+    refreshUntil: (test: () => boolean) => {
+      while (true) {
+        if (test())
+          return;
+        browser.pause(PollMs / 3);
+        browser.refresh();
+        browser.pause(PollMs * 2 / 3);
+      }
+    },
+
     refreshUntilGone: function(what) {
       while (true) {
         let resultsByBrowser = browser.isVisible(what);
@@ -1950,8 +1960,18 @@ function pagesFor(browser) {
         browser.waitForVisible('.s_LD_SsoB');
       },
 
-      createPasswordAccount: function(data: { fullName, username, email?, emailAddress?, password },
-            shallBecomeOwner?: boolean, anyVerifyEmail?) {
+      createPasswordAccount: function(data: {
+            fullName?: string,
+            username: string,
+            email?: string,
+            emailAddress?: string,
+            password: string,
+            shallBecomeOwner?: true,       // default is false
+            willNeedToVerifyEmail?: false, // default is true
+           },
+            // Legacy:
+            shallBecomeOwner?: boolean,
+            anyVerifyEmail?: 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
 
         // Switch from the guest login form to the create-real-account form, if needed.
         api.waitForVisible('#e2eFullName');
@@ -1974,9 +1994,10 @@ function pagesFor(browser) {
         logMessage('clickSubmit...');
         api.loginDialog.clickSubmit();
         logMessage('acceptTerms...');
-        api.loginDialog.acceptTerms(shallBecomeOwner);
-        logMessage('waitForNeedVerifyEmailDialog...');
-        if (anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
+        api.loginDialog.acceptTerms(data.shallBecomeOwner || shallBecomeOwner);
+        if (data.willNeedToVerifyEmail !== false &&
+            anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
+          logMessage('waitForNeedVerifyEmailDialog...');
           api.loginDialog.waitForNeedVerifyEmailDialog();
         }
         logMessage('createPasswordAccount: done');
@@ -3396,6 +3417,17 @@ function pagesFor(browser) {
         assert(!browser.isVisible(api.topic.anyCommentSelector));
       },
 
+      countReplies: (ps: { skipWait?: boolean } = {}): NumReplies => {
+        if (!ps.skipWait) {
+          api.waitForMyDataAdded();
+        }
+        let numNormal = api.count(api.topic.replySelector);
+        const numUnapproved = api.count(api.topic.replySelector + '.dw-p-unapproved');
+        const numDeleted = api.count(api.topic.replySelector + '.dw-p-dl');
+        numNormal = numNormal - numUnapproved - numDeleted;
+        return { numNormal, numUnapproved, numDeleted };
+      },
+
       assertNumRepliesVisible: function(num: number) {
         api.waitForMyDataAdded();
         api.assertExactly(num, api.topic.replySelector);
@@ -3912,13 +3944,13 @@ function pagesFor(browser) {
         api.waitAndClick('#theJoinChatB');
       },
 
-      addChatMessage: function(text: string) {
+      addChatMessage: (text: string) => {
         api.chat.editChatMessage(text);
         api.chat.submitChatMessage();
         // could verify visible
       },
 
-      editChatMessage: function(text: string) {
+      editChatMessage: (text: string) => {
         api.waitAndSetValue('.esC_Edtr_textarea', text);
       },
 
@@ -3950,6 +3982,14 @@ function pagesFor(browser) {
 
       openAdvancedEditor: function() {
         api.waitAndClick('.esC_Edtr_AdvB');
+      },
+
+      deleteChatMessageNr: (nr: PostNr) => {
+        const postSelector = `#post-${nr}`;
+        browser.waitAndClick(`${postSelector} .s_C_M_B-Dl`);
+        browser.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        browser.waitUntilLoadingOverlayGone();
+        browser.waitForVisible(`${postSelector}.s_C_M-Dd`);
       },
     },
 
@@ -5730,12 +5770,12 @@ function pagesFor(browser) {
       signUpAsMemberViaTopbar: function(
             member: { emailAddress: string, username: string, password: string }) {
         api.topbar.clickSignUp();
-        // Dupl code (035BKAS20)
-        api.loginDialog.fillInEmail(member.emailAddress);
-        api.loginDialog.fillInUsername(member.username);
-        api.loginDialog.fillInPassword(member.password);
-        api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms();
+        api.loginDialog.createPasswordAccount({
+          username: member.username,
+          emailAddress: member.emailAddress,
+          password: member.password,
+          willNeedToVerifyEmail: false,
+        });
       },
 
       signUpAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
