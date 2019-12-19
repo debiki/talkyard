@@ -498,7 +498,6 @@ trait PostsDao {
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
     val authorAndLevels = loadUserAndLevels(who, tx)
-    val author = authorAndLevels.user
 
     val settings = loadWholeSiteSettings(tx)
 
@@ -521,6 +520,7 @@ trait PostsDao {
       createdById = authorId,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
+      // Chat messages are currently auto approved. [7YKU24]
       approvedById = Some(SystemUserId))
 
     // COULD find the most recent posters in the last 100 messages only, because is chat.
@@ -1535,9 +1535,10 @@ trait PostsDao {
     var numNewVisibleReplies = 0
     var numNewVisibleOpReplies = 0
 
-    for (post <- posts) {
-      dieIf(post.isSomeVersionApproved, "EsE6YKP2", s"Post ${post.pagePostId} already approved")
-
+    for {
+      post <- posts
+      if (!post.isSomeVersionApproved)
+    } {
       numNewVisibleReplies += post.isReply ? 1 | 0
       numNewVisibleOpReplies += post.isOrigPostReply ? 1 | 0
 

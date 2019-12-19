@@ -318,8 +318,8 @@ trait ReviewsDao {
     * the user that much.
     */
   private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
-        transaction: SiteTransaction) {
-    val settings = loadWholeSiteSettings(transaction)
+        tx: SiteTransaction) {
+    val settings = loadWholeSiteSettings(tx)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     if (numFirstToAllow > 0 && numFirstToApprove > 0) {
@@ -330,7 +330,7 @@ trait ReviewsDao {
       val someMore = 15
       // COULD load tasks for posts, and tasks for approved posts, and tasks resolved as harmful,
       // in three separate queries? So won't risk 9999 of one type —> finds no other types.
-      val tasks = transaction.loadReviewTasksAboutUser(userId,
+      val tasks = tx.loadReviewTasksAboutUser(userId,
         limit = MaxNumFirstPosts + someMore, OrderBy.OldestFirst)
 
       // Use a set, because there might be many review tasks for the same post, if different
@@ -366,12 +366,17 @@ trait ReviewsDao {
           }
           task.postId
         }
-        val postsToApprove = transaction.loadPostsByUniqueId(postIdsToApprove).values
-        val titlePostsToApprove = titlesToApprove.flatMap(transaction.loadTitle)
-        val allPostsToApprove = postsToApprove ++ titlePostsToApprove
+        val postsToApprove = tx.loadPostsByUniqueId(postIdsToApprove).values
+        val titlePostsToApprove = titlesToApprove.flatMap(tx.loadTitle)
+        val tooManyPostsToApprove = postsToApprove ++ titlePostsToApprove
+
+        // Some posts might have been approved already — e.g. chat messages; they're
+        // auto approved by the System user. [7YKU24]
+        val allPostsToApprove = tooManyPostsToApprove.filter(!_.isSomeVersionApproved)
+
         for ((pageId, posts) <- allPostsToApprove.groupBy(_.pageId)) {
           pageIdsToRefresh += pageId
-          autoApprovePendingEarlyPosts(pageId, posts)(transaction)
+          autoApprovePendingEarlyPosts(pageId, posts)(tx)
         }
       }
     }
@@ -440,7 +445,7 @@ trait ReviewsDao {
   }
 
 
-  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int, forWho: Who)
+  def loadReviewStuff(olderOrEqualTo: Option[ju.Date], limit: Int, forWho: Who)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) =
     readOnlyTransaction { tx =>
       val requester = tx.loadTheParticipant(forWho.id)
@@ -448,7 +453,8 @@ trait ReviewsDao {
     }
 
 
-  private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, requester: Participant, tx: SiteTransaction)
+  private def loadStuffImpl(olderOrEqualTo: Option[ju.Date], limit: Int,
+        requester: Participant, tx: SiteTransaction)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) = {
     val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
     val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)

@@ -170,6 +170,34 @@ const make = {
     };
   },
 
+  memberMerche: function(template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username: "merche",
+      fullName: "Merche",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--merche@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publ-me020",
+      password: "publ-me020",
+    };
+  },
+
+  memberMeilani: function(template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username: "meilani",
+      fullName: "Meilani",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--meilani@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publ-me020",
+      password: "publ-me020",
+    };
+  },
+
   memberMichael: function(template: Partial<Member> = {}): Member {
     return {
       ...template,

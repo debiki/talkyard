@@ -221,6 +221,10 @@ interface Member {
   threatLevel?: ThreatLevel;
 }
 
+interface UserWithPassword extends Member {
+  password: string;
+}
+
 
 interface TestGuest {  // try to rename to Guest
   id: number;
@@ -456,6 +460,13 @@ interface TestPost {  // later: try to unify with Post?
   numUnwantedVotes: number;
   postType?: number;
   prevRevNr?: number;
+}
+
+
+interface NumReplies {
+  numNormal: number;
+  numUnapproved: number;
+  numDeleted: number;
 }
 
 

@@ -112,8 +112,10 @@ navigation:
           - navigation-as-admin.test.ts  TyT7WAAR2J4
           - embedded-comments-navigation-as-guest.test.ts  TyT2P067WKT2
 
+review,
 unapproved comments -
           - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20
+          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
   embedded + not-embedded -
     see own, not others:
     edit own:
@@ -557,6 +559,7 @@ site settings:
     num to review,
     num to approve,
     num to allow:
+          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
 
 intro tours:
   admin area, community, admin tour:
@@ -582,7 +585,10 @@ admin -
     - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
   cannot bad-click break an admin, e.g. unverifying hens email or unapproving, rejecting:
     - (missing) [5AEWBN0]
-  reviews - [TyT5DKW7U]
+
+moderation,
+review posts,
+reviews - [TyT5DKW7U]
     gets emailed about review tasks:  — see (502M7)
     see spam below: (4BKS0)
     delete flagged:   — also see (6JS3)
@@ -619,6 +625,11 @@ admin -
     review tasks and authz -
       mods won't see other's flagged direct message posts:
         - mod-review.2browsers.test.ts  TyT6KRBEQ2
+  cascade approval:
+    old chat message already approved,
+    deleted posts ignored,
+    remaining get approved:
+          - admin-review-cascade-approval.2browsers.test.ts  TyT0SKDE24
 
 spam: (4BKS0)
           - spam-basic-local.2browsers.test.ts  TyT530KRM1R

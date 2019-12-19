@@ -311,6 +311,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-suspend.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-for-reply.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-page-deld.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-cascade-approval.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only mod-review.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-move-hostname.2browsers $args
