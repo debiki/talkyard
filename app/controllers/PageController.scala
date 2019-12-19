@@ -187,6 +187,12 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       })
 
       if (pageMeta.embeddingPageUrl != canonEmbUrl || pageMeta.extImpId != extId) {
+        throwForbiddenIf(pageMeta.extImpId != extId,
+          "TyE052KTHW6K6",  // [205AKDNPTM3]
+          o"""Changing a page's ext id is not yet supported. Please tell the
+            Talkyard developers over at  www.talkyard.io  about why you need
+            to do this? Thanks""")
+
         tx.updatePageMeta(
           pageMeta.copy(
             extImpId = extId,

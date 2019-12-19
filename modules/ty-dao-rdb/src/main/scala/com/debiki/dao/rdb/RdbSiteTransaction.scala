@@ -532,7 +532,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
     anyOld foreach { oldMeta =>
       dieIf(!oldMeta.pageType.mayChangeRole && oldMeta.pageType != newMeta.pageType,
         "EsE7KPW24", s"Trying to change page role from ${oldMeta.pageType} to ${newMeta.pageType}")
-      dieIf(oldMeta.extImpId != newMeta.extImpId, "TyE305KBR", "Changing page extImpId not yet impl")
+      dieIf(oldMeta.extImpId != newMeta.extImpId,
+        "TyE305KBR", "Changing page extImpId not yet impl")  // [205AKDNPTM3]
     }
 
     // Dulp code, see the insert query [5RKS025].
