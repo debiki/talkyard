@@ -41,6 +41,14 @@ sealed trait Message {
 }
 
 
+case class NewPageMessage(
+  siteId: SiteId,
+  notifications: Notifications) extends Message {
+
+  def toJson: JsValue = JsNull
+}
+
+
 case class StorePatchMessage(
   siteId: SiteId,
   toUsersViewingPage: PageId,
@@ -339,6 +347,11 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
         sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
 
+      case newPageMessage: NewPageMessage =>
+        COULD // send a patch to everyone looking at the topic list, so they'll
+        // notice this new topic. (Unless it's private.)
+        // Exclude private page members though — they got notified above,
+        // via the notifications list.
       case x =>
         unimplemented(s"Publishing ${classNameOf(x)} [TyEPUBWHAT]")
     }

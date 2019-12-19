@@ -69,7 +69,7 @@ describe("chat-create-from-direct-message  TyT5FKB2A", () => {
     directMessageUrl = mariasBrowser.url().value;
   });
 
-  it("Michael gets a notf", () => {
+  it("Michael gets a notf  [TyTPAGENOTF]", () => {
     michaelsBrowser.topbar.waitForMyMenuVisible();
     michaelsBrowser.topbar.openNotfToMe();
     michaelsBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, mariasMessageText);

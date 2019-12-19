@@ -222,7 +222,6 @@ Send notifications about getting a Like.
 
 [refactor-notfs]
 Remove Nchan. Use Rust + server-sent-events instead.
-Send messages when added to chat, or gets priv msg.
 
 
 [external-server-js]
