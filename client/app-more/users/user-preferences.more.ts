@@ -718,7 +718,7 @@ const AccountTabForGroup = React.createFactory<any>(function(props: { member: Gr
 });
 
 
-const AccountTab = createFactory({
+const AccountTab = createFactory<any, any>({
   displayName: 'AccountTab',
 
   getInitialState: function() {

@@ -287,7 +287,7 @@ export const TitleEditor = createComponent({
     const saveCancel = this.state.isSaving
       ? r.div({}, t.SavingDots)
       : r.div({ className: 'dw-save-btns-etc' },
-          PrimaryButton({ onClick: this.save, className: 'e2eSaveBtn' }, t.Save),
+          PrimaryButton({ onClick: this.save, className: 'e_Ttl_SaveB' }, t.Save),
           Button({ onClick: this.props.closeEditor }, t.Cancel));
 
     return (

@@ -72,30 +72,28 @@ function renderOnebox(tokens, index, options, env, renderer) {
     oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString);
   }
   else {
-    var randomId = 'onebox-' + Math.random().toString(36).slice(2);
+    var randomClass = 'onebox-' + Math.random().toString(36).slice(2);
     debiki2.Server.loadOneboxSafeHtml(token.link, function(safeHtml) {
-      var replacement;
-      if (safeHtml) {
-        replacement = debiki2.$h.parseHtml(safeHtml)[0];
-      }
-      else {
+      function makeReplacement() {
+        if (safeHtml) {
+          return debiki2.$h.parseHtml(safeHtml)[0];
+        }
         // The link couldn't be oneboxed. Show a plain <a href=...> link instead.
         // (rel=nofollow gets added here: [7WBK2A04] for other not-a-onebox-attempt links.)
-        replacement = Bliss.create('a', { href: token.link, rel: 'nofollow', text: token.link });
+        return Bliss.create('a', { href: token.link, rel: 'nofollow', text: token.link });
       }
-      var placeholder = debiki2.$byId(randomId);
-      // Sometimes the placeholder doesn't exist — I suppose one case is if one did more edits,
-      // while the loadOneboxSafeHtml() request above was still in progress. Then do nothing, now
-      // — a bit later, when one has stopped typing, this code will run agan and then it should work.
-      if (placeholder) {
-        Bliss.after(replacement, placeholder);
-        placeholder.remove();
-      }
+      var placeholders = debiki2.$all('.' + randomClass);
+      // The placeholders might have disappeared, if the editor was closed or the
+      // text deleted, for example.
+      _.each(placeholders, function(ph) {
+        Bliss.after(makeReplacement(), ph);
+        ph.remove();
+      });
     });
     var safeLink = debiki2.editor.sanitizeHtml(token.link);
     // The sanitizer must allow the id and class, see [6Q8KEF2] in
     // client/third-party/html-css-sanitizer-bundle.js for the current quick hack.
-    oneboxHtml  ='<div id="' + randomId + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';
+    oneboxHtml  ='<div class="' + randomClass + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';
   }
   return oneboxHtml;
 }

@@ -513,7 +513,7 @@ trait PostsDao {
       uniqueId = uniqueId,
       pageId = page.id,
       postNr = postNr,
-      parent = None,
+      parent = None,  // [CHATPRNT]
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
       createdAt = tx.now.toJavaDate,

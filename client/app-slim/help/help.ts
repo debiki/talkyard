@@ -48,7 +48,13 @@ export const HelpMessageBox = createComponent({   // RENAME to TipsBox
     return this.computeState();
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   onChange: function() {
+    // A store change event might invoke this, although unmounted. [MIXINBUG]
+    if (this.isGone) return;
     this.setState(this.computeState());
   },
 

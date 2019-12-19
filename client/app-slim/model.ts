@@ -65,7 +65,10 @@ interface RedirPathProps {
  * #post-123: We'll scroll to post 123.
  *
  * #post-456&replyToPost&draftNr=7 — we'll scroll to post 456,
- * open the editor to reply, and load draft nr 7.
+ * open the editor to reply, and load draft nr 7
+ * Actually, as of Jan 2020, I think loads whichever draft that replies to
+ * post 456 — without looking at the draftNr. But, later, if there
+ * happens to be many drafts, then could use draftNr to choose one.
  *
  * /-/users/someone#composeDirectMessage[&draftNr=234] — we go to user @someone,
  * open the editor to write a direct message, and, if draft nr specified,
@@ -75,15 +78,16 @@ interface FragAction {
   type: FragActionType;
   categoryId?: CategoryId;
   topicType?: PageRole;
+  replyType?: PostType;
   postNr?: PostNr;
   draftNr?: DraftNr;
-  elemId?: string;
+  selector?: string;
 }
 
 
 const enum FragActionType {
   // Javascript-scrolls to show the #hash-fragment, taking the topbar height into account.
-  ScrollToElemId = 11,
+  ScrollToSelector = 11,
   ScrollToPost = 12,
   ScrollToLatestPost = 13,
   ReplyToPost = 21,
@@ -186,7 +190,7 @@ interface DraftLocator {
 
 interface Draft {
   byUserId: UserId;
-  draftNr: number;
+  draftNr: DraftNr;
   forWhat: DraftLocator;
   createdAt: WhenMs;
   lastEditedAt?: WhenMs;
@@ -198,16 +202,63 @@ interface Draft {
 }
 
 
+interface EditorIframeHeight {
+  editorIframeHeightPx?: number;
+}
+
+interface ShowEditsPreviewParams extends EditorIframeHeight {
+  scrollToPreview?: boolean;
+  safeHtml: string;
+  editorsPageId?: PageId;
+  anyPostType?: PostType;
+  replyToNr?: PostNr;
+  editingPostNr?: PostNr;
+}
+
+
+interface HideEditorAndPreviewParams {
+  anyDraft?: Draft;
+  keepDraft?: boolean;
+  keepPreview?: true;
+  editorsPageId?: PageId;
+  anyPostType?: PostType;
+  replyToNr?: PostNr;
+  editingPostNr?: PostNr;
+}
+
+
+type EditsDoneHandler = (
+    wasSaved: boolean, text: string, draft: Draft | null, draftStatus: DraftStatus) => void;
+
+
+interface ShowPostOpts {
+  marginTop?: number;
+  marginBottom?: number;
+  marginRight?: number;
+  marginLeft?: number;
+}
+
+
 interface Post {
+  // Client side only ------
+  // If this post / these changes don't yet exist — it's a preview.
+  isPreview?: boolean;
+  // Is a number if the draft has been saved server side (then the server has
+  // assigned it a number).
+  isForDraftNr?: DraftNr | true;
+  // If we're editing this post right now.
+  isEditing?: boolean;
+  // -----------------------
+
   uniqueId: PostId; // CLEAN_UP RENAME to id
   nr: PostNr;
-  parentNr: PostNr;
+  parentNr?: PostNr; // undefined, for chat messages [CHATPRNT]
   multireplyPostNrs: PostNr[];
   postType?: PostType;
   authorId: UserId;
-  createdAtMs: number;
-  approvedAtMs?: number;
-  lastApprovedEditAtMs: number;
+  createdAtMs: WhenMs;
+  approvedAtMs?: WhenMs;
+  lastApprovedEditAtMs?: WhenMs;
   numEditors: number;
   numLikeVotes: number;
   numWrongVotes: number;
@@ -229,7 +280,9 @@ interface Post {
   branchSideways: number;
   likeScore: number;
   childNrsSorted: number[];
-  unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
+  // For titles, we insert the post source, as text (no html in titles).
+  // And for drafts, we show a <pre>the-source</pre>, for now. [DFTSRC]
+  unsafeSource?: string;
   sanitizedHtml?: string;
   tags?: string[];
   numPendingFlags?: number;
@@ -280,6 +333,7 @@ interface PagePostNrId {
 interface MyPageData {
   dbgSrc?: string;
   pageId: PageId;
+  myDrafts: Draft[];
   // The user's own notification preference, for this page. Hen can change this setting.
   myPageNotfPref?: PageNotfPref;
   // Notification preferences, for the groups one is a member of, for this page. The user cannot change
@@ -801,6 +855,7 @@ interface Store extends Origins {
   rootPostId: number;
   usersByIdBrief: { [userId: number]: Participant };  // = PpsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
+  isEditorOpen?: boolean;  // default: false
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
@@ -814,6 +869,8 @@ interface Store extends Origins {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+  // Overrides quickUpdate.
+  cannotQuickUpdate?: boolean;
 
   pagesById: { [pageId: string]: Page };
   currentPage?: Page;
@@ -1123,6 +1180,7 @@ const enum LoginReason {
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
   PostEmbeddedComment = 16,  // dupl [8UKBR2AD5]
+  PostProgressPost = 17,
 }
 
 
@@ -1270,6 +1328,9 @@ interface StorePatch {
   superadmin?: SuperAdminStuff;
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
+
+  setEditorOpen?: boolean;
+  deleteDraft?: Draft;
 
   // If doing something resulted in a new page being created, and we should continue on that page.
   // E.g. if posting the first reply, in an embedded comments discussion (then a page for the
@@ -1593,7 +1654,7 @@ interface UserAccountLoginMethod {  // Maybe repl w Identity = Scala: JsIdentity
 interface LoadDraftAndTextResponse {
   pageId: PageId;
   postNr: PostNr;
-  postUid: string; // CLEAN_UP RENAME to just postId.
+  postUid: PostId; // CLEAN_UP RENAME to just postId.
   currentText: string;
   currentRevisionNr: number;
   draft?: Draft;

@@ -70,7 +70,8 @@ const enum DraftStatus {  // sync with test code [5ABXG20]
   NotLoaded = 0,
   NothingHappened = 1,
   EditsUndone = 2,
-  Saved = 3,
+  SavedServerSide = 3,
+  SavedInBrowser = 31,
   Deleted = 4,
   NeedNotSave = Deleted,
   ShouldSave = 5,
@@ -81,15 +82,18 @@ const enum DraftStatus {  // sync with test code [5ABXG20]
 }
 
 
+// draftType_toPostType() can convert to PostType.
 const enum DraftType {
   Scratch = 1,
   Topic = 2,
   DirectMessage = 3,
   Edit = 4,
   Reply = 5,
+  ProgressPost = 6,
 }
 
 
+// postType_toDraftType() can convert to DraftType.
 const enum PostType {   // sync with test code [26BKA01]
   Normal = 1,         // RENAME to NormalPost
   Flat = 2,           // CLEAN_UP remove

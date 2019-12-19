@@ -64,14 +64,14 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       case DraftType.Edit =>
         throwBadRequest(
           "TyE2ABKS0", s"Call ${routes.EditController.loadDraftAndText("123", 123).url} instead")
-      case DraftType.Reply =>
+      case DraftType.Reply | DraftType.ProgressPost =>
         val thePageId = pageId.getOrThrowBadArgument("TyE2AKB45", "pageId")
         val thePostNr = postNr.getOrThrowBadArgument("TyE2AKB46", "postNr")
         val thePost = dao.loadPost(thePageId, thePostNr) getOrElse {
           throwIndistinguishableNotFound("TyE8AKVR04")
         }
         Some(DraftLocator(
-          DraftType.Reply,
+          theDraftType,
           postId = Some(thePost.id),
           pageId = pageId,
           postNr = postNr))

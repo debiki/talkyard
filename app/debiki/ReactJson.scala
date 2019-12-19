@@ -651,6 +651,9 @@ class JsonMaker(dao: SiteDao) {
         permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
         myGroupsEveryoneLast: Seq[Group], tx: SiteTransaction): JsObject = {
 
+    val draftsOnThisPage: immutable.Seq[Draft] =
+      anyPageId.map(tx.loadDraftsByUserOnPage(requester.id, _)).getOrElse(Nil)
+
     // Bug: If !isAdmin, might count [review tasks one cannot see on the review page]. [5FSLW20]
     val reviewTasksAndCounts =
       if (requester.isStaff) tx.loadReviewTaskCounts(requester.isAdmin)
@@ -718,6 +721,7 @@ class JsonMaker(dao: SiteDao) {
         Json.obj(pageId ->
           Json.obj(  // MyPageData
             "pageId" -> pageId,
+            "myDrafts" -> draftsOnThisPage.map(JsDraft),
             "myPageNotfPref" -> pageNotfPrefs.find(_.peopleId == requester.id).map(JsPageNotfPref),
             "groupsPageNotfPrefs" -> pageNotfPrefs.filter(_.peopleId != requester.id).map(JsPageNotfPref),
             "readingProgress" -> anyReadingProgressJson,
@@ -1550,8 +1554,8 @@ object JsonMaker {
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
     val lastApprovedEditAtNoNinja =
-    if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
-    else post.lastApprovedEditAt
+      if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
+      else post.lastApprovedEditAt
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),

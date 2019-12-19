@@ -16,7 +16,7 @@
  */
 
 //------------------------------------------------------------------------------
-   namespace debiki2.utils {
+   namespace debiki2.utils {   // RENAME to Scroll?  [SCRL-NSP]
 //------------------------------------------------------------------------------
 
 const d = { i: debiki.internal };
@@ -90,7 +90,6 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
 
 export function scrollIntoView(elem, options, onDone?: () => void): boolean | undefined {
   options = options ? _.clone(options) : {};
-  const duration = options.duration || 600;
 
   let needsToScroll: boolean | undefined;
   if (eds.isInEmbeddedCommentsIframe) {
@@ -105,7 +104,8 @@ export function scrollIntoView(elem, options, onDone?: () => void): boolean | un
     const coords = d.i.calcScrollIntoViewCoords(elem, options);
     needsToScroll = coords.needsToScroll;
     if (needsToScroll) {
-      smoothScroll(options.parent, coords.desiredParentLeft, coords.desiredParentTop);
+      smoothScroll(
+          options.parent, coords.desiredParentLeft, coords.desiredParentTop, options.duration);
     }
   }
   // For now, call immediately. Did before, works ok, currently.

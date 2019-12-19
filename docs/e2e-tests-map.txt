@@ -368,6 +368,8 @@ editor -
   ninja-edit,
   view edit history:
             - view-edit-history.2browsers.test.ts  TyT60RKDWL25
+  save edits from other page:
+    should ask: "Jump back and view the now edited post?" [JMPBCK]
 
 
 mentions:
@@ -436,6 +438,8 @@ post -
     profile shown:
     ban guest:
     send message:
+  submit reply, after having navigated to other page:
+    should ask: "Jump back and view your new reply? It's on another page" [JMPBCK]
 
 chat -
   create channel:  chat.2browsers.test.ts  (4FE2)
@@ -683,6 +687,15 @@ draft: [7WKABZP2]
   works also if not logged in:
           - forum-drafts-not-logged-in.2browsers.test.ts  TyT2ABSD73
           - embedded-comments-drafts-not-logged-in.test.ts  TyT2ZBKPW048
+
+  draft previews, resume and delete:  TESTS_MISSING
+    - chat:
+    - embeded comments:
+    - discussion topic:
+    - load from browser storage:
+    - go to drafts page w editor open, try open other draft:
+    - edit post, save draft, submit edits from other page — draft not deleted?
+    - –""– but for new reply
 
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit

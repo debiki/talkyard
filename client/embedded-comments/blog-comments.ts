@@ -382,12 +382,21 @@ function onMessage(event) {
   // COULD REFACTOR: Actually, child iframes can message each other directly;
   // need not send via the parent.
 
-  var iframe;
+  const iframe = findIframeThatSent(event);
+
+  let assertIsFromEditorToComments = function() {};
+  // @ifdef DEBUG
+  assertIsFromEditorToComments = function() {
+    if (iframe !== editorIframe) {
+      debugLog(`Bad msg dir [TyEMSGDIR]: '${eventName}', ${JSON.stringify(eventData)}`);
+      debugger;
+    }
+  };
+  // @endif
 
   switch (eventName) {
     case 'iframeInited':
       debugLog("got 'iframeInited' message");
-      iframe = findIframeThatSent(event);
 
       if (iframe !== commentsIframe) {
         editorIframeInitedArr = [true];
@@ -448,7 +457,6 @@ function onMessage(event) {
       }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
-      iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
       // The comments iframe wants to know the real win dimensions, so it can position modal
       // dialogs on screen. But wait until the iframe has been resized — because if
@@ -480,7 +488,6 @@ function onMessage(event) {
       break;
       */
     case 'justLoggedIn':
-      iframe = findIframeThatSent(event);
       try {
         const item = {
           pubSiteId: eventData.pubSiteId,
@@ -517,7 +524,6 @@ function onMessage(event) {
       catch (ex) {
         debugLog(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
       }
-      iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
         sendToEditor(event.data);
         showEditor(false);
@@ -526,11 +532,20 @@ function onMessage(event) {
         sendToComments(event.data);
       }
       break;
+    // Maybe remove this one, and use only 'showEditsPreview' instead, renamed to
+    // 'showEditorAndPreview'?
     case 'showEditor':
+      assertIsFromEditorToComments();
       showEditor(true);
       break;
-    case 'hideEditor':
+    case 'showEditsPreview':
+      assertIsFromEditorToComments();
+      sendToComments(event.data);
+      break;
+    case 'hideEditorAndPreview':
+      assertIsFromEditorToComments();
       showEditor(false);
+      sendToComments(event.data);
       break;
     case 'maximizeEditor':
       setEditorMaximized(eventData);
@@ -542,15 +557,14 @@ function onMessage(event) {
       sendToEditor(event.data);
       break;
     case 'handleReplyResult':
-      sendToComments(event.data);
-      break;
-    case 'clearIsReplyingMarks':
+      assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
     case 'editorEditPost':
       sendToEditor(event.data);
       break;
     case 'handleEditResult':
+      assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
   }
@@ -628,6 +642,7 @@ function findOneTimeLoginSecret() {
     // someone copies the url with this soon-used-up secret in, the server
     // will reply Error and Talkyard would show an error message in the browser.
     debugLog("Found one time login secret, removing from url: " + oneTimeLoginSecret);
+    // Maybe use history.replaceState({}, '', '# ...') instead?
     window.location.hash = window.location.hash.replace(
         'talkyardOneTimeLoginSecret=' + oneTimeLoginSecret, '');
   }
@@ -689,7 +704,6 @@ function showEditor(show) {
   else {
     editorWrapper.style.display = 'none';
     editorPlaceholder.style.display = 'none';
-    sendToComments('["clearIsReplyingMarks", {}]');
   }
 }
 

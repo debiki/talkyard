@@ -34,6 +34,7 @@ U  = user
 G  = group
 Pp = participant
 P, Pg = page
+Prvw = preview
 Po = post
 Un = username
 FN = full name
@@ -53,7 +54,8 @@ esWhatever = old (s_Whatever = new & better)
 esForum_cats_cat     to s_F_Cs_C?
 esForum_topics_topic to esF_Ts_T?
 
-esAv            = Avatar (user profile pic or letter)
+edAvtr          = Avatar, but should rename to s_Av.
+s_Av            = Avatar (user profile pic or letter)
 esAw            = Arrow to a post from its parent
 
 e2eAddUsD       = Add users dialog
@@ -170,6 +172,7 @@ esP_H_By        = author
 s_P_H_Bm        = bookmark
 s_P_H_Unr       = unread mark
 esP_B           = post body (the actual text)
+s_P-Prvw        = post, previewing one's edits
 s_P-Hdn         = post, hidden
 s_P-Dd          = post, deleted
 

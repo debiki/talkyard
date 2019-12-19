@@ -245,13 +245,17 @@ export function MenuItemDivider() {
 
 export function UserName(props: {
     user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
+
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
-  const user = props.user;
-  const showHow: ShowAuthorHow = props.store.settings.showAuthorHow;
+  const store: Store = props.store;
+  const user: BriefUser = props.user;
+  const showHow: ShowAuthorHow = store.settings.showAuthorHow;
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
   // only used in that if branch, below.)
   const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
+
+  const isUnknown = user.id === UnknownUserId;
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
 
@@ -298,9 +302,9 @@ export function UserName(props: {
     namePartOne = "(Unknown author)";
   }
 
-  const linkFn = <any>(props.makeLink ? r.a : r.span);
+  const linkFn = <any>(props.makeLink && !isUnknown ? r.a : r.span);
   const newProps: any = {
-    className: 'dw-p-by esP_By',
+    className: 'dw-p-by esP_By' + (isUnknown ? ' s_P_By-Unk' : ''),
   };
 
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
@@ -317,7 +321,7 @@ export function UserName(props: {
         ? `https://stackoverflow.com/users/${userId}`
         : `https://${subdomain}.stackexchange.com/users/${userId}`;
   }
-  else {
+  else if (!isUnknown) {
     if (props.makeLink) {
       // This will incl the Talkyard server origin, if we're in an embedded comments discussion
       // — otherwise, would link to the embedding server, totally wrong.  [EMBCMTSORIG]

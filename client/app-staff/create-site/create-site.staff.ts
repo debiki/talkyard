@@ -64,7 +64,7 @@ const CreateSomethingComponent = createReactClass({
 
 
 
-const CreateWebsiteComponent = createFactory({
+const CreateWebsiteComponent = createFactory<any, any>({
   displayName: 'CreateWebsiteComponent',
 
   getInitialState: function() {

@@ -6,7 +6,7 @@ declare namespace debiki2.editor {
 
   function getOrCreateEditor(success: (editor: any) => void);
 
-  function markdownToSafeHtml(source: string): string;
+  function markdownToSafeHtml(source: string, hostAndPort?, sanitizerOptions?): string;
 
 }
 

@@ -64,11 +64,12 @@ export const NoCommentsPageActions = createComponent({
   displayName: 'NoCommentsPageActions',
 
   onEditClick: function(event) {
-    debiki2.ReactActions.editPostWithNr(this.props.post.nr);
+    ReactActions.editPostWithNr(this.props.post.nr);
   },
 
   render: function() {
-    const me: Myself = this.props.me;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
     const post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
@@ -77,8 +78,20 @@ export const NoCommentsPageActions = createComponent({
     if (!me.isAdmin)
       return null;
 
-    const actions =
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, t.EditV);
+    // Dupl code [305RKTDJ2]
+    const myPageData: MyPageData = me.myCurrentPageData;
+    const anyEditsDraft = _.find(myPageData.myDrafts, (d: Draft) => {
+      return d.forWhat.postId === post.uniqueId && 
+          d.forWhat.draftType === DraftType.Edit;
+    });
+    const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
+
+    const editBtn = store.isEditorOpen ? null :
+        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, onClick: this.onEditClick },
+          t.EditV + (
+            anyEditsDraft ? " — Unfinished edits" : ''));  // I18N [0436BKRFP2]
+
+    const actions = editBtn;
 
     return (
       r.div({ className: 'dw-p-as dw-as' }, actions));
@@ -122,10 +135,10 @@ export const PostActions = createComponent({
   displayName: 'PostActions',
 
   onAcceptAnswerClick: function() {
-    debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
+    ReactActions.acceptAnswer(this.props.post.uniqueId);
   },
   onUnacceptAnswerClick: function() {
-    debiki2.ReactActions.unacceptAnswer();
+    ReactActions.unacceptAnswer();
   },
 
   componentWillUnmount: function() {
@@ -166,7 +179,7 @@ export const PostActions = createComponent({
       }
     }
     else {
-      // Use the same type as the post we're replying to.
+      // Use the same type as the post we're replying to. [REPLTYPE]
       newPostType = (post.postType === PostType.Flat || post.postType === PostType.BottomComment)
           ? post.postType
           : PostType.Normal;
@@ -177,23 +190,12 @@ export const PostActions = createComponent({
 
     login.loginIfNeededReturnToPost(loginToWhat, post.nr, () => {
       if (this.isGone) return;
-      // Toggle highlighting first, because it'll be cleared later if the
-      // editor is closed, and then we don't want to toggle it afterwards.
-      const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
-
-      // Dupl code [5AKBR30W02]
-      if (eds.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(
-            JSON.stringify(['editorToggleReply', [post.nr, inclInReply]]), eds.embeddingOrigin);
-      }
-      else {
-        debiki2.editor.toggleWriteReplyToPostNr(post.nr, inclInReply, newPostType);
-      }
+      ReactActions.composeReplyTo(post.nr, newPostType);
     }, true);
   },
 
   onEditClick: function(event) {
-    debiki2.ReactActions.editPostWithNr(this.props.post.nr);
+    ReactActions.editPostWithNr(this.props.post.nr);
   },
   onLinkClick: function(event) {
     morebundle.openShareDialog(this.props.post, event.target);
@@ -241,6 +243,21 @@ export const PostActions = createComponent({
 
     const deletedOrCollapsed = isDeleted || isCollapsed;
 
+    if (post.nr < MinRealPostNr) {
+      // This is a preview of a new reply; it doesn't yet exist for real, there's nothing
+      // we can do with it.  (Later: What if one wants to e.g. schedule the post to get
+      // posted a bit later, then maybe there could be a button for that, here?
+      // Or change background color, or whatever — maybe some action buttons can
+      // make sense, also for a preview post?)
+      // @ifdef DEBUG
+      dieIf(!post.isPreview, 'TyE603WKGU42R');
+      // @endif
+      return null;
+    }
+
+    const isEditingThisPost = post.isEditing;
+    const isEditorOpenAlready = store.isEditorOpen;
+
     // (Do return a <div> so there'll be some whitespace below for arrows to any replies.)
     if (post_shallRenderAsDeleted(post) || isCollapsed)
       return r.div({ className: 'dw-p-as dw-as' });
@@ -248,6 +265,7 @@ export const PostActions = createComponent({
     let acceptAnswerButton;
     if (deletedOrCollapsed) {
       // Show no accept-as-answer button.
+      // (But if is edits preview? Then it's ok click Accept, whilst editing.)
     }
     else if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
         !isPageBody && post.isApproved) {
@@ -266,12 +284,12 @@ export const PostActions = createComponent({
         t.Solution);
     }
 
-    const replyButton = !store_mayIReply(store, post) ? null :
+    const replyButton = !store_mayIReply(store, post) || isEditorOpenAlready ? null :
           r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store),
               onClick: this.onReplyClick },
             makeReplyBtnTitle(store, post));
 
-    const changeButton = !isStaffOrOwnPage || !isPageBody ? null :
+    const changeButton = !isStaffOrOwnPage || !isPageBody || isEditingThisPost ? null :
           r.a({ className: 'dw-a dw-a-change',
               onClick: event => {
                 const rect = cloneEventTargetRect(event);
@@ -312,7 +330,10 @@ export const PostActions = createComponent({
 
     let downvotesDropdown;
     let likeVoteButton;
-    if (!deletedOrCollapsed && post.isApproved && !isOwnPost) {
+    if (!deletedOrCollapsed && post.isApproved && !isOwnPost &&
+        // Don't allow voting whilst editing — that currently would replace the
+        // edit preview post [EDPVWPST] with the real post.
+        !isEditingThisPost) {
       const myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
       const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
       const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
@@ -332,10 +353,18 @@ export const PostActions = createComponent({
     }
 
 
+    // Dupl code [305RKTDJ2]
+    const anyEditsDraft = _.find(myPageData.myDrafts, (d: Draft) => {
+      return d.forWhat.postId === post.uniqueId && 
+          d.forWhat.draftType === DraftType.Edit;
+    });
+    const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
+
     const mayEdit = store_mayIEditPost(store, post);
-    const editButton = !mayEdit ? null :
-        r.a({ className: 'dw-a dw-a-edit icon-edit', title: t.EditV,
-              onClick: this.onEditClick });
+    const editButton = !mayEdit || isEditorOpenAlready ? null :
+        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, title: t.EditV,
+              onClick: this.onEditClick },
+          anyEditsDraft ? "Unfinished edits" : null);  // I18N [0436BKRFP2] [UFINEDT]
 
     const link =
         r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,
@@ -347,7 +376,14 @@ export const PostActions = createComponent({
     // when merging server and client side markup).
     let flagBtn;
     let moreDropdown;
-    if (me.isLoggedIn) {
+    if (isEditingThisPost) {
+      // Skip the Flag and More buttons — doing such things when the post is being
+      // edited, could have weird effects?  E.g. More + Delete, or + Move-to-other-page,
+      // whilst editing.
+      // But what if one clicks Delete on the parent post, and deletes the whole tree?
+      // Maybe hide the More buttons for *all* posts?
+    }
+    else if (me.isLoggedIn) {
       moreDropdown =
         r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
           r.a({className: 'dw-a dw-a-more icon-menu', title: t.MoreDots}));
@@ -532,7 +568,7 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
   };
 
   debiki2.Server.saveVote(data, function(updatedPost) {
-    debiki2.ReactActions.vote(updatedPost, action, voteType);
+    ReactActions.vote(updatedPost, action, voteType);
   });
 }
 

@@ -58,14 +58,14 @@ function onMessage(event) {
       const oneTimeLoginSecret = eventData;
       Server.loginWithOneTimeSecret(oneTimeLoginSecret, function() {
         // typs.weakSessionId has been updated already by the above login fn.
-        debiki2.ReactActions.loadMyself();
+        ReactActions.loadMyself();
       });
       break;
     case 'resumeWeakSession':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
       typs.weakSessionId = eventData;
       // This will send 'justLoggedIn' to the editor iframe, so it'll get updated too.
-      debiki2.ReactActions.loadMyself();
+      ReactActions.loadMyself();
       break;
     case 'justLoggedIn':
       // The getMainWin().typs.weakSessionId has been updated already, by
@@ -74,23 +74,23 @@ function onMessage(event) {
       const mainWin: MainWin = getMainWin();
       dieIf(!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid'), 'TyE3065KDTH2');
       // @endif
-      debiki2.ReactActions.setNewMe(eventData.user);
+      ReactActions.setNewMe(eventData.user);
       break;
     case 'logoutClientSideOnly':
       // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
-      debiki2.ReactActions.logoutClientSideOnly();
+      ReactActions.logoutClientSideOnly();
       break;
     case 'scrollToPostNr':
       var postNr = eventData;
       debiki.scriptLoad.done(function() {
-        var pageId = debiki2.ReactStore.getPageId();
+        var pageId = ReactStore.getPageId();
         if (!pageId || pageId === EmptyPageId) {
           // Embedded comments discussion not yet lazy-created, so there's no post to scroll to.
           // (Probably someone accidentally typed an url that ends with '#comment-1' for example,
           // maybe when testing something.)
           return;
         }
-        debiki2.ReactActions.loadAndShowPost(postNr);
+        ReactActions.loadAndShowPost(postNr);
       });
       break;
     case 'editorToggleReply':
@@ -98,27 +98,34 @@ function onMessage(event) {
       // It opens the editor to write a reply to `postId`.
       var postNr = eventData[0];
       var inclInReply = eventData[1];
-      debiki2.editor.toggleWriteReplyToPostNr(postNr, inclInReply, PostType.Normal);
+      var postType = eventData[2] ?? PostType.Normal;
+      editor.toggleWriteReplyToPostNr(postNr, inclInReply, postType);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments
       // <iframe> when the editor has posted a new reply and the server has replied
       // with the HTML for the reply. `eventData` is JSON that includes this HTML;
       // it'll be inserted into the comments <iframe>.
-      d.i.handleReplyResult(eventData);
-      break;
-    case 'clearIsReplyingMarks':
-      // This is sent from the embedded editor to an embedded comments page.
-      d.i.clearIsReplyingMarks();
+      ReactActions.handleReplyResult(eventData[0], eventData[1]);
       break;
     case 'editorEditPost':
       // Sent from an embedded comments page to the embedded editor.
       var postNr = eventData;
-      debiki2.ReactActions.editPostWithNr(postNr);
+      ReactActions.editPostWithNr(postNr);
       break;
     case 'handleEditResult':
       // This is sent from the embedded editor back to an embedded comments page.
-      debiki2.ReactActions.handleEditResult(eventData);
+      ReactActions.handleEditResult(eventData);
+      break;
+    case 'showEditsPreview':
+      ReactActions.showEditsPreview(eventData);
+      break;
+    case 'scrollToPreview':
+      ReactActions.scrollToPreview(eventData);
+      break;
+    case 'hideEditorAndPreview':
+      // This is sent from the embedded editor to an embedded comments page.
+      ReactActions.hideEditorAndPreview(eventData);
       break;
     case 'iframeOffsetWinSize':
       debiki2.iframeOffsetWinSize = eventData;

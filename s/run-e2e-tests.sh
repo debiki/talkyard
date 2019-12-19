@@ -78,7 +78,7 @@ function runE2eTest {
   # '-e 2 -o 0' and '-e 2 -o 1' at the same time.
 
   # Incl $testStartId so ps-grep-kill below kills only wdio processes we start here.
-  test_log_file="logs/e2e-details-$testStartId.log"
+  test_log_file="logs/failed-e2e-test-$testStartId-nr-$site_nr.log"
   cmd="$@ --deleteOldSite --localHostname=$local_hostname --dummy-wdio-test $testStartId"
 
   echo "————————————————————————————————————————————————————————————————————"
@@ -117,12 +117,7 @@ function runE2eTest {
     echo "*** Test failed 1/3. Waiting a few seconds, then will retry ... [EdME2ETRY1] ***"
     echo
     sleep 7
-    # --- Why I did this again ?? -----
-    #site_nr=`printf '%d' $(($site_nr + 1))`
-    #local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
-    #cmd="$@ --deleteOldSite --localHostname=$local_hostname"
-    # ---------------------------------
-    echo
+
     echo "Again:"
     echo "    $cmd"
     echo
@@ -149,6 +144,7 @@ function runE2eTest {
       echo "*** Test failed 2/3. Waiting a few seconds, then trying one last time ... [EdME2ETRY2] ***"
       echo
       sleep 7
+
       echo "Last attempt:"
       echo "    $cmd"
       echo
@@ -478,7 +474,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-guest $args
   runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-verif-gmail $args
   runE2eTest s/wdio target/e2e/wdio.conf.js --b3c      --only embedded-comments-no-cookies-unverif-gmail $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote.test $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-vote-first $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-conf-notf-pref-first $args

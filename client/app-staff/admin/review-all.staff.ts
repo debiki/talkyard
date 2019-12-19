@@ -371,13 +371,14 @@ const ReviewTask = createComponent({
     const itHasBeenHidden = !post.bodyHiddenAtMs || isInvalidated ? null :
       "It has been hidden; only staff can see it. ";
 
-    const author = store.usersByIdBrief[post.createdById] || {};
+    const author = store_getUserOrMissing(store, post.createdById);
     const writtenByInfo =
         r.div({ className: 's_RT_WrittenBy' },
           "Written by: ", UserName({ user: author, store }));
 
     const lastApprovedEditBy = !post.lastApprovedEditById ? null :
-        store.usersByIdBrief[post.lastApprovedEditById] || {};
+        store_getUserOrMissing(store, post.lastApprovedEditById);
+
     const lastApprovedEditInfo = !lastApprovedEditBy ? null :
         r.div({ className: 's_RT_LastAprEditBy' },
           "Last approved edit by: ", UserName({ user: lastApprovedEditBy, store }));
@@ -394,7 +395,7 @@ const ReviewTask = createComponent({
           r.div({ className: 's_RT_FlaggedBy'}, "Flagged by: "),
           r.ul({ className: 's_RT_Flags' },
             reviewTask.flags.map((flag: Flag) => {
-              const flagger = store.usersByIdBrief[flag.flaggerId] || {};
+              const flagger = store_getUserOrMissing(store, flag.flaggerId);
               let reason = "Other";
               switch (flag.flagType) {
                 case FlagType.Inapt: reason = "Inappropriate"; break;

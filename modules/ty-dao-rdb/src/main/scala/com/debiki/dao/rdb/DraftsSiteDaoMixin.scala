@@ -136,6 +136,27 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  override def loadDraftsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[Draft] = {
+    TESTS_MISSING
+    val query = s"""
+      select d.* from drafts3 d inner join posts3 p
+        on d.site_id = p.site_id
+        -- This finds edit drafts, and also reply drafts — then, post_id is the parent
+        -- post being replied to.
+        and d.post_id = p.unique_post_id
+      where d.site_id = ?
+        and d.by_user_id = ?
+        and d.deleted_at is null
+        and d.draft_type in (
+          ${DraftType.Edit.toInt},
+          ${DraftType.Reply.toInt},
+          ${DraftType.ProgressPost.toInt})
+        and p.page_id = ?
+        order by coalesce(d.last_edited_at, d.created_at) desc"""
+    runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef, pageId), readDraft)
+  }
+
+
   override def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft] = {
     val values = ArrayBuffer[AnyRef](
       siteId.asAnyRef, userId.asAnyRef, draftLocator.draftType.toInt.asAnyRef)
@@ -148,7 +169,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       case DraftType.DirectMessage =>
         values.append(draftLocator.toUserId.getOrDie("TyE2ABK47").asAnyRef)
         "to_user_id = ?"
-      case DraftType.Reply | DraftType.Edit =>
+      case DraftType.Reply | DraftType.ProgressPost | DraftType.Edit =>
         values.append(draftLocator.postId.getOrDie("TyE2ABSL7").asAnyRef)
         "post_id = ?"
     }

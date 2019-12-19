@@ -87,9 +87,8 @@ export function loadMyself(afterwardsCallback?) {
       const mainWin = getMainWin();
       const typs: PageSession = mainWin.typs;
       const weakSessionId = typs.weakSessionId;
-      window.parent.postMessage(JSON.stringify([
-        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId }]),  // [JLGDIN]
-        eds.embeddingOrigin);
+      sendToOtherIframe([
+        'justLoggedIn', { user, weakSessionId, pubSiteId: eds.pubSiteId }]);  // [JLGDIN]
     }
     setNewMe(user);
     if (afterwardsCallback) {
@@ -123,10 +122,15 @@ export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
+
   if (eds.isInEmbeddedCommentsIframe) {
     // Tell the editor iframe that we've logged out.
-    window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), eds.embeddingOrigin);
+    sendToEditorIframe(['logoutClientSideOnly', null]);
+
+    // Probaby not needed, since reload() below, but anyway:
+    patchTheStore({ setEditorOpen: false });
   }
+
   // Abort any long polling request, so we won't receive data, for this user, after we've
   // logged out: (not really needed, because we reload() below)
   Server.abortAnyLongPollingRequest();
@@ -280,7 +284,7 @@ export function editPostWithNr(postNr: number) {
     }
     else {
       // Right now, we don't need to use the Store for this.
-      debiki2.editor.openEditorToEditPostNr(postNr);
+      editor.openToEditPostNr(postNr);
     }
   });
 }
@@ -291,7 +295,7 @@ export function handleEditResult(editedPost) {
     sendToCommentsIframe(['handleEditResult', editedPost]);
   }
   else {
-    debiki2.ReactActions.updatePost(editedPost);
+    updatePost(editedPost);
   }
 }
 
@@ -402,29 +406,44 @@ export function uncollapsePost(post) {
 }
 
 
-export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callback?) {
-  const store: Store = debiki2.ReactStore.allData();
+// COULD RENAME to loadIfNeededThenShow(AndHighlight)Post
+export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean,
+       callback?: (post?: Post) => void) {
+  const store: Store = ReactStore.allData();
   const page: Page = store.currentPage;
   const anyPost = page.postsByNr[postNr];
-  if (!anyPost || _.isEmpty(anyPost.sanitizedHtml)) {
+
+  // If post missing, or text not loaded — then, we need to load it.
+  // However draft posts have unsafeSource only, not any preview html. [DFTSRC]
+  const needLoadPost = !anyPost ||
+      (_.isEmpty(anyPost.sanitizedHtml) && !anyPost.isForDraftNr);
+
+  if (needLoadPost) {
     Server.loadPostByNr(postNr, (storePatch: StorePatch) => {
+      // (The server should have replied 404 Not Found if post not found; then,
+      // this code wouldn't run.)
       patchTheStore(storePatch);
-      showAndCallCallback();
+      const posts: Post[] = storePatch.postsByPageId && storePatch.postsByPageId[page.pageId];
+      // @ifdef DEBUG
+      dieIf(posts?.length !== 1, 'TyE06QKUSMF4');
+      // @endif
+      const post: Post = posts && posts[0];
+      showAndCallCallback(post);
     });
   }
   else {
-    showAndCallCallback();
+    showAndCallCallback(anyPost);
   }
-  function showAndCallCallback() {
+
+  function showAndCallCallback(post: Post) {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.ShowPost,
       postNr: postNr,
       showChildrenToo: showChildrenToo,
+      onDone: function() {
+        callback?.(post);
+      },
     });
-    if (callback) {
-      // Wait until React has rendered everything. (When exactly does that happen?)
-      setTimeout(callback, 1);
-    }
   }
 }
 
@@ -452,7 +471,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
   }
 
   // @ifdef DEBUG
-  console.debug(`Doing url #action ${fragAction.type}...`);
+  console.debug(`Doing url frag action ${toStr(fragAction)}...`);
   // @endif
 
   const postNr: PostNr | undefined = fragAction.postNr;
@@ -464,9 +483,9 @@ export function doUrlFragmentAction(newHashFragment?: string) {
       case FragActionType.ComposeTopic:
         editor.editNewForumPage(fragAction.categoryId, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
-        location.hash = '';
+        history.replaceState({}, '', '#');
         break;
-      case FragActionType.ScrollToElemId:
+      case FragActionType.ScrollToSelector:
         // Add some margin-top, so the topbar won't occlude the #elem-id.
         // There're CSS solutions, like: (see https://stackoverflow.com/a/28824157/694469)
         //    :target::before {
@@ -485,7 +504,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
           // might suddently change its height, when the user scrolls down and the topbar
           // changes from a position:static to a fixed bar, which can look slightly different.
           const moreThanTopbarHeight = 90;
-          utils.scrollIntoViewInPageColumn(fragAction.elemId, {
+          utils.scrollIntoViewInPageColumn(fragAction.selector, {
             marginTop: moreThanTopbarHeight, marginBottom: 999,
             // This id is from the url; maybe it's weird, not a valid css selector.
             maybeBadId: true,
@@ -501,39 +520,32 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     return;
   }
 
-  const postAnchor = `post-${postNr}`;
-
-  const postElem = $byId(postAnchor);
-  if (postElem) {
-    // Do frag action directly — post already loaded.
-    debiki.internal.showAndHighlightPost(postElem);
-    doAfterLoadedAnyPost();
+  if (store.isEditorOpen) {
+    // Then we cannot open any draft in the editor (since it's open already)
+    // — ignore the frag action, and just scroll to the post or reply draft.
+    // If this is a reply draft, we need to calculate its temporary dummy post nr.
+    let nr2 = postNr;
+    if (fragAction.type === FragActionType.ReplyToPost) {
+      nr2 = post_makePreviewIdNr(postNr, fragAction.replyType);
+    }
+    loadAndShowPost(nr2);
+    return;
   }
-  else {
-    // Load post, then do the frag action. (loadAndShowPost() highlights it, right?)
-    loadAndShowPost(postNr, undefined, doAfterLoadedAnyPost);
-  }
 
-  function doAfterLoadedAnyPost() {
+  // Load post if needed, highlight it, and do the frag action.
+  loadAndShowPost(postNr, false /* don't load children too */, function(post?: Post) {
     let resetHashFrag = true;
     markAnyNotificationAsSeen(postNr);
     switch (fragAction.type) {
       case FragActionType.ReplyToPost:
-        // CLEAN_UP Dupl code [5AKBR30W02]
-        // Break out debiki2.ReactActions.editReplyTo(postNr)  action?
-        if (eds.isInEmbeddedCommentsIframe) {
-          window.parent.postMessage(
-              JSON.stringify(['editorToggleReply', [postNr, true]]), eds.embeddingOrigin);
-        }
-        else {
-          // Normal = incl in draft + url?
-          Server.loadEditorAndMoreBundles(function() {
-            debiki2.editor.toggleWriteReplyToPostNr(postNr, true, PostType.Normal);
-          });
+        if (post) {
+          composeReplyTo(postNr, fragAction.replyType);
         }
         break;
       case FragActionType.EditPost:
-        debiki2.ReactActions.editPostWithNr(postNr);
+        if (post) {
+          editPostWithNr(postNr);
+        }
         break;
       case FragActionType.ScrollToLatestPost:
       case FragActionType.ScrollToPost:
@@ -548,13 +560,17 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     // If going to another page, and then back — just scroll to the post, this time, but
     // don't open the editor. (Doing that, feels unexpected and confusing, to me. If
     // navigating away, then, probably one is done editing? Or has maybe submitted
-    // the post already.)
+    // the post already.) [RSTHASH]
     if (resetHashFrag) {
+      // Don't link to the orig post, that's just annoying (if navigating back,
+      // and the #post-1 hash makes the page jump to the top all the time).
+      // (Need '#' because just '' apparently has no effect.)
+      const newHash = postNr === BodyNr ? '#' : `#post-${postNr}`;
       // Does this sometimes make the browser annoyingly scroll-jump so this post is at
-      // the very top of the win, occluded by the topbar?
-      location.hash = '#' + postAnchor;
+      // the very top of the win, occluded by the topbar? [4904754RSKP]
+      history.replaceState({}, '', newHash);
     }
-  }
+  });
 }
 
 
@@ -572,6 +588,7 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
   }
 
   const draftNr = findIntInHashFrag(FragParamDraftNr, theHashFrag);
+  const replyType = findIntInHashFrag(FragParamReplyType, theHashFrag);
   const topicType = findIntInHashFrag(FragParamTopicType, theHashFrag);
 
   if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0) {
@@ -592,13 +609,20 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
     };
   }
 
+  if (theHashFrag.indexOf(FragActionHashScrollToBottom) >= 0) {
+    return {
+      type: FragActionType.ScrollToSelector,
+      selector: '.s_APAs',
+    };
+  }
+
   // The rest of the actions are for a specific post.
 
   const postNr: PostNr | undefined = findIntInHashFrag(FragParamPostNr, theHashFrag);
   if (!postNr) {
     return !theHashFrag ? undefined : {
-      type: FragActionType.ScrollToElemId,
-      elemId: theHashFrag,
+      type: FragActionType.ScrollToSelector,
+      selector: theHashFrag,
     };
   }
 
@@ -613,7 +637,12 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
     actionType = FragActionType.ScrollToPost;
   }
 
-  return { type: actionType, postNr, draftNr };
+  return {
+    type: actionType,
+    postNr,
+    draftNr,
+    replyType,
+  };
 }
 
 
@@ -752,10 +781,271 @@ function markAnyNotificationAsSeen(postNr: number) {
 }
 
 
-export function patchTheStore(storePatch: StorePatch) {
+export function onEditorOpen(onDone: () => void) {
+  // @ifdef DEBUG
+  // Use messages 'editorToggleReply' or 'editorEditPost' instead.
+  dieIf(eds.isInEmbeddedCommentsIframe, 'Ty305WKHE3');
+  // @endif
+
+  if (eds.isInEmbeddedEditor) {
+    sendToCommentsIframe(['showEditor', {}]);
+  }
+
+  patchTheStore({ setEditorOpen: true }, onDone);
+}
+
+
+
+let origPostBeforeEdits: Post | undefined;
+
+
+export function showEditsPreview(ps: ShowEditsPreviewParams) {
+  // @ifdef DEBUG
+  dieIf(ps.replyToNr && ps.editingPostNr, 'TyE73KGTD02');
+  dieIf(ps.replyToNr && !ps.anyPostType, 'TyE502KGSTJ46');
+  // @endif
+
+  if (eds.isInEmbeddedEditor) {
+    const editorIframeHeightPx = window.innerHeight;
+    sendToCommentsIframe(['showEditsPreview', { ...ps, editorIframeHeightPx }]);
+    return;
+  }
+
+  const store: Store = ReactStore.allData();
+
+  // If' we've navigated to a different page, then, any preview is gone already.
+  const isOtherPage = ps.editorsPageId && ps.editorsPageId !== store.currentPageId;
+  if (isOtherPage)
+    return;
+
+  // Quick hack, dupl code: If in iframe, and page got lazy-created, its store.pagesById
+  // is wrong — so just access it via store.currentPage instead. [UPDLZYPID]
+  const page = eds.isInIframe ? store.currentPage : (
+      ps.editorsPageId ? store.pagesById[ps.editorsPageId] : store.currentPage);
+  // @ifdef DEBUG
+  dieIf(!page, 'TyE3930KRG');
+  // @endif
+
+  if (!page)
+    return;
+
+  const isChat = page_isChatChannel(page.pageRole);
+
+  // A bit dupl debug checks (49307558).
+  // @ifdef DEBUG
+  // Chat messages don't reply to any particular post — has no parent nr. [CHATPRNT]
+  dieIf(ps.replyToNr && isChat, 'TyE7WKJTGJ024');
+  // If no page id included, then either 1) we're in the embedded comments editor
+  // — doesn't include any page id when sending the showEditsPreview message to the
+  // main iframe; it doesn't know which page we're looking at. Or 2) we're in
+  // a chat — then, currently no page id included. Or 3) if we're in the api
+  // section, then there's no page.
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+      !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE630KPR5');
+  // @endif
+
+  let patch: StorePatch;
+
+  if (ps.editingPostNr) {
+    // Replace the real post with a copy that includes the edited html. [EDPVWPST]
+    const postToEdit = page.postsByNr[ps.editingPostNr];
+    if (!origPostBeforeEdits) {
+      origPostBeforeEdits = postToEdit;
+    }
+    patch = page_makeEditsPreviewPatch(page, origPostBeforeEdits, ps.safeHtml);
+  }
+  else if (ps.replyToNr || isChat) {
+    const postType = ps.anyPostType || PostType.ChatMessage;
+    // Show an inline preview, where the reply will appear.
+    patch = store_makeNewPostPreviewPatch(
+        store, page, ps.replyToNr, ps.safeHtml, postType);
+  }
+
+  // @ifdef DEBUG
+  dieIf(!patch, 'TyE5WKDAW25');
+  // @endif
+
+  if (patch) {
+    patchTheStore(patch, () => {
+      // The preview won't appear until a bit later, after the preview post
+      // store patch has been applied — currently the wait-a-bit code is
+      // a tiny bit hacky: [SCROLLPRVW].
+      if (ps.scrollToPreview) {
+        scrollToPreview({
+          isChat,
+          isEditingBody: ps.editingPostNr === BodyNr,
+          editorIframeHeightPx: ps.editorIframeHeightPx,
+        });
+      }
+    });
+  }
+}
+
+
+export function scrollToPreview(ps: {
+        isChat?: boolean,
+        isEditingBody?: boolean,
+        editorIframeHeightPx?: number } = {}) {
+
+  if (eds.isInEmbeddedEditor) {
+    const editorIframeHeightPx = window.innerHeight;
+    sendToCommentsIframe(['scrollToPreview', { ...ps, editorIframeHeightPx }]);
+    return;
+  }
+
+  // Break out function? Also see FragActionHashScrollToBottom, tiny bit dupl code.
+  // Scroll to the preview we're currently editing (not to any inactive draft previews).
+  const selector = ps.isEditingBody ? '.dw-ar-t > .s_T_YourPrvw' : (
+    ps.isChat ? '.s_T_YourPrvw + .esC_M' : '.s_T-Prvw-IsEd');
+
+  // If editing body, use some more margin, so the page title and "By (author)"
+  // stays visible — and, in a chat, so that the "Preview:" text is visible
+  // (it's not included in `selector`).
+  const isReplyingToOp = false; // todo
+  const marginTop = ps.isEditingBody || isReplyingToOp || ps.isChat ? 110 : 50;
+
+  // If we're in an embedded comments iframe, then, there's another iframe for the
+  // editor. Then scroll a bit more, so that other iframe won't occlude the preview.
+  let editorHeight = ps.editorIframeHeightPx || 0;
+
+  // Or, if we're in a chat, there's a chat text box at the bottom, on top of
+  // the chat messages.
+  if (ps.isChat) {
+    // @ifdef DEBUG
+    dieIf(editorHeight !== 0, 'TyE406KWSDJS23');
+    // @endif
+    const editorElem = $first('.esC_Edtr');
+    editorHeight = editorElem?.clientHeight || 0;
+  }
+
+  utils.scrollIntoViewInPageColumn(selector, {
+    marginTop,
+    marginBottom: 30 + editorHeight,
+  });
+}
+
+
+export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
+  // @ifdef DEBUG
+  dieIf(ps.replyToNr && ps.editingPostNr, 'TyE4KTJW035M');
+  dieIf(ps.replyToNr && !ps.anyPostType, 'TyE72SKJRW46');
+  // @endif
+
+  if (eds.isInEmbeddedEditor) {
+    sendToCommentsIframe(['hideEditorAndPreview', ps]);
+    patchTheStore({ setEditorOpen: false });
+    return;
+  }
+
+  const store: Store = ReactStore.allData();
+
+  // Quick hack, dupl code: If in iframe, and page got lazy-created, its store.pagesById
+  // is wrong — so just access it via store.currentPage instead. [UPDLZYPID]
+  const page = eds.isInIframe ? store.currentPage : (
+      ps.editorsPageId ? store.pagesById[ps.editorsPageId] : store.currentPage);
+  const isChat = page && page_isChatChannel(page.pageRole);
+
+  // If' we've navigated to a different page, then, any preview is gone already.
+  const isOtherPage = ps.editorsPageId && ps.editorsPageId !== store.currentPageId;
+
+  // A bit dupl debug checks (49307558).
+  // @ifdef DEBUG
+  dieIf(!page, 'TyE407AKSHPW24');
+  dieIf(ps.replyToNr && isChat, 'TyE62SKHSW604');
+  dieIf(!ps.editorsPageId && !eds.isInEmbeddedCommentsIframe &&
+      !isChat && location.pathname.indexOf(ApiUrlPathPrefix) === -1, 'TyE6QSADTH04');
+  // @endif
+
+  let patch: StorePatch = {};
+  let highlightPostNrAfter: PostNr;
+
+  if (isOtherPage) {
+    // The preview is gone already, since we've navigated away.
+  }
+  else if (ps.keepPreview) {
+    // This happens if we're editing a chat message in the advanced editor — we can
+    // continue typing in the cat message text box, and keep the preview.
+  }
+  else if (ps.editingPostNr) {
+    // Put back the original post, the one before the edits. If saving, then,
+    // once the serve has replied, we'll insert the new updated post instead.  Or...? [359264FKUGP]
+    if (origPostBeforeEdits) {
+      highlightPostNrAfter = origPostBeforeEdits.nr;
+      patch = page_makePostPatch(page, origPostBeforeEdits);
+      origPostBeforeEdits = null;
+    }
+  }
+  else if (ps.replyToNr || isChat) {
+    const postType = ps.anyPostType || PostType.ChatMessage;
+    patch = ps.anyDraft && ps.keepDraft
+        ? store_makeDraftPostPatch(store, page, ps.anyDraft)
+        : store_makeDeletePreviewPostPatch(store, ps.replyToNr, postType);
+    highlightPostNrAfter = post_makePreviewIdNr(ps.replyToNr, postType);
+  }
+
+  patch = { ...patch, setEditorOpen: false };
+  patchTheStore(patch);
+
+  // And then, later:
+  if (!isOtherPage) {
+    setTimeout(() => {
+      highlightPostNrBrieflyIfThere(highlightPostNrAfter);
+    }, 200);
+  }
+}
+
+
+export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
+  const inclInReply = true; // legacy — was for multireplies: toggle incl-in-reply or not
+  if (eds.isInEmbeddedCommentsIframe) {
+    sendToEditorIframe(['editorToggleReply', [parentNr, inclInReply, replyPostType]]);
+  }
+  else {
+    editor.toggleWriteReplyToPostNr(parentNr, inclInReply, replyPostType);
+  }
+}
+
+
+export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
+      anyPostType: number, draftToDelete: Draft | undefined, onDone?: () => void) {
+  Server.saveReply(editorsPageId, postNrs, text, anyPostType, draftToDelete?.draftNr,
+      (storePatch) => {
+    handleReplyResult(storePatch, draftToDelete, onDone);
+  });
+}
+
+
+export function insertChatMessage(text: string, draftToDelete: Draft | undefined,
+      onDone?: () => void) {
+  Server.insertChatMessage(text, draftToDelete?.draftNr, (storePatch) => {
+    handleReplyResult(storePatch, draftToDelete, onDone);
+  });
+}
+
+
+export function handleReplyResult(patch: StorePatch, draftToDelete: Draft | undefined,
+      onDone?: () => void) {
+  if (eds.isInEmbeddedEditor) {
+    if (patch.newlyCreatedPageId) {
+      // Update this, so subsequent server requests, will use the correct page id. [4HKW28]
+      eds.embeddedPageId = patch.newlyCreatedPageId;
+    }
+    // Send a message to the embedding page, which will forward it to
+    // the comments iframe, which will show the new comment.
+    sendToCommentsIframe(['handleReplyResult', [patch, draftToDelete]]);
+    onDone?.();
+    return;
+  }
+
+  patchTheStore({ ...patch, deleteDraft: draftToDelete }, onDone);
+}
+
+
+export function patchTheStore(storePatch: StorePatch, onDone?: () => void) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.PatchTheStore,
-    storePatch: storePatch,
+    storePatch,
+    onDone,
   });
 }
 
@@ -932,7 +1222,8 @@ function sendToEditorIframe(message) {
 }
 
 // An alias, for better readability.
-var sendToCommentsIframe = sendToEditorIframe;
+const sendToCommentsIframe = sendToEditorIframe;
+const sendToOtherIframe = sendToEditorIframe;
 
 
 //------------------------------------------------------------------------------

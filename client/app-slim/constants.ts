@@ -50,6 +50,10 @@ const BodyNrStr = '1';
 const FirstReplyNr = 2;
 const NoDraftNr = 0;
 
+// Posts nrs below this, are previews of reply drafts not yet published.
+const MaxVirtPostNr = -1000 * 1000;
+const MinRealPostNr = TitleNr;
+
 const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;
@@ -60,6 +64,7 @@ const MaxUsernameLength = 20;            // in scala [6AKBR20Q]
 
 const MaxGuestId = -2;
 const UnknownUserId = -3;
+//const CurrentUserNotLoggedInId = -1?  or  -4;  ?
 
 const ReviewDecisionUndoTimoutSeconds = 12; // sync with Scala and test code [2PUKQB0]
 
@@ -130,12 +135,16 @@ const FragActionAndEditPost = '&editPost';
 const FragActionHashComposeTopic = '#composeTopic';
 const FragActionHashComposeMessage = '#composeDirectMessage';
 const FragActionHashScrollLatest = '#scrollToLatestPost';
+const FragActionHashScrollToBottom  = '#scrollToBottom';  // rename to ...BottomButtons?
+
 
 // The post nr param looks a bit different, '-' not '=', because it's used in urls to link to
 // posts, so nice if it uses '-' like url tend to do. Whereas the other params are more like
 // api request params to the Javascript code, so then they can look like code & url params?
 const FragParamPostNr = '#post-';
+const FragParamCommentNr = '#comment-';
 const FragParamDraftNr = '&draftNr=';
+const FragParamReplyType = '&replyType=';
 const FragParamTopicType = '&topicType=';
 const FragParamCategoryId = '&categoryId=';
 

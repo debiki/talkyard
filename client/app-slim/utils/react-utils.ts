@@ -40,8 +40,10 @@ export function createClassAndFactory(componentDefinition) { // rename createCom
 }
 
 
-export function createFactory(componentDefinition) { // ... let's name it "createFactory" only
-  return createComponent(componentDefinition);
+// ... let's name it "createFactory" only
+export function createFactory<P, S>(compSpec: React.ComponentSpec<P, S>)
+    : React.Factory<any> {
+  return createComponent(compSpec);
 }
 
 

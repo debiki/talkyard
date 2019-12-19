@@ -79,7 +79,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }
     }
 
-    "save a draft for a reply" in {
+    "save a draft for a reply" in {    TESTS_MISSING // test progr post drafts too
       val post = dao.loadPost(pageId, PageParts.BodyNr) getOrDie "TyE2ABKS40L"
       val locator = DraftLocator(
         DraftType.Reply,

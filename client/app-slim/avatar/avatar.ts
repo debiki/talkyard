@@ -41,17 +41,9 @@ export const Avatar = createComponent({
   displayName: 'Avatar',
 
   onClick: function(event) {
-    if (this.props.ignoreClicks)
-      return;
-
-    if (this.props.clickOpensUserProfilePage) {
-      // there's an <a href> that fixes this.
-    }
-    else {
-      event.stopPropagation();
-      event.preventDefault();
-      morebundle.openAboutUserDialog(this.props.user.id, event.target, this.props.title);
-    }
+    event.stopPropagation();
+    event.preventDefault();
+    morebundle.openAboutUserDialog(this.props.user.id, event.target, this.props.title);
   },
 
   tiny: function() {
@@ -160,6 +152,10 @@ export const Avatar = createComponent({
 
   render: function() {
     const user: BriefUser | MemberInclDetails = this.props.user;
+    const ignoreClicks = this.props.ignoreClicks ||
+        // The user is unknow when rendering the author avatar, in
+        // the new reply preview, if we haven't logged in. [305KGWGH2]
+        user.id === UnknownUserId;
 
     // One or more of these might be undefined, even if the user has an avatar:
     // hash paths for only *some* avatar sizes are included.
@@ -168,9 +164,9 @@ export const Avatar = createComponent({
     const tnyPath = (<BriefUser> user).avatarTinyHashPath;
 
     let extraClasses = this.tiny() ? ' esAvtr-tny' : '';
-    extraClasses += this.props.ignoreClicks ? ' esAv-IgnoreClicks' : '';
+    extraClasses += ignoreClicks ? ' esAv-IgnoreClicks' : '';
     let content;
-    let styles;
+    let style;
 
     const largestPicPath = medPath || smlPath || tnyPath;
     if (largestPicPath) {
@@ -193,7 +189,7 @@ export const Avatar = createComponent({
       extraClasses += lettersClassesColor.classes;
       content = lettersClassesColor.text;
       if (lettersClassesColor.color) {
-        styles = { backgroundColor: lettersClassesColor.color };
+        style = { backgroundColor: lettersClassesColor.color };
       }
     }
     let title = user.username || user.fullName;
@@ -204,13 +200,15 @@ export const Avatar = createComponent({
     // Later: If including some is-admin/moderator symbol, then need to uncache pages
     // where this avatar is shown. [5KSIQ24]
 
-    const elemName = this.props.ignoreClicks ? 'span' : 'a';
+    const elemName = ignoreClicks ? 'span' : 'a';
     const elemFn = <any> r[elemName];
-    const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user);
+    const href = ignoreClicks ? null : linkToUserProfilePage(user);
+    const onClick = ignoreClicks || this.props.clickOpensUserProfilePage ?
+        null : this.onClick;
+
     return (
-      // [rename] edAvtr to esAvtr
-      elemFn({ className: 'esAvtr edAvtr' + extraClasses, href: link, title: title,
-          style: styles, onClick: this.onClick }, content));
+      elemFn({ className: 'esAvtr edAvtr' + extraClasses, href, title, style, onClick },
+        content));
   }
 });
 

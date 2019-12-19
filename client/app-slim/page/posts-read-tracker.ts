@@ -335,14 +335,13 @@ function trackReadingActivity() {
   // thread if parts of the thread is inside the viewport? isInViewport() takes
   // really long if there are > 200 comments (not good for mobile phones' battery?).
 
+  // @ifdef DEBUG
   const unreadPosts: Post[] = [];
   _.each(page.postsByNr, (post: Post) => {
     if (!me_hasRead(me, post)) {
       unreadPosts.push(post);
     }
   });
-
-  // @ifdef DEBUG
   !debug || console.log(`Num unread posts = ${unreadPosts.length}`);
   // @endif
 
@@ -363,7 +362,8 @@ function trackReadingActivity() {
 
       const postElem = postBodyElem.parentElement;
       const postNr = parsePostNr(postElem);
-      if (!postNr)  // in Javascript, !NaN is true
+      if (!postNr ||        // in Javascript, !NaN is true
+          postNr < BodyNr)  // skip preview posts and the page title
         return;
 
       if (!currentlyViewingPostNr) {

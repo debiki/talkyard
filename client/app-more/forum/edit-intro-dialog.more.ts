@@ -52,7 +52,7 @@ var EditIntroDialog = createClassAndFactory({
   },
 
   editIntroText: function() {
-    editor.openEditorToEditPostNr(BodyNr);
+    editor.openToEditPostNr(BodyNr);
     this.close();
   },
 

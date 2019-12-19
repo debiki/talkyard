@@ -31,10 +31,18 @@ export let anyContinueAfterLoginCallback = null;
 
 
 export function loginIfNeededReturnToPost(
-      loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
-  const anchor = postNr < FirstReplyNr ? '' : (
-    // We use 'comment-' for embedded comments, and they start on nr 1 = post 2. [2PAWC0]
-    eds.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
+      loginReason: LoginReason | string, postNr: PostNr, success: () => void,
+      willCompose?: boolean) {
+  // If posting a progress post, then, after login, scroll to the bottom, so one
+  // can click that button again — it's at the bottom.
+  const anchor = loginReason === LoginReason.PostProgressPost
+      ? FragActionHashScrollToBottom
+      : (postNr < FirstReplyNr ? '' : (
+          // We use 'comment-' for embedded comments; they start on nr 1 = post 2. [2PAWC0]
+          eds.isInEmbeddedCommentsIframe
+              ? FragParamCommentNr + (postNr - 1)
+              : FragParamPostNr + postNr));
+
   loginIfNeededReturnToAnchor(loginReason, anchor, success, willCompose);
 }
 

@@ -1293,17 +1293,22 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 }
 
 
-export function saveEdits(postNr: number, text: string, deleteDraftNr: DraftNr,
-      doneCallback: () => void) {
+export function saveEdits(editorsPageId: PageId, postNr: number, text: string,
+      deleteDraftNr: DraftNr, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {
-      pageId: getPageId(),
+      pageId: editorsPageId ||
+          // Old (as of Jan 2020), keep for a while?:
+          getPageId(),
       postNr: postNr,
       text: text,
       deleteDraftNr,
     },
     success: (editedPost) => {
+      // This hides the editor and places back the orig post [6027TKWAPJ5]
+      // — there'll be a short flash-of-original-version:
       doneCallback();
+      // ... until here we upsert the edited version instead:
       ReactActions.handleEditResult(editedPost);
     }
   });
@@ -1358,12 +1363,15 @@ export function unpinPage(success: () => void) {
 }
 
 
-export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
-      deleteDraftNr: DraftNr | undefined, success: () => void) {
+export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string,
+      anyPostType: number, deleteDraftNr: DraftNr | undefined,
+      success: (storePatch: StorePatch) => void) {
   postJson('/-/reply', {
     data: {
-      // Specify altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
-      pageId: getPageId() || undefined,
+      pageId: editorsPageId ||
+          // Old (as of Jan 2020), keep for a while?:
+          getPageId() || undefined,
+      // Incl altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
       altPageId: eds.embeddedPageAltId || undefined,
       embeddingUrl: eds.embeddingUrl || undefined,
       postNrs: postNrs,
@@ -1371,26 +1379,20 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
       text: text,
       deleteDraftNr,
     },
-    success: (response) => {
-      d.i.handleReplyResult(response);
-      success();
-    }
+    success
   });
 }
 
 
 export function insertChatMessage(text: string, deleteDraftNr: DraftNr | undefined,
-      success: () => void) {
+      success: (storePatch: StorePatch) => void) {
   postJson('/-/chat', {
     data: {
       pageId: getPageId(),
       text: text,
       deleteDraftNr,
     },
-    success: (response) => {
-      d.i.handleReplyResult(response);
-      success();
-    }
+    success
   });
 }
 
@@ -1582,12 +1584,12 @@ export function loadAllTags(success: (tags: string[]) => void) {
 
 
 export function loadTagsAndStats() {
-  get('/-/load-tags-and-stats', ReactActions.patchTheStore);
+  get('/-/load-tags-and-stats', r => ReactActions.patchTheStore(r));
 }
 
 
 export function loadMyTagNotfLevels() {
-  get('/-/load-my-tag-notf-levels', ReactActions.patchTheStore);
+  get('/-/load-my-tag-notf-levels', r => ReactActions.patchTheStore(r));
 }
 
 

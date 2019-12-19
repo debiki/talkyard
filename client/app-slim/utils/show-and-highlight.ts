@@ -43,7 +43,7 @@ function addAnySidebarWidth(options) {
 }
 
 
-debiki.internal.showAndHighlightPost = function(postElem, options) {
+debiki.internal.showAndHighlightPost = function(postElem, options: ShowPostOpts) {
   if (!postElem) {
     logError('Got no post [EdE7JKWD20]');
     return;
@@ -58,9 +58,31 @@ debiki.internal.showAndHighlightPost = function(postElem, options) {
 };
 
 
+export function highlightPostNrBrieflyIfThere(nr: PostNr) {
+  const elem = $byId('post-' + nr);
+  if (!elem)
+    return;
+  if ($h.hasClass(elem, 's_P-Prvw-NotEd')) {
+    // It's a draft preview, not a real post. Also find and highlight the draft
+    // header, e.g. "Preview, your edits:".
+    const draftHeader = $first('.s_T_YourPrvw', elem.parentElement);
+    highlightBrieflyImpl(draftHeader, elem);
+  }
+  else {
+    // It's a real post.
+    highlightPostBriefly(elem);
+  }
+}
+
+
 function highlightPostBriefly(postElem) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
+  highlightBrieflyImpl(head, body);
+}
+
+
+function highlightBrieflyImpl(head, body) {
   const highlightOnClass = 'dw-highlight-on';
   const highlightOffClass = 'dw-highlight-off';
   const allClasses = highlightOnClass + ' ' + highlightOffClass;

@@ -40,7 +40,7 @@ describe('chat', function() {
     owen.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
     owen.setValue('textarea', "Chat channel purpose");
     owen.rememberCurrentUrl();
-    owen.waitAndClick('.e2eSaveBtn');
+    owen.editor.clickSave();
     owen.waitForNewUrl();
     owen.chat.joinChat();
   });

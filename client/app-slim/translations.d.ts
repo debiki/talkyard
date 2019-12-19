@@ -539,6 +539,10 @@ interface TalkyardTranslations {
 
     repliesTo: string;
     InReplyTo: string;
+    YourReplyTo?: string;
+    YourDraft?: string;
+    YourProgrNoteC?: string;
+    YourProgrNoteDraftC?: string;
 
     ClickViewEdits: string;
 

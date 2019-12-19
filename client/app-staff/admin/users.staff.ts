@@ -26,7 +26,7 @@
 const r = ReactDOMFactories;
 
 
-export const UsersTab = createFactory({
+export const UsersTab = createFactory<any>({
   displayName: 'UsersTab',
 
   getInitialState: function() {
@@ -122,7 +122,7 @@ function ThreatsUsersPanel(props) {
 
 // COULD break out and reuse in  user-invites.more.ts ?  [3GK0YU2]
 //
-const InvitedUsersPanel = createFactory({
+const InvitedUsersPanel = createFactory<any>({
   displayName: 'InvitedUsersPanel',
 
   getInitialState: function() {
@@ -227,7 +227,7 @@ const InvitedUsersPanel = createFactory({
 });
 
 
-const UserList = createFactory({
+const UserList = createFactory<any>({
   displayName: 'UserList',
 
   componentDidMount: function() {
@@ -291,7 +291,7 @@ const UserList = createFactory({
 });
 
 
-const UserRow = createFactory({
+const UserRow = createFactory<any>({
   displayName: 'UserRow',
 
   getInitialState: function() {

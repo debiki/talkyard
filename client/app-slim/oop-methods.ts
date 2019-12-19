@@ -703,6 +703,189 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
+export function page_makePostPatch(page: Page, post: Post): StorePatch {
+  const patch: StorePatch = {
+    pageVersionsByPageId: {},
+    postsByPageId: {},
+  };
+  patch.postsByPageId[page.pageId] = [post];
+  patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+  return patch;
+}
+
+
+export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
+      : StorePatch {
+  const draftPost = store_makePostForDraft(store, draft)
+  return page_makePostPatch(page, draftPost);
+}
+
+
+export function store_makeNewPostPreviewPatch(store: Store, page: Page,
+      parentPostNr: PostNr | undefined, safePreviewHtml: string,
+      newPostType?: PostType): StorePatch {
+  const previewPost = store_makePreviewPost({
+      store, parentPostNr, safePreviewHtml, newPostType, isEditing: true });
+  return page_makePostPatch(page, previewPost);
+}
+
+
+export function page_makeEditsPreviewPatch(
+      page: Page, post: Post, safePreviewHtml: string): StorePatch {
+  const previewPost: Post = {
+    ...post,
+    sanitizedHtml: safePreviewHtml,
+    isPreview: true,
+    isEditing: true,
+  };
+  return page_makePostPatch(page, previewPost);
+}
+
+
+export function draftType_toPostType(draftType: DraftType): PostType | undefined {
+  switch (draftType) {
+    case DraftType.Reply: return PostType.Normal;  // could also be ChatMessage
+    case DraftType.ProgressPost: return PostType.BottomComment;
+    default:
+      return undefined;
+  }
+}
+
+
+export function postType_toDraftType(postType: PostType): DraftType | undefined {
+  switch (postType) {
+    case PostType.Normal: return DraftType.Reply;
+    case PostType.ChatMessage: return DraftType.Reply;
+    case PostType.BottomComment: return DraftType.ProgressPost;
+    default:
+      return undefined;
+  }
+}
+
+
+export function store_makePostForDraft(store: Store, draft: Draft): Post | null {
+  const locator: DraftLocator = draft.forWhat;
+  const parentPostNr = locator.postNr;
+
+  const postType = draftType_toPostType(draft.forWhat.draftType);
+  if (!postType)
+    return null;  // then skip draft post, for now
+
+  // It'd be nice if we saved a preview of the drafts, so can show nice preview html,
+  // instead of just the CommonMark source. Cannot load the CommonMark engine here,
+  // that'd make the page-load too slow I think. [DRAFTPRVW]
+  // For now, use the CommonMark source instead.
+
+  const previewPost = store_makePreviewPost({
+      store, parentPostNr, unsafeSource: draft.text, newPostType: postType,
+      isForDraftNr: draft.draftNr || true });
+  return previewPost;
+}
+
+
+export function post_makePreviewIdNr(parentNr: PostNr, newPostType: PostType): PostNr & PostId {
+  // So won't overlap with post nrs and ids.
+  const previewOffset = -1000 * 1000;
+  const previewPostIdNr =
+      previewOffset -
+      // We create one preview posts, per parent post we're replying to, so
+      // inclue the parent post nr, so the preview posts won't overwrite each other,
+      // in the page.postsByNr map.
+      // Chat messages have no parent post; there can be only one preview
+      // chat message [CHATPRNT].
+      (parentNr || 0) * 100 -
+      // We show different preview posts for 1) progress orig-post reply, and
+      // 2) discussion orig-post reply. — If is editing, not replying, use 0.
+      (newPostType || 0);
+  return previewPostIdNr;
+}
+
+
+interface MakePreviewParams {
+  store: Store;
+  parentPostNr?: PostNr;
+  safePreviewHtml?: string;
+  unsafeSource?: string;
+  newPostType: PostType;
+  // Is true if the draft nr hasn't yet been decided (drafts in sessionStorage
+  // haven't yet been assigned a draft nr by the server).
+  isForDraftNr?: DraftNr | true;
+  isEditing?: boolean;
+}
+
+
+function store_makePreviewPost({
+    store, parentPostNr, safePreviewHtml, unsafeSource,
+    newPostType, isForDraftNr, isEditing }: MakePreviewParams): Post {
+
+  dieIf(!newPostType, "Don't use for edit previews [TyE4903KS]");
+
+  const previewPostIdNr = post_makePreviewIdNr(parentPostNr, newPostType);
+
+  const now = getNowMs();
+
+  const previewPost: Post = {
+    isPreview: true,
+    isForDraftNr,
+    isEditing,
+
+    uniqueId: previewPostIdNr,
+    nr: previewPostIdNr,
+    parentNr: parentPostNr,
+    multireplyPostNrs: [], //PostNr[];
+    postType: newPostType,
+    authorId: store.me.id,
+    createdAtMs: now,
+    //approvedAtMs?: number;
+    //lastApprovedEditAtMs: number;
+    numEditors: 1,
+    numLikeVotes: 0,
+    numWrongVotes: 0,
+    numBuryVotes: 0,
+    numUnwantedVotes: 0,
+    numPendingEditSuggestions: 0,
+    summarize: false,
+    //summary?: string;
+    squash: false,
+    //isBodyHidden?: boolean;
+    isTreeDeleted: false,
+    isPostDeleted: false,
+    isTreeCollapsed: false,
+    isPostCollapsed: false,
+    isTreeClosed: false,
+    isApproved: false,
+    pinnedPosition: 0,
+    branchSideways: 0,
+    likeScore: 0,
+    childNrsSorted: [],
+    unsafeSource: unsafeSource,
+    sanitizedHtml: safePreviewHtml,
+    //tags?: string[];
+    //numPendingFlags?: number;
+    //numHandledFlags?: number;
+  };
+
+  return previewPost;
+}
+
+
+export function store_makeDeletePreviewPostPatch(store: Store, parentPostNr: PostNr,
+      newPostType?: PostType): StorePatch {
+  const previewPost: Post = store_makePreviewPost({
+      store, parentPostNr, safePreviewHtml: '', newPostType });
+  const postsByPageId = {};
+  // This'll remove the post from `page`, since it got "moved" away from that page.
+  postsByPageId['_no_page_'] = [previewPost];
+  return {
+    postsByPageId,
+  };
+}
+
+
+// Category
+//----------------------------------
+
+
 export function category_isPublic(category: Category | undefined, store: Store): boolean {
   // REFACTOR? !category happens here: [4JKKQS20], for the root category (looked up by id).
   // Because the root cat isn't included in the store. Maybe should include it? Then 'category'

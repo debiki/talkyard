@@ -27,7 +27,7 @@ const Post = page.Post;
 const SlashActivitySlash = '/activity/';
 
 
-export const UsersActivity = createFactory({
+export const UsersActivity = createFactory<any, any>({
   displayName: 'UsersActivity',
 
   render: function() {
@@ -111,7 +111,7 @@ function makeMaybeHiddenInfo(me: Myself, user: UserInclDetails) {
 
 
 
-const UsersPosts = createFactory({
+const UsersPosts = createFactory<any, any>({
   displayName: 'UsersPosts',
 
   getInitialState: function() {
@@ -199,7 +199,7 @@ const UsersPosts = createFactory({
 
 
 
-const UsersTopics = createFactory({
+const UsersTopics = createFactory<any, any>({
   displayName: 'UsersTopics',
 
   getInitialState: function() {

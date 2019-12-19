@@ -212,13 +212,17 @@ object DraftType {
   case object DirectMessage extends DraftType(3)
   case object Edit extends DraftType(4)
   case object Reply extends DraftType(5)
-  // case object Whisper extends DraftType(6)
+  case object ProgressPost extends DraftType(6)
+  // case object ChatMessage extends DraftType(?) — currently not needed, using Reply instead
+  // case object Whisper extends DraftType(?)
 
   def fromInt(value: Int): Option[DraftType] = Some(value match {
     case Topic.IntVal => Topic
     case DirectMessage.IntVal => DirectMessage
     case Edit.IntVal => Edit
     case Reply.IntVal => Reply
+    case ProgressPost.IntVal => ProgressPost
+    // case ChatMessage.IntVal => ChatMessage
     // case Whisper.IntVal => Whisper
     case _ => return None
   })
@@ -262,7 +266,7 @@ case class DraftLocator(
       require(toUserId.isDefined, s"Bad direct message draft: $this [TyE6RKW201]")
       require(categoryId.isEmpty && postId.isEmpty && pageId.isEmpty && postNr.isEmpty,
         s"Bad direct message draft: $this [TyE6RKW202]")
-    case DraftType.Edit | DraftType.Reply =>
+    case DraftType.Edit | DraftType.Reply | DraftType.ProgressPost =>
       require(pageId.isDefined && postNr.isDefined && postId.isDefined,
           s"Bad $draftType draft: $this [TyE5BKRT201]")
       require(categoryId.isEmpty && toUserId.isEmpty,
@@ -298,7 +302,8 @@ case class Draft(
   require(isNewTopic || title.isEmpty, "Non new topic draft, with a title [TyEBDDRFT13]")
 
   def isNewTopic: Boolean = forWhat.isNewTopic
-  def isReply: Boolean = forWhat.draftType == DraftType.Reply
+  def isReply: Boolean =
+    forWhat.draftType == DraftType.Reply || forWhat.draftType == DraftType.ProgressPost
   def isEdit: Boolean = forWhat.draftType == DraftType.Edit
 }
 

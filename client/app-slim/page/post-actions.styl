@@ -90,13 +90,6 @@
   font-size: 14px
   float: right
 
-.dw-a-disabled
-  color: #d2d2d2 !important
-  cursor: default
-
-.dw-a-disabled:hover
-  text-decoration: none !important
-
 .dw-p-as > .dropdown
   float: right;
 
@@ -193,6 +186,18 @@
 
   &.dw-a-edit.icon-edit:before
     color: hsl(0, 0%, 62%); // or too dark (it's a compact icon)
+
+  &.dw-a-edit.s_UnfinEd
+    font-weight: bold;
+    font-size: 15px;
+    color: hsl(0, 0%, 18%);
+    padding-left: 0;
+    padding-right: 2px;
+    margin-left: 6px;
+    margin-right: 8px;
+    &.icon-edit:before
+      color: hsl(0, 0%, 34%);
+      margin-right: 4px;
 
   &.dw-a-more
     margin-right: 0;
@@ -337,11 +342,6 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 
 .dropdown-menu.dw-p-as-more
   background: white
-
-.dw-a-reply.dw-replying
-  color: white !important
-  background: hsl($uiHue, 52%, 45%) !important
-  outline: 3px solid white; // whitespace between background and any post outline
 
 .s_PT-5 .dw-depth-0.dw-t  // 5 = PageRole.EmbeddedComments
   float: none;

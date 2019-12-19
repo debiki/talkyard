@@ -172,7 +172,7 @@ const ChatMessage = createComponent({
   edit: function() {
     this.setState({ isEditing: true });
     const post: Post = this.props.post;
-    editor.openEditorToEditPostNr(post.nr, (wasSaved, text) => {
+    editor.openToEditPostNr(post.nr, (wasSaved, text) => {
       this.setState({ isEditing: false });
     });
   },
@@ -181,33 +181,59 @@ const ChatMessage = createComponent({
     morebundle.openDeletePostDialog(this.props.post, cloneEventTargetRect(event));
   },
 
-  render: function () {
+  render: function() {
     const state = this.state;
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const post: Post = this.props.post;
-    const author: BriefUser = store.usersByIdBrief[post.authorId];
+    const author: BriefUser = store_getAuthorOrMissing(store, post);
     const headerProps: any = { store, post };
     headerProps.isFlat = true;
     headerProps.exactTime = true;
 
-    const isMine = me.id === author.id;
+    const isMine = me.id === author.id ||
+        // And, for now, for new post previews: [305KGWGH2]
+        author.id === UnknownUserId;
     const isMineClass = isMine ? ' s_My' : '';
-    const mayEditDelete = post.postType === PostType.ChatMessage && !state.isEditing && (
-        isMine || isStaff(me));
-    headerProps.stuffToAppend = !mayEditDelete ? [] : [
-        r.button({ className: 's_C_M_B s_C_M_B-Ed icon-edit' + isMineClass, key: 'e', onClick: this.edit },
-          t.c.edit),
-        // (Don't show a trash icon, makes the page look too cluttered.)
-        r.button({className: 's_C_M_B s_C_M_B-Dl' + isMineClass, key: 'd', onClick: this.delete_ }, t.c.delete)];
+
+    const mayDelete = post.postType === PostType.ChatMessage && !state.isEditing &&
+        !post.isPreview && (isMine || isStaff(me));
+    const mayEdit = mayDelete && !store.isEditorOpen;
+
+    if (mayEdit || mayDelete) {
+      headerProps.stuffToAppend = rFragment({},
+        !mayEdit ? null :
+          r.button({ className: 's_C_M_B s_C_M_B-Ed icon-edit' + isMineClass,
+              onClick: this.edit },
+            t.c.edit),
+        // (Don't show a trash icon, it'd make the page look too cluttered.)
+        !mayDelete ? null :
+          r.button({className: 's_C_M_B s_C_M_B-Dl' + isMineClass,
+              onClick: this.delete_ },
+            t.c.delete));
+    }
+
+    const isPreviewClass = post.isPreview ? ' s_C_M-Prvw' : '';
 
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
-    return (
-      r.div({ className: 'esC_M', id: 'post-' + post.nr },
+    const chatMessage = (
+      r.div({ className: 'esC_M' + isPreviewClass, id: 'post-' + post.nr },
         avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
         PostHeader(headerProps),
         PostBody({ store: store, post: post })));
+
+    const isEditingExistingPost = post.nr >= MinRealPostNr;
+
+    const anyPreviewInfo = !post.isPreview ? null :
+        r.div({ className: 's_T_YourPrvw' },
+          t.e.PreviewC + ' ',
+          r.span({ className: 's_T_YourPrvw_ToWho' },
+            isEditingExistingPost ?
+                "Your edits: " : "Your chat message: "));  // I18N [052RKGUCG6]
+
+    return (anyPreviewInfo ?
+        rFragment({}, anyPreviewInfo, chatMessage) : chatMessage);
   }
 });
 
@@ -303,27 +329,41 @@ const JoinChatButton = createComponent({
 
 
 
+interface ChatMessageEditorState {
+  text: string;
+  draft?: Draft;
+  draftStatus: DraftStatus;
+  draftErrorStatusCode?: number;
+  isSaving?: boolean;
+  isLoading?: boolean;
+  rows: number;
+  advancedEditorInstead?: boolean;
+  previewYPos: number;
+  scriptsLoaded?: boolean;
+}
+
+
 // SMALLER_BUNDLE move to editor script bundle? ... Hmm, could be inline-editor-bundle.js?
 // or editor-shell.js?
 // and the full-text-with-preview could be  advanced-editor-bundle.js?
-const ChatMessageEditor = createComponent({
+const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
   displayName: 'ChatMessageEditor',
 
-  getInitialState: function() {
+  getInitialState: function(): ChatMessageEditorState {
     return {
       text: '',
-      draft: undefined,
       draftStatus: DraftStatus.NotLoaded,
       rows: DefaultEditorRows,
-      advancedEditorInstead: false,
+      previewYPos: 0,
     };
   },
 
   componentDidMount: function() {
-    this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);
+    this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
+    this.saveDraftSoon = _.debounce(this.saveDraftNow, 2022);
     window.addEventListener('unload', this.saveDraftUseBeacon);
 
-    // Load editor scripts and any draft text.
+    // Load editor scripts — but why??? skip? (WAITWJS) and any draft text.
     Server.loadEditorAndMoreBundles(() => {
       if (this.isGone) return;
 
@@ -335,17 +375,20 @@ const ChatMessageEditor = createComponent({
         draftType: DraftType.Reply,
         pageId: page.pageId,
         postNr: BodyNr,
-        postId: bodyPostId,
+        postId: bodyPostId,  // ?? why incl here, but not when saving draft (50285RK)
       };
-      this.setState({ scriptsLoaded: true });
-      Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment, page.categoryId, page.pageRole,
+      const newState: Partial<ChatMessageEditorState> = { scriptsLoaded: true };
+      this.setState(newState);
+      Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment,
+          page.categoryId, page.pageRole,
           (guidelinesSafeHtml, draft?: Draft) => {
         if (this.isGone) return;
-        this.setState({
+        const newState: Partial<ChatMessageEditorState> = {
           draft,
           draftStatus: DraftStatus.NothingHappened,
           text: draft ? draft.text : '',
-        });
+        };
+        this.setState(newState);
       });
     });
   },
@@ -386,6 +429,7 @@ const ChatMessageEditor = createComponent({
       draftType: DraftType.Reply,
       pageId: store.currentPageId,
       postNr: BodyNr,
+      // No postId here? (50285RK)
     };
 
     if (store.currentPage) {
@@ -438,7 +482,7 @@ const ChatMessageEditor = createComponent({
       console.debug("...Saved draft.");
       this.setState({
         draft: draftWithNr,
-        draftStatus: DraftStatus.Saved,
+        draftStatus: DraftStatus.SavedServerSide,
       });
     }), useBeacon || this.setCannotSaveDraft);
   },
@@ -457,23 +501,42 @@ const ChatMessageEditor = createComponent({
   },
 
   updateText: function(text, draftWithStatus?: { draft, draftStatus }) {
+    const store: Store = this.props.store;
+    const state: ChatMessageEditorState = this.state;
+
     // numLines won't work with wrapped lines, oh well, fix some other day.
     // COULD use https://github.com/andreypopp/react-textarea-autosize instead.
     const numLines = text.split(/\r\n|\r|\n/).length;
 
     // A bit dupl code [7WKABF2]
-    const draft: Draft = this.state.draft;
+    const draft: Draft = state.draft;
     const draftStatus = draft && draft.text === text
       ? DraftStatus.EditsUndone
       : DraftStatus.ShouldSave;
 
-    this.setState({
-      text: text,
+    const textChanged = state.text !== text;
+    const textNowEmpty = !text;
+
+    // COULD use store.isEditorOpen instead — but I think it hasn't been updated yet?
+    if (textChanged && !this.state.advancedEditorInstead) {
+      if (textNowEmpty) {
+        ReactActions.hideEditorAndPreview({});
+      }
+      else {
+        this.updatePreviewSoon();
+      }
+    }
+
+    const newState: Partial<ChatMessageEditorState> = {
+      text,
       draft: (draftWithStatus ? draftWithStatus.draft : this.state.draft),
       draftStatus: (draftWithStatus ? draftWithStatus.draftStatus : draftStatus),
       rows: Math.max(DefaultEditorRows, Math.min(8, numLines)),
-    },
-      draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
+    };
+
+    this.setState(
+        newState,
+        draftStatus === DraftStatus.ShouldSave ? this.saveDraftSoon : undefined);
 
     // In case lines were deleted, we need to move the editor a bit downwards, so it
     // remains fixed at the bottom — because now it's smaller.
@@ -487,39 +550,61 @@ const ChatMessageEditor = createComponent({
     }
   },
 
-  onKeyDown: function(event) {
-    // In my Chrome, Ctrl + Enter won't fire onKeyPress (only onKeyDown) [5KU8W2], and won't append
-    // any newline. Why? Append the newline ourselves.
-    if (event_isCtrlEnter(event)) {
-      this.setState({ text: this.state.text + '\n' });
-      // Prevent FF, Edge, Safari from adding yet another newline in onKeyPress().
-      event.preventDefault();
-    }
+  updatePreviewNow: function() {
+    Server.loadEditorAndMoreBundles(() => {  // needn't do until here? (WAITWJS)
+      if (this.isGone) return;
+
+      const sanitizerOpts = {
+        allowClassAndIdAttr: true, // or only if isEditingBody?  dupl [304KPGSD25]
+        allowDataAttr: false
+      };
+
+      const safeHtml = debiki2['editor'].markdownToSafeHtml(
+          this.state.text, window.location.host, sanitizerOpts);
+
+      // If one has scrolled up manually, so much so the preview is now below
+      // the editor, then stop scrolling the preview into view — because
+      // apparently the user wants to control the scroll henself.
+      const previewElm = $first('.s_T_YourPrvw');
+      const previewElmY = previewElm?.getBoundingClientRect()?.y || 0;
+      // The simple chat message text box, or the advanced editor.
+      const editorElm = $first('.esC_Edtr, .s_E-E');
+      const editorElmY = editorElm?.getBoundingClientRect()?.y || 0;
+      const scrollToPreview = previewElmY <= editorElmY;
+
+      ReactActions.showEditsPreview({ scrollToPreview, safeHtml });
+    });
   },
 
-  onKeyPress: function(event) {
-    if (event_isEnter(event) && !event_isCtrlEnter(event) && !event_isShiftEnter(event)) {
-      // Enter or Return without Shift or Ctrl down means "post chat message".
+  onKeyPressOrKeyDown: function(event) {
+    // Let Return mean newline everywhere, and ctrl+return means Submit everywhere.
+    // (Typically, in a chat, Return/Enter means "post my message". However, in Talkyard's
+    // "advanced" editor, hitting Return adds a newline — so people (well at least
+    // my (KajMagnus') father) get confused if Return instead submits one's chat message.)
+
+    // In my Chrome, Ctrl + Enter won't fire onKeyPress, only onKeyDown. [5KU8W2]
+    if (event_isCtrlEnter(event)) {
       const isNotEmpty = /\S/.test(this.state.text);
       if (isNotEmpty) {
-        this.saveChatMessage();
         event.preventDefault();
+        this.saveChatMessage();
       }
     }
   },
 
   saveChatMessage: function() {
     this.setState({ isSaving: true });
-    const draft: Draft | undefined = this.state.draft;
-    Server.insertChatMessage(this.state.text, draft ? draft.draftNr : NoDraftNr, () => {
+    ReactActions.insertChatMessage(this.state.text, this.state.draft, () => {
       if (this.isGone) return;
-      this.setState({
+      ReactActions.hideEditorAndPreview({});
+      const newState: Partial<ChatMessageEditorState> = {
         text: '',
         isSaving: false,
         draft: null,
         draftStatus: DraftStatus.NothingHappened,
         rows: DefaultEditorRows,
-      });
+      };
+      this.setState(newState);
       this.props.scrollDownToViewNewMessage();
       // no such fn: this.refs.textarea.focus();
       // instead, for now:
@@ -544,19 +629,25 @@ const ChatMessageEditor = createComponent({
   },
 
   render: function () {
-    if (this.state.advancedEditorInstead || !this.state.scriptsLoaded)
+    const store: Store = this.props.store;
+
+    if (store.isEditorOpen || !this.state.scriptsLoaded ||
+        // Can remove this check now? using  isEditorOpen  above instead
+        this.state.advancedEditorInstead)
       return null;
 
-    const draft: Draft = this.state.draft;
+    const state: ChatMessageEditorState = this.state;
+    const draft: Draft = state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
-    const draftStatus: DraftStatus = this.state.draftStatus;
-    const draftErrorStatusCode = this.state.draftErrorStatusCode;
-    const draftStatusInfo = editor['DraftStatusInfo']({ draftStatus, draftNr, draftErrorStatusCode });
+    const draftStatus: DraftStatus = state.draftStatus;
+    const draftErrorStatusCode = state.draftErrorStatusCode;
+    const draftStatusInfo =
+        editor['DraftStatusInfo']({ draftStatus, draftNr, draftErrorStatusCode });
 
     // We'll disable the editor, until any draft has been loaded. [5AKBW20]
     const anyDraftLoaded = draftStatus !== DraftStatus.NotLoaded;
 
-    const disabled = this.state.isLoading || !anyDraftLoaded || this.state.isSaving;
+    const disabled = state.isLoading || !anyDraftLoaded || state.isSaving;
     const buttons =
         r.div({ className: 'esC_Edtr_Bs' },
           draftStatusInfo,
@@ -575,14 +666,14 @@ const ChatMessageEditor = createComponent({
       r.div({ className: 'esC_Edtr' },
         // The @mentions username autocomplete might overflow the textarea. [J7UKFBW]
         ReactTextareaAutocomplete({ className: 'esC_Edtr_textarea', ref: 'textarea',
-          value: anyDraftLoaded ? this.state.text : t.e.LoadingDraftDots,
+          value: anyDraftLoaded ? state.text : t.e.LoadingDraftDots,
           onChange: this.onTextEdited,
-          onKeyPress: this.onKeyPress,
-          onKeyDown: this.onKeyDown,
+          onKeyPress: this.onKeyPressOrKeyDown,
+          onKeyDown: this.onKeyPressOrKeyDown,
           closeOnClickOutside: true,
           placeholder: t.c.TypeHere,
           disabled: disabled,
-          rows: this.state.rows,
+          rows: state.rows,
           loadingComponent: () => r.span({}, t.Loading),
           trigger: listUsernamesTrigger }),
         buttons));

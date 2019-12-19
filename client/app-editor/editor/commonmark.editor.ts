@@ -25,7 +25,7 @@ const d = { i: debiki.internal, u: debiki.v0.util };
 
 
 // Converts markdown to sanitized html.
-export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?) {
+export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?): string {
   const htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
   const htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;

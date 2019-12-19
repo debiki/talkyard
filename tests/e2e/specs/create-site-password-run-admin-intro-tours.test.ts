@@ -115,7 +115,7 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");
     browser.setValue('textarea', "New tpc txt");
     browser.rememberCurrentUrl();
-    browser.click('.e2eSaveBtn');
+    browser.editor.clickSave();
     browser.waitForNewUrl();
     browser.assertTextMatches('h1', /New tpc ttl/);
     browser.assertTextMatches('#post-1', /New tpc txt/);

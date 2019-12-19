@@ -150,7 +150,7 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
     let acceptedAt = t.NotYet;
     let deletedClass = ' s_InvsL_It-Dd';
     if (invite.userId) {
-      const user: BriefUser = store_getUserOrMissing(store, invite.userId);
+      const user: BriefUser = store_getUserOrMissing(store, invite.userId, 'TyE406RKT');
       invitedUser = UserName({ user, store, makeLink: true });
     }
     if (invite.acceptedAtEpoch) {
@@ -169,7 +169,7 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
 
     let sentBy;
     if (props.showSender) {
-      let sender: BriefUser = store_getUserOrMissing(store, invite.createdById);
+      let sender: BriefUser = store_getUserOrMissing(store, invite.createdById, 'TyE073KFGJB');
       sentBy = r.td({ className: 'e_Inv_SentByU' }, UserName({ user: sender, store, makeLink: true }));
     }
 

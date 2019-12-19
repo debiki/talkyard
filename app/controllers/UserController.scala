@@ -1025,6 +1025,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(anyLastViewedPostNr.isDefined && anyPageId.isEmpty,
       "TyE2AKBF58", "Got a last viewed post nr, but no page id")
 
+    postNrsReadAsSet.find(_ < BodyNr) map { badNr =>
+      // The title and draft post nrs are < 0 and shouldn't be included here.
+      throwForbidden("TyE5RKPW025", s"Bad post nr, smaller than BodyNr: $badNr")
+    }
+
     play.api.Logger.trace(
       s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
 

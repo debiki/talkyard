@@ -85,7 +85,7 @@
       var value;
       var currentX;
       var currentY;
-      var elapsed = (time - context.startTime) / SCROLL_TIME;
+      var elapsed = (time - context.startTime) / (context.durationMs || SCROLL_TIME);
 
       // avoid elapsed times higher than one
       elapsed = elapsed > 1 ? 1 : elapsed;
@@ -111,7 +111,7 @@
      * @param {Number} x
      * @param {Number} y
      */
-    w.smoothScroll = function(el, x, y) {
+    w.smoothScroll = function(el, x, y, durationMs) {
       var scrollable;
       var startX;
       var startY;
@@ -146,6 +146,7 @@
         startY: startY,
         x: x,
         y: y,
+        durationMs: durationMs,
         frame: frame
       });
     }

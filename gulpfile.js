@@ -192,7 +192,6 @@ var slimJsFiles = [
       'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
-      'target/client/app-slim/actions/reply.js',
       //'target/client/app-slim/posts/monitor-reading-progress-unused.js',
       //'target/client/app-slim/posts/unread-unused.js',
       'target/client/app-slim/utils/util.js',

@@ -164,12 +164,21 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
     case DraftType.DirectMessage:
       theLink = linkToSendMessage(locator.toUserId);
       break;
-    case DraftType.Reply:
-      // No fragment action needed for chat messages — then the chat message input box is shown
-      // by default, and will load the draft. Do incl a '#' hash though so + &draftNr=... works.
-      const hashFragmentAction = draft.postType === PostType.ChatMessage ? '#' :
-          FragParamPostNr + locator.postNr + FragActionAndReplyToPost;
-      theLink = maybeNewPageUrl() + hashFragmentAction;
+    case DraftType.Reply: // fall through
+    case DraftType.ProgressPost:
+      let hashFragAction: string;
+      if (draft.postType === PostType.ChatMessage) {
+        // No fragment action needed for chat messages — then the chat message input box is shown
+        // by default, and will load the draft. Do incl a '#' hash though so + &draftNr=... works.
+        hashFragAction = '#';
+      }
+      else {
+        hashFragAction =
+            FragParamPostNr + locator.postNr +
+            FragActionAndReplyToPost +
+            FragParamReplyType + draft.postType;
+      }
+      theLink = maybeNewPageUrl() + hashFragAction;
       break;
     case DraftType.Edit:
       theLink = maybeNewPageUrl() + FragParamPostNr + postNr + FragActionAndEditPost;

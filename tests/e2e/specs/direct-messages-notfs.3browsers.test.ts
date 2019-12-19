@@ -188,7 +188,7 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
     stranger.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
-  it("... and won't find it when searching", () => {
+  it("... and the stranger won't find it when searching", () => {
     stranger.topbar.searchFor(mariasQuestion);
     stranger.searchResultsPage.assertPhraseNotFound(mariasQuestion);
   });

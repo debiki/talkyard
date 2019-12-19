@@ -63,6 +63,118 @@
   position: relative;
 
 
+
+// Draft and preview posts
+//===========================
+
+$previewBackground = hsl($uiHueHighlightedBackground, 93%, 80%);
+$previewBorderBottom = 15px solid $previewBackground !important;
+
+.s_T_YourPrvw
+  padding: 9px 15px 7px;
+  font-weight: bold;
+  font-size: 16px;
+  background: $previewBackground;
+
+.s_T-Prvw-IsEd > .s_T_YourPrvw
+  margin-bottom: 10px;
+
+// Remove colors from a draft one isn't currently editing. (4036RT459)
+.s_T-Prvw-NotEd
+  .s_T_YourPrvw
+    color: hsl(0, 0%, 15%);
+    background: hsl(0, 0%, 80%);
+    &.dw-highlight-off
+      background: hsl(0, 0%, 80%) !important;
+  .s_T_YourPrvw_ToWho
+    color: black;
+  .s_P-Prvw
+    padding: 14px 10px 7px !important;
+
+.DW .s_T_YourPrvw_ToWho
+  margin-left: 3px;
+  font-style: normal;
+  font-weight: normal;
+  .dw-rr
+    color: hsl(207, 100%, 38%);
+    padding-left: 3px;
+  .s_RRs_RR_Aw
+    color: hsl(207, 55%, 47%);
+
+.s_P-Prvw
+  .dw-p-hd, .dw-p-bd
+    opacity: 0.63;
+  padding: 6px 0 6px 2px !important;
+  &:not(.s_P-Prvw-Real)
+    // If real, then there's an action bar below; then, need no margin.
+    margin-bottom: 40px !important;
+    border-bottom: $previewBorderBottom;
+  .esP_Z-Show,
+  .s_P_H_Unr
+    display: none !important;
+
+.s_T-Flat, .dw-id0
+  > .s_P-Prvw
+    padding-top: 16px !important;  // align w avatar
+    min-height: 60px;  // enough height for avatar
+
+.s_T-Prvw-IsEd.dw-id0:not(.s_P-Prvw-Real)
+  // This only works for new orig post replies — currently, for nested replies,
+  // or old replies being edited,
+  // the outline could appear "far away" from the post — it'd include the arrows
+  // pointing to the posts below too, or any child posts.
+  // So skip, unless depth = 0, id0.
+  outline: 5px solid $previewBackground;
+  // W/o padding, there's a 5px gap between border and outline, no idea why.
+  // Don't think can be decender-spacing? — Display is 'block'.
+  padding-bottom: 5px;
+
+.s_T-Prvw-NotEd .s_P-Prvw  // (4036RT459)
+  border-bottom: none !important;
+  &, 
+  .dw-p-hd
+    background: hsl(0, 0%, 92%);
+    &.dw-highlight-off
+      background: hsl(0, 0%, 92%) !important;
+  pre
+    background: hsl(0, 0%, 98%);
+    white-space: pre-wrap;
+    word-break: break-word;
+
+.dw-id0,
+.s_T-Flat
+
+  // If the post is indented, but the avatar is not, so place the border
+  // below the thread instead so it'll extend below the avatar too.
+  // However, if -Real, then we're editing an already existing post,
+  // and there might be replies — then, skip the bottom border.
+  &.s_T-Prvw-IsEd&:not(.s_P-Prvw-Real)
+    border-bottom: $previewBorderBottom;
+    margin-bottom: 30px;
+
+    > .s_P-Prvw
+      // There's margin below the thread instead.
+      margin-bottom: 0 !important;
+
+  // &.s_T-Prvw-NotEd:
+  //  Skip border, there's background color instead  (4036RT459).
+
+  > .s_P-Prvw
+    border-bottom: none !important;
+  &.s_T-Prvw-NotEd
+    > .s_P-Prvw
+      margin-bottom: 30px !important;
+
+.s_T_YourPrvw_ResumeB
+  margin-left: 15px;
+  box-shadow: 1px 2px 4px hsl(0, 0%, 37%);
+
+// The Orig Post has a bit different look & margins.
+.dw-ar-t > .s_T_YourPrvw
+  margin: 20px 0 0;
+
+
+
 // Cropped and resized posts
 //===========================
 
@@ -372,7 +484,7 @@ h1.dw-p-ttl
     outline: hsl($uiHue, 100%, 87%) 2px solid;
     text-decoration: none;
 
-.-RRs_RR_Aw
+.s_RRs_RR_Aw
   color: hsl(0, 0%, 52%); // or too dark
   margin: 0 2px;
 
@@ -441,9 +553,18 @@ html:not(.mouse) .dw-rr
 .esP_By_F-G
   font-weight: normal;
   color: hsl(0, 0%, 11%);
+  // Append a "?" to show that the user might be anyone, e.g. email not verified.
+  // But ... (435465490)
   &::after
-    // Supposed to show that the user might be anyone, e.g. email not verified.
     content: ' ?';
+
+// ... (435465490) But not for the Unknown user — currently, that'd be oneself,
+// when composing a new post without having logged in [305KGWGH2].
+.s_P_By-Unk .esP_By_F-G
+  font-weight: bold;
+  color: hsl(0, 0%, 8%);
+  &::after
+    content: none;
 
 .esP_By_U
   font-weight: normal;
@@ -464,7 +585,7 @@ html:not(.mouse) .dw-rr
 .esP_viewHist
   white-space: nowrap;
 
-.esP_By,
+.esP_By:not(.s_P_By-Unk),  // not clickable, if is the Unknown user
 .esP_viewHist,
 .dw-a-clps:hover
   cursor: pointer;
@@ -833,6 +954,15 @@ html.touch .dw-p-mark-click
 //===========================
 
 .DW .dw-highlight-on
+  // Drafts
+  &.s_T_YourPrvw
+    background: hsl($uiHue, 100%, 73%);
+  &.s_P-Prvw
+    background: hsl($uiHue, 100%, 89%)
+    pre
+      color: black;
+
+  // Posts
   &.dw-p-hd,
   &.dw-p-bd
     background-color: hsl($uiHue, 100%, 83%);
