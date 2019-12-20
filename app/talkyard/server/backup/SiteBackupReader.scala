@@ -101,6 +101,8 @@ case class SiteBackupReader(context: EdContext) {
               index $index in the 'pages' list: $error, json: $json"""))
     }
 
+    // + upsertOptions: { sendNotifications: boolean }
+
     val simplePatch = SimpleSitePatch(
       categoryPatches,
       pagePatches)
