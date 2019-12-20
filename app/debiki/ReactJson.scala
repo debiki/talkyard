@@ -1554,8 +1554,8 @@ object JsonMaker {
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
     val lastApprovedEditAtNoNinja =
-    if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
-    else post.lastApprovedEditAt
+      if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
+      else post.lastApprovedEditAt
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),

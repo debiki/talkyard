@@ -703,6 +703,133 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
+export function post_makePreviewIdNr(post: Post): number {
+  return 12345;
+}
+
+
+export function store_makePostPreviewPatch(store: Store, page: Page, post: Post,
+      safePreviewHtml: string, newPostType?: PostType): StorePatch {
+  const previewPost = store_makePreviewPost(store, post.nr, safePreviewHtml, newPostType);
+  const patch: StorePatch = {
+    pageVersionsByPageId: {},
+    postsByPageId: {},
+  };
+  patch.postsByPageId[page.pageId] = [previewPost];
+  patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+  return patch;
+}
+
+
+export function store_makePostForDraft(store: Store, draft: Draft): Post | null {
+  const locator: DraftLocator = draft.forWhat;
+  const parentPostNr = locator.postNr;
+
+  // Break out fn? [0345JKATSJ]
+  let postType;
+  switch (locator.draftType) {
+    case DraftType.Reply:
+      postType = PostType.Normal;
+      break;
+    case DraftType.ProgressPost:
+      postType = PostType.BottomComment;
+      break;
+    default:
+      return null;
+  }
+
+  // Ooops apparently need to save a preview of the drafts too — because
+  // cannot load the CommonMark engine here. [DRAFTPRVW]
+  // const safeHtml = markdownToSafeHtml(
+  //    this.state.text, window.location.host, sanitizerOpts);
+  // For now:
+  const safePreviewHtml = "Your reply";
+
+  const previewPost = store_makePreviewPost(store, parentPostNr, safePreviewHtml, postType);
+  return previewPost;
+}
+
+
+function store_makePreviewPost(store: Store, parentPostNr: PostNr,
+      safePreviewHtml: string, newPostType?: PostType): Post {
+
+  // @ifdef DEBUG
+  dieIf(!newPostType, 'unimpl: edits preview [TyE4903KS]');
+  // @endif
+
+  // So won't overlap with post nrs and ids.
+  const previewOffset = -1000 * 1000;
+
+  const previewPostIdNr =
+      previewOffset -
+      // Different previews when replying to different posts.
+      parentPostNr * 100 -
+      // Different previews for progress orig-post reply, and discussion orig-post reply.
+      // If is editing, not replying, use 0.
+      (newPostType || 0);
+
+  const now = getNowMs();
+
+  const previewPost: Post = {
+    isPreview: true,
+
+    uniqueId: previewPostIdNr,
+    nr: previewPostIdNr,
+    parentNr: parentPostNr,
+    multireplyPostNrs: [], //PostNr[];
+    postType: newPostType,
+    authorId: store.me.id,
+    createdAtMs: now,
+    //approvedAtMs?: number;
+    //lastApprovedEditAtMs: number;
+    numEditors: 1,
+    numLikeVotes: 0,
+    numWrongVotes: 0,
+    numBuryVotes: 0,
+    numUnwantedVotes: 0,
+    numPendingEditSuggestions: 0,
+    summarize: false,
+    //summary?: string;
+    squash: false,
+    //isBodyHidden?: boolean;
+    isTreeDeleted: false,
+    isPostDeleted: false,
+    //// === true means totally collapsed. === 'Truncated' means collapsed but parts of post shown.
+    isTreeCollapsed: false,
+    isPostCollapsed: false,
+    isTreeClosed: false,
+    isApproved: false,
+    pinnedPosition: 0,
+    branchSideways: 0,
+    likeScore: 0,
+    childNrsSorted: [],
+    //unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
+    sanitizedHtml: safePreviewHtml,
+    //tags?: string[];
+    //numPendingFlags?: number;
+    //numHandledFlags?: number;
+  };
+
+  return previewPost;
+}
+
+
+export function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post,
+      newPostType?: PostType): StorePatch {
+  const previewPost: Post = store_makePreviewPost(store, post, '', newPostType);
+  const postsByPageId = {};
+  // This'll remove the post from `page`, since it got "moved" away from that page.
+  postsByPageId['_non_existing_page_'] = [previewPost];
+  return {
+    postsByPageId,
+  };
+}
+
+
+// Category
+//----------------------------------
+
+
 export function category_isPublic(category: Category | undefined, store: Store): boolean {
   // REFACTOR? !category happens here: [4JKKQS20], for the root category (looked up by id).
   // Because the root cat isn't included in the store. Maybe should include it? Then 'category'

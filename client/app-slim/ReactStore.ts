@@ -409,6 +409,10 @@ ReactDispatcher.register(function(payload) {
       return true;
   }
 
+  // How can one know when all these changes have been applied?
+  // (Would need to look at emitChange() and the hook fns.)
+  // Some code wants to run afterwards: [SCROLLPRVW]
+
   ReactStore.emitChange();   // old, for non-hooks based code ...
 
   // Ensure new hooks based code cannot 'cheat' by updating things in-place:
@@ -551,12 +555,24 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   // Show the user's own unapproved posts, or all, for admins.
   _.each(myPageData.unapprovedPosts, (post: Post) => {
     updatePost(post, store.currentPageId);
-    // COULD_FREE_MEM
+    // COULD_FREE_MEM if other user was logged in before?
   });
 
   _.each(myPageData.unapprovedPostAuthors, (author: BriefUser) => {
     store.usersByIdBrief[author.id] = author;
   });
+
+  // Show one's drafts: Create a preview post, for each draft.
+  /* But oops, we don't have any safePreviewHtml. Need to save server side. [DRAFTPRVW]
+  _.each(myPageData.myDrafts, (draft: Draft) => {
+    if (draft.forWhat.draftType === DraftType.Reply) {
+      const post: Post | null = store_makePostForDraft(store, draft);
+      if (post) {
+        updatePost(post, store.currentPageId);
+      }
+      // COULD_FREE_MEM
+    }
+  });  */
 
   if (_.isArray(store.topics)) {
     const currentPage: Page = store.currentPage;
@@ -809,8 +825,9 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   stopGifsPlayOnClick();
   setTimeout(() => {
     debiki2.page.Hacks.processPosts();
-    if (!oldVersion && post.authorId === store.me.id) {
-      // Show the user his/her new post.   — Hmm, this just scrolls to it? it's loaded already, always?
+    if (!oldVersion && post.authorId === store.me.id && !post.isPreview) {
+      // Show the user his/her new post.
+      // Hmm, this just scrolls to it? it's loaded already, always?
       ReactActions.loadAndShowPost(post.nr);
     }
   }, 1);
@@ -1049,9 +1066,6 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     var postA: Post = postsByNr[nrA];
     var postB: Post = postsByNr[nrB];
 
-    // Wip: Place previews first.
-
-
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
     if (!postA && !postB)
@@ -1074,6 +1088,8 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
       return aPos < bPos
     } */
 
+    const onlyOneIsPreview = postA.isPreview !== postB.isPreview;
+
     // Place append-at-the-bottom posts at the bottom, sorted by time.
     const aLast = postA.postType === PostType.BottomComment || postA.postType === PostType.MetaMessage;
     const bLast = postB.postType === PostType.BottomComment || postB.postType === PostType.MetaMessage;
@@ -1081,8 +1097,20 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
       return -1;
     if (aLast && !bLast)
       return +1;
-    if (aLast && bLast)
-      return postApprovedOrCreatedBefore(postA, postB)
+    if (aLast && bLast) {
+      // Show any preview at the very bottom, that's where the post will later appear.
+      if (onlyOneIsPreview)
+        return postA.isPreview ? +1 : -1;
+      else
+        return postApprovedOrCreatedBefore(postA, postB)
+    }
+
+    // Place preview posts first, directly below the post it replies to — this makes
+    // it simpler to see what one replies to? Even though maybe the post won't 
+    // appear at that exact place (maybe there's another post with many like votes,
+    // which would then be placed above).
+    if (onlyOneIsPreview)
+      return postA.isPreview ? -1 : +1;
 
     // Place deleted posts last; they're rather uninteresting?
     if (!isDeleted(postA) && isDeleted(postB))

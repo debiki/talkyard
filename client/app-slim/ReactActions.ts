@@ -592,6 +592,13 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
     };
   }
 
+  if (theHashFrag.indexOf(FragActionHashScrollToBottom) >= 0) {
+    return {
+      type: FragActionType.ScrollToElemId,
+      elemId: '.s_APAs',
+    };
+  }
+
   // The rest of the actions are for a specific post.
 
   const postNr: PostNr | undefined = findIntInHashFrag(FragParamPostNr, theHashFrag);

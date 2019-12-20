@@ -364,7 +364,11 @@ export const Editor = createComponent({
     }
     else if (index === -1) {
       postNrs.push(postNr);
-      this.showEditor({ scrollToShowPostNr: postNr });
+      const opts = {
+        scrollToPreview: true,
+        scrollToShowPostNr: anyPostType !== PostType.BottomComment ? postNr : undefined,
+      };
+      this.showEditor(opts);
     }
     else {
       postNrs.splice(index, 1);
@@ -757,22 +761,34 @@ export const Editor = createComponent({
         this.state.text, window.location.host, sanitizerOpts);
 
     this.setState({
+      // Save this in the draft too, & send to the server, so the preview html
+      // is available when rendering the page and one might want to see one's drafts,
+      // here: [DRAFTPRVW].
       safePreviewHtml: safeHtml,
     }, () => {
-      const postNrs: PostNr[] = this.state.replyToPostNrs;
-      if (postNrs.length === 1) {
-        // Could debounce this even more:
-        // Show an inline preview, where the reply will appear.
+      if (eds.isInEmbeddedCommentsIframe) {
+        // Send a postMessage to upd preview?
+      }
+      else {
         const store: Store = this.state.store;
-        const post = store.currentPage.postsByNr[postNrs[0]];
-        ReactActions.patchTheStore({
-          updateEditPreview: {
-            postType: this.state.anyPostType,
-            postId: post.uniqueId,
-            isReplying: true,
-            safeHtml,
-          },
-        } as StorePatch);
+        const page = store.pagesById[this.state.editorsPageId];
+
+        let postToReplyToOrEdit: Post;
+
+        const postNrs: PostNr[] = this.state.replyToPostNrs;
+        if (postNrs.length === 1) {
+          // Could debounce this even more:
+          // Show an inline preview, where the reply will appear.
+          postToReplyToOrEdit = page?.postsByNr[postNrs[0]];
+        }
+        if (this.state.editingPostUid) {
+          postToReplyToOrEdit = page?.postsByNr[this.state.editingPostNr];
+        }
+        if (postToReplyToOrEdit) {
+          const previewPatch = store_makePostPreviewPatch(
+              store, page, postToReplyToOrEdit, safeHtml, this.state.anyPostType);
+          ReactActions.patchTheStore(previewPatch);
+        }
       }
       anyCallback?.();
     });
@@ -1164,7 +1180,7 @@ export const Editor = createComponent({
     // Else: the editor covers 100% anyway.
   },
 
-  showEditor: function(opts: { scrollToShowPostNr?: PostNr } = {}) {
+  showEditor: function(opts: { scrollToPreview?: true, scrollToShowPostNr?: PostNr } = {}) {
     this.makeSpaceAtBottomForEditor();
     this.setState({ visible: true });
     if (eds.isInEmbeddedEditor) {
@@ -1175,7 +1191,24 @@ export const Editor = createComponent({
     setTimeout(() => {
       if (this.isGone) return;
       this.focusInputFields();
-      this.updatePreview();
+      this.updatePreview(() => {
+        if (this.isGone) return;
+        if (opts.scrollToPreview) {
+          // The preview won't appear until a bit later, after the preview post
+          // store patch has been applied. But how know when that has happened? [SCROLLPRVW]
+          // For now:
+          setTimeout(() => {
+            if (this.isGone) return;
+            // Break out function? Also see FragActionHashScrollToBottom, tiny bit dupl code.
+            // Scroll to the preview we're currently editing (not to any inactive draft previews).
+            utils.scrollIntoViewInPageColumn('.s_T-Prvw-IsEd', {
+              marginTop: 100, marginBottom: 999,
+            });
+          }, 10);
+        }
+      });
+      // COULD DELETE this, and always show a preview?, use above scrollToPreview.
+      // However, there's a race: [SCROLLPRVW] so keep this for a while. 
       if (opts.scrollToShowPostNr) {
         this.scrollPostIntoView(opts.scrollToShowPostNr);
       }
@@ -1191,6 +1224,30 @@ export const Editor = createComponent({
       const anyDraft: Draft = this.state.draft;
       if (anyDraft)
         removeFromSessionStorage(anyDraft.forWhat);
+    }
+
+    // Remove any preview post.
+    if (eds.isInEmbeddedCommentsIframe) {
+      // Send a postMessage to remove it?
+    }
+    else {
+      const store: Store = this.state.store;
+      const page = store.pagesById[this.state.editorsPageId];
+
+      let postToReplyToOrEdit: Post;
+
+      const postNrs: PostNr[] = this.state.replyToPostNrs;
+      if (postNrs.length === 1) {
+        postToReplyToOrEdit = page?.postsByNr[postNrs[0]];
+      }
+      if (this.state.editingPostUid) {
+        postToReplyToOrEdit = page?.postsByNr[this.state.editingPostNr];
+      }
+      if (postToReplyToOrEdit) {
+        const previewPatch = store_makeDeletePreviewPatch(
+            store, page, postToReplyToOrEdit, this.state.anyPostType);
+        ReactActions.patchTheStore(previewPatch);
+      }
     }
 
     this.returnSpaceAtBottomForEditor();

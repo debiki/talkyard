@@ -32,9 +32,14 @@ export let anyContinueAfterLoginCallback = null;
 
 export function loginIfNeededReturnToPost(
       loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
-  const anchor = postNr < FirstReplyNr ? '' : (
-    // We use 'comment-' for embedded comments, and they start on nr 1 = post 2. [2PAWC0]
-    eds.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
+  const anchor = loginReason === LoginReason.PostProgressNote
+      ? FragActionHashScrollToBottom
+      : (postNr < FirstReplyNr ? '' : (
+          // We use 'comment-' for embedded comments; they start on nr 1 = post 2. [2PAWC0]
+          eds.isInEmbeddedCommentsIframe
+              ? FragParamCommentNr + (postNr - 1)
+              : FragParamPostNr + postNr));
+
   loginIfNeededReturnToAnchor(loginReason, anchor, success, willCompose);
 }
 

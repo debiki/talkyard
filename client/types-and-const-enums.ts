@@ -81,12 +81,14 @@ const enum DraftStatus {  // sync with test code [5ABXG20]
 }
 
 
-const enum DraftType {
+// Create fn for converting from DraftType to PostType? [0345JKATSJ]
+const enum DraftType {   // check all swith-cases — adding ProgressPost
   Scratch = 1,
   Topic = 2,
   DirectMessage = 3,
   Edit = 4,
   Reply = 5,
+  ProgressPost = 6,
 }
 
 

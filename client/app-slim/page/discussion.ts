@@ -560,8 +560,13 @@ const RootPostAndComments = createComponent({
 
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
-        LoginReason.PostEmbeddedComment : 'LoginToComment';
+
+    const loginToWhat =
+        postType === PostType.BottomComment
+          ? LoginReason.PostProgressNote
+          : (page.pageRole === PageRole.EmbeddedComments
+              ? LoginReason.PostEmbeddedComment
+              : 'LoginToComment');
 
     login.loginIfNeededReturnToPost(loginToWhat, BodyNr, () => {    // SSO E2E TESTS_MISSSING
       if (this.isGone) return;
@@ -909,7 +914,7 @@ const RootPostAndComments = createComponent({
     }
 
     const afterPageActions = skipBottomReplyAppendBtn ? null :
-      r.div({ className: 's_APAs'},
+      r.div({ className: 's_APAs' },
         !isThreadedDiscussion ? null :
           r.a({ className: 's_OpReB s_OpReB-Dsc icon-reply',
                 onClick: makeOnClick(PostType.Normal) },
@@ -1161,6 +1166,15 @@ const Thread = createComponent({
       });
     }
 
+    // COULD show sth like "You have a draft" or "Resume editing" next to the edit icon?
+    // However, drafts for new replies are best rendered as whole preview posts?
+    // See here:  [DRAFTPRVW]
+    //const drafts: Draft[] = me.myDataByPageId?.[store.currentPageId]?.myDrafts ?? [];
+    //const anyEditDraft = _.find(drafts, d =>
+    //    d.forWhat.draftType === DraftType.Edit && d.forWhat.postId === post.uniqueId);
+    //const anyReplyDraft = anyReplyPreview ? null : _.find(drafts, d =>
+    //    d.forWhat.draftType === DraftType.Reply && d.forWhat.postId === post.uniqueId);
+
     const actions = post_isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
       : PostActions({ store, post, onClick: this.onAnyActionClick });
@@ -1198,22 +1212,36 @@ const Thread = createComponent({
 
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
-    const drafts: Draft[] = me.myDataByPageId?.[store.currentPageId]?.myDrafts ?? [];
-    const anyEditDraft = _.find(drafts, d =>
-        d.forWhat.draftType === DraftType.Edit && d.forWhat.postId === post.uniqueId);
-    const anyReplyDraft = anyReplyPreview ? null : _.find(drafts, d =>
-        d.forWhat.draftType === DraftType.Reply && d.forWhat.postId === post.uniqueId);
+    let previewClass = '';
+    let previewElem = null;
+    if (post.isPreview) {
+      let toWho;
+      if (parentPost) {
+        const replTo = store.usersByIdBrief[parentPost.authorId];
+        toWho = !replTo ? null :
+            r.span({ className: 's_YourPrvw_ToWho' },
+              "(" + t.d.repliesTo, UserName({ user: replTo, store }), ')');
+      }; t.replies
+      previewElem = r.div({ className: 's_YourPrvw' }, "Your post, preview: ", toWho);  // I18N
+      previewClass = ' s_T-Prvw';
+      // Currently there's just one preview active at a time — for the post we're editing:
+      //if (post.isEditing) {
+        previewClass += ' s_T-Prvw-IsEd';
+      //}
+    }
+
+    const flatClass = isFlat ? ' s_T-Flat' : '';
 
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
-          is2dColumnClass + branchSidewaysClass + collapsedClass + avatarClass },
+          is2dColumnClass + branchSidewaysClass + collapsedClass + avatarClass +
+          previewClass + flatClass },
         arrows,
         anyWrongWarning,
+        previewElem,
         anyAvatar,
         Post(postProps),
-        anyEditDraft ? r.pre({}, JSON.stringify(anyEditDraft)) : null,
         actions,
-        anyReplyDraft ? r.pre({}, JSON.stringify(anyReplyDraft)) : null,
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -1312,7 +1340,7 @@ export const Post = createComponent({
           r.span({}, text, r.span({ className: 'dw-a-clps ' + iconClass }));
       extraClasses += ' dw-zd clearfix';
     }
-    else if (!post.isApproved && !post.sanitizedHtml) {
+    else if (!post.isApproved && !post.sanitizedHtml && !post.isPreview) {
       // (Dupl code, for anyAvatar [503KP25])
       const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
       const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
@@ -1325,10 +1353,14 @@ export const Post = createComponent({
       extraClasses += ' dw-p-unapproved';
     }
     else {
-      if (!post.isApproved) {
+      if (post.isPreview) {
+        extraClasses += ' s_P-Prvw';
+      }
+      else if (!post.isApproved) {
         const isMine = post.authorId === me.id;
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
-            onClick: this.onUncollapseClick }, t.d.CmtBelowPendAppr(isMine));
+            onClick: this.onUncollapseClick },
+          t.d.CmtBelowPendAppr(isMine));
       }
       const headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
@@ -1576,8 +1608,9 @@ export const PostHeader = createComponent({
           UserName({ user: author, store, makeLink: !abbreviate,
               onClick: abbreviate ? undefined : this.onUserClick }),
           // COULD add "Posted on ..." tooltip.
-          this.props.exactTime ?
-              timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass),
+          post.isPreview ? null : (
+            this.props.exactTime ?
+              timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass)),
           editInfo,
           inReplyTo,
           toggleCollapsedButton,

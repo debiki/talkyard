@@ -63,6 +63,61 @@
   position: relative;
 
 
+// Preview posts
+//===========================
+
+$previewBorderBottom = 5px solid hsl($uiHueHighlightedBackground, 100%, 64%) !important;
+
+.s_YourPrvw
+  padding: 10px 15px 7px;
+  font-weight: bold;
+  font-size: 20px;
+  font-style: italic;
+  letter-spacing: 0.15px; // italic otherwise —> letters too close, hard to read
+  color: hsl($uiHue, 100%, 20%);
+  background: hsl($uiHueHighlightedBackground, 100%, 70%);
+
+.s_YourPrvw_ToWho
+  margin-left: 1ex;
+  font-style: normal;
+  font-weight: normal;
+  &,
+  .esP_By_F,
+  .esP_By_U
+    font-size: 16px;
+  .esP_By_U:not(:first-child)
+    margin-left: 4px;
+  .esP_By
+    margin-right: 1px;
+  .esP_By_F,
+  .esP_By_U
+    font-weight: bold;
+
+.s_P-Prvw
+  opacity: 0.7;
+  padding: 17px 0 10px!important;
+  margin-bottom: 40px !important;
+  margin-bottom: 30px;
+  border-bottom: $previewBorderBottom;
+  .esP_Z-Show,
+  .s_P_H_Unr
+    display: none !important;
+
+
+.dw-t.dw-id0,
+.s_T-Flat
+  &.s_T-Prvw
+    // Then the post is indented, but the avatar is not, so place the border
+    // below the thread instead so it'll extend below the avatar too.
+    border-bottom: $previewBorderBottom;
+    margin-bottom: 30px;
+  > .s_YourPrvw
+    margin-bottom: 10px;
+  > .s_P-Prvw
+    border-bottom: none !important;
+    margin-bottom: 15px !important;
+
+
 // Cropped and resized posts
 //===========================
 

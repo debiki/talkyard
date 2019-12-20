@@ -34,6 +34,7 @@ U  = user
 G  = group
 Pp = participant
 P, Pg = page
+Prvw = preview
 Po = post
 Un = username
 FN = full name
@@ -170,6 +171,7 @@ esP_H_By        = author
 s_P_H_Bm        = bookmark
 s_P_H_Unr       = unread mark
 esP_B           = post body (the actual text)
+s_P-Prvw        = post, previewing one's edits
 s_P-Hdn         = post, hidden
 s_P-Dd          = post, deleted
 

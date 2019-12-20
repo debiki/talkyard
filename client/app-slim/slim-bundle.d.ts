@@ -280,6 +280,11 @@ declare namespace debiki2 {
   var page_isGroupTalk;
   let store_getUserOrMissing;
   var store_thisIsMyPage;
+  function store_findTheDefaultCategory(store: Store): Category | undefined;
+  function store_ancestorsCategoriesCurrLast(store: Store, categoryId: CategoryId): Category[];
+  function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
+  function store_makePostPreviewPatch(store: Store, page: Page, post: Post, safePreviewHtml: string, newPostType?: PostType): StorePatch;
+  function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post, newPostType?: PostType): StorePatch;
   var hasErrorCode;
   var page_mayChangeRole;
   function page_canToggleClosed(page: Page): boolean;
