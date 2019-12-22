@@ -1349,6 +1349,12 @@ function patchTheStore(storePatch: StorePatch) {
                 }
               }
             }
+            if (movedToNewPage) {
+              delete oldPage.postsByNr[oldPost.nr];
+              arr_deleteInPlace(oldPage.parentlessReplyNrsSorted, oldPost.nr);
+              arr_deleteInPlace(oldPage.progressPostNrsSorted, oldPost.nr);
+              // It should get inserted into the new page by updatePost() below.
+            }
           }
         });
       });

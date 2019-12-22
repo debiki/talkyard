@@ -816,10 +816,10 @@ function store_makePreviewPost(store: Store, parentPostNr: PostNr,
 
 export function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post,
       newPostType?: PostType): StorePatch {
-  const previewPost: Post = store_makePreviewPost(store, post, '', newPostType);
+  const previewPost: Post = store_makePreviewPost(store, post.nr, '', newPostType);
   const postsByPageId = {};
   // This'll remove the post from `page`, since it got "moved" away from that page.
-  postsByPageId['_non_existing_page_'] = [previewPost];
+  postsByPageId['_no_page_'] = [previewPost];
   return {
     postsByPageId,
   };

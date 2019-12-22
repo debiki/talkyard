@@ -317,6 +317,24 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function arr_deleteInPlace<T>(ts: T[], toDelete: T) {  // RENAME arr_delInPl + arr_delCp
+  const ix = ts.indexOf(toDelete);
+  if (ix >= 0) {
+    ts.splice(ix, 1);
+  }
+}
+
+/*
+export function arr_delete<T>(ts: T[], toDelete: T): T[] {
+  const ix = ts.indexOf(toDelete);
+  if (ix === -1)
+    return ts;
+  const clone = ts.slice();
+  clone.splice(ix, 1);
+  return clone;
+} */
+
+
 export function shallowMergeFirstItemLast(items: any[]): any {
   let result = {};
   if (items) {
