@@ -708,9 +708,23 @@ export function post_makePreviewIdNr(post: Post): number {
 }
 
 
+export function store_makeDraftPreviewPatch(store: Store, page: Page, draft: Draft)
+      : StorePatch {
+  const draftPost = store_makePostForDraft(store, draft)
+  const patch: StorePatch = {
+    pageVersionsByPageId: {},
+    postsByPageId: {},
+  };
+  patch.postsByPageId[page.pageId] = [draftPost];
+  patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+  return patch;
+}
+
+
 export function store_makePostPreviewPatch(store: Store, page: Page, post: Post,
       safePreviewHtml: string, newPostType?: PostType): StorePatch {
-  const previewPost = store_makePreviewPost(store, post.nr, safePreviewHtml, newPostType);
+  const previewPost = store_makePreviewPost({
+      store, parentPostNr: post.nr, safePreviewHtml, newPostType, isEditing: true });
   const patch: StorePatch = {
     pageVersionsByPageId: {},
     postsByPageId: {},
@@ -721,37 +735,63 @@ export function store_makePostPreviewPatch(store: Store, page: Page, post: Post,
 }
 
 
+  // Break out fn — done. [0345JKATSJ]
+export function draftType_toPostType(draftType: DraftType): PostType | undefined {
+  switch (draftType) {
+    case DraftType.Reply: return PostType.Normal;
+    case DraftType.ProgressPost: return PostType.BottomComment;
+    default:
+      return undefined;
+  }
+}
+
+
+export function postType_toDraftType(postType: PostType): DraftType | undefined {
+  switch (postType) {
+    case PostType.Normal: return DraftType.Reply;
+    case PostType.BottomComment: return DraftType.ProgressPost;
+    default:
+      return undefined;
+  }
+}
+
+
 export function store_makePostForDraft(store: Store, draft: Draft): Post | null {
   const locator: DraftLocator = draft.forWhat;
   const parentPostNr = locator.postNr;
 
-  // Break out fn? [0345JKATSJ]
-  let postType;
-  switch (locator.draftType) {
-    case DraftType.Reply:
-      postType = PostType.Normal;
-      break;
-    case DraftType.ProgressPost:
-      postType = PostType.BottomComment;
-      break;
-    default:
-      return null;
-  }
+  const postType = draftType_toPostType(draft.forWhat.draftType);
+  if (!postType)
+    return null;  // then skip draft post, for now
 
-  // Ooops apparently need to save a preview of the drafts too — because
-  // cannot load the CommonMark engine here. [DRAFTPRVW]
+  // It'd be nice if we saved a preview of the drafts, so can show nice preview html,
+  // instead of just the CommonMark source. Cannot load the CommonMark engine here,
+  // that'd make the page-load too slow I think. [DRAFTPRVW]
   // const safeHtml = markdownToSafeHtml(
   //    this.state.text, window.location.host, sanitizerOpts);
   // For now:
-  const safePreviewHtml = "Your reply";
 
-  const previewPost = store_makePreviewPost(store, parentPostNr, safePreviewHtml, postType);
+  const previewPost = store_makePreviewPost({
+      store, parentPostNr, unsafeSource: draft.text, newPostType: postType,
+      isForDraftNr: draft.draftNr });
   return previewPost;
 }
 
 
-function store_makePreviewPost(store: Store, parentPostNr: PostNr,
-      safePreviewHtml: string, newPostType?: PostType): Post {
+interface MakePreviewParams {
+  store: Store;
+  parentPostNr: PostNr;
+  safePreviewHtml?: string;
+  unsafeSource?: string;
+  newPostType?: PostType;
+  isForDraftNr?: DraftNr;
+  isEditing?: boolean;
+}
+
+function store_makePreviewPost({
+    store, parentPostNr, safePreviewHtml, unsafeSource,
+    newPostType, isForDraftNr, isEditing }
+      : MakePreviewParams): Post {
 
   // @ifdef DEBUG
   dieIf(!newPostType, 'unimpl: edits preview [TyE4903KS]');
@@ -772,6 +812,8 @@ function store_makePreviewPost(store: Store, parentPostNr: PostNr,
 
   const previewPost: Post = {
     isPreview: true,
+    isForDraftNr,
+    isEditing,
 
     uniqueId: previewPostIdNr,
     nr: previewPostIdNr,
@@ -803,7 +845,7 @@ function store_makePreviewPost(store: Store, parentPostNr: PostNr,
     branchSideways: 0,
     likeScore: 0,
     childNrsSorted: [],
-    //unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
+    unsafeSource: unsafeSource,
     sanitizedHtml: safePreviewHtml,
     //tags?: string[];
     //numPendingFlags?: number;
@@ -816,7 +858,7 @@ function store_makePreviewPost(store: Store, parentPostNr: PostNr,
 
 export function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post,
       newPostType?: PostType): StorePatch {
-  const previewPost: Post = store_makePreviewPost(store, post.nr, '', newPostType);
+  const previewPost: Post = store_makePreviewPost({ store, parentPostNr: post.nr, safePreviewHtml: '', newPostType });
   const postsByPageId = {};
   // This'll remove the post from `page`, since it got "moved" away from that page.
   postsByPageId['_no_page_'] = [previewPost];

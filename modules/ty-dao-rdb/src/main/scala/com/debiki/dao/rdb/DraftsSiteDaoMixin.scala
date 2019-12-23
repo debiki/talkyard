@@ -145,7 +145,10 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       where d.site_id = ?
         and d.by_user_id = ?
         and d.deleted_at is null
-        and d.draft_type in (${DraftType.Edit.toInt}, ${DraftType.Reply.toInt})
+        and d.draft_type in (
+          ${DraftType.Edit.toInt},
+          ${DraftType.Reply.toInt},
+          ${DraftType.ProgressPost.toInt})
         and p.page_id = ?
         order by coalesce(d.last_edited_at, d.created_at) desc"""
     runQueryFindMany(query, List(siteId.asAnyRef, userId.asAnyRef, pageId), readDraft)
@@ -164,7 +167,7 @@ trait DraftsSiteDaoMixin extends SiteTransaction {
       case DraftType.DirectMessage =>
         values.append(draftLocator.toUserId.getOrDie("TyE2ABK47").asAnyRef)
         "to_user_id = ?"
-      case DraftType.Reply | DraftType.Edit =>
+      case DraftType.Reply | DraftType.ProgressPost | DraftType.Edit =>
         values.append(draftLocator.postId.getOrDie("TyE2ABSL7").asAnyRef)
         "post_id = ?"
     }

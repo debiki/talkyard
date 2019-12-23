@@ -66,21 +66,32 @@
 // Preview posts
 //===========================
 
-$previewBorderBottom = 5px solid hsl($uiHueHighlightedBackground, 100%, 64%) !important;
+$previewBorderBottom = 15px solid hsl($uiHueHighlightedBackground, 85%, 75%) !important;
 
-.s_YourPrvw
-  padding: 10px 15px 7px;
+.s_T_YourPrvw
+  padding: 9px 15px 7px;
   font-weight: bold;
-  font-size: 20px;
-  font-style: italic;
-  letter-spacing: 0.15px; // italic otherwise —> letters too close, hard to read
+  font-size: 16px;
+  //font-style: italic;
+  //letter-spacing: 0.15px; // italic otherwise —> letters too close, hard to read
   color: hsl($uiHue, 100%, 20%);
-  background: hsl($uiHueHighlightedBackground, 100%, 70%);
+  background: hsl($uiHueHighlightedBackground, 85%, 80%);
 
-.s_YourPrvw_ToWho
-  margin-left: 1ex;
+// Remove colors from a draft one isn't currently editing. (4036RT459)
+.s_T-Prvw-NotEd
+  .s_T_YourPrvw
+    color: hsl(0, 0%, 15%);
+    background: hsl(0, 0%, 79%);
+  .s_T_YourPrvw_ToWho
+    color: black;
+  .s_P-Prvw
+    padding: 12px 6px 6px !important;
+
+.DW .s_T_YourPrvw_ToWho
+  margin-left: 3px;
   font-style: normal;
   font-weight: normal;
+  /*
   &,
   .esP_By_F,
   .esP_By_U
@@ -91,10 +102,16 @@ $previewBorderBottom = 5px solid hsl($uiHueHighlightedBackground, 100%, 64%) !im
     margin-right: 1px;
   .esP_By_F,
   .esP_By_U
-    font-weight: bold;
+    font-weight: bold; */
+
+  .dw-rr
+    color: hsl(207, 100%, 38%);
+    padding-left: 3px;
+  .s_RRs_RR_Aw
+    color: hsl(207, 55%, 47%);
 
 .s_P-Prvw
-  opacity: 0.7;
+  opacity: 0.65;
   padding: 17px 0 10px!important;
   margin-bottom: 40px !important;
   margin-bottom: 30px;
@@ -103,16 +120,29 @@ $previewBorderBottom = 5px solid hsl($uiHueHighlightedBackground, 100%, 64%) !im
   .s_P_H_Unr
     display: none !important;
 
+.s_T-Prvw-NotEd .s_P-Prvw  // (4036RT459)
+  border-bottom: none !important;
+  &, 
+  .dw-p-hd
+    background: hsl(0, 0%, 92%);
+  pre
+    background: white;
+    white-space: pre-wrap;
+    word-break: break-word;
 
-.dw-t.dw-id0,
+.dw-id0,
 .s_T-Flat
-  &.s_T-Prvw
+  &.s_T-Prvw-IsEd
     // Then the post is indented, but the avatar is not, so place the border
     // below the thread instead so it'll extend below the avatar too.
     border-bottom: $previewBorderBottom;
     margin-bottom: 30px;
-  > .s_YourPrvw
-    margin-bottom: 10px;
+    > .s_T_YourPrvw
+      margin-bottom: 10px;
+
+  // &.s_T-Prvw-NotEd:
+  //  Skip border, there's background color instead  (4036RT459).
+
   > .s_P-Prvw
     border-bottom: none !important;
     margin-bottom: 15px !important;
@@ -427,7 +457,7 @@ h1.dw-p-ttl
     outline: hsl($uiHue, 100%, 87%) 2px solid;
     text-decoration: none;
 
-.-RRs_RR_Aw
+.s_RRs_RR_Aw
   color: hsl(0, 0%, 52%); // or too dark
   margin: 0 2px;
 

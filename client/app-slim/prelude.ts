@@ -257,7 +257,7 @@ export function isDefined2(x): boolean {
 
 
 // Ooops bad name, shouldn't include null  CLEAN_UP rename to isPresent/isSomething/isSth/hasValue?
-export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x)
+export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x), or:: notNullOrUndef
   return !isNullOrUndefined(x);
 }
 

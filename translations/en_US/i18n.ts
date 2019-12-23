@@ -566,6 +566,9 @@ var t_en_US: TalkyardTranslations = t = {
 
     repliesTo: "replies to",
     InReplyTo: "In reply to",
+    YourReplyTo: "Your reply to ",  // MISSING
+    YourDraft: "Your draft",    // MISSING
+    YourProgrNoteC: "Your progress note:",  // MISSING
 
     ClickViewEdits: "Click to view old edits",
 

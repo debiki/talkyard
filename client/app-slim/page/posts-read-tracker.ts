@@ -445,7 +445,7 @@ function trackReadingActivity() {
       postNrsJustRead.push(stats.postNr);
       const post = page.postsByNr[stats.postNr];
       if (post) {
-        unreportedPostsRead.push(post);
+        unreportedPostsRead.push(post);  // skip prevw
       }
       if (!firstUnreportedPostReadAtMs) {
         firstUnreportedPostReadAtMs = nowMs;

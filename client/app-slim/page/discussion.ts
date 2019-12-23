@@ -1186,7 +1186,9 @@ const Thread = createComponent({
 
     const anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
 
-    const showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
+    const showAvatar = !renderCollapsed && this.props.depth === 1
+        && !this.props.is2dTreeColumn && !post.isForDraftNr;
+
     const avatarClass = showAvatar ? ' ed-w-avtr' : '';
     const anyAvatar = !showAvatar ? null :
         avatar.Avatar({ user: store_getAuthorOrMissing(store, post),
@@ -1215,19 +1217,45 @@ const Thread = createComponent({
     let previewClass = '';
     let previewElem = null;
     if (post.isPreview) {
+      // For now,
+      // construct either this text:  "Preview: Your reply to [link to parent post]:"
+      // or this:   "Your draft, replies to [link to parent post]:".
+
+      const isProgrPost = post.parentNr === BodyNr && post.postType === PostType.BottomComment;
+      const yourWhat = post.isEditing
+          ? t.e.PreviewC
+          : (t.d.YourDraft || "Your draft") + ', ';  // [03RKTG42] I18N
+
       let toWho;
-      if (parentPost) {
-        const replTo = store.usersByIdBrief[parentPost.authorId];
+
+      if (!post.isEditing && isProgrPost) {
+        toWho =
+            r.span({ className: 's_T_YourPrvw_ToWho' },
+              "a progress note:");  // I18N
+      }
+      else if (!parentPost) {
+        // @ifdef DEBUG
+        die("No parent post [TyE602FKDJDK]");
+        // @endif
+        0;
+      }
+      else {
+        const replTo = !isProgrPost && store.usersByIdBrief[parentPost.authorId];
+        const yourReplyTo_or_repliesTo = post.isEditing
+            ? (isProgrPost
+                ? t.d.YourProgrNoteC                   // I18N
+                : (t.d.YourReplyTo || t.d.repliesTo))  // I18N YourReplyTo mising
+            : (isProgrPost
+                ? ''  // doesn't really reply to anyone in particular
+                : t.d.repliesTo);
         toWho = !replTo ? null :
-            r.span({ className: 's_YourPrvw_ToWho' },
-              "(" + t.d.repliesTo, UserName({ user: replTo, store }), ')');
-      }; t.replies
-      previewElem = r.div({ className: 's_YourPrvw' }, "Your post, preview: ", toWho);  // I18N
-      previewClass = ' s_T-Prvw';
-      // Currently there's just one preview active at a time — for the post we're editing:
-      //if (post.isEditing) {
-        previewClass += ' s_T-Prvw-IsEd';
-      //}
+            r.span({ className: 's_T_YourPrvw_ToWho' },
+              ' ' + yourReplyTo_or_repliesTo + ' ',
+              RepliesToArrow({ post: parentPost, thisPost: post, author: replTo }), ':');
+      };
+
+      previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho);
+      previewClass = ' s_T-Prvw ' + (post.isEditing ? 's_T-Prvw-IsEd' :'s_T-Prvw-NotEd');
     }
 
     const flatClass = isFlat ? ' s_T-Flat' : '';
@@ -1323,7 +1351,12 @@ export const Post = createComponent({
     let extraClasses = this.props.className || '';
     const isFlat = this.props.isFlat;
 
-    if (post_isDeleted(post)) {
+    if (post.isPreview && !post.isEditing) {
+      // Skip header and avatar. "Your draft:"  should be enough. [03RKTG42]
+      bodyElem = PostBody(this.props);
+      extraClasses += ' s_P-Prvw s_P-Prvw-NotEd';
+    }
+    else if (post_isDeleted(post)) {
       headerElem = r.div({ className: 'dw-p-hd' }, post.isTreeDeleted ? t.d.ThreadDeld : t.d.CmntDeld);
       extraClasses += ' dw-p-dl';
     }
@@ -1354,7 +1387,10 @@ export const Post = createComponent({
     }
     else {
       if (post.isPreview) {
-        extraClasses += ' s_P-Prvw';
+        // @ifdef DEBUG
+        dieIf(!post.isEditing, 'TyE305RDHGR2');
+        // @endif
+        extraClasses += ' s_P-Prvw s_P-Prvw-IsEd';
       }
       else if (!post.isApproved) {
         const isMine = post.authorId === me.id;
@@ -1438,34 +1474,26 @@ const ReplyReceivers = createComponent({
     const page: Page = store.currentPage;
     let multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     const thisPost: Post = this.props.post;
-    let repliedToPostIds = thisPost.multireplyPostNrs;
-    if (!repliedToPostIds || !repliedToPostIds.length) {
+    let repliedToPostNrs = thisPost.multireplyPostNrs;
+    if (!repliedToPostNrs || !repliedToPostNrs.length) {
       multireplyClass = '';
-      repliedToPostIds = [thisPost.parentNr];
+      repliedToPostNrs = [thisPost.parentNr];
     }
     const receivers = [];
-    for (let index = 0; index < repliedToPostIds.length; ++index) {
-      const repliedToId = repliedToPostIds[index];
-      if (repliedToId === NoPostId) {
+    for (let index = 0; index < repliedToPostNrs.length; ++index) {
+      const repliedToNr = repliedToPostNrs[index];
+      if (repliedToNr === NoPostId) {
         // This was a reply to the whole page, happens if one clicks the "Add comment"
         // button in the chat section, and then replies to someone too.
         continue;
       }
-      const post = page.postsByNr[repliedToId];
+      const post = page.postsByNr[repliedToNr];
       if (!post) {
-        receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
+        receivers.push(r.i({ key: repliedToNr }, 'Unknown [DwE4KFYW2]'));
         continue;
       }
       const author = store_getAuthorOrMissing(store, post);
-      let link =
-        r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
-            onMouseEnter: () => highlightPost(post.nr, true),
-            onMouseLeave: () => highlightPost(post.nr, false),
-            onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
-          author.username || author.fullName,
-          // Append an up arrow to indicate that clicking the name will scroll up,
-          // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.
-          r.span({ className: '-RRs_RR_Aw' }, '⬆'));
+      let link = RepliesToArrow({ post, thisPost, author });
       if (receivers.length) {
         link = r.span({ key: post.nr }, t.d._and, link);
       }
@@ -1478,6 +1506,19 @@ const ReplyReceivers = createComponent({
   }
 });
 
+
+function RepliesToArrow(
+    { post, thisPost, author }: { post: Post, thisPost: Post, author: BriefUser }) {
+  return (
+    r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
+        onMouseEnter: () => highlightPost(post.nr, true),
+        onMouseLeave: () => highlightPost(post.nr, false),
+        onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
+      author.username || author.fullName,
+      // Append an up arrow to indicate that clicking the name will scroll up,
+      // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.
+      r.span({ className: 's_RRs_RR_Aw' }, '⬆')));
+}
 
 
 export const PostHeader = createComponent({
@@ -1650,14 +1691,47 @@ export const PostBody = createComponent({
     ReactActions.loadAndShowPost(post.nr);
   },
 
+  resumeDraft: function(event) {
+    // Dupl code [5AKBR30W02]
+    const post: Post = this.props.post;
+    event.preventDefault();
+    const eventTarget = event.target; // React.js will clear the field
+    const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
+    if (eds.isInEmbeddedCommentsIframe) {
+      window.parent.postMessage(
+          JSON.stringify(['editorToggleReply', [post.parentNr, inclInReply, post.postType]]), eds.embeddingOrigin);
+    }
+    else {
+      debiki2.editor.toggleWriteReplyToPostNr(post.parentNr, inclInReply, post.postType);
+    }
+  },
+
   render: function() {
     const post: Post = this.props.post;
+
+    // @ifdef DEBUG
+    dieIf(isNullOrUndefined(post.sanitizedHtml) &&
+        isNullOrUndefined(post.unsafeSource), 'TyE35RK3JH5');
+
+    dieIf(post.isForDraftNr && isNullOrUndefined(post.unsafeSource), 'TyE2KSTH047A');
+
+    dieIf(post.isEditing && isNullOrUndefined(post.sanitizedHtml), 'TyE8WT6SR2T');
+
+    dieIf(post.summarize && isNullOrUndefined(post.summary), 'TyE75FKDTT035');
+    // @endif
+
     if (post.summarize) {
       return (
         r.div({ className: 'dw-p-bd' },
           r.div({ className: 'dw-p-bd-blk' },
             r.p({}, post.summary))));
     }
+
+    if (post.isPreview && post.isForDraftNr && !post.isEditing) {
+      return r.pre({ className: 's_P_Prvw', onClick: this.resumeDraft },
+        post.unsafeSource);
+    }
+
     let body;
     if (post_shallRenderAsHidden(post)) {
       body = r.div({ className: 'dw-p-bd-blk', onClick: this.loadAndShow },
@@ -1674,6 +1748,7 @@ export const PostBody = createComponent({
       body = r.div({ className: 'dw-p-bd-blk',
           dangerouslySetInnerHTML: { __html: post.sanitizedHtml }});
     }
+
     return (
       r.div({ className: 'dw-p-bd' },
         // Beause of evil magic, without `null`, then `body` is ignored and the post becomes

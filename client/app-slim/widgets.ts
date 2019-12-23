@@ -245,9 +245,11 @@ export function MenuItemDivider() {
 
 export function UserName(props: {
     user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
+
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
-  const user = props.user;
-  const showHow: ShowAuthorHow = props.store.settings.showAuthorHow;
+  const store: Store = props.store;
+  const user: BriefUser = props.user;
+  const showHow: ShowAuthorHow = store.settings.showAuthorHow;
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
   // only used in that if branch, below.)

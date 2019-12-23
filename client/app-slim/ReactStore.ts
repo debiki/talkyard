@@ -563,16 +563,17 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   });
 
   // Show one's drafts: Create a preview post, for each draft.
-  /* But oops, we don't have any safePreviewHtml. Need to save server side. [DRAFTPRVW]
+  // But oops, we don't have any safePreviewHtml. Need to save server side. [DRAFTPRVW]
   _.each(myPageData.myDrafts, (draft: Draft) => {
-    if (draft.forWhat.draftType === DraftType.Reply) {
+    const draftType = draft.forWhat.draftType;
+    if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {
       const post: Post | null = store_makePostForDraft(store, draft);
       if (post) {
         updatePost(post, store.currentPageId);
       }
       // COULD_FREE_MEM
     }
-  });  */
+  });
 
   if (_.isArray(store.topics)) {
     const currentPage: Page = store.currentPage;
