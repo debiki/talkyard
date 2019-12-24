@@ -720,7 +720,7 @@ const RootPostAndComments = createComponent({
 
       threadProps.elemType = 'div';
       threadProps.post = child;
-      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only?
+      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only? (349063216)
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
@@ -1064,6 +1064,13 @@ const Thread = createComponent({
     this.refs.post.onAnyActionClick();
   },
 
+  resumeDraft: function(event) {
+    // Tiny bit dupl code [5AKBR30W02]
+    const post: Post = this.props.post;
+    event.preventDefault();
+    ReactActions.resumeDraft(post);
+  },
+
   render: function() {
     const store: Store = this.props.store;
     const me: Myself = store.me;
@@ -1143,7 +1150,8 @@ const Thread = createComponent({
         }
         const threadProps = _.clone(this.props);
         threadProps.elemType = childrenSideways ? 'div' : 'li';
-        threadProps.postId = childNr;
+        threadProps.post = child;
+        threadProps.postId = childNr;   // CLEAN_UP should be .postNr. But use .post only? (349063216)
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;
@@ -1227,7 +1235,6 @@ const Thread = createComponent({
           : (t.d.YourDraft || "Your draft") + ', ';  // [03RKTG42] I18N
 
       let toWho;
-
       if (!post.isEditing && isProgrPost) {
         toWho =
             r.span({ className: 's_T_YourPrvw_ToWho' },
@@ -1252,9 +1259,13 @@ const Thread = createComponent({
             r.span({ className: 's_T_YourPrvw_ToWho' },
               ' ' + yourReplyTo_or_repliesTo + ' ',
               RepliesToArrow({ post: parentPost, thisPost: post, author: replTo }), ':');
-      };
+      }
 
-      previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho);
+      const resumeDraftBtn = post.isEditing ? null :
+            Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
+              "Resume editing");  // I18N
+
+      previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho, resumeDraftBtn);
       previewClass = ' s_T-Prvw ' + (post.isEditing ? 's_T-Prvw-IsEd' :'s_T-Prvw-NotEd');
     }
 
@@ -1691,21 +1702,6 @@ export const PostBody = createComponent({
     ReactActions.loadAndShowPost(post.nr);
   },
 
-  resumeDraft: function(event) {
-    // Dupl code [5AKBR30W02]
-    const post: Post = this.props.post;
-    event.preventDefault();
-    const eventTarget = event.target; // React.js will clear the field
-    const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
-    if (eds.isInEmbeddedCommentsIframe) {
-      window.parent.postMessage(
-          JSON.stringify(['editorToggleReply', [post.parentNr, inclInReply, post.postType]]), eds.embeddingOrigin);
-    }
-    else {
-      debiki2.editor.toggleWriteReplyToPostNr(post.parentNr, inclInReply, post.postType);
-    }
-  },
-
   render: function() {
     const post: Post = this.props.post;
 
@@ -1728,7 +1724,7 @@ export const PostBody = createComponent({
     }
 
     if (post.isPreview && post.isForDraftNr && !post.isEditing) {
-      return r.pre({ className: 's_P_Prvw', onClick: this.resumeDraft },
+      return r.pre({ className: 's_P_Prvw' },
         post.unsafeSource);
     }
 

@@ -347,11 +347,19 @@ export const Editor = createComponent({
     const store: Store = this.state.store;
     let postNrs = this.state.replyToPostNrs;
 
+    if (inclInReply && postNrs.length) {
+      // This means we've started replying to a post, and then clicked Reply
+      // for *another* post too — i.e. we're trying to reply to more than one post,
+      // a a single time. This is, in Talkyard, called Multireply.
+      // Disable this for now — it's disabled server side, and the UX was always
+      // rather poor actually. UX COULD disable the reply buttons? Also see (5445522) just below.
+      return;
+    }
+
     if (this.state.editorsPageId !== store.currentPageId && postNrs.length) {
-      // We're omposing a reply to something on another page — then,
-      // don't allow adding even more posts to multireply to, on this
-      // different page.
-      // UX COULD disable the reply buttons?
+      // The post nrs on this different page, won't match the ones in postNrs.
+      // So ignore this.
+      // UX COULD disable the reply buttons? Also see (5445522) just above.
       return;
     }
 

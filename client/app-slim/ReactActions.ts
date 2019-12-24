@@ -759,6 +759,20 @@ function markAnyNotificationAsSeen(postNr: number) {
 }
 
 
+export function resumeDraft(post: Post) {
+  // Dupl code [5AKBR30W02]
+  const inclInReply = true;
+  if (eds.isInEmbeddedCommentsIframe) {
+    window.parent.postMessage(
+        JSON.stringify(['editorToggleReply', [post.parentNr, inclInReply, post.postType]]),
+        eds.embeddingOrigin);
+  }
+  else {
+    debiki2.editor.toggleWriteReplyToPostNr(post.parentNr, inclInReply, post.postType);
+  }
+}
+
+
 export function patchTheStore(storePatch: StorePatch) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.PatchTheStore,

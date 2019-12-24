@@ -63,25 +63,24 @@
   position: relative;
 
 
-// Preview posts
+
+// Draft and preview posts
 //===========================
 
-$previewBorderBottom = 15px solid hsl($uiHueHighlightedBackground, 85%, 75%) !important;
+$previewBackground = hsl($uiHueHighlightedBackground, 85%, 80%);
+$previewBorderBottom = 15px solid $previewBackground !important;
 
 .s_T_YourPrvw
   padding: 9px 15px 7px;
   font-weight: bold;
   font-size: 16px;
-  //font-style: italic;
-  //letter-spacing: 0.15px; // italic otherwise —> letters too close, hard to read
-  color: hsl($uiHue, 100%, 20%);
-  background: hsl($uiHueHighlightedBackground, 85%, 80%);
+  background: $previewBackground;
 
 // Remove colors from a draft one isn't currently editing. (4036RT459)
 .s_T-Prvw-NotEd
   .s_T_YourPrvw
     color: hsl(0, 0%, 15%);
-    background: hsl(0, 0%, 79%);
+    background: hsl(0, 0%, 80%);
   .s_T_YourPrvw_ToWho
     color: black;
   .s_P-Prvw
@@ -91,19 +90,6 @@ $previewBorderBottom = 15px solid hsl($uiHueHighlightedBackground, 85%, 75%) !im
   margin-left: 3px;
   font-style: normal;
   font-weight: normal;
-  /*
-  &,
-  .esP_By_F,
-  .esP_By_U
-    font-size: 16px;
-  .esP_By_U:not(:first-child)
-    margin-left: 4px;
-  .esP_By
-    margin-right: 1px;
-  .esP_By_F,
-  .esP_By_U
-    font-weight: bold; */
-
   .dw-rr
     color: hsl(207, 100%, 38%);
     padding-left: 3px;
@@ -111,14 +97,24 @@ $previewBorderBottom = 15px solid hsl($uiHueHighlightedBackground, 85%, 75%) !im
     color: hsl(207, 55%, 47%);
 
 .s_P-Prvw
-  opacity: 0.65;
-  padding: 17px 0 10px!important;
+  .dw-p-hd, .dw-p-bd
+    opacity: 0.63;
+  padding: 16px 0 6px 2px !important;
   margin-bottom: 40px !important;
   margin-bottom: 30px;
   border-bottom: $previewBorderBottom;
   .esP_Z-Show,
   .s_P_H_Unr
     display: none !important;
+
+.s_T-Prvw-IsEd.dw-id0
+  // This only works for orig post replies — currently, for nested replies,
+  // the outline would appear "far away" from the post — it'd include the arrows
+  // pointing to the post too. So skip, unless depth = 0, id0.
+  outline: 5px solid $previewBackground;
+  // W/o padding, there's a 5px gap between border and outline, no idea why.
+  // Don't think can be decender-spacing? — Display is 'block'.
+  padding-bottom: 5px;
 
 .s_T-Prvw-NotEd .s_P-Prvw  // (4036RT459)
   border-bottom: none !important;
@@ -140,12 +136,23 @@ $previewBorderBottom = 15px solid hsl($uiHueHighlightedBackground, 85%, 75%) !im
     > .s_T_YourPrvw
       margin-bottom: 10px;
 
+    > .s_P-Prvw
+      // There's margin below the thread instead.
+      margin-bottom: 0 !important;
+
   // &.s_T-Prvw-NotEd:
   //  Skip border, there's background color instead  (4036RT459).
 
   > .s_P-Prvw
     border-bottom: none !important;
-    margin-bottom: 15px !important;
+  &.s_T-Prvw-NotEd
+    > .s_P-Prvw
+      margin-bottom: 30px !important;
+
+.s_T_YourPrvw_ResumeB
+  margin-left: 15px;
+  box-shadow: 1px 2px 4px hsl(0, 0%, 37%);
+
 
 
 // Cropped and resized posts
