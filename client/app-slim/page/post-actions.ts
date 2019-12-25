@@ -83,9 +83,10 @@ export const NoCommentsPageActions = createComponent({
       return d.forWhat.postId === post.uniqueId && 
           d.forWhat.draftType === DraftType.Edit;
     });
+    const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
 
     const actions =
-        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick },
+        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, onClick: this.onEditClick },
           t.EditV + (
             anyEditsDraft ? " — Unfinished edits" : null));  // I18N [0436BKRFP2]
 
@@ -362,12 +363,13 @@ export const PostActions = createComponent({
       return d.forWhat.postId === post.uniqueId && 
           d.forWhat.draftType === DraftType.Edit;
     });
+    const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
 
     const mayEdit = store_mayIEditPost(store, post);
     const editButton = !mayEdit || isEditorOpenAlready ? null :
-        r.a({ className: 'dw-a dw-a-edit icon-edit', title: t.EditV,
+        r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, title: t.EditV,
               onClick: this.onEditClick },
-          anyEditsDraft ? "Unfinished edits" : null);  // I18N [0436BKRFP2]
+          anyEditsDraft ? "Unfinished edits" : null);  // I18N [0436BKRFP2] [UFINEDT]
 
     const link =
         r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,

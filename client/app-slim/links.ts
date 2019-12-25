@@ -171,6 +171,14 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
           FragParamPostNr + locator.postNr + FragActionAndReplyToPost;
       theLink = maybeNewPageUrl() + hashFragmentAction;
       break;
+    case DraftType.ProgressPost:
+      // Right now, there's now way to auto-open a ProgressPost draft,
+      // so instead just scroll it into view. (Instead, using above FragActionAndReplyToPost
+      // would try to open any Discussion section reply draft instead? Or?)
+      const draftPostNr = post_makePreviewIdNr(draft.forWhat.postNr, PostType.BottomComment);
+      const hashFragAction = '#' + FragParamPostNr + draftPostNr;
+      theLink = maybeNewPageUrl() + hashFragAction;
+      break;
     case DraftType.Edit:
       theLink = maybeNewPageUrl() + FragParamPostNr + postNr + FragActionAndEditPost;
       break;

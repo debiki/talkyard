@@ -779,7 +779,7 @@ export const Editor = createComponent({
         this.state.text, window.location.host, sanitizerOpts);
 
     this.setState({
-      // Save this in the draft too, & send to the server, so the preview html
+      // UX COULD save this in the draft too, & send to the server, so the preview html
       // is available when rendering the page and one might want to see one's drafts,
       // here: [DRAFTPRVW].
       safePreviewHtml: safeHtml,
@@ -1239,8 +1239,11 @@ export const Editor = createComponent({
             if (this.isGone) return;
             // Break out function? Also see FragActionHashScrollToBottom, tiny bit dupl code.
             // Scroll to the preview we're currently editing (not to any inactive draft previews).
-            utils.scrollIntoViewInPageColumn('.s_T-Prvw-IsEd', {
-              marginTop: 130, marginBottom: 30,
+            const isEditingBody = this.state.editingPostNr === BodyNr;
+            const selector = isEditingBody ? '.dw-ar-t > .s_T_YourPrvw' : '.s_T-Prvw-IsEd';
+            const marginTop = isEditingBody ? 110 : 50;
+            utils.scrollIntoViewInPageColumn(selector, {
+              marginTop, marginBottom: 30,
             });
           }, 10);
         }

@@ -572,8 +572,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.usersByIdBrief[author.id] = author;
   });
 
-  // Show one's drafts: Create a preview post, for each draft.
-  // But oops, we don't have any safePreviewHtml. Need to save server side. [DRAFTPRVW]
+  // Show one's drafts: Create a preview post, for each new post draft (but not
+  // for edit drafts — then, we instead show a text "Unfinished edits" next to the
+  // edit button. [UFINEDT])
   _.each(myPageData.myDrafts, (draft: Draft) => {
     const draftType = draft.forWhat.draftType;
     if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {

@@ -781,9 +781,7 @@ export function store_makePostForDraft(store: Store, draft: Draft): Post | null 
   // It'd be nice if we saved a preview of the drafts, so can show nice preview html,
   // instead of just the CommonMark source. Cannot load the CommonMark engine here,
   // that'd make the page-load too slow I think. [DRAFTPRVW]
-  // const safeHtml = markdownToSafeHtml(
-  //    this.state.text, window.location.host, sanitizerOpts);
-  // For now:
+  // For now, use the CommonMark source instead.
 
   const previewPost = store_makePreviewPost({
       store, parentPostNr, unsafeSource: draft.text, newPostType: postType,

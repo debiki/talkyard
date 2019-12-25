@@ -225,3 +225,8 @@ Remove Nchan. Use Rust + server-sent-events instead.
 
 
 [external-server-js]
+
+
+[rich-text-editor]
+Later, support not only CommonMark but also rich text wysiwyg.
+Then first need to fix: [DRAFTPRVW] ?

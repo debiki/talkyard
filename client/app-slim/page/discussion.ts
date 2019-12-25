@@ -1182,15 +1182,6 @@ const Thread = createComponent({
       });
     }
 
-    // COULD show sth like "You have a draft" or "Resume editing" next to the edit icon?
-    // However, drafts for new replies are best rendered as whole preview posts?
-    // See here:  [DRAFTPRVW]
-    //const drafts: Draft[] = me.myDataByPageId?.[store.currentPageId]?.myDrafts ?? [];
-    //const anyEditDraft = _.find(drafts, d =>
-    //    d.forWhat.draftType === DraftType.Edit && d.forWhat.postId === post.uniqueId);
-    //const anyReplyDraft = anyReplyPreview ? null : _.find(drafts, d =>
-    //    d.forWhat.draftType === DraftType.Reply && d.forWhat.postId === post.uniqueId);
-
     const actions = post_isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
       : PostActions({ store, post, onClick: this.onAnyActionClick });
