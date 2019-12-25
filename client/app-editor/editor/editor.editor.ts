@@ -382,11 +382,7 @@ export const Editor = createComponent({
     else if (index === -1) {
       // We're starting to write a reply to postNr.
       postNrs.push(postNr);
-      const opts = {
-        scrollToPreview: true,
-        //scrollToShowPostNr: anyPostType !== PostType.BottomComment ? postNr : undefined,
-      };
-      this.showEditor(opts);
+      this.showEditor({ scrollToPreview: true });
     }
     else {
       // Remove postNr — we're not going to reply to it any longer.
@@ -438,7 +434,7 @@ export const Editor = createComponent({
       return;
     Server.loadDraftAndText(postNr, (response: LoadDraftAndTextResponse) => {
       if (this.isGone) return;
-      this.showEditor({ scrollToShowPostNr: response.postNr });
+      this.showEditor({ scrollToPreview: true });//{ scrollToShowPostNr: response.postNr });
       const store: Store = this.state.store;
       const draft: Draft | undefined = response.draft;
 
@@ -795,21 +791,26 @@ export const Editor = createComponent({
         const store: Store = this.state.store;
         const page = store.pagesById[this.state.editorsPageId];
 
-        let postToReplyToOrEdit: Post;
+        let patch;
 
         const postNrs: PostNr[] = this.state.replyToPostNrs;
         if (postNrs.length === 1) {
           // Could debounce this even more:
           // Show an inline preview, where the reply will appear.
-          postToReplyToOrEdit = page?.postsByNr[postNrs[0]];
+          const postToReplyToOrEdit = page?.postsByNr[postNrs[0]];
+          patch = store_makeNewPostPreviewPatch(
+              store, page, postToReplyToOrEdit, safeHtml, this.state.anyPostType);
         }
         if (this.state.editingPostUid) {
-          postToReplyToOrEdit = page?.postsByNr[this.state.editingPostNr];
+          // Replace the real post with a copy that includes the edited html. [EDPVWPST]
+          const postToEdit = page?.postsByNr[this.state.editingPostNr];
+          if (!this.origPostBeforeEdits) {
+            this.origPostBeforeEdits = postToEdit;
+          }
+          patch = store_makeEditsPreviewPatch(store, page, postToEdit, safeHtml);
         }
-        if (postToReplyToOrEdit) {
-          const previewPatch = store_makePostPreviewPatch(
-              store, page, postToReplyToOrEdit, safeHtml, this.state.anyPostType);
-          ReactActions.patchTheStore(previewPatch);
+        if (patch) {
+          ReactActions.patchTheStore(patch);
         }
       }
       anyCallback?.();
@@ -1109,6 +1110,7 @@ export const Editor = createComponent({
 
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
+    delete this.origPostBeforeEdits;
     Server.saveEdits(this.state.editingPostNr, this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
       this.clearAndClose();
@@ -1219,6 +1221,9 @@ export const Editor = createComponent({
     if (eds.isInEmbeddedEditor) {
       window.parent.postMessage(JSON.stringify(['showEditor', {}]), eds.embeddingOrigin);
     }
+
+    ReactActions.patchTheStore({ setEditorOpen: true });
+
     // After rerender, focus the input fields, and maybe need to scroll, so the post we're editing
     // or replying to, isn't occluded by the editor (then hard to know what we're editing).
     setTimeout(() => {
@@ -1257,9 +1262,13 @@ export const Editor = createComponent({
     const anyDraft: Draft = this.state.draft;
 
     if (!ps.keepDraft) {
-      if (anyDraft)
+      if (anyDraft) {
         removeFromSessionStorage(anyDraft.forWhat);
+      }
     }
+
+    let patch: StorePatch;
+    let highlightPostNrAfter: PostNr;
 
     // Remove any preview post.
     if (eds.isInEmbeddedCommentsIframe) {
@@ -1269,21 +1278,31 @@ export const Editor = createComponent({
       const store: Store = this.state.store;
       const page = store.pagesById[this.state.editorsPageId];
 
-      let postToReplyToOrEdit: Post;
-
       const postNrs: PostNr[] = this.state.replyToPostNrs;
       if (postNrs.length === 1) {
-        postToReplyToOrEdit = page?.postsByNr[postNrs[0]];
-      }
-      if (this.state.editingPostUid) {
-        postToReplyToOrEdit = page?.postsByNr[this.state.editingPostNr];
-      }
-      if (postToReplyToOrEdit) {
-        const patch = anyDraft && ps.keepDraft
-            ? store_makeDraftPreviewPatch(store, page, anyDraft)
+        const replyingToNr = postNrs[0];
+        const post = page?.postsByNr[replyingToNr];
+        patch = anyDraft && ps.keepDraft
+            ? store_makeDraftPostPatch(store, page, anyDraft)
             : store_makeDeletePreviewPatch(
-                store, page, postToReplyToOrEdit, this.state.anyPostType);
-        ReactActions.patchTheStore(patch);
+                store, page, post, this.state.anyPostType);
+        //const draftPreviewPost: Post = patch.postsByPageId[page.pageId][0];
+        //highlightPostNrAfter = draftPreviewPost?.nr;
+        highlightPostNrAfter = post_makePreviewIdNr(replyingToNr, this.state.anyPostType);
+      }
+
+      if (this.state.editingPostUid) {
+        const origPostBeforeEdits = this.origPostBeforeEdits;
+        delete this.origPostBeforeEdits;
+        if (origPostBeforeEdits) {
+          highlightPostNrAfter = origPostBeforeEdits.nr;
+          patch = {
+            pageVersionsByPageId: {},
+            postsByPageId: {},
+          };
+          patch.postsByPageId[page.pageId] = [origPostBeforeEdits];
+          patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+        }
       }
     }
 
@@ -1318,8 +1337,15 @@ export const Editor = createComponent({
     }
     else {
       // (Old jQuery based code.)
-      $h.removeClasses($all('.dw-replying'), 'dw-replying');
+      $h.removeClasses($all('.dw-replying'), 'dw-replying');  // GAAAAH
     }
+
+    patch = { ...patch, setEditorOpen: false };
+    ReactActions.patchTheStore(patch);
+    // And then, later:
+    setTimeout(() => {
+      highlightPostNrBrieflyIfThere(highlightPostNrAfter);
+    }, 200);
   },
 
   callOnDoneCallback: function(saved: boolean) {

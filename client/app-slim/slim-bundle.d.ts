@@ -125,6 +125,8 @@ declare namespace debiki2 {
   function $$byClass(className: string): HTMLCollectionOf<Element>;
   const $h: any;
 
+  function highlightPostNrBrieflyIfThere(nr: PostNr);
+
   // React-Router:
   const Router: any;
   const Switch: any;
@@ -286,8 +288,10 @@ declare namespace debiki2 {
   function store_findTheDefaultCategory(store: Store): Category | undefined;
   function store_ancestorsCategoriesCurrLast(store: Store, categoryId: CategoryId): Category[];
   function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
-  function store_makeDraftPreviewPatch(store: Store, page: Page, draft: Draft): StorePatch;
-  function store_makePostPreviewPatch(store: Store, page: Page, post: Post, safePreviewHtml: string, newPostType?: PostType): StorePatch;
+  function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft): StorePatch;
+  function post_makePreviewIdNr(parentPostNr: PostNr, newPostType: PostType): PostNr & PostId;
+  function store_makeNewPostPreviewPatch(store: Store, page: Page, post: Post, safePreviewHtml: string, newPostType?: PostType): StorePatch;
+  function store_makeEditsPreviewPatch(store: Store, page: Page, post: Post, safePreviewHtml: string): StorePatch;
   function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post, newPostType?: PostType): StorePatch;
   var hasErrorCode;
   var page_mayChangeRole;

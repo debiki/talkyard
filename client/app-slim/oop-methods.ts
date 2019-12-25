@@ -703,12 +703,7 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
-export function post_makePreviewIdNr(post: Post): number {
-  return 12345;
-}
-
-
-export function store_makeDraftPreviewPatch(store: Store, page: Page, draft: Draft)
+export function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft)
       : StorePatch {
   const draftPost = store_makePostForDraft(store, draft)
   const patch: StorePatch = {
@@ -721,7 +716,7 @@ export function store_makeDraftPreviewPatch(store: Store, page: Page, draft: Dra
 }
 
 
-export function store_makePostPreviewPatch(store: Store, page: Page, post: Post,
+export function store_makeNewPostPreviewPatch(store: Store, page: Page, post: Post,
       safePreviewHtml: string, newPostType?: PostType): StorePatch {
   const previewPost = store_makePreviewPost({
       store, parentPostNr: post.nr, safePreviewHtml, newPostType, isEditing: true });
@@ -735,7 +730,26 @@ export function store_makePostPreviewPatch(store: Store, page: Page, post: Post,
 }
 
 
-  // Break out fn — done. [0345JKATSJ]
+export function store_makeEditsPreviewPatch(
+      store: Store, page: Page, post: Post, safePreviewHtml: string): StorePatch {
+  const previewCopy: Post = {
+    ...post,
+    sanitizedHtml: safePreviewHtml,
+    isPreview: true,
+    //isForDraftNr: ?
+    isEditing: true,
+  };
+  const patch: StorePatch = {
+    pageVersionsByPageId: {},
+    postsByPageId: {},
+  };
+  patch.postsByPageId[page.pageId] = [previewCopy];
+  patch.pageVersionsByPageId[page.pageId] = page.pageVersion;
+  return patch;
+}
+
+
+// Break out fn — done. [0345JKATSJ]
 export function draftType_toPostType(draftType: DraftType): PostType | undefined {
   switch (draftType) {
     case DraftType.Reply: return PostType.Normal;
@@ -788,18 +802,10 @@ interface MakePreviewParams {
   isEditing?: boolean;
 }
 
-function store_makePreviewPost({
-    store, parentPostNr, safePreviewHtml, unsafeSource,
-    newPostType, isForDraftNr, isEditing }
-      : MakePreviewParams): Post {
 
-  // @ifdef DEBUG
-  dieIf(!newPostType, 'unimpl: edits preview [TyE4903KS]');
-  // @endif
-
+export function post_makePreviewIdNr(parentPostNr: PostNr, newPostType: PostType): PostNr & PostId {
   // So won't overlap with post nrs and ids.
   const previewOffset = -1000 * 1000;
-
   const previewPostIdNr =
       previewOffset -
       // Different previews when replying to different posts.
@@ -807,6 +813,18 @@ function store_makePreviewPost({
       // Different previews for progress orig-post reply, and discussion orig-post reply.
       // If is editing, not replying, use 0.
       (newPostType || 0);
+  return previewPostIdNr;
+}
+
+
+function store_makePreviewPost({
+    store, parentPostNr, safePreviewHtml, unsafeSource,
+    newPostType, isForDraftNr, isEditing }
+      : MakePreviewParams): Post {
+
+  dieIf(!newPostType, "Don't use for edit previews [TyE4903KS]");
+
+  const previewPostIdNr = post_makePreviewIdNr(parentPostNr, newPostType);
 
   const now = getNowMs();
 
@@ -858,7 +876,8 @@ function store_makePreviewPost({
 
 export function store_makeDeletePreviewPatch(store: Store, page: Page, post: Post,
       newPostType?: PostType): StorePatch {
-  const previewPost: Post = store_makePreviewPost({ store, parentPostNr: post.nr, safePreviewHtml: '', newPostType });
+  const previewPost: Post = store_makePreviewPost({
+      store, parentPostNr: post.nr, safePreviewHtml: '', newPostType });
   const postsByPageId = {};
   // This'll remove the post from `page`, since it got "moved" away from that page.
   postsByPageId['_no_page_'] = [previewPost];

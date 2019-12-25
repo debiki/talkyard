@@ -413,6 +413,10 @@ ReactDispatcher.register(function(payload) {
   // (Would need to look at emitChange() and the hook fns.)
   // Some code wants to run afterwards: [SCROLLPRVW]
 
+  if (store.cannotQuickUpdate) {
+    resetQuickUpdateInPlace(store);
+  }
+
   ReactStore.emitChange();   // old, for non-hooks based code ...
 
   // Ensure new hooks based code cannot 'cheat' by updating things in-place:
@@ -427,12 +431,18 @@ ReactDispatcher.register(function(payload) {
     setStore(storeCopy);
   });
 
-  store.quickUpdate = false;
-  store.postsToUpdate = {};
+  resetQuickUpdateInPlace(store);
 
   // Tell the dispatcher that there were no errors:
   return true;
 });
+
+
+function resetQuickUpdateInPlace(st: Store) {
+  st.quickUpdate = false;
+  st.postsToUpdate = {};
+  delete st.cannotQuickUpdate;
+}
 
 
 ReactStore.initialize = function() {
@@ -1248,6 +1258,11 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 
 
 function patchTheStore(storePatch: StorePatch) {
+  if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
+    store.isEditorOpen = storePatch.setEditorOpen;
+    store.cannotQuickUpdate = true;
+  }
+
   if (storePatch.appVersion && storePatch.appVersion !== store.appVersion) {
     // COULD show dialog, like Discourse does: (just once)
     //   The server has been updated. Reload the page please?

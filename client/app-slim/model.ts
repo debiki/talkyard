@@ -810,6 +810,7 @@ interface Store extends Origins {
   rootPostId: number;
   usersByIdBrief: { [userId: number]: Participant };  // = PpsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
+  isEditorOpen?: boolean;  // default: false
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
@@ -825,6 +826,8 @@ interface Store extends Origins {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+  // Overrides quickUpdate.
+  cannotQuickUpdate?: boolean;
 
   pagesById: { [pageId: string]: Page };
   currentPage?: Page;
@@ -1283,6 +1286,7 @@ interface StorePatch {
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
+  setEditorOpen?: boolean;
   updateEditPreview?: EditPreview;
 
   // If doing something resulted in a new page being created, and we should continue on that page.

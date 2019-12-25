@@ -109,6 +109,7 @@ function onMessage(event) {
       d.i.handleReplyResult(eventData);
       break;
     case 'clearIsReplyingMarks':
+      ReactActions.patchTheStore({ setEditorOpen: false });
       // This is sent from the embedded editor to an embedded comments page.
       d.i.clearIsReplyingMarks();
       break;

@@ -67,7 +67,7 @@
 // Draft and preview posts
 //===========================
 
-$previewBackground = hsl($uiHueHighlightedBackground, 85%, 80%);
+$previewBackground = hsl($uiHueHighlightedBackground, 87%, 80%);
 $previewBorderBottom = 15px solid $previewBackground !important;
 
 .s_T_YourPrvw
@@ -76,15 +76,20 @@ $previewBorderBottom = 15px solid $previewBackground !important;
   font-size: 16px;
   background: $previewBackground;
 
+.s_T-Prvw-IsEd > .s_T_YourPrvw
+  margin-bottom: 10px;
+
 // Remove colors from a draft one isn't currently editing. (4036RT459)
 .s_T-Prvw-NotEd
   .s_T_YourPrvw
     color: hsl(0, 0%, 15%);
     background: hsl(0, 0%, 80%);
+    &.dw-highlight-off
+      background: hsl(0, 0%, 80%) !important;
   .s_T_YourPrvw_ToWho
     color: black;
   .s_P-Prvw
-    padding: 12px 6px 6px !important;
+    padding: 14px 10px 7px !important;
 
 .DW .s_T_YourPrvw_ToWho
   margin-left: 3px;
@@ -99,18 +104,26 @@ $previewBorderBottom = 15px solid $previewBackground !important;
 .s_P-Prvw
   .dw-p-hd, .dw-p-bd
     opacity: 0.63;
-  padding: 16px 0 6px 2px !important;
-  margin-bottom: 40px !important;
-  margin-bottom: 30px;
-  border-bottom: $previewBorderBottom;
+  padding: 6px 0 6px 2px !important;
+  &:not(.s_P-Prvw-Real)
+    // If real, then there's an action bar below; then, need no margin.
+    margin-bottom: 40px !important;
+    border-bottom: $previewBorderBottom;
   .esP_Z-Show,
   .s_P_H_Unr
     display: none !important;
 
-.s_T-Prvw-IsEd.dw-id0
-  // This only works for orig post replies — currently, for nested replies,
-  // the outline would appear "far away" from the post — it'd include the arrows
-  // pointing to the post too. So skip, unless depth = 0, id0.
+.s_T-Flat, .dw-id0
+  > .s_P-Prvw
+    padding-top: 16px !important;  // align w avatar
+    min-height: 60px;  // enough height for avatar
+
+.s_T-Prvw-IsEd.dw-id0:not(.s_P-Prvw-Real)
+  // This only works for new orig post replies — currently, for nested replies,
+  // or old replies being edited,
+  // the outline could appear "far away" from the post — it'd include the arrows
+  // pointing to the posts below too, or any child posts.
+  // So skip, unless depth = 0, id0.
   outline: 5px solid $previewBackground;
   // W/o padding, there's a 5px gap between border and outline, no idea why.
   // Don't think can be decender-spacing? — Display is 'block'.
@@ -121,6 +134,8 @@ $previewBorderBottom = 15px solid $previewBackground !important;
   &, 
   .dw-p-hd
     background: hsl(0, 0%, 92%);
+    &.dw-highlight-off
+      background: hsl(0, 0%, 92%) !important;
   pre
     background: white;
     white-space: pre-wrap;
@@ -128,13 +143,14 @@ $previewBorderBottom = 15px solid $previewBackground !important;
 
 .dw-id0,
 .s_T-Flat
-  &.s_T-Prvw-IsEd
-    // Then the post is indented, but the avatar is not, so place the border
-    // below the thread instead so it'll extend below the avatar too.
+
+  // If the post is indented, but the avatar is not, so place the border
+  // below the thread instead so it'll extend below the avatar too.
+  // However, if -Real, then we're editing an already existing post,
+  // and there might be replies — then, skip the bottom border.
+  &.s_T-Prvw-IsEd&:not(.s_P-Prvw-Real)
     border-bottom: $previewBorderBottom;
     margin-bottom: 30px;
-    > .s_T_YourPrvw
-      margin-bottom: 10px;
 
     > .s_P-Prvw
       // There's margin below the thread instead.
@@ -152,6 +168,10 @@ $previewBorderBottom = 15px solid $previewBackground !important;
 .s_T_YourPrvw_ResumeB
   margin-left: 15px;
   box-shadow: 1px 2px 4px hsl(0, 0%, 37%);
+
+// The Orig Post has a bit different look & margins.
+.dw-ar-t > .s_T_YourPrvw
+  margin: 20px 0 0;
 
 
 
@@ -925,6 +945,15 @@ html.touch .dw-p-mark-click
 //===========================
 
 .DW .dw-highlight-on
+  // Drafts
+  &.s_T_YourPrvw
+    background: hsl($uiHue, 100%, 73%);
+  &.s_P-Prvw
+    background: hsl($uiHue, 100%, 89%)
+    pre
+      color: black;
+
+  // Posts
   &.dw-p-hd,
   &.dw-p-bd
     background-color: hsl($uiHue, 100%, 83%);

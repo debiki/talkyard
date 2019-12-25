@@ -244,7 +244,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     const addRecursively = (postNrs: number[]) => {
       _.each(postNrs, (postNr) => {
         const post: Post = page.postsByNr[postNr];
-        if (post) {
+        if (post && post.nr >= MinRealPostNr) {
           addPost(post);
           addRecursively(post.childNrsSorted);
         }

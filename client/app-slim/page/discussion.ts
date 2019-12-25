@@ -622,6 +622,12 @@ const RootPostAndComments = createComponent({
         r.div({ className: 's_Pg_DdInf' },
           pageRole === PageRole.EmbeddedComments ? t.d.DiscDeld : t.d.PageDeld);
 
+    const previewInfo = !rootPost.isEditing ? null :
+        r.div({ className: 's_T_YourPrvw' },
+          t.e.PreviewC + ' ',
+          r.span({ className: 's_T_YourPrvw_ToWho' },
+            "Your edits: "));  // I18N [052RKGUCG6]
+
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments || !store.isEmbedded) {
       let bodyContent;
@@ -652,6 +658,7 @@ const RootPostAndComments = createComponent({
       }
       else return (
         r.div({ className: threadClass },
+          previewInfo,
           body,
           NoCommentsPageActions({ post: rootPost, me: me })));
     }
@@ -956,6 +963,7 @@ const RootPostAndComments = createComponent({
       r.div({ className: threadClass + layoutClass },
         notYetApprovedMaybeDeletedInfo,
         deletedCross,
+        previewInfo,
         body,
         solvedBy,
         socialButtons,
@@ -1231,14 +1239,24 @@ const Thread = createComponent({
 
       const isProgrPost = post.parentNr === BodyNr && post.postType === PostType.BottomComment;
       const yourWhat = post.isEditing
-          ? t.e.PreviewC
+          ? t.e.PreviewC + ' '
           : (t.d.YourDraft || "Your draft") + ', ';  // [03RKTG42] I18N
 
+      const isEditingExistingPost = post.nr >= MinRealPostNr;
+
       let toWho;
-      if (!post.isEditing && isProgrPost) {
+      if (isEditingExistingPost) {
+        // @ifdef DEBUG
+        dieIf(!post.isEditing, 'TyE396KRTTF2J');
+        // @endif
         toWho =
             r.span({ className: 's_T_YourPrvw_ToWho' },
-              "a progress note:");  // I18N
+              "Your edits: ");  // I18N [052RKGUCG6]
+      }
+      else if (!post.isEditing && isProgrPost) {
+        toWho =
+            r.span({ className: 's_T_YourPrvw_ToWho' },
+              "a progress note: ");  // I18N
       }
       else if (!parentPost) {
         // @ifdef DEBUG
@@ -1257,16 +1275,18 @@ const Thread = createComponent({
                 : t.d.repliesTo);
         toWho = !replTo ? null :
             r.span({ className: 's_T_YourPrvw_ToWho' },
-              ' ' + yourReplyTo_or_repliesTo + ' ',
-              RepliesToArrow({ post: parentPost, thisPost: post, author: replTo }), ':');
+              yourReplyTo_or_repliesTo + ' ',
+              RepliesToArrow({ post: parentPost, thisPost: post, author: replTo }), ': ');
       }
 
-      const resumeDraftBtn = post.isEditing ? null :
+      const resumeDraftBtn = post.isEditing || store.isEditorOpen ? null :
             Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
               "Resume editing");  // I18N
 
       previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho, resumeDraftBtn);
-      previewClass = ' s_T-Prvw ' + (post.isEditing ? 's_T-Prvw-IsEd' :'s_T-Prvw-NotEd');
+      previewClass = ' s_T-Prvw ' +
+          (post.isEditing ? 's_T-Prvw-IsEd' : 's_T-Prvw-NotEd') +
+          (post.nr >= MinRealPostNr ? ' s_P-Prvw-Real' : '');
     }
 
     const flatClass = isFlat ? ' s_T-Flat' : '';
@@ -1362,10 +1382,17 @@ export const Post = createComponent({
     let extraClasses = this.props.className || '';
     const isFlat = this.props.isFlat;
 
+    extraClasses += post.isPreview ? ' s_P-Prvw' : '';
+
     if (post.isPreview && !post.isEditing) {
+      // This sohuld be a draft of a new reply.
       // Skip header and avatar. "Your draft:"  should be enough. [03RKTG42]
+      // @ifdef DEBUG
+      // The post doesn't yet exist, shouldn't have a real post nr.
+      dieIf(post.nr > MaxVirtPostNr, 'TyE50SKRPJAECW2');
+      // @endif
       bodyElem = PostBody(this.props);
-      extraClasses += ' s_P-Prvw s_P-Prvw-NotEd';
+      extraClasses += ' s_P-Prvw-NotEd';
     }
     else if (post_isDeleted(post)) {
       headerElem = r.div({ className: 'dw-p-hd' }, post.isTreeDeleted ? t.d.ThreadDeld : t.d.CmntDeld);
@@ -1401,7 +1428,8 @@ export const Post = createComponent({
         // @ifdef DEBUG
         dieIf(!post.isEditing, 'TyE305RDHGR2');
         // @endif
-        extraClasses += ' s_P-Prvw s_P-Prvw-IsEd';
+        extraClasses += ' s_P-Prvw-IsEd' + (
+            post.nr >= MinRealPostNr ? ' s_P-Prvw-Real' : '');
       }
       else if (!post.isApproved) {
         const isMine = post.authorId === me.id;

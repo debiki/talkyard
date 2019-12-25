@@ -405,6 +405,9 @@ export function $$byClass(className: string, context?): HTMLCollectionOf<Element
 
 
 export const $h = {
+  hasClass: function(elem: Element, clazz: string): boolean {
+    return elem.classList.contains(clazz);
+  },
 
   // classesString should be a space and/or comma separated class name string.
   addClasses: function(elem: Element, classesString: string) {

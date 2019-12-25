@@ -50,6 +50,10 @@ const BodyNrStr = '1';
 const FirstReplyNr = 2;
 const NoDraftNr = 0;
 
+// Posts nrs below this, are previews of reply drafts not yet published.
+const MaxVirtPostNr = -1000 * 1000;
+const MinRealPostNr = TitleNr;
+
 const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;
