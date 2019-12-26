@@ -134,6 +134,7 @@ class JsonMaker(dao: SiteDao) {
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "pageMetaBriefById" -> JsObject(Nil),
+      "reviewStuffsByPostId" -> JsObject(Nil),
       "siteSections" -> JsArray(),
       "socialLinksHtml" -> JsNull,
       "currentPageId" -> pageId,
@@ -360,6 +361,7 @@ class JsonMaker(dao: SiteDao) {
       "rootPostId" -> JsNumber(renderParams.thePageRoot),
       "usersByIdBrief" -> usersByIdJson,
       "pageMetaBriefById" -> JsObject(Nil),
+      "reviewStuffsByPostId" -> JsObject(Nil),
       "siteSections" -> makeSiteSectionsJson(),
       "socialLinksHtml" -> JsString(socialLinksHtml),
       "currentPageId" -> page.id,
@@ -415,6 +417,7 @@ class JsonMaker(dao: SiteDao) {
       "siteSections" -> makeSiteSectionsJson(),
       "usersByIdBrief" -> Json.obj(),
       "pageMetaBriefById" -> JsObject(Nil),
+      "reviewStuffsByPostId" -> JsObject(Nil),
       "strangersWatchbar" -> makeStrangersWatcbarJson(),
       "pagesById" -> Json.obj(),
       // Special pages / the admin area don't need categories. [6TKQ20]
@@ -674,7 +677,7 @@ class JsonMaker(dao: SiteDao) {
     val myCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId == requester.id)
     val groupsCatsTagsSiteNotfPrefs = ownCatsTagsSiteNotfPrefs.filter(_.peopleId != requester.id)
 
-    val (pageNotfPrefs: Seq[PageNotfPref], votes, unapprovedPosts, unapprovedAuthors) =
+    val (pageNotfPrefs: Seq[PageNotfPref], votes, postsReviewStuff) =
       anyPageId map { pageId =>
         COULD_OPTIMIZE // load cat prefs together with page notf prefs here?
         val pageNotfPrefs = tx.loadNotfPrefsForMemberAboutPage(pageId, ownIdAndGroupIds)
@@ -683,12 +686,12 @@ class JsonMaker(dao: SiteDao) {
 
         val votes = votesJson(requester.id, pageId, tx)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
-        val (postsJson, postAuthorsJson) =
+        val postsReviewStuff =
           unapprovedPostsAndAuthorsJson(requester, pageId, unapprovedPostAuthorIds, tx)
 
-        (pageNotfPrefs, votes, postsJson, postAuthorsJson)
+        (pageNotfPrefs, votes, postsReviewStuff)
       } getOrElse (
-          Nil, JsEmptyObj, JsEmptyObj, JsArray())
+          Nil, JsEmptyObj, PostsReviewStuffsAndPps(JsEmptyObj, Nil, Nil))
 
     val (threatLevel, tourTipsSeenJson, uiPrefsOwnFirstJsonSeq) = requester match {
       case member: User =>
@@ -727,8 +730,13 @@ class JsonMaker(dao: SiteDao) {
             "readingProgress" -> anyReadingProgressJson,
             "votes" -> votes,
             // later: "flags" -> JsArray(...) [7KW20WY1]
-            "unapprovedPosts" -> unapprovedPosts,
-            "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "postsReviewStuffs" -> JsArray(postsReviewStuff.reviewStuffs.map(
+              rs => JsonMaker.reviewStufToJson(rs, includePost = false))),
+            "postsReviewPps" -> JsArray(postsReviewStuff.participants.map(JsUser)),
+            // old ----
+            "unapprovedPosts" -> postsReviewStuff.postsJson,
+            "unapprovedPostAuthors" -> JsArray(postsReviewStuff.participants.map(JsUser)),  // should remove [5WKW219] + search for elsewhere
+            // /old----
             "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
             "postNrsAutoReadNow" -> JsArray(Nil),
             "marksByPostId" -> JsObject(Nil)))
@@ -855,37 +863,59 @@ class JsonMaker(dao: SiteDao) {
       includeAboutCategoryPages = siteSettings.showCategories)
 
 
-  private def unapprovedPostsAndAuthorsJson(user: Participant, pageId: PageId,
-        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
-          JsObject /* why object? try to change to JsArray instead */, JsArray) = {
+  case class PostsReviewStuffsAndPps(
+    postsJson: JsObject, // why object? try to change to JsArray instead
+    reviewStuffs: Seq[ReviewStuff],
+    participants: Seq[Participant])
 
-    var posts: Seq[Post] =
-      if (unapprovedPostAuthorIds.isEmpty) {
-        // This is usually the case, and lets us avoid a db query.
-        Nil
+
+  private def unapprovedPostsAndAuthorsJson(requester: Participant, pageId: PageId,
+        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): PostsReviewStuffsAndPps = {
+
+    var (postsPendingReview: Seq[Post], pendingTasks) =
+      if (requester.isStaff) {
+        (Nil,
+          transaction.loadReviewTasksOnPage(pageId, limit = 999))
+        //transaction.loadPostsPendingReview(pageId, limit = 999)
       }
-      else if (user.isStaff) {
-        transaction.loadAllUnapprovedPosts(pageId, limit = 999)
-      }
-      else if (unapprovedPostAuthorIds.contains(user.id)) {
-        transaction.loadUnapprovedPosts(pageId, by = user.id, limit = 999)
+      else if (unapprovedPostAuthorIds.contains(requester.id)) {
+        (transaction.loadUnapprovedPosts(pageId, by = requester.id, limit = 999),
+          Nil)
       }
       else {
-        Nil
+        // This is usually the case, and lets us avoid a db query.
+        COULD_OPTIMIZE // remember post ids also for already approved posts,
+        // which now need an additional review, e.g. after having gotten flagged or
+        // edited. Because if there are *no* such posts, we can avoid the
+        // loadAllUnapprovedPosts() requests above.
+        (Nil,
+          Nil)
       }
 
     COULD // load form replies also if user is page author?
-    if (user.isAdmin) {
-      posts ++= transaction.loadCompletedForms(pageId, limit = 999)
+    if (requester.isAdmin) {
+      postsPendingReview ++= transaction.loadCompletedForms(pageId, limit = 999)
     }
 
-    if (posts.isEmpty)
-      return (JsObject(Nil), JsArray())
+    if (postsPendingReview.isEmpty)  // OOOPS
+      return PostsReviewStuffsAndPps(JsObject(Nil), Nil, Nil)
 
-    val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
+    val tagsByPostId = transaction.loadTagsByPostId(postsPendingReview.map(_.id))
     val pageMeta = transaction.loadThePageMeta(pageId)
+    val reviewStuffAndPps: ReviewStuffsAndPps =
+      if (!requester.isStaff) {
+        // Only staff may see the review reasons. [ONLSTFRVRS]
+        ReviewStuffsAndPps(Nil, Nil)
+      }
+      else {
+        dao.loadReviewStuffAndPpsOnPage(pageId, limit = 9999, requester, transaction)
+        //dao.loadReviewStuffAndPpsForPosts(postsPendingReview, limit = 9999, requester, transaction)
+      }
 
-    val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
+    val postIdsAndJson: Seq[(String, JsValue)] =
+          // Need only include unapproved posts — other posts already loaded.
+          // BUT is safe-html for the most recent edits included?
+          postsPendingReview.filter(!_.isSomeVersionApproved).map { post =>
       val tags = tagsByPostId(post.id)
       val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
       val renderer = RendererWithSettings(
@@ -897,9 +927,12 @@ class JsonMaker(dao: SiteDao) {
             Nil), renderer)
     }
 
-    val authors = transaction.loadParticipants(posts.map(_.createdById).toSet)
-    val authorsJson = JsArray(authors map JsUser)
-    (JsObject(postIdsAndJson), authorsJson)
+    //val participantIds = posts.map(_.createdById) ++ reviewTasks.map(_.createdById)
+    //val participants = transaction.loadParticipants(participantIds.toSet)
+    PostsReviewStuffsAndPps(
+      postsJson = JsObject(postIdsAndJson),
+      reviewStuffs = reviewStuffAndPps.reviewStuffs,
+      participants = reviewStuffAndPps.participants)
   }
 
 
@@ -1487,9 +1520,9 @@ object JsonMaker {
   }
 
 
-  def reviewStufToJson(stuff: ReviewStuff): JsValue = {
+  def reviewStufToJson(stuff: ReviewStuff, includePost: Boolean): JsValue = {
     // Related code: JsReviewTask [073SMDR26]
-    val anyPost = stuff.post match {
+    val anyPost = if (!includePost) JsNull else stuff.post match {
       case None => JsNull
       case Some(post) =>
         Json.obj(  // typescript interface PostToReview
@@ -1515,7 +1548,7 @@ object JsonMaker {
           "numBuryVotes" -> JsNumber(post.numBuryVotes),
           "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes))
     }
-    Json.obj(  // typescript interface ReviewTask
+    Json.obj(  // typescript interface ReviewStuff
       "id" -> stuff.id,
       "reasonsLong" -> ReviewReason.toLong(stuff.reasons),
       "createdAtMs" -> stuff.createdAt.getTime,
@@ -1529,6 +1562,8 @@ object JsonMaker {
       "pageId" -> JsStringOrNull(stuff.pageId),
       "pageTitle" -> JsStringOrNull(stuff.pageTitle),
       "post" -> anyPost,
+      "postId" -> JsNumberOrNull(stuff.post.map(_.id)),
+      "postNr" -> JsNumberOrNull(stuff.post.map(_.nr)),
       "flags" -> stuff.flags.map(JsFlag))
   }
 

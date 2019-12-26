@@ -59,7 +59,8 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
       olderOrEqualTo = None, limit = 100, request.who)
     OkSafeJson(
       Json.obj(
-        "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson)),
+        "reviewTasks" -> JsArray(reviewStuff.map(
+          rs => JsonMaker.reviewStufToJson(rs, includePost = true))),
         "reviewTaskCounts" -> Json.obj(
           "numUrgent" -> reviewTaskCounts.numUrgent,
           "numOther" -> reviewTaskCounts.numOther),

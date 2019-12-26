@@ -47,6 +47,10 @@ case class ReviewStuff(
   flags: Seq[PostFlag])
 
 
+case class ReviewStuffsAndPps(
+  reviewStuffs: Seq[ReviewStuff],
+  participants: Seq[Participant])
+
 
 
 trait ReviewsDao {
@@ -449,18 +453,50 @@ trait ReviewsDao {
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) =
     readOnlyTransaction { tx =>
       val requester = tx.loadTheParticipant(forWho.id)
-      loadStuffImpl(olderOrEqualTo, limit, requester, tx)
+      val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
+      val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
+      val (reviewStuff, participantsById, pageMetaById) =
+          loadReviewStuffImpl(anyPosts = None, Some(reviewTasksMaybeNotSee), requester, tx)
+      (reviewStuff, taskCounts, participantsById, pageMetaById)
     }
 
 
-  private def loadStuffImpl(olderOrEqualTo: Option[ju.Date], limit: Int,
-        requester: Participant, tx: SiteTransaction)
-        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, Participant], Map[PageId, PageMeta]) = {
-    val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
-    val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
+  def loadReviewStuffAndPpsOnPage(pageId: PageId, limit: Int,
+        requester: Participant, tx: SiteTransaction): ReviewStuffsAndPps = {
+    val reviewTasksMaybeNotSee = tx.loadReviewTasksOnPage(pageId, limit)
+    val (reviewStuffs, participantsById, _) =
+      loadReviewStuffImpl(None, Some(reviewTasksMaybeNotSee), requester, tx)
+    ReviewStuffsAndPps(reviewStuffs, participantsById.values.toSeq)
+  }
 
-    val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet
-    val postsById = tx.loadPostsByUniqueId(postIds)
+
+  /*
+  def loadReviewStuffAndPpsForPosts(posts: Seq[Post], limit: Int,
+        requester: Participant, tx: SiteTransaction): ReviewStuffsAndPps = {
+    val (reviewStuffs, participantsById, _) =
+      loadReviewStuffImpl(Some(posts), anyReviewTasksMaybeNotSee = None, requester, tx)
+    ReviewStuffsAndPps(reviewStuffs, participantsById.values.toSeq)
+  } */
+
+
+  private def loadReviewStuffImpl(
+        anyPosts: Option[Seq[Post]],
+        anyReviewTasksMaybeNotSee: Option[Seq[ReviewTask]],
+        requester: Participant,
+        tx: SiteTransaction)
+        : (Seq[ReviewStuff], Map[UserId, Participant], Map[PageId, PageMeta]) = {
+
+    require(anyPosts.isDefined != anyReviewTasksMaybeNotSee.isDefined, "TyE305RKDE24")
+
+    val reviewTasksMaybeNotSee = anyReviewTasksMaybeNotSee getOrElse {
+      val postIds = anyPosts.getOrDie("TyE406WKTE").map(_.id)
+      tx.loadReviewTasksAboutPostIds(postIds)
+    }
+
+    val postsById = anyPosts.map(_.groupByKeepOne(_.id)) getOrElse {
+      val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet
+      tx.loadPostsByUniqueId(postIds)
+    }
 
     val pageIds = postsById.values.map(_.pageId)
     val pageMetaById = tx.loadPageMetasAsMap(pageIds)
@@ -548,7 +584,7 @@ trait ReviewsDao {
           post = anyPost,
           flags = flags))
     }
-    (result.toSeq, taskCounts, usersById, pageMetaById)
+    (result.toSeq, usersById, pageMetaById)
   }
 
 }

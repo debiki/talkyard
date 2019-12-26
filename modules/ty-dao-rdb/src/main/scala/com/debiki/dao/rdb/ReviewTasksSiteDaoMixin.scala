@@ -185,6 +185,21 @@ trait ReviewTasksSiteDaoMixin extends SiteTransaction {
   }
 
 
+  override def loadReviewTasksOnPage(pageId: PageId, limit: Int): Seq[ReviewTask] = {
+    // Sort by id, desc, if same timestamp, because higher id likely means more recent.
+    val query = i"""
+      select r.* from posts3 p inner join review_tasks3 r
+        on p.site_id = r.site_id
+        and p.unique_post_id = r.post_id
+      where p.site_id = ?
+        and p.page_id = ?
+      order by r.created_at desc, r.id desc
+      limit ?
+      """
+    runQueryFindMany(query, List(siteId.asAnyRef, pageId, limit.asAnyRef), readReviewTask)
+  }
+
+
   def loadAllReviewTasks(): Seq[ReviewTask] = {
     val query = "select * from review_tasks3 where site_id = ?"
     runQueryFindMany(query, List(siteId.asAnyRef), rs => {

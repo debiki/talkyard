@@ -115,7 +115,7 @@ interface PostToModerate {
 }
 
 
-interface ReviewTask {
+interface ReviewStuff {
   id: number;
   //causedBy: Participant;
   reasonsLong: number;
@@ -129,8 +129,16 @@ interface ReviewTask {
   invalidatedAtMs?: WhenMs;
   pageId?: string;
   pageTitle?: string;
-  post?: PostToReview;
+  postId?: PostId;
+  postNr?: PostId;
   flags: Flag[];
+}
+
+
+interface ReviewTask extends ReviewStuff {  // DELETE, see comment below. And, bad name.
+  // Maybe exclude? and use a postById map instead,
+  // so each post incl just once in the server's response
+  post?: PostToReview;
 }
 
 
@@ -296,6 +304,8 @@ interface MyPageData {
   groupsPageNotfPrefs: PageNotfPref[];
   readingProgress?: ReadingProgress;
   votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
+  postsReviewStuffs?: ReviewStuff[]; // only for staff
+  postsReviewPps: Participant[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
   postNrsAutoReadLongAgo: number[];
@@ -810,6 +820,7 @@ interface Store extends Origins {
   rootPostId: number;
   usersByIdBrief: { [userId: number]: Participant };  // = PpsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
+  reviewStuffsByPostId: { [postId: string]: ReviewStuff[] };
   isEditorOpen?: boolean;  // default: false
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;

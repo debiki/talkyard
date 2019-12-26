@@ -751,7 +751,7 @@ object JsX {
 
 
   def JsReviewTask(reviewTask: ReviewTask): JsObject = {
-    // Related code: reviewStufToJson [073SMDR26]
+    // Related code: reviewStufToJson [073SMDR26] — and that's the ReviewTask Typescript interface
     Json.obj(
       "id" -> reviewTask.id,
       "reasonsLong" -> ReviewReason.toLong(reviewTask.reasons),

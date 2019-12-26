@@ -572,6 +572,15 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.usersByIdBrief[author.id] = author;
   });
 
+  // Maybe clear, in between page loads? Should reload this, when jumping to new page?
+  // Not important right now — review tasks of interest mainly when showing
+  // post via email link, on initial page load.
+  _.each(myPageData.postsReviewStuffs, (reviewStuff: ReviewStuff) => {
+    const oldStuff = store.reviewStuffsByPostId[reviewStuff.postId] || []; 
+    oldStuff.push(reviewStuff);
+    store.reviewStuffsByPostId[reviewStuff.postId] = oldStuff;
+  });
+
   // Show one's drafts: Create a preview post, for each new post draft (but not
   // for edit drafts — then, we instead show a text "Unfinished edits" next to the
   // edit button. [UFINEDT])

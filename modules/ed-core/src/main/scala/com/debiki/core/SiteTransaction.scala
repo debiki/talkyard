@@ -100,7 +100,8 @@ trait SiteTransaction {
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
-  def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
+  //def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
+  //def loadPostsPendingReview(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
@@ -571,6 +572,7 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask]
+  def loadReviewTasksOnPage(pageId: PageId, limit: Int): Seq[ReviewTask]
   def loadAllReviewTasks(): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
   def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]

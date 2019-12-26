@@ -1422,12 +1422,26 @@ export const Post = createComponent({
         extraClasses += ' s_P-Prvw-IsEd' + (
             post.nr >= MinRealPostNr ? ' s_P-Prvw-Real' : '');
       }
-      else if (!post.isApproved) {
+
+      // (Unless is staff, reviewStuffs might be empty — because ordinary members
+      // don't get to know about all reasons why something needs to get reviewed.
+      // So need to check post.isApproved too, to find out if should show a
+      // Pending Approval message.  [ONLSTFRVRS])
+      const reviewStuffs = store.reviewStuffsByPostId[post.uniqueId];
+      if (!post.isApproved || reviewStuffs?.length) {
         const isMine = post.authorId === me.id;
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick },
-          t.d.CmtBelowPendAppr(isMine));
+          t.d.CmtBelowPendAppr(isMine),
+          r.pre({},
+            JSON.stringify(reviewStuffs, undefined, 2)),
+          );
+
+          //Button({ onClick: (event) => {
+            //Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, this.props.updateTaskList);
+          //}}));
       }
+
       const headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
       // For mind maps, each node is part of the article/page (rather than a comment) so skip author.

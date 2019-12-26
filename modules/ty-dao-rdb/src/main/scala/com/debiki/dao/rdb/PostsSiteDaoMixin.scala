@@ -159,9 +159,10 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post] = {
+  /*def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post] = {
+  def loadPostsPendingReview(pageId: PageId, limit: Int): immutable.Seq[Post] = {
     loadUnapprovedPostsImpl(pageId, None, limit)
-  }
+  } */
 
 
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post] = {
@@ -176,6 +177,8 @@ trait PostsSiteDaoMixin extends SiteTransaction {
       where site_id = ?
         and page_id = ?
         and (type is null or type <> ${PostType.CompletedForm.toInt})
+        and (approved_rev_nr is null
+          or approved_rev_nr < curr_rev_nr)
       """
 
     var values = ArrayBuffer[AnyRef](siteId.asAnyRef, pageId.asAnyRef)
