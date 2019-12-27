@@ -91,6 +91,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
+    // CRAZY renders CommonMark inside tx [CMINTX]
     val storePatchJson = jsonMaker.makeStorePatch(newPost, author, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
@@ -1439,7 +1440,7 @@ trait PostsDao {
     // ------ The post
     val renderSettings = makePostRenderSettings(pageMeta.pageType)
     COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. [4WKAB02]
-    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
+    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,  // CRAZY renders CommonMark inside tx [CMINTX]
       IfCached.Die("TyE2BKYUF4"))
 
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,

@@ -326,7 +326,9 @@ case class Post(   // [exp] ok use
   currentRevisionById: UserId,
   currentRevStaredAt: ju.Date,
   currentRevLastEditedAt: Option[ju.Date],
-  currentRevSourcePatch: Option[String],
+  currentRevSourcePatch: Option[String],  // change to currentRevSource, = null if same as approvedSource?
+  // currentHtmlSanitized: String = null if same as approvedHtmlSanitized?
+  //   migrate via dao/migrations/Migration14.scala
   currentRevisionNr: Int,
   previousRevisionNr: Option[Int],
   lastApprovedEditAt: Option[ju.Date],

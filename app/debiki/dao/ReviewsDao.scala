@@ -43,14 +43,21 @@ case class ReviewStuff(
   maybeBadUser: Participant, // remove? or change to a list, the most recent editors?
   pageId: Option[PageId],
   pageTitle: Option[String],
-  post: Option[Post],
+  postId: Option[PostId],
+  post: Option[Post],  // skip, use ReviewStuffsAndPps instead
   flags: Seq[PostFlag])
 
 
-case class ReviewStuffsAndPps(
+case class ReviewStuffsPostsPagesPps(
   reviewStuffs: Seq[ReviewStuff],
-  participants: Seq[Participant])
+  postsById: Map[PostId, Post],
+  pageMetasById: Map[PageId, PageMeta],
+  participantsById: Map[UserId, Participant]) {
+}
 
+object ReviewStuffsPostsPagesPps {
+  def empty = ReviewStuffsPostsPagesPps(Nil, Map.empty, Map.empty, Map.empty)
+}
 
 
 trait ReviewsDao {
@@ -61,13 +68,14 @@ trait ReviewsDao {
     * carried out, by JanitorActor.executePendingReviewTasks, after a short
     * undo-decision timeout.
     */
-  def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
-        decision: ReviewDecision) {
-    readWriteTransaction { tx =>
+  def makeReviewDecisionIfAuthz(taskIds: Seq[ReviewTaskId], requester: Who, anyRevNr: Option[Int],
+        decision: ReviewDecision, doNowSkipUndo: Boolean = false) {
+
+    readWriteTransaction { tx => for (taskId <- taskIds) {
       val task = tx.loadReviewTask(taskId) getOrElse
         throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
 
-      throwIfMayNotSeeReviewTaskUseCache(task, requester)
+      throwIfMayNotSeeReviewTaskUseCache(task, requester) ; COULD // move to separate read-only tx?
 
       // Another staff member might have completed this task already, or maybe the current
       // has, but in a different browser tab.
@@ -98,6 +106,11 @@ trait ReviewsDao {
 
       tx.upsertReviewTask(taskWithDecision)
       tx.insertAuditLogEntry(auditLogEntry)
+      }
+
+      if (doNowSkipUndo) {
+        carryOutReviewDecisions(taskIds, Some(tx))
+      }
     }
   }
 
@@ -147,10 +160,10 @@ trait ReviewsDao {
   }
 
 
-  def carryOutReviewDecision(taskId: ReviewTaskId) {
+  def carryOutReviewDecisions(taskIds: Seq[ReviewTaskId], anyTx: Option[SiteTransaction] = None) {
     val pageIdsToRefresh = mutable.Set[PageId]()
 
-    readWriteTransaction { tx =>
+    readWriteTransaction { tx => for (taskId <- taskIds) {
       val anyTask = tx.loadReviewTask(taskId)
       val task = anyTask.getOrDie("EsE8YM42", s"s$siteId: Review task $taskId not found")
       task.pageId.map(pageIdsToRefresh.add)
@@ -233,7 +246,7 @@ trait ReviewsDao {
             // — that's done from the delete functions already. [UPDSPTSK]
         }
       }
-    }
+    }}
 
     refreshPagesInAnyCache(pageIdsToRefresh)
   }
@@ -455,18 +468,15 @@ trait ReviewsDao {
       val requester = tx.loadTheParticipant(forWho.id)
       val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
       val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
-      val (reviewStuff, participantsById, pageMetaById) =
-          loadReviewStuffImpl(anyPosts = None, Some(reviewTasksMaybeNotSee), requester, tx)
-      (reviewStuff, taskCounts, participantsById, pageMetaById)
+      val r: ReviewStuffsPostsPagesPps = loadReviewStuffImpl(reviewTasksMaybeNotSee, requester, tx)
+      (r.reviewStuffs, taskCounts, r.participantsById, r.pageMetasById)
     }
 
 
-  def loadReviewStuffAndPpsOnPage(pageId: PageId, limit: Int,
-        requester: Participant, tx: SiteTransaction): ReviewStuffsAndPps = {
+  def loadReviewStuffsAndPpsOnPage(pageId: PageId, limit: Int,
+        requester: Participant, tx: SiteTransaction): ReviewStuffsPostsPagesPps = {
     val reviewTasksMaybeNotSee = tx.loadReviewTasksOnPage(pageId, limit)
-    val (reviewStuffs, participantsById, _) =
-      loadReviewStuffImpl(None, Some(reviewTasksMaybeNotSee), requester, tx)
-    ReviewStuffsAndPps(reviewStuffs, participantsById.values.toSeq)
+    loadReviewStuffImpl(reviewTasksMaybeNotSee, requester, tx)
   }
 
 
@@ -480,23 +490,23 @@ trait ReviewsDao {
 
 
   private def loadReviewStuffImpl(
-        anyPosts: Option[Seq[Post]],
-        anyReviewTasksMaybeNotSee: Option[Seq[ReviewTask]],
+        reviewTasksMaybeNotSee: Seq[ReviewTask],
         requester: Participant,
         tx: SiteTransaction)
-        : (Seq[ReviewStuff], Map[UserId, Participant], Map[PageId, PageMeta]) = {
-
+        : ReviewStuffsPostsPagesPps = {
+    /*
     require(anyPosts.isDefined != anyReviewTasksMaybeNotSee.isDefined, "TyE305RKDE24")
-
     val reviewTasksMaybeNotSee = anyReviewTasksMaybeNotSee getOrElse {
       val postIds = anyPosts.getOrDie("TyE406WKTE").map(_.id)
       tx.loadReviewTasksAboutPostIds(postIds)
     }
-
     val postsById = anyPosts.map(_.groupByKeepOne(_.id)) getOrElse {
       val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet
       tx.loadPostsByUniqueId(postIds)
-    }
+    } */
+
+    val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet
+    val postsById = tx.loadPostsByUniqueId(postIds)
 
     val pageIds = postsById.values.map(_.pageId)
     val pageMetaById = tx.loadPageMetasAsMap(pageIds)
@@ -557,7 +567,7 @@ trait ReviewsDao {
 
     // -----  Construct a ReviewStuff list
 
-    val result = ArrayBuffer[ReviewStuff]()
+    val reviewStuffsArr = ArrayBuffer[ReviewStuff]()
     for (task <- reviewTasks) {
       def whichTask = s"site $siteId, review task id ${task.id}"
       val anyPost = task.postId.flatMap(postsById.get)
@@ -566,7 +576,7 @@ trait ReviewsDao {
         case None => Nil
         case Some(id) => flagsByPostId.getOrElse(id, Nil)
       }
-      result.append(
+      reviewStuffsArr.append(
         ReviewStuff(
           id = task.id,
           reasons = task.reasons,
@@ -581,10 +591,13 @@ trait ReviewsDao {
           maybeBadUser = usersById.get(task.maybeBadUserId) getOrDie "EdE2KU8B",
           pageId = task.pageId,
           pageTitle = anyPageTitle,
+          postId = anyPost.map(_.id),
           post = anyPost,
           flags = flags))
     }
-    (result.toSeq, usersById, pageMetaById)
+
+    ReviewStuffsPostsPagesPps(
+      reviewStuffsArr.to[Vector], postsById, pageMetaById, usersById)
   }
 
 }

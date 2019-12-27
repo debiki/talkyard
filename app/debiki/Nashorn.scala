@@ -202,6 +202,12 @@ class Nashorn(
   }
 
 
+  // cache:
+  //  appr + unappr (= current) source, pubSiteId, cdnOrigin, embeddedOriginOrEmpty (needed to view user profiles,
+  // also if cdn in use)
+  // + @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
+  // they'll resolve relative the embedd*ing* page.
+  //
   def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PublSiteId,
         embeddedOriginOrEmpty: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): RenderCommonmarkResult = {

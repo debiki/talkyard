@@ -1427,19 +1427,53 @@ export const Post = createComponent({
       // don't get to know about all reasons why something needs to get reviewed.
       // So need to check post.isApproved too, to find out if should show a
       // Pending Approval message.  [ONLSTFRVRS])
-      const reviewStuffs = store.reviewStuffsByPostId[post.uniqueId];
-      if (!post.isApproved || reviewStuffs?.length) {
+      const reviewStuffs: ReviewStuff[] | undefined = store.reviewStuffsByPostId[post.uniqueId];
+      if (reviewStuffs?.length) {
+        // @ifdef DEBUG
+        dieIf(!isStaff(me), "Only staff may see review tasks [TyE503KRSJW2]");
+        // @endif
+
+        const reviewTaskElems = reviewStuffs.map((reviewStuff: ReviewStuff) => {
+          const revisionNr = 1; // ??? post.currRevNr;
+          return (
+            r.div({},
+              r.pre({}, JSON.stringify(reviewStuff, undefined, 2)),
+              /*
+              Button({ onClick: (event) => {
+                Server.makeReviewDecision(
+                  reviewStuff.id, revisionNr, ReviewDecision.Accept, undefined);
+              }}, "Approve, looks fine"),
+              Button({ onClick: (event) => {
+                const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
+                Server.makeReviewDecision(
+                  reviewStuff.id, revisionNr, ReviewDecision.DeletePostOrPage, undefined);
+              }}, "Reject, delete it")*/ ));
+        });
+
+        const allReviewTaskIds: ReviewTaskId[] = reviewStuffs.map(rs => rs.id);
+        const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
+
+        pendingApprovalElem =
+            r.div({ className: 's_P_Rvw dw-p-pending-mod', onClick: this.onUncollapseClick },
+              r.div({ className: 's_P_Rvw_Ttl' }, post.isApproved
+                  ? "This post is pending review — others can see it already."
+                  : "This post is hidden — waiting for you to review it."),
+              this.props.abbreviate ? null : r.ul({ className: 's_P_Rvw_Tsks' },
+                reviewTaskElems),
+              Button({ onClick: (event) => {
+                Server.makeReviewDecision(
+                  allReviewTaskIds, revisionNr, ReviewDecision.Accept, undefined);
+              }}, "Approve, looks fine"),
+              Button({ onClick: (event) => {
+                Server.makeReviewDecision(
+                  allReviewTaskIds, revisionNr, ReviewDecision.DeletePostOrPage, undefined);
+              }}, "Reject, delete it"));
+      }
+      else if (!post.isApproved) {
         const isMine = post.authorId === me.id;
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick },
-          t.d.CmtBelowPendAppr(isMine),
-          r.pre({},
-            JSON.stringify(reviewStuffs, undefined, 2)),
-          );
-
-          //Button({ onClick: (event) => {
-            //Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, this.props.updateTaskList);
-          //}}));
+          t.d.CmtBelowPendAppr(isMine));
       }
 
       const headerProps = _.clone(this.props);

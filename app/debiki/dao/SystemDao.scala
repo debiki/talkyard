@@ -581,10 +581,12 @@ class SystemDao(
     }
     taskIdsBySite foreach { case (siteId, taskIds) =>
       val siteDao = globals.siteDao(siteId)
+      // Could send all taskIds at once, but that's a bit untested — maybe could cause
+      // PostgreSQL serialization errors? For now, instead do one at a time.
       taskIds foreach { taskId =>
         // This might invalidate other subsequent review tasks — so we check if the tasks
         // has been invalidated, see [2MFFKR0].
-        siteDao.carryOutReviewDecision(taskId)
+        siteDao.carryOutReviewDecisions(Seq(taskId))
       }
     }
   }

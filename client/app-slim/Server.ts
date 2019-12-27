@@ -653,8 +653,8 @@ export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
 }
 
 
-export function makeReviewDecision(taskId: number, revisionNr: number, decision: ReviewDecision,
-      success: (tasks: ReviewTask[]) => void) {
+export function makeReviewDecision(taskId: ReviewTaskId | ReviewTaskId[],
+      revisionNr: number, decision: ReviewDecision, success: (tasks: ReviewTask[]) => void) {
   postJsonSuccess('/-/make-review-decision',
         response => handleReviewTasksResponse(response, success),
         { taskId, revisionNr, decision });

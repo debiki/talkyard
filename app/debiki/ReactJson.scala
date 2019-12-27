@@ -482,7 +482,7 @@ class JsonMaker(dao: SiteDao) {
 
   def postToJson(postNr: PostNr, pageId: PageId, includeUnapproved: Boolean = false,
         showHidden: Boolean = false): (JsObject, PageVersion) = {
-    dao.readOnlyTransaction { transaction =>
+    dao.readOnlyTransaction { transaction =>  // CRAZY renders CommonMark inside tx [CMINTX]
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
       val post = page.parts.thePostByNr(postNr)
@@ -501,7 +501,7 @@ class JsonMaker(dao: SiteDao) {
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
+  private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel], // CRAZY renders CommonMark inside tx [CMINTX]
         includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
@@ -558,7 +558,7 @@ class JsonMaker(dao: SiteDao) {
     val renderer = RendererWithSettings(
       dao.context.postRenderer, postRenderSettings)
 
-    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
+    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved, // CRAZY renders CommonMark inside tx [CMINTX]
       tags = tags, howRender, renderer)
   }
 
@@ -870,17 +870,16 @@ class JsonMaker(dao: SiteDao) {
 
 
   private def unapprovedPostsAndAuthorsJson(requester: Participant, pageId: PageId,
-        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): PostsReviewStuffsAndPps = {
+        unapprovedPostAuthorIds: Set[UserId], tx: SiteTransaction): PostsReviewStuffsAndPps = {
 
-    var (postsPendingReview: Seq[Post], pendingTasks) =
+    var (postsPendingReview: Seq[Post], reviewStuffsAndPps: ReviewStuffsPostsPagesPps) =
       if (requester.isStaff) {
-        (Nil,
-          transaction.loadReviewTasksOnPage(pageId, limit = 999))
-        //transaction.loadPostsPendingReview(pageId, limit = 999)
+        val stuffEtc = dao.loadReviewStuffsAndPpsOnPage(pageId, limit = 9999, requester, tx)
+        (stuffEtc.postsById.values.toSeq, stuffEtc)
       }
       else if (unapprovedPostAuthorIds.contains(requester.id)) {
-        (transaction.loadUnapprovedPosts(pageId, by = requester.id, limit = 999),
-          Nil)
+        val posts = tx.loadUnapprovedPosts(pageId, by = requester.id, limit = 999)
+        (posts, ReviewStuffsPostsPagesPps.empty)
       }
       else {
         // This is usually the case, and lets us avoid a db query.
@@ -888,29 +887,29 @@ class JsonMaker(dao: SiteDao) {
         // which now need an additional review, e.g. after having gotten flagged or
         // edited. Because if there are *no* such posts, we can avoid the
         // loadAllUnapprovedPosts() requests above.
-        (Nil,
-          Nil)
+        return PostsReviewStuffsAndPps(JsObject(Nil), Nil, Nil)
       }
 
     COULD // load form replies also if user is page author?
     if (requester.isAdmin) {
-      postsPendingReview ++= transaction.loadCompletedForms(pageId, limit = 999)
+      postsPendingReview ++= tx.loadCompletedForms(pageId, limit = 999)
     }
 
-    if (postsPendingReview.isEmpty)  // OOOPS
+    if (postsPendingReview.isEmpty)
       return PostsReviewStuffsAndPps(JsObject(Nil), Nil, Nil)
 
-    val tagsByPostId = transaction.loadTagsByPostId(postsPendingReview.map(_.id))
-    val pageMeta = transaction.loadThePageMeta(pageId)
+    val tagsByPostId = tx.loadTagsByPostId(postsPendingReview.map(_.id))
+    val pageMeta = tx.loadThePageMeta(pageId)
+    /*
     val reviewStuffAndPps: ReviewStuffsAndPps =
       if (!requester.isStaff) {
         // Only staff may see the review reasons. [ONLSTFRVRS]
         ReviewStuffsAndPps(Nil, Nil)
       }
       else {
-        dao.loadReviewStuffAndPpsOnPage(pageId, limit = 9999, requester, transaction)
-        //dao.loadReviewStuffAndPpsForPosts(postsPendingReview, limit = 9999, requester, transaction)
-      }
+        dao.loadReviewStuffsAndPpsOnPage(pageId, limit = 9999, requester, tx)
+        //dao.loadReviewStuffAndPpsForPosts(postsPendingReview, limit = 9999, requester, tx)
+      } */
 
     val postIdsAndJson: Seq[(String, JsValue)] =
           // Need only include unapproved posts — other posts already loaded.
@@ -927,12 +926,10 @@ class JsonMaker(dao: SiteDao) {
             Nil), renderer)
     }
 
-    //val participantIds = posts.map(_.createdById) ++ reviewTasks.map(_.createdById)
-    //val participants = transaction.loadParticipants(participantIds.toSet)
     PostsReviewStuffsAndPps(
       postsJson = JsObject(postIdsAndJson),
-      reviewStuffs = reviewStuffAndPps.reviewStuffs,
-      participants = reviewStuffAndPps.participants)
+      reviewStuffs = reviewStuffsAndPps.reviewStuffs,
+      participants = reviewStuffsAndPps.participantsById.values.toSeq)
   }
 
 
@@ -992,7 +989,7 @@ class JsonMaker(dao: SiteDao) {
   def makeStorePatch(post: Post, author: Participant, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
-    val (postJson, pageVersion) = postToJson(
+    val (postJson, pageVersion) = postToJson( // CRAZY renders CommonMark inside tx [CMINTX]
       post.nr, pageId = post.pageId, includeUnapproved = true, showHidden = showHidden)
     makeStorePatch(PageIdVersion(post.pageId, pageVersion), appVersion = dao.globals.applicationVersion,
       posts = Seq(postJson), users = Seq(JsUser(author)))
@@ -1579,7 +1576,7 @@ object JsonMaker {
         (None, post.approvedSource, post.approvedAt.isDefined)
       }
       else if (includeUnapproved) {
-        val htmlString = renderer.renderAndSanitize(post, IfCached.Use)
+        val htmlString = renderer.renderAndSanitize(post, IfCached.Use)  // CRAZY renders CommonMark inside tx [CMINTX]
         (Some(htmlString), Some(post.currentSource), post.isCurrentVersionApproved)
       }
       else {

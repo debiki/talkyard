@@ -637,7 +637,7 @@ object NotificationGenerator {
     if (!MaybeMentionsRegex.matches(text))
       return Set.empty
 
-    val result = nashorn.renderAndSanitizeCommonMark(
+    val result = nashorn.renderAndSanitizeCommonMark(  // CRAZY renders CommonMark inside tx [CMINTX]
       // BUG? COULD incl origin here, so links won't be interpreted relative any
       // web browser client's address? — Right now, no images incl in reply notf emails
       // anyway, so need not fix now.

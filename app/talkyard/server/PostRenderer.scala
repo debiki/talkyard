@@ -63,7 +63,7 @@ class PostRenderer(private val nashorn: Nashorn) {
     }
     else {
       // Reuse @mentions? [4WKAB02]
-      val renderResult = nashorn.renderAndSanitizeCommonMark(
+      val renderResult = nashorn.renderAndSanitizeCommonMark(  // CRAZY renders CommonMark inside tx [CMINTX]
           post.currentSource,
           pubSiteId = settings.pubSiteId,
           embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,

@@ -70,11 +70,15 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def makeReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
-    val taskId = (request.body \ "taskId").as[ReviewTaskId]
+    val singleTaskId = (request.body \ "taskId").as[ReviewTaskId]
+    val anyManyTaskIds = (request.body \ "taskIds").asOpt[Seq[ReviewTaskId]]
     val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
     val decisionInt = (request.body \ "decision").as[Int]
+    val doNowSkipUndo = (request.body \ "doNowSkipUndo").as[Boolean]
     val decision = ReviewDecision.fromInt(decisionInt) getOrElse throwBadArgument("EsE5GYK2", "decision")
-    request.dao.makeReviewDecisionIfAuthz(taskId, request.who, anyRevNr = anyRevNr, decision)
+    val taskIds = anyManyTaskIds getOrElse Seq(singleTaskId)
+    request.dao.makeReviewDecisionIfAuthz(
+      taskIds, request.who, anyRevNr = anyRevNr, decision, doNowSkipUndo)
     loadReviewTasksdReplyJson(request)
   }
 

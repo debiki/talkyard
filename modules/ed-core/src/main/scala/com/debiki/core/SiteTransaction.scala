@@ -101,7 +101,6 @@ trait SiteTransaction {
 
   def loadAllPosts(): immutable.Seq[Post]
   //def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
-  //def loadPostsPendingReview(pageId: PageId, limit: Int): immutable.Seq[Post]
   def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
   def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
 
