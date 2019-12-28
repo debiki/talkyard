@@ -93,6 +93,7 @@ function pagesFor(browser) {
   const origWaitForEnabled = browser.waitForEnabled;
   const origWaitForText = browser.waitForText;
   const origWaitForExist = browser.waitForExist;
+  const origGetText = browser.getText;
   const origRefresh = browser.refresh;
 
   const hostsVisited = {};
@@ -340,8 +341,16 @@ function pagesFor(browser) {
     },
 
 
-    numBrowserTabs: (): number => {
-      return browser.getTabIds().length;
+    waitForMinBrowserTabs: (howMany: number) => {
+      browser.waitUntil(function () {
+        return browser.getTabIds().length >= howMany;
+      });
+    },
+
+    waitForMaxBrowserTabs: (howMany: number) => {
+      browser.waitUntil(function () {
+        return browser.getTabIds().length <= howMany;
+      });
     },
 
 
@@ -357,8 +366,9 @@ function pagesFor(browser) {
       for (let i = 0; i < ids.length; ++i) {
         const id = ids[i];
         if (id !== currentId) {
-          logMessage("Calling browser.switchTab(id), id = " + id);
+          logMessage(`Calling browser.switchTab(id), id = ${id}...`);
           browser.switchTab(id);
+          logMessage(`... done, current tab id is now: ${browser.getCurrentTabId()}.`);
           return;
         }
       }
@@ -697,6 +707,21 @@ function pagesFor(browser) {
       origWaitForText.apply(browser, arguments);
     },
 
+    getWholePageJsonStrAndObj: (): [string, any] => {
+      // Chrome: The browser wraps the json response in a <html><body><pre> tag.
+      // Firefox: Shows pretty json with expand/collapse sub trees buttons,
+      // and we need click a #rawdata-tab to get a <pre> with json text to copy.
+      return utils.tryManyTimes("copy json", 3, () => {
+        api.waitForVisible('#rawdata-tab, pre');
+        if (browser.isVisible('#rawdata-tab')) {
+          api.waitAndClick('#rawdata-tab');
+        }
+        const jsonStr: string = api.waitAndGetText('pre');
+        const obj: any = JSON.parse(jsonStr);
+        return [jsonStr, obj];
+      });
+    },
+
     waitUntilValueIs: function(selector: string, value: string) {
       browser.waitForVisible(selector);
       while (true) {
@@ -904,9 +929,31 @@ function pagesFor(browser) {
             // Can this happen? Perhaps if elem not on screen?
             return false;
           }
+
+          // Found elem directly, or found a nested elem inside?
           if (elem == elemAtTopOfCenter || elem.contains(elemAtTopOfCenter)) {
             return true;
           }
+
+          // Found an ancestor?
+          // Then, if the elem is display: inline, likely it's is e.g. an <a href=...>
+          // link that line breaks, in a way so that the middle of its bounding rect
+          // happens to be empty — when we look in its "middle", we see its parent
+          // instead. If so, the elem is most likely not occluded.
+          var maybeWeird = '';
+          if (elemAtTopOfCenter.contains(elem)) {
+            var elemStyles = window.getComputedStyle(elem);
+            var displayHow = elemStyles.getPropertyValue('display');
+            if (displayHow === 'inline') {
+              return true;
+            }
+            else {
+              // This would be really weird — how is it possible to see a block elem's
+              // ancestor at the top, when looking at the middle of the block elem?
+              maybeWeird = " Weird! [TyM306RDE24]";
+            }
+          }
+
           var elemIdClass =
               (elemAtTopOfCenter.id ? '#' + elemAtTopOfCenter.id : '') +
               (elemAtTopOfCenter.className ? '.' + elemAtTopOfCenter.className : '');
@@ -914,7 +961,7 @@ function pagesFor(browser) {
             return true;
           }
           // Return the id/class of the thing that occludes 'elem'.
-          return elemIdClass;
+          return elemIdClass + maybeWeird;
         }, selector, opts.okayOccluders);
 
         dieIf(!result, "Error checking if elem interactable, result: " + JSON.stringify(result));
@@ -1149,6 +1196,20 @@ function pagesFor(browser) {
         }
         browser.pause(Math.min(pauseMs, PollMaxMs));
       }
+    },
+
+
+    getText: function(selector: string): string {  // RENAME to waitAndGetText
+                                              // and thereafter, die(...) in api.getText().
+      return api.waitAndGetText.apply(browser, arguments);
+    },
+
+
+    waitAndGetText: function(selector: string): string {
+      // Maybe not visible, if empty text? So use  waitForExist() here — and,
+      // in waitAndGetVisibleText() just below, we waitForVisible() instead.
+      api.waitForExist(selector);
+      return origGetText.apply(browser, arguments);
     },
 
 
@@ -1576,8 +1637,7 @@ function pagesFor(browser) {
       },
 
       getMyUsername: function() {
-        browser.waitForVisible('.esMyMenu .esAvtrName_name');
-        return browser.getText('.esMyMenu .esAvtrName_name');
+        return api.waitAndGetText('.esMyMenu .esAvtrName_name');
       },
 
       clickLogin: function() {
@@ -2071,9 +2131,7 @@ function pagesFor(browser) {
         }
         api.loginDialog.tryLogin(username, password);
         // The popup auto closes after login.
-        browser.waitUntil(function () {
-          return browser.getTabIds().length === 1;
-        });
+        api.waitForMaxBrowserTabs(1);
         api.switchBackToFirstTabOrWindow();
       },
 
@@ -2129,8 +2187,7 @@ function pagesFor(browser) {
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         logMessage('createPasswordAccount with no email: done');
         // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]?
-        api.waitForVisible('.esTopbar .esAvtrName_name');
-        const nameInHtml = browser.getText('.esTopbar .esAvtrName_name');
+        const nameInHtml = api.waitAndGetText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === username);
       },
 
@@ -2418,7 +2475,11 @@ function pagesFor(browser) {
 
       createLinkedInAccount: function(ps: { email: string, password: string, username: string,
         shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) {
-        api.loginDialog.loginWithLinkedIn({ email: ps.email, password: ps.password });
+        api.loginDialog.loginWithLinkedIn({
+          email: ps.email,
+          password: ps.password,
+          alreadyLoggedIn: ps.alreadyLoggedInAtLinkedIn,
+        });
         // This should be the first time we login with LinkedInd at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
@@ -2436,13 +2497,14 @@ function pagesFor(browser) {
       },
 
 
-      loginWithLinkedIn: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
+      loginWithLinkedIn: function(data: { email: string, password: string,
+            alreadyLoggedIn?: boolean, isInPopupAlready?: boolean }) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(100);
         api.waitAndClick('#e2eLoginLinkedIn');
 
         // Switch to LinkedIn's login popup window.
-        if (!isInPopupAlready)
+        if (!data.isInPopupAlready)
           api.swithToOtherTabOrWindow();
 
         // Wait until popup window done loading.
@@ -2492,7 +2554,7 @@ function pagesFor(browser) {
           logAndDie.logException(ex);
         }
 
-        if (!isInPopupAlready) {
+        if (!data.isInPopupAlready) {
           logMessage("switching back to first tab...");
           api.switchBackToFirstTabOrWindow();
         }
@@ -3125,7 +3187,7 @@ function pagesFor(browser) {
       },
 
       getText: function() {
-        return browser.getText('.editor-area textarea');
+        return api.waitAndGetText('.editor-area textarea');
       },
 
       setTopicType: function(type: PageRole) {
@@ -3454,7 +3516,7 @@ function pagesFor(browser) {
       },
 
       getTopicAuthorUsernameInclAt: function(): string {
-        return browser.getText('.dw-ar-p-hd .esP_By_U');
+        return api.waitAndGetText('.dw-ar-p-hd .esP_By_U');
       },
 
       clickReplyToOrigPost: function(whichButton?: 'DiscussionSection') {
@@ -3955,8 +4017,7 @@ function pagesFor(browser) {
       },
 
       getChatInputText: function(): string {
-        browser.waitForVisible('.esC_Edtr_textarea');
-        return browser.getText('.esC_Edtr_textarea');
+        return api.waitAndGetText('.esC_Edtr_textarea');
       },
 
       waitForDraftSaved: function() {
@@ -4263,10 +4324,11 @@ function pagesFor(browser) {
       groupMembers: {
         goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
           api.userProfilePage._goHere(username, ps, '/members');
+          api.userProfilePage.groupMembers.waitUntilLoaded();
         },
 
         waitUntilLoaded: () => {
-          api.waitForExist('.s_G_Mbrs');
+          api.waitForExist('.s_G_Mbrs, .s_G_Mbrs-Dnd');
         },
 
         waitUntilMemberPresent: (username: string) => {
@@ -4549,8 +4611,7 @@ function pagesFor(browser) {
 
         emailsLogins: {   // RENAME to `account`
           getEmailAddress: function() {
-            api.waitForVisible('.s_UP_EmLg_EmL_It_Em');
-            return browser.getText('.s_UP_EmLg_EmL_It_Em');
+            return api.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
           },
 
           waitUntilEmailAddressListed: function(addrRegexStr: string,
@@ -4884,8 +4945,7 @@ function pagesFor(browser) {
           },
 
           createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string }) => {
-            browser.waitForVisible('#e_EmbCmtsHtml');
-            const htmlToPaste = browser.getText('#e_EmbCmtsHtml');
+            const htmlToPaste = api.waitAndGetVisibleText('#e_EmbCmtsHtml');
             const pageHtml = utils.makeEmbeddedCommentsHtml({
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });

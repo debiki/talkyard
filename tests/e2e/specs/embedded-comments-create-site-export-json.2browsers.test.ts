@@ -174,12 +174,11 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
   });
 
 
-  let jsonDumpStr;
+  let jsonDumpStr: string;
 
   it("Can parse the exported json into a js obj", () => {
-    // The browser wraps the json response in a <html><body><pre> tag. At least Chrome does.
-    jsonDumpStr = owensBrowser.getText('pre');
-    JSON.parse(jsonDumpStr);
+    let dummy;
+    [jsonDumpStr, dummy] = owensBrowser.getWholePageJsonStrAndObj();
   });
 
   it("Saves the dump, here:\n\n      " + c.EmbCommentsJsonExport + "\n", () => {

@@ -111,9 +111,7 @@ describe("imp-exp-imp-exp-site [TyT5BKW2ZY]", () => {
   let jsonDump: any;
 
   it("Can parse the exported json into a js obj", () => {
-    // The browser wraps the json response in a <html><body><pre> tag. At least Chrome does.
-    const jsonDumpStr = owensBrowser.getText('pre');
-    jsonDump = JSON.parse(jsonDumpStr);
+    const [jsonStr, jsonDump] = owensBrowser.getWholePageJsonStrAndObj();
     console.log("JSON: " + JSON.stringify(jsonDump, null, 2));
   });
 

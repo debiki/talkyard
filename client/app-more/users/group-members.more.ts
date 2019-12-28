@@ -58,7 +58,7 @@ export const GroupMembers = React.createFactory<GroupMembersProps>(function(prop
     return t.Loading;
 
   if (!membersNullOrFalse)
-    return r.p({}, t.gpp.MayNotListMembers);
+    return r.p({ className: 's_G_Mbrs-Dnd' }, t.gpp.MayNotListMembers);
 
   const members: Participant[] = membersNullOrFalse;
 

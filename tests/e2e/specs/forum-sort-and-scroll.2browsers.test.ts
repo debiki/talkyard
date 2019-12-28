@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
@@ -66,7 +66,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
         bumpedAtMs: builder.defaultCreatedAtMs + 1000 * 1000 - i * 1000,
       });
     }
-    assert(builder.getSite() === forum.siteData);
+    assert.eq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
   });
@@ -96,7 +96,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
   });
 
   it("... but not 1041", () => {
-    assert(!strangersBrowser.isVisible(page1041LinkSelector));
+    assert.ok(!strangersBrowser.isVisible(page1041LinkSelector));
   });
 
   it("Scrolls down to page id 1040, at the bottom of the topic list", () => {
@@ -107,7 +107,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
 
   it("Clicks 'Load more ...'", () => {
     scrollPosAtBottom = strangersBrowser.getPageScrollY();
-    assert(scrollPosAtBottom > 1000); // else test broken
+    assert.greaterThan(scrollPosAtBottom, 1000); // else test broken
     // The scroll button is already visible, thanks to scrollToBottom() above. Don't
     // scroll it even more into view — that'd break the scroll position test below (2AD4J0).
     strangersBrowser.forumTopicList.clickLoadMore({ mayScroll: false });
@@ -122,12 +122,12 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
   });
 
   it("... but not 1080", () => {
-    assert(!strangersBrowser.isVisible(page1080LinkSelector));
+    assert.ok(!strangersBrowser.isVisible(page1080LinkSelector));
   });
 
   it("... The scroll position didn't change, 1", () => {
     const scrollPosAfterMoreTopics = strangersBrowser.getPageScrollY();
-    assert.equal(scrollPosAfterMoreTopics, scrollPosAtBottom);  // (2AD4J0)
+    assert.eq(scrollPosAfterMoreTopics, scrollPosAtBottom);  // (2AD4J0)
   });
 
   it("Hen scrolls up to topic 1015", () => {
@@ -138,7 +138,11 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
 
   it("... opens it", () => {
     scrollPosByActivityTopic1015 = strangersBrowser.getPageScrollY();
-    assert(scrollPosByActivityTopic1015 > 1000); // else test broken
+    // In Chrome, we're always at scroll pos > 1000, but in FF, we're at
+    // scroll pos 995. Why? Maybe doesn't matter? I suppose somehow FF
+    // scrolls up a tiny bit more, in the step just above?
+    const minScroll = settings.browserName === 'firefox' ? 990 : 1000;
+    assert.greaterThan(scrollPosByActivityTopic1015, minScroll); // else test broken
     strangersBrowser.forumTopicList.goToTopic('1015')
   });
 
@@ -157,7 +161,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
       browser.pause(400);
     }
     // This'll fail.
-    assert.equal(scrollPosAfterBack, scrollPosByActivityTopic1015);
+    assert.eq(scrollPosAfterBack, scrollPosByActivityTopic1015);
   }
 
   it("... the scroll position didn't change, 2", () => {
@@ -190,7 +194,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
   });
 
   it("... but not 1059", () => {
-    assert(!strangersBrowser.isVisible(page1059LinkSelector));
+    assert.ok(!strangersBrowser.isVisible(page1059LinkSelector));
   });
 
   it("Scrolling down and clicking Load More", () => {
@@ -207,7 +211,7 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
   });
 
   it("... but not 1020", () => {
-    assert(!strangersBrowser.isVisible(page1020LinkSelector));
+    assert.ok(!strangersBrowser.isVisible(page1020LinkSelector));
   });
 
   it("Loading topics once more, shows the remaining topics", () => {

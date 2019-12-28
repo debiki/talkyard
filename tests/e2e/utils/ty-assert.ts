@@ -16,6 +16,12 @@ const tyAssert = {
           `expected: ${JSON.stringify(expected)}`);
   },
 
+  greaterThan: (actual, min) => {
+    assert.ok(actual > min,
+      `Value too small: ${JSON.stringify(actual)}, ` +
+          `should be at least: ${JSON.stringify(min)}`);
+  },
+
   includes: (text: string, expectedSubstring: string, message?: string) => {
     // Could make this work w regexs too.
     const ix = text.indexOf(expectedSubstring);

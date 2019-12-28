@@ -198,7 +198,7 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
  * won't break everything.
  */
 try {
-  if (debiki2.getMainWin().location.hash.indexOf('&loadWeinre') >= 0) {  // [WEINRE]
+  if (location.hash.indexOf('&loadWeinre') >= 0) {  // [WEINRE]
     console.info("Lazy loading Weinre [TyMWEINRE]");
     // 127.0.0.1 doesn't work in SauceLab's iPhone emulator — but 'localhost' works.
     debiki2.Server.loadJs('http://localhost:8090/target/target-script-min.js#anonymous');

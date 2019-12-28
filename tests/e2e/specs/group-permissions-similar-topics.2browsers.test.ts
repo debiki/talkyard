@@ -285,7 +285,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
   });
 
   it("... a 2nd tab opens, michael continues there", () => {
-    assert.equal(michaelsBrowser.numBrowserTabs(), 2);
+    michaelsBrowser.waitForMinBrowserTabs(2);
     michaelsBrowser.swithToOtherTabOrWindow();
   });
 
@@ -344,7 +344,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
     majasBrowser.forumButtons.clickCreateTopic();
   });
 
-  let majasTitle = "How do kittens " + SharedText;
+  let majasTitle = "Wow! Kittens! " + SharedText;
 
   it("... surprisingly, she types a title with a word from all 3 topics", () => {
     majasBrowser.editor.editTitle(majasTitle);
@@ -378,7 +378,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
   });
 
   it("... a new tab opens", () => {
-    assert.equal(majasBrowser.numBrowserTabs(), 2);
+    majasBrowser.waitForMinBrowserTabs(2);
     majasBrowser.swithToOtherTabOrWindow();
   });
 

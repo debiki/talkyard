@@ -174,17 +174,16 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  tryManyTimes: (what, maxNumTimes, fn) => {
+  tryManyTimes: function<R>(what, maxNumTimes, fn: () => R) {
     for (let retryCount = 0; retryCount < maxNumTimes - 1; ++retryCount) {
       try {
-        fn();
-        return;
+        return fn();
       }
       catch (error) {
         logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
       }
     }
-    fn();
+    return fn();
   },
 };
 

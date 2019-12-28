@@ -149,8 +149,8 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       });
 
       it(`... switches to a new tab, which should show hens profile`, () => {
-        const numTabs = usersBrowser.numBrowserTabs();
-        assert(numTabs >= 2); // more than two, if we're debugging and have opened more tabs
+        // More than two tabs, if we're debugging and have opened more tabs.
+        usersBrowser.waitForMinBrowserTabs(2);
         usersBrowser.swithToOtherTabOrWindow();
       });
 

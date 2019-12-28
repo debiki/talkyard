@@ -28,7 +28,7 @@ interface TestSettings {
   include3rdPartyDependentTests?: boolean;
   grep: string;
   only: string;
-  browserName: string;
+  browserName: 'firefox' | 'chrome';
   gmailEmail?: string;
   gmailPassword?: string;
   githubUsernameMixedCase?: string;
