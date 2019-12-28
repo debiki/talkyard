@@ -332,7 +332,7 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       addOwnProfileTest("2: ");
 
       it("start at another user's profile, MyMenu nav to own profile", () => {
-        usersBrowser.go2('/-/users/michael');
+        usersBrowser.go2('/-/users/maria');
         usersBrowser.topbar.clickGoToProfile();
       });
       addOwnProfileTest("3: ");

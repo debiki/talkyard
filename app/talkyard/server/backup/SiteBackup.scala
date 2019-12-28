@@ -47,6 +47,7 @@ import scala.collection.mutable
 case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related classes too.
                         // SitePatch is a (possibly small) set of changes to do to a site,
                         // whilst a SiteDump is a SitePatch that includes the whole site.
+  upsertOptions: Option[UpsertOptions],
   site: Option[SiteInclDetails],
   settings: Option[SettingsToSave],
   apiSecrets: Seq[ApiSecret],
@@ -145,8 +146,14 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
 }
 
 
+case class UpsertOptions(
+  // Default: false, send no notfs. [TyT3BG05KTJ2]
+  sendNotifications: Option[Boolean])
+
+
 case object SiteBackup {
   val empty = SiteBackup(
+    upsertOptions = None,
     site = None,
     settings = None,
     apiSecrets = Vector.empty,
@@ -182,6 +189,7 @@ case object SiteBackup {
 
 
 case class SimpleSitePatch(
+  upsertOptions: Option[UpsertOptions] = None,
   categoryPatches: Seq[CategoryPatch] = Nil,
   pagePatches: Seq[SimplePagePatch] = Nil) {
 
@@ -419,6 +427,7 @@ case class SimpleSitePatch(
 
 
     val result = SiteBackup.empty.copy(
+      upsertOptions = upsertOptions,
       categories = categories.toVector,
       pages = pages.toVector,
       pagePaths = pagePaths.toVector,

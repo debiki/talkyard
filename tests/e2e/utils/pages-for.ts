@@ -4119,6 +4119,8 @@ function pagesFor(browser) {
     },
 
 
+    preferences: '',
+    userPreferences: '',
     userProfilePage: {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
@@ -4511,7 +4513,8 @@ function pagesFor(browser) {
         },
         // ---- /END should be wrapped in `about { .. }`.
 
-        notfs: {
+        notfs: {  // api.userProfilePage.preferences.notfs
+
           goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {  // oops, dupl (443300222), keep this
             api.userProfilePage._goHere(username, ps, '/preferences/notifications');
           },

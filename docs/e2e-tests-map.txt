@@ -733,6 +733,9 @@ notifications:
           - notfs-mark-seen-as-seen  TyT2AKBR0T
   about topics one may not see:
           - notf-prefs-private-groups.2browsers.test.ts   TyT406WMDKG26
+  new topics:
+          - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
+          - ... more, which?
 
 live notfs,
 live notifications -
@@ -772,6 +775,9 @@ email notifications:  (5ABKR024)
   not until after email verified:
           - unsubscribe.2browsers.test.ts  [TyT2ABKR04]
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT305RKTH4
+  new topics:
+          - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
+          - ... more, which?
   unsubscribe:
           -  (7ABKR023)
 
@@ -808,6 +814,10 @@ api:
   with sso enabled:
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
             but not 100% real SSO, TESTS_MISSING, T703KUDHRPJ4
+  notifications:  TyT3BG05KTJ2
+          - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
+    no notfs, by default:
+          - api-upsert-pages.2browsers.test.ts  TyT305WKTUC2
   wrong api user, or not-allowed user type (guest or System):
           - sso-one-time-key-errors.2browsers.test.ts  TyT062SUNF3
 

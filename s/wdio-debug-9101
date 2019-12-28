@@ -1,5 +1,16 @@
+#!/bin/bash
+#
 # If we --inspect on 9100, wdio apparently forks a child process listening on 9100 + 1 = 9101.
 # To which you can connect like so: `node debug 127.0.0.1:9101`
+
+for x in {1..9}
+do
+  if [ -f "$1" ]; then
+    break
+  fi
+  sleep 1
+  echo "Waiting for transpilation of Typescript to Javascript, file missing: $1"
+done
 
 node --debug --inspect=9100 ./node_modules/webdriverio/bin/wdio $@
 exit_code=$?

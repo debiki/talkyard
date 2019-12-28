@@ -1,5 +1,14 @@
 #!/bin/bash
 
+for x in {1..9}
+do
+  if [ -f "$1" ]; then
+    break
+  fi
+  sleep 1
+  echo "Waiting for transpilation of Typescript to Javascript, file missing: $1"
+done
+
 ./node_modules/webdriverio/bin/wdio $@
 exit_code=$?
 

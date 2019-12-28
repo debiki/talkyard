@@ -70,13 +70,14 @@ case class SiteBackupReader(context: EdContext) {
 
 
   private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
-    val (categoriesJson, pagesJson) =
+    val (categoriesJson, pagesJson, anyUpsertOptionsJson) =
       try { // (this extra try...catch is for better error messages)
         // Only categories.
         // Right now, all people have asked for, is to upsert categories
         // (via /-/v0/upsert-simple ).
         (readJsArray(bodyJson, "categories", optional = true),
-          readJsArray(bodyJson, "pages", optional = true))
+          readJsArray(bodyJson, "pages", optional = true),
+          readOptJsObject(bodyJson, "upsertOptions"))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -101,7 +102,13 @@ case class SiteBackupReader(context: EdContext) {
               index $index in the 'pages' list: $error, json: $json"""))
     }
 
+    val upsertOptions = anyUpsertOptionsJson map { json =>
+      UpsertOptions(
+        sendNotifications = readOptBool(json, "sendNotifications"))
+    }
+
     val simplePatch = SimpleSitePatch(
+      upsertOptions,
       categoryPatches,
       pagePatches)
 
@@ -111,6 +118,11 @@ case class SiteBackupReader(context: EdContext) {
       case Bad(errorMessage) =>
         throwBadRequest("TyE05JKRVHP8", s"Error interpreting patch: $errorMessage")
     }
+
+    throwForbiddenIf(completePatch.hasManyThings && upsertOptions.exists(_.sendNotifications is true),
+      "TyE306RKSJ25", o"""Cannot send notifications when upserting many posts and pages etcetera
+        (more than one or two at a time) — that could cause problematically many notifications?""")
+
     completePatch
   }
 
@@ -408,7 +420,7 @@ case class SiteBackupReader(context: EdContext) {
               $error, json: $json"""))
     }
 
-    SiteBackup(siteToSave, settings, apiSecrets,
+    SiteBackup(upsertOptions = None, siteToSave, settings, apiSecrets,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive,
       guests, guestEmailPrefs, groups,

@@ -22,8 +22,10 @@ import com.debiki.core._
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SiteDao}
+import ed.server.notf.NotificationGenerator
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
+
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -348,6 +350,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         }
       }
 
+      val postsToMaybeNotfAbout = ArrayBuffer[Post]()
+
       siteData.posts.groupBy(_.pageId).foreach { case (tempPageId, postsInPatch) =>
         val realPageId = remappedPageTempId(tempPageId)
         val postsInDbOnPage = tx.loadPostsOnPage(realPageId)  ; COULD_OPTIMIZE // don't need them all
@@ -482,6 +486,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               case None => postRealIdsNrsNoHtml
               case Some(approvedSource) =>
                 postRealIdsNrsNoHtml.copy(
+                  // This is html only, no @mentions supported here when importing.
+                  // So skip @mentions later when generating notifications? [305TKRW24]
                   approvedHtmlSanitized = Some(
                     Jsoup.clean(
                       approvedSource, TextAndHtml.relaxedHtmlTagWhitelist)))
@@ -497,6 +503,10 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             postsRealByTempId.put(postInPatch.id, postReal)
             postsRealByTempPagePostNr.put(postInPatch.pagePostNr, postReal)
+
+            // Wait with sending notfs until pages and categories have been upserted, otherwise
+            // I'd think something won't be found when running notf creation related queries.
+            postsToMaybeNotfAbout.append(postReal)
           }
         }
       }
@@ -871,6 +881,25 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
               s"Section page id '$sectionPageId' not found for $badCat"
             })
         }
+
+
+      // ----- Notifications
+
+      if (siteData.upsertOptions.exists(_.sendNotifications is true)) {
+        val notfGenerator: NotificationGenerator = NotificationGenerator(
+          tx, dao, dao.context.nashorn, globals.config)
+
+        for {
+          post <- postsToMaybeNotfAbout
+          if !post.isTitle // only gen for the body —> new page notf
+        } {
+          // COULD skip @mentions notifications here somehow, since not supported
+          // here since we import html only, not CommonMark with @mentions syntax. [305TKRW24]
+          val notifications = notfGenerator.generateForNewPost(
+            PageDao(post.pageId, tx), post, anyNewTextAndHtml = None, anyReviewTask = None)
+          tx.saveDeleteNotifications(notifications)
+        }
+      }
 
       sectionPagePaths
     }

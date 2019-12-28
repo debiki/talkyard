@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
@@ -108,7 +108,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
       title: "Ups Pages E2E Test",
       members: ['owen', 'maja', 'maria', 'michael'],
     });
-    assert(builder.getSite() === forum.siteData);
+    assert.ok(builder.getSite() === forum.siteData);
     const site: SiteData2 = forum.siteData;
     site.settings.enableApi = true;
     site.apiSecrets = [apiSecret];
@@ -170,13 +170,13 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("... gets back the upserted page in the server's response", () => {
     console.log("Page ups resp:\n\n:" + JSON.stringify(upsertResponse, undefined, 2));
 
-    assert.equal(upsertResponse.pages.length, 1);
+    assert.eq(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle');
+    assert.eq(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle');
 
-    assert.equal(firstUpsertedPage.id, "1");
-    assert.equal(firstUpsertedPage.pageType, c.TestPageRole.Idea);
+    assert.eq(firstUpsertedPage.id, "1");
+    assert.eq(firstUpsertedPage.pageType, c.TestPageRole.Idea);
     utils.checkNewPageFields(firstUpsertedPage, {
       categoryId: forum.categories.categoryA.id,
       authorId: owen.id,
@@ -244,7 +244,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("... gets back two upserted pages in the response", () => {
     console.log("2 pages ups resp:\n\n:" +
         JSON.stringify(upsertResponse.pages.length, undefined, 2));
-    assert.equal(upsertResponse.pages.length, 2);
+    assert.eq(upsertResponse.pages.length, 2);
   });
 
   function expectedUrlPath(page, title: string): string {
@@ -253,8 +253,8 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   }
   it("... the first one looks correct", () => {
     const upsPage = upsertResponse.pages[0];
-    assert.equal(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageTwoToUpsert.title));
-    assert.equal(upsPage.pageType, c.TestPageRole.Question);
+    assert.eq(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageTwoToUpsert.title));
+    assert.eq(upsPage.pageType, c.TestPageRole.Question);
     utils.checkNewPageFields(upsPage, {
       categoryId: forum.categories.categoryA.id,
       authorId: owen.id,
@@ -263,8 +263,8 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   it("... the 2nd, likewise", () => {
     const upsPage = upsertResponse.pages[1];
-    assert.equal(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageThreeToUpsert.title));
-    assert.equal(upsPage.pageType, c.TestPageRole.Problem);
+    assert.eq(upsPage.urlPaths.canonical, expectedUrlPath(upsPage, pageThreeToUpsert.title));
+    assert.eq(upsPage.pageType, c.TestPageRole.Problem);
     utils.checkNewPageFields(upsPage, {
       categoryId: forum.categories.categoryA.id,
       authorId: owen.id,
@@ -283,6 +283,11 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
         pageOneToUpsert.title,
         forum.topics.byMichaelCategoryA.title,
         forum.topics.byMariaCategoryA.title]);
+  });
+
+  it("No notf emails sent — by default, no notfs for upserts  TyT305WKTUC2", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, 0, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -342,7 +347,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   let upsEditedPageTwo;
 
   it("... the server replies; the page has now the new title, slug, etc", () => {
-    assert.equal(upsertResponse.pages.length, 1);
+    assert.eq(upsertResponse.pages.length, 1);
     upsEditedPageTwo = upsertResponse.pages[0];
   });
 
@@ -388,7 +393,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   const PageTwoTitleManuallyEdited = 'PageTwoTitleManuallyEdited';
   const PageTwoBodyManuallyEdited = 'PageTwoBodyManuallyEdited';
-  const PageTwoReply = 'PageTwoReply';
+  const PageTwoReplyMentionsMaja = 'PageTwoReply @maja';
 
   it("... edits the title", () => {
     owensBrowser.complex.editPageTitle(PageTwoTitleManuallyEdited);
@@ -398,8 +403,8 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     owensBrowser.complex.editPageBody(PageTwoBodyManuallyEdited, { append: true });
   });
 
-  it("... and posts a reply", () => {
-    owensBrowser.complex.replyToOrigPost(PageTwoReply);
+  it("... and posts a reply, mentions Maja", () => {
+    owensBrowser.complex.replyToOrigPost(PageTwoReplyMentionsMaja);
   });
 
   it("Owen reloads the page", () => {
@@ -409,7 +414,19 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("... all fine, after reload", () => {
     owensBrowser.topic.waitForPostAssertTextMatches(c.TitleNr, PageTwoTitleManuallyEdited);
     owensBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, PageTwoBodyManuallyEdited);
-    owensBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, PageTwoReply);
+    owensBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr, PageTwoReplyMentionsMaja);
+  });
+
+  it("Maja gets a notf email", () => {
+    server.waitUntilLastEmailMatches(
+        siteIdAddress.id, maja.emailAddress,
+        [PageTwoReplyMentionsMaja], majasBrowser);
+  });
+
+  it("... but no one else", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    const oneEmailToMaja = 1;
+    assert.eq(num, oneEmailToMaja, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
   it("Owen returns to the category", () => {
