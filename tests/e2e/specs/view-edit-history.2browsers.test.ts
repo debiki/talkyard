@@ -122,6 +122,8 @@ describe("view-edit-history  TyT60RKDWL25", () => {
   it("... no view-old-edits button appears", () => {
     // Need not refresh. (692096K0)
     assert.ok(!mariasBrowser.topic.isViewEditsButtonVisible(c.FirstReplyNr + 1));
+    // Test the test, that this fn works, can return true:
+    assert.ok(mariasBrowser.topic.isViewEditsButtonVisible(c.FirstReplyNr));
   });
 
   it("... a stranger sees the ninja edited text, but no view-edit-history button", () => {

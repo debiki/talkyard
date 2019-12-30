@@ -450,6 +450,8 @@ chat -
     - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
   switch to advanced editor:
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
+  delete chat message:
+          - admin-review-cascade-approval.2browsers.test.ts  TyT052SKDGJ37
 
 embedded comments:
   no about page created:  [5WAKR02]

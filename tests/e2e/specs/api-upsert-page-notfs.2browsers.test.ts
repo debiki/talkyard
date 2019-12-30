@@ -101,6 +101,7 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
 
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
+    server.skipRateLimits(siteId);
   });
 
   it("initialize people", () => {
@@ -257,6 +258,27 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
 
   it("... and body", () => {
     majasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, pageOneToUpsert.body);
+  });
+
+
+  // ----- Notfs when upserting many things: Not allowed
+
+  it("Upsert with notfs enabled isn't allowed, when upserting many things", () => {
+    const responseText = upsertResponse = server.apiV0.upsertSimple({
+      fail: true,
+      origin: siteIdAddress.origin,
+      apiRequesterId: c.SysbotUserId,
+      apiSecret: apiSecret.secretKey,
+      data: {
+        upsertOptions: { sendNotifications: true },
+        pages: [
+          // One, two, many — too many.
+          { ...pageOneToUpsert, extId: 'oone', },
+          { ...pageOneToUpsert, extId: 'twoo', },
+          { ...pageOneToUpsert, extId: 'maaaany', }],
+      },
+    });
+    assert.includes(responseText, 'TyEUPSMNYNTFS_');
   });
 
 });

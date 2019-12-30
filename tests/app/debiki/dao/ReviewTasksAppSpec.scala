@@ -31,7 +31,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
       val (stuff, taskCounts, usersById, pageMetaById) = dao.loadReviewStuff(
-          olderOrEqualTo = now, limit = 999, forWho = Who.System)
+          olderOrEqualTo = None, limit = 999, forWho = Who.System)
       stuff.length mustBe 0
 
       taskCounts.numUrgent mustBe 0
@@ -88,7 +88,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
 
       info("find the tasks")
       val (stuff, taskCounts, usersById, pageMetaById) =
-        dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999, forWho = Who.System)
+        dao.loadReviewStuff(olderOrEqualTo = None, limit = 999, forWho = Who.System)
       taskCounts.numUrgent mustBe 1
       taskCounts.numOther mustBe 1
       stuff.length mustBe 2

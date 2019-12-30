@@ -95,7 +95,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
     merchesBrowser.go(chatPageUrl);
   });
 
-  it("... clicks Jon Chat", () => {
+  it("... clicks Join Chat", () => {
     merchesBrowser.chat.joinChat();
   });
 
@@ -128,7 +128,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
     merchesBrowser.chat.waitForNumMessages(2);
   });
 
-  it("... but deletes this one", () => {
+  it("... but deletes this one  TyT052SKDGJ37", () => {
     merchesBrowser.chat.deleteChatMessageNr(c.FirstReplyNr + 1);
   });
 
@@ -232,7 +232,7 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
-  it("... namely cascade-approves Meilani's first post too", () => {
+  it("... namely cascade-approves Meilani's posts too", () => {
     let counts: NumReplies;
     strangersBrowser.refreshUntil(() => {
       counts = strangersBrowser.topic.countReplies();

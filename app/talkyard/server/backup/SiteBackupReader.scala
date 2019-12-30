@@ -120,7 +120,7 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     throwForbiddenIf(completePatch.hasManyThings && upsertOptions.exists(_.sendNotifications is true),
-      "TyE306RKSJ25", o"""Cannot send notifications when upserting many posts and pages etcetera
+      "TyEUPSMNYNTFS_", o"""Cannot send notifications when upserting many posts and pages etcetera
         (more than one or two at a time) — that could cause problematically many notifications?""")
 
     completePatch

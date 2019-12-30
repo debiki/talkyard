@@ -25,7 +25,8 @@ const tyAssert = {
   includes: (text: string, expectedSubstring: string, message?: string) => {
     // Could make this work w regexs too.
     const ix = text.indexOf(expectedSubstring);
-    assert.ok(ix >= 0, message || `This: "${expectedSubstring}" is missing from: "${text}"`);
+    assert.ok(ix >= 0, message ||
+      `This: "${expectedSubstring}" is missing from:\n    "${text}"\n`);
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {

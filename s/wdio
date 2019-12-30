@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for x in {1..9}
+for x in {1..15}
 do
   if [ -f "$1" ]; then
     break

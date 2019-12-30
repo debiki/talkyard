@@ -26,8 +26,11 @@ const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 export var SpecialContent = createComponent({
+  displayName: 'SpecialContent',
+
   componentDidMount: function() {
     Server.loadSpecialContent(this.props.rootPageId, this.props.contentId, content => {
+      if (this.isGone) return;
       this.setState({
         content,
         editedText: this.savedText(content)
@@ -35,11 +38,16 @@ export var SpecialContent = createComponent({
     });
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   saveEdits: function() {
     let anyCustomText = this.state.editedText;
     if (anyCustomText) anyCustomText = anyCustomText.trim();
     let contentToSave = { ...this.state.content, anyCustomText };
     Server.saveSpecialContent(contentToSave, () => {
+      if (this.isGone) return;
       this.setState({
         content: contentToSave,
         editedText: this.savedText(contentToSave),

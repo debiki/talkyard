@@ -506,6 +506,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
             // Wait with sending notfs until pages and categories have been upserted, otherwise
             // I'd think something won't be found when running notf creation related queries.
+            // (We exclude titles further below.)
             postsToMaybeNotfAbout.append(postReal)
           }
         }

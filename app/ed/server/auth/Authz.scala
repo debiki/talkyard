@@ -42,7 +42,8 @@ sealed abstract class AuthzContext {
 
   if (requester.isEmpty) {
     // Strangers cannot be members of any group except for the Everyone group.
-    require(groupIdsUserIdFirst == List(Group.EveryoneId))
+    require(groupIdsUserIdFirst == List(Group.EveryoneId),
+      s"Bad stranger groups, should be [EveryoneId] but is: $groupIdsUserIdFirst [TyE30KRGV2]")
     // It's fine, though, if tooManyPermissions includes permissions for
     // other groups — such permissions get excluded, later [7RBBRY2].
   }

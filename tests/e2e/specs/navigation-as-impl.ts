@@ -26,6 +26,7 @@ let member;
 let memberIsAdmin: boolean;
 
 let idAddress: IdAddress;
+let siteId: number;
 let forumTitle = "Navigation Test Forum";
 
 const newTopicTitle = "Rabbits";
@@ -71,8 +72,8 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
   // Only for testing guests. -----
   const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
   const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
-  const pageSlug = 'emb-cmts-guest.html';
-  const pageUrl = embeddingOrigin + '/' + pageSlug;
+  const embeddingPageSlug = 'emb-cmts-guest.html';
+  const embeddingPageUrl = embeddingOrigin + '/' + embeddingPageSlug;
   // ------------------------------
 
   forum = buildSite().addLargeForum({
@@ -98,6 +99,8 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
 
     it("import a site", () => {
       idAddress = server.importSiteData(forum.siteData);
+      siteId = idAddress.id;
+      server.skipRateLimits(siteId);
     });
 
     it("go to forum", () => {
@@ -114,7 +117,7 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       });
     }
     else if (initResult.isGuest) {
-      // Need to create an embedding page, to login as Guest there, by clickng Reply.
+      // Need to create an embedding page, to login as Guest there, by clicking Reply.
       willBeLoggedIn = true;
 
       it("Creates an embedding page", () => {
@@ -125,31 +128,27 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       });
 
       it(`... opens it`, () => {
-        usersBrowser.go(pageUrl);
+        usersBrowser.go(embeddingPageUrl);
       });
 
       it(`... logs in as guest ${initResult.fullName}`, () => {
         // This opens a guest login dialog: (but the Sign Up button doesn't)
-        //usersBrowser.forumButtons.clickCreateTopic();
         logMessage("comments iframe: Clicking Reply ...");
         usersBrowser.switchToEmbeddedCommentsIrame();
         usersBrowser.topic.clickReplyToEmbeddingBlogPost();
 
         logMessage("login popup: Logging in as guest ...");
         usersBrowser.swithToOtherTabOrWindow();
-        usersBrowser.disableRateLimits();
         usersBrowser.loginDialog.signUpLogInAs_Real_Guest(initResult.fullName);
         usersBrowser.switchBackToFirstTabOrWindow();
       });
 
       it(`Click one's user profile link...`, () => {
         usersBrowser.switchToEmbeddedCommentsIrame();
-        //usersBrowser.go(idAddress.origin);
         usersBrowser.waitAndClick('.s_MB_Name');
       });
 
       it(`... switches to a new tab, which should show hens profile`, () => {
-        // More than two tabs, if we're debugging and have opened more tabs.
         usersBrowser.waitForMinBrowserTabs(2);
         usersBrowser.swithToOtherTabOrWindow();
       });

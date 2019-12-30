@@ -1537,7 +1537,7 @@ trait PostsDao {
 
     for {
       post <- posts
-      if (!post.isSomeVersionApproved)
+      if !post.isSomeVersionApproved
     } {
       numNewVisibleReplies += post.isReply ? 1 | 0
       numNewVisibleOpReplies += post.isOrigPostReply ? 1 | 0

@@ -1637,7 +1637,7 @@ function pagesFor(browser) {
       },
 
       getMyUsername: function() {
-        return api.waitAndGetText('.esMyMenu .esAvtrName_name');
+        return api.waitAndGetVisibleText('.esMyMenu .esAvtrName_name');
       },
 
       clickLogin: function() {
@@ -2186,7 +2186,7 @@ function pagesFor(browser) {
         logMessage('waitForWelcomeLoggedInDialog...');
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         logMessage('createPasswordAccount with no email: done');
-        // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]?
+        // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]? [E2EBUG] ?
         const nameInHtml = api.waitAndGetText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === username);
       },
@@ -3516,7 +3516,7 @@ function pagesFor(browser) {
       },
 
       getTopicAuthorUsernameInclAt: function(): string {
-        return api.waitAndGetText('.dw-ar-p-hd .esP_By_U');
+        return api.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
       },
 
       clickReplyToOrigPost: function(whichButton?: 'DiscussionSection') {
