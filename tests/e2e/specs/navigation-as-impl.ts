@@ -121,7 +121,7 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       willBeLoggedIn = true;
 
       it("Creates an embedding page", () => {
-        fs.writeFileSync(`target/emb-comments`, makeHtml('b3c-aaa', '#500'));
+        fs.writeFileSync(`target/${embeddingPageSlug}`, makeHtml('b3c-aaa', '#500'));
         function makeHtml(pageName: string, bgColor: string): string {
           return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
         }
