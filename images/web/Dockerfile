@@ -259,6 +259,7 @@ RUN rm -fr \
   nginx.conf.default
 
 
+COPY 404.html             /opt/nginx/html/
 COPY 502.html             /opt/nginx/html/
 COPY 503.html             /opt/nginx/html/
 
