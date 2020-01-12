@@ -79,11 +79,12 @@ function doNextFrameOrNow(something: () => void) {
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-// @ifdef DEBUG
+// Typescript changes this so the macro breaks somehow, in prod builds:
+// x ifdef DEBUG
 export function toStr(x: any, indentation: number = 2): string {
   return JSON.stringify(x, undefined, indentation);
 }
-// @endif
+// x endif
 
 
 // If in an embedded comments iframe.

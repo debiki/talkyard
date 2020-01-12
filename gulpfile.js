@@ -25,6 +25,7 @@
  */
 
 const gulp = require('gulp');
+const gDebug = require('gulp-debug');
 const plumber = require('gulp-plumber');
 const newer = require('gulp-newer');
 const typeScript = require('gulp-typescript');
@@ -582,6 +583,10 @@ gulp.task('enable-prod-stuff', (done) => {
 gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
   return gulp.src([`${serverDestTranslations}/**/*.js`, `!${serverDestTranslations}/**/*.min.js`])
       .pipe(plumber())
+      .pipe(gDebug({
+        minimal: false,
+        title: `gulp-debug: minifying transl:`,
+      }))
       .pipe(preprocess({ context: preprocessProdContext }))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
@@ -593,7 +598,7 @@ gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
 }));
 
 
-gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTranslations', () => {
+gulp.task('minifyScriptsImpl', gulp.series(() => {
   // preprocess() removes all @ifdef DEBUG — however (!) be sure to not place '// @endif'
   // on the very last line in a {} block, because it would get removed, by... by what? the
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
@@ -601,6 +606,10 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
   function makeMinJsGzStream(sourceAndDest, gzipped) {
     let stream = gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
       .pipe(plumber())
+      .pipe(gDebug({
+        minimal: false,
+        title: `gulp-debug: minifying scripts: ${JSON.stringify(sourceAndDest)}`,
+      }))
       .pipe(preprocess({ context: preprocessProdContext })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
@@ -617,6 +626,14 @@ gulp.task('minifyScripts', gulp.series('compileConcatAllScripts', 'minifyTransla
       makeMinJsGzStream(webDest, true),
       makeMinJsGzStream(webDestVersioned, true));
 }));
+
+
+gulp.task('minifyScripts', gulp.series(
+    'compileConcatAllScripts', 'minifyTranslations', 'minifyScriptsImpl'));
+
+
+gulp.task('testProdMinify', gulp.series(
+    'enable-prod-stuff', 'minifyScriptsImpl'));
 
 
 
