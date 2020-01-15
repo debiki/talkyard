@@ -2012,7 +2012,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
     case DraftStatus.NotLoaded: draftStatusText = t.e.LoadingDraftDots; break;
     case DraftStatus.NothingHappened: break;
     case DraftStatus.EditsUndone: draftStatusText = t.e.DraftUnchanged; break;
-    case DraftStatus.SavedInBrowser: draftStatusText = "Draft saved, in browser session."; break;  // I18N
+    case DraftStatus.SavedInBrowser: draftStatusText = t.e.DraftSavedBrwsr; break;
     case DraftStatus.SavedServerSide: draftStatusText = t.e.DraftSaved(draftNr); break;
     case DraftStatus.Deleted: draftStatusText = t.e.DraftDeleted(draftNr); break;
     case DraftStatus.ShouldSave: draftStatusText = t.e.WillSaveDraft(draftNr); break;

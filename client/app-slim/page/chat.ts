@@ -230,7 +230,7 @@ const ChatMessage = createComponent({
           t.e.PreviewC + ' ',
           r.span({ className: 's_T_YourPrvw_ToWho' },
             isEditingExistingPost ?
-                "Your edits: " : "Your chat message: "));  // I18N [052RKGUCG6]
+            t.d.YourEdits : t.d.YourChatMsg));
 
     return (anyPreviewInfo ?
         rFragment({}, anyPreviewInfo, chatMessage) : chatMessage);

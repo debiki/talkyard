@@ -106,6 +106,8 @@ interface TalkyardTranslations {
   started: string;
   Summary: string;
   Submit: string;
+  Tag?: string;  // MISSING
+  Tags?: string;  // MISSING
   Tools: string;
   Topics: string;
   TopicTitle: string;
@@ -539,10 +541,16 @@ interface TalkyardTranslations {
 
     repliesTo: string;
     InReplyTo: string;
-    YourReplyTo?: string;
-    YourDraft?: string;
-    YourProgrNoteC?: string;
-    YourProgrNoteDraftC?: string;
+    YourReplyTo: string;
+    YourChatMsg: string;
+    YourDraft: string;
+    YourEdits: string;
+    YourProgrNoteC: string;
+    aProgrNote: string;
+
+    UnfinEdits: string;
+    ResumeEdting: string;
+    DelDraft: string;
 
     ClickViewEdits: string;
 
@@ -1047,6 +1055,7 @@ interface TalkyardTranslations {
     LoadingDraftDots: string;
     DraftUnchanged: string;
     CannotSaveDraftC: string;
+    DraftSavedBrwsr: string;
     DraftSaved: (nr: string | number) => string;
     DraftDeleted: (nr: string | number) => string;
     WillSaveDraft: (nr: string | number) => string;

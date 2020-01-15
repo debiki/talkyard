@@ -616,7 +616,7 @@ const RootPostAndComments = createComponent({
         r.div({ className: 's_T_YourPrvw' },
           t.e.PreviewC + ' ',
           r.span({ className: 's_T_YourPrvw_ToWho' },
-            "Your edits: "));  // I18N [052RKGUCG6]
+            t.d.YourEdits));
 
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments || !store.isEmbedded) {
@@ -1215,7 +1215,7 @@ const Thread = createComponent({
       const isProgrPost = post.parentNr === BodyNr && post.postType === PostType.BottomComment;
       const yourWhat = post.isEditing
           ? t.e.PreviewC + ' '
-          : (t.d.YourDraft || "Your draft") + ', ';  // [03RKTG42] I18N
+          : t.d.YourDraft + ', ';  // [03RKTG42]
 
       const isEditingExistingPost = post.nr >= MinRealPostNr;
 
@@ -1226,12 +1226,12 @@ const Thread = createComponent({
         // @endif
         toWho =
             r.span({ className: 's_T_YourPrvw_ToWho' },
-              "Your edits: ");  // I18N [052RKGUCG6]
+              t.d.YourEdits);
       }
       else if (!post.isEditing && isProgrPost) {
         toWho =
             r.span({ className: 's_T_YourPrvw_ToWho' },
-              "a progress note: ");  // I18N
+              t.d.aProgrNote);
       }
       else if (!parentPost) {
         // @ifdef DEBUG
@@ -1246,8 +1246,8 @@ const Thread = createComponent({
             store.usersByIdBrief[parentPost.authorId];
         const yourReplyTo_or_repliesTo = post.isEditing
             ? (isProgrPost
-                ? t.d.YourProgrNoteC                   // I18N
-                : (t.d.YourReplyTo || t.d.repliesTo))  // I18N YourReplyTo mising
+                ? t.d.YourProgrNoteC
+                : t.d.YourReplyTo)
             : (isProgrPost
                 ? ''  // doesn't really reply to anyone in particular
                 : t.d.repliesTo);
@@ -1259,7 +1259,8 @@ const Thread = createComponent({
 
       const resumeDraftBtn = post.isEditing || store.isEditorOpen ? null :
             Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
-              "Resume editing");  // I18N
+              t.d.ResumeEdting);
+      // + "Delete draft"   t.d.DelDraft  button too, later
 
       previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho, resumeDraftBtn);
       previewClass = ' s_T-Prvw ' +

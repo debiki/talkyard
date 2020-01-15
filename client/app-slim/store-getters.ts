@@ -51,7 +51,7 @@ export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
     // @endif
     return {
        id: UnknownUserId,
-       fullName: "You",  // I18N
+       fullName: t.You,
     };
   }
 

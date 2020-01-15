@@ -89,7 +89,7 @@ export const NoCommentsPageActions = createComponent({
     const editBtn = store.isEditorOpen ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, onClick: this.onEditClick },
           t.EditV + (
-            anyEditsDraft ? " — Unfinished edits" : ''));  // I18N [0436BKRFP2]
+            anyEditsDraft ? " — " + t.d.UnfinEdits : ''));
 
     const actions = editBtn;
 
@@ -364,7 +364,7 @@ export const PostActions = createComponent({
     const editButton = !mayEdit || isEditorOpenAlready ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, title: t.EditV,
               onClick: this.onEditClick },
-          anyEditsDraft ? "Unfinished edits" : null);  // I18N [0436BKRFP2] [UFINEDT]
+          anyEditsDraft ? t.d.UnfinEdits : null);  // [UFINEDT]
 
     const link =
         r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,

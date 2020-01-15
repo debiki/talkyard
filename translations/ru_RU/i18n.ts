@@ -105,6 +105,8 @@ var t_ru_RU: TalkyardTranslations = t = {
   started: "началось",
   Summary: "Итого",
   Submit: "Submit",
+  Tag: "Tag",  // MISSING
+  Tags: "Tags",  // MISSING
   Tools: "Инструменты",
   Topics: "Темы",
   TopicTitle: "Название темы",
@@ -566,6 +568,16 @@ var t_ru_RU: TalkyardTranslations = t = {
 
     repliesTo: "ответы на",
     InReplyTo: "В ответ на",
+    YourReplyTo: "Your reply to ",  // MISSING
+    YourChatMsg: "Your chat message: ",   // MISSING
+    YourDraft: "Your draft",    // MISSING
+    YourEdits: "Your edits: ",   // MISSING
+    YourProgrNoteC: "Your progress note:",  // MISSING
+    aProgrNote: "a progress note: ",  // MISSING
+
+    UnfinEdits: "Unfinished edits",  // MISSING
+    ResumeEdting: "Resume editing",  // MISSING
+    DelDraft: "Delete draft",   // MISSING
 
     ClickViewEdits: "Нажмите, чтобы посмотреть старые правки",
 
@@ -1208,6 +1220,7 @@ var t_ru_RU: TalkyardTranslations = t = {
     LoadingDraftDots: "Загрузка любого черновика ...",
     DraftUnchanged: "Без изменений.",
     CannotSaveDraftC: "Не удается сохранить черновик:",
+    DraftSavedBrwsr: "Draft saved, in browser.",   // MISSING
     DraftSaved: (nr: string | number) => `Черновик ${nr} сохранен.`,
     DraftDeleted: (nr: string | number) => `Черновик ${nr} удален.`,
     WillSaveDraft: (nr: string | number) => `Сохранит черновик ${nr} ...`,
