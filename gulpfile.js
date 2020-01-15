@@ -583,10 +583,7 @@ gulp.task('enable-prod-stuff', (done) => {
 gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
   return gulp.src([`${serverDestTranslations}/**/*.js`, `!${serverDestTranslations}/**/*.min.js`])
       .pipe(plumber())
-      .pipe(gDebug({
-        minimal: false,
-        title: `gulp-debug: minifying transl:`,
-      }))
+      .pipe(gDebug({ title: `gulp-debug: minifying transl:` }))
       .pipe(preprocess({ context: preprocessProdContext }))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))

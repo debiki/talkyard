@@ -94,6 +94,9 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
   });
 
   it("Maria attempts to post a reply", () => {
+    // [E2EBUG]? This failed 2 times out of 3, Jan 2020:
+    //   Waiting for elem [ .esEdtr_textarea ] to not be occluded by [ .fade in modal ]...
+    // apparently in   editText: function(...)
     mariasBrowser.complex.replyToOrigPost("text text");
   });
 
