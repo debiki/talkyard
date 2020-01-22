@@ -294,6 +294,10 @@ const AdminAppComponent = createReactClass(<any> {
       r.div({ className: 'esA_SaveBar' },
         r.div({ className: 'container' },
           PrimaryButton({ onClick: this.saveSettings,
+            // UX BUG: Not visilbe, on emb comments settings page,
+            // if has choose Gatsby — because those instructions are tall,
+            // and pushes this button below the window,
+            //   ... so people won't see it? might not click it?
             className: 'esA_SaveBar_SaveAllB' }, "Save all changes" ),
           Button({ onClick: this.undoSettings,
             className: 'esA_SaveBar_UndoAllB' }, "Undo all changes" )));

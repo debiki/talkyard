@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+ // TODO: if iframe not loaded within X seconds,
+ // then show error, mention needs to upd  Allow embedding from:  ____
+ // — how know if not loaded? Set timeout, wait for iframe-inited messge.
 
 declare const debiki: any | undefined;
 declare const Bliss: any | undefined;

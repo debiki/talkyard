@@ -212,6 +212,11 @@ const CreateSomethingHere = createComponent({
     const anyCreateForumPanel = createWhat === PageRole.Forum ?
         CreateForumPanel(store) : null;
 
+    // Add this back — for FirstSiteId; then we don't know what the admin has in mind.
+    // But for other sites: then one used either the /-/create-site API endpoint,
+    // or /-/create-site/embedded-comments — and then we know what hen wants,
+    // need not ask again.
+    //
     /* Previously, here one got to choose if one wants a blog comments site,
     or a dicussion forum. Now this choice happens earlier instead, at Talkyard.io.
     Still could make sense to re-enable this, because when doing a
