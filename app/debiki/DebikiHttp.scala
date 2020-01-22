@@ -206,6 +206,11 @@ object EdHttp {
   def throwNotFound(errCode: String, message: String = ""): Nothing =
     throw ResultException(NotFoundResult(errCode, message))
 
+  def throwSiteNotFound(hostname: String, debugCode: String = ""): Nothing = {
+    val dashDebug = if (debugCode.isEmpty || Globals.isProd) "" else "-" + debugCode
+    throwNotFound("TyE404HOSTNAME" + dashDebug, s"There is no site with hostname '$hostname'")
+  }
+
   def throwEntityTooLargeIf(condition: Boolean, errCode: String, message: String): Unit =
     if (condition) throwEntityTooLarge(errCode, message)
 

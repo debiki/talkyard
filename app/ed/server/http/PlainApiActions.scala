@@ -313,7 +313,9 @@ class PlainApiActions(
           if (!anyUser.exists(_.isAdmin) && !isLogin)
             throwLoginAsAdmin(request)
         case SiteStatus.Deleted | SiteStatus.Purged =>
-          throwForbidden("EdESITEGONE", "This site has been deleted.")
+          throwSiteNotFound(
+            request.host,
+            debugCode = s"SITEGONE-${site.status.toString.toUpperCase}")
       }
 
       if (staffOnly && !anyUser.exists(_.isStaff) && !isLogin)

@@ -732,7 +732,8 @@ class Globals(
           // to it, just after installation, by lazy-creating an empty default site.
           return defaultSiteIdAndHostname
         }
-        throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
+        throwSiteNotFound(
+          hostname, debugCode = "LKPCANHOST")
     }
     val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
     site.brief

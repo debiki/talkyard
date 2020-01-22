@@ -102,16 +102,28 @@ const SiteTableRow = createComponent({
   render: function() {
     const stuff: SuperAdminStuff = this.props.superAdminStuff;
     const site: SASite = this.props.site;
-    let newStatusButtonStatus: SiteStatus;
-    let newStatusButtonText: string;
-    if (site.status <= SiteStatus.Active) {
-      newStatusButtonStatus = SiteStatus.HiddenUnlessStaff;
-      newStatusButtonText = "Hide unless staff";
-    }
-    else {
-      newStatusButtonStatus = SiteStatus.Active;
-      newStatusButtonText = "Activate again";
-    }
+
+    const makeButton = (className: string, title: string, newStatus: SiteStatus,
+            opts: { disabled?: boolean } = {}) =>
+      Button({ ...opts, className: className + ' s_SA_StatusB',
+          onClick: () => opts.disabled ? undefined : this.changeStatus(newStatus) },
+        title);
+
+    const hideButton = site.status > SiteStatus.Active ? null :
+        makeButton('s_SA_StatusB-Hide', "Hide unless staff", SiteStatus.HiddenUnlessStaff);
+
+    const reactivateButton = site.status !== SiteStatus.HiddenUnlessStaff ? null :
+        makeButton('', "Activate again", SiteStatus.Active);
+
+    const deleteButton = site.status !== SiteStatus.HiddenUnlessStaff ? null :
+        makeButton('', "Delete (can undo)", SiteStatus.Deleted);
+
+    const undeleteButton = site.status !== SiteStatus.Deleted ? null :
+        makeButton('', "Undelete", SiteStatus.HiddenUnlessStaff);
+
+    const purgeButton = site.status !== SiteStatus.Deleted ? null :
+        makeButton('', "Purge (can NOT undo)", SiteStatus.Purged, { disabled: true });
+
     let canonHostname = site.canonicalHostname;
     if (!canonHostname && site.id === FirstSiteId) {
       canonHostname = stuff.firstSiteHostname;
@@ -150,9 +162,11 @@ const SiteTableRow = createComponent({
           r.a({ href: '//site-' + site.id + '.' + stuff.baseDomain }, site.id)),
         r.td({},
           siteStatusToString(site.status),
-          Button({ className: 'esSA_StatusB',
-              onClick: () => this.changeStatus(newStatusButtonStatus) },
-            newStatusButtonText)),
+          hideButton,
+          reactivateButton,
+          deleteButton,
+          undeleteButton,
+          purgeButton),
         r.td({},
           r.div({},
             r.a({ href: '//' + canonHostname }, canonHostname),
