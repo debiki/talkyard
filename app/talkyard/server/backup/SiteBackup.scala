@@ -79,7 +79,8 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   posts: Seq[Post],
   postActions: Seq[PostAction],
   permsOnPages: Seq[PermsOnPages],
-  reviewTasks: Seq[ReviewTask]) {
+  reviewTasks: Seq[ReviewTask],
+  isTestSiteOkDelete: Boolean = false) {
 
   /* MISSING:
  public | audit_log3              | table    | edc

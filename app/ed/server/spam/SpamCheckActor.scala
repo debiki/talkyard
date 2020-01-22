@@ -50,7 +50,7 @@ object SpamCheckActor {
 case object CheckForSpam
 
 /** For e2e tests, so cache items from earlier tests, won't interfere with later tests. */
-case object ClearCheckingSpamNowCache
+case class ClearCheckingSpamNowCache(siteIds: Set[SiteId])
 
 
 class SpamCheckActor(
@@ -81,7 +81,9 @@ class SpamCheckActor(
         case ex: Exception =>
           p.Logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
       }
-    case ClearCheckingSpamNowCache =>
+    case ClearCheckingSpamNowCache(siteIds) =>
+      COULD_OPTIMIZE // remove items only for siteIds — no need to clear
+      // the whole queue, if running smoke tests against a live production server.
       checkingNowCache.invalidateAll()
   }
 

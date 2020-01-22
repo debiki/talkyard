@@ -42,7 +42,7 @@ trait SystemTransaction {
   def createSite(id: Option[SiteId], pubId: PublSiteId,
     name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
-    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
+    isTestSiteOkayToDelete: Boolean, createdAt: When): Site
 
   def siteTransaction(siteId: SiteId): SiteTransaction  // oops doesn't (and cannot) use SiteDao.synchronizeOnSiteId
 

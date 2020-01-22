@@ -29,6 +29,9 @@ package object controllers {
   def OkSafeJson(json: JsValue, pretty: Boolean = false): Result =
     Utils.OkSafeJson(json, pretty)
 
+  def OkPrettyJson(json: JsValue): Result =
+    Utils.OkApiJson(json, pretty = true)
+
   def OkApiJson(json: JsValue, pretty: Boolean = false): Result =
     Utils.OkApiJson(json, pretty)
 

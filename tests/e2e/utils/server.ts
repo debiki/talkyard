@@ -182,8 +182,8 @@ function showResponseBodyJson(body) {
 
 
 function importRealSiteData(siteData: SiteData): IdAddress {
-  const url = settings.mainSiteOrigin + '/-/import-site-json';
-  const idAddr = postOrDie(url, siteData).bodyJson();
+  const url = settings.mainSiteOrigin + '/-/import-site-json?deleteOldSite=true';
+  const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE4STJ2]",
       showResponseBodyJson(idAddr));
   return idAddr;
@@ -193,9 +193,12 @@ function importRealSiteData(siteData: SiteData): IdAddress {
 function importTestSiteData(siteData: SiteData): IdAddress {
   siteData.meta.nextPageId = 100; // for now
   siteData.meta.version = 1;      // for now
+
+  // Maybe remove this param? Now done automatically in most cases [DELTSTHOSTS].
   const deleteOldSite = settings.deleteOldSite ? '?deleteOldSite=true' : '';
+
   const url = settings.mainSiteOrigin + '/-/import-test-site-json' + deleteOldSite;
-  const idAddr = postOrDie(url, siteData).bodyJson();
+  const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE7UGK2]",
       showResponseBodyJson(idAddr));
   return idAddr;

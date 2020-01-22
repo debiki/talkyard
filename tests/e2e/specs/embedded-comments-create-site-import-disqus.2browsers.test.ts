@@ -62,8 +62,8 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   function createPasswordTestData() {
     // Dupl code [502KGAWH0]
     const testId = utils.generateTestId();
-    const embeddingHostPort = `test--imp-dsq-${testId}.localhost:8080`;
-    const localHostname     = `test--imp-dsq-${testId}-localhost-8080`;
+    const embeddingHostPort = `e2e-test--imp-dsq-${testId}.localhost:8080`;
+    const localHostname     = `e2e-test--imp-dsq-${testId}-localhost-8080`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
@@ -102,9 +102,6 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   // ----- Prepare: Create embedding pages and API secret
 
   it("Owen clicks Blog = Something Else, to show the instructions", () => {
-    // ?? why this needed although didn' do; browser.tour.runToursAlthoughE2eTest() ??
-    owensBrowser.tour.exitTour();
-
     owensBrowser.waitAndClick('.e_SthElseB');
   });
 

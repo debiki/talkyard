@@ -24,10 +24,10 @@ import com.debiki.core.Prelude._
 import debiki.EdHttp.throwForbidden
 import scala.collection.{immutable, mutable}
 import SystemDao._
-import debiki.Globals
+import debiki.{ForgetEndToEndTestEmails, Globals}
 import ed.server.spam.ClearCheckingSpamNowCache
 import play.api.libs.json.{JsObject, Json}
-import talkyard.server.{DeleteWhatSite, JsX}
+import talkyard.server.JsX
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -53,9 +53,13 @@ class SystemDao(
   // So, don't use this for updating per-site things. Instead, create a site specific
   // dao and site specific transactions — they do the database writes under mutex,
   // and so avoids any tx rollbacks.
-  private def dangerous_readWriteTransaction[R](fn: SystemTransaction => R): R =
+  def dangerous_readWriteTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readWriteSystemTransaction(fn)
 
+  def dangerous_readWriteTransactionReuseOld[R](
+        anyOldTx: Option[SystemTransaction])(fn: SystemTransaction => R): R =
+    if (anyOldTx.isDefined) fn(anyOldTx.get)
+    else dbDao2.readWriteSystemTransaction(fn)
 
   def applyEvolutions() {
     dangerous_readWriteTransaction(_.applyEvolutions())
@@ -123,7 +127,7 @@ class SystemDao(
         pubId = pubId, name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
-        isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
+        isTestSiteOkayToDelete = false, createdAt = sysTx.now)
 
       dieIf(firstSite.id != FirstSiteId, "EdE2AE6U0")
       val siteTx = sysTx.siteTransaction(FirstSiteId)
@@ -150,12 +154,87 @@ class SystemDao(
   }
 
 
+  /**
+    * During e2e tests, find out which test sites to delete, to make the hostname
+    * or something available again. But don't delete them immediately — first
+    * acquire a SiteDao mutex (we'll do, a bit below), to avoid PostgreSQL
+    * deadlocks if the transaction here deletes the site, but another request
+    * tries to update the same site, in a parallel transaction.
+    */
+  def deleteSitesWithNameAndHostnames(siteName: String, hostnames: Set[String]) {
+    dieIfAny(hostnames, (h: String) => !Hostname.isE2eTestHostname(h), "TyE7PK5W8",
+      (badName: String) => s"Not an e2e test hostname: $badName")
+
+    // isE2eTestHostname works for site names too (not only hostnames).
+    dieIf(siteName.nonEmpty && !Hostname.isE2eTestHostname(siteName), "TyE60KPDR",
+      s"Not an e2e test site name: $siteName")
+
+    val sitesToDeleteMaybeDupls: Vector[Site] = readOnlyTransaction { sysTx =>
+      hostnames.flatMap(sysTx.loadSiteByHostname).toVector ++
+          sysTx.loadSiteByName(siteName).toVector
+    }
+
+    dieIfAny(sitesToDeleteMaybeDupls, (site: Site) => site.id > MaxTestSiteId,
+      "TyE5S20PUJ6", (site: Site) => s"Trying to delete *real* site: $site")
+
+    val siteIdsToDelete = sitesToDeleteMaybeDupls.map(_.id).toSet
+    SiteDao.synchronizeOnManySiteIds(siteIdsToDelete) {
+      // Not dangerous — we locked these site ids (the line above).
+      globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+        deleteSites(siteIdsToDelete, sysTx)
+      }
+    }
+  }
+
+
+  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SystemTransaction) {
+    val deletedHostnames = mutable.Set[String]()
+
+    siteIdsToDelete foreach { siteId: SiteId =>
+      // Reload site in same transaction.
+      val site = sysTx.loadSite(siteId)
+      deletedHostnames ++= site.map(_.hostnames.map(_.hostname)) getOrElse Nil
+      val gotDeleted = sysTx.deleteSiteById(siteId)
+      dieIf(!gotDeleted,
+        "TyE2ABK493U4", s"Could not delete site $siteId, this one: $site (a race cond?)")
+    }
+
+    deletedHostnames.toSet foreach this.forgetHostname
+
+    // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
+    // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
+    // so instead:
+    if (deletedHostnames.nonEmpty) {
+      memCache.clearAllSites()
+    }
+
+    // If there was still stuff in the cache, for any of the now deleted sites
+    // that could lead to confusing behavior when site ids get reused, e.g. in
+    // tests or when restoring a backup. (2PKF05Y)
+    siteIdsToDelete foreach { siteId =>
+      val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
+      redisCache.clearThisSite()
+    }
+
+    val testSiteIds = siteIdsToDelete.filter(_ <= MaxTestSiteId)
+    if (testSiteIds.nonEmpty)
+      globals.endToEndTestMailer.tell(
+        ForgetEndToEndTestEmails(testSiteIds), Actor.noSender)
+
+    globals.spamCheckActor.foreach(_.tell(
+      ClearCheckingSpamNowCache(siteIdsToDelete), Actor.noSender))
+  }
+
+
   /** Used to create additional sites on the same server. The server then becomes a
-    * multi site server (i.e. separate communities, on the same server).
+    * multi site server (i.e. separate communities, on the same server)
+    * — unless we're restoring/overwriting FirstSiteId; then it can remain be
+    * a single site server.
     *
     * The first site is instead created by [[createFirstSite()]] above.
     */
   def createAdditionalSite(
+    anySiteId: Option[SiteId],
     pubId: PublSiteId,
     name: String,
     status: SiteStatus,
@@ -166,12 +245,12 @@ class SystemDao(
     browserIdData: BrowserIdData,
     isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean,
-    deleteWhatSite: DeleteWhatSite,
-    pricePlan: PricePlan,
-    createdFromSiteId: Option[SiteId]): Site = {
+    createdFromSiteId: Option[SiteId],
+    anySysTx: Option[SystemTransaction] = None): Site = {
 
-    if (!Site.isOkayName(name))
-      throwForbidden("EsE7UZF2_", s"Bad site name: '$name'")
+    Site.findNameProblem(name) foreach { problem =>
+      throwForbidden("EsE7UZF2_", s"Bad site name: '$name', problem: $problem")
+    }
 
     dieIf(hostname.exists(_ contains ":"), "DwE3KWFE7")
 
@@ -184,78 +263,11 @@ class SystemDao(
       config.createSite.maxSitesTotal + 5
     }
 
-    // During e2e tests, find out which test sites to delete, to make the hostname
-    // or something available again. But don't delete them immediately — first
-    // acquire a SiteDao mutex (we'll do, a bit below), to avoid PostgreSQL
-    // deadlocks if the transaction here deletes the site, but another request
-    // tries to update the same site, in a parallel transaction.
-    val anySitesToDelete: Vector[Site] = try readOnlyTransaction { sysTx =>
-      if (deleteWhatSite == DeleteWhatSite.NoSite) {
-        Vector.empty
-      }
-      else {
-        val anySitesToDeleteMaybeDupls: Vec[Site] =
-        deleteWhatSite match {
-          case DeleteWhatSite.SameHostname =>
-            dieIf(hostname.exists(!Hostname.isE2eTestHostname(_)), "TyE7PK5W8",
-              s"Not an e2e test hostname: $hostname")
-            // This test works for site names too (not only hostnames).
-            dieIf(!Hostname.isE2eTestHostname(name), "TyE50K5W4",
-              s"Not an e2e test site name: $name")
-            if (hostname.isEmpty) Vector.empty
-            else {
-              sysTx.loadSiteByHostname(hostname.get).toVector ++
-                  sysTx.loadSiteByName(name).toVector
-            }
-          case DeleteWhatSite.WithId(theId) =>
-            sysTx.loadSite(theId).toVector
-          case DeleteWhatSite.NoSite =>
-            die("TyE502MWKDT45")
-        }
 
-        anySitesToDeleteMaybeDupls.distinct
-      }
-    }
-
-
-    SiteDao.synchronizeOnManySiteIds(anySitesToDelete.map(_.id).toSet) {
-          // Not dangerous: We've locked any sites we'll delete, already.
-          try dangerous_readWriteTransaction { sysTx =>
-      if (anySitesToDelete.nonEmpty) {
-
-        val deletedAlready = mutable.HashSet[SiteId]()
-
-        val anyDeletedHostnames: Seq[String] = anySitesToDelete flatMap { siteToDelete =>
-          dieIf(siteToDelete.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
-
-          // Delete the site. Maybe we've deleted it alread — although we do `.distinct`
-          // above, there's a tiny tiny likelihood for duplicates — in case we happened
-          // to load it twice, and it was changed in between, so `.distinct` didn't "work".
-          val gotDeleted = sysTx.deleteSiteById(siteToDelete.id)
-          dieIf(!gotDeleted && !deletedAlready.contains(siteToDelete.id),
-            "TyE2ABK493U4", s"Could not delete site: $siteToDelete")
-
-          deletedAlready.add(siteToDelete.id)
-          siteToDelete.hostnames.map(_.hostname)
-        }
-
-        anyDeletedHostnames.toSet foreach this.forgetHostname
-
-        // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
-        // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
-        // so instead:
-        if (anyDeletedHostnames.nonEmpty) {
-          memCache.clearAllSites()
-          // Redis cache cleared below, for the new site only (if overwriting old). (2PKF05Y)
-        }
-
-        if (isTestSiteOkayToDelete) {
-          globals.endToEndTestMailer.tell(
-            "ForgetEndToEndTestEmails" -> anySitesToDelete.map(_.id), Actor.noSender)
-          globals.spamCheckActor.foreach(_.tell(
-            ClearCheckingSpamNowCache, Actor.noSender))
-        }
-      }
+    SiteDao.synchronizeOnManySiteIds(anySiteId.toSet) {
+          globals.systemDao.dangerous_readWriteTransactionReuseOld(anySysTx) { sysTx =>
+              try {
+      // (Fix indentation another day. I want a nice live editor diff, for now.)
 
       // Keep all this in sync with createFirstSite(). (5DWSR42)
 
@@ -263,11 +275,17 @@ class SystemDao(
         isForBlogComments = embeddingSiteUrl.isDefined,
         isTestSite = isTestSiteOkayToDelete)
 
-      val newSite = sysTx.createSite(id = None, pubId = pubId, name = name, status,
+      val newSite = sysTx.createSite(
+        id = anySiteId,
+        pubId = pubId,
+        name = name,
+        status,
         creatorIp = browserIdData.ip,
         quotaLimitMegabytes = maxQuota,
-        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
+        maxSitesPerIp = maxSitesPerIp,
+        maxSitesTotal = maxSitesTotal,
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete,
+        sysTx.now)
 
       // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing
       // one empties the SQL database or imports a dump, resulting in most sites disappearing
@@ -355,7 +373,7 @@ class SystemDao(
         play.api.Logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
-    } }
+    } } }
   }
 
 

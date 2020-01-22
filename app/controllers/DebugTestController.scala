@@ -20,7 +20,7 @@ package controllers
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{RateLimits, Nashorn}
+import debiki.{GetEndToEndTestEmail, Nashorn, NumEndToEndTestEmailsSent, RateLimits}
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
@@ -297,7 +297,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
     val futureReply: Future[Any] =
       globals.endToEndTestMailer.ask(
-          "GetEndToEndTestEmail", s"$siteId:$sentTo")(akka.util.Timeout(timeout))
+          GetEndToEndTestEmail(s"$siteId:$sentTo"))(akka.util.Timeout(timeout))
 
     val result: Future[p.mvc.Result] = futureReply.flatMap({
       case futureEmail: Future[_] =>
@@ -308,11 +308,11 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
         firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
           case emails: Vector[Email] =>
-            Ok(JsArray(emails.map(email => {
+            OkPrettyJson(JsArray(emails.map(email => {
               Json.obj(
                 "subject" -> JsString(email.subject),
                 "bodyHtmlText" -> JsString(email.bodyHtmlText))
-            }))) as JSON
+            })))
           case x =>
             InternalErrorResult("DwE7UGY4", "Mailer sent the wrong class: " + classNameOf(x))
         }).recover({
@@ -342,7 +342,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
       val futureReply: Future[Any] =
         globals.endToEndTestMailer.ask(
-          "NumEndToEndTestEmailsSent", siteId)(akka.util.Timeout(7 seconds))
+          NumEndToEndTestEmailsSent(siteId))(akka.util.Timeout(7.seconds))
 
       futureReply.map(sentToAddrsUntyped => {
         val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Seq[String]]

@@ -151,6 +151,14 @@ object Prelude {
   def dieIf(condition: Boolean, errorCode: String, problem: => Any = null): Unit =
     if (condition) die(errorCode, if (problem != null) problem.toString else null)
 
+  def dieIfAny[T](things: Iterable[T], condition: T => Boolean,
+        errorCode: String, problem: T => Any = null) {
+    things.find(condition) foreach { badThing =>
+      val details = if (problem ne null) problem(badThing).toString else null
+      die(errorCode, details)
+    }
+  }
+
   def dieUnless(condition: Boolean, errorCode: String, problem: => String = null): Unit =
     if (!condition) die(errorCode, problem)
 

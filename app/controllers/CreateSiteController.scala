@@ -28,7 +28,6 @@ import org.owasp.encoder.Encode
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
-import talkyard.server.DeleteWhatSite
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
@@ -90,7 +89,6 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
-    val pricePlanInt = (request.body \ "pricePlan").as[Int]
     val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
@@ -108,8 +106,9 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (!acceptTermsAndPrivacy)
       throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
 
-    if (!Site.isOkayName(localHostname))
-      throwForbidden("DwE5YU70", "Bad site name")
+    Site.findNameProblem(localHostname) foreach { problem =>
+      throwForbidden("TyE5YU70", s"Bad site name: '$localHostname', problem: $problem")
+    }
 
     if (localHostname.length < MinLocalHostnameLength && !okForbiddenPassword)
       // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
@@ -130,33 +129,47 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (organizationName.length > 100)
       throwForbidden("DwE7KEP36", "Too long organization name: more than 100 characters")
 
+    /*
+          val pricePlanInt = (request.body \ "pricePlan").as[Int]
     val pricePlan = pricePlanInt match {  // [4GKU024S]
       case 0 => "Unknown"
       case 1 => "NonCommercial"
       case 2 => "Business"
       case 3 => "EmbeddedComments"
       case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1, 2 or 3")
-    }
+     } */
 
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-    val deleteWhatSite =
-      if (isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname))
-        DeleteWhatSite.SameHostname
-      else
-        DeleteWhatSite.NoSite
+
+    val siteName = localHostname
+
+    throwForbiddenIf(isTestSiteOkayToDelete && !Hostname.isE2eTestHostname(localHostname),
+      "TyE502TKUTDY2", o"""Not a test site hostname: '$localHostname',
+        should start with: ${Hostname.E2eTestPrefix}""")
+
+    if (isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname)) {
+      globals.systemDao.deleteSitesWithNameAndHostnames(siteName, hostnames = Set(hostname))
+    }
 
     val goToUrl: String =
       try {
-        globals.systemDao.createAdditionalSite(
-          pubId = Site.newPublId(),
-          name = localHostname, SiteStatus.NoAdmin, hostname = Some(hostname),
-          embeddingSiteUrl = anyEmbeddingSiteAddress,
-          creatorId = request.user.map(_.id) getOrElse UnknownUserId,
-          browserIdData = request.theBrowserIdData, organizationName = organizationName,
-          isTestSiteOkayToDelete = isTestSiteOkayToDelete,
-          skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
-          deleteWhatSite = deleteWhatSite, pricePlan = pricePlan,
-          createdFromSiteId = Some(request.siteId))
+        // Not dangerous: We'll use a new site id.
+        globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+          globals.systemDao.createAdditionalSite(
+            anySiteId = None,
+            pubId = Site.newPublId(),
+            name = siteName,
+            SiteStatus.NoAdmin,
+            hostname = Some(hostname),
+            embeddingSiteUrl = anyEmbeddingSiteAddress,
+            creatorId = request.user.map(_.id) getOrElse UnknownUserId,
+            browserIdData = request.theBrowserIdData,
+            organizationName = organizationName,
+            isTestSiteOkayToDelete = isTestSiteOkayToDelete,
+            skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
+            createdFromSiteId = Some(request.siteId),
+            anySysTx = Some(sysTx))
+        }
 
         val newSiteOrigin = globals.originOf(hostname)
 
@@ -174,7 +187,6 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
                 |newSiteOrigin: ${ Encode.forHtmlContent(newSiteOrigin) }<br>
                 |embeddingUrl: ${ anyEmbeddingSiteAddress map Encode.forHtmlContent }<br>
                 |organizationName: ${ Encode.forHtmlContent(organizationName) }<br>
-                |pricePlan: ${ Encode.forHtmlContent(pricePlan) }<br>
                 |createdAt: ${ toIso8601T(now.toJavaDate) }<br>
                 |""")
             globals.sendEmail(email, request.siteId)

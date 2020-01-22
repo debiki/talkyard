@@ -486,7 +486,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-export-json.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-import-json-create-new-site.2browsers $args
   #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-import-json-to-existing-emb-cmts-site.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-restore-overwrite-site.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
 
 
   if [ -n "$server_port_8080_pid" ]; then

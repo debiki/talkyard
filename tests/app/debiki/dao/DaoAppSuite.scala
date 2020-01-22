@@ -29,7 +29,6 @@ import java.io.File
 import play.api.inject.DefaultApplicationLifecycle
 import play.api._
 import play.core.DefaultWebCommands
-import talkyard.server.DeleteWhatSite
 
 
 
@@ -127,11 +126,12 @@ class DaoAppSuite(
   def createSite(hostname: String, settings: SettingsToSave = SettingsToSave()): (Site, SiteDao) = {
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
     val site = globals.systemDao.createAdditionalSite(
+      anySiteId = None,
       pubId = s"pubid-$siteName", name = siteName, status = SiteStatus.Active, hostname = Some(hostname),
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
       creatorId = UnknownUserId, browserIdData,
       isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
-      deleteWhatSite = DeleteWhatSite.NoSite, pricePlan = "Unknown", createdFromSiteId = None)
+      createdFromSiteId = None)
     val dao = globals.siteDao(site.id)
     if (settings != SettingsToSave()) {
       dao.readWriteTransaction { tx =>

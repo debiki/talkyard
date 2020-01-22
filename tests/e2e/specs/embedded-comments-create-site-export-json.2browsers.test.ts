@@ -23,6 +23,7 @@ let maria: Member;
 let mariasBrowser;
 let michael: Member;
 let michaelsBrowser;
+let guestsBrowser;
 let strangersBrowser;
 
 let data: NewSiteData;
@@ -43,6 +44,7 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
     mariasBrowser = _.assign(browserB, pagesFor(browserB));
     michaelsBrowser = _.assign(browserB, pagesFor(browserB));
     strangersBrowser = mariasBrowser;
+    guestsBrowser = strangersBrowser;
     owen = make.memberOwenOwner();
     maria = make.memberMaria();
     michael = make.memberMichael();
@@ -50,7 +52,7 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
 
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
-    const newSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
+    const newSiteData: NewSiteData = owensBrowser.makeNewSiteDataForEmbeddedComments({
         shortName: 'emb-exp', longName: "Emb Cmts Exp" });
     const result = owensBrowser.createNewSite(newSiteData);
     data = result.data;
@@ -62,9 +64,6 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
   // ----- Prepare: Create embedding pages and API secret
 
   it("Owen clicks Blog = Something Else, to show the instructions", () => {
-    // ?? why this needed although didn' do; browser.tour.runToursAlthoughE2eTest() ?? [306MKP67]
-    owensBrowser.tour.exitTour();
-
     owensBrowser.waitAndClick('.e_SthElseB');
   });
 
@@ -75,6 +74,39 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
 
 
   // ----- Create things to export
+
+  it(`A stranger goes to ${embPages.slugs.guestReplyPageSlug}`, () => {
+    strangersBrowser.go(data.embeddingUrl + embPages.slugs.guestReplyPageSlug);
+  });
+
+  it("... posts a comment", () => {
+    // Dupl code 0. [60290KWFUDTT]
+    guestsBrowser.switchToEmbeddedCommentsIrame();
+    guestsBrowser.topic.clickReplyToEmbeddingBlogPost();
+    guestsBrowser.switchToEmbeddedEditorIrame();
+    guestsBrowser.editor.editText(embPages.texts.guestsReply);
+    guestsBrowser.editor.save();
+  });
+
+  it("... logs in as Garbo Guest", () => {
+    // Dupl code 1. [60290KWFUDTT]
+    guestsBrowser.swithToOtherTabOrWindow();
+    guestsBrowser.disableRateLimits();
+    guestsBrowser.loginDialog.signUpLogInAs_Real_Guest(
+        embPages.texts.guestsName, embPages.texts.guestsEmail);
+    guestsBrowser.switchBackToFirstTabOrWindow();
+  });
+
+  it("... the comment appears", () => {
+    // Dupl code 2. [60290KWFUDTT]
+    guestsBrowser.switchToEmbeddedCommentsIrame();
+    guestsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr, embPages.texts.guestsReply);
+  });
+
+  it("... the guest leaves", () => {
+    guestsBrowser.metabar.clickLogout();
+  });
 
   it(`Michael goes to ${embPages.slugs.threeRepliesPageSlug}`, () => {
     michaelsBrowser.go(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);

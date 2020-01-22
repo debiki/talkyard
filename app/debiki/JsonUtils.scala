@@ -189,7 +189,7 @@ object JsonUtils {
         val dateMs = value getOrElse {
           return None
         }
-        if (dateMs < UnixMillisSomeDayIn1973) {
+        if (dateMs < UnixMillisSomeDayIn1973 && dateMs != 0) {
           throwBadJson("EsE7UMKW2", o"""'$fieldName' looks like a unix time in seconds,
               should be milliseconds""")
         }

@@ -29,7 +29,6 @@ import org.jsoup.safety.Whitelist
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import talkyard.server.DeleteWhatSite
 
 
 case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
@@ -922,7 +921,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
 
   def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData,
-        deleteWhatSite: DeleteWhatSite): Site = {
+        anySiteToOverwrite: Option[Site]): Site = {
+
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
       // Special pages shouldn't be reachable via any page path. Others, should.
@@ -943,49 +943,91 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       }
     }
 
-    val siteToSave = siteData.site.getOrDie("TyE7KRUGV24")
+    val siteToSaveWrongHostname = siteData.site.getOrDie("TyE7KRUGV24")
+
     val siteSettings = siteData.settings.getOrDie("TyE5KRYTG02")
 
     throwForbiddenIf(isMissing(siteSettings.orgFullName),
       "EdE7KB4W5", "No organization name specified")
 
-    // COULD do this in the same transaction as the one below — then, would need a function
-    // `transaction.continueWithSiteId(zzz)`?
-    val site = globals.systemDao.createAdditionalSite(
-      siteToSave.pubId,
-      siteToSave.name,
-      siteToSave.status,
-      siteToSave.canonicalHostname.map(_.hostname),
-      embeddingSiteUrl = None,
-      organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
-      creatorId = SystemUserId,
-      browserIdData = browserIdData,
-      isTestSiteOkayToDelete = true,
-      skipMaxSitesCheck = true,
-      deleteWhatSite,
-      pricePlan = "Unknown",  // [4GKU024S]
-      createdFromSiteId = None)
+    val siteIdToOverwrite = anySiteToOverwrite.map(_.id).toSet
 
-    val newDao = globals.siteDao(site.id)
+    dieIf(siteData.isTestSiteOkDelete && siteIdToOverwrite.exists(_ > MaxTestSiteId),
+      "TyE5032FPKJ63", s"Trying to e2e-test overwrite real site: $anySiteToOverwrite")
 
-    SECURITY; SHOULD // use upsertIntoExistingSite instead, and add post cycles nnd
-    // category cycles checks there.
+    SiteDao.synchronizeOnManySiteIds(siteIdToOverwrite) {
+        // Not dangerous: We've locked any site to overwrite, already.
+        globals.systemDao.dangerous_readWriteTransaction { sysTx =>
 
-    HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
-    // And in the wrong transaction :-/
-    newDao.saveAboutGroupPrefs(AboutGroupPrefs(
-      groupId = Group.EveryoneId,
-      fullName = Some("Everyone"),
-      username = "everyone",
-      summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
-      summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
+      // It's good to delete the old site and create the new one, in the same
+      // transaction — so we won't be left without any site at all, if something
+      // errors out when creating the new site (e.g. Postgres serialization errors).
+      globals.systemDao.deleteSites(siteIdToOverwrite, sysTx)
 
-    newDao.readWriteTransaction { tx =>
+      // Keep the hostname of the site we're overwriting. Otherwise, once we've imported
+      // the new site, and the hostname changes to whatever is in the dump — then,
+      // the browser's current url might stop working. Instead, most likely,
+      // the browser's current url is the one we want, for the newly imported site.
+      val siteToSave: SiteInclDetails = {
+        val s = siteToSaveWrongHostname
+        anySiteToOverwrite match {
+          case None => s
+          case Some(siteToOverwrite) => siteToOverwrite.canonicalHostname match {
+            case None => s
+            case Some(hn) =>
+              s.copyWithNewCanonicalHostname(
+                hn.hostname, addedAt = sysTx.now, redirectOld = true)
+          }
+        }
+      }
+
+      val theNewSite = globals.systemDao.createAdditionalSite(
+        // Reuse any old id — so that we'll overwrite FirstSiteId, if importing
+        // to a self hosted single site server.
+        anySiteId = anySiteToOverwrite.map(_.id),
+        siteToSave.pubId,
+        siteToSave.name,
+        siteToSave.status,
+        hostname = siteToSave.canonicalHostname.map(_.hostname),
+        embeddingSiteUrl = None,
+        // This get updated below (0296537).
+        organizationName = "Organization name missing [TyM8YKWP3]",
+        creatorId = SystemUserId,
+        browserIdData = browserIdData,
+        isTestSiteOkayToDelete = siteData.isTestSiteOkDelete,
+        skipMaxSitesCheck = true,
+        createdFromSiteId = None,
+        anySysTx = Some(sysTx))
+
+      // -----------
+      val newDao = globals.siteDao(theNewSite.id)
+
+      SECURITY; SHOULD // use upsertIntoExistingSite instead, and add post cycles nnd
+      // category cycles checks there.
+
+      /*
+      HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
+      // And in the wrong transaction :-/
+      newDao.saveAboutGroupPrefs(AboutGroupPrefs(
+        groupId = Group.EveryoneId,
+        fullName = Some("Everyone"),
+        username = "everyone",
+        summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
+        summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
+      // ----------- */
+
+
+      val tx = sysTx.siteTransaction(theNewSite.id)
+
       // We might import a forum or a forum category, and then the categories reference the
       // forum page, and the forum page references to the root category.
       tx.deferConstraints()
 
-      tx.upsertSiteSettings(siteSettings)
+      // The canonical hostname got inserted already, by createAdditionalSite() above.
+      val otherHostnames = siteToSave.hostnames.filter(_.role != Hostname.RoleCanonical)
+      otherHostnames.foreach(hn => tx.insertSiteHost(hn.noDetails))
+
+      tx.upsertSiteSettings(siteSettings)  // also updates org name (0296537)
 
       siteData.apiSecrets foreach tx.insertApiSecret
 
@@ -995,13 +1037,22 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
       }
 
-      siteData.groups foreach { group: Group =>
-        // Dupl code, also for users' usernames. (603WKH7)
-        val usernameLowercase = group.theUsername.toLowerCase // [CANONUN]
+      def insertUsernameUsageIfMissing(member: MemberInclDetails) {
+        val usernameLowercase = member.usernameLowercase // [CANONUN]
         if (!siteData.usernameUsages.exists(_.usernameLowercase == usernameLowercase)) {
-          tx.insertUsernameUsage(UsernameUsage(
-            usernameLowercase, inUseFrom = tx.now, userId = group.id))
+          // BUilt-in members get UsernameUsage:s auto inserted when
+          // they're auto created. However, if the user has been renamed,
+          // we should insert an entry for its new name.
+          val usernamesInDb = tx.loadUsersOldUsernames(member.id)
+          if (!usernamesInDb.exists(_.usernameLowercase == usernameLowercase)) {
+            tx.insertUsernameUsage(UsernameUsage(
+              usernameLowercase, inUseFrom = tx.now, userId = member.id))
+          }
         }
+      }
+
+      siteData.groups foreach { group: Group =>
+        insertUsernameUsageIfMissing(group)
         // Also auto-gen UserEmailAddress if missing, if adding group email inbox later. [306KWUSSJ24]
         if (group.isBuiltIn) {
           // Then it's in the database already. But maybe its name or settings has been changed?
@@ -1019,19 +1070,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         tx.addGroupMembers(groupPp.groupId, Set(groupPp.ppId))
       }
 
-      siteData.users foreach { user =>
+      siteData.users foreach { user: UserInclDetails =>
         // Make it slightly simpler to construct site patches, by automatically
         // generating UsernameUsage and UserEmailAddress and UserStats entries if needed.
         if (user.primaryEmailAddress.nonEmpty &&
             !siteData.memberEmailAddrs.exists(_.emailAddress == user.primaryEmailAddress)) {
           user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
         }
-        // Dupl code, also for groups' usernames. (603WKH7)
-        if (!siteData.usernameUsages.exists(_.usernameLowercase == user.usernameLowercase)) {
-          tx.insertUsernameUsage(UsernameUsage(
-            usernameLowercase = user.usernameLowercase, // [CANONUN]
-            inUseFrom = tx.now, userId = user.id))
-        }
+        insertUsernameUsageIfMissing(user)
         if (!siteData.pptStats.exists(_.userId == user.id)) {
            tx.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = tx.now,
              emailedAt = None))
@@ -1142,9 +1188,9 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       siteData.reviewTasks foreach { reviewTask: ReviewTask =>
         tx.upsertReviewTask(reviewTask)
       }
-    }
 
-    site
+      theNewSite
+    }}
   }
 
 }

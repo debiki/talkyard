@@ -27,7 +27,6 @@ import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
-import talkyard.server.DeleteWhatSite
 import talkyard.server.JsX.JsStringOrNull
 
 
@@ -136,46 +135,39 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       && !globals.config.mayPatchSite(request.siteId),
      "TyE7MKSDFTS20", "Not allowed, may currently only restore to the default site")
     importOverwriteImpl(request.underlying, request.body,
-      DeleteWhatSite.WithId(request.siteId), isTest = false)
+      overwriteSite = request.dao.getSite(), isTest = false)
   }
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
+    // Dupl code (968754903265).
     throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
-
-    throwForbiddenIf(deleteOldSite is true, "TyE56AKSD2", "Deleting old sites not yet well tested enough")
-    val deleteWhatSite = DeleteWhatSite.NoSite
-
-    /*
-    //val createdFromSiteId = Some(request.siteId)
-    val response = importSiteImpl(
-      request.underlying, request.theBrowserIdData, deleteOld = false, isTest = false)
-    response */
-    val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
-    val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
-      fingerprint = 0)
-    val response = importSiteImpl(request.body, browserIdData, deleteWhatSite, isTest = false)
-    response.withCookies(moreNewCookies: _*)
+    val isTestDeleteOld = deleteOldSite is true
+    if (isTestDeleteOld && !globals.isProd) {
+      globals.testResetTime()
+    }
+    importOverwriteImpl(request, request.body, overwriteSite = None, isTest = isTestDeleteOld)
   }
 
 
   def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) {
         request =>
+    // Dupl code (968754903265).
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
     globals.testResetTime()
-    importOverwriteImpl(request, request.body, DeleteWhatSite.SameHostname, isTest = true)
+    importOverwriteImpl(request, request.body, overwriteSite = None, isTest = true)
   }
 
 
   private def importOverwriteImpl(request: play.api.mvc.Request[_], json: JsValue,
-        deleteWhatSite: DeleteWhatSite, isTest: Boolean)
+        overwriteSite: Option[Site], isTest: Boolean)
         : Result = {
     val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
-    val response = importSiteImpl(json, browserIdData, deleteWhatSite, isTest = isTest)
+    val response = importSiteImpl(json, browserIdData, overwriteSite, isTest = isTest)
     response.withCookies(moreNewCookies: _*)
   }
 
@@ -186,7 +178,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   private def importSiteImpl(json: JsValue, browserIdData: BrowserIdData,
-      deleteWhatSite: DeleteWhatSite, isTest: Boolean): mvc.Result = {
+      overwriteSite: Option[Site], isTest: Boolean): mvc.Result = {
 
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
@@ -199,8 +191,12 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
         // Unless we're deleting any old site, don't import the new site's hostnames —
         // they can cause unique key errors. The site owner can instead add the right
         // hostnames via the admin interface later.
+        siteDump
+
+        /* No longer needed?   xx rm
         if (deleteWhatSite != DeleteWhatSite.NoSite) {
-          // Shouldn't be any unique key error. Can still happen though, if on a
+          // Shouldn't be any unique key error, because we're deleting any sites
+          // with conflicting unique keys. Can still happen though, if on a
           // multi forum server, one restores a backup for *another* site with
           // the hostname of that other site, to the current site. That'd be
           // a user error though and shouldn't work. For now, a unique key
@@ -217,19 +213,25 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
             pubId = pubId,
             name = "imp-" + pubId,  // for now. Maybe remove  .name  field?
             hostnames = Nil)))
-        }
+        } */
     }
 
     val siteMeta = siteData.site.getOrDie("TyE04HKRG53")
+    val onlyTestHostnames = siteMeta.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname))
 
-    throwForbiddenIf(
-      deleteWhatSite == DeleteWhatSite.SameHostname
-        && !siteMeta.hostnames.forall(h => Hostname.isE2eTestHostname(h.hostname)),
-      "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${Hostname.E2eTestPrefix}")
+    // For now, so broken tests fail fast?
+    dieIf(isTest && !onlyTestHostnames,
+      "TyE602WKJHF63", s"Test site hostnames should start with: ${Hostname.E2eTestPrefix}")
 
-    val newSite = doImportOrUpserts {
+    val newSite: Site = doImportOrUpserts {
+      // Delete test sites with the same hostnames, to avoid unique key errors. [DELTSTHOSTS]
+      if (isTest && onlyTestHostnames) {
+        globals.systemDao.deleteSitesWithNameAndHostnames(
+          siteMeta.name, hostnames = siteMeta.hostnames.map(_.hostname).toSet)
+      }
+
       SiteBackupImporterExporter(globals).importCreateSite(
-        siteData, browserIdData, deleteWhatSite)
+        siteData, browserIdData, anySiteToOverwrite = overwriteSite)
     }
 
     val anyHostname = newSite.canonicalHostname.map(

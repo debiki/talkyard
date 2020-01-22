@@ -186,6 +186,12 @@ object Mailer {
 
 
 
+case class ForgetEndToEndTestEmails(siteIds: Set[SiteId])
+case class GetEndToEndTestEmail(siteIdColonEmailAddress: String)
+case class NumEndToEndTestEmailsSent(siteId: SiteId)
+
+
+
 /** Sends emails via SMTP. Does not handle any incoming mail. If broken, however,
   * then only logs emails to the console. It'll be broken e.g. if you run on localhost
   * with no SMTP settings configured — it'll still work for E2E tests though.
@@ -262,7 +268,7 @@ class Mailer(
         numEmailsSent += 1
       }
 
-    case ("NumEndToEndTestEmailsSent", siteId: SiteId) =>
+    case NumEndToEndTestEmailsSent(siteId: SiteId) =>
       val addresses = ArrayBuffer[Email]()
       e2eTestEmails.foreach { case (siteIdColonEmailAddr: String, emailsPromise) =>
         if (siteIdColonEmailAddr.startsWith(siteId + ":")) {
@@ -283,7 +289,7 @@ class Mailer(
       // Sort by sent-when, ascending.
       sender() ! addresses.sortBy(_.sentOn.map(_.getTime).getOrElse(Long.MaxValue)).map(_.sentTo).toVector
 
-    case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
+    case GetEndToEndTestEmail(siteIdColonEmailAddress: String) =>
       e2eTestEmails.get(siteIdColonEmailAddress) match {
         case Some(promise) =>
           sender() ! promise.future
@@ -296,7 +302,7 @@ class Mailer(
           sender() ! newPromise.future
       }
 
-    case ("ForgetEndToEndTestEmails", siteIds: Seq[SiteId]) =>
+    case ForgetEndToEndTestEmails(siteIds: Set[SiteId]) =>
       e2eTestEmails retain { case (siteIdColonEmailAddr: String, emailsPromise) =>
         !siteIds.exists({ siteId =>
           siteIdColonEmailAddr.startsWith(s"$siteId:")

@@ -162,8 +162,6 @@ package object core {
 
   case class ErrorMessageCode(message: ErrorMessage, code: String)
 
-  type PricePlan = String  // for now CLEAN_UP remove
-
   /** Where to start rendering a page. The specified post and all its successors
     * will be included in the resulting page. If None, then all top level posts are
     * included (and their successors), that is, all posts with no parent posts.

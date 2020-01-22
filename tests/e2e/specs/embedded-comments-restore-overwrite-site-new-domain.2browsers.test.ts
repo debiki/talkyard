@@ -2,5 +2,5 @@ import constructEmbCommentsImportTest from './embedded-comments-create-site-expo
 
 
 constructEmbCommentsImportTest("emb-cmts-imp-create-new-site  TyT5WKTJL025", {
-    restoreOverwriteSiteViaAdminButton: true });
+    restoreOverwriteSiteViaAdminButtonToNewDomain: true });
 

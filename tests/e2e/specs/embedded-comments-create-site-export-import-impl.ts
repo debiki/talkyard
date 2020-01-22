@@ -39,7 +39,8 @@ function constructEmbCommentsImportTest(testName: string, variants: {
   importToExistingEmptyEmbCommentsSiteViaAdminButton?: true,
   importToExistingEmptyForumSiteViaApi?: true,
   importToExistingEmptyForumSiteViaAdminButton?: true,
-  restoreOverwriteSiteViaAdminButton?: true,
+  restoreOverwriteSiteViaAdminButtonToSameDomain?: true,
+  restoreOverwriteSiteViaAdminButtonToNewDomain?: true,
 }) {
   describe(testName, () => {
 
@@ -94,7 +95,7 @@ function constructEmbCommentsImportTest(testName: string, variants: {
         // Avoid unique key errors.
         const testId = utils.generateTestId();
         siteDump.meta.pubId = siteDump.meta.pubId + '_copy_' + testId;
-        siteDump.meta.name = siteDump.meta.name + '_copy_' + testId;
+        siteDump.meta.name = siteDump.meta.name + '-copy-' + testId;
         newSiteIdAddr = server.importRealSiteData(siteDump);
         siteId = newSiteIdAddr.id;
         console.log("Import site response: " + JSON.stringify(newSiteIdAddr));
@@ -156,7 +157,9 @@ function constructEmbCommentsImportTest(testName: string, variants: {
     else if (variants.importToExistingEmptyEmbCommentsSiteViaAdminButton) {
       lad.die("unimplemented [TyE206MKTT2]");
     }
-    else if (variants.restoreOverwriteSiteViaAdminButton) {
+    else if (
+        variants.restoreOverwriteSiteViaAdminButtonToSameDomain ||
+        variants.restoreOverwriteSiteViaAdminButtonToNewDomain) {
       // [Import] btn somewhere in adm interface, but where??
       // ----- Imports the site, as a patch, to an already existing embedded comments site
 
@@ -182,8 +185,19 @@ function constructEmbCommentsImportTest(testName: string, variants: {
       });
 
       it("... edits site dump hostname, name, pubId — to avoid unique key errors", () => {
-        // Pretend we're restoring a site, so use the same hostname:
-        site.meta.hostnames[0].hostname = owensBrowser.host();
+        const hostnameInDump =
+            variants.restoreOverwriteSiteViaAdminButtonToNewDomain
+              // Pretend we're restoring a site, e.g. a comments-for-ones-blog.talkyard.net,
+              // but we restore it to a different domain. So, set the hostname in
+              // the dump to something else than the current server's hostname.
+              // Also, use a unique name, since won't be deleted here: [DELTSTHOSTS]
+              // as of now. (restoreBackupOverwriteSite() is not a test endpoint).
+              ? `old-hostname-we-migr-away-from-${utils.generateTestId()}.example.com`
+              // Pretend we're restoring a site, and didn't change the url,
+              // so use the same hostname:
+              : owensBrowser.host();
+        lad.logMessage(`Setting hostname in dump to:  ${hostnameInDump}`);
+        site.meta.hostnames[0].hostname = hostnameInDump;
         // Could let these ones be the same too, but oh well, simpler to just append this:
         // (Need the unique testId too, in case re-runs this test, maybe a retry, if flaky.)
         // (This can be an a bit long name, like, 65 chars. [502KHSRG52])
@@ -270,8 +284,32 @@ function constructEmbCommentsImportTest(testName: string, variants: {
     });
 
 
-    it("... nothing more  (but why 3 not 2?  (0592DW660))", () => {
-      assert.equal(owensBrowser.adminArea.review.countThingsToReview(), 3);
+    it("... and Garbo Guest's reply", () => {
+      owensBrowser.adminArea.review.waitForTextToReview(
+          embPages.texts.guestsReply, { index: 4 });
+    });
+
+
+    it("... nothing more  (but why 4 not 3?  (0592DW660))", () => {
+      assert.equal(owensBrowser.adminArea.review.countThingsToReview(), 4);
+    });
+
+
+    it(`Maria goes to ${embPages.slugs.guestReplyPageSlug}`, () => {
+      mariasBrowser.go2(embeddingOrigin + embPages.slugs.guestReplyPageSlug);
+    });
+
+
+    it(`... sees the guest's reply`, () => {
+      mariasBrowser.switchToEmbeddedCommentsIrame();
+      mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+      mariasBrowser.topic.assertNumRepliesVisible(1);
+    });
+
+
+    it(`... with the correct text`, () => {
+      mariasBrowser.topic.waitForPostAssertTextMatches(
+          c.FirstReplyNr, embPages.texts.guestsReply);
     });
 
 
@@ -400,7 +438,12 @@ function constructEmbCommentsImportTest(testName: string, variants: {
     it(`... now Michael's pending reply notf email gets sent to him`, () => {
       server.waitUntilLastEmailMatches(
           siteId, michael.emailAddress, owensReplyTwoMentionsMichaelMaria, michaelsBrowser);
-    });  */
+    });
+
+
+    TESTS_MISSING: Owen approves the review tasks
+
+    */
 
   });
 };

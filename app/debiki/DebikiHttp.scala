@@ -188,6 +188,12 @@ object EdHttp {
   def throwForbiddenIf(test: Boolean, errorCode: String, message: => String): Unit =
     if (test) throwForbidden(errorCode, message)
 
+  def throwForbiddenIfAny[T](things: Iterable[T], isBad: T => Boolean, errorCode: String,
+        makeMessage: T => String): Unit =
+    things.find(isBad) foreach { t: T =>
+      throwForbidden(errorCode, makeMessage(t))
+    }
+
   def throwForbiddenUnless(test: Boolean, errorCode: String, message: => String): Unit =
     if (!test) throwForbidden(errorCode, message)
 

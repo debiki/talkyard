@@ -35,7 +35,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   def createSite(id: Option[SiteId], pubId: PublSiteId,
     name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
-    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site = {
+    isTestSiteOkayToDelete: Boolean, createdAt: When): Site = {
 
     // Unless apparently testing from localhost, don't allow someone to create
     // very many sites.
@@ -61,7 +61,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
       creatorIp = creatorIp, hostnames = Nil)
 
     val newSite =
-      try insertSite(newSiteNoId, quotaLimitMegabytes, pricePlan)
+      try insertSite(newSiteNoId, quotaLimitMegabytes)
       catch {
         case ex: js.SQLException =>
           if (!isUniqueConstrViolation(ex)) throw ex
@@ -103,7 +103,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
 
-  private def insertSite(siteNoId: Site, quotaLimitMegabytes: Option[Int], pricePlan: PricePlan)
+  private def insertSite(siteNoId: Site, quotaLimitMegabytes: Option[Int])
         : Site = {
     val newId = siteNoId.id match {
       case NoSiteId =>
@@ -120,10 +120,10 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     runUpdateSingleRow("""
         insert into sites3 (
           ID, publ_id, status, NAME, ctime, CREATOR_IP,
-          QUOTA_LIMIT_MBS, price_plan)
-        values (?, ?, ?, ?, ?, ?, ?, ?)""",
+          QUOTA_LIMIT_MBS)
+        values (?, ?, ?, ?, ?, ?, ?)""",
       List[AnyRef](site.id.asAnyRef, site.pubId, site.status.toInt.asAnyRef, site.name,
-        site.createdAt.asTimestamp, site.creatorIp, quotaLimitMegabytes.orNullInt, pricePlan))
+        site.createdAt.asTimestamp, site.creatorIp, quotaLimitMegabytes.orNullInt))
     site
   }
 

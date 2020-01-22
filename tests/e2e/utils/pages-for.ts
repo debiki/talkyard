@@ -321,8 +321,8 @@ function pagesFor(browser) {
           : NewSiteData => {
       // Dupl code [502KGAWH0]
       const testId = utils.generateTestId();
-      const embeddingHostPort = `test--${ps.shortName}-${testId}.localhost:8080`;
-      const localHostname = `test--${ps.shortName}-${testId}-localhost-8080`;
+      const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
+      const localHostname = `e2e-test--${ps.shortName}-${testId}-localhost-8080`;
       //const localHostname = settings.localHostname ||
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
       return {
@@ -1309,7 +1309,7 @@ function pagesFor(browser) {
         // COULD use 'arguments' & a loop instead
         if (regex2) {
           assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
-              regex2.toString() + ", actual text: '" + text + whichBrowser);
+              regex2.toString() + ", actual text: '" + text + whichBrowser + "'");
         }
       });
       //process.stdout.write('S ');

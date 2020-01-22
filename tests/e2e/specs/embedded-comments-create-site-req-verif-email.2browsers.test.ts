@@ -57,8 +57,8 @@ describe("embedded comments, new site", () => {
   function createPasswordTestData() {
       // Dupl code [502KGAWH0]
     const testId = utils.generateTestId();
-    const embeddingHostPort = `test--ec-${testId}.localhost:8080`;
-    const localHostname     = `test--ec-${testId}-localhost-8080`;
+    const embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
+    const localHostname     = `e2e-test--ec-${testId}-localhost-8080`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
@@ -91,6 +91,8 @@ describe("embedded comments, new site", () => {
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);
     owensBrowser.waitAndClick('#e2eContinue');
+
+    owensBrowser.tour.runToursAlthoughE2eTest();
   });
 
 

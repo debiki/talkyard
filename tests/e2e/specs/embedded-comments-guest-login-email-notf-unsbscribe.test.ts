@@ -91,6 +91,7 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
   });
 
   it("... clicks Reply, types a comment, clicks submit", () => {
+    // Dupl code 0. [60290KWFUDTT]
     guestsBrowser.topic.clickReplyToEmbeddingBlogPost();
     guestsBrowser.switchToEmbeddedEditorIrame();
     guestsBrowser.editor.editText(gundesCommentOne);
@@ -98,6 +99,7 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
   });
 
   it("... logs in as guest, with email", () => {
+    // Dupl code 1. [60290KWFUDTT]
     guestsBrowser.swithToOtherTabOrWindow();
     guestsBrowser.disableRateLimits();
     guestsBrowser.loginDialog.signUpLogInAs_Real_Guest(gundesName, gundesEmailAddr);
@@ -105,9 +107,10 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
   });
 
   it("... the comment appears", () => {
+    // Dupl code 2. [60290KWFUDTT]
     guestsBrowser.switchToEmbeddedCommentsIrame();
-    guestsBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
-    guestsBrowser.topic.assertPostTextMatches(2, gundesCommentOne);
+    guestsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr, gundesCommentOne);
   });
 
   it("He logs out", () => {
@@ -130,8 +133,8 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
 
   it("... her comment appears", () => {
     guestsBrowser.switchToEmbeddedCommentsIrame();
-    guestsBrowser.topic.waitForPostNrVisible(3);
-    guestsBrowser.topic.assertPostTextMatches(3, gillansCommentOne);
+    guestsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 1);
+    guestsBrowser.topic.assertPostTextMatches(c.FirstReplyNr + 1, gillansCommentOne);
   });
 
   it("Gunde gets a reply notf email", () => {

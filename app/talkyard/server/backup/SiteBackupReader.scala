@@ -164,7 +164,8 @@ case class SiteBackupReader(context: EdContext) {
 
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         pagePopularityScoresJson, pageParticipantsJson,
-        categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson) =
+        categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson,
+        isTestSiteOkDelete) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
@@ -176,7 +177,8 @@ case class SiteBackupReader(context: EdContext) {
           readJsArray(bodyJson, "drafts", optional = true),
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
-          readJsArray(bodyJson, "reviewTasks", optional = true))
+          readJsArray(bodyJson, "reviewTasks", optional = true),
+          readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -430,7 +432,8 @@ case class SiteBackupReader(context: EdContext) {
       categoryPatches.toVector, categories.toVector,
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,
-      drafts, posts, postActions, permsOnPages, reviewTasks)
+      drafts, posts, postActions, permsOnPages, reviewTasks,
+      isTestSiteOkDelete = isTestSiteOkDelete)
   }
 
 

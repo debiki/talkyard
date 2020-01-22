@@ -7,6 +7,7 @@ const slugs = {
   replyWithImagePageSlug: 'impexp-reply-w-image',
   onlyLikeVotePageSlug: 'impexp-like-vote',
   onlySubscrNotfsPageSlug: 'impexp-subscr-notfs',
+  guestReplyPageSlug: 'impexp-guest-reply',
 };
 
 const texts = {
@@ -14,6 +15,9 @@ const texts = {
   mariasReplyTwoWithImage: 'mariasReplyTwoWithImage',
   michaelsReply: 'michaelsReply',
   owensReplyMentionsMariaMichael: 'owensReplyMentionsMariaMichael @maria @michael',
+  guestsReply: 'guestsReply',
+  guestsName: 'Garbo Guest',
+  guestsEmail: 'e2e-garboguest@x.co',
 };
 
 function createEmbeddingPages(browser) {
@@ -22,6 +26,7 @@ function createEmbeddingPages(browser) {
   mkPage({ urlPath: slugs.replyWithImagePageSlug });
   mkPage({ urlPath: slugs.onlyLikeVotePageSlug });
   mkPage({ urlPath: slugs.onlySubscrNotfsPageSlug });
+  mkPage({ urlPath: slugs.guestReplyPageSlug });
 }
 
 

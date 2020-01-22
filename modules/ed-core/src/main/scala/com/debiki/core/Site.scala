@@ -48,13 +48,26 @@ object Site {
     * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
     */
   def isOkayName(siteName: String): Boolean =
-    OkWebsiteNameRegex matches siteName
+    findNameProblem(siteName).isEmpty
+
+  def findNameProblem(siteName: String): Option[String] = {
+    if (siteName.length > MaxSiteNameLength)
+      Some(s"Name too long, max $MaxSiteNameLength chars")
+    else if (siteName.length <= 2)
+      Some(s"Name too short")
+    else if (!OkWebsiteNameRegex.matches(siteName))
+      Some("Bad chars, only a-z 0-9 and '-' allowed, must start with a-z")
+    else
+      None
+  }
 
   /** Shouldn't need more than 70 chars hostname? Even if 'comments-for-...(domain-with-dashes)'
     * local hostnames. — The e2e tests sometimes generate long names though [502KHSRG52]
     * so actually sometimes need 70 chars.
     */
-  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,68}[a-z0-9]""".r
+  private val MaxSiteNameLength = 70
+
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]*[a-z0-9]""".r
 
 }
 
@@ -97,6 +110,11 @@ object SiteStatus {
 
   /** No content can be added, but content can be deleted, by staff, if it's reported as
     * offensive, for example. And more staff can be added, to help deleting any bad content.
+    *
+    * Useful for a site that's been shut down, but you don't want to remove it from
+    * the Internet. Then, you leave it online, read-only — however, staff needs to
+    * be able to login and delete any bad contents that might get flagged. So,
+    * in addition to reading, one can also delete things.
     */
   case object ReadAndCleanOnly extends SiteStatus(3) {
     def mayAddAdmins = true
@@ -116,7 +134,8 @@ object SiteStatus {
     def mayAddUsers = false
   }
 
-  /** Can be undeleted. Only visible to superadmins.
+  /** Can be undeleted. Only visible to superadmins — others see 404 Not Found,
+    * just as if the site had never been created.
     */
   case object Deleted extends SiteStatus(6) {
     def mayAddAdmins = false
@@ -173,7 +192,7 @@ case class Site(  // delete? Use only SiteInclDetails instead?
 // COULD split into SiteMeta and SiteStats?  So one can construct a SiteMeta even if
 // one has not yet counted all pages and members etc.
 //
-case class SiteInclDetails(  // [exp] ok use. delete: price_plan
+case class SiteInclDetails(  // [exp] ok use
   id: SiteId,
   pubId: String,
   status: SiteStatus,
@@ -206,6 +225,20 @@ case class SiteInclDetails(  // [exp] ok use. delete: price_plan
 
   def canonicalHostname: Option[HostnameInclDetails] =
     hostnames.find(_.role == Hostname.RoleCanonical)
+
+  def copyWithNewCanonicalHostname(hostname: String, addedAt: When, redirectOld: Boolean)
+        : SiteInclDetails = {
+    unimplementedIf(!redirectOld, "TyE4065KUTKFP2")
+    // Could, but not tested:
+    //if (hostnames.exists(hn => hn.hostname == hostname && hn.role == Hostname.RoleCanonical))
+    //  return this
+    val oldNoCanon = hostnames.filter(_.hostname != hostname).map(h => {
+      if (h.role == Hostname.RoleCanonical) h.copy(role = Hostname.RoleRedirect)
+      else h
+    })
+    val newCanon = HostnameInclDetails( hostname, Hostname.RoleCanonical, addedAt = addedAt)
+    copy(hostnames = newCanon +: oldNoCanon)
+  }
 }
 
 

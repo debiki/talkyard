@@ -845,6 +845,8 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
   def summaryEmailIfActive: Option[Boolean]
   def seeActivityMinTrustLevel: Option[TrustLevel]
 
+  def usernameLowercase: String
+
   /** UI features to enable or disable, or which UI variant to use. For A/B testing and
     * also in some cases for letting admins or users override the default settings
     * and make things look like they look for their community, or themselves.
@@ -1275,6 +1277,7 @@ case class Group(  // [exp] missing: createdAt, add to MemberInclDetails & Parti
   override def isGroup = true
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
+  def usernameLowercase: String = theUsername.toLowerCase
   override def usernameOrGuestName: String = theUsername
   override def nameOrUsername: String = name getOrElse theUsername
 
@@ -1659,6 +1662,7 @@ case class UserStats(
   userId: UserId,
   // SHOULD update based on browser activity
   // Change to Option? If user upserted via API but has never actually visited the forum?
+  // And change firstSeenAtOr0 to Option[When] too? (5032957635)
   lastSeenAt: When = When.fromMillis(0),
   // Later: lastSeenAtIp, lastBrowserIdCookie, lastBrowserFingerprint?
   // Then also include that lastX stuff in the download-my-personal-data response [6LKKEZW2].
@@ -1667,6 +1671,7 @@ case class UserStats(
   lastSummaryEmailAt: Option[When] = None, // RENAME to lastSummaryAt, & db field too
   nextSummaryEmailAt: Option[When] = None, // RENAME to nextSummaryMaybeAt,   & db field too
   emailBounceSum: Float = 0f,
+  // Change to Option[When] instead? and lastSeenAt too; see comment above. (5032957635)
   firstSeenAtOr0: When = When.fromMillis(0),
   firstNewTopicAt: Option[When] = None,
   firstDiscourseReplyAt: Option[When] = None,
