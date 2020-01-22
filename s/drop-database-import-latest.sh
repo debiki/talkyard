@@ -23,11 +23,22 @@ if [ -z "$latest_dump" ]; then
   exit 1
 fi
 
-echo "The most recent dumps in $1 are:"
+echo
+echo "Looking at: $1 ..."
+echo
+echo "The most recent database and config dumps are:"
 echo "`ls -hlt $1 | grep '\.gz' | head`"
 echo
 
-read -r -p "Shall I import $latest_dump into the Docker database container? [Y/n]" response
+latest_uploads_dump=`ls -t $1 2>/dev/null | grep 'uploads-up-to-incl-.*\.d' | head -n1`
+echo "The most recent uploaded files dump dirs:"
+echo "`ls -hlt $1 | grep 'uploads-up-to-incl-.*\.d' | head`"
+echo
+
+echo "Shall I import:
+   $latest_dump
+   $latest_uploads_dump"
+read -r -p "into the Docker database container, and uploads directory? [Y/n]" response
 response=${response,,}    # tolower
 if [[ $response =~ ^(no|n)$ ]] ; then
   echo "I'll do nothing then, bye."
@@ -53,7 +64,12 @@ fi
 psql="docker exec -i $container psql postgres postgres"
 
 
-zcat $1/$latest_dump | $psql
+echo
+echo "Importing database:"
+echo
+echo "    zcat ${1}$latest_dump | $psql"
+echo
+zcat ${1}$latest_dump | $psql
 
 echo '... Done importing.'
 
@@ -63,7 +79,22 @@ $psql -c 'drop user if exists talkyard_test;'
 $psql -c "create user talkyard_test with password 'public';"
 $psql -c 'create database talkyard_test owner talkyard_test;'
 echo '... Done recreating talkyard_test.'
+echo
 
+if [ -z "$latest_uploads_dump" ]; then
+  echo "Didn't find any uploads dir to import."
+else
+  echo "Rsyncing uploads:"
+  echo
+  cmd="rsync -av ${1}$latest_uploads_dump/ volumes/uploads/"
+  echo "    $cmd"
+  echo
+  $cmd
+  echo "... Done rsyncing uploads."
+fi
 
-echo "Done. If the web and application servers aren't running, you can start them now:"
-echo "  docker-compose start web app"
+echo
+echo "Done. If the web and application servers aren't running, you can start them:"
+echo
+echo "    make up"
+echo
