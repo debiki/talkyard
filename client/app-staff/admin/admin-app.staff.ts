@@ -450,13 +450,6 @@ const SettingsPanel = createFactory({
     const sr = AdminRoot + 'settings/';
     const ps = this.props;
 
-    // If this site is for blog comments, and forum features not yet enabled,
-    // then we'll soft-hide settings for changing the address to the site (which
-    // people do but then HTTPS won't work unless also configured — so their site breaks),
-    // and, accidentally, we hide Google Analytics too — which isn't useful for blog
-    // comments sites anyway, right?
-    const isBlogCommentsOnly = isBlogCommentsSite() && !currentSettings.enableForum;
-
     return (
       r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
@@ -467,10 +460,7 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'features', id: 'e_A_Ss_Features' }, "Features"),
           LiNavLink({ to: sr + 'embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
           LiNavLink({ to: sr + 'language', id: 'e_AA_Ss_Lang' }, "Language"),
-          // Just soft-hide this — so Talkyard staff can still have a look, by typing the
-          // url to these settings, manually.
-          isBlogCommentsOnly ? null :
-            LiNavLink({ to: sr + 'site', id: 'e2eAA_Ss_AdvancedL' }, "Site")),
+          LiNavLink({ to: sr + 'site', id: 'e2eAA_Ss_AdvancedL' }, "Site")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
             Route({ path: sr + 'legal', render: () => LegalSettings(ps) }),
@@ -1944,6 +1934,22 @@ const AdvancedSettings = createFactory({
 
   render: function() {
     const props = this.props;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const currentSettings: Settings = props.currentSettings;
+
+    // If this site is for blog comments, and forum features not yet enabled,
+    // then we'll soft-hide settings for changing the address to the site (which
+    // people do but then HTTPS won't work unless also configured — so their site breaks).
+    // To test, try this e2e test?:  <<which?>>
+    const isBlogCommentsOnly =
+        isBlogCommentsSite() &&
+        !currentSettings.enableForum;
+    const hideForumStuff =
+        isBlogCommentsOnly &&
+        eds.siteId !== FirstSiteId &&
+        location.hash.indexOf('&showAll') === -1;
+
     const hosts: Host[] = props.hosts;
     const noCanonicalHostSpecifiedString = " (no address specified)";
     const canonicalHostname = this.getCanonicalHostname() || noCanonicalHostSpecifiedString;
@@ -1958,7 +1964,7 @@ const AdvancedSettings = createFactory({
     const redirectingHostnames =
       _.filter(hosts, (h: Host) => h.role == HostRole.Redirect).map((h: Host) => h.hostname);
 
-    const changeHostnameFormGroup =
+    const changeHostnameFormGroup = hideForumStuff ? null :
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label col-sm-3' }, "Site address"),
         r.div({ className: 'col-sm-9 esA_Ss_S esAdmin_settings_setting' },
@@ -2004,12 +2010,25 @@ const AdvancedSettings = createFactory({
           }
         });
 
+    // const disableDeleteButton = !ppt_isOwner(me);
+    const deleteSiteFormGroup =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label col-sm-3' }, "Delete site"),
+        r.div({ className: 'col-sm-9 esAdmin_settings_setting' },
+          r.p({},
+            "You can delete your site, by emailing ",
+            r.samp({}, 'support@talkyard.io'),
+            " from your admin email address. Later, there'll be a " +
+            "button here so you can do this yourself.")));
+
     return (
       r.div({},
         googleAnalyticsId,
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
-        redirectingHostsFormGroup));
+        redirectingHostsFormGroup,
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'}, "Danger zone"),
+        deleteSiteFormGroup));
 
   }
 });
