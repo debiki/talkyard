@@ -101,6 +101,9 @@ export function scrollIntoView(elem, options, onDone?: () => void): boolean | un
     if (!options.parent) {
       options.parent = $byId('esPageColumn');
     }
+
+    // Here could be a good place to add extra margin, if topbar open?  [306KDRGFG2]
+
     const coords = d.i.calcScrollIntoViewCoords(elem, options);
     needsToScroll = coords.needsToScroll;
     if (needsToScroll) {

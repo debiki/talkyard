@@ -71,7 +71,7 @@
   background-color: hsl($uiHue, 80%, 54%);
   margin-bottom: 18px;  // instead of metabar's margin-top  [MTBMGTP]
 
-.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply:hover
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply:not(.s_PA_B-Disabled):hover
   color: white;
   background-color: hsl($uiHue, 95%, 64%);
 
@@ -117,6 +117,13 @@
     &:before
       opacity: 0.47;
       margin-right: 5px;
+    &.s_PA_B-Disabled
+      opacity: 0.5;
+      cursor: default;
+    &.s_PA_B-Active
+      opacity: 1;
+      color: white;
+      background: hsl($uiHue,40%,40%);
 
   &.dw-a-solve,
   &.dw-a-solved
@@ -204,7 +211,7 @@
     padding-left: 9px;
     padding-right: 13px;
 
-  &:hover:not(.dw-a-votes),
+  &:hover:not(.dw-a-votes):not(.s_PA_B-Disabled),
   &.dw-a-votes:hover:after
     // dupl code (6KF0WR4Z)
     color: hsl($uiHue, 100%, 25%);

@@ -657,21 +657,6 @@ export const Editor = createFactory<any, EditorState>({
     setTimeout(fadeBackdrop, 1400);
   },
 
-  scrollPostIntoView: function(postNr) {
-    // SHOULD send message to iframe parent, so works also for embedded comments.
-
-    const postElem = $byId('post-' + postNr);
-    // There's no pots-1 = BodyNr in embedded comments discussions (there's a blog
-    // article instead, on the embedding page).
-    if (postElem) {
-      // Try to not scroll so much, that's also confusing: specify fairly small margins.
-      debiki.internal.showAndHighlightPost(postElem, {
-        marginTop: Math.max(60, topbar.getTopbarHeightInclShadow()),
-        marginBottom: 50,
-      })
-    }
-  },
-
   alertBadState: function(wantsToDoWhat = null): boolean {
     // REFACTOR  we call clearIsReplyingMarks from here, so cannot return directly if allFine,
     // which makse this unnecessarily complicated?
@@ -893,7 +878,7 @@ export const Editor = createFactory<any, EditorState>({
     this.setState({
       // UX COULD save this in the draft too, & send to the server, so the preview html
       // is available when rendering the page and one might want to see one's drafts,
-      // here: [DRAFTPRVW].
+      // here: [DRAFTPRVW]. But would need to sanitize server side (!).
       safePreviewHtml: safeHtml,
     }, () => {
       // Show an in-page preview, unless we're creating a new page.
@@ -1348,9 +1333,16 @@ export const Editor = createFactory<any, EditorState>({
     dieIf(!_.isUndefined(statePatch.visible), 'TyE305WKTJP4');
     // @endif
     this.makeSpaceAtBottomForEditor();
+    const oldState: EditorState = this.state;
     const newState: Partial<EditorState> = { ...statePatch, visible: true };
     this.setState(newState);
-    ReactActions.onEditorOpen(() => {
+
+    const params: EditorPatch = {
+      editorsPageId: newState.editorsPageId || oldState.editorsPageId,
+      replyingToPostNr: newState.replyToPostNrs?.[0],
+      editingPostId: newState.editingPostUid,
+    };
+    ReactActions.onEditorOpen(params, () => {
       if (this.isGone || !this.state.visible) return;
       this.focusInputFields();
       this.scrollToPreview = true;
@@ -1474,8 +1466,11 @@ export const Editor = createFactory<any, EditorState>({
     const store: Store = state.store;
 
     // Is undef, if in the API section, e.g. typing a direct message to a user.
+    // Dulp line, a bit. (526WJ53TP34)
     const editorsPage: Page | undefined =
         store.pagesById[state.editorsPageId] || store.currentPage;
+
+    const editorsPageType: PageType | undefined = editorsPage?.pageRole;
 
     const me: Myself = store.me;
     let settings: SettingsVisibleClientSide = store.settings;
@@ -1575,16 +1570,16 @@ export const Editor = createFactory<any, EditorState>({
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
-      if (this.state.newPageRole && settings_selectTopicType(settings, me)) {
-        pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newPageRole,
+      if (state.newPageRole && settings_selectTopicType(settings, me)) {
+        pageRoleDropdown = PageRoleDropdown({ store, pageRole: state.newPageRole,
             complicated: store.settings.showExperimental,
             onSelect: this.changeNewForumPageRole,
             title: t.TopicType, className: 'esEdtr_titleEtc_pageRole' });
       }
     }
 
-    const editingPostNr = this.state.editingPostNr;
-    const replyToPostNrs = this.state.replyToPostNrs;
+    const editingPostNr = state.editingPostNr;
+    const replyToPostNrs = state.replyToPostNrs;
     const isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
     const repliesToNotOrigPost = replyToPostNrs.length && !isOrigPostReply;
     // ----- Delete these?:
@@ -1598,7 +1593,11 @@ export const Editor = createFactory<any, EditorState>({
         r.span({},
           // "Edit post X:"
           t.e.EditPost_1,
-          r.a({ href: '#post-' + editingPostNr }, t.e.EditPost_2 + editingPostNr + ':'));
+          r.a({ href: '#post-' + editingPostNr, onClick: (event) => {
+              event.preventDefault();
+              ReactActions.scrollAndShowPost(editingPostNr);
+            }},
+            t.e.EditPost_2 + editingPostNr + ':'));
     }
     else if (this.state.isWritingChatMessage) {
       doingWhatInfo = t.e.TypeChatMsg;
@@ -1654,6 +1653,7 @@ export const Editor = createFactory<any, EditorState>({
             // If replying to a blog post, then, it got auto created by the System
             // user. Don't show "Reply to System".
             const isReplyingToBlogPost = eds.isInEmbeddedEditor && postNr === BodyNr;
+            let parentPost: Post | undefined;
 
             let parentAuthor: BriefUser | undefined;
             if (isReplyingToBlogPost) {
@@ -1665,8 +1665,15 @@ export const Editor = createFactory<any, EditorState>({
               // — get them from the main iframe instead (the one with all the comments).
               // This is a new and a bit odd approach? (Jan 2020.) Let's wrap in try (although
               // shouldn't be needed).)
+              //
+              // REFACTOR CLEAN_UP don't send just a postNr to the editor,
+              // instead send:
+              //     { replyingToPost: Post, replyingToAuthor: Participant }   ? + page id ?
+              // then can skip all this (!),
+              // plus, post remembered, also if navigating to other page.
+              //
               try {
-                const parentPost = state.embMainStoreCopy.currentPage.postsByNr[postNr];
+                parentPost = state.embMainStoreCopy.currentPage.postsByNr[postNr];
                 parentAuthor = parentPost && store_getAuthorOrMissing(
                     state.embMainStoreCopy as Store, parentPost);
               }
@@ -1679,7 +1686,7 @@ export const Editor = createFactory<any, EditorState>({
               }
             }
             else {
-              const parentPost: Post | undefined = editorsPage?.postsByNr[postNr];
+              parentPost = editorsPage?.postsByNr[postNr];
               parentAuthor = parentPost && store_getAuthorOrMissing(store, parentPost);
             }
 
@@ -1689,7 +1696,7 @@ export const Editor = createFactory<any, EditorState>({
                   makeLink: false, onClick: null, avoidFullName: true });
             }
             else {
-              replyingToWhat = postNr === BodyNrStr ?
+              replyingToWhat = postNr === BodyNr ?
                   t.e.ReplyTo_theOrigPost : t.e.ReplyTo_post + postNr;
             }
 
@@ -1697,7 +1704,10 @@ export const Editor = createFactory<any, EditorState>({
             return (
               (<any> r.span)({ key: postNr },   // span has no .key, weird [TYPEERROR]
                 anyAnd,
-                r.a({ onClick: () => this.scrollPostIntoView(postNr) }, replyingToWhat)));
+                r.a({ onClick: !parentPost ? undefined : function() {
+                    ReactActions.scrollAndShowPost(parentPost);
+                  }},
+                  replyingToWhat)));
           }),
           ':');
     }
@@ -1712,7 +1722,7 @@ export const Editor = createFactory<any, EditorState>({
 
     let saveButtonTitle = t.Save;
     let cancelButtonTitle = t.Cancel;  // UX should be entitled  t.SaveDraft  instead?  I18N
-    if (_.isNumber(this.state.editingPostNr)) {
+    if (_.isNumber(editingPostNr)) {
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
     else if (replyToPostNrs.length) {
@@ -1813,9 +1823,28 @@ export const Editor = createFactory<any, EditorState>({
             // UX COULD list usernames of users already loaded & visible anyway, if not logged in?
             trigger: me.isLoggedIn ? listUsernamesTrigger : {} });
 
+
+    // ----- Preview
+
     const previewHelp =
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
+
+    const thereIsAnInPagePreview =
+        me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
+        // If we're creating a new page, there's not any place to show an in-page preview.
+        !state.newForumTopicCategoryId;
+    const previewTitleTagName = !thereIsAnInPagePreview ? 'span' : 'a';
+    const onPreviewTitleClick = !thereIsAnInPagePreview ? null : () => {
+      ReactActions.scrollToPreview({
+        isChat: page_isChat(editorsPageType),
+      });
+    };
+
+    const previewTitle =
+        r.div({},
+          r[previewTitleTagName]({ onClick: onPreviewTitleClick },
+            t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
 
 
     // ----- Editor size
@@ -1872,7 +1901,7 @@ export const Editor = createFactory<any, EditorState>({
                 textareaButtons,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },
-              r.div({}, t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')),
+              previewTitle,
               previewHelp,
               r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),

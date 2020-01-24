@@ -236,6 +236,7 @@ interface ShowPostOpts {
   marginBottom?: number;
   marginRight?: number;
   marginLeft?: number;
+  showChildrenToo?: boolean;
 }
 
 
@@ -824,7 +825,7 @@ interface Origins {
 }
 
 
-interface Store extends Origins {
+interface Store extends Origins, PartialEditorState {
   widthLayout: WidthLayout;
   isEmbedded: boolean;
   appVersion: string;
@@ -855,7 +856,13 @@ interface Store extends Origins {
   rootPostId: number;
   usersByIdBrief: { [userId: number]: Participant };  // = PpsById
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
+
   isEditorOpen?: boolean;  // default: false
+  // From PartialEditorState:
+  // editorsPageId?: PageId;
+  // replyingToPostNr?: PostNr;
+  // editingPostId?: PostId;
+
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
@@ -1126,8 +1133,14 @@ interface UserDetailsStatsGroups extends UserInclDetailsWithStats {
 
 
 interface UiPrefs {
+  inp?: UiPrefsIninePreviews;
   fbs?: UiPrefsForumButtons;
   xls?: UiPrefsExternaLInks;
+}
+
+const enum UiPrefsIninePreviews {
+  Show = 1,
+  Skip = 2,
 }
 
 const enum UiPrefsForumButtons {
@@ -1311,7 +1324,7 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch {
+interface StorePatch extends EditorPatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1329,7 +1342,6 @@ interface StorePatch {
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
-  setEditorOpen?: boolean;
   deleteDraft?: Draft;
 
   // If doing something resulted in a new page being created, and we should continue on that page.
@@ -1337,6 +1349,18 @@ interface StorePatch {
   // discussion gets created, lazily).
   newlyCreatedPageId?: PageId;
 }
+
+interface PartialEditorState {
+  editorsPageId?: PageId;
+  replyingToPostNr?: PostNr;
+  editingPostId?: PostId;
+}
+
+interface EditorPatch extends PartialEditorState {
+  setEditorOpen?: boolean;
+}
+
+
 
 
 interface Settings {

@@ -80,7 +80,7 @@ function onMessage(event) {
       // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
       ReactActions.logoutClientSideOnly();
       break;
-    case 'scrollToPostNr':
+    case 'scrollToPostNr':  // rename to loadAndShowPost  ? + add  anyShowPostOpts?: ShowPostOpts
       var postNr = eventData;
       debiki.scriptLoad.done(function() {
         var pageId = ReactStore.getPageId();
@@ -112,6 +112,10 @@ function onMessage(event) {
       // Sent from an embedded comments page to the embedded editor.
       var postNr = eventData;
       ReactActions.editPostWithNr(postNr);
+      break;
+    case 'onEditorOpen':
+      // Sent from the embedded editor to the comments iframe.
+      ReactActions.onEditorOpen(eventData);
       break;
     case 'handleEditResult':
       // This is sent from the embedded editor back to an embedded comments page.

@@ -352,7 +352,7 @@ function messageCommentsIframeNewWinTopSize() {
 // code here in the main win, with info about how to scroll — because the actuall scrolling is done
 // here in the main win.
 function messageCommentsIframeToMessageMeToScrollTo(postNr) {
-  sendToComments('["scrollToPostNr", ' + postNr + ']');
+  sendToComments(['scrollToPostNr', postNr]);
 }
 
 
@@ -388,10 +388,17 @@ function onMessage(event) {
   const iframe = findIframeThatSent(event);
 
   let assertIsFromEditorToComments = function() {};
+  let assertIsFromCommentsToEditor = function() {};
   // @ifdef DEBUG
   assertIsFromEditorToComments = function() {
     if (iframe !== editorIframe) {
-      debugLog(`Bad msg dir [TyEMSGDIR]: '${eventName}', ${JSON.stringify(eventData)}`);
+      debugLog(`Bad msg dir [TyEMSGDIR1]: '${eventName}', ${JSON.stringify(eventData)}`);
+      debugger;
+    }
+  };
+  assertIsFromCommentsToEditor = function() {
+    if (iframe !== commentsIframe) {
+      debugLog(`Bad msg dir [TyEMSGDIR2]: '${eventName}', ${JSON.stringify(eventData)}`);
       debugger;
     }
   };
@@ -459,12 +466,12 @@ function onMessage(event) {
         }
       }
       break;
-    case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
+    case 'setIframeSize':
       setIframeSize(iframe, eventData);
       // The comments iframe wants to know the real win dimensions, so it can position modal
       // dialogs on screen. But wait until the iframe has been resized — because if
-      // the iframe bottom, is higher up than the window bottom, then that'd reduce
-      // the height we send to the iframe.
+      // the iframe bottom after the above resize, is higher up than the window bottom,
+      // then that'd reduce the height we send to the iframe.
       if (iframe === commentsIframe) {
         setTimeout(messageCommentsIframeNewWinTopSize);
       }
@@ -473,7 +480,13 @@ function onMessage(event) {
       if (loadingText)
         loadingText.parentNode.removeChild(loadingText);
       break;
-    case 'scrollComments':
+    case 'scrollToPostNr':
+      // The comments iframe will calculate the rectangle to scroll into view,
+      // and then reply with a 'scrollComments' message, because the actual scrolling
+      // needs to happen here in the parent frame.
+      sendToComments(event.data);
+      break;
+    case 'scrollComments':   // RENAME to 'scrollCommentsIframe'?
       var rectToScrollIntoView = eventData[0];
       var options = eventData[1];
       scrollComments(rectToScrollIntoView, options);
@@ -537,11 +550,16 @@ function onMessage(event) {
       break;
     // Maybe remove this one, and use only 'showEditsPreview' instead, renamed to
     // 'showEditorAndPreview'?
-    case 'showEditor':
+    case 'onEditorOpen':
       assertIsFromEditorToComments();
       showEditor(true);
+      sendToComments(event.data);
       break;
     case 'showEditsPreview':
+      assertIsFromEditorToComments();
+      sendToComments(event.data);
+      break;
+    case 'scrollToPreview':
       assertIsFromEditorToComments();
       sendToComments(event.data);
       break;
@@ -557,6 +575,7 @@ function onMessage(event) {
       setEditorMinimized(eventData);
       break;
     case 'editorToggleReply':
+      assertIsFromCommentsToEditor();
       sendToEditor(event.data);
       break;
     case 'handleReplyResult':
@@ -564,6 +583,7 @@ function onMessage(event) {
       sendToComments(event.data);
       break;
     case 'editorEditPost':
+      assertIsFromCommentsToEditor();
       sendToEditor(event.data);
       break;
     case 'handleEditResult':
@@ -692,7 +712,7 @@ function scrollComments(rectToScrollIntoView, options) {
 
 var hasInitedEditorHeight = false;
 
-function showEditor(show) {
+function showEditor(show: boolean) {
   if (show) {
     editorWrapper.style.display = 'block';
     if (!hasInitedEditorHeight) {

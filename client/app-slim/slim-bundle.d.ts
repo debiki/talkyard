@@ -252,9 +252,11 @@ declare namespace debiki2 {
 
   function event_isCtrlEnter(event): boolean;
   function event_isEscape(event): boolean;
+  function page_isChat(pageRole: PageRole): boolean;
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function me_uiPrefs(me: Myself): UiPrefs;
   function member_isBuiltIn(member: Member): boolean;
   function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean;
   function user_threatLevel(user: UserInclDetails): ThreatLevel;

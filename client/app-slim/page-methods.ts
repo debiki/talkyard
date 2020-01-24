@@ -31,7 +31,7 @@
 
 
 export function page_isGroupTalk(pageRole: PageRole): boolean {
-  return page_isPersonalTalk(pageRole) || page_isChatChannel(pageRole);
+  return page_isPersonalTalk(pageRole) || page_isChat(pageRole);
 }
 
 
@@ -64,7 +64,7 @@ export function page_findPostById(page: Page, postId: PostId): Post | undefined 
 
 export function page_mayChangeRole(pageRole: PageRole): boolean {
   // Sync with Scala [6KUW204]
-  return !isSection(pageRole) && !page_isChatChannel(pageRole) && !page_isPrivateGroup(pageRole) &&
+  return !isSection(pageRole) && !page_isChat(pageRole) && !page_isPrivateGroup(pageRole) &&
       pageRole !== PageRole.About &&
       pageRole !== PageRole.Code &&
       pageRole !== PageRole.SpecialContent;

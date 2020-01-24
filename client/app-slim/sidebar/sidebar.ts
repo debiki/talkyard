@@ -88,7 +88,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       this.loadAdminGuide();
     }
     else {
-      commentsType = isPageWithComments(page.pageRole) && !page_isChatChannel(page.pageRole)
+      commentsType = isPageWithComments(page.pageRole) && !page_isChat(page.pageRole)
           ? 'Recent'
           : 'Users';
     }
@@ -336,7 +336,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     //var minimapProps = _.assign({ ref: 'minimap' }, store);
     const commentsFound = isPageWithComments(page.pageRole) ? this.findComments() : null;
-    const isChat = page_isChatChannel(page.pageRole);
+    const isChat = page_isChat(page.pageRole);
     const isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
 
     let sidebarClasses = '';

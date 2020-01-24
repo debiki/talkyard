@@ -151,7 +151,7 @@ export const TopBar = createComponent({
     const page: Page = store.currentPage;
     const me: Myself = store.me;
     const pageRole = page.pageRole;
-    const isChat = page_isChatChannel(page.pageRole);
+    const isChat = page_isChat(page.pageRole);
     const isEmbComments = pageRole === PageRole.EmbeddedComments;
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.

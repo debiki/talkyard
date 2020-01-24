@@ -407,8 +407,8 @@ export function uncollapsePost(post) {
 
 
 // COULD RENAME to loadIfNeededThenShow(AndHighlight)Post
-export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean,
-       callback?: (post?: Post) => void) {
+export function loadAndShowPost(postNr: PostNr, showPostOpts: ShowPostOpts = {},
+       onDone?: (post?: Post) => void) {
   const store: Store = ReactStore.allData();
   const page: Page = store.currentPage;
   const anyPost = page.postsByNr[postNr];
@@ -428,23 +428,63 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean,
       dieIf(posts?.length !== 1, 'TyE06QKUSMF4');
       // @endif
       const post: Post = posts && posts[0];
-      showAndCallCallback(post);
+      scrollAndShowPost(post, showPostOpts, onDone);
     });
   }
   else {
-    showAndCallCallback(anyPost);
+    scrollAndShowPost(anyPost, showPostOpts, onDone);
+  }
+}
+
+
+export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: ShowPostOpts,
+       onDone?: (post?: Post) => void) {
+
+  if (eds.isInEmbeddedEditor) {
+    const nr = _.isNumber(postOrNr) ? postOrNr : postOrNr.nr;
+    sendToCommentsIframe(['scrollToPostNr', nr]);
+    return;
   }
 
-  function showAndCallCallback(post: Post) {
-    ReactDispatcher.handleViewAction({
-      actionType: actionTypes.ShowPost,
-      postNr: postNr,
-      showChildrenToo: showChildrenToo,
-      onDone: function() {
-        callback?.(post);
-      },
-    });
+  const store: Store = ReactStore.allData();
+  let post: Post;
+  if (_.isNumber(postOrNr)) {
+    const page: Page = store.currentPage;
+    post = page.postsByNr[postOrNr];
+    if (!post) {
+      // @ifdef DEBUG
+      die('TyE20962SKGPJ')
+      // @endif
+      return;
+    }
   }
+  else {
+    post = postOrNr;
+  }
+
+  // Adjust scroll margins?
+  const showPostOpts: ShowPostOpts = { ...anyShowPostOpts };
+  let marginTop = showPostOpts.marginTop || 0;
+  // We don't want the topbar to occlude the whatever we're scrolling to.
+  // COULD do in utils.scrollIntoView() instead?  [306KDRGFG2]
+  marginTop += topbar.getTopbarHeightInclShadow();
+  if (store.replyingToPostNr === post.nr ||
+      store.editingPostId === post.uniqueId) {
+    // Add more margin so "Replying to:" above also will scroll into view. [305KTJ4]
+    marginTop += 75;
+  }
+  showPostOpts.marginTop = marginTop;
+  // Try to not scroll so much, that can be confusing; use fairly small margins by default.
+  showPostOpts.marginBottom = showPostOpts.marginBottom ?? 50;
+
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ShowPost,
+    postNr: post.nr,
+    showPostOpts,
+    onDone: function() {
+      onDone?.(post);
+    },
+  });
 }
 
 
@@ -463,7 +503,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
   const fragAction: FragAction = findUrlFragmentAction(newHashFragment);
   if (!fragAction) {
     // The default action for chat pages, is to scroll to the end.
-    if (currentPage && page_isChatChannel(currentPage.pageRole)) {
+    if (currentPage && page_isChat(currentPage.pageRole)) {
       // dupl code [5UKP20]
       utils.scrollIntoViewInPageColumn('#thePageBottom');
     }
@@ -533,7 +573,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
   }
 
   // Load post if needed, highlight it, and do the frag action.
-  loadAndShowPost(postNr, false /* don't load children too */, function(post?: Post) {
+  loadAndShowPost(postNr, {}, function(post?: Post) {
     let resetHashFrag = true;
     markAnyNotificationAsSeen(postNr);
     switch (fragAction.type) {
@@ -781,17 +821,12 @@ function markAnyNotificationAsSeen(postNr: number) {
 }
 
 
-export function onEditorOpen(onDone: () => void) {
-  // @ifdef DEBUG
-  // Use messages 'editorToggleReply' or 'editorEditPost' instead.
-  dieIf(eds.isInEmbeddedCommentsIframe, 'Ty305WKHE3');
-  // @endif
-
+export function onEditorOpen(ps: EditorPatch, onDone?: () => void) {
   if (eds.isInEmbeddedEditor) {
-    sendToCommentsIframe(['showEditor', {}]);
+    sendToCommentsIframe(['onEditorOpen', ps]);
   }
-
-  patchTheStore({ setEditorOpen: true }, onDone);
+  const patch: EditorPatch = { ...ps, setEditorOpen: true };
+  patchTheStore(patch, onDone);
 }
 
 
@@ -812,6 +847,12 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
   }
 
   const store: Store = ReactStore.allData();
+  const me: Myself = store.me;
+
+  if (me_uiPrefs(me).inp === UiPrefsIninePreviews.Skip) {
+    ps.replyToNr && highlightPostNrBrieflyIfThere(ps.replyToNr);
+    return;
+  }
 
   // If' we've navigated to a different page, then, any preview is gone already.
   const isOtherPage = ps.editorsPageId && ps.editorsPageId !== store.currentPageId;
@@ -829,7 +870,7 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
   if (!page)
     return;
 
-  const isChat = page_isChatChannel(page.pageRole);
+  const isChat = page_isChat(page.pageRole);
 
   // A bit dupl debug checks (49307558).
   // @ifdef DEBUG
@@ -943,7 +984,7 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
   // is wrong — so just access it via store.currentPage instead. [UPDLZYPID]
   const page = eds.isInIframe ? store.currentPage : (
       ps.editorsPageId ? store.pagesById[ps.editorsPageId] : store.currentPage);
-  const isChat = page && page_isChatChannel(page.pageRole);
+  const isChat = page && page_isChat(page.pageRole);
 
   // If' we've navigated to a different page, then, any preview is gone already.
   const isOtherPage = ps.editorsPageId && ps.editorsPageId !== store.currentPageId;

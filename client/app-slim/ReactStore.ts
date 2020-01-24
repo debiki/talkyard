@@ -324,7 +324,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowPost:
-      showPostNr(action.postNr, action.showChildrenToo);
+      showPostNr(action.postNr, action.showPostOpts);
       break;
 
     case ReactActions.actionTypes.SetWatchbar:
@@ -659,7 +659,7 @@ ReactStore.allData = function(): Store {
 // message text input box. [CHATPRVW]
 //
 function addMyDraftPosts(store: Store, myPageData: MyPageData) {
-  if (!eds.isInEmbeddedEditor && !page_isChatChannel(store.currentPage?.pageRole)) {
+  if (!eds.isInEmbeddedEditor && !page_isChat(store.currentPage?.pageRole)) {
     _.each(myPageData.myDrafts, (draft: Draft) => {
       const draftType = draft.forWhat.draftType;
       if (draftType === DraftType.Reply || draftType === DraftType.ProgressPost) {
@@ -1010,10 +1010,11 @@ function collapseTree(post: Post) {
 }
 
 
-function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
+function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
   const page: Page = store.currentPage;
-  let post: Post = page.postsByNr[postNr];
-  if (showChildrenToo) {
+  const postToShow: Post = page.postsByNr[postNr];
+  let post: Post = postToShow;
+  if (showPostOpts.showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
   // Uncollapse ancestors, to make postId visible. Don't loop forever if there's any weird
@@ -1032,7 +1033,7 @@ function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
     post = page.postsByNr[post.parentNr];
   }
   setTimeout(() => {
-    const opts: ShowPostOpts = {};
+    const opts: ShowPostOpts = { ...showPostOpts };
     if (postNr <= MaxVirtPostNr) {
       // It's a draft. Add a bit more margin, because there's a "Your draft"
       // text above. [03RKTG42]
@@ -1281,6 +1282,8 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 function patchTheStore(storePatch: StorePatch) {
   if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
     store.isEditorOpen = storePatch.setEditorOpen;
+    store.replyingToPostNr = storePatch.setEditorOpen && storePatch.replyingToPostNr;
+    store.editingPostId = storePatch.setEditorOpen && storePatch.editingPostId;
     // Need to update all posts when the editor opens, to hide all Reply buttons
     // — so cannot quick-update just one post.
     store.cannotQuickUpdate = true;
@@ -1503,7 +1506,7 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
     let clazz = '';
-    if (page_isChatChannel(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page_isChat(page.pageRole)) clazz = ' dw-vt es-chat';
     if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
     if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
     if (page.pageRole) clazz = ' dw-vt';

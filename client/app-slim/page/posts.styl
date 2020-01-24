@@ -64,17 +64,22 @@
 
 
 
-// Draft and preview posts
+// Relying-to, draft and preview posts
 //===========================
 
 $previewBackground = hsl($uiHueHighlightedBackground, 93%, 80%);
 $previewBorderBottom = 15px solid $previewBackground !important;
 
+.s_T_ReTo,
 .s_T_YourPrvw
   padding: 9px 15px 7px;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 17px;
   background: $previewBackground;
+
+.s_T_ReTo
+  background: hsl($uiHue, 94%, 89%);
+  margin-bottom: 16px;  // the .s_T_YourPrvw has extra top padding, but not .s_T_ReTo
 
 .s_T-Prvw-IsEd > .s_T_YourPrvw
   margin-bottom: 10px;

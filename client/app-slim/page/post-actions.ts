@@ -284,9 +284,18 @@ export const PostActions = createComponent({
         t.Solution);
     }
 
-    const replyButton = !store_mayIReply(store, post) || isEditorOpenAlready ? null :
-          r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store),
-              onClick: this.onReplyClick },
+    const replyingToClass = store.replyingToPostNr === post.nr  ? ' s_PA_B-Active' : '';
+    const disabledClass = isEditorOpenAlready ? ' s_PA_B-Disabled' : '';
+
+    const replyButton = !store_mayIReply(store, post) ? null :
+          r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store)
+                + disabledClass + replyingToClass,
+              // Highlight the post this Reply button replies to.
+              onMouseEnter: isEditorOpenAlready ? undefined : () => highlightPost(post.nr, true),
+              // Remove any highlight also if editor open, so disappears after
+              // click —> eitor-opens —> mouseleave.
+              onMouseLeave: () => highlightPost(post.nr, false),
+              onClick: isEditorOpenAlready ? undefined : this.onReplyClick },
             makeReplyBtnTitle(store, post));
 
     const changeButton = !isStaffOrOwnPage || !isPageBody || isEditingThisPost ? null :

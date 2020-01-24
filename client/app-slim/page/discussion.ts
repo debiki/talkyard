@@ -1205,8 +1205,13 @@ const Thread = createComponent({
 
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
+    let replyingToElem;
+    if (store.replyingToPostNr === post.nr) {   // + && page id
+      replyingToElem = r.div({ className: 's_T_ReTo' }, "Replying to:");  // [305KTJ4]  I18N
+    }
+
     let previewClass = '';
-    let previewElem = null;
+    let previewElem;
     if (post.isPreview) {
       // For now,
       // construct either this text:  "Preview: Your reply to (someone's name):"
@@ -1275,6 +1280,7 @@ const Thread = createComponent({
           is2dColumnClass + branchSidewaysClass + collapsedClass + avatarClass +
           previewClass + flatClass },
         arrows,
+        replyingToElem,
         anyWrongWarning,
         previewElem,
         anyAvatar,
@@ -1798,7 +1804,7 @@ export function makeQuestionTooltipText(isAnswered) {
 }
 
 
-function highlightPost(postNr: PostNr, highlightOn: boolean) {
+export function highlightPost(postNr: PostNr, highlightOn: boolean) {
   const postElem = $byId('post-' + postNr);
   if (highlightOn) {
     debiki2.$h.addClasses(postElem, 'dw-highlighted-multireply-hover');

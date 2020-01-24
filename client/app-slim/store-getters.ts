@@ -122,7 +122,7 @@ export function store_getUsersOnline(store: Store): BriefUser[] {
 
 export function store_getUsersHere(store: Store): UsersHere {
   const page: Page = store.currentPage;
-  const isChat = page_isChatChannel(page.pageRole);
+  const isChat = page_isChat(page.pageRole);
   let users: BriefUser[];
   const listMembers = isChat;
   const listUsersOnPage = !listMembers && page_isDiscussion(page.pageRole);

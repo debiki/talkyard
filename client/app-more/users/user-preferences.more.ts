@@ -95,7 +95,7 @@ export const UserPreferences = createFactory({
                   to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGuestOrBuiltIn ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account),
-              user.isGroup || !isNormalMember ? null : LiNavLink({
+              !isNormalMember ? null : LiNavLink({
                   to: uiPath, className: 'e_UP_Prf_Nav_UiL' }, t.upp.Interface))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));

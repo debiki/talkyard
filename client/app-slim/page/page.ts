@@ -195,12 +195,12 @@ const Page = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    const content = page_isChatChannel(page.pageRole)
+    const content = page_isChat(page.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact'; // BUG React rendering: Was missing server side, present in browser
     const pageTypeClass = ' s_PT-' + page.pageRole;  // REFACTOR place here: [5J7KTW2] instead
-    const isChat = page_isChatChannel(page.pageRole);
+    const isChat = page_isChat(page.pageRole);
     return rFragment({},
       isChat ? r.div({ id: 'theChatVspace' }) : null,
       r.div({ className: 'esPage' + compactClass + pageTypeClass },

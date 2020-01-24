@@ -34,7 +34,7 @@ export function mayIndeed() {
 }
 
 
-export function page_isChatChannel(pageRole: PageRole): boolean {
+export function page_isChat(pageRole: PageRole): boolean {
   return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
 }
 

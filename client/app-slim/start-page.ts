@@ -20,10 +20,13 @@
 
 const d = { i: debiki.internal };
 
+
+let pageStarted;
 const scriptLoadDoneCallbacks = [];
-debiki.scriptLoad = {  // RENAME to tyd.whenStarted(...) ?
+debiki.scriptLoad = {  // RENAME to tyd.afterStarted(...) ?
   done: function(callback) {
-    scriptLoadDoneCallbacks.push(callback);
+    if (pageStarted) callback();
+    else scriptLoadDoneCallbacks.push(callback);
   }
 };
 
@@ -339,6 +342,7 @@ function renderPageInBrowser() {
 
   function lastStep() {
     debiki2.startMagicTime(eds.testNowMs);
+    pageStarted = true;
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });
     console.log("Page started. [TyMPGSTRTD]");
   }
