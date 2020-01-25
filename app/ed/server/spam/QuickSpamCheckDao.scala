@@ -49,18 +49,25 @@ object QuickSpamCheckDao {
     */
   def throwForbiddenIfLooksSpammy(user: Participant, textAndHtml: TextAndHtml) {
     def throwIfTooManyLinks(maxNumLinks: Int) {
-      if (textAndHtml.links.length > maxNumLinks)  // BUG also looks at links in <pre>
+      if (textAndHtml.links.length > maxNumLinks)
         throwForbidden("EdE4KFY2_", o"""Your text includes more than $maxNumLinks links —
            that makes me nervous about spam. Can you please remove some links?""")
     }
-    if (user.isStaff) {
+    if (user.isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember)) {
       // Ok.
+      SECURITY; SHOULD // throwIfTooManyLinks(50) if siteId != FirstSiteId  — so cannot SELF_DOS
+    }
+    else if (user.isStaffOrMinTrustNotThreat(TrustLevel.FullMember)) {
+      throwIfTooManyLinks(25)
+    }
+    else if (user.isStaffOrMinTrustNotThreat(TrustLevel.BasicMember)) {
+      throwIfTooManyLinks(15)
     }
     else if (user.isAuthenticated) {
-      throwIfTooManyLinks(7)
+      throwIfTooManyLinks(10)
     }
     else {
-      throwIfTooManyLinks(3)
+      throwIfTooManyLinks(5)
     }
   }
 

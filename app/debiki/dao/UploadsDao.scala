@@ -20,14 +20,13 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
-import debiki.Globals
+import debiki.{Globals, ImageUtils, TextAndHtmlMaker}
 import debiki.EdHttp._
 import ed.server.UploadsUrlBasePath
 import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
 import java.nio.file.{attribute => jfa}
-import debiki.ImageUtils
 import org.jsoup.Jsoup
 import play.{api => p}
 import UploadsDao._
@@ -359,28 +358,12 @@ object UploadsDao {
 
 
   def findUploadRefsInText(html: String, pubSiteId: String): Set[UploadRef] = {
-    // COULD reuse TextAndHtml — it also finds links
-    TESTS_MISSING
-    val document = Jsoup.parse(html)
-    val anchorElems: org.jsoup.select.Elements = document.select("a[href]")
-    val mediaElems: org.jsoup.select.Elements = document.select("[src]")
+    // Tested here:  tests/app/debiki/dao/UploadsDaoSpec.scala
+
+    val links: Seq[String] = TextAndHtmlMaker.findLinks(html)
     val references = ArrayBuffer[UploadRef]()
 
-    import scala.collection.JavaConversions._
-
-    for (linkElem: org.jsoup.nodes.Element <- anchorElems) {
-      val url = linkElem.attr("href")
-      if ((url ne null) && url.nonEmpty) {
-        addUrlIfReferencesUploadedFile(url)
-      }
-    }
-
-    for (mediaElem: org.jsoup.nodes.Element <- mediaElems) {
-      val url = mediaElem.attr("src")
-      if ((url ne null) && url.nonEmpty) {
-        addUrlIfReferencesUploadedFile(url)
-      }
-    }
+    links foreach addUrlIfReferencesUploadedFile
 
     def addUrlIfReferencesUploadedFile(urlString: String) {
       val urlPath =

@@ -1033,6 +1033,7 @@ package object core {
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
   def SECURITY = ()       // Some security issue, not necessarily so very important
+  def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people
   def PRIVACY = ()        // Could make things a bit more private
   def BUG = ()            // Need not be a terribly important bug.

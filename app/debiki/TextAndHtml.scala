@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.JsArray
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.util.matching.Regex
 import TextAndHtmlMaker._
 
@@ -84,7 +84,49 @@ object TextAndHtmlMaker {
 
   val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
+
+  def findLinks(html: String): immutable.Seq[String] = {
+    val result = mutable.ArrayBuffer[String]()
+
+    val document = org.jsoup.Jsoup.parse(html)
+
+    // There're  <a hre=...> and also <area href=...> — a clickable map, its contents
+    // defined by href links.
+    val hrefAttrElems: org.jsoup.select.Elements = document.select("[href]")
+
+    // There're  <img> <video> <iframe> etc elems with src=...  links.
+    val srcAttrElems: org.jsoup.select.Elements = document.select("[src]")
+
+    import scala.collection.JavaConversions._
+
+    def hasBoringTextParent(elem: org.jsoup.nodes.Element) =
+      elem.parents.exists(_.tagName == "pre")   // what about <textarea>?  sth more?
+
+    for {
+      elem: org.jsoup.nodes.Element <- hrefAttrElems
+      //if !hasBoringTextParent(elem)
+    } {
+      val url = elem.attr("href")
+      if ((url ne null) && url.nonEmpty) {
+        result.append(url)
+      }
+    }
+
+    for {
+      elem: org.jsoup.nodes.Element <- srcAttrElems
+      //if !hasBoringTextParent(elem)
+    } {
+      val url = elem.attr("src")
+      if ((url ne null) && url.nonEmpty) {
+        result.append(url)
+      }
+    }
+
+    result.toVector
+  }
+
 }
+
 
 
 /** Thread safe.
@@ -215,14 +257,20 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
           if (domainOrAddress eq null) {
             // Relative link? Ignore.
           }
-          else if (domainOrAddress contains ":") {
-            // Java's getHost() returns the hostname, no port. Instead, getAuthority()
-            // includess any port (but not http(s)://).
-            die("DwE6GKW2")
-          }
           else if (domainOrAddress.startsWith("[")) {
-            // IPv6.
-            linkAddresses :+= domainOrAddress
+            if (domainOrAddress.endsWith("]")) {
+              // IPv6.
+              linkAddresses :+= domainOrAddress
+            }
+            else {
+              // Weird.
+              die("TyE305WKUDW2", s"Weird url, starts with '[' but no ']': $domainOrAddress")
+            }
+          }
+          else if (domainOrAddress contains ":") {
+            // Cannot happen? Java's getHost() returns the hostname, no port. Instead,
+            // getAuthority() includess any port (but not http(s)://).
+            die("TyE603KUPRSDJ3", s"Weird url, includes ':': $domainOrAddress")
           }
           else if (Ipv4AddressRegex matches domainOrAddress) {
             linkAddresses :+= domainOrAddress
@@ -266,25 +314,6 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       linkIpAddresses = Nil, embeddedOriginOrEmpty = "",
       isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
-  }
-
-  def findLinks(html: String): immutable.Seq[String] = {
-    SECURITY; SHOULD // find all src=... links too, e.g. <img src=...>, not just <a href=...>.
-                    // And thereafter, could use TextAndHtml in UploadsDao.findUploadRefsInText ?
-    TESTS_MISSING
-    import org.jsoup.Jsoup
-    import org.jsoup.nodes.Element
-    import scala.collection.JavaConversions._
-    var links = Vector[String]()
-    val document = Jsoup.parse(html).body
-    val linkElements: java.util.ArrayList[Element] = document.select("a")
-    for (linkElement: Element <- linkElements) {
-      val href = linkElement.attr("href")
-      if ((href ne null) && href.nonEmpty) {
-        links :+= href
-      }
-    }
-    links
   }
 
 }
