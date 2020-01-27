@@ -1807,7 +1807,7 @@ export const Editor = createFactory<any, EditorState>({
 
     const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
-        !anyDraftLoaded ? r.pre({}, t.e.LoadingDraftDots) :
+        !anyDraftLoaded ? r.pre({ className: 'e_LdDft' }, t.e.LoadingDraftDots) :
           ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'rtaTextarea',

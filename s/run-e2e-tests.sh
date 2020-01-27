@@ -398,6 +398,9 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-upsert-pages.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only api-upsert-page-notfs.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only slow-3g-navigate-edit-drafts.2browsers $args
+
+
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup

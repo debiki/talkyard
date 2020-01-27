@@ -31,7 +31,8 @@ settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;
-settings.debugAfterwards = args.debugAfterwards || args.da;
+// dant = debug afterwards, no timeout
+settings.debugAfterwards = args.debugAfterwards || args.da || args.dant;
 settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;
 
 settings.block3rdPartyCookies = args.block3rdPartyCookies || args.b3c;
@@ -50,9 +51,8 @@ if (args.v || args.verbose) {
 // Whatever. Wait 21 seconds by default.)
 let waitforTimeout = args.waitforTimeout || args.wft;
 if (waitforTimeout) waitforTimeout = parseInt(waitforTimeout);
-settings.waitforTimeout =
-    settings.debugBefore || settings.debugAfterwards || args.noTimeout || args.nt ?
-        2147483647 : (waitforTimeout || 21 * 1000);
+settings.waitforTimeout = args.noTimeout || args.nt || args.dant ?
+    2147483647 : (waitforTimeout || 21 * 1000);
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

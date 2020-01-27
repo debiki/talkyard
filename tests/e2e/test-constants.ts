@@ -104,6 +104,10 @@ export = {
   ReviewDecisionUndoTimoutSeconds: 12, // sync with Scala and React component [2PUKQB0]
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
   MagicTimeoutPollMs: 500,  // [4GKB93RA]
+
+  // Including this in the hostname, tells the server to add a 3 seconds fake latency.
+  Slow3gHostnamePart: 'slow-3g',
+
   SsoTestPath: '/-/sso-test',
   UsersUrlPrefix: '/-/users/',
   GroupsUrlPrefix: '/-/groups/',

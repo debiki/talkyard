@@ -106,7 +106,39 @@ class PlainApiActions(
       }
     }
 
-    override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result])
+    override def invokeBlock[A](requestNoTracing: Request[A], block: ApiRequest[A] => Future[Result])
+            : Future[Result] = {
+      import scala.concurrent.duration._
+      import scala.concurrent.Promise
+
+      val MagicSlow3gHostname = "slow-3g"  // also in tests/e2e/
+
+      if (globals.isProd || !requestNoTracing.host.contains(MagicSlow3gHostname))
+        return invokeBlockImpl(requestNoTracing, block)
+
+      // Add latency. I don't know how to throttle the response bandwidth though.
+      // In Chrome Dev Tools, setting the network latency to 2 seconds, is pretty
+      // useless — seems as if Chrome still executes the requests instantly,
+      // just delays them for a while. Won't make Talkyard's "This takes long" server
+      // request overlay appear, '#theLoadingOverlay', as of Jan 2020 ...
+      //
+      // ... But adding the below for-real server side delay, *does* make that overlay
+      // appear. So, this delay here, is more realistic, than Dev Tools network
+      // latency settings.
+      //
+      val promise = Promise[Result]()
+      globals.actorSystem.scheduler.scheduleOnce(delay = 2.seconds) {
+        invokeBlockImpl[A](requestNoTracing, block) onComplete {
+          case Success(value) =>
+            promise.success(value)
+          case Failure(exception) =>
+            promise.failure(exception)
+        }
+      }
+      promise.future
+    }
+
+    private def invokeBlockImpl[A](request: Request[A], block: ApiRequest[A] => Future[Result])
         : Future[Result] = {
 
       val site = globals.lookupSiteOrThrow(request)

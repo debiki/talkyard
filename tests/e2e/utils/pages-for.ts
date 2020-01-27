@@ -892,8 +892,22 @@ function pagesFor(browser) {
       }
     },
 
-    waitUntilLoadingOverlayGone: function() {
-      api.waitUntilGone('#theLoadingOverlay');
+    __theLoadingOveraySelector: '#theLoadingOverlay',
+
+    waitUntilLoadingOverlayGone: () => {
+      api.waitUntilGone(api.__theLoadingOveraySelector);
+    },
+
+    waitUntilLoadingOverlayVisible_raceCond: () => {
+      // The loading overlay might disappear at any time, when done loading. (309362485)
+      // So not impossible that e2e tests that use this fn, sometimes break
+      // (that's fine, we'll just retry them).
+      api.waitForVisible(api.__theLoadingOveraySelector);
+    },
+
+    isLoadingOverlayVisible_raceCond: (): boolean => {
+      // A race: It might disappear at any time. (309362485)
+      return browser.isVisible(api.__theLoadingOveraySelector);
     },
 
     waitUntilModalGone: function() {
@@ -1022,7 +1036,7 @@ function pagesFor(browser) {
 
     waitAndSetValue: (selector: string, value: string | number,
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
-            okayOccluders?: string, append?: boolean } = {}) => {
+            okayOccluders?: string, append?: boolean, skipWait?: true } = {}) => {
       //browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
       //                    // (maybe add waitUntilDoesNotMove ?)
       //// Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
@@ -1034,7 +1048,9 @@ function pagesFor(browser) {
       //if (opts.maybeMoves) {
       //  api.waitUntilDoesNotMove(selector);
       //}
-      api._waitForClickable(selector, opts);
+      if (!opts.skipWait) {
+        api._waitForClickable(selector, opts);
+      }
       if (value) {
         // Sometimes, when starting typing, React does a refresh / unmount?
         // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
@@ -3180,7 +3196,7 @@ function pagesFor(browser) {
       },
 
       editText: function(text, opts: {
-          timeoutMs?: number, checkAndRetry?: true, append?: boolean } = {}) {
+          timeoutMs?: number, checkAndRetry?: true, append?: boolean, skipWait?: true } = {}) {
         api.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 

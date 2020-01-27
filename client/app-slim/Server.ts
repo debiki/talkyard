@@ -49,8 +49,8 @@ interface OngoingRequest {
 }
 
 interface RequestData {
-  data: any;
-  success: (response: any) => void;
+  data?: JsonData;
+  success?: (response: any) => void;
   error?: (xhr: XMLHttpRequest) => any;
   showLoadingOverlay?: boolean;
 }
@@ -93,7 +93,7 @@ function postJson(urlPath: string, requestData: RequestData) {
 
   Bliss.fetch(url, {
     method: 'POST',
-    data: JSON.stringify(requestData.data),
+    data: JSON.stringify(requestData.data || null),
     headers,
   }).then(xhr => {
     removeTimeoutAndOverlay();
@@ -297,11 +297,18 @@ function showErrorIfNotComplete() {
 
 export const testPost = postJsonSuccess;
 
+type JsonData = object | any[];
+type OnErrorFn = (xhr: XMLHttpRequest) => any;
 
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog.
   */
-function postJsonSuccess(urlPath, onOk: ((response: any) => void) | UseBeacon, data: any,
-        onError?, options?: { showLoadingOverlay?: boolean }) {
+function postJsonSuccess(
+  urlPath: string,
+  onOk: ((response: any) => void) | UseBeacon,
+  data: JsonData | OnErrorFn,
+  onError?: JsonData | OnErrorFn,
+  options?: { showLoadingOverlay?: boolean }) {
+
   // Make postJsonSuccess(..., onError, data) work:
   if (!data || _.isFunction(data)) {
     const tmp = data;
@@ -318,7 +325,7 @@ function postJsonSuccess(urlPath, onOk: ((response: any) => void) | UseBeacon, d
   postJson(urlPath, {
     data: data,
     success: onOk,
-    error: onError,
+    error: onError as OnErrorFn,
     showLoadingOverlay: options.showLoadingOverlay,
   });
 }
@@ -1717,9 +1724,31 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 }
 
 
+
+const inFlightPages = new Set<PageId>();
+let lastMarkedAsSeen: PageId;
+
+// This updates the most recently visited pages in the watchbar (stored server side).
+// And maybe more things, later, e.g. update user presence in a chat channel.
+//
 export function markCurrentPageAsSeen() {
-  // COULD avoid showing the is-POSTing-data overlay.
-  postJsonSuccess('/-/mark-as-seen?pageId=' + getPageId(), () => {}, {});
+  const pageId = getPageId();
+
+  // You can show the annoying loading indicator by commenting in this:
+  // (this behavior was a bug, before)
+  //postJsonSuccess(`/-/mark-as-seen?pageId=${pageId}`, () => {}, {});
+
+  if (lastMarkedAsSeen === pageId || inFlightPages.has(pageId))
+    return;
+
+  inFlightPages.add(pageId);
+  postJsonSuccess(`/-/mark-as-seen?pageId=${pageId}`, onComplete, onComplete, {},
+      { showLoadingOverlay: false });
+
+  function onComplete() {
+    lastMarkedAsSeen = pageId;
+    inFlightPages.delete(pageId);
+  }
 }
 
 
