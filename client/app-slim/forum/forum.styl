@@ -18,6 +18,22 @@
 
 $isWideMinWidth = 900px;
 
+
+.s_F_Ts_T_Con-Para
+  display: block;
+  &:hover
+    outline: 2px solid hsl($uiHue, 100%, 96.7%) !important;
+    background: hsl($uiHue, 100%, 98.7%) !important;
+    [title]
+      text-decoration: underline;
+      text-decoration-color: #888;
+    &
+      color: black !important;
+    & .dw-p-excerpt
+      color: #4a4a4a !important;
+      text-decoration: none !important;
+
+
 // Avoid a flash of the-wrong-layout (e.g. table layout, before noticing that the screen
 // is narrow and switching to list layout).
 html.js:not(.dw-react-started)

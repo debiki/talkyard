@@ -1356,10 +1356,17 @@ const TopicRow = createComponent({
             title: t.ft.mostRecentPoster }));
     }
 
+    let titleReactFn = Link;
+    let contentReactFn = r.div;
+    let contentLinkUrl;
     let manyLinesClass = '';
     let showMoreClickHandler;
     if (showExcerptAsParagraph) {
       manyLinesClass = ' s_F_Ts_T_Con-Para';
+      // Make the whole title and paragraph block a link, not just the title.
+      titleReactFn = r.span;
+      contentReactFn = Link;
+      contentLinkUrl = topic.url;
     }
     else if (this.state.showMoreExcerpt) {
       manyLinesClass += ' s_F_Ts_T_Con-More';
@@ -1381,8 +1388,9 @@ const TopicRow = createComponent({
     if (this.props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },  // (update BJJ CSS before renaming 'esForum_topics_topic' (!))
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
-          r.div({ className: 's_F_Ts_T_Con' + manyLinesClass, onClick: showMoreClickHandler },
-            makeTitle(topic, anyPinOrHiddenIconClass, settings, me),
+          contentReactFn({ className: 's_F_Ts_T_Con' + manyLinesClass,
+              onClick: showMoreClickHandler, to: contentLinkUrl },
+            makeTitle(topic, anyPinOrHiddenIconClass, settings, me, titleReactFn),
             excerpt),
           anyThumbnails),
         !showCategories ? null : r.td({ className: 's_F_Ts_T_CN' }, categoryName),
@@ -1577,7 +1585,7 @@ function CatLink(props: { category: Category, forumPath: string, location,
 
 
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,
-      me: Myself) {
+      me: Myself, reactTag?) {
   let title: any = topic.title;
   let iconClass = '';
   let tooltip;
@@ -1711,8 +1719,11 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
   // COULD remove the HTML for the topic type icon, if topic pinned — because showing both
   // the pin icon, + topic type icon, looks ugly. But for now, just hide the topic type
   // icon in CSS instead: [6YK320W].
+  const toUrl = reactTag && reactTag !== Link ? undefined : topic.url;
   return (
-      Link({ to: topic.url, title: tooltip, className: className }, title));
+      (reactTag || Link)({
+          to: toUrl, title: tooltip, className: className },
+        title));
 }
 
 
