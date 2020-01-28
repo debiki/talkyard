@@ -86,12 +86,14 @@ object TextAndHtmlMaker {
 
 
   def findLinks(html: String): immutable.Seq[String] = {
+    // Tested here:  tests/app/debiki/TextAndHtmlTest.scala
+
     val result = mutable.ArrayBuffer[String]()
 
     val document = org.jsoup.Jsoup.parse(html)
 
-    // There're  <a hre=...> and also <area href=...> — a clickable map, its contents
-    // defined by href links.
+    // There're  <a hre=...>, and also <area href=...> (that's a clickable map, its
+    // contents defined by href links.)
     val hrefAttrElems: org.jsoup.select.Elements = document.select("[href]")
 
     // There're  <img> <video> <iframe> etc elems with src=...  links.
@@ -99,27 +101,19 @@ object TextAndHtmlMaker {
 
     import scala.collection.JavaConversions._
 
-    def hasBoringTextParent(elem: org.jsoup.nodes.Element) =
-      elem.parents.exists(_.tagName == "pre")   // what about <textarea>?  sth more?
-
-    for {
-      elem: org.jsoup.nodes.Element <- hrefAttrElems
-      //if !hasBoringTextParent(elem)
-    } {
-      val url = elem.attr("href")
-      if ((url ne null) && url.nonEmpty) {
-        result.append(url)
-      }
+    for (elem: org.jsoup.nodes.Element <- hrefAttrElems) {
+      addUrl(elem.attr("href"))
     }
 
-    for {
-      elem: org.jsoup.nodes.Element <- srcAttrElems
-      //if !hasBoringTextParent(elem)
-    } {
-      val url = elem.attr("src")
-      if ((url ne null) && url.nonEmpty) {
-        result.append(url)
-      }
+    for (elem: org.jsoup.nodes.Element <- srcAttrElems) {
+      addUrl(elem.attr("src"))
+    }
+
+    def addUrl(url: String) {
+      if (url eq null) return
+      val trimmed = url.trim
+      if (trimmed.isEmpty) return
+      result.append(trimmed)
     }
 
     result.toVector

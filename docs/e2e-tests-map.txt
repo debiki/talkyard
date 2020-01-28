@@ -370,6 +370,8 @@ editor -
             - view-edit-history.2browsers.test.ts  TyT60RKDWL25
   save edits from other page:
     should ask: "Jump back and view the now edited post?" [JMPBCK]
+  slow 3g:
+          - slow-3g-navigate-edit-drafts.2browsers.test.ts   TyT40PKDRT4
 
 
 mentions:
@@ -862,6 +864,10 @@ export and restore:  (impexp)
     - guestEmailPrefs, not yet incl in export
     - Include category ext id in imported dump. Also speeds up test. TyT60FKTEXK53
 
+latency,
+3g,
+slow 3g connections:
+          - slow-3g-navigate-edit-drafts.2browsers.test.ts   TyT502KSTJGJ6
 
 Tests to create:
   Login with pwd here: /-/users/id/109/activity, no .categories bug

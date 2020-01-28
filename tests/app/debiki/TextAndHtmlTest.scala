@@ -18,6 +18,8 @@
 package debiki
 
 
+import com.debiki.core._
+import com.debiki.core.Prelude._
 import org.scalatest._
 
 
@@ -47,6 +49,13 @@ class TextAndHtmlTest extends FreeSpec with MustMatchers {
         val textAndHtml = maker.forHtmlAlready("<a href='http://example.com/path'>A link</a>")
         textAndHtml.links mustBe Seq("http://example.com/path")
         textAndHtml.linkDomains mustBe Set("example.com")
+        textAndHtml.linkIpAddresses mustBe Seq()
+      }
+
+      "blank <a href='  '> link" in {
+        val textAndHtml = maker.forHtmlAlready("<a href='  '>A link</a>")
+        textAndHtml.links mustBe Seq()
+        textAndHtml.linkDomains mustBe Set()
         textAndHtml.linkIpAddresses mustBe Seq()
       }
 
@@ -86,6 +95,24 @@ class TextAndHtmlTest extends FreeSpec with MustMatchers {
         textAndHtml.linkIpAddresses mustBe Seq("22.22.11.11")
       }
 
+      "Many links, incl <video>" in {
+        val textAndHtml = maker.forHtmlAlready(o"""
+           <img src='http://imgs.com/one.jpg'>
+           <video src='http://vids.com/two.mp4'>
+           <div><a href='http://hello.ex.co/path'>A link</a></div>
+           <area href='http://1.2.3.4/path'>An ip addr</a>
+           <b>Hello <a>not a link</a> and <img src="">not an img</img></b>
+           """)
+        textAndHtml.links mustBe Seq(
+          "http://imgs.com/one.jpg",
+          "http://vids.com/two.mp4",
+          "http://hello.ex.co/path",
+          "http://1.2.3.4/path")
+        textAndHtml.linkDomains mustBe Set("imgs.com", "vids.com", "/hello.ex.co")
+        textAndHtml.linkIpAddresses mustBe Seq("1.2.3.4")
+      }
+
+      TESTS_MISSING // ipv6 addr?
     }
 
   }

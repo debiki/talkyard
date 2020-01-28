@@ -274,6 +274,7 @@ declare namespace debiki2 {
 
   function whenMsToIsoDate(whenMs: number): string;
 
+  function seemsSelfHosted(): boolean;
   function isInSomeEmbCommentsIframe(): boolean;
   function isBlogCommentsSite(): boolean;
   function isCommunitySite(): boolean;

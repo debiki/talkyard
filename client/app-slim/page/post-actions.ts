@@ -89,7 +89,7 @@ export const NoCommentsPageActions = createComponent({
     const editBtn = store.isEditorOpen ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, onClick: this.onEditClick },
           t.EditV + (
-            anyEditsDraft ? " — " + t.d.UnfinEdits : ''));
+            anyEditsDraft ? " — " + t.d.UnfinEdits : ''));  // [UFINEDT]
 
     const actions = editBtn;
 

@@ -134,15 +134,15 @@ describe("slow-3g  TyT502KSTJGJ6", () => {
     mariasBrowser.assertPageBodyMatches(topicBody222);
   });
 
-  it("Maria starts repling to herself", () => {
+  it("Maria starts replying to herself", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
   });
 
   it("... starts typing", () => {
-    mariasBrowser.editor.editText('start');
+    mariasBrowser.editor.editText("Hello me");
   });
 
-  it("... whilst typing, no annoying Wait-wait-wait overlay pops up", () => {
+  it("... whilst typing, no annoying Wait-wait-wait overlay pops up   TyT40PKDRT4", () => {
     for (let i = 111; i < 1000; i += 111) {
       mariasBrowser.editor.editText('' + i, { skipWait: true });
       mariasBrowser.pause(250);

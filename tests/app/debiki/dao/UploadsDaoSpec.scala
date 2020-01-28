@@ -116,6 +116,13 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
       UploadsDao.findUploadRefsInText(
         s"""link: <a href="$uploadUrlPath">text</a>""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
+      UploadsDao.findUploadRefsInText(
+        s"""area: <area href="$uploadUrlPath"></area>""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
+
+      // Bad attr:
+      UploadsDao.findUploadRefsInText(
+        s"""weird: <a x-href="$uploadUrlPath"></a>""", pubSiteIdOne) mustBe Set.empty
+
       // Many refs, different tags
       UploadsDao.findUploadRefsInText(i"""
          |<a href="$uploadUrlPath2">text</a>

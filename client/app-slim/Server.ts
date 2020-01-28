@@ -242,22 +242,30 @@ export function maybeLoadGlobalAdminScript() {
 }
 
 
-function showWaitForRequestOverlay(shallShow: boolean): number | undefined {
-  let timeoutHandle;
-  if (shallShow !== false) {
-    showLoadingOverlay();
-    timeoutHandle = setTimeout(function() {
-      maybeShowServerJustStartedMessage();
-      timeoutHandle = setTimeout(showErrorIfNotComplete, 21 * 1000);
-    }, 9 * 1000);
-  }
+type RequestTimeoutHandle = number[];
+
+function showWaitForRequestOverlay(shallShow: boolean): RequestTimeoutHandle | undefined {
+  if (!shallShow)
+    return;
+
+  let timeoutHandle = [0];
+  showLoadingOverlay();
+  timeoutHandle[0] = setTimeout(function() {
+    maybeShowServerJustStartedMessage();
+    // 2nd timeout:
+    timeoutHandle[0] = setTimeout(showErrorIfNotComplete, 21 * 1000);
+  }, 9 * 1000);
+
   return timeoutHandle;
 }
 
 
-function removeWaitForRequestOverlay(timeoutHandle) {
+function removeWaitForRequestOverlay(timeoutHandle: RequestTimeoutHandle) {
   if (timeoutHandle) {
-    clearTimeout(timeoutHandle);
+    const actualHandle = timeoutHandle[0]
+    if (actualHandle) {
+      clearTimeout(actualHandle);
+    }
     removeLoadingOverlay();
   }
 }
@@ -1744,8 +1752,8 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 
 
 
-const inFlightPages = new Set<PageId>();
-let lastMarkedAsSeen: PageId;
+const inFlightPageIds = new Set<PageId>();
+let lastPageIdMarkedSeen: PageId;
 
 // This updates the most recently visited pages in the watchbar (stored server side).
 // And maybe more things, later, e.g. update user presence in a chat channel.
@@ -1754,19 +1762,19 @@ export function markCurrentPageAsSeen() {
   const pageId = getPageId();
 
   // You can show the annoying loading indicator by commenting in this:
-  // (this behavior was a bug, before)
+  // (This was a bug, now e2e tested here:  TyT40PKDRT4)
   //postJsonSuccess(`/-/mark-as-seen?pageId=${pageId}`, () => {}, {});
 
-  if (lastMarkedAsSeen === pageId || inFlightPages.has(pageId))
+  if (lastPageIdMarkedSeen === pageId || inFlightPageIds.has(pageId))
     return;
 
-  inFlightPages.add(pageId);
+  inFlightPageIds.add(pageId);
   postJsonSuccess(`/-/mark-as-seen?pageId=${pageId}`, onComplete, onComplete, {},
       { showLoadingOverlay: false });
 
   function onComplete() {
-    lastMarkedAsSeen = pageId;
-    inFlightPages.delete(pageId);
+    lastPageIdMarkedSeen = pageId;
+    inFlightPageIds.delete(pageId);
   }
 }
 

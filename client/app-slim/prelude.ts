@@ -146,6 +146,10 @@ export function scrollToBottom(node) {
 }
 
 
+export function seemsSelfHosted(): boolean {
+  return eds.siteId === FirstSiteId;
+}
+
 
 export function isBlogCommentsSite(): boolean {
   return location.hostname.startsWith('comments-for-'); // or how know? [7PLBKA24]

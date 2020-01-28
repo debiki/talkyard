@@ -106,15 +106,15 @@ class PlainApiActions(
       }
     }
 
-    override def invokeBlock[A](requestNoTracing: Request[A], block: ApiRequest[A] => Future[Result])
+    override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result])
             : Future[Result] = {
       import scala.concurrent.duration._
       import scala.concurrent.Promise
 
-      val MagicSlow3gHostname = "slow-3g"  // also in tests/e2e/
+      val Slow3gHostnamePart = "slow-3g"  // also in tests/e2e/
 
-      if (globals.isProd || !requestNoTracing.host.contains(MagicSlow3gHostname))
-        return invokeBlockImpl(requestNoTracing, block)
+      if (globals.isProd || !request.host.contains(Slow3gHostnamePart))
+        return invokeBlockImpl(request, block)
 
       // Add latency. I don't know how to throttle the response bandwidth though.
       // In Chrome Dev Tools, setting the network latency to 2 seconds, is pretty
@@ -128,7 +128,7 @@ class PlainApiActions(
       //
       val promise = Promise[Result]()
       globals.actorSystem.scheduler.scheduleOnce(delay = 2.seconds) {
-        invokeBlockImpl[A](requestNoTracing, block) onComplete {
+        invokeBlockImpl[A](request, block) onComplete {
           case Success(value) =>
             promise.success(value)
           case Failure(exception) =>

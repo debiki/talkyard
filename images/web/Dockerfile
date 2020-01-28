@@ -262,6 +262,7 @@ RUN rm -fr \
 COPY 404.html             /opt/nginx/html/
 COPY 502.html             /opt/nginx/html/
 COPY 503.html             /opt/nginx/html/
+COPY 504.html             /opt/nginx/html/
 
 COPY robots.txt           /opt/talkyard/
 COPY security.txt         /opt/talkyard/

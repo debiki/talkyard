@@ -1947,7 +1947,8 @@ const AdvancedSettings = createFactory({
         !currentSettings.enableForum;
     const hideForumStuff =
         isBlogCommentsOnly &&
-        eds.siteId !== FirstSiteId &&
+        // If self hosted, one needs to be able to change the adress.
+        !seemsSelfHosted() &&
         location.hash.indexOf('&showAll') === -1;
 
     const hosts: Host[] = props.hosts;
@@ -2010,8 +2011,12 @@ const AdvancedSettings = createFactory({
           }
         });
 
-    // const disableDeleteButton = !ppt_isOwner(me);
-    const deleteSiteFormGroup =
+    const hideDangerZone = seemsSelfHosted(); // later:  || !ppt_isOwner(me);
+
+    const dangerZoneTitle = hideDangerZone ? null :
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'}, "Danger zone");
+
+    const deleteSiteFormGroup = hideDangerZone ? null :
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label col-sm-3' }, "Delete site"),
         r.div({ className: 'col-sm-9 esAdmin_settings_setting' },
@@ -2019,7 +2024,7 @@ const AdvancedSettings = createFactory({
             "You can delete your site, by emailing ",
             r.samp({}, 'support@talkyard.io'),
             " from your admin email address. Later, there'll be a " +
-            "button here so you can do this yourself.")));
+            "button here so you can delete the site yourself directly.")));
 
     return (
       r.div({},
@@ -2027,7 +2032,7 @@ const AdvancedSettings = createFactory({
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup,
-        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'}, "Danger zone"),
+        dangerZoneTitle,
         deleteSiteFormGroup));
 
   }
