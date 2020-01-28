@@ -40,7 +40,8 @@ declare const Bliss: any;
 declare function $$(selector: string): Element[];
 
 // Defined in client/third-party/smoothscroll-tiny.js.
-declare function smoothScroll(elem: Element, x: number, y: number, durationMs?: number);
+declare function smoothScroll(elem: Element, x: number, y: number,
+    durationMs?: number, onDone?: () => void);
 
 // Defined in client/third-party/get-set-cookie.js.
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;

@@ -10,7 +10,8 @@ declare global {
 
   const debiki: any | undefined;
   const Bliss: any | undefined;
-  const smoothScroll: any;
+  declare function smoothScroll(elem: Element, x: number, y: number,
+      durationMs?: number, onDone?: () => void);
 }
 
 export {}

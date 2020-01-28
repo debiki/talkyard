@@ -188,7 +188,7 @@ export const Editor = createFactory<any, EditorState>({
 
   makeEditorResizable: function() {
     if (eds.isInEmbeddedEditor) {
-      // The iframe is resizable instead.
+      // The iframe is resizable instead. [RESEMBEDTR]
       return;
     }
     util.makeResizableUp(this.refs.editor, this.refs.resizeHandle, this.makeSpaceAtBottomForEditor);
@@ -1593,10 +1593,14 @@ export const Editor = createFactory<any, EditorState>({
         r.span({},
           // "Edit post X:"
           t.e.EditPost_1,
-          r.a({ href: '#post-' + editingPostNr, onClick: (event) => {
-              event.preventDefault();
-              ReactActions.scrollAndShowPost(editingPostNr);
-            }},
+          // Dupl code, break out fn? [306KUGSTRR3]  <a href='#post-..'>  + onClick preventDefault?
+          r.a({ href: '#post-' + editingPostNr,
+              onMouseEnter: () => ReactActions.highlightPost(editingPostNr, true),
+              onMouseLeave: () => ReactActions.highlightPost(editingPostNr, false),
+              onClick: (event) => {
+                event.preventDefault();
+                ReactActions.scrollAndShowPost(editingPostNr);
+              }},
             t.e.EditPost_2 + editingPostNr + ':'));
     }
     else if (this.state.isWritingChatMessage) {
@@ -1649,13 +1653,13 @@ export const Editor = createFactory<any, EditorState>({
       doingWhatInfo =
         r.span({},
           t.e.ReplyTo,
-          _.filter(replyToPostNrs, (id) => id !== NoPostId).map((postNr, index) => {
+          _.filter(replyToPostNrs, (id) => id !== NoPostId).map((replToPostNr, index) => {
             // If replying to a blog post, then, it got auto created by the System
             // user. Don't show "Reply to System".
-            const isReplyingToBlogPost = eds.isInEmbeddedEditor && postNr === BodyNr;
-            let parentPost: Post | undefined;
+            const isReplyingToBlogPost = eds.isInEmbeddedEditor && replToPostNr === BodyNr;
+            let replToPost: Post | undefined;
 
-            let parentAuthor: BriefUser | undefined;
+            let replToAuthor: BriefUser | undefined;
             if (isReplyingToBlogPost) {
               // Blog post author name is unknown. (There's an orig post by System,
               // but "Replying to @system" would be incorect.)
@@ -1673,9 +1677,9 @@ export const Editor = createFactory<any, EditorState>({
               // plus, post remembered, also if navigating to other page.
               //
               try {
-                parentPost = state.embMainStoreCopy.currentPage.postsByNr[postNr];
-                parentAuthor = parentPost && store_getAuthorOrMissing(
-                    state.embMainStoreCopy as Store, parentPost);
+                replToPost = state.embMainStoreCopy.currentPage.postsByNr[replToPostNr];
+                replToAuthor = replToPost && store_getAuthorOrMissing(
+                    state.embMainStoreCopy as Store, replToPost);
               }
               catch (ex) {
                 if (!this.loggedStoreCloneWarning) {
@@ -1686,26 +1690,30 @@ export const Editor = createFactory<any, EditorState>({
               }
             }
             else {
-              parentPost = editorsPage?.postsByNr[postNr];
-              parentAuthor = parentPost && store_getAuthorOrMissing(store, parentPost);
+              replToPost = editorsPage?.postsByNr[replToPostNr];
+              replToAuthor = replToPost && store_getAuthorOrMissing(store, replToPost);
             }
 
             let replyingToWhat;
-            if (parentAuthor) {
-              replyingToWhat = UserName({ user: parentAuthor, store,
+            if (replToAuthor) {
+              replyingToWhat = UserName({ user: replToAuthor, store,
                   makeLink: false, onClick: null, avoidFullName: true });
             }
             else {
-              replyingToWhat = postNr === BodyNr ?
-                  t.e.ReplyTo_theOrigPost : t.e.ReplyTo_post + postNr;
+              replyingToWhat = replToPostNr === BodyNr ?
+                  t.e.ReplyTo_theOrigPost : t.e.ReplyTo_post + replToPostNr;
             }
 
             const anyAnd = index > 0 ? " and " : '';
             return (
-              (<any> r.span)({ key: postNr },   // span has no .key, weird [TYPEERROR]
+              (<any> r.span)({ key: replToPostNr },   // span has no .key, weird [TYPEERROR]
                 anyAnd,
-                r.a({ onClick: !parentPost ? undefined : function() {
-                    ReactActions.scrollAndShowPost(parentPost);
+                // Dupl code, break out fn? [306KUGSTRR3]  <a href='#post-..'>  + onClick preventDefault?
+                r.a({
+                  onMouseEnter: () => ReactActions.highlightPost(replToPostNr, true),
+                  onMouseLeave: () => ReactActions.highlightPost(replToPostNr, false),
+                  onClick: !replToPost ? undefined : function() {
+                    ReactActions.scrollAndShowPost(replToPost);
                   }},
                   replyingToWhat)));
           }),
@@ -1837,13 +1845,17 @@ export const Editor = createFactory<any, EditorState>({
     const previewTitleTagName = !thereIsAnInPagePreview ? 'span' : 'a';
     const onPreviewTitleClick = !thereIsAnInPagePreview ? null : () => {
       ReactActions.scrollToPreview({
+        isEditingBody: state.editingPostNr === BodyNr,
         isChat: page_isChat(editorsPageType),
       });
     };
 
     const previewTitle =
         r.div({},
-          r[previewTitleTagName]({ onClick: onPreviewTitleClick },
+          r[previewTitleTagName]({
+              onMouseEnter: () => ReactActions.highlightPreview(true),
+              onMouseLeave: () => ReactActions.highlightPreview(false),
+              onClick: onPreviewTitleClick },
             t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
 
 
@@ -1922,7 +1934,10 @@ export const Editor = createFactory<any, EditorState>({
               anyViewHistoryButton)),
             r.div({ className: 's_E_iPhoneKbd' },
               t.e.IPhoneKbdSpace_1, r.br(), t.e.IPhoneKbdSpace_2),
-            r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }))));
+
+            eds.isInEmbeddedEditor ? null :  // [RESEMBEDTR]
+              r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }),
+          )));
   }
 });
 

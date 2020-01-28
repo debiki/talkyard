@@ -75,18 +75,32 @@ export function highlightPostNrBrieflyIfThere(nr: PostNr) {
 }
 
 
-function highlightPostBriefly(postElem) {
+export function highlightPostBriefly(postElem) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
   highlightBrieflyImpl(head, body);
 }
 
 
+const highlightOffHandles = new Map();
+
 function highlightBrieflyImpl(head, body) {
-  const highlightOnClass = 'dw-highlight-on';
-  const highlightOffClass = 'dw-highlight-off';
+  const highlightOnClass = 'dw-highlight-on';   // RENAME to s_Flash-Start   ?
+  const highlightOffClass = 'dw-highlight-off'; // RENAME to s_Flash-FadeOut ?
   const allClasses = highlightOnClass + ' ' + highlightOffClass;
   const $h = debiki2.$h;
+
+  // Remove the fade-out class, otherwise cannot highlight again until the
+  // flade-out animation has ended.
+  // How clear timeout — remember handle in per elem map?
+  if (head) $h.removeClasses(head, allClasses);
+  $h.removeClasses(body, allClasses);
+  const oldHighlOffHandle = highlightOffHandles.get(body);
+  if (oldHighlOffHandle) {
+    clearTimeout(oldHighlOffHandle);
+    highlightOffHandles.delete(body);
+  }
+
   // On mind map pages, there're no post headers (except for for the original post).
   if (head) $h.addClasses(head, highlightOnClass);
   $h.addClasses(body, highlightOnClass);
@@ -96,10 +110,13 @@ function highlightBrieflyImpl(head, body) {
     // At least Chrome returns 'Xs', e.g. '1.5s', regardles of the units in the CSS file.
     const durationSeconds = 4; // dupl constant, also in css [2DKQ7AM]
                                // doesn't work: parseFloat(head.style.transitionDuration);  (it's "")
-    setTimeout(function() {
+    const highlOffHandle = setTimeout(function() {
+      highlightOffHandles.delete(body);
       if (head) $h.removeClasses(head, allClasses);
       $h.removeClasses(body, allClasses);
     }, durationSeconds * 1000);
+
+    highlightOffHandles.set(body, highlOffHandle);
   }, 700);
 }
 

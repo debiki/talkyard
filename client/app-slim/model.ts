@@ -213,6 +213,7 @@ interface ShowEditsPreviewParams extends EditorIframeHeight {
   anyPostType?: PostType;
   replyToNr?: PostNr;
   editingPostNr?: PostNr;
+  highlightPreview?: boolean; // default: true
 }
 
 
@@ -231,11 +232,21 @@ type EditsDoneHandler = (
     wasSaved: boolean, text: string, draft: Draft | null, draftStatus: DraftStatus) => void;
 
 
-interface ShowPostOpts {
+interface ScrollIntoViewOpts {
   marginTop?: number;
   marginBottom?: number;
   marginRight?: number;
   marginLeft?: number;
+  duration?: number;
+  parent?;
+  onDone?: () => void;
+
+  // If user defined selector, might cause an exception.
+  maybeBadId?: boolean;
+}
+
+
+interface ShowPostOpts extends ScrollIntoViewOpts {
   showChildrenToo?: boolean;
 }
 

@@ -1,6 +1,7 @@
 /**
  * License: The MIT License (MIT)
  * Copyright (C) 2013 Dustan Kasten
+ * Parts copyright (C) 2020 Kaj Magnus Lindberg and Debiki AB
  *
  * This is smoothscroll-polyfill but with all polyfill stuff removed, I (KajMagnus) have kept
  * only the smoothScroll function, to keep down the amount of js code.
@@ -10,6 +11,7 @@
  * (Don't change the indentation below — keep it 4 spaces so it'll be easier to run a diff
  * against the original.)
  *
+ * I added these param:  durationMs,  and onDone,  and  1 pixel = fine (6284AKST4).
  * /KajMagnus
  *
  */
@@ -98,9 +100,20 @@
 
       context.method.call(context.scrollable, currentX, currentY);
 
-      // return when end points have been reached
-      if (currentX === context.x && currentY === context.y) {
+      // Done scrolling? (6284AKST4) But it's enough to be within 1 pixel, otherwise
+      // the scroll animation will run, also if we don't really need to scroll
+      //— because seems there's always (?) small floating point differences, e.g.
+      // when starting scrolling, we might have:
+      //    currentY  = 1132.000000211447
+      //    context.y = 1132.78125
+      // — then, let's just call onDone directly.
+      let distX = Math.abs(currentX - context.x);
+      let distY = Math.abs(currentY - context.y);
+      if (distX < 1.0 && distY < 1.0) {
         w.cancelAnimationFrame(context.frame);
+        if (context.onDone) {
+          context.onDone();
+        }
       }
     }
 
@@ -110,8 +123,10 @@
      * @param {Object|Node} el
      * @param {Number} x
      * @param {Number} y
+     * @param {Number} durationMs — optional
+     * @param {Function} onDone — optional
      */
-    w.smoothScroll = function(el, x, y, durationMs) {
+    w.smoothScroll = function(el, x, y, durationMs, onDone) {
       var scrollable;
       var startX;
       var startY;
@@ -147,6 +162,7 @@
         x: x,
         y: y,
         durationMs: durationMs,
+        onDone: onDone,
         frame: frame
       });
     }

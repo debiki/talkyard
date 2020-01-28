@@ -43,7 +43,7 @@ export function calcScrollIntoViewCoordsInPageColumn(
 
 
 export function scrollIntoViewInPageColumn(
-    elemOrSelector: Element | string, options: any = {}): boolean | undefined {
+    elemOrSelector: Element | string, options: ScrollIntoViewOpts = {}): boolean | undefined {
   // Warning: dupl code, see [5GUKF24] above.
   let what: Element;
   if (elemOrSelector && _.isString(elemOrSelector)) {
@@ -88,8 +88,11 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
 };
 
 
-export function scrollIntoView(elem, options, onDone?: () => void): boolean | undefined {
+export function scrollIntoView(elem, options: ScrollIntoViewOpts,
+      // remove — now incl in 'options'
+      onDone?: () => void): boolean | undefined {
   options = options ? _.clone(options) : {};
+  onDone = onDone || options.onDone;
 
   let needsToScroll: boolean | undefined;
   if (eds.isInEmbeddedCommentsIframe) {
@@ -108,13 +111,15 @@ export function scrollIntoView(elem, options, onDone?: () => void): boolean | un
     needsToScroll = coords.needsToScroll;
     if (needsToScroll) {
       smoothScroll(
-          options.parent, coords.desiredParentLeft, coords.desiredParentTop, options.duration);
+          options.parent, coords.desiredParentLeft, coords.desiredParentTop,
+          options.duration, onDone);
     }
   }
-  // For now, call immediately. Did before, works ok, currently.
-  if (onDone) {
+
+  if (onDone && !needsToScroll) {
     onDone();
   }
+
   return needsToScroll;
 }
 
@@ -122,6 +127,7 @@ d.i.scrollIntoView = scrollIntoView;
 
 
 export function makeShowPostFn(currentPostNr: PostNr, postToShowNr: PostNr) {
+  // Combine this? [306KUGSTRR3]  <a href='#post-..'>  + onClick preventDefault?
   return function(event) {
     event.preventDefault();
     event.stopPropagation();

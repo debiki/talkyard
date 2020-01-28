@@ -658,8 +658,8 @@ const RootPostAndComments = createComponent({
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
           href: '#post-' + page.pageAnswerPostNr,
-          onMouseEnter: () => highlightPost(page.pageAnswerPostNr, true),
-          onMouseLeave: () => highlightPost(page.pageAnswerPostNr, false),
+          onMouseEnter: () => ReactActions.highlightPost(page.pageAnswerPostNr, true),
+          onMouseLeave: () => ReactActions.highlightPost(page.pageAnswerPostNr, false),
           onClick: utils.makeShowPostFn(BodyNr, page.pageAnswerPostNr) },
         t.d.SolvedClickView_1 + page.pageAnswerPostNr + t.d.SolvedClickView_2);
     }
@@ -1207,7 +1207,18 @@ const Thread = createComponent({
 
     let replyingToElem;
     if (store.replyingToPostNr === post.nr) {   // + && page id
-      replyingToElem = r.div({ className: 's_T_ReTo' }, "Replying to:");  // [305KTJ4]  I18N
+      replyingToElem = r.div({ className: 's_T_ReTo' },
+        r.span({ className: 's_T_ReTo_Ttl' },
+          "Replying to:"),  // [305KTJ4]  I18N
+        me_uiPrefs(store.me).inp === UiPrefsIninePreviews.Skip ? null :
+          r.span({ className: 's_T_ReTo_Prvw' },
+            "Scroll to ",   // I18N
+            r.a({ className: 's_T_ReTo_Prvw_B',
+                onMouseEnter: () => ReactActions.highlightPreview(true),
+                onMouseLeave: () => ReactActions.highlightPreview(false),
+                onClick: () => ReactActions.scrollToPreview({}) },
+              "preview ", r.span({ className: 's_T_ReTo_Prvw_B_Arw' }, "⬇️")),  // I18N
+            ));
     }
 
     let previewClass = '';
@@ -1540,8 +1551,8 @@ function RepliesToArrow(
     { post, thisPost, author }: { post: Post, thisPost: Post, author: BriefUser }) {
   return (
     r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
-        onMouseEnter: () => highlightPost(post.nr, true),
-        onMouseLeave: () => highlightPost(post.nr, false),
+        onMouseEnter: () => ReactActions.highlightPost(post.nr, true),
+        onMouseLeave: () => ReactActions.highlightPost(post.nr, false),
         onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
       author.username || author.fullName,
       // Append an up arrow to indicate that clicking the name will scroll up,
@@ -1803,16 +1814,6 @@ export function makeQuestionTooltipText(isAnswered) {
   return isAnswered ? t.d.TooltipQuestSolved : t.d.TooltipQuestUnsolved;
 }
 
-
-export function highlightPost(postNr: PostNr, highlightOn: boolean) {
-  const postElem = $byId('post-' + postNr);
-  if (highlightOn) {
-    debiki2.$h.addClasses(postElem, 'dw-highlighted-multireply-hover');
-  }
-   else {
-    debiki2.$h.removeClasses(postElem, 'dw-highlighted-multireply-hover');
-  }
-}
 
 //------------------------------------------------------------------------------
    }

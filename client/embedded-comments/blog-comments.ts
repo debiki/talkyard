@@ -21,7 +21,8 @@
 
 declare const debiki: any | undefined;
 declare const Bliss: any | undefined;
-declare const smoothScroll: any;
+declare function smoothScroll(elem: Element, x: number, y: number,
+    durationMs?: number, onDone?: () => void);
 
 interface WindowWithTalkyardProps {
   talkyardDebug: boolean | number | undefined;
@@ -771,6 +772,9 @@ function setEditorMinimized(minimized) {
 }
 
 
+/// The editor's own resize functionality won't work, because it is height 100% in
+/// the editor iframe. Instead, here we resize the whole editor iframe. [RESEMBEDTR]
+///
 function makeEditorResizable() {
   editorWrapper.addEventListener('mousedown', startDrag);
 

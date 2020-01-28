@@ -409,6 +409,9 @@ export function uncollapsePost(post) {
 // COULD RENAME to loadIfNeededThenShow(AndHighlight)Post
 export function loadAndShowPost(postNr: PostNr, showPostOpts: ShowPostOpts = {},
        onDone?: (post?: Post) => void) {
+
+  //  COULD  sendToCommentsIframe(['loadAndShowPost', nr]);   ???
+
   const store: Store = ReactStore.allData();
   const page: Page = store.currentPage;
   const anyPost = page.postsByNr[postNr];
@@ -485,6 +488,41 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
       onDone?.(post);
     },
   });
+}
+
+
+export function highlightPost(postNr: PostNr, highlightOn: boolean) {  // RENAME to outlinePost ?
+  const elem = $byId('post-' + postNr);
+  highlightImpl(elem, highlightOn);
+}
+
+
+export function highlightPreview(highlightOn: boolean) {  // RENAME to outlinePreview ?
+  const elem = findPreviewPost();
+  highlightImpl(elem, highlightOn);
+}
+
+
+function findPreviewPost(): Element {
+  // We don't know if the preview is for a reply, orig post or chat message
+  // — try finding the preview at all those "places".
+  return (
+      $first('.s_T-Prvw-IsEd .dw-p') ||
+      $first('.dw-ar-p') ||
+      $first('.s_T_YourPrvw + .esC_M'));
+}
+
+
+function highlightImpl(elem, highlightOn: boolean) {
+
+  //  COULD  sendToCommentsIframe(['highlightImpl', nr]);   ???
+
+  if (highlightOn) {
+    debiki2.$h.addClasses(elem, 'dw-highlighted-multireply-hover');
+  }
+   else {
+    debiki2.$h.removeClasses(elem, 'dw-highlighted-multireply-hover');
+  }
 }
 
 
@@ -916,6 +954,7 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
           isChat,
           isEditingBody: ps.editingPostNr === BodyNr,
           editorIframeHeightPx: ps.editorIframeHeightPx,
+          highlightPreview: ps.highlightPreview,
         });
       }
     });
@@ -924,20 +963,25 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
 
 
 export function scrollToPreview(ps: {
+        // COULD remove  isChat and  isEditingBody, and instad find the
+        // preview by using $first like in findPreviewPost().   (206702364)
         isChat?: boolean,
         isEditingBody?: boolean,
-        editorIframeHeightPx?: number } = {}) {
+        editorIframeHeightPx?: number,
+        highlightPreview?: boolean,
+       } = {}) {
 
   if (eds.isInEmbeddedEditor) {
-    const editorIframeHeightPx = window.innerHeight;
+    const editorIframeHeightPx = window.innerHeight;   // maybe remove? [95BKAEPG240]
     sendToCommentsIframe(['scrollToPreview', { ...ps, editorIframeHeightPx }]);
     return;
   }
 
   // Break out function? Also see FragActionHashScrollToBottom, tiny bit dupl code.
   // Scroll to the preview we're currently editing (not to any inactive draft previews).
+  // Hmm, this not really needed, instead: (206702364).
   const selector = ps.isEditingBody ? '.dw-ar-t > .s_T_YourPrvw' : (
-    ps.isChat ? '.s_T_YourPrvw + .esC_M' : '.s_T-Prvw-IsEd');
+      ps.isChat ? '.s_T_YourPrvw + .esC_M' : '.s_T-Prvw-IsEd');
 
   // If editing body, use some more margin, so the page title and "By (author)"
   // stays visible — and, in a chat, so that the "Preview:" text is visible
@@ -948,6 +992,18 @@ export function scrollToPreview(ps: {
   // If we're in an embedded comments iframe, then, there's another iframe for the
   // editor. Then scroll a bit more, so that other iframe won't occlude the preview.
   let editorHeight = ps.editorIframeHeightPx || 0;
+  if (eds.isInEmbeddedCommentsIframe) {
+    // This is better? Works also when starting scrolling from inside the comments
+    // iframe — then, the editor iframe hasn't sent any message that included
+    // its height, so `= ps.editorIframeHeightPx` won't work . But this is not
+    // so tested (Jan 2020) so wrap in try-catch. [95BKAEPG240]
+    try {
+      editorHeight = window.parent.frames['edEditor'].innerHeight || 0;
+    }
+    catch (ex) {
+      console.warn("Error reading editor iframe height [TyE3062RKP4]", ex);
+    }
+  }
 
   // Or, if we're in a chat, there's a chat text box at the bottom, on top of
   // the chat messages.
@@ -962,6 +1018,13 @@ export function scrollToPreview(ps: {
   utils.scrollIntoViewInPageColumn(selector, {
     marginTop,
     marginBottom: 30 + editorHeight,
+    onDone: ps.highlightPreview === false ? null : function() {
+      const elem = findPreviewPost();
+      // @ifdef DEBUG
+      dieIf(!elem, 'TyE6002PKRDT53');
+      // @endif
+      highlightPostBriefly(elem);
+    },
   });
 }
 

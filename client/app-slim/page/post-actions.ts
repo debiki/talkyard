@@ -291,10 +291,11 @@ export const PostActions = createComponent({
           r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store)
                 + disabledClass + replyingToClass,
               // Highlight the post this Reply button replies to.
-              onMouseEnter: isEditorOpenAlready ? undefined : () => highlightPost(post.nr, true),
+              onMouseEnter: isEditorOpenAlready ? undefined :
+                  () => ReactActions.highlightPost(post.nr, true),
               // Remove any highlight also if editor open, so disappears after
               // click —> eitor-opens —> mouseleave.
-              onMouseLeave: () => highlightPost(post.nr, false),
+              onMouseLeave: () => ReactActions.highlightPost(post.nr, false),
               onClick: isEditorOpenAlready ? undefined : this.onReplyClick },
             makeReplyBtnTitle(store, post));
 

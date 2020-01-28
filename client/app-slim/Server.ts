@@ -248,7 +248,7 @@ function showWaitForRequestOverlay(shallShow: boolean): RequestTimeoutHandle | u
   if (!shallShow)
     return;
 
-  let timeoutHandle = [0];
+  const timeoutHandle = [];
   showLoadingOverlay();
   timeoutHandle[0] = setTimeout(function() {
     maybeShowServerJustStartedMessage();
