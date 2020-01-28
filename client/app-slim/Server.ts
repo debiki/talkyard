@@ -64,23 +64,7 @@ interface NewEmbCommentsPageAltIdUrl {
 
 function postJson(urlPath: string, requestData: RequestData) {
   let url = appendE2eAndForbiddenPassword(origin() + urlPath);
-  let timeoutHandle;
-  if (requestData.showLoadingOverlay !== false) {
-    showLoadingOverlay();
-    timeoutHandle = setTimeout(function() {
-      maybeShowServerJustStartedMessage();
-      timeoutHandle = setTimeout(showErrorIfNotComplete, 21 * 1000);
-    }, 9 * 1000);
-  }
-
-  function removeTimeoutAndOverlay() {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
-    if (requestData.showLoadingOverlay !== false) {
-      removeLoadingOverlay();
-    }
-  }
+  const timeoutHandle = showWaitForRequestOverlay(requestData.showLoadingOverlay !== false);
 
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -96,7 +80,7 @@ function postJson(urlPath: string, requestData: RequestData) {
     data: JSON.stringify(requestData.data || null),
     headers,
   }).then(xhr => {
-    removeTimeoutAndOverlay();
+    removeWaitForRequestOverlay(timeoutHandle);
     if (requestData.success) {
       // Remove any AngularJS safe json prefix. [5LKW02D4]
       let response = xhr.response.replace(/^\)]}',\n/, '');
@@ -104,7 +88,7 @@ function postJson(urlPath: string, requestData: RequestData) {
       requestData.success(response);
     }
   }).catch(errorObj => {
-    removeTimeoutAndOverlay();
+    removeWaitForRequestOverlay(timeoutHandle);
     const errorAsJson = JSON.stringify(errorObj);
     const details = errorObj.xhr && errorObj.xhr.responseText ?
         errorObj.xhr.responseText : errorObj.stack;
@@ -258,6 +242,27 @@ export function maybeLoadGlobalAdminScript() {
 }
 
 
+function showWaitForRequestOverlay(shallShow: boolean): number | undefined {
+  let timeoutHandle;
+  if (shallShow !== false) {
+    showLoadingOverlay();
+    timeoutHandle = setTimeout(function() {
+      maybeShowServerJustStartedMessage();
+      timeoutHandle = setTimeout(showErrorIfNotComplete, 21 * 1000);
+    }, 9 * 1000);
+  }
+  return timeoutHandle;
+}
+
+
+function removeWaitForRequestOverlay(timeoutHandle) {
+  if (timeoutHandle) {
+    clearTimeout(timeoutHandle);
+    removeLoadingOverlay();
+  }
+}
+
+
 function showLoadingOverlay() {
   document.body.appendChild(
       $h.parseHtml('<div id="theLoadingOverlay"><div class="icon-loading"></div></div>')[0]);
@@ -307,7 +312,8 @@ function postJsonSuccess(
   onOk: ((response: any) => void) | UseBeacon,
   data: JsonData | OnErrorFn,
   onError?: JsonData | OnErrorFn,
-  options?: { showLoadingOverlay?: boolean }) {
+  options?: { showLoadingOverlay?: boolean },  // default true, for POST requests
+  ) {
 
   // Make postJsonSuccess(..., onError, data) work:
   if (!data || _.isFunction(data)) {
@@ -341,6 +347,7 @@ interface GetOptions {
   headers?: { [headerName: string]: string }
   timeout?: number;
   suppressErrorDialog?: boolean;
+  showLoadingOverlay?: true;  // default false, for GET requests
 }
 
 
@@ -354,12 +361,15 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
 
   addAnyNoCookieHeaders(headers);
 
+  const timeoutHandle = showWaitForRequestOverlay(options?.showLoadingOverlay === true);
+
   const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack, search for "Hack" in fetch()
     method: 'GET',                                            // in client/third-party/bliss.shy.js
     headers: headers,
     timeout: options.timeout,
   });
   promiseWithXhr.then(xhr => {
+    removeWaitForRequestOverlay(timeoutHandle);
     let response = xhr.response;
     if (options.dataType !== 'html') {
       // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
@@ -368,6 +378,7 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
     }
     successFn(response, xhr);
   }).catch(errorObj => {
+    removeWaitForRequestOverlay(timeoutHandle);
     const errorAsJson = JSON.stringify(errorObj);
     const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
     console.error(`Error GETting from ${uri}: ${errorAsJson}, details: ${details}`);
@@ -545,12 +556,12 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
   const editorLoaded = loadJs(eds.assetUrlPrefix + 'editor-bundle.' + eds.minMaxJs);
   const moreScriptsLoaded = loadMoreScriptsBundle();
 
-  showLoadingOverlay();
+  const timeoutHandle = showWaitForRequestOverlay(true);
   // But don't resolve the editorScriptsPromise until everything has been loaded.
   editorScriptsPromise = new Promise(function(resolve, reject) {
     moreScriptsLoaded.then(function() {
       editorLoaded.then(function() {
-        removeLoadingOverlay();
+        removeWaitForRequestOverlay(timeoutHandle);
         resolve();
       }).catch(reject);
     }).catch(reject);
@@ -1219,8 +1230,16 @@ export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: 
 }
 
 
-export function loadDraftAndText(postNr: PostNr, onDone: (response: LoadDraftAndTextResponse) => void) {
-  get(`/-/load-draft-and-text?pageId=${getPageId()}&postNr=${postNr}`, onDone);
+export function loadDraftAndText(postNr: PostNr,
+      onDone: (response: LoadDraftAndTextResponse) => void) {
+  get(`/-/load-draft-and-text?pageId=${getPageId()}&postNr=${postNr}`, onDone, undefined, {
+    // If takes a second to load the post text (because of high latency),
+    // it's nice to see that one's Edit button click did cause something to happen
+    // — and also, good to instantly disable everything (by adding this click
+    // catching overlay), so the user won't continue clicking other buttons, e.g. Reply,
+    // whilst this request is in flight.
+    showLoadingOverlay: true,
+  });
 }
 
 
