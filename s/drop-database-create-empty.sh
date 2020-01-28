@@ -2,7 +2,9 @@
 
 docker ps >> /dev/null
 if [ $? -eq 1 ] ; then
-  echo "If the Docker daemon *is* running — then you can try with 'sudo'?"
+  echo
+  echo "If the Docker daemon *is* running — can you try with 'sudo'?"
+  echo
   exit 1
 fi
 
@@ -39,5 +41,10 @@ $psql -c 'create database talkyard owner talkyard;'
 $psql -c "create user talkyard_test with password 'public';"
 $psql -c 'create database talkyard_test owner talkyard_test;'
 
-echo '...Done.'
-
+echo "...Done."
+echo
+echo "Database user: 'talkyard', password: 'public', for these config values:"
+echo '  talkyard.postgresql.database="..." and'
+echo '  talkyard.postgresql.user="..."'
+echo 'in conf/my.conf (which you can create yourself).'
+echo

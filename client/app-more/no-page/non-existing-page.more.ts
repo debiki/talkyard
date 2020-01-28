@@ -86,18 +86,19 @@ const SignUpAsAdmin = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const embCmts = store.makeEmbeddedCommentsSite;
-    let startOfTheEmailAddress;
-    if (this.props.obfuscatedAminEmail) {
-      startOfTheEmailAddress =
-        r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
-    }
 
-    const anyEmailProblem = this.props.isFirstSiteAdminEmailMissing
-      ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
-          "But you haven't specified any ", r.code({}, 'debiki.becomeOwnerEmailAddress'),
+    // Maybe this is a bad idea? Skip for now at least:
+    // let startOfTheEmailAddress;
+    // if (store.obfuscatedAminEmail) {
+    //   startOfTheEmailAddress =
+    //     r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
+    // }
+
+    const anyEmailProblem = !store.isFirstSiteAdminEmailMissing ? null :
+      r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
+          "But you haven't specified any ", r.code({}, 'talkyard.becomeOwnerEmailAddress'),
           " value in the config file — please edit it and do so.", r.br(),
-          "Then restart the app server: ", r.code({}, "docker-compose restart app"))
-      : null;
+          "Then restart the app server: ", r.code({}, "docker-compose restart app"));
 
     // UX this step needs to be removed, from the create-new-site flow. [SIMPLNEWSITE]
     // People get stuck here, when typing their email address and username etc, and
@@ -107,20 +108,24 @@ const SignUpAsAdmin = createComponent({
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
           "Continue");
 
-    return eds.siteId === debiki.FirstSiteId
+    // If this is a self hosted server, one needs to login with the email in the
+    // Play Framework config file — otherwise anyone who happens to connect to the
+    // server just after it was started, could type their email and become admin.
+    return eds.siteId === FirstSiteId
       ? r.div({},
           r.h1({}, "Welcome"),
-          r.p({}, "You have successfully started the server."),
-          r.p({}, "Next, sign up using the email address you specified in the " +
+          r.p({}, "This is your Talkyard server."),
+          r.p({}, "Now, sign up using the email address you specified in the " +
             "configuration file in the ", r.code({}, 'becomeOwnerEmailAddress'), " field."),
           anyEmailProblem,
           r.br(),
           loginBtn)
       : r.div({},
           r.h1({}, "Welcome"),
-          r.p({}, embCmts ? "Here you'll moderate comments." : "This is your new website."),
+          r.p({}, embCmts ? "Here you'll moderate comments." : "This is your Talkyard forum."),
           r.p({}, "Look at the address bar above" + (
                 embCmts ? ': ' : // will be like: 'comments-for-your-site.example.com' [7PLBKA24]
+                                 // — it does not start with the address one specified.
                   " — it starts with the address you specified: "), r.code({}, location.hostname)),
           r.br(),
           loginBtn);

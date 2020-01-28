@@ -232,7 +232,9 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   private val ImStartingError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Play Framework is starting. Please wait a few seconds, then reload this page. [TyEIMSTARTING]
+      |Talkyard's application server is starting ...
+      |
+      |Please wait a few seconds, then reload this page. [TyEIMSTARTING]
       |""")
   }
 
@@ -245,40 +247,83 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       rootCause = rootCause.getCause
       loopLimit -= 1
     }
+
+    // Seems role-missing never happens, nowadays — instead, Postgres says:
+    // "password authentication failed" also if the user doesn't exist.
     val roleMissing = isRoleNotFoundException(rootCause)
     val badPassword = isBadPasswordException(rootCause)
+    val dbMissing = isDatabaseNotFoundException(rootCause)
+
     val (errorMessage, errorCode, orQueryTooLong) =
       if (roleMissing) {
         if (startingUp)
-          ("Play Framework is trying to start, but it seems no database user has been created",
-              "EsE500DBUM", "")
+          (o"""Talkyard's application server is trying to start,
+              but it seems no database user has been created?""",
+            "TyEDATABUSRM", "")
         else
-          ("The database user has suddenly disappeared", "EsE500DBUD", "")
+          ("The database user has suddenly disappeared", "TyEDATABUSRG", "")
       }
       else if (badPassword) {
-        (o"""Play Framework cannot connect to the database. Wrong database password?
-             Or the database user doesn't exist?""",
-          "EsE500BPWD", "")
+        (o"""Talkyard's application server cannot connect to the database.
+             Wrong database password? Or the database user doesn't exist?""",
+          "TyEDATABPWD", "")
+      }
+      else if (dbMissing) {
+        (o"""Talkyard's application server has logged in to the PostgreSQL server,
+              but it seems the PostgreSQL user's database does not exist""",
+            "TyE0DATAB", "")
       }
       else {
         if (startingUp)
-          ("Play Framework is trying to start, but cannot connect to the database", "EsE500DBNR", "")
+          (o"""Talkyard's application server is trying to start,
+              but cannot connect to the database""", "TyEDATABCONN1", "")
         else
-          ("Database no longer reachable", "EsE500DBG", "Or did a query take too long?")
+          ("Database no longer reachable", "TyEDATABCONN2", "Or did a query take too long?")
       }
+
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
+
     val (hasItStoppedPerhaps, fixProblemTips) =
-      if (globals.isProd) ("", "")
-      else if (roleMissing || badPassword) (
-        "", i"""If you use Docker-Compose: You can create the database user like so:
-        |  'docker/drop-database-create-empty.sh'
+      if (globals.isProd)
+        ("", "")
+      else if (roleMissing || badPassword || dbMissing) (
+        "", i"""You can create a PostgreSQL user and database like so:
+        |
+        |    make dead-app  # stop the app server
+        |    s/drop-database-create-empty.sh
+        |
+        |You can change the PostgreSQL user's password:
+        |
+        |    make db-cli  # starts the PostgreSQL psql client
+        |    talkyard=> alter user talkyard password 'public';
+        |
+        |Then update  conf/my.conf with your password:
+        |
+        |    vi conf/my.conf
+        |
+        |    # Add/edit this line:
+        |    talkyard.postgresql.password="public"
+        |
+        |Start everything: (if you stopped the app server above)
+        |
+        |    make up
         |""")
-      else (s"\nHas the database stopped or is there a network problem? $orQueryTooLong", i"""
-        |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
-        |If not running, start it:  'docker-compose start rdb'
-        |If running, then check logs:  'docker-compose logs -f'
-        |Or login with Bash:  'docker-compose exec rdb bash'
+      else (
+        s"\nHas the database stopped or is there a network problem? $orQueryTooLong",
+        i"""
+        |See if the database container is running — it's name is something like 'tyd_rdb_X':
+        |    docker-compose ps
+        |
+        |If not running, start it:
+        |    docker-compose start rdb
+        |
+        |If running, check the logs:
+        |    docker-compose logs -f --tail 999 app rdb
+        |
+        |Or login with Bash:
+        |    docker-compose exec rdb bash
         |""")
+
     Results.InternalServerError(i"""500 Internal Server Error
       |
       |$errorMessage [$errorCode]
@@ -288,15 +333,19 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       |""")
   }
 
-  // Move to a database package? io.efdi.server.db?
   def isRoleNotFoundException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       RoleMissingRexec.matches(throwable.getMessage)
+
+  def isDatabaseNotFoundException(throwable: Throwable) =
+    throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
+      DatabaeMissingRexec.matches(throwable.getMessage)
 
   def isBadPasswordException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       throwable.getMessage.contains("assword")
 
+  private val DatabaeMissingRexec = ".* database .+ does not exist.*".r
   private val RoleMissingRexec = ".* role .+ does not exist.*".r
 
 }

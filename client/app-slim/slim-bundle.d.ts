@@ -22,35 +22,35 @@ declare function getSetCookie(cookieName: string, value?: string, options?: any)
 declare const parseQueryString: (s: string) => any;
 declare const stringifyQueryString: (s: any) => string;
 
-declare const ReactStartedClass;
+declare const ReactStartedClass: string;
 
-declare const TooHighNumber;
+declare const TooHighNumber: number;
 
-declare const EmptyPageId;
-declare const FirstSiteId;
+declare const EmptyPageId: PageId;
+declare const FirstSiteId: SiteId;
 
-declare const NoId;
-declare const NoCategoryId;
-declare const NoPermissionId;
+declare const NoId: number; // ?? won't work for page id
+declare const NoCategoryId: CategoryId;
+declare const NoPermissionId: number;
 
-declare const NoPostId;
-declare const TitleNr;
-declare const BodyNr: number;
+declare const NoPostId: PostId;
+declare const TitleNr: PostNr;
+declare const BodyNr: PostNr;
 declare const BodyNrStr: string;
-declare const FirstReplyNr;
-declare const NoDraftNr;
+declare const FirstReplyNr: PostNr;
+declare const NoDraftNr: number;
 
-declare let NoUserId;
-declare const SystemUserId;
-declare const MinMemberId;
-declare const LowestAuthenticatedUserId;
-declare const LowestNormalMemberId;
-declare const MaxUsernameLength;
+declare let NoUserId: UserId;
+declare const SystemUserId: UserId;
+declare const MinMemberId: UserId;
+declare const LowestAuthenticatedUserId: UserId;
+declare const LowestNormalMemberId: UserId;
+declare const MaxUsernameLength: number;
 
-declare const MaxGuestId;
-declare const UnknownUserId;
+declare const MaxGuestId: UserId;
+declare const UnknownUserId: UserId;
 
-declare const ReviewDecisionUndoTimoutSeconds;
+declare const ReviewDecisionUndoTimoutSeconds: number;
 
 declare function makeNoPageData(): MyPageData;
 declare function makeAutoPage(): any;
@@ -61,9 +61,9 @@ declare const FirstStarMark;
 declare const BlueStarMark;
 declare const LastStarMark;
 
-declare const MaxNumFirstPosts;
+declare const MaxNumFirstPosts: number;
 
-declare const MaxEmailsPerUser;
+declare const MaxEmailsPerUser: number;
 
 declare const IgnoreThisError: number;
 declare const UseBeacon: string;
@@ -72,33 +72,33 @@ declare const UseBeacon: string;
 declare const SiteStatusStrings: string[];
 
 
-declare const ApiUrlPathPrefix;
-declare const UsersRoot;
-declare const GroupsRoot;
-declare const SearchRootPath;
+declare const ApiUrlPathPrefix: string;
+declare const UsersRoot: string;
+declare const GroupsRoot: string;
+declare const SearchRootPath: string;
 
 
-declare const RoutePathLatest;
-declare const RoutePathNew;
-declare const RoutePathTop;
-declare const RoutePathCategories;
+declare const RoutePathLatest: string;
+declare const RoutePathNew: string;
+declare const RoutePathTop: string;
+declare const RoutePathCategories: string;
 
 
-declare const ImpersonationCookieName;
+declare const ImpersonationCookieName: string;
 
 
-declare const UseWideForumLayoutMinWidth;
-declare const UseWidePageLayoutMinWidth;
-declare const WatchbarWidth;
-declare const ContextbarMinWidth;
+declare const UseWideForumLayoutMinWidth: number;
+declare const UseWidePageLayoutMinWidth: number;
+declare const WatchbarWidth: number;
+declare const ContextbarMinWidth: number;
 
-declare const ServerSideWindowWidth;
+declare const ServerSideWindowWidth: number;
 
-declare const FragActionAndReplyToPost;
-declare const FragActionAndEditPost;
-declare const FragActionHashComposeTopic;
-declare const FragActionHashComposeMessage;
-declare const FragActionHashScrollLatest;
+declare const FragActionAndReplyToPost: string;
+declare const FragActionAndEditPost: string;
+declare const FragActionHashComposeTopic: string;
+declare const FragActionHashComposeMessage: string;
+declare const FragActionHashScrollLatest: string;
 
 
 declare namespace ed {

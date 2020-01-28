@@ -69,9 +69,11 @@ echo "Importing database:"
 echo
 echo "    zcat ${1}$latest_dump | $psql"
 echo
+
 zcat ${1}$latest_dump | $psql
 
 echo '... Done importing.'
+
 
 echo 'Creating (or recreating) talkyard_test...'
 $psql -c 'drop database if exists talkyard_test;'
@@ -89,7 +91,9 @@ else
   cmd="rsync -av ${1}$latest_uploads_dump/ volumes/uploads/"
   echo "    $cmd"
   echo
+
   $cmd
+
   echo "... Done rsyncing uploads."
 fi
 
@@ -98,3 +102,9 @@ echo "Done. If the web and application servers aren't running, you can start the
 echo
 echo "    make up"
 echo
+echo "But first you need to change the database password?"
+echo
+echo "make db-cli"
+
+make db-cli
+

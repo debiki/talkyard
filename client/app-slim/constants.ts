@@ -37,7 +37,9 @@ const ReactStartedClass = 'dw-react-started';
 
 const EmptyPageId = '0';
 const NumEmptyPageDummyPosts = 2; // orig post dummy title and body
-const FirstSiteId = '1';
+
+// When self hosting, exactly one site is created, by default, and its id is FirstSiteId.
+const FirstSiteId = 1;
 
 const NoId = 0;
 const NoCategoryId = 0;

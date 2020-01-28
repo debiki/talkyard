@@ -37,7 +37,7 @@ type MainWin = __MainWinInterface & typeof globalThis;
 
 interface ServerVars {
   pubSiteId: string;
-  siteId: number;  // only in Dev mode
+  siteId: SiteId;  // only in Dev mode  — repl w isFirstSite: boolean?
   secure: boolean;
   isDev: boolean;
   isTestSite: boolean;
