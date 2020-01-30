@@ -37,6 +37,10 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
+// Why won't show only the 1st 80 comments instaed of  800  !!
+// 800 is too many.
+
+
 const r = ReactDOMFactories;
 const closedIcon = r.span({ className: 'icon-block' });
 const questionIcon = r.span({ className: 'icon-help-circled' });
