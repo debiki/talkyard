@@ -111,10 +111,10 @@ object SiteStatus {
   /** No content can be added, but content can be deleted, by staff, if it's reported as
     * offensive, for example. And more staff can be added, to help deleting any bad content.
     *
-    * Useful for a site that's been shut down, but you don't want to remove it from
-    * the Internet. Then, you leave it online, read-only — however, staff needs to
-    * be able to login and delete any bad contents that might get flagged. So,
-    * in addition to reading, one can also delete things.
+    * Useful for "archiving" a site that is to be used no more, and that you don't want to
+    * remove from the Internet. Then, you leave it online, read-only — however, staff needs
+    * to login and delete any bad contents that might get flagged. So, in addition to reading,
+    * staff can delete things.
     */
   case object ReadAndCleanOnly extends SiteStatus(3) {
     def mayAddAdmins = true
@@ -236,7 +236,7 @@ case class SiteInclDetails(  // [exp] ok use
       if (h.role == Hostname.RoleCanonical) h.copy(role = Hostname.RoleRedirect)
       else h
     })
-    val newCanon = HostnameInclDetails( hostname, Hostname.RoleCanonical, addedAt = addedAt)
+    val newCanon = HostnameInclDetails(hostname, Hostname.RoleCanonical, addedAt = addedAt)
     copy(hostnames = newCanon +: oldNoCanon)
   }
 }

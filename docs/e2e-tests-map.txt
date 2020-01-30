@@ -848,8 +848,13 @@ export and restore:  (impexp)
     embedded comments:
           - embedded-comments-create-site-export-json.2browsers.test.ts TyT7FKDJF3
   things remembered after exp-imp:
-          - embedded-comments-restore-overwrite-site.2browsers.test.ts  TyT5WKTJL025
+          - embedded-comments-restore-overwrite-site-same-domain.2browsers.test.ts  TyT5WKTJL025
+          - embedded-comments-restore-overwrite-site-new-domain.2browsers.test.ts  TyT603KNF62
           - embedded-comments-import-json-create-new-site.2browsers.test.ts  TyT4SLCD24S
+  restore,
+  overwrite current site:
+          - embedded-comments-restore-overwrite-site-same-domain.2browsers.test.ts  TyT5WKTJL025
+          - embedded-comments-restore-overwrite-site-new-domain.2browsers.test.ts  TyT603KNF62
   exp imp images:
           - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]
   sanitize html:

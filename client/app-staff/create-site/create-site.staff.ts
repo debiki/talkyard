@@ -41,10 +41,7 @@ const CreateSomethingComponent = createReactClass({
   displayName: 'CreateSomethingComponent',
 
   getInitialState: function() {
-    const queryParams = parseQueryString(this.props.location.search);
-    return {
-      pricePlan: queryParams.pricePlan
-    };
+    return {};
   },
 
   componentDidMount: function() {
@@ -54,10 +51,9 @@ const CreateSomethingComponent = createReactClass({
 
   render: function() {
     // This was needed in the past. Can be simplified now, maybe this whole class can be elliminated.
-    const pricePlan = this.state.pricePlan;
     return (
       Route({ path: '*', render: (props) => {
-        return CreateWebsiteComponent({ ...props, pricePlan });
+        return CreateWebsiteComponent({ ...props });
       }}));
   }
 });
@@ -68,13 +64,9 @@ const CreateWebsiteComponent = createFactory<any, any>({
   displayName: 'CreateWebsiteComponent',
 
   getInitialState: function() {
-    // Later: add Non-Commercial or Hobby / Business checkbox.
-    let pricePlan = PricePlan.NonCommercial;
-    if (location.pathname.indexOf('business') !== -1) pricePlan = PricePlan.Business;
-    if (location.pathname.indexOf('embedded-comments') !== -1) pricePlan = PricePlan.EmbeddedComments;
-
+    const isForEmbeddedComments = location.pathname.indexOf('embedded-comments') >= 0;
     return {
-      pricePlan,
+      isForEmbeddedComments,
       okayStatuses: {
         address: false,
         orgName: false,
@@ -95,7 +87,7 @@ const CreateWebsiteComponent = createFactory<any, any>({
   handleSubmit: function(event) {
     const testSitePrefix = // dupl code [5UKF03]
       location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
-    const isComments = this.state.pricePlan === PricePlan.EmbeddedComments;
+    const isComments = this.state.isForEmbeddedComments;
     const localHostname = isComments ? null : testSitePrefix + this.refs.localHostname.getValue();
     const embeddingOrigin = !isComments ? null : this.refs.embeddingOrigin.getValue();
 
@@ -104,7 +96,6 @@ const CreateWebsiteComponent = createFactory<any, any>({
         localHostname,
         embeddingOrigin,
         this.refs.organizationName.getValue(),
-        this.state.pricePlan,
         (nextUrl) => {
           window.location.assign(nextUrl);
         });
@@ -120,7 +111,7 @@ const CreateWebsiteComponent = createFactory<any, any>({
     const state = this.state;
     const okayStatuses = state.okayStatuses;
     const disableSubmit = _.includes(_.values(okayStatuses), false);
-    const isComments = this.state.pricePlan === PricePlan.EmbeddedComments;
+    const isComments = this.state.isForEmbeddedComments;
     const embeddingOriginOrLocalHostname = isComments
       ? EmbeddingAddressInput({
           onChangeValueOk: (value, isOk) => {

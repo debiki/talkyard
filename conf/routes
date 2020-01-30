@@ -64,10 +64,8 @@ POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.Reset
 POST  /-/send-reset-password-email       controllers.ResetPasswordController.sendResetPasswordEmail
 
 GET   /-/create-site                        controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-site/website                controllers.CreateSiteController.showPage(isTest = "false")
 GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
 GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
-GET   /-/create-test-site/website           controllers.CreateSiteController.showPage(isTest = "true")
 GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
 POST  /-/create-site                        controllers.CreateSiteController.createSite
 POST  /-/delete-test-site                   controllers.CreateSiteController.deleteTestSite

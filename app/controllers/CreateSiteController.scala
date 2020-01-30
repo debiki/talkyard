@@ -129,26 +129,15 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (organizationName.length > 100)
       throwForbidden("DwE7KEP36", "Too long organization name: more than 100 characters")
 
-    /*
-          val pricePlanInt = (request.body \ "pricePlan").as[Int]
-    val pricePlan = pricePlanInt match {  // [4GKU024S]
-      case 0 => "Unknown"
-      case 1 => "NonCommercial"
-      case 2 => "Business"
-      case 3 => "EmbeddedComments"
-      case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1, 2 or 3")
-     } */
-
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-
-    val siteName = localHostname
 
     throwForbiddenIf(isTestSiteOkayToDelete && !Hostname.isE2eTestHostname(localHostname),
       "TyE502TKUTDY2", o"""Not a test site hostname: '$localHostname',
         should start with: ${Hostname.E2eTestPrefix}""")
 
     if (isTestSiteOkayToDelete && Hostname.isE2eTestHostname(hostname)) {
-      globals.systemDao.deleteSitesWithNameAndHostnames(siteName, hostnames = Set(hostname))
+      globals.systemDao.deleteSitesWithNameAndHostnames(
+          siteName = localHostname, hostnames = Set(hostname))
     }
 
     val goToUrl: String =
@@ -158,7 +147,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           globals.systemDao.createAdditionalSite(
             anySiteId = None,
             pubId = Site.newPublId(),
-            name = siteName,
+            name = localHostname,
             SiteStatus.NoAdmin,
             hostname = Some(hostname),
             embeddingSiteUrl = anyEmbeddingSiteAddress,

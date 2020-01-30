@@ -1161,8 +1161,8 @@ case class AboutGroupPrefs(
   groupId: UserId,
   fullName: Option[String],
   username: String,
-  summaryEmailIntervalMins: Option[Int],
-  summaryEmailIfActive: Option[Boolean]) {
+  summaryEmailIntervalMins: Option[Int],    // REFACTOR break out to EmailPrefs [REFACTORNOTFS]
+  summaryEmailIfActive: Option[Boolean]) {  //
 
   require(!fullName.exists(_.trim.isEmpty), "EdE05KFB521")
   require(groupId >= Participant.LowestNonGuestId, "DwE56KX2")

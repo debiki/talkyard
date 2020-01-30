@@ -153,7 +153,8 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) {
         request =>
-    // Dupl code (968754903265).
+    // Dupl code (968754903265) — this endpoint can be replaced by the other
+    // importSiteJson() just above, and a url param 'isTestDeleteOld'?
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
     globals.testResetTime()
@@ -192,28 +193,6 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
         // they can cause unique key errors. The site owner can instead add the right
         // hostnames via the admin interface later.
         siteDump
-
-        /* No longer needed?   xx rm
-        if (deleteWhatSite != DeleteWhatSite.NoSite) {
-          // Shouldn't be any unique key error, because we're deleting any sites
-          // with conflicting unique keys. Can still happen though, if on a
-          // multi forum server, one restores a backup for *another* site with
-          // the hostname of that other site, to the current site. That'd be
-          // a user error though and shouldn't work. For now, a unique key
-          // error will be fine?
-          siteDump
-        }
-        else {
-          // Later: Could import the hostnames, if currently absent in the database?
-          // However, maybe sometimes people import the same site many times, to test if works?
-          // And if the hostnames are imported the first time only, that can cause confusion?
-          // Maybe better to *never* import hostnames. Or choose, via url param?
-          val pubId = Site.newPublId()
-          siteDump.copy(site = Some(siteDump.site.getOrDie("TyE305TBK").copy(
-            pubId = pubId,
-            name = "imp-" + pubId,  // for now. Maybe remove  .name  field?
-            hostnames = Nil)))
-        } */
     }
 
     val siteMeta = siteData.site.getOrDie("TyE04HKRG53")
@@ -231,7 +210,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       }
 
       SiteBackupImporterExporter(globals).importCreateSite(
-        siteData, browserIdData, anySiteToOverwrite = overwriteSite)
+        siteData, browserIdData, anySiteToOverwrite = overwriteSite, isTest = isTest)
     }
 
     val anyHostname = newSite.canonicalHostname.map(

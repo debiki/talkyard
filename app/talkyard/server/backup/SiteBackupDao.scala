@@ -921,7 +921,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
 
   def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData,
-        anySiteToOverwrite: Option[Site]): Site = {
+        anySiteToOverwrite: Option[Site], isTest: Boolean): Site = {
 
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
@@ -984,7 +984,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val theNewSite = globals.systemDao.createAdditionalSite(
         // Reuse any old id — so that we'll overwrite FirstSiteId, if importing
         // to a self hosted single site server.
-        anySiteId = anySiteToOverwrite.map(_.id),
+        anySiteId = siteIdToOverwrite.headOption,
         siteToSave.pubId,
         siteToSave.name,
         siteToSave.status,
@@ -995,27 +995,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         creatorId = SystemUserId,
         browserIdData = browserIdData,
         isTestSiteOkayToDelete = siteData.isTestSiteOkDelete,
-        skipMaxSitesCheck = true,
+        skipMaxSitesCheck = isTest || siteIdToOverwrite.nonEmpty,
         createdFromSiteId = None,
         anySysTx = Some(sysTx))
 
-      // -----------
+      CLEAN_UP // weird to create a SiteDao here — better use the site
+      // transaction started just below, 'tx', instead.
       val newDao = globals.siteDao(theNewSite.id)
 
-      SECURITY; SHOULD // use upsertIntoExistingSite instead, and add post cycles nnd
-      // category cycles checks there.
-
-      /*
-      HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
-      // And in the wrong transaction :-/
-      newDao.saveAboutGroupPrefs(AboutGroupPrefs(
-        groupId = Group.EveryoneId,
-        fullName = Some("Everyone"),
-        username = "everyone",
-        summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
-        summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
-      // ----------- */
-
+      SECURITY; SHOULD // check for post cycles and category cycles.
 
       val tx = sysTx.siteTransaction(theNewSite.id)
 
@@ -1039,12 +1027,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       def insertUsernameUsageIfMissing(member: MemberInclDetails) {
         val usernameLowercase = member.usernameLowercase // [CANONUN]
-        if (!siteData.usernameUsages.exists(_.usernameLowercase == usernameLowercase)) {
-          // BUilt-in members get UsernameUsage:s auto inserted when
+        def includesCurrentName(usernameUsages: Iterable[UsernameUsage]) =
+          usernameUsages.exists(n =>
+              n.usernameLowercase == usernameLowercase && n.inUseTo.isEmpty)
+        if (!includesCurrentName(siteData.usernameUsages)) {
+          // Built-in members get UsernameUsage:s auto inserted when
           // they're auto created. However, if the user has been renamed,
           // we should insert an entry for its new name.
           val usernamesInDb = tx.loadUsersOldUsernames(member.id)
-          if (!usernamesInDb.exists(_.usernameLowercase == usernameLowercase)) {
+          if (!includesCurrentName(usernamesInDb)) {
             tx.insertUsernameUsage(UsernameUsage(
               usernameLowercase, inUseFrom = tx.now, userId = member.id))
           }

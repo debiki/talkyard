@@ -191,12 +191,12 @@ class SystemDao(
     val deletedHostnames = mutable.Set[String]()
 
     siteIdsToDelete foreach { siteId: SiteId =>
-      // Reload site in same transaction.
       val site = sysTx.loadSite(siteId)
       deletedHostnames ++= site.map(_.hostnames.map(_.hostname)) getOrElse Nil
       val gotDeleted = sysTx.deleteSiteById(siteId)
       dieIf(!gotDeleted,
-        "TyE2ABK493U4", s"Could not delete site $siteId, this one: $site (a race cond?)")
+        "TyE2ABK493U4", o"""Could not delete site $siteId, this site: $site
+          — another thread or server deleted it already? A race condition?""")
     }
 
     deletedHostnames.toSet foreach this.forgetHostname
@@ -208,8 +208,8 @@ class SystemDao(
       memCache.clearAllSites()
     }
 
-    // If there was still stuff in the cache, for any of the now deleted sites
-    // that could lead to confusing behavior when site ids get reused, e.g. in
+    // If there is still stuff in the cache, for any of the now deleted sites,
+    // that could make weird things happen, when site ids get reused — e.g. in
     // tests or when restoring a backup. (2PKF05Y)
     siteIdsToDelete foreach { siteId =>
       val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
@@ -263,12 +263,13 @@ class SystemDao(
       config.createSite.maxSitesTotal + 5
     }
 
+    COULD // add a debug test that if there is already anySysTx, then
+    // anySiteId must have been locked already, by the caller. So things
+    // always get locked in the same order (avoids deadlocks).
 
     SiteDao.synchronizeOnManySiteIds(anySiteId.toSet) {
           globals.systemDao.dangerous_readWriteTransactionReuseOld(anySysTx) { sysTx =>
               try {
-      // (Fix indentation another day. I want a nice live editor diff, for now.)
-
       // Keep all this in sync with createFirstSite(). (5DWSR42)
 
       val maxQuota = config.createSite.quotaLimitMegabytes(
@@ -287,10 +288,10 @@ class SystemDao(
         isTestSiteOkayToDelete = isTestSiteOkayToDelete,
         sysTx.now)
 
-      // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing
-      // one empties the SQL database or imports a dump, resulting in most sites disappearing
-      // from the database, but not from the Redis cache. So even if 'anyDeletedSite' is None,
-      // might still need to:
+      // Delete Redis stuff even if no site found (2PKF05Y), because if you're developing
+      // on localhost, and you empty the SQL database or import an SQL dump, that'd make
+      // most/all sites disappear from the Postgres database — but we also need to clear
+      // the Redis cache:
       val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now)
       redisCache.clearThisSite()
 

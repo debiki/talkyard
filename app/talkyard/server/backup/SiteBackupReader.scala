@@ -228,26 +228,11 @@ case class SiteBackupReader(context: EdContext) {
                 json: $json"""))
     }
 
-    HACK // just loading Everyone's summary email interval. [7FKB4Q1]
-    CLEAN_UP // no longer needed? — now groups are loaded & updated
-    var summaryEmailIntervalMins = SummaryEmails.DoNotSend
-    var summaryEmailIfActive = false
-
     val groups: Seq[Group] = groupsJson.value.zipWithIndex map { case (json, index) =>
-      val group = readGroupOrBad(json).getOrIfBad(errorMessage =>
+      readGroupOrBad(json).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE603KHUR6", o"""Invalid Group json at index $index in the 'groups' list:
               $errorMessage, json: $json"""))
-      val groupId = readInt(json, "id")
-      if (groupId == Group.EveryoneId) {
-        (json \ "summaryEmailIntervalMins").asOpt[Int] foreach { mins =>
-          summaryEmailIntervalMins = mins
-        }
-        (json \ "summaryEmailIfActive").asOpt[Boolean] foreach { value =>
-          summaryEmailIfActive = value
-        }
-      }
-      group
     }
 
     val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.zipWithIndex map {
@@ -423,8 +408,6 @@ case class SiteBackupReader(context: EdContext) {
     }
 
     SiteBackup(upsertOptions = None, siteToSave, settings, apiSecrets,
-      summaryEmailIntervalMins = summaryEmailIntervalMins,
-      summaryEmailIfActive = summaryEmailIfActive,
       guests, guestEmailPrefs, groups,
       groupParticipants,
       users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,

@@ -182,6 +182,8 @@ function showResponseBodyJson(body) {
 
 
 function importRealSiteData(siteData: SiteData): IdAddress {
+  // We're importing test data, to a "real" endpoint that works also
+  // in Prod mode. [06KWFNDS2]
   const url = settings.mainSiteOrigin + '/-/import-site-json?deleteOldSite=true';
   const idAddr = postOrDie(url, { ...siteData, isTestSiteOkDelete: true }).bodyJson();
   dieIf(!idAddr.id, "No site id in import-site response [TyE4STJ2]",

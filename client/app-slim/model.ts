@@ -1498,15 +1498,6 @@ interface Host {
 }
 
 
-
-const enum PricePlan {  // [4GKU024S]
-  Unknown = 0,
-  NonCommercial = 1,
-  Business = 2,
-  EmbeddedComments = 3,
-}
-
-
 interface ApiSecret {
   nr: ApiSecretNr;
   userId?: UserId;

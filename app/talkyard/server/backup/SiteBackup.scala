@@ -51,8 +51,6 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   site: Option[SiteInclDetails],
   settings: Option[SettingsToSave],
   apiSecrets: Seq[ApiSecret],
-  summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
-  summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
   guests: Seq[Guest],
   guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
   // Includes built-in groups — they can be renamed or have their settings changed,
@@ -80,6 +78,10 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   postActions: Seq[PostAction],
   permsOnPages: Seq[PermsOnPages],
   reviewTasks: Seq[ReviewTask],
+  // This is if the data in the dump, is just test data and can be deleted.
+  // This might be different from if the server runs in Test mode, or if
+  // we're upserting via an e2e test endpoint or not — see importRealSiteData()
+  // in tests/e2e/  [06KWFNDS2].
   isTestSiteOkDelete: Boolean = false) {
 
   /* MISSING:
@@ -158,8 +160,6 @@ case object SiteBackup {
     site = None,
     settings = None,
     apiSecrets = Vector.empty,
-    summaryEmailIntervalMins = 60, // for now [7FKB4Q1]
-    summaryEmailIfActive = false, // for now [7FKB4Q1]
     guests = Vector.empty,
     guestEmailNotfPrefs = Map.empty,
     groups = Vector.empty,

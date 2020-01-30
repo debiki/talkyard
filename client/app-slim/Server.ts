@@ -600,7 +600,7 @@ function loadJQuery(callback?) {
 
 export function createSite(localHostname: string,
     anyEmbeddingSiteAddress: string, organizationName: string,
-    pricePlan: PricePlan, doneCallback: (string) => void) {
+    doneCallback: (string) => void) {
   const isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
     window.location.pathname === '/-/create-test-site';
   postJson('/-/create-site', {
@@ -610,7 +610,6 @@ export function createSite(localHostname: string,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
       organizationName: organizationName,
       testSiteOkDelete: isTestSite,
-      pricePlan: pricePlan,
     },
     success: (response) => {
       doneCallback(response.nextUrl);
