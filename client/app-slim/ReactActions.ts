@@ -888,7 +888,9 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
   const me: Myself = store.me;
 
   if (me_uiPrefs(me).inp === UiPrefsIninePreviews.Skip) {
-    ps.replyToNr && highlightPostNrBrieflyIfThere(ps.replyToNr);
+    if (ps.replyToNr) {
+      highlightPostNrBrieflyIfThere(ps.replyToNr);
+    }
     return;
   }
 

@@ -88,15 +88,22 @@ interface EditorState {
   showTextErrors?: boolean;
   draftStatus: DraftStatus;
   draft?: Draft;
+  draftErrorStatusCode?: number;
   safePreviewHtml: string;
   onDone?:  EditsDoneHandler;
   guidelines?: Guidelines;
+  showGuidelinesInModal?: boolean;
   backdropOpacity: 0,
   isUploadingFile: boolean;
   fileUploadProgress: number;
   uploadFileXhr?: any;
   showSimilarTopics?: boolean;
   searchResults?: any;
+
+  showMinimized?: boolean;
+  showOnlyPreview?: boolean;
+  showMaximized?: boolean;
+  splitHorizontally?: boolean;
 }
 
 interface Guidelines {
@@ -230,8 +237,7 @@ export const Editor = createFactory<any, EditorState>({
 
     FileAPI.event.on(document, 'drop', (event: Event) => {
       event.preventDefault();
-      if (this.isGone) return;
-      if (!this.state.visible) return;
+      if (this.isGone || !this.state.visible) return;
       FileAPI.getDropFiles(event, (files: File[]) => {
         if (files.length > 1) {
           // This'll log a warning server side, I think I want that (want to know how
@@ -533,8 +539,9 @@ export const Editor = createFactory<any, EditorState>({
     if (this.alertBadState())
       return;
     Server.loadDraftAndText(postNr, (response: LoadDraftAndTextResponse) => {
+      const state: EditorState = this.state;
       if (this.isGone) return;
-      const store: Store = this.state.store;
+      const store: Store = state.store;
       const draft: Draft | undefined = response.draft;
 
       // In case the draft was created when one wasn't logged in, then, now, set a user id.
@@ -566,13 +573,14 @@ export const Editor = createFactory<any, EditorState>({
   editNewForumPage: function(categoryId: number, role: PageRole) {
     if (this.alertBadState())
       return;
+    const state: EditorState = this.state;
     // Private chat topics shouldn't be placed in any category.
     dieIf(role === PageRole.PrivateChat && categoryId, 'EsE5KF024');
     // But other topics should be placed in a category.
     dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
 
-    const text = this.state.text || '';
-    const store: Store = this.state.store;
+    const text = state.text || '';
+    const store: Store = state.store;
 
     const newState: Partial<EditorState> = {
       anyPostType: null,
@@ -646,8 +654,9 @@ export const Editor = createFactory<any, EditorState>({
     // Later: Start using util.FadingBackdrop instead. [4KEF0YUU2]
     this.setState({ backdropOpacity: 0.83 });
     const fadeBackdrop = () => {
-      if (this.isGone) return;
-      const opacity = this.state.backdropOpacity;
+      const state: EditorState = this.state;
+      if (this.isGone || !state.visible) return;
+      const opacity = state.backdropOpacity;
       const nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
       this.setState({ backdropOpacity: nextOpacity });
       if (nextOpacity) {
@@ -664,33 +673,34 @@ export const Editor = createFactory<any, EditorState>({
     // so can simplify? this.  (it was old jQuery code that highlighted
     // the active Reply button(s).)
 
-    const store: Store = this.state.store;
-    const allFine = this.state.draftStatus <= DraftStatus.NeedNotSave &&
-        store.currentPageId === this.state.editorsPageId;
+    const state: EditorState = this.state;
+    const store: Store = state.store;
+    const allFine = state.draftStatus <= DraftStatus.NeedNotSave &&
+        store.currentPageId === state.editorsPageId;
     const maybeAlert = allFine ? (x: any) => {} : alert;
     let seemsBad = false;
 
-    if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostNrs.length > 0) {
+    if (wantsToDoWhat !== 'WriteReply' && state.replyToPostNrs.length > 0) {
       maybeAlert(t.e.PleaseFinishPost);
       seemsBad = true;
     }
 
-    if (this.state.isWritingChatMessage) {
+    if (state.isWritingChatMessage) {
       maybeAlert(t.e.PleaseFinishChatMsg);
       seemsBad = true;
     }
 
-    if (this.state.messageToUserIds.length) {
+    if (state.messageToUserIds.length) {
       maybeAlert(t.e.PleaseFinishMsg);
       seemsBad = true;
     }
 
-    if (_.isNumber(this.state.editingPostNr)) {
+    if (_.isNumber(state.editingPostNr)) {
       maybeAlert(t.e.PleaseSaveEdits);
       seemsBad = true;
     }
 
-    if (this.state.newPageRole) {
+    if (state.newPageRole) {
       maybeAlert(t.e.PleaseSaveOrCancel);
       seemsBad = true;
     }
@@ -717,7 +727,8 @@ export const Editor = createFactory<any, EditorState>({
       });
     };
 
-    if (isEmbeddedNotYetCreatedPage(this.state)) {
+    const state: EditorState = this.state;
+    if (isEmbeddedNotYetCreatedPage(state)) {
       // Cannot currently load draft & guidelines (below) for a not-yet-created page.
       // Instead, we'll load from the browser. [BLGCMNT1]
       setDraftAndGuidelines();
@@ -731,7 +742,7 @@ export const Editor = createFactory<any, EditorState>({
 
     // What's this? why? I should have added a comment. The code seems to say that
     // if *guidelines* have been loaded, then any *draft* has also been loaded.
-    const currentGuidelines = this.state.guidelines;
+    const currentGuidelines = state.guidelines;
     if (currentGuidelines &&
         currentGuidelines.categoryId === theCategoryId &&
         currentGuidelines.pageRole === thePageRole &&
@@ -742,7 +753,8 @@ export const Editor = createFactory<any, EditorState>({
 
     Server.loadDraftAndGuidelines(draftLocator, writingWhat, theCategoryId, thePageRole,
         (guidelinesSafeHtml, draft?: Draft) => {
-      if (this.isGone || !this.state.visible)
+      const state: EditorState = this.state;
+      if (this.isGone || !state.visible)
         return;
       let guidelines = undefined;
       if (guidelinesSafeHtml) {
@@ -765,7 +777,8 @@ export const Editor = createFactory<any, EditorState>({
   // So, if the guidelines get changed, they'll be shown again (good). COULD delete old hashes if
   // we end up storing > 100? hashes?
   hideGuidelines: function() {
-    const guidelines = this.state.guidelines;
+    const state: EditorState = this.state;
+    const guidelines = state.guidelines;
     guidelines.hidden = true;
     this.setState({
       guidelines: guidelines,
@@ -778,7 +791,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   showGuidelines: function() {
-    const guidelines = this.state.guidelines;
+    const state: EditorState = this.state;
+    const guidelines = state.guidelines;
     guidelines.hidden = false;
     this.setState({ guidelines: guidelines });
     // Leave hidden on page reload? I.e. don't update localStorage.
@@ -787,7 +801,8 @@ export const Editor = createFactory<any, EditorState>({
   // If we're showing some guidelines, but they're not visible on screen, then show them
   // in a modal dialog instead — guidelines are supposedly fairly important.
   perhapsShowGuidelineModal: function() {
-    if (!this.refs.guidelines || this.state.showGuidelinesInModal)
+    const state: EditorState = this.state;
+    if (!this.refs.guidelines || state.showGuidelinesInModal)
       return;
 
     // If the guidelines are visible, we don't need no modal.
@@ -805,7 +820,8 @@ export const Editor = createFactory<any, EditorState>({
 
   isTitleOk: function() {
     // For now
-    const title = this.state.title ? this.state.title.trim() : null;
+    const state: EditorState = this.state;
+    const title = state.title ? state.title.trim() : null;
     if (!title) return false;
     return true;
   },
@@ -816,13 +832,15 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   _handleEditsImpl: function(title: string | undefined, text: string | undefined) {
+    const state: EditorState = this.state;
+
     // A bit dupl code [7WKABF2]
-    const draft: Draft = this.state.draft;
+    const draft: Draft = state.draft;
     const draftStatus = draft && draft.text === text && draft.title === title
         ? DraftStatus.EditsUndone
         : DraftStatus.ShouldSave;
 
-    const titleChanged = this.state.title !== title;
+    const titleChanged = state.title !== title;
 
     this.setState({ title, text, draftStatus }, () => {
       if (draftStatus === DraftStatus.ShouldSave) {
@@ -848,7 +866,8 @@ export const Editor = createFactory<any, EditorState>({
 
   isTextOk: function() {
     // For now
-    const text = this.state.text ? this.state.text.trim() : null;
+    const state: EditorState = this.state;
+    const text = state.text ? state.text.trim() : null;
     if (!text) return false;
     return true;
   },
@@ -856,7 +875,8 @@ export const Editor = createFactory<any, EditorState>({
   updatePreviewNow: function() {
     // This function is debounce-d, so the editor might have been cleared
     // and closed already, or even unmounted.
-    if (this.isGone || !this.state.visible)
+    const state: EditorState = this.state;
+    if (this.isGone || !state.visible)
       return;
 
     // This cannot be a function param, because updatePreviewSoon() is debounce():d,
@@ -866,14 +886,14 @@ export const Editor = createFactory<any, EditorState>({
     delete this.scrollToPreview;
 
     // (COULD verify still edits same post/thing, or not needed?)
-    const isEditingBody = this.state.editingPostNr === BodyNr;
+    const isEditingBody = state.editingPostNr === BodyNr;
     const sanitizerOpts = {
       allowClassAndIdAttr: true, // or only if isEditingBody?  dupl [304KPGSD25]
       allowDataAttr: isEditingBody
     };
 
     const safeHtml = markdownToSafeHtml(
-        this.state.text, window.location.host, sanitizerOpts);
+        state.text, window.location.host, sanitizerOpts);
 
     this.setState({
       // UX COULD save this in the draft too, & send to the server, so the preview html
@@ -882,19 +902,20 @@ export const Editor = createFactory<any, EditorState>({
       safePreviewHtml: safeHtml,
     }, () => {
       // Show an in-page preview, unless we're creating a new page.
-      if (!this.state.newPageRole) {
+      const state: EditorState = this.state;
+      if (!state.newPageRole) {
         const params: ShowEditsPreviewParams = {
           scrollToPreview,
           safeHtml,
-          editorsPageId: this.state.editorsPageId,
+          editorsPageId: state.editorsPageId,
         };
-        const postNrs: PostNr[] = this.state.replyToPostNrs;
+        const postNrs: PostNr[] = state.replyToPostNrs;
         if (postNrs.length === 1) {
           params.replyToNr = postNrs[0];
-          params.anyPostType = this.state.anyPostType;
+          params.anyPostType = state.anyPostType;
         }
-        if (this.state.editingPostUid) {
-          params.editingPostNr = this.state.editingPostNr;
+        if (state.editingPostUid) {
+          params.editingPostNr = state.editingPostNr;
         }
         ReactActions.showEditsPreview(params);
         // We'll hide the preview, wheh closing the editor, here: (TGLPRVW)
@@ -907,6 +928,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
 
     const store: Store = this.state.store;
+    const state: EditorState = this.state;
     let settings: SettingsVisibleClientSide = store.settings;
     if (settings.enableSimilarTopics === false)
       return;
@@ -914,7 +936,7 @@ export const Editor = createFactory<any, EditorState>({
     // Wait until has typed a bit, so there's sth to search for.
     // People sometimes type short titles like "Popups flicker" or "gravatar support",
     // so start searching fairly soon:
-    const trimmedTitle = (this.state.title || '').trim();
+    const trimmedTitle = (state.title || '').trim();
     const tooFewChars = trimmedTitle.length < 12;
     const tooFewWords = trimmedTitle.indexOf(' ') === -1;  // 2 words
 
@@ -932,14 +954,15 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     if (skipSilimarTopics) {
-      if (this.state.searchResults) {
+      if (state.searchResults) {
         this.setState({ searchResults: null });
       }
       return;
     }
 
-    Server.search(this.state.title, (searchResults: SearchResults) => {
-      if (this.isGone || !this.state.visible)
+    Server.search(state.title, (searchResults: SearchResults) => {
+      const state: EditorState = this.state;
+      if (this.isGone || !state.visible)
         return;
       // Exclude category description pages — they're off-topic, here. Also don't show
       // forum topic index pages or blog post list pages. (Such pages are typically
@@ -961,8 +984,9 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   onCancelClick: function() {
+    const state: EditorState = this.state;
     this.callOnDoneCallback(false);
-    if (this.state.isWritingChatMessage) {
+    if (state.isWritingChatMessage) {
       // We'll continue editing in the simple inline editor, and it'll save the draft —
       // don't save here too; that could result in dupl drafts [TyT270424]. Also, no
       // can-continue-editing tips needed, because we're just switching to the simple inline editor.
@@ -970,7 +994,7 @@ export const Editor = createFactory<any, EditorState>({
     }
     else {
       // Show a can-continue-editing tips.
-      if (this.state.draftStatus === DraftStatus.SavedServerSide) {
+      if (state.draftStatus === DraftStatus.SavedServerSide) {
         help.openHelpDialogUnlessHidden({ content: t.e.CanContinueEditing, id: '7YK35W1' });
       }
       this.saveDraftClearAndClose();
@@ -978,53 +1002,54 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   makeEmptyDraft: function(): Draft | undefined {
-    const anyPostType: PostType | undefined = this.state.anyPostType;
+    const state: EditorState = this.state;
+    const anyPostType: PostType | undefined = state.anyPostType;
     const locator: DraftLocator = { draftType: DraftType.Scratch };
-    const store: Store = this.state.store;
+    const store: Store = state.store;
     let postType: PostType;
 
     // @ifdef DEBUG
-    dieIf(!this.state.replyToPostNrs, '[TyE502KRDL35]');
+    dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
     // @endif
 
-    if (this.state.editingPostNr) {
+    if (state.editingPostNr) {
       locator.draftType = DraftType.Edit;
-      locator.pageId = this.state.editorsPageId;
-      locator.postId = this.state.editingPostUid;
-      locator.postNr = this.state.editingPostNr;
+      locator.pageId = state.editorsPageId;
+      locator.postId = state.editingPostUid;
+      locator.postNr = state.editingPostNr;
     }
-    else if (this.state.replyToPostNrs?.length) {  // can remove '?.', never undef? [TyE502KRDL35]
+    else if (state.replyToPostNrs?.length) {  // can remove '?.', never undef? [TyE502KRDL35]
       // @ifdef DEBUG
       dieIf(anyPostType !== PostType.Normal &&
           anyPostType !== PostType.BottomComment, 'TyE25KSTJ30');
       // @endif
       postType = anyPostType || PostType.Normal;
       locator.draftType = postType_toDraftType(postType);
-      locator.pageId = this.state.editorsPageId;
-      locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
+      locator.pageId = state.editorsPageId;
+      locator.postNr = state.replyToPostNrs[0]; // for now just pick the first one
       locator.postId = getPostId(store, locator.pageId, locator.postNr);
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
       if (eds.embeddingUrl) {
         locator.embeddingUrl = eds.embeddingUrl;
       }
     }
-    else if (this.state.isWritingChatMessage) {
+    else if (state.isWritingChatMessage) {
       locator.draftType = DraftType.Reply;
-      locator.pageId = this.state.editorsPageId;
+      locator.pageId = state.editorsPageId;
       locator.postNr = BodyNr;
       locator.postId = getPostId(store, locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
     }
-    else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {
+    else if (state.messageToUserIds && state.messageToUserIds.length) {
       locator.draftType = DraftType.DirectMessage;
-      locator.toUserId = this.state.messageToUserIds[0];  // for now
+      locator.toUserId = state.messageToUserIds[0];  // for now
     }
-    else if (this.state.newForumTopicCategoryId) {
+    else if (state.newForumTopicCategoryId) {
       locator.draftType = DraftType.Topic;
-      locator.categoryId = this.state.newForumTopicCategoryId;
+      locator.categoryId = state.newForumTopicCategoryId;
       // Need to know in which forum (sub community) the new page should be placed.
       // (Hmm or could lookup via category id?)
-      locator.pageId = this.state.editorsPageId;
+      locator.pageId = state.editorsPageId;
     }
     else {
       // Editor probably closed, state gone.
@@ -1036,8 +1061,8 @@ export const Editor = createFactory<any, EditorState>({
       draftNr: NoDraftNr,
       forWhat: locator,
       createdAt: getNowMs(),
-      topicType: this.state.newPageRole,
-      postType: this.state.anyPostType || postType,
+      topicType: state.newPageRole,
+      postType: state.anyPostType || postType,
       title: '',
       text: '',
     };
@@ -1053,15 +1078,16 @@ export const Editor = createFactory<any, EditorState>({
       useBeacon?: UseBeacon) {
     // Tested here: 7WKABZP2
     // A bit dupl code [4ABKR2J0]
+    const state: EditorState = this.state;
 
     // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
     // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
     if (this.isSavingDraft && !useBeacon)
       return;
 
-    const oldDraft: Draft | undefined = this.state.draft;
+    const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
-    const draftStatus: DraftStatus = this.state.draftStatus;
+    const draftStatus: DraftStatus = state.draftStatus;
 
     if (!draftOldOrEmpty || draftStatus <= DraftStatus.NeedNotSave) {
       if (callbackThatClosesEditor) {
@@ -1070,8 +1096,8 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    const text: string = (this.state.text || '').trim();
-    const title: string = (this.state.title || '').trim();
+    const text: string = (state.text || '').trim();
+    const title: string = (state.title || '').trim();
 
     // BUG the lost update bug, unlikely to happen: Might overwrite other version of this draft [5KBRZ27]
     // which might be open in another browser tab. Could have the server check if there's
@@ -1099,7 +1125,8 @@ export const Editor = createFactory<any, EditorState>({
           // Could patch the store: delete the draft — so won't reappear
           // if [offline-first] and navigates back to this page.
 
-          if (this.isGone || !this.state.visible)
+          const state: EditorState = this.state;
+          if (this.isGone || !state.visible)
             return;
 
           this.setState({
@@ -1114,7 +1141,7 @@ export const Editor = createFactory<any, EditorState>({
       return;
     }
 
-    const store: Store = this.state.store;
+    const store: Store = state.store;
     const draftToSave: Draft = { ...draftOldOrEmpty, text, title };
 
     // If this is an embedded comments discussion, and the discussion page hasn't
@@ -1123,7 +1150,7 @@ export const Editor = createFactory<any, EditorState>({
     // UX COULD save server side, with url as key  [BLGCMNT1]
     // — it's the key already, in the sesison cache.
     const saveInSessionStorage =
-        !store.me.isLoggedIn || isEmbeddedNotYetCreatedPage(this.state);
+        !store.me.isLoggedIn || isEmbeddedNotYetCreatedPage(state);
 
     console.debug(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
         saveInSessionStorage ? "temp in browser" : "server side"));
@@ -1150,7 +1177,8 @@ export const Editor = createFactory<any, EditorState>({
       this.isSavingDraft = false;
       console.debug("...Saved draft.");
 
-      if (this.isGone || !this.state.visible)
+      const state: EditorState = this.state;
+      if (this.isGone || !state.visible)
         return;
 
       this.setState({
@@ -1178,7 +1206,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   saveStuff: function() {
-    const isReplying = this.state.replyToPostNrs.length > 0;
+    const state: EditorState = this.state;
+    const isReplying = state.replyToPostNrs.length > 0;
     const loginToWhat = eds.isInEmbeddedEditor && isReplying ?
       LoginReason.PostEmbeddedComment : LoginReason.SubmitEditorText;
 
@@ -1188,16 +1217,17 @@ export const Editor = createFactory<any, EditorState>({
     // to may-NOT-compose-before-logged-in, and then the user clicks Post Reply. Then,
     // #dummy below might get used, but won't work.
     debiki2.login.loginIfNeededReturnToAnchor(loginToWhat, '#dummy-TyE2PBBYL0', () => {
-      if (page_isPrivateGroup(this.state.newPageRole)) {
+      const state: EditorState = this.state;
+      if (page_isPrivateGroup(state.newPageRole)) {
         this.startPrivateGroupTalk();
       }
-      else if (this.state.newForumTopicCategoryId) {
+      else if (state.newForumTopicCategoryId) {
         this.saveNewForumPage();
       }
-      else if (_.isNumber(this.state.editingPostNr)) {
+      else if (_.isNumber(state.editingPostNr)) {
         this.saveEdits();
       }
-      else if (this.state.isWritingChatMessage) {
+      else if (state.isWritingChatMessage) {
         this.postChatMessage();
       }
       else {
@@ -1236,13 +1266,14 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   saveNewForumPage: function() {
+    const state: EditorState = this.state;
     this.throwIfBadTitleOrText(t.e.PleaseWriteTitle, t.e.PleaseWriteSth);
     const data = {
-      categoryId: this.state.newForumTopicCategoryId,
-      pageRole: this.state.newPageRole,
+      categoryId: state.newForumTopicCategoryId,
+      pageRole: state.newPageRole,
       pageStatus: 'Published',
-      pageTitle: this.state.title,
-      pageBody: this.state.text,
+      pageTitle: state.title,
+      pageBody: state.text,
       deleteDraftNr: this.anyDraftNr(),
     };
     Server.createPage(data, (newPageId: string) => {
@@ -1254,7 +1285,8 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   postChatMessage: function() {
-    ReactActions.insertChatMessage(this.state.text, this.state.draft, () => {
+    const state: EditorState = this.state;
+    ReactActions.insertChatMessage(state.text, state.draft, () => {
       this.callOnDoneCallback(true);
       this.clearAndClose();
     });
@@ -1262,8 +1294,8 @@ export const Editor = createFactory<any, EditorState>({
 
   startPrivateGroupTalk: function() {
     this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
-    const state = this.state;
-    Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
+    const state: EditorState = this.state;
+    Server.startPrivateGroupTalk(state.title, state.text, state.newPageRole,
         state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
       // Could, but not needed, since assign() below:
       //   this.callOnDoneCallback(true);
@@ -1273,17 +1305,19 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   anyDraftNr: function(): DraftNr | undefined {
-    const draft: Draft | undefined = this.state.draft;
+    const state: EditorState = this.state;
+    const draft: Draft | undefined = state.draft;
     if (draft) return draft.draftNr;
   },
 
   throwIfBadTitleOrText: function(titleErrorMessage, textErrorMessage) {
+    const state: EditorState = this.state;
     let errors = '';
-    if (titleErrorMessage && isBlank(this.state.title)) {
+    if (titleErrorMessage && isBlank(state.title)) {
       errors += titleErrorMessage;
       this.setState({ showTitleErrors: true });
     }
-    if (textErrorMessage && isBlank(this.state.text)) {
+    if (textErrorMessage && isBlank(state.text)) {
       if (errors) errors += ' ';
       errors += textErrorMessage;
       this.setState({ showTextErrors: true });
@@ -1297,20 +1331,22 @@ export const Editor = createFactory<any, EditorState>({
   cycleMaxHorizBack: function() {
     // Cycle from 1) normal to 2) maximized & tiled vertically, to 3) maximized & tiled horizontally
     // and then back to normal.
-    const newShowMaximized = !this.state.showMaximized || !this.state.splitHorizontally;
-    if (eds.isInEmbeddedEditor && newShowMaximized !== this.state.showMaximized) {
+    const state: EditorState = this.state;
+    const newShowMaximized = !state.showMaximized || !state.splitHorizontally;
+    if (eds.isInEmbeddedEditor && newShowMaximized !== state.showMaximized) {
       window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
           eds.embeddingOrigin);
     }
     this.setState({
-      showMaximized: !this.state.showMaximized || !this.state.splitHorizontally,
-      splitHorizontally: this.state.showMaximized && !this.state.splitHorizontally,
+      showMaximized: !state.showMaximized || !state.splitHorizontally,
+      splitHorizontally: state.showMaximized && !state.splitHorizontally,
     });
   },
 
   togglePreview: function() {
+    const state: EditorState = this.state;
     this.setState({
-      showOnlyPreview: !this.state.showOnlyPreview,
+      showOnlyPreview: !state.showOnlyPreview,
       showMinimized: false,
     });
   },
@@ -1466,7 +1502,6 @@ export const Editor = createFactory<any, EditorState>({
     const store: Store = state.store;
 
     // Is undef, if in the API section, e.g. typing a direct message to a user.
-    // Dulp line, a bit. (526WJ53TP34)
     const editorsPage: Page | undefined =
         store.pagesById[state.editorsPageId] || store.currentPage;
 
@@ -1474,13 +1509,13 @@ export const Editor = createFactory<any, EditorState>({
 
     const me: Myself = store.me;
     let settings: SettingsVisibleClientSide = store.settings;
-    const isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
+    const isPrivateGroup = page_isPrivateGroup(state.newPageRole);
 
     // We'll disable the editor, until any draft has been loaded. [5AKBW20] Otherwise one might
     // start typing, and then the draft gets loaded (which might take some seconds if
     // the server was just started, or maybe slow connection) and overwrites the text one
     // has already typed.
-    const draftStatus: DraftStatus = this.state.draftStatus;
+    const draftStatus: DraftStatus = state.draftStatus;
     const anyDraftLoaded = draftStatus !== DraftStatus.NotLoaded;
 
 
@@ -1494,7 +1529,7 @@ export const Editor = createFactory<any, EditorState>({
         showGuidelinesBtn =
           r.a({ className: 'icon-info-circled', onClick: this.showGuidelines });
       }
-      else if (this.state.showGuidelinesInModal) {
+      else if (state.showGuidelinesInModal) {
         // Skip the post-it style guidelines just below.
       }
       else {
@@ -1502,22 +1537,22 @@ export const Editor = createFactory<any, EditorState>({
           r.div({ className: 'dw-editor-guidelines-wrap', ref: 'guidelines' },
             r.div({ className: 'dw-editor-guidelines clearfix' },
               r.div({ className: 'dw-editor-guidelines-text',
-                dangerouslySetInnerHTML: { __html: this.state.guidelines.safeHtml }}),
+                dangerouslySetInnerHTML: { __html: state.guidelines.safeHtml }}),
               r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuidelines }, t.Hide)));
       }
     }
 
     const guidelinesModal = GuidelinesModal({ guidelines,
-        isOpen: guidelines && this.state.showGuidelinesInModal, close: this.hideGuidelines });
+        isOpen: guidelines && state.showGuidelinesInModal, close: this.hideGuidelines });
 
 
     // ----- Similar topics?
 
     let similarTopicsTips;
-    const searchResults: SearchResults = this.state.searchResults;
+    const searchResults: SearchResults = state.searchResults;
 
-    if (searchResults && this.state.showSimilarTopics) {
-      const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.title);
+    if (searchResults && state.showSimilarTopics) {
+      const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(state.title);
       const searchUrl = '/-/search?q=' + urlEncodedQuery;
 
       const hitList = !searchResults.pagesAndHits.length ? null :
@@ -1542,8 +1577,8 @@ export const Editor = createFactory<any, EditorState>({
     // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
     // except for the editor, people will see it for sure. We'll make everything dark only for
     // a short while.
-    const anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
-        r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
+    const anyBackdrop = state.backdropOpacity < 0.01 ? null :
+        r.div({ className: 'esEdtr_backdrop', style: { opacity: state.backdropOpacity }});
 
 
     // ----- Title, page type, category
@@ -1551,23 +1586,23 @@ export const Editor = createFactory<any, EditorState>({
     let titleInput;
     let pageRoleDropdown;
     let categoriesDropdown;
-    if (this.state.newForumTopicCategoryId || isPrivateGroup) {
-      const titleErrorClass = this.state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
+    if (state.newForumTopicCategoryId || isPrivateGroup) {
+      const titleErrorClass = state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
-              value: this.state.title, disabled: !anyDraftLoaded,
+              value: state.title, disabled: !anyDraftLoaded,
               placeholder: t.e.TitlePlaceholder,
               onKeyPress: this.onKeyPressOrKeyDown,
               onKeyDown: this.onKeyPressOrKeyDown,
             });
 
-      if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
+      if (state.newForumTopicCategoryId && !isPrivateGroup &&
           settings_showCategories(settings, me))
         categoriesDropdown =
           SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
-              categories: this.state.editorsCategories,
-              selectedCategoryId: this.state.newForumTopicCategoryId,
+              categories: state.editorsCategories,
+              selectedCategoryId: state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
       if (state.newPageRole && settings_selectTopicType(settings, me)) {
@@ -1603,15 +1638,15 @@ export const Editor = createFactory<any, EditorState>({
               }},
             t.e.EditPost_2 + editingPostNr + ':'));
     }
-    else if (this.state.isWritingChatMessage) {
+    else if (state.isWritingChatMessage) {
       doingWhatInfo = t.e.TypeChatMsg;
     }
-    else if (this.state.messageToUserIds.length) {
+    else if (state.messageToUserIds.length) {
       doingWhatInfo = t.e.YourMsg;
     }
-    else if (this.state.newPageRole) {
+    else if (state.newPageRole) {
       let what = t.e.CreateTopic;
-      switch (this.state.newPageRole) {
+      switch (state.newPageRole) {
         case PageRole.CustomHtmlPage: what = t.e.CreateCustomHtml; break;
         case PageRole.WebPage: what = t.e.CreateInfoPage; break;
         case PageRole.Code: what = t.e.CreateCode; break;
@@ -1748,15 +1783,15 @@ export const Editor = createFactory<any, EditorState>({
         }
       }
     }
-    else if (this.state.isWritingChatMessage) {
+    else if (state.isWritingChatMessage) {
       saveButtonTitle = t.e.PostMessage;
       cancelButtonTitle = t.e.SimpleEditor;
     }
-    else if (this.state.messageToUserIds.length) {
+    else if (state.messageToUserIds.length) {
       saveButtonTitle = makeSaveTitle(t.e.Send, t.e.message);
     }
-    else if (this.state.newPageRole) {
-      switch (this.state.newPageRole) {
+    else if (state.newPageRole) {
+      switch (state.newPageRole) {
         case PageRole.CustomHtmlPage:
         case PageRole.WebPage:
         case PageRole.Code:
@@ -1780,7 +1815,7 @@ export const Editor = createFactory<any, EditorState>({
     // ----- Misc (move elsewhere?)
 
     let anyViewHistoryButton;
-    if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
+    if (state.editingPostRevisionNr && state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
           r.a({ onClick: this.showEditHistory, className: 'view-edit-history', tabIndex: 1 },
             t.e.ViewOldEdits);
@@ -1789,7 +1824,7 @@ export const Editor = createFactory<any, EditorState>({
     // If not visible, don't remove the editor, just hide it, so we won't have
     // to unrigister the mentions parser (that would be boring).
     const styles = {
-      display: this.state.visible ? 'block' : 'none'
+      display: state.visible ? 'block' : 'none'
     };
 
 
@@ -1813,13 +1848,13 @@ export const Editor = createFactory<any, EditorState>({
         r.button({ onClick: this.addHeading, title: t.e.HeadingBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'H'));
 
-    const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
+    const textErrorClass = state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
         !anyDraftLoaded ? r.pre({ className: 'e_LdDft' }, t.e.LoadingDraftDots) :
           ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'rtaTextarea',
-            value: this.state.text,
+            value: state.text,
             onChange: this.onTextEdited,
             onKeyPress: this.onKeyPressOrKeyDown,
             onKeyDown: this.onKeyPressOrKeyDown,
@@ -1862,26 +1897,27 @@ export const Editor = createFactory<any, EditorState>({
     // ----- Editor size
 
     let editorClasses = eds.isInEmbeddedEditor ? '' : 'editor-box-shadow';
-    editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
-    editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
-    editorClasses += this.state.showMinimized ? ' s_E-Min' : (
-        this.state.showOnlyPreview ? ' s_E-Prv' : ' s_E-E');
+    editorClasses += state.showMaximized ? ' s_E-Max' : '';
+    editorClasses += state.splitHorizontally ? ' s_E-SplitHz' : '';
+    editorClasses += state.showMinimized ? ' s_E-Min' : (
+        state.showOnlyPreview ? ' s_E-Prv' : ' s_E-E');
 
-    const editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
-    const previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
+    const editorStyles = state.showOnlyPreview ? { display: 'none' } : null;
+    const previewStyles = state.showOnlyPreview ? { display: 'block' } : null;
 
     const maximizeAndHorizSplitBtnTitle =
-        !this.state.showMaximized ? t.e.Maximize : (
-          this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
+        !state.showMaximized ? t.e.Maximize : (
+          state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
 
     // ----- Draft status
 
-    const draft: Draft = this.state.draft;
+    const draft: Draft = state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
 
     const draftStatusText =
-        DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
+        DraftStatusInfo({
+          draftStatus, draftNr, draftErrorStatusCode: state.draftErrorStatusCode });
 
 
     // ----- The result
@@ -1916,7 +1952,7 @@ export const Editor = createFactory<any, EditorState>({
               previewTitle,
               previewHelp,
               r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
-                  dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
+                  dangerouslySetInnerHTML: { __html: state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e_E_SaveB' },
                 saveButtonTitle),
@@ -1927,10 +1963,10 @@ export const Editor = createFactory<any, EditorState>({
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
-                  primary: this.state.showMinimized, tabIndex: 3 },
-                this.state.showMinimized ? t.e.ShowEditorAgain : t.e.Minimize),
+                  primary: state.showMinimized, tabIndex: 3 },
+                state.showMinimized ? t.e.ShowEditorAgain : t.e.Minimize),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                this.state.showOnlyPreview ? t.EditV : t.PreviewV),
+                state.showOnlyPreview ? t.EditV : t.PreviewV),
               anyViewHistoryButton)),
             r.div({ className: 's_E_iPhoneKbd' },
               t.e.IPhoneKbdSpace_1, r.br(), t.e.IPhoneKbdSpace_2),

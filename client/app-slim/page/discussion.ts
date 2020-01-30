@@ -1210,7 +1210,8 @@ const Thread = createComponent({
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
     let replyingToElem;
-    if (store.replyingToPostNr === post.nr) {   // + && page id
+    if (store.replyingToPostNr === post.nr &&
+        store.editorsPageId === page.pageId) {
       replyingToElem = r.div({ className: 's_T_ReTo' },
         r.span({ className: 's_T_ReTo_Ttl' },
           "Replying to:"),  // [305KTJ4]  I18N

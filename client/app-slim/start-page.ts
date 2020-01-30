@@ -21,7 +21,7 @@
 const d = { i: debiki.internal };
 
 
-let pageStarted;
+let pageStarted: undefined | true;
 const scriptLoadDoneCallbacks = [];
 debiki.scriptLoad = {  // RENAME to tyd.afterStarted(...) ?
   done: function(callback) {
