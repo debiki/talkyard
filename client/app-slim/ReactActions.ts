@@ -505,7 +505,7 @@ export function highlightPreview(highlightOn: boolean) {  // RENAME to outlinePr
 
 function findPreviewPost(): Element {
   // We don't know if the preview is for a reply, orig post or chat message
-  // — try finding the preview at all those "places".
+  // — try finding the preview at all those "places".   (206702364)
   return (
       $first('.s_T-Prvw-IsEd .dw-p') ||
       $first('.dw-ar-p') ||
@@ -981,7 +981,7 @@ export function scrollToPreview(ps: {
 
   // Break out function? Also see FragActionHashScrollToBottom, tiny bit dupl code.
   // Scroll to the preview we're currently editing (not to any inactive draft previews).
-  // Hmm, this not really needed, instead: (206702364).
+  // Hmm, this not really needed, instead, use findPreviewPost()  (206702364)  ?
   const selector = ps.isEditingBody ? '.dw-ar-t > .s_T_YourPrvw' : (
       ps.isChat ? '.s_T_YourPrvw + .esC_M' : '.s_T-Prvw-IsEd');
 
@@ -997,8 +997,8 @@ export function scrollToPreview(ps: {
   if (eds.isInEmbeddedCommentsIframe) {
     // This is better? Works also when starting scrolling from inside the comments
     // iframe — then, the editor iframe hasn't sent any message that included
-    // its height, so `= ps.editorIframeHeightPx` won't work . But this is not
-    // so tested (Jan 2020) so wrap in try-catch. [95BKAEPG240]
+    // its height, so `= ps.editorIframeHeightPx` (just above) won't work . But this
+    // is not so tested (Jan 2020) so wrap in try-catch. [95BKAEPG240]
     try {
       editorHeight = window.parent.frames['edEditor'].innerHeight || 0;
     }

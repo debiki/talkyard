@@ -35,7 +35,6 @@ trait SiteTransaction {
   /** Continues using the same connection. */
   def asSystem: SystemTransaction
 
-  @deprecated("now", "Use Globals.now() instead, so auto tests can fast forward time") // no? nowadays now gets set to Globals.now
   def now: When
 
   def deferConstraints()

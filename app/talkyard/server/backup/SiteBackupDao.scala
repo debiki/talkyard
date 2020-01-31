@@ -23,9 +23,9 @@ import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
 import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 import ed.server.notf.NotificationGenerator
+import ed.server.pop.PagePopularityDao
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
-
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1163,7 +1163,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // previously when inserting. At least not more than 2x slower, which should be ok
         // (simplicity = more important).
         val pagePartsDao = PagePartsDao(pageMeta.pageId, tx)
-        newDao.updatePagePopularity(pagePartsDao, tx)
+        PagePopularityDao.updatePagePopularity(pagePartsDao, tx)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
         val numReplies = pagePartsDao.allPosts.count(_.isReply)
         val correctMeta = pageMeta.copy(

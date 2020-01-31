@@ -264,21 +264,25 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
           ("The database user has suddenly disappeared", "TyEDATABUSRG", "")
       }
       else if (badPassword) {
-        (o"""Talkyard's application server cannot connect to the database.
+        (o"""Talkyard's application server cannot login to the database
+             (but can connect to it).
              Wrong database password? Or the database user doesn't exist?""",
           "TyEDATABPWD", "")
       }
       else if (dbMissing) {
-        (o"""Talkyard's application server has logged in to the PostgreSQL server,
-              but it seems the PostgreSQL user's database does not exist""",
+        (o"""Talkyard's application server has logged in to the PostgreSQL database server,
+              but the PostgreSQL user's database does not exist?""",
             "TyE0DATAB", "")
       }
       else {
         if (startingUp)
           (o"""Talkyard's application server is trying to start,
-              but cannot connect to the database""", "TyEDATABCONN1", "")
+              but cannot connect to the PostgreSQL database server""",
+            "TyEDATABCONN1", "")
         else
-          ("Database no longer reachable", "TyEDATABCONN2", "Or did a query take too long?")
+          (o"""Talkyard's application server suddenly can no longer connect
+            to the PostgreSQL database server""",
+            "TyEDATABCONN2", "Or did a query take too long?")
       }
 
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)

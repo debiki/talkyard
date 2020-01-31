@@ -990,8 +990,10 @@ html.touch .dw-p-mark-click
   -ms-transition: background-color 4s;
   transition: background-color 4s;  // dupl constant, also in js [2DKQ7AM]
 
-.dw-p.dw-highlighted-multireply-hover
-  outline: hsl($uiHue, 100%, 77%) solid 5px;
+.dw-highlighted-multireply-hover   // RENAME to s_Fx-Outl
+  &.dw-p,
+  &.esC_M
+    outline: hsl($uiHue, 100%, 77%) solid 5px;
 
 
 

@@ -74,7 +74,7 @@ d.i.calcScrollRectIntoViewCoords = function(rect, options) {
     }
   }
 
-  return {
+  return {  // Typescript interface CalcScrollResult
     actualWinTop: parentScrollTop,
     actualWinLeft: parentScrollLeft,
     desiredParentTop: desiredParentTop,

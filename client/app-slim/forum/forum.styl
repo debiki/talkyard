@@ -296,6 +296,11 @@ $tableHeaderFontSize = 14px;
   text-decoration-color: hsl(0,0%,70%);
   font-weight: bold;
   color: hsl(0, 0%, 35%) !important;
+  &:hover
+    color: hsl(0, 0%, 25%) !important;
+    // Dupl [HOVERSTYL]
+    background: hsl($uiHue, 100%, 98%);
+    outline: 1px solid hsl($uiHue, 100%, 94%);
 
 // harmless UX BUG: Use ::after instead, on the base cat, so this arrow
 // will be on the same row as the base cat (if flex wrap).
@@ -483,6 +488,7 @@ td.dw-tpc-activity
           position: relative;
           left: - $leftPadding;
           &:hover
+            // Dupl [HOVERSTYL]
             text-decoration: none;
             background: hsl($uiHue, 100%, 97%);
             outline: 1px solid hsl($uiHue, 100%, 92%);

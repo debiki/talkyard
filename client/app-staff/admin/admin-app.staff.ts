@@ -2011,6 +2011,8 @@ const AdvancedSettings = createFactory({
           }
         });
 
+    // If there's just one site, self hosted — then, cannot delete it.
+    // (Instead, one would shut down the Talkard server.)
     const hideDangerZone = seemsSelfHosted(); // later:  || !ppt_isOwner(me);
 
     const dangerZoneTitle = hideDangerZone ? null :

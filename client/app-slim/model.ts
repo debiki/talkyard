@@ -232,13 +232,27 @@ type EditsDoneHandler = (
     wasSaved: boolean, text: string, draft: Draft | null, draftStatus: DraftStatus) => void;
 
 
-interface ScrollIntoViewOpts {
+interface CalcScrollOpts {
+  // If you want to scroll to show only the 'height' upper pixels of something.
+  height?: number;
   marginTop?: number;
   marginBottom?: number;
   marginRight?: number;
   marginLeft?: number;
+  parent?: Element;
+}
+
+// The fields might be undefined, if !needsToScroll.
+interface CalcScrollResult {
+  actualWinTop?: number;
+  actualWinLeft?: number;
+  desiredParentTop?: number;
+  desiredParentLeft?: number;
+  needsToScroll: boolean;
+}
+
+interface ScrollIntoViewOpts extends CalcScrollOpts {
   duration?: number;
-  parent?;
   onDone?: () => void;
 
   // If user defined selector, might cause an exception.

@@ -103,12 +103,12 @@ class TextAndHtmlTest extends FreeSpec with MustMatchers {
            <area href='http://1.2.3.4/path'>An ip addr</a>
            <b>Hello <a>not a link</a> and <img src="">not an img</img></b>
            """)
-        textAndHtml.links mustBe Seq(
+        textAndHtml.links.sorted mustBe Seq(
           "http://imgs.com/one.jpg",
           "http://vids.com/two.mp4",
           "http://hello.ex.co/path",
-          "http://1.2.3.4/path")
-        textAndHtml.linkDomains mustBe Set("imgs.com", "vids.com", "/hello.ex.co")
+          "http://1.2.3.4/path").sorted
+        textAndHtml.linkDomains mustBe Set("imgs.com", "vids.com", "hello.ex.co")
         textAndHtml.linkIpAddresses mustBe Seq("1.2.3.4")
       }
 

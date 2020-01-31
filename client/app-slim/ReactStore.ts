@@ -1282,6 +1282,7 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 function patchTheStore(storePatch: StorePatch) {
   if (isDefined2(storePatch.setEditorOpen) && storePatch.setEditorOpen !== store.isEditorOpen) {
     store.isEditorOpen = storePatch.setEditorOpen;
+    store.editorsPageId = storePatch.setEditorOpen && storePatch.editorsPageId;
     store.replyingToPostNr = storePatch.setEditorOpen && storePatch.replyingToPostNr;
     store.editingPostId = storePatch.setEditorOpen && storePatch.editingPostId;
     // Need to update all posts when the editor opens, to hide all Reply buttons

@@ -29,7 +29,7 @@
  * by adding some options.marginRight.
  * Find the sidebar in client/app/sidebar/sidebar.ts.
  */
-function addAnySidebarWidth(options) {
+function addAnySidebarWidth(options: ShowPostOpts) {
   options = options || {};
   var sidebar = debiki2.$byId('dw-sidebar');
   if (!sidebar || !sidebar.querySelector('.dw-comments')) {
@@ -43,7 +43,7 @@ function addAnySidebarWidth(options) {
 }
 
 
-debiki.internal.showAndHighlightPost = function(postElem, options: ShowPostOpts) {
+debiki.internal.showAndHighlightPost = function(postElem: Element, options: ShowPostOpts) {
   if (!postElem) {
     logError('Got no post [EdE7JKWD20]');
     return;
@@ -75,7 +75,7 @@ export function highlightPostNrBrieflyIfThere(nr: PostNr) {
 }
 
 
-export function highlightPostBriefly(postElem) {
+export function highlightPostBriefly(postElem: Element) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
   highlightBrieflyImpl(head, body);
@@ -84,15 +84,21 @@ export function highlightPostBriefly(postElem) {
 
 const highlightOffHandles = new Map();
 
-function highlightBrieflyImpl(head, body) {
-  const highlightOnClass = 'dw-highlight-on';   // RENAME to s_Flash-Start   ?
-  const highlightOffClass = 'dw-highlight-off'; // RENAME to s_Flash-FadeOut ?
+function highlightBrieflyImpl(head: Element | undefined, body: Element) {
+  if (!body) {
+    // @ifdef DEBUG
+    die('TyE306WKUDR2');
+    // @endif
+    return;
+  }
+
+  const highlightOnClass = 'dw-highlight-on';   // RENAME to s_Fx-Flash-Start   ?
+  const highlightOffClass = 'dw-highlight-off'; // RENAME to s_Fx-Flash-End ?
   const allClasses = highlightOnClass + ' ' + highlightOffClass;
   const $h = debiki2.$h;
 
   // Remove the fade-out class, otherwise cannot highlight again until the
   // flade-out animation has ended.
-  // How clear timeout — remember handle in per elem map?
   if (head) $h.removeClasses(head, allClasses);
   $h.removeClasses(body, allClasses);
   const oldHighlOffHandle = highlightOffHandles.get(body);

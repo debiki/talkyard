@@ -107,8 +107,8 @@
       //    currentY  = 1132.000000211447
       //    context.y = 1132.78125
       // — then, let's just call onDone directly.
-      let distX = Math.abs(currentX - context.x);
-      let distY = Math.abs(currentY - context.y);
+      var distX = Math.abs(currentX - context.x);
+      var distY = Math.abs(currentY - context.y);
       if (distX < 1.0 && distY < 1.0) {
         w.cancelAnimationFrame(context.frame);
         if (context.onDone) {

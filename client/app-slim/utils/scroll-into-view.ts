@@ -23,7 +23,7 @@ const d = { i: debiki.internal };
 
 
 export function calcScrollIntoViewCoordsInPageColumn(
-    elemOrSelector: Element | string, options: any = {}) {
+    elemOrSelector: Element | string, options: CalcScrollOpts = {}): CalcScrollResult {
   // Warning: dupl code, see [5GUKF24] below.
   let what: Element;
   if (elemOrSelector && _.isString(elemOrSelector)) {
@@ -32,13 +32,24 @@ export function calcScrollIntoViewCoordsInPageColumn(
   else {
     what = <Element> elemOrSelector;
   }
-  if (!what)
+
+  if (!what) {
+    // This is fine — maybe something just got unmounted / removed from the page.
     return { needsToScroll: false };
+  }
+
   debiki2.dieIf(options.parent, 'EsE77KF28');
   options.parent = $byId('esPageColumn');
-  if (!options.parent.contains(what))
+
+  if (!options.parent.contains(what)) {
+    // But this is a bug? Shouldn't try to scroll something that's not inside the page.
+    // @ifdef DEBUG
+    die('TyE4062KUPTHA2');
+    // @endif
     return { needsToScroll: false };
-  return d.i.calcScrollIntoViewCoords(what, options);
+  }
+
+  return calcScrollIntoViewCoords(what, options);
 }
 
 
@@ -68,8 +79,8 @@ export function scrollIntoViewInPageColumn(
 }
 
 
-export function elemIsVisible(elem): boolean {
-  const coords = d.i.calcScrollIntoViewCoords(elem, {
+export function elemIsVisible(elem: Element): boolean {
+  const coords = calcScrollIntoViewCoords(elem, {
     marginTop: 0,
     marginBottom: 0,
     marginLeft: 0,
@@ -82,7 +93,7 @@ export function elemIsVisible(elem): boolean {
 d.i.elemIsVisible = elemIsVisible;
 
 
-d.i.calcScrollIntoViewCoords = function(elem, options) {
+function calcScrollIntoViewCoords(elem: Element, options: CalcScrollOpts): CalcScrollResult {
   const rect = elem.getBoundingClientRect();
   return d.i.calcScrollRectIntoViewCoords(rect, options);
 };
@@ -107,7 +118,7 @@ export function scrollIntoView(elem, options: ScrollIntoViewOpts,
 
     // Here could be a good place to add extra margin, if topbar open?  [306KDRGFG2]
 
-    const coords = d.i.calcScrollIntoViewCoords(elem, options);
+    const coords = calcScrollIntoViewCoords(elem, options);
     needsToScroll = coords.needsToScroll;
     if (needsToScroll) {
       smoothScroll(

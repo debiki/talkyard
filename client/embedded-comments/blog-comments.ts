@@ -49,7 +49,7 @@ const debugLog: (...args) => void =
     ? function() {}
     : function() {
       // Clone the function arguments array.
-      var args = [].slice.call(arguments);
+      const args = [].slice.call(arguments);
       // Add a prefix to the 1st arg, the actuall message.
       // (Subsequent args could be an exception to log, who knows.)
       var arg0 = args[0];
@@ -61,8 +61,8 @@ const debugLog: (...args) => void =
 
 debugLog("Starting... (disable logging by setting talkyardDebug = false)");
 
-var d = { i: debiki.internal };
-var serverOrigin = d.i.commentsServerOrigin;
+const d = { i: debiki.internal };
+const serverOrigin = d.i.commentsServerOrigin;
 
 // HTTPS problem? Talkyard must use HTTPS, if the blog uses HTTPS,
 // otherwise there'll be an insecure-content-blocked error.
@@ -100,7 +100,7 @@ var editorPlaceholder;
 // and do things there. Then instead you need to login directly to the Talkyard
 // server, rather than on the embedding site via the iframe — so an XSS
 // vulnerability on the embedding site (the blog) cannot give admin access.
-var theStorage = localStorage;
+const theStorage = localStorage;
 
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
@@ -674,10 +674,10 @@ function findOneTimeLoginSecret() {
 
 
 function findCommentToScrollTo() {
-  var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
+  const commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)([#&].*)?$/);  // [2PAWC0]
   if (commentNrHashMatch) {
-    var commentNrStr = commentNrHashMatch[1];
-    var commentNr = parseInt(commentNrStr);
+    const commentNrStr = commentNrHashMatch[1];
+    const commentNr = parseInt(commentNrStr);
     // If the comment nr is > 1e6, something is amiss. Probably the #comment-NNN
     // url hash, is instead for a Disqus comment — which also happen to use
     // that same hash frag, for refering to a comment via the url, and their
@@ -690,28 +690,28 @@ function findCommentToScrollTo() {
 }
 
 
-function scrollComments(rectToScrollIntoView, options) {
+function scrollComments(rectToScrollIntoView, options /* CalcScrollOpts */) {
   // For a discussion about using <html> or <body>, see:
   // https://stackoverflow.com/questions/19618545/
   //    body-scrolltop-vs-documentelement-scrolltop-vs-window-pagyoffset-vs-window-scrol
   // COULD use  window.scrollY instead, that's maybe more future compatible,
   // see: https://stackoverflow.com/a/33462363/694469
   options.parent = document.documentElement.scrollTop ? document.documentElement : document.body;
-  var iframeRect = commentsIframe.getBoundingClientRect();
-  var rectWithOffset = {
+  const iframeRect = commentsIframe.getBoundingClientRect();
+  const rectWithOffset = {
     top: rectToScrollIntoView.top + iframeRect.top,
     bottom: rectToScrollIntoView.bottom + iframeRect.top,
     left: rectToScrollIntoView.left + iframeRect.left,
     right: rectToScrollIntoView.right + iframeRect.left
   };
-  var coords = d.i.calcScrollRectIntoViewCoords(rectWithOffset, options);
+  const coords /* CalcScrollResult */ = d.i.calcScrollRectIntoViewCoords(rectWithOffset, options);
   if (coords.needsToScroll) {
     smoothScroll(document.body, coords.desiredParentLeft, coords.desiredParentTop);
   }
 }
 
 
-var hasInitedEditorHeight = false;
+let hasInitedEditorHeight = false;
 
 function showEditor(show: boolean) {
   if (show) {
@@ -719,7 +719,7 @@ function showEditor(show: boolean) {
     if (!hasInitedEditorHeight) {
       hasInitedEditorHeight = true;
       // Apparently this needs be done after display = 'block'.
-      var initialHeight = Math.max(Math.min(300, window.innerHeight), window.innerHeight / 2.8);
+      const initialHeight = Math.max(Math.min(300, window.innerHeight), window.innerHeight / 2.8);
       editorWrapper.style.height = initialHeight + 'px';
     }
     editorPlaceholder.style.display = 'block';
@@ -755,7 +755,7 @@ function setEditorMaximized(maximized) {
 }
 
 function setEditorMinimized(minimized) {
-  var editorWrapper = document.getElementById('ed-editor-wrapper');
+  const editorWrapper = document.getElementById('ed-editor-wrapper');
   if (minimized) {
     oldHeight = editorWrapper.style.height;
     oldBorderTop = editorWrapper.style.borderTop;
@@ -772,7 +772,7 @@ function setEditorMinimized(minimized) {
 }
 
 
-/// The editor's own resize functionality won't work, because it is height 100% in
+/// The editor's own resize functionality won't work, because it is height 100% inside
 /// the editor iframe. Instead, here we resize the whole editor iframe. [RESEMBEDTR]
 ///
 function makeEditorResizable() {
@@ -790,7 +790,7 @@ function makeEditorResizable() {
   }
 
   function doDrag(event) {
-    var newHeight = startHeight - event.clientY + startY;
+    const newHeight = startHeight - event.clientY + startY;
     editorPlaceholder.style.height = newHeight + 'px';
     editorWrapper.style.height = newHeight + 'px';
   }
@@ -804,7 +804,7 @@ function makeEditorResizable() {
 
 
 function coverIframesSoWontStealMouseEvents(cover) {
-  var newVisibilityStyle = { style: { visibility: cover ? 'hidden' : 'visible' }};
+  const newVisibilityStyle = { style: { visibility: cover ? 'hidden' : 'visible' }};
   /*  This won't work, still steals mouse clicks/drags and starts selecting text "randomly".
   var newValue = cover ? 'none' : 'auto';
   var newVisibilityStyle = { style: {
@@ -816,8 +816,8 @@ function coverIframesSoWontStealMouseEvents(cover) {
     '-ms-user-select': newValue, // Internet Explorer/Edge
     'user-select': newValue
   }}; */
-  var comments = document.getElementById('ed-embedded-comments');
-  var editor = document.getElementById('ed-embedded-editor');
+  const comments = document.getElementById('ed-embedded-comments');
+  const editor = document.getElementById('ed-embedded-editor');
   Bliss.set(comments, newVisibilityStyle);
   Bliss.set(editor, newVisibilityStyle);
 }
