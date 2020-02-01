@@ -197,7 +197,7 @@ Hacker News / Reddit style discussion:
 
 Like Disqus — but lightweight, no ads, no tracking. Configure in the Admin Area, the Settings tab, the Embedded Comments sub tab. — Read more about blog comments, and an optional hosting service, here: https://www.talkyard.io/blog-comments
 
-A Disqus importer was just completed, a bit untested though (Aug 2019) — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
+There's a Disqus importer — talk with us [in the forum](https://www.talkyard.io/forum/) if you want to migrate from Disqus to Talkyard.
 
 <br>
 
@@ -742,7 +742,7 @@ License
 -----------------------------
 
 - AGPL, see below.
-- And dual licensed under AGPL and GPL, from 2025-01-01 00:00:01 UTC and onwards.
+- And dual licensed under AGPL and GPL, from 2026-01-01 00:00:01 UTC and onwards.
 - I (KajMagnus) bump the above becomes-dual-licensed date, with one year,
   each year — for the most recent version of Talkyard.
   Meaning, the most recent version of Talkyard, becomes GPLv2, always 5 years
@@ -751,7 +751,7 @@ License
 AGPL:
 
 ```
-Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
+Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -767,12 +767,12 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 
-Plus GPLv2 or later, from 2025-01-01 and onwards:
+Plus GPLv2 or later, from 2026-01-01 and onwards:
 
 ```
-Copyright (c) 2010-2019  Kaj Magnus Lindberg and Debiki AB
+Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
 
-This program is free software; from 2025-01-01 00:00:01 UTC and
+This program is free software; from 2026-01-01 00:00:01 UTC and
 onwards, you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -782,7 +782,7 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details,
-from 2025-01-01 00:00:01 UTC and onwards.
+from 2026-01-01 00:00:01 UTC and onwards.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
