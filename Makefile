@@ -140,7 +140,7 @@ zipped_bundles:=\
 minified-asset-bundles: node_modules $(zipped_bundles)
 
 $(zipped_bundles): $@
-	sudo s/d-gulp release
+	s/d-gulp release
 
 
 # ----- To-Talkyard Javascript
@@ -160,7 +160,7 @@ to-talkyard/dist/to-talkyard/src/to-talkyard.js: $(shell find to-talkyard/src/)
 
 clean-bundles:
 	@echo Delting script and style bundles:
-	sudo s/d-gulp clean
+	s/d-gulp clean
 
 clean: clean-bundles
 	@echo Delting Scala things and other things:
@@ -199,7 +199,7 @@ pristine: clean
 # the minified asset bundles, to run (because the app server loads and execs React Javascript
 # server side.)
 play-cli: minified-asset-bundles
-	sudo s/d-cli
+	s/d-cli
 
 db-cli:
 	@# Find out which database is currently being used, by looking at my.conf.
@@ -208,47 +208,59 @@ db-cli:
 	  def_user="$${def_user:-talkyard}" ;\
 	  read -p "Connect to the PostgreSQL database as which user? [$$def_user] " db_user ;\
 	  db_user="$${db_user:-$$def_user}" ;\
-	  sudo s/d-psql "$$db_user" "$$db_user"
+	  s/d-psql "$$db_user" "$$db_user"
 
 build:
 	s/d build
 
 up: minified-asset-bundles
-	sudo s/d up -d
+	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
 	@echo
-	@sudo s/d-logsf0
+	@s/d-logsf0
 
 log: tail
 logs: tail
 tails: tail
 tail:
-	sudo s/d-logsf0
+	s/d-logsf0
 
 restart:
-	sudo s/d-restart
+	s/d-restart
 
 restart-web:
-	sudo s/d kill web ; sudo s/d start web ; sudo s/d-logsf0
+	s/d kill web ; s/d start web ; s/d-logsf0
+
+recreate-web:
+	s/d kill web ; s/d rm -f web ; s/d up -d web ; s/d-logsf0
+
+rebuild-restart-web:
+	s/d kill web ; s/d rm -f web ; s/d build web ; s/d up -d web ; s/d-logsf0
 
 restart-app:
-	sudo s/d kill app ; sudo s/d start app ; sudo s/d-logsf0
+	s/d kill app ; s/d start app ; s/d-logsf0
+
+recreate-app:
+	s/d kill app ; s/d rm -f app ; s/d up -d app ; s/d-logsf0
+
+rebuild-restart-app:
+	s/d kill app ; s/d rm -f app ; s/d build app ; s/d up -d app ; s/d-logsf0
 
 restart-web-app:
-	sudo s/d-restart-web-app
+	s/d-restart-web-app
 
 restart-gulp:
-	sudo s/d kill gulp ; sudo s/d start gulp ; sudo s/d-logsf0
+	s/d kill gulp ; s/d start gulp ; s/d-logsf0
 
 down:
-	sudo s/d down
+	s/d down
 
 dead:
-	sudo s/d-killdown
+	s/d-killdown
 
 dead-app:
-	sudo s/d kill web app
+	s/d kill web app
 
 
 
