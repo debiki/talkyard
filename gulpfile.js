@@ -52,6 +52,27 @@ const uglify = require('gulp-uglify');
 const currentDirectorySlash = __dirname + '/';
 const versionFilePath = 'version.txt';
 
+// Gzip otions: Use max level = 9 for 0.5% better compression.
+//
+// Details:
+// memLevel 8 is the default, and level 8 too?
+// But 9 is max and results in better compression,
+// see https://zlib.net/manual.html#Advanced
+//
+// With the defaults, supposedly 8:
+//    # du -ks /opt/talkyard/assets/
+//    5656	/opt/talkyard/assets/
+// This:
+//    { memLevel: 9 } —> du -ks /opt/talkyard/assets/ = 5656,  i.e. no difference.
+// This:
+//    { level: 9, memLevel: 9 }
+//    —>  du -ks /opt/talkyard/assets/  =  5628   that's  0.5% smaller, nice (!).
+// and   slim-bundle.min.js.gz is 157.6K  instead of  158.2K.
+//
+// (Adding windowBits: 15 has no effect — it's the default, supposedly,
+// see: https://nodejs.org/api/zlib.html#zlib_for_zlib_based_streams )
+//
+const gzipOptions = { level: 9, memLevel: 9 };
 
 function readGitHash() {
   try {
@@ -346,7 +367,7 @@ gulp.task('compileTranslations', () => {
   return stream.js
       .pipe(gulp.dest(webDestTranslations))
       .pipe(gulp.dest(serverDestTranslations))
-      .pipe(gzip())
+      .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(webDestTranslations));
 });
 
@@ -539,7 +560,7 @@ function makeConcatWebScriptsStream() {
         .pipe(insert.prepend(thisIsAConcatenationMessage))
         .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
         .pipe(gulp.dest(dest))
-        .pipe(gzip())
+        .pipe(gzip({ gzipOptions }))
         .pipe(gulp.dest(dest));
   }
 
@@ -555,7 +576,7 @@ function makeConcatWebScriptsStream() {
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
           .pipe(plumber())
           .pipe(gulp.dest(webDestVersioned))
-          .pipe(gzip())
+          .pipe(gzip({ gzipOptions }))
           .pipe(gulp.dest(webDestVersioned)))
       .pipe(plumber());
 }
@@ -590,7 +611,7 @@ gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
       .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
       // The Scala app server code wants non-gz files. Nginx wants gz.
       .pipe(gulp.dest(serverDestTranslations))
-      .pipe(gzip())
+      .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(webDestTranslations));
 }));
 
@@ -601,7 +622,7 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
   // found in string" error with a meaningless stacktrace, in preprocess().
   function makeMinJsGzStream(sourceAndDest, gzipped) {
-    let stream = gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
+    return gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
       .pipe(plumber())
       .pipe(gDebug({
         minimal: false,
@@ -610,11 +631,13 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
       .pipe(preprocess({ context: preprocessProdContext })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
-      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()));
-    if (gzipped) {
-      stream = stream.pipe(gzip());
-    }
-    return stream.pipe(gulp.dest(sourceAndDest));
+      .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
+      // Generate non-minified files [WHYUNGZ] — because sometimes Talkyard gets
+      // installed on an intranet behind a reverse proxy that requires non-gzipped
+      // files. (Although all browsers are fine with getting gzip.)
+      .pipe(gulp.dest(sourceAndDest))
+      .pipe(gzip({ gzipOptions }))
+      .pipe(gulp.dest(sourceAndDest));
   }
   return merge2(  // can speed up with gulp.parallel? (GLPPPRL)
       // The Scala app server wants non-gzipped files.
@@ -670,14 +693,19 @@ gulp.task('compile-stylus', () => {
       // Make the .rtl styles work by removing this hacky text.
       .pipe(replace('__RTL__', ''))
       .pipe(concat(`styles-bundle${rtlSuffix}.css`))
+      // Generate non-minified files:
       .pipe(save('111'))
-        .pipe(gzip())
+        .pipe(gulp.dest(webDestVersioned))
+        .pipe(gzip({ gzipOptions }))
         .pipe(gulp.dest(webDestVersioned))
       .pipe(save.restore('111'))
+      // Generate minified files:
       .pipe(cleanCSS())
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
       .pipe(rename({ extname: '.min.css' }))
-      .pipe(gzip())
+      // We need non-gzipped files too, see: [WHYUNGZ].
+      .pipe(gulp.dest(webDestVersioned))
+      .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(webDestVersioned));
     return stream;
   }
@@ -818,10 +846,18 @@ gulp.task('watch', gulp.series('default', (done) => {
 }));
 
 
+// Keep min.{js,css}, in addition to min.{js,css}.gz.  [WHYUNGZ]
+// (This makes the Web image assets dir 5.5 MB large instead of just 2.7 MB,
+// as of Jan 2020. An alternative, to keep the image small, could be to
+// unzip the files in a docker-entrypoint script. However, the assets dir is
+// mounted read-only here in this dev repo.)
+//
 gulp.task('delete-non-gzipped', () => {
   return del([
       `${webDest}/**/*.js`,
+      `!${webDest}/**/*.min.js`,
       `${webDest}/**/*.css`,
+      `!${webDest}/**/*.min.css`,
       // Needed in dev mode:
       //`${serverDest}/**/*.js`,
       //`!${serverDest}/**/*.min.js`,
