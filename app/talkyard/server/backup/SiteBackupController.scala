@@ -70,8 +70,11 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertFew, maxBytes = maxImportDumpBytes) { request =>
     // Dangerous endpoint, DoS attack risk.
-    throwForbiddenIf(globals.isProd && !security.hasOkForbiddenPassword(request) &&
-      !globals.config.mayPatchSite(request.siteId),  // [UPSRTPERM]
+    throwForbiddenIf(
+      globals.isProd
+      && !request.isDefaultSite
+      && !security.hasOkForbiddenPassword(request)
+      && !globals.config.mayPatchSite(request.siteId),  // [UPSRTPERM]
       "TyE306KDGL25", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
 
     // This parses JSON, and converts the simple patch contents to a "complete" patch
@@ -89,8 +92,11 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     // Dangerous endpoint, DoS attack risk.
-    throwForbiddenIf(globals.isProd && !security.hasOkForbiddenPassword(request) &&
-      !globals.config.mayPatchSite(request.siteId),
+    throwForbiddenIf(
+      globals.isProd
+      && !request.isDefaultSite
+      && !security.hasOkForbiddenPassword(request)
+      && !globals.config.mayPatchSite(request.siteId),
       "TyE402AKDTJ5", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
 
     val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
@@ -125,12 +131,13 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   */
 
 
+  SECURITY; COULD // make this an Owner endpoint, but not for all Admin:s?
   def restoreBackupOverwriteSite(): Action[JsValue] = AdminPostJsonAction2(
         RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     // Dangerous endpoint, DoS attack risk.
     throwForbiddenIf(
       globals.isProd
-      && request.siteId != globals.defaultSiteId
+      && !request.isDefaultSite
       && !security.hasOkForbiddenPassword(request)
       && !globals.config.mayPatchSite(request.siteId),
      "TyE7MKSDFTS20", "Not allowed, may currently only restore to the default site")
@@ -142,7 +149,9 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
         ExceptionAction(parse.json(maxLength = maxImportDumpBytes)) { request =>
     // Dupl code (968754903265).
-    throwForbiddenIf(!globals.config.mayImportSite, "TyEMAY0IMPDMP", "May not import site dumps")
+    throwForbiddenIf(!globals.config.mayImportSite,
+      "TyEMAY0IMPDMP", o"""May not import site dumps. Set talkyard.mayImportSite to true,
+         in ${talkyard.server.ProdConfFilePath}, to allow this. And restart.""")
     val isTestDeleteOld = deleteOldSite is true
     if (isTestDeleteOld && !globals.isProd) {
       globals.testResetTime()

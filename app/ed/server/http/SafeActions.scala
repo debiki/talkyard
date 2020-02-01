@@ -220,7 +220,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   private val BadAppSecretError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Admin: Please edit the '${Globals.AppSecretConfValName}' config value, in file /opt/talkyard/conf/play-framework.conf.
+      |Admin: Please edit the '${Globals.AppSecretConfValName}' config value,
+      |in file ${talkyard.server.ProdConfFilePath}.
       |
       |It's still set to "${Globals.AppSecretDefVal}".
       |

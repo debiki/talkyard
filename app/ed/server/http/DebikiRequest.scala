@@ -80,6 +80,7 @@ abstract class DebikiRequest[A] {
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
+  def isDefaultSite: Boolean = siteId == globals.defaultSiteId
   def canonicalHostname: Option[String] = site.hostname
   def domain: String = request.domain
 
