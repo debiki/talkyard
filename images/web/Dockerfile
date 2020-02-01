@@ -260,6 +260,7 @@ RUN rm -fr \
 
 
 COPY 404.html             /opt/nginx/html/
+COPY 413.html             /opt/nginx/html/
 COPY 502.html             /opt/nginx/html/
 COPY 503.html             /opt/nginx/html/
 COPY 504.html             /opt/nginx/html/
@@ -302,6 +303,9 @@ RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
 # Currently, each tab has its own websocket/long-polling connection — and if 40 connections per ip,
 # I sometimes happen to open really many tabs, and requests start failing. Set to >= 60, for now.
 # Later, just one single live-update connection per browser [onesocket].
+#
+# Set the default alloed request body size to something fairly large — 25m (megabytes)
+# — so people can upload Mac Retina screenshots (they're maybe 10 MB) and small videos.
 ENV \
     ED_NGX_LIMIT_CONN_PER_IP=60 \
     ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
@@ -309,6 +313,7 @@ ENV \
     ED_NGX_LIMIT_REQ_PER_IP_BURST=200 \
     ED_NGX_LIMIT_REQ_PER_SERVER=200 \
     ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
+    TY_NGX_LIMIT_REQ_BODY_SIZE=25m \
     ED_NGX_LIMIT_RATE=50k \
     ED_NGX_LIMIT_RATE_AFTER=5m \
     # Wait with setting this to a year (31536000), until things more tested.

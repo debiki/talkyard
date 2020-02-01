@@ -1,0 +1,49 @@
+<html><body><pre>
+
+413 Request Entity Too Large  [TyE413ENTLRG]
+
+You're uploading too much data, maybe a too large image or video?
+
+***
+
+This is Talkyard's Nginx server.
+
+If you're server admin, you can configure Nginx so large files
+are accepted:
+
+In /opt/talkyard/docker-compose.yml, in the  services:  web:  environment:
+section, add this environment variable, to allow files up to 75 megabytes:
+
+      TY_NGX_LIMIT_REQ_BODY_SIZE: "75m"
+
+Thereafter, recreate the 'web' container: (it runs Nginx)
+
+      # Remove the current container.
+      docker-compose kill web
+      docker-compose rm -f web
+
+      # Start a new container — it'll pick up the new config.
+      docker-compose up -d web
+
+      # Check the logs — all seems fine?
+      # (The "LuaJIT version" alert is harmless)
+      docker-compose logs -f web
+
+
+However, it's possible that Talkyard's application server has been
+configured to reject such large files. So you might also need to reconfigure
+the app server — look in this file:
+    /opt/talkyard/conf/play-framework.conf
+Thereafter:
+    docker-compose restart app
+
+
+
+</pre></body>
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+</html>
