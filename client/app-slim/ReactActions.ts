@@ -870,6 +870,7 @@ export function onEditorOpen(ps: EditorPatch, onDone?: () => void) {
 
 
 let origPostBeforeEdits: Post | undefined;
+let lastFlashPostNr: PostNr | undefined;
 
 
 export function showEditsPreview(ps: ShowEditsPreviewParams) {
@@ -888,7 +889,8 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
   const me: Myself = store.me;
 
   if (me_uiPrefs(me).inp === UiPrefsIninePreviews.Skip) {
-    if (ps.replyToNr) {
+    if (ps.replyToNr && ps.replyToNr !== lastFlashPostNr) {
+      lastFlashPostNr = ps.replyToNr;
       flashPostNrIfThere(ps.replyToNr);
     }
     return;
