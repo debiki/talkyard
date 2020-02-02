@@ -632,7 +632,7 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
-      // Generate non-minified files [WHYUNGZ] — because sometimes Talkyard gets
+      // Save uncompressed files [UNCOMPRAST] — because sometimes Talkyard gets
       // installed on an intranet behind a reverse proxy that requires non-gzipped
       // files. (Although all browsers are fine with getting gzip.)
       .pipe(gulp.dest(sourceAndDest))
@@ -703,7 +703,7 @@ gulp.task('compile-stylus', () => {
       .pipe(cleanCSS())
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
       .pipe(rename({ extname: '.min.css' }))
-      // We need non-gzipped files too, see: [WHYUNGZ].
+      // We need uncompressed files too [UNCOMPRAST].
       .pipe(gulp.dest(webDestVersioned))
       .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(webDestVersioned));
@@ -846,11 +846,11 @@ gulp.task('watch', gulp.series('default', (done) => {
 }));
 
 
-// Keep min.{js,css}, in addition to min.{js,css}.gz.  [WHYUNGZ]
+// Keep min.{js,css}, in addition to min.{js,css}.gz.  [UNCOMPRAST]
 // (This makes the Web image assets dir 5.5 MB large instead of just 2.7 MB,
-// as of Jan 2020. An alternative, to keep the image small, could be to
-// unzip the files in a docker-entrypoint script. However, the assets dir is
-// mounted read-only here in this dev repo.)
+// as of Jan 2020.  (An alternative, to keep the image small, could be to
+// unzip the files in a docker-entrypoint script. But scratch that — the assets dir
+// is mounted read-only here in this dev repo; would need to mount read-write?))
 //
 gulp.task('delete-non-gzipped', () => {
   return del([

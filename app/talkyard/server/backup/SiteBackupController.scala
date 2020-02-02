@@ -67,15 +67,24 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
-          RateLimits.UpsertFew, maxBytes = maxImportDumpBytes) { request =>
-    // Dangerous endpoint, DoS attack risk.
+  /** These are dangerous endpoints, DoS attack risk.  [UPSRTPERM] */
+  private def throwIfMayNot(request: DebikiRequest[_], errCode: String, message: => String = null) {
     throwForbiddenIf(
       globals.isProd
-      && !request.isDefaultSite
-      && !security.hasOkForbiddenPassword(request)
-      && !globals.config.mayPatchSite(request.siteId),  // [UPSRTPERM]
-      "TyE306KDGL25", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
+        // Iff is self hosted, we'd be using the default site — then, allow.
+        && !request.isDefaultSite
+        // For multi site servers: Either a magic password, or an allow-patch conf val.
+        && !security.hasOkForbiddenPassword(request)
+        && !globals.config.mayPatchSite(request.siteId),
+      errCode,
+      if (message ne null) message
+      else "Not allowed. Ask for help at https://www.talkyard.io/forum/")
+  }
+
+
+  def upsertSimpleJson: Action[JsValue] = ApiSecretPostJsonAction(
+          RateLimits.UpsertFew, maxBytes = maxImportDumpBytes) { request =>
+    throwIfMayNot(request, "TyEM0UPSSIMPL")
 
     // This parses JSON, and converts the simple patch contents to a "complete" patch
     // that can be upserted.
@@ -91,13 +100,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def upsertPatchJson(): Action[JsValue] = ApiSecretPostJsonAction(
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
-    // Dangerous endpoint, DoS attack risk.
-    throwForbiddenIf(
-      globals.isProd
-      && !request.isDefaultSite
-      && !security.hasOkForbiddenPassword(request)
-      && !globals.config.mayPatchSite(request.siteId),
-      "TyE402AKDTJ5", "Not allowed. Ask for permission at https://www.talkyard.io/forum/")
+    throwIfMayNot(request, "TyEM0UPSPATCH")
 
     val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = false, isE2eTest = false)
@@ -134,13 +137,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
   SECURITY; COULD // make this an Owner endpoint, but not for all Admin:s?
   def restoreBackupOverwriteSite(): Action[JsValue] = AdminPostJsonAction2(
         RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
-    // Dangerous endpoint, DoS attack risk.
-    throwForbiddenIf(
-      globals.isProd
-      && !request.isDefaultSite
-      && !security.hasOkForbiddenPassword(request)
-      && !globals.config.mayPatchSite(request.siteId),
-     "TyE7MKSDFTS20", "Not allowed, may currently only restore to the default site")
+    throwIfMayNot(request, "TyEM0RESTR")
     importOverwriteImpl(request.underlying, request.body,
       overwriteSite = request.dao.getSite(), isTest = false)
   }

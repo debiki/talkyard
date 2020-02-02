@@ -209,7 +209,7 @@ There's a Disqus importer — talk with us [in the forum](https://www.talkyard.i
 
 ### Embarrassing questions, creative ideas:
 
-SOON IMPLEMENTED, but not yet (Aug 2019): Let your students ask anonymous questions. Maybe they feel ashamed for not knowing? — Or let your co-workers submit ideas and feedback, anonymously. Maybe they feel worried their ideas has crossed the border from Creative to Crazy? They can un-anonymize themselves later if they want to. (Anonymous posting first needs to be enabled, by admins. Here you can read more: https://www.talkyard.io/-239/is-there-anonymous-messages-support-for-the-full-talkyard )
+Planned, not yet implemented: Let your students ask anonymous questions. Maybe they feel ashamed for not knowing? — Or let your co-workers submit ideas and feedback, anonymously. Maybe they feel worried their ideas has crossed the border from Creative to Crazy? They can un-anonymize themselves later if they want to. (Anonymous posting first needs to be enabled, by admins. Here you can read more: https://www.talkyard.io/-239/is-there-anonymous-messages-support-for-the-full-talkyard )
 
 <br>
 

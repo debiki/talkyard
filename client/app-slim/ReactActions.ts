@@ -1025,7 +1025,7 @@ export function scrollToPreview(ps: {
       // @ifdef DEBUG
       dieIf(!elem, 'TyE6002PKRDT53');
       // @endif
-      flashPost(elem);
+      flashPostElem(elem);
     },
   });
 }

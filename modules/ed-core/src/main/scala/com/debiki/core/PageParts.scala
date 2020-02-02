@@ -209,7 +209,7 @@ abstract class PageParts {
 
 
   /** Returns the index of `post` among its siblings, the first sibling is no 0.
-    * Also tells if there are any non-deleted trees afterwards.
+    * Also tells if there are any non-deleted sibling post trees sorted after `post`.
     */
   def siblingIndexOf(post: Post): (Int, Boolean) = {
     val siblings: Seq[Post] = post.parentNr match {
@@ -254,7 +254,7 @@ abstract class PageParts {
 
 
   def hasNonDeletedSuccessor(postNr: PostNr): Boolean = {
-    // COULD optimize this, bad O(?) complexity when called on each node, like
+    COULD_OPTIMIZE // bad O(?) complexity when called on each node, like
     // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
     // and cache the result -> O(n).
     childrenBestFirstOf(postNr) exists { child =>

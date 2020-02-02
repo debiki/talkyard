@@ -520,14 +520,14 @@ class JsonMaker(dao: SiteDao) {
         (false, JsNull, false)
       }
       else {
-        val (siblingIndex, hasNonDeletedSuccessorSiblingTrees) = page.parts.siblingIndexOf(post)
+        val (siblingIndex, hasNonDeletedSiblingTreesAfter) = page.parts.siblingIndexOf(post)
         val siblingsLimit = SquashSiblingIndexLimit / math.max(depth, 1)
 
         // If the previous sibling got squashed, then, squash this one too —
         // otherwise there'd be a "Click to show more replies" button [306UDRPJ24]
         // but after that button, the very last sibling would *not* have gotten
-        // squashed, unless it has successors so hasNonDeletedSuccessor() is true,,
-        // because hasNonDeletedSuccessorSiblingTrees() is false since it's the last sibling.
+        // squashed, unless it has successors so hasNonDeletedSuccessor() is true,
+        // because hasNonDeletedSiblingTreesAfter is false since it's the last sibling.
         val prevSiblingSquashed = (siblingIndex - 1) > siblingsLimit
 
         val (squash, tooManySiblings) =
@@ -540,7 +540,7 @@ class JsonMaker(dao: SiteDao) {
             // (Squashing it would be pointless, since there're no replies or
             // siblings-placed-after-it that would get squashed together with it.)
             val squash = tooMany && (
-                hasNonDeletedSuccessorSiblingTrees ||
+                hasNonDeletedSiblingTreesAfter ||
                 page.parts.hasNonDeletedSuccessor(post.nr))
             (squash, tooMany)
           }

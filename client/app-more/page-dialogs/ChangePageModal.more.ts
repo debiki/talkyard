@@ -207,7 +207,7 @@ const ChangePageDialog = createComponent({
             r.div({ className: 's_ExplDrp_ActIt' },
               Button({ className: 'icon-block e_ClosePgB',
                   onClick: togglePageClosed },
-                t.pa.CloseTopic || t.Close),
+                t.pa.CloseTopic || t.Close),  // I18N remove  || ...  once translated
               r.div({ className: 'esExplDrp_ActIt_Expl' }, closeItemText)));
       }
     }

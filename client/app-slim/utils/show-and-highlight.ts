@@ -55,8 +55,8 @@ export function scrollAndFlashPosts(page: Page, posts: Post[]) {
   // Flash posts[0] and the 9 posts just below — that should be enough,
   // for highlighting all posts visible on the screen.
   // (COULD look at their bounding boxes, and pick all on screen, + 1 or 2 more.)
-  const nrsToFadeIn = [];
-  page_depthFirstWalk(page, posts, 10, (p: Post) => nrsToFadeIn.push(p.nr));
+  const nrsToFlash = [];
+  page_depthFirstWalk(page, posts, 10, (p: Post) => nrsToFlash.push(p.nr));
 
   const postElem = $byId('post-' + posts[0].nr);
   if (!postElem) {
@@ -64,28 +64,28 @@ export function scrollAndFlashPosts(page: Page, posts: Post[]) {
     return;
   }
 
-  // If the user did a "big change" so that now many posts are scoll-flashing,
-  // then, typicall it's harder for hen to understand what's happening.
+  // If the user did a "big change" so that now we're scroll-flashing many posts,
+  // then, can be not-so-easy for hen to see what's happening.
   // So, if many posts, do things slower. However, being slow, when we're
   // flashing just one post, is boring.
-  const duration = nrsToFadeIn.length <= 1
+  const duration = nrsToFlash.length <= 1
       ? undefined // use the default, which is okay fast
-      : (nrsToFadeIn.length <= 3 ? 900 : 1100);
+      : (nrsToFlash.length <= 3 ? 900 : 1100);
 
   utils.scrollIntoView(postElem, {
     duration,
     marginTop: 200,
-    marginBottom: nrsToFadeIn.length <= 1
-        ? 200   // nothing below to show
+    marginBottom: nrsToFlash.length <= 1
+        ? 200   // no more posts below to show-and-flash
         : 1200, // more posts below, who knows how much space they take
     onDone: function() {
-      _.each(nrsToFadeIn, flashPostNrIfThere);
+      _.each(nrsToFlash, flashPostNrIfThere);
     },
   });
 }
 
 
-export function scrollAndFlashPostNrs(postNr: PostNr, postNrsToFlash: [], options: ShowPostOpts) {
+export function scrollAndFlashPostNr(postNr: PostNr, options: ShowPostOpts) {
   const postElem = $byId('post-' + postNr);
   if (!postElem) {
     logError('Got no post [EdE7JKWD20]');
@@ -96,8 +96,7 @@ export function scrollAndFlashPostNrs(postNr: PostNr, postNrsToFlash: [], option
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
   utils.scrollIntoView(postElem, options, function() {
-    flashPost(postElem);
-    _.each(postNrsToFlash, flashPostNrIfThere);
+    flashPostElem(postElem);
   });
 };
 
@@ -114,12 +113,12 @@ export function flashPostNrIfThere(nr: PostNr) {
   }
   else {
     // It's a real post.
-    flashPost(elem);
+    flashPostElem(elem);
   }
 }
 
 
-export function flashPost(postElem: Element) {
+export function flashPostElem(postElem: Element) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
   flashImpl(head, body);
@@ -136,8 +135,8 @@ function flashImpl(head: Element | undefined, body: Element) {
     return;
   }
 
-  const highlightOnClass = 'dw-highlight-on';   // RENAME to s_Fx-Flash-Start   ?
-  const highlightOffClass = 'dw-highlight-off'; // RENAME to s_Fx-Flash-End ?
+  const highlightOnClass = 's_Fx-Flash';
+  const highlightOffClass = 's_Fx-Flash-End';
   const allClasses = highlightOnClass + ' ' + highlightOffClass;
   const $h = debiki2.$h;
 

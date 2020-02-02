@@ -29,7 +29,7 @@
 
 .dw-p-hd,
 .dw-p.dw-zd,  // folded comment
-.DW.DW .dw-p-hd.dw-highlight-off
+.DW.DW .dw-p-hd.s_Fx-Flash-End
   color: hsl(0, 0%, 8%);
   background-color: white
 
@@ -49,7 +49,7 @@
 
 .dw-p-bd,
 .dw-p-diff,
-.DW.DW .dw-p-bd.dw-highlight-off
+.DW.DW .dw-p-bd.s_Fx-Flash-End
   background-color: white
 
 .dw-p-flat > .dw-p-bd,
@@ -89,7 +89,7 @@ $previewBorderBottom = 15px solid $previewBackground !important;
   .s_T_YourPrvw
     color: hsl(0, 0%, 15%);
     background: hsl(0, 0%, 80%);
-    &.dw-highlight-off
+    &.s_Fx-Flash-End
       background: hsl(0, 0%, 80%) !important;
   .s_T_YourPrvw_ToWho
     color: black;
@@ -147,7 +147,7 @@ $previewBorderBottom = 15px solid $previewBackground !important;
   &, 
   .dw-p-hd
     background: hsl(0, 0%, 92%);
-    &.dw-highlight-off
+    &.s_Fx-Flash-End
       background: hsl(0, 0%, 92%) !important;
   pre
     background: hsl(0, 0%, 98%);
@@ -213,7 +213,7 @@ $previewBorderBottom = 15px solid $previewBackground !important;
 .dw-p.dw-zd,
 .dw-ts-squashed .dw-x-show
   bottom: 0;
-  padding: 13px 18px;  // 12px 16px 12px;
+  padding: 13px 18px;
   display: block;
   margin: 0 0 8px;
   z-index: 1;
@@ -969,7 +969,7 @@ html.touch .dw-p-mark-click
 // Highlighted posts
 //===========================
 
-.DW .dw-highlight-on
+.DW .s_Fx-Flash
   // Drafts
   &.s_T_YourPrvw
     background: hsl($uiHue, 100%, 73%);
@@ -985,8 +985,8 @@ html.touch .dw-p-mark-click
     // Place -bd background above action buttons.
     z-index: 1;
 
-.dw-highlight-off
-  // (Color reset higher up in this file, see .dw-highlight-off.
+.s_Fx-Flash-End
+  // (Color reset higher up in this file, search for .s_Fx-Flash-End)
   -webkit-transition: background-color 4s;
   -moz-transition: background-color 4s;
   -o-transition: background-color 4s;

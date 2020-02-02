@@ -998,11 +998,11 @@ export function page_mostRecentPostNr(page: Page): number {
 }
 
 
-// Depth-first-search traverses all `posts` and their successors,
-/// and calls 'fn' — posts[0] and its successors, first.
+/// Depth-first-search traverses all `posts` and their successors,
+/// and calls `fn` — posts[0] and its successors, first.
 /// Stops and returns after having visited stopAfter
 /// posts (regardless of if they're successors or directly
-/// in `posts`.
+/// in `posts`).
 ///
 export function page_depthFirstWalk(page: Page, posts: Post[],
         stopAfter: number, fn: (p: Post) => void) {
@@ -1017,7 +1017,8 @@ export function page_depthFirstWalk(page: Page, posts: Post[],
       if (!p || numSeen > stopAfter) return;
       numSeen += 1;
       fn(p);
-      traverse(p.childNrsSorted.map((nr: PostNr) => page.postsByNr[nr]))
+      const childPosts = p.childNrsSorted.map((nr: PostNr) => page.postsByNr[nr]);
+      traverse(childPosts);
     });
   }
 }

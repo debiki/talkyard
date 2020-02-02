@@ -1021,9 +1021,9 @@ function collapseTree(post: Post) {
   post.summary = makeSummaryFor(post, 70);
   updatePost(post, store.currentPageId, true);
   // It's nice to see where the post is, after having collapsed it
-  // — because often this makes the page jump a bit.
+  // — because collapsing a post tree often makes the page jump a bit.
   // UX COULD animate-collapse height of tree to 0? By shrinking each
-  // post individually proably, since there's no wrapping <div> to shrink.
+  // post individually probably, since there's no wrapping <div> to shrink.
   flashPostNrIfThere(post.nr);
 }
 
@@ -1055,7 +1055,7 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
     if (postNr <= MaxVirtPostNr) {
       // It's a draft. Add a bit more margin, because there's a "Your draft"
       // text above. [03RKTG42]
-      opts.marginTop = 120;
+      opts.marginTop = 120;  // move this to inside  scrollAndFlashPostNr()  instead
     }
 
     if (showPostOpts.showChildrenToo) {
@@ -1063,7 +1063,7 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
     }
     else {
       // Maybe could use instead?: scrollAndFlashPosts(page, [post]);
-      scrollAndFlashPostNrs(postNr, [], opts);
+      scrollAndFlashPostNr(postNr, opts);
     }
 
     debiki2.page.Hacks.processPosts();

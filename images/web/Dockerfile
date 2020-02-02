@@ -304,8 +304,9 @@ RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
 # I sometimes happen to open really many tabs, and requests start failing. Set to >= 60, for now.
 # Later, just one single live-update connection per browser [onesocket].
 #
-# Set the default alloed request body size to something fairly large — 25m (megabytes)
-# — so people can upload Mac Retina screenshots (they're maybe 10 MB) and small videos.
+# Set the default allowed request body size to something fairly large — 25m (megabytes)
+# — so self hosted people can upload Mac Retina screenshots (they're maybe 10 MB) and
+# small videos, without having to ask for help at Talkyard.io.
 ENV \
     ED_NGX_LIMIT_CONN_PER_IP=60 \
     ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
