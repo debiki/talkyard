@@ -621,6 +621,7 @@ var t_en_US: TalkyardTranslations = t = {
   // Post actions
 
   pa: {
+    CloseTopic: "Close topic",  // MISSING
     CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
     CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
         "it is off-topic or already answered in another topic.",

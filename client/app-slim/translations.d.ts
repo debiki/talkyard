@@ -402,6 +402,7 @@ interface TalkyardTranslations {
 
   // Post actions
   pa: {
+    CloseTopic?: string;
     CloseOwnQuestionTooltip: string;
     CloseOthersQuestionTooltip: string;
     CloseToDoTooltip: string;
