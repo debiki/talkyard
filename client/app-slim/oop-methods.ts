@@ -998,6 +998,31 @@ export function page_mostRecentPostNr(page: Page): number {
 }
 
 
+// Depth-first-search traverses all `posts` and their successors,
+/// and calls 'fn' — posts[0] and its successors, first.
+/// Stops and returns after having visited stopAfter
+/// posts (regardless of if they're successors or directly
+/// in `posts`.
+///
+export function page_depthFirstWalk(page: Page, posts: Post[],
+        stopAfter: number, fn: (p: Post) => void) {
+  // @ifdef DEBUG
+  // Maybe could cause performance problems?
+  dieIf(stopAfter > 999, 'TyE051TKSEXSD');
+  // @endif
+  let numSeen = 0;
+  traverse(posts);
+  function traverse(ps: Post[]) {
+    _.each(ps, (p: Post) => {
+      if (!p || numSeen > stopAfter) return;
+      numSeen += 1;
+      fn(p);
+      traverse(p.childNrsSorted.map((nr: PostNr) => page.postsByNr[nr]))
+    });
+  }
+}
+
+
 // Forum buttons
 //----------------------------------
 

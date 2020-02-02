@@ -43,7 +43,50 @@ function addAnySidebarWidth(options: ShowPostOpts) {
 }
 
 
-debiki.internal.showAndHighlightPost = function(postElem: Element, options: ShowPostOpts) {
+
+// Scrolls posts[0], and lots of space below, into view,
+// and flashes all posts and successors.
+// Nice, if lazy-loading more posts, on a large page.
+//
+export function scrollAndFlashPosts(page: Page, posts: Post[]) {
+  if (!posts.length)
+    return;
+
+  // Flash posts[0] and the 9 posts just below — that should be enough,
+  // for highlighting all posts visible on the screen.
+  // (COULD look at their bounding boxes, and pick all on screen, + 1 or 2 more.)
+  const nrsToFadeIn = [];
+  page_depthFirstWalk(page, posts, 10, (p: Post) => nrsToFadeIn.push(p.nr));
+
+  const postElem = $byId('post-' + posts[0].nr);
+  if (!postElem) {
+    // It's gone? A race? Not so interesting.
+    return;
+  }
+
+  // If the user did a "big change" so that now many posts are scoll-flashing,
+  // then, typicall it's harder for hen to understand what's happening.
+  // So, if many posts, do things slower. However, being slow, when we're
+  // flashing just one post, is boring.
+  const duration = nrsToFadeIn.length <= 1
+      ? undefined // use the default, which is okay fast
+      : (nrsToFadeIn.length <= 3 ? 900 : 1100);
+
+  utils.scrollIntoView(postElem, {
+    duration,
+    marginTop: 200,
+    marginBottom: nrsToFadeIn.length <= 1
+        ? 200   // nothing below to show
+        : 1200, // more posts below, who knows how much space they take
+    onDone: function() {
+      _.each(nrsToFadeIn, flashPostNrIfThere);
+    },
+  });
+}
+
+
+export function scrollAndFlashPostNrs(postNr: PostNr, postNrsToFlash: [], options: ShowPostOpts) {
+  const postElem = $byId('post-' + postNr);
   if (!postElem) {
     logError('Got no post [EdE7JKWD20]');
     return;
@@ -53,12 +96,13 @@ debiki.internal.showAndHighlightPost = function(postElem: Element, options: Show
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
   utils.scrollIntoView(postElem, options, function() {
-    highlightPostBriefly(postElem);
+    flashPost(postElem);
+    _.each(postNrsToFlash, flashPostNrIfThere);
   });
 };
 
 
-export function highlightPostNrBrieflyIfThere(nr: PostNr) {
+export function flashPostNrIfThere(nr: PostNr) {
   const elem = $byId('post-' + nr);
   if (!elem)
     return;
@@ -66,25 +110,25 @@ export function highlightPostNrBrieflyIfThere(nr: PostNr) {
     // It's a draft preview, not a real post. Also find and highlight the draft
     // header, e.g. "Preview, your edits:".
     const draftHeader = $first('.s_T_YourPrvw', elem.parentElement);
-    highlightBrieflyImpl(draftHeader, elem);
+    flashImpl(draftHeader, elem);
   }
   else {
     // It's a real post.
-    highlightPostBriefly(elem);
+    flashPost(elem);
   }
 }
 
 
-export function highlightPostBriefly(postElem: Element) {
+export function flashPost(postElem: Element) {
   const head = postElem.querySelector('.dw-p-hd');
   const body = postElem.querySelector('.dw-p-bd');
-  highlightBrieflyImpl(head, body);
+  flashImpl(head, body);
 }
 
 
 const highlightOffHandles = new Map();
 
-function highlightBrieflyImpl(head: Element | undefined, body: Element) {
+function flashImpl(head: Element | undefined, body: Element) {
   if (!body) {
     // @ifdef DEBUG
     die('TyE306WKUDR2');

@@ -239,15 +239,15 @@ class JsonMaker(dao: SiteDao) {
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    if (page.pageType == PageType.EmbeddedComments) {
-      allPostsJson +:=
-        PageParts.BodyNr.toString ->
-          embeddedCommentsDummyRootPost(pageParts.parentlessReplies)
-    }
-
     val parentlessReplies = pageParts.parentlessReplies
     val parentlessReplyNrsSorted =
       Post.sortPostsBestFirst(parentlessReplies).map(reply => JsNumber(reply.nr))
+
+    if (page.pageType == PageType.EmbeddedComments) {
+      allPostsJson +:=
+        PageParts.BodyNr.toString ->
+          embeddedCommentsDummyRootPost(parentlessReplyNrsSorted)
+    }
 
     val progressPosts = pageParts.progressPosts
     val progressPostNrsSorted =
@@ -507,23 +507,51 @@ class JsonMaker(dao: SiteDao) {
     // to load all of those.
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
+    //
     // This is simple but a bit too stupid? COULD come up with a better algorithm (better
     // in the sense that it better avoids summarizing or squashing interesting stuff).
+    //
     // (Note: We'll probably have to do this server side in order to do it well, because
     // only server side all information is available, e.g. how trustworthy certain users
     // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
+    //
     val (summarize, jsSummary, squash) =
       if (page.parts.numRepliesVisible < SummarizeNumRepliesVisibleLimit) {
         (false, JsNull, false)
       }
       else {
         val (siblingIndex, hasNonDeletedSuccessorSiblingTrees) = page.parts.siblingIndexOf(post)
-        val squashTime = siblingIndex > SquashSiblingIndexLimit / math.max(depth, 1)
-        // Don't squash a single comment with no replies – summarize it instead.
-        val squash = squashTime && (hasNonDeletedSuccessorSiblingTrees ||
-          page.parts.hasNonDeletedSuccessor(post.nr))
-        var summarize = !squash && (squashTime || siblingIndex > SummarizeSiblingIndexLimit ||
+        val siblingsLimit = SquashSiblingIndexLimit / math.max(depth, 1)
+
+        // If the previous sibling got squashed, then, squash this one too —
+        // otherwise there'd be a "Click to show more replies" button [306UDRPJ24]
+        // but after that button, the very last sibling would *not* have gotten
+        // squashed, unless it has successors so hasNonDeletedSuccessor() is true,,
+        // because hasNonDeletedSuccessorSiblingTrees() is false since it's the last sibling.
+        val prevSiblingSquashed = (siblingIndex - 1) > siblingsLimit
+
+        val (squash, tooManySiblings) =
+          if (prevSiblingSquashed) {
+            (true, true)
+          }
+          else {
+            val tooMany = siblingIndex > siblingsLimit
+            // Don't squash a single last post with no replies – summarize it instead.
+            // (Squashing it would be pointless, since there're no replies or
+            // siblings-placed-after-it that would get squashed together with it.)
+            val squash = tooMany && (
+                hasNonDeletedSuccessorSiblingTrees ||
+                page.parts.hasNonDeletedSuccessor(post.nr))
+            (squash, tooMany)
+          }
+
+        var summarize = !squash && (
+          // If tooManySiblings, but we couldn't squash it — let's summarize it instead.
+          tooManySiblings ||
+          // Or if we've exceeded the time-to-summarize limits.
+          siblingIndex > SummarizeSiblingIndexLimit ||
           depth >= SummarizeAllDepthLimit)
+
         val summary: JsValue =
           if (summarize) post.approvedHtmlSanitized match {
             case None =>
@@ -1030,19 +1058,19 @@ object JsonMaker {
   /** If there are more than this many visible replies, we'll summarize the page, otherwise
     * it'll take a bit long to render in the browser, especially on mobiles.
     */
-  private val SummarizeNumRepliesVisibleLimit = 80
+  private val SummarizeNumRepliesVisibleLimit = 65
 
   /** If we're summarizing a page, we'll show the first replies to each comment non-summarized.
     * But the rest will be summarized.
     */
-  private val SummarizeSiblingIndexLimit = 5
+  private val SummarizeSiblingIndexLimit = 7
 
   private val SummarizeAllDepthLimit = 5
 
   /** If we're summarizing a page, we'll squash the last replies to a comment into one
     * single "Click to show more comments..." html elem.
     */
-  private val SquashSiblingIndexLimit = 8
+  private val SquashSiblingIndexLimit = 12
 
   /** Like a tweet :-)  */
   private val PostSummaryLength = 140
@@ -1534,10 +1562,8 @@ object JsonMaker {
 
 
   private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
-    tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
+    tags: Set[TagLabel], howRender: HowRenderPostInPage,
     renderer: RendererWithSettings): JsObject = {
-
-    import inPageInfo._
 
     val (anySanitizedHtml: Option[String], unsafeSource: Option[String], isApproved: Boolean) =
       if ((post.isBodyHidden || post.isDeleted) && !showHidden) {
@@ -1573,21 +1599,22 @@ object JsonMaker {
       "numBuryVotes" -> JsNumber(post.numBuryVotes),
       "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes),
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "summarize" -> JsBoolean(summarize),
-      "summary" -> jsSummary,
-      "squash" -> JsBoolean(squash),
+      "summarize" -> JsBoolean(howRender.summarize),
+      "summary" -> howRender.jsSummary,
+      "squash" -> JsBoolean(howRender.squash),
       "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
       "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
       "isTreeCollapsed" -> (
-        if (summarize) JsString("Truncated")
-        else JsBoolean(!squash && post.collapsedStatus.isTreeCollapsed)),
-      "isPostCollapsed" -> JsBoolean(!summarize && !squash && post.collapsedStatus.isPostCollapsed),
+        if (howRender.summarize) JsString("Truncated")
+        else JsBoolean(!howRender.squash && post.collapsedStatus.isTreeCollapsed)),
+      "isPostCollapsed" -> JsBoolean(
+          !howRender.summarize && !howRender.squash && post.collapsedStatus.isPostCollapsed),
       "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
       "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
       "likeScore" -> JsNumber(decimal(post.likeScore)),
-      "childNrsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
+      "childNrsSorted" -> JsArray(howRender.childrenSorted.map(reply => JsNumber(reply.nr))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
@@ -1622,14 +1649,13 @@ object JsonMaker {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject =
+  def embeddedCommentsDummyRootPost(parentlessReplyNrsSorted: immutable.Seq[JsNumber]): JsObject =
     Json.obj(
       "nr" -> JsNumber(PageParts.BodyNr),
       "isApproved" -> JsTrue,
       // COULD link to embedding article, change text to: "Discussion of the text at https://...."
       "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
-      "childNrsSorted" ->
-        JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
+      "childNrsSorted" -> parentlessReplyNrsSorted)
 
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)

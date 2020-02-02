@@ -104,7 +104,11 @@ abstract class PageParts {
   private lazy val childrenBestFirstByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
     val childMap = mutable.HashMap[PostNr, Vector[Post]]()
-    for (post <- allPosts) {
+    for {
+      post <- allPosts
+      if !post.isTitle && !post.isOrigPost
+      if post.parentNr isNot post.nr
+    } {
       val parentNrOrNoNr = post.parentNr getOrElse PageParts.NoNr
       var siblings = childMap.getOrElse(parentNrOrNoNr, Vector[Post]())
       siblings = siblings :+ post
@@ -129,9 +133,7 @@ abstract class PageParts {
   def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
   def parentlessReplies: immutable.Seq[Post] =
-    childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil) filterNot { post =>
-      PageParts.isArticleOrTitlePostNr(post.nr)
-    }
+    childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil)
 
   def progressPosts: immutable.Seq[Post] =
     allPosts filter { post =>
@@ -209,25 +211,27 @@ abstract class PageParts {
   /** Returns the index of `post` among its siblings, the first sibling is no 0.
     * Also tells if there are any non-deleted trees afterwards.
     */
-  def siblingIndexOf(post: Post): (Int, Boolean) = post.parentNr match {
-    case None => (0, false)
-    case Some(parentNr) =>
-      val siblings = childrenBestFirstOf(parentNr)
-      var index = 0
-      var result = -1
-      while (index < siblings.length) {
-        val sibling = siblings(index)
-        if (sibling.nr == post.nr) {
-          dieIf(result != -1, "DwE4JPU7")
-          result = index
-        }
-        else if (result != -1) {
-          if (!sibling.isDeleted || hasNonDeletedSuccessor(sibling.nr))
-            return (result, true)
-        }
-        index += 1
+  def siblingIndexOf(post: Post): (Int, Boolean) = {
+    val siblings: Seq[Post] = post.parentNr match {
+      case None => parentlessReplies
+      case Some(parentNr) => childrenBestFirstOf(parentNr)
+    }
+
+    var index = 0
+    var result = -1
+    while (index < siblings.length) {
+      val sibling = siblings(index)
+      if (sibling.nr == post.nr) {
+        dieIf(result != -1, "DwE4JPU7")
+        result = index
       }
-      (result, false)
+      else if (result != -1) {
+        if (!sibling.isDeleted || hasNonDeletedSuccessor(sibling.nr))
+          return (result, true)
+      }
+      index += 1
+    }
+    (result, false)
   }
 
 

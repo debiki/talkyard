@@ -889,7 +889,7 @@ export function showEditsPreview(ps: ShowEditsPreviewParams) {
 
   if (me_uiPrefs(me).inp === UiPrefsIninePreviews.Skip) {
     if (ps.replyToNr) {
-      highlightPostNrBrieflyIfThere(ps.replyToNr);
+      flashPostNrIfThere(ps.replyToNr);
     }
     return;
   }
@@ -1025,7 +1025,7 @@ export function scrollToPreview(ps: {
       // @ifdef DEBUG
       dieIf(!elem, 'TyE6002PKRDT53');
       // @endif
-      highlightPostBriefly(elem);
+      flashPost(elem);
     },
   });
 }
@@ -1095,7 +1095,7 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
   // And then, later:
   if (!isOtherPage) {
     setTimeout(() => {
-      highlightPostNrBrieflyIfThere(highlightPostNrAfter);
+      flashPostNrIfThere(highlightPostNrAfter);
     }, 200);
   }
 }

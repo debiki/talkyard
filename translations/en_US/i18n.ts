@@ -553,8 +553,8 @@ var t_en_US: TalkyardTranslations = t = {
     SolvedClickView_2: ", click to view",
 
     PostHiddenClickShow: "Post hidden; click to show",
-    ClickSeeMoreRepls: "Click to show more replies",
-    ClickSeeMoreComments: "Click to show more comments",
+    ClickSeeMoreRepls: "Show more replies",      // MISSING  removed "Click to .." but only in en_US
+    ClickSeeMoreComments: "Show more comments",  // MISSING
     ClickSeeThisComment: "Click to show this comment",
     clickToShow: "click to show",
 

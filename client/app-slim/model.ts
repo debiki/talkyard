@@ -278,7 +278,7 @@ interface Post {
 
   uniqueId: PostId; // CLEAN_UP RENAME to id
   nr: PostNr;
-  parentNr?: PostNr; // undefined, for chat messages [CHATPRNT]
+  parentNr?: PostNr; // undefined, for chat messages and sometimes embedded comments [CHATPRNT]
   multireplyPostNrs: PostNr[];
   postType?: PostType;
   authorId: UserId;

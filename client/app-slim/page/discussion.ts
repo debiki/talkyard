@@ -37,9 +37,6 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-// Why won't show only the 1st 80 comments instaed of  800  !!
-// 800 is too many.
-
 
 const r = ReactDOMFactories;
 const closedIcon = r.span({ className: 'icon-block' });
@@ -1050,7 +1047,7 @@ const SquashedThreads = createComponent({
           is2dColumnClass },
         arrows,
         r.a({ className: 'dw-x-show', onClick: this.onClick },
-          t.d.ClickSeeMoreRepls + postNrDebug)));
+          t.d.ClickSeeMoreRepls + ' ...' + postNrDebug)));   // [306UDRPJ24]
   }
 });
 
@@ -1181,7 +1178,8 @@ const Thread = createComponent({
 
     const anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
 
-    const showAvatar = !renderCollapsed && this.props.depth === 1
+    // (Show avatar also if collapsed, otherwise messes up indentation.)
+    const showAvatar = this.props.depth === 1
         && !this.props.is2dTreeColumn && !post.isForDraftNr;
 
     const avatarClass = showAvatar ? ' ed-w-avtr' : '';

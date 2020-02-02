@@ -128,7 +128,7 @@ declare namespace debiki2 {
   function $$byClass(className: string): HTMLCollectionOf<Element>;
   const $h: any;
 
-  function highlightPostNrBrieflyIfThere(nr: PostNr);
+  function flashPostNrIfThere(nr: PostNr);
 
   // React-Router:
   const Router: any;

@@ -979,25 +979,38 @@ function unsquashTrees(postNr: number) {
   // Mark postNr and its nearest subsequent siblings as not squashed.
   const page: Page = store.currentPage;
   const post: Post = page.postsByNr[postNr];
-  const parent = page.postsByNr[post.parentNr];
+
+  // parentNr might be undefined.
+  const parent: Post | undefined =  page.postsByNr[post.parentNr];
+  const siblingNrs: PostNr[] =
+      parent ? parent.childNrsSorted : page.parentlessReplyNrsSorted;
+
   let numLeftToUnsquash = -1;
-  for (let i = 0; i < parent.childNrsSorted.length; ++i) {
-    const childNr = parent.childNrsSorted[i];
-    const child: Post = page.postsByNr[childNr];
-    if (!child)
+  const postsUnsquashed = [];
+
+  for (let i = 0; i < siblingNrs.length; ++i) {
+    const siblingNr = siblingNrs[i];
+    const postOrSibling: Post = page.postsByNr[siblingNr];
+    if (!postOrSibling)
       continue; // deleted
-    if (child.nr == postNr) {
+    if (postOrSibling.nr == postNr) {
+      // Start unsquashing, from here.
       numLeftToUnsquash = 5;
     }
     if (numLeftToUnsquash !== -1) {
       // Updating in-place, should perhaps not. But works right now anyway
-      child.squash = false;
+      postOrSibling.squash = false;
+      postsUnsquashed.push(postOrSibling);
       numLeftToUnsquash -= 1;
     }
     if (numLeftToUnsquash === 0)
       break;
   }
-  setTimeout(debiki2.page.Hacks.processPosts);
+
+  setTimeout(function() {
+    debiki2.page.Hacks.processPosts();
+    scrollAndFlashPosts(page, postsUnsquashed);
+  });
 }
 
 
@@ -1007,6 +1020,11 @@ function collapseTree(post: Post) {
   post.summarize = true;
   post.summary = makeSummaryFor(post, 70);
   updatePost(post, store.currentPageId, true);
+  // It's nice to see where the post is, after having collapsed it
+  // — because often this makes the page jump a bit.
+  // UX COULD animate-collapse height of tree to 0? By shrinking each
+  // post individually proably, since there's no wrapping <div> to shrink.
+  flashPostNrIfThere(post.nr);
 }
 
 
@@ -1039,7 +1057,15 @@ function showPostNr(postNr: PostNr, showPostOpts: ShowPostOpts = {}) {
       // text above. [03RKTG42]
       opts.marginTop = 120;
     }
-    debiki.internal.showAndHighlightPost($byId('post-' + postNr), opts);
+
+    if (showPostOpts.showChildrenToo) {
+      // uncollapsePostAndChildren() will scroll-flash, don't do here too.
+    }
+    else {
+      // Maybe could use instead?: scrollAndFlashPosts(page, [post]);
+      scrollAndFlashPostNrs(postNr, [], opts);
+    }
+
     debiki2.page.Hacks.processPosts();
   }, 1);
 }
@@ -1063,7 +1089,10 @@ function uncollapsePostAndChildren(post: Post) {
       uncollapseOne(grandchild);
     }
   }
-  setTimeout(debiki2.page.Hacks.processPosts);
+  setTimeout(function() {
+    debiki2.page.Hacks.processPosts();
+    scrollAndFlashPosts(page, [post]);
+  });
 }
 
 

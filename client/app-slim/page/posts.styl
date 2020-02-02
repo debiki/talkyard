@@ -213,17 +213,20 @@ $previewBorderBottom = 15px solid $previewBackground !important;
 .dw-p.dw-zd,
 .dw-ts-squashed .dw-x-show
   bottom: 0;
-  padding: 12px 16px 12px;
+  padding: 13px 18px;  // 12px 16px 12px;
   display: block;
   margin: 0 0 8px;
   z-index: 1;
   float: left;  // see [5FKT02W] below
-  color: hsl(0, 0%, 4%);
+  color: hsl(0, 0%, 3%);
   background: hsl(0, 0%, 95%);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 40%);
+  font-size: 16px;
+  margin-top: 10px;
 
   &:hover
-    background-color: hsl($uiHue, 100%, 97%);
-    color: hsl($uiHue, 100%, 20%);
+    background-color: hsl($uiHue, 100%, 96%);
+    color: hsl($uiHue, 100%, 16%);
     text-decoration: none;
 
 .dw-ts-squashed.dw-2dcol > .dw-x-show
