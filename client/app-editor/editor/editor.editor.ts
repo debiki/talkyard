@@ -1877,6 +1877,7 @@ export const Editor = createFactory<any, EditorState>({
         me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
         // If we're creating a new page, there's not any place to show an in-page preview.
         !state.newForumTopicCategoryId;
+
     const previewTitleTagName = !thereIsAnInPagePreview ? 'span' : 'a';
     const onPreviewTitleClick = !thereIsAnInPagePreview ? null : () => {
       ReactActions.scrollToPreview({
@@ -1888,8 +1889,10 @@ export const Editor = createFactory<any, EditorState>({
     const previewTitle =
         r.div({},
           r[previewTitleTagName]({
-              onMouseEnter: () => ReactActions.highlightPreview(true),
-              onMouseLeave: () => ReactActions.highlightPreview(false),
+              onMouseEnter: !thereIsAnInPagePreview ? null :
+                  () => ReactActions.highlightPreview(true),
+              onMouseLeave: !thereIsAnInPagePreview ? null :
+                  () => ReactActions.highlightPreview(false),
               onClick: onPreviewTitleClick },
             t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
 
