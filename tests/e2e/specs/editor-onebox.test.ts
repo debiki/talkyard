@@ -39,6 +39,8 @@ let videoMp4Onebox = `aside.onebox.dw-ob-video video[src="${videoMp4Url}"]`;
 let videoYouTubeOnebox =
     `aside.onebox.dw-ob-youtube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
 
+const inPagePreviewSelector = '.s_P-Prvw ';
+const inEditorPreviewSelector = '#debiki-editor-controller .preview ';
 
 describe("editor onebox:", () => {
 
@@ -76,12 +78,14 @@ describe("editor onebox:", () => {
 
   it("The image url gets converted to a .onebox tag", () => {
     // Something in here timed out once. So do in two steps, simpler to troubleshoot. First: ...
-    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + dotOneboxClass);
+    owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InEditor' });
+    owensBrowser.waitForExist(inEditorPreviewSelector + dotOneboxClass);  // CLEAN_UP remove
   });
 
   it("... with an a[href=...] and img[src=...]", () => {
     // ...Then:
-    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + imageJpgOnebox);
+    owensBrowser.preview.waitForExist(imageJpgOnebox, { where: 'InEditor' });
+    owensBrowser.waitForExist(inEditorPreviewSelector + imageJpgOnebox);  // CLEAN_UP remove
   });
 
   it("Owen saves the page", () => {
@@ -102,8 +106,11 @@ describe("editor onebox:", () => {
   });
 
   it("It appears as a onebox <video> tag in the preview", () => {
-    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + dotOneboxClass);
-    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + videoMp4Onebox);
+    owensBrowser.preview.waitForExist(dotOneboxClass, { where: 'InPage' });
+    owensBrowser.waitForExist(inPagePreviewSelector + dotOneboxClass);  // CLEAN_UP remove
+
+    owensBrowser.preview.waitForExist(videoMp4Onebox, { where: 'InPage' });
+    owensBrowser.waitForExist(inPagePreviewSelector + videoMp4Onebox);  // CLEAN_UP remove
   });
 
   it("Owen saves the edits, sees both the onebox <img> and the <video> tags", () => {

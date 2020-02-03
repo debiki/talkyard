@@ -197,9 +197,18 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
           `No weak session:  ${JSON.stringify(typs)}  [TyE50286KT]`);
       // @endif
 
-      window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
-      // This should be a login popup. Close the whole popup window.
-      close();
+      // We should be a login popup.
+      if (!window.opener) {
+        // The user closed the main window, which opened this popup?
+        pagedialogs.getServerErrorDialog().openForBrowserError(
+          "You closed the main browser window, which we were going to " +
+            "continue in?  [TyEOPNRGONE]", { mayClose: false });
+      }
+      else {
+        window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
+        // Close this popup window — we'll continue in the main window.
+        close();
+      }
     }
   }
   else {

@@ -294,7 +294,12 @@ class EdSecurity(globals: Globals) {
           case s: SidOk => (s, xsrfOk, Nil)
           case SidAbsent => (SidAbsent, xsrfOk, Nil)
           case s: SidExpired => (s, xsrfOk, Nil)
-          case _ => throwForbidden("TyEBADSID", "Bad SID")
+          case _ =>
+            throw ResultException(
+              ForbiddenResult("TyEBADSID", "Bad session ID",
+                  "You can try again — I just deleted the bad session ID.")
+                .discardingCookies(
+                  DiscardingSecureCookie(SessionIdCookieName)))
         }
       }
 

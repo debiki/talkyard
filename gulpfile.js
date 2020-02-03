@@ -850,7 +850,8 @@ gulp.task('watch', gulp.series('default', (done) => {
 // (This makes the Web image assets dir 5.5 MB large instead of just 2.7 MB,
 // as of Jan 2020.  (An alternative, to keep the image small, could be to
 // unzip the files in a docker-entrypoint script. But scratch that — the assets dir
-// is mounted read-only here in this dev repo; would need to mount read-write?))
+// is mounted read-only here in this dev repo; would need to mount read-write?
+// Or using ngx_http_gunzip_module — but that'd cause slightly higher CPU load?))
 //
 gulp.task('delete-non-gzipped', () => {
   return del([

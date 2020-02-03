@@ -1508,6 +1508,7 @@ export const Editor = createFactory<any, EditorState>({
     const editorsPageType: PageType | undefined = editorsPage?.pageRole;
 
     const me: Myself = store.me;
+    const myUiPrefs: UiPrefs = me_uiPrefs(me);
     let settings: SettingsVisibleClientSide = store.settings;
     const isPrivateGroup = page_isPrivateGroup(state.newPageRole);
 
@@ -1617,10 +1618,23 @@ export const Editor = createFactory<any, EditorState>({
     const replyToPostNrs = state.replyToPostNrs;
     const isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
     const repliesToNotOrigPost = replyToPostNrs.length && !isOrigPostReply;
+
+    // The page might not yet have been created — it's just {} before it gets
+    // saved and lazy-created [EMBED0PG]. However, in such a situation, we're inside
+    // the editor iframe, at the blog (not at the Talkyard site).
+    const isBlogPostReply = isOrigPostReply && (
+        // Might not work, at the blog:
+        editorsPage?.pageRole === PageRole.EmbeddedComments ||
+        // Works, but only at the blog:
+        eds.isInEmbeddedEditor);
+
     // ----- Delete these?:
     const isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
     const isMindMapNode = replyToPostNrs.length === 1 && editorsPage.pageRole === PageRole.MindMap;
     // --------------------
+
+
+    // ----- "Reply to" or "Editing" text
 
     let doingWhatInfo: any;
     if (_.isNumber(editingPostNr)) {
@@ -1684,6 +1698,11 @@ export const Editor = createFactory<any, EditorState>({
     else if (state.anyPostType === PostType.BottomComment && !repliesToNotOrigPost) {
       doingWhatInfo = t.e.AppendComment;
     }
+    else if (isBlogPostReply) {
+      // Blog post author name is unknown. (There's an orig post by System,
+      // but "Replying to @system" would be incorrect.)
+      doingWhatInfo = t.e.AddCommentC;
+    }
     else if (replyToPostNrs.length > 0) {
       doingWhatInfo =
         r.span({},
@@ -1691,15 +1710,10 @@ export const Editor = createFactory<any, EditorState>({
           _.filter(replyToPostNrs, (id) => id !== NoPostId).map((replToPostNr, index) => {
             // If replying to a blog post, then, it got auto created by the System
             // user. Don't show "Reply to System".
-            const isReplyingToBlogPost = eds.isInEmbeddedEditor && replToPostNr === BodyNr;
             let replToPost: Post | undefined;
 
             let replToAuthor: BriefUser | undefined;
-            if (isReplyingToBlogPost) {
-              // Blog post author name is unknown. (There's an orig post by System,
-              // but "Replying to @system" would be incorect.)
-            }
-            else if (eds.isInEmbeddedEditor) {
+            if (eds.isInEmbeddedEditor) {
               // Here in the embedded editor, we haven't loaded any page or author names
               // — get them from the main iframe instead (the one with all the comments).
               // This is a new and a bit odd approach? (Jan 2020.) Let's wrap in try (although
@@ -1869,37 +1883,53 @@ export const Editor = createFactory<any, EditorState>({
 
     // ----- Preview
 
-    const previewHelp =
-        r.div({ className: 'dw-preview-help' },
-          help.HelpMessageBox({ message: previewHelpMessage }));
-
     const thereIsAnInPagePreview =
         me_uiPrefs(me).inp !== UiPrefsIninePreviews.Skip &&
         // If we're creating a new page, there's not any place to show an in-page preview.
         !state.newForumTopicCategoryId;
 
+    // Don't show any in-editor preview, if we're showing an in-page preview,
+    // and hasn't configured double previews (in editor too).
+    const skipInEditorPreview =
+        thereIsAnInPagePreview &&
+        myUiPrefs.inp !== UiPrefsIninePreviews.Double &&
+        // If the editor is full screen (i.e. textarea and preview split screen),
+        // then show an in-editor preview as usual.
+        !(state.showMaximized || state.splitHorizontally || state.showOnlyPreview);
+
+    const previewHelp = skipInEditorPreview ? null :
+        r.div({ className: 'dw-preview-help' },
+          help.HelpMessageBox({ message: previewHelpMessage }));
+
     const previewTitleTagName = !thereIsAnInPagePreview ? 'span' : 'a';
-    const onPreviewTitleClick = !thereIsAnInPagePreview ? null : () => {
-      ReactActions.scrollToPreview({
-        isEditingBody: state.editingPostNr === BodyNr,
-        isChat: page_isChat(editorsPageType),
-      });
+
+    const scrollToPreviewProps = !thereIsAnInPagePreview ? {} : {
+      onMouseEnter: () => ReactActions.highlightPreview(true),
+      onMouseLeave: () => ReactActions.highlightPreview(false),
+      onClick: () => {
+        ReactActions.scrollToPreview({
+          isEditingBody: state.editingPostNr === BodyNr,
+          isChat: page_isChat(editorsPageType),
+        });
+      },
     };
 
-    const previewTitle =
+    const previewTitle = skipInEditorPreview ? null :
         r.div({},
-          r[previewTitleTagName]({
-              onMouseEnter: !thereIsAnInPagePreview ? null :
-                  () => ReactActions.highlightPreview(true),
-              onMouseLeave: !thereIsAnInPagePreview ? null :
-                  () => ReactActions.highlightPreview(false),
-              onClick: onPreviewTitleClick },
+          r[previewTitleTagName](scrollToPreviewProps,
             t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')));
+
+    // If no in-editor preview, instead well include a "Scroll to preview" button
+    // above the textarea.
+    const scrollToPreviewBtn = !skipInEditorPreview || !thereIsAnInPagePreview ? null :
+        r.a({ ...scrollToPreviewProps, className: 's_E_ScrPrvwB' }, t.ShowPreview);
+
+    let editorClasses = skipInEditorPreview ? 's_E-NoInEdPrvw' : 's_E-WithInEdPrvw';
 
 
     // ----- Editor size
 
-    let editorClasses = eds.isInEmbeddedEditor ? '' : 'editor-box-shadow';
+    editorClasses += eds.isInEmbeddedEditor ? '' : ' editor-box-shadow';
     editorClasses += state.showMaximized ? ' s_E-Max' : '';
     editorClasses += state.splitHorizontally ? ' s_E-SplitHz' : '';
     editorClasses += state.showMinimized ? ' s_E-Min' : (
@@ -1940,6 +1970,7 @@ export const Editor = createFactory<any, EditorState>({
                 r.div({ className: 's_E_DoingRow' },
                   r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
                   showGuidelinesBtn,
+                  scrollToPreviewBtn,
                   draftStatusText),
                 r.div({ className: 'esEdtr_titleEtc' },
                   // COULD use https://github.com/marcj/css-element-queries here so that
@@ -1951,11 +1982,12 @@ export const Editor = createFactory<any, EditorState>({
                     pageRoleDropdown)),
                 textareaButtons,
                 textarea)),
-            r.div({ className: 'preview-area', style: previewStyles },
-              previewTitle,
-              previewHelp,
-              r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
-                  dangerouslySetInnerHTML: { __html: state.safePreviewHtml }})),
+             skipInEditorPreview ? null :
+               r.div({ className: 'preview-area', style: previewStyles },
+                previewTitle,
+                previewHelp,
+                r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
+                    dangerouslySetInnerHTML: { __html: state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e_E_SaveB' },
                 saveButtonTitle),

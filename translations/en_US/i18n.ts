@@ -100,6 +100,7 @@ var t_en_US: TalkyardTranslations = t = {
   SavedDot: "Saved.",
   Search: "Search",
   SendMsg: "Send Message",
+  ShowPreview: "Show preview",  // MISSING
   SignUp: "Sign Up",
   Solution: "Solution",
   started: "started",
@@ -574,6 +575,10 @@ var t_en_US: TalkyardTranslations = t = {
     YourEdits: "Your edits: ",   // MISSING
     YourProgrNoteC: "Your progress note:",  // MISSING
     aProgrNote: "a progress note: ",  // MISSING
+
+    ReplyingToC: "Replying to:",    // MISSING
+    ScrollToPrevw_1: "Scroll to ",  // MISSING
+    ScrollToPrevw_2: "preview",     // MISSING
 
     UnfinEdits: "Unfinished edits",  // MISSING
     ResumeEdting: "Resume editing",  // MISSING
@@ -1165,6 +1170,7 @@ var t_en_US: TalkyardTranslations = t = {
     ReplyTo: "Reply to ",
     ReplyTo_theOrigPost: "the Original Post",
     ReplyTo_post: "post ",
+    AddCommentC: "Add a comment:",   // MISSING
 
     PleaseSelectPosts: "Please select one or more posts to reply to.",
 

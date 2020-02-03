@@ -1164,8 +1164,12 @@ interface UiPrefs {
 }
 
 const enum UiPrefsIninePreviews {
-  Show = 1,
+  // Only an in-page preview, no in editor preview
+  Show = 1, // RENAME to Only?
+  // No in-page preview
   Skip = 2,
+  // Both in-page and in-editor previews.
+  Double = 3,
 }
 
 const enum UiPrefsForumButtons {

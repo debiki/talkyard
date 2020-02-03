@@ -597,6 +597,8 @@ const RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
+    postClass += rootPost.isPreview ? ' s_P-Prvw' : '';
+
     const isThreadedDiscussion = page_isThreadedDiscussion(page);
     const isFlatProgress = page_isFlatProgress(page);
     // @ifdef DEBUG
@@ -1207,20 +1209,25 @@ const Thread = createComponent({
 
     const branchSidewaysClass = horizontalCss(childrenSideways);
 
+    const isEditorsPage =
+        store.editorsPageId === page.pageId ||
+        // The embedded editor doesn't know about page ids (as of now). [EMBED0PG]
+        page.pageRole === PageRole.EmbeddedComments;
+
     let replyingToElem;
-    if (store.replyingToPostNr === post.nr &&
-        store.editorsPageId === page.pageId) {
+    if (store.replyingToPostNr === post.nr && isEditorsPage) {
       replyingToElem = r.div({ className: 's_T_ReTo' },
         r.span({ className: 's_T_ReTo_Ttl' },
-          "Replying to:"),  // [305KTJ4]  I18N
+          t.d.ReplyingToC),  // [305KTJ4]
         me_uiPrefs(store.me).inp === UiPrefsIninePreviews.Skip ? null :
           r.span({ className: 's_T_ReTo_Prvw' },
-            "Scroll to ",   // I18N
+            t.d.ScrollToPrevw_1,
             r.a({ className: 's_T_ReTo_Prvw_B',
                 onMouseEnter: () => ReactActions.highlightPreview(true),
                 onMouseLeave: () => ReactActions.highlightPreview(false),
                 onClick: () => ReactActions.scrollToPreview({}) },
-              "preview ", r.span({ className: 's_T_ReTo_Prvw_B_Arw' }, "⬇️")),  // I18N
+              t.d.ScrollToPrevw_2,
+                  r.span({ className: 's_T_ReTo_Prvw_B_Arw' }, " ⬇️")),
             ));
     }
 

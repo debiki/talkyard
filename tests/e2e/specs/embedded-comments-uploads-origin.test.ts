@@ -111,7 +111,7 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
       'href="' + uplFileLinkTwo(idAddress.origin, idAddress.pubId) + '".*' +
       'href="' + extFileLink + '".*' +
       'href="' + extFile2Link + '"';
-    mariasBrowser.editor.preview.waitUntilPreviewHtmlMatches(correctLinksRegexStr);
+    mariasBrowser.preview.waitUntilPreviewHtmlMatches(correctLinksRegexStr, { where: 'InPage' });
   });
 
 
@@ -164,7 +164,7 @@ describe("emb cmts uploads origin  TyT603RKDJA6", () => {
   // ----- Add image, directly via Talkyards server
 
   it("Maria goes to the Talkard server, the topics list", () => {
-    mariasBrowser.go(idAddress.origin);
+    mariasBrowser.go2(idAddress.origin);
   });
 
   it("She posts a new topic, with the same links", () => {

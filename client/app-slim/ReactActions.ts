@@ -477,8 +477,22 @@ export function scrollAndShowPost(postOrNr: Post | PostNr, anyShowPostOpts?: Sho
     marginTop += 75;
   }
   showPostOpts.marginTop = marginTop;
+
   // Try to not scroll so much, that can be confusing; use fairly small margins by default.
   showPostOpts.marginBottom = showPostOpts.marginBottom ?? 50;
+
+  // ----- Dupl code [0396AKTSSJ46]
+  let editorHeight = 0;
+  if (eds.isInEmbeddedCommentsIframe) {
+    try {
+      editorHeight = window.parent.frames['edEditor'].innerHeight || 0;
+    }
+    catch (ex) {
+      console.warn("Error reading editor iframe height [TyE603KSNJ507]", ex);
+    }
+  }
+  // ----- /Dupl code
+  showPostOpts.marginBottom += editorHeight;
 
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowPost,
@@ -993,6 +1007,7 @@ export function scrollToPreview(ps: {
   const isReplyingToOp = false; // todo
   const marginTop = ps.isEditingBody || isReplyingToOp || ps.isChat ? 110 : 50;
 
+  // ----- Dupl code [0396AKTSSJ46]
   // If we're in an embedded comments iframe, then, there's another iframe for the
   // editor. Then scroll a bit more, so that other iframe won't occlude the preview.
   let editorHeight = ps.editorIframeHeightPx || 0;
@@ -1008,6 +1023,7 @@ export function scrollToPreview(ps: {
       console.warn("Error reading editor iframe height [TyE3062RKP4]", ex);
     }
   }
+  // ----- /Dupl code
 
   // Or, if we're in a chat, there's a chat text box at the bottom, on top of
   // the chat messages.

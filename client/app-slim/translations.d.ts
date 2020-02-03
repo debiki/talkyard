@@ -101,6 +101,7 @@ interface TalkyardTranslations {
   SavedDot: string;
   Search: string;
   SendMsg: string;
+  ShowPreview: string;
   SignUp: string;
   Solution: string;
   started: string;
@@ -548,6 +549,10 @@ interface TalkyardTranslations {
     YourEdits: string;
     YourProgrNoteC: string;
     aProgrNote: string;
+
+    ReplyingToC: string;
+    ScrollToPrevw_1: string;
+    ScrollToPrevw_2: string;
 
     UnfinEdits: string;
     ResumeEdting: string;
@@ -1000,6 +1005,7 @@ interface TalkyardTranslations {
     ReplyTo: string;
     ReplyTo_theOrigPost: string;
     ReplyTo_post: string;
+    AddCommentC: string;
 
     PleaseSelectPosts: string;
 

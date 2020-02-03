@@ -55,8 +55,9 @@ const ServerErrorDialog = createComponent({
     };
   },
 
-  openForBrowserError: function(errorMessage: string) {
+  openForBrowserError: function(errorMessage: string, opts: { mayClose?: boolean } = {}) {
     this.setState({
+      ...opts,
       isOpen: true,
       error: null,
       dialogMessagePrefix: '',
@@ -70,6 +71,7 @@ const ServerErrorDialog = createComponent({
       dialogMessagePrefix = '';
     }
     this.setState({
+      mayClose: true,
       isOpen: true,
       error: error,
       dialogMessagePrefix: dialogMessagePrefix,
@@ -156,8 +158,9 @@ const ServerErrorDialog = createComponent({
               r.div({ className: 'modal-body' },
                 r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
               r.div({ className: 'modal-footer' },
-                PrimaryButton({ onClick: this.close, className: 'e_SED_CloseB' },
-                  "Close")))))));
+                this.state.mayClose === false ? null :
+                  PrimaryButton({ onClick: this.close, className: 'e_SED_CloseB' },
+                    "Close")))))));
   }
 });
 

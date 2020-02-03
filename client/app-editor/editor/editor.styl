@@ -1,5 +1,5 @@
 
-$spaceForButtons = 45px;
+$spaceForButtons = 46px;
 $showPreviewMinWidth = 900px;
 $spacyButtonsMinWidth = 450px;
 $spacyYMinHeight = 400px;
@@ -113,6 +113,40 @@ $spacyYMinHeight = 400px;
     font-weight: bold;
     color: hsl($uiHue, 100%, 35%);
 
+$scrollPreviewButtonPaddingTop = 6px;
+
+#debiki-editor-controller.s_E-NoInEdPrvw
+  // No in-editor preview — then, there's a Show-preview button instead that
+  // scrolls to an in-page preview. Align the doing-what (e.g. "Reply to:") text
+  // with that button.
+  .s_E_DoingWhat,
+  .icon-info-circled
+    padding-top: $scrollPreviewButtonPaddingTop;
+  .s_DfSts
+    // Skip flex-position, it'd get placed "far away" to the right, hard to see,
+    // now when the textarea is so wide (100%, no preview to the right).
+    margin-left: 33px;
+    padding-top: $scrollPreviewButtonPaddingTop;
+
+  // Also, there's more blank space above, because of the large "Show preview" button,
+  // so can reduce 'top' from 12px (EDABSTOP) to this:
+  // And, sice no preview, set width 100% (instead of 50%).
+  .editor-area
+    top: 8px;
+    width: 100%;
+  // And add a bit more padding, looks less claustrophobic.
+  #editor-after-borders
+    left: 21px;
+    right: 21px;
+
+.s_E_ScrPrvwB
+    margin: 0 0 5px 30px;
+    background: white;
+    color: #222;
+    padding: $scrollPreviewButtonPaddingTop 12px;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 50%);
 
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite
@@ -221,10 +255,10 @@ $spacyYMinHeight = 400px;
     bottom: 0;
     left: 15px;
 
-  .editor-area
+  .editor-area  // (EDABSTOP)
     width: 50%
     position: absolute
-    top: 12px
+    top: 12px;
     bottom: $spaceForButtons - 4;
     @media (min-height: $spacyYMinHeight)
       bottom: $spaceForButtons;
