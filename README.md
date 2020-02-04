@@ -15,7 +15,8 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Forum software, brings together the best from StackOverflow, Discourse, Slack etc.
+Forum software, brings together the main features from StackOverflow, Discourse, Slack,
+HackerNews/Reddit, Disqus.
 
 <!--
 Create a place to talk,
