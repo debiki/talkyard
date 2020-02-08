@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo
+
 docker ps >> /dev/null
 if [ $? -eq 1 ] ; then
   echo
@@ -10,6 +12,7 @@ fi
 
 up_line=`docker-compose ps rdb | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
+  echo
   echo "Error: The database container is not running."
   echo "You can start it:"
   echo "  docker-compose start rdb"
@@ -43,8 +46,10 @@ $psql -c 'create database talkyard_test owner talkyard_test;'
 
 echo "...Done."
 echo
-echo "Database user: 'talkyard', password: 'public', for these config values:"
-echo '  talkyard.postgresql.database="..." and'
-echo '  talkyard.postgresql.user="..."'
-echo 'in conf/my.conf (which you can create yourself).'
+echo "Now you can configure user and database 'talkyard', password 'public',"
+echo 'in conf/my.conf:  (which you can create yourself)'
+echo
+echo '  talkyard.postgresql.user="talkyard"'
+echo '  talkyard.postgresql.database="talkyard"'
+echo '  talkyard.postgresql.password="public"'
 echo

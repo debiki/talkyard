@@ -962,7 +962,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       // It's good to delete the old site and create the new one, in the same
       // transaction — so we won't be left without any site at all, if something
       // errors out when creating the new site (e.g. Postgres serialization errors).
-      globals.systemDao.deleteSites(siteIdToOverwrite, sysTx)
+      globals.systemDao.deleteSites(siteIdToOverwrite, sysTx,
+        mayDeleteRealSite = !isTest && !siteData.isTestSiteOkDelete)
 
       // Keep the hostname of the site we're overwriting. Otherwise, once we've imported
       // the new site, and the hostname changes to whatever is in the dump — then,

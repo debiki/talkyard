@@ -98,11 +98,15 @@ else
 fi
 
 echo
-echo "Done. If the web and application servers aren't running, you can start them:"
+echo "Done. You can start the web and application servers like so:"
 echo
 echo "    make up"
 echo
-echo "But first you need to change the database password?"
+echo "But first you need to change the database password? For example:"
+echo
+echo "    sql> alter user talkyard password 'public';"
+echo
+echo "So, let's start psql, the PostgreSQL database command line client:"
 echo
 echo "make db-cli"
 

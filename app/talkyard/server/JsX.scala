@@ -108,17 +108,6 @@ object JsX {
   }
 
 
-  /*  rm
-  def JsParticipantInclDetails(participant: ParticipantInclDetails, callerIsAdmin: Boolean): JsObject = {
-    participant match {
-      case guest: Guest => JsGuestInclDetails(guest)
-      case group: Group => JsGroupInclDetails(group)
-      case user: UserInclDetails =>
-        JsUserInclDetails(user, groups = Nil, usersById = Map.empty, callerIsAdmin = callerIsAdmin)
-    }
-  }*/
-
-
   def JsGuestInclDetails(guest: Guest, inclEmail: Boolean): JsObject = {
     var json = JsUser(guest)
     if (inclEmail) {
@@ -127,6 +116,7 @@ object JsX {
     }
     json += "createdAt" -> JsWhenMs(guest.createdAt)
     json += "guestBrowserId" -> JsStringOrNull(guest.guestBrowserId)
+    json += "extId" -> JsStringOrNull(guest.extImpId)
     json
   }
 
@@ -361,7 +351,7 @@ object JsX {
 
   def JsGroupInclDetails(group: Group, inclEmail: Boolean): JsObject = {
     var json = JsGroup(group)
-    json += "extImpId" -> JsStringOrNull(group.extImpId)
+    json += "extId" -> JsStringOrNull(group.extImpId)
     json += "createdAt" -> JsWhenMs(group.createdAt)
     // "tinyAvatar"
     // "smallAvatar"

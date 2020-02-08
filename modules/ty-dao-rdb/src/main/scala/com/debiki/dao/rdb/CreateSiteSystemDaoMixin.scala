@@ -178,8 +178,9 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   }
 
 
-  def deleteSiteById(siteId: SiteId): Boolean = {
-    require(siteId <= MaxTestSiteId, "Can delete test sites only [EdE6FK02]")
+  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Boolean = false): Boolean = {
+    require(mayDeleteRealSite || siteId <= MaxTestSiteId,
+      s"Trying to delete real site $siteId, but may delete test sites only [TyEDELREALID]")
 
     runUpdate("set constraints all deferred")
 

@@ -187,17 +187,26 @@ class SystemDao(
   }
 
 
-  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SystemTransaction) {
+  def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SystemTransaction,
+        mayDeleteRealSite: Boolean = false) {
+
     val deletedHostnames = mutable.Set[String]()
+
+    // ----- Delete the site
 
     siteIdsToDelete foreach { siteId: SiteId =>
       val site = sysTx.loadSite(siteId)
       deletedHostnames ++= site.map(_.hostnames.map(_.hostname)) getOrElse Nil
-      val gotDeleted = sysTx.deleteSiteById(siteId)
+
+      val gotDeleted =
+        sysTx.deleteSiteById(siteId, mayDeleteRealSite)
+
       dieIf(!gotDeleted,
         "TyE2ABK493U4", o"""Could not delete site $siteId, this site: $site
           — another thread or server deleted it already? A race condition?""")
     }
+
+    // ----- Clear caches
 
     deletedHostnames.toSet foreach this.forgetHostname
 
@@ -215,6 +224,8 @@ class SystemDao(
       val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
       redisCache.clearThisSite()
     }
+
+    // ----- Cancel any background jobs
 
     val testSiteIds = siteIdsToDelete.filter(_ <= MaxTestSiteId)
     if (testSiteIds.nonEmpty)

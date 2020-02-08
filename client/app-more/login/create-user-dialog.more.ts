@@ -57,10 +57,11 @@ function getCreateUserDialog() {
 // But in other cases, maybe makes people nervous?
 // Do UX testing to find out maybe?
 function waitUntilAcceptsTerms(store: Store, isOwner, after) {
-  // If this is the very first site on this server, then the current user is some server
-  // admin/owner who is setting up the organization's own first site — hen has already accepted
-  // some employment/freelancer contract or sth like that, needn't accept any ToS here.
-  if (isOwner && store.isFirstSiteAdminEmailMissing) {
+  // If this is the very first site on this server, then the current user is a server
+  // admin/owner who is setting up the organization's own Talkyard. Hen doesn't
+  // accept any terms, instead, more likely, hen defines & creates the terms hensef,
+  // for others to accept.
+  if (isOwner && store.siteStatus === SiteStatus.NoAdmin && seemsSelfHosted()) {
     after();
     return;
   }

@@ -497,7 +497,7 @@ case class SiteBackupReader(context: EdContext) {
       val email = readOptString(jsObj, "emailAddress").trimNoneIfBlank
       Good(Guest(
         id = id,
-        extImpId = readOptString(jsObj, "extImpId"),
+        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
@@ -576,7 +576,8 @@ case class SiteBackupReader(context: EdContext) {
         id = id,
         theUsername = readString(jsObj, "username"),
         name = readOptString(jsObj, "fullName"),
-        extImpId = readOptString(jsObj, "extImpId"),  // RENAME to extId
+        // RENAME to extId here and everywhere else ... Done, can soon remove 'orElse ...'.
+        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
@@ -1004,7 +1005,7 @@ case class SiteBackupReader(context: EdContext) {
     try {
       Good(PageMeta(
         pageId = id,
-        extImpId = readOptString(jsObj, "extImpId"),
+        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         pageType = PageType.fromInt(readInt(jsObj, "pageType", "role")).getOrThrowBadJson("pageType"),
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
@@ -1148,7 +1149,7 @@ case class SiteBackupReader(context: EdContext) {
 
       require(theId != NoCategoryId, "EdE5LKAW0")
 
-      val extId = readOptString(jsObj, "extImpId")  // what? not "extId"?  RENAME
+      val extId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId")
       extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
         return Bad(problem)
       }
@@ -1292,7 +1293,7 @@ case class SiteBackupReader(context: EdContext) {
     try {
       Good(Post(
         id = id,
-        extImpId = readOptString(jsObj, "extImpId"),
+        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         pageId = readString(jsObj, "pageId"),
         nr = readInt(jsObj, "nr"),
         parentNr = readOptInt(jsObj, "parentNr"),

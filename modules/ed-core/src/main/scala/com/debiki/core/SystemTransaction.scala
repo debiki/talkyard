@@ -68,7 +68,7 @@ trait SystemTransaction {
 
   /** Returns Some(the-deleted-site) if it existed. */
   def deleteSiteByName(name: String): Option[Site]
-  def deleteSiteById(siteId: SiteId): Boolean
+  def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Boolean = false): Boolean
 
 
   // ----- Staff users
