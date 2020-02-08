@@ -530,7 +530,7 @@ class JsonMaker(dao: SiteDao) {
         // because hasNonDeletedSiblingTreesAfter is false since it's the last sibling.
         val prevSiblingSquashed = (siblingIndex - 1) > siblingsLimit
 
-        val (squash, tooManySiblings) =
+        val (squash, tooManySiblings) =   // [SQUASHSIBL]
           if (prevSiblingSquashed) {
             (true, true)
           }

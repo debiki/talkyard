@@ -583,32 +583,54 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
 }
 
 
-function findPostNrsRead(postsByNr: { [postNr: number]: Post }, post): PostNr[] {
+function findPostNrsRead(postsByNr: { [postNr: number]: Post }, post: Post): PostNr[] {
   const postsReadNrs = {};
   postsReadNrs[post.nr] = post.nr;
   let curPostNr = post.nr;
   let nextParentNr = post.parentNr;
   while (!postsReadNrs[nextParentNr]) {
     const parent: Post = postsByNr[nextParentNr];
-    if (!parent) break;
+    if (!parent) {
+      // No more parents. Done.
+      break;
+    }
+    if (parent.nr < MinRealPostNr) {
+      // The parent isn't a real post — it's a new post draft or preview. But
+      // that's impossible? Because its descendant, `post`, is real.
+      // @ifdef DEBUG
+      die('TyE4064QKTSUTD2');
+      // @endif
+      break;
+    }
+
     const parentShown = $byId('post-' + parent.nr);
     if (parentShown) {
       postsReadNrs[parent.nr] = parent.nr;
     }
 
-    // Also add all previous siblings, shown before curPostNr — because to find and read curPostNr,
-    // one needs to scroll past, and probably read, those too.
+    // Also add all previous siblings visible above curPostNr — because to find and read
+    // curPostNr, one needs to scroll past, and probably read, those too.
     for (let i = 0; i < parent.childNrsSorted.length; ++i) {
       const siblingNr = parent.childNrsSorted[i];
       if (siblingNr === curPostNr) {
-        // We don't know if any siblings sorted *after* curPostNr has been read.
+        // Likely, any siblings sorted *after* curPostNr haven't yet been read,
+        // so don't include those.
         // @ifdef DEBUG
         dieIf(!postsReadNrs[siblingNr], 'EdE4GUWKR0');
         // @endif
         break;
       }
+      if (siblingNr < MinRealPostNr) {
+        // It's a draft or preview — doesn't yet exist for real.
+        continue;
+      }
       const sibling = postsByNr[siblingNr];
-      const siblingShown = sibling && $byId('post-' +siblingNr);
+      if (!sibling) {
+        // Maybe it and some other siblings got squashed [SQUASHSIBL] and weren't
+        // loaded from the server.
+        continue;
+      }
+      const siblingShown = $byId('post-' + siblingNr);
       if (siblingShown) {
         postsReadNrs[siblingNr] = siblingNr;
       }
