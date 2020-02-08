@@ -63,7 +63,7 @@ To add a new language:
        var t_nn_NN = t; // remember your new language, otherwise gets overwritten
        // This'll create a variable t_en_US, i.e. English language values (and also overwrite `t`).
        // Change /256/ to whatever currently in use (asset versioning), look at the html source.
-       debiki2.Server.loadJs('/-/assets/256/translations/en_US/i18n.js');
+       debiki2.Server.loadJs('/-/assets/v0.6.56-WIP-1/translations/en_US/i18n.js');
        ```
 
        Now, compare all English and new-language values, to find missing or extra spaces/punctuation,
@@ -76,6 +76,9 @@ To add a new language:
          var otherValue = t_nn_NN[key];
          if (_.isString(englishValue)) {
            findMaybeError(englishValue, otherValue, key);
+         }
+         else if (!otherValue) {
+           maybeTranslErrors[key] = [eng, undefined];
          }
          else {
            _.forOwn(englishValue, function(englishSubValue, subKey) {
@@ -98,11 +101,18 @@ To add a new language:
        }
 
        function findMaybeError(eng, otr, path) {
-         var firstEng = punctSpace(eng[0]);
-         var firstOtr = punctSpace(otr[0]);
-         var lastEng = punctSpace(eng[eng.length - 1]);
-         var lastOtr = punctSpace(otr[otr.length - 1]);
-         if (firstEng !== firstOtr || lastEng !== lastOtr) {
+         var weird = false;
+         if (_.isUndefined(otr)) {
+           weird = true;
+         }
+         else {
+          var firstEng = punctSpace(eng[0]);
+          var firstOtr = punctSpace(otr[0]);
+          var lastEng = punctSpace(eng[eng.length - 1]);
+          var lastOtr = punctSpace(otr[otr.length - 1]);
+          weird = firstEng !== firstOtr || lastEng !== lastOtr;
+         }
+         if (weird) {
            maybeTranslErrors[path] = [eng, otr];
          }
        }
