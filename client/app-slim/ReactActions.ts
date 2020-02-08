@@ -1119,6 +1119,21 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 }
 
 
+export function deleteDraft(draftNr: DraftNr, onDone?: OnDoneOrBeacon,
+      onError?: ErrorStatusHandler) {
+  // SHOULD  also delete from session storage (emb comments)
+  if (onDone === UseBeacon) {
+    Server.deleteDrafts([draftNr], UseBeacon);
+  }
+  else {
+    Server.deleteDrafts([draftNr], function() {
+      // SHOULD  if in editor iframe, send message to comments iframe
+      patchTheStore({ deleteDraftNr: draftNr }, onDone);
+    }, onError);
+  }
+}
+
+
 export function composeReplyTo(parentNr: PostNr, replyPostType: PostType) {
   const inclInReply = true; // legacy — was for multireplies: toggle incl-in-reply or not
   if (eds.isInEmbeddedCommentsIframe) {

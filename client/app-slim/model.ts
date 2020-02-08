@@ -533,6 +533,9 @@ interface StupidDialogStuff {  // RENAME from ...Stuff to ...Options
   // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
   // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
   onCloseOk?: (number: number) => void;
+  // If the user clicks the primary button. Not called, if hen clicks a secondaary
+  // button or closes the dialog e.g. by clicking outside.
+  onPrimaryClick?: () => void;
   preventClose?: boolean;
   closeOnClickOutside?: boolean; // default true
   // Specify this to get a fn that closes the dialog.
@@ -1372,6 +1375,7 @@ interface StorePatch extends EditorPatch {
   tagsStuff?: TagsStuff;
 
   deleteDraft?: Draft;
+  deleteDraftNr?: DraftNr;
 
   // If doing something resulted in a new page being created, and we should continue on that page.
   // E.g. if posting the first reply, in an embedded comments discussion (then a page for the
@@ -1572,6 +1576,10 @@ interface Rect {
 
 
 // ----- Server requests and responses
+
+
+type OnDoneOrBeacon = (() => void) | UseBeacon;
+type ErrorStatusHandler = (errorStatusCode?: number) => void;
 
 
 /// The browser gives you a Response, but that's not an object so { ...response } won't work.

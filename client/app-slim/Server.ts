@@ -42,8 +42,6 @@ function getPageId(): PageId {
       ReactStore.allData().currentPageId;
 }
 
-type ErrorStatusHandler = (errorStatusCode?: number) => void;
-
 interface OngoingRequest {
   abort();
 }
@@ -1260,9 +1258,9 @@ export function upsertDraft(draft: Draft, onOk: ((draftWithNr: Draft) => void) |
 
 
 export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon,
-        onError: ErrorStatusHandler | undefined) {
+        onError?: ErrorStatusHandler) {
   postJsonSuccess('/-/delete-drafts', onOk, draftNrs, function(xhr) {
-    onError(xhr.status);
+    if (onError) onError(xhr.status);
     return ShowNoErrorDialog;
   }, { showLoadingOverlay: false });
 }

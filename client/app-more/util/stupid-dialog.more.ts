@@ -48,6 +48,17 @@ export function makeStupidDialogGetter() {
 
 const getDefaultStupidDialog = makeStupidDialogGetter();
 
+/**
+ * Usage example:
+ *
+ *     util.openDefaultStupidDialog({
+ *       body: "Really delete?",
+ *       primaryButtonTitle: "Yes, delete",
+ *       secondaryButonTitle: "No, cancel",
+ *       small: true,
+ *       onPrimaryClick: () => { Server.deleteAllTheThings(); },
+ *     });
+ */
 export function openDefaultStupidDialog(stuff: StupidDialogStuff) {
   getDefaultStupidDialog().open(stuff);
 }
@@ -75,6 +86,9 @@ export const StupidDialog = createComponent({
     const stuff: StupidDialogStuff = this.state.stuff || {};
     if (stuff.onCloseOk) {
       stuff.onCloseOk(whichButton);
+    }
+    if (stuff.onPrimaryClick && whichButton === 1) {
+      stuff.onPrimaryClick();
     }
   },
 

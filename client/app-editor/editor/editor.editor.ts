@@ -1118,7 +1118,7 @@ export const Editor = createFactory<any, EditorState>({
               DraftStatus.NothingHappened : DraftStatus.Deleting,
         });
         this.isSavingDraft = true;
-        Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
+        ReactActions.deleteDraft(oldDraft.draftNr, useBeacon || (() => {
           this.isSavingDraft = false;
           console.debug("...Deleted draft.");
 

@@ -1074,6 +1074,24 @@ const Thread = createComponent({
     ReactActions.composeReplyTo(post.parentNr, post.postType);
   },
 
+  askDeleteDraft: function(event) {
+    event.preventDefault();
+    const post: Post = this.props.post;
+    const draftNr = post.isForDraftNr as DraftNr;
+    // @ifdef DEBUG
+    dieIf(!_.isNumber(draftNr), 'TyE502WKTL73');
+    // @endif
+   morebundle.openDefaultStupidDialog({
+     body: t.d.DelDraft + '?',
+     primaryButtonTitle: t.upp.YesDelete,
+     secondaryButonTitle: t.NoCancel,
+     small: true,
+     onPrimaryClick: () => {
+       ReactActions.deleteDraft(draftNr);
+     },
+   });
+  },
+
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
@@ -1286,9 +1304,13 @@ const Thread = createComponent({
       const resumeDraftBtn = post.isEditing || store.isEditorOpen ? null :
             Button({ onClick: this.resumeDraft, className: 's_T_YourPrvw_ResumeB' },
               t.d.ResumeEdting);
-      // + "Delete draft"   t.d.DelDraft  button too, later
 
-      previewElem = r.div({ className: 's_T_YourPrvw' }, yourWhat, toWho, resumeDraftBtn);
+      const deleteDraftBtn = post.isEditing || store.isEditorOpen ? null :
+            Button({ onClick: this.askDeleteDraft, className: 's_T_YourPrvw_ResumeB' },
+              t.d.DelDraft);
+
+      previewElem = r.div({ className: 's_T_YourPrvw' },
+          yourWhat, toWho, resumeDraftBtn, deleteDraftBtn);
       previewClass = ' s_T-Prvw ' +
           (post.isEditing ? 's_T-Prvw-IsEd' : 's_T-Prvw-NotEd') +
           (post.nr >= MinRealPostNr ? ' s_P-Prvw-Real' : '');

@@ -120,6 +120,7 @@ interface TalkyardTranslations {
   Wiki: string;
   Yes: string;
   YesBye: string;
+  // YesDelete — use t.upp.YesDelete, REFACTOR: move it to here instead
   YesDoThat: string;
   You: string;
   you: string;

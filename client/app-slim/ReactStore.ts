@@ -1075,15 +1075,15 @@ function uncollapsePostAndChildren(post: Post) {
   const page: Page = store.currentPage;
   uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
-  for (var i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
-    var childNr = post.childNrsSorted[i];
-    var child = page.postsByNr[childNr];
+  for (let i = 0; i < Math.min(post.childNrsSorted.length, 5); ++i) {
+    const childNr = post.childNrsSorted[i];
+    const child = page.postsByNr[childNr];
     if (!child)
       continue;
     uncollapseOne(child);
-    for (var i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
-      var grandchildNr = child.childNrsSorted[i2];
-      var grandchild = page.postsByNr[grandchildNr];
+    for (let i2 = 0; i2 < Math.min(child.childNrsSorted.length, 3); ++i2) {
+      const grandchildNr = child.childNrsSorted[i2];
+      const grandchild = page.postsByNr[grandchildNr];
       if (!grandchild)
         continue;
       uncollapseOne(grandchild);
@@ -1099,7 +1099,7 @@ function uncollapsePostAndChildren(post: Post) {
 function uncollapseOne(post: Post) {
   if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
     return;
-  var p2 = clonePost(post.nr);
+  const p2 = clonePost(post.nr);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;  // sometimes we don't want this though  (305RKTU)
   p2.summarize = false;
@@ -1109,7 +1109,7 @@ function uncollapseOne(post: Post) {
 
 
 function findParentlessReplyIds(postsByNr): number[] {
-  var ids: number[] = [];
+  const ids: number[] = [];
   _.each(postsByNr, (post: Post) => {
     if (!post.parentNr && post.nr !== BodyNr && post.nr !== TitleNr) {
       ids.push(post.nr);
@@ -1125,8 +1125,8 @@ function findParentlessReplyIds(postsByNr): number[] {
  */
 function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number]: Post }) {
   postNrs.sort((nrA: number, nrB: number) => {
-    var postA: Post = postsByNr[nrA];
-    var postB: Post = postsByNr[nrB];
+    const postA: Post = postsByNr[nrA];
+    const postB: Post = postsByNr[nrB];
 
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
@@ -1195,8 +1195,8 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     }
 
     // Show unwanted posts last. See debiki-core/src/main/scala/com/debiki/core/Post.scala.
-    var unwantedA = postA.numUnwantedVotes > 0;
-    var unwantedB = postB.numUnwantedVotes > 0;
+    const unwantedA = postA.numUnwantedVotes > 0;
+    const unwantedB = postB.numUnwantedVotes > 0;
     if (unwantedA && unwantedB) {
       if (postA.numUnwantedVotes < postB.numUnwantedVotes)
         return -1;
@@ -1211,8 +1211,8 @@ function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     }
 
     // Bury bury-voted posts. See debiki-core/src/main/scala/com/debiki/core/Post.scala.
-    var buryA = postA.numBuryVotes > 0 && !postA.numLikeVotes;
-    var buryB = postB.numBuryVotes > 0 && !postB.numLikeVotes;
+    const buryA = postA.numBuryVotes > 0 && !postA.numLikeVotes;
+    const buryB = postB.numBuryVotes > 0 && !postB.numLikeVotes;
     if (buryA && buryB) {
       if (postA.numBuryVotes < postB.numBuryVotes)
         return -1;
@@ -1261,9 +1261,9 @@ function postApprovedOrCreatedBefore(postA: Post, postB: Post): number {
 
 
 function handleNotifications(newNotfs: Notification[]) {
-  var oldNotfs = store.me.notifications;
-  for (var i = 0; i < newNotfs.length; ++i) {
-    var newNotf = newNotfs[i];
+  const oldNotfs = store.me.notifications;
+  for (let i = 0; i < newNotfs.length; ++i) {
+    const newNotf = newNotfs[i];
 
     // Update notification list in the username menu.
     if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
@@ -1278,7 +1278,7 @@ function handleNotifications(newNotfs: Notification[]) {
 
 
 function markAnyNotificationssAsSeen(postNr) {
-  var notfs: Notification[] = store.me.notifications;
+  const notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
     if (notf.pageId === store.currentPageId && notf.postNr === postNr) {
       // Modifying state directly, oh well [redux]
@@ -1295,7 +1295,7 @@ function markAnyNotificationssAsSeen(postNr) {
 
 function updateNotificationCounts(notf: Notification, add: boolean) {
   // Modifying state directly, oh well [redux]
-  var delta = add ? +1 : -1;
+  const delta = add ? +1 : -1;
   if (isTalkToMeNotification(notf)) {
     store.me.numTalkToMeNotfs += delta;
   }
@@ -1336,7 +1336,11 @@ function patchTheStore(storePatch: StorePatch) {
     store.me = <Myself> _.assign(store.me || {}, storePatch.me);
   }
 
-  if (storePatch.deleteDraft) {
+  const draftNrToDelete = storePatch.deleteDraft?.draftNr || storePatch.deleteDraftNr;
+  if (draftNrToDelete) {
+    // @ifdef DEBUG
+    dieIf(storePatch.deleteDraft && storePatch.deleteDraftNr, 'TyE4026RKRBHS5');
+    // @endif
     _.each(store.me.myDataByPageId, (myData: MyPageData) => {
       myData.myDrafts = _.filter(myData.myDrafts, (draft: Draft) => {
         // 1) Compare by locator (i.e. forWhat), because:
@@ -1346,8 +1350,8 @@ function patchTheStore(storePatch: StorePatch) {
         // 2) Compare by draftNr too, because:
         // Maybe in some cases, the locators are slightly different somehow,
         // although it's the same draft — e.g. if an embedding page's url got changed?
-        const sameLocator = _.isEqual(draft.forWhat, storePatch.deleteDraft.forWhat);
-        const sameNr = !!draft.draftNr && draft.draftNr === storePatch.deleteDraft.draftNr;
+        const sameLocator = _.isEqual(draft.forWhat, storePatch.deleteDraft?.forWhat);
+        const sameNr = !!draft.draftNr && draft.draftNr === draftNrToDelete;
         return !sameLocator && !sameNr;
       });
     });
@@ -1390,6 +1394,22 @@ function patchTheStore(storePatch: StorePatch) {
     // lazily only for embedded comments, and then there's no watchbar.
   }
 
+  // Deleted draft posts?
+  if (currentPage && draftNrToDelete) {
+    let draftPost: Post;
+    _.each(currentPage.postsByNr, function(post: Post) {
+      if (post.isForDraftNr === draftNrToDelete) {
+        draftPost = post;
+      }
+    });
+    if (draftPost) {
+      // Oops, del from parentPost.childNrsSorted  too
+      page_deletePostInPlace(currentPage, draftPost);
+      // Need to redraw arrows, maybe change indentation and more.
+      store.cannotQuickUpdate = true;
+    }
+  }
+
   // New or moved posts?
   _.each(storePatch.postsByPageId, (patchedPosts: Post[], patchedPageId: PageId) => {
     // Highligt pages with new posts, in the watchbar.
@@ -1410,22 +1430,23 @@ function patchTheStore(storePatch: StorePatch) {
       _.each(patchedPosts, (patchedPost: Post) => {
         _.each(oldPage.postsByNr, (oldPost: Post) => {
           if (oldPost.uniqueId === patchedPost.uniqueId) {
-            var movedToNewPage = oldPage.pageId !== patchedPageId;
-            var movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
-            if (movedToNewPage || movedOnThisPage) {
-              var oldParent = oldPage.postsByNr[oldPost.parentNr];
-              if (oldParent && oldParent.childNrsSorted) {
-                var index = oldParent.childNrsSorted.indexOf(oldPost.nr);
-                if (index !== -1) {
-                  oldParent.childNrsSorted.splice(index, 1);
-                }
-              }
+            const movedToNewPage = oldPage.pageId !== patchedPageId;
+            const movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
+            if (movedOnThisPage) {
+              // It'll get reinserted into its new location, by updatePost() below.
+              page_removeFromParentInPlace(oldPage, oldPost);
             }
             if (movedToNewPage) {
-              delete oldPage.postsByNr[oldPost.nr];
-              arr_deleteInPlace(oldPage.parentlessReplyNrsSorted, oldPost.nr);
-              arr_deleteInPlace(oldPage.progressPostNrsSorted, oldPost.nr);
-              // It should get inserted into the new page by updatePost() below.
+              // It'll get inserted into the new page by updatePost() below.
+              page_deletePostInPlace(oldPage, oldPost);
+            }
+            // If the current page gets changed, then, need redraw arrows,
+            // indentation, etc — cannot quick update.
+            if (movedOnThisPage || movedToNewPage) {
+              if (oldPage.pageId === store.currentPageId ||
+                  patchedPageId === store.currentPageId) {
+                store.cannotQuickUpdate = true;
+              }
             }
           }
         });
@@ -1625,7 +1646,7 @@ function watchbar_markReadUnread(watchbar: Watchbar, pageId: PageId, read: boole
 
 
 function watchbar_handleNotification(watchbar: Watchbar, notf: Notification) {
-  var alreadyThere = false;
+  let alreadyThere = false;
   if (notf.type === NotificationType.Message) {
     _.each(watchbar[WatchbarSection.DirectMessages], (watchbarTopic: WatchbarTopic) => {
       if (watchbarTopic.pageId === notf.pageId) {
@@ -1858,9 +1879,9 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // draw an arrow to `post`. However if you've added an Unwanted vote, and post a new reply,
   // then a hereafter unwanted earlier sibling might be moved below startPostId. So we need
   // to update all subsequent siblings too.
-  var parent: any = postsByNr[post.parentNr] || {};
-  for (var i = 0; i < (parent.childNrsSorted || []).length; ++i) {
-    var siblingNr = parent.childNrsSorted[i];
+  const parent: any = postsByNr[post.parentNr] || {};
+  for (let i = 0; i < (parent.childNrsSorted || []).length; ++i) {
+    const siblingNr = parent.childNrsSorted[i];
     store.postsToUpdate[siblingNr] = true;
   }
 
