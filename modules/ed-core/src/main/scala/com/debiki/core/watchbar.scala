@@ -326,7 +326,7 @@ case class BareWatchbar(
 
 object BareWatchbar {
 
-  val MaxRecentTopics = 7
+  val MaxRecentTopics = 9
 
   val empty = BareWatchbar(Nil, Nil, Nil, Nil)
 

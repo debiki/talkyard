@@ -21,6 +21,7 @@ $isWideMinWidth = 900px;
 
 .s_F_Ts_T_Con-Para
   display: block;
+  padding-top: 0 !important;
   &:hover
     outline: 2px solid hsl($uiHue, 100%, 96.7%) !important;
     background: hsl($uiHue, 100%, 98.7%) !important;
@@ -382,7 +383,7 @@ td.dw-tpc-activity
 .dw-tpc-title
   a
     color: black;
-  .s_F_Ts_T_Con-Para a
+  .s_F_Ts_T_Con_Ttl
     color: hsl(0, 0%, 16%);
     font-weight: bold;
 
@@ -482,11 +483,13 @@ td.dw-tpc-activity
             font-size: $tableTopicTitleFontSize + 1.7;
           .dw-p-excerpt
             font-size: $tableTopicExcerptFontSize;
+        .s_F_Ts_T_Con_Ttl,
         a:not(.esAvtr)
           $leftPadding = 5px;  // dupl 5px, see (305FF220)
           padding: 3px 2px 5px $leftPadding; // makes it easier to click
           position: relative;
           left: - $leftPadding;
+        a:not(.esAvtr)
           &:hover
             // Dupl [HOVERSTYL]
             text-decoration: none;
