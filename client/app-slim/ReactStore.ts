@@ -1403,7 +1403,6 @@ function patchTheStore(storePatch: StorePatch) {
       }
     });
     if (draftPost) {
-      // Oops, del from parentPost.childNrsSorted  too
       page_deletePostInPlace(currentPage, draftPost);
       // Need to redraw arrows, maybe change indentation and more.
       store.cannotQuickUpdate = true;
