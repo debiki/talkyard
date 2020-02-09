@@ -185,8 +185,9 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
 
   def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { request: mvc.Request[_] =>
+    // (Original request available in:  request.headers.get("X-Original-URI") )
     val siteId = context.globals.systemDao.getSiteIdByPublId(publSiteId) getOrElse {
-      throwNotFound("TyE2PKJ40", s"No site with publ id '$publSiteId'")
+      throwForbidden("TyESITEPUBID", s"No site with publ id '$publSiteId'")
     }
     val siteDao: debiki.dao.SiteDao = context.globals.siteDao(siteId)
     val hashPathNoSlash = hashPath drop 1 // otherwise starts with slash

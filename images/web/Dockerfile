@@ -101,7 +101,7 @@ ENV CONFIG "\
 	# --with-http_secure_link_module \
 	--with-http_stub_status_module \
 	# client authorization based on the result of a subrequest
-	# --with-http_auth_request_module \
+	--with-http_auth_request_module \
 	# --with-http_xslt_module=dynamic \
 	# --with-http_image_filter_module=dynamic \
 	# --with-http_geoip_module=dynamic \
@@ -119,9 +119,10 @@ ENV CONFIG "\
 	# --with-compat \
 	# asynchronous file I/O (AIO) on FreeBSD and Linux
 	--with-file-aio \
-	# Currently doesn't work, with Lua. Causes *runtime* errors. Comment out, so instead there'll be
-	# errors directly when people test the config via  nginx -t.
-	#--with-http_v2_module \
+	\
+	# HTTP2 doesn't work with Lua scripts that call ngx.location.capture/_multi(..),
+	# there'd be runtime errors. See [63DRN3M75] in ./old/.
+	--with-http_v2_module \
 	\
 	# Disable stuff, and add Lua:
 	# won't ever need to show any auto index? If adding it back, add 'autoindex off' here: [5KUP293]
@@ -259,14 +260,10 @@ RUN rm -fr \
   nginx.conf.default
 
 
-COPY 404.html             /opt/nginx/html/
-COPY 413.html             /opt/nginx/html/
-COPY 502.html             /opt/nginx/html/
-COPY 503.html             /opt/nginx/html/
-COPY 504.html             /opt/nginx/html/
+COPY ssl-cert-snakeoil.key /etc/nginx/
+COPY ssl-cert-snakeoil.pem /etc/nginx/
 
-COPY robots.txt           /opt/talkyard/
-COPY security.txt         /opt/talkyard/
+COPY html                 /opt/nginx/html/
 
 # For development. Another directory gets mounted in prod, see <talkyard-prod-one>/docker-compose.yml.
 COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/
