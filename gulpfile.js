@@ -72,6 +72,15 @@ const versionFilePath = 'version.txt';
 // (Adding windowBits: 15 has no effect — it's the default, supposedly,
 // see: https://nodejs.org/api/zlib.html#zlib_for_zlib_based_streams )
 //
+// We'll keep uncompressed files too [UNCOMPRAST] — because sometimes Talkyard gets
+// installed on an intranet behind a reverse proxy that requires non-gzipped
+// files. (All browsers are fine with getting gzip though.)
+// If you want to test with cURL, you need to set the Accept-Encoding
+// header to something, whatever, but not gzip, e.g.:
+// curl -v -v -H 'Accept-Encoding: NOTgzip'  \
+//     https://talkyard-server/-/assets/v0.6.51-WIP-1/slim-bundle.min.js
+// — that won't work; you'll get 404 Not Found, unless the non-gzipped file is present.
+//
 const gzipOptions = { level: 9, memLevel: 9 };
 
 function readGitHash() {
@@ -609,8 +618,10 @@ gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
-      // The Scala app server code wants non-gz files. Nginx wants gz.
+      // The Scala app server code wants non-gz files. Nginx wants both non-gz
+      // and gz [UNCOMPRAST].
       .pipe(gulp.dest(serverDestTranslations))
+      .pipe(gulp.dest(webDestTranslations))
       .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(webDestTranslations));
 }));
@@ -622,7 +633,7 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
   // found in string" error with a meaningless stacktrace, in preprocess().
   function makeMinJsGzStream(sourceAndDest, gzipped) {
-    return gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
+    let stream = gulp.src([`${sourceAndDest}/*.js`, `!${sourceAndDest}/*.min.js`])
       .pipe(plumber())
       .pipe(gDebug({
         minimal: false,
@@ -632,17 +643,18 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
-      // Save uncompressed files [UNCOMPRAST] — because sometimes Talkyard gets
-      // installed on an intranet behind a reverse proxy that requires non-gzipped
-      // files. (Although all browsers are fine with getting gzip.)
-      .pipe(gulp.dest(sourceAndDest))
-      .pipe(gzip({ gzipOptions }))
       .pipe(gulp.dest(sourceAndDest));
+    if (gzipped) {
+      stream = stream
+        .pipe(gzip({ gzipOptions }))
+        .pipe(gulp.dest(sourceAndDest));
+    }
+    return stream;
   }
   return merge2(  // can speed up with gulp.parallel? (GLPPPRL)
-      // The Scala app server wants non-gzipped files.
+      // The Scala app server wants a min.js (no gzip compression), for Nashorn.
       makeMinJsGzStream(serverDest, false),
-      // Nginx wants gzipped files.
+      // Nginx wants both min.js and min.js.gz [UNCOMPRAST].
       makeMinJsGzStream(webDest, true),
       makeMinJsGzStream(webDestVersioned, true));
 }));
