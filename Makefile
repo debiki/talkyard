@@ -163,8 +163,10 @@ clean-bundles:
 	s/d-gulp clean
 
 clean: clean-bundles
+	@# target/ sometimes includes files compilation-created and owned by root.
 	@echo Delting Scala things and other things:
-	rm -fr target/
+	@$(call ask_for_root_password)
+	sudo rm -fr target/
 	rm -fr project/target/
 	rm -fr project/project/
 	rm -f  tests/e2e-failures.txt
