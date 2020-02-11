@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Runs a script or something  in a Docker Nodejs container, in the base directory.
+# E.g. so you can run Webdriverio End-to-End tests, without having to install
+# anything (no Nodejs, no Selenium) on your host OS.
+
+sudo docker run --rm -it  \
+    --name run-wdio  \
+    --network=host  \
+    -v `pwd`:/opt/talkyard/server/  \
+    debiki/talkyard-gulp  \
+    $@
+
+# Usage example. First start Selenium:
+#
+# n/selenium firefox      # starts FF in a Docker container
+# vinagre 127.0.0.1:5900  # connects with VNC so you can view FF
+#
+# Then start the tests:
+#
+# d/node  s/wdio  target/e2e/wdio.conf.js  --only votes-and-best-firs  --da --ff --des --nt
+

@@ -19,7 +19,15 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # Docker host, so they'll persist across container recreations. [NODEHOME])
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
-  adduser -u $file_owner_id -h /opt/talkyard/server/volumes/gulp-home -D owner   # [5RZ4HA9]
+  # Alpine:
+  # adduser -u $file_owner_id -h /opt/talkyard/server/volumes/gulp-home -D owner
+  # Debian:
+  adduser \
+      --uid $file_owner_id  \
+      --home /opt/talkyard/server/volumes/gulp-home  \
+      --disabled-password  \
+      --gecos ""  \
+      owner   # [5RZ4HA9]
 fi
 
 if [ -z "$*" ] ; then

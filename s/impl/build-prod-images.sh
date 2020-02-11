@@ -73,8 +73,10 @@ done
 # Ensure no other containers running
 # ----------------------
 
-s/d -pedt kill web app search cache rdb
-s/d -pedt down
+# Dupl kill-down prod test code. [KLLPRDTST]
+test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
+$test_containers kill web app search cache rdb
+$test_containers down
 
 s/d kill web app
 s/d down
@@ -84,7 +86,8 @@ s/d down
 function containers_running_test() {
   # 'tail -n +2' skips the column titles row. We exclude any '*registry*' container,
   # because it's fine to run a local Docker registry, if testing images on localhost.
-  docker ps | tail -n +2 | grep -v registry
+  # And we exclude any container started via s/selenium ('e2ebrowser').
+  docker ps | tail -n +2 | grep -v registry | grep -v e2ebrowser
 }
 
 if [ -n "`containers_running_test`" ]; then
@@ -143,7 +146,6 @@ if [ -z "$skip_e2e_tests" ]; then
   export VERSION_TAG=latest
   export POSTGRES_PASSWORD=public
   export DOCKER_REPOSITORY=debiki
-  test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
   $test_containers down
   rm -fr modules/ed-prod-one-test/data
   $test_containers up -d
