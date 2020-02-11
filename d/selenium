@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# See  ../s/selenium-start  for how to debug.
+
+
+dash_debug="-debug"
+browser_name="chrome"
+container_name="tye2ebrowser"
+
+
+
+for arg in "$@"; do
+    case $arg in
+        c|chrome)
+        echo "I will use Chrome."
+        browser_name="chrome"
+        shift
+        ;;
+        f|ff|firefox)
+        echo "I will use Firefox."
+        browser_name="firefox"
+        shift
+        ;;
+        i|invisible)
+        echo "The browser will be invisible (headless)."
+        dash_debug=""
+        shift
+        ;;
+        *)
+        echo
+        echo "Error: Unknown command line argument:  $arg"
+        echo
+        exit 1
+        ;;
+    esac
+done
+
+
+# E.g.: selenium/standalone-chrome-debug
+image_name="selenium/standalone-${browser_name}${dash_debug}"
+
+
+echo
+echo "Starting image '$image_name' as container '$container_name':"
+echo
+
+sudo docker kill $container_name
+sudo docker rm -f $container_name
+
+sudo docker run -d \
+    --name $container_name  \
+    --network=host \
+    -p 4444:4444 \
+    -p 5900:5900 \
+    --env VNC_NO_PASSWORD=yes_skip \
+    -v /dev/shm:/dev/shm  \
+    $image_name
+
+
+echo
+echo "You now have these Selenium containers running:"
+echo
+
+sudo docker ps  | grep selenium
+
+echo
+echo "You can ssh into the container:"
+echo
+echo "    sudo docker exec -it $container_name sh"
+echo
+
+start_vinagre="vinagre 127.0.0.1:5900"
+
+if [ -z "$dash_debug" ]; then
+    echo "The browser is invisible; you cannot connect with VNC."
+else
+    echo "You can look at the browser via VNC, using e.g. vinagre, install and start like so:"
+    echo
+    echo "    sudo apt install vinagre"
+    echo "    $start_vinagre"
+    echo
+    read -r -p "Shall I try starting vinagre for you? [Y/n] " response
+    response=${response,,}    # tolower
+    if [[ $response =~ ^(no|n)$ ]] ; then
+        echo "Bye."
+        exit 0
+    fi
+    echo "Ok, here we go:"
+    echo
+    echo "$start_vinagre"
+    echo
+
+    sleep 1
+    $start_vinagre
+fi

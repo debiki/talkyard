@@ -551,7 +551,15 @@ This project looks like so:
      | |                 read-only in Nginx (to serve static files)
      | ...
      |
-     +-s/         <-- Utility scripts (typing "scripts/" is so long)
+     +-d/         <-- Docker scripts, e.g. d/c is docker-compose, and
+     |                'd/n a-script' runs a-script in a Nodejs Docker container
+     |                ('docker-compose' is soo loong to type).
+     |                Many scripts still in s/* instead, could move to here?
+     |
+     +-s/         <-- Utility Bash scripts (typing "scripts/" is so long),
+     |                e.g. s/run-e2e-tests.sh, or, to run in a container:
+     |                'd/n s/run-e2e-tests.sh'  — combining the d/* and s/*
+     |                scripts.
      |
      +-conf/      <-- App server (Play Framework) config files
      | +-my.conf  <-- You can add your localhost config here. Ignored by Git.

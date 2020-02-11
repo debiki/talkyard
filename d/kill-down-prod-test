@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Dupl kill-down prod test code. [KLLPRDTST]
+
+test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
+
+sudo $test_containers kill web app search cache rdb
+sudo $test_containers down
