@@ -10,6 +10,7 @@
 var $overlay;
 var $image;
 var anySkipSelectors;
+var listensOnEscape;
 
 function createLightbox(elem, event) {
   // In case wrapped in an <a> tag, don't navigate away.
@@ -31,6 +32,16 @@ function createLightbox(elem, event) {
       '</div>')[0];
   document.body.appendChild($overlay);
   document.body.appendChild($image);
+
+  // Close, if clicking ESC (the Escape key).
+  if (!listensOnEscape) {
+    listensOnEscape = true;
+    document.addEventListener('keyup', function(event) {
+      if (event.key === 'Escape') {
+        removeLightbox();
+      }
+    });
+  }
 }
 
 function removeLightbox() {
