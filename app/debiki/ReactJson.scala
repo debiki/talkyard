@@ -254,7 +254,8 @@ class JsonMaker(dao: SiteDao) {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
 
-    val categories = page.meta.categoryId.map(makeCategoriesJson(_, authzCtx)) getOrElse JsArray()
+    val categories = page.meta.categoryId.map(
+      makeCategoriesJson(_, authzCtx, exclPublCats = false)) getOrElse JsArray()
     val siteSettings = dao.getWholeSiteSettings()
 
     val anyLatestTopics: JsValue =
@@ -822,14 +823,6 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  private def listRestrictedCategoriesJson(categoryId: CategoryId,
-        authzCtx: ForumAuthzContext): JsArray = {
-    val sectCats =
-      dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
-    makeCategoriesJsonNoDbAccess(sectCats)
-  }
-
-
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_])
@@ -849,7 +842,7 @@ class JsonMaker(dao: SiteDao) {
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
-    val categoriesJson = listRestrictedCategoriesJson(categoryId, authzCtx)
+    val categoriesJson = makeCategoriesJson(categoryId, authzCtx, exclPublCats = true)
 
     val (topics: Seq[PagePathAndMeta], pageStuffById) =
       if (request.thePageRole != PageType.Forum) {
@@ -939,8 +932,10 @@ class JsonMaker(dao: SiteDao) {
   def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : JsValue = {
     // 2 dupl lines [7UXAI1]
-    val restrCategoriesJson = makeCategoriesJson(categoryId, authzCtx)
-    val publCategoriesJson = makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext())
+    val restrCategoriesJson =
+      makeCategoriesJson(categoryId, authzCtx, exclPublCats = true)
+    val publCategoriesJson =
+      makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext(), exclPublCats = false)
     Json.obj(
       "appVersion" -> dao.globals.applicationVersion,
       "restrictedCategories" -> restrCategoriesJson,
@@ -948,8 +943,9 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext)
-        : JsArray = {
+  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext,
+        exclPublCats: Boolean): JsArray = {
+    COULD_OPTIMIZE // exclPublCats currently ignored — but would result in less json generated
     val sectCats = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
     makeCategoriesJsonNoDbAccess(sectCats)
   }
@@ -1491,20 +1487,21 @@ object JsonMaker {
   }
 
 
-  def makeCategoriesJsonNoDbAccess(anySectCats: Option[SectionCategories]): JsArray = {
+  private def makeCategoriesJsonNoDbAccess(anySectCats: Option[SectionCategories]): JsArray = {
     val sectCats = anySectCats getOrElse {
       return JsArray()
     }
 
-    val categoriesJson = JsArray(sectCats.categoriesExclRoot map { category =>
-      makeCategoryJson(category, sectCats.rootCategory)
+    val categoriesJson = JsArray(sectCats.catStuffsExclRoot map { categoryStuff =>
+      makeCategoryJson(categoryStuff, sectCats.rootCategory)
     })
     categoriesJson
   }
 
 
-  def makeCategoryJson(category: Category, rootCategory: Category,
+  def makeCategoryJson(categoryStuff: CategoryStuff, rootCategory: Category,
         recentTopicsJson: Seq[JsObject] = null, includeDetails: Boolean = false): JsObject = {
+    val category = categoryStuff.category
     var json = Json.obj(
       "id" -> category.id,
       "parentId" -> JsNumberOrNull(category.parentId),
@@ -1519,7 +1516,8 @@ object JsonMaker {
       "unlistTopics" -> JsBoolean(category.unlistTopics),
       "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
       "position" -> category.position,
-      "description" -> JsStringOrNull(category.description))
+      "description" -> JsStringOrNull(category.description),
+      "thumbnailUrl" -> JsStringOrNull(categoryStuff.anyThumbnails.headOption))
     if (recentTopicsJson ne null) {
       json += "recentTopics" -> JsArray(recentTopicsJson)
     }
@@ -1531,6 +1529,7 @@ object JsonMaker {
     }
     if (includeDetails) {
       json += "sectionPageId" -> JsString(category.sectionPageId)
+      // Needed if editing the category in the edit-category dialog:
       if (category.extImpId.isDefined) {
         json += "extId" -> JsString(category.extImpId.get)
       }

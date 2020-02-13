@@ -878,7 +878,7 @@ trait PostsDao {
 
       // If we're editing an about-category-post == a category description, update the category.
       val editsAboutCategoryPost = page.pageType == PageType.AboutCategory && editedPost.isOrigPost
-      val anyEditedCategory =
+      val anyEditedCategory =  // REFACTOR CLEAN_UP use a bool instead. & remove things: [502RKDJWF5]
         if (!editsAboutCategoryPost || !editsApproved) {
           if (editsAboutCategoryPost && !editsApproved) {
             // Currently needn't fix this? Only staff can edit these posts, right now.
@@ -979,7 +979,11 @@ trait PostsDao {
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
+
+      REFACTOR; CLEAN_UP; // only mark section page as stale, and uncache category.
+      // Because categories on loonger  store a their description (well they don't use it anyway)
       anyEditedCategory.foreach(tx.updateCategoryMarkSectionPageStale)
+
       reviewTask.foreach(tx.upsertReviewTask)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
@@ -1006,8 +1010,8 @@ trait PostsDao {
     }
 
     if (anyEditedCategory.isDefined) {
-      // The cached categories remember their category description — one of which we
-      // have now edited.
+      // The cached categories remember their category description or thumbnail images
+      // — some of which we have now edited.
       uncacheAllCategories()
     }
 

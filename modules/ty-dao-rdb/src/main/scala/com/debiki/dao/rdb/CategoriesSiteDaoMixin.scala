@@ -328,7 +328,8 @@ trait CategoriesSiteDaoMixin extends SiteTransaction {
         page_id = ?, parent_id = ?, default_category_id = ?,
         ext_id = ?,
         name = ?, slug = ?, position = ?,
-        description = ?, new_topic_types = ?,
+        description = ?,   -- REFACTOR CLEAN_UP no longer needed, instead: [502RKDJWF5]
+        new_topic_types = ?,
         unlist_category = ?, unlist_topics = ?, incl_in_summaries = ?,
         created_at = ?, updated_at = ?,
         deleted_at = ?

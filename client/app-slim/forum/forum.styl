@@ -707,6 +707,10 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
 // Categories tree
 //===========================
 
+$catTitleMarginTop = 4px;
+$catIconWidth = 64px;
+$minOwnIconColumnDisplWidth = 900px;
+
 .esForum_cats_cat-new
   animation: esFadeIn 2.8s 0s;
   animation-timing-function: ease-out-quad;
@@ -716,6 +720,27 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
   .topic-title
     crossGray();
 
+.s_F_Cs_C_IcoWrp
+  float: left;
+  width: $catIconWidth;
+  margin: $catTitleMarginTop 16px 0 0;
+  img
+    object-fit: contain;
+
+.s_F_Cs_C_IcoWrp
+  @media (max-width: 600px)
+    width: 48px;
+
+.s_F_Cs_C_IcoWrp + .s_F_Cs_C_TxtWrp
+  // Wide screen? Then any category icon can get its own "column".
+  @media (min-width: $minOwnIconColumnDisplWidth)
+    margin-left: $catIconWidth + 16px;
+  // Narrow screen? Show only icon and category title together,
+  // but let the category description use the full width.
+  @media (max-width: $minOwnIconColumnDisplWidth - 1)
+    .forum-description
+      clear: left;
+      padding-top: 16px;  // so not immediately below the icon.
 
 .s_F_Cs_C_ChildCs
   margin: 8px 0 -1px;
@@ -817,7 +842,8 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
 
 .forum-table .forum-title-wrap
   font-size: 19px;
-  margin: 3px 10px 5px 0;
+  line-height: 1;  // else hard to vertical-align with any icon to the left
+  margin: $catTitleMarginTop 10px 9px 0;
   .forum-title
     font-weight: bold;
     color: hsl(0, 0%, 23%);

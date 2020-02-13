@@ -603,7 +603,8 @@ interface Category {
   defaultTopicType: PageRole;
   newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   position?: number;
-  description: string;
+  description: string;    // from the about category topic
+  thumbnailUrl?: string;  // from the about category topic
   recentTopics?: Topic[];
   unlistCategory?: boolean;
   unlistTopics?: boolean;

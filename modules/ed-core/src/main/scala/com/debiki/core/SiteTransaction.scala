@@ -107,7 +107,11 @@ trait SiteTransaction {
   def loadPosts(authorId: Option[UserId], includeTitles: Boolean, includeChatMessages: Boolean,
         limit: Int, orderBy: OrderBy, onPageId: Option[PageId] = None, onlyUnapproved: Boolean = false): immutable.Seq[Post]
         */
-  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int)
+
+  /** Loads the most Like voted posts, per page.
+    * (Excluding posts with Unwanted votes or pending flags, and collapsed/hidden/deleted posts.)
+    */
+  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
         : Map[PageId, immutable.Seq[Post]]
 
   def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]

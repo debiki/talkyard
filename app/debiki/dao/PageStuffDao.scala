@@ -115,24 +115,29 @@ trait PageStuffDao {
       Seq(PagePostNr(pageId, TitleNr), PagePostNr(pageId, BodyNr))
     })
 
-    val popularPosts: Map[PageId, immutable.Seq[Post]] =
-      transaction.loadPopularPostsByPage(pageIds, limitPerPage = 10)
+    val popularRepliesByPageId: Map[PageId, immutable.Seq[Post]] =
+      transaction.loadPopularPostsByPage(pageIds, limitPerPage = 10, exclOrigPost = true)
 
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId
       val anyBody = titlesAndBodies.find(post => post.pageId == pageId && post.nr == BodyNr)
       val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.nr == TitleNr)
-      val popularPostsBestFirst = popularPosts.getOrElse(pageId, Nil)
-      val popularImageUrls: immutable.Seq[String] = popularPostsBestFirst flatMap { post =>
+      val repliesPopularFirst = popularRepliesByPageId.getOrElse(pageId, Nil)
+      val popularImageUrls: immutable.Seq[String] = repliesPopularFirst flatMap { post =>
         post.approvedHtmlSanitized.flatMap(JsonMaker.findImageUrls(_).headOption) take 5
       }
+
       // For pinned topics: The excerpt is only shown in forum topic lists for pinned topics,
       // and should be the first paragraph only.
       // Other topics: The excerpt is shown on the same line as the topic title, as much as fits.
       // [7PKY2X0]
       val anyExcerpt: Option[PostExcerpt] = anyBody.flatMap(_.approvedHtmlSanitized map { html =>
-        val length = pageMeta.isPinned ? ExcerptLength | StartLength
-        JsonMaker.htmlToExcerpt(html, length, firstParagraphOnly = pageMeta.isPinned)
+        val (length, firstParagraphOnly) =
+          if (pageMeta.pageType == PageType.AboutCategory)
+            (Category.DescriptionExcerptLength, true)  // <— instead of [502RKDJWF5]
+          else
+            (pageMeta.isPinned ? ExcerptLength | StartLength, pageMeta.isPinned)
+        JsonMaker.htmlToExcerpt(html, length, firstParagraphOnly)
       })
 
       val summary = PageStuff(

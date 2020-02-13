@@ -52,7 +52,6 @@ object IncludeInSummaries {
   * @param name
   * @param slug
   * @param position
-  * @param description
   * @param newTopicTypes
   * @param unlistCategory — this category won't be shown on the category page
   * @param unlistTopics — topics from this category won't be listed in the main topic list
@@ -74,7 +73,7 @@ case class Category(  // [exp] ok use
   name: String,
   slug: String,
   position: Int,
-  description: Option[String],
+  description: Option[String],  // REMOVE [502RKDJWF5]
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageType],
   // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?
@@ -122,6 +121,17 @@ object Category {
   val DescriptionExcerptLength = 280
   val DefaultPosition = 50 // also in Typescript [7KBYW2]
 }
+
+
+case class CategoryStuff(
+  category: Category,
+  descriptionBriefPlainText: String,
+  // Later: Don't allow external urls? Those could point to large images, making the page slow.
+  anyThumbnails: immutable.Seq[String],  // UploadRef],
+  // Later:
+  // Statistics, e.g. num new topics per day / week / or month.
+  // (Total num topics?)
+  )
 
 
 case class CategoryPatch(

@@ -21,9 +21,14 @@ import com.debiki.core._
 import debiki.EdHttp.throwNotFound
 import scala.collection.immutable
 import Prelude._
-import debiki.{AllSettings, EffectiveSettings}
+import debiki.AllSettings
 
 
+/** Loads posts and things related to a specific page.
+  *
+  * (There's also a class PagesDao (with a 's' in the name) that focuses on
+  * whole pages.)
+  */
 // REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
 case class PageDao(override val id: PageId, settings: AllSettings, transaction: SiteTransaction)
   extends Page {

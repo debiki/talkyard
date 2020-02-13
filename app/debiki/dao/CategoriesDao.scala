@@ -30,34 +30,36 @@ import scala.collection.mutable.ArrayBuffer
 
 case class SectionCategories(
   rootCategory: Category,
-  categoriesExclRoot: immutable.Seq[Category]) {
+  catStuffsExclRoot: immutable.Seq[CategoryStuff]) {
 
   if (!rootCategory.isRoot) throwIllegalArgument(
     "TyE5AKP036SSD", s"The root category thinks it's not a root category: $rootCategory")
 
-  categoriesExclRoot.find(_.id == rootCategory.id) foreach { badRootCat =>
+  catStuffsExclRoot.find(_.category.id == rootCategory.id) foreach { badRootCat =>
     throwIllegalArgument(
       "TyE7WKTL02XT4", o"""A category with the same id as the root category is included
         in categoriesExclRoot: $badRootCat""")
   }
 
-  categoriesExclRoot.find(_.isRoot) foreach { badRootCat =>
+  catStuffsExclRoot.find(_.category.isRoot) foreach { badRootCat =>
     throwIllegalArgument(
       "TyE602GPK5R3", s"This category in categoriesExclRoot thinks it's a root cat: $badRootCat")
   }
 
-  categoriesExclRoot.find(_.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>
+  catStuffsExclRoot.find(_.category.sectionPageId != rootCategory.sectionPageId) foreach { badCat =>
     throwIllegalArgument(o"""Category $badCat has a different section page id
       than the root cat: $rootCategory [TyE05RMDRYDK4]""")
   }
 
-  categoriesExclRoot.find(_.parentId.isEmpty) foreach { badCat =>
+  catStuffsExclRoot.find(_.category.parentId.isEmpty) foreach { badCat =>
     throwIllegalArgument(s"Category $badCat has no parent cat id [TyE6WKDR203]")
   }
 
-  categoriesExclRoot.find(c => c.parentId.isNot(rootCategory.id) &&
-      !categoriesExclRoot.exists(c2 => c.parentId is c2.id)) foreach { badCat =>  // [On2]
-    throwIllegalArgument(s"Category $badCat has a parent cat in a different site section [TyE4WHUS25]")
+  catStuffsExclRoot.find(c => c.category.parentId.isNot(rootCategory.id) &&
+      !catStuffsExclRoot.exists(c2 => c.category.parentId is c2.category.id)
+      ) foreach { badCat =>  // [On2]
+    throwIllegalArgument("TyE4WHUS25",
+      s"Category $badCat has a parent cat in a different site section")
   }
 
   def sectionPageId: PageId = rootCategory.sectionPageId
@@ -197,27 +199,26 @@ trait CategoriesDao {
     */
   def listMaySeeCategoriesInSection(sectionPageId: PageId, includeDeleted: Boolean,
         authzCtx: ForumAuthzContext): Option[SectionCategories] = {
-    // A bit dupl code (7UKWTW1)
     getRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
-      val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-        includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
-      SectionCategories(
-        rootCategory = rootCategory,
-        categoriesExclRoot = categories)
+      makeSectCatStuffs(rootCategory, includeDeleted, authzCtx)
     }
   }
 
 
   def listMaySeeCategoriesAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
+        : Seq[Category] = {
+    listMaySeeCategoryStuffAllSections(
+      includeDeleted = false, authzCtx).flatMap(_.catStuffsExclRoot.map(_.category))
+  }
+
+
+  def listMaySeeCategoryStuffAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
         : Seq[SectionCategories] = {
     getAndRememberCategories()
     val result = ArrayBuffer[SectionCategories]()
     for (rootCategory <- rootCategories) {
-      val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-        includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
-      result.append(SectionCategories(
-        rootCategory = rootCategory,
-        categoriesExclRoot = categories))
+      val sectCats = makeSectCatStuffs(rootCategory, includeDeleted = includeDeleted, authzCtx)
+      result.append(sectCats)
     }
     result
   }
@@ -231,11 +232,41 @@ trait CategoriesDao {
     if (rootCategories.isEmpty)
       return None
 
-    // A bit dupl code (7UKWTW1)
     val rootCategory = getRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
+    val sectCats = makeSectCatStuffs(rootCategory, includeDeleted = authzCtx.isStaff, authzCtx)
+    Some(sectCats)
+  }
+
+
+  private def makeSectCatStuffs(rootCategory: Category, includeDeleted: Boolean,
+        authzCtx: ForumAuthzContext): SectionCategories = {
+    COULD_OPTIMIZE // why not cache this? Or this (9038303)? Doesn't include recent topics,
+    // so should be fine? With whole server feature flag, in case of bugs.
+    // But first find out if this actually takes time. Usually no db access anyway.
+
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      includeDeleted = authzCtx.isStaff, includeUnlistTopics = true, authzCtx).sortBy(_.position)
-    Some(SectionCategories(rootCategory, categories))
+      includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
+
+    val catStuffs = categories map { category =>
+      makeCatStuff(category)
+    }
+
+    SectionCategories(
+      rootCategory = rootCategory,
+      catStuffsExclRoot = catStuffs)
+  }
+
+
+  /** Loads info about the category: its description [502RKDJWF5], any thumbnail url.
+    * Maybe activity statistics later?
+    */
+  private def makeCatStuff(category: Category): CategoryStuff = {
+    COULD_OPTIMIZE // cache this or that: (9038303)?
+    val anyAboutPageId = getAboutCategoryPageId(category.id)
+    val anyAboutPageStuff = getPageStuffById(anyAboutPageId).values.headOption
+    val excerpt = anyAboutPageStuff.flatMap(_.bodyExcerpt) getOrElse ""
+    val imageUrls = anyAboutPageStuff.map(_.bodyImageUrls) getOrElse Nil
+    CategoryStuff(category, excerpt, imageUrls)
   }
 
 
@@ -393,8 +424,12 @@ trait CategoriesDao {
   }
 
 
-  def getTheCategoryAndRoot(id: CategoryId): (Category, Category) =
-    getCategoryAndRoot(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
+  def getTheCategoryStuffAndRoot(id: CategoryId): (CategoryStuff, Category) = {
+    val (cat, rootCat) = getCategoryAndRoot(id) getOrElse throwNotFound(
+      "TyE830DLYUF0", s"s$siteId: No category with id $id")
+    val catStuff = makeCatStuff(cat)
+    (catStuff, rootCat)
+  }
 
 
   private def getRootCategoryForCategoryId(categoryId: CategoryId): Option[Category] =
@@ -409,8 +444,13 @@ trait CategoriesDao {
     getRootCategoryForCategoryId(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
 
-  def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
-    readOnlyTransaction(_.loadAboutCategoryPageId(categoryId))
+  def getAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
+    memCache.lookup(
+      aboutPageIdByCatId(categoryId),
+      orCacheAndReturn = Some({
+        // This never changes.
+        readOnlyTransaction(_.loadAboutCategoryPageId(categoryId))
+      })).get
   }
 
 
@@ -431,7 +471,8 @@ trait CategoriesDao {
 
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      includeDeleted: Boolean, includeUnlistTopics: Boolean,
+      includeDeleted: Boolean,
+      includeUnlistTopics: Boolean, // COULD RENAME to inclCatsWithTopicsUnlisted
       authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
@@ -476,7 +517,7 @@ trait CategoriesDao {
   }
 
 
-  /** Returns (categoriesById, childCatsByParentId).
+  /** Returns (categoriesById, childCatsByParentId).  + about category topic texts and thumbnails?
     */
   private def getAndRememberCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
@@ -723,6 +764,8 @@ trait CategoriesDao {
   }
 
 
+  private def aboutPageIdByCatId(categoryId: CategoryId) =
+    debiki.dao.MemCacheKey(siteId, s"$categoryId|AbtPgId")
   private val allCategoriesKey = debiki.dao.MemCacheKey(siteId, "AllCats")
 
 }
