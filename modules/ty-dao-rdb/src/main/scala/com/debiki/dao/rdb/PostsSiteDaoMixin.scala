@@ -279,7 +279,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int)
+  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int, exclOrigPost: Boolean)
         : Map[PageId, immutable.Seq[Post]] = {
     if (pageIds.isEmpty)
       return Map.empty
@@ -293,14 +293,14 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         from posts3 p
         where p.site_id = ?
           and p.page_id in (${makeInListFor(pageIds)})
-          and p.post_nr >= ${PageParts.FirstReplyNr}
+          and p.post_nr >= ${exclOrigPost ? PageParts.FirstReplyNr | PageParts.BodyNr}
           and length(p.approved_html_sanitized) > 20
           and p.collapsed_status = 0
           and p.closed_status = 0
           and p.hidden_at is null
           and p.deleted_status = 0
           and p.num_pending_flags = 0
-          and p.num_unwanted_votes <= p.num_like_votes / 20
+          and p.num_unwanted_votes = 0
         ) by_page
       where by_page.rownum <= $limitPerPage
       """

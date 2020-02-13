@@ -32,7 +32,7 @@ import math.max
 import org.owasp.encoder.Encode
 
 
-/** Loads and saves pages and page parts (e.g. posts and patches).
+/** Creates and deletes pages, changes their states, e.g. Closed or Solved etc.
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
   * one specific single page.)
@@ -609,6 +609,7 @@ trait PagesDao {
   }
 
 
+  REFACTOR // Move to PostsDao? This fn creates a post, not a whole page op.
   def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction) {
     // Some dupl code [3GTKYA02]
     val page = PageDao(pageId, tx)

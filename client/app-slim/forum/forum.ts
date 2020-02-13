@@ -1558,14 +1558,18 @@ const CategoryRow = createComponent({
     return (
       r.tr({ className: 'esForum_cats_cat' + isNewClass + isDeletedClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
-          r.div({ className: 'forum-title-wrap' },
-            CatLink({ category, forumPath, location, isDefaultText,
-                className: categoryIconClass + 'forum-title', }),
-            isDeletedText),
-          r.p({ className: 'forum-description' }, category.description),
-          anyNotfLevel,
-          r.ol({ className: 's_F_Cs_C_ChildCs' },
-            childCatsList)),
+          !category.thumbnailUrl ? null :
+            r.div({ className: 's_F_Cs_C_IcoWrp' },
+              r.img({ src: category.thumbnailUrl })),
+          r.div({ className: 's_F_Cs_C_TxtWrp' },
+            r.div({ className: 'forum-title-wrap' },
+              CatLink({ category, forumPath, location, isDefaultText,
+                  className: categoryIconClass + 'forum-title', }),
+              isDeletedText),
+            r.p({ className: 'forum-description' }, category.description),
+            anyNotfLevel,
+            r.ol({ className: 's_F_Cs_C_ChildCs' },
+              childCatsList))),
         r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},

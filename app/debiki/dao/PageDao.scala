@@ -23,6 +23,11 @@ import scala.collection.immutable
 import Prelude._
 
 
+/** Loads posts and things related to a specific page.
+  *
+  * (There's also a class PagesDao (with a 's' in the name) that focuses on
+  * whole pages.)
+  */
 @deprecated("use SiteTransaction directly instead?", "now")
 case class PageDao(override val id: PageId, transaction: SiteTransaction)
   extends Page {
