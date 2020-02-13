@@ -315,7 +315,10 @@ export const Editor = createFactory<any, EditorState>({
           // Or the preview takes a while to update. — So wait for a while.
           setTimeout(() => {
             if (this.isGone) return;
-            scrollToBottom(this.refs.preview);
+            // Maybe no preview because of UI prefs.
+            if (this.refs.preview) {
+              scrollToBottom(this.refs.preview);
+            }
           }, 900);
         });
       },
