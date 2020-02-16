@@ -39,6 +39,7 @@ const TestDraftStatus = {  // sync with real code [5ABXG20]
   NothingHappened: 1,
   EditsUndone: 2,
   Saved: 3,
+  SavedInBrowser: 31,
   Deleted: 4,
   NeedNotSave: 4,
   ShouldSave: 5,

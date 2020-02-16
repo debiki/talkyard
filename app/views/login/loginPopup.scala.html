@@ -17,9 +17,10 @@
 
 @* TODO RENAME to loginPage.scala.html ?  Sometimes shown full win, sometimes in a login popup win.  *@
 
-@(tpi: debiki.SiteTpi, mode: String, serverAddress: String, returnToUrl: String, debugMessage: String = "")
+@(tpi: debiki.SiteTpi, mode: String, serverAddress: String,
+  returnToUrl: String, isInLoginPopup: Boolean = false, debugMessage: String = "")
 
-@popupMain(tpi, serverAddress) {   @* TODO REFACTOR, INLINE it HERE, need no longer be in its own file  *@
+@popupMain(tpi, serverAddress, isInLoginPopup = isInLoginPopup) {
   <!-- views/login/loginPopup.scala.html -->
   @if(debugMessage.nonEmpty) {
   <pre style="font-size: 14px; margin: 5px; display: inline-block; z-index: 9999; position: relative;">@debugMessage</pre>

@@ -84,9 +84,12 @@ describe("emb cmts no cookies verif gmail   TyT795KB61368", () => {
     gmannesBrowser.switchBackToFirstTabOrWindow();
   });
 
-  it("... writes and submits a comment, won't need to login again", () => {
+  it("... writes a comment", () => {
     gmannesBrowser.switchToEmbeddedEditorIrame();
     gmannesBrowser.editor.editText(gmailCommentOne);
+  });
+
+  it("... submits it, won't need to login again", () => {
     gmannesBrowser.editor.save();
   });
 

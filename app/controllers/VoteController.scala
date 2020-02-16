@@ -91,7 +91,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
     }
 
-    val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+    val (pageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
       anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
       anyEmbeddingUrl = anyEmbeddingUrl, request)
 
@@ -106,9 +106,11 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postJson = dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = false, showHidden = true)
 
-    OkSafeJson(Json.obj(
-      "newlyCreatedPageId" -> JsStringOrNull(anyNewPagePath.map(_.pageId)),
-      "updatedPost" -> postJson))
+    val responseJson =
+      EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage) +
+        ("updatedPost" -> postJson)
+
+    OkSafeJson(responseJson)
   }
 
 

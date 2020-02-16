@@ -80,7 +80,13 @@ function onMessage(event) {
       // makeUpdNoCookiesTempSessionIdFn() or in the 'case:' just above, lets check:
       // @ifdef DEBUG
       const mainWin: MainWin = getMainWin();
-      dieIf(!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid'), 'TyE3065KDTH2');
+      if (!mainWin.typs.weakSessionId && !getSetCookie('dwCoSid')) {
+        logAndDebugDie(`Not really logged in? No cookie, no typs.weakSessionId. ` +
+            `This frame name: ${window.name}, ` +
+            `main frame name: ${mainWin.name}, ` +
+            `this is main frame: ${window === mainWin}, ` +
+            `typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
+      }
       // @endif
       ReactActions.setNewMe(eventData.user);
       break;
@@ -141,6 +147,9 @@ function onMessage(event) {
       break;
     case 'iframeOffsetWinSize':
       debiki2.iframeOffsetWinSize = eventData;
+      break;
+    case 'patchTheStore':
+      ReactActions.patchTheStore(eventData);
       break;
   }
 }

@@ -729,6 +729,23 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
+export function store_getPostId(store: Store, pageId: PageId, postNr: PostNr)
+      : PostId | undefined {
+  // If we're on a blog bost with embedded comments, then, the Talkyard embedded
+  // comments page might not yet have been created.
+  if (!pageId)
+    return undefined;
+
+  // The page might not be the current page, if the editor is open and we've
+  // temporarily jumped to a different page or user's profile maybe.
+  const page: Page = store.pagesById[pageId];
+  dieIf(!page, 'TyE603KWUDB4');
+
+  const post = page.postsByNr[postNr];
+  return post.uniqueId;
+}
+
+
 export function page_makePostPatch(page: Page, post: Post): StorePatch {
   const patch: StorePatch = {
     pageVersionsByPageId: {},
@@ -895,13 +912,24 @@ function store_makePreviewPost({
 }
 
 
+export function store_makeDeleteDraftPostPatch(store: Store, draft: Draft): StorePatch {
+  const draftPost = store_makePostForDraft(store, draft);
+  return store_makeDeletePostPatch(draftPost);
+}
+
+
 export function store_makeDeletePreviewPostPatch(store: Store, parentPostNr: PostNr,
       newPostType?: PostType): StorePatch {
   const previewPost: Post = store_makePreviewPost({
       store, parentPostNr, safePreviewHtml: '', newPostType });
+  return store_makeDeletePostPatch(previewPost);
+}
+
+
+export function store_makeDeletePostPatch(post: Post): StorePatch {
   const postsByPageId = {};
   // This'll remove the post from `page`, since it got "moved" away from that page.
-  postsByPageId['_no_page_'] = [previewPost];
+  postsByPageId['_no_page_'] = [post];
   return {
     postsByPageId,
   };

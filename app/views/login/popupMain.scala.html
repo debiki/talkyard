@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, serverAddress: String)(content: Html)
+@(tpi: debiki.SiteTpi, serverAddress: String, isInLoginPopup: Boolean = false)(content: Html)
 
 <!DOCTYPE html>
 <html class="DW dw-pri">
@@ -24,7 +24,7 @@
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="@tpi.mediaUrl("fontello/css/fontello-embedded.css")"/>@* [NGXMEDIA] *@
   <link rel="stylesheet" href="@tpi.assetUrl(s"styles-bundle.${tpi.minMaxCss}")"/>
-  @tpi.debikiScriptsInHead(isInLoginWindow = true)
+  @tpi.debikiScriptsInHead(isInLoginWindow = true, isInLoginPopup = isInLoginPopup)
   <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
   <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
   <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>

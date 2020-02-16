@@ -114,6 +114,7 @@ declare namespace ed {
 declare namespace debiki2 {
 
   function getMainWin(): MainWin;
+  function getMainWinStore(): Store;
   function win_canUseCookies(win: MainWin): boolean;
 
   function getNowMs(): WhenMs;
@@ -250,6 +251,13 @@ declare namespace debiki2 {
   function removeFromLocalStorage(key);
   function removeFromSessionStorage(key);
 
+  namespace BrowserStorage {
+    function get(key: any): any;
+    function set(key: any, value: any): any;
+    function remove(key: any): any;
+    function forEachDraft(pageId: PageId, fn: (draft: Draft, keyStr: string) => void);
+  }
+
   function event_isCtrlEnter(event): boolean;
   function event_isEscape(event): boolean;
   function page_isChat(pageRole: PageRole): boolean;
@@ -297,6 +305,7 @@ declare namespace debiki2 {
   function store_findTheDefaultCategory(store: Store): Category | undefined;
   function store_ancestorsCategoriesCurrLast(store: Store, categoryId: CategoryId): Category[];
   function store_findCatsWhereIMayCreateTopics(store: Store): Category[];
+  function store_getPostId(store: Store, pageId: PageId, postNr: PostNr): PostId | U;
 
   function page_makePostPatch(page: Page, post: Post): StorePatch;
   function store_makeDraftPostPatch(store: Store, page: Page, draft: Draft): StorePatch;

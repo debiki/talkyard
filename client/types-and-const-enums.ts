@@ -15,6 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// It's so annoying to type e.g.:
+//
+//   const anyUser: User | undefined = Server.getUser(...);
+//
+// Look at this instead:
+//
+//   const anyUser: User | U = Server.getUser(...);
+//
+type U = undefined;
+
 type PageId = string;
 type PostId = number;
 type PostNr = number;
@@ -38,8 +48,6 @@ type ApiSecretNr = number;
 type WhenMs = number;
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
-
-type U = undefined;
 
 
 const enum ReviewDecision {

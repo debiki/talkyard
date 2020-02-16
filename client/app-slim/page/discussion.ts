@@ -1076,20 +1076,17 @@ const Thread = createComponent({
 
   askDeleteDraft: function(event) {
     event.preventDefault();
-    const post: Post = this.props.post;
-    const draftNr = post.isForDraftNr as DraftNr;
-    // @ifdef DEBUG
-    dieIf(!_.isNumber(draftNr), 'TyE502WKTL73');
-    // @endif
-   morebundle.openDefaultStupidDialog({
-     body: t.d.DelDraft + '?',
-     primaryButtonTitle: t.upp.YesDelete,
-     secondaryButonTitle: t.NoCancel,
-     small: true,
-     onPrimaryClick: () => {
-       ReactActions.deleteDraft(draftNr);
-     },
-   });
+    const store: Store = this.props.store;
+    const draftPost: Post = this.props.post;
+    morebundle.openDefaultStupidDialog({
+      body: t.d.DelDraft + '?',
+      primaryButtonTitle: t.upp.YesDelete,
+      secondaryButonTitle: t.NoCancel,
+      small: true,
+      onPrimaryClick: () => {
+        ReactActions.deleteDraftPost(store.currentPageId, draftPost);
+      },
+    });
   },
 
   render: function() {

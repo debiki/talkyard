@@ -419,25 +419,27 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
  * incorrectly thinks we're doing some kind of cross site tracking.
  */
 function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // [NOCOOKIES]
-  const win = getMainWin();
+  const mainWin = getMainWin();
 
   // @ifdef DEBUG
-  console.log("Window name: " + window.name);
+  console.log(`This window name: ${window.name} [TyM306WKTH2]`);
+  console.log(`This is the main window: ${window === mainWin}`);
   try {
-    console.log("Window.opener.typs: " + (window.opener && JSON.stringify(window.opener.typs)));
+    console.log("Window.opener.typs: " +
+        (window.opener && JSON.stringify(window.opener.typs)));
   }
   catch (ignored) {
     console.log("Window.opener.typs: Threw exception. Was opened from a cross-origin window?");
   }
-  console.log("Main win name: " + win.name);
-  console.log("Main win typs: " + JSON.stringify(win.typs));
+  console.log(`Main win name: ${mainWin.name}`);
+  console.log(`Main win typs: ${JSON.stringify(mainWin.typs)}`);
   // @endif
 
-  const typs: PageSession = win.typs;
+  const typs: PageSession = mainWin.typs;
   const currentPageXsrfToken = typs.xsrfTokenIfNoCookies;
   const currentPageSid = typs.weakSessionId;
 
-  if (!win_canUseCookies(win)) {
+  if (!win_canUseCookies(mainWin)) {
     headers[AvoidCookiesHeaderName] = 'Avoid';
     // Not sure if can have been set to xsrf cookie value already? So skip if set.
     if (!headers[XsrfTokenHeaderName]) {
@@ -1040,9 +1042,14 @@ export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNot
 
 export function loadMyself(callback: (user: any) => void) {
   // @ifdef DEBUG
-  const typs: PageSession = getMainWin().typs;
+  const mainWin = getMainWin();
+  const typs: PageSession = mainWin.typs;
   if (!typs.canUseCookies && !typs.weakSessionId) {
-    console.error(`Cannot load myself: No cookies, no session: ${typs} [TyE603FKNFD5]`);
+    console.error(`Cannot load myself: No cookies, no typs.weakSessionId. ` +
+        `This frame name: ${window.name}, ` +
+        `main frame name: ${mainWin.name}, ` +
+        `this is main frame: ${window === mainWin}, ` +
+        `typs: ${JSON.stringify(typs)} [TyE603FKNFD5]`);
     debugger;
   }
   // @endif
@@ -1216,7 +1223,15 @@ export function listUsernames(prefix: string, pageId: PageId, success: (username
 //
 export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: WritingWhat,
       categoryId: number, pageRole: PageRole,
-      success: (guidelinesSafeHtml: string, draft?: Draft) => void) {
+      success: (guidelinesSafeHtml: string | U, draft?: Draft) => void) {
+
+  // For now, we don't save drafts for not-yet-lazy-created pages.
+  // (Instead, such drafts currently stored in the browser only.)
+  // And such pages tend to have no guidelines.
+  if (pageRole === PageRole.EmbeddedComments && !draftLocator?.pageId) {
+    success(undefined);
+    return;
+  }
 
   const loc = draftLocator;
   const draftTypeParam = '&draftType=' + loc.draftType;

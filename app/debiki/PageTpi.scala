@@ -145,12 +145,14 @@ class SiteTpi protected (
   def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
 
   CLEAN_UP // isAdminApp not needed? already has isAdminArea.
-  def debikiScriptsInHead(isInLoginWindow: Boolean = false, isAdminApp: Boolean = false) = xml.Unparsed(
+  def debikiScriptsInHead(isInLoginWindow: Boolean = false, isInLoginPopup: Boolean = false,
+        isAdminApp: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
       isInLoginWindow = isInLoginWindow,
+      isInLoginPopup = isInLoginPopup,
       isAdminApp = isAdminApp,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)

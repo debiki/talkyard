@@ -26,7 +26,7 @@ import ed.server.auth.Authz
 import ed.server.http._
 import javax.inject.Inject
 import play.api._
-import play.api.libs.json.{JsObject, JsString, JsValue}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc._
 
 
@@ -57,7 +57,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
-    val (pageId, anyNewPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+    val (pageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
       anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
       anyEmbeddingUrl = anyEmbeddingUrl, request)
 
@@ -88,11 +88,12 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, deleteDraftNr, request.who, request.spamRelatedStuff)
 
-    var patchWithNewPageId: JsObject = result.storePatchJson
-    if (anyNewPagePath.isDefined) {
-      patchWithNewPageId = patchWithNewPageId + ("newlyCreatedPageId" -> JsString(pageId))
+    var responseJson: JsObject = result.storePatchJson
+    if (newEmbPage.isDefined) {
+      responseJson = responseJson ++
+          EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage)
     }
-    OkSafeJson(patchWithNewPageId)
+    OkSafeJson(responseJson)
   }
 
 
@@ -135,15 +136,36 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 }
 
 
+case class NewEmbPage(path: PagePathWithId, origPostId: PostId)
+
 
 object EmbeddedCommentsPageCreator {
 
 
+  /** The browser wants to know if a new page got created.
+    */
+  def makeAnyNewPageJson(anyNewEmbPage: Option[NewEmbPage]): JsObject = {
+    anyNewEmbPage match {
+      case None => JsObject(Nil)
+      case Some(newEmbPage) =>
+        Json.obj(
+          "newlyCreatedPageId" -> newEmbPage.path.pageId,
+          "newlyCreatedOrigPostId" -> newEmbPage.origPostId)
+    }
+  }
+
+
+  /** Returns the id of an already existing page, or if missing, creates
+    * a new — and returns its id, it's path, and its Orig Post id.
+    *
+    * (The OP id is hereafter needed, if continuing posting replies to
+    * the orig post [NEEDEMBOP].)
+    */
   def getOrCreatePageId(  // [4AMJX7]
         anyPageId: Option[PageId],
         anyDiscussionId: Option[String],
         anyEmbeddingUrl: Option[String],
-        request: DebikiRequest[_]): (PageId, Option[PagePathWithId]) = {
+        request: DebikiRequest[_]): (PageId, Option[NewEmbPage]) = {
     anyPageId foreach { pageId =>
       if (pageId != NoPageId)
         return (pageId, None)
@@ -249,7 +271,9 @@ object EmbeddedCommentsPageCreator {
     // It hasn't yet been created, and is needed, so we can associate the thing
     // we're currently saving (e.g. a reply) with a page.
     val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyDiscussionId)
-    (newPagePath.pageId, Some(newPagePath))
+    val origPost = request.dao.loadPost(newPagePath.pageId, BodyNr).getOrDie(
+      "TyE305WKTSR", s"s${request.siteId}: Couldn't load orig post of new page $newPagePath")
+    (newPagePath.pageId, Some(NewEmbPage(newPagePath, origPost.id)))
   }
 
 

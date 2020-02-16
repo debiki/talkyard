@@ -188,6 +188,13 @@ interface DraftLocator {
 }
 
 
+interface DraftDeletor {
+  pageId?: PageId,
+  forWhat: DraftLocator;
+  draftNr?: DraftNr;
+}
+
+
 interface Draft {
   byUserId: UserId;
   draftNr: DraftNr;
@@ -1407,13 +1414,14 @@ interface StorePatch extends EditorPatch {
   me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
-  deleteDraft?: Draft;
-  deleteDraftNr?: DraftNr;
+  deleteDraft?: DraftDeletor;
 
-  // If doing something resulted in a new page being created, and we should continue on that page.
-  // E.g. if posting the first reply, in an embedded comments discussion (then a page for the
-  // discussion gets created, lazily).
+  // For lazy-created pages: I we post the first reply to a blog post (or the
+  // first Like vote, or configure page notf prefs) — then, a Talkyard page
+  // gets lazy-created, and we need its id, to continue doing things on that
+  // now *real* page.
   newlyCreatedPageId?: PageId;
+  newlyCreatedOrigPostId?: PostId;
 }
 
 interface PartialEditorState {
@@ -1615,7 +1623,8 @@ interface Rect {
 // ----- Server requests and responses
 
 
-type OnDoneOrBeacon = (() => void) | UseBeacon;
+type OnDone = (() => void);
+type OnDoneOrBeacon = OnDone | UseBeacon;
 type ErrorStatusHandler = (errorStatusCode?: number) => void;
 
 
