@@ -100,7 +100,40 @@ var editorPlaceholder;
 // and do things there. Then instead you need to login directly to the Talkyard
 // server, rather than on the embedding site via the iframe — so an XSS
 // vulnerability on the embedding site (the blog) cannot give admin access.
-const theStorage = localStorage;
+
+let someStorage: Storage | undefined;
+let tempObjStorage;
+
+// Just *looking* at localStorage throws an exception, if cookies blocked,
+// so need try-catch.
+try {
+  someStorage = localStorage;
+}
+catch {
+}
+if (!someStorage) {
+  try {
+    someStorage = sessionStorage;
+  }
+  catch {
+    tempObjStorage = {};
+  }
+}
+
+// Dupl code [OBJSTRG].
+const theStorage: Storage = someStorage || {
+  getItem: function(key: string): string | null {
+    return tempObjStorage[key];
+  },
+  setItem: function(key: string, value: string) {
+    tempObjStorage[key] = value;
+  },
+  removeItem: function(key: string) {
+    delete tempObjStorage[key];
+  },
+} as Storage;
+
+
 
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
