@@ -1159,15 +1159,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     BUG // lazy creating the page here reportedly results in a
         // "You have replies to posts of yours" email, although there aren't yet any replies.
         // https://www.talkyard.io/-227#post-8
-    val (anyPageId: Option[PageId], isNewEmbCmtsPage: Boolean) =
+    val (anyPageId: Option[PageId], newEmbPage: Option[NewEmbPage]) =
       if (anyPageIdMaybeEmptyPage is EmptyPageId) {
-        val (newPageId: PageId, newPagePath) = EmbeddedCommentsPageCreator.getOrCreatePageId(
+        val (newPageId: PageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
           anyPageId = Some(EmptyPageId), anyDiscussionId = anyDiscussionId,
           anyEmbeddingUrl = anyEmbeddingUrl, request)
-        (Some(newPageId), true)
+        (Some(newPageId), newEmbPage)
       }
       else {
-        (anyPageIdMaybeEmptyPage, false)
+        (anyPageIdMaybeEmptyPage, None)
       }
 
     val newPref = Try(
@@ -1184,8 +1184,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao.deletePageNotfPref(newPref, request.who)
     }
 
-    OkSafeJson(Json.obj(
-      "newlyCreatedPageId" -> (if (isNewEmbCmtsPage) JsString(anyPageId.get) else JsNull)))
+    OkSafeJson(
+      EmbeddedCommentsPageCreator.makeAnyNewPageJson(newEmbPage))
   }
 
 

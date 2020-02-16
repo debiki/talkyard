@@ -1119,17 +1119,86 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 }
 
 
-export function deleteDraft(draftNr: DraftNr, onDone?: OnDoneOrBeacon,
-      onError?: ErrorStatusHandler) {
-  // SHOULD  also delete from session storage (emb comments)
-  if (onDone === UseBeacon) {
-    Server.deleteDrafts([draftNr], UseBeacon);
+export function deleteDraftPost(pageId: PageId, draftPost: Post) {
+  const store: Store = ReactStore.allData();
+
+  const draftLocator: DraftLocator = {
+    draftType: postType_toDraftType(draftPost.postType),
+    pageId: pageId,
+    postNr: draftPost.parentNr,
+    postId: store_getPostId(store, pageId, draftPost.parentNr),
+  };
+  const draftNr = _.isNumber(draftPost.isForDraftNr) ? draftPost.isForDraftNr : undefined;
+  const draftDeletor: DraftDeletor = {
+    pageId,
+    draftNr,
+    forWhat: draftLocator,
+  };
+  deleteDraftImpl(draftPost, draftDeletor);
+}
+
+
+export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boolean,
+      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
+
+  const draftDeletor: DraftDeletor = {
+    pageId,
+    draftNr: draft.draftNr,
+    forWhat: draft.forWhat,
   }
-  else {
-    Server.deleteDrafts([draftNr], function() {
-      // SHOULD  if in editor iframe, send message to comments iframe
-      patchTheStore({ deleteDraftNr: draftNr }, onDone);
-    }, onError);
+  let draftPost;
+  if (deleteDraftPost) {
+    const store: Store = getMainWinStore();
+    draftPost = store_makePostForDraft(store, draft);
+  }
+  deleteDraftImpl(draftPost, draftDeletor, onDoneOrBeacon, onError);
+}
+
+
+function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
+      onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
+
+  // ----- Delete from browser storage
+
+  // Not so easy to do an exact key lookup — not sure what fields
+  // were included in the storage key, when saving the draft. So look at all
+  // browser storage drafts.
+  BrowserStorage.forEachDraft(draftDeletor.pageId, (draft: Draft, keyStr: string) => {
+    if (draft.forWhat.postNr === draftDeletor.forWhat.postNr &&
+        draft.forWhat.draftType === draftDeletor.forWhat.draftType) {
+      BrowserStorage.remove(keyStr);
+    }
+  });
+
+  // ----- A patch to delete from the store
+
+  const storePatch: StorePatch =
+      draftPost ? store_makeDeletePostPatch(draftPost) : {};
+
+  storePatch.deleteDraft = draftDeletor;
+
+  // ----- Delete from server
+
+  const onDone: OnDone | U =
+      onDoneOrBeacon === UseBeacon ? undefined : onDoneOrBeacon;
+
+  // If this draft has been saved server side, it'll have a draft nr, assigned
+  // by the server. Then we need to delete the draft server side too.
+  const draftNr: DraftNr | U = draftDeletor.draftNr;
+  if (!draftNr) {
+    // This draft existed locally only, in the browse's storage.
+    patchTheStoreAllIframes(storePatch, onDone);
+  }
+  else if (_.isNumber(draftNr)) {
+    if (onDoneOrBeacon === UseBeacon) {
+      Server.deleteDrafts([draftNr], UseBeacon);
+      // Window closing; need not patch the store or call onDone.
+    }
+    else {
+      Server.deleteDrafts([draftNr], function() {
+        patchTheStoreAllIframes(storePatch, onDone);
+      }, onError);
+    }
   }
 }
 
@@ -1177,6 +1246,12 @@ export function handleReplyResult(patch: StorePatch, draftToDelete: Draft | unde
   }
 
   patchTheStore({ ...patch, deleteDraft: draftToDelete }, onDone);
+}
+
+
+function patchTheStoreAllIframes(storePatch: StorePatch, onDone?: () => void) {
+  patchTheStore(storePatch, onDone);
+  sendToOtherIframe(['patchTheStore', storePatch]);
 }
 
 

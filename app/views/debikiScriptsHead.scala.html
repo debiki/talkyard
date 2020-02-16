@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, siteId: Int, isInLoginWindow: Boolean, isAdminApp: Boolean,
-  reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
+@(tpi: debiki.SiteTpi, siteId: Int, isInLoginWindow: Boolean, isInLoginPopup: Boolean,
+  isAdminApp: Boolean, reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import tpi.globals
 @import com.debiki.core.PageType.InfoPageMaxId
@@ -37,6 +37,10 @@
 
 @isInLoginWindowBoolStr = @{
   if (isInLoginWindow) "true" else "false"
+}
+
+@isInLoginPopupBoolStr = @{
+  if (isInLoginPopup) "true" else "false"
 }
 
 @testNowMs = @{
@@ -222,7 +226,7 @@ var eds = {
   cdnOrServerOrigin: '@tpi.cdnOrServerOrigin',@* for admin page embedded comments code *@
   isIos: _ios,
   isInLoginWindow: @isInLoginWindowBoolStr,
-  isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,@* broken ?? checks in *iframe* ?? *@
+  isInLoginPopup: @isInLoginPopupBoolStr,
   isInIframe: _isInIframe,
   isInEmbeddedCommentsIframe: _isInEmbCmtsIframe,
   isInAdminArea: @{ if (isAdminApp) "true" else "false" },

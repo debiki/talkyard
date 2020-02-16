@@ -25,7 +25,7 @@ d.i.createLoginPopup = function(url) {
   var width = 550;
   var height = 630;
   var coordinates = popupManager.getCenteredCoords(width, height);
-  var windowName = 'LoginPopup';
+  var windowName = 'TyLoginPopup';
 
   // For now. Fixes # in return-to-url.
   var url = url.replace(/#/, '__dwHash__');

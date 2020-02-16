@@ -699,11 +699,18 @@ function pagesFor(browser) {
     },
 
     waitForNotVisible: function(selector: string, timeoutMillis?: number) {
+      for (let elapsed = 0; elapsed < timeoutMillis || true ; elapsed += PollMs) {
+        if (!browser.isVisible(selector))
+          return;
+        browser.pause(PollMs);
+      }
+      /*
       // API is: browser.waitForVisible(selector[,ms][,reverse])
       logMessage(`browser.waitForVisible('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
       logWarning(`BUG just waits forever [2ABKRP83]`);
       assert(false);
       browser.waitForVisible(selector, timeoutMillis || true, timeoutMillis ? true : undefined);
+      */
     },
 
     waitForEnabled: function(selector: string, timeoutMillis?: number) {
@@ -3241,15 +3248,15 @@ function pagesFor(browser) {
         api.waitUntilModalGone();
       },
 
-      cancelNoHelp: function() {
-        api.waitAndClick('#debiki-editor-controller .e_EdCancelB');
-        // doesn't work :-(  api.waitForNotVisible('#debiki-editor-controller');
-        // just waits forever
+      cancelNoHelp: function() {  // REMOVE just use cancel() now, help dialog removed
+        const buttonSelector = '#debiki-editor-controller .e_EdCancelB';
+        api.waitAndClick(buttonSelector);
+        // waitForGone won't work — the editor just gets display:none but is still there.
+        api.waitForNotVisible(buttonSelector);
       },
 
       cancel: function() {
         api.editor.cancelNoHelp();
-        api.helpDialog.waitForThenClose();
       },
 
       closeIfOpen: function() {
@@ -3285,6 +3292,10 @@ function pagesFor(browser) {
 
       waitForDraftSaved: function() {
         api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      },
+
+      waitForDraftSavedInBrowser: function() {
+        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.SavedInBrowser);
       },
 
       waitForDraftDeleted: function() {

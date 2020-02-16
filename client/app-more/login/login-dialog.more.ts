@@ -437,7 +437,8 @@ const OpenAuthButton = createClassAndFactory({
       // (Use a cookie not an URL param because the cookie will be present later whe we're
       // being redirected back to the server from the OpenAuth provider.)
       getSetCookie('dwCoIsInLoginWindow', 'true');
-      // Maybe we're in a blog comments iframe? Then, cookies might not work, so tell the server
+      // Maybe we're in a blog comments login popup? Then, cookies might not work,
+      // in the blog comments iframes — then, tell the server
       // to include the session id in the response body, so we can access it browser side.
       // Also see Server.ts. [NOCOOKIES]
       const mainWin = getMainWin();

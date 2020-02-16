@@ -34,7 +34,7 @@ export function stableStringify(obj: any): string {
 }
 
 
-function stableStringifySkipNulls(obj: any, skipNulls: boolean): string {
+export function stableStringifySkipNulls(obj: any, skipNulls: boolean): string {
   // @ifdef DEBUG
   dieIf(!obj, "TyE7AKBR02")
   // @endif
@@ -59,7 +59,7 @@ function stableStringifySkipNulls(obj: any, skipNulls: boolean): string {
 }
 
 
-export function putInLocalStorage(key, value) {
+export function putInLocalStorage(key, value) {   // CLEAN_UP REMOVE Use BrowserStorage instead
   key = stableStringifySkipNulls(key, true);
   // In Safari, private browsing mode, there's no local storage, so setItem() throws an error.
   try {

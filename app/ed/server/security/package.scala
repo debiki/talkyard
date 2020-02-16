@@ -247,6 +247,8 @@ class EdSecurity(globals: Globals) {
             val (theProblem, errorCode)  =
               if (xsrfStatus == XsrfExpired) ("xsrf token expired", "TyEXSRFEXP1")
               else if (xsrfStatus == XsrfBadEmpty) ("xsrf token empty", "TyEXSRFEMPTY1")
+              else if (xsrfToken == "null") ("xsrf token is 'null'", "TyEXSRFNULL")
+              else if (xsrfToken == "undefined") ("xsrf token is 'undefined'", "TyEXSRFUNDF")
               else ("bad xsrf token", "TyEXSRFBAD1")
 
             throwForbidden(

@@ -381,7 +381,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
       this.setState(newState);
       Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment,
           page.categoryId, page.pageRole,
-          (guidelinesSafeHtml, draft?: Draft) => {
+          (guidelinesSafeHtml: string | U, draft?: Draft) => {
         if (this.isGone) return;
         const newState: Partial<ChatMessageEditorState> = {
           draft,

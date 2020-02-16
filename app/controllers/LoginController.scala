@@ -100,7 +100,8 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
       SiteTpi(request),
       mode = mode,
       serverAddress = s"//${request.host}",  // try to remove
-      returnToUrl = returnToUrl)) as HTML
+      returnToUrl = returnToUrl,
+      isInLoginPopup = true)) as HTML
   }
 
 

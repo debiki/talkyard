@@ -41,6 +41,10 @@ const htmlElem = document.getElementsByTagName('html')[0];
 declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't work.
 export const ReactStore = new EventEmitter3();
 
+export function getMainWinStore(): Store {
+  const mainWin = getMainWin();
+  return mainWin.debiki2.ReactStore.allData();
+}
 
 type StoreStateSetter = (store: Store) => void;
 const useStoreStateSetters: StoreStateSetter[] = [];
@@ -1336,11 +1340,7 @@ function patchTheStore(storePatch: StorePatch) {
     store.me = <Myself> _.assign(store.me || {}, storePatch.me);
   }
 
-  const draftNrToDelete = storePatch.deleteDraft?.draftNr || storePatch.deleteDraftNr;
-  if (draftNrToDelete) {
-    // @ifdef DEBUG
-    dieIf(storePatch.deleteDraft && storePatch.deleteDraftNr, 'TyE4026RKRBHS5');
-    // @endif
+  if (storePatch.deleteDraft) {
     _.each(store.me.myDataByPageId, (myData: MyPageData) => {
       myData.myDrafts = _.filter(myData.myDrafts, (draft: Draft) => {
         // 1) Compare by locator (i.e. forWhat), because:
@@ -1350,9 +1350,25 @@ function patchTheStore(storePatch: StorePatch) {
         // 2) Compare by draftNr too, because:
         // Maybe in some cases, the locators are slightly different somehow,
         // although it's the same draft — e.g. if an embedding page's url got changed?
-        const sameLocator = _.isEqual(draft.forWhat, storePatch.deleteDraft?.forWhat);
-        const sameNr = !!draft.draftNr && draft.draftNr === draftNrToDelete;
-        return !sameLocator && !sameNr;
+        const toDelete: DraftLocator | U = storePatch.deleteDraft.forWhat;
+
+        const sameLocator = !toDelete ? false :
+            draft.forWhat.draftType === toDelete.draftType && (
+              ( // Same page and post nr?
+                (draft.forWhat.pageId === toDelete.pageId
+                    || draft.forWhat.embeddingUrl === toDelete.embeddingUrl)
+                && (
+                  draft.forWhat.postNr === toDelete.postNr))
+              || (
+                // A message to the same person? New topic, same category? Etc.
+                // Then this should work:
+                _.isEqual(draft.forWhat, toDelete)));
+
+        const sameDraftNr =
+            !!draft.draftNr && draft.draftNr === storePatch.deleteDraft.draftNr;
+
+        const shallDelete = sameLocator || sameDraftNr;
+        return shallDelete;
       });
     });
   }
@@ -1390,26 +1406,21 @@ function patchTheStore(storePatch: StorePatch) {
     dieIf(store.currentPageId !== currentPage.pageId, 'EdE7GBW2');
     currentPage.pageId = storePatch.newlyCreatedPageId;
     store.currentPageId  = storePatch.newlyCreatedPageId;
+
+    // This'll make the page indexed by both EmptyPageId and newlyCreatedPageId:
+    // (Could remov the NoPageId key? But might cause some bug?)
+    store.pagesById[currentPage.pageId] = currentPage;
+
+    // If posting (an additional) reply to the orig post, we hereafter
+    // need its id. [NEEDEMBOP]
+    const origPost = currentPage.postsByNr[BodyNr];
+    origPost.uniqueId = storePatch.newlyCreatedOrigPostId;
+
     // Later: Add this new page to the watchbar? Currently not needed, because pages created
     // lazily only for embedded comments, and then there's no watchbar.
   }
 
-  // Deleted draft posts?
-  if (currentPage && draftNrToDelete) {
-    let draftPost: Post;
-    _.each(currentPage.postsByNr, function(post: Post) {
-      if (post.isForDraftNr === draftNrToDelete) {
-        draftPost = post;
-      }
-    });
-    if (draftPost) {
-      page_deletePostInPlace(currentPage, draftPost);
-      // Need to redraw arrows, maybe change indentation and more.
-      store.cannotQuickUpdate = true;
-    }
-  }
-
-  // New or moved posts?
+  // New or moved/removed posts?
   _.each(storePatch.postsByPageId, (patchedPosts: Post[], patchedPageId: PageId) => {
     // Highligt pages with new posts, in the watchbar.
     if (patchedPageId !== store.currentPageId) {
@@ -1763,28 +1774,14 @@ function addLocalStorageDataTo(me: Myself) {
   // COULD do this not only for embeded comments, but also for a forum
   // — if compose-before-login enabled. [LDDFTS]
   //
-  // Any drafts in session storage? Wrap in try-catch in case browser privacy
-  // settings forbids using sessionStorage.
+  // Any drafts in the browser's storage?
   if (!eds.isInEmbeddedEditor) {
-    try {
-      Object.keys(sessionStorage).forEach(keyStr => {
-        if (keyStr.indexOf('draftType') >= 0) {
-          const locator: DraftLocator = JSON.parse(keyStr);
-          if (locator.embeddingUrl === eds.embeddingUrl ||
-              locator.pageId === store.currentPageId) {
-            const draftStr = sessionStorage.getItem(keyStr);
-            const draft: Draft = JSON.parse(draftStr);
-            me.myCurrentPageData.myDrafts.push(draft);
-          }
-        }
-      });
-    }
-    catch (ex) {
-      // @ifdef DEBUG
-      console.debug(`Cannot access sessionStorage, or bad draft?`, ex)
-      // @endif
-      void 0; // [macro-bug], messes up file if 'endif' just before '}'
-    }
+    BrowserStorage.forEachDraft(store.currentPageId, (draft: Draft) => {
+      // BUG: Skip drafts that got loaded from the server already, so browser storage
+      // drafts won't overwrite them (until the editor gets opened and the real
+      // draft text gets loaded from the server).
+      me.myCurrentPageData.myDrafts.push(draft);
+    });
   }
 
   if (!store.currentPageId)

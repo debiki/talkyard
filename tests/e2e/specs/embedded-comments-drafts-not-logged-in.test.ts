@@ -74,12 +74,18 @@ describe("emb cmts drafts when not logged in  TyT2ZBKPW048", () => {
   it("... writes a comment", () => {
     mariasBrowser.switchToEmbeddedEditorIrame();
     mariasBrowser.editor.editText(mariasCommentOneOrig);
+
+    // Chrome 80, Feb 2020, stopped on-unload saving drafts, cannot
+    // figure out why: it also won't stop on breakpoints. FF still works fine.
+    if (settings.browserName === 'chrome') {  // [NOBEACON] [E2EBUG]
+      mariasBrowser.editor.waitForDraftSavedInBrowser();
+    }
   });
 
 
   // ----- Beacon save, first reply
 
-  it("She reloads the page, without posting the comment — this beacon-saves the text", () => {
+  it("She reloads the page, without posting the comment — this saves the text in the browser", () => {
     mariasBrowser.refresh();
   });
 
@@ -177,6 +183,9 @@ describe("emb cmts drafts when not logged in  TyT2ZBKPW048", () => {
     mariasBrowser.topic.clickReplyToPostNr(c.FirstReplyNr);
     mariasBrowser.switchToEmbeddedEditorIrame();
     mariasBrowser.editor.editText(mariasCommentTwo);
+    if (settings.browserName === 'chrome') {  // [NOBEACON] [E2EBUG]
+      mariasBrowser.editor.waitForDraftSavedInBrowser();
+    }
   });
 
   it("Refreshs the page — this beacon saves", () => {

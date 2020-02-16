@@ -972,7 +972,7 @@ interface TalkyardTranslations {
     PleaseFinishMsg: string;
     PleaseSaveEdits: string;
     PleaseSaveOrCancel: string;
-    CanContinueEditing: string;
+    CanContinueEditing: string;  // CLEAN_UP REMOVE DELETE not needed, now with drafts
     PleaseDontDeleteAll: string;
     PleaseWriteSth: string;
     PleaseWriteTitle: string;

@@ -179,6 +179,7 @@ export const Editor = createFactory<any, EditorState>({
 
   componentWillUnmount: function() {
     this.isGone = true;
+    console.debug("Editor: componentWillUnmount");
     window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.saveDraftNow();
   },
@@ -472,10 +473,10 @@ export const Editor = createFactory<any, EditorState>({
     //   "Replying to post-1234" text:
     // will run instead — all fine.
     //
+    const mainStore: Store = getMainWinStore();
     let embMainStoreCopy: Partial<Store> | undefined;
     if (eds.isInEmbeddedEditor) {
       try {
-        const mainStore: Store = getMainWin().debiki2.ReactStore.allData();
         embMainStoreCopy = {
           // Clone data from the other iframe, so as not to 1) hold on to it
           // and thereby maybe preventing data in that other frame from being
@@ -504,7 +505,7 @@ export const Editor = createFactory<any, EditorState>({
       embMainStoreCopy,
       anyPostType: postType,
       editorsCategories: store.currentCategories,
-      editorsPageId: store.currentPageId,
+      editorsPageId: store.currentPageId || eds.embeddedPageId,
       replyToPostNrs: postNrs,
       text: this.state.text || makeDefaultReplyText(store, postNrs),
     };
@@ -520,10 +521,10 @@ export const Editor = createFactory<any, EditorState>({
 
     const draftLocator: DraftLocator = {
       draftType,
-      pageId: store.currentPageId,
+      pageId: newState.editorsPageId,
       postNr: postNrs[0], // for now
     };
-    draftLocator.postId = getPostId(store, draftLocator.pageId, draftLocator.postNr);
+    draftLocator.postId = store_getPostId(mainStore, draftLocator.pageId, draftLocator.postNr);
     if (eds.embeddingUrl) {
       draftLocator.embeddingUrl = eds.embeddingUrl;
     }
@@ -715,13 +716,18 @@ export const Editor = createFactory<any, EditorState>({
         pageRole?: PageRole) {
 
     const setDraftAndGuidelines = (anyDraft?, anyGuidelines?) => {
-      const draft = anyDraft || getFromSessionStorage(draftLocator);
+      const draft = anyDraft || BrowserStorage.get(draftLocator);
+      console.debug("Setting draft and guidelines: !!anyDraft: " + !!anyDraft +
+          " !!draft: " + !!draft +
+          " !!anyGuidelines: " + !!anyGuidelines);
       const newState: Partial<EditorState> = {
         draft,
         draftStatus: DraftStatus.NothingHappened,
         text: draft ? draft.text : '',
         title: draft ? draft.title : '',
-        guidelines: anyGuidelines,
+        // For now, skip guidelines, for blog comments — they would break e2e tests,
+        // and maybe are annoying?
+        guidelines: eds.isInIframe ? undefined : anyGuidelines,
       };
       this.setState(newState, () => {
         this.focusInputFields();
@@ -731,43 +737,49 @@ export const Editor = createFactory<any, EditorState>({
     };
 
     const state: EditorState = this.state;
-    if (isEmbeddedNotYetCreatedPage(state)) {
+    if (isEmbeddedNotYetCreatedPage(state)) {   // what if 1) new blank page, 2) save reply 3) edit?
       // Cannot currently load draft & guidelines (below) for a not-yet-created page.
       // Instead, we'll load from the browser. [BLGCMNT1]
       setDraftAndGuidelines();
       return;
     }
 
-    const store: Store = ReactStore.allData();
+    const store: Store = getMainWinStore();
+
+    // For embedded comments iframes, the page might not yet have been created,
+    // and the categoryId might be unknown / undefined.
     const page: Page = store.currentPage;
-    const theCategoryId = draftLocator.categoryId || page.categoryId;
-    const thePageRole = pageRole || page.pageRole;
+    const categoryId: CategoryId | undefined = draftLocator.categoryId || page.categoryId;
+    const pageType: PageRole = pageRole || page.pageRole || (
+      eds.isInEmbeddedEditor ? PageRole.EmbeddedComments : die('TyE305WKD'));
 
     // What's this? why? I should have added a comment. The code seems to say that
     // if *guidelines* have been loaded, then any *draft* has also been loaded.
     const currentGuidelines = state.guidelines;
     if (currentGuidelines &&
-        currentGuidelines.categoryId === theCategoryId &&
-        currentGuidelines.pageRole === thePageRole &&
+        currentGuidelines.categoryId === categoryId &&
+        currentGuidelines.pageRole === pageType &&
         currentGuidelines.writingWhat === writingWhat) {
       this.setState({ draftStatus: DraftStatus.NothingHappened });
       return;
     }
 
-    Server.loadDraftAndGuidelines(draftLocator, writingWhat, theCategoryId, thePageRole,
-        (guidelinesSafeHtml, draft?: Draft) => {
+    console.debug("Loading draft and guidelines...");
+    Server.loadDraftAndGuidelines(draftLocator, writingWhat, categoryId, pageType,
+        (guidelinesSafeHtml: string | U, draft?: Draft) => {
+      console.debug("Done loading draft and guidelines.");
       const state: EditorState = this.state;
       if (this.isGone || !state.visible)
         return;
       let guidelines = undefined;
       if (guidelinesSafeHtml) {
         const guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
-        const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+        const hiddenGuidelinesHashes = BrowserStorage.get('dwHiddenGuidelinesHashes') || {};
         const isHidden = hiddenGuidelinesHashes[guidelinesHash];
         guidelines = {
           writingWhat: writingWhat,
-          categoryId: theCategoryId,
-          pageRole: thePageRole,
+          categoryId: categoryId,
+          pageRole: pageType,
           safeHtml: guidelinesSafeHtml,
           hidden: isHidden,
         };
@@ -788,9 +800,9 @@ export const Editor = createFactory<any, EditorState>({
       showGuidelinesInModal: false,
     });
     const hash = hashStringToNumber(guidelines.safeHtml);
-    const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+    const hiddenGuidelinesHashes = BrowserStorage.get('dwHiddenGuidelinesHashes') || {};
     hiddenGuidelinesHashes[hash] = true;
-    putInLocalStorage('dwHiddenGuidelinesHashes', hiddenGuidelinesHashes);
+    BrowserStorage.set('dwHiddenGuidelinesHashes', hiddenGuidelinesHashes);
   },
 
   showGuidelines: function() {
@@ -798,7 +810,7 @@ export const Editor = createFactory<any, EditorState>({
     const guidelines = state.guidelines;
     guidelines.hidden = false;
     this.setState({ guidelines: guidelines });
-    // Leave hidden on page reload? I.e. don't update localStorage.
+    // Leave hidden on page reload? I.e. don't update the browser storage.
   },
 
   // If we're showing some guidelines, but they're not visible on screen, then show them
@@ -996,10 +1008,6 @@ export const Editor = createFactory<any, EditorState>({
       this.clearAndClose();
     }
     else {
-      // Show a can-continue-editing tips.
-      if (state.draftStatus === DraftStatus.SavedServerSide) {
-        help.openHelpDialogUnlessHidden({ content: t.e.CanContinueEditing, id: '7YK35W1' });
-      }
       this.saveDraftClearAndClose();
     }
   },
@@ -1008,7 +1016,7 @@ export const Editor = createFactory<any, EditorState>({
     const state: EditorState = this.state;
     const anyPostType: PostType | undefined = state.anyPostType;
     const locator: DraftLocator = { draftType: DraftType.Scratch };
-    const store: Store = state.store;
+    const mainStore: Store = eds.isInEmbeddedEditor ? getMainWinStore() : state.store;
     let postType: PostType;
 
     // @ifdef DEBUG
@@ -1028,9 +1036,9 @@ export const Editor = createFactory<any, EditorState>({
       // @endif
       postType = anyPostType || PostType.Normal;
       locator.draftType = postType_toDraftType(postType);
-      locator.pageId = state.editorsPageId;
+      locator.pageId = state.editorsPageId || eds.embeddedPageId;
       locator.postNr = state.replyToPostNrs[0]; // for now just pick the first one
-      locator.postId = getPostId(store, locator.pageId, locator.postNr);
+      locator.postId = store_getPostId(mainStore, locator.pageId, locator.postNr);
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
       if (eds.embeddingUrl) {
         locator.embeddingUrl = eds.embeddingUrl;
@@ -1040,7 +1048,7 @@ export const Editor = createFactory<any, EditorState>({
       locator.draftType = DraftType.Reply;
       locator.pageId = state.editorsPageId;
       locator.postNr = BodyNr;
-      locator.postId = getPostId(store, locator.pageId, locator.postNr);
+      locator.postId = store_getPostId(mainStore, locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
     }
     else if (state.messageToUserIds && state.messageToUserIds.length) {
@@ -1060,7 +1068,7 @@ export const Editor = createFactory<any, EditorState>({
     }
 
     const draft: Draft = {
-      byUserId: store.me.id,
+      byUserId: mainStore.me.id,
       draftNr: NoDraftNr,
       forWhat: locator,
       createdAt: getNowMs(),
@@ -1074,6 +1082,7 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   saveDraftUseBeacon: function() {
+    console.debug("saveDraftUseBeacon");
     this.saveDraftNow(undefined, UseBeacon);
   },
 
@@ -1085,14 +1094,18 @@ export const Editor = createFactory<any, EditorState>({
 
     // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
     // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
-    if (this.isSavingDraft && !useBeacon)
+    if (this.isSavingDraft && !useBeacon) {
+      console.debug("isSavingDraft already.");
       return;
+    }
 
     const oldDraft: Draft | undefined = state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
     const draftStatus: DraftStatus = state.draftStatus;
 
     if (!draftOldOrEmpty || draftStatus <= DraftStatus.NeedNotSave) {
+      console.debug("Need not save draft: !!draftOldOrEmpty: " + !!draftOldOrEmpty +
+          " draftStatus: " + draftStatus);
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor(oldDraft);
       }
@@ -1121,7 +1134,9 @@ export const Editor = createFactory<any, EditorState>({
               DraftStatus.NothingHappened : DraftStatus.Deleting,
         });
         this.isSavingDraft = true;
-        ReactActions.deleteDraft(oldDraft.draftNr, useBeacon || (() => {
+        const deleteDraftPost = false;  // that'd delete any preview
+        ReactActions.deleteDraft(
+            state.editorsPageId, oldDraft, deleteDraftPost, useBeacon || (() => {
           this.isSavingDraft = false;
           console.debug("...Deleted draft.");
 
@@ -1149,17 +1164,17 @@ export const Editor = createFactory<any, EditorState>({
 
     // If this is an embedded comments discussion, and the discussion page hasn't
     // yet been created, there's no page id to use as draft locator key. Then,
-    // save the draft in the session storage only, for now.
+    // save the draft in the browser storage only, for now.
     // UX COULD save server side, with url as key  [BLGCMNT1]
     // — it's the key already, in the sesison cache.
-    const saveInSessionStorage =
+    const saveInBrowser =
         !store.me.isLoggedIn || isEmbeddedNotYetCreatedPage(state);
 
     console.debug(`Saving draft: ${JSON.stringify(draftToSave)}, ` + (
-        saveInSessionStorage ? "temp in browser" : "server side"));
+        saveInBrowser ? "temp in browser" : "server side"));
 
-    if (saveInSessionStorage) {
-      putInSessionStorage(draftToSave.forWhat, draftToSave);
+    if (saveInBrowser) {
+      BrowserStorage.set(draftToSave.forWhat, draftToSave);
       this.setState({
          draft: draftToSave,
          draftStatus: DraftStatus.SavedInBrowser,
@@ -1399,7 +1414,8 @@ export const Editor = createFactory<any, EditorState>({
     const anyDraft: Draft = ps.upToDateDraft || state.draft;
 
     if (!ps.keepDraft && anyDraft) {
-      removeFromSessionStorage(anyDraft.forWhat);
+      const deleteDraftPost = true;
+      ReactActions.deleteDraft(state.editorsPageId, anyDraft, deleteDraftPost);
     }
 
     const params: HideEditorAndPreviewParams = {
@@ -2100,6 +2116,7 @@ function isEmbeddedNotYetCreatedPage(props: { store: Store, messageToUserIds }):
   // profile section, composing a reply or a direct message to someone — then we
   // do save drafts.
   const result =
+      !eds.embeddedPageId &&
       store_isNoPage(props.store) &&
       !props.messageToUserIds.length && // could skip this?
       eds.isInIframe;
@@ -2152,22 +2169,6 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   return !draftStatusText ? null :
        r.span({ className: 's_DfSts e_DfSts-' + props.draftStatus + draftErrorClass }, draftStatusText);
 }
-
-
-function getPostId(store:Store, pageId: PageId, postNr: PostNr): PostId | undefined {
-  // If we're on a blog bost with embedded comments, then, the Talkyard embedded
-  // comments page might not yet have been created.
-  if (!pageId)
-    return undefined;
-
-  // (The page might not be the current page, if the editor is open and we've
-  // temporarily jumped to a different page or user's profile maybe.)
-  const page: Page = store.pagesById[pageId];
-  dieIf(!page, 'TyE603KWUDB4');
-  const post = page.postsByNr[postNr];
-  return post.uniqueId;
-}
-
 
 
 //------------------------------------------------------------------------------

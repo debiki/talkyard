@@ -405,6 +405,19 @@ function onMessage(event) {
   };
   // @endif
 
+  function sendToOtherIframe(what) {
+    if (iframe === editorIframe) {
+      sendToComments(what);
+    }
+    else if (iframe === commentsIframe) {
+      sendToEditor(what);
+    }
+    else {
+      // Is this in the future and there's now an iframe for one
+      // of the sidebars?
+    }
+  }
+
   switch (eventName) {
     case 'iframeInited':
       debugLog("got 'iframeInited' message");
@@ -527,12 +540,7 @@ function onMessage(event) {
       catch (ex) {
         debugLog(`Error setting 'talkyardSession' in  theStorage [TyESETWKSID]`, ex);
       }
-      if (iframe === commentsIframe) {
-        sendToEditor(event.data);
-      }
-      else {
-        sendToComments(event.data);
-      }
+      sendToOtherIframe(event.data);
       break;
     case 'logoutClientSideOnly':
       try {
@@ -541,12 +549,9 @@ function onMessage(event) {
       catch (ex) {
         debugLog(`Error removing 'talkyardSession' from  theStorage [TyERMWKSID]`, ex);
       }
+      sendToOtherIframe(event.data);
       if (iframe === commentsIframe) {
-        sendToEditor(event.data);
         showEditor(false);
-      }
-      else {
-        sendToComments(event.data);
       }
       break;
     // Maybe remove this one, and use only 'showEditsPreview' instead, renamed to
@@ -590,6 +595,9 @@ function onMessage(event) {
     case 'handleEditResult':
       assertIsFromEditorToComments();
       sendToComments(event.data);
+      break;
+    case 'patchTheStore':
+      sendToOtherIframe(event.data);
       break;
   }
 }
