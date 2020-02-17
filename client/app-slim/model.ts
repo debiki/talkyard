@@ -1566,6 +1566,7 @@ interface SASite {
   canonicalHostname: string;
   createdAtMs: number;
   staffUsers: UserInclDetails[];
+  superStaffNotes?: string;
 }
 
 
