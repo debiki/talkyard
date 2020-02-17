@@ -59,7 +59,7 @@ trait SystemTransaction {
   def loadSite(siteId: SiteId): Option[Site] =
     loadSitesWithIds(Seq(siteId)).headOption
 
-  def updateSites(sites: Seq[(SiteId, SiteStatus)])
+  def updateSites(sites: Seq[SuperAdminSitePatch])
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 

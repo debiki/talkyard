@@ -90,6 +90,12 @@ sealed abstract class SiteStatus(val IntValue: Int) {
 }
 
 
+case class SuperAdminSitePatch(
+  siteId: SiteId,
+  newStatus: SiteStatus,
+  newNotes: Option[String])
+
+
 object SiteStatus {
 
   /** No site admin has been created.
@@ -176,7 +182,8 @@ case class Site(  // delete? Use only SiteInclDetails instead?
   name: String,
   createdAt: When,
   creatorIp: String,
-  hostnames: List[Hostname]) {
+  hostnames: List[Hostname],
+  superStaffNotes: Option[String] = None) {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
@@ -204,6 +211,8 @@ case class SiteInclDetails(  // [exp] ok use
   quotaLimitMbs: Option[Int],
   hostnames: immutable.Seq[HostnameInclDetails],
   version: Int,  // >= 1,
+  // Don't incl in json exports — it's for super staff only.
+  superStaffNotes: Option[String] = None,
   // >= 13 because of built-in members: System, Sysbot, Unknown, 10 groups Everyone .. Admins.
   numParticipants: Int = 0,
   numGuests: Int = 0,  // gone? delete

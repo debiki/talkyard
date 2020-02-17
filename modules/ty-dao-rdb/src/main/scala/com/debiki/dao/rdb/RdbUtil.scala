@@ -111,6 +111,7 @@ object RdbUtil {
       creatorEmailAddress = getOptString(rs, "creator_email_address"),
       quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
       version = rs.getInt("version"),
+      superStaffNotes = getOptString(rs, "super_staff_notes"),
       numParticipants = rs.getInt("num_roles"),
       numGuests = rs.getInt("num_guests"),
       numIdentities = rs.getInt("num_identities"),

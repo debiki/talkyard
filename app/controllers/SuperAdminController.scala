@@ -54,15 +54,16 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def updateSites() = SuperAdminPostJsonAction(maxBytes = 10*1000) { request =>
     val jsObjs = request.body.as[Seq[JsObject]]
-    val siteData = jsObjs.map(jsObj => {
+    val patches: Seq[SuperAdminSitePatch] = jsObjs.map(jsObj => {
       val siteId = (jsObj \ "id").as[SiteId]
       val newStatusInt = (jsObj \ "status").as[Int]
+      val newNotes = (jsObj \ "superStaffNotes").asOpt[String]
       val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
         throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
       }
-      (siteId, newStatus)
+      SuperAdminSitePatch(siteId, newStatus, newNotes)
     })
-    globals.systemDao.updateSites(siteData)
+    globals.systemDao.updateSites(patches)
     listSitesImpl()
   }
 
@@ -88,6 +89,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "hostnames" -> JsArray(site.hostnames.map(h => JsString(h.hostname))),
       "canonicalHostname" -> JsStringOrNull(site.canonicalHostname.map(_.hostname)),
       "name" -> site.name,
+      "superStaffNotes" -> JsStringOrNull(site.superStaffNotes),
       "createdAtMs" -> site.createdAt.toUnixMillis,
       "staffUsers" -> JsArray(staff.map(staffUser =>
         JsUserInclDetails(

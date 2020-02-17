@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Kaj Magnus Lindberg
+ * Copyright (c) 2016-2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -66,18 +66,69 @@ const AdminAppComponent = createReactClass(<any> {
 const DashboardPanel = createFactory({
   displayName: 'DashboardPanel',
 
+  getInitialState: function() {
+    return {
+      numRows: 50,
+      filter: '',
+    };
+  },
+
   render: function() {
     const store: Store = this.props.store;
+    const numRows = this.state.numRows;
     const stuff: SuperAdminStuff = store.superadmin;
     if (!stuff)
       return r.p({}, "Loading ...");
 
-    const sites = stuff.sites.map((site: SASite) =>
+    let filteredSites = [];
+
+    const filterText: string = this.state.filter;
+    if (filterText) {
+      _.each(stuff.sites, (site: SASite) => {
+        let show = _.some(site.hostnames, h => h.indexOf(filterText) >= 0);
+        show = show || _.some(site.staffUsers, (m: UserInclDetails) =>
+            m.email?.toLowerCase().indexOf(filterText) >= 0 ||
+            m.username?.toLowerCase().indexOf(filterText) >= 0 ||
+            m.fullName?.toLowerCase().indexOf(filterText) >= 0);
+        if (show) {
+          filteredSites.push(site);
+        }
+      });
+    }
+    else {
+      filteredSites = stuff.sites;
+    }
+
+    const someSites =  _.take(filteredSites, numRows);
+    const sitesToShow = someSites.map((site: SASite) =>
         SiteTableRow({ key: site.id, site: site, superAdminStuff: stuff }));
+
+    const showMoreButton = stuff.sites.length <= numRows ? null :
+        Button({ onClick: () => this.setState({ numRows: numRows + 50 })},
+          "Show more ...");
+
+    const showAllButton = !showMoreButton ? null :
+        Button({ onClick: () => this.setState({ numRows: 999999999 })},
+          "Show all");
+
+    const howMany =
+        r.p({}, `There are ${stuff.sites.length} sites, incl both real and test.`);
+
+    const filter =
+        r.div({ className: 's_SA_Filter' },
+          r.div({}, "Filter hostnames, staff names, emails:"),
+          r.input({
+            value: this.state.filter,
+            onChange: (event) => this.setState({
+              filter: event.target.value.toLowerCase(),
+            }),
+          }));
 
     return (
       r.div({},
         r.h2({}, "All sites"),
+        howMany,
+        filter,
         r.table({ className: 'table' },
           r.thead({},
             r.tr({},
@@ -85,7 +136,12 @@ const DashboardPanel = createFactory({
               r.th({}, "Status"),
               r.th({}, "Address, admins, etc"))),
           r.tbody({},
-            sites))));
+            sitesToShow)),
+        r.hr(),
+        r.div({},
+          howMany,
+          showMoreButton,
+          showAllButton)));
   }
 });
 
@@ -93,9 +149,19 @@ const DashboardPanel = createFactory({
 const SiteTableRow = createComponent({
   displayName: 'SiteTableRow',
 
+  getInitialState: function() {
+    return {};
+  },
+
   changeStatus: function(newStatus: SiteStatus) {
     const site: SASite = _.clone(this.props.site);
     site.status = newStatus;
+    Server.updateSites([site]);
+  },
+
+  saveNotes: function() {
+    const site: SASite = _.clone(this.props.site);
+    site.superStaffNotes = this.state.newNotes;
     Server.updateSites([site]);
   },
 
@@ -132,7 +198,7 @@ const SiteTableRow = createComponent({
     // (Don't show a login button for the superadmin site itself, because already logged in.)
     const loginButton = site.id === eds.siteId
         ? r.span({ className: 'esSA_ThisSite' }, "(this site)")
-        : LinkButton({ className: 'esSA_LoginB',
+        : r.a({ className: 'esSA_LoginB', target: 'blank',
             // Stop using the System user? It should only do things based on Talkyard's source code,
             // never be controlled by a human.  But use which other user, instead?  [SYS0LGI]
               href: Server.makeImpersonateAtOtherSiteUrl(site.id, SystemUserId) },
@@ -143,8 +209,8 @@ const SiteTableRow = createComponent({
     const oldHostnames = _.filter(site.hostnames, h => h != canonHostname);
     const anyOldHostnames = !oldHostnames.length ? null :
         r.div({},
-          r.p({}, "Old hostnames:"),
-          r.ul({},
+          r.div({}, "Old hostnames:"),
+          r.ul({ className: 's_SA_S_Hostnames' },
             oldHostnames.map(h => r.li({ key: h }, h))));
 
     const staffUsers = !site.staffUsers.length ? null :
@@ -155,6 +221,16 @@ const SiteTableRow = createComponent({
               return r.li({ key: staffUser.username },
                 `${admOrMod} @${staffUser.username}, ${staffUser.email}, ${staffUser.fullName}`)
             })));
+
+    const notesClass = !site.superStaffNotes?.length ? ' s_SA_S_Notes-Empty' : '';
+    const notes =
+        r.div({},
+          r.textarea({ className: 's_SA_S_Notes' + notesClass,
+            onChange: (event) =>
+                this.setState({ newNotes: event.target.value }),
+            defaultValue: site.superStaffNotes || '' }),
+          this.state.newNotes === site.superStaffNotes ? null :
+            PrimaryButton({ onClick: this.saveNotes }, "Save"));
 
     return (
       r.tr({},
@@ -173,7 +249,8 @@ const SiteTableRow = createComponent({
             loginButton,
             createdAtStr),
           anyOldHostnames,
-          staffUsers)));
+          staffUsers,
+          notes)));
   }
 });
 

@@ -276,7 +276,8 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     val hostsByTenantId: Map[SiteId, List[HostnameInclDetails]] = loadHosts(siteIds, all)
 
     var sitesQuery = s"""
-      select id, publ_id, status, name, ctime, creator_ip, creator_email_address
+      select id, publ_id, status, name, ctime, creator_ip, creator_email_address,
+          super_staff_notes
       from sites3
       """
     var sitesValues: List[AnyRef] = Nil
@@ -296,7 +297,8 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
           name = rs.getString("NAME"),
           createdAt = getWhen(rs, "ctime"),
           creatorIp = rs.getString("CREATOR_IP"),
-          hostnames = hosts.map(_.noDetails))
+          hostnames = hosts.map(_.noDetails),
+          superStaffNotes = getOptString(rs, "super_staff_notes"))
       }
     })
     tenants
@@ -312,13 +314,18 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
-  def updateSites(sites: Seq[(SiteId, SiteStatus)]) {
+  def updateSites(sites: Seq[SuperAdminSitePatch]) {
     val statement = s"""
-       update sites3 set status = ? where id = ?
+       update sites3 set status = ?, super_staff_notes = ? where id = ?
        """
-    for ((siteId, newStatus) <- sites) {
-      val num = runUpdate(statement, List(newStatus.toInt.asAnyRef, siteId.asAnyRef))
-      dieIf(num != 1, "EsE24KF90", s"num = $num when changing site status, site id: $siteId")
+    for (patch <- sites) {
+      val siteId = patch.siteId
+      val values = List(
+        patch.newStatus.toInt.asAnyRef,
+        patch.newNotes.orNullVarchar,
+        siteId.asAnyRef)
+      val num = runUpdate(statement, values)
+      dieIf(num != 1, "EsE24KF90", s"s$siteId: num = $num when changing site status")
     }
   }
 
