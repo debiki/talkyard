@@ -577,7 +577,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     // most likely be rendered by a GET request handling thread any time soon, when
     // they're asked for, for the first time. See debiki.dao.RenderedPageHtmlDao [5KWC58].
     val pagesNotCached = mutable.Set[PageIdToRerender]()
-    val neverRenderedQuery = s"""
+    val neverRenderedQuery = s""" -- Q487189653, SLOW_QUERY: 4 ms @ Ty.io, runs often!
       select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
       from pages3 p left join page_html3 h
           on p.site_id = h.site_id and p.page_id = h.page_id
@@ -606,7 +606,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     // a message to the RenderContentService, if the page gets accessed. [4KGJW2]
     val pagesStale = mutable.Set[PageIdToRerender]()
     if (pagesNotCached.size < limit) {
-      val outOfDateQuery = s"""
+      val outOfDateQuery = s""" -- Q69284235, SLOW_QUERY: 9 ms @ Ty.io, runs often!
         select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
         from pages3 p inner join page_html3 h
             on p.site_id = h.site_id and p.page_id = h.page_id and p.version > h.page_version
