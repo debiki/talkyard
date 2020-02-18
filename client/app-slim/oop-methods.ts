@@ -491,6 +491,24 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 // Store
 //----------------------------------
 
+export function store_mainSiteSection(store: Store): SiteSection {
+  // Currently there's always just one sub site, namely the forum.
+  // Edit: Actually, there're some old sites, with many sub sites — they
+  // got created, before the sub site feature got disabled. In such a case,
+  // use the sub site with the lowest root category id, because that one was
+  // created by the server and should be the real one / the one actually in use.
+  const siteSections: SiteSection[] = store.siteSections;
+  let mainSiteSection: SiteSection;
+  _.each(siteSections, ss => {
+    if (!mainSiteSection || mainSiteSection.rootCategoryId > ss.rootCategoryId) {
+      mainSiteSection = ss;
+    }
+  });
+  return mainSiteSection;
+}
+
+
+
 export function store_isNoPage(store: Store): boolean {
   return !store.currentPageId || store.currentPageId === EmptyPageId;
 }

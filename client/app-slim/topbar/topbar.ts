@@ -190,9 +190,10 @@ export const TopBar = createComponent({
     // direct messages, which aren't placed in any category (!thereAreAncestors),
     // and 3) for embedded comments, if categories disabled, so can still return to
     // discussion list page.
-    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage || isEmbComments) {
-      // Currently there's always just one site section, namely the forum.
-      const homePath = store.siteSections[0].path;
+    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage ||
+        page.pageRole === PageRole.PrivateChat || isEmbComments) {
+      const mainSiteSection: SiteSection = store_mainSiteSection(store);
+      const homePath = mainSiteSection.path;
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           r.li({},
