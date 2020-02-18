@@ -41,7 +41,7 @@ export function isHelpMessageClosed(store: Store, message: HelpMessage) {
 }
 
 
-export const HelpMessageBox = createComponent({   // RENAME to TipsBox
+export const HelpMessageBox = createComponent({   // props: HelpMessage. RENAME to TipsBox
   mixins: [StoreListenerMixin],
 
   getInitialState: function() {
@@ -65,6 +65,10 @@ export const HelpMessageBox = createComponent({   // RENAME to TipsBox
     if (!store.userSpecificDataAdded) {
       // Don't want search engines to index help text.
       return { hidden: true };
+    }
+    if (!message.id) {
+      // Then cannot close.
+      return {};
     }
     const closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
     const thisMessClosedVersion = closedMessages[message.id];
@@ -92,26 +96,28 @@ export const HelpMessageBox = createComponent({   // RENAME to TipsBox
   },
 
   render: function() {
-    if (this.state.hidden && !(this.props.alwaysShow || this.props.message.alwaysShow))
+    const message: HelpMessage = this.props.message;
+    const alwaysShow = (this.props.alwaysShow || message.alwaysShow || !message.id)
+    if (this.state.hidden && !alwaysShow)
       return null;
 
     // If there are more help dialogs afterwards, show a comment icon instead to give
     // the impression that we're talking with the computer. Only when no more help awaits,
     // show the close (well "cancel") icon.
-    const okayIcon = this.props.message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
-    const okayButton = this.props.message.alwaysShow
+    const okayIcon = message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
+    const okayButton = message.alwaysShow
         ? null
         : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
-            this.props.message.okayText || t.Hide);
+            message.okayText || t.Hide);
 
-    const className = this.props.className || this.props.message.className || '';
+    const className = this.props.className || message.className || '';
     const largeClass = this.props.large ? ' dwHelp-large' : '';
-    const warningClass = this.props.message.isWarning ? ' esHelp-warning' : '';
+    const warningClass = message.isWarning ? ' esHelp-warning' : '';
     const classes = className + ' dw-help' + largeClass + warningClass;
     return (
       r.div({ className: classes },
         r.div({ className: 'dw-help-text' },
-          this.props.message.content),
+          message.content),
         okayButton));
   }
 });

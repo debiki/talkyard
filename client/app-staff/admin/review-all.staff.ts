@@ -137,6 +137,17 @@ export const ReviewAllPanel = createFactory({
     if (!_.some(elems, x => x))  // maybe null items, see above
       elems = r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
 
+    const helpText = help.HelpMessageBox({ message: <HelpMessage> {
+      alwaysShow: true,
+      content: rFragment({},
+        r.p({},
+          "Here you can moderate contents people submit, or that got reported. " +
+          "E.g. approve or delete new posts."),
+        Link({ to: linkToAdminPageModerationSettings() },
+          "Moderation settings ..."))
+      },
+    });
+
     const hideComplTasks =
       Input({ type: 'checkbox', checked: this.state.hideComplTasks,
         onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
@@ -144,6 +155,7 @@ export const ReviewAllPanel = createFactory({
 
     return (
       r.div({ className: 's_A_Rvw' },
+        helpText,
         hideComplTasks,
         elems));
   }

@@ -345,6 +345,7 @@ declare namespace debiki2 {
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
+  function linkToAdminPageModerationSettings(): string;
   function linkToReviewPage(): string;
   function linkToStaffInvitePage(): string;
   function externalLinkToAdminHelp(): string;
