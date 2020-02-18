@@ -55,6 +55,10 @@ export function linkToAdminPageLoginSettings(): string {
   return linkToAdminPage()+ 'settings/login';
 }
 
+export function linkToAdminPageModerationSettings(): string {
+  return linkToAdminPage()+ 'settings/moderation';
+}
+
 export function linkToAdminPageAdvancedSettings(differentHostname?: string): string {
   // This fn is called if we change the hostname, to jump to site settings at the new address.
   const maybeNewOrigin = differentHostname ? '//' + differentHostname : origin();

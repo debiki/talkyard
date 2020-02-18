@@ -341,7 +341,7 @@ const AdminAppComponent = createReactClass(<any> {
             customizeLink,
             backupLink,
             apiLink,
-            LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
+            LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Moderation")),
           childRoutes,
           saveBar)));
   }

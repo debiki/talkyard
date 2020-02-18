@@ -518,14 +518,17 @@ interface ReadingProgress {
 
 
 interface HelpMessage {
-  id: string;
+  id: string;  // leave out —> cannot close.  RENAME to closeId insetad? and remove alwaysShow?
   version: number;
   content: any;
   defaultHide?: boolean;
   doAfter?: () => void;
   type?: number;
   className?: string;
+  isWarning?: boolean;
   alwaysShow?: boolean;
+  moreHelpAwaits?: boolean;
+  okayText?: string;
 }
 
 
