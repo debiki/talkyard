@@ -1038,6 +1038,27 @@ trait PostsDao {
   }
 
 
+  def updatePostRevision_mustBeStaff(postId: PostId, revisionNr: PostRevNr,
+        hidden: Boolean, reqrIds: Who) {
+    readOnlyTransaction { tx =>
+      val requester = tx.loadTheParticipant(reqrIds.id)
+      val post = tx.loadThePost(postId)
+      throwIfMayNotSeePost(post, Some(requester))(tx)
+      val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
+      loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst, atLeast = 1, tx)
+      val revToUpd: PostRevision = revisionsRecentFirst.headOption.getOrDie(
+        "TyE602RKDP3", s"s$siteId: No such post or rev nr")
+      // This'd likely be a bug, so throw & fail:
+      throwForbiddenIf(revToUpd.hiddenAt.isDefined == hidden,
+        "TyE32946AKS", "This revision already hidden")
+      val revToSave = revToUpd.copy(
+        hiddenAt = if (hidden) Some(tx.now.toJavaDate) else None,
+        hiddenById = if (hidden) Some(requester.id) else None)
+      tx.updatePostRevision(revToSave)
+    }
+  }
+
+
   def loadSomeRevisionsRecentFirst(postId: PostId, revisionNr: Int, atLeast: Int,
         userId: Option[UserId]): (Seq[PostRevision], Map[UserId, Participant]) = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()

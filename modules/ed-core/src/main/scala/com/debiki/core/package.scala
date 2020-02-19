@@ -304,7 +304,7 @@ package object core {
 
   RENAME // to ReqrId? = "Requester id" and that's what it is: the user id plus hens browser id data.
   // I find "who" being confusing as to whom it refers to.
-  case class Who(id: UserId, browserIdData: BrowserIdData) {
+  case class Who(id: UserId /* RENAME to participantId */, browserIdData: BrowserIdData) {
     def ip: String = browserIdData.ip
     def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint

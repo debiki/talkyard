@@ -942,7 +942,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
 
 
   def updatePostRevision(revision: PostRevision) {
-    UNTESTED
+    UNTESTED // not for much longer
     val statement = """
       update post_revisions3 set
         source_patch = ?, full_source = ?, title = ?,

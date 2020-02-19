@@ -151,11 +151,27 @@ var PostRevisionRow = createComponent({
     */
     var revisionNrText = this.props.isCurrent ?
       "Latest changes" : "Changes in revision " + thisRevision.revisionNr;
+
+    const isHidden = !!thisRevision.hiddenAtMs;
+    // @ifdef DEBUG
+    dieIf(isHidden && thisRevision.fullSource,
+        "The server shows hidden post revisions [TyE5J3RKDTF]");
+    // @endif
+
+    const toggleHidden = isHidden
+        ? r.div({},
+            r.div({}, "This revision is hidden for non-staff people."),
+            Button({},
+              "Unhide (so everyone can see)"))
+        : Button({},
+          "Click to hide for others than staff");
+
       // BUG latest changes timestamp = wrong, too old (start of cur rev, not end?)
     return r.div({ className: 'ed-revision' },
       r.p({}, revisionNrText + ", composed by ", composedBy,
           ' ' + moment(thisRevision.composedAtMs).fromNow(), anyApprovedBy, ':'),
-      r.pre({ dangerouslySetInnerHTML: { __html: htmlDiff }}));
+      toggleHidden,
+      isHidden ? null : r.pre({ dangerouslySetInnerHTML: { __html: htmlDiff }}));
   }
 });
 

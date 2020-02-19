@@ -242,14 +242,30 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val revisionNrInt =
       if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
       else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
+    loadPostRevisionsImpl(postId, revisionNrInt, request)
+  }
+
+
+  def loadPostRevisionsImpl(postId: PostId, revisionNr: PostRevNr, request: ApiRequest[_])
+        : play.api.mvc.Result = {
     val (revisionsRecentFirst, usersById) =
-      request.dao.loadSomeRevisionsRecentFirst(postId, revisionNrInt, atLeast = 5,
+      request.dao.loadSomeRevisionsRecentFirst(postId, revisionNr, atLeast = 5,
           userId = request.user.map(_.id))
     val revisionsJson = revisionsRecentFirst map { revision =>
       val isStaffOrComposer = request.isStaff || request.user.map(_.id).contains(revision.composedById)
       JsonMaker.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
     }
     OkSafeJson(JsArray(revisionsJson))
+  }
+
+
+  def updatePostRevision: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
+    import request.{dao, body}
+    val postId = (body \ "postId").as[PostId]
+    val revisionNr = (body \ "revisionNr").as[PostRevNr]
+    val hidden = (body \ "hidden").as[Boolean]
+    dao.updatePostRevision(postId, revisionNr, hidden = hidden, request.who)
+    loadPostRevisionsImpl(postId, revisionNr, request)
   }
 
 
