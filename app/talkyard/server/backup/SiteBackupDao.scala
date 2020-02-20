@@ -31,7 +31,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
-case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter ?
+case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter? or SitePatcher?
 
 
   def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData)

@@ -1329,7 +1329,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
         values (?, ?, ?, ?, ?, ?)
         """,
         List(siteId.asAnyRef, pagePath.folder, pagePath.pageId,
-          showPageId, e2d(pagePath.pageSlug), canonical))(conn)
+          showPageId, e2d(pagePath.pageSlug) /* [274RKNQ2] */, canonical))(conn)
     }
     catch {
       case ex: js.SQLException if isUniqueConstrViolation(ex) =>

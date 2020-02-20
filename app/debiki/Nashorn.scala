@@ -316,6 +316,10 @@ class Nashorn(
   }
 
 
+  /** Might return an empty slug ("") if the title contains only "weird" chars,
+    * (currently only ASCII allowed [30BDAH256]) that's fine (gets converted
+    * to and from '-' in Postgres [274RKNQ2])
+    */
   def slugifyTitle(title: String): String = {
     if (isTestSoDisableScripts)
       return "scripts-disabled-EsM28WXP45"

@@ -8,7 +8,17 @@ const tyAssert = {
   // Could do that change later — but start with deepEq as a separate fn.
   deepEq: assert.deepStrictEqual,
 
-  eq: assert.strictEqual,
+  eq: (actual, expected, message?) => {
+    // Show the two values on two lines, aligned, so one sees at a glance
+    // what's wrong.
+    if (!message) {
+      message =
+          "assert.eq: Actual value differs from expected value:\n" +
+          `       ${actual}\n` +
+          `  !==  ${expected}\n`;
+    }
+    assert.strictEqual(actual, expected, message);
+  },
 
   refEq: (actual, expected) => {
     assert.ok(actual === expected,

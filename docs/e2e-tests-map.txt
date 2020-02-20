@@ -823,10 +823,15 @@ api:
           - api-upsert-categories.2browsers.test.ts  TyT602RHK42JF
   upsert categories:  (upscats)
           - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
-  upsert pages,
-  sanitize html:
+  upsert pages:
+    sanitize html:
           - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
+    slugifying long and weird titles:
+          - api-upsert-pages.2browsers.test.ts   TyT692SKBDWJ74
   upsert-edit pages:
+    &,
+    sanitize html,
+    long titles:
           - TESTS_MISSING  TyT650KWUDEPJ03g
   with sso enabled:
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3

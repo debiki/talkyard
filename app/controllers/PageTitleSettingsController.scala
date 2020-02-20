@@ -101,10 +101,13 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("TyECHOTRPGS", "You may not change other people's pages")
 
-    if (anyFolder.isDefined || hasManuallyEditedSlug || anyShowId.isDefined) {
-      if (!request.theUser.isAdmin)
-        throwForbidden("DwE5KEP8", o"""Only admins may change the URL path
-           and certain other stuff""")
+    if (!request.theUser.isAdmin) {
+      throwForbiddenIf(hasManuallyEditedSlug,
+          "TyENEWPATH001", "Only admins may change the page slug")
+      throwForbiddenIf(anyFolder.isDefined,
+          "TyENEWPATH002", "Only admins can specify url/path/folders/")
+      throwForbiddenIf(anyShowId.isDefined,
+          "TyENEWPATH003", "Only admins can hide or show page ids")
     }
 
     if (anyNewRole.is(PageType.Forum) || (anyNewRole.isEmpty && oldMeta.pageType == PageType.Forum)) {

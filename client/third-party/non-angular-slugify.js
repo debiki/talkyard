@@ -262,10 +262,34 @@ function debikiSlugify(s) {
      }
    }
    s = ascii.join("");
-   s = s.toLowerCase();  // [kajmagnus]
+
+   // Tested here: [TyT692SKBDWJ74]
+
+   // URLs should not be mixed case; people would not remember the correct casing.
+   s = s.trim().toLowerCase();  // [kajmagnus]
+
+   // For now, allow only ASCII [30BDAH256]  (and [ -] which we'll replace with '-' later).
    s = s.replace(/[^a-z0-9 -]/g, '')  // [kajmagnus]
-   s = s.replace(/[^\w\s-]/g, "").trim().toLowerCase();
-   return s.replace(/[-\s]+/g, "-");
+
+   // Don't think this is needed any longer?
+   s = s.replace(/[^\w\s-]/g, "");
+
+   // Collapse-replace blanks with a single '-':
+   s = s.replace(/[-\s]+/g, "-");
+
+   // Remove start '-':  (would it make sense to keep any leading '-'? in case
+   // a page title starts with a negative number? — I don't think so)
+   s = s.replace(/^-+/, '');
+
+   // There server restricts the slug length.
+   var MaxSlugLength = 100;  // sync with Scala [MXPGSLGLN]
+   s = s.substr(0, MaxSlugLength);
+
+   // Remove trailing '-':  (do here after truncation)
+   s = s.replace(/-+$/, '');
+
+   // Not impossible that the slug is now just '' (the empty string).
+   return s;
 }
 
 window.debikiSlugify = debikiSlugify;  // [5FK2W08]
