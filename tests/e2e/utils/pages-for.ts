@@ -1757,6 +1757,10 @@ function pagesFor(browser) {
 
       searchFor: function(phrase: string) {
         api.waitAndClick('.esTB_SearchBtn');
+        // The search text field should grab focus, so we can just start typing:
+        // But this causes a "RuntimeError" in Webdriver.io v4:
+        // browser.keys(phrase);
+        // This works though (although won't test if has focus):
         api.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
         api.waitAndClick('.e_SearchB');
         api.searchResultsPage.waitForResults(phrase);

@@ -519,10 +519,22 @@ const SearchForm = createComponent({
     return { queryInputText: '' };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   componentDidMount: function() {
-    // BUG COULD find some way for the DropdownModal to tell its contents when
-    // it's done fading iteslf in, so can focus the input field here? [FOCUSMODAL]
-    //setTimeout(this.refs.input.focus, 900);  — doesn't work, why not.
+    // Focus the search text input.
+    // This won't work — I think focus() gets invoked without 'input' as 'this'
+    // causing a "Illegal invocation" error:
+    //   setTimeout(this.refs.input.focus, 900);
+    // This works:
+    this.refs.input.focus();
+    // Let's try again soon, in case the above didn't work when fading in:
+    setTimeout(() => {
+      if (this.isGone) return;
+      this.refs.input.focus();
+    }, 150);
   },
 
   onQueryChange: function(event) {
@@ -530,10 +542,10 @@ const SearchForm = createComponent({
   },
 
   render: function() {
-    let urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
-    let searchEndpoint    = '/-/search';
-    let searchUrl         = '/-/search?q=' + urlEncodedQuery;
-    let searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
+    const urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
+    const searchEndpoint    = '/-/search';
+    const searchUrl         = '/-/search?q=' + urlEncodedQuery;
+    const searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
     const afterClick = this.props.closeDropdown;
     return (
         r.form({ className: 'esTB_SearchD', ref: 'form',
