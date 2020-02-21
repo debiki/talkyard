@@ -23,6 +23,7 @@ interface TalkyardTranslations {
   Activity: string;
   Add: string;
   AddingDots: string;
+  AddComment?: string;
   Admin: string;
   AdvSearch: string;
   Away: string;
@@ -34,13 +35,14 @@ interface TalkyardTranslations {
   Category: string;
   ChangeV: string;
   ClickToShow: string;
-  Continue: string;
   ChangeDots: string;
   ChatN: string;
   Chatting: string;
   CheckYourEmail: string;
   Close: string;
   closed: string;
+  comments?: string;
+  Continue: string;
   Created: string;
   Delete: string;
   Deleted: string;
@@ -1014,6 +1016,7 @@ interface TalkyardTranslations {
     edits: string;
 
     PostReply: string;
+    PostComment?: string;
 
     Post: string;
     comment: string;

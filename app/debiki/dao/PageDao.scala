@@ -21,38 +21,29 @@ import com.debiki.core._
 import debiki.EdHttp.throwNotFound
 import scala.collection.immutable
 import Prelude._
+import debiki.{AllSettings, EffectiveSettings}
 
 
-@deprecated("use SiteTransaction directly instead?", "now")
-case class PageDao(override val id: PageId, transaction: SiteTransaction)
+// REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
+case class PageDao(override val id: PageId, settings: AllSettings, transaction: SiteTransaction)
   extends Page {
 
   def sitePageId = SitePageId(transaction.siteId, id)
 
-  var _meta: Option[PageMeta] = null
   var _path: Option[PagePathWithId] = null
 
-  val parts = PagePartsDao(id, transaction)
+  val parts = PagePartsDao(id, settings, transaction)
 
   override def siteId: SiteId = transaction.siteId
 
-  def exists: Boolean = {
-    if (_meta eq null) {
-      _meta = transaction.loadPageMeta(id)
-    }
-    _meta.isDefined
-  }
+  def exists: Boolean =
+    parts.exists
 
   def version: PageVersion = meta.version
   def isClosed: Boolean = meta.isClosed
 
-  override def meta: PageMeta = {
-    if (_meta eq null) {
-      exists // this loads the page meta
-      dieIf(_meta eq null, "EsE7K5UF2")
-    }
-    _meta getOrElse throwPageNotFound()
-  }
+  override def meta: PageMeta =
+    parts.pageMeta
 
 
   override def path: Option[PagePathWithId] = {
@@ -61,10 +52,6 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction)
     }
     _path
   }
-
-
-  private def throwPageNotFound() =
-    throwNotFound("DwE404GKP3", s"Page not found, id: `$id'")
 
 }
 
@@ -91,14 +78,62 @@ case class NonExistingPage(
   override def path: Option[PagePathWithId] =
     Some(PagePathWithId.fromIdOnly(pageId = EmptyPageId, canonical = true))
 
-  override def parts: PageParts = PreLoadedPageParts(EmptyPageId, allPosts = Nil)
+  override def parts: PageParts = PreLoadedPageParts(meta, allPosts = Nil)
 
   override def version: PageVersion = 1
 }
 
 
-case class PagePartsDao(override val pageId: PageId, transaction: SiteTransaction)
-  extends PageParts {
+// REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
+case class PagePartsDao(
+  override val pageId: PageId,
+  settings: AllSettings,
+  transaction: SiteTransaction) extends PageParts {
+
+
+  private var _meta: Option[PageMeta] = null
+
+  def pageMeta: PageMeta = {
+    if (_meta eq null) {
+      exists // this loads the page meta
+      dieIf(_meta eq null, "EsE7K5UF2")
+    }
+    _meta getOrElse throwPageNotFound()
+  }
+
+  def exists: Boolean = {
+    if (_meta eq null) {
+      _meta = transaction.loadPageMeta(pageId)
+    }
+    _meta.isDefined
+  }
+
+  def origPostReplyBtnTitle: Option[String] = {
+    // For now, this is for embedded comments only  [POSTSORDR].
+    if (pageMeta.pageType != PageType.EmbeddedComments)
+      return None
+    if (settings.origPostReplyBtnTitle.isEmpty)
+      return None
+    Some(settings.origPostReplyBtnTitle)
+  }
+
+  def origPostVotes: OrigPostVotes = {
+    // For now, this is for embedded comments only  [POSTSORDR].
+    if (pageMeta.pageType != PageType.EmbeddedComments)
+      return OrigPostVotes.Default
+    settings.origPostVotes
+  }
+
+  def postsOrderNesting: PostsOrderNesting = {
+    // COULD_OPTIMIZE // often the caller has loaded the page meta already
+    // For now, changing the sort order, is for embedded comments only [POSTSORDR].
+    val sortOrder =
+      if (pageMeta.pageType == PageType.EmbeddedComments)
+        settings.discPostSortOrder
+      else
+        PostSortOrder.BestFirst
+    PostsOrderNesting(sortOrder, settings.discPostNesting)
+  }
 
   private var _allPosts: immutable.Seq[Post] = _
 
@@ -114,4 +149,9 @@ case class PagePartsDao(override val pageId: PageId, transaction: SiteTransactio
     }
     _allPosts
   }
+
+  def siteId: SiteId = transaction.siteId
+
+  private def throwPageNotFound() =
+    throwNotFound("TyE404GKP3", s"s$siteId: Page not found, id: `$pageId'")
 }

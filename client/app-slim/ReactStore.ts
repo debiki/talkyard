@@ -827,7 +827,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     const alreadyAChild = _.find(parentPost.childNrsSorted, nr => nr === post.nr);
     if (!alreadyAChild) {
       parentPost.childNrsSorted.unshift(post.nr);
-      sortPostNrsInPlaceBestFirst(parentPost.childNrsSorted, page.postsByNr);
+      sortPostNrsInPlace(
+          parentPost.childNrsSorted, page.postsByNr, page.discPostSortOrder);
     }
   }
 
@@ -836,7 +837,9 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     const alreadyIncl = _.find(page.progressPostNrsSorted, nr => nr === post.nr);
     if (!alreadyIncl) {
       page.progressPostNrsSorted.push(post.nr);
-      sortPostNrsInPlaceBestFirst(page.progressPostNrsSorted, page.postsByNr);
+      sortPostNrsInPlace(
+          // Progress posts are always sorted by time.
+          page.progressPostNrsSorted, page.postsByNr, PostSortOrder.OldestFirst);
     }
   }
 
@@ -844,7 +847,8 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   // (Top level embedded comments have no parent post — there's no Original Post.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
-    sortPostNrsInPlaceBestFirst(page. parentlessReplyNrsSorted, page.postsByNr);
+    sortPostNrsInPlace(
+        page. parentlessReplyNrsSorted, page.postsByNr, page.discPostSortOrder);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -1120,9 +1124,33 @@ function findParentlessReplyIds(postsByNr): number[] {
 
 
 /**
- * NOTE: Keep in sync with sortPostsFn() in
- *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
+ * NOTE: Keep in sync with  sortPosts(posts, sortOrder)   [SAMESORT]
+ * in modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
+function sortPostNrsInPlace(postNrs: PostNr[], postsByNr: { [nr: number]: Post },
+      postSortOrder: PostSortOrder | U) {
+  switch (postSortOrder) {
+    case PostSortOrder.NewestFirst: // fall through
+    case PostSortOrder.OldestFirst:
+      const oldestFirst = postSortOrder === PostSortOrder.OldestFirst;
+      sortPostNrsInPlaceByTime(postNrs, postsByNr, oldestFirst);
+      break;
+    default:
+      sortPostNrsInPlaceBestFirst(postNrs, postsByNr);
+  }
+}
+
+
+function sortPostNrsInPlaceByTime(postNrs: PostNr[], postsByNr: { [nr: number]: Post },
+      oldestFirst: boolean) {
+  postNrs.sort((nrA: number, nrB: number) => {
+    const postAOrB: Post = postsByNr[oldestFirst ? nrA : nrB];
+    const postBOrA: Post = postsByNr[oldestFirst ? nrB : nrA];
+    return postApprovedOrCreatedBefore(postAOrB, postBOrA);
+  });
+}
+
+
 function sortPostNrsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number]: Post }) {
   postNrs.sort((nrA: number, nrB: number) => {
     const postA: Post = postsByNr[nrA];

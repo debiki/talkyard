@@ -322,25 +322,27 @@ object PagePopularityCalculator {
     topmostFractionByPostNr(origPost.nr) = 1f
     secondsSpent += 15  // for now. Could make depend on post length.
 
-    val origChildrenSorted = Post.sortPostsBestFirst(origPost.children(pageParts))
+    val origChildrenSorted = pageParts.childrenSortedOf(origPost.nr)
+          // Not needed?: Post.sortPosts(origPost.children(pageParts))
+          // Already sorted??
 
     val firstOpReply = origChildrenSorted.headOption getOrElse {
       return secondsSpent
     }
     secondsSpent += addBranch(firstOpReply, pageParts, topmostFractionByPostNr,
-        MaxSeconds - secondsSpent, 6)
+        MaxSeconds - secondsSpent, 6, pageParts.postsOrderNesting)
 
     val secondOpReply = origChildrenSorted.drop(1).headOption getOrElse {
       return secondsSpent
     }
     secondsSpent += addBranch(secondOpReply, pageParts, topmostFractionByPostNr,
-        MaxSeconds - secondsSpent, 5)
+        MaxSeconds - secondsSpent, 5, pageParts.postsOrderNesting)
 
     val thirdOpReply = origChildrenSorted.drop(2).headOption getOrElse {
       return secondsSpent
     }
     secondsSpent += addBranch(thirdOpReply, pageParts, topmostFractionByPostNr,
-        MaxSeconds - secondsSpent, 4)
+        MaxSeconds - secondsSpent, 4, pageParts.postsOrderNesting)
 
     secondsSpent
   }
@@ -348,7 +350,8 @@ object PagePopularityCalculator {
 
   private def addBranch(post: Post, pageParts: PageParts,
         topmostFractionByPostNr: mutable.Map[PostNr, Float],
-        secondsLeft: Int, depthLeft: Int): Int = {
+        secondsLeft: Int, depthLeft: Int,
+        postsOrderNesting: PostsOrderNesting): Int = {
     if (secondsLeft <= 0 || depthLeft <= 0)
       return 0
 
@@ -364,12 +367,12 @@ object PagePopularityCalculator {
     else {
       timeSpentHere = 10
       topmostFractionByPostNr(post.nr) = 1f
-      val childrenSorted = Post.sortPostsBestFirst(post.children(pageParts))
+      val childrenSorted = Post.sortPosts(post.children(pageParts), postsOrderNesting.sortOrder)
       val firstReply = childrenSorted .headOption getOrElse {
         return timeSpentHere
       }
       timeSpentHere += addBranch(firstReply, pageParts, topmostFractionByPostNr,
-          secondsLeft - timeSpentHere, depthLeft - 1)
+          secondsLeft - timeSpentHere, depthLeft - 1, postsOrderNesting)
     }
 
     timeSpentHere

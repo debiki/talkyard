@@ -97,6 +97,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         select_topic_type,
         show_author_how,
         watchbar_starts_open,
+        discussion_layout,
+        disc_post_nesting,
+        disc_post_sort_order,
+        progress_layout,
+        orig_post_reply_btn_title,
+        orig_post_votes,
         num_first_posts_to_review,
         num_first_posts_to_approve,
         num_first_posts_to_allow,
@@ -139,7 +145,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -183,6 +190,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.selectTopicType.getOrElse(None).orNullBoolean,
       editedSettings2.showAuthorHow.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.watchbarStartsOpen.getOrElse(None).orNullBoolean,
+      editedSettings2.discussionLayout.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.discPostNesting.getOrElse(None).orNullInt,
+      editedSettings2.discPostSortOrder.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.progressLayout.getOrElse(None).map(_.toInt).orNullInt,
+      editedSettings2.origPostReplyBtnTitle.getOrElse(None).orNullVarchar,
+      editedSettings2.origPostVotes.getOrElse(None).map(_.toInt).orNullInt,
       editedSettings2.numFirstPostsToReview.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToApprove.getOrElse(None).orNullInt,
       editedSettings2.numFirstPostsToAllow.getOrElse(None).orNullInt,
@@ -282,6 +295,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("select_topic_type", s.selectTopicType.map(_.orNullBoolean))
     maybeSet("show_author_how", s.showAuthorHow.map(_.map(_.toInt).orNullInt))
     maybeSet("watchbar_starts_open", s.watchbarStartsOpen.map(_.orNullBoolean))
+    maybeSet("discussion_layout", s.discussionLayout.map(_.map(_.toInt).orNullInt))
+    maybeSet("disc_post_nesting", s.discPostNesting.map(_.orNullInt))
+    maybeSet("disc_post_sort_order", s.discPostSortOrder.map(_.map(_.toInt).orNullInt))
+    maybeSet("progress_layout", s.progressLayout.map(_.map(_.toInt).orNullInt))
+    maybeSet("orig_post_reply_btn_title", s.origPostReplyBtnTitle.map(_.trimOrNullVarchar))
+    maybeSet("orig_post_votes", s.origPostVotes.map(_.map(_.toInt).orNullInt))
     maybeSet("num_first_posts_to_review", s.numFirstPostsToReview.map(_.orNullInt))
     maybeSet("num_first_posts_to_approve", s.numFirstPostsToApprove.map(_.orNullInt))
     maybeSet("num_first_posts_to_allow", s.numFirstPostsToAllow.map(_.orNullInt))
@@ -381,6 +400,12 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       selectTopicType = getOptBool(rs, "select_topic_type"),
       showAuthorHow = getOptInt(rs, "show_author_how").flatMap(ShowAuthorHow.fromInt),
       watchbarStartsOpen = getOptBool(rs, "watchbar_starts_open"),
+      discussionLayout = getOptInt(rs, "discussion_layout").flatMap(DiscussionLayout.fromInt),
+      discPostNesting = getOptInt(rs, "disc_post_nesting"),
+      discPostSortOrder = getOptInt(rs, "disc_post_sort_order").flatMap(PostSortOrder.fromInt),
+      progressLayout = getOptInt(rs, "progress_layout").flatMap(ProgressLayout.fromInt),
+      origPostReplyBtnTitle = getOptString(rs, "orig_post_reply_btn_title"),
+      origPostVotes = getOptInt(rs, "orig_post_votes").flatMap(OrigPostVotes.fromInt),
       numFirstPostsToReview = getOptInt(rs, "num_first_posts_to_review"),
       numFirstPostsToApprove = getOptInt(rs, "num_first_posts_to_approve"),
       numFirstPostsToAllow = getOptInt(rs, "num_first_posts_to_allow"),

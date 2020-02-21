@@ -31,11 +31,11 @@ trait SettingsDao {
   self: SiteDao =>
 
 
-  def getWholeSiteSettings(): EffectiveSettings = {
+  def getWholeSiteSettings(tx: Option[SiteTransaction] = None): EffectiveSettings = {
     memCache.lookup(
       siteSettingsKey,
       orCacheAndReturn = {
-        readOnlyTransaction { transaction =>
+        readOnlyTransactionTryReuse(tx) { transaction =>
           Some(loadWholeSiteSettings(transaction))
         }
       }) getOrDie "DwE52WK8"
@@ -43,8 +43,7 @@ trait SettingsDao {
 
 
   def loadWholeSiteSettings(transaction: SiteTransaction): EffectiveSettings = {
-    val editedSettings = transaction.loadSiteSettings()
-    EffectiveSettings(editedSettings.toVector, AllSettings.makeDefault(globals))
+    SettingsDao.loadWholeSiteSettings(transaction, globals)
   }
 
 
@@ -130,5 +129,14 @@ trait SettingsDao {
   private def singlePageSettingsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|SnglPgStngsKey")
   */
 
+}
+
+object SettingsDao {
+
+  def loadWholeSiteSettings(tx: SiteTransaction, globals: Globals): EffectiveSettings = {
+    // Dupl code [96KTHRH2]
+    val editedSettings = tx.loadSiteSettings()
+    EffectiveSettings(editedSettings.toVector, AllSettings.makeDefault(globals))
+  }
 }
 

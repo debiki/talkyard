@@ -108,7 +108,7 @@ trait PostsDao {
 
     val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
     }
@@ -255,7 +255,12 @@ trait PostsDao {
     tx.indexPostsSoon(newPost)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
     if (shallApprove) {
-      val pagePartsInclNewPost = PreLoadedPageParts(pageId, page.parts.allPosts :+ newPost)
+      val pagePartsInclNewPost = PreLoadedPageParts(
+        newMeta,
+        page.parts.allPosts :+ newPost,
+        origPostReplyBtnTitle = page.parts.origPostReplyBtnTitle,
+        origPostVotes = page.parts.origPostVotes,
+        postsOrderNesting = page.parts.postsOrderNesting)
       updatePagePopularity(pagePartsInclNewPost, tx)
     }
     uploadRefs foreach { uploadRef =>
@@ -427,7 +432,7 @@ trait PostsDao {
       val author = authorAndLevels.user
 
       SHOULD_OPTIMIZE // don't load all posts [2GKF0S6], because this is a chat, could be too many.
-      val page = PageDao(pageId, tx)
+      val page = newPageDao(pageId, tx)
       val replyToPosts = Nil // currently cannot reply to specific posts, in the chat. [7YKDW3]
 
       dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, tx.loadGroupIdsMemberIdFirst(author),
@@ -721,7 +726,7 @@ trait PostsDao {
     val anyEditedCategory = readWriteTransaction { tx =>
       val editorAndLevels = loadUserAndLevels(who, tx)
       val editor = editorAndLevels.user
-      val page = PageDao(pageId, tx)
+      val page = newPageDao(pageId, tx)
       val settings = loadWholeSiteSettings(tx)
 
       val postToEdit = page.parts.postByNr(postNr) getOrElse {
@@ -1040,7 +1045,7 @@ trait PostsDao {
     var usersById: Map[UserId, Participant] = null
     readOnlyTransaction { tx =>
       val post = tx.loadThePost(postId)
-      val page = PageDao(post.pageId, tx)
+      val page = newPageDao(post.pageId, tx)
       val user = userId.flatMap(tx.loadParticipant)
 
       throwIfMayNotSeePost(post, user)(tx)
@@ -1150,7 +1155,7 @@ trait PostsDao {
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
         changerId: UserId, browserIdData: BrowserIdData) {
     readWriteTransaction { tx =>
-      val page = PageDao(pageId, tx)
+      val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
       val Seq(author, changer) = tx.loadTheParticipants(postBefore.createdById, changerId)
       throwIfMayNotSeePage(page, Some(changer))(tx)
@@ -1243,7 +1248,7 @@ trait PostsDao {
         : ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
 
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
     throwIfMayNotSeePage(page, Some(user))(tx)
 
@@ -1424,7 +1429,7 @@ trait PostsDao {
 
   def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId, tx: SiteTransaction) {
 
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     val pageMeta = page.meta
     val postBefore = page.parts.thePostByNr(postNr)
     if (postBefore.isCurrentVersionApproved)
@@ -1529,7 +1534,7 @@ trait PostsDao {
     if (posts.isEmpty) return
     require(posts.forall(_.pageId == pageId), "EdE2AX5N6")
 
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     val pageMeta = page.meta
 
     var numNewVisibleReplies = 0
@@ -1630,7 +1635,8 @@ trait PostsDao {
       throwIfMayNotSeePost(post, Some(voter))(tx)
 
       tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
-      updateVoteCounts(PagePartsDao(pageId, tx), post, tx)
+      updateVoteCounts( post, tx)
+      updatePagePopularity(newPageDao(pageId, tx).parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = -1, mayBeNegative = true))(tx)
       addUserStats(UserStats(voterId, numLikesGiven = -1, mayBeNegative = true))(tx)
 
@@ -1658,7 +1664,7 @@ trait PostsDao {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
     readWriteTransaction { tx =>
-      val page = PageDao(pageId, tx)
+      val page = newPageDao(pageId, tx)
       val voter = tx.loadTheParticipant(voterId)
       SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
       throwIfMayNotSeePage(page, Some(voter))(tx)
@@ -1707,7 +1713,8 @@ trait PostsDao {
 
       tx.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
-      updateVoteCounts(page.parts, post, tx)
+      updateVoteCounts(post, tx)
+      updatePagePopularity(page.parts, tx)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(tx)
       addUserStats(UserStats(voterId, numLikesGiven = 1))(tx)
     }
@@ -1746,8 +1753,8 @@ trait PostsDao {
       dieIf(newParentPost.closedStatus.isClosed, "EsE2GLK83", "Unimpl")
       dieIf(newParentPost.deletedStatus.isDeleted, "EsE8KFG1", "Unimpl")
 
-      val fromPage = PageDao(postToMove.pageId, tx)
-      val toPage = PageDao(newParent.pageId, tx)
+      val fromPage = newPageDao(postToMove.pageId, tx)
+      val toPage = newPageDao(newParent.pageId, tx)
 
       // Don't create cycles.
       TESTS_MISSING // try to create a cycle?
@@ -2089,7 +2096,7 @@ trait PostsDao {
       tx.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
         // The page might be hidden now, or num-replies has changed, so refresh forum topic list.
         markSectionPageStale = true)
-      updatePagePopularity(PagePartsDao(pageId, tx), tx)
+      updatePagePopularity(newPageDao(pageId, tx).parts, tx)
     }
   }
 
@@ -2139,7 +2146,7 @@ trait PostsDao {
     }
 
 
-  private def updateVoteCounts(pageParts: PageParts, post: Post, tx: SiteTransaction) {
+  private def updateVoteCounts(post: Post, tx: SiteTransaction) {
     dieIf(post.nr < PageParts.BodyNr, "TyE4WKAB02")
     val actions = tx.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = tx.loadPostsReadStats(post.pageId, Some(post.nr))
@@ -2173,7 +2180,6 @@ trait PostsDao {
     // (Don't reindex)
     tx.updatePost(postAfter)
     tx.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore, markSectionPageStale = true)
-    updatePagePopularity(pageParts, tx)
 
     // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }

@@ -93,7 +93,11 @@ trait PagesDao {
         tx, discussionIds = discussionIds, embeddingUrl = embeddingUrl, extId = extId)
 
       val notifications = notfGenerator(tx).generateForNewPost(
-        PageDao(pagePath.pageId, tx), bodyPost, Some(bodyTextAndHtml), anyReviewTask)
+        newPageDao(pagePath.pageId, tx),
+        bodyPost,
+        Some(bodyTextAndHtml),
+        anyReviewTask)
+
       tx.saveDeleteNotifications(notifications)
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
@@ -338,7 +342,8 @@ trait PagesDao {
     }
 
     if (approvedById.isDefined) {
-      updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), tx)
+      updatePagePopularity(
+        PreLoadedPageParts(pageMeta, Vector(titlePost, bodyPost)), tx)
     }
 
     uploadPaths foreach { hashPathSuffix =>
@@ -611,7 +616,7 @@ trait PagesDao {
 
   def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction) {
     // Some dupl code [3GTKYA02]
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     val postId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
 
@@ -644,7 +649,7 @@ trait PagesDao {
 
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
         tx: SiteTransaction) {
-    val page = PageDao(pageId, tx)
+    val page = newPageDao(pageId, tx)
     var newMeta = page.meta.copyWithUpdatedStats(page)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)

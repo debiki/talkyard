@@ -69,17 +69,32 @@ echo
 echo "    sudo docker exec -it $container_name sh"
 echo
 
+install_vinagre="sudo apt install vinagre"
 start_vinagre="vinagre 127.0.0.1:5900"
 
 if [ -z "$dash_debug" ]; then
     echo "The browser is invisible; you cannot connect with VNC."
 else
-    echo "You can look at the browser via VNC, using e.g. vinagre, install and start like so:"
+    echo "You can look at the browser via VNC, using e.g. Vinagre, install and start like so:"
     echo
-    echo "    sudo apt install vinagre"
+    echo "    $install_vinagre"
     echo "    $start_vinagre"
+    if [ -z "$(which vinagre)" ]; then
+        echo
+        read -r -p "Shall I install Vinagre for you? [y/N] " response
+        response=${response,,}    # tolower
+        if [[ ! $response =~ ^(yes|y)$ ]] ; then
+            echo "No? Bye."
+            exit 0
+        fi
+        echo "Yes, here we go:"
+        echo
+        $install_vinagre
+        echo
+    fi
+
     echo
-    read -r -p "Shall I try starting vinagre for you? [Y/n] " response
+    read -r -p "Shall I start Vinagre for you? [Y/n] " response
     response=${response,,}    # tolower
     if [[ $response =~ ^(no|n)$ ]] ; then
         echo "Bye."

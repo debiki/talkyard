@@ -43,7 +43,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dummySpamRelReqStuff, deleteDraftNr = None)
 
       dao.readOnlyTransaction { transaction =>
-        val page = PageDao(pagePath.pageId, transaction)
+        val page = dao.newPageDao(pagePath.pageId, transaction)
         page.pageType mustBe PageType.FormalMessage
         page.categoryId mustBe None
         page.parts.theTitle.approvedSource mustBe Some("title_558206")

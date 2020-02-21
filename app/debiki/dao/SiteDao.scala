@@ -131,6 +131,8 @@ class SiteDao(
   def now(): When = globals.now()
   def nashorn: Nashorn = context.nashorn
 
+  def newPageDao(pageId: PageId, tx: SiteTransaction): PageDao =
+    PageDao(pageId, loadWholeSiteSettings(tx), tx)
 
   REFACTOR // Change textAndHtmlMaker to maketextAndHtmlMaker(pageType: PageType)
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,

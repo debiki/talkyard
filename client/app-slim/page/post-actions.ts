@@ -102,6 +102,7 @@ export const NoCommentsPageActions = createComponent({
 function makeReplyBtnIcon(store: Store) {
   const page: Page = store.currentPage;
   return page.pageRole === PageRole.MindMap ? 'icon-plus' : 'icon-reply';
+     // icon-comment if blog post?
 }
 
 
@@ -114,10 +115,14 @@ function makeReplyBtnTitle(store: Store, post: Post) {
       return t.ReplyV;
   }
 
+  if (page.origPostReplyBtnTitle)
+    return page.origPostReplyBtnTitle;
+
   switch (page.pageRole) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
     case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
+    case PageRole.EmbeddedComments: return t.AddComment || t.ReplyV;
     default:
       return rFragment({},
         r.b({}, t.ReplyV),
@@ -228,6 +233,7 @@ export const PostActions = createComponent({
     const isDone = page.pageDoneAtMs && (page.pageRole === PageRole.Problem ||
       page.pageRole === PageRole.Idea || page.pageRole === PageRole.ToDo ||
       page.pageRole === PageRole.UsabilityTesting);  // [plugin]
+    const isEmbeddedComments = page.pageRole === PageRole.EmbeddedComments;
 
     const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
@@ -307,15 +313,22 @@ export const PostActions = createComponent({
               }},
             t.ChangeV + ' ...');
 
+    // Votes can be disabled for blog posts only, right now: [POSTSORDR]
+    const isEmbOrigPost = isEmbeddedComments && isPageBody;
+    const useDownvotes = !isEmbOrigPost || page.origPostVotes === OrigPostVotes.AllVotes;
+    const useLikeVote  = !isEmbOrigPost || (
+      page.origPostVotes === OrigPostVotes.AllVotes ||
+      page.origPostVotes === OrigPostVotes.LikeVotesOnly);
+
     let numLikesText;
-    if (post.numLikeVotes) {
+    if (post.numLikeVotes && useLikeVote) {
       numLikesText = r.a({ className: 'dw-a dw-vote-count',
             onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Like, event.target) },
           t.pa.NumLikes(post.numLikeVotes));
     }
 
     let numWrongsText;
-    if (post.numWrongVotes) {
+    if (post.numWrongVotes && useDownvotes) {
       numWrongsText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
           t.pa.NumDisagree(post.numWrongVotes));
@@ -325,14 +338,14 @@ export const PostActions = createComponent({
     // staff, so they can detect misuse.
     // UX: one won't see one's own Bury vote (unless one is staff). That's confusing. What do about that?
     let numBurysText;
-    if (isStaff(me) && post.numBuryVotes) {
+    if (isStaff(me) && post.numBuryVotes && useDownvotes) {
       numBurysText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Bury, event.target) },
           t.pa.NumBury(post.numBuryVotes));
     }
 
     let numUnwantedsText;
-    if (post.numUnwantedVotes) {
+    if (post.numUnwantedVotes && useDownvotes) {
       numUnwantedsText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Unwanted, event.target) },
           t.pa.NumUnwanted(post.numUnwantedVotes));
@@ -352,12 +365,12 @@ export const PostActions = createComponent({
 
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
-      downvotesDropdown = post.nr === BodyNr ? null :
+      downvotesDropdown = !useDownvotes ? null :
           r.span({ className: 'dropdown navbar-right', title: t.pa.MoreVotes,
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
 
-      likeVoteButton =
+      likeVoteButton = !useLikeVote ? null :
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
             title: t.pa.LikeThis, onClick: this.onLikeClick });
     }

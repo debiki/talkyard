@@ -626,11 +626,31 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
+        Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
+          label: "Logout idle user after minutes", className: 'e_LgoIdlAftMins',
+          help: "After how long a user who is away, gets logged out. " +
+            "Default: one year (525600 minutes). " +
+            "This currently does log out also *active* users. " + // [EXPIREIDLE]
+            "Will fix this later (so only users who are away get logged out).",
+          getter: (s: Settings) => s.expireIdleAfterMins,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (num < 1) num = 1;
+            newSettings.expireIdleAfterMins = num;
+          }
+        }),
+
         /* Not yet implemented: (saved to db but won't have any effect)
 
         doubleTypeEmailAddress: Option[Boolean]
         doubleTypePassword: Option[Boolean]
         begForEmailAddress */
+
+
+        // ---- Email domain whitelist and blacklist
+
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          "Ways to sign up"),
 
         enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Allow creating local accounts",
@@ -644,7 +664,7 @@ const LoginAndSignupSettings = createFactory({
         }),
 
         enableSso || !allowSignup ? null : Setting2(props, {
-          type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
+          type: 'checkbox', label: "Allow anonymous \"login\"", id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without creating real accounts " +
             "with username and password. Instead, they just type a name and email address. " +
@@ -654,20 +674,6 @@ const LoginAndSignupSettings = createFactory({
           getter: (s: Settings) => s.allowGuestLogin,
           update: (newSettings: Settings, target) => {
             newSettings.allowGuestLogin = target.checked;
-          }
-        }),
-
-        Setting2(props, { type: 'number', min: 5, max: 60 * 24 * 365 * 999,
-          label: "Logout idle user after minutes", className: 'e_LgoIdlAftMins',
-          help: "After how long a user who is away, gets logged out. " +
-            "Default: one year (525600 minutes). " +
-            "This currently does log out also *active* users. " + // [EXPIREIDLE]
-            "Will fix this later (so only users who are away get logged out).",
-          getter: (s: Settings) => s.expireIdleAfterMins,
-          update: (newSettings: Settings, target) => {
-            let num = parseInt(target.value);
-            if (num < 1) num = 1;
-            newSettings.expireIdleAfterMins = num;
           }
         }),
 
@@ -736,6 +742,9 @@ const LoginAndSignupSettings = createFactory({
 
         // ---- Email domain whitelist and blacklist
 
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          "Who may sign up?"),
+
         // Hide, if SSO enabled — then, the SSO system determines if allowed or not. [7AKBR25]
 
         enableSso || !allowSignup ? null : Setting2(props, {
@@ -764,6 +773,9 @@ const LoginAndSignupSettings = createFactory({
 
 
         // ---- Single Sign-On
+
+        r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          "Single Sign-On"),
 
         Setting2(props, {
           type: 'text', label: "Single Sign-On URL",
@@ -2221,9 +2233,11 @@ const CustomizeBasicPanel = createFactory({
 
     const faviconUrl = valueOf(s => s.faviconUrl);
     const enableForum = valueOf(s => s.enableForum);
+    const enableEmbedded = !!valueOf(s => s.allowEmbeddingFrom);
 
     return (
       r.div({},
+        !enableForum ? null :
         Setting2(props, { type: 'text', label: "Favicon URL",
           placeholder: "https://example.com/your/favicon.ico",
           help: rFragment({},
@@ -2284,8 +2298,10 @@ const CustomizeBasicPanel = createFactory({
           }
         }),
 
+        !enableForum ? null :
         Setting2(props, { type: 'checkbox', label: "Sidebar open by default",
-          help: "Uncheck to hide the left sidebar for new users. They'll then need to open it " +
+          help: "Uncheck to hide the left sidebar for new users. " +
+            "They'll then need to open it " +
             "themselves. (The right hand sidebar is always closed, by default.)",
           getter: (s: Settings) => s.watchbarStartsOpen,
           update: (newSettings: Settings, target) => {
@@ -2318,6 +2334,131 @@ const CustomizeBasicPanel = createFactory({
             if (num < 1) num = 1;
             if (num > 3) num = 3;
             newSettings.showAuthorHow = num;
+          }
+        }),
+
+
+        // ---- Discussion and Progress sections
+
+        !enableForum ? null : rFragment({},
+
+          r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+            "Discussion and Progress topic sections"),
+
+          r.p({ className: 'col-sm-offset-3' },
+            "Talkyard's topics can have two section: " +
+            "A Discussion section, where you " +
+            "post answers and discuss ideas, problems, news. " +
+            "And a \"Progress\" or \"Timeline\" section, where you see " +
+            "the step by step progress of making the idea happen, " +
+            "or solving the problem."),
+          r.p({ className: 'col-sm-offset-3' },
+            "However, the Progress section can confuse people, " +
+            "and you might want to disable it, until we've " +
+            "made it simpler to understand."),
+
+          Setting2(props, { type: 'number', min: 1, max: 3,
+            label: "Progress section layout",
+            help: rFragment({},
+              "How shall the Progress section look? One of these numbers:",
+              r.br(),
+              "0: Default, currently same as Enabled.",
+              r.br(),
+              "1: Enabled.",
+              r.br(),
+              "2: Mostly disabled. Hides the ", r.i({}, "Add Progress Note"), "  button.",
+              ),
+            getter: (s: Settings) => s.progressLayout,
+            update: (newSettings: Settings, target) => {
+              let num = parseInt(target.value);
+              if (num < 0) num = 0;
+              if (num > 2) num = 2;
+              newSettings.progressLayout = num;
+            }
+          }),
+
+        ),
+
+
+        // ---- Blog comments
+
+        // Skip this title, if forum features disabled — because then all
+        // settings are for blog comments only.
+        !enableForum ? null :
+          r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+            "Blog comments"),
+
+        enableEmbedded ? null :
+          r.p({ className: 'col-sm-offset-3' },
+            "To show these settings, first specify an ",
+            r.i({}, "Allow Embedding From"), " domain.", r.br(),
+            "Go here: ",
+            Link({ to: linkToAdminPageEmbeddedSettings() },
+              "Embedded comments settings ...")),
+
+        // Later, break out this to a separate settings3 table row,
+        // for PageType.EmeddedComments.  [PAGETYPESETTNG]
+        !enableEmbedded ? null : Setting2(props, { type: 'text',
+          label: rFragment({}, "Title of the ", r.i({}, "Add Comment"), " button"),
+          help: rFragment({},
+            "Leave empty to use the default button title, which is \"" +
+            t.AddComment + "\" (if you use English)."),
+          getter: (s: Settings) => s.origPostReplyBtnTitle,
+          update: (newSettings: Settings, target) => {
+            // Don't trim() here — that'd make it hard to type a space.
+            newSettings.origPostReplyBtnTitle = target.value;
+          }
+        }),
+
+        // Later, break out this to a separate settings3 table row,
+        // for PageType.EmeddedComments.  [PAGETYPESETTNG]
+        !enableEmbedded ? null : Setting2(props, { type: 'number', min: 1, max: 3,
+          label: "Blog post votes",
+          help: rFragment({},
+            "May blog readers Like or Disagree vote on the blog post itself? " +
+            "Type one of these numbers:",
+            r.br(),
+            "0: The default, currently means Like votes only (same as 2).",
+            r.br(),
+            "1: No votes. People can vote on blog ", r.i({}, "comments"), ", " +
+              "but not the blog post itself.",
+            r.br(),
+            "2: Like votes only.",
+            r.br(),
+            "3: Like and Disagree votes."
+            ),
+          getter: (s: Settings) => s.origPostVotes,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (num < 0) num = 0;
+            if (num > 3) num = 3;
+            newSettings.origPostVotes = num;
+          }
+        }),
+
+        // Later, break out this to a separate settings3 table row,
+        // for PageType.EmeddedComments.  [PAGETYPESETTNG]
+        // — Until then, this whole site setting, is only used for
+        // embedded blog comments. [POSTSORDR]
+        !enableEmbedded ? null : Setting2(props, { type: 'number', min: 1, max: 3,
+          label: "Blog comments sort order",
+          help: rFragment({},
+            "How should blog comments be ordered? One of these numbers:",
+            r.br(),
+            "0: The default, currently means Best First (same as 1).",
+            r.br(),
+            "1: Best (popular) first.",
+            r.br(),
+            "2: Newest first.",
+            r.br(),
+            "3: Oldest first."
+            ),
+          getter: (s: Settings) => s.discPostSortOrder,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (num < 0) num = 0;
+            if (num > 3) num = 3;
+            newSettings.discPostSortOrder = num;
           }
         }),
       ));

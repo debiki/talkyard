@@ -92,19 +92,30 @@ trait AllSettings {
   //
   def ssoLoginRequiredLogoutUrl: String
 
-  REFACTOR // ----- These could be moved to per member uiPrefs fields. ------------
+
+  // UX settings (could add a UserId column so people can override some (not all) of these?)
+  // -----------------------------
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
   def forumTopicsLayout: TopicListLayout
   def forumCategoriesLayout: CategoriesLayout
+  // def forummKnowledgeBaseLayout: KnowledgeBaseLayout — later
   def showCategories: Boolean
   def showTopicFilterButton: Boolean
   def showTopicTypes: Boolean
   def selectTopicType: Boolean
   def showAuthorHow: ShowAuthorHow
   def watchbarStartsOpen: Boolean
-  // -------------------------------------------------------------------------------
+
+  // ----- Topics — hmm these could / should? be per topic type:
+  def discussionLayout: DiscussionLayout
+  def discPostNesting: Int
+  def discPostSortOrder: PostSortOrder
+  def progressLayout: ProgressLayout
+  def origPostReplyBtnTitle: String
+  def origPostVotes: OrigPostVotes
+  // -----------------------------
 
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
@@ -212,6 +223,12 @@ trait AllSettings {
     selectTopicType = Some(self.selectTopicType),
     showAuthorHow = Some(self.showAuthorHow),
     watchbarStartsOpen = Some(self.watchbarStartsOpen),
+    discussionLayout = Some(self.discussionLayout),
+    discPostNesting = Some(self.discPostNesting),
+    discPostSortOrder = Some(self.discPostSortOrder),
+    progressLayout = Some(self.progressLayout),
+    origPostReplyBtnTitle = Some(self.origPostReplyBtnTitle),
+    origPostVotes = Some(self.origPostVotes),
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
     numFirstPostsToApprove = Some(self.numFirstPostsToApprove),
     numFirstPostsToAllow = Some(self.numFirstPostsToAllow),
@@ -321,6 +338,12 @@ object AllSettings {
     val selectTopicType = true
     val showAuthorHow: ShowAuthorHow = ShowAuthorHow.FullNameThenUsername
     val watchbarStartsOpen = true
+    val discussionLayout: DiscussionLayout = DiscussionLayout.Default
+    val discPostNesting: NestingDepth = PostsOrderNesting.Default.nestingDepth
+    val discPostSortOrder: PostSortOrder = PostSortOrder.Default
+    val progressLayout: ProgressLayout = ProgressLayout.Default
+    val origPostReplyBtnTitle: String = ""  // will then use the i18n field
+    val origPostVotes: OrigPostVotes = OrigPostVotes.Default
     val numFirstPostsToReview = 1
     val numFirstPostsToApprove = 0
     val numFirstPostsToAllow = 0
@@ -431,6 +454,12 @@ case class EffectiveSettings(
   def selectTopicType: Boolean = firstInChain(_.selectTopicType) getOrElse default.selectTopicType
   def showAuthorHow: ShowAuthorHow = firstInChain(_.showAuthorHow) getOrElse default.showAuthorHow
   def watchbarStartsOpen: Boolean = firstInChain(_.watchbarStartsOpen) getOrElse default.watchbarStartsOpen
+  def discussionLayout: DiscussionLayout = firstInChain(_.discussionLayout) getOrElse default.discussionLayout
+  def discPostNesting: Int =  firstInChain(_.discPostNesting) getOrElse default.discPostNesting
+  def discPostSortOrder: PostSortOrder = firstInChain(_.discPostSortOrder) getOrElse default.discPostSortOrder
+  def progressLayout: ProgressLayout = firstInChain(_.progressLayout) getOrElse default.progressLayout
+  def origPostReplyBtnTitle: String = firstInChain(_.origPostReplyBtnTitle) getOrElse default.origPostReplyBtnTitle
+  def origPostVotes: OrigPostVotes = firstInChain(_.origPostVotes) getOrElse default.origPostVotes
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
   def numFirstPostsToApprove: Int = firstInChain(_.numFirstPostsToApprove) getOrElse default.numFirstPostsToApprove
   def numFirstPostsToAllow: Int = firstInChain(_.numFirstPostsToAllow) getOrElse default.numFirstPostsToAllow
@@ -641,6 +670,12 @@ object Settings2 {
       "selectTopicType" -> JsBooleanOrNull(s.selectTopicType),
       "showAuthorHow" -> JsNumberOrNull(s.showAuthorHow.map(_.toInt)),
       "watchbarStartsOpen" -> JsBooleanOrNull(s.watchbarStartsOpen),
+      "discussionLayout" -> JsNumberOrNull(s.discussionLayout.map(_.toInt)),
+      "discPostNesting" -> JsNumberOrNull(s.discPostNesting),
+      "discPostSortOrder" -> JsNumberOrNull(s.discPostSortOrder.map(_.toInt)),
+      "progressLayout" -> JsNumberOrNull(s.progressLayout.map(_.toInt)),
+      "origPostReplyBtnTitle" -> JsStringOrNull(s.origPostReplyBtnTitle),
+      "origPostVotes" -> JsNumberOrNull(s.origPostVotes.map(_.toInt)),
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
       "numFirstPostsToApprove" -> JsNumberOrNull(s.numFirstPostsToApprove),
       "numFirstPostsToAllow" -> JsNumberOrNull(s.numFirstPostsToAllow),
@@ -733,6 +768,12 @@ object Settings2 {
     selectTopicType = anyBool(json, "selectTopicType", d.selectTopicType),
     showAuthorHow = anyInt(json, "showAuthorHow", d.showAuthorHow.toInt).map(_.flatMap(ShowAuthorHow.fromInt)),
     watchbarStartsOpen = anyBool(json, "watchbarStartsOpen", d.watchbarStartsOpen),
+    discussionLayout = anyInt(json, "discussionLayout", d.discussionLayout.toInt).map(_.flatMap(DiscussionLayout.fromInt)),
+    discPostNesting = anyInt(json, "discPostNesting", d.discPostNesting),
+    discPostSortOrder = anyInt(json, "discPostSortOrder", d.discPostSortOrder.toInt).map(_.flatMap(PostSortOrder.fromInt)),
+    progressLayout = anyInt(json, "progressLayout", d.progressLayout.toInt).map(_.flatMap(ProgressLayout.fromInt)),
+    origPostReplyBtnTitle = anyString(json, "origPostReplyBtnTitle", d.origPostReplyBtnTitle),
+    origPostVotes = anyInt(json, "origPostVotes", d.origPostVotes.toInt).map(_.flatMap(OrigPostVotes.fromInt)),
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
     numFirstPostsToApprove = anyInt(json, "numFirstPostsToApprove", d.numFirstPostsToApprove),
     numFirstPostsToAllow = anyInt(json, "numFirstPostsToAllow", d.numFirstPostsToAllow),

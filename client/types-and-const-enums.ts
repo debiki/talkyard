@@ -39,6 +39,7 @@ type WhenMs = number;
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
 
+type U = undefined;
 
 
 const enum ReviewDecision {
@@ -255,6 +256,37 @@ const enum PinPageWhere {
   InCategory = 1,
   Globally = 3,
 }
+
+
+const enum DiscussionLayout {
+  Default = 0,
+}
+
+type NestingDepth = number;
+const InfiniteNesting: NestingDepth = -1;  // sync with Scala
+
+const enum PostSortOrder {
+  Default = 0,
+  BestFirst = 1,
+  NewestFirst = 2,
+  OldestFirst = 3,
+  // Random = 4 ?
+  // NewAndBestFirst = 5,
+}
+
+const enum ProgressLayout {
+  Default = 0,
+  Enabled = 1,
+  MostlyDisabled = 2,
+}
+
+const enum OrigPostVotes {
+  Default = 0,
+  NoVotes = 1,
+  LikeVotesOnly = 2,
+  AllVotes = 3,
+}
+
 
 
 const enum SiteStatus {

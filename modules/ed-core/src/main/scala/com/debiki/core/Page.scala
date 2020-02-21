@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import com.debiki.core.Prelude._
+import com.debiki.core.PageParts.MaxTitleLength
 import java.{util => ju}
 import scala.collection.mutable
 
@@ -26,6 +27,8 @@ import scala.collection.mutable
 /** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
   * a Wiki main page, or a site's homepage, for example.
   */
+// REFACTOR  combine Page and PageParts into the same trait, "Page".[ONEPAGEDAO]
+//  + move to talkyard-server,  not needed here in ty-core.
 trait Page {
 
   def id: PageId
@@ -191,6 +194,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
+  // REFACTOR move to site settings and admin area
   layout: PageLayout = PageLayout.Default,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
@@ -623,7 +627,7 @@ object PageType {
 }
 
 
-trait PageLayout { def toInt: Int }
+trait PageLayout { def toInt: Int }  // REMOVE, and split into 3 fields, see: SiteSectionPageLayout
 object PageLayout {
   object Default extends PageLayout { val toInt = 0 }
 
@@ -631,10 +635,7 @@ object PageLayout {
     if (TopicListLayout.MinIntVal <= value && value <= TopicListLayout.MaxIntVal) {
       TopicListLayout.fromInt(value)
     }
-    else if (TopicLayout.MinIntVal <= value && value <= TopicLayout.MaxIntVal) {
-      TopicLayout.fromInt(value)
-    }
-    else if (value == Default.toInt) {
+    else if (value == DiscussionLayout.Default.toInt || value == Default.toInt) {
       Some(PageLayout.Default)
     }
     else {
@@ -644,7 +645,21 @@ object PageLayout {
 }
 
 
-sealed abstract class CategoriesLayout(val IntVal: Int) extends PageLayout {
+/** A site section is e.g. a forum page — and you can view the contents of the forum,
+  * in different ways:
+  *
+  * - Listing topics
+  * - Listing categories
+  * - A knowledge-base style search page  (not implemented)
+  *
+  * What's the best default view, depends on the community. People can click
+  * buttons: "View categories", "View topic list", to switch between views.
+  */
+trait SiteSectionPageLayout
+
+
+
+sealed abstract class CategoriesLayout(val IntVal: Int) extends PageLayout with  SiteSectionPageLayout {
   def toInt: Int = IntVal
 }
 
@@ -655,6 +670,11 @@ object CategoriesLayout {
     case Default.IntVal => Default
     case _ => return None
   })
+}
+
+
+sealed abstract class KnowledgeBaseLayout(val IntVal: Int) extends PageLayout {
+  def toInt: Int = IntVal
 }
 
 
@@ -688,53 +708,64 @@ object TopicListLayout {
 }
 
 
-sealed abstract class TopicLayout(val IntVal: Int) extends PageLayout {
+sealed abstract class DiscussionLayout(val IntVal: Int) extends PageLayout {
   def toInt: Int = IntVal
 }
 
-object TopicLayout {
-  object Default extends TopicLayout(0)
-
-  val MinIntVal = 1001
-
-  /** Threaded layout. Reddit, Hacker News, Disqus use this. */
-  object ThreadedDiscussion extends TopicLayout(1001)
-
-  /** Flat layout. Discourse, phpBB and other forum software use this. */
-  object FlatProgress extends TopicLayout(1002)
-
-  /** I (KajMagnus) like this, and no one has tried this before?  */
-  object SplitDiscussionProgress extends TopicLayout(1003)
-
-  /* Maybe later:
-
-  /** Top level replies sorted by time, and each such reply has its own threaded
-    * sub discussion. Nice for posting and discussing status updates — each
-    * status update, becomes its own sub discussion. I can use for the dev diary.
-    * (If separate *topics* for each status update (like, a blog), is too heavy weight.)  */
-  object ProgressWithThreadedReplies extends TopicLayout(1004)
-
-  /** Like the above, but replies are flat, just one level nesting. Facebook uses this. */
-  object ProgressWithFlatReplies extends TopicLayout(1005)
-
-  /** Like the above, but best replies first (instead of by time). Facebook uses this. */
-  object DiscussionWithFlatReplies extends TopicLayout(1006)
-  */
-
-  // Maybe not.
-  //object SplitDiscussionWithFlatRepliesAndProgressBelow extends TopicLayout(...)
-
-  val MaxIntVal = 1100
-
-  def fromInt(value: Int): Option[TopicLayout] = Some(value match {
+object DiscussionLayout {
+  object Default extends DiscussionLayout(0)
+  def fromInt(value: Int): Option[DiscussionLayout] = Some(value match {
     case Default.IntVal => Default
-    case ThreadedDiscussion.IntVal => ThreadedDiscussion
-    case FlatProgress.IntVal => FlatProgress
-    case SplitDiscussionProgress.IntVal => SplitDiscussionProgress
     case _ => return None
   })
 }
 
+
+/* Old, instead, use  discPostNesting: Int
+ *
+object DiscussionLayout {
+  val MinIntVal = 1001
+
+  /** Threaded layout — Talkyard's default. Reddit, Hacker News, Disqus use this. */
+  object Threaded extends DiscussionLayout(1001)
+
+  /** Flat layout. Discourse, phpBB and other forum software use this. */
+  object Flat extends DiscussionLayout(1002)
+
+  /** Each top level reply has its own flat sub discussion. That is, one level nesting.
+    * Facebook and StackOverflow uses this.
+    */
+  object ThreadedFlat extends DiscussionLayout(1003)
+
+
+  val MaxIntVal = 1100
+
+  def fromInt(value: Int): Option[DiscussionLayout] = Some(value match {
+    case Default.IntVal => Default
+    case Threaded.IntVal => Threaded
+    case Flat.IntVal => Flat
+    case ThreadedFlat.IntVal => ThreadedFlat
+    case _ => return None
+  })
+}  */
+
+
+sealed abstract class ProgressLayout(val IntVal: Int) {
+  def toInt: Int = IntVal
+}
+
+object ProgressLayout {
+  object Default extends ProgressLayout(0)
+  object Enabled extends ProgressLayout(1)
+  object MostlyDisabled extends ProgressLayout(2)
+
+  def fromInt(value: Int): Option[ProgressLayout] = Some(value match {
+    case Default.IntVal => Default
+    case Enabled.IntVal => Enabled
+    case MostlyDisabled.IntVal => MostlyDisabled
+    case _ => return None
+  })
+}
 
 
 /**

@@ -143,7 +143,7 @@ class JsonMaker(dao: SiteDao) {
 
   private def pageThatExistsToJsonImpl(pageId: PageId, pageRenderParams: PageRenderParams,
         tx: SiteTransaction): PageToJsonResult = {
-    val page = PageDao(pageId, tx)
+    val page = dao.newPageDao(pageId, tx)
     pageToJsonImpl(page, pageRenderParams, tx)
   }
 
@@ -239,9 +239,11 @@ class JsonMaker(dao: SiteDao) {
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    val parentlessReplies = pageParts.parentlessReplies
+    val parentlessReplies = pageParts.parentlessRepliesSorted
     val parentlessReplyNrsSorted =
-      Post.sortPostsBestFirst(parentlessReplies).map(reply => JsNumber(reply.nr))
+      parentlessReplies.map(reply => JsNumber(reply.nr))
+      // Not needed?: Post.sortPosts(parentlessReplies).map(reply => JsNumber(reply.nr))
+      // — already sorted??!!
 
     if (page.pageType == PageType.EmbeddedComments) {
       allPostsJson +:=
@@ -251,8 +253,7 @@ class JsonMaker(dao: SiteDao) {
 
     val progressPosts = pageParts.progressPosts
     val progressPostNrsSorted =
-      // COULD rename 'sortPostsBestFirst', since sorts progress replies by time.
-      Post.sortPostsBestFirst(progressPosts).map(reply => JsNumber(reply.nr))
+      Post.sortPosts(progressPosts, PostSortOrder.OldestFirst).map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
@@ -304,7 +305,15 @@ class JsonMaker(dao: SiteDao) {
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "pageRole" -> JsNumber(page.pageType.toInt),
       "pagePath" -> JsPagePathWithId(pagePath),
+      // --- These and some more, could be in separate objs instead [DBLINHERIT]
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
+      "discussionLayout" -> JsNumber(siteSettings.discussionLayout.toInt),
+      "discPostSortOrder" -> JsNumber(page.parts.postsOrderNesting.sortOrder.toInt),
+      "discPostNesting" -> JsNumber(page.parts.postsOrderNesting.nestingDepth),
+      "progressLayout" -> JsNumber(siteSettings.progressLayout.toInt),
+      "origPostVotes" -> JsNumber(page.parts.origPostVotes.toInt),
+      "origPostReplyBtnTitle" -> JsStringOrNull(page.parts.origPostReplyBtnTitle),
+      // -------------------------------------------------
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
       "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),
       "pageHtmlHeadDescription" -> JsString(page.meta.htmlHeadDescription),
@@ -481,7 +490,7 @@ class JsonMaker(dao: SiteDao) {
         showHidden: Boolean = false): (JsObject, PageVersion) = {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
-      val page = PageDao(pageId, transaction)
+      val page = dao.newPageDao(pageId, transaction)
       val post = page.parts.thePostByNr(postNr)
       val tags = transaction.loadTagsForPost(post.id)
       val json = postToJsonImpl(post, page, tags,
@@ -573,7 +582,7 @@ class JsonMaker(dao: SiteDao) {
         (summarize, summary, squash)
       }
 
-    val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
+    val childrenSorted = page.parts.childrenSortedOf(post.nr)
 
     val howRender = new HowRenderPostInPage(summarize = summarize, jsSummary = jsSummary,
         squash = squash, childrenSorted = childrenSorted)
@@ -999,7 +1008,7 @@ class JsonMaker(dao: SiteDao) {
         transaction: SiteTransaction): JsValue = {
     // Warning: some similar code above [89fKF2]
     // Load the page so we'll get a version that includes postId, in case it was just added.
-    val page = PageDao(pageId, transaction)
+    val page = dao.newPageDao(pageId, transaction)
     val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
     dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
         just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
@@ -1035,7 +1044,7 @@ class JsonMaker(dao: SiteDao) {
       postsByPageId.toSeq.map(pageIdPosts => {
         val pageId = pageIdPosts._1
         val posts = pageIdPosts._2
-        val page = PageDao(pageId, transaction)
+        val page = dao.newPageDao(pageId, transaction)
         val postsJson = posts map { p =>
           postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
             includeUnapproved = false, showHidden = false)
@@ -1173,6 +1182,19 @@ object JsonMaker {
       json += "showAuthorHow" -> JsNumber(settings.showAuthorHow.toInt)
     if (settings.watchbarStartsOpen != D.watchbarStartsOpen)
       json += "watchbarStartsOpen" -> JsBoolean(settings.watchbarStartsOpen)
+    if (settings.discussionLayout != D.discussionLayout)
+      json += "discussionLayout" -> JsNumber(settings.discussionLayout.toInt)
+    if (settings.discPostNesting != D.discPostNesting)
+      json += "discPostNesting" -> JsNumber(settings.discPostNesting)
+    if (settings.discPostSortOrder != D.discPostSortOrder)
+      json += "discPostSortOrder" -> JsNumber(settings.discPostSortOrder.toInt)
+    if (settings.progressLayout != D.progressLayout)
+      json += "progressLayout" -> JsNumber(settings.progressLayout.toInt)
+    if (settings.origPostReplyBtnTitle != D.origPostReplyBtnTitle)
+      json += "origPostReplyBtnTitle" -> JsString(settings.origPostReplyBtnTitle)
+    if (settings.origPostVotes != D.origPostVotes)
+      json += "origPostVotes" -> JsNumber(settings.origPostVotes.toInt)
+
     json
   }
 

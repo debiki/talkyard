@@ -346,6 +346,7 @@ declare namespace debiki2 {
   function linkToAdminPage(): string;
   function linkToAdminPageLoginSettings(): string;
   function linkToAdminPageModerationSettings(): string;
+  function linkToAdminPageEmbeddedSettings(): string;
   function linkToReviewPage(): string;
   function linkToStaffInvitePage(): string;
   function externalLinkToAdminHelp(): string;

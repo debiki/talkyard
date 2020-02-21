@@ -21,7 +21,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.EdHttp._
 import debiki.{SpecialContentPages, TextAndHtml}
-import debiki.dao.{PageDao, PagePartsDao, SiteDao}
+import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import org.jsoup.Jsoup
@@ -808,7 +808,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         if (pageIdsWithBadStats.contains(realPageId)) {
           dieIf(!wroteToDatabase, "TyE0KSGF45")
 
-          val pageDao = PageDao(pageWrongStats.pageId, tx) // (0926575)
+          val pageDao = dao.newPageDao(pageWrongStats.pageId, tx) // (0926575)
           val pageMeta = pageWrongStats.copyWithUpdatedStats(pageDao) // bumps version [306MDH26]
 
           dao.updatePagePopularity(pageDao.parts, tx)
@@ -896,7 +896,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
           // COULD skip @mentions notifications here somehow, since not supported
           // here since we import html only, not CommonMark with @mentions syntax. [305TKRW24]
           val notifications = notfGenerator.generateForNewPost(
-            PageDao(post.pageId, tx), post, anyNewTextAndHtml = None, anyReviewTask = None)
+            dao.newPageDao(post.pageId, tx), post, anyNewTextAndHtml = None, anyReviewTask = None)
           tx.saveDeleteNotifications(notifications)
         }
       }
@@ -1163,7 +1163,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         // performance wise — it's just one db query, to load all posts, vs one per post,
         // previously when inserting. At least not more than 2x slower, which should be ok
         // (simplicity = more important).
-        val pagePartsDao = PagePartsDao(pageMeta.pageId, tx)
+        val settings = SettingsDao.loadWholeSiteSettings(tx, globals)
+        val pagePartsDao = PagePartsDao(pageMeta.pageId, settings, tx)
         PagePopularityDao.updatePagePopularity(pagePartsDao, tx)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
         val numReplies = pagePartsDao.allPosts.count(_.isReply)

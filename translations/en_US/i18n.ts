@@ -22,6 +22,7 @@ var t_en_US: TalkyardTranslations = t = {
   Activity: "Activity",
   Add: "Add",
   AddingDots: "Adding ...",
+  AddComment: "Add Comment",
   Admin: "Admin",
   AdvSearch: "Advanced search",
   Away: "Away",
@@ -32,7 +33,6 @@ var t_en_US: TalkyardTranslations = t = {
   Categories: "Categories",
   Category: "Category",
   ChangeV: "Change",
-  Continue: "Continue",
   ClickToShow: "Click to show",
   ChangeDots: "Change ...",
   ChatN: "Chat",
@@ -40,6 +40,8 @@ var t_en_US: TalkyardTranslations = t = {
   CheckYourEmail: "Check your email",
   Close: "Close",
   closed: "closed",
+  comments: "comments",   // as in:  "123 comments"
+  Continue: "Continue",
   Created: "Created",
   Delete: "Delete",
   Deleted: "Deleted",
@@ -1178,6 +1180,7 @@ var t_en_US: TalkyardTranslations = t = {
     edits: "edits",
 
     PostReply: "Post reply",
+    PostComment: "Post comment",
 
     Post: "Post",
     comment: "comment",

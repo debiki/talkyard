@@ -509,7 +509,7 @@ case class Post(   // [exp] ok use
     parentNr.flatMap(pageParts.postByNr)
 
   def children(pageParts: PageParts): immutable.Seq[Post] =
-    pageParts.childrenBestFirstOf(nr)
+    pageParts.childrenSortedOf(nr)
 
 
   /** Setting any flag to true means that status will change to true. Leaving it
@@ -790,14 +790,34 @@ object Post {
 
 
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
+    *
+    * NOTE: Keep in sync with  sortPostNrsInPlace()   [SAMESORT]
+    * in client/app/ReactStore.ts.
     */
-  def sortPostsBestFirst(posts: immutable.Seq[Post]): immutable.Seq[Post] = {
-    posts.sortWith(sortPostsFn)
+  def sortPosts(posts: immutable.Seq[Post], sortOrder: PostSortOrder)
+        : immutable.Seq[Post] = {
+    var sortFn: (Post, Post) => Boolean = sortPostsBestFirstFn
+    if (sortOrder == PostSortOrder.NewestFirst) {
+      sortFn = sortPostsNewestFirst
+    }
+    else if (sortOrder == PostSortOrder.OldestFirst) {
+      sortFn = sortPostsOldestFirst
+    }
+    else {
+      // Keep default, best first.
+    }
+    posts.sortWith(sortFn)
   }
 
-  /** NOTE: Keep in sync with `sortPostIdsInPlaceBestFirst()` in client/app/ReactStore.ts
-    */
-  private def sortPostsFn(postA: Post, postB: Post): Boolean = {
+  private def sortPostsNewestFirst(postA: Post, postB: Post): Boolean = {
+    !postApprovedOrCreatedBefore(postA, postB)
+  }
+
+  private def sortPostsOldestFirst(postA: Post, postB: Post): Boolean = {
+    postApprovedOrCreatedBefore(postA, postB)
+  }
+
+  private def sortPostsBestFirstFn(postA: Post, postB: Post): Boolean = {
     /* From app/debiki/HtmlSerializer.scala:
     if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
       // 1 means place first, 2 means place first but one, and so on.
@@ -910,6 +930,9 @@ object Post {
       return true
     if (postAApprAt > postBApprAt)
       return false
+    // This should order posts by when they got inserted into the database, not
+    // by their creation timestamps. Usually gives the same result. Could matter
+    // though, if one import-appends more posts to an already existing page.
     postA.nr < postB.nr
   }
 }

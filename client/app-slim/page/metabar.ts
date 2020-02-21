@@ -88,6 +88,7 @@ export var Metabar = createComponent({
     const page: Page = store.currentPage;
     const ui = this.state.ui;
     const me: Myself = store.me;
+    const isBlogComments = page.pageRole === PageRole.EmbeddedComments;
 
     const notfLevelElem = !me.isAuthenticated || ui.showDetails ? null :
       r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
@@ -100,13 +101,15 @@ export var Metabar = createComponent({
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }));
 
     // If not in emb cmts, then login btns in topbar, need not show here too.
-    const nameLoginBtns = page.pageRole !== PageRole.EmbeddedComments ? null :
+    const nameLoginBtns = !isBlogComments ? null :
         r.li({}, reactelements.NameLoginBtns({}));
 
     const summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
-              r.li({ className: 'dw-cmts-count' }, page.numPostsRepliesSection + ' ' + t.replies),
+              r.li({ className: 'dw-cmts-count' },
+                page.numPostsRepliesSection + ' ' +
+                    isBlogComments ? (t.comments || t.replies) : t.replies),  // I18N
               nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);

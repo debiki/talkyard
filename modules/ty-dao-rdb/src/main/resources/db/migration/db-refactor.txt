@@ -1,4 +1,5 @@
 
+?? settings3.many_sections  —> enable_sub_sites
 
 rename perms_on_pages to  page_perms  ?
    no ... instead,  perms_on_pages, perms_on_cats, perms_on_tags. ?

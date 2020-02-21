@@ -3,6 +3,11 @@
 -- later, change col type to Int, add 0 < ... < 1000 constraint?
 
 
+alter table settings3 add column media_in_posts int;
+alter table settings3 add constraint settings_c_mediainposts check (
+    media_in_posts between 0 and 100);
+
+
 ---------------
 -- Prefix alt page ids with:  'diid:'  unless is http(s)://... or url path:  /...  [J402RKDT]
 -- From edc:

@@ -356,9 +356,10 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def showPagePopularityStats(pageId: PageId): Action[Unit] = AdminGetAction { request =>
-    val (scoreInDb, scoreNow, statsNow) = request.dao.readOnlyTransaction { tx =>
+    import request.dao
+    val (scoreInDb, scoreNow, statsNow) = dao.readOnlyTransaction { tx =>
       val scoreInDb = tx.loadPagePopularityScore(pageId)
-      val pageParts = PagePartsDao(pageId, tx)
+      val pageParts = PagePartsDao(pageId, dao.loadWholeSiteSettings(tx), tx)
       val actions = tx.loadActionsOnPage(pageParts.pageId)
       val visits = tx.loadPageVisitTrusts(pageParts.pageId)
       val statsNow = PagePopularityCalculator.calcPopStatsNowAndThen(

@@ -531,11 +531,92 @@ package object core {
   }
 
 
-  sealed abstract class ShowAuthorHow(val IntVal: Int) { def toInt: Int = IntVal }
+  // ----- PostsOrderNesting
+
+  case class PostsOrderNesting(
+    sortOrder: PostSortOrder,
+    nestingDepth: NestingDepth)
+
+  type NestingDepth = Int
+
+  object PostsOrderNesting {
+    val InfiniteNesting: NestingDepth = -1  // sync with Typescript
+
+    val Default = PostsOrderNesting(PostSortOrder.Default, InfiniteNesting)
+  }
+
+  // ----- PostsSortOrder
+
+  sealed abstract class PostSortOrder(val IntVal: Int, val isByTime: Boolean) {
+    def toInt: Int = IntVal
+  }
+
+  object PostSortOrder {
+    case object Default extends PostSortOrder(0, false)
+    case object BestFirst extends PostSortOrder(1, false)
+    case object NewestFirst extends PostSortOrder(2, true)
+    case object OldestFirst extends PostSortOrder(3, true)
+
+    // Maybe: Random?
+    // How would Random work, combined with performance and caching? Pick
+    // a random post, keep at top for 1 minute, then a new, for the next
+    // minute? and so on. So the page can be cached for a minute at least.
+    // Or maybe max(1, 60 min / num-orig-post-replies)?
+    // Or 100 different "cache slots" for 100 different random seeds?
+    // Wait with this ... for quite a while (!).
+    //
+    // object Random extends PostsSortOrder(4)
+
+    // These give new posts (and old posts further down) a chance to be seen,
+    // rather than old upvoted post at the top getting all attention:
+    //
+    // /* Shows a few new posts first, then, below, post sorted by popularity. */
+    // object NewAndBestFirst extends PostsSortOrder(5)
+    // object RandomAndBestFirst extends PostsSortOrder(6)
+    // object NewRandomAndBestFirst extends PostsSortOrder(7)
+
+    def fromInt(value: Int): Option[PostSortOrder] = Some(value match {
+      case Default.IntVal => Default
+      case BestFirst.IntVal => BestFirst
+      case NewestFirst.IntVal => NewestFirst
+      case OldestFirst.IntVal => OldestFirst
+      case _ => return None
+    })
+  }
+
+
+  // ----- OrigPostVotes
+
+  sealed abstract class OrigPostVotes(val IntVal: Int) {
+    def toInt: Int = IntVal
+  }
+
+  object OrigPostVotes {
+    case object Default extends OrigPostVotes(0)
+    case object NoVotes extends OrigPostVotes(1)
+    case object LikeVotesOnly extends OrigPostVotes(2)
+    case object AllVotes extends OrigPostVotes(3)
+
+    def fromInt(value: Int): Option[OrigPostVotes] = Some(value match {
+      case Default.IntVal => Default
+      case NoVotes.IntVal => NoVotes
+      case LikeVotesOnly.IntVal => LikeVotesOnly
+      case AllVotes.IntVal => AllVotes
+      case _ => return None
+    })
+  }
+
+
+  // ----- ShowAuthorHow
+
+  sealed abstract class ShowAuthorHow(val IntVal: Int) {
+    def toInt: Int = IntVal
+  }
+
   object ShowAuthorHow {
-    object UsernameOnly extends ShowAuthorHow(1)
-    object UsernameThenFullName extends ShowAuthorHow(2)
-    object FullNameThenUsername extends ShowAuthorHow(3)
+    case object UsernameOnly extends ShowAuthorHow(1)
+    case object UsernameThenFullName extends ShowAuthorHow(2)
+    case object FullNameThenUsername extends ShowAuthorHow(3)
 
     def fromInt(value: Int): Option[ShowAuthorHow] = Some(value match {
       case UsernameOnly.IntVal => UsernameOnly

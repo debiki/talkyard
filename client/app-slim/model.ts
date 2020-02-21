@@ -377,6 +377,11 @@ interface MyPageData {
 }
 
 
+/**
+ * This is not the effective permissions on the current page, but instead
+ * permissions configured for its parent groups and categories — so we can see,
+ * client side, from where a setting got inherited.  [DBLINHERIT]
+ */
 interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
   id?: UserId;
   myDataByPageId?: { [id: string]: MyPageData };
@@ -720,7 +725,13 @@ interface AutoPage {
 }
 
 // A page with real user written content, e.g. a discussion, chat, info page or homepage.
-interface Page {
+interface Page
+    // For now, "inline" settings in the page. Later, keep separately,
+    // like OwnPageNotfPrefs? [DBLINHERIT]
+    // So we can see from where a setting comes — is it from some ancestor category
+    // or group? Or the whole forum? Otherwise, hard to troubleshoot unexpected
+    // effective settings.
+    extends TopicInterfaceSettings {
   dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
@@ -730,7 +741,7 @@ interface Page {
   categoryId?: number;
   pageRole: PageRole;
   pagePath: PagePath;
-  pageLayout?: PageLayout;
+  pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
   pageHtmlTagCssClasses?: string;
   // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
@@ -921,7 +932,7 @@ interface Store extends Origins, PartialEditorState {
 
 
 // Default settings: [8L4KWU02]
-interface SettingsVisibleClientSide {
+interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   termsOfUseUrl?: string;               // default: undefined —> built-in
   privacyUrl?: string;                  // default: undefined —> built-in
   languageCode?: string;                // default: 'en_US'
@@ -963,6 +974,22 @@ interface SettingsVisibleClientSide {
   watchbarStartsOpen?: boolean;         // default: true
   showSocialButtons?: boolean;          // default: undefined —> false
   facebookAppId?: string;               // default: undefined —> no FB insight statistics
+}
+
+
+// interface FrumInterfaceSettings {   — move some things from above to here?
+// ...
+// }
+
+
+interface TopicInterfaceSettings {
+  discussionLayout?: DiscussionLayout;  // default: threaded
+  discPostNesting?: NestingDepth;       // default: infinite nesting depth
+  discPostSortOrder?: PostSortOrder;    // default: best first
+
+  progressLayout?: ProgressLayout;      // default: Visible
+  origPostReplyBtnTitle?: string;       // default: t.AddComment
+  origPostVotes?: OrigPostVotes;
 }
 
 
@@ -1399,7 +1426,7 @@ interface EditorPatch extends PartialEditorState {
 
 
 
-interface Settings {
+interface Settings extends TopicInterfaceSettings {
   // Signup and Login
   expireIdleAfterMins: number;
   userMustBeAuthenticated: boolean;
@@ -1451,6 +1478,9 @@ interface Settings {
   selectTopicType: boolean;
   watchbarStartsOpen: boolean;
   showAuthorHow: ShowAuthorHow;
+
+  // Topics — hmm these could be per category and topic type too:
+  // Inherited from: TopicInterfaceSettings
 
   // Spam
   numFlagsToHidePost: number;

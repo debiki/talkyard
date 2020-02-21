@@ -79,8 +79,16 @@ object PageParts {
 
 
 case class PreLoadedPageParts(
-  pageId: PageId,
-  allPosts: immutable.Seq[Post]) extends PageParts
+  override val pageMeta: PageMeta,
+  allPosts: immutable.Seq[Post],
+  override val origPostReplyBtnTitle: Option[String] = None,
+  override val origPostVotes: OrigPostVotes = OrigPostVotes.Default,
+  override val postsOrderNesting: PostsOrderNesting = PostsOrderNesting.Default)
+  extends PageParts {
+
+  def pageId: PageId = pageMeta.pageId
+  def exists: Boolean = pageMeta.pageId != NoPageId  // ???
+}
 
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
@@ -91,6 +99,8 @@ case class PreLoadedPageParts(
   *
   * TODO move to debiki-server instead?
   */
+// REFACTOR  combine PageDao and PagePartsDao into the same class, "PageDao". [ONEPAGEDAO]
+//  + see above TODO.
 abstract class PageParts {
 
   private lazy val postsByNr: collection.Map[PostNr, Post] = {
@@ -101,7 +111,17 @@ abstract class PageParts {
     postsMap
   }
 
-  private lazy val childrenBestFirstByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
+  def pageMeta: PageMeta
+
+  def exists: Boolean
+
+  def postsOrderNesting: PostsOrderNesting
+
+  def origPostVotes: OrigPostVotes
+
+  def origPostReplyBtnTitle: Option[String]
+
+  private lazy val childrenSortedByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
     val childMap = mutable.HashMap[PostNr, Vector[Post]]()
     for {
@@ -114,7 +134,7 @@ abstract class PageParts {
       siblings = siblings :+ post
       childMap.put(parentNrOrNoNr, siblings)
     }
-    childMap.mapValues(Post.sortPostsBestFirst)
+    childMap.mapValues(posts => Post.sortPosts(posts, postsOrderNesting.sortOrder))
   }
 
   def lastPostButNotOrigPost: Option[Post] =
@@ -130,10 +150,11 @@ abstract class PageParts {
   }
 
   def pageId: PageId
+
   def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
-  def parentlessReplies: immutable.Seq[Post] =
-    childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil)
+  def parentlessRepliesSorted: immutable.Seq[Post] =
+    childrenSortedByParentNr.getOrElse(PageParts.NoNr, Nil)
 
   def progressPosts: immutable.Seq[Post] =
     allPosts filter { post =>
@@ -213,8 +234,8 @@ abstract class PageParts {
     */
   def siblingIndexOf(post: Post): (Int, Boolean) = {
     val siblings: Seq[Post] = post.parentNr match {
-      case None => parentlessReplies
-      case Some(parentNr) => childrenBestFirstOf(parentNr)
+      case None => parentlessRepliesSorted
+      case Some(parentNr) => childrenSortedOf(parentNr)
     }
 
     var index = 0
@@ -235,19 +256,19 @@ abstract class PageParts {
   }
 
 
-  def childrenBestFirstOf(postNr: PostNr): immutable.Seq[Post] =
-    childrenBestFirstByParentNr.getOrElse(postNr, Nil)
+  def childrenSortedOf(postNr: PostNr): immutable.Seq[Post] =
+    childrenSortedByParentNr.getOrElse(postNr, Nil)
 
 
   def descendantsOf(postNr: PostNr): immutable.Seq[Post] = {
-    val pending = ArrayBuffer[Post](childrenBestFirstByParentNr.getOrElse(postNr, Nil): _*)
+    val pending = ArrayBuffer[Post](childrenSortedByParentNr.getOrElse(postNr, Nil): _*)
     val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
       dieIf(successors.exists(_.nr == next.nr),
         "DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post nr ${next.nr}")
       successors.append(next)
-      pending.append(childrenBestFirstOf(next.nr): _*)
+      pending.append(childrenSortedOf(next.nr): _*)
     }
     successors.toVector
   }
@@ -257,7 +278,7 @@ abstract class PageParts {
     COULD_OPTIMIZE // bad O(?) complexity when called on each node, like
     // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
     // and cache the result -> O(n).
-    childrenBestFirstOf(postNr) exists { child =>
+    childrenSortedOf(postNr) exists { child =>
       !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.nr)
     }
   }
