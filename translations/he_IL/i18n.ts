@@ -16,7 +16,7 @@ var t: TalkyardTranslations;
 
 // Hebrew (not yet but later).
 
-var t_en_US: TalkyardTranslations = t = {
+var t_he_IL: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 
@@ -31,8 +31,8 @@ var t_en_US: TalkyardTranslations = t = {
   BlogN: "Blog",
   Bookmarks: "Bookmarks",
   Cancel: "Cancel",
-  Categories: "Categories",
-  Category: "Category",
+  Categories: "קטגוריות",
+  Category: "קטגוריה",
   ChangeV: "Change",
   Continue: "Continue",
   ClickToShow: "Click to show",
@@ -93,7 +93,7 @@ var t_en_US: TalkyardTranslations = t = {
   Recent: "Recent",
   Remove: "Remove",
   Reopen: "Reopen",
-  ReplyV: "Reply",
+  ReplyV: "תשובה",
   Replying: "Replying",
   Replies: "Replies",
   replies: "replies",
@@ -246,7 +246,7 @@ var t_en_US: TalkyardTranslations = t = {
 
   fb: {
 
-    TopicList: "Topic list",
+    TopicList: "רשימת הנושאים",
 
     // Select category dropdown
 
@@ -267,7 +267,7 @@ var t_en_US: TalkyardTranslations = t = {
 
     // Topic filter dropdown
 
-    AllTopics: "All topics",
+    AllTopics: "כל הנושאים",
 
     ShowAllTopics: "Show all topics",
     ShowAllTopicsDescr: "Not deleted topics though",
@@ -286,10 +286,10 @@ var t_en_US: TalkyardTranslations = t = {
 
     // Rightmost buttons
 
-    ViewCategories: "View categories",  // MISSING
+    ViewCategories: "הצגת קטגוריות",  // MISSING
     EditCat: "Edit Category",
     CreateCat: "Create Category",
-    CreateTopic: "Create Topic",
+    CreateTopic: "צור נושא",  // GOOGLE
     PostIdea: "Post an Idea",
     AskQuestion: "Ask a Question",
     ReportProblem: "Report a Problem",
@@ -320,7 +320,7 @@ var t_en_US: TalkyardTranslations = t = {
 
     CatHasBeenDeleted: "This category has been deleted",
 
-    TopicsActiveFirst: "Topics, recently active first",
+    TopicsActiveFirst: "נושאים פעילים לאחרונה",
     TopicsNewestFirst: "Topics, newest first",
 
     CreatedOn: "Created on ",
@@ -358,7 +358,7 @@ var t_en_US: TalkyardTranslations = t = {
   fc: {
     RecentTopicsWaiting: "Recent topics (those waiting)",
     RecentTopicsInclDel: "Recent topics (including deleted)",
-    RecentTopics: "Recent topics",
+    RecentTopics: "נושאים אחרונים",
     _replies: " replies",
     _deleted: " (deleted)",
     _defCat: " (default category)",
@@ -1066,8 +1066,8 @@ var t_en_US: TalkyardTranslations = t = {
 
     CreateAcconut: "Create account",
     ContinueWithDots: "Continue with ...",
-    SignUp: "Sign up",
-    LogIn: "Log in",
+    SignUp: "הירשם",
+    LogIn: "התחברות",
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
     AuthRequired: "Authentication required to access this site",
@@ -1168,7 +1168,7 @@ var t_en_US: TalkyardTranslations = t = {
     NewPrivChat: "New private chat title and purpose",
     AppendComment: "Append a comment at the bottom of the page:",
 
-    ReplyTo: "Reply to ",
+    ReplyTo: "להגיב ל ",
     ReplyTo_theOrigPost: "the Original Post",
     ReplyTo_post: "post ",
     AddCommentC: "Add a comment:",   // MISSING
@@ -1178,7 +1178,7 @@ var t_en_US: TalkyardTranslations = t = {
     Save: "Save",
     edits: "edits",
 
-    PostReply: "Post reply",
+    PostReply: "פרסם תגובה",
 
     Post: "Post",
     comment: "comment",
