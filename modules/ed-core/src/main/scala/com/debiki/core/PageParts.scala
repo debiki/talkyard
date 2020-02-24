@@ -41,7 +41,7 @@ object PageParts {
 
   val NoNr: Int = -1   // would be good to change to 0 instead [4WKBA20]
 
-  val MaxTitleLength = 150
+  val MaxTitleLength = 200
 
   def isArticleOrTitlePostNr(nr: PostNr): Boolean =
     nr == PageParts.BodyNr || nr == PageParts.TitleNr

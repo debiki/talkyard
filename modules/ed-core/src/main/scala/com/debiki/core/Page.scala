@@ -431,6 +431,7 @@ case class SimplePagePatch(
   ) {
 
   throwIllegalArgumentIf(title.isEmpty, "TyE306GXF24", "Page title is empty")
+  throwIllegalArgumentIf(title.length > MaxTitleLength, "TyE5qDKWQJ6", "Title too long")
   throwIllegalArgumentIf(body.isEmpty, "TyE306GXF25", "Page body is empty")
   Validation.findExtIdProblem(extId) foreach { problem =>
     throwIllegalArgument("TyE8FKDXT2", s"Bad page extId: $problem")

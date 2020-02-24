@@ -19,6 +19,7 @@ package talkyard.server.backup
 
 import com.debiki.core
 import com.debiki.core.Prelude._
+import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core._
 import com.debiki.dao.rdb.PostsSiteDaoMixin
 import debiki.JsonUtils._
@@ -1062,6 +1063,13 @@ case class SiteBackupReader(context: EdContext) {
         return Bad(s"Not a SimplePagePatch json object, but a: " + classNameOf(bad))
     }
 
+    // Try to not reject the request.
+    // E.g. truncate the title to MaxTitleLength instead of replying Error.
+    // Because the software (and people) that calls this API, generally expects it
+    // to do "as best it can", and wouldn't understand any server response error codes.
+    //
+    // ... Unless an upsertOptions is { strict: true }  (unimplemented).
+
     try {
       val pageType = readOptInt(jsObj, "pageType") map { value =>
         PageType.fromInt(value).getOrThrowBadJson("pageType")
@@ -1073,7 +1081,7 @@ case class SiteBackupReader(context: EdContext) {
         // Better require an author name — hard to *start* requiring it in the future,
         // but easy to *stop* requiring it.
         authorRef = Some(readString(jsObj, "authorRef")),
-        title = readString(jsObj, "title"),
+        title = readString(jsObj, "title").take(MaxTitleLength),
         body = readString(jsObj, "body")))
     }
     catch {
