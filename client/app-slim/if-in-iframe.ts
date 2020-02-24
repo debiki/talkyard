@@ -63,9 +63,17 @@ function onMessage(event) {
       break;
     case 'resumeWeakSession':
       dieIf(!eds.isInEmbeddedCommentsIframe, 'TyE305RK3');
-      typs.weakSessionId = eventData;
-      // This will send 'justLoggedIn' to the editor iframe, so it'll get updated too.
-      ReactActions.loadMyself();
+      const pubSiteId = eventData.pubSiteId;
+      if (eds.pubSiteId === pubSiteId) {
+        typs.weakSessionId = eventData.weakSessionId;
+        // This will send 'justLoggedIn' to the editor iframe, so it'll get updated too.
+        ReactActions.loadMyself();
+      }
+      else {
+        // This session id won't work — it's for some other Talkyard site.
+        // This happens if debugging and testing on localhost, deleting and
+        // creating different Talkyard sites at the same something.localhost address.
+      }
       break;
     case 'justLoggedIn':
       // The getMainWin().typs.weakSessionId has been updated already, by

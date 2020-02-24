@@ -458,7 +458,7 @@ function onMessage(event) {
         if (sessionStr) {
           try {
             const session = JSON.parse(sessionStr);
-            sendToComments(`["resumeWeakSession", "${session.weakSessionId}"]`);
+            sendToComments(['resumeWeakSession', session]);
           }
           catch (ex) {
             debugLog(
