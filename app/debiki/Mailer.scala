@@ -345,9 +345,10 @@ class Mailer(
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
     val isTestAddress =
-      emailToSend.sentTo.endsWith("example.com") ||
-      emailToSend.sentTo.endsWith("ex.com") ||
-      emailToSend.sentTo.endsWith("x.co")
+      emailToSend.sentTo.endsWith("@example.com") ||
+      emailToSend.sentTo.endsWith(".example.com") ||
+      emailToSend.sentTo.endsWith("@ex.com") ||
+      emailToSend.sentTo.endsWith("@x.co")
 
     val isE2eAddress = Email.isE2eTestEmailAddress(emailToSend.sentTo)
 
