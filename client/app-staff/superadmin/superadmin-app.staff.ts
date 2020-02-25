@@ -83,7 +83,7 @@ const DashboardPanel = createFactory({
     let filteredSites = [];
 
     const filterText: string = this.state.filter;
-    if (filterText) {
+    if (filterText && filterText.length >= 2) {
       _.each(stuff.sites, (site: SASite) => {
         let show = _.some(site.hostnames, h => h.indexOf(filterText) >= 0);
         show = show || _.some(site.staffUsers, (m: UserInclDetails) =>
@@ -103,7 +103,7 @@ const DashboardPanel = createFactory({
     const sitesToShow = someSites.map((site: SASite) =>
         SiteTableRow({ key: site.id, site: site, superAdminStuff: stuff }));
 
-    const showMoreButton = stuff.sites.length <= numRows ? null :
+    const showMoreButton = filteredSites.length <= numRows ? null :
         Button({ onClick: () => this.setState({ numRows: numRows + 50 })},
           "Show more ...");
 
@@ -112,11 +112,11 @@ const DashboardPanel = createFactory({
           "Show all");
 
     const howMany =
-        r.p({}, `There are ${stuff.sites.length} sites, incl both real and test.`);
+        r.p({}, `There are ${stuff.sites.length} sites in total, incl both real and test.`);
 
     const filter =
         r.div({ className: 's_SA_Filter' },
-          r.div({}, "Filter hostnames, staff names, emails:"),
+          r.div({}, "Filter hostnames, staff names, emails: (at least 2 chars)"),
           r.input({
             value: this.state.filter,
             onChange: (event) => this.setState({
@@ -150,7 +150,9 @@ const SiteTableRow = createComponent({
   displayName: 'SiteTableRow',
 
   getInitialState: function() {
-    return {};
+    return {
+      newNotes: this.props.site.superStaffNotes,
+    };
   },
 
   changeStatus: function(newStatus: SiteStatus) {
@@ -222,15 +224,16 @@ const SiteTableRow = createComponent({
                 `${admOrMod} @${staffUser.username}, ${staffUser.email}, ${staffUser.fullName}`)
             })));
 
-    const notesClass = !site.superStaffNotes?.length ? ' s_SA_S_Notes-Empty' : '';
+    const notesClass = !site.superStaffNotes?.length ? ' s_SA_S_Notes_Txt-Empty' : '';
     const notes =
         r.div({},
-          r.textarea({ className: 's_SA_S_Notes' + notesClass,
+          r.textarea({ className: 's_SA_S_Notes_Txt' + notesClass,
             onChange: (event) =>
                 this.setState({ newNotes: event.target.value }),
             defaultValue: site.superStaffNotes || '' }),
           this.state.newNotes === site.superStaffNotes ? null :
-            PrimaryButton({ onClick: this.saveNotes }, "Save"));
+            PrimaryButton({ className: 's_SA_S_Notes_SaveB', onClick: this.saveNotes },
+              "Save"));
 
     return (
       r.tr({},

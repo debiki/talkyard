@@ -110,12 +110,16 @@ class SystemDao(
     readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
 
   def updateSites(sites: Seq[SuperAdminSitePatch]) {
-    dangerous_readWriteTransaction(_.updateSites(sites))  // BUG tx race, rollback risk
+    val sitesToClear = mutable.Set[SiteId]()
     for (patch <- sites) {
       val siteInDb = loadSite(patch.siteId)
       if (siteInDb.forall(_.status != patch.newStatus)) {
-        globals.siteDao(patch.siteId).emptyCache()
+        sitesToClear.add(patch.siteId)
       }
+    }
+    dangerous_readWriteTransaction(_.updateSites(sites))  // BUG tx race, rollback risk
+    for (siteId <- sitesToClear) {
+      globals.siteDao(siteId).emptyCache()
     }
   }
 

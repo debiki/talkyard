@@ -57,7 +57,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
     val patches: Seq[SuperAdminSitePatch] = jsObjs.map(jsObj => {
       val siteId = (jsObj \ "id").as[SiteId]
       val newStatusInt = (jsObj \ "status").as[Int]
-      val newNotes = (jsObj \ "superStaffNotes").asOpt[String]
+      val newNotes = (jsObj \ "superStaffNotes").asOptStringNoneIfBlank
       val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
         throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
       }
