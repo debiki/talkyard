@@ -42,6 +42,14 @@ export function win_canUseCookies(win: MainWin): boolean {
 }
 
 
+export function event_isCmdShiftClick(event): boolean {
+  // I think on Mac, the Command key is the same as the Meta = Windows key on PC?
+  // "Ctrl" on Linux seems to behave in the same way as Command on Mac, so
+  // include it too.
+  return event.ctrlKey || event.metaKey || event.shiftKey;
+}
+
+
 export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
   const idPathRegex = new RegExp(`^.*/-${pageId}(/.*)?$`);  // [2WBG49]
   return idPathRegex.test(urlPath);

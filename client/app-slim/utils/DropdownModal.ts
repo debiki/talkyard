@@ -92,7 +92,11 @@ export const ModalDropdownButton = createComponent({
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
             bottomCloseButton: props.bottomCloseButton,
-            onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
+            onContentClick: props.closeOnClick === false ? null : (event) => {
+              if (!props.stayOpenOnCmdShiftClick || !event_isCmdShiftClick(event)) {
+                this.closeDropdown();
+              }
+            } },
           props.render ? props.render({ closeDropdown: this.closeDropdown }) : props.children));
     }
 

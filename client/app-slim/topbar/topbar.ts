@@ -238,13 +238,20 @@ export const TopBar = createComponent({
           ref: 'myMenuButton',
           showCloseButton: true,
           bottomCloseButton: true,
+          // MyMenu might list many notifications, and people Command-Click to open
+          // them in new browser tabs, or Shift-Click to open in new windows — then,
+          // they want MyMenu to stay open so they can continue Command-Click
+          // opening notifications.
+          stayOpenOnCmdShiftClick: true,
           title: r.span({},
             urgentReviewTasks,
             otherReviewTasks,
             impersonatingStrangerInfo,
             myAvatar,
-            r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
-            r.span({ className: 'esAvtrName_you' }, t.You), // if screen narrow
+            // If screen wide:
+            r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
+            // If screen narrow:
+            r.span({ className: 'esAvtrName_you' }, t.You),
             talkToMeNotfs,
             talkToOthersNotfs,
             otherNotfs) },
