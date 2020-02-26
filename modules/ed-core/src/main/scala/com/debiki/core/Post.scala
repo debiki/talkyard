@@ -491,7 +491,19 @@ case class Post(   // [exp] ok use
   def numFlags: Int = numPendingFlags + numHandledFlags
 
 
-  /** The lower bound of an 80% confidence interval for the number of people that like this post.
+  /** The lower bound of an 80% confidence interval for the number of people that like this post
+    * — taking into account not only Like votes, but also how many people actually read it.
+    * This mitigates/solves the problem that the topmost reply gets most attention and upvotes.
+    * [LIKESCORE]
+    *
+    * Details:
+    * The topmost reply: All its Like votes won't matter much, if only a small fraction
+    * of the people who read it, Like-voted it.
+    * Whereas a reply further down, which got just some Like votes, but almost everyone
+    * who read it liked it — then it can move up to the top (for a while).
+    *
+    * Tests here: modules/ed-core/src/test/scala/com/debiki/core/StatsCalcTest.scala
+    * but they're commented out
     */
   lazy val likeScore: Float = {
     val numLikes = this.numLikeVotes
@@ -503,13 +515,6 @@ case class Post(   // [exp] ok use
       sampleSize = numTimesRead, proportionOfSuccesses = avgLikes, percent = 80.0f)
     lowerBound
   }
-
-
-  def parent(pageParts: PageParts): Option[Post] =
-    parentNr.flatMap(pageParts.postByNr)
-
-  def children(pageParts: PageParts): immutable.Seq[Post] =
-    pageParts.childrenSortedOf(nr)
 
 
   /** Setting any flag to true means that status will change to true. Leaving it

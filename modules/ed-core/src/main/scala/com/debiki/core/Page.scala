@@ -194,7 +194,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
-  // REFACTOR move to site settings and admin area
+  // REFACTOR move to site settings and admin area — and per topic type. [PAGETYPESETTNG]
   layout: PageLayout = PageLayout.Default,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
@@ -627,7 +627,7 @@ object PageType {
 }
 
 
-trait PageLayout { def toInt: Int }  // REMOVE, and split into 3 fields, see: SiteSectionPageLayout
+trait PageLayout { def toInt: Int }  // REMOVE, and split into 3 fields, see: SiteSectionPageLayout [PAGETYPESETTNG]
 object PageLayout {
   object Default extends PageLayout { val toInt = 0 }
 
@@ -664,7 +664,7 @@ sealed abstract class CategoriesLayout(val IntVal: Int) extends PageLayout with 
 }
 
 object CategoriesLayout {
-  val Default: CategoriesLayout = new CategoriesLayout(0) {}
+  case object Default extends CategoriesLayout(0)
 
   def fromInt(value: Int): Option[CategoriesLayout] = Some(value match {
     case Default.IntVal => Default
@@ -683,7 +683,7 @@ sealed abstract class TopicListLayout(val IntVal: Int) extends PageLayout {
 }
 
 object TopicListLayout {
-  object Default extends TopicListLayout(0)
+  case object Default extends TopicListLayout(0)
 
   val MinIntVal = 1
   object TitleOnly extends TopicListLayout(1)
@@ -719,35 +719,6 @@ object DiscussionLayout {
     case _ => return None
   })
 }
-
-
-/* Old, instead, use  discPostNesting: Int
- *
-object DiscussionLayout {
-  val MinIntVal = 1001
-
-  /** Threaded layout — Talkyard's default. Reddit, Hacker News, Disqus use this. */
-  object Threaded extends DiscussionLayout(1001)
-
-  /** Flat layout. Discourse, phpBB and other forum software use this. */
-  object Flat extends DiscussionLayout(1002)
-
-  /** Each top level reply has its own flat sub discussion. That is, one level nesting.
-    * Facebook and StackOverflow uses this.
-    */
-  object ThreadedFlat extends DiscussionLayout(1003)
-
-
-  val MaxIntVal = 1100
-
-  def fromInt(value: Int): Option[DiscussionLayout] = Some(value match {
-    case Default.IntVal => Default
-    case Threaded.IntVal => Threaded
-    case Flat.IntVal => Flat
-    case ThreadedFlat.IntVal => ThreadedFlat
-    case _ => return None
-  })
-}  */
 
 
 sealed abstract class ProgressLayout(val IntVal: Int) {

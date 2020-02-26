@@ -1786,7 +1786,7 @@ export const Editor = createFactory<any, EditorState>({
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
     else if (isBlogPostReply) {
-      saveButtonTitle = t.e.PostComment || t.e.PostReply;
+      saveButtonTitle = t.e.PostComment || t.e.PostReply;   // I18N  t.e.PostComment missing
     }
     else if (replyToPostNrs.length) {
       if (isChatComment) {

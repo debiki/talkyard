@@ -108,8 +108,8 @@ export var Metabar = createComponent({
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
               r.li({ className: 'dw-cmts-count' },
-                page.numPostsRepliesSection + ' ' +
-                    isBlogComments ? (t.comments || t.replies) : t.replies),  // I18N
+                page.numPostsRepliesSection + ' ' + (
+                    isBlogComments ? (t.comments || t.replies) : t.replies)),  // I18N t.comments missing
               nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);

@@ -838,17 +838,18 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
     if (!alreadyIncl) {
       page.progressPostNrsSorted.push(post.nr);
       sortPostNrsInPlace(
-          // Progress posts are always sorted by time.
+          // Progress posts are always sorted by time. [PROGRTIME]
           page.progressPostNrsSorted, page.postsByNr, PostSortOrder.OldestFirst);
     }
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
-  // (Top level embedded comments have no parent post — there's no Original Post.)
+  // (Top level embedded comments have no parent post — there's no Original Post
+  //  ... What? There is. But it's still not in use here, for embedded comments.)
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
     page.parentlessReplyNrsSorted = findParentlessReplyIds(page.postsByNr);
     sortPostNrsInPlace(
-        page. parentlessReplyNrsSorted, page.postsByNr, page.discPostSortOrder);
+        page.parentlessReplyNrsSorted, page.postsByNr, page.discPostSortOrder);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -1129,7 +1130,7 @@ function findParentlessReplyIds(postsByNr): number[] {
  */
 function sortPostNrsInPlace(postNrs: PostNr[], postsByNr: { [nr: number]: Post },
       postSortOrder: PostSortOrder | U) {
-  switch (postSortOrder) {
+  switch (postSortOrder || PostSortOrder.Default) {
     case PostSortOrder.NewestFirst: // fall through
     case PostSortOrder.OldestFirst:
       const oldestFirst = postSortOrder === PostSortOrder.OldestFirst;

@@ -122,7 +122,7 @@ function makeReplyBtnTitle(store: Store, post: Post) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
     case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
-    case PageRole.EmbeddedComments: return t.AddComment || t.ReplyV;
+    case PageRole.EmbeddedComments: return t.AddComment || t.ReplyV;  // I18N t.AddComment missing
     default:
       return rFragment({},
         r.b({}, t.ReplyV),
@@ -316,9 +316,7 @@ export const PostActions = createComponent({
     // Votes can be disabled for blog posts only, right now: [POSTSORDR]
     const isEmbOrigPost = isEmbeddedComments && isPageBody;
     const useDownvotes = !isEmbOrigPost || page.origPostVotes === OrigPostVotes.AllVotes;
-    const useLikeVote  = !isEmbOrigPost || (
-      page.origPostVotes === OrigPostVotes.AllVotes ||
-      page.origPostVotes === OrigPostVotes.LikeVotesOnly);
+    const useLikeVote  = !isEmbOrigPost || page.origPostVotes !== OrigPostVotes.NoVotes;
 
     let numLikesText;
     if (post.numLikeVotes && useLikeVote) {
@@ -365,7 +363,11 @@ export const PostActions = createComponent({
 
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
-      downvotesDropdown = !useDownvotes ? null :
+      // For now, skip downvotes for the Orig Post. Don't remember why I
+      // disabled that originally — doesn't look so aesthetically nice at least,
+      // without some CSS tweaks.
+      // Enable when fixing [DBLINHERIT]?  [OPDOWNV]
+      downvotesDropdown = isPageBody || !useDownvotes ? null :
           r.span({ className: 'dropdown navbar-right', title: t.pa.MoreVotes,
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));

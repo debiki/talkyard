@@ -79,6 +79,7 @@ else
     echo
     echo "    $install_vinagre"
     echo "    $start_vinagre"
+
     if [ -z "$(which vinagre)" ]; then
         echo
         read -r -p "Shall I install Vinagre for you? [y/N] " response
@@ -100,7 +101,18 @@ else
         echo "Bye."
         exit 0
     fi
-    echo "Ok, here we go:"
+    echo "Ok. Waiting for the VNC server on port 5900 ..."
+    echo
+
+    # Apparently Netcat (nc) exits with status ok, if the VNC server closes
+    # the connection when one talks about teapots?  But nc exits with error,
+    # if cannot connect at all?
+    while ! echo "I am a teapot" | nc 127.0.0.1 5900; do
+      sleep 1
+    done
+
+    echo
+    echo "... Now ready. Starting Vinagre:"
     echo
     echo "$start_vinagre"
     echo

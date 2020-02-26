@@ -647,7 +647,11 @@ function sendToIframeImpl(iframe, initedArr: boolean[], pendingMessages,
     return;
   }
   for (let i = 0; i < pendingMessages.length; ++i) {
-    const m = pendingMessages[i];
+    let m = pendingMessages[i];
+    if ((typeof m) !== 'string') {
+      // For now. Could remove JSON.parse instead [3056MSDJ1].
+      m = JSON.stringify(m);
+    }
     iframe.contentWindow.postMessage(m, serverOrigin);
   }
   // Empty the array.

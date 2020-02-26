@@ -260,6 +260,7 @@ trait PostsDao {
         page.parts.allPosts :+ newPost,
         origPostReplyBtnTitle = page.parts.origPostReplyBtnTitle,
         origPostVotes = page.parts.origPostVotes,
+        // Should be the same — the page type didn't change (we're just adding a reply).
         postsOrderNesting = page.parts.postsOrderNesting)
       updatePagePopularity(pagePartsInclNewPost, tx)
     }

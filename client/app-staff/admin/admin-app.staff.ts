@@ -647,7 +647,7 @@ const LoginAndSignupSettings = createFactory({
         begForEmailAddress */
 
 
-        // ---- Email domain whitelist and blacklist
+        // ---- Ways to sign up: Password, Guest
 
         r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
           "Ways to sign up"),
@@ -677,7 +677,8 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        // ---- OpenAuth login
+
+        // ---- Ways to sign up: OpenAuth
 
         enableSso || !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
@@ -2346,7 +2347,7 @@ const CustomizeBasicPanel = createFactory({
             "Discussion and Progress topic sections"),
 
           r.p({ className: 'col-sm-offset-3' },
-            "Talkyard's topics can have two section: " +
+            "Talkyard's topics can have two sections: " +
             "A Discussion section, where you " +
             "post answers and discuss ideas, problems, news. " +
             "And a \"Progress\" or \"Timeline\" section, where you see " +
@@ -2424,14 +2425,14 @@ const CustomizeBasicPanel = createFactory({
               "but not the blog post itself.",
             r.br(),
             "2: Like votes only.",
-            r.br(),
-            "3: Like and Disagree votes."
+            //r.br(),
+            //"3: Like and Disagree votes."  — skip for now [OPDOWNV].
             ),
           getter: (s: Settings) => s.origPostVotes,
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
             if (num < 0) num = 0;
-            if (num > 3) num = 3;
+            if (num > 2) num = 2;  // [OPDOWNV]
             newSettings.origPostVotes = num;
           }
         }),

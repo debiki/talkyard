@@ -379,8 +379,9 @@ interface MyPageData {
 
 /**
  * This is not the effective permissions on the current page, but instead
- * permissions configured for its parent groups and categories — so we can see,
- * client side, from where a setting got inherited.  [DBLINHERIT]
+ * permissions configured for the page's ancestor categories, and groups
+ * the user is in — so we can find out, client side, from where a setting
+ * got inherited.  [DBLINHERIT]
  */
 interface OwnPageNotfPrefs {  // RENAME to MembersPageNotfPrefs?
   id?: UserId;
@@ -742,6 +743,7 @@ interface Page
   pageRole: PageRole;
   pagePath: PagePath;
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings
+      // Or rather, split into different fields [PAGETYPESETTNG].
   pageHtmlTagCssClasses?: string;
   // Overrides the title from the title Post.
   pageHtmlHeadTitle?: string;
@@ -977,7 +979,7 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
 }
 
 
-// interface FrumInterfaceSettings {   — move some things from above to here?
+// interface ForumInterfaceSettings {   — move some things from above to here?
 // ...
 // }
 

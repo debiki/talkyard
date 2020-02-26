@@ -39,7 +39,7 @@ function onMessage(event) {
     return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
-  // sending objects.
+  // sending objects.  But now we don't support IE9 any longer! [3056MSDJ1]
   var eventName;
   var eventData;
   try {

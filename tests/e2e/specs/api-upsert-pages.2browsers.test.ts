@@ -97,8 +97,11 @@ const pageThreeToUpsert_longTitle = {
   body: 'UpsPageThreeBody',
 };
 
+const pageThreeExpectedTitle =
+    pageThreeToUpsert_longTitle.title.substr(0, c.MaxTitleLength);
+
 const pageThreeExpectedSlug =
-  'upspagethreettl-aaa-oh-so-many-chars-123456789-123456789-123456789-123456789-123456789-1234567-89-1';
+    'upspagethreettl-aaa-oh-so-many-chars-123456789-123456789-123456789-123456789-123456789-1234567-89-1';
 
 describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
@@ -293,7 +296,8 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
   it("... all topics have the epected titles", () => {
     owensBrowser.forumTopicList.assertTopicTitlesAreAndOrder([
-        pageThreeToUpsert_longTitle.title, // now topic no 3 is first, but below: TyT602FKUDLSV
+        // Now topic no 3 is first, but below: TyT602FKUDLSV
+        pageThreeExpectedTitle,
         pageTwoToUpsert.title,
         pageOneToUpsert.title,
         forum.topics.byMichaelCategoryA.title,
@@ -452,7 +456,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     owensBrowser.forumTopicList.assertNumVisible(5, { wait: true });
     owensBrowser.forumTopicList.assertTopicTitlesAreAndOrder([
         PageTwoTitleManuallyEdited, // topic 2 first — got bumped  TyT602FKUDLSV
-        pageThreeToUpsert_longTitle.title,    // ... above topic 3
+        pageThreeExpectedTitle,     // ... above topic 3
         pageOneToUpsert.title,
         forum.topics.byMichaelCategoryA.title,
         forum.topics.byMariaCategoryA.title]);

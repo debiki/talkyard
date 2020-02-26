@@ -103,7 +103,7 @@ case class NotificationGenerator(
 
     // Direct reply notification.
     for {
-      replyingToPost <- newPost.parent(page.parts)
+      replyingToPost <- page.parts.parentOf(newPost)
       if replyingToPost.createdById != newPost.createdById // not replying to oneself
       if approverId != replyingToPost.createdById // the approver has already read newPost
       replyingToUser <- tx.loadParticipant(replyingToPost.createdById)

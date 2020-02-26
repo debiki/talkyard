@@ -239,11 +239,8 @@ class JsonMaker(dao: SiteDao) {
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    val parentlessReplies = pageParts.parentlessRepliesSorted
     val parentlessReplyNrsSorted =
-      parentlessReplies.map(reply => JsNumber(reply.nr))
-      // Not needed?: Post.sortPosts(parentlessReplies).map(reply => JsNumber(reply.nr))
-      // — already sorted??!!
+      pageParts.parentlessRepliesSorted.map(reply => JsNumber(reply.nr))
 
     if (page.pageType == PageType.EmbeddedComments) {
       allPostsJson +:=
@@ -251,9 +248,8 @@ class JsonMaker(dao: SiteDao) {
           embeddedCommentsDummyRootPost(parentlessReplyNrsSorted)
     }
 
-    val progressPosts = pageParts.progressPosts
     val progressPostNrsSorted =
-      Post.sortPosts(progressPosts, PostSortOrder.OldestFirst).map(reply => JsNumber(reply.nr))
+      pageParts.progressPostsSorted.map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta)
@@ -1182,6 +1178,11 @@ object JsonMaker {
       json += "showAuthorHow" -> JsNumber(settings.showAuthorHow.toInt)
     if (settings.watchbarStartsOpen != D.watchbarStartsOpen)
       json += "watchbarStartsOpen" -> JsBoolean(settings.watchbarStartsOpen)
+    // --- These and some more, could be in separate objs instead [DBLINHERIT]
+    // Because they'll be configurable per page type. And per category (and page?
+    // for Dev Diary pages / light weight by-time announcements topics,
+    // instead of announcement categories with separate topics)
+    //  Like the permission system.
     if (settings.discussionLayout != D.discussionLayout)
       json += "discussionLayout" -> JsNumber(settings.discussionLayout.toInt)
     if (settings.discPostNesting != D.discPostNesting)
@@ -1194,6 +1195,7 @@ object JsonMaker {
       json += "origPostReplyBtnTitle" -> JsString(settings.origPostReplyBtnTitle)
     if (settings.origPostVotes != D.origPostVotes)
       json += "origPostVotes" -> JsNumber(settings.origPostVotes.toInt)
+    // -----------------------------------------------------------------------
 
     json
   }

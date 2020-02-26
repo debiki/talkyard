@@ -82,6 +82,7 @@ export = {
   TestDraftStatus,
   MaxUsernameLength: 20,  // sync with Scala [6AKBR20Q]
   TitleNr: 0,
+  MaxTitleLength: 200,    // sync with Scala
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
   UnknownUserId: -3,

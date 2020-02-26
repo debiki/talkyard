@@ -63,6 +63,10 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
             PageType.EmbeddedComments, globals.now())
         val categoryId = dao.getDefaultCategoryId()
 
+        BUG // this'll use the default settings — which means the Like button will
+        // always be visible, for an empty blog comments page.
+        // Need to pass the settings to NonExistingPage somehow, but it's in ty-core
+        // which doesn't know about that class.
         val dummyPage = NonExistingPage(
           dao.siteId, PageType.EmbeddedComments, Some(categoryId), embeddingUrl, globals.now())
 

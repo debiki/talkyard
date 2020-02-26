@@ -537,6 +537,13 @@ package object core {
     sortOrder: PostSortOrder,
     nestingDepth: NestingDepth)
 
+  /** -1 = InfiniteNesting: Never stops nesting. Reddit and HackerNews use this.
+    *  0 = flat, like "all" forum software, e.g. phpBB and Discourse.
+    *  1 = one flat sub thread per top level reply. Facebook uses this.
+    *      And StackOverflow: flat comments below each answer.
+    *
+    * As of Feb 2020, Talkyard supports only InfiniteNesting.
+    */
   type NestingDepth = Int
 
   object PostsOrderNesting {
@@ -568,7 +575,8 @@ package object core {
     // object Random extends PostsSortOrder(4)
 
     // These give new posts (and old posts further down) a chance to be seen,
-    // rather than old upvoted post at the top getting all attention:
+    // rather than old upvoted post at the top getting most attention:
+    // Also see [LIKESCORE].
     //
     // /* Shows a few new posts first, then, below, post sorted by popularity. */
     // object NewAndBestFirst extends PostsSortOrder(5)

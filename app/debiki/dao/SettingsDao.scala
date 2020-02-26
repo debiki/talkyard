@@ -134,7 +134,6 @@ trait SettingsDao {
 object SettingsDao {
 
   def loadWholeSiteSettings(tx: SiteTransaction, globals: Globals): EffectiveSettings = {
-    // Dupl code [96KTHRH2]
     val editedSettings = tx.loadSiteSettings()
     EffectiveSettings(editedSettings.toVector, AllSettings.makeDefault(globals))
   }

@@ -94,9 +94,10 @@ case class PagePartsDao(
   private var _meta: Option[PageMeta] = null
 
   def pageMeta: PageMeta = {
+    COULD_OPTIMIZE // often the caller has loaded the page meta already
     if (_meta eq null) {
       exists // this loads the page meta
-      dieIf(_meta eq null, "EsE7K5UF2")
+      dieIf(_meta eq null, "TyE5M7K5UF2")
     }
     _meta getOrElse throwPageNotFound()
   }
@@ -125,13 +126,12 @@ case class PagePartsDao(
   }
 
   def postsOrderNesting: PostsOrderNesting = {
-    // COULD_OPTIMIZE // often the caller has loaded the page meta already
     // For now, changing the sort order, is for embedded comments only [POSTSORDR].
     val sortOrder =
       if (pageMeta.pageType == PageType.EmbeddedComments)
         settings.discPostSortOrder
       else
-        PostSortOrder.BestFirst
+        PostSortOrder.Default
     PostsOrderNesting(sortOrder, settings.discPostNesting)
   }
 
