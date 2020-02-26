@@ -3395,12 +3395,13 @@ function pagesFor(browser) {
     topic: {
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd`,
 
-      forAllPostIndexNrElem: (fn: (index, id, elem) => void) => {
+      forAllPostIndexNrElem: (fn: (index: number, postNr: PostNr, elem) => void) => {
         const postElems = browser.elements('[id^="post-"]').value;
         for (let index = 0; index < postElems.length; ++index) {
           const elem = postElems[index];
           const idAttr = browser.elementIdAttribute(elem.ELEMENT, 'id').value;
-          const postNr = idAttr.replace('post-', '');
+          const postNrStr: string = idAttr.replace('post-', '');
+          const postNr: PostNr = parseInt(postNrStr);
           logMessage(`post elem id attr: ${idAttr}, nr: ${postNr}`);
           assert.equal(0, c.TitleNr);
           assert.equal(1, c.BodyNr);
@@ -3441,6 +3442,11 @@ function pagesFor(browser) {
         api.topic.waitForLoaded();
         assert(!api.topic._isOrigPostPendingApprovalVisible());
         assert(api.topic._isOrigPostBodyVisible());
+      },
+
+      isPostNrDescendantOf: function(postNr, maybeParentNr) {
+        return browser.isVisible(
+            `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
       isPostNrVisible: function(postNr) {

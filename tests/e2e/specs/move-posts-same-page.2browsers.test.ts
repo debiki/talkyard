@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
@@ -62,18 +62,18 @@ describe("move posts  TyT03946HET3", () => {
     addOnePost(c.FirstReplyNr + 1, c.FirstReplyNr + 0, discPostOneReply);
     addOnePost(c.FirstReplyNr + 2, c.FirstReplyNr + 1, discPostOneReplyReply);
 
-    assert.equal(c.FirstReplyNr + 3, theReplyToMoveNr);
+    assert.eq(c.FirstReplyNr + 3, theReplyToMoveNr);
     addOnePost(theReplyToMoveNr, c.FirstReplyNr + 2, discPostOneReplyReplyReply);
 
     addOnePost(c.FirstReplyNr + 4, c.FirstReplyNr + 3, discPostOneReplyReplyReplyReply);
     addOnePost(c.FirstReplyNr + 5, c.FirstReplyNr + 4, discPostOneReplyReplyReplyReplyReply);
 
-    assert.equal(c.FirstReplyNr + 6, otherOpDiscReplyNr);
+    assert.eq(c.FirstReplyNr + 6, otherOpDiscReplyNr);
     addOnePost(otherOpDiscReplyNr, c.BodyNr, discPostTwo);
 
     addOnePost(c.FirstReplyNr + 7, c.BodyNr, progrPostOne, PostType.BottomComment);
 
-    assert(builder.getSite() === forum.siteData);
+    assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
@@ -98,7 +98,7 @@ describe("move posts  TyT03946HET3", () => {
   it("Sees the posts in the initial order", () => {
     owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
       // Originally, all post got so that their post nr is also their position from the top.
-      assert.equal(nr, index);
+      assert.eq(nr, index);
     })
   });
 
@@ -106,6 +106,13 @@ describe("move posts  TyT03946HET3", () => {
     owensBrowser.topic.openShareDialogForPostNr(otherOpDiscReplyNr);
     owensBrowser.shareDialog.copyLinkToPost();
     owensBrowser.shareDialog.close();
+  });
+
+  it(`Post ${theReplyToMoveNr} is not below ${otherOpDiscReplyNr}`, () => {
+    // This tests the test.  (062TADH46)
+    assert.not(
+        owensBrowser.topic.isPostNrDescendantOf(
+          theReplyToMoveNr, otherOpDiscReplyNr));
   });
 
   it("Moves three replies to the other discussion OP reply: 1) Opens Move dialog", () => {
@@ -117,10 +124,14 @@ describe("move posts  TyT03946HET3", () => {
   });
 
   it("Now the replies appear below OP reply 2 (instead of above)", () => {
-    owensBrowser.refresh(); // or sometimes this error:
-    // "stale element reference: element is not attached to the page document"
-    //  — React redraws the page in the middle of us checking all posts
-    // below? and, in doing so, invalidates elem refs?
+    // Wait until the post we moved, appears below the other Orig Post reply.
+    // Might need to refresh a few times — otherwise, the page reloads
+    // before the server is done moving the post.
+    owensBrowser.refreshUntil(() => {
+      // Test tested above, (062TADH46).
+      return owensBrowser.topic.isPostNrDescendantOf(theReplyToMoveNr, otherOpDiscReplyNr);
+    });
+
     // Wait until all posts have appeared:
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr + 7);
     verifyAfterFirstMoveOrder();
@@ -129,14 +140,14 @@ describe("move posts  TyT03946HET3", () => {
   function verifyAfterFirstMoveOrder() {
     owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
       switch (index) {
-        case 2:  assert.equal(nr, c.FirstReplyNr + 0);  break;
-        case 3:  assert.equal(nr, c.FirstReplyNr + 1);  break;
-        case 4:  assert.equal(nr, c.FirstReplyNr + 2);  break;
-        case 5:  assert.equal(nr, c.FirstReplyNr + 6);  break; //          <———————.  ...this one
-        case 6:  assert.equal(nr, c.FirstReplyNr + 3);  break; // These were...     |  = otherOpDiscReplyNr
-        case 7:  assert.equal(nr, c.FirstReplyNr + 4);  break; // ...moved to       |
-        case 8:  assert.equal(nr, c.FirstReplyNr + 5);  break; // ...children of ---`
-        case 9:  assert.equal(nr, c.FirstReplyNr + 7);  break;
+        case 2:  assert.eq(nr, c.FirstReplyNr + 0);  break;
+        case 3:  assert.eq(nr, c.FirstReplyNr + 1);  break;
+        case 4:  assert.eq(nr, c.FirstReplyNr + 2);  break;
+        case 5:  assert.eq(nr, c.FirstReplyNr + 6);  break; //          <———————.  ...this one
+        case 6:  assert.eq(nr, c.FirstReplyNr + 3);  break; // These were...     |  = otherOpDiscReplyNr
+        case 7:  assert.eq(nr, c.FirstReplyNr + 4);  break; // ...moved to       |
+        case 8:  assert.eq(nr, c.FirstReplyNr + 5);  break; // ...children of ---`
+        case 9:  assert.eq(nr, c.FirstReplyNr + 7);  break;
       }
     })
   }
@@ -152,14 +163,14 @@ describe("move posts  TyT03946HET3", () => {
   it("Now the first 3 replies are instead first in the Progress section", () => {
     owensBrowser.topic.forAllPostIndexNrElem((index, nr) => {
       switch (index) {
-        case 2:  assert.equal(nr, c.FirstReplyNr + 6);  break;
-        case 3:  assert.equal(nr, c.FirstReplyNr + 3);  break;
-        case 4:  assert.equal(nr, c.FirstReplyNr + 4);  break;
-        case 5:  assert.equal(nr, c.FirstReplyNr + 5);  break;
-        case 6:  assert.equal(nr, c.FirstReplyNr + 0);  break; // <———.
-        case 7:  assert.equal(nr, c.FirstReplyNr + 1);  break; // <————\——— were previously at the top
-        case 8:  assert.equal(nr, c.FirstReplyNr + 2);  break; // <————/
-        case 9:  assert.equal(nr, c.FirstReplyNr + 7);  break;
+        case 2:  assert.eq(nr, c.FirstReplyNr + 6);  break;
+        case 3:  assert.eq(nr, c.FirstReplyNr + 3);  break;
+        case 4:  assert.eq(nr, c.FirstReplyNr + 4);  break;
+        case 5:  assert.eq(nr, c.FirstReplyNr + 5);  break;
+        case 6:  assert.eq(nr, c.FirstReplyNr + 0);  break; // <———.
+        case 7:  assert.eq(nr, c.FirstReplyNr + 1);  break; // <————\——— were previously at the top
+        case 8:  assert.eq(nr, c.FirstReplyNr + 2);  break; // <————/
+        case 9:  assert.eq(nr, c.FirstReplyNr + 7);  break;
       }
     });
   });

@@ -8,6 +8,10 @@ const tyAssert = {
   // Could do that change later — but start with deepEq as a separate fn.
   deepEq: assert.deepStrictEqual,
 
+  not: (what, message?) => {
+    assert.ok(!what, message);
+  },
+
   eq: (actual, expected, message?) => {
     // Show the two values on two lines, aligned, so one sees at a glance
     // what's wrong.
