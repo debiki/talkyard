@@ -117,6 +117,7 @@ describe("Page type discussion, and progress comments", () => {
   });
 
   it("Everything is in the correct order", () => {
+    // Dupl code. Use  topic.assertPostOrderIs()  instead  [59SKEDT0652].
     const postElems = mariasBrowser.elements('[id^="post-"]').value;
     for (let i = 0; i < postElems.length; ++i) {
       const elem = postElems[i];

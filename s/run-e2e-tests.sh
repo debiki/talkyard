@@ -465,6 +465,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-create-site-forum-intro-tour $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-import-disqus.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-drafts-not-logged-in $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-scroll-and-load-more.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-different-disc-ids-same-page $args
@@ -481,6 +482,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-vote-first $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-conf-notf-pref-first $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-sort-order-op-likes-btn-txt $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-uploads-origin $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)

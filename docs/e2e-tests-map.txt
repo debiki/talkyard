@@ -352,6 +352,10 @@ topics -
   report:
   bump topic, so first in category topic list:
           - api-upsert-pages.2browsers.test.ts  TyT602FKUDLSV
+  scroll and load #post-nnn,
+  load more posts:
+          - MISSING  but for embedded comments: TyT603MRKH592S
+          - For embedded comments: (50279460)
 
 
 edit,
@@ -471,8 +475,11 @@ embedded comments:
           - embedded-comments-vote-first.test.ts  TyT2AKBS056
   click login:
           - embedded-comments-scroll  TyT2K4DHR49-02   MISSING
-  scroll to #comment-nnn:
+  (50279460),
+  scroll and load #comment-nnn,
+  load more comments:
           - embedded-comments-scroll  TyT2K4DHR49-05   MISSING
+          - embedded-comments-scroll-and-load-more.2browsers.test.ts  TyT603MRKH592S
   won't auto scroll to last read comment:
   (usually the blog post more interesting? so don't auto scroll):
           - embedded-comments-scroll  TyT2K4DHR49   MISSING

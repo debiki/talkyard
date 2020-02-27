@@ -16,10 +16,10 @@ const tyAssert = {
     // Show the two values on two lines, aligned, so one sees at a glance
     // what's wrong.
     if (!message) {
-      message =
-          "assert.eq: Actual value differs from expected value:\n" +
-          `       ${actual}\n` +
-          `  !==  ${expected}\n`;
+      message = '\n\n' +
+          `  assert.eq: Actual value differs from expected value:\n` +
+          `        actual:  ${actual}\n` +
+          `      expected:  ${expected}\n`;
     }
     assert.strictEqual(actual, expected, message);
   },

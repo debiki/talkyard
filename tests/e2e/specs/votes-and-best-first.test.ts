@@ -12,7 +12,7 @@ import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 declare const browser: any;
-declare const $$: any; // webdriver.io global utility
+declare const $$: any; // webdriver.io global utility   DELETE use  assertPostOrderIs insted [59SKEDT0652]
 
 let everyonesBrowsers;
 let owen;
@@ -172,6 +172,7 @@ describe("votes and best first", () => {
   });
 
   it("Posts get sorted correctly", () => {
+    // Dupl code, and won't work with > 1 browser. Instead: topic.assertPostOrderIs()  [59SKEDT0652]
     modyasBrowser.refresh();
     const els = $$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
@@ -319,6 +320,7 @@ describe("votes and best first", () => {
 
 
 function consoleLogPostSortOrder(els) {
+  // DELETE later when using  assertPostOrderIs insted of $$  [59SKEDT0652]
   console.log("Posts sort order: " +
       els[0].getAttribute('id') + ' ' + els[0].getText().replace('\n', ' ') + ', ' +
       els[1].getAttribute('id') + ' ' + els[1].getText().replace('\n', ' ') + ', ' +

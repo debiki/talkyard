@@ -11,6 +11,20 @@ container_name="tye2ebrowser"
 
 for arg in "$@"; do
     case $arg in
+        k|kill)
+        echo
+        echo "Killing any $container_name container..."
+        echo
+        sudo docker kill $container_name
+        sudo docker rm -f $container_name
+        echo
+        echo "Is it gone? These Selenium containers are now running:"
+        echo
+        sudo docker ps  | grep selenium
+        echo
+        exit 0
+        shift
+        ;;
         c|chrome)
         echo "I will use Chrome."
         browser_name="chrome"

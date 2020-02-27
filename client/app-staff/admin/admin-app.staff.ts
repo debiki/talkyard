@@ -2343,7 +2343,7 @@ const CustomizeBasicPanel = createFactory({
 
         !enableForum ? null : rFragment({},
 
-          r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl'},
+          r.h2({ className: 'col-sm-offset-3 s_A_Ss_S_Ttl e_DscPrgSct'},
             "Discussion and Progress topic sections"),
 
           r.p({ className: 'col-sm-offset-3' },
@@ -2400,6 +2400,7 @@ const CustomizeBasicPanel = createFactory({
         // Later, break out this to a separate settings3 table row,
         // for PageType.EmeddedComments.  [PAGETYPESETTNG]
         !enableEmbedded ? null : Setting2(props, { type: 'text',
+          className: 'e_AddCmtBtnTtl',
           label: rFragment({}, "Title of the ", r.i({}, "Add Comment"), " button"),
           help: rFragment({},
             "Leave empty to use the default button title, which is \"" +
@@ -2414,6 +2415,7 @@ const CustomizeBasicPanel = createFactory({
         // Later, break out this to a separate settings3 table row,
         // for PageType.EmeddedComments.  [PAGETYPESETTNG]
         !enableEmbedded ? null : Setting2(props, { type: 'number', min: 1, max: 3,
+          className: 'e_BlgPstVts',
           label: "Blog post votes",
           help: rFragment({},
             "May blog readers Like or Disagree vote on the blog post itself? " +
@@ -2442,6 +2444,7 @@ const CustomizeBasicPanel = createFactory({
         // — Until then, this whole site setting, is only used for
         // embedded blog comments. [POSTSORDR]
         !enableEmbedded ? null : Setting2(props, { type: 'number', min: 1, max: 3,
+          className: 'e_BlgSrtOdr',
           label: "Blog comments sort order",
           help: rFragment({},
             "How should blog comments be ordered? One of these numbers:",
