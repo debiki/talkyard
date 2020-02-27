@@ -915,14 +915,14 @@ const RootPostAndComments = createComponent({
 
     const afterPageActions = skipBottomReplyAppendBtn ? null :
       r.div({ className: 's_APAs' },
-        !isThreadedDiscussion || store.isEditorOpen ? null :
+        store.isEditorOpen || !isThreadedDiscussion ? null :
           r.a({ className: 's_OpReB s_OpReB-Dsc icon-reply',
                 onClick: makeOnClick(PostType.Normal) },
               r.b({}, t.ReplyV),
               // If there are progress posts above, clarify that the reply will
               // appear in the discussion section (not in the progress section).
               progressPosts.length ? r.span({}, ' (' + t.discussion + ')') : null),
-        store.isEditorOpen ? null :
+        store.isEditorOpen || page.progressLayout === ProgressLayout.MostlyDisabled ? null :
           r.a({ className: 's_OpReB s_OpReB-Prg icon-reply',
             onClick: makeOnClick(PostType.BottomComment) },
               /* This no longer needed? [DSCPRG] Keep for a while if want to add back
