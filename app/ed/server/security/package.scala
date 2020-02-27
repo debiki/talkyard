@@ -556,6 +556,24 @@ class EdSecurity(globals: Globals) {
     path = "/",
     domain = None,
     secure = globals.secure,
+    sameSite =
+      // Later, could change to Lax or even Strict, for session id cookie,
+      // and, when embedded, always send session id via header instead?
+      // Or now directly? There are SameSite: None incompatible browsers:
+      // https://www.chromium.org/updates/same-site/incompatible-clients
+      // Ok explanation of Strict, Lax and None:
+      //   https://web.dev/samesite-cookies-explained/
+      /* if (globals.skipSameSiteCookieAttr) {
+        None
+      }
+      else */
+      if (globals.secure) {
+        Some(Cookie.SameSite.None)
+      }
+      else {
+        // SameSite.None only works with https.
+        None
+      },
     httpOnly = false)
 
 
