@@ -335,7 +335,7 @@ const make = {
   rootCategoryWithIdFor: function(id: CategoryId, forumPage: PageIdWhen): TestCategory {
     const category = make.categoryWithIdFor(id, forumPage);
     category.name = "(Root Category)";    // in Scala too [7UKPX5]
-    category.slug = "root-category-001";  //
+    category.slug =  `__root_cat_${id}`; //
     return category;
   },
 

@@ -131,7 +131,7 @@ object Validation {
   }
 
 
-  val BadCategorySlugCharRegex: Regex = """.*([^a-z0-9-]).*""".r
+  val BadCategorySlugCharRegex: Regex = """.*([^a-z0-9_-]).*""".r
 
   def findCategorySlugProblem(slug: String): Option[ErrorMessage] = {
     if (slug.isEmpty) return Some("Empty category slug [TyECATSLGEMP]")
@@ -140,12 +140,14 @@ object Validation {
       s"Slug too long, max ${Category.MaxSlugLength} chars [TyECATSLGLNG]")
 
     BadCategorySlugCharRegex.findGroupIn(slug) foreach { badChar =>
+      // Don't mention that '_' is actually allowed. It's for Talkyard's own
+      // root categories only: '__root_cat_${id}'.
       return Some(s"Bad category slug char: '$badChar', only [a-z0-9-] allowed [TyECATSLGCHR]")
     }
     if (slug.startsWith("-")) return Some("Category slug should not start with '-' [TyECATSLGFST]")
     if (slug.endsWith("-")) return Some("Category slug should not end with '-' [TyECATSLGLST]")
     if (slug.contains("--")) return Some("Category slug with double dashes '--' [TyECATSLGDD]")
-    if (!slug.exists(charIsAz)) return Some("Category slug has no letter [TyECATSLGLTR]")
+    if (!slug.exists(charIsAzUnderscore)) return Some("Category slug has no letter [TyECATSLGLTR]")
     None
   }
 

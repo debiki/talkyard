@@ -171,7 +171,7 @@ trait ForumDao {
       parentId = None,
       defaultSubCatId = Some(defaultCategoryId),
       name = RootCategoryName,
-      slug = RootCategorySlug,
+      slug = RootCategorySlugPrefix + rootCategoryId,
       position = 1,
       description = None,
       newTopicTypes = Nil,
@@ -512,7 +512,7 @@ object ForumDao {
   private val WelcomeToForumTopicPinOrder = 5
 
   private val RootCategoryName = "(Root Category)"    // In Typescript test code too [7UKPX5]
-  private val RootCategorySlug = "root-category-001"  //
+  private val RootCategorySlugPrefix = "__root_cat_"  //
 
   private val UncategorizedCategoryName = "General" // I18N everywhere here
   private val UncategorizedCategorySlug = "general"

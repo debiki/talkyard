@@ -227,8 +227,10 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
       findCategorySlugProblem("slug:zz").get must include("TyECATSLGCHR")
     }
 
-    "disallow underscore, for now at least" in {
-      findCategorySlugProblem("slug_zz").get must include("TyECATSLGCHR")
+    "allow underscore" in {
+      findCategorySlugProblem("slug_zz") mustBe None
+      // Otherwise this wouldn't work:
+      findCategorySlugProblem("__root_cat_1") mustBe None
     }
 
     "not start or end with dashes" in {
@@ -241,6 +243,9 @@ class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
       findCategorySlugProblem("12345x") mustBe None
       findCategorySlugProblem("12-45").get must include("TyECATSLGLTR")
       findCategorySlugProblem("12-45x") mustBe None
+      // Underscore counts as a letter.
+      findCategorySlugProblem("12_45") mustBe None
+      findCategorySlugProblem("_123") mustBe None
     }
   }
 

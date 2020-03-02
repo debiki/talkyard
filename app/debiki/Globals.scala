@@ -1100,7 +1100,7 @@ class Config(conf: play.api.Configuration) {
   private def getStringOrEmpty[A](confName: String): String =
     conf.getOptional[String](confName) getOrElse ""
 
-  val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = false)
+  val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = true)
 
   private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
   def mayPatchSite(siteId: SiteId): Boolean =
