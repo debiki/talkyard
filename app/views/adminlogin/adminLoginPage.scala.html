@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, xsrfToken: String)
+@(tpi: debiki.SiteTpi, xsrfToken: String, isDefaultSite: Boolean)
 
 
 @css = @{("""
@@ -48,9 +48,27 @@ input[type="text"] {
   <br>
   <button type="submit" class="btn btn-default e_SbmB">Submit</button>
 </form>
+</div>
+</div>
 
+@* If seems self hosted ( = isDefaultSite for now), then, show this so the
+admin knows what to do, if hen hasn't configured emails.  [GETADMLNK] *@
+@if(isDefaultSite) {
+<br>
+<br>
+<div class='row'>
+<div class="col-sm-12">
+  <p>
+    If you haven't configured emails yet, you can still read the email I'll
+    try to send, by logging in to the server, and running these commands:<br>
+    <pre>sudo -i
+cd /opt/talkyard/
+./scripts/find-admin-login-link.sh
+</pre>
+  </p>
 </div>
 </div>
+}
 
 }
 

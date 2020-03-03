@@ -79,7 +79,9 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def showAdminOneTimeLoginPage: Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.adminlogin.adminLoginPage(
-        SiteTpi(request), xsrfToken = request.xsrfToken.value))
+      SiteTpi(request),
+      xsrfToken = request.xsrfToken.value,
+      isDefaultSite = request.isDefaultSite))
   }
 
 
@@ -113,7 +115,23 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
     sendOneTimeLoginEmail(
         admin, request, emailTitle = "Admin one time login link", secret = oneTimeSecret)
 
-    Ok("Email sent, with a one time login link.") as TEXT
+    var responseTex = "Email sent, with a one time login link."
+
+    // [GETADMLNK]
+    // If not default site, then, probably not self hosted, so cannot login as root.
+    if (request.isDefaultSite) {
+      responseTex += i"""
+        |
+        |Not configured emails yet?  You can still read the email I tried to send,
+        |by logging in to the server, and running these commands:
+        |
+        |    sudo -i
+        |    cd /opt/talkyard/
+        |    ./scripts/find-admin-login-link.sh
+        |"""
+    }
+
+    Ok(responseTex) as TEXT
   }
 
 
