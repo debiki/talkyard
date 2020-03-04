@@ -4,8 +4,30 @@
 # E.g. so you can run Webdriverio End-to-End tests, without having to install
 # anything (no Nodejs, no Selenium) on your host OS.
 
+
+# Find an available container number suffix, so won't be
+# a container-name-already-in-use error:
+
+names_in_use=$(sudo docker ps  | grep tynodejs)
+
+for num in {1..100}; do
+  if [ "$num" -eq "100" ]; then
+    echo "Cannot find an unused container number suffix"
+    exit 1
+  fi
+
+  match=$(echo "$names_in_use" | grep "tynodejs_$num")
+  if [ -z "$match" ]; then
+    # We can use this number.
+    break
+  fi
+done
+
+
+# Start Nodejs:
+
 sudo docker run --rm -it  \
-    --name tynodejs  \
+    --name "tynodejs_$num"  \
     --network=host  \
     -v `pwd`:/opt/talkyard/server/  \
     debiki/talkyard-gulp  \
