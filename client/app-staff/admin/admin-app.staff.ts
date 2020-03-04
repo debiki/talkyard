@@ -193,7 +193,8 @@ const AdminAppComponent = createReactClass(<any> {
         defaultSettings: currentAndDefaultSettings.defaultSettings,
         currentSettings: currentAndDefaultSettings.effectiveSettings,
         baseDomain: currentAndDefaultSettings.baseDomain,
-        cnameTargetHost: currentAndDefaultSettings.cnameTargetHost,
+        // COULD Actually make use of this addr, here: [CONFADDRS]
+        dnsCnameTargetHost: currentAndDefaultSettings.dnsCnameTargetHost,
         hosts: currentAndDefaultSettings.hosts,
         editedSettings: {},
       });

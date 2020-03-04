@@ -1085,7 +1085,7 @@ object Config {
   val CreateSitePath = "talkyard.createSite"
   val SuperAdminPath = "talkyard.superAdmin"
   val SuperAdminEmailAddressesPath = s"$SuperAdminPath.emailAddresses"
-  val CnameTargetHostConfValName = "talkyard.cnameTargetHost"
+  val DnsCnameTargetHostConfValName = "talkyard.cnameTargetHost"
 }
 
 
@@ -1124,8 +1124,8 @@ class Config(conf: play.api.Configuration) {
     Map.empty  // for now
   }
 
-  val cnameTargetHost: Option[String] =
-    conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
+  val dnsCnameTargetHost: Option[String] =
+    conf.getString(Config.DnsCnameTargetHostConfValName).noneIfBlank
 
   CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url

@@ -117,7 +117,7 @@ trait SettingsDao {
         tx.bumpSiteVersion()
       }
 
-      memCache.clearSingleSite(siteId)
+      memCache.clearThisSite()
     }
   }
 

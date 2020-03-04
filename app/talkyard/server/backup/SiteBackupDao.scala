@@ -955,7 +955,7 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     dieIf(siteData.isTestSiteOkDelete && siteIdToOverwrite.exists(_ > MaxTestSiteId),
       "TyE5032FPKJ63", s"Trying to e2e-test overwrite real site: $anySiteToOverwrite")
 
-    SiteDao.synchronizeOnManySiteIds(siteIdToOverwrite) {
+    val newSite = SiteDao.synchronizeOnManySiteIds(siteIdToOverwrite) {
         // Not dangerous: We've locked any site to overwrite, already.
         globals.systemDao.dangerous_readWriteTransaction { sysTx =>
 
@@ -1184,6 +1184,15 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
 
       theNewSite
     }}
+
+    // If we restored a site, then there're already things in the mem cache and Redis cache,
+    // for the site we're overwriting when restoring. Remove any such stuff — or Talkyard
+    // might do surprising things.
+    val newSiteDao = globals.siteDao(newSite.id)
+    newSiteDao.memCache.clearThisSite()
+    newSiteDao.redisCache.clearThisSite()
+
+    newSite
   }
 
 }

@@ -622,7 +622,7 @@ interface LoadSettingsResult {
   effectiveSettings: Settings;
   defaultSettings: Settings;
   baseDomain: string,
-  cnameTargetHost: string,
+  dnsCnameTargetHost: string,
   hosts: Host[];
 }
 

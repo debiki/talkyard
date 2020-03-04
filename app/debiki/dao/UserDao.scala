@@ -1628,7 +1628,7 @@ trait UserDao {
     }
 
     if (clearMemCacheAfterTx) {
-      memCache.clearSingleSite(siteId)
+      memCache.clearThisSite()
     }
     removeUserFromMemCache(preferences.userId)
   }
@@ -1966,7 +1966,7 @@ trait UserDao {
     }
 
     // To uncache pages where the user's name appears: (now changed to anonNNN)
-    memCache.clearSingleSite(siteId)
+    memCache.clearThisSite()
     COULD // instead uncache only the pages on which hens name appears, plus this:
     // (this not needed, since cleared the site cache just above. Do anyway.)
     uncacheOnesGroupIds(Seq(userId))

@@ -218,13 +218,13 @@ class SystemDao(
     deletedHostnames.toSet foreach this.forgetHostname
 
     // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
-    // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
+    // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)  — what? why not?
     // so instead:
     if (deletedHostnames.nonEmpty) {
       memCache.clearAllSites()
     }
 
-    // If there is still stuff in the cache, for any of the now deleted sites,
+    // If there is still stuff in the Redis cache, for any of the now deleted sites,
     // that could make weird things happen, when site ids get reused — e.g. in
     // tests or when restoring a backup. (2PKF05Y)
     siteIdsToDelete foreach { siteId =>

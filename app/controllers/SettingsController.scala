@@ -45,15 +45,14 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   private def loadSiteSettingsImpl(request: DebikiRequest[_]) = {
     val settings = request.dao.getWholeSiteSettings()
-    val editedSettings = settings.editedSettingsChain.headOption getOrElse EditedSettings.empty
     // What's the default, if settings from parent categories have been inherited? Therefore:
     dieIf(settings.editedSettingsChain.length > 1, "EsE4GJKU0", "not tested")
     OkSafeJson(Json.obj(
       "effectiveSettings" -> settings.toJson,
       "defaultSettings" -> settings.default.toJson,
       "baseDomain" -> globals.baseDomainNoPort,
-      "cnameTargetHost" -> JsString(globals.config.cnameTargetHost.getOrElse(
-          s"? (config value ${Config.CnameTargetHostConfValName} missing [EsM5KGCJ2]) ?")),
+      "dnsCnameTargetHost" -> JsString(globals.config.dnsCnameTargetHost.getOrElse(
+          s"? (config value ${Config.DnsCnameTargetHostConfValName} missing [EsM5KGCJ2]) ?")),
       "hosts" -> request.dao.listHostnames().sortBy(_.hostname).map(host => {
         Json.obj("hostname" -> host.hostname, "role" -> host.role.IntVal)
       })

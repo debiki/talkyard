@@ -225,7 +225,7 @@ class SiteDao(
 
   def emptyCache() {
     readWriteTransaction(_.bumpSiteVersion())
-    memCache.clearSingleSite(siteId)
+    memCache.clearThisSite()
   }
 
   def emptyDatabaseCache(tx: SiteTransaction) {
@@ -233,12 +233,12 @@ class SiteDao(
   }
 
   def emptyInMemoryCache() {
-    memCache.clearSingleSite(siteId)
+    memCache.clearThisSite()
   }
 
   def emptyCacheImpl(transaction: SiteTransaction) {  BUG; RACE; // if mem cache refilled before tx ends
     transaction.bumpSiteVersion()
-    memCache.clearSingleSite(siteId)
+    memCache.clearThisSite()
   }
 
 
