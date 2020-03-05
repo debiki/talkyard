@@ -85,7 +85,7 @@ function onMessage(event) {
             `This frame name: ${window.name}, ` +
             `main frame name: ${mainWin.name}, ` +
             `this is main frame: ${window === mainWin}, ` +
-            `typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
+            `mainWin.typs: ${JSON.stringify(mainWin.typs)} [TyE60UKTTGL35]`);
       }
       // @endif
       ReactActions.setNewMe(eventData.user);

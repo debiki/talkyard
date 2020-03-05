@@ -729,8 +729,7 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
-export function store_getPostId(store: Store, pageId: PageId, postNr: PostNr)
-      : PostId | undefined {
+export function store_getPostId(store: Store, pageId: PageId, postNr: PostNr): PostId | U {
   // If we're on a blog bost with embedded comments, then, the Talkyard embedded
   // comments page might not yet have been created.
   if (!pageId)
@@ -742,7 +741,7 @@ export function store_getPostId(store: Store, pageId: PageId, postNr: PostNr)
   dieIf(!page, 'TyE603KWUDB4');
 
   const post = page.postsByNr[postNr];
-  return post.uniqueId;
+  return post && post.uniqueId;
 }
 
 
@@ -912,10 +911,11 @@ function store_makePreviewPost({
 }
 
 
+/* Not in use, but maybe later? Instead, for now, this: [60MNW53].
 export function store_makeDeleteDraftPostPatch(store: Store, draft: Draft): StorePatch {
   const draftPost = store_makePostForDraft(store, draft);
   return store_makeDeletePostPatch(draftPost);
-}
+} */
 
 
 export function store_makeDeletePreviewPostPatch(store: Store, parentPostNr: PostNr,

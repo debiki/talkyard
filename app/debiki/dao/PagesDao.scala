@@ -614,7 +614,7 @@ trait PagesDao {
   }
 
 
-  REFACTOR // Move to PostsDao? This fn creates a post, not a whole page op.
+  REFACTOR // Move to PostsDao? This fn creates a post, not a whole page operation.
   def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction) {
     // Some dupl code [3GTKYA02]
     val page = newPageDao(pageId, tx)

@@ -311,14 +311,14 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwOkSafeJson(JsArray())
     }
 
-    val categories = sectionCategories.catStuffsExclRoot
+    val catStuffs: Seq[CategoryStuff] = sectionCategories.catStuffsExclRoot
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
 
     val pageIds = ArrayBuffer[PageId]()
 
-    for (catStuff <- categories) {
+    for (catStuff <- catStuffs) {
       val recentTopics = dao.listMaySeeTopicsInclPinned(catStuff.category.id, pageQuery,
         includeDescendantCategories = true, authzCtx, limit = 6)
       recentTopicsByCategoryId(catStuff.category.id) = recentTopics
@@ -328,7 +328,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
       dao.getPageStuffById(pageIds)
 
-    val json = JsArray(categories.map({ catStuff =>
+    val json = JsArray(catStuffs.map({ catStuff =>
       categoryToJson(catStuff, sectionCategories.rootCategory,
           recentTopicsByCategoryId(catStuff.category.id), pageStuffById)
     }))

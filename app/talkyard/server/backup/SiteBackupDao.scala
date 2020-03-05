@@ -990,8 +990,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
         siteToSave.name,
         siteToSave.status,
         hostname = siteToSave.canonicalHostname.map(_.hostname),
+        // Any embedding url and org name get updated below (0296537).
         embeddingSiteUrl = None,
-        // This get updated below (0296537).
         organizationName = "Organization name missing [TyM8YKWP3]",
         creatorId = SystemUserId,
         browserIdData = browserIdData,
@@ -1016,7 +1016,8 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
       val otherHostnames = siteToSave.hostnames.filter(_.role != Hostname.RoleCanonical)
       otherHostnames.foreach(hn => tx.insertSiteHost(hn.noDetails))
 
-      tx.upsertSiteSettings(siteSettings)  // also updates org name (0296537)
+      // This also updates any embedding url and org name (0296537).
+      tx.upsertSiteSettings(siteSettings)
 
       siteData.apiSecrets foreach tx.insertApiSecret
 

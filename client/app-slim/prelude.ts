@@ -186,14 +186,15 @@ export function getMainWin(): MainWin {
   // Maybe there're no iframes and we're already in the main win?
   // (window.opener might still be defined though — could be an embedded
   // comments iframe, in another browser tab. So if we were to continue below,
-  // we could find the main win from the *wrong* browser tab with a completely
-  // unrelated React store. )
+  // we could find the main win from the *wrong* browser tab with the wrong
+  // React store. )
   if (!eds.isInIframe && !eds.isInLoginPopup &&
         // If we're in a login popup, and got rediected back from an
         // OAuth provider, then eds.isInLoginPopup is false, but
-        // the window will have this name:
-        // (And it keeps its name, also when going to the OAuth provider and
-        // logging in there, and when going back again.)
+        // the window name will be 'TyLoginPopup' — then, we need to continue
+        // below to find the real main win (since we're in a popup).
+        // (The window it keeps its name, also when going to the OAuth provider
+        // and logging in there, and when going back again.)
         window.name !== 'TyLoginPopup') {
     return window as MainWin;
   }

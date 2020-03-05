@@ -467,6 +467,9 @@ embedded comments:
   no about page created:  [5WAKR02]
   post comment:
           - "all" e2e emb cmts tests
+  post 1st comment, edit:   TESTS_MISSING
+    when unapproved:
+    auto approved:
   start with Like vote:
           - embedded-comments-vote-first.test.ts  TyT2AKBS056
   start with configuring one's notf prefs:

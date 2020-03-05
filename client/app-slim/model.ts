@@ -189,8 +189,11 @@ interface DraftLocator {
 
 
 interface DraftDeletor {
+  // Embedded comments pages get lazy created e.g. when the first reply gets
+  // posted — until then, there's no page id.
   pageId?: PageId,
   forWhat: DraftLocator;
+  // Only drafts saved server side have been assigned a draft nr.
   draftNr?: DraftNr;
 }
 
@@ -1416,10 +1419,10 @@ interface StorePatch extends EditorPatch {
 
   deleteDraft?: DraftDeletor;
 
-  // For lazy-created pages: I we post the first reply to a blog post (or the
-  // first Like vote, or configure page notf prefs) — then, a Talkyard page
-  // gets lazy-created, and we need its id, to continue doing things on that
-  // now *real* page.
+  // Some pages get created lazily, namely embedded comments pages. They get
+  // created when someone posts the first comment, or posts the first Like vote,
+  // or configures page notf prefs (e.g. to be notified about commenst). We need
+  // the lazy-created page's id, to continue doing things on that now *real* page.
   newlyCreatedPageId?: PageId;
   newlyCreatedOrigPostId?: PostId;
 }

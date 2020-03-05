@@ -127,7 +127,7 @@ case class CategoryStuff(
   category: Category,
   descriptionBriefPlainText: String,
   // Later: Don't allow external urls? Those could point to large images, making the page slow.
-  anyThumbnails: immutable.Seq[String],  // UploadRef],
+  anyThumbnails: immutable.Seq[String]  // later: Seq[UploadRef] — then cannot be external.
   // Later:
   // Statistics, e.g. num new topics per day / week / or month.
   // (Total num topics?)

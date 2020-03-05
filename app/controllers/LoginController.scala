@@ -92,6 +92,11 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * the iframe — only the iframe content would be overlaid by the modal dialog, but
     * the rest of the page (outside the iframe) would be active & clickable as usual,
     * which I think would be confusing?
+    *
+    * Especially on mobile phones, if one scrolls up or down a bit, so the dialog
+    * scrolls out of view, and all one sees are comments behind a non-clickable
+    * background. — Would need to disable scroll on the embedd*ing* page? That'd be
+    * a bit error prone?
     */
   def showLoginPopup(mode: String, returnToUrl: String): Action[Unit] =
         GetActionAllowAnyoneRateLimited(

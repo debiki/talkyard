@@ -1516,7 +1516,7 @@ object JsonMaker {
       "unlistTopics" -> JsBoolean(category.unlistTopics),
       "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
       "position" -> category.position,
-      "description" -> JsStringOrNull(category.description),
+      "description" -> JsStringOrNull(category.description), // [502RKDJWF5] repl w categoryStuff.descriptionBriefPlainText
       "thumbnailUrl" -> JsStringOrNull(categoryStuff.anyThumbnails.headOption))
     if (recentTopicsJson ne null) {
       json += "recentTopics" -> JsArray(recentTopicsJson)

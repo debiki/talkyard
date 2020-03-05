@@ -89,11 +89,12 @@ package object core {
   val PermissionAlreadyExistsMinId = 1
 
 
-  // Avoid exposing ExtIds. It's best if strangers and non-staff members cannot access
-  // them anywhere. Because ext ids might include numbers and things that makes it possible
-  // for strangers to draw conclusions about an organization that has SSO integrated
-  // with Talkyard. (E.g. some organization might assign ids 1,2,3,4,... to their
-  // own users, and use as ext ids in Talkyard.)
+  // Avoid exposing ExtIds. It's best if strangers and non-staff members cannot see
+  // them anywhere. Because ext ids might include numbers that makes it possible
+  // for strangers to draw conclusions about an organization that has integrated
+  // with Talkyard. (E.g. an organization might assign ids 1,2,3,4,... to their
+  // own users, and use as ext ids in Talkyard — and a stranger who can see any such
+  // ext ids, could estimate the number of people in the organization.)
   type ExtImpId = String  // RENAME to ExtId
   type ExtId = String
 

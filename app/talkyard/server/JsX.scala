@@ -525,7 +525,7 @@ object JsX {
       "name" -> category.name,
       "slug" -> category.slug,
       "position" -> category.position,
-      "description" -> JsStringOrNull(category.description),
+      "description" -> JsStringOrNull(category.description), // remove [502RKDJWF5]
       // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
       "newTopicTypes" -> category.newTopicTypes.map(_.toInt),  // : immutable.Seq[PageType],
       // REFACTOR these two should be one field?: Unlist.Nothing = 0, Unlist.Topics = 1, Unlist.Category = 2?

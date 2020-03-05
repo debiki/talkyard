@@ -1119,6 +1119,8 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 }
 
 
+/// Deletes both the draft, and the in-page draft post.
+///
 export function deleteDraftPost(pageId: PageId, draftPost: Post) {
   const store: Store = ReactStore.allData();
 
@@ -1138,6 +1140,8 @@ export function deleteDraftPost(pageId: PageId, draftPost: Post) {
 }
 
 
+/// Deletes the draft, and optionally any draft post too.
+///
 export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boolean,
       onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
 
@@ -1149,7 +1153,7 @@ export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boole
   let draftPost;
   if (deleteDraftPost) {
     const store: Store = getMainWinStore();
-    draftPost = store_makePostForDraft(store, draft);
+    draftPost = store_makePostForDraft(store, draft);  // [60MNW53]
   }
   deleteDraftImpl(draftPost, draftDeletor, onDoneOrBeacon, onError);
 }
@@ -1172,9 +1176,11 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
 
   // ----- A patch to delete from the store
 
+  // Delete any draft preview post, for the draft.
   const storePatch: StorePatch =
       draftPost ? store_makeDeletePostPatch(draftPost) : {};
 
+  // Delete the draft itself.
   storePatch.deleteDraft = draftDeletor;
 
   // ----- Delete from server
@@ -1182,7 +1188,7 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
   const onDone: OnDone | U =
       onDoneOrBeacon === UseBeacon ? undefined : onDoneOrBeacon;
 
-  // If this draft has been saved server side, it'll have a draft nr, assigned
+  // If this draft has been saved server side, it has a draft nr, assigned
   // by the server. Then we need to delete the draft server side too.
   const draftNr: DraftNr | U = draftDeletor.draftNr;
   if (!draftNr) {
@@ -1200,6 +1206,12 @@ function deleteDraftImpl(draftPost: Post | U, draftDeletor: DraftDeletor,
       }, onError);
     }
   }
+  // @ifdef DEBUG
+  else {
+    die('TyE407WKU46');
+  }
+  // @endif
+  void 0; // [macro-bug]
 }
 
 

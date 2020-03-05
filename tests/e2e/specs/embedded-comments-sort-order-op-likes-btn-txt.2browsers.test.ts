@@ -273,8 +273,8 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
         veryLastPostNr - 0, veryLastPostNr - 1, veryLastPostNr - 2]);
   });
 
-  it("Owen changes sort order back to default, Newest First", () => {
-    owensBrowser.adminArea.interface.setSortOrder(0);
+  it("Owen changes sort order back to Best First", () => {
+    owensBrowser.adminArea.interface.setSortOrder(1);
   });
 
   it("... saves", () => {
@@ -288,8 +288,6 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
         12,  // Like voted reply-reply
         11,  // Reply-reply sorted by time
         13,  //     – "" –
-        // Then, the new comment Maria posted:
-        veryLastPostNr + 1,
         // Then, no votes — sorted by time:
          2, 3, 4, 5, 6, 7, 8, 9,
         // 10..13 got Like-votes, are at the top.

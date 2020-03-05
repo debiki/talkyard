@@ -11,6 +11,9 @@ import c = require('../test-constants');
 import { logUnusual, logError, logWarning, logMessage, printBoringToStdout, die, dieIf } from './log-and-die';
 
 
+//  RENAME  this file, but to what?  E2eBrowser? (RichBrowser like Scala's RichString etc?)
+
+
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
 let cb = 0;
@@ -23,16 +26,18 @@ const PollMaxMs = 5000;
 
 
 const enum IsWhere {
-  Nowhere = 0,
   Forum = 1,
+  LoginPopup = 2,
 
-  EmbFirst = 2,
-  EmbeddingPage = 2,
-  EmbCommentsIframe = 3,
-  EmbEditorIframe = 4,
-  EmbLast = 4,
+  EmbFirst = 3,
+  EmbeddingPage = 3,
+  EmbCommentsIframe = 4,
+  EmbEditorIframe = 5,
+  EmbLast = 5,
 
-  OtherTab = 5,
+  // Another server, e.g. Google's OAuth login page. But not an
+  // embedding blog post page.
+  External = 10,
 };
 
 
@@ -103,8 +108,12 @@ function pagesFor(browser) {
   const origRefresh = browser.refresh;
 
   const hostsVisited = {};
-  let isWhere: IsWhere = IsWhere.Nowhere;
+  let isWhere: IsWhere | U;
   let isOnEmbeddedCommentsPage = false;
+
+  function isOnEmbeddedPage() {
+    return isWhere && IsWhere.EmbFirst <= isWhere && isWhere <= IsWhere.EmbLast;
+  }
 
   const api = {
 
@@ -214,8 +223,11 @@ function pagesFor(browser) {
     __updateIsWhere: () => {
       // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
       // -one's-email-addr page.
-      api.waitForExist('.DW, .talkyard-comments, .btn');
-      isOnEmbeddedCommentsPage = browser.isExisting('.talkyard-comments');
+      // ('ed-comments' is old, deprecated, class name.)
+      api.waitForExist('.DW, .talkyard-comments, .ed-comments, .btn');
+      isOnEmbeddedCommentsPage =
+          browser.isExisting('.talkyard-comments') ||
+          browser.isExisting('.ed-comments');
       isWhere = isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
     },
 
@@ -347,6 +359,10 @@ function pagesFor(browser) {
     },
 
 
+    numTabs: (): number => {
+      return browser.getTabIds().length;
+    },
+
     waitForMinBrowserTabs: (howMany: number) => {
       browser.waitUntil(function () {
         return browser.getTabIds().length >= howMany;
@@ -355,12 +371,13 @@ function pagesFor(browser) {
 
     waitForMaxBrowserTabs: (howMany: number) => {
       browser.waitUntil(function () {
-        return browser.getTabIds().length <= howMany;
+        // Cannot be 0, that'd mean the test made itself disappear?
+        return browser.getTabIds().length <= Math.max(1, howMany);
       });
     },
 
 
-    swithToOtherTabOrWindow: function() {
+    swithToOtherTabOrWindow: function(isWhereAfter?: IsWhere) {
       for (let i = 0; i < 3; ++i) {
         logMessage("Waiting for other window to open, to prevent weird Selenium errors...");
         browser.pause(1500);
@@ -375,7 +392,12 @@ function pagesFor(browser) {
           logMessage(`Calling browser.switchTab(id), id = ${id}...`);
           browser.switchTab(id);
           logMessage(`... done, current tab id is now: ${browser.getCurrentTabId()}.`);
-          isWhere = IsWhere.OtherTab;
+          if (isWhereAfter) {
+            isWhere = isWhereAfter;
+          }
+          else {
+            api.__updateIsWhere();
+          }
           return;
         }
       }
@@ -384,7 +406,7 @@ function pagesFor(browser) {
     },
 
 
-    switchBackToFirstTabOrWindow: function() {
+    switchBackToFirstTabOrWindow: () => {
       // If no id specified, will switch to the first tab.
       browser.pause(500);
       let ids = browser.getTabIds();
@@ -483,14 +505,14 @@ function pagesFor(browser) {
 
 
     switchToLoginPopupIfEmbedded: () => {
-      if (IsWhere.EmbFirst <= isWhere && isWhere <= IsWhere.EmbLast ) {
-        api.swithToOtherTabOrWindow();
+      if (isOnEmbeddedPage()) {
+        api.swithToOtherTabOrWindow(IsWhere.LoginPopup);
       }
     },
 
 
     switchBackToFirstTabIfNeeded: () => {
-      if (isWhere === IsWhere.OtherTab) {
+      if (isWhere === IsWhere.LoginPopup) {
         api.switchBackToFirstTabOrWindow();
       }
     },
@@ -502,14 +524,14 @@ function pagesFor(browser) {
 
 
     switchToEmbCommentsIframeIfNeeded: () => {
-      if (isWhere >= IsWhere.EmbeddingPage && isWhere !== IsWhere.EmbCommentsIframe) {
+      if (isOnEmbeddedPage() && isWhere !== IsWhere.EmbCommentsIframe) {
         api.switchToEmbeddedCommentsIrame();
       }
     },
 
 
     switchToEmbEditorIframeIfNeeded: () => {
-      if (isWhere >= IsWhere.EmbeddingPage && isWhere !== IsWhere.EmbEditorIframe) {
+      if (isOnEmbeddedPage() && isWhere !== IsWhere.EmbEditorIframe) {
         api.switchToEmbeddedEditorIrame();
       }
     },
@@ -2173,12 +2195,13 @@ function pagesFor(browser) {
           password = username.password;
           username = username.username;
         }
+        const numTabs = api.numTabs();
         api.loginDialog.tryLogin(username, password);
         if (opts && opts.resultInError)
           return;
-        if (isWhere === IsWhere.OtherTab) {
+        if (isWhere === IsWhere.LoginPopup) {
           // Wait for this login popup tab/window to close.
-          api.waitForMaxBrowserTabs(1);
+          api.waitForMaxBrowserTabs(numTabs - 1);
           api.switchBackToFirstTabIfNeeded();
         }
         else {
@@ -2198,15 +2221,16 @@ function pagesFor(browser) {
       // Embedded discussions do all logins in popups.
       loginWithPasswordInPopup:
           (username: string | { username: string, password: string }, password?: string) => {
-        api.swithToOtherTabOrWindow();
+        api.swithToOtherTabOrWindow(IsWhere.LoginPopup);
         api.disableRateLimits();
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
         }
+        const numTabs = api.numTabs();
         api.loginDialog.tryLogin(username, password);
         // The popup auto closes after login.
-        api.waitForMaxBrowserTabs(1);
+        api.waitForMaxBrowserTabs(numTabs - 1);
         api.switchBackToFirstTabOrWindow();
       },
 
@@ -2356,8 +2380,13 @@ function pagesFor(browser) {
         ps = ps || {};
 
         // Switch to a login popup window that got opened, for Google:
-        if (!isInPopupAlready && !ps.isInFullScreenLogin)
-          api.swithToOtherTabOrWindow();
+        if (!isInPopupAlready && !ps.isInFullScreenLogin) {
+          logMessage(`Switching to login popup ...`);
+          api.swithToOtherTabOrWindow(IsWhere.External);
+        }
+        else {
+          logMessage(`Already in popup, need not switch window.`);
+        }
 
         const emailInputSelector = 'input[type="email"]';
         const emailNext = '#identifierNext';
@@ -2453,7 +2482,7 @@ function pagesFor(browser) {
 
         //if (!isInPopupAlready)
         logMessage("Switching to GitHub login window...");
-        api.swithToOtherTabOrWindow();
+        api.swithToOtherTabOrWindow(IsWhere.External);
 
         browser.waitForVisible('.auth-form-body');
         api.waitAndSetValue('.auth-form-body #login_field', ps.username);
@@ -2506,7 +2535,7 @@ function pagesFor(browser) {
 
         // In Facebook's login popup window:
         if (!isInPopupAlready)
-          api.swithToOtherTabOrWindow();
+          api.swithToOtherTabOrWindow(IsWhere.External);
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
         // a short while to find out what'll happen.
@@ -2580,7 +2609,7 @@ function pagesFor(browser) {
 
         // Switch to LinkedIn's login popup window.
         if (!data.isInPopupAlready)
-          api.swithToOtherTabOrWindow();
+          api.swithToOtherTabOrWindow(IsWhere.External);
 
         // Wait until popup window done loading.
         while (true) {
@@ -2658,6 +2687,7 @@ function pagesFor(browser) {
       },
 
       clickResetPasswordCloseDialogSwitchTab: function() {
+        // This click opens a new tab.
         api.waitAndClick('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
         api.waitUntilModalGone();
@@ -3724,7 +3754,7 @@ function pagesFor(browser) {
         api.waitForVisible('.s_ShareD');
       },
 
-      openMoveDialogForPostNr: function(postNr: PostNr) {
+      openMoveDialogForPostNr: (postNr: PostNr) => {
         // This always works, when the tests are visible and I look at them.
         // But can block forever, in an invisible browser. Just repeat until works.
         utils.tryManyTimes("Open move post dialog", 3, () => {
@@ -4031,6 +4061,8 @@ function pagesFor(browser) {
       // Not needed? Just use  waitAndClick()  instead?
       clickPostActionButton: function(buttonSelector: string, opts: { clickFirst?: boolean } = {}) {   // RENAME to api.scrollAndClick?
         api.switchToEmbCommentsIframeIfNeeded();
+        api.waitAndClick(buttonSelector, opts);
+        return;
         let hasScrolled = false;
         const isInIframe = api.isInIframe();
 
@@ -5462,7 +5494,11 @@ function pagesFor(browser) {
         },
 
         setSortOrder: (value: number) => {
-          api.waitAndSetValue('.e_BlgSrtOdr input', value, { checkAndRetry: true });
+          dieIf(value === 0, "Cannot set to default — that'd clear the value, " +
+              "but browser drivers are buggy / weird, won't work with Webdriver v4 [TyE06KUDS]");
+          // 0 = default.
+          const valueOrEmpty = value === 0 ? '' : value;
+          api.waitAndSetValue('.e_BlgSrtOdr input', valueOrEmpty, { checkAndRetry: true });
         },
 
         setBlogPostLikeVotes: (value: number) => {

@@ -443,6 +443,9 @@ const OpenAuthButton = createClassAndFactory({
       // Also see Server.ts. [NOCOOKIES]
       const mainWin = getMainWin();
       if (!win_canUseCookies(mainWin)) {
+        // (We can use cookies here in this login window — they're 1st party cookies.
+        // But not in the main window, typically an embedded comments iframe, and that'd
+        // be 3rd party cookies.)
         getSetCookie('TyCoAvoidCookies', 'Avoid');
       }
       window.location.assign(url);

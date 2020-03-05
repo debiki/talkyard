@@ -48,10 +48,10 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
     it('verifies hens email address', () => {
       const siteId = pages.getSiteId();
       const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, newMembersEmail, browser);
-      browser.go(link);
+      browser.go2(link);
     });
     it('posts a topic', () => {
-      browser.go('/');
+      browser.go2('/');
       pages.complex.createAndSaveTopic({ title: newMembersTopicTitle, body: newMembersTopicText });
     });
     it('the owner gets an email notification', () => {

@@ -737,7 +737,7 @@ export const Editor = createFactory<any, EditorState>({
     };
 
     const state: EditorState = this.state;
-    if (isEmbeddedNotYetCreatedPage(state)) {   // what if 1) new blank page, 2) save reply 3) edit?
+    if (isEmbeddedNotYetCreatedPage(state)) {
       // Cannot currently load draft & guidelines (below) for a not-yet-created page.
       // Instead, we'll load from the browser. [BLGCMNT1]
       setDraftAndGuidelines();
@@ -1017,15 +1017,24 @@ export const Editor = createFactory<any, EditorState>({
     const anyPostType: PostType | undefined = state.anyPostType;
     const locator: DraftLocator = { draftType: DraftType.Scratch };
     const mainStore: Store = eds.isInEmbeddedEditor ? getMainWinStore() : state.store;
+
+    // If we're in an iframe, the page might have gotten lazy-creted, then
+    // we need to use eds.embeddedPageId.
+    const editorsPageId = state.editorsPageId || eds.embeddedPageId;
+
     let postType: PostType;
 
     // @ifdef DEBUG
     dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
+    // Cannot edit sth, if page doesn't exist. And cannot create a new topic, in a forum
+    // that doesn't exist (the editor's page id should be the forum page id).
+    dieIf(!state.editorsPageId && (
+          state.editingPostNr || state.newForumTopicCategoryId), '[TyE40JMABN42]');
     // @endif
 
     if (state.editingPostNr) {
       locator.draftType = DraftType.Edit;
-      locator.pageId = state.editorsPageId;
+      locator.pageId = editorsPageId;
       locator.postId = state.editingPostUid;
       locator.postNr = state.editingPostNr;
     }
@@ -1036,7 +1045,7 @@ export const Editor = createFactory<any, EditorState>({
       // @endif
       postType = anyPostType || PostType.Normal;
       locator.draftType = postType_toDraftType(postType);
-      locator.pageId = state.editorsPageId || eds.embeddedPageId;
+      locator.pageId = editorsPageId;
       locator.postNr = state.replyToPostNrs[0]; // for now just pick the first one
       locator.postId = store_getPostId(mainStore, locator.pageId, locator.postNr);
       // This is needed for embedded comments, if the discussion page hasn't yet been created.
@@ -1046,7 +1055,7 @@ export const Editor = createFactory<any, EditorState>({
     }
     else if (state.isWritingChatMessage) {
       locator.draftType = DraftType.Reply;
-      locator.pageId = state.editorsPageId;
+      locator.pageId = editorsPageId;
       locator.postNr = BodyNr;
       locator.postId = store_getPostId(mainStore, locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
@@ -1060,7 +1069,7 @@ export const Editor = createFactory<any, EditorState>({
       locator.categoryId = state.newForumTopicCategoryId;
       // Need to know in which forum (sub community) the new page should be placed.
       // (Hmm or could lookup via category id?)
-      locator.pageId = state.editorsPageId;
+      locator.pageId = editorsPageId;
     }
     else {
       // Editor probably closed, state gone.
@@ -1104,8 +1113,8 @@ export const Editor = createFactory<any, EditorState>({
     const draftStatus: DraftStatus = state.draftStatus;
 
     if (!draftOldOrEmpty || draftStatus <= DraftStatus.NeedNotSave) {
-      console.debug("Need not save draft: !!draftOldOrEmpty: " + !!draftOldOrEmpty +
-          " draftStatus: " + draftStatus);
+      console.debug("Need not save draft, because: !!draftOldOrEmpty: " +
+          !!draftOldOrEmpty + " draftStatus: " + draftStatus);
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor(oldDraft);
       }
@@ -1134,7 +1143,12 @@ export const Editor = createFactory<any, EditorState>({
               DraftStatus.NothingHappened : DraftStatus.Deleting,
         });
         this.isSavingDraft = true;
-        const deleteDraftPost = false;  // that'd delete any preview
+
+        // Deleting the draft post, would in fact delete the edits preview
+        // instead — because now when editing, the draft post has been temporarily
+        // removed and there's a preview (with the same post nr) instead.
+        const deleteDraftPost = false;
+
         ReactActions.deleteDraft(
             state.editorsPageId, oldDraft, deleteDraftPost, useBeacon || (() => {
           this.isSavingDraft = false;
@@ -2113,7 +2127,8 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
 // We currently don't save any draft server side, for the 1st embedded comment  [BLGCMNT1]
 // on a new blog post, because the embedded page hasn't yet been created (it gets created
 // lazily when the 1st reply is posted [4AMJX7]); there's no page id to use in the
-// draft locator. Could use the embedding URL though.
+// draft locator. Could use the embedding URL though, or data-discussion-id="..."
+// embedding page html tag attr.
 function isEmbeddedNotYetCreatedPage(props: { store: Store, messageToUserIds }): boolean {
   // If is-no-page, then the page doesn't exist. However, we might be in the user
   // profile section, composing a reply or a direct message to someone — then we

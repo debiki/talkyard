@@ -466,7 +466,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-create-site-import-disqus.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-drafts-not-logged-in $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only embedded-comments-scroll-and-load-more.2browsers $args
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll $args
+  #runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-different-disc-ids-same-page $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id.test $args

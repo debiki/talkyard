@@ -245,7 +245,7 @@ trait CategoriesDao {
     // But first find out if this actually takes time. Usually no db access anyway.
 
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      includeDeleted = includeDeleted, includeUnlistTopics = true, authzCtx).sortBy(_.position)
+      includeDeleted = includeDeleted, inclCatsWithTopicsUnlisted = true, authzCtx).sortBy(_.position)
 
     val catStuffs = categories map { category =>
       makeCatStuff(category)
@@ -273,11 +273,11 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        includeDeleted: Boolean, includeUnlistTopics: Boolean,
+        includeDeleted: Boolean, inclCatsWithTopicsUnlisted: Boolean,
         authzCtx: ForumAuthzContext): immutable.Seq[Category] = {
     val categories = ArrayBuffer[Category]()
     appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDeleted = includeDeleted,
-        includeUnlistTopics = includeUnlistTopics, authzCtx, categories)
+        inclCatsWithTopicsUnlisted = inclCatsWithTopicsUnlisted, authzCtx, categories)
     categories.to[immutable.Seq]
   }
 
@@ -303,7 +303,7 @@ trait CategoriesDao {
         // contain any pages, but subtree roots usually contain pages.)
         listDescendantMaySeeCategories(categoryId, includeRoot = true,
             includeDeleted = pageQuery.pageFilter.includeDeleted,
-          includeUnlistTopics = false, authzCtx).map(_.id)
+            inclCatsWithTopicsUnlisted = false, authzCtx).map(_.id)
       }
       else {
         SECURITY // double-think-through this:
@@ -446,7 +446,7 @@ trait CategoriesDao {
 
   def getAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
     memCache.lookup(
-      aboutPageIdByCatId(categoryId),
+      aboutPageIdByCatIdKey(categoryId),
       orCacheAndReturn = Some({
         // This never changes.
         readOnlyTransaction(_.loadAboutCategoryPageId(categoryId))
@@ -472,7 +472,7 @@ trait CategoriesDao {
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
       includeDeleted: Boolean,
-      includeUnlistTopics: Boolean, // COULD RENAME to inclCatsWithTopicsUnlisted
+      inclCatsWithTopicsUnlisted: Boolean,
       authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
@@ -510,14 +510,15 @@ trait CategoriesDao {
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
       return
     })
-    for (childCategory <- childCategories; if !childCategory.unlistTopics || includeUnlistTopics) {
+    for (childCategory <- childCategories;
+         if !childCategory.unlistTopics || inclCatsWithTopicsUnlisted) {
       appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDeleted = includeDeleted,
-        includeUnlistTopics = includeUnlistTopics, authzCtx, categoryList)
+        inclCatsWithTopicsUnlisted = inclCatsWithTopicsUnlisted, authzCtx, categoryList)
     }
   }
 
 
-  /** Returns (categoriesById, childCatsByParentId).  + about category topic texts and thumbnails?
+  /** Returns (categoriesById, categoriesByParentId).
     */
   private def getAndRememberCategories()
         : (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = {
@@ -529,7 +530,7 @@ trait CategoriesDao {
     }
 
     // Didn't remember. Get from cache.
-    val result = memCache.lookup(
+    val result: (Map[CategoryId, Category], Map[CategoryId, Vector[Category]]) = memCache.lookup(
       allCategoriesKey,
       orCacheAndReturn = Some({
         loadCategories()
@@ -764,8 +765,9 @@ trait CategoriesDao {
   }
 
 
-  private def aboutPageIdByCatId(categoryId: CategoryId) =
+  private def aboutPageIdByCatIdKey(categoryId: CategoryId) =
     debiki.dao.MemCacheKey(siteId, s"$categoryId|AbtPgId")
+
   private val allCategoriesKey = debiki.dao.MemCacheKey(siteId, "AllCats")
 
 }

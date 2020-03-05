@@ -1045,11 +1045,11 @@ export function loadMyself(callback: (user: any) => void) {
   const mainWin = getMainWin();
   const typs: PageSession = mainWin.typs;
   if (!typs.canUseCookies && !typs.weakSessionId) {
-    console.error(`Cannot load myself: No cookies, no typs.weakSessionId. ` +
+    console.error(`Cannot load myself: No cookies, no mainWin.typs.weakSessionId. ` +
         `This frame name: ${window.name}, ` +
         `main frame name: ${mainWin.name}, ` +
         `this is main frame: ${window === mainWin}, ` +
-        `typs: ${JSON.stringify(typs)} [TyE603FKNFD5]`);
+        `mainWin.typs: ${JSON.stringify(typs)} [TyE603FKNFD5]`);
     debugger;
   }
   // @endif

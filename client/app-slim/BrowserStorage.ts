@@ -106,13 +106,13 @@ export function get(key: any): any | undefined {
       value = JSON.parse(valueStr);
     }
     catch (ex) {
-      // @ifdef DEBUG
-      logAndDebugDie(`Error getting '${key} from storage [TyESTRREAD]`, ex);
-      // @endif
-      void 0; // [macro-bug]
-      // "Impossible". Someone placed sth weird in the storage?
+      // This is "impossible". Someone placed sth weird in the storage?
       // Talkyard doesn't have any code that can do that?
       // Maybe delete this entry?
+      // @ifdef DEBUG
+      logAndDebugDie(`Error parsing browser storage value for key '${key}' [TyESTRREAD]`, ex);
+      // @endif
+      void 0; // [macro-bug]
     }
   }
   return value;
@@ -137,27 +137,38 @@ export function forEachDraft(pageId: PageId,
   withBrowserStorage(function(storage: Storage) {
     for (let i = 0; true; i++) {
       const keyStr = storage.key(i);
-      if (!keyStr) break;
-      if (keyStr.indexOf('draftType') >= 0) {
-        const locator: DraftLocator = JSON.parse(keyStr);
-        if (locator.embeddingUrl === eds.embeddingUrl || locator.pageId === pageId) {
-          const draftStr = storage.getItem(keyStr);
-          let draft: Draft;
-          let bad;
-          try {
-            draft = JSON.parse(draftStr);
-          }
-          catch (ex) {
-            bad = true;
-          }
-          if (bad || !draft.forWhat) {
-            // Weird. Can cause undefined object field access bugs.
-            storage.removeItem(keyStr);
-            continue;
-          }
-          fn(draft, keyStr);
-        }
+
+      // Looped past the last item?
+      if (!keyStr)
+        break;
+
+      // Is this a draft?
+      if (keyStr.indexOf('draftType') === -1)
+        continue;
+
+      // Is this draft for the current page?
+      const locator: DraftLocator = JSON.parse(keyStr);
+      if (locator.embeddingUrl !== eds.embeddingUrl && locator.pageId !== pageId)
+        continue;
+
+      // Get the draft.
+      const draftStr = storage.getItem(keyStr);
+      let draft: Draft;
+      let bad;
+      try {
+        draft = JSON.parse(draftStr);
       }
+      catch (ex) {
+        bad = true;
+      }
+
+      if (bad || !draft.forWhat) {
+        // Weird. Using this broken draft cuold cause undefined object access bugs.
+        storage.removeItem(keyStr);
+        continue;
+      }
+
+      fn(draft, keyStr);
     };
   });
 }

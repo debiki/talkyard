@@ -705,7 +705,7 @@ object Prelude {
     (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 
   def charIsAzUnderscore(c: Char): Boolean =
-    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+    charIsAz(c) || c == '_'
 
   def charIsAzOrNum(c: Char): Boolean =
     charIsAz(c) || charIsNum(c)

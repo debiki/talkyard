@@ -1370,6 +1370,7 @@ function patchTheStore(storePatch: StorePatch) {
   }
 
   if (storePatch.deleteDraft) {
+    const deletor: DraftDeletor = storePatch.deleteDraft;
     _.each(store.me.myDataByPageId, (myData: MyPageData) => {
       myData.myDrafts = _.filter(myData.myDrafts, (draft: Draft) => {
         // 1) Compare by locator (i.e. forWhat), because:
@@ -1379,7 +1380,7 @@ function patchTheStore(storePatch: StorePatch) {
         // 2) Compare by draftNr too, because:
         // Maybe in some cases, the locators are slightly different somehow,
         // although it's the same draft — e.g. if an embedding page's url got changed?
-        const toDelete: DraftLocator | U = storePatch.deleteDraft.forWhat;
+        const toDelete: DraftLocator | U = deletor.forWhat;
 
         const sameLocator = !toDelete ? false :
             draft.forWhat.draftType === toDelete.draftType && (
@@ -1394,7 +1395,7 @@ function patchTheStore(storePatch: StorePatch) {
                 _.isEqual(draft.forWhat, toDelete)));
 
         const sameDraftNr =
-            !!draft.draftNr && draft.draftNr === storePatch.deleteDraft.draftNr;
+            !!draft.draftNr && draft.draftNr === deletor.draftNr;
 
         const shallDelete = sameLocator || sameDraftNr;
         return shallDelete;
@@ -1437,11 +1438,14 @@ function patchTheStore(storePatch: StorePatch) {
     store.currentPageId  = storePatch.newlyCreatedPageId;
 
     // This'll make the page indexed by both EmptyPageId and newlyCreatedPageId:
-    // (Could remov the NoPageId key? But might cause some bug?)
+    // (Could remove the NoPageId key? But might cause some bug?)
     store.pagesById[currentPage.pageId] = currentPage;
 
     // If posting (an additional) reply to the orig post, we hereafter
-    // need its id. [NEEDEMBOP]
+    // need its id. [NEEDEMBOP]  Hmm wouldn't it make more sense if the
+    // server sent back the whole new page? Instead of just patching the orig
+    // post id here, but keeping other out-of-date fields. Anyway, this works
+    // fine as of now:
     const origPost = currentPage.postsByNr[BodyNr];
     origPost.uniqueId = storePatch.newlyCreatedOrigPostId;
 
@@ -1806,9 +1810,9 @@ function addLocalStorageDataTo(me: Myself) {
   // Any drafts in the browser's storage?
   if (!eds.isInEmbeddedEditor) {
     BrowserStorage.forEachDraft(store.currentPageId, (draft: Draft) => {
-      // BUG: Skip drafts that got loaded from the server already, so browser storage
-      // drafts won't overwrite them (until the editor gets opened and the real
-      // draft text gets loaded from the server).
+      // BUG, harmless: Skip drafts that got loaded from the server already,
+      // so browser storage drafts won't overwrite them (until the editor gets opened
+      // and the real draft text gets loaded from the server).
       me.myCurrentPageData.myDrafts.push(draft);
     });
   }

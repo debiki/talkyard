@@ -150,7 +150,7 @@ object EmbeddedCommentsPageCreator {
       case Some(newEmbPage) =>
         Json.obj(
           "newlyCreatedPageId" -> newEmbPage.path.pageId,
-          "newlyCreatedOrigPostId" -> newEmbPage.origPostId)
+          "newlyCreatedOrigPostId" -> newEmbPage.origPostId)   // [NEEDEMBOP]
     }
   }
 
