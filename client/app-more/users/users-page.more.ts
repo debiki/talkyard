@@ -339,7 +339,7 @@ const AvatarAboutAndButtons = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const user: UserDetailsStatsGroups = this.props.user;
-    const groupsMaySee = this.props.groupsMaySee;
+    const groupsMaySee: Group[] = this.props.groupsMaySee;
     const stats: UserStats | undefined = this.props.stats;
     const me: Myself = this.props.me;
     const isGone = user_isGone(user);
@@ -388,7 +388,8 @@ const AvatarAboutAndButtons = createComponent({
     const uploadAvatarBtnText = user.avatarMediumHashPath ? t.upp.ChangePhoto : t.upp.UploadPhoto;
     const avatarMissingClass = user.avatarMediumHashPath ? '' : ' esMedAvtr-missing';
 
-    const anyUploadPhotoBtn = isGone || user.isGroup || isGuest(user) || !isMe && !isStaff(me) ? null :
+    const anyUploadPhotoBtn =
+        isGone || user.isGroup || isGuest(user) || !isMe && !isStaff(me) ? null :
         r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
@@ -406,20 +407,8 @@ const AvatarAboutAndButtons = createComponent({
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
           t.SendMsg);
 
-    let maxTrustLevelGroup = Groups.AllMembersId;
-    user.groupIdsMaySee.forEach(id => {
-      // Staff users are included in all built-in groups. [COREINCLSTAFF]
-      if (maxTrustLevelGroup < id && id <= Groups.MaxBuiltInGroupId) {
-        maxTrustLevelGroup = id;
-      }
-    });
-
-    const groupsOnlyOneBuiltIn =
-      _.filter(user.groupIdsMaySee, (id) => id > Groups.MaxBuiltInGroupId);
-    // Maybe lower id groups tend to be more interesting? Got created first.
-    groupsOnlyOneBuiltIn.sort((a, b) => a - b);
-    // Place the built-in group first — it shows the trust level, and if is staff.
-    groupsOnlyOneBuiltIn.unshift(maxTrustLevelGroup);
+    const groupList = GroupList(
+        user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group');
 
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
@@ -450,12 +439,7 @@ const AvatarAboutAndButtons = createComponent({
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             t.GroupsC,
             r.ul({ className: 's_UP_Ab_Stats_Stat_Groups' },
-              groupsOnlyOneBuiltIn.map(groupId => {
-                const group = _.find(groupsMaySee, g => g.id === groupId);
-                return !group ? null :
-                  r.li({ key: groupId, className: 's_UP_Ab_Stats_Stat_Groups_Group' },
-                    Link({ to: linkToUserProfilePage(group) }, group.fullName));
-              }))),
+              groupList)),
           ));
         // Need not show trust level — one will know what the trust level is,
         // by looking at the groups; the first group shows one's trust level's auto group.

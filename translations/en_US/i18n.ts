@@ -51,6 +51,7 @@ var t_en_US: TalkyardTranslations = t = {
   done: "done",
   EditV: "Edit",
   Editing: "Editing",
+  EmailC: "Email: ",
   EmailAddress: "Email address",
   EmailAddresses: "Email addresses",
   EmailSentD: "Email sent.",
@@ -985,7 +986,7 @@ var t_en_US: TalkyardTranslations = t = {
   cud: {
     CreateUser: "Create User",
     CreateAccount: "Create Account",
-    EmailC: "Email:",
+    EmailC: "Email:",  // REMOVE move to t.EmailC instead
     keptPriv: "will be kept private",
     forNotfsKeptPriv: "for reply notifications, kept private",
     EmailVerifBy_1: "Your email has been verified by ",

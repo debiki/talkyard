@@ -48,9 +48,43 @@ export const emailLabel = (isForGuest: boolean) => rFragment({},
     ')'));
 
 
+export const GroupList = function(member: UserDetailsStatsGroups, groupsMaySee: Group[],
+      listItemClassName: string, canUseLink?: false) {
+  let maxTrustLevelGroup = Groups.AllMembersId;
+  member.groupIdsMaySee.forEach(id => {
+    // Staff users are included in all built-in groups. [COREINCLSTAFF]
+    if (maxTrustLevelGroup < id && id <= Groups.MaxBuiltInGroupId) {
+      maxTrustLevelGroup = id;
+    }
+  });
+
+  const groupsOnlyOneBuiltIn =
+    _.filter(member.groupIdsMaySee, (id) => id > Groups.MaxBuiltInGroupId);
+  // Maybe lower id groups tend to be more interesting? Got created first.
+  groupsOnlyOneBuiltIn.sort((a, b) => a - b);
+  // Place the built-in group first — it shows the trust level, and if is staff.
+  groupsOnlyOneBuiltIn.unshift(maxTrustLevelGroup);
+
+  return groupsOnlyOneBuiltIn.map(groupId => {
+    const group = _.find(groupsMaySee, g => g.id === groupId);
+    if (!group)
+      return null;
+    const name = group.fullName || group.username;
+    const urlPath = linkToUserProfilePage(group);
+    return (
+      r.li({ key: groupId, className: listItemClassName },
+        // If we aren't inside a ReactRouter route, then, Link() won't work,
+        // throws an error.
+        canUseLink === false
+            ? r.a({ href: urlPath, target: '_blank' }, name)
+            : Link({ to: urlPath }, name)));
+  });
+}
+
+
 // (Or move to slim-bundle? So the search results page can be generated server side.)
 //
-export var Expandable = (
+export const Expandable = (
       props: { header: any, onHeaderClick: any, isOpen?: boolean,
         className?: string, openButtonId?: string },
       ...children) => {

@@ -41,14 +41,24 @@ export function getAboutUserDialog() {
 }
 
 
+interface AboutUserDialogState {
+  store?: Store;
+  isOpen?: boolean;
+  user?: UserDetailsStatsGroups;
+  groupsMaySee?: Group[];
+  post?: Post;
+  blocks?: any;
+  extraInfo?: string;
+  atRect?: Rect;
+  windowWidth?: number;
+}
+
+
 const AboutUserDialog = createComponent({
   displayName: 'AboutUserDialog',
 
-  getInitialState: function () {
+  getInitialState: function(): AboutUserDialogState {
     return {
-      isOpen: false,
-      user: null,
-      post: null,
       store: ReactStore.allData(),
     };
   },
@@ -72,27 +82,29 @@ const AboutUserDialog = createComponent({
     this._openAndLoadUser({ user: user, post: null, extraInfo }, user.id, at);
   },
 
-  _openAndLoadUser: function(newState, idOrUsername: number | string, at) {
+  _openAndLoadUser: function(newState: AboutUserDialogState, idOrUsername: number | string, at) {
     const atRect = cloneRect(at.getBoundingClientRect());
     atRect.left -= 90; // makes the dialog a bit more centered
-    this.setState({
+    const newState2: AboutUserDialogState = {
       isOpen: true,
       blocks: {},
       atRect: atRect,
       windowWidth: window.innerWidth,
       ...newState,
-    });
+    };
+    this.setState(newState2);
     this.loadUser(idOrUsername);
   },
 
   close: function() {
-    this.setState({
+    const nextState: AboutUserDialogState = {
       isOpen: false,
       user: null,
       post: null,
       atRect: null,
       extraInfo: null,
-    });
+    };
+    this.setState(nextState);
   },
 
   reload: function() {
@@ -104,8 +116,12 @@ const AboutUserDialog = createComponent({
     Server.loadUserAnyDetails(idOrUsername,
           (user: UserDetailsStatsGroups, groupsMaySee: Group[]) => {
       if (this.isGone) return;
+      const nextState: AboutUserDialogState = {
+        user,
+        groupsMaySee,
+      };
       if (!this.state.post) {
-        this.setState({ user: user });
+        this.setState(nextState);
         return;
       }
       Server.loadAuthorBlockedInfo(this.state.post.uniqueId, (blocks: Blocks) => {
@@ -121,32 +137,32 @@ const AboutUserDialog = createComponent({
             browserBlock = block;
           }
         });
-        this.setState({
-          user: user,
-          blocks: {
-            isBlocked: blocks.isBlocked,
-            ipBlock: ipBlock,
-            browserBlock: browserBlock,
-            blockedForever: blocks.blockedForever,
-            blockedTillMs: blocks.blockedTillMs
-          }
-        });
+        nextState.blocks = {
+          isBlocked: blocks.isBlocked,
+          ipBlock: ipBlock,
+          browserBlock: browserBlock,
+          blockedForever: blocks.blockedForever,
+          blockedTillMs: blocks.blockedTillMs
+        };
+        this.setState(nextState);
       });
     });
   },
 
   render: function () {
+    const state: AboutUserDialogState = this.state;
     let content;
 
-    if (this.state.isOpen) {
-      const user: UserInclDetails = this.state.user;
+    if (state.isOpen) {
+      const user: UserInclDetails = state.user;
       const childProps = _.assign({
-        store: this.state.store,
+        store: state.store,
         reload: this.reload,
-        post: this.state.post,
+        post: state.post,
         user: user,
-        extraInfo: this.state.extraInfo,
-        blocks: this.state.blocks,
+        groupsMaySee: state.groupsMaySee,
+        extraInfo: state.extraInfo,
+        blocks: state.blocks,
         close: this.close,
       }, this.props);
 
@@ -165,9 +181,9 @@ const AboutUserDialog = createComponent({
     }
 
     return (
-      DropdownModal({ show: this.state.isOpen, onHide: this.close,
+      DropdownModal({ show: state.isOpen, onHide: this.close,
         dialogClassName2: 's_UD',
-        atRect: this.state.atRect, windowWidth: this.state.windowWidth,
+        atRect: state.atRect, windowWidth: state.windowWidth,
         className: 'esUsrDlg', showCloseButton: false }, content));
   }
 });
@@ -196,7 +212,8 @@ const AboutUser = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    const user: UserInclDetails = this.props.user;
+    const user: UserDetailsStatsGroups = this.props.user;
+    const groupsMaySee: Group[] = this.props.groupsMaySee;
     const me: Myself = store.me;
     const userIsMe = user.id === me.id;
 
@@ -240,6 +257,21 @@ const AboutUser = createComponent({
     const extraInfoNewline =
         this.props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, this.props.extraInfo) : null;
 
+    const emailIfSelfAdmin = !me.isAdmin || !user.email ? null :
+        r.div({ className: 's_UD_Em' },
+          t.EmailC || (t.cud.EmailC + ' '),
+          // Don't use an <a href="mailto:..."> — it's better to encourage people
+          // to use the built-in messaging system? And also annoying when some
+          // email program starts, if clicking the email just to copy it.
+          r.samp({}, user.email),
+          OnlyAdminsSee);
+
+    const groupList = GroupList(
+        user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',
+        // `false`: Use r.a() not a Link() because we're not inside a React Router.
+        // UX COULD place all dialog roots inside the router elem, so Link() will work?
+        false);
+
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
@@ -254,7 +286,12 @@ const AboutUser = createComponent({
           r.b({ className: 's_UD_Un' }, user.username), r.br(),
           r.span({ className: 's_UD_FN' }, user.fullName), r.br(),
           isStaffInfo,
-          isGoneInfo)));
+          isGoneInfo),
+        r.div({ className: 's_UD_BelwAv' },
+          emailIfSelfAdmin,
+          r.div({ className: 's_UP_Gs' },
+            t.GroupsC, groupList))
+        ));
   }
 });
 
@@ -329,6 +366,10 @@ const AboutGuest = createComponent({
         ? r.p({}, t.aud.EmAdrUnkn)
         : null;
 
+    const emailIfSelfAdmin = !me.isAdmin ? null :
+        r.div({ className: 's_UD_Em' },
+          "Email: ", guest.email || "(unknown)");
+
     return (
       r.div({ className: 'clearfix' },
         blockModal,
@@ -337,7 +378,8 @@ const AboutGuest = createComponent({
           blockButton),
         r.p({},
           t.NameC + ' ' + guest.fullName, r.br(),
-          t.aud.ThisIsGuest),
+          t.aud.ThisIsGuest,
+          emailIfSelfAdmin),
         anyCannotBeContactedMessage,
         blockedInfo));
   }

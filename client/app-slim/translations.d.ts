@@ -52,6 +52,7 @@ interface TalkyardTranslations {
   done: string;
   EditV: string;
   Editing: string;
+  EmailC?: string;
   EmailAddress: string;
   EmailAddresses: string;
   EmailSentD: string;

@@ -92,6 +92,11 @@ export function RedirAppend({ path, append }) {
   });
 }
 
+// Use an icon with on-hover instead?
+export const OnlyAdminsSee =
+    r.span({ className: 's_OnlAdmTxt' },
+      " (only admins can see)");
+
 
 export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');

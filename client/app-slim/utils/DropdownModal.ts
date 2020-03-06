@@ -175,7 +175,10 @@ export const DropdownModal = createComponent({
         content.style.left = '6px';
       }
 
-      this.setState({ fitsInDisplay: true });
+      // This calls componentDidUpdate() and could create a "loop", so do only if needed.
+      if (!this.state.fitsInDisplay) {
+        this.setState({ fitsInDisplay: true });
+      }
     }, 0);
   },
 

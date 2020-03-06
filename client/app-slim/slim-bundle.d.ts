@@ -421,6 +421,7 @@ declare namespace debiki2 {
   var SelectCategoryDropdown: any;
 
   // From widgets.ts:
+  var OnlyAdminsSee;
   var PrimaryButton;
   var Button;
   var PrimaryLinkButton;
