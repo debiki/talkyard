@@ -65,13 +65,13 @@ export function onMouseDetected(callback: () => void) {
 
 
 function onFirstTouch() {
-  console.log('Touch screen in use, assuming no mouse.');
+  logM('Touch screen in use, assuming no mouse.');
   isMouseDetected = false;
 }
 
 
 function onFirstMouseMove() {
-  console.log('Mouse detected. [TyMMOUSE]');
+  logM('Mouse detected. [TyMMOUSE]');
   isMouseDetected = true;
   document.documentElement.className += ' mouse';
   for (let i = 0; i < pendingCallbacks.length; ++i) {

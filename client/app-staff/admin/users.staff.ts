@@ -242,7 +242,7 @@ const UserList = createFactory<any>({
   },
 
   componentWillUnmount: function() {
-    console.log("Unmounting UserList [TyD4FKQW2]"); // [5QKBRQ]
+    logD("Unmounting UserList [TyD4FKQW2]"); // [5QKBRQ]
     this.isGone = true;
   },
 

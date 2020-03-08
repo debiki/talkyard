@@ -470,7 +470,7 @@ const NotfPrefsTab = createFactory({
       else {
         // The data we got from the server, is old: we have since updated the UI
         // to show info about a different member, apparently. Fine.
-        console.log("Race condition. [2C80BX]");
+        logM("Race condition. [TyM52C80BX]");
       }
     });
   },

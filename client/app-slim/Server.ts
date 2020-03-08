@@ -124,7 +124,7 @@ export function uploadFiles(endpoint: string, files: any[], onDone, onError) {
     headers,
   })
   .then((response: Response) => {
-    console.log("Uploaded file. [TyM306KWRDF2]");
+    logM("Uploaded file. [TyM306KWRDF2]");
     // Clone the respones, otherwie `.text()` fails with a
     // "TypeError: Failed to execute 'text' on 'Response': body stream is locked" error,
     // if one has Dev Tools open and inspects the response in Dev Tools.
@@ -422,17 +422,17 @@ function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // 
   const mainWin = getMainWin();
 
   // @ifdef DEBUG
-  console.log(`This window name: ${window.name} [TyM306WKTH2]`);
-  console.log(`This is the main window: ${window === mainWin}`);
+  logD(`This window name: ${window.name} [TyM306WKTH2]`);
+  logD(`This is the main window: ${window === mainWin}`);
   try {
-    console.log("Window.opener.typs: " +
+    logD("Window.opener.typs: " +
         (window.opener && JSON.stringify(window.opener.typs)));
   }
   catch (ignored) {
-    console.log("Window.opener.typs: Threw exception. Was opened from a cross-origin window?");
+    logD("Window.opener.typs: Threw exception. Opened from cross-origin window?");
   }
-  console.log(`Main win name: ${mainWin.name}`);
-  console.log(`Main win typs: ${JSON.stringify(mainWin.typs)}`);
+  logD(`Main win name: ${mainWin.name}`);
+  logD(`Main win typs: ${JSON.stringify(mainWin.typs)}`);
   // @endif
 
   const typs: PageSession = mainWin.typs;
@@ -1732,11 +1732,11 @@ export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
 
 
 export function loadPageJson(path: string, success: (response) => void) {
-  console.log(`Loading page: ${path} [TyMLDPG]`);
+  logD(`Loading page: ${path} [TyMLDPG]`);
   get(path + '?json', response => {
-    console.log(`Done loading ${path}, updating store...`);
+    logD(`Done loading ${path}, updating store...`);
     success(response);
-    console.log(`Done updating store.`);
+    logD(`Done updating store.`);
   });
 }
 
@@ -1912,7 +1912,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
   const reqNr = longPollingState.nextReqNr;
   longPollingState.nextReqNr = reqNr + 1;
 
-  console.debug(
+  logD(
       `Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
 
 
@@ -1953,7 +1953,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
 
   longPollingState.ongoingRequest =
       get(pollUrl, (response, xhr) => {
-        console.debug(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
+        logD(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
         // (In case evil proxy servers remove the Etag header from the response, there's
@@ -1966,7 +1966,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
         requestDone = true;
         if (statusCode === 408) {
           // Fine.
-          console.debug(`Long polling request ${reqNr} done, status 408 Timeout [TyELPRTMT]`);
+          logD(`Long polling request ${reqNr} done, status 408 Timeout [TyELPRTMT]`);
           resendIfNeeded();
         }
         else {
@@ -1993,7 +1993,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
   magicTimeout(LongPollingSeconds * 1000, function () {
     if (requestDone)
       return;
-    console.debug(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
+    logD(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
     currentRequest.abort();
     // Unless a new request has been started, reset the state.
     if (currentRequest === longPollingState.ongoingRequest) {
@@ -2012,7 +2012,7 @@ export function isLongPollingNow(): boolean {
 export function abortAnyLongPollingRequest() {
   if (longPollingState.ongoingRequest) {
     const reqNr = longPollingState.ongoingRequest.reqNr;
-    console.debug(`Aborting long polling request ${reqNr} [TyMLPRABRT2]`);
+    logD(`Aborting long polling request ${reqNr} [TyMLPRABRT2]`);
     longPollingState.ongoingRequest.abort();
     longPollingState.ongoingRequest = null;
   }

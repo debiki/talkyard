@@ -108,7 +108,7 @@ const NotfsLevelDropdownModal = createComponent({
       const ppsById: PpsById = state.ppsById || store.usersByIdBrief;
 
       // @ifdef DEBUG
-      console.log("Debug:\n" + JSON.stringify(effPref));
+      logD("Debug:\n" + JSON.stringify(effPref));
       // @endif
 
       const makeListItem = (itemsLevel, title, e2eClass) =>

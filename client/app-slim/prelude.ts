@@ -97,6 +97,37 @@ export function oneIfDef(x: any): number {
 }
 
 
+/// Wrapper for console.log().
+///
+/// But uses *debug* level if we're in an embedded blog comments iframe — because
+/// blog authors sometimes look in the console, and send emails asking about
+/// actually harmless log messages in the console. — With debug log level,
+/// though, the browser won't show those messages, by default.
+///
+/// Otherwise, use normal log level — so if someone copy-pastes a real warning
+/// or error from the console, those other log messages get included, making it
+/// simpler to see what's happening.
+///
+export function logM(message, ex?) {
+  if (eds.isInIframe) {
+    console.debug(message, ex);
+  }
+  else {
+    console.log(message, ex);
+  }
+}
+
+
+/// Wrapper for console.debug().
+///
+/// So can change how logging works, from this one place, rather than updating
+/// console.debug() "everywhere".
+///
+export function logD(message, ex?) {
+  console.debug(message, ex);
+}
+
+
 export function logAndDebugDie(errorMessage: string, ex?) {
   console.error(errorMessage, ex);
   // @ifdef DEBUG

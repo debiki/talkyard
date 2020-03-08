@@ -113,6 +113,9 @@ declare namespace ed {
 
 declare namespace debiki2 {
 
+  function logM(message, ex?);
+  function logD(message, ex?);
+
   function getMainWin(): MainWin;
   function getMainWinStore(): Store;
   function win_canUseCookies(win: MainWin): boolean;

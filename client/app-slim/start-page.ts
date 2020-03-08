@@ -20,6 +20,7 @@
 
 const d = { i: debiki.internal };
 
+const logM = debiki2.logM;
 
 let pageStarted: undefined | true;
 const scriptLoadDoneCallbacks = [];
@@ -45,7 +46,7 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
 // because we've disabled service workers / they aren't supported.
 debiki.serviceWorkerPromise.catch(function(ex) {
   if (ex !== 'ok')
-    console.log("Error subscribing to events via service worker", ex);
+    console.warn("Error subscribing to events via service worker [TyM5RM57]", ex);
 });
 
 let serviceWorkerIsSameVersion = false;
@@ -177,7 +178,7 @@ function renderPageInBrowser() {
   let htmlAfter;
   // @endif
 
-  console.log("Cached html version: <" + eds.cachedVersion +
+  logM("Cached html version: <" + eds.cachedVersion +
       ">, current: <" + eds.currentVersion + "> [TyMPAGEVER]");
 
   const store: Store = debiki2.ReactStore.allData();
@@ -195,17 +196,17 @@ function renderPageInBrowser() {
     isServerHtmlStale = true;
     htmlBefore = document.getElementById('dwPosts').innerHTML;
     // @endif
-    console.log("Cached React store json and html is stale. I will rerender. [TyMRERENDER]");
+    logM("Cached React store json and html is stale. I will rerender. [TyMRERENDER]");
     reactRenderMethod = 'render';
   }
 
   if (location.search.indexOf('&hydrate=false') >= 0) {
-    console.log("Will use ReactDOM.render, because '&hydrate=false'. [TyMFORCRNDR]");
+    logM("Will use ReactDOM.render, because '&hydrate=false'. [TyMFORCRNDR]");
     reactRenderMethod = 'render';
   }
 
   if (location.search.indexOf('&hydrate=true') >= 0) {
-    console.log("Will use ReactDOM.hydrate, because '&hydrate=true'. [TyMFORCHYDR]");
+    logM("Will use ReactDOM.hydrate, because '&hydrate=true'. [TyMFORCHYDR]");
     reactRenderMethod = 'hydrate';
   }
 
@@ -246,7 +247,7 @@ function renderPageInBrowser() {
     timeAfterRemainingRoots = performance.now();
   }
 
-  console.log(`Millis to ReactDOM.${reactRenderMethod} page: ${timeAfterPageContent - timeBefore}` +
+  logM(`Millis to ReactDOM.${reactRenderMethod} page: ${timeAfterPageContent - timeBefore}` +
     ", time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
     ", user data: " + (timeAfterUserData - timeAfterTimeAgo) +
     ", remaining roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [TyMRNDRPERF]");
@@ -344,7 +345,7 @@ function renderPageInBrowser() {
     debiki2.startMagicTime(eds.testNowMs);
     pageStarted = true;
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });
-    console.log("Page started. [TyMPGSTRTD]");
+    logM("Page started. [TyMPGSTRTD]");
   }
 
   function runNextStep() {
@@ -368,14 +369,14 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           "not incognito mode. [TyMSWMISSNG]");
     }
     else {
-      console.log("Not using any service worker. [TyMSWSKIPD]");
+      logM("Not using any service worker. [TyMSWSKIPD]");
     }
     rejectServiceWorkerPromise('ok');
     return;
   }
 
   navigator.serviceWorker.addEventListener('controllerchange', (controllerchangeevent) => {
-    console.log("Service worker controllerchange event [TyMSWCTRCHG]");
+    logM("Service worker controllerchange event [TyMSWCTRCHG]");
   });
 
   // The service worker script must be from the same origin — otherwise an attacker
@@ -388,9 +389,9 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
   const scriptUrl = `${embeddedOriginorEmpty}/talkyard-service-worker.${eds.minMaxJs}`;
   navigator.serviceWorker.register(scriptUrl)
       .then(function(registration) {
-        console.log("Service worker registered. [TyMSWREGOK]");
+        logM("Service worker registered. [TyMSWREGOK]");
         registration.onupdatefound = function() {
-          console.log("New service worker available [TyMNWSWAVL]");
+          logM("New service worker available [TyMNWSWAVL]");
         };
 
         // Optionally, check for new app versions, each hour. This'll download
@@ -428,10 +429,10 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           // poll-ask the service worker about its version, until it's the same version.
           // (Or if newer version — should tell user to refresh page [NEWSWVER]. Not impl.)
           if (i === 1)
-            console.log("Service worker active — but which version? [TyMSWACTV]");
+            logM("Service worker active — but which version? [TyMSWACTV]");
 
           if ((i % 20) === 4)
-            console.log("Waiting for service worker to maybe update ... [TyMWAITSWUPD]");
+            logM("Waiting for service worker to maybe update ... [TyMWAITSWUPD]");
 
           // Poll the service worker's version: it replies to this message, with
           // its version number.
@@ -443,7 +444,7 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           // This variable gets updated when the service worker replies to the messages
           // we send just above. (Could use a MessageChannel instead? But this works fine.)
           if (serviceWorkerIsSameVersion) {  // [SWSAMEVER]
-            console.log(`Service worker is same version: ${TalkyardVersion}, fine [TyMEQSWVER]`);
+            logM(`Service worker is same version: ${TalkyardVersion}, fine [TyMEQSWVER]`);
             clearInterval(intervalHandle);
             resolveServiceWorkerPromise(theServiceWorker);
           }

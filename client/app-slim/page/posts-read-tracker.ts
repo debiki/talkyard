@@ -169,7 +169,7 @@ export function sendAnyRemainingData(success: () => void | null) {
 
   if (skip) {
     // @ifdef DEBUG
-    if (debug) console.log(
+    if (debug) logD(
         `*Not* sending remaining post nrs read via beacon: ${toNrs(unreportedPostsRead)},` +
         ` ${unreportedSecondsReading} seconds reading, lastViewedPostNr: ${lastViewedPostNr}, ` +
         `talksWithSererAlready: ${talksWithSererAlready}`);
@@ -179,7 +179,7 @@ export function sendAnyRemainingData(success: () => void | null) {
 
   // @ifdef DEBUG
   const viaWhat = success === null ? "via beacon" : "via normal request";
-  if (debug) console.log(
+  if (debug) logD(
       `Sending remaining posts nrs read ${viaWhat}: ${toNrs(unreportedPostsRead)}, ` +
       `${unreportedSecondsReading} seconds reading`);
   // @endif
@@ -226,7 +226,7 @@ function trackReadingActivity() {
   // Don't remove posts read one tick ago until now, so they get time to fade away slowly.
   const hasReadMorePosts = postNrsJustRead.length;
   // @ifdef DEBUG
-  !debug || !hasReadMorePosts || console.log(`Marking as read: ${postNrsJustRead}`);
+  !debug || !hasReadMorePosts || logD(`Marking as read: ${postNrsJustRead}`);
   // @endif
   _.each(postNrsJustRead, postNr => {
     debiki2.ReactActions.markPostAsRead(postNr, false);
@@ -250,7 +250,7 @@ function trackReadingActivity() {
       // Instead s/he scrolled down a bit, or stayed there quite long.
       // So apparently the user isn't interested in continuing reading at lastViewedPostNr.
       // @ifdef DEBUG
-      !debug || console.log(`Resetting lastViewedPostNr (was: ${lastViewedPostNr})`);
+      !debug || logD(`Resetting lastViewedPostNr (was: ${lastViewedPostNr})`);
       // @endif
       lastViewedPostNr = BodyNr;
     }
@@ -258,7 +258,7 @@ function trackReadingActivity() {
 
   if (lastScrollLeft != curScrollLeft || lastScrollTop != curScrollTop) {
     // @ifdef DEBUG
-    !debug || console.log(`Scroll detected, at ms: ${nowMs}`);
+    !debug || logD(`Scroll detected, at ms: ${nowMs}`);
     // @endif
     lastScrollLeft = curScrollLeft;
     lastScrollTop = curScrollTop;
@@ -272,7 +272,7 @@ function trackReadingActivity() {
     // this page, focus that same post.
     // @ifdef DEBUG
     !debug || lastViewedPostNr === currentlyViewingPostNr ||
-        console.log(`Setting lastViewedPostNr to: ${currentlyViewingPostNr}`);
+        logD(`Setting lastViewedPostNr to: ${currentlyViewingPostNr}`);
     // @endif
     lastViewedPostNr = currentlyViewingPostNr;
     wentToTopAtMs = undefined;
@@ -283,7 +283,7 @@ function trackReadingActivity() {
     unreportedSecondsReading += secondsBetweenTicks;
   }
   // @ifdef DEBUG
-  !debug || !hasStoppedReading || console.log(`Not reading, at ms: ${lastScrolledAtMs}`);
+  !debug || !hasStoppedReading || logD(`Not reading, at ms: ${lastScrolledAtMs}`);
   // @endif
 
   let millisSinceLastReport = nowMs - lastReportedToServerAtMs;
@@ -302,7 +302,7 @@ function trackReadingActivity() {
           millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
 
     // @ifdef DEBUG
-    !debug || console.log(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
+    !debug || logD(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
         `${unreportedSecondsReading} seconds reading, these post nrs: ${toNrs(unreportedPostsRead)}`);
     // @endif
 
@@ -342,7 +342,7 @@ function trackReadingActivity() {
       unreadPosts.push(post);
     }
   });
-  !debug || console.log(`Num unread posts = ${unreadPosts.length}`);
+  !debug || logD(`Num unread posts = ${unreadPosts.length}`);
   // @endif
 
   const shallRefreshVisiblePosts = hasScrolled || storeChanged || (!hadFocus && hasFocus);
@@ -439,7 +439,7 @@ function trackReadingActivity() {
 
     if (fractionRead >= 1) {
       // @ifdef DEBUG
-      !debug || console.log(`Just read post nr ${stats.postNr}`);
+      !debug || logD(`Just read post nr ${stats.postNr}`);
       // @endif
       // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
       postNrsJustRead.push(stats.postNr);
