@@ -69,7 +69,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
     return {
       testId: testId,
       embeddingUrl: `http://${embeddingHostPort}/`,
-      origin: `http://comments-for-${localHostname}.localhost`,
+      origin: `${settings.scheme}://comments-for-${localHostname}.localhost`,
       orgName: "E2E Imp Dsq Test",
       fullName: 'E2E Imp Dsq Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',

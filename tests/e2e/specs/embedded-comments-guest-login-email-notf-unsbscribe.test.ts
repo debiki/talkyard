@@ -76,8 +76,8 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
 <body style="background: black; color: #ccc; font-family: monospace">
 <p>This is an embedded comments E2E test page. Ok to delete. 6UKK2QZ03F. The comments:</p>
 
-<script>talkyardCommentsServerUrl='http://${localHostname}.localhost';</script>
-<script async defer src="http://${localHostname}.localhost/-/talkyard-comments.js"></script>
+<script>talkyardCommentsServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
+<script async defer src="${settings.scheme}://${localHostname}.localhost/-/talkyard-comments.js"></script>
 <div class="talkyard-comments" style="margin-top: 45px;">
 <p>/End of page.</p>
 </body>

@@ -70,8 +70,8 @@ describe("emb cmts all logins", () => {
 <body style="background: black; color: #ccc; font-family: monospace">
 <p>This is an embedded comments E2E test page. Ok to delete. 27KT5QAX29. The comments:</p>
 
-<script>edCommentsServerUrl='http://${localHostname}.localhost';</script>
-<script async defer src="http://${localHostname}.localhost/-/ed-comments.v0.min.js"></script>
+<script>edCommentsServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
+<script async defer src="${settings.scheme}://${localHostname}.localhost/-/ed-comments.v0.min.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
 <div class="ed-comments" style="margin-top: 45px;">
 <noscript>Please enable Javascript to view comments.</noscript>

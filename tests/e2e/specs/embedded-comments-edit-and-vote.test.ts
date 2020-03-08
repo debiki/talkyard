@@ -5,6 +5,7 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
+import settings = require('../utils/settings');
 import make = require('../utils/make');
 import c = require('../test-constants');
 
@@ -63,8 +64,8 @@ describe("emb cmts edit and vote", () => {
 <body style="background: #620; color: #ccc; font-family: monospace">
 <p>This is an embedded comments E2E test page. Ok to delete. 4BKQ2C8J9R. The comments:</p>
 
-<script>talkyardCommentsServerUrl='http://${localHostname}.localhost';</script>
-<script async defer src="http://${localHostname}.localhost/-/talkyard-comments.js"></script>
+<script>talkyardCommentsServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
+<script async defer src="${settings.scheme}://${localHostname}.localhost/-/talkyard-comments.js"></script>
 <div class="talkyard-comments" style="margin-top: 45px;">
 
 <p>/End of page.</p>

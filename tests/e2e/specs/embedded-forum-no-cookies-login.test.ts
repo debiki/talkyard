@@ -106,11 +106,11 @@ iframe {
 <hr>
 
 <!--
-<script>talkyardServerUrl='http://${localHostname}.localhost';</script>
+<script>talkyardServerUrl='${settings.scheme}://${localHostname}.localhost';</script>
 -->
 <script async defer src="${siteIdAddress.origin}/-/talkyard-embedded-forum.js"></script>
 <div class="talkyard-forum" style="margin-top: 45px;">
-<iframe src="http://${localHostname}.localhost">Oops iframe didn't want to load</iframe>
+<iframe src="${settings.scheme}://${localHostname}.localhost">Oops iframe didn't want to load</iframe>
 
 <hr>
 <p>/End of page.</p>

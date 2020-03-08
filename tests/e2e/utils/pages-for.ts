@@ -243,7 +243,17 @@ function pagesFor(browser) {
     disableRateLimits: () => {
       // Old, before I added the no-3rd-party-cookies tests.
       // Maybe instead always: server.skipRateLimits(siteId)  ?
-      browser.setCookie({ name: 'esCoE2eTestPassword', value: settings.e2eTestPassword });
+      browser.execute(function(pwd) {
+        var value =
+            "esCoE2eTestPassword=" + pwd +
+            "; expires=Fri, 31 Dec 9999 23:59:59 GMT";
+        if (location.protocol === 'https:') {
+          value +=
+              "; Secure" +
+              "; SameSite=None";  // [SAMESITE]
+        }
+        document.cookie = value;
+      }, settings.e2eTestPassword);
     },
 
 
@@ -347,7 +357,7 @@ function pagesFor(browser) {
         testId: testId,
         siteType: SiteType.EmbeddedCommments,
         embeddingUrl: `http://${embeddingHostPort}/`,
-        origin: `http://comments-for-${localHostname}.localhost`,
+        origin: `${settings.scheme}://comments-for-${localHostname}.localhost`,
         orgName: ps.longName + " Org Name",
         // The owner:
         newSiteOwner: NewSiteOwnerType.OwenOwner,

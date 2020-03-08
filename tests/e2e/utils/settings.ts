@@ -25,7 +25,7 @@ _.extend(settings, args);
 if (settings.localHostname && !settings.localHostname.startsWith('e2e-test-')) {
   die("localHostname doesn't start with 'e2e-test-'");
 }
-settings.scheme = settings.secure ? 'https' : 'http';
+settings.scheme = settings.secure ? 'https' : 'http';  // [E2EHTTPS]
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 

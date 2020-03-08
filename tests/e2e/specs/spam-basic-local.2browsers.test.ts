@@ -73,18 +73,19 @@ describe("spam test, no external services  TyT530KRM1R", () => {
     mallorysBrowser.disableRateLimits();
   });
 
+  // Use both http and smoe https links.
   const tooManyLinks = `<3 links <3 <3 <3
         http://example.com/link-1
         http://example.com/link-2
-        http://example.com/link-3
-        http://example.com/link-4
-        http://example.com/link-5
-        http://example.com/link-6
-        http://example.com/link-7
-        http://example.com/link-8
-        http://example.com/link-9
-        http://example.com/link-10
-        http://example.com/link-11`;
+        https://example.com/link-3
+        https://example.com/link-4
+        https://example.com/link-5
+        https://example.com/link-6
+        https://example.com/link-7
+        https://example.com/link-8
+        https://example.com/link-9
+        https://example.com/link-10
+        https://example.com/link-11`;
 
   it("Mallory posts too many links, the server thinks it's spam and rejects the comment", () => {
     mallorysBrowser.forumButtons.clickCreateTopic();
@@ -110,7 +111,7 @@ describe("spam test, no external services  TyT530KRM1R", () => {
     mallorysBrowser.editor.editTitle(topicTitleTwo);
     mallorysBrowser.editor.editText(`Not many links :-(
         http://www.example.com/link-1
-        http://www.example.com/link-2`);
+        https://www.example.com/link-2`);
     mallorysBrowser.rememberCurrentUrl();
     mallorysBrowser.editor.save();
     mallorysBrowser.waitForNewUrl();

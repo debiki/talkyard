@@ -24,10 +24,13 @@ let oneboxTopicTitle = "Onebox Topic Title";
 
 let dotOneboxClass = '.onebox';
 
-let imageJpgUrl = 'http://www.example.com/image.jpg';
-let imagePngUrl = 'http://www.example.com/image.png';
-let imageGifUrl = 'http://www.example.com/image.gif';
-let videoMp4Url = 'http://www.example.com/video.mp4';
+// Currently Onebox links must be HTTPS if the server uses HTTPS —  [E2EHTTPS]
+// because then http gets changed to https. [1BXHTTPS]
+// Let's use some http links too though, unless the server uses https.
+let imageJpgUrl = 'https://www.example.com/image.jpg';
+let imagePngUrl = `${settings.scheme}://www.example.com/image.png`;  // http, sometimes
+let imageGifUrl = `${settings.scheme}://www.example.com/image.gif`;  //
+let videoMp4Url = 'https://www.example.com/video.mp4';
 let videoYouTubeIdInvalid = 'https://www.youtube.com/watch?v=DAR27FWzyZY';
 let videoYouTubeId = 'DAR27FWzyZY';
 let videoYouTubeUrl = `https://www.youtube.com/watch?v=${videoYouTubeId}`;
@@ -62,7 +65,7 @@ describe("editor onebox:", () => {
   });
 
   it("Owen goes to the homepage and logs in", () => {
-    owensBrowser.go(idAddress.origin);
+    owensBrowser.go2(idAddress.origin);
     owensBrowser.assertPageTitleMatches(forumTitle);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });
@@ -133,8 +136,8 @@ describe("editor onebox:", () => {
   });
 
   it("But unknown links won't get converted to oneboxes", () => {
-    let weirdUrl = 'http://www.example.com/what.is.this.weirdweird';
-    mariasBrowser.complex.replyToOrigPost('http://www.example.com/what.is.this.weirdweird');
+    const weirdUrl = 'https://www.example.com/what.is.this.weirdweird';
+    mariasBrowser.complex.replyToOrigPost('https://www.example.com/what.is.this.weirdweird');
     mariasBrowser.topic.waitForPostNrVisible(3);
     assert(!mariasBrowser.topic.postNrContains(3, dotOneboxClass));
     assert(mariasBrowser.topic.postNrContains(3, `a[href="${weirdUrl}"]`));

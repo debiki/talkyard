@@ -55,7 +55,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     return {
       testId: testId,
       embeddingUrl: `http://${specifiedEmbeddingHost}/`,
-      origin: `http://${commentsSiteLocalHostname}.localhost`,
+      origin: `${settings.scheme}://${commentsSiteLocalHostname}.localhost`,
       orgName: "E2E Gatsby",
       fullName: owen.fullName,
       email: owen.emailAddress,

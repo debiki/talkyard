@@ -9,9 +9,9 @@ const syncRequest = require('sync-request');
 declare const browser: any;
 let everyonesBrowsers;
 
-const scriptUrl = 'http://localhost/-/ed-comments.min.js';
-const scriptUrl2 = 'http://localhost/-/ed-comments.v0.min.js';
-const scriptUrl3 = 'http://localhost/-/talkyard-comments.min.js';
+const scriptUrl = `${settings.scheme}://localhost/-/ed-comments.min.js`;
+const scriptUrl2 = `${settings.scheme}://localhost/-/ed-comments.v0.min.js`;
+const scriptUrl3 = `${settings.scheme}://localhost/-/talkyard-comments.min.js`;
 
 const desiredCacheHeader = settings.prod ?
     'max-age=86400, s-maxage=86400, public' : 'no-cache';

@@ -12,7 +12,8 @@ do
   echo "Waiting for transpilation of Typescript to Javascript, file missing: $1"
 done
 
-node --debug --inspect=9100 ./node_modules/webdriverio/bin/wdio $@
+# [E2EHTTPS]
+NODE_TLS_REJECT_UNAUTHORIZED=0 node --debug --inspect=9100 ./node_modules/webdriverio/bin/wdio $@
 exit_code=$?
 
 if [ $exit_code -ne 0 ]; then

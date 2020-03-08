@@ -45,12 +45,13 @@ describe("spam test, no external services, ip links & unblock  TyT602RGL4X", () 
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  it("She posts http://11.22.33.44 ip addr links — the server will think they're spam", () => {
+  it("She posts https://11.22.33.44 ip addr links — the server will think they're spam", () => {
     mariasBrowser.complex.createAndSaveTopic(
         { title: "My numbers, I like them", body: "You like numbers also, 1 2 3, and 4" });
+    // (Incl one http: link too)
     mariasBrowser.complex.replyToOrigPost("http://11.22.33.44/ip-page-two");
-    mariasBrowser.complex.replyToOrigPost("http://11.22.33.44/ip-page-three");
-    mariasBrowser.complex.replyToOrigPost("http://11.22.33.44/ip-page-four");
+    mariasBrowser.complex.replyToOrigPost("https://11.22.33.44/ip-page-three");
+    mariasBrowser.complex.replyToOrigPost("https://11.22.33.44/ip-page-four");
   });
 
   it("Such ip addr links get classified as spam, and hidden", () => {

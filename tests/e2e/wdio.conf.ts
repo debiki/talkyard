@@ -21,7 +21,22 @@ const browserNameAndOpts: any = {
 // So don't. Webdriver.io/Selenium bug? (April 29 2018)
 if (browserNameAndOpts.browserName == 'chrome') {
   const opts: any = {
-    args: ['--disable-notifications'],
+    args: [
+      '--disable-notifications',
+
+      // Make HTTPS snake oil cert work: [E2EHTTPS]
+
+      // Seems this is enough:
+      // (from https://deanhume.com/testing-service-workers-locally-with-self-signed-certificates/ )
+      '--ignore-certificate-errors',
+
+      // Seems this isn't needed:
+      // See: https://www.chromium.org/blink/serviceworker/service-worker-faq
+      //'--allow-insecure-localhost',
+
+      // Apparently also not needed: (good because the hostname is "never" the same)
+      //'--unsafely-treat-insecure-origin-as-secure=https://comments-for-...-localhost-8080.localhost'
+    ],
   };
   if (settings.block3rdPartyCookies) {
     // Seems `profile.block_third_party_cookies` isn't documented anywhere on the Internet,
@@ -39,6 +54,8 @@ if (browserNameAndOpts.browserName == 'chrome') {
   }
   browserNameAndOpts.chromeOptions = opts;          // Webdriver.io v4
   browserNameAndOpts['goog:chromeOptions'] = opts;  // Webdriver.io v5 ?
+  // If the Talkyard server runs https: (the --secure flag [E2EHTTPS])
+  browserNameAndOpts.acceptInsecureCerts = true;
 }
 else {
   // This supposedly works in FF: "network.cookie.cookieBehavior": 1

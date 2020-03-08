@@ -87,7 +87,7 @@ abstract class OneboxEngine(globals: Globals, val nashorn: Nashorn) {
           // COULD pass info to here so can follow links sometimes? [WHENFOLLOW]
           nashorn.sanitizeHtmlReuseEngine(html, followLinks = false, javascriptEngine)
         }
-      // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
+      // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link  [1BXHTTPS]
       // to <img src="http://...">, change to https instead even if the image then breaks.
       // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
       // plain text as is. But for now, this is safe and simple and stupid: (?)

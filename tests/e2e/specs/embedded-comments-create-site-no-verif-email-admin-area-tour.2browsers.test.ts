@@ -64,7 +64,7 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
     return {
       testId: testId,
       embeddingUrl: `http://${embeddingHostPort}/`,
-      origin: `http://comments-for-${localHostname}.localhost`,
+      origin: `${settings.scheme}://comments-for-${localHostname}.localhost`,
       //originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
       orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
