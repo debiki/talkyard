@@ -225,6 +225,8 @@ if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   # 'yarn' doesn't work, result in a "Gatsby may not be installed" error. 'npm install' works.
   (npm install && yarn build && echo 'yarn-build-1' ) &
   yarn_build_gatsby_pid=$(jobs -l | grep yarn-build-1 | awk '{ printf $2; }')
+  # Could copy the generated files and change from http: to https:, so can test
+  # Gatsby under https too? [GATSBYHTTPS]
   echo "Background building the Gatsby blog in process id $yarn_build_gatsby_pid"
   popd
 fi

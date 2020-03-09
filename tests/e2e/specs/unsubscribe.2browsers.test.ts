@@ -21,6 +21,7 @@ let guest; // should rename to guestsBrowser
 let guestsBrowser;
 
 let idAddress: IdAddress;
+let siteId: SiteId;
 const forumTitle = "Unsubscription Forum";
 
 const topicTitle = "Unsub Topic Title";
@@ -60,6 +61,8 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     site.settings.mayPostBeforeEmailVerified = true;
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
+    siteId = idAddress.id;
+    server.skipRateLimits(siteId);
     _.assign(maria, make.memberMaria());
     _.assign(owen, make.memberOwenOwner());
   });
@@ -162,7 +165,7 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
   });
 
   it("The guest again @mentions Owen, in a new topic", () => {
-    guest.go('/');
+    guest.go2('/');
     guest.complex.logInAsGuestViaTopbar(guestName, guestEmail);
     guest.complex.createAndSaveTopic({ title: "Hello 3 Owen", body: guestsTextAfterUnsubMentionsOwen });
   });

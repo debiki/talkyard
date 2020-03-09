@@ -100,6 +100,7 @@ function isResponseOk(response): boolean {
 // `browser` is an argument.
 //
 function pagesFor(browser) {
+  const origFrameParent = browser.frameParent;
   const origWaitForVisible = browser.waitForVisible;
   const origWaitForEnabled = browser.waitForEnabled;
   const origWaitForText = browser.waitForText;
@@ -169,7 +170,7 @@ function pagesFor(browser) {
       api.go2(url, { ...opts, waitForPageType: false });
     },
 
-    go2: (url, opts: { useRateLimits?: boolean, waitForPageType?: false } = {}) => {
+    go2: (url, opts: { useRateLimits?: boolean, waitForPageType?: false, isExternalPage?: true } = {}) => {
       let shallDisableRateLimits = false;
 
       if (url[0] === '/') {
@@ -181,12 +182,15 @@ function pagesFor(browser) {
           throw ex;
         }
       }
-      else if (!opts.useRateLimits) {
-        const parts = url.split('/');
-        const host = parts[2];
-        if (!hostsVisited[host]) {
-          shallDisableRateLimits = true;
-          hostsVisited[host] = true;
+      else {
+        // New origin? Then disable rate limits.
+        if (!opts.useRateLimits) {
+          const parts = url.split('/');
+          const host = parts[2];
+          if (!hostsVisited[host]) {
+            shallDisableRateLimits = true;
+            hostsVisited[host] = true;
+          }
         }
       }
 
@@ -205,7 +209,10 @@ function pagesFor(browser) {
       }
 
       // Wait for some Talkyard thing to appear, so we'll know what type of page this is.
-      if (opts.waitForPageType === false) {
+      if (opts.isExternalPage) {
+        isWhere = IsWhere.External;
+      }
+      else if (opts.waitForPageType === false) {
         // Backw compat.
         isOnEmbeddedCommentsPage = false;
       }
@@ -217,6 +224,14 @@ function pagesFor(browser) {
       if (shallDisableRateLimits) {
         api.disableRateLimits();
       }
+    },
+
+
+    isWhere: () => isWhere,
+
+
+    updateIsWhere: () => {
+      api.__updateIsWhere();
     },
 
 
@@ -496,9 +511,14 @@ function pagesFor(browser) {
     },
 
 
+    frameParent: () => {
+      die("Use switchToAnyParentFrame() instead [TyE306WKHJP2]");
+    },
+
+
     switchToAnyParentFrame: () => {
       if (api.isInIframe()) {
-        browser.frameParent();
+        origFrameParent.apply(browser, arguments);
         logMessage("Switched to parent frame.");
         isWhere = IsWhere.EmbeddingPage;
       }
@@ -529,19 +549,30 @@ function pagesFor(browser) {
 
 
     waitForEmbeddedCommentsIframe: function() {
+      // Can there be any emb comments iframe here?
+      dieIf(isWhere && isWhere !== IsWhere.External &&
+          isWhere != IsWhere.EmbeddingPage,
+          `No comments iframe here, isWhere: ${isWhere} [TyE6RKB2GR04]`);
       api.waitForExist('iframe#ed-embedded-comments');
+      if (isWhere) isWhere = IsWhere.EmbeddingPage;
     },
 
 
     switchToEmbCommentsIframeIfNeeded: () => {
-      if (isOnEmbeddedPage() && isWhere !== IsWhere.EmbCommentsIframe) {
+      if (!isWhere || isWhere == IsWhere.Forum)
+        return;
+      dieIf(!isOnEmbeddedPage(), `No embedded things here, isWhere: ${isWhere} [TyE703TKDLJ4]`);
+      if (isWhere !== IsWhere.EmbCommentsIframe) {
         api.switchToEmbeddedCommentsIrame();
       }
     },
 
 
     switchToEmbEditorIframeIfNeeded: () => {
-      if (isOnEmbeddedPage() && isWhere !== IsWhere.EmbEditorIframe) {
+      if (!isWhere || isWhere == IsWhere.Forum)
+        return;
+      dieIf(!isOnEmbeddedPage(), `No embedded things here, isWhere: ${isWhere} [TyE306WKH2]`);
+      if (isWhere !== IsWhere.EmbEditorIframe) {
         api.switchToEmbeddedEditorIrame();
       }
     },
@@ -3298,6 +3329,7 @@ function pagesFor(browser) {
 
       editText: function(text, opts: {
           timeoutMs?: number, checkAndRetry?: true, append?: boolean, skipWait?: true } = {}) {
+        api.switchToEmbEditorIframeIfNeeded();
         api.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 

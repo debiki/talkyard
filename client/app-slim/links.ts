@@ -29,11 +29,16 @@
 
 // In embedded comments, need incl the Talkyard server url, otherwise links will [EMBCMTSORIG]
 // resolve to the embeddING server.
-// Hack. Currently there's always exactly one store, and it always has embeddedOriginOrEmpty set.
 export function origin(): string {
+  // Currently there's always exactly one store, and it always has embeddedOriginOrEmpty
+  // set. When in the embedded editor, it's undefined (or maybe ''), [60MRKDJ56]
+  // so get it from the main store instead.
+  //
   // This needs to happen in a function, so gets reevaluated server side, where the same script
   // engine gets reused, for rendering pages at different sites, different origins.
-  return (<any> window).theStore.embeddedOriginOrEmpty;  // [ONESTORE]
+  //
+  const mainStore: Store = getMainWinStore();
+  return mainStore.embeddedOriginOrEmpty;  // [ONESTORE]
 }
 
 

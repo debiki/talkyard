@@ -403,8 +403,8 @@ class JsonMaker(dao: SiteDao) {
     var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
-      "isEmbedded" -> false,
-      "embeddedOriginOrEmpty" -> "",
+      "isEmbedded" -> false,  // what ??? Yes, if in emb editor iframe
+      "embeddedOriginOrEmpty" -> "",  // what ??? but not in use, instead: [60MRKDJ56]
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),

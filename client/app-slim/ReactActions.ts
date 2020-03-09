@@ -382,10 +382,10 @@ export function summarizeReplies() {
 }
 
 
-export function unsquashTrees(postId: number) {
+export function unsquashTrees(postNr: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UnsquashTrees,
-    postId: postId
+    postNr
   });
 }
 

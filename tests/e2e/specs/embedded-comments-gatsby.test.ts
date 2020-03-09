@@ -38,12 +38,17 @@ const owens2ndPostComment = 'owens2ndPostComment';
 //
 describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
+  if (settings.secure) {
+    console.log("Skipping this test — it currently doesn't work with https");  // [GATSBYHTTPS]
+    return;
+  }
+
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
 
-    owensBrowser = _.assign(browser, pagesFor(browser));
-    mariasBrowser = owensBrowser;
-    gmailUsersBrowser = owensBrowser;
+    owensBrowser = everyonesBrowsers;
+    mariasBrowser = everyonesBrowsers;
+    gmailUsersBrowser = everyonesBrowsers;
 
     owen = make.memberOwenOwner();
     maria = make.memberMaria();
@@ -71,7 +76,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
     data = createPasswordTestData();
-    owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
+    owensBrowser.go2(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
     owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
@@ -82,7 +87,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-    owensBrowser.go(link);
+    owensBrowser.go2(link);
     owensBrowser.waitAndClick('#e2eContinue');
   });
 
@@ -105,7 +110,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
 
   it("Goes to the Gatsby site, /hi-folks/", () => {
-    owensBrowser.go(blogUrl);
+    owensBrowser.go2(blogUrl, { isExternalPage: true });
     owensBrowser.waitAndClick('a[href*="hi-folks"]');
   });
 
@@ -114,7 +119,6 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   it("... switches to the comments iframe", () => {
     owensBrowser.waitForEmbeddedCommentsIframe();
     owensBrowser.scrollToBottom();
-    owensBrowser.switchToEmbeddedCommentsIrame();
   });
 
   it("... clicks Reply to post a comment", () => {
@@ -122,20 +126,15 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     // (Alredy logged in.)
   });
 
-  it("... switches to the editor iframe", () => {
-    owensBrowser.switchToEmbeddedEditorIrame();
-  });
-
   it("... composes a comment", () => {
     owensBrowser.editor.editText(owensHiFolksComment);
     owensBrowser.editor.save();
-    owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     owensBrowser.topic.postNrContains(c.FirstReplyNr, owensHiFolksComment);
   });
 
   it("Goes to /my-second-post", () => {
-    owensBrowser.frameParent();
+    owensBrowser.switchToAnyParentFrame();
     owensBrowser.scrollToTop();
     owensBrowser.click('a[href="/"]');
     owensBrowser.waitAndClick('a[href*="my-second-post"]');
@@ -145,28 +144,28 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     owensBrowser.waitForEmbeddedCommentsIframe();
     owensBrowser.scrollToBottom();
     owensBrowser.complex.replyToEmbeddingBlogPost(owens2ndPostComment);
-    owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     owensBrowser.topic.postNrContains(c.FirstReplyNr, owens2ndPostComment);
   });
 
   it("... the comment appears on the other page with the same discussion id", () => {
-    owensBrowser.frameParent();
+    owensBrowser.switchToAnyParentFrame();
     owensBrowser.scrollToTop();
     owensBrowser.click('a[href="/"]');
     owensBrowser.waitAndClick('a[href*="same-discussion-id-as-2nd-post"]');
-    owensBrowser.switchToEmbeddedCommentsIrame();
+    owensBrowser.updateIsWhere();
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);  // because same discussion id
     owensBrowser.topic.postNrContains(c.FirstReplyNr, owens2ndPostComment);
   });
 
   it("... the last blog post is still empty", () => {
-    owensBrowser.frameParent();
+    owensBrowser.switchToAnyParentFrame();
     owensBrowser.scrollToTop();
     owensBrowser.waitAndClick('a[href="/"]');
     // This *= selector causes an error in waitUntilElementNotOccluded().
     // There's nothing that can occlude this link, so just skip the check.
     owensBrowser.waitAndClick('a[href*="hello-world"]', { waitUntilNotOccluded: false });
+    owensBrowser.updateIsWhere();
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.waitForVisible('.dw-a-logout'); // then comments have loaded
     owensBrowser.topic.assertNumRepliesVisible(0); // no replies on this page
@@ -175,9 +174,8 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
 
   it("Maria arrives", () => {
-    owensBrowser.frameParent();
-    mariasBrowser.go('/same-discussion-id-as-2nd-post');
-    mariasBrowser.switchToEmbeddedCommentsIrame();
+    owensBrowser.switchToAnyParentFrame();
+    mariasBrowser.go2('/same-discussion-id-as-2nd-post');
     mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);  // because same discussion id
     mariasBrowser.topic.postNrContains(c.FirstReplyNr, owens2ndPostComment);
   });

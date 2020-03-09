@@ -316,7 +316,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UnsquashTrees:
-      unsquashTrees(action.postId);
+      unsquashTrees(action.postNr);
       break;
 
     case ReactActions.actionTypes.CollapseTree:

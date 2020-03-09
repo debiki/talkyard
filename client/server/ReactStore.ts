@@ -5,6 +5,10 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
+export function getMainWinStore(): Store {
+  return (<any> window).theStore.embeddedOriginOrEmpty;  // [ONESTORE]
+}
+
 export function makeNoPageData() { die('K42B01'); }
 export function makeAutoPage(path?: string) { die('K42B02'); }
 

@@ -720,7 +720,7 @@ const RootPostAndComments = createComponent({
 
       threadProps.elemType = 'div';
       threadProps.post = child;
-      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only? (349063216)
+      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only? [349063216]
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
@@ -1023,15 +1023,12 @@ export const MetaPost = createComponent({
 const SquashedThreads = createComponent({
   displayName: 'SquashedThreads',
 
-  onClick: function() {
-    debiki2.ReactActions.unsquashTrees(this.props.postId);
-  },
-
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
     const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
-    const post: Post = postsByNr[this.props.postId];
+    const post: Post = this.props.post;
+    const postNr = post.nr;
     const parentPost: Post = postsByNr[post.parentNr];
 
     const arrows = debiki2.renderer.drawArrowsFromParent(
@@ -1048,7 +1045,8 @@ const SquashedThreads = createComponent({
       baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
           is2dColumnClass },
         arrows,
-        r.a({ className: 'dw-x-show', onClick: this.onClick },
+        r.a({ className: 'dw-x-show s_X_Show-PostNr-' + postNr,
+            onClick: () => debiki2.ReactActions.unsquashTrees(postNr) },
           t.d.ClickSeeMoreRepls + ' ...' + postNrDebug)));   // [306UDRPJ24]
   }
 });
@@ -1161,7 +1159,7 @@ const Thread = createComponent({
         const threadProps = _.clone(this.props);
         threadProps.elemType = childrenSideways ? 'div' : 'li';
         threadProps.post = child;
-        threadProps.postId = childNr;   // CLEAN_UP should be .postNr. But use .post only? (349063216)
+        threadProps.postId = childNr;   // CLEAN_UP should be .postNr. But use .post only? [349063216]
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;

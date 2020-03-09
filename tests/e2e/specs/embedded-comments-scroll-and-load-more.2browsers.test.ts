@@ -67,9 +67,21 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
         `and do only the items matching prime numbers! The prime numbers are:`,
     });
 
-    for (let i = 1; i <= 50; ++i) {
+    //  50  caused Chrome to get stuck rendering, when un-collapsing [LARGEPAGES]
+    // the last pots and showing 50 nested replies. Chrome consumes more and more
+    // memory up to 6 GB (!) until the browser tab dies.
+    // So far I've only noticed this inside this Selenium container:
+    //   selenium/standalone-chrome-debug
+    //
+    // Oddly enuogh, all this worked fine (with 50 nested) until now suddenly,
+    // without me having changed anything intentionally. — Edit: now I undid a
+    // code change for this: [349063216] (I forgot to remove postId in Thread()
+    // and that had bad effects?) then started working again.
+    //
+    const numNested = 50;
+    for (let i = 1; i <= numNested; ++i) {
       const primeNr = c.FiftyPrimes[i - 1];
-      const writeABook = i === 50 ? ". I can write a book about this method" : '';
+      const writeABook = i === numNested ? ". I can write a book about this method" : '';
       veryLastPostNr = nextNr;
       builder.addPost({
         page: forum.topics.byMichaelCategoryA,
@@ -162,12 +174,16 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
 
   it("The stranger clicks  'Show more replies...' just below", () => {
     strangersBrowser.switchToAnyParentFrame(); // cannot scroll in comments iframe
-    strangersBrowser.scrollToBottom();  // waitAndClickLast won't scroll [05YKTDTH4]
     strangersBrowser.switchToEmbCommentsIframeIfNeeded();
-    strangersBrowser.waitAndClickLast('.dw-x-show');
+
+    // This would be really fragile, because waitAndClickLast won't
+    // scroll [05YKTDTH4]: (only scrolls to the *first* thing)
+    // strangersBrowser.waitAndClickLast('.dw-x-show');
+    // Instead:
+    strangersBrowser.waitAndClick('.s_X_Show-PostNr-32', { maybeMoves: true });
   });
 
-  it("... Now comment 31 appears", () => {
+  it("... Now comment 31 (post 32) appears", () => {
     strangersBrowser.topic.waitForPostNrVisible(31 + 1);
     assert.ok(strangersBrowser.topic.isPostNrVisible(31 + 1));  // tests the test
   });
@@ -178,10 +194,12 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
         break;
 
       if (strangersBrowser.isVisible('.dw-x-show')) {
+        lad.logMessage(`Clicking Show More ...`);
         strangersBrowser.waitAndClickFirst('.dw-x-show', { maybeMoves: true });
       }
 
-      strangersBrowser.pause(125);
+      lad.logMessage(`Waiting for more posts to load ...`);
+      strangersBrowser.pause(250);
     }
   });
 
