@@ -257,17 +257,8 @@ const AboutUser = createComponent({
     const extraInfoNewline =
         this.props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, this.props.extraInfo) : null;
 
-    const emailIfSelfAdmin = !me.isAdmin || !user.email ? null :
-        r.div({ className: 's_UD_Em' },
-          t.EmailC || (t.cud.EmailC + ' '),
-          // Don't use an <a href="mailto:..."> — it's better to encourage people
-          // to use the built-in messaging system? And also annoying when some
-          // email program starts, if clicking the email just to copy it.
-          r.samp({}, user.email),
-          OnlyAdminsSee);
-
     const groupList = GroupList(
-        user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',
+        user, groupsMaySee, 's_UP_Ab_Stats_Stat_Groups_Group',  // COULD rename css class
         // `false`: Use r.a() not a Link() because we're not inside a React Router.
         // UX COULD place all dialog roots inside the router elem, so Link() will work?
         false);
@@ -287,8 +278,8 @@ const AboutUser = createComponent({
           r.span({ className: 's_UD_FN' }, user.fullName), r.br(),
           isStaffInfo,
           isGoneInfo),
-        r.div({ className: 's_UD_BelwAv' },
-          emailIfSelfAdmin,
+        r.div({ className: 's_UD_BelwAv' },  // "below avatar"
+          AnyUserEmail(user, me),
           r.div({ className: 's_UP_Gs' },
             t.GroupsC, groupList))
         ));
@@ -366,10 +357,6 @@ const AboutGuest = createComponent({
         ? r.p({}, t.aud.EmAdrUnkn)
         : null;
 
-    const emailIfSelfAdmin = !me.isAdmin ? null :
-        r.div({ className: 's_UD_Em' },
-          "Email: ", guest.email || "(unknown)");
-
     return (
       r.div({ className: 'clearfix' },
         blockModal,
@@ -379,7 +366,7 @@ const AboutGuest = createComponent({
         r.p({},
           t.NameC + ' ' + guest.fullName, r.br(),
           t.aud.ThisIsGuest,
-          emailIfSelfAdmin),
+          AnyUserEmail(guest, me)),
         anyCannotBeContactedMessage,
         blockedInfo));
   }
@@ -445,6 +432,18 @@ const BlockGuestDialog = createComponent({
           Button({ onClick: this.props.close }, "Cancel"))));
   }
 });
+
+
+function AnyUserEmail(user: { email?: string }, me: Myself) {
+  return !me.isAdmin || !user.email ? null : (
+      r.div({ className: 's_UD_Em' },
+        t.EmailC || (t.cud.EmailC + ' '),
+        // Don't use an <a href="mailto:..."> — it's better to encourage people
+        // to use the built-in messaging system? And also annoying when some
+        // email program starts, if clicking the email just to copy it.
+        r.samp({}, user.email),
+        OnlyAdminsSee));
+}
 
 //------------------------------------------------------------------------------
    }

@@ -1732,11 +1732,11 @@ export function savePageIdsUrls(data: PageIdsUrls, onDone: () => void) {
 
 
 export function loadPageJson(path: string, success: (response) => void) {
-  logD(`Loading page: ${path} [TyMLDPG]`);
+  logM(`Loading page: ${path} [TyMLDPG]`);
   get(path + '?json', response => {
-    logD(`Done loading ${path}, updating store...`);
+    logM(`Done loading ${path}, updating store...`);
     success(response);
-    logD(`Done updating store.`);
+    logM(`Done updating store.`);
   });
 }
 
@@ -1912,8 +1912,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
   const reqNr = longPollingState.nextReqNr;
   longPollingState.nextReqNr = reqNr + 1;
 
-  logD(
-      `Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
+  logD(`Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
 
 
   const options: GetOptions = {

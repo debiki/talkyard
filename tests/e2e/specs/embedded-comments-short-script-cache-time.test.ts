@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 const syncRequest = require('sync-request');
@@ -25,7 +25,19 @@ describe("the embedded comments script is cached for a day only", () => {
 
   it("it contains javascript", () => {
     const source = everyonesBrowsers.getSource();
-    assert(source.search('edCommentsServerUrl') > 0);
+    // It can be annoyingly confusing to track down why this test fails
+    // with a 404 Not Found, so let's explain.
+    if (source.indexOf('TyE404NF') >= 0) {
+      assert.fail(
+        `Page not found. You need to build minified Javascript files, for\n` +
+        `this test to work — otherwise the file I want becomes 404 Not Found.\n` +
+        `\n` +
+        `Do this:\n` +
+        `\n` +
+        `    s/d gulp release\n` +   // sync w gulpfile.js [MKBUNDLS]
+        `\n`);
+    }
+    assert.includes(source, 'edCommentsServerUrl');
   });
 
   it("the cache time is just one day", () => {
@@ -34,9 +46,8 @@ describe("the embedded comments script is cached for a day only", () => {
       const response = syncRequest('GET', theUrl);
       const headers = response.headers;
       if (headers['cache-control'] !== desiredCacheHeader) {  // [2WBKP46]
-        console.log("Bad es-comments.min.js cache time, look at the cache header:\n" +
+        assert.fail("Bad es-comments.min.js cache time, look at the cache header:\n" +
             JSON.stringify(headers));
-        assert(false);
       }
       if (i === 0) theUrl = scriptUrl2;
       else theUrl = scriptUrl3;

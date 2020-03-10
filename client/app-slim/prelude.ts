@@ -105,8 +105,8 @@ export function oneIfDef(x: any): number {
 /// though, the browser won't show those messages, by default.
 ///
 /// Otherwise, use normal log level — so if someone copy-pastes a real warning
-/// or error from the console, those other log messages get included, making it
-/// simpler to see what's happening.
+/// or error from the console, the console.log() messages are visible and
+/// get included, simplifying troubleshooting.
 ///
 export function logM(message, ex?) {
   if (eds.isInIframe) {
@@ -121,7 +121,7 @@ export function logM(message, ex?) {
 /// Wrapper for console.debug().
 ///
 /// So can change how logging works, from this one place, rather than updating
-/// console.debug() "everywhere".
+/// console.debug() everywhere.
 ///
 export function logD(message, ex?) {
   console.debug(message, ex);
@@ -224,8 +224,8 @@ export function getMainWin(): MainWin {
         // OAuth provider, then eds.isInLoginPopup is false, but
         // the window name will be 'TyLoginPopup' — then, we need to continue
         // below to find the real main win (since we're in a popup).
-        // (The window it keeps its name, also when going to the OAuth provider
-        // and logging in there, and when going back again.)
+        // (The window apparently keeps its name, also when going to the OAuth
+        // provider and logging in there, and getting redirected back.)
         window.name !== 'TyLoginPopup') {
     return window as MainWin;
   }

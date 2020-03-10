@@ -39,8 +39,16 @@ const tyAssert = {
   includes: (text: string, expectedSubstring: string, message?: string) => {
     // Could make this work w regexs too.
     const ix = text.indexOf(expectedSubstring);
-    assert.ok(ix >= 0, message ||
-      `This: "${expectedSubstring}" is missing from:\n    "${text}"\n`);
+    const isOk = ix >= 0;
+    if (!isOk) console.log(''); // nice with a blank line
+    assert.ok(isOk, message ||
+      `assert.includes:\n` +
+      `    This:  "${expectedSubstring}"\n` +
+      `    is missing from:  (between the ----)\n` +
+      `------------------------------------------------------------------------\n` +
+      `${text}\n` +
+      `------------------------------------------------------------------------\n` +
+      `\n`);
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {

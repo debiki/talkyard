@@ -1105,7 +1105,9 @@ class Config(conf: play.api.Configuration) {
 
   val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = true)
 
+  // Remove these later — just for now, new feature switches.
   val sameSiteNone: Boolean = getBoolOrDefault("talkyard.sameSiteNone", default = true)
+  val sameSiteLax: Boolean = getBoolOrDefault("talkyard.sameSiteLax", default = false)
 
   private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
   def mayPatchSite(siteId: SiteId): Boolean =

@@ -347,7 +347,7 @@ class JsonMaker(dao: SiteDao) {
       "widthLayout" -> renderParams.widthLayout.toInt,
       "isEmbedded" -> renderParams.isEmbedded,
       // For embedded comments pages, relative links don't work — then need to include
-      // the Talkyard server origin in the links. [REMOTEORIGIN]
+      // the Talkyard server origin in the links. [REMOTEORIGIN] [60MRKDJ56]
       "embeddedOriginOrEmpty" -> renderParams.embeddedOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,

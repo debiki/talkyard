@@ -25,22 +25,6 @@ const PollExpBackoff = 1.33;
 const PollMaxMs = 5000;
 
 
-const enum IsWhere {
-  Forum = 1,
-  LoginPopup = 2,
-
-  EmbFirst = 3,
-  EmbeddingPage = 3,
-  EmbCommentsIframe = 4,
-  EmbEditorIframe = 5,
-  EmbLast = 5,
-
-  // Another server, e.g. Google's OAuth login page. But not an
-  // embedding blog post page.
-  External = 10,
-};
-
-
 type ElemRect = { x: number, y: number, width: number, height: number };
 
 // [E2EBUG] Stop using browser.waitUntil — it crashes, on any exception inside,
@@ -227,7 +211,7 @@ function pagesFor(browser) {
     },
 
 
-    isWhere: () => isWhere,
+    isWhere: (): IsWhere => isWhere,
 
 
     updateIsWhere: () => {
@@ -516,7 +500,7 @@ function pagesFor(browser) {
     },
 
 
-    switchToAnyParentFrame: () => {
+    switchToAnyParentFrame: function() {  // arrow fn => `arguments` below won't work
       if (api.isInIframe()) {
         origFrameParent.apply(browser, arguments);
         logMessage("Switched to parent frame.");
@@ -1678,9 +1662,7 @@ function pagesFor(browser) {
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
         logMessage(`Typig forum title: "${forumTitle}" ...`);
-        utils.tryManyTimes("Type forum name", 3, () => {
-          api.waitAndSetValue('input[type="text"]', forumTitle, { timeoutMs: 2000 });
-        });
+        api.waitAndSetValue('input[type="text"]', forumTitle, { checkAndRetry: true });
         // Click Next, Next ... to accept all default choices.
         /*  [NODEFCATS]
         api.waitAndClick('.e_Next');
@@ -1692,9 +1674,100 @@ function pagesFor(browser) {
         */
         logMessage(`Clicking Next ...`);
         api.waitAndClick('.e_Next');
-        browser.pause(200);
+
+        /*
+        DB_CONFICT: A Postgres serialization error might happen here, sth like 1 in 12, or 0 in 22:
+
+2020-03-09 15:14:36.476 UTC session-5e665804.1eb tx-98022: DETAIL:  Reason code: Canceled on identification as a pivot, during write.
+2020-03-09 15:14:36.476 UTC session-5e665804.1eb tx-98022: HINT:  The transaction might succeed if retried.
+2020-03-09 15:14:36.476 UTC session-5e665804.1eb tx-98022: STATEMENT:  
+              insert into pages3 (
+                site_id,
+                page_id,
+
+2020-03-09 15:20:11.012 UTC session-5e665804.1eb tx-98392: ERROR:  could not serialize access due to read/write dependencies among transactions
+2020-03-09 15:20:11.012 UTC session-5e665804.1eb tx-98392: DETAIL:  Reason code: Canceled on identification as a pivot, during write.
+2020-03-09 15:20:11.012 UTC session-5e665804.1eb tx-98392: HINT:  The transaction might succeed if retried.
+2020-03-09 15:20:11.012 UTC session-5e665804.1eb tx-98392: STATEMENT:  
+              update pages3 set
+                version = $1,
+                PAGE_ROLE = $2,
+                category_id = $3,
+                EMBEDDING_PAGE_URL = $4,
+                author_id = $5,
+                UPDATED_AT = greatest(created_at, $6),
+
+2020-03-09 15:20:58.349 UTC session-5e665804.1eb tx-98448: ERROR:  could not serialize access due to read/write dependencies among transactions
+2020-03-09 15:20:58.349 UTC session-5e665804.1eb tx-98448: DETAIL:  Reason code: Canceled on identification as a pivot, during conflict out checking.
+2020-03-09 15:20:58.349 UTC session-5e665804.1eb tx-98448: HINT:  The transaction might succeed if retried.
+2020-03-09 15:20:58.349 UTC session-5e665804.1eb tx-98448: STATEMENT:  
+              select unique_post_id, page_id, post_nr, type, created_at, created_by_id
+              from post_actions3
+              where site_id = $1 and page_id = $2 
+
+2020-03-09 15:33:00.317 UTC session-5e665efd.248 tx-98891: ERROR:  could not serialize access due to read/write dependencies among transactions
+2020-03-09 15:33:00.317 UTC session-5e665efd.248 tx-98891: DETAIL:  Reason code: Canceled on identification as a pivot, during write.
+2020-03-09 15:33:00.317 UTC session-5e665efd.248 tx-98891: HINT:  The transaction might succeed if retried.
+2020-03-09 15:33:00.317 UTC session-5e665efd.248 tx-98891: STATEMENT:  
+              update pages3 set
+                version = $1,
+                PAGE_ROLE = $2,
+                category_id = $3,
+
+2020-03-09 15:54:49.506 UTC session-5e6665de.29d tx-100416: ERROR:  could not serialize access due to read/write dependencies among transactions
+2020-03-09 15:54:49.506 UTC session-5e6665de.29d tx-100416: DETAIL:  Reason code: Canceled on identification as a pivot, during write.
+2020-03-09 15:54:49.506 UTC session-5e6665de.29d tx-100416: HINT:  The transaction might succeed if retried.
+2020-03-09 15:54:49.506 UTC session-5e6665de.29d tx-100416: STATEMENT:  
+              insert into pages3 (
+                site_id,
+                page_id,
+                ext_id,
+                version,
+
+          org.postgresql.util.PSQLException: ERROR: could not serialize access due to read/write dependencies among transactions
+            Detail: Reason code: Canceled on identification as a pivot, during write.
+            Hint: The transaction might succeed if retried.
+            at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2440)
+            at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2183)
+            at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:308)
+            at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:441)
+            at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:365)
+            at org.postgresql.jdbc.PgPreparedStatement.executeWithFlags(PgPreparedStatement.java:150)
+            at org.postgresql.jdbc.PgPreparedStatement.executeUpdate(PgPreparedStatement.java:127)
+            at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+            at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+            at com.debiki.dao.rdb.Rdb.execImpl(Rdb.scala:494)
+            at com.debiki.dao.rdb.Rdb.update(Rdb.scala:454)
+            at com.debiki.dao.rdb.RdbSiteTransaction._updatePageMeta(RdbSiteTransaction.scala:636)
+            at com.debiki.dao.rdb.RdbSiteTransaction.$anonfun$updatePageMetaImpl$1(RdbSiteTransaction.scala:524)
+            at com.debiki.dao.rdb.RdbSiteTransaction.$anonfun$updatePageMetaImpl$1$adapted(RdbSiteTransaction.scala:516)
+            at com.debiki.dao.rdb.RdbSiteTransaction.$anonfun$transactionCheckQuota$1(RdbSiteTransaction.scala:140)
+            at scala.Option.foreach(Option.scala:274)
+            at com.debiki.dao.rdb.RdbSiteTransaction.transactionCheckQuota(RdbSiteTransaction.scala:138)
+            at com.debiki.dao.rdb.RdbSiteTransaction.updatePageMetaImpl(RdbSiteTransaction.scala:516)
+            at com.debiki.core.SiteTransaction.updatePageMeta(SiteTransaction.scala:269)
+            at com.debiki.core.SiteTransaction.updatePageMeta$(SiteTransaction.scala:266)
+            at com.debiki.dao.rdb.RdbSiteTransaction.updatePageMeta(RdbSiteTransaction.scala:38)
+            at debiki.dao.PostsDao.insertReplyImpl(PostsDao.scala:256)
+            at debiki.dao.PostsDao.insertReplyImpl$(PostsDao.scala:102)
+            at debiki.dao.SiteDao.insertReplyImpl(SiteDao.scala:86)
+            at debiki.dao.ForumDao.createForumCategories(ForumDao.scala:405)
+            at debiki.dao.ForumDao.createDefaultCategoriesAndTopics(ForumDao.scala:208)
+            at debiki.dao.ForumDao.$anonfun$createForum$1(ForumDao.scala:113)
+            at debiki.dao.SiteDao.$anonfun$readWriteTransaction$2(SiteDao.scala:199)
+            at com.debiki.core.DbDao2.readWriteSiteTransaction(DbDao2.scala:67)
+            at debiki.dao.SiteDao.$anonfun$readWriteTransaction$1(SiteDao.scala:199)
+            at debiki.dao.SiteDao$.synchronizeOnSiteId(SiteDao.scala:543)
+            at debiki.dao.SiteDao.readWriteTransaction(SiteDao.scala:198)
+            at debiki.dao.ForumDao.createForum(ForumDao.scala:68)
+            at debiki.dao.ForumDao.createForum$(ForumDao.scala:64)
+            at debiki.dao.SiteDao.createForum(SiteDao.scala:86)
+            at controllers.ForumController.$anonfun$createForum$1(ForumController.scala:70)
+            */
+
         logMessage(`Creating the forum ...`);
         api.waitAndClick('#e2eDoCreateForum');
+        logMessage(`Waiting for title ...`);
         const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
         logMessage(`Done? The forum title is: "${actualTitle}"`);
         assert.equal(actualTitle, forumTitle);
@@ -4105,6 +4178,7 @@ function pagesFor(browser) {
         api.switchToEmbCommentsIframeIfNeeded();
         api.waitAndClick(buttonSelector, opts);
         return;
+        // DO_AFTER 2020-06-01: CLEAN_UP REMOVE the rest of this function.
         let hasScrolled = false;
         const isInIframe = api.isInIframe();
 

@@ -3,6 +3,23 @@
 
 type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
 
+
+const enum IsWhere {
+  Forum = 1,
+  LoginPopup = 2,
+
+  EmbFirst = 3,
+  EmbeddingPage = 3,
+  EmbCommentsIframe = 4,
+  EmbEditorIframe = 5,
+  EmbLast = 5,
+
+  // Another server, e.g. Google's OAuth login page. But not an
+  // embedding blog post page.
+  External = 10,
+};
+
+
 interface TestSettings {
   debug: boolean;
   parallel?: number;

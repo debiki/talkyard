@@ -113,8 +113,8 @@ declare namespace ed {
 
 declare namespace debiki2 {
 
-  function logM(message, ex?);
-  function logD(message, ex?);
+  function logM(message: string, ex?);
+  function logD(message: string, ex?);
 
   function getMainWin(): MainWin;
   function getMainWinStore(): Store;

@@ -887,7 +887,7 @@ gulp.task('clean', () => {
 });
 
 
-gulp.task('release', gulp.series(
+gulp.task('release', gulp.series(  // [MKBUNDLS]
     'clean',
     'enable-prod-stuff',
     'minifyScripts',

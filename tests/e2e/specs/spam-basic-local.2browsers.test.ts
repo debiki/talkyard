@@ -73,7 +73,7 @@ describe("spam test, no external services  TyT530KRM1R", () => {
     mallorysBrowser.disableRateLimits();
   });
 
-  // Use both http and smoe https links.
+  // Use both http and https links.
   const tooManyLinks = `<3 links <3 <3 <3
         http://example.com/link-1
         http://example.com/link-2
@@ -109,6 +109,7 @@ describe("spam test, no external services  TyT530KRM1R", () => {
     mallorysBrowser.go2('/');
     mallorysBrowser.forumButtons.clickCreateTopic();
     mallorysBrowser.editor.editTitle(topicTitleTwo);
+    // (Use both http and https links.)
     mallorysBrowser.editor.editText(`Not many links :-(
         http://www.example.com/link-1
         https://www.example.com/link-2`);

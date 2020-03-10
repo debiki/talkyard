@@ -534,14 +534,30 @@ class EdSecurity(globals: Globals) {
       maxAge = maxAgeSeconds,
       secure = globals.secure,
       httpOnly = httpOnly,
-      sameSite =  // [SAMESITE]
-        if (globals.secure && globals.config.sameSiteNone) {
-          Some(Cookie.SameSite.None)
-        }
-        else {
-          None
-        }
-    )
+      sameSite = anySameSiteCookieValue())
+
+  /**
+    * Later, could change to Lax or even Strict, for session id cookie,
+    * and, when embedded, always send session id via header instead?
+    * Or now directly? There are SameSite: None incompatible browsers:
+    * https://www.chromium.org/updates/same-site/incompatible-clients
+    *   ??? copy-paste that Apache 2 to here ???
+    * Ok explanation of Strict, Lax and None:
+    *   https://web.dev/samesite-cookies-explained/
+    */
+  private def anySameSiteCookieValue(): Option[Cookie.SameSite] = {  // [SAMESITE]
+    // SameSite.None only works with https.
+    if (globals.secure && globals.config.sameSiteNone) {
+      Some(Cookie.SameSite.None)
+    }
+    else if (globals.config.sameSiteLax) {
+      Some(Cookie.SameSite.Lax)
+    }
+    else {
+      None
+    }
+  }
+
 
   def DiscardingSecureCookie(name: String) =
     DiscardingCookie(name, secure = globals.secure)
@@ -564,7 +580,7 @@ class EdSecurity(globals: Globals) {
   // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
   // So I've modified jquery-cookie.js to remove double quotes when
   // reading cookie values.
-  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
+  private def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
     Cookie(
       name = name,
       value = urlEncode(convertEvil(value)),  // see comment above
@@ -572,24 +588,7 @@ class EdSecurity(globals: Globals) {
       path = "/",
       domain = None,
       secure = globals.secure,
-      sameSite =  // [SAMESITE]
-        // Later, could change to Lax or even Strict, for session id cookie,
-        // and, when embedded, always send session id via header instead?
-        // Or now directly? There are SameSite: None incompatible browsers:
-        // https://www.chromium.org/updates/same-site/incompatible-clients
-        // Ok explanation of Strict, Lax and None:
-        //   https://web.dev/samesite-cookies-explained/
-        /* if (globals.skipSameSiteCookieAttr) {
-          None
-        }
-        else */
-        if (globals.secure && globals.config.sameSiteNone) {
-          Some(Cookie.SameSite.None)
-        }
-        else {
-          // SameSite.None only works with https.
-          None
-        },
+      sameSite = anySameSiteCookieValue(),
       httpOnly = false)
 
 

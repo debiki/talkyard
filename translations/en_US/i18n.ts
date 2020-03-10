@@ -51,7 +51,7 @@ var t_en_US: TalkyardTranslations = t = {
   done: "done",
   EditV: "Edit",
   Editing: "Editing",
-  EmailC: "Email: ",
+  EmailC: "Email: ",   // MISSING  copy t.cud.EmailC to here
   EmailAddress: "Email address",
   EmailAddresses: "Email addresses",
   EmailSentD: "Email sent.",

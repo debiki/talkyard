@@ -1018,7 +1018,7 @@ export const Editor = createFactory<any, EditorState>({
     const locator: DraftLocator = { draftType: DraftType.Scratch };
     const mainStore: Store = eds.isInEmbeddedEditor ? getMainWinStore() : state.store;
 
-    // If we're in an iframe, the page might have gotten lazy-creted, then
+    // If we're in an iframe, the page might have gotten lazy-created; then
     // we need to use eds.embeddedPageId.
     const editorsPageId = state.editorsPageId || eds.embeddedPageId;
 
@@ -1026,10 +1026,16 @@ export const Editor = createFactory<any, EditorState>({
 
     // @ifdef DEBUG
     dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
-    // Cannot edit sth, if page doesn't exist. And cannot create a new topic, in a forum
-    // that doesn't exist (the editor's page id should be the forum page id).
-    dieIf(!state.editorsPageId && (
-          state.editingPostNr || state.newForumTopicCategoryId), '[TyE40JMABN42]');
+    const pageExists = !!state.editorsPageId;
+    // Cannot *edit* sth, if page doesn't exist.
+    dieIf(!pageExists && state.editingPostNr, '[TyE40JMABN42]');
+    // Cannot create forum topics, if the forum page itself doesn't exist.
+    dieIf(!pageExists && state.newForumTopicCategoryId, '[TyE40JMABN43]');
+    // Cannot post chat messages on non-existing pages.
+    dieIf(!pageExists && state.isWritingChatMessage, '[TyE40JMABN44]');
+    // But yes — can post new replies, if the page doesn't exist,
+    // because PageRole.EmbeddedComments pages get created lazily.
+    // Also direct message topics get created lazily (messageToUserIds).
     // @endif
 
     if (state.editingPostNr) {

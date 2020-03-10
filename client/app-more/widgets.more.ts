@@ -66,7 +66,7 @@ export const GroupList = function(member: UserDetailsStatsGroups, groupsMaySee: 
   groupsOnlyOneBuiltIn.unshift(maxTrustLevelGroup);
 
   return groupsOnlyOneBuiltIn.map(groupId => {
-    const group = _.find(groupsMaySee, g => g.id === groupId);
+    const group = _.find(groupsMaySee, g => g.id === groupId);  // [On2]
     if (!group)
       return null;
     const name = group.fullName || group.username;

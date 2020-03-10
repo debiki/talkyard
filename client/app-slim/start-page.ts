@@ -46,7 +46,7 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
 // because we've disabled service workers / they aren't supported.
 debiki.serviceWorkerPromise.catch(function(ex) {
   if (ex !== 'ok')
-    console.warn("Error subscribing to events via service worker [TyM5RM57]", ex);
+    console.warn("Error subscribing to events via service worker [TyE5RM57]", ex);
 });
 
 let serviceWorkerIsSameVersion = false;
