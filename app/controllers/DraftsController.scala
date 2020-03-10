@@ -65,8 +65,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Better use the server time? In case the client's clock is wrong? [SERVERTIME]
     // Also, without this, some e2e tests fail (race conditions [DRAFTWAIT]).
     val now = globals.now()
-    val talkyardJsonParser = talkyard.server.backup.SiteBackupReader(context)
-    var draft = talkyardJsonParser.readDraftOrBad(body, Some(now)) getOrIfBad { problem =>
+    val parser = talkyard.server.sitepatch.SitePatchParser(context)
+    var draft = parser.readDraftOrBad(body, Some(now)) getOrIfBad { problem =>
       throwBadRequest("TyEBDDRFTDT", s"Bad Draft json, problem: $problem")
     }
 

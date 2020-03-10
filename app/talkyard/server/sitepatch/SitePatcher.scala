@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup  // RENAME to  talkyard.server.sitepatch
+package talkyard.server.sitepatch
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
@@ -25,17 +25,16 @@ import debiki.dao.{PageDao, PagePartsDao, SettingsDao, SiteDao}
 import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import org.jsoup.Jsoup
-import org.jsoup.safety.Whitelist
 import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
-case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to SiteDumpImporter? or SitePatcher?
+case class SitePatcher(globals: debiki.Globals) {
 
 
-  def upsertIntoExistingSite(siteId: SiteId, siteData: SiteBackup, browserIdData: BrowserIdData)
-        : SiteBackup = {
+  def upsertIntoExistingSite(siteId: SiteId, siteData: SitePatch, browserIdData: BrowserIdData)
+        : SitePatch = {
 
     // Tested e.g. here:
     // - api-upsert-categories.2browsers.test.ts  TyT94DFKHQC24
@@ -913,14 +912,14 @@ case class SiteBackupImporterExporter(globals: debiki.Globals) {  RENAME // to S
     // Categories and pages is what the current Talkyard API consumers need. As of November 2019.
     // The /-/v0/upsert-simple endpoint also wants the category locations (url paths),
     // so, we need the forum section page paths, so included below.
-    SiteBackup.empty.copy(
+    SitePatch.empty.copy(
       pages = upsertedPages,
       pagePaths = (upsertedPagePaths ++ sectionPagePaths).distinct,
       categories = upsertedCategories.toVector)
   }
 
 
-  def importCreateSite(siteData: SiteBackup, browserIdData: BrowserIdData,
+  def importCreateSite(siteData: SitePatch, browserIdData: BrowserIdData,
         anySiteToOverwrite: Option[Site], isTest: Boolean): Site = {
 
     for (page <- siteData.pages) {

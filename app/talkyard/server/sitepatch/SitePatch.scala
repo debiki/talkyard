@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -43,10 +43,10 @@ import scala.collection.mutable
   * construct these patch > 2e9 "temporary import ids" — or "patch item id" ?
   * See "LowestTempImpId".
   *
+  * SitePatch is a (possibly small) set of changes to do to a site,
+  * whilst a SiteDump is a SitePatch that includes the whole site.
   */
-case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related classes too.
-                        // SitePatch is a (possibly small) set of changes to do to a site,
-                        // whilst a SiteDump is a SitePatch that includes the whole site.
+case class SitePatch(
   upsertOptions: Option[UpsertOptions],
   site: Option[SiteInclDetails],
   settings: Option[SettingsToSave],
@@ -104,15 +104,15 @@ case class SiteBackup(  // RENAME to SiteDmup *no* SitePatch, and all related cl
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
   def toSimpleJson: JsObject = {
-    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = true)
+    SitePatchMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = true)
   }
 
   def toPatchJson: JsObject = {
-    SiteBackupMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = false)
+    SitePatchMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = false)
   }
 
   /** For tests. */
-  def withVersionPlusOne: SiteBackup = copy(
+  def withVersionPlusOne: SitePatch = copy(
     site = site.map(s => s.copy(version = s.version + 1)))
 
   def hasManyThings: Boolean = {
@@ -154,8 +154,8 @@ case class UpsertOptions(
   sendNotifications: Option[Boolean])
 
 
-case object SiteBackup {
-  val empty = SiteBackup(
+object SitePatch {
+  val empty = SitePatch(
     upsertOptions = None,
     site = None,
     settings = None,
@@ -195,7 +195,7 @@ case class SimpleSitePatch(
   pagePatches: Seq[SimplePagePatch] = Nil) {
 
 
-  def loadThingsAndMakeComplete(dao: SiteDao): SiteBackup Or ErrorMessage = {
+  def loadThingsAndMakeComplete(dao: SiteDao): SitePatch Or ErrorMessage = {
     // For now, pick the first random root category. Sub communities currently
     // disabled. [4GWRQA28]  But the site must not be empty — we need something
     // to insert the new contents into:
@@ -213,7 +213,7 @@ case class SimpleSitePatch(
     * that's where the description is kept (.i.e in the About page,
     * the page body post text).
     */
-  def makeComplete(dao: ReadOnySiteDao): SiteBackup Or ErrorMessage = {
+  def makeComplete(dao: ReadOnySiteDao): SitePatch Or ErrorMessage = {
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
@@ -427,7 +427,7 @@ case class SimpleSitePatch(
     }
 
 
-    val result = SiteBackup.empty.copy(
+    val result = SitePatch.empty.copy(
       upsertOptions = upsertOptions,
       categories = categories.toVector,
       pages = pages.toVector,

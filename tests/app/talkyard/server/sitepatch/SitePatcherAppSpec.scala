@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -28,7 +28,7 @@ import scala.collection.immutable
 
 // OOPS FAILS
 
-class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // TyT2496ANPJ3
+class SitePatcherAppSpec extends DaoAppSuite(disableScripts = false)  // TyT2496ANPJ3
   with DumpMaker {
 
   private def testForumQuotaLimit =
@@ -42,12 +42,12 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       "import" in {
         site = createSite(siteName)._1
-        upsert(site.id, SiteBackup.empty)
+        upsert(site.id, SitePatch.empty)
       }
 
       "read back, it's empty" in {
-        val dump = SiteBackupMaker(context = context).loadSiteDump(site.id)
-        val expectedDump = SiteBackup.empty.copy(
+        val dump = SitePatchMaker(context = context).loadSiteDump(site.id)
+        val expectedDump = SitePatch.empty.copy(
           site =
             Some(SiteInclDetails(
               id = dump.theSite.id,
@@ -76,7 +76,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var site: Site = null
       val siteName = "just-a-guest-304676"
 
-      lazy val initialDumpToUpsert = SiteBackup.empty.copy(
+      lazy val initialDumpToUpsert = SitePatch.empty.copy(
         guests = Vector(
           GuestWithAllFields.copy(
             emailNotfPrefs = EmailNotfPrefs.ForbiddenForever))) // ignored (50525205)
@@ -92,8 +92,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         groups =
           CreateSiteDao.makeDefaultGroups(context.globals.now()))
 
-      var expectedDump: SiteBackup = null
-      var actualDump: SiteBackup = null
+      var expectedDump: SitePatch = null
+      var actualDump: SitePatch = null
 
       "import the guest" in {
         site = createSite(siteName)._1
@@ -101,7 +101,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "load / recreate dump from database" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "the guest is in the dump" in {
@@ -130,7 +130,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         }
 
         "read back" in {
-          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
         }
 
         "nothing changed" in {
@@ -144,7 +144,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var site: Site = null
       val siteName = "one-of-each-2958395"
 
-      lazy val initialDumpToUpsert = SiteBackup.empty.copy(
+      lazy val initialDumpToUpsert = SitePatch.empty.copy(
         guests = Vector(GuestWithAllFields.copy(
           emailNotfPrefs = EmailNotfPrefs.ForbiddenForever)), // overwritten (50525205)
         guestEmailNotfPrefs = Map(
@@ -194,8 +194,8 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             id = 1,
             onCategoryId = Some(subCatRealId))))
 
-      var expectedDump: SiteBackup = null
-      var actualDump: SiteBackup = null
+      var expectedDump: SitePatch = null
+      var actualDump: SitePatch = null
 
       "import the items" in {
         site = createSite(siteName)._1
@@ -203,7 +203,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "load / recreate dump from database" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "now they're all there" in {
@@ -235,7 +235,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         }
 
         "read back" in {
-          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
         }
 
         "nothing changed" in {
@@ -252,9 +252,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var site: Site = null
       val siteName = "re-imp-more-6094624"
 
-      var expectedDump: SiteBackup = null
-      var actualDump: SiteBackup = null
-      var latestDumpToUpsert: SiteBackup = null
+      var expectedDump: SitePatch = null
+      var actualDump: SitePatch = null
+      var latestDumpToUpsert: SitePatch = null
 
       lazy val rootCat = actualDump.categories.find(_.parentId.isEmpty) getOrDie "TyE305HSDRA"
       lazy val sectPage = {
@@ -262,7 +262,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         actualDump.pages.head
       }
 
-      lazy val initialDumpToUpsertNoPagePath = SiteBackup.empty.copy(
+      lazy val initialDumpToUpsertNoPagePath = SitePatch.empty.copy(
         categories = Vector(CategoryWithSectPageId333, CategoryWithSectPageId333SubCat),
         pages = Vector(AboutCatPageMeta333))
 
@@ -315,7 +315,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "load / recreate dump from database" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "now they're all there" in {
@@ -355,11 +355,11 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             includeInSummaries = IncludeInSummaries.NoExclude)
 
       "add a sub category" in {
-        upsert(site.id, SiteBackup.empty.copy(categories = Vector(newCat)))
+        upsert(site.id, SitePatch.empty.copy(categories = Vector(newCat)))
       }
 
       "read back, with the new sub cat" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "find the new sub cat" in {
@@ -383,11 +383,11 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         )
 
       "upsert-edit the new sub cat" in {
-        upsert(site.id, SiteBackup.empty.copy(categories = Vector(newCatEdited)))
+        upsert(site.id, SitePatch.empty.copy(categories = Vector(newCatEdited)))
       }
 
       "read back, with the updated sub cat" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "the new sub cat has now been edited (via the upsert)" in {
@@ -409,9 +409,9 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       var site: Site = null
       val siteName = "ups-cat-parent-ext-id-905562"
 
-      var expectedDump: SiteBackup = null
-      var actualDump: SiteBackup = null
-      var latestDumpToUpsert: SiteBackup = null
+      var expectedDump: SitePatch = null
+      var actualDump: SitePatch = null
+      var latestDumpToUpsert: SitePatch = null
 
       lazy val siteDao = globals.siteDao(actualDump.site.get.id)
 
@@ -427,7 +427,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       lazy val baseCat =
         CategoryWithSectPageId333SubCat.copy(extImpId = Some(baseCatExtId))
 
-      lazy val initialDumpToUpsert = SiteBackup.empty.copy(
+      lazy val initialDumpToUpsert = SitePatch.empty.copy(
         categories = Vector(
           CategoryWithSectPageId333, baseCat),
         pages = Vector(AboutCatPageMeta333),
@@ -463,7 +463,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "load / recreate dump from database" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       "now they're all there" in {
@@ -507,7 +507,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "read back, with the new sub cat" in {
-        actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
       }
 
       var upsCat: Category = null
@@ -605,11 +605,11 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       "upsert-edit via complete patch" - {
 
         "upsert-edit the new sub cat" in {
-          upsert(site.id, SiteBackup.empty.copy(categories = Vector(newCatEdited)))
+          upsert(site.id, SitePatch.empty.copy(categories = Vector(newCatEdited)))
         }
 
         "read back, with the updated sub cat" in {
-          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
         }
 
         "the new sub cat has now been edited (via the upsert)" in {
@@ -646,7 +646,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         var aboutPageBodyPostEd2: Post = null
 
         "read back" in {
-          actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
         }
 
         "the category got modified correcly" in {
@@ -764,12 +764,12 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
       }
 
       "add a page with one reply" - {
-        var patchToUpsert: SiteBackup = null
+        var patchToUpsert: SitePatch = null
 
         "add the page and reply" in {
           val dummyCategory = makeEmbeddedCommentsCategory(forum)
 
-          patchToUpsert = SiteBackup.empty.copy(
+          patchToUpsert = SitePatch.empty.copy(
             categories = Vector(dummyCategory),
             pages = Vector(pageToUpsert),
             pageIdsByAltIds = Map(pageToUpsertAltId -> pageToUpsert.pageId), // not needed here?
@@ -796,7 +796,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
         def loadDumpCheckLooksOk() {
           info("read back")
-          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
           info("find the new page")
           val defaultCatPages = actualDump.pages.filter(_.categoryId is forum.defaultCategoryId)
@@ -893,7 +893,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
             approvedById = owen.id,
             approvedAt = now)
 
-          patchToUpsert = SiteBackup.empty.copy(
+          patchToUpsert = SitePatch.empty.copy(
             categories = Vector(dummyCategory),
             pages = Vector(pageToUpsert),
             posts = Vector(
@@ -904,7 +904,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
         }
 
         "frequentPosterIds did get updated" in {
-          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
           info("find the new page")
           val actualNewPage =
@@ -928,12 +928,12 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
 
       "add a 3nd reply" - {
-        var patchToUpsert: SiteBackup = null
+        var patchToUpsert: SitePatch = null
         lazy val reply2 = Page333Reply.copy(
           extImpId = Some("reply_2_ext_id"))  ; TESTS_MISSING // edit the suorce text
 
         "import (upsert) a site patch with the reply" in {
-          patchToUpsert = SiteBackup.empty.copy(
+          patchToUpsert = SitePatch.empty.copy(
             pages = Vector(
               // Needed so the new reply has a page to reference in the patch.
               upsertedPageOnlyExtId),
@@ -963,7 +963,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
         def loadDumpCheckLooksOk() {
           info("read back")
-          val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+          val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
           info("find the page")
           val actualNewPage = actualDump.pages.find(_.extImpId is pageToUpsertExtId
@@ -1033,11 +1033,11 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       lazy val upsReply = Page333Reply.copy(extImpId = Some("reply_ext_id"))
 
-      var patchToUpsert: SiteBackup = null
+      var patchToUpsert: SitePatch = null
 
       "upsert a site patch with a reply and a page with an alt id matching an old page" in {
         val dummyCategory = makeEmbeddedCommentsCategory(forum)
-        patchToUpsert = SiteBackup.empty.copy(
+        patchToUpsert = SitePatch.empty.copy(
           categories = Vector(dummyCategory),
           pages = Vector(pageToUpsertAlreadyExists),  // same alt id —> is considered same page
           pageIdsByAltIds = Map("diid:" + oldPageDiscId -> pageToUpsertAlreadyExists.pageId),
@@ -1064,7 +1064,7 @@ class SiteDumpImporterAppSpec extends DaoAppSuite(disableScripts = false)  // Ty
 
       def loadDumpCheckLooksOk() {
         info("read back")
-        val actualDump = SiteBackupMaker(context = context).loadSiteDump(site.id)
+        val actualDump = SitePatchMaker(context = context).loadSiteDump(site.id)
 
         info("find the page")
         val actualOldPage = actualDump.pages.find(_.pageId == oldPageId) getOrDie "TyE5KT5SHH6"

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import java.io.RandomAccessFile
 import com.debiki.core._
@@ -30,8 +30,8 @@ trait DumpMaker {
   self: DaoAppSuite =>
 
 
-  def upsert(siteId: SiteId, patch: SiteBackup) {
-    val importer = SiteBackupImporterExporter(globals)
+  def upsert(siteId: SiteId, patch: SitePatch) {
+    val importer = SitePatcher(globals)
     importer.upsertIntoExistingSite(siteId, patch, browserIdData)
   }
 

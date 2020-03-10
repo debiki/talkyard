@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import com.debiki.core
 import com.debiki.core.Prelude._
@@ -44,7 +44,7 @@ import talkyard.server.JsX
   *
   * Search for [readlater] for stuff ignored right now.
   */
-case class SiteBackupReader(context: EdContext) {
+case class SitePatchParser(context: EdContext) {
 
   import context.globals
   import context.security
@@ -54,7 +54,7 @@ case class SiteBackupReader(context: EdContext) {
 
 
   def parseDumpJsonMaybeThrowBadRequest(siteId: Option[SiteId], bodyJson: JsValue, simpleFormat: Boolean,
-          isE2eTest: Boolean): SiteBackup = {
+          isE2eTest: Boolean): SitePatch = {
     try {
       if (simpleFormat) parseSimpleSitePatch(siteId getOrDie "TyE045ASDKH3", bodyJson)
       else parseSiteJson(bodyJson, isE2eTest = isE2eTest)
@@ -70,7 +70,7 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SiteBackup = {
+  private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SitePatch = {
     val (categoriesJson, pagesJson, anyUpsertOptionsJson) =
       try { // (this extra try...catch is for better error messages)
         // Only categories.
@@ -128,7 +128,7 @@ case class SiteBackupReader(context: EdContext) {
   }
 
 
-  def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SiteBackup = {
+  def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SitePatch = {
 
     // When importing API secrets has been impl **EDIT: NOT DONE** then upd this test:
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
@@ -408,7 +408,7 @@ case class SiteBackupReader(context: EdContext) {
               $error, json: $json"""))
     }
 
-    SiteBackup(upsertOptions = None, siteToSave, settings, apiSecrets,
+    SitePatch(upsertOptions = None, siteToSave, settings, apiSecrets,
       guests, guestEmailPrefs, groups,
       groupParticipants,
       users, ppStats, ppVisitStats, usernameUsages, memberEmailAddrs,

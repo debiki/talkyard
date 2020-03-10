@@ -52,7 +52,7 @@ import debiki.dao.RemoteRedisClientError
 
 
 class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
-  backupController: talkyard.server.backup.SiteBackupController)
+  sitePatchController: talkyard.server.sitepatch.SitePatchController)
   extends EdController(cc, edContext) {
 
   import context.{security, globals}
@@ -118,7 +118,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       case "export-site-json" =>
         throwForbiddenIf(!request.isViaApiSecret,
           "TyE0APIGET", "The API may be called only via Basic Auth and an API secret")
-        backupController.exportSiteJsonImpl(request)
+        sitePatchController.exportSiteJsonImpl(request)
 
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
       case "sso-login" | // deprecated name, remove (because login secrets are generated

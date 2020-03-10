@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
@@ -39,7 +39,7 @@ import talkyard.server.JsX.JsStringOrNull
   *
   * Search for [readlater] for stuff ignored right now.
   */
-class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdContext)
+class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
@@ -61,7 +61,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
       request.context.rateLimiter.rateLimit(RateLimits.ExportSite, request)
     }
     val json = context.globals.siteDao(request.siteId).readOnlyTransaction { tx =>
-      SiteBackupMaker.createPostgresqlJsonBackup(anyTx = Some(tx), simpleFormat = false)
+      SitePatchMaker.createPostgresqlJsonBackup(anyTx = Some(tx), simpleFormat = false)
     }
     Ok(json.toString()) as JSON
   }
@@ -88,7 +88,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     // This parses JSON, and converts the simple patch contents to a "complete" patch
     // that can be upserted.
-    val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+    val sitePatch = SitePatchParser(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = true, isE2eTest = false)
 
     if (sitePatch.hasManyThings) {
@@ -102,18 +102,18 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
           RateLimits.UpsertDump, maxBytes = maxImportDumpBytes) { request =>
     throwIfMayNot(request, "TyEM0UPSPATCH")
 
-    val sitePatch = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+    val sitePatch = SitePatchParser(context).parseDumpJsonMaybeThrowBadRequest(
       siteId = Some(request.siteId), request.body, simpleFormat = false, isE2eTest = false)
     upsertSitePatchImpl(sitePatch, request)
   }
 
 
-  private def upsertSitePatchImpl(dump: SiteBackup, request: DebikiRequest[_]) = {
+  private def upsertSitePatchImpl(dump: SitePatch, request: DebikiRequest[_]) = {
     // Avoid PostgreSQL serialization errors. [one-db-writer]
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     val upsertedThings = doImportOrUpserts {
-      SiteBackupImporterExporter(globals).upsertIntoExistingSite(
+      SitePatcher(globals).upsertIntoExistingSite(
           request.siteId, dump, request.theBrowserIdData)
     }
 
@@ -191,7 +191,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
     globals.pauseAutoBackgorundRenderer3Seconds()
 
     val siteData = {
-        val siteDump = SiteBackupReader(context).parseDumpJsonMaybeThrowBadRequest(
+        val siteDump = SitePatchParser(context).parseDumpJsonMaybeThrowBadRequest(
           siteId = None, json, simpleFormat = false, isE2eTest = isTest)
         throwBadRequestIf(siteDump.site.isEmpty, "TyE305MHKR2", "No site meta included in dump")
         throwBadRequestIf(siteDump.settings.isEmpty, "TyE5KW0PG", "No site settings included in dump")
@@ -215,7 +215,7 @@ class SiteBackupController @Inject()(cc: ControllerComponents, edContext: EdCont
           siteMeta.name, hostnames = siteMeta.hostnames.map(_.hostname).toSet)
       }
 
-      SiteBackupImporterExporter(globals).importCreateSite(
+      SitePatcher(globals).importCreateSite(
         siteData, browserIdData, anySiteToOverwrite = overwriteSite, isTest = isTest)
     }
 

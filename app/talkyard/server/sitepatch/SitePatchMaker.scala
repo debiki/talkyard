@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package talkyard.server.backup
+package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -31,12 +31,12 @@ import talkyard.server.JsX._
   *
   * Search for [readlater] for stuff ignored right now.
   */
-case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ...Maker?
+case class SitePatchMaker(context: EdContext) {
 
   import context.globals
 
 
-  def loadSiteDump(siteId: SiteId): SiteBackup = {
+  def loadSiteDump(siteId: SiteId): SitePatch = {
     globals.siteDao(siteId).readOnlyTransaction { tx =>
       val site: SiteInclDetails = tx.loadSiteInclDetails().getOrDie("TyE2RKKP85")
 
@@ -69,7 +69,7 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
 
       val postActions: Seq[PostAction] = tx.loadAllPostActions()
 
-      SiteBackup.empty.copy(
+      SitePatch.empty.copy(
         site = Some(site),
         // settings = settings,
         groups = tx.loadAllGroupsAsSeq().sortBy(_.id),
@@ -90,7 +90,7 @@ case class SiteBackupMaker(context: EdContext) {  // RENAME to SiteDumpLoader ..
 }
 
 
-object SiteBackupMaker {
+object SitePatchMaker {
 
   private val AllForNow: Int = 100*1000
 
@@ -100,7 +100,7 @@ object SiteBackupMaker {
     * (Some time later, for really large sites, might be better to load things directly
     * from a db transaction, rather than creating an intermediate representation.)
     */
-  def createPostgresqlJsonBackup(anyDump: Option[SiteBackup] = None,  // RENAME makeSiteJsonDump?
+  def createPostgresqlJsonBackup(anyDump: Option[SitePatch] = None,  // RENAME makeSiteJsonDump?
         anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
