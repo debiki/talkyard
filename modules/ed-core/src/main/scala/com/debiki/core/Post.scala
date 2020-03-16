@@ -260,6 +260,21 @@ case class DraftLocator(
       // a whatever-draft. So they won't just get lost or throw exceptions.
     case DraftType.Topic =>
       require(categoryId.isDefined && pageId.isDefined, s"Bad new topic draft: $this [TyE4WABG701]")
+      /* Ooops, the test above failed twice:
+        {"severity":"ERROR","context":{"reportLocation":{"filePath":"SafeActions.scala",
+        "lineNumber":210,"functionName":"ed$server$http$SafeActions$$internalError","className":"ed.server.http.SafeActions"}},
+        "message":
+        "Replying internal error to: GET //forum.examples.com/-/load-draft-and-guidelines?writingWhat=1&pageRole=18&draftType=2&categoryId=3 [DwE500REX]
+        \njava.lang.IllegalArgumentException: requirement failed:
+             Bad new topic draft: DraftLocator(Topic,Some(3),None,None,None,None) [TyE4WABG701]
+          at scala.Predef$.require(Predef.scala:281)
+          at com.debiki.core.DraftLocator.<init>(Post.scala:262)
+          at controllers.EditController.$anonfun$loadDraftAndGuidelines$3(EditController.scala:60)
+          at controllers.EditController.$anonfun$loadDraftAndGuidelines$3$adapted(EditController.scala:59)
+          at scala.Option.map(Option.scala:163)
+          at controllers.EditController.$anonfun$loadDraftAndGuidelines$1(EditController.scala:59)
+          ...
+       */
       require(postId.isEmpty && postNr.isEmpty && toUserId.isEmpty,
         s"Bad new topic draft: $this [TyE4WABG702]")
     case DraftType.DirectMessage =>

@@ -119,9 +119,12 @@ describe("categories", function() {
     assert(!mons.isVisible(WastelandCategorySelector));
   });
 
-  it("Mons logs in, sees the unlisted Wasteland category because he's a moderator", function() {
+  it("Mons logs in", () => {
     mons.topbar.clickLogin();
     mons.loginDialog.loginWithPassword(mons);
+  });
+
+  it("... sees the unlisted Wasteland category because he's a moderator", () => {
     mons.waitForVisible(DefaultCategorySelector);
     mons.waitForMyDataAdded();
     assert(mons.isVisible(WastelandCategorySelector));  // cmp w (27KAK6) below
