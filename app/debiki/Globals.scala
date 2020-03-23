@@ -1133,6 +1133,14 @@ class Config(conf: play.api.Configuration) {
     Map.empty  // for now
   }
 
+  val isTestDisableRateLimits: Boolean = {
+    val disable = getBoolOrDefault("talkyard.isTestDisableRateLimits", default = false)
+    if (disable) {
+      p.Logger.info("Is test with rate limits disabled. [TyM0RATELIM]")
+    }
+    disable
+  }
+
   val dnsCnameTargetHost: Option[String] =
     conf.getString(Config.DnsCnameTargetHostConfValName).noneIfBlank
 

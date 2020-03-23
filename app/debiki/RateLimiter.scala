@@ -57,6 +57,9 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     if (request.user.exists(_.isAdmin))
       return
 
+    if (globals.config.isTestDisableRateLimits)
+      return
+
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
@@ -115,7 +118,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
   }
 
 
-  def throwIfTooManyRequests(rateLimits: RateLimits, now: UnixTime,
+  private def throwIfTooManyRequests(rateLimits: RateLimits, now: UnixTime,
         recentRequestTimestamps: Array[UnixTime], key: String) {
 
     var index = 0
@@ -164,7 +167,8 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
   }
 
 
-  def copyAndAddCurrentTime(timestampsToCopy: Array[UnixTime], now: UnixTime): Array[UnixTime] = {
+  private def copyAndAddCurrentTime(timestampsToCopy: Array[UnixTime], now: UnixTime)
+        : Array[UnixTime] = {
     val timestamps = timestampsToCopy.clone()
     var indexOfOldestTimestamp = 0
     var oldestTimestamp = Int.MaxValue
