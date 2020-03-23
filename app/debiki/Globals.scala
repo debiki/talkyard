@@ -1106,7 +1106,9 @@ class Config(conf: play.api.Configuration) {
   val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = true)
 
   // Remove these later — just for now, new feature switches.
-  val sameSiteNone: Boolean = getBoolOrDefault("talkyard.sameSiteNone", default = true)
+  // Don't set to true just yet — Apple iOS 12 handles None as Strict,
+  // that seems really bad?
+  val sameSiteNone: Boolean = getBoolOrDefault("talkyard.sameSiteNone", default = false)
   val sameSiteLax: Boolean = getBoolOrDefault("talkyard.sameSiteLax", default = false)
 
   private val mayPatchSiteIds: String = "," + getStringOrEmpty("talkyard.mayPatchSiteIds") + ","
