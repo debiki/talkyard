@@ -15,3 +15,13 @@ select
  updated_at
  from page_html3 where site_id = 3 and page_id = '72';
 
+
+-- View notifications:
+select n.*,
+  (select username from users3 u where u.site_id = n.site_id and u.user_id = n.by_user_id) as by_username,
+  (select username from users3 u where u.site_id = n.site_id and u.user_id = n.to_user_id) as to_username,
+  (select approved_source from posts3 p where p.site_id = n.site_id and p.unique_post_id = n.unique_post_id) as post_approved_source
+from notifications3 n
+  where site_id = -18;
+
+

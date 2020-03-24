@@ -18,7 +18,7 @@
 package debiki
 
 import com.debiki.core.Prelude._
-import com.debiki.core.{When, WhenDay}
+import com.debiki.core.{ParsedRef, When, WhenDay}
 import java.{util => ju}
 import play.api.libs.json._
 
@@ -73,6 +73,14 @@ object JsonUtils {
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE5GUMK", s"'$fieldName' is not a string: " + errors.toString())
     }
+
+
+  def readParsedRef(json: JsValue, fieldName: String, allowParticipantRef: Boolean): ParsedRef = {
+    val refStr = readString(json, fieldName)
+    com.debiki.core.parseRef(refStr, allowParticipantRef = allowParticipantRef) getOrIfBad { problem =>
+      throwBadJson("TyEBADREFFLD", s"Field '$fieldName': Bad ref: '$refStr', the problem: $problem")
+    }
+  }
 
 
   def readOptByte(json: JsValue, fieldName: String): Option[Byte] = {

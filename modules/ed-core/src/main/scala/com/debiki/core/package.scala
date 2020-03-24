@@ -95,10 +95,9 @@ package object core {
   // with Talkyard. (E.g. an organization might assign ids 1,2,3,4,... to their
   // own users, and use as ext ids in Talkyard — and a stranger who can see any such
   // ext ids, could estimate the number of people in the organization.)
-  type ExtImpId = String  // RENAME to ExtId
   type ExtId = String
 
-  type Ref = String
+  type Ref = String  ; RENAME // to RefStr(ing) or RawRef? maybe rename ParsedRef to just Ref?
 
   sealed abstract class ParsedRef
   object ParsedRef {
@@ -147,7 +146,7 @@ package object core {
 
   val LowestTempImpId: Int = 2*1000*1000*1000
   val FirstTempImpId: Int = LowestTempImpId + 1
-  def isPageTempId(pageId: PageId) =
+  def isPageTempId(pageId: PageId): Boolean =
     pageId.length == 10 && pageId.startsWith("2000") // good enough for now
 
   type Tag = String
@@ -795,9 +794,16 @@ package object core {
 
 
   /** All columns in table page_users3.
-    * Except for these, which will be removed: (instead, there's the page_notf_prefs3 table)
+    * Except for these, will be removed: (instead, there's the page_notf_prefs3 table) [036KRMP4]
     * notf_level = null,
     * notf_reason = null
+    *
+    * @param inclInSummaryEmailAtMins — was this the last time this page was
+    *   included in a summary email sent to the user? So won't include the same
+    *   page in many summary emails to the same person.
+    *
+    * @param readingProgress — can be None, e.g. if the user got added to a new chat
+    *   page (addedById = Some(..)), but didn't visit it yet.
     */
   case class PageParticipant(
     pageId: PageId,
@@ -805,7 +811,7 @@ package object core {
     addedById: Option[UserId],
     removedById: Option[UserId],
     inclInSummaryEmailAtMins: Int,
-    readingProgress: PageReadingProgress)
+    readingProgress: Option[PageReadingProgress])
 
 
   /**
@@ -1037,6 +1043,9 @@ package object core {
 
   implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
+    def getOrDie(errorCode: String): G =
+      underlying.badMap(problem => die(errorCode, s"Bad.getOrDie: $problem")).get
+
     def getMakeGood(errorFixFn: B => G): G = underlying match {
       case Good(value) => value
       case Bad(bad) => errorFixFn(bad)

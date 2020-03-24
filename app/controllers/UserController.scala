@@ -25,9 +25,11 @@ import debiki.dao.{ReadMoreResult, SiteDao}
 import debiki.EdHttp._
 import ed.server.http._
 import java.{util => ju}
+
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result}
+
 import scala.util.Try
 import scala.collection.immutable
 import debiki.RateLimits.TrackReadingActivity
@@ -495,12 +497,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "email" -> memberInclDetails.primaryEmailAddress)
     }
 
-    if (memberInclDetails.externalId.isDefined) {
+    if (memberInclDetails.ssoId.isDefined) {
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
         "loginType" -> "Single Sign-On",
         "provider" -> "external",
         "email" -> memberInclDetails.primaryEmailAddress,
-        "externalId" -> JsStringOrNull(memberInclDetails.externalId))
+        "externalId" -> JsStringOrNull(memberInclDetails.ssoId))
     }
 
     OkSafeJson(Json.obj(  // UserAccountResponse
@@ -1246,16 +1248,42 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
+    val json = listAllUsersImpl(usernamePrefix, isViaApi = false, request)
+    OkSafeJson(json)
+  }
+
+
+  SECURITY // user listing disabled? [8FKU2A4]
+  def listMembersPubApi(usernamePrefix: String, usersOnly: Boolean)
+        : Action[Unit] = GetAction { request =>
+    // Allowed also if not logged in — so can use from a non-Talkyard client,
+    // without any API secret.
+    throwForbiddenIf(!request.siteSettings.enableApi,
+      "TyE4305RKCGL4", o"""API not enabled. If you're admin, you can enable it
+         in the Admin Area | Settings | Features tab.""")
+    val json = listAllUsersImpl(usernamePrefix, isViaApi = true, request)
+    OkApiJson(
+      // [PUB_API] Wrap in an obj, so, later on, we can add more things (fields)
+      // to the response, without breaking existing API consumers. E.g. some type of
+      // cursor for iterating through all members.
+      Json.obj(
+        "members" -> json))
+  }
+
+
+  private def listAllUsersImpl(usernamePrefix: String, isViaApi: Boolean,
+        request: ApiRequest[_]): JsArray = {
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
+    // ... stop doing that?
     val members = request.dao.loadUsersWithPrefix(usernamePrefix)
-    val json = JsArray(
+    JsArray(
       members map { member =>
+        // [PUB_API] .ts: ListUsersApiResponse, ListGroupsApiResponse, ListMembersApiResponse
         Json.obj(
           "id" -> member.id,
           "username" -> member.username,
           "fullName" -> member.fullName)
       })
-    OkSafeJson(json)
   }
 
 

@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pagesFor = require('../utils/pages-for');
@@ -10,23 +10,29 @@ import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
-declare var browserC: any;
+declare const browser: any;
+declare const browserA: any;
+declare const browserB: any;
+declare const browserC: any;
 
-var everyone;
-var owen;
-var michael;
-var maria;
-var guest;
+let everyone;
+let owen;
+let michael;
+let maria;
+let guest;
 
-var idAddress;
-var forumTitle = "Forum with Private Chat";
-var chatNameOrig = "Chat Name Orig";
-var chatNameEdited = "Chat Name Edited";
-var chatPurpose = "Chat purpose";
-var chatUrl;
+let idAddress;
+let siteId;
+const forumTitle = "Forum with Private Chat";
+const chatNameOrig = "Chat Name Orig";
+const chatNameEdited = "Chat Name Edited";
+const chatPurpose = "Chat purpose";
+let chatUrl;
+
+const owensFirstMessageMariaNotified = 'owensFirstMessageMariaNotified';
+const mariasMessageOwenMichaelNotified = 'mariasMessageOwenMichaelNotified';
+const owensTopSecretToMichael = 'owensTopSecretToMichael';
+const michaelMentionsMaria = 'michaelMentionsMaria';
 
 
 describe("private chat  TyT2ABKR045", function() {
@@ -48,6 +54,7 @@ describe("private chat  TyT2ABKR045", function() {
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
+    siteId = idAddress.id;
   });
 
   it("Owen creates a private chat", function() {
@@ -65,6 +72,9 @@ describe("private chat  TyT2ABKR045", function() {
     owen.pageTitle.save();
     owen.pageTitle.assertMatches(chatNameEdited);
   });
+
+
+  // ----- A private chat is private
 
   it("Maria, when not logged in, cannot access it via direct link", function() {
     maria.go(chatUrl);
@@ -88,11 +98,34 @@ describe("private chat  TyT2ABKR045", function() {
     owen.watchbar.clickViewPeople();
   });
 
-  it("Owen adds Maria to the chat: ... and adds Maria", function() {
+  it("... and adds Maria", function() {
     owen.complex.addPeopleToPageViaContextbar(['maria']);
   });
 
-  it("Now Maria sees the chat in her watchbar, but not in the forum topic list", function() {
+
+  // ----- Priv chat members get notified about all messages  [PUBPRIVNOTF]
+
+  let prevNumEmails: number;
+
+  it("Owen writes something, not directly to Maria though", () => {
+    prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
+    owen.chat.addChatMessage(owensFirstMessageMariaNotified);
+  });
+  it("... Maria gets an email notf, although the reply wasn't directly to her " +
+        "— being a private topic member is enough", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [owensFirstMessageMariaNotified], maria);
+  });
+  it("... but only Maria", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
+  });
+
+
+  // ----- More access permissions tests
+
+  it("Now Maria sees the chat in her watchbar, but not in the forum topic list", () => {
     maria.refresh();
     maria.watchbar.assertTopicVisible(chatNameEdited);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
@@ -110,25 +143,59 @@ describe("private chat  TyT2ABKR045", function() {
     owen.complex.addPeopleToPageViaContextbar(['michael']);
   });
 
+
+  // ----- Another notifications test
+
+  it("Maria writes something", () => {
+    maria.chat.addChatMessage(mariasMessageOwenMichaelNotified);
+  });
+
+  it("... now Owen get notified", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [mariasMessageOwenMichaelNotified], owen);
+  });
+
+  it("... and Michael", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, michael.emailAddress, [mariasMessageOwenMichaelNotified], michael);
+  });
+
+  it("... no one else", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 2, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
+  });
+
+
   it("Now Michael can access it", function() {
     michael.refresh();
     michael.assertPageTitleMatches(chatNameEdited);
   });
 
-  it("All three post a chat message, which all of them see", function() {
+
+  // ----- Live updates work
+
+  it("All three post a chat message ...", function() {
     owen.chat.addChatMessage("I'm Owen.");
     maria.chat.addChatMessage("I'm Maria.");
-    michael.chat.addChatMessage("I'm Michael.");
+    michael.chat.addChatMessage("Me too. No, I mean, I'm Michael.");
     //everyone.chat.waitForNumMessages(3); [EVRYBUG]
-    browserA.chat.waitForNumMessages(3);
-    browserB.chat.waitForNumMessages(3);
-    browserC.chat.waitForNumMessages(3);
+  });
+
+
+  it("... which all of them see", function() {
+    browserA.chat.waitForNumMessages(5);
+    browserB.chat.waitForNumMessages(5);
+    browserC.chat.waitForNumMessages(5);
   });
 
   // 1 minute passes (so new long pollling requests gets sent)   // break out fn? [4KWBFG5]
   // TESTS_MISSING
   // ... everyone says sth, everyone sees
   // + eveeryone sees 3 members in the chat ...
+
+
+  // ----- One can leave the chat
 
   it("Maria leaves the chat", function() {
     maria.watchbar.clickLeaveChat();
@@ -161,6 +228,47 @@ describe("private chat  TyT2ABKR045", function() {
     michael.assertPageTitleMatches(chatNameEdited);
   });
 
+
+  // ----- After having left the chat: No more notifications
+
+  it("Owen writes something, top secret, Maria must not see", () => {
+    prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
+    owen.chat.addChatMessage(owensTopSecretToMichael);
+  });
+
+  it("... Michael gets a notf email, although wasn't directly to him", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, michael.emailAddress, [owensTopSecretToMichael], michael);
+  });
+
+  it("... but only Michael (not Maria)", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
+  });
+
+
+  // ----- Cannot @mention-notify people outside private chat  [PUBPRIVNOTF]
+
+  it("Mentioning someone not in this *private* chat, generates *no* notf " +
+        "(but does, in a public chat)", () => {
+    michael.chat.addChatMessage(michaelMentionsMaria + ` @${maria.username}`);
+  });
+
+  it("... Owen gets a notf email (since he's in the chat)", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [michaelMentionsMaria], michael);
+  });
+
+  it("... but not Maria", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
+  });
+
+
+  // ----- More leave-chat access permission tests
+
   it("Owen remvoes Michael from the chat", function() {
     owen.contextbar.clickUser('michael');
     // Failed once:
@@ -188,7 +296,7 @@ describe("private chat  TyT2ABKR045", function() {
   });
 
   it("A guest logs in (in Maria's browser)", function() {
-    assert(guest === maria, 'EsE4FKG6FY0');
+    assert.refEq(guest, maria);
     guest.go(idAddress.origin);
     guest.complex.signUpAsGuestViaTopbar("Gunnar Guest");
   });

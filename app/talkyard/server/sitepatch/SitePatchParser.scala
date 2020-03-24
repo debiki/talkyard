@@ -71,13 +71,14 @@ case class SitePatchParser(context: EdContext) {
 
 
   private def parseSimpleSitePatch(siteId: SiteId, bodyJson: JsValue): SitePatch = {
-    val (categoriesJson, pagesJson, anyUpsertOptionsJson) =
+    val (categoriesJson, pagesJson, postJson, anyUpsertOptionsJson) =
       try { // (this extra try...catch is for better error messages)
         // Only categories.
         // Right now, all people have asked for, is to upsert categories
         // (via /-/v0/upsert-simple ).
         (readJsArray(bodyJson, "categories", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
+          readJsArray(bodyJson, "posts", optional = true),
           readOptJsObject(bodyJson, "upsertOptions"))
       }
       catch {
@@ -103,6 +104,13 @@ case class SitePatchParser(context: EdContext) {
               index $index in the 'pages' list: $error, json: $json"""))
     }
 
+    val postPatches: Seq[SimplePostPatch] = postJson.value.zipWithIndex map { case (json, index) =>
+      readSimplePostPatchOrBad(json).getOrIfBad(error =>
+        throwBadReq(
+          "TyE5WKVJ025", o"""Invalid SimplePostPatch json at
+              index $index in the 'posts' list: $error, json: $json"""))
+    }
+
     val upsertOptions = anyUpsertOptionsJson map { json =>
       UpsertOptions(
         sendNotifications = readOptBool(json, "sendNotifications"))
@@ -110,14 +118,13 @@ case class SitePatchParser(context: EdContext) {
 
     val simplePatch = SimpleSitePatch(
       upsertOptions,
-      categoryPatches,
-      pagePatches)
+      categoryPatches.toVector,
+      pagePatches.toVector,
+      postPatches.toVector)
 
     val dao = context.globals.siteDao(siteId)
-    val completePatch = simplePatch.loadThingsAndMakeComplete(dao) match {
-      case Good(p) => p
-      case Bad(errorMessage) =>
-        throwBadRequest("TyE05JKRVHP8", s"Error interpreting patch: $errorMessage")
+    val completePatch = simplePatch.loadThingsAndMakeComplete(dao) getOrIfBad { errorMessage =>
+      throwBadRequest("TyE05JKRVHP8", s"s$siteId: Error interpreting patch: $errorMessage")
     }
 
     throwForbiddenIf(completePatch.hasManyThings && upsertOptions.exists(_.sendNotifications is true),
@@ -129,6 +136,7 @@ case class SitePatchParser(context: EdContext) {
 
 
   def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): SitePatch = {
+    import collection.immutable.Seq
 
     // When importing API secrets has been impl **EDIT: NOT DONE** then upd this test:
     // sso-all-ways-to-login.2browsers.test.ts  [5ABKR2038]  so it imports
@@ -201,7 +209,7 @@ case class SitePatchParser(context: EdContext) {
         throwBadReq(
           "TyE305KTW5", o"""Invalid ApiSecret json at index $index
             in the 'apiSecrets' list: $errorMessage, json: $json"""))
-    }
+    } toVector
 
     val guestEmailPrefs: Map[String, EmailNotfPrefs] = anyGuestEmailPrefsJson.map({ // [GSTPRFS]
           json =>
@@ -222,21 +230,21 @@ case class SitePatchParser(context: EdContext) {
       Map(emailsAndPrefs: _*)
     }) getOrElse Map.empty
 
-    val guests: Seq[Guest] = guestsJson.value.zipWithIndex map { case (json, index) =>
+    val guests: Seq[Guest] = guestsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readGuestOrBad(json, guestEmailPrefs, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "EsE0GY72", o"""Invalid guest json at index $index in the 'guests' list: $errorMessage,
                 json: $json"""))
     }
 
-    val groups: Seq[Group] = groupsJson.value.zipWithIndex map { case (json, index) =>
+    val groups: Seq[Group] = groupsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readGroupOrBad(json).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE603KHUR6", o"""Invalid Group json at index $index in the 'groups' list:
               $errorMessage, json: $json"""))
     }
 
-    val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.zipWithIndex map {
+    val groupParticipants: Seq[GroupParticipant] = groupPpsJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readGroupParticipantOrBad(json).getOrIfBad(errorMessage =>
         throwBadReq(
@@ -244,21 +252,21 @@ case class SitePatchParser(context: EdContext) {
               in the 'groupPps' list: $errorMessage, json: $json"""))
     }
 
-    val users: Seq[UserInclDetails] = usersJson.value.zipWithIndex map { case (json, index) =>
+    val users: Seq[UserInclDetails] = usersJson.value.toVector.zipWithIndex map { case (json, index) =>
       readUserOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "TyE06KWT24", o"""Invalid user json at index $index in the 'users' list: $errorMessage,
                 json: $json"""))
     }
 
-    val ppStats: Seq[UserStats] = pptStatsJson.value.zipWithIndex map { case (json, index) =>
+    val ppStats: Seq[UserStats] = pptStatsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readPptStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE76K0RKD2", o"""Invalid UserStats json at index $index in the 'ppStats' list: $errorMessage,
                 json: $json"""))
     }
 
-    val ppVisitStats:  Seq[UserVisitStats] = ppVisitStatsJson.value.zipWithIndex map {
+    val ppVisitStats:  Seq[UserVisitStats] = ppVisitStatsJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readPpVisitStatsOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
@@ -266,49 +274,49 @@ case class SitePatchParser(context: EdContext) {
             in the 'ppVisitStats' list: $errorMessage, json: $json"""))
     }
 
-    val usernameUsages: Seq[UsernameUsage] = usernameUsagesJson.value.zipWithIndex map { case (json, index) =>
+    val usernameUsages: Seq[UsernameUsage] = usernameUsagesJson.value.toVector.zipWithIndex map { case (json, index) =>
       readUsernameUsageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE5RKTUG05", o"""Invalid UsernameUsage json at index $index in
                the 'usernameUsages' list: $errorMessage, json: $json"""))
     }
 
-    val memberEmailAddrs: Seq[UserEmailAddress] = memberEmailAddressesJson.value.zipWithIndex map { case (json, index) =>
+    val memberEmailAddrs: Seq[UserEmailAddress] = memberEmailAddressesJson.value.toVector.zipWithIndex map { case (json, index) =>
       readMemberEmailAddrOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE20UWKD45", o"""Invalid UserEmailAddress json at index $index in
                the 'memberEmailAddresses' list: $errorMessage, json: $json"""))
     }
 
-    val identities: Seq[Identity] = identitiesJson.value.zipWithIndex map { case (json, index) =>
+    val identities: Seq[Identity] = identitiesJson.value.toVector.zipWithIndex map { case (json, index) =>
       readIdentityOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "TyE5KD2PJ", o"""Invalid Identity json at index $index in
               the 'identities' list: $errorMessage, json: $json"""))
     }
 
-    val invites: Seq[Invite] = invitesJson.value.zipWithIndex map { case (json, index) =>
+    val invites: Seq[Invite] = invitesJson.value.toVector.zipWithIndex map { case (json, index) =>
       readInviteOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE783RKTWP3", o"""Invalid invite json at index $index in
              the 'invites' list: $errorMessage, json: $json"""))
     }
 
-    val notifications: Seq[Notification] = notificationsJson.value.zipWithIndex map { case (json, index) =>
+    val notifications: Seq[Notification] = notificationsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readNotfOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE60KRTD3", o"""Invalid Notification json at index $index in
              the 'notifications' list: $errorMessage, json: $json"""))
     }
 
-    val pages: Seq[PageMeta] = pagesJson.value.zipWithIndex map { case (json, index) =>
+    val pages: Seq[PageMeta] = pagesJson.value.toVector.zipWithIndex map { case (json, index) =>
       readPageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
           "TyE402GKB0", o"""Invalid PageMeta json at index $index
             in the 'pages' list: $errorMessage json: $json"""))
     }
 
-    val paths: Seq[PagePathWithId] = pathsJson.value.zipWithIndex map { case (json, index) =>
+    val paths: Seq[PagePathWithId] = pathsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readPagePathOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "Ese55GP1", o"""Invalid page path json at index $index in the 'pagePaths' list: $error,
@@ -330,7 +338,7 @@ case class SitePatchParser(context: EdContext) {
     }: _*)
 
     val pagePopularityScores: Seq[PagePopularityScores] =
-          pagePopularityScoresJson.value.zipWithIndex map {
+          pagePopularityScoresJson.value.toVector.zipWithIndex map {
       case (json, index) =>
         readPagePopularityScoresOrBad(json).getOrIfBad(errorMessage =>
           throwBadReq(
@@ -338,7 +346,7 @@ case class SitePatchParser(context: EdContext) {
                the 'pagePopularityScores' list: $errorMessage, json: $json"""))
     }
 
-    val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.zipWithIndex map {
+    val pageNotfPrefs: Seq[PageNotfPref] = pageNotfPrefsJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readPageNotfPrefOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
         throwBadReq(
@@ -347,7 +355,7 @@ case class SitePatchParser(context: EdContext) {
     }
 
 
-    val pageParticipants: Seq[PageParticipant] = pageParticipantsJson.value.zipWithIndex map {
+    val pageParticipants: Seq[PageParticipant] = pageParticipantsJson.value.toVector.zipWithIndex map {
       case (json, index) =>
         readPageParticipantOrBad(json).getOrIfBad(errorMessage =>
           throwBadReq(
@@ -369,7 +377,7 @@ case class SitePatchParser(context: EdContext) {
         }
     }
 
-    val drafts: Seq[Draft] = draftsJson.value.zipWithIndex map {
+    val drafts: Seq[Draft] = draftsJson.value.toVector.zipWithIndex map {
       case (json, index) =>
         readDraftOrBad(json).getOrIfBad(errorMessage =>
           throwBadReq(
@@ -378,21 +386,21 @@ case class SitePatchParser(context: EdContext) {
     }
 
 
-    val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
+    val posts: Seq[Post] = postsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readPostOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "TyE205KUD24", o"""Invalid Post json at index $index
             in the 'posts' list: $error, json: $json"""))
     }
 
-    val postActions: Seq[PostAction] = postActionsJson.value.zipWithIndex map { case (json, index) =>
+    val postActions: Seq[PostAction] = postActionsJson.value.toVector.zipWithIndex map { case (json, index) =>
       readPostActionOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
           "TyE205KRU", o"""Invalid PostActio json at index $index in
               the 'postActions' list: $error, json: $json"""))
     }
 
-    val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.zipWithIndex map {
+    val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
@@ -400,7 +408,7 @@ case class SitePatchParser(context: EdContext) {
               $error, json: $json"""))
     }
 
-    val reviewTasks: Seq[ReviewTask] = reviewTasksJson.value.zipWithIndex map {
+    val reviewTasks: Seq[ReviewTask] = reviewTasksJson.value.toVector.zipWithIndex map {
           case (json, index) =>
       readReivewTaskOrBad(json, isE2eTest).getOrIfBad(error =>
         throwBadReq(
@@ -498,7 +506,7 @@ case class SitePatchParser(context: EdContext) {
       val email = readOptString(jsObj, "emailAddress").trimNoneIfBlank
       Good(Guest(
         id = id,
-        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
+        extId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         guestName = readOptString(jsObj, "fullName").getOrElse(""),  // RENAME? to  guestName?
         guestBrowserId = readOptString(jsObj, "guestBrowserId"),
@@ -578,7 +586,7 @@ case class SitePatchParser(context: EdContext) {
         theUsername = readString(jsObj, "username"),
         name = readOptString(jsObj, "fullName"),
         // RENAME to extId here and everywhere else ... Done, can soon remove 'orElse ...'.
-        extImpId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
+        extId = readOptString(jsObj, "extId") orElse readOptString(jsObj, "extImpId"),
         createdAt = readWhen(jsObj, "createdAtMs"),
         tinyAvatar = None,   // [readlater] Option[UploadRef]  "avatarTinyHashPath"
         smallAvatar = None,  // [readlater] Option[UploadRef]
@@ -643,7 +651,7 @@ case class SitePatchParser(context: EdContext) {
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(UserInclDetails(
         id = id,
-        externalId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId" [395KSH20]
+        ssoId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId" [395KSH20]
         username = username,
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readWhen(jsObj, "createdAtMs"),
@@ -883,7 +891,8 @@ case class SitePatchParser(context: EdContext) {
     }
 
     try {
-      val readingProgress = PageReadingProgress(
+      val anyReadingProgress =
+          readOptJsObject(jsObj, "readingProgress").map(jsObj => PageReadingProgress(
         firstVisitedAt = readWhen(jsObj, "firstVisitedAt"),
         lastVisitedAt = readWhen(jsObj, "lastVisitedAt"),
         lastViewedPostNr = readInt(jsObj, "lastViewedPostNr"),
@@ -892,15 +901,15 @@ case class SitePatchParser(context: EdContext) {
           (jsObj \ "lastPostNrsReadRecentFirst").as[Vector[PostNr]],
         lowPostNrsRead =
           (jsObj \ "lowPostNrsRead").as[Set[PostNr]],
-        secondsReading = readInt(jsObj, "secondsReading"),
-      )
+        secondsReading = readInt(jsObj, "secondsReading")))
+
       Good(PageParticipant(
         pageId = readString(jsObj, "pageId"),
         userId = ppId,
         addedById = readOptInt(jsObj, "addedById"),
         removedById = readOptInt(jsObj, "removedById"),
         inclInSummaryEmailAtMins = readInt(jsObj, "inclInSummaryEmailAtMins"),
-        readingProgress = readingProgress))
+        readingProgress = anyReadingProgress))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -1063,7 +1072,7 @@ case class SitePatchParser(context: EdContext) {
         return Bad(s"Not a SimplePagePatch json object, but a: " + classNameOf(bad))
     }
 
-    // Try to not reject the request.
+    // Try to not reject the request. [0REJREQ]
     // E.g. truncate the title to MaxTitleLength instead of replying Error.
     // Because the software (and people) that calls this API, generally expects it
     // to do "as best it can", and wouldn't understand any server response error codes.
@@ -1071,16 +1080,27 @@ case class SitePatchParser(context: EdContext) {
     // ... Unless an upsertOptions is { strict: true }  (unimplemented).
 
     try {
+      val extId = readString(jsObj, "extId")
       val pageType = readOptInt(jsObj, "pageType") map { value =>
         PageType.fromInt(value).getOrThrowBadJson("pageType")
       }
+
+      val pageMemberRefs = readJsArray(jsValue, "pageMemberRefs", optional = true).value.map {
+        case JsString(ref) =>
+          parseRef(ref, allowParticipantRef = true) getOrIfBad { problem =>
+            return Bad(s"Bad page participant ref: '$ref', problem: $problem [TyE306WMTR6")
+          }
+        case v => return Bad(s"Page extId '$extId' has bad page member ref: $v  [TyE406KSTJ3]")
+      }.toVector
+
       Good(SimplePagePatch(
-        extId = readString(jsObj, "extId"),
+        extId = extId,
         pageType = pageType,
         categoryRef = Some(readString(jsObj, "categoryRef")),
         // Better require an author name — hard to *start* requiring it in the future,
         // but easy to *stop* requiring it.
         authorRef = Some(readString(jsObj, "authorRef")),
+        pageMemberRefs = pageMemberRefs,
         title = readString(jsObj, "title").take(MaxTitleLength),
         body = readString(jsObj, "body")))
     }
@@ -1350,6 +1370,46 @@ case class SitePatchParser(context: EdContext) {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for post id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readSimplePostPatchOrBad(jsValue: JsValue): SimplePostPatch Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val extId = try readString(jsObj, "extId") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid post id: " + ex.getMessage)
+    }
+
+    // Try to not reject the request. [0REJREQ]
+
+    try {
+      val anyPostTypeInt = readOptInt(jsObj, "postType", "type")
+      throwForbiddenIf(
+          anyPostTypeInt.isSomethingButNot(PostType.Normal.toInt) &&
+          anyPostTypeInt.isSomethingButNot(PostType.ChatMessage.toInt) &&
+          anyPostTypeInt.isSomethingButNot(PostType.BottomComment.toInt),
+        "TyE70536SRKT", "Currently only PostType.Normal, ChatMessage and ProgressPost allowed")
+
+      val postTypeDefaultNormal: PostType =
+        anyPostTypeInt.flatMap(PostType.fromInt) getOrElse PostType.Normal
+
+      Good(SimplePostPatch(
+        extId = extId,
+        postType = postTypeDefaultNormal,
+        pageRef = readParsedRef(jsObj, "pageRef", allowParticipantRef = false),
+        parentNr = readOptInt(jsObj, "parentNr"),
+        authorRef = readParsedRef(jsObj, "authorRef", allowParticipantRef = true),
+        body = readString(jsObj, "body")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for SimplePostPatch with extId '$extId': ${ex.getMessage}")
     }
   }
 

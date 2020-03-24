@@ -19,10 +19,12 @@ package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.dao.SiteDao
 import debiki.{JsonMaker, Settings2}
 import ed.server._
 import play.api.libs.json._
 import scala.collection.mutable
+import scala.collection.immutable
 import talkyard.server.JsX._
 
 
@@ -30,6 +32,8 @@ import talkyard.server.JsX._
 /** Creates json and .tar individual site backup files.
   *
   * Search for [readlater] for stuff ignored right now.
+  *
+  * Split into two: SitePatchMaker and ActionPatchResultJsonMaker? [ACTNPATCH]
   */
 case class SitePatchMaker(context: EdContext) {
 
@@ -48,8 +52,8 @@ case class SitePatchMaker(context: EdContext) {
       // with all inner Options being Some?  So that:
       //   EditedSettings = SettingsToSave[Option[Some[...]]]
 
-      val guests: Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
-      val guestEmailNotfPrefs: Map[String, EmailNotfPrefs] = tx.loadAllGuestEmailNotfPrefsByEmailAddr()
+      val guests: immutable.Seq[Guest] = tx.loadAllGuests().filter(!_.isBuiltIn).sortBy(_.id)
+      val guestEmailNotfPrefs: immutable.Map[String, EmailNotfPrefs] = tx.loadAllGuestEmailNotfPrefsByEmailAddr()
 
       val users = tx.loadAllUsersInclDetails().filter(!_.isBuiltIn).sortBy(_.id)
 
@@ -59,6 +63,8 @@ case class SitePatchMaker(context: EdContext) {
 
       val pagePaths = tx.loadAllPagePaths().sortBy(_.pageId)
 
+      val pagePps = tx.loadAllPageParticipantsAllPages().sortBy(_.pageId)
+
       val categories = tx.loadCategoryMap().values.toVector.sortBy(_.id)
 
       val permsOnPages = tx.loadPermsOnPages()
@@ -67,7 +73,9 @@ case class SitePatchMaker(context: EdContext) {
 
       val posts = tx.loadAllPosts().sortBy(_.id)
 
-      val postActions: Seq[PostAction] = tx.loadAllPostActions()
+      val postActions: immutable.Seq[PostAction] = tx.loadAllPostActions()
+
+      val notfs = tx.loadAllNotifications()
 
       SitePatch.empty.copy(
         site = Some(site),
@@ -77,9 +85,11 @@ case class SitePatchMaker(context: EdContext) {
         pptStats = pptStats,
         guests = guests,
         guestEmailNotfPrefs = guestEmailNotfPrefs,
+        notifications = notfs,
         categories = categories,
         pages = pageMetas,
         pagePaths = pagePaths,
+        pageParticipants = pagePps,
         pageIdsByAltIds = tx.loadAllAltPageIds(),
         permsOnPages = permsOnPages,
         drafts = drafts,
@@ -99,14 +109,20 @@ object SitePatchMaker {
     *
     * (Some time later, for really large sites, might be better to load things directly
     * from a db transaction, rather than creating an intermediate representation.)
+    *
+    * Split into two fns? [ACTNPATCH]
     */
   def createPostgresqlJsonBackup(anyDump: Option[SitePatch] = None,  // RENAME makeSiteJsonDump?
-        anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean): JsObject = {
+        anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean,
+        anyDao: Option[SiteDao] = None): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
+    require(simpleFormat == anyDao.isDefined, "TyEG503WKL2")
+    require(simpleFormat == anyDump.isDefined, "TyEG503WKL3")
 
     val fields = mutable.HashMap.empty[String, JsValue]
     def tx = anyTx getOrDie "TyE06RKDJFD"
+    def dao = anyDao getOrDie "TyE52KTJC57"
 
       val anySite: Option[SiteInclDetails] =
         anyDump.map(_.site) getOrElse Some(tx.loadSiteInclDetails().getOrDie("TyE2S6WKDL"))
@@ -246,7 +262,19 @@ object SitePatchMaker {
       fields("drafts") = JsArray(drafts map JsDraft)
 
       val posts: Seq[Post] = anyDump.map(_.posts) getOrElse tx.loadAllPosts()
-      fields("posts") = JsArray(posts map JsPostInclDetails)
+      fields("posts") = JsArray(
+        posts.map((post: Post) => {
+          var json = JsPostInclDetails(post)
+          if (simpleFormat) {
+            val canonicalPath: PagePathWithId =
+              pagePaths.find(p => p.pageId == post.pageId && p.canonical)
+              .orElse(dao.getPagePath2(post.pageId)) getOrDie "TyE703KDNF36"
+            json +=
+              "urlPaths" -> Json.obj(
+                "canonical" -> JsString(canonicalPath.value + "post-" + post.nr))
+          }
+          json
+        }))
 
       val postsActions: Seq[PostAction] =
         anyDump.map(_.postActions) getOrElse tx.loadAllPostActions()

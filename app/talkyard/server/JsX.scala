@@ -116,7 +116,7 @@ object JsX {
     }
     json += "createdAt" -> JsWhenMs(guest.createdAt)
     json += "guestBrowserId" -> JsStringOrNull(guest.guestBrowserId)
-    json += "extId" -> JsStringOrNull(guest.extImpId)
+    json += "extId" -> JsStringOrNull(guest.extId)
     json
   }
 
@@ -169,7 +169,7 @@ object JsX {
     dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
     var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
-      "externalId" -> JsStringOrNull(user.externalId),
+      "externalId" -> JsStringOrNull(user.ssoId),
       "createdAtEpoch" -> JsNumber(user.createdAt.millis),  // REMOVE
       "createdAtMs" -> JsNumber(user.createdAt.millis),  // RENAME
       "username" -> user.username,
@@ -351,7 +351,7 @@ object JsX {
 
   def JsGroupInclDetails(group: Group, inclEmail: Boolean): JsObject = {
     var json = JsGroup(group)
-    json += "extId" -> JsStringOrNull(group.extImpId)
+    json += "extId" -> JsStringOrNull(group.extId)
     json += "createdAt" -> JsWhenMs(group.createdAt)
     // "tinyAvatar"
     // "smallAvatar"
@@ -707,16 +707,18 @@ object JsX {
 
 
   def JsPageParticipant(pagePp: PageParticipant): JsObject = {
-    val readingProgress = pagePp.readingProgress
-
     Json.obj(
       "pageId" -> pagePp.pageId,
       "userId" -> pagePp.userId,
       "addedById" -> JsNumberOrNull(pagePp.addedById),
       "removedById" -> JsNumberOrNull(pagePp.removedById),
       "inclInSummaryEmailAtMins" -> pagePp.inclInSummaryEmailAtMins,
+      "readingProgress" -> pagePp.readingProgress.map(JsReadingProgress))
+  }
 
-      // Reading progress:
+
+  def JsReadingProgress(readingProgress: PageReadingProgress): JsObject = {
+    Json.obj(
       "firstVisitedAt" -> JsWhenMs(readingProgress.firstVisitedAt),
       "lastVisitedAt" -> JsWhenMs(readingProgress.lastVisitedAt),
       "lastViewedPostNr" -> JsNumber(readingProgress.lastViewedPostNr),

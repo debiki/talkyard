@@ -1886,8 +1886,11 @@ interface RouteHistory {
 
 
 
-// ----- Public API
+// ----- Public API  [PUB_API]
 
+// This is used both by Talkyard's client side code, and by Talkyard admins who
+// add LaTeX or code highlighting script tags.  (So cannot be placed in
+// <root>/tests/e2e/pub-api.ts .)
 
 interface TalkyardApi {  // [5ABJH72]
   postElemPostProcessor?: (elem: any) => void;

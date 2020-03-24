@@ -97,7 +97,7 @@ object PageMeta {
         authorId: UserId,
         creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
-        extId: Option[ExtImpId] = None,
+        extId: Option[ExtId] = None,
         layout: Option[PageLayout] = None,
         plannedAt: Option[ju.Date] = None,
         deletedAt: Option[When] = None,
@@ -181,7 +181,7 @@ object PageMeta {
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
-  extImpId: Option[ExtImpId] = None,
+  extImpId: Option[ExtId] = None,
   pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,
@@ -425,10 +425,11 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
 
 case class SimplePagePatch(
-  extId: ExtImpId,
+  extId: ExtId,
   pageType: Option[PageType],
   categoryRef: Option[Ref],
   authorRef: Option[Ref],
+  pageMemberRefs: Vector[ParsedRef],
   title: String,
   body: String
   // later: bodyMarkupLang: Option[MarkupLang]

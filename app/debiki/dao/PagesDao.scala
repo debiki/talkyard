@@ -55,7 +55,7 @@ trait PagesDao {
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
-        extId: Option[ExtImpId] = None): PagePathWithId = {
+        extId: Option[ExtId] = None): PagePathWithId = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.

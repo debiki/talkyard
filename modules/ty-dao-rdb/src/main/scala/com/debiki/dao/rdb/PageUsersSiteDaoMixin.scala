@@ -17,10 +17,16 @@
 
 package com.debiki.dao.rdb
 
+import java.sql.ResultSet
+
 import com.debiki.core._
+import com.debiki.core.Prelude._
+
 import scala.collection.immutable
 import Rdb._
 import RdbUtil.makeInListFor
+
+import scala.collection.mutable.ArrayBuffer
 
 
 /** Loads and saves members of direct message conversations.
@@ -29,15 +35,53 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
   self: RdbSiteTransaction =>
 
 
-  /** Loads all fields.
-    */
-  def loadAllPageParticipantsAllPages(): Seq[PageParticipant] = {
-    Nil  // for now  ???
-  }
-
-
   def insertPageParticipant(pageParticipant: PageParticipant) {
-    ???
+    val statement = """
+      insert into page_users3 (
+        site_id,
+        page_id,
+        user_id,
+        joined_by_id,
+        kicked_by_id,
+        notf_level,   -- will remove, use page_notf_prefs3 instead [036KRMP4]
+        notf_reason,  --
+        incl_in_summary_email_at_mins,
+        num_seconds_reading,
+        num_low_posts_read,
+        first_visited_at_mins,
+        last_visited_at_mins,
+        last_viewed_post_nr,
+        last_read_at_mins,
+        last_read_post_nr,
+        recently_read_nrs,
+        low_post_nrs_read)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      """
+
+    val pp = pageParticipant
+    val anyProgr = pp.readingProgress
+
+    val values = List[AnyRef](
+      siteId.asAnyRef,
+      pp.pageId,
+      pp.userId.asAnyRef,
+      pp.addedById.orNullInt,
+      pp.removedById.orNullInt,
+      NullInt,  // will remove, use page_notf_prefs3 instead [036KRMP4]
+      NullInt,  //
+      pp.inclInSummaryEmailAtMins.asAnyRef,
+      // Similar code: insert list items. [04RKJUMS2]
+      anyProgr.map(_.secondsReading).getOrElse(0).asAnyRef,
+      anyProgr.map(_.lowPostNrsRead.size).getOrElse(0).asAnyRef,
+      anyProgr.map(_.firstVisitedAt.unixMinutes).orNullInt,
+      anyProgr.map(_.lastVisitedAt.unixMinutes).orNullInt,
+      anyProgr.map(_.lastViewedPostNr).orNullInt,
+      anyProgr.flatMap(_.lastReadAt.map(_.unixMinutes)).orNullInt,
+      anyProgr.flatMap(_.lastPostNrsReadRecentFirst.headOption).orNullInt,
+      NullBytea, // for now
+      anyProgr.map(_.lowPostNrsReadAsBitsetBytes).getOrElse(Array.empty).orNullByteaIfEmpty)
+
+    runUpdateSingleRow(statement, values)
   }
 
 
@@ -122,9 +166,35 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
 
 
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
-        : (Option[PageReadingProgress], Boolean) = {
-    val query = """
+      : (Option[PageReadingProgress], Boolean) = {
+    loadAllPageParticipantsImpl(Some(userId), anyPageId = Some(pageId)).headOption match {
+      case None =>
+        (None, false)
+      case Some(pagePp) =>
+        (pagePp.readingProgress, pagePp.inclInSummaryEmailAtMins > 0)
+    }
+  }
+
+
+  def loadAllPageParticipantsAllPages(): Vector[PageParticipant] = {
+    loadAllPageParticipantsImpl(None, None)
+  }
+
+
+  def loadAllPageParticipantsImpl(anyUserId: Option[UserId], anyPageId: Option[PageId])
+        : Vector[PageParticipant] = {
+
+    dieIf(anyUserId.isDefined != anyPageId.isDefined, "TyE502KNS2")
+    val oneUserAndPage = anyUserId.isDefined
+    val values = ArrayBuffer(siteId.asAnyRef)
+
+    var query = """
       select
+        page_id,
+        user_id,
+        joined_by_id,
+        kicked_by_id,
+        incl_in_summary_email_at_mins,
         num_seconds_reading,
         first_visited_at_mins,
         last_visited_at_mins,
@@ -132,21 +202,39 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
         last_read_at_mins,
         last_read_post_nr,
         recently_read_nrs,
-        low_post_nrs_read,
-        incl_in_summary_email_at_mins
+        low_post_nrs_read
       from page_users3
-      where site_id = ?
+      where site_id = ?"""
+    if (oneUserAndPage) {
+      query += """
         and page_id = ?
         and user_id = ?
-      """
-    val result = runQueryFindOneOrNone(query, List(siteId.asAnyRef, pageId, userId.asAnyRef), rs => {
-      val hasSummaryEmailed = rs.getInt("incl_in_summary_email_at_mins") > 0
+        """
+      values.append(anyPageId.get)
+      values.append(anyUserId.get.asAnyRef)
+    }
+
+    val pageParticipants = runQueryFindMany(query, values.toList, rs => {
+      PageParticipant(
+        pageId = rs.getString("page_id"),
+        userId = rs.getInt("user_id"),
+        addedById = getOptInt(rs, "joined_by_id"),
+        removedById = getOptInt(rs, "kicked_by_id"),
+        inclInSummaryEmailAtMins = rs.getInt("incl_in_summary_email_at_mins"),
+        readingProgress = getPageReadingProgress(rs))
+    })
+
+    pageParticipants
+  }
+
+
+  private def getPageReadingProgress(rs: ResultSet): Option[PageReadingProgress] = {
       val firstVisitedAt = getWhenMinutes(rs, "first_visited_at_mins")
       if (rs.wasNull) {
         // There's a row for this user, although hen hasn't visited the page — apparently
         // someone else has made hen a page member, e.g. added hen to a chat channel.
         // Or there's a row because hen got an activity-summary-email that mentions this page.
-        return (None, hasSummaryEmailed)
+        return None
       }
 
       // This is the very last post nr read.
@@ -165,16 +253,14 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
         Option(rs.getBytes("low_post_nrs_read")) getOrElse Array.empty
       val lowPostNrsRead = PageReadingProgress.parseLowPostNrsReadBitsetBytes(lowPostNrsReadBytes)
 
-      (Some(PageReadingProgress(
+      Some(PageReadingProgress(
         firstVisitedAt = firstVisitedAt,
         lastVisitedAt = getWhenMinutes(rs, "last_visited_at_mins"),
         lastViewedPostNr = rs.getInt("last_viewed_post_nr"),
         lastReadAt = getOptWhenMinutes(rs, "last_read_at_mins"),
         lastPostNrsReadRecentFirst = lastPostNrsRead,
         lowPostNrsRead = lowPostNrsRead,
-        secondsReading = rs.getInt("num_seconds_reading"))), hasSummaryEmailed)
-    })
-    result getOrElse (None, false)
+        secondsReading = rs.getInt("num_seconds_reading")))
   }
 
 
@@ -211,6 +297,7 @@ trait PageUsersSiteDaoMixin extends SiteTransaction {
       siteId.asAnyRef,
       pageId,
       userId.asAnyRef,
+      // Similar code: insert list items. [04RKJUMS2]
       progress.secondsReading.asAnyRef,
       progress.lowPostNrsRead.size.asAnyRef,
       progress.firstVisitedAt.unixMinutes.asAnyRef,

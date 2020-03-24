@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -74,11 +75,16 @@ trait PagePathMetaDao {
   }
 
 
-  def getPagePath(pageId: PageId): Option[PagePath] = {
+  def getPagePath2(pageId: PageId): Option[PagePathWithId] = {
     memCache.lookup(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
-        readOnlyTransaction(_.loadPagePath(pageId) .map(_.toOld(siteId))))
+        readOnlyTransaction(_.loadPagePath(pageId)))
+  }
+
+
+  def getPagePath(pageId: PageId): Option[PagePath] = {
+    getPagePath2(pageId) .map(_.toOld(siteId))
   }
 
 
@@ -96,6 +102,23 @@ trait PagePathMetaDao {
     memCache.lookup[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = readOnlyTransaction(_.loadPageMeta(pageId)))
+  }
+
+
+  def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta] = {
+    parsedRef match {
+      case ParsedRef.TalkyardId(id) => getPageMeta(id)
+      case ParsedRef.ExternalId(extId) => getPageMetaByExtId(extId)
+      case bad => die("TyE404KSR5", s"Bad ref type: ${classNameOf(bad)}")
+    }
+  }
+
+
+  def getPageMetaByExtId(extId: ExtId): Option[PageMeta] = {
+    val pageMetaInDb: Option[PageMeta] =
+      readOnlyTransaction(_.loadPageMetasByExtIdAsMap(Some(extId))).values.headOption
+    dieIfAny(pageMetaInDb, (p: PageMeta) => p.extImpId isNot extId, "TyE395KST82P")
+    pageMetaInDb
   }
 
 

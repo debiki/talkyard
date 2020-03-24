@@ -33,7 +33,8 @@ import scala.util.matching.Regex
   */
 case class NotificationGenerator(
   // This is a bit weird: getting both a tx and a dao. Maybe instead NotificationGenerator
-  // should be part of the dao it too?
+  // should be part of the dao it too? — But needs a tx, so can run in the same tx
+  // as SitePatcher and gen notfs for changes it did (in the same tx).
   tx: SiteTransaction,
   dao: debiki.dao.SiteDao,
   nashorn: Nashorn,
@@ -41,17 +42,17 @@ case class NotificationGenerator(
 
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
-  private var sentToUserIds = new mutable.HashSet[UserId]()
+  private var sentToUserIds = new mutable.HashSet[UserId]()  // by page id? post id?
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
 
-  private def generatedNotifications =
+  def generatedNotifications =
     Notifications(
-      toCreate = notfsToCreate.toSeq,
-      toDelete = notfsToDelete.toSeq)
+      toCreate = notfsToCreate.toVector,
+      toDelete = notfsToDelete.toVector)
 
 
   def generateForNewPost(page: Page, newPost: Post, anyNewTextAndHtml: Option[TextAndHtml],
@@ -122,7 +123,7 @@ case class NotificationGenerator(
     def notfCreatedAlreadyTo(userId: UserId) =
       generatedNotifications.toCreate.map(_.toUserId).contains(userId)
 
-    lazy val pageMemberIds: Set[UserId] = tx.loadMessageMembers(newPost.pageId)
+    val pageMemberIds: Set[UserId] = tx.loadMessageMembers(newPost.pageId)
 
     // Mentions
     BUG // harmless. If a mention is removed, and added back, a new notf is sent. TyT2ABKS057
@@ -156,12 +157,19 @@ case class NotificationGenerator(
         if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
       } {
-        makeNewPostNotfs(
+        makeNewPostNotfs(   // ! not if mentioned in private chat [PRIVPUBMENTN]
             NotificationType.Mention, newPost, page.categoryId, userOrGroup)
       }
     }
 
     // People watching this topic or category
+    addWatchingSomethingNotfs(page, newPost, pageMemberIds)
+
+    generatedNotifications
+  }
+
+
+  private def addWatchingSomethingNotfs(page: Page, newPost: Post, pageMemberIds: Set[UserId]) {
 
     val minNotfLevel =
       if (newPost.isOrigPost) {
@@ -202,26 +210,50 @@ case class NotificationGenerator(
 
     val memberIdsHandled = mutable.HashSet[UserId]()
 
-    // Page.
-    val notfPrefsOnPage = tx.loadPageNotfPrefsOnPage(page.id)
-    makeNewPostSubscrNotfFor(notfPrefsOnPage, newPost, minNotfLevel, memberIdsHandled)
+    // ----- Page
 
-    // Parent category.
+    val notfPrefsOnPage = tx.loadPageNotfPrefsOnPage(page.id)
+
+    // Add default NotfLevel.WatchingAll for private topic members [PUBPRIVNOTF]
+    // — unless they've configured another notf pref.
+    // (This wouldn't be needed if [page_pps_t] instead.)
+    val privTopicPrefsOnPage =
+      if (!page.meta.pageType.isPrivateGroupTalk) Nil
+      else pageMemberIds flatMap { id: UserId =>
+        if (notfPrefsOnPage.exists(_.peopleId == id)) None  // [On2]
+        else Some(PageNotfPref(
+          peopleId = id,
+          NotfLevel.WatchingAll,
+          pageId = Some(page.id)))
+      }
+
+    val allPrefsOnPage = notfPrefsOnPage ++ privTopicPrefsOnPage
+
+    makeNewPostSubscrNotfFor(allPrefsOnPage, newPost, minNotfLevel, memberIdsHandled)
+
+    // If private page, skip cat & whole site notf prefs
+    // — only page members and people (like moderators) who explicitly follow
+    // this page, get notified. — So, forum admins won't get notified about
+    // new private group chats for example (unless they get added).
+    if (page.meta.pageType.isPrivateGroupTalk)
+      return
+
+    // ----- Parent category
+
     val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
     makeNewPostSubscrNotfFor(notfPrefsOnCategory, newPost, minNotfLevel, memberIdsHandled)
 
-    // Grandparent category? [subcats]
+    // ----- Grandparent category? [subcats]
 
-    // Tags.
+    // ----- Tags
+
     // notPrefsOnTags = ... (later)
     //makeNewPostSubscrNotfFor(notPrefsOnTags, NotificationType.PostTagged, newPost ...)
 
-    // Whole site.
+    // ----- Whole site
+
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
     makeNewPostSubscrNotfFor(notfPrefsOnSite, newPost, minNotfLevel, memberIdsHandled)
-
-
-    generatedNotifications
   }
 
 
@@ -241,8 +273,9 @@ case class NotificationGenerator(
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
     anyAuthor = Some(tx.loadTheParticipant(pageBody.createdById))
-    tx.loadParticipants(toUserIds) foreach { user =>
+    tx.loadParticipants(toUserIds.filter(_ != sender.id)) foreach { user =>
       makeNewPostNotfs(
+          // But what if is 2 ppl chat — then would want to incl 1st message instead.
           NotificationType.Message, pageBody, categoryId = None, user)
     }
     generatedNotifications

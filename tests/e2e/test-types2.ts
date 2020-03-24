@@ -325,6 +325,7 @@ interface PageToMake {
 
 interface CategoryJustAdded {
   id: number;
+  extId?: ExtId;
   parentId: number;
   name: string;
   slug: string;
@@ -578,7 +579,8 @@ interface LargeTestForum extends EmptyTestForum {
 // users via API — might possibly evolve a bit differently from the SSO api.
 interface ExternalUser {   // sync with Scala [7KBA24Y]
   ssoId: string;
-  //externalUserId: string; //  deprecated, 2019-08-18
+  extId?: string;
+  //externalUserId: string; //  deprecated, 2019-08-18, earlier name for ssoId (not extId)
   primaryEmailAddress: string;
   isEmailAddressVerified: boolean;
   username?: string;
@@ -587,6 +589,13 @@ interface ExternalUser {   // sync with Scala [7KBA24Y]
   aboutUser?: string;
   isAdmin?: boolean;
   isModerator?: boolean;
+}
+
+
+interface EmailMatchResult {
+  matchedEmail: EmailSubjectBody;
+  matchingString?: string;
+  matchingStrings: string[];
 }
 
 

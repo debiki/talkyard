@@ -2135,7 +2135,10 @@ trait PostsDao {
     readOnlyTransaction(_.loadPostsReadStats(pageId))
 
 
-  def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =
+  def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post] =
+    loadPost(pageId, postNr)
+
+  def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =  // RENAME to loadPostByPageIdNr just above
     readOnlyTransaction(_.loadPost(pageId, postNr))
 
 

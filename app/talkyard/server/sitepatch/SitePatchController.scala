@@ -117,7 +117,7 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
           request.siteId, dump, request.theBrowserIdData)
     }
 
-    Ok(upsertedThings.toSimpleJson.toString()) as JSON
+    Ok(upsertedThings.toSimpleJson(request.dao).toString()) as JSON
   }
 
 

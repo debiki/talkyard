@@ -17,3 +17,9 @@ could have:  category_perms3  and tag_perms3
 but that's overkill.
 Only  tag_label_perms.may_use  makes sense (says who may add/remove a tag with that label)
 
+
+[page_pps_t] Maybe a table with member notf prefs and joined = true/false?
+And change page_users3 to page_reading_progrs_t only?
+The notf prefs table could be split into one for pages — namely page_pps_t
+— and one for categories:  cat_pps_t?
+But the current approach with page_users3 and page_notf_prefs3 is fairly ok too.

@@ -89,7 +89,7 @@ case class CategoryToSave(
   includeInSummaries: IncludeInSummaries,
   description: String,
   createDeletedAboutTopic: Boolean = false,
-  extId: Option[ExtImpId] = None,
+  extId: Option[ExtId] = None,
   anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
   // -------Check cat slug, name, ext id: [05970KF5]----------------

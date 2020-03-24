@@ -21,6 +21,7 @@ let owensBrowser;
 let corax: Member;
 let maja: Member;
 let majasBrowser;
+let maria: Member;
 let strangersBrowser;
 
 let siteIdAddress: IdAddress;
@@ -51,7 +52,7 @@ const pageOneToUpsert = {
 };
 
 
-/* Later: Make  @mentions  work also via the upsert API?
+/* Later: Make  @mentions  work also via the upsert API?  Refactor into ActionPatch [ACTNPATCH]
 
 const pageTwoToUpsert = {
   extId: 'UpsPageTwoExtId',
@@ -90,6 +91,9 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
     assert.refEq(builder.getSite(), forum.siteData);
     const site: SiteData2 = forum.siteData;
     site.settings.enableApi = true;
+    // Disable these, or notf email counts will be off (since Owen would get emails).
+    site.settings.numFirstPostsToReview = 0;
+    site.settings.numFirstPostsToApprove = 0;
     site.apiSecrets = [apiSecret];
 
     owen = forum.members.owen;
@@ -114,6 +118,7 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
 
     maja = forum.members.maja;
     majasBrowser = richBrowserB;
+    maria = forum.members.maria;
     strangersBrowser = richBrowserB;
   });
 
@@ -258,6 +263,29 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
 
   it("... and body", () => {
     majasBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, pageOneToUpsert.body);
+  });
+
+
+  // ----- The upserted page works: Can post replies via Ty's interface, not only API
+
+  it("Maja posts a reply, mentions Maria", () => {
+    majasBrowser.complex.replyToOrigPost(
+      `I'm testing it works as fine as feathers for flying, @${maria.username}`);
+  });
+
+  it("... Maria gets notified", () => {
+    server.waitUntilLastEmailMatches(
+        siteIdAddress.id, maria.emailAddress, [maria.username, 'feathers for flying'], browserA);
+  });
+
+  it("... and Corax, because is page author", () => {
+    server.waitUntilLastEmailMatches(
+        siteIdAddress.id, corax.emailAddress, [maria.username, 'feathers for flying'], browserA);
+  });
+
+  it("But no one else", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, 4, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 

@@ -19,6 +19,7 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import scala.collection.immutable
 
 
 /** Notifications about e.g. new replies, @mentions, someone liked your post.
@@ -26,8 +27,8 @@ import java.{util => ju}
   * mention, so we're no longer supposed to send an email about it.
   */
 case class Notifications(
-  toCreate: Seq[Notification] = Nil,
-  toDelete: Seq[NotificationToDelete] = Nil) {
+  toCreate: immutable.Seq[Notification] = Nil,
+  toDelete: immutable.Seq[NotificationToDelete] = Nil) {
   def isEmpty: Boolean = toCreate.isEmpty && toDelete.isEmpty
 }
 

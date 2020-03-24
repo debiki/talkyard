@@ -263,8 +263,9 @@ describe("summary emails", () => {
   });
 
   it("Maria clicks Unsubscribe and changes summary email interval to one month", () => {
-    const unsubUrl = server.waitUntilLastEmailMatches(
+    const emailMatchResult: EmailMatchResult = server.waitUntilLastEmailMatches(
       siteId, maria.emailAddress, 'https?://[^/"]+/-/unsub-from-summaries[^"]*', browser);
+    const unsubUrl = emailMatchResult.matchingString;
     mariasBrowser.go(unsubUrl);
     mariasBrowser.waitAndClick('input[value="Monthly"]');
     mariasBrowser.waitAndClick('.s_UnsubSum_SubmB');
@@ -321,8 +322,9 @@ describe("summary emails", () => {
   });
 
   it("Maria totally unsubscribes: goes to the unsub page", () => {
-    const unsubUrl = server.waitUntilLastEmailMatches(
+    const emailMatchResult: EmailMatchResult = server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, 'https?://[^/"]+/-/unsub-from-summaries[^"]*', browser);
+    const unsubUrl = emailMatchResult.matchingString;
     mariasBrowser.go(unsubUrl);
   });
 

@@ -457,11 +457,11 @@ chat -
   add/remove member:  private-chat.3browsers.test.ts
   join/leave channel:       ==
   private chat:             ==
-          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+          - private-chat.3browsers.test.ts  TyT2ABKR045
   shows last 50 messages:
   pin globally —> appears in watchbar:  (6KWQ2)
   create, when in no site section:
-    - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
+          - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
   switch to advanced editor:
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   delete chat message:
@@ -751,8 +751,12 @@ restart server -
 notfs,
 notifications:
   about review tasks:   — see (502M7)
-  about chat replies:
+  about direct messages:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+  about public chat messages:
+          ?
+  about private chat messages:
+          - private-chat.3browsers.test.ts  TyT2ABKR045
   via email:  (5ABKR024)
   mute topic:
   mute category:
@@ -798,8 +802,10 @@ email notifications:  (5ABKR024)
   watching everything:
           - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
   new discourse reply:
-  new chat reply:
+  new direct message reply:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+  new private chat messages:
+          - private-chat.3browsers.test.ts  TyT2ABKR045
   mention:
           - notf-emails-discussion.2browsers.test.ts   TyT4FKA2EQ02
   watching:

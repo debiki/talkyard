@@ -74,6 +74,8 @@ trait MessagesDao {
       val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
         byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), tx = tx)
 
+      // If this is a private topic, they'll get notified about all posts,
+      // by default, although no notf pref configured here. [PUBPRIVNOTF]
       (toUserIds + sentById) foreach { userId =>
         tx.insertMessageMember(pagePath.pageId, userId,
           addedById = sentById)

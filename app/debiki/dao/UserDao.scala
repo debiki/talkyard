@@ -551,7 +551,7 @@ trait UserDao {
 
   def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData, browserIdData: BrowserIdData)
         : User = {
-    dieIf(userData.externalId.isDefined, "TyE5BKW02QX")
+    dieIf(userData.ssoId.isDefined, "TyE5BKW02QX")
     security.throwErrorIfPasswordBad(
       password = userData.password.getOrDie("TyE2AKB84"), username = userData.username,
       fullName = userData.name, email = userData.email,
@@ -741,6 +741,7 @@ trait UserDao {
 
 
   def loadUsersWithPrefix(prefix: String): immutable.Seq[User] = {  RENAME // to ...WithUsernamePrefix
+    // CACHE
     readOnlyTransaction(_.loadUsersWithPrefix(prefix))
   }
 
@@ -761,12 +762,16 @@ trait UserDao {
 
 
   def getParticipantByRef(ref: String): Option[Participant] Or ErrorMessage = {
-    parseRef(ref, allowParticipantRef = true) map {
+    parseRef(ref, allowParticipantRef = true) map getParticipantByParsedRef
+  }
+
+
+  def getParticipantByParsedRef(ref: ParsedRef): Option[Participant] = {
+    ref match {
       case ParsedRef.ExternalId(extId) =>
         getParticipantByExtId(extId)
       case ParsedRef.TalkyardId(tyId) =>
-        val id = tyId.toIntOption getOrElse { return Good(None) }
-        getParticipant(id)
+        tyId.toIntOption flatMap getParticipant
       case ParsedRef.SingleSignOnId(ssoId) =>
         getMemberBySsoId(ssoId)
       case ParsedRef.Username(username) =>
@@ -1890,7 +1895,7 @@ trait UserDao {
         id = memberBefore.id,
         // Reset the external id, so the external user will be able to sign up again. (Not our
         // choice to prevent that? That'd be the external login system's responsibility, right.)
-        externalId = None,
+        ssoId = None,
         fullName = None,
         username = anonUsername,
         createdAt = memberBefore.createdAt,

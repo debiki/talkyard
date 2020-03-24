@@ -96,7 +96,7 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
-  def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtImpId]): immutable.Map[ExtImpId, Post]
+  def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
   def loadAllPosts(): immutable.Seq[Post]
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
@@ -171,7 +171,7 @@ trait SiteTransaction {
   def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: PageReadingProgress)
   def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When)
 
-  def loadAllPageParticipantsAllPages(): Seq[PageParticipant]
+  def loadAllPageParticipantsAllPages(): immutable.Seq[PageParticipant]
   def insertPageParticipant(pagePp: PageParticipant)
 
   def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
@@ -259,7 +259,7 @@ trait SiteTransaction {
   def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
-  def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta]
+  def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtId]): Map[ExtId, PageMeta]
   def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
 
@@ -445,7 +445,14 @@ trait SiteTransaction {
     loadParticipant(userId).map(_.toUserOrThrow)
   }
   def loadTheUser(userId: UserId): User = loadUser(userId).getOrDie(
-    "EsEFK320FG", s"Member $userId missing")
+    "TyEFK320FG", s"User $userId missing")
+
+  def loadMember(memberId: UserId): Option[Member] = {
+    dieIf(memberId <= Participant.MaxGuestId, "TyE502KTD25", memberId)
+    loadParticipant(memberId).map(_.toMemberOrThrow)
+  }
+  def loadTheMember(memberId: UserId): Member = loadMember(memberId).getOrDie(
+    "TyE205THW53", s"Member $memberId missing")
 
   def isAdmin(userId: UserId): Boolean = loadUser(userId).exists(_.isAdmin)
 
@@ -506,8 +513,8 @@ trait SiteTransaction {
   def loadParticipantsInclDetailsByIdsAsMap_wrongGuestEmailNotfPerf(ids: Iterable[UserId])
         : immutable.Map[UserId, ParticipantInclDetails]
 
-  def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtImpId])
-        : immutable.Map[ExtImpId, ParticipantInclDetails]
+  def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(extImpIds: Iterable[ExtId])
+        : immutable.Map[ExtId, ParticipantInclDetails]
 
   def loadOwner(): Option[UserInclDetails]
 
@@ -589,7 +596,7 @@ trait SiteTransaction {
   def markNotfsAsSeen(userId: UserId, notfId: Option[NotificationId], skipEmails: Boolean)
   def markNotfsForPostIdsAsSeen(userId: UserId, postIds: Set[PostId], skipEmails: Boolean): Int
 
-  def loadAllNotifications(): Seq[Notification]
+  def loadAllNotifications(): immutable.Seq[Notification]
 
   /** This skips review tasks notfs — they're shown in the admin area instead, the review tab. */
   def loadNotificationsToShowInMyMenu(roleId: RoleId, limit: Int, unseenFirst: Boolean,

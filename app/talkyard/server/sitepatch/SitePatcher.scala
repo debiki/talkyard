@@ -33,6 +33,9 @@ import scala.collection.mutable.ArrayBuffer
 case class SitePatcher(globals: debiki.Globals) {
 
 
+  // ======= Add to existing site
+
+
   def upsertIntoExistingSite(siteId: SiteId, siteData: SitePatch, browserIdData: BrowserIdData)
         : SitePatch = {
 
@@ -45,6 +48,7 @@ case class SitePatcher(globals: debiki.Globals) {
     val upsertedCategories = ArrayBuffer[Category]()
     val upsertedPages = ArrayBuffer[PageMeta]()
     val upsertedPagePaths = ArrayBuffer[PagePathWithId]()
+    val upsertedReplies = ArrayBuffer[Post]()
     val pageIdsWithBadStats = mutable.HashSet[PageId]()
     var wroteToDatabase = false
 
@@ -111,7 +115,7 @@ case class SitePatcher(globals: debiki.Globals) {
 
       SHOULD // check ok alt id  [05970KF5]
 
-      val pagesInDbByExtId: Map[ExtImpId, PageMeta] =
+      val pagesInDbByExtId: Map[ExtId, PageMeta] =
         tx.loadPageMetasByExtIdAsMap(siteData.pages.flatMap(_.extImpId))
 
       val pagesInDbByAltId: Map[AltPageId, PageMeta] =
@@ -228,7 +232,7 @@ case class SitePatcher(globals: debiki.Globals) {
       // ----- Participants
 
       val ppsExtIds =
-        siteData.guests.flatMap(_.extImpId)
+        siteData.guests.flatMap(_.extId)
         // ++ siteData.users.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
         // ++ siteData.groups.flatMap(_.extImpId)  later  ... = now? [UPSMEMBRNOW]
       // For now:
@@ -240,7 +244,7 @@ case class SitePatcher(globals: debiki.Globals) {
       // If there're participants in the database with the same external ids
       // as some of those in the siteData, then, they are to be updated, and we
       // won't create new participants, for them.
-      val ppsInDbByExtId: Map[ExtImpId, ParticipantInclDetails] =
+      val ppsInDbByExtId: Map[ExtId, ParticipantInclDetails] =
         tx.loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(ppsExtIds)
 
       val ppsWithRealIdsByTempImpId = mutable.HashMap[UserId, ParticipantInclDetails]()
@@ -295,11 +299,11 @@ case class SitePatcher(globals: debiki.Globals) {
 
         // We need an extId, so we won't duplicate this guest, if we import the same dump many times.
         // Later: Unless we upsert with a real id (3607TK2).
-        throwForbiddenIf(guestInPatch.extImpId.isEmpty,
+        throwForbiddenIf(guestInPatch.extId.isEmpty,
           "TyE5HKW30R", o"""Upserting guests with no extId not implemented.
           Guest temp imp id: ${guestInPatch.id}""")
 
-        val upsertedGuestRealId = guestInPatch.extImpId.flatMap(ppsInDbByExtId.get) match {
+        val upsertedGuestRealId = guestInPatch.extId.flatMap(ppsInDbByExtId.get) match {
           case None =>
             // Insert a new guest.
             val guestRealId = guestInPatch.copy(id = nextGuestId)
@@ -310,7 +314,7 @@ case class SitePatcher(globals: debiki.Globals) {
           case Some(guestInDb: Guest) =>
             // Update an exiting guest. Later. Now: noop.
             dieIf(guestInDb.id <= -LowestTempImpId, "TyE046MKP01")
-            dieIf(guestInDb.extImpId != guestInPatch.extImpId, "TyE046MKP02")
+            dieIf(guestInDb.extId != guestInPatch.extId, "TyE046MKP02")
             // Later, update guest, but when do this? If url query:  [YESUPSERT]
             //  /-/v0/upsert-patch?onConflict = UpdateIfNewer / UpdateAlways / DoNothing ?
             //if (guestTempId.updatedAt.millis > oldGuestRealId.updatedAt.millis)
@@ -324,6 +328,43 @@ case class SitePatcher(globals: debiki.Globals) {
         dieIf(upsertedGuestRealId.id <= -LowestTempImpId,
           "TyE305HKSD2", s"Guest id ${guestInPatch.id} got remapped to ${upsertedGuestRealId.id}")
         ppsWithRealIdsByTempImpId.put(guestInPatch.id, upsertedGuestRealId)
+      }
+
+
+      // ----- Page participants
+
+      // This currently happens only via /-/v0/upsert-simple. [UPSPAMEM]
+
+      siteData.pageParticipants foreach { pagePp =>
+        throwForbiddenIf(Participant.isGuestId(pagePp.userId),
+          "TyE5G2JKG057M", s"Cannot add guest ${pagePp.userId} to page")
+        throwForbiddenIf(Participant.isBuiltInParticipant(pagePp.userId),
+          "TyE5KRSJWQ66", s"Cannot add built-in participant ${pagePp.userId} to page")
+      }
+
+      val pagesToMaybeNotfAbout = mutable.Map[PageId, ArrayBuffer[PageParticipant]]()
+
+      siteData.pageParticipants.groupBy(_.pageId) foreach { tempPageIdAndPps =>
+        val tempImpPageId = tempPageIdAndPps._1
+        val realPageId = remappedPageTempId(tempImpPageId)
+        val pagePps = tempPageIdAndPps._2
+        val pagePpIds: Set[UserId] = tx.loadMessageMembers(realPageId)
+        val addedPagePps = ArrayBuffer[PageParticipant]()
+        pagePps foreach { pagePpTempPageId: PageParticipant =>
+          dieIf(pagePpTempPageId.pageId != tempImpPageId, "TyE305SKSJ5")
+          if (pagePpIds.contains(pagePpTempPageId.userId)) {
+            // Don't add again. Later: Maybe update? Or remove if pageParticipant.kickedAt.
+          }
+          else {
+            val pagePpRealPageId = pagePpTempPageId.copy(pageId = realPageId)
+            addedPagePps.append(pagePpRealPageId)
+            tx.insertPageParticipant(pagePpRealPageId)
+          }
+        }
+
+        if (addedPagePps.nonEmpty) {
+          pagesToMaybeNotfAbout.put(realPageId, addedPagePps)
+        }
       }
 
 
@@ -378,15 +419,41 @@ case class SitePatcher(globals: debiki.Globals) {
             case Some(postInDb: Post) =>
               // Later: If has same id and nr, then could upsert.  [YESUPSERT]
               throwForbiddenIf(postInPatch.id < LowestTempImpId && postInPatch.id != postInDb.id,
-                "TyE4206KSW", o"""Post in patch has different real id, than post in db with same
-                ext id. In patch: $postInPatch, in db: $postInDb""")
+                "TyE4206KSW", i"""
+                |Post in patch has different real id, than post in db with same ext id.
+                |In patch:
+                |$postInPatch,
+                |in db:
+                |$postInDb
+                |""")
               throwForbiddenIf(postInPatch.nr < LowestTempImpId && postInPatch.nr != postInDb.nr,
-                "TyE6KG2XV46", o"""Post in patch has different real nr, than post in db with same
-                ext id. In patch: $postInPatch, in db: $postInDb""")
+                "TyE6KG2XV46", i"""
+                |Post in patch has different real nr, than post in db with same ext id.
+                |In patch:
+                |$postInPatch,
+                |in db:
+                |$postInDb
+                |""")
               throwForbiddenIf(realPageId != postInDb.pageId,
-                "TyE7DWTX205H", o"""Post in patch has different real page id, than post in db with same
-                ext id. In patch, the post: $postInPatch, maps to real page id: $realPageId.
-                Post in db: $postInDb, that is, a different page id: ${postInDb.pageId}""")
+                "TyE7DWTX205H", i"""
+                |Post in patch has different page id, than post in db with same ext id.
+                |In the patch, the post:
+                |$postInPatch
+                |maps to real page id: $realPageId,
+                |but the supposedly same post in the db:
+                |$postInDb
+                |has this different page id: ${postInDb.pageId}
+                |""")
+              // For now: Leave the post as is.
+              // Actually editing the post is a rabbit hole — look at PostsDao.editPostIfAuth,
+              // it's 300+ lines long. E.g. to update edit revisions, and generate
+              // notifications if a @mention gets added, or not if in ninja edit window,
+              // and maybe un-caching a forum topic list, if the topic summary now needs
+              // to change, and remembering to full text search re-index the post.
+              // Makes no sense to try doing such things from her?
+              // Maybe /-/upsert-simple should refuse some too complicated types of upserts?
+              // And what if this patch includes edit revisions already, which would
+              // conflict with any auto generated by making changes to the post here?
               postInDb
             case None =>
               // Probably we need to remap the post nr to 2, 3, 4, 5 ... instead of a temp nr.
@@ -455,7 +522,7 @@ case class SitePatcher(globals: debiki.Globals) {
             dieIf(postTempParentNr.parentNr != postInPatch.parentNr, "TyE306RKTJ2")
 
             val postRealIdsNrsNoHtml =
-              if (postInPatch.parentNr.isEmpty) {
+              if (postInPatch.parentNr.forall(_ < FirstTempImpId)) {
                 postTempParentNr
               }
               else {
@@ -495,6 +562,8 @@ case class SitePatcher(globals: debiki.Globals) {
             wroteToDatabase = true
             pageIdsWithBadStats.add(postReal.pageId)
 
+            // MISSING:  addUserStats(stats)(tx)
+
             // Full-text-search index this new post.
             TESTS_MISSING // this test: [2WBKP05] commented out, assumes isn't indexed.
             tx.indexPostsSoon(postReal)
@@ -506,6 +575,10 @@ case class SitePatcher(globals: debiki.Globals) {
             // I'd think something won't be found when running notf creation related queries.
             // (We exclude titles further below.)
             postsToMaybeNotfAbout.append(postReal)
+
+            if (postReal.isReply) {
+              upsertedReplies.append(postReal)
+            }
           }
         }
       }
@@ -884,20 +957,46 @@ case class SitePatcher(globals: debiki.Globals) {
 
       // ----- Notifications
 
+      REFACTOR // Change SimpleSitePatch to a ActionPatch — then, this Notifications
+      // stuff here can be removed. [ACTNPATCH]
+
       if (siteData.upsertOptions.exists(_.sendNotifications is true)) {
         val notfGenerator: NotificationGenerator = NotificationGenerator(
           tx, dao, dao.context.nashorn, globals.config)
 
+        // Replies and mentions:
         for {
           post <- postsToMaybeNotfAbout
           if !post.isTitle // only gen for the body —> new page notf
         } {
           // COULD skip @mentions notifications here somehow, since not supported
           // here since we import html only, not CommonMark with @mentions syntax. [305TKRW24]
-          val notifications = notfGenerator.generateForNewPost(
+
+          // Ooops! remembers sentTo  :- /
+          // Has no effet as of now (currently only one new post / page at a time)
+          notfGenerator.generateForNewPost(
             dao.newPageDao(post.pageId, tx), post, anyNewTextAndHtml = None, anyReviewTask = None)
-          tx.saveDeleteNotifications(notifications)
         }
+
+        // Group chats, direct messages:
+        // But this is dead code? because notfGenerator.generateForNewPost() [PATCHNOTF]
+        // above happens first?
+        for {
+          (pageId, pagePps) <- pagesToMaybeNotfAbout
+          pageMeta = tx.loadThePageMeta(pageId)
+          pageBody = tx.loadThePost(PagePostNr(pageId, BodyNr))
+          if pageMeta.publishedAt.isDefined
+          if pageBody.isCurrentVersionApproved
+        } {
+          val sender = tx.loadTheMember(pageMeta.authorId)
+          val pagePpsExclAuthr = pagePps.filter(_.userId != pageMeta.authorId)
+          val mmemberIdsToNotify = pagePpsExclAuthr.map(_.userId)
+          // Ooops! remembers sentTo  :- /
+          notfGenerator.generateForMessage(
+            sender, pageBody, mmemberIdsToNotify.toSet)
+        }
+
+        tx.saveDeleteNotifications(notfGenerator.generatedNotifications)
       }
 
       sectionPagePaths
@@ -912,11 +1011,21 @@ case class SitePatcher(globals: debiki.Globals) {
     // Categories and pages is what the current Talkyard API consumers need. As of November 2019.
     // The /-/v0/upsert-simple endpoint also wants the category locations (url paths),
     // so, we need the forum section page paths, so included below.
+    // And any posts, so can direct link to e.g. chat messages upserted via API
+    //  — but exclude title and body posts; then, instead, the pages[] is enough?
+    REFACTOR // sometimes return a ActionPatchApiResponse  [ACTNPATCH], if is
+    // an ActionPatch "upsert" — which will be an API thing.
+    // Don't expose all internal fields
+    // — that'd make other ppls things break if I rename anything
     SitePatch.empty.copy(
-      pages = upsertedPages,
-      pagePaths = (upsertedPagePaths ++ sectionPagePaths).distinct,
+      pages = upsertedPages.toVector,
+      posts = upsertedReplies.toVector,
+      pagePaths = (upsertedPagePaths ++ sectionPagePaths).distinct.toVector,
       categories = upsertedCategories.toVector)
   }
+
+
+  // ======= Create / restore site
 
 
   def importCreateSite(siteData: SitePatch, browserIdData: BrowserIdData,

@@ -375,7 +375,7 @@ function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string
 
 
 function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
-        textOrTextsToMatch: string | string[], browser): string | string[] {
+        textOrTextsToMatch: string | string[], browser): EmailMatchResult {
   const textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const startMs = Date.now();
@@ -383,7 +383,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
   let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email = getLastEmailSenTo(siteId, emailAddress, null);
+    const email: EmailSubjectBody | U = getLastEmailSenTo(siteId, emailAddress, null);
     misses = [];
     let matchingStrings: string[] = [];
     for (let i = 0; i < regexs.length; ++i) {
@@ -396,8 +396,13 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         misses.push(textsToMatch[i]);
       }
     }
-    if (!misses.length)
-      return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
+    if (!misses.length) {
+      return {
+        matchedEmail: email,
+        matchingString: _.isString(textOrTextsToMatch) ? matchingStrings[0] : undefined,
+        matchingStrings,
+      }
+    }
 
     // Debug log last email if after a while there're no matching email.
     const tenSecondsPassed = Date.now() > startMs + 10*1000;
@@ -483,6 +488,12 @@ function upsertSimple(ps: { origin: string, apiRequesterId: UserId, apiSecret: s
   return ps.fail ? response.bodyText : response.bodyJson();
 }
 
+function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApiResponse {
+  const url = ps.origin + '/-/v0/list-users?usernamePrefix=' + ps.usernamePrefix;
+  const response = getOrDie(url);
+  return JSON.parse(response.body);
+}
+
 
 
 // ----- Export functions
@@ -519,6 +530,7 @@ export = {
   apiV0: {
     upsertUserGetLoginSecret,
     upsertSimple,
+    listUsers,
   },
 };
 

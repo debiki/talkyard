@@ -348,7 +348,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
     val values = List(
       siteId.asAnyRef,
       group.id.asAnyRef,
-      group.extImpId.orNullVarchar,
+      group.extId.orNullVarchar,
       group.theUsername,
       group.name.orNullVarchar,
       group.createdAt.asTimestamp,
@@ -395,7 +395,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
       """
 
     val values = List(
-      group.extImpId.orNullVarchar,
+      group.extId.orNullVarchar,
       group.anyName.orNullVarchar,
       group.theUsername,
       group.summaryEmailIntervalMins.orNullInt,
@@ -556,7 +556,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
         locked_threat_level)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
-    val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.extImpId.orNullVarchar,
+    val values = List(siteId.asAnyRef, guest.id.asAnyRef, guest.extId.orNullVarchar,
       guest.createdAt.asTimestamp, guest.guestName.trim,
       guest.guestBrowserId.orNullVarchar,  // absent if importing Disqus user [494AYDNR]
       e2d(guest.email),
@@ -589,8 +589,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
         List[AnyRef](
           siteId.asAnyRef,
           user.id.asAnyRef,
-          user.extImpId.orNullVarchar,
-          user.externalId.orNullVarchar,
+          user.extId.orNullVarchar,
+          user.ssoId.orNullVarchar,
           user.fullName.orNullVarchar,
           user.username, user.createdAt.asTimestamp, user.primaryEmailAddress.trimNullVarcharIfBlank,
           _toFlag(user.emailNotfPrefs), o2ts(user.emailVerifiedAt),
@@ -1080,10 +1080,10 @@ trait UserSiteDaoMixin extends SiteTransaction {
 
 
   def loadParticipantsInclDetailsByExtIdsAsMap_wrongGuestEmailNotfPerf(
-        extImpIds: Iterable[ExtImpId])
-        : immutable.Map[ExtImpId, ParticipantInclDetails] = {
-    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[ExtImpId](
-      extImpIds, "ext_id", _.extImpId.getOrDie("TyE205HKSD63"))
+        extImpIds: Iterable[ExtId])
+        : immutable.Map[ExtId, ParticipantInclDetails] = {
+    loadParticipantsInclDetails_wrongGuestEmailNotfPerf_Impl[ExtId](
+      extImpIds, "ext_id", _.extId.getOrDie("TyE205HKSD63"))
   }
 
 
@@ -1228,8 +1228,8 @@ trait UserSiteDaoMixin extends SiteTransaction {
       """
 
     val values = List(
-      user.extImpId.orNullVarchar,
-      user.externalId.orNullVarchar,
+      user.extId.orNullVarchar,
+      user.ssoId.orNullVarchar,
       user.fullName.orNullVarchar,
       user.username,
       user.primaryEmailAddress.trimNullVarcharIfBlank,

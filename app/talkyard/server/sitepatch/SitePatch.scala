@@ -20,13 +20,15 @@ package talkyard.server.sitepatch
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{ForumDao, ReadOnySiteDao, SiteDao}
-import debiki.EdHttp.throwForbiddenIf
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import debiki.TextAndHtml
 import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json.JsObject
+
 import scala.collection.mutable
+import scala.collection.immutable
 
 
 /** Later: This class should not contain complete items like Category and Post. [PPATCHOBJS]
@@ -45,39 +47,41 @@ import scala.collection.mutable
   *
   * SitePatch is a (possibly small) set of changes to do to a site,
   * whilst a SiteDump is a SitePatch that includes the whole site.
+  *
+  * RENAME to SiteUpsertPatch? [ACTNPATCH]
   */
 case class SitePatch(
   upsertOptions: Option[UpsertOptions],
   site: Option[SiteInclDetails],
   settings: Option[SettingsToSave],
-  apiSecrets: Seq[ApiSecret],
-  guests: Seq[Guest],
-  guestEmailNotfPrefs: Map[String, EmailNotfPrefs],
+  apiSecrets: immutable.Seq[ApiSecret],
+  guests: immutable.Seq[Guest],
+  guestEmailNotfPrefs: immutable.Map[String, EmailNotfPrefs],
   // Includes built-in groups — they can be renamed or have their settings changed,
   // and if restoring a dump to a new site, such changes should be remembered.
-  groups: Seq[Group],
-  groupPps: Seq[GroupParticipant],
-  users: Seq[UserInclDetails],
-  pptStats: Seq[UserStats],
-  pptVisitStats: Seq[UserVisitStats],
-  usernameUsages: Seq[UsernameUsage],
-  memberEmailAddrs: Seq[UserEmailAddress],
-  identities: Seq[Identity],
-  invites: Seq[Invite],
-  notifications: Seq[Notification],
-  categoryPatches: Seq[CategoryPatch],
-  categories: Seq[Category],  // later, remove, see: [PPATCHOBJS]
-  pages: Seq[PageMeta],
-  pagePaths: Seq[PagePathWithId],
-  pageIdsByAltIds: Map[AltPageId, PageId],
-  pagePopularityScores: Seq[PagePopularityScores],
-  pageNotfPrefs: Seq[PageNotfPref],
-  pageParticipants: Seq[PageParticipant],
-  drafts: Seq[Draft],
-  posts: Seq[Post],
-  postActions: Seq[PostAction],
-  permsOnPages: Seq[PermsOnPages],
-  reviewTasks: Seq[ReviewTask],
+  groups: immutable.Seq[Group],
+  groupPps: immutable.Seq[GroupParticipant],
+  users: immutable.Seq[UserInclDetails],
+  pptStats: immutable.Seq[UserStats],
+  pptVisitStats: immutable.Seq[UserVisitStats],
+  usernameUsages: immutable.Seq[UsernameUsage],
+  memberEmailAddrs: immutable.Seq[UserEmailAddress],
+  identities: immutable.Seq[Identity],
+  invites: immutable.Seq[Invite],
+  notifications: immutable.Seq[Notification],
+  categoryPatches: immutable.Seq[CategoryPatch],
+  categories: immutable.Seq[Category],  // later, remove, see: [PPATCHOBJS]
+  pages: immutable.Seq[PageMeta],
+  pagePaths: immutable.Seq[PagePathWithId],
+  pageIdsByAltIds: immutable.Map[AltPageId, PageId],
+  pagePopularityScores: immutable.Seq[PagePopularityScores],
+  pageNotfPrefs: immutable.Seq[PageNotfPref],
+  pageParticipants: immutable.Seq[PageParticipant],
+  drafts: immutable.Seq[Draft],
+  posts: immutable.Seq[Post],
+  postActions: immutable.Seq[PostAction],
+  permsOnPages: immutable.Seq[PermsOnPages],
+  reviewTasks: immutable.Seq[ReviewTask],
   // This is if the data in the dump, is just test data and can be deleted.
   // This might be different from if the server runs in Test mode, or if
   // we're upserting via an e2e test endpoint or not — see importRealSiteData()
@@ -103,8 +107,11 @@ case class SitePatch(
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
-  def toSimpleJson: JsObject = {
-    SitePatchMaker.createPostgresqlJsonBackup(anyDump = Some(this), simpleFormat = true)
+  def toSimpleJson(siteDao: SiteDao): JsObject = {
+    SitePatchMaker.createPostgresqlJsonBackup(
+      anyDump = Some(this),
+      simpleFormat = true,
+      anyDao = Some(siteDao))
   }
 
   def toPatchJson: JsObject = {
@@ -141,7 +148,7 @@ case class SitePatch(
       pageNotfPrefs.length >= many ||
       pageParticipants.size >= many ||
       drafts.length >= many ||
-      posts.length >= many * 2 ||  // since at least 2 posts per page: title and body
+      posts.length >= many * 2 ||  // since at least 2 posts per page: title and body [SOMNYPSTS]
       postActions.length >= many ||
       permsOnPages.length >= many ||
       reviewTasks.length >= many
@@ -189,10 +196,17 @@ object SitePatch {
 
 
 
+/** REFACTOR  Change SimpleSitePatch to a ActionPatch? [ACTNPATCH] and do *not*
+  * generate a SitePatch to import — instead, iterate through the things
+  * in the ActionPatch and call the correct Dao functions to make things
+  * happen in the same way as if people were doing things via their web client.
+  * All in the same transaction.
+  */
 case class SimpleSitePatch(
   upsertOptions: Option[UpsertOptions] = None,
-  categoryPatches: Seq[CategoryPatch] = Nil,
-  pagePatches: Seq[SimplePagePatch] = Nil) {
+  categoryPatches: immutable.Seq[CategoryPatch] = Nil,
+  pagePatches: immutable.Seq[SimplePagePatch] = Nil,
+  postPatches: immutable.Seq[SimplePostPatch] = Nil) {
 
 
   def loadThingsAndMakeComplete(dao: SiteDao): SitePatch Or ErrorMessage = {
@@ -212,17 +226,23 @@ case class SimpleSitePatch(
     * makeComplete() adds a patch for the category's About page body post too — because
     * that's where the description is kept (.i.e in the About page,
     * the page body post text).
+    *
+    * REFACTOR [ACTNPATCH] Instead of the above, have a class ActionPatcher that
+    * live-applies all changes in an ActionPatch, without constructing an intermediate
+    * SitePatch.
     */
-  def makeComplete(dao: ReadOnySiteDao): SitePatch Or ErrorMessage = {
+  def makeComplete(dao: ReadOnySiteDao): SitePatch Or ErrorMessage = {  // why not a r/o tx?
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
+    val nextPostNrByPage = mutable.HashMap[PageId, PostNr]().withDefaultValue(LowestTempImpId)
     val now = dao.now()
 
     // This works with the current users of the API — namely, upserting categories.
     val categories = mutable.ArrayBuffer[Category]()
     val pages = mutable.ArrayBuffer[PageMeta]()
     val pagePaths = mutable.ArrayBuffer[PagePathWithId]()
+    val pageParticipants = mutable.ArrayBuffer[PageParticipant]()
     val permsOnPages = mutable.ArrayBuffer[PermsOnPages]()
     val posts = mutable.ArrayBuffer[Post]()
 
@@ -286,12 +306,14 @@ case class SimpleSitePatch(
         pageType = PageType.AboutCategory,
         pageSlug = "about-" + theCategorySlug,
         authorId = SysbotUserId,
+        pageMemberRefs = Nil,
         categoryId = Some(nextCategoryId),
         titlePostExtId = categoryPatch.extImpId.map(_ + "_about_page_title"),
         // Sync the title with CategoryToSave [G204MF3]
         titleHtmlUnsafe = s"Description of the $theCategoryName category",
         bodyPostExtId = categoryPatch.extImpId.map(_ + "_about_page_body"),
         bodyHtmlUnsafe = theCategoryDescription)
+        .badMap { problem => return Bad(problem) }
     }
 
 
@@ -307,6 +329,7 @@ case class SimpleSitePatch(
       }
 
       val author: Option[Participant] = pagePatch.authorRef.map { ref =>
+        // Dupl [502TKJF5]
         dao.getParticipantByRef(ref) getOrIfBad { problem =>
           return Bad(s"Bad author ref: '$ref', the problem: $problem [TyE5KD2073]")
         } getOrElse {
@@ -321,11 +344,13 @@ case class SimpleSitePatch(
         pageType = pagePatch.pageType getOrElse PageType.Discussion,
         pageSlug = pageSlug,
         authorId = author.map(_.id) getOrElse SysbotUserId,
+        pageMemberRefs = pagePatch.pageMemberRefs,
         categoryId = category.map(_.id),
         titlePostExtId = Some(pagePatch.extId + "_title"),
         titleHtmlUnsafe = pagePatch.title,
         bodyPostExtId = Some(pagePatch.extId + "_body"),
         bodyHtmlUnsafe = pagePatch.body)
+        .badMap { problem => return Bad(problem) }
     }
 
 
@@ -334,23 +359,36 @@ case class SimpleSitePatch(
       pageType: PageType,
       pageSlug: String,
       authorId: UserId,
+      pageMemberRefs: Seq[ParsedRef],
       categoryId: Option[CategoryId],
       titleHtmlUnsafe: String,
       titlePostExtId: Option[ExtId],
       bodyHtmlUnsafe: String,
-      bodyPostExtId: Option[ExtId],
-    ) {
-      nextPageId += 1
+      bodyPostExtId: Option[ExtId]): Unit Or ErrorMessage = {
+      // Page already exists?
+      val pageMetaInDb: Option[PageMeta] =
+        pageExtId.flatMap(extId => dao.getPageMetaByExtId(extId))
 
-      pages.append(PageMeta.forNewPage(
-        extId = pageExtId,
-        pageId = nextPageId.toString,
-        pageRole = pageType,
-        authorId = authorId,
-        creationDati = now.toJavaDate,
-        numPostsTotal = 2,
-        categoryId = categoryId,
-        publishDirectly = true))
+      // For now, not decided what to do if the upserted page is different from
+      // the one in the database. Overwrite or not?
+      if (pageMetaInDb.isDefined) {
+        return Good(())
+      }
+
+      val pageMeta: PageMeta = pageMetaInDb getOrElse {
+        nextPageId += 1
+        PageMeta.forNewPage(
+          extId = pageExtId,
+          pageId = nextPageId.toString,
+          pageRole = pageType,
+          authorId = authorId,
+          creationDati = now.toJavaDate,
+          numPostsTotal = 2,
+          categoryId = categoryId,
+          publishDirectly = true)
+      }
+
+      pages.append(pageMeta)
 
       pagePaths.append(PagePathWithId(
         folder = "/",
@@ -366,7 +404,7 @@ case class SimpleSitePatch(
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1
-      val titlePost = Post(
+      val titlePost = Post(  // [DUPPSTCRT]
         id = nextPostId,
         extImpId = titlePostExtId,
         pageId = nextPageId.toString,
@@ -424,14 +462,123 @@ case class SimpleSitePatch(
 
       posts.append(titlePost)
       posts.append(bodyPost)
+
+      // Members to join the page?
+      pageMemberRefs foreach { ref: ParsedRef =>
+        val pp: Participant = dao.getParticipantByParsedRef(ref) getOrElse {
+          return Bad(s"No member matching ref $ref, for page extId '$pageExtId' [TyE40QMSJV3]")
+        }
+        throwForbiddenIf(pp.isGuest, "TyE502QK4JV", "Cannot add guests to page")
+        throwForbiddenIf(pp.isBuiltIn, "TyE7WKCT24GT", "Cannot add built-in users to page")
+
+        pageParticipants.append(  // [UPSPAMEM]
+          PageParticipant(
+            pageId = pageMeta.pageId,
+            userId = pp.id,
+            addedById = Some(SysbotUserId), // or?
+            removedById = None,
+            inclInSummaryEmailAtMins = 0,
+            readingProgress = None))
+      }
+
+      Good(())
     }
 
+
+    // ----- Upsert posts
+
+    for (postPatch: SimplePostPatch <- postPatches) {
+      val pageInDb: Option[PageMeta] = dao.getPageMetaByParsedRef(postPatch.pageRef)
+      val pageInPatch: Option[PageMeta] = getPageMetaInPatchByParsedRef(postPatch.pageRef)
+
+      // Any page in the database is really the same as the one in the patch?
+      (pageInDb, pageInPatch) match {
+        case (Some(thePageInDb), Some(thePageInPatch)) =>
+          if (thePageInDb.extImpId != thePageInPatch.extImpId)
+            return Bad(o"""The supposedly same page in db as the one in the patch,
+              have different extId:s, so they are *not* the same page:
+              ext id in db: '${thePageInDb.extImpId}',
+              in the patch: '${thePageInPatch.extImpId}'  [TyE05MRKJ6]""")
+
+          if (!isPageTempId(thePageInPatch.pageId) &&
+              thePageInDb.pageId != thePageInPatch.pageId)
+            return Bad(o"""The supposedly same page in db as the one in the patch,
+              have different ids, so they are *not* the same page:
+              page id in db: '${thePageInDb.pageId}',
+              in patch: '${thePageInPatch.pageId}'  [TyE7KDQ42K2]""")
+
+        case _ =>
+      }
+
+      val pageMeta = pageInDb.orElse(pageInPatch) getOrElse {
+        return Bad(s"Page missing, '${postPatch.pageRef}' [TyE406WKDGF4]")
+      }
+
+      val pageId = pageMeta.pageId
+      val postNr = nextPostNrByPage(pageId)
+
+      nextPostNrByPage(pageId) = postNr + 1
+
+      val parentPostInDb: Option[Post] = postPatch.parentNr flatMap { parentNr =>
+        if (parentNr >= FirstTempImpId || isPageTempId(pageId)) None
+        else dao.loadPostByPageIdNr(pageId, parentNr)
+      }
+
+      val parentPostInPatch: Option[Post] = postPatch.parentNr.flatMap(nr =>
+        getPostInPatchByPageIdNr(pageId, nr))
+
+      val parentPost = parentPostInDb orElse parentPostInPatch
+
+      val author = dao.getParticipantByParsedRef(postPatch.authorRef)  getOrElse {
+        return Bad(s"Author not found: '${postPatch.authorRef}' [TyE502KTDXG52]")
+      }
+
+      val htmlSanitized = Jsoup.clean(postPatch.body, TextAndHtml.relaxedHtmlTagWhitelist)
+
+      val post = Post.create(
+        uniqueId = nextPostId,
+        extImpId = Some(postPatch.extId),
+        pageId = pageId,
+        postNr = postNr,
+        parent = parentPost,
+        multireplyPostNrs = Set.empty,
+        postType = postPatch.postType,
+        createdAt = now.toJavaDate,
+        createdById = author.id,
+        source = postPatch.body,
+        htmlSanitized = htmlSanitized,
+        approvedById = Some(SysbotUserId))
+
+      posts.append(post)
+    }
+
+
+    // ----- Helper fns
+
+    def getPageMetaInPatchByParsedRef(ref: ParsedRef): Option[PageMeta] = {
+      ref match {
+        case ParsedRef.ExternalId(extId) =>
+          pages.find(_.extImpId is extId)
+        case ParsedRef.TalkyardId(id) =>
+          pages.find(_.pageId == id)
+        case wrongRefType =>
+          throwForbidden("TyE603RKJGL5", s"Wrong SimplePagePatch ref type: $wrongRefType")
+      }
+    }
+
+    def getPostInPatchByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post] = {
+      posts.find(p => p.pageId == pageId && p.nr == postNr)
+    }
+
+
+    // ----- The result
 
     val result = SitePatch.empty.copy(
       upsertOptions = upsertOptions,
       categories = categories.toVector,
       pages = pages.toVector,
       pagePaths = pagePaths.toVector,
+      pageParticipants = pageParticipants.toVector,
       posts = posts.toVector,
       permsOnPages = permsOnPages.toVector)
 

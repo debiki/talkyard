@@ -317,14 +317,27 @@ GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(
 GET   /-/list-sites              controllers.SuperAdminController.listSites
 POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
+
+# ----- API
+
 GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
 POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
+
+GET   /-/v0/list-users          controllers.UserController.listMembersPubApi(usernamePrefix, usersOnly: Boolean = true)
+#ET   /-/v0/list-groups — only groups
+#ET   /-/v0/list-members — both users and groups
 # REFACTOR use ApiSecretPostJsonAction instead, move to more precise controllers?
 GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoint)
 POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
 
+
+# ----- PWA
+
 #GET   /manifest.webmanifest     controllers.Application.mobileAppWebmanifest
+
+
+# ----- View pages/posts
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
 

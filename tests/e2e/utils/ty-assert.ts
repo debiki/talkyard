@@ -1,4 +1,5 @@
-import assert = require('assert');
+import * as _ from 'lodash';
+import * as assert from 'assert';
 
 
 const tyAssert = {
@@ -15,19 +16,23 @@ const tyAssert = {
   eq: (actual, expected, message?) => {
     // Show the two values on two lines, aligned, so one sees at a glance
     // what's wrong.
-    if (!message) {
-      message = '\n\n' +
+    let wholeMessage = '\n\n' +
           `  assert.eq: Actual value differs from expected value:\n` +
           `        actual:  ${actual}\n` +
           `      expected:  ${expected}\n`;
+    if (message) {
+      wholeMessage +=
+          `  Details:\n` +
+          `    ${message}\n`;
     }
-    assert.strictEqual(actual, expected, message);
+    assert.strictEqual(actual, expected, wholeMessage);
   },
 
   refEq: (actual, expected) => {
     assert.ok(actual === expected,
-      `Not reference-equal, actual: ${JSON.stringify(actual)}, ` +
-          `expected: ${JSON.stringify(expected)}`);
+      `  assert.refEq: Not reference-equal:\n` +
+      `      actual:  ${JSON.stringify(actual)}\n` +
+      `    expected:  ${JSON.stringify(expected)}\n`);
   },
 
   greaterThan: (actual, min) => {
@@ -36,19 +41,32 @@ const tyAssert = {
           `should be at least: ${JSON.stringify(min)}`);
   },
 
+  matches: (text: string, regexOrString: RegExp | string) => {
+    assert.fail("Untested [TyE4069RKTS$]");
+    /*
+      const regex = _.isString(regexOrString) ?
+          new RegExp(regexOrString) : regexOrString;
+      assert(regex.test(text), '\n\n' +
+          `  assert.matches:\n` +
+          `       This regex:  ${regex.toString()}\n` +
+          `       does not match:  (between the ----)\n` +
+          `------------------------------------------------------------------------\n` +
+          `${text}\n` +
+          `------------------------------------------------------------------------\n` +
+          `\n`); */
+  },
+
   includes: (text: string, expectedSubstring: string, message?: string) => {
     // Could make this work w regexs too.
     const ix = text.indexOf(expectedSubstring);
-    const isOk = ix >= 0;
-    if (!isOk) console.log(''); // nice with a blank line
-    assert.ok(isOk, message ||
-      `assert.includes:\n` +
-      `    This:  "${expectedSubstring}"\n` +
-      `    is missing from:  (between the ----)\n` +
+    assert.ok(ix >= 0, '\n\n' + (message ||
+      `  assert.includes:\n` +
+      `     This:  "${expectedSubstring}"\n` +
+      `     is missing from:  (between the ----)\n` +
       `------------------------------------------------------------------------\n` +
       `${text}\n` +
       `------------------------------------------------------------------------\n` +
-      `\n`);
+      `\n`));
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {

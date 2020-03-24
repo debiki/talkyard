@@ -162,7 +162,7 @@ class DaoAppSuite(
       createdAt: Option[When], firstSeenAt: Option[When] = None, emailVerified: Boolean = false)
       : User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
-    val password = s"public-${username take 2}-x-${username drop 2}"
+    val password = s"pub-${username take 3}020"
     val adm = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $username"), username = username,
       email = s"$username@x.co", password = Some(password),
@@ -180,7 +180,7 @@ class DaoAppSuite(
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val mod = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $username"), username = username, email = s"$username@x.co",
-      password = Some(s"public-$username"), createdAt = theCreatedAt,
+      password = Some(s"pub-${username take 3}020"), createdAt = theCreatedAt,
       isAdmin = false, isModerator = true, isOwner = false).get, browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(mod.id, theCreatedAt.toJavaDate)
@@ -195,11 +195,11 @@ class DaoAppSuite(
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
         createdAt: Option[When] = None, emailVerified: Boolean = false,
-        extId: Option[ExtImpId] = None): User = {
+        extId: Option[ExtId] = None, password: Option[String] = None): User = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $username"), username = username, email = s"$username@x.co",
-      password = Some(s"public-$username"), createdAt = theCreatedAt,
+      password = password orElse Some(s"pub-${username take 3}020"), createdAt = theCreatedAt,
       isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel,
       extId = extId).get,
       browserIdData)
@@ -207,6 +207,19 @@ class DaoAppSuite(
       dao.verifyPrimaryEmailAddress(member.id, theCreatedAt.toJavaDate)
     }
     member
+  }
+
+
+  /** Like createPasswordUser() but returns a memeber with details.
+    */
+  def createPasswordUserGetDetails(username: String, dao: SiteDao,
+        trustLevel: TrustLevel = TrustLevel.NewMember,
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+        createdAt: Option[When] = None, emailVerified: Boolean = false,
+        extId: Option[ExtId] = None): UserInclDetails = {
+    val user = createPasswordUser(username, dao, trustLevel, threatLevel,
+        createdAt = createdAt, emailVerified, extId)
+    dao.readOnlyTransaction(_.loadTheUserInclDetails(user.id))
   }
 
 
@@ -289,7 +302,7 @@ class DaoAppSuite(
   def createPage(pageRole: PageType, titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
-        extId: Option[ExtImpId] = None, discussionIds: Set[AltPageId] = Set.empty): PageId = {
+        extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): PageId = {
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,

@@ -265,10 +265,10 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       case "sso-upsert-user-generate-login-secret" |
         "upsert-external-user-generate-login-secret" =>  // deprecated name, remove
         val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
-          externalId =  // RENAME to ssoId
-            (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
+          ssoId = (body \ "ssoId").asOpt[String].getOrElse(  // [395KSH20]
                   (body \ "externalUserId") // DEPRECATED 2019-08-18 v0.6.43
                     .as[String]).trim,
+          extId = (body \ "extId").asOptStringNoneIfBlank,
           primaryEmailAddress = (body \ "primaryEmailAddress").as[String].trim,
           isEmailAddressVerified = (body \ "isEmailAddressVerified").as[Boolean],
           username = (body \ "username").asOptStringNoneIfBlank,
@@ -281,16 +281,16 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           }
 
         throwForbiddenIf(!extUser.isEmailAddressVerified, "TyESSOEMLUNVERF", o"""s$siteId:
-            The email address ${extUser.primaryEmailAddress} of external user '${extUser.externalId}'
+            The email address ${extUser.primaryEmailAddress} of external user 'ssoid:${extUser.ssoId}'
             hasn't been verified.""")
 
         val (user, isNew) = request.dao.readWriteTransaction { tx =>
-          // Look up by external id. If found, login.
-          // Look up by email. If found, reuse account, set external id, and login.
+          // Look up by Single Sign-On id. If found, login.
+          // Look up by email. If found, reuse account, set SSO id, and login.
           // Else, create new user with specified external id and email.
 
-          tx.loadUserInclDetailsBySsoId(extUser.externalId).map({ user =>  // (7KAB2BA)
-            dieIf(user.externalId isNot extUser.externalId, "TyE5KR02A")
+          tx.loadUserInclDetailsBySsoId(extUser.ssoId).map({ user =>  // (7KAB2BA)
+            dieIf(user.ssoId isNot extUser.ssoId, "TyE5KR02A")
             // TODO update fields, if different.
             if (extUser.primaryEmailAddress != user.primaryEmailAddress) {
               // TODO later: The external user's email address has been changed? Update this Talkyard
@@ -300,8 +300,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
               val anyUser2 = tx.loadUserByPrimaryEmailOrUsername(extUser.primaryEmailAddress)
               anyUser2 foreach { user2 =>
                 throwForbidden("TyE2ABK40", o"""s$siteId: Cannot update the email address of
-                    Talkyard user ${user.usernameHashId} with external id
-                    '${extUser.externalId}' to match the external user's new email address
+                    Talkyard user ${user.usernameHashId} with Single Sign-On id
+                    '${extUser.ssoId}' to match the external user's new email address
                     ('${extUser.primaryEmailAddress}'): The new address is already used
                     by another Talkyard user: ${user2.usernameHashId}""")
               }
@@ -319,19 +319,19 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
               // that there isn't any clash here: (5BK02A5)?
               tx.loadUserInclDetailsByEmailAddr(extUser.primaryEmailAddress).map({ user =>
 
-            dieIf(user.externalId is extUser.externalId, "TyE7AKBR2") // ought to have been found by id
+            dieIf(user.ssoId is extUser.ssoId, "TyE7AKBR2") // ought to have been found by id
             dieIf(user.primaryEmailAddress != extUser.primaryEmailAddress, "TyE7AKBR8")
 
-            throwForbiddenIf(user.externalId.isDefined,
-                "TyE5AKBR20", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is already
-                  in use by Talkyard user ${user.usernameHashId} which mirrors
-                  external user '${user.externalId}' — cannot create a mirror account for
-                  external user '${extUser.externalId} that use that same email address""")
+            throwForbiddenIf(user.ssoId.isDefined,
+                "TyE5AKBR20", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is
+                  already in use by Talkyard user ${user.usernameHashId} which mirrors
+                  external user 'ssoid:${user.ssoId}' — cannot create a mirror account for
+                  external user 'ssoid:${extUser.ssoId} that use that same email address""")
 
             throwForbiddenIf(user.emailVerifiedAt.isEmpty,
                "TyE7BKG52A4", o"""s$siteId: Cannot connect Talkyard user ${user.usernameHashId}
-                  with external user '${user.externalId}': The Talkyard user account's email address
-                  hasn't been verified.""")
+                  with external user 'ssoid:${user.ssoId}': The Talkyard user account's
+                  email address hasn't been verified.""")
 
             // Apparently this Talkyard user was created "long ago", and now we're
             // single-sign-on logging in as that user, for the first time. Connect this Talkyard account
@@ -339,7 +339,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             // id lookup instead (in code block (7KAB2BA) above).
             Logger.info(o"""s$siteId:
                 Connecting Talkyard user ${user.usernameHashId}
-                to external user '${extUser.externalId}', because they have the same
+                to external user 'ssoid:${extUser.ssoId}', because they have the same
                 email address: ${extUser.primaryEmailAddress}, and the Talkyard
                 user account doesn't currently mirror any external user. [TyM2DKW07X]""")
 
@@ -357,7 +357,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
               tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
 
             Logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,
-                for external user '${extUser.externalId}'... [TyM5BKA2WA0]""")
+                for external user 'ssoid:${extUser.ssoId}'... [TyM5BKA2WA0]""")
 
             val userData = // [5LKKWA10]
               NewPasswordUserData.create(
@@ -365,7 +365,8 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
                 username = okayUsername,
                 email = extUser.primaryEmailAddress,
                 password = None,
-                externalId = Some(extUser.externalId),
+                ssoId = Some(extUser.ssoId),
+                extId = extUser.extId,
                 createdAt = now,
                 isOwner = false,
                 isAdmin = extUser.isAdmin,

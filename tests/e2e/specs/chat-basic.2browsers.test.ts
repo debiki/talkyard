@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pagesFor = require('../utils/pages-for');
@@ -16,7 +16,13 @@ declare let browserB: any;
 
 let everyone;
 let owen;
+let owensBrowser;
 let maria;
+let mariasBrowser;
+let michael;
+let michaelsBrowser;
+
+let siteId;
 
 
 describe('chat', function() {
@@ -24,67 +30,91 @@ describe('chat', function() {
   it('create site with two members', function() {
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    owensBrowser = owen;
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
+    mariasBrowser = maria;
+    michael = make.memberMichael();
+    michaelsBrowser = mariasBrowser;
 
     const site: SiteData = make.forumOwnedByOwen('basicchat');
     site.members.push(make.memberMaria());
+    site.members.push(michael);
     const idAddress = server.importSiteData(site);
+    siteId = idAddress.id;
     everyone.go(idAddress.origin);
-    maria.disableRateLimits();
-    owen.disableRateLimits();
+    mariasBrowser.disableRateLimits();
+    owensBrowser.disableRateLimits();
   });
 
   it("Owen logs in, creates a chat topic", function() {
-    owen.watchbar.clickCreateChat();
-    owen.loginDialog.loginWithPassword(owen);
-    owen.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
-    owen.setValue('textarea', "Chat channel purpose");
-    owen.rememberCurrentUrl();
-    owen.editor.clickSave();
-    owen.waitForNewUrl();
-    owen.chat.joinChat();
+    owensBrowser.watchbar.clickCreateChat();
+    owensBrowser.loginDialog.loginWithPassword(owen);
+    owensBrowser.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
+    owensBrowser.setValue('textarea', "Chat channel purpose");
+    owensBrowser.rememberCurrentUrl();
+    owensBrowser.editor.clickSave();
+    owensBrowser.waitForNewUrl();
+    owensBrowser.chat.joinChat();
   });
 
-  it("Owen writes a chat message", function() {
-    owen.chat.addChatMessage("Hi, I'm Owen, and my name is Owen.");
-    owen.chat.waitForNumMessages(1);
-    owen.assertTextMatches('.esC_M', /Owen/);
+
+  // ----- In public chat, can @mention-notify others  [PUBPRIVNOTF]
+
+  let prevNumEmails: number;
+
+  it("Owen writes a chat message, mentions @maria", function() {
+    prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
+    owensBrowser.chat.addChatMessage(`Hi, I'm Owen, and my name is Owen. Who is @${maria.username}?`);
+    owensBrowser.chat.waitForNumMessages(1);
+    owensBrowser.assertTextMatches('.esC_M', /Owen/);
+  });
+  it("... Maria gets email notf, since @mentioned, and chat not private [PUBPRIVNOTF]", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, ['my name is Owen'], mariasBrowser);
+  });
+  it("... but only Maria", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
   });
 
   it("Maria opens the chat page, sees Owens message", function() {
-    maria.go(owen.url().value);
-    maria.chat.waitForNumMessages(1);
-    maria.assertTextMatches('.esC_M', /Owen/);
+    mariasBrowser.go(owensBrowser.url().value);
+    mariasBrowser.chat.waitForNumMessages(1);
+    mariasBrowser.assertTextMatches('.esC_M', /Owen/);
   });
 
+
+  // ----- Live updates work
+
   it("Maria joins the chat topic", function() {
-    maria.chat.joinChat();
-    maria.loginDialog.loginWithPassword(maria);
+    mariasBrowser.chat.joinChat();
+    mariasBrowser.loginDialog.loginWithPassword(maria);
   });
 
   it("Maria posts a chat message, and sees it", function() {
-    maria.chat.addChatMessage("Hi, I'm Maria.");
-    maria.chat.waitForNumMessages(2);
-    maria.assertNthTextMatches('.esC_M', 2, /Maria/);
+    mariasBrowser.chat.addChatMessage("Hi, I'm Maria.");
+    mariasBrowser.chat.waitForNumMessages(2);
+    mariasBrowser.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 
   it("Owen sees it", function() {
-    owen.chat.waitForNumMessages(2);
-    owen.assertNthTextMatches('.esC_M', 2, /Maria/);
+    owensBrowser.chat.waitForNumMessages(2);
+    owensBrowser.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 
   it("Owen posts a chat message, and sees it", function() {
-    owen.chat.addChatMessage("Hi, and is your name Maria?");
-    owen.assertNthTextMatches('.esC_M', 3, /is your name/);
+    owensBrowser.chat.addChatMessage("Hi, and is your name Maria?");
+    owensBrowser.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 
   it("Maria sees it", function() {
-    maria.assertNthTextMatches('.esC_M', 3, /is your name/);
+    mariasBrowser.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 
-  it("A minute elapses, ... the browsers re-send long polling requests", function() { // break out fn? [4KWBFG5]  [8T5WKBQT]
-    const mariaReqNrBefore = maria.countLongPollingsDone();
-    const owenReqNrBefore = owen.countLongPollingsDone();
+  it("A minute elapses, ... the browsers re-send long polling requests", () => { // break out fn? [4KWBFG5]  [8T5WKBQT]
+    const mariaReqNrBefore = mariasBrowser.countLongPollingsDone();
+    const owenReqNrBefore = owensBrowser.countLongPollingsDone();
 
     // This'll make the browsers send 2 new long polling requests.
     everyone.playTimeSeconds(60);
@@ -92,8 +122,8 @@ describe('chat', function() {
     everyone.playTimeSeconds(60);
     everyone.pause(c.MagicTimeoutPollMs + 100);  // ... nr 2
 
-    const mariaReqNrAfter = maria.countLongPollingsDone();
-    const owenReqNrAfter = owen.countLongPollingsDone();
+    const mariaReqNrAfter = mariasBrowser.countLongPollingsDone();
+    const owenReqNrAfter = owensBrowser.countLongPollingsDone();
 
     console.log(`Maria's num long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
     console.log(`Owen's num long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
@@ -107,31 +137,54 @@ describe('chat', function() {
   });
 
   it("Maria replies, and Owen posts another message", function() {
-    maria.chat.addChatMessage("What?");
-    //maria.pause(3500);
-    maria.chat.addChatMessage("Why, yes.");
-    owen.chat.addChatMessage("Can I call you Maria then?");
+    mariasBrowser.chat.addChatMessage("What?");
+    //mariasBrowser.pause(3500);
+    mariasBrowser.chat.addChatMessage("Why, yes.");
+    owensBrowser.chat.addChatMessage("Can I call you Maria then?");
   });
 
-  it("Owen sees Maria's last chat message — live updates still work, after many minutes", function() {
-    owen.assertNthTextMatches('.esC_M', 4, /Why, yes/);
+  it("Owen sees Maria's last chat message — live updates still work, after many minutes", () => {
+    owensBrowser.assertNthTextMatches('.esC_M', 4, /Why, yes/);
   });
 
   it("Maria sees Owen's", function() {
-    maria.assertNthTextMatches('.esC_M', 5, /Can I call you Maria/);
+    mariasBrowser.assertNthTextMatches('.esC_M', 5, /Can I call you Maria/);
   });
 
-  /* For demos:
-  it("Maria replies", function() {
-    //maria.pause(5000);
-    maria.chat.addChatMessage("Yes, sure");
+
+  // ----- No notfs in public chat, unless @mentioned  [PUBPRIVNOTF]
+
+  it("Maria goes to another page", () => {
+    mariasBrowser.topbar.clickHome();
   });
 
-  it("They talk", function() {
-    owen.chat.addChatMessage("Ok super :- )");
-    owen.chat.addChatMessage("Hi Maria. Lorem ipsizzle dolizzle crackalackin, boom shackalack adipiscing elit. Nullizzle fo velizzle, i'm in the shizzle volutpizzle, suscipit quis, gravida boofron, arcu. Nice talking with you!");
-    maria.chat.addChatMessage("You too");
-  }); */
+  it("?? Annoyingly, needs to click the chat channel so it stops being unread ??", () => {
+    // This makes the topic unread. Why is this needed? Mildly annoying.
+    mariasBrowser.watchbar.openUnreadTopic();
+    // Then go back to Home.
+    mariasBrowser.topbar.clickHome();
+  });
+
+  it("Owen posts another message — Maria won't get notified, because " +
+     "not directly to her and isn't a private chat", function() {
+    prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
+    assert.eq(mariasBrowser.watchbar.numUnreadTopics(), 0);
+    owensBrowser.chat.addChatMessage(`But what is @${michael.username}'s name?`);
+  });
+  it("... Michael gets notified", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, michael.emailAddress, ['But what is @michael'], michaelsBrowser);
+  });
+  it("... Maria sees the topic get highlighted in the sidebar", () => {
+    mariasBrowser.watchbar.waitUntilNumUnreadTopics(1);
+    assert.eq(mariasBrowser.watchbar.numUnreadTopics(), 1);
+  });
+  it("... but she won't get any email notf", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
+    prevNumEmails = num;
+  });
+
 
 });
 

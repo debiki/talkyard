@@ -21,7 +21,7 @@ import java.io.RandomAccessFile
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
-import debiki.dao.DaoAppSuite
+import debiki.dao.{DaoAppSuite, SiteDao}
 import org.scalatest._
 import java.{io => jio}
 
@@ -35,6 +35,12 @@ trait DumpMaker {
     importer.upsertIntoExistingSite(siteId, patch, browserIdData)
   }
 
+  def upsertSimplePatch(simplePatch: SimpleSitePatch, siteDao: SiteDao) {
+    val importer = SitePatcher(globals)
+    val completePatch = simplePatch.makeComplete(siteDao).getOrDie("TyETSTSIMPL2COMPL")
+    importer.upsertIntoExistingSite(siteDao.siteId, completePatch, browserIdData)
+  }
+
 
 
   val FirstGuestTempImpId: UserId = - LowestTempImpId - 1
@@ -43,7 +49,7 @@ trait DumpMaker {
 
   def makeGuest(id: UserId): Guest = Guest(
     id = id,
-    extImpId = Some(s"guest_w_temp_imp_id_$id"),
+    extId = Some(s"guest_w_temp_imp_id_$id"),
     createdAt = globals.now(),
     guestName = s"Guest With Id $id",
     guestBrowserId = Some(s"guest-br-id-$id"),
@@ -57,8 +63,8 @@ trait DumpMaker {
   def makeUnapprovedUser(id: UserId) =
     UserInclDetails(
       id = id,
-      extImpId = Some(s"user-w-temp-imp-id-$id"),
-      externalId = Some(s"user-sso-id-for-temp-imp-id-$id"),
+      extId = Some(s"user-w-temp-imp-id-$id"),
+      ssoId = Some(s"user-sso-id-for-temp-imp-id-$id"),
       fullName = Some(s"User W Temp Imp Id $id Full Name"),
       username = s"usr_tid_$id",
       createdAt = globals.now(),

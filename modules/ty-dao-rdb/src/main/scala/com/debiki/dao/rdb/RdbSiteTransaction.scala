@@ -474,7 +474,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }*/
 
 
-  def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtImpId]): Map[ExtImpId, PageMeta] = {
+  def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtId]): Map[ExtId, PageMeta] = {
     if (extImpIds.isEmpty)
       return Map.empty
 

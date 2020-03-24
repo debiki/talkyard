@@ -1,8 +1,9 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import * as assert from 'assert';
-import { logUnusual, dieIf } from './log-and-die';
+import * as assert from './ty-assert';
+import { logMessage, logUnusual, dieIf } from './log-and-die';
+import c = require('../test-constants');
 
 
 declare const settings;
@@ -57,11 +58,11 @@ const utils = {
     return utils._findFirstLinkToUrlImpl(url, text, true);
   },
 
-  findAnyFirstLinkToUrlIn: function(url: string, text: string): string {
+  findAnyFirstLinkToUrlIn: function(url: string, text: string): string | U {
     return utils._findFirstLinkToUrlImpl(url, text, false);
   },
 
-  _findFirstLinkToUrlImpl: function(url: string, text: string, mustMatch: boolean): string {
+  _findFirstLinkToUrlImpl: function(url: string, text: string, mustMatch: boolean): string | U {
     // Make sure ends with ", otherwise might find: <a href="..">http://this..instead..of..the..href</a>.
     // This:  (?: ...)  is a non-capture group, so the trailing " won't be incl in the match.
     const regexString = '(' + utils.regexEscapeSlashes(url) + '[^"\']*)(?:["\'])';
@@ -69,6 +70,24 @@ const utils = {
     dieIf(mustMatch && !matches,
         `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
     return matches ? matches[1] : undefined;
+  },
+
+  ssoLogin: (ps: { member: Member, ssoId, browser,
+        origin: string, server, apiSecret: string, apiRequesterId?: UserId,
+        thenGoTo: string }) => {
+    const extUser = utils.makeExternalUserFor(ps.member, { ssoId: ps.ssoId });
+    logMessage(`SSO: Upserting @${ps.member.username}, getting a one time secret ...`);
+    const oneTimeLoginSecret = ps.server.apiV0.upsertUserGetLoginSecret({
+        origin: ps.origin,
+        apiRequesterId: ps.apiRequesterId || c.SysbotUserId,
+        apiSecret: ps.apiSecret,
+        externalUser: extUser });
+    logMessage(`SSO: Logging in as @${ps.member.username}, using one time secret ...`);
+    ps.browser.apiV0.loginWithSecret({
+        origin: ps.origin,
+        oneTimeSecret: oneTimeLoginSecret,
+        thenGoTo: ps.thenGoTo || '/' });
+    logMessage(`SSO: Done`);
   },
 
   makeExternalUserFor: (member: Member, opts: {
@@ -139,51 +158,65 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  checkNewPageFields: (page, ps: { categoryId: CategoryId, authorId: UserId }) => {
-    assert.equal(page.htmlTagCssClasses, "");
-    assert.equal(page.hiddenAt, null);
-    assert(!!page.createdAtMs);
-    assert(!!page.publishedAtMs);
-    assert(!!page.updatedAtMs);
-    assert.equal(page.authorId, ps.authorId);
+  checkNewPageFields: (page, ps: {
+     categoryId: CategoryId,
+      authorId?: UserId,
+      numPostsTotal?: number,
+    }) => {
+
+    const numRepliesTotal = ps.numPostsTotal ? ps.numPostsTotal - 2 : 0;
+
+    assert.eq(page.htmlTagCssClasses, "");
+    assert.eq(page.hiddenAt, null);
+    assert.ok(!!page.createdAtMs);
+    assert.ok(!!page.publishedAtMs);
+    assert.ok(!!page.updatedAtMs);
+    if (ps.authorId) assert.eq(page.authorId, ps.authorId);
     // The version number is 2 (not 1 becuse the page gets re-saved with correct
     // stats and a version bump, after the initial insert (with wrong stats)). [306MDH26]
-    assert.equal(page.version, 2);
-    assert.equal(page.categoryId, ps.categoryId);
-    assert.equal(page.numLikes, 0);
-    assert.equal(page.numWrongs, 0);
-    assert.equal(page.numBurys, 0);
-    assert.equal(page.numUnwanteds, 0);
-    assert.equal(page.numOrigPostLikeVotes, 0);
-    assert.equal(page.numOrigPostWrongVotes, 0);
-    assert.equal(page.numOrigPostBuryVotes, 0);
-    assert.equal(page.numOrigPostUnwantedVotes, 0);
-    assert.equal(page.numPostsTotal, 2);
-    assert.equal(page.numRepliesTotal, 0);
-    assert.equal(page.numRepliesVisible, 0);
-    assert.equal(page.numOrigPostRepliesVisible, 0);
-    assert.equal(page.lastApprovedReplyById, null);
-    assert.equal(page.lastApprovedReplyAt, null);
-    assert.equal(page.pinOrder, null);
-    assert.equal(page.pinWhere, null);
-    assert.equal(page.answeredAt, null);
-    assert.equal(page.answerPostId, null);
-    assert.equal(page.lockedAt, null);
-    assert.equal(page.plannedAt, null);
-    assert.equal(page.startedAt, null);
-    assert.equal(page.bumpedAtMs, null);
-    assert.equal(page.doingStatus, 1);
-    assert.equal(page.doneAt, null);
-    assert.equal(page.closedAt, null);
-    assert.equal(page.unwantedAt, null);
-    assert.equal(page.frozenAt, null);
-    assert.equal(page.deletedAt, null);
-    assert.equal(page.htmlHeadDescription, "");
-    assert.equal(page.htmlHeadTitle, "");
-    assert.equal(page.layout, 0);
-    assert.equal(page.embeddingPageUrl, null);
-    assert(!!page.frequentPosterIds);
-    assert.equal(page.frequentPosterIds.length, 0);
+    assert.eq(page.version, 2);
+    assert.eq(page.categoryId, ps.categoryId);
+    assert.eq(page.numLikes, 0);
+    assert.eq(page.numWrongs, 0);
+    assert.eq(page.numBurys, 0);
+    assert.eq(page.numUnwanteds, 0);
+    assert.eq(page.numOrigPostLikeVotes, 0);
+    assert.eq(page.numOrigPostWrongVotes, 0);
+    assert.eq(page.numOrigPostBuryVotes, 0);
+    assert.eq(page.numOrigPostUnwantedVotes, 0);
+    assert.eq(page.numPostsTotal, ps.numPostsTotal || 2);
+    assert.eq(page.numRepliesTotal, numRepliesTotal);
+    assert.eq(page.numRepliesVisible, numRepliesTotal);
+    assert.eq(page.numOrigPostRepliesVisible, numRepliesTotal);  // for now
+
+    // Maybe shouldn't include the below things, + some things above, in the publ api?
+    // So don't bother updating this test code — for now, just return instead,
+    // if there're replies included on the page already.
+    // And later, remove everything below? + some / most tests above.
+    if (ps.numPostsTotal)
+      return;
+    assert.eq(page.lastApprovedReplyById, null);
+    assert.eq(page.lastApprovedReplyAt, null);
+    assert.eq(page.pinOrder, null);
+    assert.eq(page.pinWhere, null);
+    assert.eq(page.answeredAt, null);
+    assert.eq(page.answerPostId, null);
+    assert.eq(page.lockedAt, null);
+    assert.eq(page.plannedAt, null);
+    assert.eq(page.startedAt, null);
+    assert.eq(page.bumpedAtMs, null);
+    assert.eq(page.doingStatus, 1);
+    assert.eq(page.doneAt, null);
+    assert.eq(page.closedAt, null);
+    assert.eq(page.unwantedAt, null);
+    assert.eq(page.frozenAt, null);
+    assert.eq(page.deletedAt, null);
+    assert.eq(page.htmlHeadDescription, "");
+    assert.eq(page.htmlHeadTitle, "");
+    assert.eq(page.layout, 0);
+    assert.eq(page.embeddingPageUrl, null);
+    assert.ok(!!page.frequentPosterIds);
+    assert.eq(page.frequentPosterIds.length, 0);
   },
 
 

@@ -32,6 +32,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
   var moderator: User = _
   var member1: User = _
+  val Member1Password = "pub-mem1-pwd"
   var wrongMember: User = _
 
   var noRepliesTopicId: PageId = _
@@ -64,7 +65,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
       createForumResult = dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false, ownerWho).get
       categoryId = createForumResult.defaultCategoryId
       moderator = createPasswordModerator("us_mod", dao)
-      member1 = createPasswordUser("us_mb1", dao)
+      member1 = createPasswordUser("us_mb1", dao, password = Some(Member1Password))
       wrongMember = createPasswordUser("us_wr_mb", dao)
     }
 
@@ -130,7 +131,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
       playTimeMillis(1000)
       dao.verifyPrimaryEmailAddress(member1.id, globals.now().toJavaDate)
       val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-        ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "public-us_mb1"))
+        ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
       val stats = loadUserStats(member1.id)(dao)
       stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }

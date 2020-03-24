@@ -1,0 +1,6 @@
+
+single sign-on:
+
+
+upsert api:
+  create chat, two people chat:  

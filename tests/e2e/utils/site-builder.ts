@@ -62,6 +62,7 @@ function buildSite(site?: SiteData) {
 
     addCategoryNoAboutPage: function(forumPage: PageJustAdded, opts: {
       id: number,
+      extId?: ExtId,
       parentCategoryId?: number,
       name: string,
       slug: string,
@@ -72,7 +73,8 @@ function buildSite(site?: SiteData) {
     }): CategoryJustAdded {
       assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
       const category = make.categoryWithIdFor(opts.id, forumPage);
-      category.parentId = opts.parentCategoryId;
+      category.extId = opts.extId;
+      category.parentId = opts.parentCategoryId;  // note: different name
       category.name = opts.name;
       category.slug = opts.slug;
       category.description = opts.description;
@@ -86,6 +88,7 @@ function buildSite(site?: SiteData) {
 
     addCategoryWithAboutPage: function(forumPage: PageJustAdded, opts: {
       id: number,
+      extId?: ExtId,
       parentCategoryId: number,
       name: string,
       slug: string,
@@ -222,7 +225,8 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addTwoPagesForum: function(opts: { title: string, introText?: string, members?: string[] })
+    addTwoPagesForum: function(opts: { title: string, introText?: string,
+          members?: string[], categoryExtId?: string })
           : TwoPagesTestForum {
       const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
@@ -239,6 +243,7 @@ function buildSite(site?: SiteData) {
       const specificCategoryId = 4;
       forum.categories.specificCategory = api.addCategoryWithAboutPage(forumPage, {
         id: specificCategoryId,
+        extId: opts.categoryExtId,
         parentCategoryId: forumPage.categoryId,
         name: "Specific Category",
         slug: 'specific-category',

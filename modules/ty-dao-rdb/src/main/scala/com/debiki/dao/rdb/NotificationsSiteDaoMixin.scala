@@ -109,7 +109,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadAllNotifications(): Seq[Notification] = {
+  def loadAllNotifications(): Vector[Notification] = {
     val query = s"""
       select * from notifications3
       where site_id = ?

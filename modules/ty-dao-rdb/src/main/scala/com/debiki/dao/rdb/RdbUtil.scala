@@ -252,7 +252,7 @@ object RdbUtil {
     if (isGuestId(userId))
       Guest(
         id = userId,
-        extImpId = extImpId,
+        extId = extImpId,
         createdAt = createdAt,
         guestName = dn2e(name.orNull),
         guestBrowserId = Option(rs.getString("u_guest_browser_id")),
@@ -263,7 +263,7 @@ object RdbUtil {
     else if (isGroup)
       Group(
         id = userId,
-        extImpId = extImpId,
+        extId = extImpId,
         createdAt = createdAt,
         theUsername = theUsername,
         name = name,
@@ -300,7 +300,7 @@ object RdbUtil {
   def getGroup(rs: js.ResultSet): Group = {
     Group(
       id = rs.getInt("user_id"),
-      extImpId = getOptString(rs, "ext_id"),
+      extId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       theUsername = rs.getString("username"),
       name = getOptString(rs, "full_name"),
@@ -397,7 +397,7 @@ object RdbUtil {
     val name = Option(rs.getString("full_name"))
     Guest(
       id = theGuestId,
-      extImpId = getOptString(rs, "ext_id"),
+      extId = getOptString(rs, "ext_id"),
       createdAt = getWhen(rs, "created_at"),
       guestName = dn2e(name.orNull),
       guestBrowserId = Option(rs.getString("guest_browser_id")),
@@ -415,8 +415,8 @@ object RdbUtil {
     // A bit dupl code. (703KWH4)
     UserInclDetails(
       id = theUserId,
-      extImpId = getOptString(rs, "ext_id"),
-      externalId = getOptString(rs, "sso_id"),
+      extId = getOptString(rs, "ext_id"),
+      ssoId = getOptString(rs, "sso_id"),
       fullName = Option(rs.getString("full_name")),
       username = rs.getString("username"),
       createdAt = getWhen(rs, "created_at"),

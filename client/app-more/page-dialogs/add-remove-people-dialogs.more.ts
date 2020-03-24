@@ -64,11 +64,11 @@ const AddPeopleDialog = createComponent({
       alreadyAddedIds,
       onDone,
     });
-    Server.listAllUsernames('', users => {
+    Server.listAllUsernames('', (allUsers: BriefUser[]) => {
       if (this.isGone || !this.state.isOpen) return;
       this.setState({
         selectedLabelValues: [],
-        allUsers: users,
+        allUsers,
         isLoading: false,
       });
     });

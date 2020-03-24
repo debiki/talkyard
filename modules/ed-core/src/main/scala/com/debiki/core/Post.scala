@@ -332,7 +332,7 @@ case class Draft(
   */
 case class Post(   // [exp] ok use
   id: PostId,
-  extImpId: Option[ExtImpId] = None,
+  extImpId: Option[ExtId] = None,
   pageId: PageId,
   nr: PostNr,
   parentNr: Option[PostNr],
@@ -677,6 +677,23 @@ case class Post(   // [exp] ok use
 }
 
 
+case class SimplePostPatch(
+  extId: ExtId,
+  postType: PostType,
+  pageRef: ParsedRef,
+  parentNr: Option[PostNr],
+  authorRef: ParsedRef,
+  body: String
+  // later: bodyMarkupLang: Option[MarkupLang]
+  ) {
+
+  throwIllegalArgumentIf(body.isEmpty, "TyE602MKDPA", "Text is empty")
+  Validation.findExtIdProblem(extId) foreach { problem =>
+    throwIllegalArgument("TyE306DKZH", s"Bad post extId: $problem")
+  }
+}
+
+
 
 object Post {
 
@@ -684,7 +701,7 @@ object Post {
 
   def create(
         uniqueId: PostId,
-        extImpId: Option[String] = None,
+        extImpId: Option[ExtId] = None,
         pageId: PageId,
         postNr: PostNr,
         parent: Option[Post],
@@ -705,7 +722,9 @@ object Post {
 
     // If approved by a human, this initial version is safe.
     val safeVersion =
-      approvedById.flatMap(id => if (id != SystemUserId) Some(FirstVersion) else None)
+      approvedById.flatMap(id =>
+        if (id != SystemUserId && id != SysbotUserId) Some(FirstVersion)
+        else None)
 
     val (parentsChildrenCollapsedAt, parentsChildrenColllapsedById) = parent match {
       case None =>
@@ -727,7 +746,7 @@ object Post {
           (None, None)
     }
 
-    Post(
+    Post(    // [DUPPSTCRT]
       id = uniqueId,
       extImpId = extImpId,
       pageId = pageId,
@@ -778,7 +797,7 @@ object Post {
 
   def createTitle(
         uniqueId: PostId,
-        extImpId: Option[String] = None,
+        extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
@@ -792,7 +811,7 @@ object Post {
 
   def createBody(
         uniqueId: PostId,
-        extImpId: Option[String] = None,
+        extImpId: Option[ExtId] = None,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,

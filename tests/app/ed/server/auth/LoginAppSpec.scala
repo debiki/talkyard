@@ -25,11 +25,11 @@ import java.{util => ju}
 class LoginAppSpec extends DaoAppSuite() {
   var dao: SiteDao = _
 
-  val Member1PasswordEnd = "lg_mb1"
-  val Member1Password: String = "public-" + Member1PasswordEnd
+  val Member1Username = "lg_mb1"
+  val Member1Password: String = "public-" + Member1Username
 
   lazy val moderator: User = createPasswordModerator("lg_mod", dao)
-  lazy val member1: User = createPasswordUser(Member1PasswordEnd, dao)
+  lazy val member1: User = createPasswordUser(Member1Username, dao, password = Some(Member1Password))
   lazy val wrongMember: User = createPasswordUser("lg_wr_mb", dao)
 
 

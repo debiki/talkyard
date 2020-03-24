@@ -350,7 +350,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
 
 
-  // ----- Edit page, via upsert API
+  // ----- Edit page, via upsert API  — no, this requires ActionPatch [ACTNPATCH]
 
   /* Not yet implemented  TyT650KWUDEPJ03g
   it("Owen edit-upserts the 2nd page: a new name, slug, etc", () => {

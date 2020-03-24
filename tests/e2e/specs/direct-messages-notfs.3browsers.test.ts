@@ -32,6 +32,7 @@ let messageText = "Hi I have a question";
 let owensAnswer = "Yes what is it?";
 let mariasQuestion = "Can I ask questions?";
 let owensQuestionAnswer = "Yes if the number of questions is a prime number. 2, 3, 5, 7, 11 you know.";
+let mariasOwnOpReply = "Hmm, myself, let me think";
 
 let siteId;
 
@@ -177,6 +178,22 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
 
   it("... she sees the question answer", () => {
     maria.topic.waitForPostAssertTextMatches(4, owensQuestionAnswer);
+  });
+
+
+  // All page members get notified about replies
+  // ------------------------------------------------------
+
+  // Also if they aren't replied to or mentioned explicitly.
+
+  it("Maria replies to the Orig Post — that's *not* Owen's post", () => {
+    maria.complex.replyToOrigPost(mariasOwnOpReply);
+    maria.topic.waitForPostAssertTextMatches(5, mariasOwnOpReply);
+  });
+
+  it("... Owen gets notified, because he's a page member", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [messageTitle, mariasOwnOpReply], browser);
   });
 
 
