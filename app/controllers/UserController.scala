@@ -25,13 +25,10 @@ import debiki.dao.{ReadMoreResult, SiteDao}
 import debiki.EdHttp._
 import ed.server.http._
 import java.{util => ju}
-
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents, Result}
-
+import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
-import scala.collection.immutable
 import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
@@ -1248,7 +1245,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
-    val json = listAllUsersImpl(usernamePrefix, isViaApi = false, request)
+    val json = listAllUsersImpl(usernamePrefix, request)
     OkSafeJson(json)
   }
 
@@ -1261,21 +1258,21 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(!request.siteSettings.enableApi,
       "TyE4305RKCGL4", o"""API not enabled. If you're admin, you can enable it
          in the Admin Area | Settings | Features tab.""")
-    val json = listAllUsersImpl(usernamePrefix, isViaApi = true, request)
+    val json = listAllUsersImpl(usernamePrefix, request)
+    dieIf(!usersOnly, "TyE206KTTR4")  // else: return a 'groups:...' or 'members:' field
     OkApiJson(
       // [PUB_API] Wrap in an obj, so, later on, we can add more things (fields)
       // to the response, without breaking existing API consumers. E.g. some type of
       // cursor for iterating through all members.
       Json.obj(
-        "members" -> json))
+        "users" -> json))
   }
 
 
-  private def listAllUsersImpl(usernamePrefix: String, isViaApi: Boolean,
-        request: ApiRequest[_]): JsArray = {
+  private def listAllUsersImpl(usernamePrefix: String, request: ApiRequest[_]): JsArray = {
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     // ... stop doing that?
-    val members = request.dao.loadUsersWithPrefix(usernamePrefix)
+    val members = request.dao.loadUsersWithUsernamePrefix(usernamePrefix, limit = 50)
     JsArray(
       members map { member =>
         // [PUB_API] .ts: ListUsersApiResponse, ListGroupsApiResponse, ListMembersApiResponse

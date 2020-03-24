@@ -169,7 +169,9 @@ object JsX {
     dieIf(inclPasswordHash && !callerIsAdmin, "TyE305KSJWG2")
     var userJson = Json.obj(  // MemberInclDetails  [B28JG4]
       "id" -> user.id,
-      "externalId" -> JsStringOrNull(user.ssoId),
+      "ssoId" -> JsStringOrNull(user.ssoId),
+      "externalId" -> JsStringOrNull(user.ssoId),  // deprecated 2020-03-25 [395KSH20]
+      "extId" -> JsStringOrNull(user.extId),
       "createdAtEpoch" -> JsNumber(user.createdAt.millis),  // REMOVE
       "createdAtMs" -> JsNumber(user.createdAt.millis),  // RENAME
       "username" -> user.username,

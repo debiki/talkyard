@@ -164,6 +164,7 @@ ${ htmlToPaste ? htmlToPaste : `
       numPostsTotal?: number,
     }) => {
 
+    // -2: Skip title and body posts.
     const numRepliesTotal = ps.numPostsTotal ? ps.numPostsTotal - 2 : 0;
 
     assert.eq(page.htmlTagCssClasses, "");
@@ -187,7 +188,15 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.eq(page.numPostsTotal, ps.numPostsTotal || 2);
     assert.eq(page.numRepliesTotal, numRepliesTotal);
     assert.eq(page.numRepliesVisible, numRepliesTotal);
-    assert.eq(page.numOrigPostRepliesVisible, numRepliesTotal);  // for now
+    if (page.pageType === PageRole.PrivateChat || page.pageType === PageRole.OpenChat) {
+      // Chat messages don't reply to any particular post.
+      assert.eq(page.numOrigPostRepliesVisible, 0);
+
+    }
+    else {
+      // For now. (Won't work if a post replies to not-the-OP.)
+      assert.eq(page.numOrigPostRepliesVisible, numRepliesTotal);
+    }
 
     // Maybe shouldn't include the below things, + some things above, in the publ api?
     // So don't bother updating this test code — for now, just return instead,
@@ -217,6 +226,68 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.eq(page.embeddingPageUrl, null);
     assert.ok(!!page.frequentPosterIds);
     assert.eq(page.frequentPosterIds.length, 0);
+  },
+
+
+  checkNewPostFields: (post, ps: {
+      postNr: PostNr,
+      parentNr?: PostNr,
+      postType: PostType,
+      pageId: PageId,
+      authorId?: UserId,
+      approvedSource: string,
+    }) => {
+
+    assert.ok(!post.lastApprovedEditAt);
+    assert.eq(post.closedStatus, 0);
+    assert.eq(post.numPendingEditSuggestions, 0);
+    assert.eq(post.nr, ps.postNr);
+
+    assert.notEq(post.parentNr, 0);
+    if (post.parentNr) assert.eq(post.parentNr, ps.parentNr);
+    else assert.ok(ps.parentNr === null || ps.parentNr === undefined);
+
+    assert.ok(!post.bodyHiddenById);
+    assert.ok(!post.currRevSourcePatch);
+    assert.ok(!post.collapsedById);
+    assert.eq(post.numUnwantedVotes, 0);
+    assert.eq(post.numHandledFlags, 0);
+    assert.eq(post.numWrongVotes, 0);
+    assert.ok(!post.prevRevNr);
+    assert.ok(!!post.createdAt);
+    assert.ok(!post.closedById);
+    assert.ok(!!post.currRevStartedAt);
+    assert.eq(post.approvedRevNr, 1);
+    assert.ok(!post.collapsedStatus);
+    assert.eq(post.currRevNr, 1);
+    assert.ok(!post.deletedById);
+    assert.eq(post.numPendingFlags, 0);
+    assert.ok(!!post.id);
+    assert.eq(post.approvedById, c.SysbotUserId);
+    assert.ok(!post.closedAt);
+    assert.eq(post.numLikeVotes, 0);
+    assert.eq(post.numTimesRead, 0);
+    assert.eq(post.createdById, 106);
+    assert.ok(!post.branchSideways);
+    assert.eq(post.deletedStatus, 0);
+    assert.ok(!post.pinnedPosition);
+    assert.ok(!post.safeRevNr);
+    assert.eq(post.postType, ps.postType);
+    //assert.eq(post.multireplyPostNrs, []);  not in use
+    assert.eq(post.pageId, ps.pageId);
+    assert.ok(!!post.approvedAt);
+    assert.ok(!post.collapsedAt);
+    assert.ok(!!post.urlPaths.canonical);
+    assert.ok(!post.deletedAt);
+    assert.ok(!post.bodyHiddenAt);
+    assert.eq(post.numDistinctEditors, 1);
+    assert.eq(post.numBuryVotes, 0);
+    assert.ok(!post.currRevLastEditedAt);
+    assert.eq(post.approvedSource, ps.approvedSource);
+    assert.ok(!post.bodyHiddenReason);
+    assert.eq(post.approvedHtmlSanitized, ps.approvedSource); // simpler
+    !ps.authorId || assert.eq(post.currRevById, ps.authorId);
+    assert.ok(!post.lastApprovedEditById);
   },
 
 

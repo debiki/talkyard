@@ -158,7 +158,7 @@ describe('chat', function() {
     mariasBrowser.topbar.clickHome();
   });
 
-  it("?? Annoyingly, needs to click the chat channel so it stops being unread ??", () => {
+  it("?? BUG Annoyingly, needs to click the chat channel so it stops being unread ??", () => {
     // This makes the topic unread. Why is this needed? Mildly annoying.
     mariasBrowser.watchbar.openUnreadTopic();
     // Then go back to Home.
@@ -166,7 +166,7 @@ describe('chat', function() {
   });
 
   it("Owen posts another message — Maria won't get notified, because " +
-     "not directly to her and isn't a private chat", function() {
+     "not directly to her and isn't a private chat", () => {
     prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
     assert.eq(mariasBrowser.watchbar.numUnreadTopics(), 0);
     owensBrowser.chat.addChatMessage(`But what is @${michael.username}'s name?`);
@@ -181,6 +181,7 @@ describe('chat', function() {
   });
   it("... but she won't get any email notf", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    // Only 1 email, to Michael.
     assert.eq(num, prevNumEmails + 1, `Emails sent to: ${addrsByTimeAsc}`);
     prevNumEmails = num;
   });

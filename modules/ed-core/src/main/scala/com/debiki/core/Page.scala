@@ -181,7 +181,7 @@ object PageMeta {
   */
 case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp] ok use. Missing, fine: num_replies_to_review  incl_in_summaries  wait_until
   pageId: String,
-  extImpId: Option[ExtId] = None,
+  extImpId: Option[ExtId] = None,  // RENAME to extId
   pageType: PageType,
   version: PageVersion,
   createdAt: ju.Date,

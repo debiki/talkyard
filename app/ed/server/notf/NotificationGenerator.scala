@@ -42,7 +42,11 @@ case class NotificationGenerator(
 
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
-  private var sentToUserIds = new mutable.HashSet[UserId]()  // by page id? post id?
+
+  BUG // currently harmless. Should remember sent-to by post id too — in case [REMBSENTTO]
+  // needs to generate many notfs to the same user, for different posts.
+  private var sentToUserIds = new mutable.HashSet[UserId]()
+
   private var avoidDuplEmailToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
   private var anyAuthor: Option[Participant] = None
@@ -156,8 +160,10 @@ case class NotificationGenerator(
         // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
         if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
+        // Authz checks that we won't notify people outside a private chat
+        // about any mentions (because they cannot see the chat). [PRIVPUBMENTN] TESTS_MISSING
       } {
-        makeNewPostNotfs(   // ! not if mentioned in private chat [PRIVPUBMENTN]
+        makeNewPostNotfs(
             NotificationType.Mention, newPost, page.categoryId, userOrGroup)
       }
     }

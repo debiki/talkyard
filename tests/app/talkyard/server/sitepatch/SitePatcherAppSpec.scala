@@ -33,7 +33,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
   private def testForumQuotaLimit =
     globals.config.createSite.quotaLimitMegabytes(isForBlogComments = false, isTestSite = true)
 
-  /* "SitePatcher can" - {
+  "SitePatcher can" - {
 
 
     // ----- Import empty
@@ -705,7 +705,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
       }
 
     }
-  } */
+  }
 
 
   // ----- Helpers, for the tests below
@@ -753,7 +753,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
 
 
 
-  /*"SitePatcher can also" - {
+  "SitePatcher can also" - {
 
     "Import new pages and replies, all posts approved" - {
 
@@ -1116,7 +1116,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
         postsWithExtImpId.length mustBe 1
       }
     }
-  } */
+  }
 
 
 

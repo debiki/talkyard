@@ -651,7 +651,10 @@ case class SitePatchParser(context: EdContext) {
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(UserInclDetails(
         id = id,
-        ssoId = readOptString(jsObj, "externalId"),  // RENAME to "ssoId" [395KSH20]
+        ssoId = readOptString(jsObj, "ssoId") orElse
+          // deprecated [395KSH20]
+          readOptString(jsObj, "externalId"),
+        extId = readOptString(jsObj, "extId"),
         username = username,
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readWhen(jsObj, "createdAtMs"),
@@ -1383,25 +1386,17 @@ case class SitePatchParser(context: EdContext) {
 
     val extId = try readString(jsObj, "extId") catch {
       case ex: IllegalArgumentException =>
-        return Bad(s"Invalid post id: " + ex.getMessage)
+        return Bad(s"Invalid post extId: " + ex.getMessage)
     }
 
     // Try to not reject the request. [0REJREQ]
 
     try {
-      val anyPostTypeInt = readOptInt(jsObj, "postType", "type")
-      throwForbiddenIf(
-          anyPostTypeInt.isSomethingButNot(PostType.Normal.toInt) &&
-          anyPostTypeInt.isSomethingButNot(PostType.ChatMessage.toInt) &&
-          anyPostTypeInt.isSomethingButNot(PostType.BottomComment.toInt),
-        "TyE70536SRKT", "Currently only PostType.Normal, ChatMessage and ProgressPost allowed")
-
-      val postTypeDefaultNormal: PostType =
-        anyPostTypeInt.flatMap(PostType.fromInt) getOrElse PostType.Normal
-
+      val anyPostTypeInt = readOptInt(jsObj, "postType")
+      val postType: PostType = anyPostTypeInt.flatMap(PostType.fromInt) getOrElse PostType.Normal
       Good(SimplePostPatch(
         extId = extId,
-        postType = postTypeDefaultNormal,
+        postType = postType,
         pageRef = readParsedRef(jsObj, "pageRef", allowParticipantRef = false),
         parentNr = readOptInt(jsObj, "parentNr"),
         authorRef = readParsedRef(jsObj, "authorRef", allowParticipantRef = true),

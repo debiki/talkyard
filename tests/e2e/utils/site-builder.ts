@@ -97,8 +97,10 @@ function buildSite(site?: SiteData) {
       deletedAtMs?: number,
       aboutPageText: string,
     }): CategoryJustAdded {
+      // REMOVE optsWithDescr, instead, will load category description via PageStuff. [502RKDJWF5]
       const optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
       const category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
+
       const page = api.addPage({
         dbgSrc: 'StBldrCatWAbt',
         id: `about_cat_${opts.slug.replace('-', '_')}`.substr(0, 32),
@@ -111,6 +113,7 @@ function buildSite(site?: SiteData) {
         categoryId: category.id,
         authorId: c.SystemUserId,
       });
+
       category.aboutPage = page;
       return <CategoryJustAdded> category;
     },

@@ -83,6 +83,7 @@ trait PagePathMetaDao {
   }
 
 
+  @deprecated("use getPagePath2 instead")
   def getPagePath(pageId: PageId): Option[PagePath] = {
     getPagePath2(pageId) .map(_.toOld(siteId))
   }
@@ -115,6 +116,7 @@ trait PagePathMetaDao {
 
 
   def getPageMetaByExtId(extId: ExtId): Option[PageMeta] = {
+    COULD_OPTIMIZE // could cache. But only used via the Act API [ACTNPATCH].
     val pageMetaInDb: Option[PageMeta] =
       readOnlyTransaction(_.loadPageMetasByExtIdAsMap(Some(extId))).values.headOption
     dieIfAny(pageMetaInDb, (p: PageMeta) => p.extImpId isNot extId, "TyE395KST82P")

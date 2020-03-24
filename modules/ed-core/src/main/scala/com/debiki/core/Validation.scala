@@ -164,10 +164,22 @@ object Validation {
 
   val MaxExtIdLength: Int = 128  // sha512 in hex
 
-  def findExtIdProblem(extId: String): Option[ErrorMessage] = {  // [05970KF5]
-    if (extId.isEmpty) return Some("Empty external id [TyEEXTIDEMP]")
+  def findExtIdProblem(extId: String): Option[ErrorMessage] = { // [05970KF5]
+    findExtIdOrSsoIdProblemImpl(extId, isSsoId = false)
+  }
+
+  def findSsoIdProblem(ssoId: String): Option[ErrorMessage] = {
+    findExtIdOrSsoIdProblemImpl(ssoId, isSsoId = true)
+    if (ssoId.trim != ssoId)
+      return Some("Single Sign-On id start or ends with blanks [TyESSOBLNKS")
+    None
+  }
+
+  private def findExtIdOrSsoIdProblemImpl(extId: String, isSsoId: Boolean): Option[ErrorMessage] = {
+    def what = isSsoId ? "Single Sign-On id" | "external id"
+    if (extId.isEmpty) return Some(s"Empty $what [TyEEXTIDEMP]")
     if (extId.length > MaxExtIdLength) return Some(
-      s"Too long external id, longer than $MaxExtIdLength chars: '$extId' [TyEEXTIDLNG]")
+      s"Too long $what, longer than $MaxExtIdLength chars: '$extId' [TyEEXTIDLNG]")
 
     //For now: (there's a db constraint)
     None

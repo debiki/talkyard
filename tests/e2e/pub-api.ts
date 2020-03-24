@@ -13,7 +13,7 @@
 
 
 interface ListUsersApiResponse {
-   members: UserIdName[];
+  users: UserIdName[];
 }
 
 interface UserIdName {

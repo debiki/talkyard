@@ -60,13 +60,14 @@ class SiteDaoFactory (
 }
 
 
-trait ReadOnySiteDao {
+trait ReadOnySiteDao {  // RENAME typo: "Ony"
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage  // repl w ParsedRef?
   def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta]
   def getPageMetaByExtId(extId: ExtId): Option[PageMeta]
   def getParticipantByRef(ref: Ref): Option[Participant] Or ErrorMessage  // remove?
   def getParticipantByParsedRef(ref: ParsedRef): Option[Participant]
   def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post]
+  def getPagePath2(pageId: PageId): Option[PagePathWithId]
 
   def now(): When
 

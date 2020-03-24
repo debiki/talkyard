@@ -69,21 +69,21 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     "find users by username prefix" in {
       dao.readWriteTransaction { tx =>
         info("no members")
-        tx.loadUsersWithPrefix("zzz") mustBe Nil
+        tx.loadUsersWithUsernamePrefix("zzz") mustBe Nil
 
         info("all members")
-        var allMembers = tx.loadUsersWithPrefix("")
+        var allMembers = tx.loadUsersWithUsernamePrefix("")
         allMembers.length mustBe 2
-        allMembers = tx.loadUsersWithPrefix("t")
+        allMembers = tx.loadUsersWithUsernamePrefix("t")
         allMembers.length mustBe 2
-        allMembers = tx.loadUsersWithPrefix("txt_")
+        allMembers = tx.loadUsersWithUsernamePrefix("txt_")
         allMembers.length mustBe 2
 
         info("specific member")
-        var admin = tx.loadUsersWithPrefix("txt_a")
+        var admin = tx.loadUsersWithUsernamePrefix("txt_a")
         admin.length mustBe 1
         admin.head.username mustBe Some("txt_adm")
-        admin = tx.loadUsersWithPrefix("txt_adm")
+        admin = tx.loadUsersWithUsernamePrefix("txt_adm")
         admin.length mustBe 1
         admin.head.username mustBe Some("txt_adm")
       }

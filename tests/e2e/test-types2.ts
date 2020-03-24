@@ -361,7 +361,8 @@ interface PageIdWhen {
 
 interface Page {
   id: string;
-  role: PageRole;
+  role: PageRole;      // deprecated ...
+  pageType: PageRole;  // ... changing to this instead
   categoryId?: number;
   embeddingPageUrl?: string;
   authorId: number;

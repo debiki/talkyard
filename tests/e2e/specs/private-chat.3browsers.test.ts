@@ -31,7 +31,7 @@ let chatUrl;
 
 const owensFirstMessageMariaNotified = 'owensFirstMessageMariaNotified';
 const mariasMessageOwenMichaelNotified = 'mariasMessageOwenMichaelNotified';
-const owensTopSecretToMichael = 'owensTopSecretToMichael';
+const owensTopTopSecretToMichael = 'owensTopTopSecretToMichael';
 const michaelMentionsMaria = 'michaelMentionsMaria';
 
 
@@ -231,14 +231,14 @@ describe("private chat  TyT2ABKR045", function() {
 
   // ----- After having left the chat: No more notifications
 
-  it("Owen writes something, top secret, Maria must not see", () => {
+  it("Owen writes something, Top Top secret, Maria must not see", () => {
     prevNumEmails = server.getEmailsSentToAddrs(siteId).num;
-    owen.chat.addChatMessage(owensTopSecretToMichael);
+    owen.chat.addChatMessage(owensTopTopSecretToMichael);
   });
 
   it("... Michael gets a notf email, although wasn't directly to him", () => {
     server.waitUntilLastEmailMatches(
-        siteId, michael.emailAddress, [owensTopSecretToMichael], michael);
+        siteId, michael.emailAddress, [owensTopTopSecretToMichael], michael);
   });
 
   it("... but only Michael (not Maria)", () => {

@@ -19,7 +19,7 @@ package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.SiteDao
+import debiki.dao.{ReadOnySiteDao, SiteDao}
 import debiki.{JsonMaker, Settings2}
 import ed.server._
 import play.api.libs.json._
@@ -33,7 +33,7 @@ import talkyard.server.JsX._
   *
   * Search for [readlater] for stuff ignored right now.
   *
-  * Split into two: SitePatchMaker and ActionPatchResultJsonMaker? [ACTNPATCH]
+  * Split into two: SitePatchMaker and ActionBatchResponseMaker? [ACTNPATCH]
   */
 case class SitePatchMaker(context: EdContext) {
 
@@ -110,11 +110,12 @@ object SitePatchMaker {
     * (Some time later, for really large sites, might be better to load things directly
     * from a db transaction, rather than creating an intermediate representation.)
     *
-    * Split into two fns? [ACTNPATCH]
+    * Split into two fns?  and remove `simpleFormat` param [ACTNPATCH]
     */
   def createPostgresqlJsonBackup(anyDump: Option[SitePatch] = None,  // RENAME makeSiteJsonDump?
+        // A bit weird with both a txt and a dao. Oh well.
         anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean,
-        anyDao: Option[SiteDao] = None): JsObject = {
+        anyDao: Option[ReadOnySiteDao] = None): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
     require(simpleFormat == anyDao.isDefined, "TyEG503WKL2")
@@ -271,7 +272,7 @@ object SitePatchMaker {
               .orElse(dao.getPagePath2(post.pageId)) getOrDie "TyE703KDNF36"
             json +=
               "urlPaths" -> Json.obj(
-                "canonical" -> JsString(canonicalPath.value + "post-" + post.nr))
+                "canonical" -> JsString(canonicalPath.value + "#post-" + post.nr))
           }
           json
         }))

@@ -99,12 +99,12 @@ package object core {
 
   type Ref = String  ; RENAME // to RefStr(ing) or RawRef? maybe rename ParsedRef to just Ref?
 
-  sealed abstract class ParsedRef
+  sealed abstract class ParsedRef(val canOnlyBeToParticipant: Boolean = false)
   object ParsedRef {
     case class ExternalId(value: ExtId) extends ParsedRef
-    case class SingleSignOnId(value: String) extends ParsedRef
+    case class SingleSignOnId(value: String) extends ParsedRef(true)
     case class TalkyardId(value: String) extends ParsedRef
-    case class Username(value: String) extends ParsedRef
+    case class Username(value: String) extends ParsedRef(true)
   }
 
   def parseRef(ref: Ref, allowParticipantRef: Boolean): ParsedRef Or ErrorMessage = {
@@ -808,6 +808,7 @@ package object core {
   case class PageParticipant(
     pageId: PageId,
     userId: UserId,
+    // Change to isPageMember: Boolean, and use the audit log to remember who did what?
     addedById: Option[UserId],
     removedById: Option[UserId],
     inclInSummaryEmailAtMins: Int,

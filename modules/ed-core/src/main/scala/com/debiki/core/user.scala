@@ -213,13 +213,16 @@ object NewPasswordUserData {
         name: Option[String], username: String, email: String,
         password: Option[String] = None,
         extId: Option[ExtId] = None,
-        ssoId: Option[String] = None, // SECURITY validate?
+        ssoId: Option[String] = None,
         createdAt: When,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
         emailVerifiedAt: Option[When] = None,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): NewPasswordUserData Or ErrorMessage = {
     extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+      return Bad(problem)
+    }
+    ssoId.flatMap(Validation.findSsoIdProblem) foreach { problem =>
       return Bad(problem)
     }
     for {
@@ -782,7 +785,14 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   isAdmin: Boolean,
   isModerator: Boolean) {
 
-  require(ssoId.isTrimmedNonEmpty, "TyE5KBW01")
+  // COULD somehow return Bad instead? Or throw Forbidden — then need to move to the server module
+  extId.flatMap(Validation.findExtIdProblem) foreach { problem =>
+    throwIllegalArgument(s"Bad extId: $problem [TyE402TKUHR24]")
+  }
+  Validation.findSsoIdProblem(ssoId) foreach { problem =>
+    throwIllegalArgument(s"Bad ssoId: $problem [TyE502WKDTTSR2]")
+  }
+
   Validation.checkEmail(primaryEmailAddress).badMap(errorMessage =>
     die("TyE5KBW02", s"Bad email: $primaryEmailAddress, for external user 'ssoid:$ssoId'"))
   require(username.forall(_.isTrimmedNonEmpty), "TyE5KBW05")
@@ -799,15 +809,15 @@ case class ExternalUser(   // sync with test code [7KBA24Y]
   * However if a guest behaves well, hens *threat level* decreases (not yet implemented).
   */
 case class Guest( // [exp] ok
-                  id: UserId,
-                  override val extId: Option[ExtId],
-                  createdAt: When,
-                  guestName: String,
-                  guestBrowserId: Option[String],
-                  email: String, // COULD rename to emailAddr
-                  emailNotfPrefs: EmailNotfPrefs,
-                  country: Option[String] = None, // COULD rename to Location
-                  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant with ParticipantInclDetails {
+  id: UserId,
+  override val extId: Option[ExtId],
+  createdAt: When,
+  guestName: String,
+  guestBrowserId: Option[String],
+  email: String, // COULD rename to emailAddr
+  emailNotfPrefs: EmailNotfPrefs,
+  country: Option[String] = None, // COULD rename to Location
+  lockedThreatLevel: Option[ThreatLevel] = None) extends Participant with ParticipantInclDetails {
 
   def emailVerifiedAt: Option[ju.Date] = None
   def passwordHash: Option[String] = None
@@ -879,7 +889,7 @@ sealed trait MemberInclDetails extends ParticipantInclDetails {
 case class UserInclDetails( // ok for export
   id: UserId,
   extId: Option[ExtId] = None,
-  ssoId: Option[String], // RENAME to 'ssoId' in API protocol too? [395KSH20]
+  ssoId: Option[String],
   fullName: Option[String],
   username: String,
   createdAt: When,
@@ -921,9 +931,12 @@ case class UserInclDetails( // ok for export
     throwIllegalArgument("TyE2AKT057TM", s"Bad user extId: $problem")
   }
 
+  ssoId.flatMap(Validation.findSsoIdProblem) foreach { problem =>
+    throwIllegalArgument("TyE603WKVNF5", s"Bad user ssoId: $problem")
+  }
+
   require(Participant.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
-  require(ssoId.forall(_.isTrimmedNonEmpty), "TyE5KBW0Z")
   require(!username.contains(isBlank _), "EdE8FKY07")
   require(!primaryEmailAddress.contains(isBlank _), "EdE6FKU02")
   require(fullName == fullName.map(_.trim), "EdE3WKD5F")
@@ -1247,18 +1260,18 @@ case class GroupAndStats(group: Group, stats: Option[GroupStats])
   * A group can, however, auto-grant trust level 'grantsTrustLevel' to all its members.
   */
 case class Group( // [exp] missing: createdAt, add to MemberInclDetails & ParticipantInclDetails?
-                  id: UserId,
-                  theUsername: String,
-                  name: Option[String],
-                  extId: Option[ExtId] = None,
-                  createdAt: When = When.Genesis, // for now
-                  // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
-                  tinyAvatar: Option[UploadRef] = None,
-                  smallAvatar: Option[UploadRef] = None,
-                  summaryEmailIntervalMins: Option[Int] = None,
-                  summaryEmailIfActive: Option[Boolean] = None,
-                  grantsTrustLevel: Option[TrustLevel] = None,
-                  uiPrefs: Option[JsObject] = None)
+  id: UserId,
+  theUsername: String,
+  name: Option[String],
+  extId: Option[ExtId] = None,
+  createdAt: When = When.Genesis, // for now
+  // emailAddr: String  <— if adding later, don't forget to update this: [306KWUSSJ24]
+  tinyAvatar: Option[UploadRef] = None,
+  smallAvatar: Option[UploadRef] = None,
+  summaryEmailIntervalMins: Option[Int] = None,
+  summaryEmailIfActive: Option[Boolean] = None,
+  grantsTrustLevel: Option[TrustLevel] = None,
+  uiPrefs: Option[JsObject] = None)
   extends Member with MemberInclDetails {  // COULD split into two? One without, one with details
 
   require(id >= Group.EveryoneId, "TyE4J5RKH24")

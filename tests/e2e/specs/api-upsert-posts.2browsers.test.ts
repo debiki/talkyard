@@ -156,7 +156,7 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
 
   it("Maja logs in", () => {
     majasBrowser.go2(siteIdAddress.origin);
-    majasBrowser.complex.loginWithPasswordViaTopbar((maja);
+    majasBrowser.complex.loginWithPasswordViaTopbar(maja);
   });
 
   it("... posts a topic", () => {
@@ -308,7 +308,7 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
 
   let replyNotfLink: string;
 
-  it("Maja fins a page link in a notf email", () => {
+  it("Maja finds a page link in a notf email", () => {
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical

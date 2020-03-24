@@ -26,7 +26,6 @@ import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json.JsObject
-
 import scala.collection.mutable
 import scala.collection.immutable
 
@@ -35,7 +34,7 @@ import scala.collection.immutable
   * Instead, it should consist of CategoryPatch (exist) and PostPatch and
   * GuestPatch etc, where some fields can be left out.
   * That'd be useful if one wants to upsert something and overwrite only
-  * some fields, and leave the others unchanged.
+  * some fields, and leave the others unchanged.  — No? Use ActionBatch for that instead? [ACTNPATCH]
   *
   * So, all things need two representations: Thing and ThingPatch.
   * But don't implement anything more than CategoryPatch, until people ask for that.
@@ -45,7 +44,7 @@ import scala.collection.immutable
   * construct these patch > 2e9 "temporary import ids" — or "patch item id" ?
   * See "LowestTempImpId".
   *
-  * SitePatch is a (possibly small) set of changes to do to a site,
+  * SitePatch is a (possibly small) set of things to add to a site,
   * whilst a SiteDump is a SitePatch that includes the whole site.
   *
   * RENAME to SiteUpsertPatch? [ACTNPATCH]
@@ -107,7 +106,7 @@ case class SitePatch(
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
-  def toSimpleJson(siteDao: SiteDao): JsObject = {
+  def toSimpleJson(siteDao: ReadOnySiteDao): JsObject = {
     SitePatchMaker.createPostgresqlJsonBackup(
       anyDump = Some(this),
       simpleFormat = true,
@@ -196,11 +195,44 @@ object SitePatch {
 
 
 
-/** REFACTOR  Change SimpleSitePatch to a ActionPatch? [ACTNPATCH] and do *not*
+/** REFACTOR  Change SimpleSitePatch to a ActionPatch? [ACTNPATCH] **edit: ActionBatch?
+  * see below**   and do *not*
   * generate a SitePatch to import — instead, iterate through the things
   * in the ActionPatch and call the correct Dao functions to make things
   * happen in the same way as if people were doing things via their web client.
   * All in the same transaction.
+  *
+  * Hmm, instead: ActionBatch = a group of actions/commands to do:
+  * (and does nothing, if there's an insertion conflict for example
+  * — and returns info about what was, and wasn't, done.)
+  *
+  * POST /-/v0/action-batch    or just:  /-/v0/act  or  /-/v0/do-batch  ?
+  * {
+  *   actionBatch: [{   // or actionGroups? no, "group" is also used for user groups
+  *     sendDirectMessages: [{ from: ... , to: ..., text: ..., textFormatLang: ... }],
+  *     createCategories: ...,
+  *     createPages: [{ ...a chat page ...}],
+  *     actionOptions: {
+  *       generateNotifications: false,
+  *     },
+  *   },
+  *   {
+  *     createPosts: [{ ... a chat message ...}],
+  *     actionOptions: {
+  *       generateNotifications: true,
+  *     },
+  *   }]
+  * }
+  *
+  * Or:
+  *   actionGroups: [{
+  *     editPosts: [{ ... ]}
+  *   }]
+  *
+  *   actionGroups: [{
+  *     deletePosts: [{ ... ]}
+  *   }]
+  *
   */
 case class SimpleSitePatch(
   upsertOptions: Option[UpsertOptions] = None,
@@ -227,8 +259,8 @@ case class SimpleSitePatch(
     * that's where the description is kept (.i.e in the About page,
     * the page body post text).
     *
-    * REFACTOR [ACTNPATCH] Instead of the above, have a class ActionPatcher that
-    * live-applies all changes in an ActionPatch, without constructing an intermediate
+    * REFACTOR [ACTNPATCH] Instead of the above, have a class ActionBatchDoer that
+    * live-applies all changes in an ActionBatch, without constructing an intermediate
     * SitePatch.
     */
   def makeComplete(dao: ReadOnySiteDao): SitePatch Or ErrorMessage = {  // why not a r/o tx?
@@ -329,7 +361,6 @@ case class SimpleSitePatch(
       }
 
       val author: Option[Participant] = pagePatch.authorRef.map { ref =>
-        // Dupl [502TKJF5]
         dao.getParticipantByRef(ref) getOrIfBad { problem =>
           return Bad(s"Bad author ref: '$ref', the problem: $problem [TyE5KD2073]")
         } getOrElse {
@@ -375,6 +406,7 @@ case class SimpleSitePatch(
         return Good(())
       }
 
+      // (Always picks the Else branch, as of now)
       val pageMeta: PageMeta = pageMetaInDb getOrElse {
         nextPageId += 1
         PageMeta.forNewPage(
@@ -404,7 +436,7 @@ case class SimpleSitePatch(
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1
-      val titlePost = Post(  // [DUPPSTCRT]
+      val titlePost = Post(  // dupl code, ue Post.create() instead [DUPPSTCRT]
         id = nextPostId,
         extImpId = titlePostExtId,
         pageId = nextPageId.toString,
@@ -465,17 +497,20 @@ case class SimpleSitePatch(
 
       // Members to join the page?
       pageMemberRefs foreach { ref: ParsedRef =>
+        // Currently cannot create members and add to page at the same time. [JB205KDN]
         val pp: Participant = dao.getParticipantByParsedRef(ref) getOrElse {
           return Bad(s"No member matching ref $ref, for page extId '$pageExtId' [TyE40QMSJV3]")
         }
         throwForbiddenIf(pp.isGuest, "TyE502QK4JV", "Cannot add guests to page")
         throwForbiddenIf(pp.isBuiltIn, "TyE7WKCT24GT", "Cannot add built-in users to page")
+        // For now at least:
+        throwForbiddenIf(pp.isGroup, "TyE602RKNP35", "Currently cannot add groups to page")
 
         pageParticipants.append(  // [UPSPAMEM]
           PageParticipant(
             pageId = pageMeta.pageId,
             userId = pp.id,
-            addedById = Some(SysbotUserId), // or?
+            addedById = Some(SysbotUserId),  // change to isMember: true/false
             removedById = None,
             inclInSummaryEmailAtMins = 0,
             readingProgress = None))
@@ -491,27 +526,33 @@ case class SimpleSitePatch(
       val pageInDb: Option[PageMeta] = dao.getPageMetaByParsedRef(postPatch.pageRef)
       val pageInPatch: Option[PageMeta] = getPageMetaInPatchByParsedRef(postPatch.pageRef)
 
-      // Any page in the database is really the same as the one in the patch?
+      // Is any page in the database the same as the one in the patch?
       (pageInDb, pageInPatch) match {
         case (Some(thePageInDb), Some(thePageInPatch)) =>
           if (thePageInDb.extImpId != thePageInPatch.extImpId)
             return Bad(o"""The supposedly same page in db as the one in the patch,
               have different extId:s, so they are *not* the same page:
               ext id in db: '${thePageInDb.extImpId}',
-              in the patch: '${thePageInPatch.extImpId}'  [TyE05MRKJ6]""")
+              in the patch: '${thePageInPatch.extImpId}'
+              whole page in db: $thePageInDb,
+              whole page in patch: $thePageInPatch
+              [TyE05MRKJ6]""")
 
           if (!isPageTempId(thePageInPatch.pageId) &&
-              thePageInDb.pageId != thePageInPatch.pageId)
+            thePageInPatch.pageId != thePageInDb.pageId)
             return Bad(o"""The supposedly same page in db as the one in the patch,
               have different ids, so they are *not* the same page:
               page id in db: '${thePageInDb.pageId}',
-              in patch: '${thePageInPatch.pageId}'  [TyE7KDQ42K2]""")
+              in patch: '${thePageInPatch.pageId}'
+              whole page in db: $thePageInDb,
+              whole page in patch: $thePageInPatch
+              [TyE7KDQ42K2]""")
 
         case _ =>
       }
 
       val pageMeta = pageInDb.orElse(pageInPatch) getOrElse {
-        return Bad(s"Page missing, '${postPatch.pageRef}' [TyE406WKDGF4]")
+        return Bad(s"Page missing: '${postPatch.pageRef}' [TyE406WKDGF4]")
       }
 
       val pageId = pageMeta.pageId
@@ -519,13 +560,13 @@ case class SimpleSitePatch(
 
       nextPostNrByPage(pageId) = postNr + 1
 
-      val parentPostInDb: Option[Post] = postPatch.parentNr flatMap { parentNr =>
-        if (parentNr >= FirstTempImpId || isPageTempId(pageId)) None
-        else dao.loadPostByPageIdNr(pageId, parentNr)
+      val parentPostInDb: Option[Post] = postPatch.parentNr flatMap { pNr =>
+        if (pNr >= FirstTempImpId || isPageTempId(pageId)) None
+        else dao.loadPostByPageIdNr(pageId, pNr)
       }
 
-      val parentPostInPatch: Option[Post] = postPatch.parentNr.flatMap(nr =>
-        getPostInPatchByPageIdNr(pageId, nr))
+      val parentPostInPatch: Option[Post] = postPatch.parentNr.flatMap(pNr =>
+        getPostInPatchByPageIdNr(pageId, pNr))
 
       val parentPost = parentPostInDb orElse parentPostInPatch
 

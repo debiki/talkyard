@@ -740,9 +740,15 @@ trait UserDao {
   }
 
 
-  def loadUsersWithPrefix(prefix: String): immutable.Seq[User] = {  RENAME // to ...WithUsernamePrefix
-    // CACHE
-    readOnlyTransaction(_.loadUsersWithPrefix(prefix))
+  def loadUsersWithUsernamePrefix(prefix: String, limit: Int): immutable.Seq[User] = {
+    COULD_OPTIMIZE // cache, sth like:
+    //memCache.lookup[immutable.Seq[User]](
+    //  membersByPrefixKey(prefix, "u"),
+    //  orCacheAndReturn = Some(readOnlyTransaction(_.loadUsersWithPrefix(prefix)))).get
+    // BUT then there'd be a DoS attack: iterate through all prefixes and exhaust
+    // the cache. Note that there's a million? Unicode chars, so restricting the
+    // prefix length to <= 2 chars won't work (cache size 1e6 ^ 2 = 1e12).
+    readOnlyTransaction(_.loadUsersWithUsernamePrefix(prefix, limit = limit))
   }
 
 
@@ -2053,6 +2059,10 @@ trait UserDao {
   }
 
   private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|PptById") ; RENAME // to pptKey?
+
+  // Which: 'u' = users only, 'g' = groups only, 'm' = members — both groups and users.
+  private def membersByPrefixKey(prefix: String, which: String) =
+    MemCacheKey(siteId, s"$prefix|$which|MbByPfx")
 
   private def allGroupsKey = MemCacheKey(siteId, "AlGrps")
   private def groupMembersKey(groupId: UserId) = MemCacheKey(siteId, s"$groupId|GrMbrs")

@@ -13,6 +13,13 @@ const tyAssert = {
     assert.ok(!what, message);
   },
 
+  notEq: (actual, wrongValue, message?) => {
+    tyAssert.ok(actual !== wrongValue,
+      `  assert.ne: Equals the wrong value:\n` +
+      `           actual:  ${JSON.stringify(actual)}\n` +
+      `    should not be:  ${JSON.stringify(wrongValue)}\n`);
+  },
+
   eq: (actual, expected, message?) => {
     // Show the two values on two lines, aligned, so one sees at a glance
     // what's wrong.

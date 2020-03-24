@@ -478,7 +478,7 @@ trait SiteTransaction {
   def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
 
-  def loadUsersWithPrefix(usernamePrefix: String): immutable.Seq[User]
+  def loadUsersWithUsernamePrefix(usernamePrefix: String, limit: Int = 50): immutable.Seq[User]
 
   def loadAdmins(): immutable.Seq[User] =
     loadStaffUsers().filter(_.isAdmin)

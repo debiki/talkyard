@@ -3691,7 +3691,7 @@ function pagesFor(browser) {
         api.waitForVisible('#post-' + postNr);
       },
 
-      waitForPostAssertTextMatches: function(postNr, text: string) {
+      waitForPostAssertTextMatches: function(postNr, text: string | RegExp) {
         dieIf(!_.isString(text) && !_.isRegExp(text),
             "Test broken: `text` is not a string nor a regex [TyEJ53068MSK]");
 
@@ -3744,7 +3744,7 @@ function pagesFor(browser) {
         return browser.isVisible(api.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
-      assertPostTextMatches: function(postNr: PostNr, text: string) {
+      assertPostTextMatches: function(postNr: PostNr, text: string | RegExp) {
         api.assertTextMatches(api.topic.postBodySelector(postNr), text)
       },
 

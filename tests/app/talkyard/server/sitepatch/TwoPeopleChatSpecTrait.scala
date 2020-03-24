@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+//NEXT
 package talkyard.server.sitepatch
 
 import com.debiki.core._
@@ -92,15 +92,21 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 05697826" in {
+      var alicesPost: Post = null
       checkChanges(
         numNewPages = 1,         // Alice's message to Bob
         numNewPosts =  3,        // title, body, message
         numNewPostsByAlice = 3,  //  – "" —
         // Alice's message is the last post:
         lastPostBy = alice.id,
-        lastPostCheckFn = (alicesPost: Post) => {
+        lastPostCheckFn = (lastPost: Post) => {
+          alicesPost = lastPost
+          //alicesPost.pageId mustBe ???
+          alicesPost.nr mustBe FirstReplyNr
+          alicesPost.createdById mustBe alice.id
           alicesPost.currentSource mustBe aliceSaysHiBobMessage.body
-          alicesPost.isCurrentVersionApproved mustBe true
+          alicesPost.currentRevisionById mustBe alice.id
+          alicesPost.approvedHtmlSanitized.get must include(aliceSaysHiBobMessage.body)
         },
         // One notf to Bob about Alice's message:
         numNewNotfs = 1,
@@ -110,6 +116,9 @@ trait TwoPeopleChatSpecTrait {
           // Hmm this'll currently be a NotificationType.NewPost, because
           // new posts considered before new messages [PATCHNOTF].
           //notf.tyype mustBe NotificationType.Message
+          // For now:  (this should be the page body, created just before.
+          // But would want this to be the chat message = alicesPost.id - 0, instead)
+          notf.uniquePostId mustBe (alicesPost.id - 1)
         })
     }
 
@@ -137,8 +146,18 @@ trait TwoPeopleChatSpecTrait {
         numCurBy(sanjo.id) mustBe (numPrevBy(sanjo.id) + numNewPostsBySanjo)
       }
 
-      curDump.posts.last.createdById mustBe lastPostBy
-      lastPostCheckFn(curDump.posts.last)
+      val lastPost = curDump.posts.last
+      lastPost.createdById mustBe lastPostBy
+      lastPost.currentRevisionById mustBe lastPostBy
+      lastPost.parentNr mustBe None
+      lastPost.tyype mustBe PostType.ChatMessage
+      lastPost.currentRevLastEditedAt mustBe None
+      lastPost.currentRevSourcePatch mustBe None
+      lastPost.isCurrentVersionApproved mustBe true
+      lastPost.approvedById mustBe Some(SysbotUserId)
+      lastPost.safeRevisionNr mustBe None  // not reviewed by a human
+      lastPost.approvedRevisionNr mustBe Some(1)
+      lastPostCheckFn(lastPost)
 
       curDump.notifications.length mustBe (prevSiteDump.notifications.length + numNewNotfs)
       if (numNewNotfs > 0) {
@@ -165,14 +184,15 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 7039067258" in {
+      var bobsPost: Post = null
       checkChanges(
         // Bob's reply:
         numNewPosts = 1,
         numNewPostsByBob = 1,
         lastPostBy = bob.id,
         lastPostCheckFn = (post: Post) => {
+          bobsPost = post
           post.currentSource mustBe bobSaysHiAliceMessage.body
-          post.isCurrentVersionApproved mustBe true
         },
         // A notf to Alice:
         numNewNotfs = 1,
@@ -180,9 +200,12 @@ trait TwoPeopleChatSpecTrait {
           notf.byUserId mustBe bob.id
           notf.toUserId mustBe alice.id
           notf.tyype mustBe NotificationType.NewPost
+          notf.uniquePostId mustBe bobsPost.id
         })
     }
 
+
+    // Can have two chats going on in parallel
 
     lazy val sarahSaysHiSanjoMessage = makeChatMessage(
       extId = "sarahSaysHiSanjoMessage ext id",
@@ -207,7 +230,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = sarah.id,
         lastPostCheckFn = (post: Post) => {
           post.currentSource mustBe sarahSaysHiSanjoMessage.body
-          post.isCurrentVersionApproved mustBe true
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -223,7 +245,7 @@ trait TwoPeopleChatSpecTrait {
       extId = "sanjoRelpiesMessage ext id",
       chatPagePatch2,
       sanjo,
-      "Like in one snowball plus one snowball equals how many snowballs?")
+      "One plus one, like in one snowball plus one snowball equals how many snowballs?")
 
     "Sanjo replies, page *is* included in patch (55294962)" in {
       val simplePatch = SimpleSitePatch(
@@ -241,7 +263,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = sanjo.id,
         lastPostCheckFn = (post: Post) => {
           post.currentSource mustBe sanjoRelpiesMessage.body
-          post.isCurrentVersionApproved mustBe true
         },
         // A notf to Sarah:
         numNewNotfs = 1,
@@ -273,7 +294,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = sanjo.id,
         lastPostCheckFn = (post: Post) => {
           post.currentSource mustBe sanjosEditedReply.body
-          post.isCurrentVersionApproved mustBe true
         },
         numNewNotfs = 0)
     }
@@ -296,7 +316,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = sanjo.id,
         lastPostCheckFn = (post: Post) => {
           post.currentSource mustBe sanjosEditedReply2.body
-          post.isCurrentVersionApproved mustBe true
         },
         numNewNotfs = 0)
     } */
@@ -323,7 +342,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = sarah.id,
         lastPostCheckFn = (post: Post) => {
           post.currentSource mustBe sarahRepliesMessage.body
-          post.isCurrentVersionApproved mustBe true
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -334,6 +352,8 @@ trait TwoPeopleChatSpecTrait {
         })
     }
 
+
+    // Back on the 1st chat page again
 
     lazy val aliceRepliesToBobMessage = aliceSaysHiBobMessage.copy(
       extId = "aliceRepliesToBobMessage-ext-id",
@@ -353,7 +373,6 @@ trait TwoPeopleChatSpecTrait {
         lastPostBy = alice.id,
         lastPostCheckFn = (alicesPost: Post) => {
           alicesPost.currentSource mustBe aliceRepliesToBobMessage.body
-          alicesPost.isCurrentVersionApproved mustBe true
         },
         // One notf to Bob about Alice's message:
         numNewNotfs = 1,

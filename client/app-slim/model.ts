@@ -1080,6 +1080,13 @@ const enum AvatarSize {
 }
 
 
+interface MemberIdName {
+  id: UserId;
+  username: string;
+  fullName?: string;
+}
+
+
 type BriefUser = Participant;  // old name, CLEAN_UP RENAME all occurrences to Participant
 
 interface Participant {   // Guest or Member, and Member = group or user
@@ -1113,7 +1120,7 @@ interface Guest extends Participant {
 }
 
 
-interface Member extends Participant {
+interface Member extends Participant, MemberIdName {
   username: string;
   // but fullName is optional
   isGuest?: false;

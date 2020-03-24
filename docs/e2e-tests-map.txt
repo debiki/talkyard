@@ -848,6 +848,11 @@ api:
           - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
     slugifying long and weird titles:
           - api-upsert-pages.2browsers.test.ts   TyT692SKBDWJ74
+  upsert posts:
+          - api-upsert-posts.2browsers.test.ts
+  private chat:
+          - api-private-chat-two-pps-sso-extid.2browsers.test.ts   TyT603WKVJW336
+          - api-private-chat-two-pps-list-use-usernames.2browsers.test.ts  TYT6924VBNF962
   upsert-edit pages:
     &,
     sanitize html,
@@ -862,6 +867,8 @@ api:
           - api-upsert-pages.2browsers.test.ts  TyT305WKTUC2
   wrong api user, or not-allowed user type (guest or System):
           - sso-one-time-key-errors.2browsers.test.ts  TyT062SUNF3
+  list usernames:
+          - TyT05RKVJF68
 
 import,
 export and restore:  (impexp)

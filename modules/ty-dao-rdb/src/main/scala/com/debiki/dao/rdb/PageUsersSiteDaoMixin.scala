@@ -16,16 +16,11 @@
  */
 
 package com.debiki.dao.rdb
-
 import java.sql.ResultSet
-
 import com.debiki.core._
 import com.debiki.core.Prelude._
-
 import scala.collection.immutable
 import Rdb._
-import RdbUtil.makeInListFor
-
 import scala.collection.mutable.ArrayBuffer
 
 

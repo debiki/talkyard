@@ -950,7 +950,7 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUsersWithPrefix(usernamePrefix: String): immutable.Seq[User] = {
+  def loadUsersWithUsernamePrefix(usernamePrefix: String, limit: Int): immutable.Seq[User] = {
     // Would it be better UX to do lowercase match?
     val withPrefixAnd = usernamePrefix.isEmpty ? "" | "username like ? and"
     val query = i"""
@@ -958,7 +958,9 @@ trait UserSiteDaoMixin extends SiteTransaction {
       from users3 u
       where $withPrefixAnd u.site_id = ?
         and u.user_id >= $LowestTalkToMemberId
-        and u.trust_level is not null
+        and u.trust_level is not null  -- or  u.is_group nowadays?
+      order by u.username
+      limit $limit
       """
     var values = List(siteId.asAnyRef)
     if (withPrefixAnd.nonEmpty) {

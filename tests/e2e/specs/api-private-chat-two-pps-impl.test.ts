@@ -20,6 +20,8 @@ let owen: Member;
 let owensBrowser;
 let charliesBrowser;
 let chumasBrowser;
+let maria;
+let michael;
 let mallory;
 let mallorysBrowser;
 let strangersBrowser;
@@ -81,13 +83,12 @@ const chatPageOne = {
 const chumaSaysHiCharlieChatMessage = {
   // An extId is useful if the API consumer wants to refer to this same
   // chat message in a 2nd API request, e.g. to *edit* or *delete* the message
-  // (currently edits and deletes aren't supported though, in the upsert API).
-  extId: 'chumaSaysHiCharlie extId',
+  // (currently edits and deletes aren't supported though, in the upsert API [ACTNPATCH]).
+  extId: 'chumaSaysHiCharlieChatMessage extId',
   postType: c.TestPostType.ChatMessage,
-  parentNr: c.BodyNr,
   pageRef: `extid:${chatPageOne.extId}`,
   authorRef: `ssoid:${chumaExtUser.ssoId}`,   // ... (sso id here too)
-  body: 'chumaSaysHiCharlie body',
+  body: 'chumaSaysHiCharlieChatMessage body',
 };
 
 const charlieSaysHiChuma = {
@@ -101,7 +102,7 @@ const chumaRepliesToCharlie = {
   ...chumaSaysHiCharlieChatMessage,
   extId: 'chumaRepliesToCharlie extId',
   authorRef: `ssoid:${chumaExtUser.ssoId}`,
-  body: 'chumaSaysHiCharlie body',
+  body: 'chumaRepliesToCharlie body',
 };
 
 
@@ -150,6 +151,8 @@ export default function addApiChatTestSteps(variants: {
     owensBrowser = richBrowserA;
     charliesBrowser = richBrowserA;
     chumasBrowser = richBrowserB;
+    maria = forum.members.maria;
+    michael = forum.members.michael;
     mallory = forum.members.mallory;
     mallorysBrowser = richBrowserB;
   });
@@ -195,10 +198,20 @@ export default function addApiChatTestSteps(variants: {
       });
     });
 
-    it("... Finds ... and .........", () => {
+    it("... gets back a list of everyone", () => {
+      console.log(`Finds: ${JSON.stringify(listUsersResponse)}`);
+      const users = listUsersResponse.users;
+      assert.eq(users.length, 6);
+      // Should be sorted by name.  TyT05RKVJF68
+      assert.eq(users[0].username, charlieExtUser.username);
+      assert.eq(users[1].username, chumaExtUser.username);
+      assert.eq(users[2].username, mallory.username);
+      assert.eq(users[3].username, maria.username);
+      assert.eq(users[4].username, michael.username);
+      assert.eq(users[5].username, owen.username);
     });
 
-    it("... lists only members starting with 'ch'", () => {
+    it("Chuma lists only members starting with 'ch'", () => {
       listUsersResponse = server.apiV0.listUsers({
         origin: siteIdAddress.origin,
         usernamePrefix: 'ch',
@@ -206,20 +219,20 @@ export default function addApiChatTestSteps(variants: {
     });
 
     it("... Finds two people", () => {
-      assert.eq(listUsersResponse.members.length, 2);
+      assert.eq(listUsersResponse.users.length, 2);
     });
 
     let charlieFromApi: UserIdName;
 
     it("... namely Charlie", () => {
-      charlieFromApi = listUsersResponse.members[0];
+      charlieFromApi = listUsersResponse.users[0];
       assert.eq(charlieFromApi.username, charlieExtUser.username);
     });
 
     let chumaFromApi: UserIdName;
 
     it("... and Chuma", () => {
-      chumaFromApi = listUsersResponse.members[1];
+      chumaFromApi = listUsersResponse.users[1];
       assert.eq(chumaFromApi.username, chumaExtUser.username);
     });
 
@@ -262,7 +275,7 @@ export default function addApiChatTestSteps(variants: {
 
     assert.eq(firstUpsertedPage.urlPaths.canonical, '/-1/chatpageone-title');
 
-    assert.eq(firstUpsertedPage.id, "1");
+    assert.eq(firstUpsertedPage.id, '1');
     assert.eq(firstUpsertedPage.pageType, c.TestPageRole.PrivateChat);
     utils.checkNewPageFields(firstUpsertedPage, {
       categoryId: forum.categories.specificCategory.id,
@@ -270,8 +283,17 @@ export default function addApiChatTestSteps(variants: {
       // authorId: ??
     });
 
-    // utils.checkNewPostFields(firstUpsertedPage, {
-    // });
+    // Title = [0], body = [1], the actual chat message = [2].
+    // Eh, no. [0] = the chat message. Page title & body not included.
+    assert.eq(upsertResponse.posts.length, 1);
+    utils.checkNewPostFields(upsertResponse.posts[0], {
+      postNr: c.FirstReplyNr,
+      parentNr: undefined,
+      postType: PostType.ChatMessage,
+      pageId: '1',
+      // authorId: chuma.id, // ?? what id did the server assign to Chuma
+      approvedSource: chumaSaysHiCharlieChatMessage.body,
+    });
   });
 
 
@@ -353,7 +375,7 @@ export default function addApiChatTestSteps(variants: {
   it("... he remembers the notf link", () => {
     charliesNotfLink = utils.findAnyFirstLinkToUrlIn(
         siteIdAddress.origin, charliesNotfEmail.bodyHtmlText);
-    lad.logMessage(`Charlies's notification link: ${chumasNotfLink}`);
+    lad.logMessage(`Charlies's notification link: ${charliesNotfLink}`);
   });
 
   it("But no one else gets notified", () => {

@@ -242,7 +242,7 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
 
   let upsertedPageUrlFromEmail: string;
 
-  it("Maja fins a page link in her email", () => {
+  it("Maja finds a page link in her email", () => {
     const email = server.getLastEmailSenTo(siteId, maja.emailAddress, majasBrowser);
     upsertedPageUrlFromEmail = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.

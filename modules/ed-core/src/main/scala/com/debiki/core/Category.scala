@@ -64,7 +64,7 @@ object IncludeInSummaries {
   */
 case class Category(  // [exp] ok use
   id: CategoryId,
-  extImpId: Option[ExtId] = None,
+  extImpId: Option[ExtId] = None,  // RENAME to extId
   sectionPageId: PageId,
   // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
   // root category).

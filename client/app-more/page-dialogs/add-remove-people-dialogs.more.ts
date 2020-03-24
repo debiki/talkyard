@@ -64,7 +64,7 @@ const AddPeopleDialog = createComponent({
       alreadyAddedIds,
       onDone,
     });
-    Server.listAllUsernames('', (allUsers: BriefUser[]) => {
+    Server.listAllUsernames('', (allUsers: MemberIdName[]) => {
       if (this.isGone || !this.state.isOpen) return;
       this.setState({
         selectedLabelValues: [],
@@ -115,8 +115,8 @@ const AddPeopleDialog = createComponent({
 });
 
 
-function makeLabelValues(users: BriefUser[], pageMemberIds: UserId[]) {
-  return users.map((user: BriefUser) => {
+function makeLabelValues(users: MemberIdName[], pageMemberIds: UserId[]) {
+  return users.map((user: MemberIdName) => {
     let prettyName = user.username;
     if (user.fullName) {
       prettyName += ' (' + user.fullName + ')';
