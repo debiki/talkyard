@@ -19,6 +19,7 @@ let owen;
 let owensBrowser;
 let maria;
 let mariasBrowser;
+let maja;
 let michael;
 let michaelsBrowser;
 
@@ -33,11 +34,13 @@ describe('chat', function() {
     owensBrowser = owen;
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
     mariasBrowser = maria;
+    maja = make.memberMaja();
     michael = make.memberMichael();
     michaelsBrowser = mariasBrowser;
 
     const site: SiteData = make.forumOwnedByOwen('basicchat');
     site.members.push(make.memberMaria());
+    site.members.push(maja);
     site.members.push(michael);
     const idAddress = server.importSiteData(site);
     siteId = idAddress.id;
@@ -186,6 +189,46 @@ describe('chat', function() {
     prevNumEmails = num;
   });
 
+
+  // ----- Appends to the last message, unless @mention sbd else   TyT306WKCDE4
+
+  let numMessages: number;
+
+  it("Owen continues typing", () => {
+    numMessages = owensBrowser.chat.countMessages();
+    owensBrowser.chat.addChatMessage(`Nothing going`);
+    owensBrowser.chat.addChatMessage(`on here`);
+  });
+
+  it("Maria clicks the chat in the watchbar — curious about what's going on", () => {
+    mariasBrowser.watchbar.openUnreadTopic();
+  });
+
+  it("... She sees Owens last messages in a single post", () => {
+    mariasBrowser.chat.waitForNumMessages(numMessages);
+    assert.eq(mariasBrowser.chat.countMessages(), numMessages);  // but not more
+  });
+
+  // The regex modifier /s makes '.' match line breaks too.
+  const chatMessage6Regex = /.*michael's name.*Nothing going.*on here/s;
+
+  it("... with the 3 last texts Owen typed", () => {
+    mariasBrowser.chat.assertMessageNrMatches(6, chatMessage6Regex);
+  });
+
+  it("Owen continues typing, @mentions Maja", () => {
+    owensBrowser.chat.addChatMessage(`@${maja.username} do you know what's ANYONE'S name?`);
+  });
+
+  it("... this becomes a separate message, since @mentions sbd else", () => {
+    numMessages += 1;
+    mariasBrowser.chat.waitForNumMessages(numMessages);
+    mariasBrowser.chat.assertMessageNrMatches(7, /ANYONE'S name/);
+  });
+
+  it("... didn't change Owen's previous message", () => {
+    mariasBrowser.chat.assertMessageNrMatches(6, chatMessage6Regex);
+  });
 
 });
 

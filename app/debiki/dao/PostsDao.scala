@@ -453,7 +453,7 @@ trait PostsDao {
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and
-      // render a little bit faster.
+      // render a little bit faster.  TyT306WKCDE4
       val anyLastMessage = page.parts.lastPostButNotOrigPost
       val anyLastMessageSameUserRecently = anyLastMessage filter { post =>
         post.createdById == authorId &&
@@ -461,7 +461,13 @@ trait PostsDao {
       }
 
       val (post, notfs) = anyLastMessageSameUserRecently match {
-        case Some(lastMessage) if !lastMessage.isDeleted && lastMessage.tyype == PostType.ChatMessage =>
+        case Some(lastMessage)
+            if !lastMessage.isDeleted &&
+              lastMessage.tyype == PostType.ChatMessage &&
+              // If mentioning new people — then create a new Post, so they won't
+              // get notified about the text in the previous chat message (that text
+              // was likely not intended directly for them).  TyT306WKCDE4
+              textAndHtml.usernameMentions.isEmpty =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, tx)
         case _ =>
           val (post, notfs) =

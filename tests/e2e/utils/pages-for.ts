@@ -1439,9 +1439,14 @@ function pagesFor(browser) {
         if (!many) {
           assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
         }
-        // Could reformat, make simpler to read [E2EEASYREAD].
-        assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
-            regex.toString() + ", actual text: '" + text + whichBrowser);
+        // This is easy to read:  [E2EEASYREAD]
+        assert(regex.test(text), '\n\n' +
+            `  Elem selected by:  ${selector}\n` +
+            `      didn't match:  ${regex.toString()}${whichBrowser}\n` +
+            `  Actual text: (between ---)\n` +
+            `---------------------------------------------------\n` +
+            text + '\n' +
+            `---------------------------------------------------\n`);
         // COULD use 'arguments' & a loop instead
         if (regex2) {
           assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
@@ -4394,6 +4399,15 @@ function pagesFor(browser) {
 
       waitForNumMessages: function(howMany: number) {
         api.waitForAtLeast(howMany, '.esC_M');
+      },
+
+      countMessages: (): number => {
+        return api.count('.esC_M');
+      },
+
+      assertMessageNrMatches: (messageNr, regex: RegExp | string) => {
+        const postNr = messageNr + 1;
+        api.topic.waitForPostAssertTextMatches(postNr, regex);
       },
 
       openAdvancedEditor: function() {
