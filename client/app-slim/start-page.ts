@@ -162,10 +162,11 @@ function chooseInitialLayout() {
  */
 function renderPageInBrowser() {
   debiki2.ReactStore.initialize();
-  const _2dLayout = chooseInitialLayout() === 'TreeLayout';
-  if (_2dLayout) {
-    debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
-  }
+
+  // const _2dLayout = chooseInitialLayout() === 'TreeLayout';   // [2D_LAYOUT]
+  // if (_2dLayout) {
+  //   debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
+  // }
 
   // Later, when having tested for a bit, use 'hydrate' by default.
   // ReactDOM.hydrate() reuses server generated html, whereas render() ignores it, rerenders everything.

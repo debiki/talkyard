@@ -265,10 +265,15 @@ ReactDispatcher.register(function(payload) {
       currentPage.pageStartedAtMs = newMeta.startedAt;
       currentPage.pageDoneAtMs = newMeta.doneAt;
       currentPage.pageClosedAtMs = newMeta.closedAt;
-      currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
-      const is2dTree = currentPage.horizontalLayout;
+
+      // [2D_LAYOUT]
+      //currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
+      //const is2dTree = currentPage.horizontalLayout;
+
       updatePost(action.newTitlePost, currentPage.pageId);
-      if (was2dTree !== is2dTree) {
+
+      /*
+      if (was2dTree !== is2dTree) {   // [2D_LAYOUT]
         // Rerender the page with the new layout.
         store.quickUpdate = false;
         if (is2dTree) {
@@ -285,7 +290,8 @@ ReactDispatcher.register(function(payload) {
         }
         debiki2.removeSidebar();
         setTimeout(debiki2.createSidebar, 1);
-      }
+      } */
+
       break;
 
     case ReactActions.actionTypes.ShowForumIntro:

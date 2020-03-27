@@ -504,7 +504,9 @@ export function loadMoreScriptsBundle(callback?) {
 }
 
 
-export function load2dScriptsBundleStart2dStuff() {
+/*
+export function load2dScriptsBundleStart2dStuff() {  // [2D_LAYOUT]
+  die("2D layout disabled [TyE2DDISABLED]");
   if (hasStartedLoading2dScripts) {
     return;
   }
@@ -519,7 +521,7 @@ export function load2dScriptsBundleStart2dStuff() {
       hasStartedLoading2dScripts = false;
     });
   });
-}
+} */
 
 
 export function loadStaffScriptsBundle(callback) {
@@ -580,6 +582,8 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
 }
 
 
+/* jQuery was needed in the past, for horizontal scrolling in 2D layout, [2D_LAYOUT]
+   now disabled though.
 function loadJQuery(callback?) {
   if (jQueryPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
@@ -595,7 +599,7 @@ function loadJQuery(callback?) {
     });
   });
   return jQueryPromise;
-}
+} */
 
 
 export function createSite(localHostname: string,

@@ -35,10 +35,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/jquery@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@types/jquery/-/jquery-3.3.9.tgz#91f2aaf5c1e91fd79598fc00ecb4504d78b51fd7"
-
 "@types/keymaster@^1.6.28":
   version "1.6.28"
   resolved "https://registry.yarnpkg.com/@types/keymaster/-/keymaster-1.6.28.tgz#093fc6fe49deff4ee17d36935a49230edb1c935f"
@@ -2231,14 +2227,6 @@ istextorbinary@2.2.1:
 jest-docblock@^21.0.0:
   version "21.2.0"
   resolved "https://registry.yarnpkg.com/jest-docblock/-/jest-docblock-21.2.0.tgz#51529c3b30d5fd159da60c27ceedc195faf8d414"
-
-jquery-resizable@=1.0.6:
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/jquery-resizable/-/jquery-resizable-1.0.6.tgz#e2f5bfc471a08bbf8fbeeeea156a8e7c9754e67c"
-
-jquery@^2.2.4:
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-2.2.4.tgz#2c89d6889b5eac522a7eea32c14521559c6cbf02"
 
 js-tokens@^3.0.0:
   version "3.0.2"

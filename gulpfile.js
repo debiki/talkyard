@@ -241,7 +241,7 @@ var moreJsFiles = [
       'target/client/more-typescript.js'];
 
 /*
-var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]
+var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]  [2D_LAYOUT]
   'client/third-party/jquery-scrollable.js',
   'client/third-party/jquery.browser.js',
   'target/client/app-2d/page/layout-threads.2d.js',
@@ -268,10 +268,11 @@ var editorJsFiles = [
       'target/client/app-editor/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
+/* For 2d layout horizontal scrolling, now disabled. [2D_LAYOUT]
 var jqueryJsFiles = [
   'node_modules/jquery/dist/jquery.js',
   'client/third-party/abbreviate-jquery.js',
-  'node_modules/jquery-resizable/resizable.js'];
+  'node_modules/jquery-resizable/resizable.js']; */
 
 
 // For both touch devices and desktops.
@@ -580,7 +581,7 @@ function makeConcatWebScriptsStream() {
       //makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'), [SLIMTYPE]
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
-      makeConcatStream('jquery-bundle.js', jqueryJsFiles, 'DoCheckNewer'),
+      //makeConcatStream('jquery-bundle.js', jqueryJsFiles, 'DoCheckNewer'),
       makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
           .pipe(plumber())
@@ -727,7 +728,6 @@ gulp.task('compile-stylus', () => {
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
-        'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',
         'client/app-slim/theme.styl',
         'client/app-slim/third-party.styl',
@@ -747,7 +747,6 @@ gulp.task('compile-stylus', () => {
       files[0] = 'client/rtl/bootstrap.styl';
       files[1] = 'client/rtl/react-textarea-autocomplete.styl';
       files[2] = 'client/rtl/react-select.styl';
-      files[3] = 'client/rtl/resizable.styl';
       // Add a few rtl specifig styles, e.g. mirroring icons from left to right.
       files.push('client/rtl/right-to-left-props.styl');
     }
