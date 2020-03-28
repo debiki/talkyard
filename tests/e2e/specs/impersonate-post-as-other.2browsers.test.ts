@@ -30,7 +30,7 @@ var origPostReplyText = "Orig post reply text";
 // Please note! The purpose with impersonating people, is to troubleshoot e.g. security
 // settings. Forum admins have access to everything posted by all users anyway.
 //
-describe("impersonate", () => {
+describe("impersonate  TyT502KNG24", () => {
 
   it("initialize people", () => {
     everyone = _.assign(browser, pagesFor(browser));
@@ -46,7 +46,7 @@ describe("impersonate", () => {
     _.assign(owen, make.memberOwenOwner());
   });
 
-  it("Maria goes to the homepage and logsin", () => {
+  it("Maria goes to the homepage and logs in", () => {
     maria.go(idAddress.origin);
     maria.assertPageTitleMatches(forumTitle);
     maria.complex.loginWithPasswordViaTopbar(maria);
@@ -169,7 +169,7 @@ describe("impersonate", () => {
     maria.userProfilePage.assertFullNameIsNot(maria.fullName);
   });
 
-  it("... she contacts the tax agency and tells them about this", () => {
+  it("... she contacts the tax agency and tells them about her new name", () => {
     // to-do, later
   });
 

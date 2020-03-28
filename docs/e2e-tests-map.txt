@@ -102,6 +102,10 @@ single-sign-on:  (3093533)
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
 
+impersonate:
+          - impersonate-post-as-other.2browsers  TyT502KNG24
+          - impersonate-restricted-areas.test.ts  TyT6502PKSNR57
+
 different users -
   login, logout, switch user:  almost all tests
 

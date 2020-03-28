@@ -330,7 +330,9 @@ function runAllE2eTests {
 
   $r s/wdio target/e2e/wdio.conf.js         --only authz-view-as-stranger $args
   $r s/wdio target/e2e/wdio.conf.js         --only authz-basic-see-reply-create $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only impersonate.2browsers $args
+  $r s/wdio target/e2e/wdio.2chrome.conf.js --only impersonate-post-as-other.2browsers $args
+  $r s/wdio target/e2e/wdio.conf.js         --only impersonate-restricted-areas $args
+
 
   # There're email notfs and unsubscription tests for guests, further below, in:
   # embedded-comments-guest-login-email-notf-unsbscribe

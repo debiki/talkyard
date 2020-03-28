@@ -111,6 +111,7 @@ export const MyMenuContent = createFactory({
       isViewingAsHint = r.p({ className: 's_MM_ImpInfo' }, isViewingAsHint);
       stopImpersonatingMenuItem = !store.isImpersonating ? null :
           MenuItem({ onClick: Server.stopImpersonatingReloadPage, className: 's_MM_StopImpB' },
+            // dupl text [306MKTW33]
             store.isViewingAs ? "Stop viewing as other" : "Stop impersonating");
       if (me.isLoggedIn) {
         notYourMenuHint = r.div({className: 's_MM_ImpNotYour'},

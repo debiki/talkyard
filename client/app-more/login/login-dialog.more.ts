@@ -103,6 +103,7 @@ const LoginDialog = createClassAndFactory({
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
     dieIf(isInSomeEmbCommentsIframe(), 'Login dialog in some emb cmnts iframe [EdE5KER2]');
+    const store: Store = this.state.store;
 
     // The login reason might be a stringified number from the url, so try to convert to enum.
     // Some login reasons are enums, others are strings. CLEAN_UP: Change the strings to enums.
@@ -114,8 +115,14 @@ const LoginDialog = createClassAndFactory({
       util.openDefaultStupidDialog({
         preventClose: true,
         body: r.div({},
-          r.p({}, t.ld.NotFoundOrPrivate),
-          r.p({}, t.ld.IsImpersonating)) });
+          r.p({ className: 'e_ImpFrbdn' }, t.ld.NotFoundOrPrivate),
+          r.p({}, t.ld.IsImpersonating),
+          Button({ onClick: () => history.back(), className: 'e_ImpBackB' },
+            "Go back"),
+          Button({ onClick: Server.stopImpersonatingReloadPage, className: 'e_ImpStopB' },
+            // dupl text [306MKTW33]
+            store.isViewingAs ? "Stop viewing as other" : "Stop impersonating"),
+          ) });
       return;
     }
 
@@ -126,7 +133,6 @@ const LoginDialog = createClassAndFactory({
 
     login.anyContinueAfterLoginCallback = callback;
 
-    const store: Store = this.state.store;
     if (store.settings.allowSignup === false)
       isSignUp = false;
 
