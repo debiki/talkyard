@@ -161,7 +161,7 @@ case class NotificationGenerator(
         if userOrGroup.id != newPost.createdById  // poster mentions henself?
         if !notfCreatedAlreadyTo(userOrGroup.id)
         // Authz checks that we won't notify people outside a private chat
-        // about any mentions (because they cannot see the chat). [PRIVPUBMENTN] TESTS_MISSING
+        // about any mentions (because they cannot see the chat). [PRIVCHATNOTFS]
       } {
         makeNewPostNotfs(
             NotificationType.Mention, newPost, page.categoryId, userOrGroup)
@@ -220,7 +220,7 @@ case class NotificationGenerator(
 
     val notfPrefsOnPage = tx.loadPageNotfPrefsOnPage(page.id)
 
-    // Add default NotfLevel.WatchingAll for private topic members [PUBPRIVNOTF]
+    // Add default NotfLevel.WatchingAll for private topic members [PRIVCHATNOTFS]
     // — unless they've configured another notf pref.
     // (This wouldn't be needed if [page_pps_t] instead.)
     val privTopicPrefsOnPage =

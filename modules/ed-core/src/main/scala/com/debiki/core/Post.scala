@@ -329,6 +329,8 @@ case class Draft(
   *
   * SHOULD: If a post has been flagged, it gets hidden. People can click to view it anyway, so that
   * they can notify moderators if posts are being flagged and hidden inappropriately.
+  *
+  * @safeRevisionNr — The highest rev nr that got reviewed by a >= TrustedMember human.
   */
 case class Post(   // [exp] ok use
   id: PostId,
@@ -693,11 +695,13 @@ case class SimplePostPatch(
     chat messages not yet implemented. Remove 'parentNr' please.""")
 
   throwIllegalArgumentIf(parentNr.exists(_ < BodyNr),
-    "TyE6033MKSHUW2", s"parentNr is < BodyNr (BodyNr is $BodyNr), parentNr: $parentNr")
+    "TyE6033MKSHUW2", s"parentNr is < $BodyNr (the Orig Post), parentNr: $parentNr")
 
+  // COULD make the type system prevent this (and handle this higher up in the call stack).
   throwIllegalArgumentIf(pageRef.canOnlyBeToParticipant,
     "TyE630RKDNW2J", s"The *page* ref is to a user/participant: $pageRef")
 
+  // Better not allow unexpected things, for now.
   throwIllegalArgumentIf(
     postType != PostType.Normal && postType != PostType.ChatMessage &&
       postType != PostType.BottomComment,

@@ -191,7 +191,6 @@ ${ htmlToPaste ? htmlToPaste : `
     if (page.pageType === PageRole.PrivateChat || page.pageType === PageRole.OpenChat) {
       // Chat messages don't reply to any particular post.
       assert.eq(page.numOrigPostRepliesVisible, 0);
-
     }
     else {
       // For now. (Won't work if a post replies to not-the-OP.)
@@ -242,11 +241,7 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.eq(post.closedStatus, 0);
     assert.eq(post.numPendingEditSuggestions, 0);
     assert.eq(post.nr, ps.postNr);
-
-    assert.notEq(post.parentNr, 0);
-    if (post.parentNr) assert.eq(post.parentNr, ps.parentNr);
-    else assert.ok(ps.parentNr === null || ps.parentNr === undefined);
-
+    if (ps.parentNr) assert.eq(ps.parentNr, post.parentNr);
     assert.ok(!post.bodyHiddenById);
     assert.ok(!post.currRevSourcePatch);
     assert.ok(!post.collapsedById);
@@ -267,7 +262,7 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.ok(!post.closedAt);
     assert.eq(post.numLikeVotes, 0);
     assert.eq(post.numTimesRead, 0);
-    assert.eq(post.createdById, 106);
+    if (ps.authorId) assert.eq(post.createdById, ps.authorId);
     assert.ok(!post.branchSideways);
     assert.eq(post.deletedStatus, 0);
     assert.ok(!post.pinnedPosition);
@@ -278,6 +273,7 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.ok(!!post.approvedAt);
     assert.ok(!post.collapsedAt);
     assert.ok(!!post.urlPaths.canonical);
+    assert.ok(post.urlPaths.canonical.endsWith('#post-' + post.nr));
     assert.ok(!post.deletedAt);
     assert.ok(!post.bodyHiddenAt);
     assert.eq(post.numDistinctEditors, 1);
@@ -286,7 +282,7 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.eq(post.approvedSource, ps.approvedSource);
     assert.ok(!post.bodyHiddenReason);
     assert.eq(post.approvedHtmlSanitized, ps.approvedSource); // simpler
-    !ps.authorId || assert.eq(post.currRevById, ps.authorId);
+    if (ps.authorId) assert.eq(post.currRevById, ps.authorId);
     assert.ok(!post.lastApprovedEditById);
   },
 

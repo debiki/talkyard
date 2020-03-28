@@ -269,7 +269,7 @@ GET   /-/export-site-json        talkyard.server.sitepatch.SitePatchController.e
 POST  /-/import-site-json        talkyard.server.sitepatch.SitePatchController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site-json   talkyard.server.sitepatch.SitePatchController.importTestSite
 # New API:
-#POST  /-/v0/act                 talkyard.server.sitepatch.ActionBatchController.doActionBatch
+#POST  /-/v0/do-action-batch     talkyard.server.sitepatch.ActionBatchController.doActionBatch
 # ... but upsert-simple deprecated?:
 POST  /-/v0/upsert-simple        talkyard.server.sitepatch.SitePatchController.upsertSimpleJson
 POST  /-/v0/upsert-patch         talkyard.server.sitepatch.SitePatchController.upsertPatchJson

@@ -1683,6 +1683,8 @@ object BrowserIdData {
   *
   * @param emailBounceSum Somewhat taking into account bounce rates of earlier addresses?
   * @param numSolutionsProvided How many accepted answers/solutions this user has posted.
+  *
+  * Not 100% accurate. [BADSTATS]
   */
 case class UserStats(
   userId: UserId,

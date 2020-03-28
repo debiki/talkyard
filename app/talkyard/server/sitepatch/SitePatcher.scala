@@ -572,7 +572,24 @@ case class SitePatcher(globals: debiki.Globals) {
             wroteToDatabase = true
             pageIdsWithBadStats.add(postReal.pageId)
 
-            // MISSING:  addUserStats(stats)(tx)  ... oops
+            COULD // update user stats, but so many things to think about,  [BADSTATS]
+            // so skip for now:
+            /*
+            val moreStats = UserStats(
+              postReal.createdById,
+              lastSeenAt = tx.now,
+              lastPostedAt = Some(tx.now)
+              // firstSeenAt ?   <—— if absent, might fail some assertion
+              // firstChatMessageAt
+              // firstDiscourseReplyAt
+              // numDiscourseTopicsRepliedIn
+              // numDiscourseTopicsCreated
+              // numChatMessagesPosted
+              // numChatTopicsRepliedIn
+              // numChatTopicsCreated
+              // numSolutionsProvided
+              )
+            dao.addUserStats(moreStats)(tx)  */
 
             // Full-text-search index this new post.
             TESTS_MISSING // this test: [2WBKP05] commented out, assumes isn't indexed.
@@ -1023,7 +1040,8 @@ case class SitePatcher(globals: debiki.Globals) {
     // Categories and pages is what the current Talkyard API consumers need. As of November 2019.
     // The /-/v0/upsert-simple endpoint also wants the category locations (url paths),
     // so, we need the forum section page paths, so included below.
-    // And any posts, so can direct link to e.g. chat messages upserted via API.
+    // And any posts, so can direct link to e.g. chat messages upserted via API
+    //  — but exclude title and body posts; then, instead, the pages[] is enough?
     //
     REFACTOR // sometimes return a ActionPatchApiResponse  [ACTNPATCH], if is
     // an ActionPatch "upsert" — which will be an API thing.
@@ -1032,7 +1050,7 @@ case class SitePatcher(globals: debiki.Globals) {
     //
     SitePatch.empty.copy(
       pages = upsertedPages.toVector,
-      posts = upsertedReplies.toVector,
+      posts = upsertedReplies.toVector,  // [205WKTJF4]
       pagePaths = (upsertedPagePaths ++ sectionPagePaths).distinct.toVector,
       categories = upsertedCategories.toVector)
   }

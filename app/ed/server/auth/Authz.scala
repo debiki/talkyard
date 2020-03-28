@@ -387,7 +387,7 @@ object Authz {
       if (meta.pageType == PageType.MindMap && (isOwnPage || isStaff))
         mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
 
-      // Only page participants may see things like private chats. [PRIVPUBMENTN]
+      // Only page participants may see things like private chats. [PRIVCHATNOTFS]
       if (meta.pageType.isPrivateGroupTalk) {
         val thePageMembers = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {

@@ -61,7 +61,7 @@ describe('chat', function() {
   });
 
 
-  // ----- In public chat, can @mention-notify others  [PUBPRIVNOTF]
+  // ----- In public chat, can @mention-notify others  [PRIVCHATNOTFS]
 
   let prevNumEmails: number;
 
@@ -71,7 +71,7 @@ describe('chat', function() {
     owensBrowser.chat.waitForNumMessages(1);
     owensBrowser.assertTextMatches('.esC_M', /Owen/);
   });
-  it("... Maria gets email notf, since @mentioned, and chat not private [PUBPRIVNOTF]", () => {
+  it("... Maria gets email notf, since @mentioned, and chat not private [PRIVCHATNOTFS]", () => {
     server.waitUntilLastEmailMatches(
         siteId, maria.emailAddress, ['my name is Owen'], mariasBrowser);
   });
@@ -155,7 +155,7 @@ describe('chat', function() {
   });
 
 
-  // ----- No notfs in public chat, unless @mentioned  [PUBPRIVNOTF]
+  // ----- No notfs in public chat, unless @mentioned  [PRIVCHATNOTFS]
 
   it("Maria goes to another page", () => {
     mariasBrowser.topbar.clickHome();

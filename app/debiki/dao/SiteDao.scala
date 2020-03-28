@@ -60,7 +60,7 @@ class SiteDaoFactory (
 }
 
 
-trait ReadOnySiteDao {  // RENAME typo: "Ony"
+trait ReadOnlySiteDao {
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage  // repl w ParsedRef?
   def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta]
   def getPageMetaByExtId(extId: ExtId): Option[PageMeta]
@@ -98,7 +98,7 @@ class SiteDao(
   private val elasticSearchClient: es.client.Client,
   val config: Config)
   extends AnyRef
-  with ReadOnySiteDao
+  with ReadOnlySiteDao
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao

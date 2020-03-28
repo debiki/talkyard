@@ -15,7 +15,7 @@ const tyAssert = {
 
   notEq: (actual, wrongValue, message?) => {
     tyAssert.ok(actual !== wrongValue,
-      `  assert.ne: Equals the wrong value:\n` +
+      `  assert.notEq: Equals the wrong value:\n` +
       `           actual:  ${JSON.stringify(actual)}\n` +
       `    should not be:  ${JSON.stringify(wrongValue)}\n`);
   },

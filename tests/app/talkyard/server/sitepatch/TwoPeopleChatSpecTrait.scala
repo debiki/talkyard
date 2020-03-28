@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-//NEXT
+
 package talkyard.server.sitepatch
 
 import com.debiki.core._
@@ -98,7 +98,7 @@ trait TwoPeopleChatSpecTrait {
         numNewPosts =  3,        // title, body, message
         numNewPostsByAlice = 3,  //  – "" —
         // Alice's message is the last post:
-        lastPostBy = alice.id,
+        lastPostById = alice.id,
         lastPostCheckFn = (lastPost: Post) => {
           alicesPost = lastPost
           //alicesPost.pageId mustBe ???
@@ -125,7 +125,7 @@ trait TwoPeopleChatSpecTrait {
     def checkChanges(numNewPages: Int = 0, numNewPosts: Int,
           numNewPostsByAlice: Int = 0, numNewPostsByBob: Int = 0,
           numNewPostsBySarah: Int = 0, numNewPostsBySanjo: Int = 0,
-          lastPostBy: UserId,
+          lastPostById: UserId,
           lastPostCheckFn: Post => Unit,
           numNewNotfs: Int,
           newNotfCheckFn: Seq[Notification.NewPost] => Unit = null
@@ -147,15 +147,15 @@ trait TwoPeopleChatSpecTrait {
       }
 
       val lastPost = curDump.posts.last
-      lastPost.createdById mustBe lastPostBy
-      lastPost.currentRevisionById mustBe lastPostBy
+      lastPost.createdById mustBe lastPostById
+      lastPost.currentRevisionById mustBe lastPostById
       lastPost.parentNr mustBe None
       lastPost.tyype mustBe PostType.ChatMessage
       lastPost.currentRevLastEditedAt mustBe None
       lastPost.currentRevSourcePatch mustBe None
       lastPost.isCurrentVersionApproved mustBe true
       lastPost.approvedById mustBe Some(SysbotUserId)
-      lastPost.safeRevisionNr mustBe None  // not reviewed by a human
+      lastPost.safeRevisionNr mustBe None  // wasn't reviewed by a human
       lastPost.approvedRevisionNr mustBe Some(1)
       lastPostCheckFn(lastPost)
 
@@ -189,7 +189,7 @@ trait TwoPeopleChatSpecTrait {
         // Bob's reply:
         numNewPosts = 1,
         numNewPostsByBob = 1,
-        lastPostBy = bob.id,
+        lastPostById = bob.id,
         lastPostCheckFn = (post: Post) => {
           bobsPost = post
           post.currentSource mustBe bobSaysHiAliceMessage.body
@@ -222,14 +222,16 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 40692463" in {
+      var sarahsPost: Post = null
       checkChanges(
         // Sarah's message:
         numNewPages = 1,        // The message topic
         numNewPosts =  3,       // title, body, message
         numNewPostsBySarah = 3, //  —""—
-        lastPostBy = sarah.id,
+        lastPostById = sarah.id,
         lastPostCheckFn = (post: Post) => {
-          post.currentSource mustBe sarahSaysHiSanjoMessage.body
+          sarahsPost = post
+          sarahsPost.currentSource mustBe sarahSaysHiSanjoMessage.body
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -237,6 +239,7 @@ trait TwoPeopleChatSpecTrait {
           notf.byUserId mustBe sarah.id
           notf.toUserId mustBe sanjo.id
           //notf.tyype mustBe NotificationType.Message
+          notf.uniquePostId mustBe (sarahsPost.id - 1)  // would want - 0   [PATCHNOTF]
         })
     }
 
@@ -256,13 +259,15 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 5029642" in {
+      var sanjosPost: Post = null
       checkChanges(
         // Sanjo's reply:
         numNewPosts = 1,
         numNewPostsBySanjo = 1,
-        lastPostBy = sanjo.id,
+        lastPostById = sanjo.id,
         lastPostCheckFn = (post: Post) => {
-          post.currentSource mustBe sanjoRelpiesMessage.body
+          sanjosPost = post
+          sanjosPost.currentSource mustBe sanjoRelpiesMessage.body
         },
         // A notf to Sarah:
         numNewNotfs = 1,
@@ -270,6 +275,7 @@ trait TwoPeopleChatSpecTrait {
           notf.byUserId mustBe sanjo.id
           notf.toUserId mustBe sarah.id
           notf.tyype mustBe NotificationType.NewPost
+          notf.uniquePostId mustBe sanjosPost.id
         })
     }
 
@@ -335,13 +341,15 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 59028906" in {
+      var sarahsPost: Post = null
       checkChanges(
         // Sarah's reply to Sanjo's reply:
         numNewPosts = 1,
         numNewPostsBySarah = 1,
-        lastPostBy = sarah.id,
+        lastPostById = sarah.id,
         lastPostCheckFn = (post: Post) => {
-          post.currentSource mustBe sarahRepliesMessage.body
+          sarahsPost = post
+          sarahsPost.currentSource mustBe sarahRepliesMessage.body
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -349,6 +357,7 @@ trait TwoPeopleChatSpecTrait {
           notf.byUserId mustBe sarah.id
           notf.toUserId mustBe sanjo.id
           notf.tyype mustBe NotificationType.NewPost
+          notf.uniquePostId mustBe sarahsPost.id
         })
     }
 
@@ -367,11 +376,13 @@ trait TwoPeopleChatSpecTrait {
     }
 
     "... check the changes 40649026434" in {
+      var alicesPost: Post = null
       checkChanges(
         numNewPosts = 1,         // Alice's reply to Bob
         numNewPostsByAlice = 1,  //  – "" —
-        lastPostBy = alice.id,
-        lastPostCheckFn = (alicesPost: Post) => {
+        lastPostById = alice.id,
+        lastPostCheckFn = (lastPost: Post) => {
+          alicesPost = lastPost
           alicesPost.currentSource mustBe aliceRepliesToBobMessage.body
         },
         // One notf to Bob about Alice's message:
@@ -380,6 +391,7 @@ trait TwoPeopleChatSpecTrait {
           notf.byUserId mustBe alice.id
           notf.toUserId mustBe bob.id
           notf.tyype mustBe NotificationType.NewPost
+          notf.uniquePostId mustBe alicesPost.id
         })
     }
 

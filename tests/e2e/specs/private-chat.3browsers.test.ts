@@ -103,7 +103,7 @@ describe("private chat  TyT2ABKR045", function() {
   });
 
 
-  // ----- Priv chat members get notified about all messages  [PUBPRIVNOTF]
+  // ----- Priv chat members get notified about all messages  [PRIVCHATNOTFS]
 
   let prevNumEmails: number;
 
@@ -248,7 +248,7 @@ describe("private chat  TyT2ABKR045", function() {
   });
 
 
-  // ----- Cannot @mention-notify people outside private chat  [PUBPRIVNOTF]
+  // ----- Cannot @mention-notify people outside private chat  [PRIVCHATNOTFS]
 
   it("Mentioning someone not in this *private* chat, generates *no* notf " +
         "(but does, in a public chat)", () => {

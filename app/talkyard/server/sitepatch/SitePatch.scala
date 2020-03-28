@@ -19,7 +19,7 @@ package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.{ForumDao, ReadOnySiteDao, SiteDao}
+import debiki.dao.{ForumDao, ReadOnlySiteDao, SiteDao}
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import debiki.TextAndHtml
 import org.jsoup.Jsoup
@@ -106,7 +106,7 @@ case class SitePatch(
 
   def theSite: SiteInclDetails = site.getOrDie("TyE053KKPSA6")
 
-  def toSimpleJson(siteDao: ReadOnySiteDao): JsObject = {
+  def toSimpleJson(siteDao: ReadOnlySiteDao): JsObject = {
     SitePatchMaker.createPostgresqlJsonBackup(
       anyDump = Some(this),
       simpleFormat = true,
@@ -206,7 +206,7 @@ object SitePatch {
   * (and does nothing, if there's an insertion conflict for example
   * — and returns info about what was, and wasn't, done.)
   *
-  * POST /-/v0/action-batch    or just:  /-/v0/act  or  /-/v0/do-batch  ?
+  * POST /-/v0/do-action-batch    or just:  /-/v0/act  or  /-/v0/do-batch   /do  /do-something ?
   * {
   *   actionBatch: [{   // or actionGroups? no, "group" is also used for user groups
   *     sendDirectMessages: [{ from: ... , to: ..., text: ..., textFormatLang: ... }],
@@ -263,7 +263,7 @@ case class SimpleSitePatch(
     * live-applies all changes in an ActionBatch, without constructing an intermediate
     * SitePatch.
     */
-  def makeComplete(dao: ReadOnySiteDao): SitePatch Or ErrorMessage = {  // why not a r/o tx?
+  def makeComplete(dao: ReadOnlySiteDao): SitePatch Or ErrorMessage = {  // why not a r/o tx?
     var nextCategoryId = LowestTempImpId
     var nextPageId = LowestTempImpId
     var nextPostId = LowestTempImpId
@@ -436,7 +436,7 @@ case class SimpleSitePatch(
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1
-      val titlePost = Post(  // dupl code, ue Post.create() instead [DUPPSTCRT]
+      val titlePost = Post(  // dupl code, use Post.create() instead [DUPPSTCRT]
         id = nextPostId,
         extImpId = titlePostExtId,
         pageId = nextPageId.toString,

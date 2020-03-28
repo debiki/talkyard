@@ -283,8 +283,7 @@ export default function addApiChatTestSteps(variants: {
       // authorId: ??
     });
 
-    // Title = [0], body = [1], the actual chat message = [2].
-    // Eh, no. [0] = the chat message. Page title & body not included.
+    // The chat message = [0], page title & body not included. [205WKTJF4]
     assert.eq(upsertResponse.posts.length, 1);
     utils.checkNewPostFields(upsertResponse.posts[0], {
       postNr: c.FirstReplyNr,

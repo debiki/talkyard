@@ -19,7 +19,7 @@ package talkyard.server.sitepatch
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.{ReadOnySiteDao, SiteDao}
+import debiki.dao.{ReadOnlySiteDao, SiteDao}
 import debiki.{JsonMaker, Settings2}
 import ed.server._
 import play.api.libs.json._
@@ -113,9 +113,9 @@ object SitePatchMaker {
     * Split into two fns?  and remove `simpleFormat` param [ACTNPATCH]
     */
   def createPostgresqlJsonBackup(anyDump: Option[SitePatch] = None,  // RENAME makeSiteJsonDump?
-        // A bit weird with both a txt and a dao. Oh well.
+        // A bit weird with both a tx and a dao. Oh well.
         anyTx: Option[SiteTransaction] = None, simpleFormat: Boolean,
-        anyDao: Option[ReadOnySiteDao] = None): JsObject = {
+        anyDao: Option[ReadOnlySiteDao] = None): JsObject = {
 
     require(anyDump.isDefined != anyTx.isDefined, "TyE0627KTLFRU")
     require(simpleFormat == anyDao.isDefined, "TyEG503WKL2")
