@@ -213,13 +213,15 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
         listUsersNotifiedAbout(chatPost.id) mustBe Set(member1.id)
 
+        // No, this no longer appends — instead, when @mention:ing sbd else, a new
+        // chat message starts (so post id += 1, and num notfs += 2, now). TyT306WKCDE4 [NEXTCHATMSG]
         info("chat-append-recreate one mention")
-        val sameChatPost = chat(member3.id, chatTopicManyJoinedId,  // appends to the same message
+        val post2 = chat(member3.id, chatTopicManyJoinedId,  // appends to the same message
             s"Hi @${member1.theUsername} and @${moderator.theUsername} again")(dao)
-        sameChatPost.id mustBe chatPost.id
-        expectedTotalNumNotfs += 1
+        post2.id mustBe (chatPost.id + 1)
+        expectedTotalNumNotfs += 2
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe Set(member1.id, moderator.id)
+        listUsersNotifiedAbout(post2.id) mustBe Set(member1.id, moderator.id)
       }
 
       "mention someone not in the chat, then append-add, then edit-add others not in the chat" in {
@@ -232,27 +234,28 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
         listUsersNotifiedAbout(chatPost.id) mustBe Set(member5NotInAnyChat.id)
 
+        // Now this creates a new message  [NEXTCHATMSG]
         info("append to message, mention same person again, plus someone else")
-        val samePost = chat(member1.id, chatTopicManyJoinedId,
+        val post2 = chat(member1.id, chatTopicManyJoinedId,
             s"Hi again @${member5NotInAnyChat.theUsername}, + @${member6NotInAnyChat.theUsername}")(dao)
-        samePost.id mustBe chatPost.id
-        expectedTotalNumNotfs += 1
+        post2.id mustBe (chatPost.id + 1)
+        expectedTotalNumNotfs += 2
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe Set(member5NotInAnyChat.id, member6NotInAnyChat.id)
+        listUsersNotifiedAbout(post2.id) mustBe Set(member5NotInAnyChat.id, member6NotInAnyChat.id)
 
         info("edit message & mention a third")
-        edit(chatPost, member1.id,
+        edit(post2, member1.id,
           s"""Hi @${member5NotInAnyChat.theUsername} @${member6NotInAnyChat.theUsername}
               @${member7NotInAnyChat.theUsername}""")(dao)
         expectedTotalNumNotfs += 1
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe Set(
+        listUsersNotifiedAbout(post2.id) mustBe Set(
             member5NotInAnyChat.id, member6NotInAnyChat.id, member7NotInAnyChat.id)
       }
     }
 
     "mention @all" - {
-      "if isn't staff = has no effect" in {
+      "if isn't staff, mentioning '@all' has no effect" in {
         // Post as member 2 not member 1, so as not to append to prev message.
 
         info("not when posting new chat message")
@@ -265,19 +268,20 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         expectedTotalNumNotfs -= 0
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
 
+        // Now "appending" a @mention instead creates a new message  [NEXTCHATMSG]
         info("not when post-appending")
-        val samePost = chat(member2.id, chatTopicManyJoinedId, s"... More @all")(dao)
-        samePost.id mustBe chatPost.id
+        val post2 = chat(member2.id, chatTopicManyJoinedId, s"... More @all")(dao)
+        post2.id mustBe (chatPost.id + 1)
         expectedTotalNumNotfs += 0
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
 
-        edit(chatPost, member2.id, s"""Bye bye again""")(dao)
+        edit(post2, member2.id, "Bye bye again")(dao)
         expectedTotalNumNotfs -= 0
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
 
         info("not when editing")
-        edit(chatPost, member2.id, s"""Hi @all again""")(dao)
-        expectedTotalNumNotfs == 0
+        edit(post2, member2.id, "Hi @all again")(dao)
+        expectedTotalNumNotfs += 0
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
       }
 
@@ -307,27 +311,28 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
         listUsersNotifiedAbout(chatPost.id) mustBe Set.empty
 
+        // Now "appending" a @mention instead creates a new message  [NEXTCHATMSG]
         info("chat-append '@all' again")
-        val samePost = chat(moderator.id, chatTopicOneId,
+        val post2 = chat(moderator.id, chatTopicOneId,
             s"Hi @all")(dao)
-        samePost.id mustBe chatPost.id
+        post2.id mustBe (chatPost.id + 1)
         expectedTotalNumNotfs += 1
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe Set(member1.id)
+        listUsersNotifiedAbout(post2.id) mustBe Set(member1.id)
 
         info("edit-remove '@all'")
-        edit(chatPost, moderator.id,
+        edit(post2, moderator.id,
           s"""Hi not not not""")(dao)
         expectedTotalNumNotfs -= 1
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe Set.empty
+        listUsersNotifiedAbout(post2.id) mustBe Set.empty
 
         info("edit-add '@all' a third time")
-        edit(chatPost, moderator.id,
+        edit(post2, moderator.id,
           s"""Hi @all""")(dao)
         expectedTotalNumNotfs += 1
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
-        listUsersNotifiedAbout(chatPost.id) mustBe  Set(member1.id)
+        listUsersNotifiedAbout(post2.id) mustBe  Set(member1.id)
       }
 
       "mention @all + mem 4,5,6, in large chat, then edit-rm @all and mem 5, edit-add mem 7" in {

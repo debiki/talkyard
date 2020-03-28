@@ -466,7 +466,7 @@ trait PostsDao {
               lastMessage.tyype == PostType.ChatMessage &&
               // If mentioning new people — then create a new Post, so they won't
               // get notified about the text in the previous chat message (that text
-              // was likely not intended directly for them).  TyT306WKCDE4
+              // was likely not intended directly for them).  TyT306WKCDE4 [NEXTCHATMSG]
               textAndHtml.usernameMentions.isEmpty =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, tx)
         case _ =>

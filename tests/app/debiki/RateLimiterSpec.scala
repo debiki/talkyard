@@ -31,7 +31,10 @@ import play.api.test.FakeHeaders
 
 
 
-class RateLimiterSpec extends DaoAppSuite with MockitoSugar {
+class RateLimiterSpec
+  extends DaoAppSuite(
+    extraConfig = Map("talkyard.isTestDisableRateLimits" -> "false"))
+  with MockitoSugar {
 
   import RateLimits.Unlimited
 
