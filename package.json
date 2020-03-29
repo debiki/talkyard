@@ -64,7 +64,7 @@
     "lodash": "^4.17.11",
     "lodash-cli": "^4.17.5",
     "merge2": "^1.2.3",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.2",
     "request": "^2.88.0",
     "selenium-standalone": "^6.17.0",
     "stylus": "^0.54.7",
