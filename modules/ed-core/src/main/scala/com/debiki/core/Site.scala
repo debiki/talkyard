@@ -275,11 +275,16 @@ object Hostname {
   /** Should be used as prefix for both the hostname and the site name, for test sites. */
   val E2eTestPrefix = "e2e-test-"
 
+  /** Prefix for sites people create to try out Talkyard, but won't use for real. */
+  val TryOutTalkyardPrefix = "test--"
+
   val EmbeddedCommentsHostnamePrefix = "comments-for-"   // also in info message [7PLBKA24]
 
   def isE2eTestHostname(hostname: String): Boolean =
-    hostname.endsWith("example.com") ||
+    hostname == "example.com" ||
+      hostname.endsWith(".example.com") ||
       hostname.startsWith(Hostname.E2eTestPrefix) ||
+      hostname.startsWith(Hostname.TryOutTalkyardPrefix) ||
       hostname.startsWith(EmbeddedCommentsHostnamePrefix + E2eTestPrefix)
 }
 
