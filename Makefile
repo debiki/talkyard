@@ -126,8 +126,16 @@ zipped_bundles:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/he_IL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/lv_LV/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/pl_PL/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/pt_BR/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.min.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
   images/app/assets/server-bundle.js \
   images/app/assets/server-bundle.min.js \
   images/app/assets/translations/en_US/i18n.js \

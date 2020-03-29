@@ -22,7 +22,7 @@ var t_en_US: TalkyardTranslations = t = {
   Activity: "Activity",
   Add: "Add",
   AddingDots: "Adding ...",
-  AddComment: "Add Comment",
+  AddComment: "Add Comment",  // MISSING, & dupl t.e.AddCommentC
   Admin: "Admin",
   AdvSearch: "Advanced search",
   Away: "Away",
@@ -1173,7 +1173,7 @@ var t_en_US: TalkyardTranslations = t = {
     ReplyTo: "Reply to ",
     ReplyTo_theOrigPost: "the Original Post",
     ReplyTo_post: "post ",
-    AddCommentC: "Add a comment:",   // MISSING
+    AddCommentC: "Add a comment:",   // MISSING, & dupl t.AddComment
 
     PleaseSelectPosts: "Please select one or more posts to reply to.",
 

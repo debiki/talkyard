@@ -487,11 +487,12 @@ class Nashorn(
 
       // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
       addTranslation("en_US")
-      addTranslation("sv_SE")
-      addTranslation("pt_BR")
-      addTranslation("pl_PL")
-      addTranslation("ru_RU")
-      addTranslation("he_IL")
+      addTranslation("he_IL")  // Hebrew
+      addTranslation("lv_LV")  // Latvian
+      addTranslation("pl_PL")  // Polish
+      addTranslation("pt_BR")  // Portuguese, Brazilian
+      addTranslation("ru_RU")  // Russian
+      addTranslation("sv_SE")  // Swedish
 
       // Add render page code.
       val rendererScript = loadAssetAsString(s"server-bundle$min.js", isTranslation = false)

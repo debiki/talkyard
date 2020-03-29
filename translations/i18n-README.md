@@ -62,8 +62,7 @@ To add a new language:
        ```js
        var t_nn_NN = t; // remember your new language, otherwise gets overwritten
        // This'll create a variable t_en_US, i.e. English language values (and also overwrite `t`).
-       // Change /256/ to whatever currently in use (asset versioning), look at the html source.
-       debiki2.Server.loadJs('/-/assets/v0.6.56-WIP-1/translations/en_US/i18n.js');
+       debiki2.Server.loadJs(eds.assetUrlPrefix + 'translations/en_US/i18n.js');
        ```
 
        Now, compare all English and new-language values, to find missing or extra spaces/punctuation,
