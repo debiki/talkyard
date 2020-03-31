@@ -39,7 +39,6 @@ const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 const SsoTestPath = '/-/sso-test';
-const AdminRoot = '/-/admin/';
 
 export function staffRoutes() {
   // Only admins may currently access the settings tab. Moderators are instead supposed to review.

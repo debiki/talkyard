@@ -285,7 +285,7 @@ class PlainApiActions(
               |
               |Details: A certain login id has become invalid. I just gave you a new id,
               |but you will probably need to login again.""")
-              .discardingCookies(DiscardingSecureCookie(EdSecurity.SessionIdCookieName)))
+              .discardingCookies(DiscardingSessionCookie))
         }
 
       val resultOkSid =
@@ -299,8 +299,7 @@ class PlainApiActions(
               .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(
-                  DiscardingSecureCookie(EdSecurity.SessionIdCookieName))
+                resultWithCookies.discardingCookies(DiscardingSessionCookie)
             }
             resultWithCookies
           }

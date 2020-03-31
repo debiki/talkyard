@@ -23,6 +23,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
+import org.scalactic.{Bad, Good, Or}
 import play.api._
 import play.api.mvc.{Action, ControllerComponents}
 import redis.RedisClient
@@ -174,22 +175,30 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   }
 
 
-  def stopImpersonating: Action[Unit] = GetAction { request =>
+  def stopImpersonating: Action[Unit] = GetActionAllowAnyone { request =>
     urlDecodeCookie(ImpersonationCookieName, request.underlying) match {
       case None =>
+        // What's this? Clicking Stop Impersonating, but no such cookie?
+        // Maybe clicking twice in different tabs? Anyway, feels
+        // better to log out, so as not to accidentally stay logged in somehow.
         LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
       case Some(cookieValue) =>
-        val (secondsAgo, oldUserId) = throwIfBadHashElseGetAgeAndUserId(cookieValue)
-        // Ignore old impersonation cookies, in case they're leaked somehow.
-        if (secondsAgo > MaxBecomeOldUserSeconds || oldUserId == NoUserId) {
-          LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
-        }
-        else {
-          // Restore the old user id.
-          val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, oldUserId)
-          Ok.withCookies(sidAndXsrfCookies: _*)
-            .discardingCookies(mvc.DiscardingCookie(ImpersonationCookieName))
-        }
+        val response =
+          checkHashElseGetAgeAndUserId(cookieValue) match {
+            case Bad(r) => r
+            case Good((secondsAgo, oldUserId)) =>
+              // Ignore old impersonation cookies, in case they're leaked somehow.
+                if (secondsAgo > MaxBecomeOldUserSeconds || oldUserId == NoUserId) {
+                  LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
+                }
+                else {
+                  // Restore the old user id.
+                  val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, oldUserId)
+                  Ok.withCookies(sidAndXsrfCookies: _*)
+                }
+          }
+        response.discardingCookies(
+            mvc.DiscardingCookie(ImpersonationCookieName))
     }
   }
 
@@ -204,26 +213,26 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
   }
 
 
-  private def throwIfBadHashElseGetAgeAndUserId(value: String): (Long, UserId) = {
+  private def checkHashElseGetAgeAndUserId(value: String): (Long, UserId) Or mvc.Result = {
     val parts = value.split(FieldSeparator)
     if (parts.length != 5)
-      throwForbidden(
-        "EsE4YK82", s"Bad $ImpersonationCookieName cookie: ${parts.length} parts, not 4")
+      return Bad(ForbiddenResult(
+        "EsE4YK82", s"Bad $ImpersonationCookieName cookie: ${parts.length} parts, not 4"))
 
     val oldUserId = parts(0).toIntOrThrow("EsE8IKPW2", "Old user id is not a number")
     val viewAsGroupOnly = parts(1) match {
       case ViewAsGroupOnly => true
       case ImpersonateRealUser => false
-      case bad => throwForbidden("EdE2WK6PX", s"Bad view-only field")
+      case bad => return Bad(ForbiddenResult("EdE2WK6PX", s"Bad view-only field"))
     }
     val unixSeconds = parts(2).toLongOrThrow("EsE4YK0W2", "Unix seconds is not a number")
     val randomString = parts(3)
     val correctCookieValue = concatAndHash(oldUserId, viewAsGroupOnly, unixSeconds, randomString)
     if (value != correctCookieValue)
-      throwForbidden("TyE6YKP2JW3", s"Bad hash")
+      return Bad(ForbiddenResult("TyE6YKP2JW3", s"Bad hash"))
 
     val ageSeconds = globals.now().numSeconds - unixSeconds
-    (ageSeconds, oldUserId)
+    Good((ageSeconds, oldUserId))
   }
 
 }

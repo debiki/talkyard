@@ -477,16 +477,15 @@ function pagesFor(browser) {
     },
 
     repeatUntilAtNewUrl: function(fn: () => void) {
-      if (!api._currentUrl) {
-        api.rememberCurrentUrl();
-      }
+      const urlBefore = api.rememberCurrentUrl();
       fn();
-      while (api._currentUrl === browser.url().value) {
-        browser.pause(125);
+      browser.pause(250);
+      while (urlBefore === browser.url().value) {
+        // E2EBUG RACE: if the url changes right here, maybe fn() below won't work,
+        // will block.
         fn();
-        browser.pause(125);
+        browser.pause(250);
       }
-      api._currentUrl = '';
     },
 
     waitForNewOrigin: function(anyCurrentUrl?: string) {
@@ -5248,6 +5247,10 @@ function pagesFor(browser) {
         },
 
         login: {
+          goHere: () => {
+            api.adminArea.goToLoginSettings();
+          },
+
           setRequireVerifiedEmail: function(isRequired: boolean) {
             setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
           },
@@ -5389,6 +5392,10 @@ function pagesFor(browser) {
           api.waitAndClick('.e_VwPblPrfB');
         },
 
+        assertUsernameIs: (username: string | Member) => {
+          api.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
+        },
+
         assertEnabled: function() {
           api.adminArea.user.waitForLoaded();
           assert(browser.isVisible(api.adminArea.user.enabledSelector));
@@ -5523,7 +5530,9 @@ function pagesFor(browser) {
         },
 
         startImpersonating: function() {
-          api.waitAndClick('#e2eA_Us_U_ImpersonateB');
+          api.repeatUntilAtNewUrl(() => {
+            api.waitAndClick('#e2eA_Us_U_ImpersonateB');
+          });
         },
       },
 
@@ -5541,7 +5550,7 @@ function pagesFor(browser) {
           api.rememberCurrentUrl();
           api.waitForThenClickText(api.adminArea.users.usernameSelector, username);
           api.waitForNewUrl();
-          api.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
+          api.adminArea.user.assertUsernameIs(user);
         },
 
         assertUserListEmpty: function(member: Member) {
@@ -6475,6 +6484,7 @@ function pagesFor(browser) {
   };
 
   function setCheckbox(selector: string, checked: boolean) {
+    dieIf(_.isUndefined(checked), "setCheckbox: Pass true or false  [TyE036WKDP45]");
     // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
     // caused the checkbox to move? so the click missed? Therefore, try many times.
     // Update, 2017-11: Look here, the click works, but the button changes state back again,

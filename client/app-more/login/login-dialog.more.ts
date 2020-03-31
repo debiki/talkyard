@@ -117,8 +117,13 @@ const LoginDialog = createClassAndFactory({
         body: r.div({},
           r.p({ className: 'e_ImpFrbdn' }, t.ld.NotFoundOrPrivate),
           r.p({}, t.ld.IsImpersonating),
-          Button({ onClick: () => history.back(), className: 'e_ImpBackB' },
-            "Go back"),
+          // If clicking Back would take us to the Admin Area, hide that button
+          // — because if browser-Back-going there whilst impersonating someone,
+          // the admin area looks half broken — harmless but looks weird.
+          // (Maybe checking document.referrer here is anti-React style? Fine, harmless.)
+          document.referrer.indexOf(AdminRoot) >= 0 ? null :
+            Button({ onClick: () => history.back(), className: 'e_ImpBackB' },
+              "Go back"),
           Button({ onClick: Server.stopImpersonatingReloadPage, className: 'e_ImpStopB' },
             // dupl text [306MKTW33]
             store.isViewingAs ? "Stop viewing as other" : "Stop impersonating"),

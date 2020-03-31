@@ -109,6 +109,7 @@ const ApiUrlPathPrefix = '/-/';
 const UsersRoot = '/-/users/';
 const GroupsRoot = '/-/groups/';
 const SearchRootPath = '/-/search';
+const AdminRoot = '/-/admin/';
 
 
 const RoutePathLatest = 'latest';  // change to 'active'?  here too: [394SMDLW20] + 99 more places?

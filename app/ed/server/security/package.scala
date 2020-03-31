@@ -301,7 +301,7 @@ class EdSecurity(globals: Globals) {
               ForbiddenResult("TyEBADSID", "Bad session ID",
                   "You can try again — I just deleted the bad session ID.")
                 .discardingCookies(
-                  DiscardingSecureCookie(SessionIdCookieName)))
+                  DiscardingSessionCookie))
         }
       }
 
@@ -562,7 +562,9 @@ class EdSecurity(globals: Globals) {
   def DiscardingSecureCookie(name: String) =
     DiscardingCookie(name, secure = globals.secure)
 
-  def DiscardingSessionCookie: DiscardingCookie = DiscardingSecureCookie("dwCoSid")
+  def DiscardingSessionCookie: DiscardingCookie = DiscardingSecureCookie(SessionIdCookieName)
+  // Maybe also always delete:  ImpersonationCookieName  ?
+  // Well, things work fine anyway as of now (Mars 2020).
 
   // Two comments on the encoding of the cookie value:
   // 1. If the cookie contains various special characters
