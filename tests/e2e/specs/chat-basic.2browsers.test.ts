@@ -52,8 +52,8 @@ describe('chat', function() {
   it("Owen logs in, creates a chat topic", function() {
     owensBrowser.watchbar.clickCreateChat();
     owensBrowser.loginDialog.loginWithPassword(owen);
-    owensBrowser.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
-    owensBrowser.setValue('textarea', "Chat channel purpose");
+    owensBrowser.editor.editTitle("Chat channel title");
+    owensBrowser.editor.editText("Chat channel purpose");
     owensBrowser.rememberCurrentUrl();
     owensBrowser.editor.clickSave();
     owensBrowser.waitForNewUrl();
@@ -82,7 +82,7 @@ describe('chat', function() {
   });
 
   it("Maria opens the chat page, sees Owens message", function() {
-    mariasBrowser.go(owensBrowser.url().value);
+    mariasBrowser.go(owensBrowser.getUrl());
     mariasBrowser.chat.waitForNumMessages(1);
     mariasBrowser.assertTextMatches('.esC_M', /Owen/);
   });
@@ -195,7 +195,11 @@ describe('chat', function() {
   let numMessages: number;
 
   it("Owen continues typing", () => {
-    numMessages = owensBrowser.chat.countMessages();
+    numMessages = owensBrowser.chat.countMessages({ inclAnyPreview: false }); // [DRAFTS_BUG] ...
+    // ... namely Owen's browser might show a preview of an empty chat message, after this,
+    // resulting in +1 more chat messages for Owen, than for Maria;
+    // then, mariasBrowser.chat.waitForNumMessages(numMessages) below never completes.
+
     owensBrowser.chat.addChatMessage(`Nothing going`);
     owensBrowser.chat.addChatMessage(`on here`);
   });

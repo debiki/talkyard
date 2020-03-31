@@ -99,7 +99,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
   it("... posts a topic", () => {
     majasBrowser.complex.createAndSaveTopic(
       { title: topics.majasTopicTitle, body: topics.majasTopicText, matchAfter: false });
-    topics.majasTopicUrl = majasBrowser.url().value;
+    topics.majasTopicUrl = majasBrowser.getUrl();
   });
 
   it("... it needs to be approved by staff", () => {
@@ -150,7 +150,7 @@ describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths
 
   it("... reply nr 3", () => {
     majasBrowser.complex.replyToOrigPost(majasReplyThree);
-    topics.oldTopicUrl = majasBrowser.url().value;
+    topics.oldTopicUrl = majasBrowser.getUrl();
   });
 
   it("... Owen gets a review task notification", () => {

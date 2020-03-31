@@ -320,40 +320,6 @@ const nextFileTemplate = function(contents, file) {
 
 
 // ========================================================================
-//  End-to-end Tests
-// ========================================================================
-
-
-gulp.task('clean-e2e', () => {
-  return del(['target/e2e/**/*']);
-});
-
-gulp.task('compile-e2e-scripts', () => {
-  var stream = gulp.src([
-        'client/app-slim/constants.ts',
-        'client/app-slim/model.ts',
-        'tests/e2e/**/*ts'])
-      .pipe(plumber())
-      .pipe(typeScript({
-        declarationFiles: true,
-        module: 'commonjs',
-        lib: ['es5', 'es2015', 'dom'],
-        types: ['lodash', 'core-js', 'assert', 'node']
-      }));
-  // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
-
-  return stream.js
-      // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
-      .pipe(gulp.dest('target/e2e'));
-});
-
-// Compiles TypeScript code in test/e2e/ and places it in target/e2e/transpiled/,
-//
-gulp.task('build-e2e', gulp.series('clean-e2e', 'compile-e2e-scripts'));
-
-
-
-// ========================================================================
 //  Translations
 // ========================================================================
 
@@ -786,7 +752,6 @@ gulp.task('default', gulp.series(
   'compileConcatAllScripts',
   'compile-stylus',
   'minifyTranslations',
-  'build-e2e',
   //'build-security-tests',
   ));
 
@@ -838,10 +803,6 @@ gulp.task('watch', gulp.series('default', (done) => {
       ['translations/**/*.ts'],
       gulp.series('minifyTranslations'))
     .on('change', logChangeFn('Translations typescript'));
-
-  gulp.watch('tests/e2e/**/*.ts',
-      gulp.series('build-e2e'))
-    .on('change', logChangeFn('End-to-End test files'));
 
   gulp.watch([versionFilePath],
       gulp.series('updateVersionGenBundles'))

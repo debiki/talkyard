@@ -66,7 +66,7 @@ describe("chat-create-from-direct-message  TyT5FKB2A", () => {
     mariasBrowser.go(discussionPageUrl);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.complex.sendMessageToPageAuthor(mariasMessageTitle, mariasMessageText);
-    directMessageUrl = mariasBrowser.url().value;
+    directMessageUrl = mariasBrowser.getUrl();
   });
 
   it("Michael gets a notf  [TyTPAGENOTF]", () => {

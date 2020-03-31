@@ -5,7 +5,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -152,7 +151,7 @@ ${htmlToPaste}
     console.log("signs up...");
     mariasBrowser.loginDialog.createPasswordAccount(maria, false);
     console.log("close login popup...");
-    mariasBrowser.close();
+    mariasBrowser.closeWindowSwitchToOther();
   });
 
   it("... verifies her email", () => {

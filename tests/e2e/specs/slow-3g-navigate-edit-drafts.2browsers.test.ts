@@ -144,7 +144,9 @@ describe("slow-3g  TyT502KSTJGJ6", () => {
 
   it("... whilst typing, no annoying Wait-wait-wait overlay pops up   TyT40PKDRT4", () => {
     for (let i = 111; i < 1000; i += 111) {
-      mariasBrowser.editor.editText('' + i, { skipWait: true });
+      const nextText = '' + i;
+      lad.logBoring(`Maria types: "${nextText}`);
+      mariasBrowser.editor.editText(nextText, { skipWait: true });
       mariasBrowser.pause(250);
       assert.ok(!mariasBrowser.isLoadingOverlayVisible_raceCond());  // (4092762)
     }

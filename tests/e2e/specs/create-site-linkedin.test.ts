@@ -4,7 +4,6 @@ import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
@@ -30,14 +29,14 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () =>
   });
 
   it('can actually use the LinkedIn admin account to create stuff', () => {
-    pages.complex.createAndSaveTopic({ title: "LinkedIn topic title", body: "Body" });
-    pages.topbar.clickLogout(); // (6HRWJ3)
+    browser.complex.createAndSaveTopic({ title: "LinkedIn topic title", body: "Body" });
+    browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
   it('can create a new site as LinkedIn user, when already logged in to LinkedIn', () => {
     // Now we're logged in already, so the LinkedIn login flow is / might-be slightly different.
     makeForumWithLinkedInAdminAccount({ alreadyLoggedIn: true });
-    pages.topbar.clickLogout(); // (6HRWJ3)
+    browser.topbar.clickLogout(); // (6HRWJ3)
   });
 
   function makeForumWithLinkedInAdminAccount(ps: { alreadyLoggedIn: boolean }) {
@@ -48,7 +47,7 @@ describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () =>
     console.log("Create new site:");
     browser.createNewSite(data);
     console.log("Create forum:");
-    pages.createSomething.createForum("Linkedin Forum Title");
+    browser.createSomething.createForum("Linkedin Forum Title");
   }
 
 });

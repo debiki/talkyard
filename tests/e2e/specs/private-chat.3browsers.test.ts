@@ -63,7 +63,7 @@ describe("private chat  TyT2ABKR045", function() {
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.createChatChannelViaWatchbar(
         { name: chatNameOrig, purpose: chatPurpose, public_: false });
-    chatUrl = owen.url().value;
+    chatUrl = owen.getUrl();
   });
 
   it("... edits the title  TyT7UKAB20", function() {
@@ -125,10 +125,16 @@ describe("private chat  TyT2ABKR045", function() {
 
   // ----- More access permissions tests
 
-  it("Now Maria sees the chat in her watchbar, but not in the forum topic list", () => {
+  it("Now Maria sees the chat in her watchbar", () => {
     maria.refresh();
-    maria.watchbar.assertTopicVisible(chatNameEdited);
+    maria.watchbar.waitForTopicVisible(chatNameEdited);
+  });
+
+  it("... but not in the forum topic list", function() {
     maria.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("... she clicks and opens that topic", function() {
     maria.watchbar.goToTopic(chatNameEdited);
   });
 
@@ -184,9 +190,12 @@ describe("private chat  TyT2ABKR045", function() {
 
 
   it("... which all of them see", function() {
-    browserA.chat.waitForNumMessages(5);
-    browserB.chat.waitForNumMessages(5);
-    browserC.chat.waitForNumMessages(5);
+    logAndDie.logMessage(`Owen ...`);
+    owen.chat.waitForNumMessages(5);
+    logAndDie.logMessage(`Maria ...`);
+    maria.chat.waitForNumMessages(5);
+    logAndDie.logMessage(`Michael ...`);
+    michael.chat.waitForNumMessages(5);
   });
 
   // 1 minute passes (so new long pollling requests gets sent)   // break out fn? [4KWBFG5]
@@ -209,8 +218,8 @@ describe("private chat  TyT2ABKR045", function() {
     maria.assertNotFoundError();
     maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.watchbar.waitForTopicVisible(c.WatchbarHomeLinkTitle);
     maria.watchbar.assertTopicAbsent(chatNameEdited);
-    maria.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     maria.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
@@ -269,7 +278,7 @@ describe("private chat  TyT2ABKR045", function() {
 
   // ----- More leave-chat access permission tests
 
-  it("Owen remvoes Michael from the chat", function() {
+  it("Owen removs Michael from the chat", function() {
     owen.contextbar.clickUser('michael');
     // Failed once:
     // "FAIL: Error: An element could not be located on the page using the given search parameters."
@@ -290,8 +299,8 @@ describe("private chat  TyT2ABKR045", function() {
   });
 
   it("... and doesn't see it in the watchbar", function() {
+    michael.watchbar.waitForTopicVisible(c.WatchbarHomeLinkTitle);
     michael.watchbar.assertTopicAbsent(chatNameEdited);
-    michael.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     michael.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
@@ -312,8 +321,8 @@ describe("private chat  TyT2ABKR045", function() {
   });
 
   it("... and it won't appear in the watchbar", function() {
+    guest.watchbar.waitForTopicVisible(c.WatchbarHomeLinkTitle);
     guest.watchbar.assertTopicAbsent(chatNameEdited);
-    guest.watchbar.assertTopicVisible(c.WatchbarHomeLinkTitle);
     guest.watchbar.asserExactlyNumTopics(1); // the forum
   });
 

@@ -109,7 +109,7 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
   it("Owen creates a staff-only page", () => {
     owensBrowser.forumTopicList.goHere({ categorySlug: forum.categories.staffOnlyCategory.slug });
     owensBrowser.complex.createAndSaveTopic(staffOnlyTopic);
-    staffOnlyPageUrl = owensBrowser.url().value;
+    staffOnlyPageUrl = owensBrowser.getUrl();
   });
 
   it("Mons goes to the staff-only page", () => {
@@ -130,14 +130,14 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
    let monsUrlBeforeLogin;
 
   it("... which Mons clicks", () => {
-    monsUrlBeforeLogin = monsBrowser.url().value;
+    monsUrlBeforeLogin = monsBrowser.getUrl();
     monsBrowser.rememberCurrentUrl();
     monsBrowser.waitAndClick('.s_LD_SsoB');
     monsBrowser.waitForNewUrl();
   });
 
   it("... he gets to the dummy external login page, at localhost:8080", () => {
-    const url = monsBrowser.url().value;
+    const url = monsBrowser.getUrl();
     const pathQueryHash = monsUrlBeforeLogin.replace(siteIdAddress.origin, '');
     assert.equal(url, ssoUrlVarsReplaced(pathQueryHash));
   });
@@ -169,7 +169,7 @@ describe("sso-access-denied-login  TyT4AKT02DKJ41", () => {
   });
 
   it("The Talkayrd server logs Mons in, and redirects him back to where she started", () => {
-    const url = monsBrowser.url().value;
+    const url = monsBrowser.getUrl();
     assert.equal(url, monsUrlBeforeLogin);
   });
 

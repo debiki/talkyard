@@ -47,10 +47,15 @@ print_help:
 	@echo "Running tests"
 	@echo "--------------------------"
 	@echo
-	@echo "End-to-End tests:"
+	@echo "End-to-End tests: NO this is old"
 	@echo "  First, start Selenium:    make invisible-selenium-server"
 	@echo "  Then run the tests:       make e2e-tests  # first do: make up"
 	@echo "  Stop Selenium:            make selenium-dead"
+	@echo
+	@echo "Instead?"
+	@echo "  First, start Selenium:    d/selenium chrome"
+	@echo "  Then run the tests:       d/n s/run-e2e-tests"
+	@echo "  Stop Selenium:            d/selenium kill"
 	@echo
 	@echo "Unit tests:"
 	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
@@ -177,7 +182,7 @@ clean: clean-bundles
 	sudo rm -fr target/
 	rm -fr project/target/
 	rm -fr project/project/
-	rm -f  tests/e2e-failures.txt
+	rm -fr logs/
 	rm -f  ensime-langserver.log
 	rm -f  chromedriver.log
 

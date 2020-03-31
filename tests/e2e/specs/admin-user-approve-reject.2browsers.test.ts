@@ -64,7 +64,7 @@ describe("admin-user-approve-reject [TyT5KHEWQ2]", function() {
 
   it("... clicks Michael", function() {
     owensBrowser.adminArea.users.goToUser(michael);
-    michaelsPageUrl = owensBrowser.url().value;
+    michaelsPageUrl = owensBrowser.getUrl();
   });
 
   it("Michael's admin page also says Enabled", function() {
@@ -156,7 +156,7 @@ describe("admin-user-approve-reject [TyT5KHEWQ2]", function() {
     owensBrowser.adminArea.user.assertDisabledBecauseEmailNotVerified();
     owensBrowser.adminArea.user.assertEmailNotVerified();
     owensBrowser.adminArea.user.assertWaitingForApproval();
-    mariaPageUrl = owensBrowser.url().value;
+    mariaPageUrl = owensBrowser.getUrl();
   });
 
   it("Maria verifies her email", function() {
@@ -297,9 +297,13 @@ describe("admin-user-approve-reject [TyT5KHEWQ2]", function() {
     owensBrowser.adminArea.users.asserExactlyNumUsers(3);  // maria, michael, owen
   });
 
-  it("... Maria again cannot login", function() {
+  it("Maria again cannot login: She logs out", () => {
     mariasBrowser.topbar.clickLogout({ waitForLoginButton: false });
+  });
+  it("... tries to login", () => {
     mariasBrowser.loginDialog.tryLogin(maria.username, maria.password);
+  });
+  it("... there's an Email Unverified error", () => {
     mariasBrowser.loginDialog.waitForEmailUnverifiedError();
   });
 

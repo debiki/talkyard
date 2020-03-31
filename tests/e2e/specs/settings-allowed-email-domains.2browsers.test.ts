@@ -102,8 +102,8 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
   });
 
   it("Owen clears the blacklist", () => {
-    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(' ');
-    owensBrowser.adminArea.settings.clickSaveAll();
+    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist('');
+    owensBrowser.adminArea.settings.clickSaveAll();  // BUG won't reappear  !
   });
 
   it("... Now evilOrgUserOne can sign up", () => {

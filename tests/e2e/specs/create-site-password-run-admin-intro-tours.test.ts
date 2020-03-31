@@ -4,10 +4,10 @@ import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
 import createTestData = require('./create-site-impl');
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logMessage = logAndDie.logMessage;
@@ -30,12 +30,12 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
     const data = createTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits();
-    pages.createSite.fillInFieldsAndSubmit(data);
+    browser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     browser.disableRateLimits();
-    pages.createSite.clickOwnerSignupButton();
-    pages.loginDialog.createPasswordAccount(data, true);
-    const siteId = pages.getSiteId();
+    browser.createSite.clickOwnerSignupButton();
+    browser.loginDialog.createPasswordAccount(data, true);
+    const siteId = browser.getSiteId();
     const email = server.getLastEmailSenTo(siteId, data.email, browser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
@@ -44,7 +44,7 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
 
     browser.tour.runToursAlthoughE2eTest();
 
-    pages.createSomething.createForum("Password Forum Title");
+    browser.createSomething.createForum("Password Forum Title");
   });
 
   it("the forum admin tour works", () => {
@@ -104,21 +104,21 @@ describe('create-site-password  @createsite @login @password  TyT7BAWFPK9', () =
 
   it("the forum works: can edit forum title", () => {
     // --- Edit title
-    pages.pageTitle.clickEdit();
-    pages.pageTitle.editTitle("Pwd Frm Edtd");
-    pages.pageTitle.save();
+    browser.pageTitle.clickEdit();
+    browser.pageTitle.editTitle("Pwd Frm Edtd");
+    browser.pageTitle.save();
     browser.assertPageTitleMatches(/Pwd Frm Edtd/);
   });
 
   it("the forum works: can post a topic", () => {
-    browser.waitAndClick('#e2eCreateSth');
-    browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");
-    browser.setValue('textarea', "New tpc txt");
+    browser.forumButtons.clickCreateTopic();
+    browser.editor.editTitle("New tpc ttl");
+    browser.editor.editText("New tpc txt");
     browser.rememberCurrentUrl();
     browser.editor.clickSave();
     browser.waitForNewUrl();
-    browser.assertTextMatches('h1', /New tpc ttl/);
-    browser.assertTextMatches('#post-1', /New tpc txt/);
+    browser.topic.waitUntilPostTextMatches(c.TitleNr, /New tpc ttl/);
+    browser.topic.assertPostTextMatches(c.BodyNr, /New tpc txt/);
   });
 
 

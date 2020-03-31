@@ -254,161 +254,167 @@ function runAllE2eTests {
   echo "Running all end-to-end tests..."
 
   r=runE2eTest
-  $r s/wdio target/e2e/wdio.conf.js         --only all-links $args
-  $r s/wdio target/e2e/wdio.conf.js         --only create-site-password-run-admin-intro-tours $args
-  $r s/wdio target/e2e/wdio.conf.js         --only create-site-gmail-and-email-notf $args
-  $r s/wdio target/e2e/wdio.conf.js         --only create-site-facebook $args
-  $r s/wdio target/e2e/wdio.conf.js         --only create-site-github-oauth-uppercase-email $args
-  $r s/wdio target/e2e/wdio.conf.js         --only create-site-linkedin $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only create-site-admin-guide.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only oauth-signup-login $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only login-expire-idle-after.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only forum-sort-and-scroll.2browsers $args
+  # If you want to skip the first tests, then move the end-if down wards.
+  if [ -z "skip these tests" ]; then
+    echo
+  fi
 
-  # This test is crazy-slow: a few isVisible takes 20 seconds sometimes, only this test, why?
-  $r s/wdio target/e2e/wdio.conf.js         --only navigation-as-admin --waitforTimeout=42000 $args
-  $r s/wdio target/e2e/wdio.conf.js         --only navigation-as-member $args
-  $r s/wdio target/e2e/wdio.conf.js         --only navigation-as-stranger $args
+  $r s/wdio --only all-links $args
+  $r s/wdio --only create-site-password-run-admin-intro-tours $args
+  $r s/wdio --only create-site-gmail-and-email-notf $args
+  $r s/wdio --only create-site-facebook $args
+  $r s/wdio --only create-site-github-oauth-uppercase-email $args
+  $r s/wdio --only create-site-linkedin $args
+  $r s/wdio --only create-site-admin-guide.2browsers $args
+  $r s/wdio --only oauth-signup-login $args   # oops, also runs:  login-required-oauth-signup-login
+  $r s/wdio --only login-expire-idle-after.2browsers $args
+
+  $r s/wdio --only forum-sort-and-scroll.2browsers $args
+
+  $r s/wdio --only navigation-as-admin $args
+  $r s/wdio --only navigation-as-member $args
+  $r s/wdio --only navigation-as-stranger $args
   # Also:  embedded-comments-navigation-as-guest  further below.
 
 
-  $r s/wdio target/e2e/wdio.conf.js         --only votes-and-best-first $args
+  $r s/wdio --only votes-and-best-first $args
 
-  $r s/wdio target/e2e/wdio.conf.js         --only editor-onebox $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only view-edit-history.2browsers $args
+  $r s/wdio --only editor-onebox $args
+  $r s/wdio --only view-edit-history.2browsers $args
 
-  $r s/wdio target/e2e/wdio.3chrome.conf.js --only direct-messages-notfs.3browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only chat-basic.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only chat-create-from-direct-message.2browsers $args
+  $r s/wdio --only direct-messages-notfs.3browsers $args
+  $r s/wdio --only direct-messages-delete.2browsers $args
+  $r s/wdio --only chat-basic.2browsers $args  #  broken [DRAFTS_BUG]
+  $r s/wdio --only chat-create-from-direct-message.2browsers $args
 
-  $r s/wdio target/e2e/wdio.3chrome.conf.js --only categories-basic.3browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only categories-delete.2browsers $args
+  $r s/wdio --only categories-basic.3browsers $args
+  #$r s/wdio --only categories-delete.2browsers $args
 
-  $r s/wdio target/e2e/wdio.3chrome.conf.js --only private-chat.3browsers $args
+  $r s/wdio --only private-chat.3browsers $args
 
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only forum-drafts-not-logged-in $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only drafts-new-topic.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only drafts-reply-edit-dir-msg.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only drafts-chat-adv-ed.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only drafts-delete $args
+  $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
+  $r s/wdio --only drafts-new-topic.2browsers $args
+  $r s/wdio --only drafts-reply-edit-dir-msg.2browsers $args
+  $r s/wdio --only drafts-chat-adv-ed.2browsers $args
+  $r s/wdio --only drafts-delete $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only move-posts-same-page.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only move-posts-other-page.2browsers $args
+  $r s/wdio --only move-posts-same-page.2browsers $args
+  $r s/wdio --only move-posts-other-page.2browsers $args
   # + wikify-posts
   # + delete-posts
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only settings-allowed-email-domains.2browsers $args
-  $r s/wdio target/e2e/wdio.3chrome.conf.js --only settings-toggle-login-required.3browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only login-required-oauth-signup-login $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only settings-approve-members.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-user-approve-reject.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-user-staff.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-user-threat-mild.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-user-threat-moderate.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-user-suspend.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-review-invalidate-for-reply.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-review-invalidate-page-deld.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-review-cascade-approval.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only mod-review.2browsers $args
+  $r s/wdio --only settings-allowed-email-domains.2browsers $args
+  $r s/wdio --only settings-toggle-login-required.3browsers $args
+  $r s/wdio --only login-required-oauth-signup-login $args
+  $r s/wdio --only settings-approve-members.2browsers $args
+  $r s/wdio --only admin-user-approve-reject.2browsers $args
+  $r s/wdio --only admin-user-staff.2browsers $args
+  $r s/wdio --only admin-user-threat-mild.2browsers $args
+  $r s/wdio --only admin-user-threat-moderate.2browsers $args
+  $r s/wdio --only admin-user-suspend.2browsers $args
+  $r s/wdio --only admin-review-invalidate-for-reply.2browsers $args
+  $r s/wdio --only admin-review-invalidate-page-deld.2browsers $args
+  $r s/wdio --only admin-review-cascade-approval.2browsers $args
+  $r s/wdio --only mod-review.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only admin-move-hostname.2browsers $args
+  $r s/wdio --only admin-move-hostname.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only password-login-reset.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only user-profile-access $args
-  $r s/wdio target/e2e/wdio.conf.js         --only user-profile-change-username $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only user-profile-change-email $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only user-profile-change-password.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only user-profile-cannot-delete-openauth-email $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only user-profile-activity-private.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only user-self-delete-upd-groups.2browsers $args
+  $r s/wdio --only password-login-reset.2browsers $args
+  $r s/wdio --only user-profile-access $args
+  $r s/wdio --only user-profile-change-username $args
+  $r s/wdio --only user-profile-change-email.2browsers $args
+  $r s/wdio --only user-profile-change-password.2browsers $args
+  $r s/wdio --only user-profile-cannot-delete-openauth-email $args
+  $r s/wdio --only user-profile-activity-private.2browsers $args
+  $r s/wdio --only user-self-delete-upd-groups.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only group-profile-change-things.2browsers $args
+  $r s/wdio --only group-profile-change-things.2browsers $args
 
-  $r s/wdio target/e2e/wdio.3chrome.conf.js --only custom-forms.3browsers $args
+  $r s/wdio --only custom-forms.3browsers $args
 
-  $r s/wdio target/e2e/wdio.conf.js         --only authz-view-as-stranger $args
-  $r s/wdio target/e2e/wdio.conf.js         --only authz-basic-see-reply-create $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only impersonate-post-as-other.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only impersonate-restricted-areas $args
+  $r s/wdio --only authz-view-as-stranger $args
+  $r s/wdio --only authz-basic-see-reply-create $args
+  $r s/wdio --only impersonate-post-as-other.2browsers $args
+  $r s/wdio --only impersonate-restricted-areas $args
 
 
   # There're email notfs and unsubscription tests for guests, further below, in:
   # embedded-comments-guest-login-email-notf-unsbscribe
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only unsubscribe.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notf-emails-discussion.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-mark-all-as-read.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notf-override-group-prefs.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-prefs-inherit-own.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-prefs-inherit-group.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notf-prefs-custom-groups.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notf-prefs-private-groups.2browsers $args
+  $r s/wdio --only unsubscribe.2browsers $args
+  $r s/wdio --only notf-emails-discussion.2browsers $args
+  $r s/wdio --only notfs-mark-all-as-read.2browsers $args
+  $r s/wdio --only notf-override-group-prefs.2browsers $args
+  $r s/wdio --only notfs-prefs-inherit-own.2browsers $args
+  $r s/wdio --only notfs-prefs-inherit-group.2browsers $args
+  $r s/wdio --only notf-prefs-custom-groups.2browsers $args
+  $r s/wdio --only notf-prefs-private-groups.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-page-gone.2browsers $args
+  $r s/wdio --only notfs-page-gone.2browsers $args
   # Later:
   # Move page from a staff only cat, to a publ cat, and verify people who have
   # subscr to the publ cat and haven't seen the topic before, get notified.
 
   # See: specs/notf-page-cats-site.2browsers.test.ts:
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-whole-site.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-publ-cat.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-priv-cat.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-publ-page.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-priv-group-page.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-for-dir-message.2browsers $args
+  #$r s/wdio --only notfs-for-whole-site.2browsers $args
+  #$r s/wdio --only notfs-for-publ-cat.2browsers $args
+  #$r s/wdio --only notfs-for-priv-cat.2browsers $args
+  #$r s/wdio --only notfs-for-publ-page.2browsers $args
+  #$r s/wdio --only notfs-for-priv-group-page.2browsers $args
+  #$r s/wdio --only notfs-for-dir-message.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only notfs-mark-seen-as-seen.2browsers $args
+  $r s/wdio --only notfs-mark-seen-as-seen.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only new-user-review-ok.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only new-user-review-bad.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only new-member-allow-approve.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only new-member-allow-reject.2browsers $args
+  $r s/wdio --only new-user-review-ok.2browsers $args
+  #$r s/wdio --only new-user-review-bad.2browsers $args
+  $r s/wdio --only new-member-allow-approve.2browsers $args
+  #$r s/wdio --only new-member-allow-reject.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-local.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-local-ip-links-unblock.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-safe-browsing-api-blocked.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-akismet-blocked.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-akismet-false-positives.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only spam-basic-akismet-false-negatives.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only flag-member-block-agree.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only flag-guest-block-agree.2browsers $args
+  $r s/wdio --only spam-basic-local.2browsers $args
+  $r s/wdio --only spam-basic-local-ip-links-unblock.2browsers $args
+  $r s/wdio --only spam-basic-safe-browsing-api-blocked.2browsers $args
+  $r s/wdio --only spam-basic-akismet-blocked.2browsers $args
+  $r s/wdio --only spam-basic-akismet-false-positives.2browsers $args
+  $r s/wdio --only spam-basic-akismet-false-negatives.2browsers $args
+  $r s/wdio --only flag-member-block-agree.2browsers $args
+  $r s/wdio --only flag-guest-block-agree.2browsers $args
 
-  $r s/wdio target/e2e/wdio.conf.js         --only page-type-discussion-progress $args
-  $r s/wdio target/e2e/wdio.conf.js         --only page-type-idea-statuses-comments $args
-  $r s/wdio target/e2e/wdio.conf.js         --only page-type-problem-statuses $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only page-type-question-closed.2browsers $args
+  $r s/wdio --only page-type-discussion-progress $args
+  $r s/wdio --only page-type-idea-statuses-comments $args
+  $r s/wdio --only page-type-problem-statuses $args
+  $r s/wdio --only page-type-question-closed.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only search-public-basic.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only search-private-chat.2browsers $args
+  $r s/wdio --only search-public-basic.2browsers $args
+  $r s/wdio --only search-private-chat.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only summary-emails.2browsers $args
+  $r s/wdio --only summary-emails.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-by-adm-click-email-set-pwd-link.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-by-mod-try-signup-after.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-by-core-try-login-after.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-weird-email-addrs.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-many-retry.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invites-too-many.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only invite-to-groups.2browsers $args
+  $r s/wdio --only invites-by-adm-click-email-set-pwd-link.2browsers $args
+  $r s/wdio --only invites-by-mod-try-signup-after.2browsers $args
+  $r s/wdio --only invites-by-core-try-login-after.2browsers $args
+  $r s/wdio --only invites-weird-email-addrs.2browsers $args
+  $r s/wdio --only invites-many-retry.2browsers $args
+  $r s/wdio --only invites-too-many.2browsers $args
+  $r s/wdio --only invite-to-groups.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only weird-usernames.2browsers $args
+  $r s/wdio --only weird-usernames.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only group-mentions-built-in-groups.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only group-mentions-custom-groups.2browsers $args
+  $r s/wdio --only group-mentions-built-in-groups.2browsers $args
+  $r s/wdio --only group-mentions-custom-groups.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only group-permissions-similar-topics.2browsers $args
+  $r s/wdio --only group-permissions-similar-topics.2browsers $args
 
 
   # API
   # ------------
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-upsert-categories.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-upsert-pages.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-upsert-page-notfs.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-upsert-posts.2browsers $args
+  $r s/wdio --only api-upsert-categories.2browsers $args
+  $r s/wdio --only api-upsert-pages.2browsers $args
+  $r s/wdio --only api-upsert-page-notfs.2browsers $args
+  $r s/wdio --only api-upsert-posts.2browsers $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only slow-3g-navigate-edit-drafts.2browsers $args
+  $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 
 
   # wip:
@@ -420,30 +426,30 @@ function runAllE2eTests {
   # Usability Testing Exchange
   # ------------
 
-  $r s/wdio target/e2e/wdio.conf.js         --only utx-all-logins $args
+  $r s/wdio --only utx-all-logins $args
 
 
   # Single Sign-On
   # ------------
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-test.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-login-member.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-login-required.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-login-required-w-logout-url.2browsers $args
-  # unimpl:  s/wdio target/e2e/wdio.2chrome.conf.js --only sso-approval-required.2browsers $args
-  # unimpl:  s/wdio target/e2e/wdio.2chrome.conf.js --only sso-login-and-approval-required.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only sso-admin-extra-login $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-all-ways-to-login.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-access-denied-login.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only sso-one-time-key-errors.2browsers $args
+  $r s/wdio --only sso-test.2browsers $args
+  $r s/wdio --only sso-login-member.2browsers $args
+  $r s/wdio --only sso-login-required.2browsers $args
+  $r s/wdio --only sso-login-required-w-logout-url.2browsers $args
+  # unimpl:  s/wdio --only sso-approval-required.2browsers $args
+  # unimpl:  s/wdio --only sso-login-and-approval-required.2browsers $args
+  $r s/wdio --only sso-admin-extra-login $args
+  $r s/wdio --only sso-all-ways-to-login.2browsers $args
+  $r s/wdio --only sso-access-denied-login.2browsers $args
+  $r s/wdio --only sso-one-time-key-errors.2browsers $args
 
 
   # API + SSO
   # ------------
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-w-sso-upsert-pages.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-private-chat-two-pps-sso-extid.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only api-private-chat-two-pps-list-use-usernames.2browsers $args
+  $r s/wdio --only api-w-sso-upsert-pages.2browsers $args
+  $r s/wdio --only api-private-chat-two-pps-sso-extid.2browsers $args
+  $r s/wdio --only api-private-chat-two-pps-list-use-usernames.2browsers $args
 
 
   #------------------------------------------------------------
@@ -462,49 +468,49 @@ function runAllE2eTests {
   # Embedded forum
   # ------------
 
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-login $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --b3c  --only embedded-forum-no-cookies-sso-login $args
+  #$r s/wdio --b3c  --only embedded-forum-no-cookies-login $args
+  #$r s/wdio --b3c  --only embedded-forum-no-cookies-sso-login $args
 
 
   # Embedded comments
   # ------------
 
   # Also see navigation-as-* above.
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-navigation-as-guest $args
+  $r s/wdio       --only embedded-comments-navigation-as-guest $args
 
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-create-site-req-verif-email.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-create-site-forum-intro-tour $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-create-site-import-disqus.2browsers $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-drafts-not-logged-in $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-scroll-and-load-more.2browsers $args
-  #$r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-scroll-embedding-page $args
+  $r s/wdio       --only embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers $args
+  $r s/wdio       --only embedded-comments-create-site-req-verif-email.2browsers $args
+  $r s/wdio       --only embedded-comments-create-site-forum-intro-tour $args
+  $r s/wdio       --only embedded-comments-create-site-import-disqus.2browsers $args
+  $r s/wdio       --only embedded-comments-drafts-not-logged-in $args
+  $r s/wdio       --only embedded-comments-scroll-and-load-more.2browsers $args
+  #$r s/wdio       --only embedded-comments-scroll-embedding-page $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-different-disc-ids-same-page $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-discussion-id.test $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-discussion-id-old-name $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-guest-login-email-notf-unsbscribe $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-all-logins $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-all-logins-old-name $args
-  $r s/wdio target/e2e/wdio.conf.js --b3c   --only embedded-comments-no-cookies-verif-email $args
-  $r s/wdio target/e2e/wdio.conf.js --b3c   --only embedded-comments-no-cookies-guest $args
-  $r s/wdio target/e2e/wdio.conf.js --b3c   --only embedded-comments-no-cookies-verif-gmail $args
-  $r s/wdio target/e2e/wdio.conf.js --b3c   --only embedded-comments-no-cookies-unverif-gmail $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-edit-and-vote.test $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-edit-and-vote-old-name $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-vote-first $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-conf-notf-pref-first $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-sort-order-op-likes-btn-txt $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-uploads-origin $args
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-short-script-cache-time $args
+  $r s/wdio       --only embedded-comments-different-disc-ids-same-page $args
+  $r s/wdio       --only embedded-comments-discussion-id.test $args
+  $r s/wdio       --only embedded-comments-discussion-id-old-name $args
+  $r s/wdio       --only embedded-comments-guest-login-email-notf-unsbscribe $args
+  $r s/wdio       --only embedded-comments-all-logins $args
+  $r s/wdio       --only embedded-comments-all-logins-old-name $args
+  $r s/wdio --b3c --only embedded-comments-no-cookies-verif-email $args
+  $r s/wdio --b3c --only embedded-comments-no-cookies-guest $args
+  $r s/wdio --b3c --only embedded-comments-no-cookies-verif-gmail $args
+  $r s/wdio --b3c --only embedded-comments-no-cookies-unverif-gmail $args
+  $r s/wdio       --only embedded-comments-edit-and-vote.test $args
+  $r s/wdio       --only embedded-comments-edit-and-vote-old-name $args
+  $r s/wdio       --only embedded-comments-vote-first $args
+  $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
+  $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
+  $r s/wdio       --only embedded-comments-uploads-origin $args
+  $r s/wdio       --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)
 
   # Do last, easier to debug the tests above instead if there's a bug:
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-create-site-export-json.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-import-json-create-new-site.2browsers $args
-  #$r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-import-json-to-existing-emb-cmts-site.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
-  $r s/wdio target/e2e/wdio.2chrome.conf.js --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
+  $r s/wdio       --only embedded-comments-create-site-export-json.2browsers $args
+  $r s/wdio       --only embedded-comments-import-json-create-new-site.2browsers $args
+  #$r s/wdio       --only embedded-comments-import-json-to-existing-emb-cmts-site.2browsers $args
+  $r s/wdio       --only embedded-comments-restore-overwrite-site-same-domain.2browsers $args
+  $r s/wdio       --only embedded-comments-restore-overwrite-site-new-domain.2browsers $args
 
 
   if [ -n "$server_port_8080_pid" ]; then
@@ -532,7 +538,7 @@ function runAllE2eTests {
   fi
   # else: the user has probably started the server henself already, do nothing.
 
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-gatsby $args
+  $r s/wdio --only embedded-comments-gatsby $args
 
   if [ -n "$server_port_8000_pid" ]; then
     kill $server_port_8000_pid
@@ -559,7 +565,7 @@ function runAllE2eTests {
   fi
   # else: the user has probably started the server henself already, do nothing.
 
-  $r s/wdio target/e2e/wdio.conf.js         --only embedded-comments-gatsby $args
+  $r s/wdio --only embedded-comments-gatsby $args
 
   if [ -n "$server_port_8000_pid2" ]; then
     kill $server_port_8000_pid2

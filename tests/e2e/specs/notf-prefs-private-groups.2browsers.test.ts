@@ -292,6 +292,9 @@ describe("notf-prefs-private-groups  TyT406WMDKG26", () => {
   it("Owen restricts access to Category A to only Maria's group: opens the category dialog", () => {
     owensBrowser.forumTopicList.goHere({ categorySlug: forum.categories.categoryA.slug });
     owensBrowser.forumButtons.clickEditCategory();
+  });
+
+  it("... the Security tab", () => {
     owensBrowser.categoryDialog.openSecurityTab();
   });
 

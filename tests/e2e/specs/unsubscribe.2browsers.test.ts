@@ -75,7 +75,7 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
 
   it("... he posts a topic", () => {
     owen.complex.createAndSaveTopic({ title: topicTitle, body: topicBody });
-    topicUrl = owen.url().value;
+    topicUrl = owen.getUrl();
   });
 
   it("... and goes to the topic list page, so won't see any replies (they'd get marked as seen)", () => {

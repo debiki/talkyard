@@ -190,8 +190,7 @@ describe("usability testing exchange, all logins:", () => {
 
     it("sees own topic in test queue", () => {
       utxImpl.goToQueue(browser, idAddress);
-      browser.forumTopicList.waitForTopics();
-      browser.forumTopicList.assertTopicVisible(gmailUsersSiteHostname);
+      browser.forumTopicList.waitForTopicVisible(gmailUsersSiteHostname);
       browser.forumTopicList.goToTopic(gmailUsersSiteHostname);
     });
 
@@ -338,8 +337,7 @@ describe("usability testing exchange, all logins:", () => {
     });
 
     it("sees topic", () => {
-      browser.forumTopicList.waitForTopics();
-      browser.forumTopicList.assertTopicVisible(passwordUsersSiteHostname2);
+      browser.forumTopicList.waitForTopicVisible(passwordUsersSiteHostname2);
     });
   });
 

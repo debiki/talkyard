@@ -1,19 +1,17 @@
 #!/bin/bash
 #
+
+# Old;
 # If we --inspect on 9100, wdio apparently forks a child process listening on 9100 + 1 = 9101.
 # To which you can connect like so: `node debug 127.0.0.1:9101`
 
-for x in {1..15}
-do
-  if [ -f "$1" ]; then
-    break
-  fi
-  sleep 1
-  echo "Waiting for transpilation of Typescript to Javascript, file missing: $1"
-done
+
+# The default inspect ip:port is:  127.0.0.1:9229
+
+cd tests/e2e/
 
 # [E2EHTTPS]
-NODE_TLS_REJECT_UNAUTHORIZED=0 node --debug --inspect=9100 ./node_modules/webdriverio/bin/wdio $@
+NODE_TLS_REJECT_UNAUTHORIZED=0 node --inspect ../../node_modules/.bin/wdio  wdio.conf.js  $@
 exit_code=$?
 
 if [ $exit_code -ne 0 ]; then

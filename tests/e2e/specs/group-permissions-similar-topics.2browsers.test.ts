@@ -154,7 +154,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
 
   it("... posts a topic", () => {
     owensBrowser.complex.createAndSaveTopic(CatOneTopic);
-    catOneTopicUrl = owensBrowser.url().value;
+    catOneTopicUrl = owensBrowser.getUrl();
   });
 
   it("Owen goes back to the categories", () => {
@@ -167,7 +167,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
 
   it("... posts a topic in Cat Two", () => {
     owensBrowser.complex.createAndSaveTopic(CatTwoTopic);
-    catTwoTopicUrl = owensBrowser.url().value;
+    catTwoTopicUrl = owensBrowser.getUrl();
   });
 
   it("... switches to a public category", () => {
@@ -177,7 +177,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
 
   it("... posts a public topic", () => {
     owensBrowser.complex.createAndSaveTopic(PublicTopic);
-    publiTopicUrl = owensBrowser.url().value;
+    publiTopicUrl = owensBrowser.getUrl();
   });
 
 
@@ -290,7 +290,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
   });
 
   it("... he's on the Cat Two topic page's url", () => {
-    assert.equal(michaelsBrowser.url().value, catTwoTopicUrl);
+    assert.equal(michaelsBrowser.getUrl(), catTwoTopicUrl);
   });
 
   it("... works fine, he may see it", () => {
@@ -328,8 +328,7 @@ describe("group-permissions-similar-topics  TyT05BMRSH2J", () => {
   });
 
   it("Michael returns to the first tab", () => {
-    michaelsBrowser.close();
-    michaelsBrowser.swithToOtherTabOrWindow();
+    michaelsBrowser.closeWindowSwitchToOther();
   });
 
 

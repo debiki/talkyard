@@ -4,12 +4,12 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
+import api = require('../utils/log-and-die');
 
 declare let browser: any;
 
@@ -64,7 +64,7 @@ describe("Page statuses and bottom comments", () => {
   it("She posts a topic, type Idea", () => {
     mariasBrowser.complex.createAndSaveTopic({
       type: c.TestPageRole.Idea, title: "Marias Topic Title", body: "Marias Topic Text" });
-    mariasTopicUrl = mariasBrowser.url().value;
+    mariasTopicUrl = mariasBrowser.getUrl();
   });
 
   it("It's in status New: An idea icon", () => {
@@ -96,7 +96,7 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Three status change events appear (after page refresh)", () => {
-    mariasBrowser.refresh(); // [2PKRRSZ0]
+    mariasBrowser.topic.refreshUntilPostNrAppears(4, { isMetaPost: true }); // [2PKRRSZ0]
     mariasBrowser.topic.waitForPostNrVisible(4);  // 2, 3 and 4  (1 is the orig post)
   });
 
@@ -134,34 +134,33 @@ describe("Page statuses and bottom comments", () => {
     mariasBrowser.complex.addProgressReply(bottomCommentTwoText);  // #post-10
   });
 
-  it("The posts has the correct contents", () => {
-    mariasBrowser.refresh();  // currently needed, so event posts will appear [2PKRRSZ0]
+  it("Refresh page", () => {
+    // currently needed, so event posts will appear [2PKRRSZ0]
+    mariasBrowser.topic.refreshUntilPostNrAppears(9, { isMetaPost: true });
+    mariasBrowser.topic.refreshUntilPostNrAppears(10);
+  });
+
+  it("The progress reply has the correct contents", () => {
     mariasBrowser.topic.waitForPostAssertTextMatches(10, bottomCommentTwoText);
+  });
+
+  it("... the meta post too", () => {
     mariasBrowser.topic.assertMetaPostTextMatches(9, 'marked this topic as Planned');
   });
 
   it("Everything is in the correct order", () => {
-    const postElems = mariasBrowser.elements('[id^="post-"]').value;
-    for (let i = 0; i < postElems.length; ++i) {
-      const elem = postElems[i];
-      const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
-      console.log('id: ' + id);
-      assert.equal(2, c.BodyNr + 1);
-      assert.equal(2, c.FirstReplyNr);
-      switch (i) {
-        case c.TitleNr: assert.equal(id, 'post-' + c.TitleNr);  break;
-        case c.BodyNr:  assert.equal(id, 'post-' + c.BodyNr);  break;
-        case 2:  assert(id === 'post-7');  break; // the orig post reply gets placed first
-        case 3:  assert(id === 'post-8');  break; // orig post reply reply
-        case 4:  assert(id === 'post-2');  break; // new –> planned
-        case 5:  assert(id === 'post-3');  break; // planned —> started
-        case 6:  assert(id === 'post-4');  break; // started —> done
-        case 7:  assert(id === 'post-5');  break; // bottom comment
-        case 8:  assert(id === 'post-6');  break; // done —> new
-        case 9:  assert(id === 'post-9');  break; // new —> planned
-        case 10: assert(id === 'post-10'); break; // bottom comment
-      }
-    }
+    mariasBrowser.topic.assertPostOrderIs([  //  CROK  CODE REVIEW DONE OK
+        c.TitleNr,
+        c.BodyNr,
+        7,    // the orig post reply gets placed first
+        8,    // orig post reply reply
+        2,    // new –> planned
+        3,    // planned —> started
+        4,    // started —> done
+        5,    // bottom comment
+        6,    // done —> new
+        9,    // new —> planned
+        10]); // bottom comment
   });
 
   it("Michael may not change page status, not his page", () => {
@@ -172,7 +171,7 @@ describe("Page statuses and bottom comments", () => {
     michaelsBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed');
     // Nothing happens
     michaelsBrowser.pause(100);
-    assert(!michaelsBrowser.topic.isChangePageDialogOpen());
+    assert(!michaelsBrowser.topic.isChangePageDialogOpen());  // (396326)
   });
 
   it("Owen can, he's admin", () => {
@@ -180,7 +179,8 @@ describe("Page statuses and bottom comments", () => {
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     assert(owensBrowser.pageTitle.canBumpPageStatus());
     owensBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed.dw-clickable');
-    assert(owensBrowser.topic.isChangePageDialogOpen());
+    owensBrowser.topic.waitUntilChangePageDialogOpen();
+    assert(owensBrowser.topic.isChangePageDialogOpen());  // tests the test (396326)
     owensBrowser.topic.closeChangePageDialog();
   });
 

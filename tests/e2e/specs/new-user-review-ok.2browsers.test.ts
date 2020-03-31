@@ -90,7 +90,7 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
   it("... posts a topic", () => {
     majasBrowser.complex.createAndSaveTopic(
       { title: topics.majasTopicTitle, body: topics.majasTopicText, matchAfter: false });
-    topics.majasTopicUrl = majasBrowser.url().value;
+    topics.majasTopicUrl = majasBrowser.getUrl();
   });
 
   it("... it doesn't need to be approved by staff, before shown", () => {
@@ -126,7 +126,7 @@ describe("new user, review, ok   TyT39657MRDT2", () => {
     server.waitUntilLastEmailMatches(
         idAddress.id, owen.emailAddress, majasReplyOne, owensBrowser);
 
-    topics.oldTopicUrl = majasBrowser.url().value;
+    topics.oldTopicUrl = majasBrowser.getUrl();
   });
 
   it("... they don't need to be approved by staff, before they're shown", () => {

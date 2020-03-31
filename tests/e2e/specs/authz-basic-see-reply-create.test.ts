@@ -1,14 +1,14 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
-import assert = require('assert');
+import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import { makeSiteOwnedByOwenBuilder } from '../utils/site-builder';
-import logAndDie = require('../utils/log-and-die');
+import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 declare let browser: any;
@@ -366,12 +366,11 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   }
 
   function assertSeesBothCategories(browser) {
-    browser.forumCategoryList.waitForCategories();
-    assert(browser.forumCategoryList.numCategoriesVisible() === 2);
-    assert(browser.forumCategoryList.isCategoryVisible(
-      forum.categories.allSeeReplyCreateCat.name));
-    assert(browser.forumCategoryList.isCategoryVisible(
-      forum.categories.newSeeBasicReplyFullCreateCat.name));
+    browser.forumCategoryList.waitForNumCategoriesVisible(2);
+    const catNames = browser.forumCategoryList.namesOfVisibleCategories();
+    assert.deepEq(catNames, [
+        forum.categories.allSeeReplyCreateCat.name,
+        forum.categories.newSeeBasicReplyFullCreateCat.name]);
   }
 
 
@@ -390,9 +389,9 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
 
   it("Sees only 'allSeeReplyCreateCat'", () => {
     strangersBrowser.go(idAddress.origin + '/categories');
-    strangersBrowser.forumCategoryList.waitForCategories();
-    assert(strangersBrowser.forumCategoryList.numCategoriesVisible() === 1);
-    assert(strangersBrowser.forumCategoryList.isCategoryVisible(
+    strangersBrowser.forumCategoryList.waitForNumCategoriesVisible(1);
+    assert.eq(browser.forumCategoryList.numCategoriesVisible(), 1);
+    assert.ok(strangersBrowser.forumCategoryList.isCategoryVisible(
         forum.categories.allSeeReplyCreateCat.name));
   });
 
@@ -426,7 +425,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   });
 
   it("... cannot edit orig post", () => {
-    assert(!strangersBrowser.topic.canEditOrigPost());
+    assert.not(strangersBrowser.topic.canEditOrigPost());
   });
 
   it("... cannot edit someone else's reply", () => {
@@ -439,7 +438,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
 
   it("... and can create topic 'Guest Topic'", () => {
     strangersBrowser.complex.createAndSaveTopic({ title: guestTopicTitle, body: guestTopicBody });
-    guestsTopicUrl = strangersBrowser.url().value;
+    guestsTopicUrl = strangersBrowser.getUrl();
   });
 
   it("... and post a reply", () => {
@@ -473,11 +472,11 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   });
 
   it("... cannot edit orig post", () => {
-    assert(!majasBrowser.topic.canEditOrigPost());
+    assert.not(majasBrowser.topic.canEditOrigPost());
   });
 
   it("... cannot edit the guest's reply", () => {
-    assert(!majasBrowser.topic.canEditPostNr(guestsReplyToOwnTopicNr));
+    assert.not(majasBrowser.topic.canEditPostNr(guestsReplyToOwnTopicNr));
   });
 
   it("Goes to 'newSeeBasicReplyFullCreateCat'", () => {
@@ -497,8 +496,8 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   });
 
   it("... but cannot reply or edit anything", () => {
-    assert(!majasBrowser.topic.canEditSomething());
-    assert(!majasBrowser.topic.canReplyToSomething());
+    assert.not(majasBrowser.topic.canEditSomething());
+    assert.not(majasBrowser.topic.canReplyToSomething());
   });
 
 
@@ -527,7 +526,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   });
 
   it("... cannot edit orig post", () => {
-    assert(!mariasBrowser.topic.canEditOrigPost());
+    assert.not(mariasBrowser.topic.canEditOrigPost());
   });
 
   it("Goes to the 'newSeeBasicReplyFullCreateCat' topic list", () => {
@@ -556,7 +555,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   });
 
   it("... cannot edit page or Maria's reply", () => {
-    assert(!michaelsBrowser.topic.canEditSomething());
+    assert.not(michaelsBrowser.topic.canEditSomething());
   });
 
   it("Goes to the 'newSeeBasicReplyFullCreateCat' topic list", () => {
@@ -566,7 +565,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
   it("... can create topic", () => {
     michaelsBrowser.complex.createAndSaveTopic(
         { title: michaelsTopicTitle, body: michaelsTopicBody });
-    michaelsTopicUrl = michaelsBrowser.url().value;
+    michaelsTopicUrl = michaelsBrowser.getUrl();
   });
 
   it("... can edit the topic afterwards", () => {

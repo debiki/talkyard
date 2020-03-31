@@ -56,7 +56,7 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
     owensBrowser.adminArea.users.goToUser(maria);
     owensBrowser.adminArea.user.assertEnabled();
     owensBrowser.adminArea.user.assertApprovedInfoAbsent();
-    mariasPageUrl = owensBrowser.url().value;
+    mariasPageUrl = owensBrowser.getUrl();
   });
 
   it("Maria logs in", function() {

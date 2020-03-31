@@ -94,7 +94,7 @@ describe("spam test, Akismet  TyTSPAKISMET", () => {
   it("He then submits a topic, not spam, works fine", () => {
     mallorysBrowser.complex.createAndSaveTopic(
         { title: topicOneNotSpamTitle, body: topicOneNotSpamBody });
-    notSpamPageUrl = mallorysBrowser.url().value;
+    notSpamPageUrl = mallorysBrowser.getUrl();
   });
 
   it("... and a not-spam reply", () => {

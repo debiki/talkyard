@@ -35,22 +35,13 @@ const newTopicText = "Follow the white rabbit";
 let nextPostNr = c.FirstReplyNr;
 
 
-function logAndAssertVisible(browser, topicTitle: string, shallBeVisible: boolean = true) {
-  if (shallBeVisible)
-    browser.forumTopicList.assertTopicVisible(topicTitle);
-  else
-    browser.forumTopicList.assertTopicNotVisible(topicTitle);
-}
-
-
 function assertPublicTopicsVisible(browser) {
   // browser.forumTopicList.assertTopicTitlesAreAndOrder()
-  logAndAssertVisible(browser, forum.topics.byMariaCategoryA.title);
-  logAndAssertVisible(browser, forum.topics.byMariaCategoryANr2.title);
-  logAndAssertVisible(browser, forum.topics.byMariaCategoryANr3.title);
-  logAndAssertVisible(browser, forum.topics.byMariaCategoryB.title);
-  logAndAssertVisible(browser, forum.topics.byMichaelCategoryA.title);
-  process.stdout.write('\n');
+  browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryA.title);
+  browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryANr2.title);
+  browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryANr3.title);
+  browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryB.title);
+  browser.forumTopicList.waitForTopicVisible(forum.topics.byMichaelCategoryA.title);
 }
 
 
@@ -62,10 +53,9 @@ interface InitResult {
 }
 
 
-function makeWholeSpec(initFn: (browser) => InitResult) {
-  initResult = initFn(browser);
+function makeWholeSpec(initFn: () => InitResult) {
+  initResult = initFn();
   memberName = initResult.member;
-  usersBrowser = _.assign(browser, pagesFor(browser));
   memberIsAdmin = initResult.memberIsAdmin;
   let willBeLoggedIn = false;
 
@@ -101,6 +91,10 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       idAddress = server.importSiteData(forum.siteData);
       siteId = idAddress.id;
       server.skipRateLimits(siteId);
+    });
+
+    it("init brower", () => {
+      usersBrowser = _.assign(browser, pagesFor(browser));
     });
 
     it("go to forum", () => {
@@ -156,8 +150,7 @@ function makeWholeSpec(initFn: (browser) => InitResult) {
       addOwnProfileTest("0: ");
 
       it(`... closes that tab, switches back to the first`, () => {
-        usersBrowser.close();
-        usersBrowser.swithToOtherTabOrWindow();
+        usersBrowser.closeWindowSwitchToOther();
       });
     }
 

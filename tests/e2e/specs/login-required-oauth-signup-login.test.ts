@@ -94,9 +94,8 @@ describe(`${testName}  TyT406MRTJW2`, () => {
 
 
   it("Sees the topic in the topic list", () => {
-    browser.forumTopicList.waitForTopics();
+    browser.forumTopicList.waitForTopicVisible(googleUSersTopic.title);
     browser.forumTopicList.assertNumVisible(1);
-    browser.forumTopicList.assertTopicVisible(googleUSersTopic.title);
   });
 
 

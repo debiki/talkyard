@@ -223,9 +223,12 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
     strangersBrowser.waitForVisible(page1001LinkSelector);
 });
 
-  it("... and Michael's and Maria's topics", () => {
-    strangersBrowser.forumTopicList.assertTopicVisible(forum.topics.byMariaCategoryA.title);
-    strangersBrowser.forumTopicList.assertTopicVisible(forum.topics.byMichaelCategoryA.title);
+  it("... and Michael's topic", () => {
+    strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryA.title);
+});
+
+  it("... and Maria's topic", () => {
+    strangersBrowser.forumTopicList.waitForTopicVisible(forum.topics.byMichaelCategoryA.title);
   });
 
 

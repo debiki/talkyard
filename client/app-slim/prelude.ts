@@ -110,10 +110,10 @@ export function oneIfDef(x: any): number {
 ///
 export function logM(message, ex?) {
   if (eds.isInIframe) {
-    console.debug(message, ex);
+    console.debug.apply(console, arguments);
   }
   else {
-    console.log(message, ex);
+    console.log.apply(console, arguments);
   }
 }
 
@@ -315,7 +315,7 @@ export function uppercaseFirst(text: string): string {
 }
 
 
-export function isBlank(x): boolean {
+export function isBlank(x: string): boolean {
   return _.isEmpty(x) || !x.trim();
 }
 

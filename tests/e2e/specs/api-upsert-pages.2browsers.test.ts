@@ -427,7 +427,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   });
 
   it("Owen reloads the page", () => {
-    owensBrowser.refresh();
+    owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr);
   });
 
   it("... all fine, after reload", () => {

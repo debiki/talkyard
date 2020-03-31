@@ -252,7 +252,7 @@ describe("notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24", () => {
   it("... num emails sent is correct", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
-    pageUrl = owensBrowser.url().value;
+    pageUrl = owensBrowser.getUrl();
   });
 
 

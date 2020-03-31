@@ -140,7 +140,7 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
 
   it("Owen flags Michael's reply", () => {
     owensBrowser.go(data.embeddingUrl + embPages.slugs.threeRepliesPageSlug);
-    owensBrowser.topic.refreshUntilPostAppears(c.FirstReplyNr, { isEmbedded: true });
+    owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr, { isEmbedded: true });
     owensBrowser.complex.flagPost(c.FirstReplyNr, 'Inapt');
   });
 
@@ -194,14 +194,15 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
     owensBrowser.adminArea.goToBackupsTab(talkyardSiteOrigin);
 
     // There should be a download file link here.
-    const downloadAttr = owensBrowser.getAttribute('.e_DnlBkp', 'download')
+    owensBrowser.waitForVisible('.e_DnlBkp');
+    const downloadAttr = owensBrowser.$('.e_DnlBkp').getAttribute('download');
     assert(_.isString(downloadAttr)); // but not null
-    const wrongAttr = owensBrowser.getAttribute('.e_DnlBkp', 'download-wrong')
+    const wrongAttr = owensBrowser.$('.e_DnlBkp').getAttribute('download-wrong');
     assert(!_.isString(wrongAttr)); // tests the test
 
     // Don't know how to choose where to save the file, so instead, open the json 
     // directly in the browser:
-    const downloadUrl = owensBrowser.getAttribute('.e_DnlBkp', 'href')
+    const downloadUrl = owensBrowser.$('.e_DnlBkp').getAttribute('href');
     owensBrowser.go(downloadUrl);
   });
 

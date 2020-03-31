@@ -57,7 +57,7 @@ describe("admin-user-threat-mild [TyT2WKBG4Z]", () => {
     owensBrowser.adminArea.users.waitForLoaded();
     owensBrowser.adminArea.users.goToUser(maria);
     owensBrowser.adminArea.user.assertEnabled();
-    mariasPageUrl = owensBrowser.url().value;
+    mariasPageUrl = owensBrowser.getUrl();
   });
 
   it("Maria logs in", () => {

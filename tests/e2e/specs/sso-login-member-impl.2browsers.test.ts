@@ -146,13 +146,18 @@ function constructSsoLoginTest(testName: string, variants: {
   it("Maria goes to the discussion page", () => {
     // (Don't try to disable rate limits, if there'll be an instant redirect
     // — that'd cause "Error: unable to set cookie". )
-    mariasBrowser.go(discussionPageUrl, { useRateLimits: willBeInstantRedirect });
+    mariasBrowser.go(discussionPageUrl, {
+      useRateLimits: willBeInstantRedirect,
+      // Will get redirected directly to a non-existing dummy login page, different origin.
+      // There's an harmles error, with WebDriver [E2ESSOLGIREDR].
+      waitForPageType: false,
+    });
   });
 
   let mariasUrlBeforeLogin;
 
   it("... (maybe clicks Log In, and) gets redirected to the SSO page", () => {
-    mariasUrlBeforeLogin = mariasBrowser.url().value;
+    mariasUrlBeforeLogin = mariasBrowser.getUrl();
     mariasBrowser.rememberCurrentUrl();  // (is wrong if willBeInstantRedirect, fine)
 
     if (variants.loginRequired) {
@@ -178,7 +183,7 @@ function constructSsoLoginTest(testName: string, variants: {
   });
 
   it("... and gets to the dummy external login page, at localhost:8080", () => {
-    const url = mariasBrowser.url().value;
+    const url = mariasBrowser.getUrl();
     const pathQueryHash = mariasUrlBeforeLogin.replace(siteIdAddress.origin, '');
     assert.equal(url, ssoUrlVarsReplaced(pathQueryHash));
   });
@@ -208,7 +213,7 @@ function constructSsoLoginTest(testName: string, variants: {
   });
 
   it("The Talkayrd server logs her in, and redirects her back to where she started", () => {
-    const url = mariasBrowser.url().value;
+    const url = mariasBrowser.getUrl();
     assert.equal(url, discussionPageUrl);
   });
 
@@ -247,7 +252,7 @@ function constructSsoLoginTest(testName: string, variants: {
   if (variants.ssoLoginRequiredLogoutUrl) {
     it("... and gets sent to the  ssoLoginRequiredLogoutUrl  page ", () => {
       mariasBrowser.waitForNewOrigin();
-      assert.equal(mariasBrowser.url().value, variants.ssoLoginRequiredLogoutUrl);
+      assert.equal(mariasBrowser.getUrl(), variants.ssoLoginRequiredLogoutUrl);
     });
   }
   else if (variants.loginRequired) {

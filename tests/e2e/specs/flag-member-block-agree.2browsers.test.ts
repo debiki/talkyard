@@ -115,7 +115,7 @@ describe("spam test, no external services:", () => {
     mallorysBrowser.complex.replyToOrigPost("Come and buy my hat");
     mallorysBrowser.complex.replyToOrigPost("I sell hats, you can buy them");
     mallorysBrowser.complex.replyToOrigPost("Today the sun is shining");
-    topics.oldTopicUrl = mallorysBrowser.url().value;
+    topics.oldTopicUrl = mallorysBrowser.getUrl();
   });
 
   it("... posts a topics with two replies", () => {
@@ -124,7 +124,7 @@ describe("spam test, no external services:", () => {
         { title: topics.kittensTwoRepliesTitle, body: "About kittens..." });
     mallorysBrowser.complex.replyToOrigPost("Kittens are dog food");
     mallorysBrowser.complex.replyToOrigPost("I feed my snake with kittens");
-    topics.kittensTwoRepliesUrl = mallorysBrowser.url().value;
+    topics.kittensTwoRepliesUrl = mallorysBrowser.getUrl();
   });
 
   it("... and another with one reply", () => {
@@ -132,21 +132,21 @@ describe("spam test, no external services:", () => {
     mallorysBrowser.complex.createAndSaveTopic(
         { title: topics.puppiesOneReplyTitle, body: "Puppies not allowed" });
     mallorysBrowser.complex.replyToOrigPost("Puppies poo");
-    topics.puppiesOneReplyUrl = mallorysBrowser.url().value;
+    topics.puppiesOneReplyUrl = mallorysBrowser.getUrl();
   });
 
   it("... and one with no replies", () => {
     mallorysBrowser.go(idAddress.origin);
     mallorysBrowser.complex.createAndSaveTopic(
       { title: topics.bunniesNoRepliesTitle, body: "Yes, they can multiply" });
-    topics.bunniesNoRepliesUrl = mallorysBrowser.url().value;
+    topics.bunniesNoRepliesUrl = mallorysBrowser.getUrl();
   });
 
   it("... and another, to which Maja will reply later", () => {
     mallorysBrowser.go(idAddress.origin);
     mallorysBrowser.complex.createAndSaveTopic(
       { title: topics.hummingbirdMajasReplyTitle, body: "They forgot the words" });
-    topics.hummingbirdMajasReplyUrl = mallorysBrowser.url().value;
+    topics.hummingbirdMajasReplyUrl = mallorysBrowser.getUrl();
   });
 
 

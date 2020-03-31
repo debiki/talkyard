@@ -160,7 +160,7 @@ describe("notfs overr grp prfs TyT6BKWDGY24", () => {
   let owensTopicUrl;
 
   it("Owen goes to All Members' prefs page again", () => {
-    owensTopicUrl = owensBrowser.url().value;
+    owensTopicUrl = owensBrowser.getUrl();
     owensBrowser.go('/-/groups/all_members/preferences/notifications');
   });
 

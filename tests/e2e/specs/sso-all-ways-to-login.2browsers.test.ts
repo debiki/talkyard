@@ -176,14 +176,14 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("... clicks Sign Up, gets redirected to the SSO page", () => {
-    urlBeforeLogin = mariasBrowser.url().value;
+    urlBeforeLogin = mariasBrowser.getUrl();
     mariasBrowser.rememberCurrentUrl();
     mariasBrowser.topbar.clickSignUp();
     mariasBrowser.waitForNewUrl();
   });
 
   it("... and dummy-logs-in at the dummy external login page", () => {
-    const urlNow = mariasBrowser.url().value;
+    const urlNow = mariasBrowser.getUrl();
     const pathQueryHash = urlBeforeLogin.replace(siteIdAddress.origin, '');
     assert.equal(urlNow, ssoUrlVarsReplaced(pathQueryHash));
   });
@@ -206,7 +206,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("The Talkayrd server logs her in, and redirects her back to where she started", () => {
-    const url = mariasBrowser.url().value;
+    const url = mariasBrowser.getUrl();
     assert.equal(url, discussionPageUrl);
   });
 
@@ -223,7 +223,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("Maria clicks reply ...", () => {
-    urlBeforeLogin = mariasBrowser.url().value;
+    urlBeforeLogin = mariasBrowser.getUrl();
     returnToPathQueryEscHash =
         mariasBrowser.urlPathQueryHash() + '__dwHash__post-' + michaelsLastPostNr;
 
@@ -236,7 +236,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("... and gets to the dummy external login page, with  __dwHash__ in the return-to-url", () => {
-    const urlNow = mariasBrowser.url().value;
+    const urlNow = mariasBrowser.getUrl();
     console.log(`urlNow should incl __dwHash__: ${urlNow}`);
     assert.equal(urlNow, ssoUrlVarsReplaced(returnToPathQueryEscHash));
   });
@@ -255,7 +255,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("The Talkayrd server logs her in, and redirects her to the #post-nr she wanted to reply to", () => {
-    const urlNow = mariasBrowser.url().value;
+    const urlNow = mariasBrowser.getUrl();
     const urlBeforePlusHashPostNr = urlBeforeLogin + '#post-' + michaelsLastPostNr;
     console.log(`urlNow: ${urlNow}`);
     assert.equal(urlNow, urlBeforePlusHashPostNr);
@@ -267,7 +267,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("... clicks reply again, replies to Michael — without getting redirected to the SSO page", () => {
-    urlBeforeLogin = mariasBrowser.url().value;
+    urlBeforeLogin = mariasBrowser.getUrl();
     mariasBrowser.complex.replyToPostNr(michaelsLastPostNr, "Fly and sing with the ducks");
   });
 
@@ -288,7 +288,7 @@ describe("sso-all-ways-to-login  TyT7FKRTTSR024", () => {
   });
 
   it("... gets to the dummy login page, with  __dwHash__", () => {
-    const urlNow = mariasBrowser.url().value;
+    const urlNow = mariasBrowser.getUrl();
     console.log(`urlNow should incl __dwHash__: ${urlNow}`);
     assert.equal(urlNow, ssoUrlVarsReplaced(returnToPathQueryEscHash));
 

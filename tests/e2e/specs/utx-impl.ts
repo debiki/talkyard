@@ -41,7 +41,7 @@ const utxImpl = {
   typeAddressSubmit: function(browser, address) {
     browser.waitForVisible('#utxWebsiteAddr');
     browser.waitForEnabled('#utxWebsiteAddr');
-    browser.setValue('#utxWebsiteAddr', address);
+    browser.waitAndSetValue('#utxWebsiteAddr', address);
     browser.rememberCurrentUrl();
     browser.waitAndClick('.utxContinueBtn');
     browser.waitForNewUrl();
@@ -52,10 +52,10 @@ const utxImpl = {
     // Should loop and read & check the value —> test more stable. But just .pause(..) works ok.
     browser.pause(1000);
     if (address) {
-      browser.setValue('#utxAskForUx_Address', address)
+      browser.waitAndSetValue('#utxAskForUx_Address', address)
     }
     if (instructions) {
-      browser.setValue('#utxAskForUx_Instrs', instructions);
+      browser.waitAndSetValue('#utxAskForUx_Instrs', instructions);
     }
     browser.waitAndClick('.utxActionBtns input[type="submit"]')
   },

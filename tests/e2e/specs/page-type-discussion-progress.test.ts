@@ -4,7 +4,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -71,7 +70,7 @@ describe("Page type discussion, and progress comments", () => {
   });
 
   it("Two status change events appear (after page refresh)", () => {
-    mariasBrowser.refresh(); // [2PKRRSZ0]
+    mariasBrowser.topic.refreshUntilPostNrAppears(3, { isMetaPost: true }); // [2PKRRSZ0]
     assert.equal(c.FirstReplyNr, 2);
     mariasBrowser.topic.waitForPostNrVisible(2); // status post 1 (close)
     mariasBrowser.topic.waitForPostNrVisible(3); // status post 2 (reopen)
@@ -111,33 +110,27 @@ describe("Page type discussion, and progress comments", () => {
   });
 
   it("The posts has the correct contents", () => {
-    mariasBrowser.refresh();  // currently needed, so event posts will appear [2PKRRSZ0]
+    // currently needed, so event posts will appear [2PKRRSZ0]
+    mariasBrowser.topic.refreshUntilPostNrAppears(8, { isMetaPost: true });
+    // Also takes a while for the server to refresh its cache:
+    mariasBrowser.topic.refreshUntilPostNrAppears(9);
+
     mariasBrowser.topic.waitForPostAssertTextMatches(9, bottomCommentTwoText);
     mariasBrowser.topic.assertMetaPostTextMatches(8, 'reopened');
   });
 
   it("Everything is in the correct order", () => {
-    // Dupl code. Use  topic.assertPostOrderIs()  instead  [59SKEDT0652].
-    const postElems = mariasBrowser.elements('[id^="post-"]').value;
-    for (let i = 0; i < postElems.length; ++i) {
-      const elem = postElems[i];
-      const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
-      console.log('id: ' + id);
-      assert.equal(2, c.BodyNr + 1);
-      assert.equal(2, c.FirstReplyNr);
-      switch (i) {
-        case c.TitleNr: assert.equal(id, 'post-' + c.TitleNr);  break;
-        case c.BodyNr:  assert.equal(id, 'post-' + c.BodyNr);  break;
-        case 2:  assert.equal(id, 'post-6');  break; // the orig post reply gets placed first
-        case 3:  assert.equal(id, 'post-7');  break; // orig post reply reply
-        case 4:  assert.equal(id, 'post-2');  break; // closed
-        case 5:  assert.equal(id, 'post-3');  break; // reopened
-        case 6:  assert.equal(id, 'post-4');  break; // progress comment
-        case 7:  assert.equal(id, 'post-5');  break; // closed
-        case 8:  assert.equal(id, 'post-8');  break; // reopened
-        case 9:  assert.equal(id, 'post-9');  break; // progress comment
-      }
-    }
+    mariasBrowser.topic.assertPostOrderIs([  //  CROK  CODE REVIEW DONE OK
+        c.TitleNr,
+        c.BodyNr,
+        6,   // the orig post reply gets placed first
+        7,   // orig post reply reply
+        2,   // closed
+        3,   // reopened
+        4,   // progress comment
+        5,   // closed
+        8,   // reopened
+        9]); // progress comment
   });
 
   it("Michael may not change page status, not his page", () => {

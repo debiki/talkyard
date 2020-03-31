@@ -380,7 +380,7 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
   });
 
   it("Owen reloads the page", () => {
-    owensBrowser.refresh();
+    owensBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr);
   });
 
   it("... all fine, after reload", () => {

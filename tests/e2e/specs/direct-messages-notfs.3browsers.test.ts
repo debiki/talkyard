@@ -86,7 +86,7 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
     maria.editor.saveWaitForNewPage();
     maria.assertPageTitleMatches(messageTitle);
     maria.assertPageBodyMatches(messageText);
-    messageUrl = maria.url().value;
+    messageUrl = maria.getUrl();
   });
 
   it("Owen logs in", () => {

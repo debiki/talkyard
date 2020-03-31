@@ -112,7 +112,7 @@ describe("private chat", function() {
     owen.complex.createAndSaveTopic(
         { title: formPageTitle, body: formPageBody, type: c.TestPageRole.Form,
           bodyMatchAfter: false });
-    formPageUrl = owen.url().value;
+    formPageUrl = owen.getUrl();
   });
 
   it("Everyone goes to the form page", function() {

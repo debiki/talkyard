@@ -112,7 +112,7 @@ describe("email notfs discs TyT4FKA2EQ02", () => {
     mariasBrowser.go(idAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.complex.createAndSaveTopic({ title: mariasTopicTitle, body: mariasTopicBody });
-    mariasTopicUrl = mariasBrowser.url().value;
+    mariasTopicUrl = mariasBrowser.getUrl();
     mariasBrowser.topbar.clickLogout();
   });
 

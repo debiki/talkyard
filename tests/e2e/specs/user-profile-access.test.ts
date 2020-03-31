@@ -92,11 +92,15 @@ describe("user profile access:", () => {
 
   // ----- Michael replies
 
-  it("Strangers may not see the topic", () => {
-    // When not logged in, we may not see the private topic, so we get redirected to the homepage.
-    const privateMessageUrl = mariasBrowser.url().value;
+  let privateMessageUrl;
+
+  it("Maria gets redirected to the, after logged out — may not see the private topic", () => {
+    privateMessageUrl = mariasBrowser.getUrl();
     mariasBrowser.topbar.clickLogout({ waitForLoginButton: false });
-    strangersBrowser.waitUntilIsOnHomepage();
+    mariasBrowser.waitUntilIsOnHomepage();
+  });
+
+  it("Strangers may not see the topic", () => {
     strangersBrowser.go(privateMessageUrl);
     strangersBrowser.assertNotFoundError();
 

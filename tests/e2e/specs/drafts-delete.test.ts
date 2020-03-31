@@ -137,7 +137,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("... and deletes all text, but not the title", () => {
-    mariasBrowser.editor.editText('  ');
+    mariasBrowser.editor.editText('');
   });
 
   it("... cancels", () => {
@@ -150,13 +150,14 @@ describe("drafts-delete  TyT5BKRQ0", () => {
 
   it("... the *title* is still there; the draft didn't get deleted", () => {
     mariasBrowser.editor.waitForDraftTitleToLoad(draftTopicTitleToDelete);
+  });
+
+  it("... but the new topic body is empty", () => {
     mariasBrowser.editor.waitForDraftTextToLoad('');
   });
 
   it("... she deletes the title", () => {
-    // 2019-09: editTitle('  ') didn't remove all chars. In Chrome. Weird. So retry. [E2EBUG]
-    // Maybe have waitAndSetValue() always inspect the result and retry?
-    mariasBrowser.editor.editTitle('  ', { checkAndRetry: true });
+    mariasBrowser.editor.editTitle('', { checkAndRetry: true });
   });
 
   it("... so now the draft gets deleted", () => {
@@ -178,10 +179,12 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   it("She opens the reply draft", () => {
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
     mariasBrowser.editor.waitForDraftTextToLoad(replyDraftToDelete);
+//settings.debugEachStep=true;
+//mariasBrowser.debug();  [DRAFTS_BUG]
   });
 
   it("... and deletes all text", () => {
-    mariasBrowser.editor.editText(' ');
+    mariasBrowser.editor.editText('');
   });
 
   it("... closes the editor — this deletes the draft, since it's now empty", () => {
@@ -189,7 +192,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("When she starts replying again, the text is empty (draft gone)", () => {
-    mariasBrowser.topic.clickReplyToOrigPost();
+    mariasBrowser.topic.clickReplyToOrigPost();      //  [DRAFTS_BUG]
     mariasBrowser.editor.waitForDraftTextToLoad('');
   });
 
@@ -228,7 +231,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("... and deletes all text, for this reply message too", () => {
-    mariasBrowser.editor.editText(' ');
+    mariasBrowser.editor.editText('');
   });
 
   it("Jumps to her profile page drafts list — the reply draft gets beacon-deleted", () => {
@@ -248,7 +251,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("... and happily deletes all text", () => {
-    mariasBrowser.chat.editChatMessage(' ');
+    mariasBrowser.chat.editChatMessage('');
   });
 
   it("... the draft gets auto deleted", () => {
@@ -297,7 +300,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
   it("... and deletes all text, for this chat message too", () => {
-    mariasBrowser.chat.editChatMessage(' ');
+    mariasBrowser.chat.editChatMessage('');
   });
 
   it("Jumps to her profile page drafts list — the draft gets beacon-deleted", () => {

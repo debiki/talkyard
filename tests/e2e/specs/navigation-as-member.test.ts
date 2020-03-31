@@ -2,9 +2,7 @@
 
 import navAsSomeoneTests = require('./navigation-as-impl');
 
-declare let browser: any;
-
-navAsSomeoneTests((browser) => {    // TyT2ABKR593
+navAsSomeoneTests(() => {    // TyT2ABKR593
   return {
     member: 'michael',
   };

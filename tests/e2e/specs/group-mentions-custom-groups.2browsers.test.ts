@@ -97,7 +97,7 @@ describe("group-mentions-custom-group  TyT5BMRP2058", () => {
   it("Owen posts a topic, mentions @" + BasicGroupUsername, () => {
     owensBrowser.topbar.clickBack();
     owensBrowser.complex.createAndSaveTopic(OwensTopicMentionsBasicGroup);
-    discussionPageUrl = owensBrowser.url().value;
+    discussionPageUrl = owensBrowser.getUrl();
   });
 
   it("Maja logs in", () => {

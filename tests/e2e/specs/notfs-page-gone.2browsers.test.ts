@@ -165,7 +165,7 @@ describe("notfs-page-gone  TyT7DMR24RF8", () => {
   });
 
   it("... the url is correct", () => {
-    assert(owensBrowser.url().value.startsWith(discussionPageUrl));
+    assert(owensBrowser.getUrl().startsWith(discussionPageUrl));
   });
 
   it("Owen books a ticket to the tropical rain forrests, to go and feed the colibris", () => {

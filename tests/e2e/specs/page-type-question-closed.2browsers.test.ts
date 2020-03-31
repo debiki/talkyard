@@ -4,7 +4,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -29,6 +28,8 @@ let siteId: any;
 
 let mariasTopicUrl: string;
 
+const closeEventPostNr = 4;
+const reopenEventPostNr = 7;
 
 
 describe("Page type question", () => {
@@ -61,7 +62,7 @@ describe("Page type question", () => {
   it("She posts a question", () => {
     mariasBrowser.complex.createAndSaveTopic({
       type: c.TestPageRole.Question, title: "Which pet?", body: "Should I get a cat or an otter?" });
-    mariasTopicUrl = mariasBrowser.url().value;
+    mariasTopicUrl = mariasBrowser.getUrl();
   });
 
   it("Michael logs in", () => {
@@ -75,8 +76,8 @@ describe("Page type question", () => {
   });
 
   it("... attempts to select an answer, but cannot (not his question)", () => {
-    michaelsBrowser.refresh();
-    michaelsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
+    michaelsBrowser.topic.refreshUntilPostNrAppears(c.FirstReplyNr + 1);
+    michaelsBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);  // can remove
     assert(!michaelsBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
 
@@ -116,11 +117,11 @@ describe("Page type question", () => {
   });
 
   it("... and closes the topic", () => {
-    owensBrowser.topic.closeTopic();   // generates an event post, nr 4
+    owensBrowser.topic.closeTopic();   // generates an event post, nr 4 = closeEventPostNr
   });
 
   it("Maria wants to select Otter as the accepted answer again, but now she cannot", () => {
-    mariasBrowser.refresh();
+    mariasBrowser.topic.refreshUntilPostNrAppears(closeEventPostNr, { isMetaPost: true });
     mariasBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
     assert(!mariasBrowser.topic.canSelectAnswer());  // (2PR5PH)
   });
@@ -134,7 +135,7 @@ describe("Page type question", () => {
   });
 
   it("Owen reopens the topic", () => {
-    owensBrowser.topic.reopenTopic();
+    owensBrowser.topic.reopenTopic();   // generates an event post, nr 7 = reopenEventPostNr
   });
 
   it("Now Maria can select Otter", () => {
@@ -142,32 +143,30 @@ describe("Page type question", () => {
     mariasBrowser.topic.selectPostNrAsAnswer(3);
   });
 
+  it("... Currently needs to refres for all posts to appear", () => {
+    mariasBrowser.topic.refreshUntilPostNrAppears(7, { isMetaPost: true });
+  });
+
   it("Everything is in the correct order", () => {
-    mariasBrowser.refresh();
     mariasBrowser.topic.waitForPostAssertTextMatches(1, "a cat or an otter?");
     mariasBrowser.topic.assertPostTextMatches(2, "Yes, a cat");
     mariasBrowser.topic.assertPostTextMatches(3, "Yes, an otter");
+    assert.equal(closeEventPostNr, 4);
     mariasBrowser.topic.assertMetaPostTextMatches(4, "closed");
     mariasBrowser.topic.assertPostTextMatches(5, "good idea");
     mariasBrowser.topic.assertPostTextMatches(6, "Thanks everyone!");
+    assert.equal(reopenEventPostNr, 7);
     mariasBrowser.topic.assertMetaPostTextMatches(7, "reopened");
 
-    const postElems = mariasBrowser.elements('[id^="post-"]').value;
-    for (let i = 0; i < postElems.length; ++i) {
-      const elem = postElems[i];
-      const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
-      console.log('id: ' + id);
-      switch (i) {
-        case c.TitleNr: assert(id === 'post-' + c.TitleNr); break;
-        case c.BodyNr:  assert(id === 'post-' + c.BodyNr);  break;
-        case 2:  assert(id === 'post-2');  break; // cat
-        case 3:  assert(id === 'post-3');  break; // otter
-        case 4:  assert(id === 'post-5');  break; // the "Good idea" reply
-        case 5:  assert(id === 'post-4');  break; // the topic-closed event
-        case 6:  assert(id === 'post-6');  break; // the "Thanks everyone" comment
-        case 7:  assert(id === 'post-7');  break; // the topic-reopened event
-      }
-    }
+    mariasBrowser.topic.assertPostOrderIs([  //  CROK  CODE REVIEW DONE OK
+        c.TitleNr,
+        c.BodyNr,
+        2,   // cat
+        3,   // otter
+        5,   // the "Good idea" reply
+        4,   // the topic-closed event
+        6,   // the "Thanks everyone" comment
+        7]); // the topic-reopened event
   });
 
 });

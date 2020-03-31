@@ -74,7 +74,7 @@ describe("settings-toggle-login-required [TyT4GKBW20]", function() {
 
   it("... and can posts a forum topic", function() {
     maria.complex.createAndSaveTopic({ title: mariasTopicTitle, body: "Marias text." });
-    mariasTopicUrl = maria.url().value;
+    mariasTopicUrl = maria.getUrl();
   });
 
   it("Michael only sees the login dialog, when he goes to the forum topic url", function() {

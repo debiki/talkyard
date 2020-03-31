@@ -209,7 +209,7 @@ settings.debugEachStep=true;
   });
 
   it("The Talkayrd server logs her in, and redirects her back to where she started", () => {
-    const url = mariasBrowser.url().value;
+    const url = mariasBrowser.getUrl();
     //assert.equal(url, discussionPageUrl);
   });
 

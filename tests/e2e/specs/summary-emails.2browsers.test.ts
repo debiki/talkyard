@@ -107,7 +107,7 @@ describe("summary emails", () => {
 
   it("... and posts a topic", () => {
     trilliansBrowser.complex.createAndSaveTopic({ title: topicOneEveryone, body: topicOneEveryone });
-    topicOneEveryoneUrl = trilliansBrowser.url().value;
+    topicOneEveryoneUrl = trilliansBrowser.getUrl();
   });
 
   it("a day elapses", () => {
@@ -155,7 +155,7 @@ describe("summary emails", () => {
   it("Trillian posts 'topicTwoToSome'", () => {
     trilliansBrowser.go(idAddress.origin);
     trilliansBrowser.complex.createAndSaveTopic({ title: topicTwoToSome, body: topicTwoToSome });
-    topicTwoToSomeUrl = trilliansBrowser.url().value;
+    topicTwoToSomeUrl = trilliansBrowser.getUrl();
   });
 
   it("... after a day, only Owen, Mons and Michael get a summary email with the new topic", () => {
@@ -196,7 +196,7 @@ describe("summary emails", () => {
   it("Trillian posts 'topicThreeToOwen'", () => {
     trilliansBrowser.go(idAddress.origin);
     trilliansBrowser.complex.createAndSaveTopic({ title: topicThreeToOwen, body: topicThreeToOwen });
-    topicThreeToOwenUrl = trilliansBrowser.url().value;
+    topicThreeToOwenUrl = trilliansBrowser.getUrl();
   });
 
   it("... now Owen gets a summary email", () => {
@@ -225,11 +225,6 @@ describe("summary emails", () => {
 
   it("... but Maria enables", () => {
     owensBrowser.topbar.clickLogout();
-    // How is this possible: [7UKDWP2]
-    // FAIL: Error: Element <button class="dw-login esTopbar_logIn btn btn-primary">
-    //        is not clickable at point (996.599983215332,35) because another element
-    //        <div id="theLoadingOverlay"> obscures it
-    // — clickLogout above already waits for the loading overlay to disappear  o.O
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria.username, maria.password);
     mariasBrowser.userProfilePage.openPreferencesFor(maria.username);
     mariasBrowser.userProfilePage.preferences.setSummaryEmailsEnabled(true);
@@ -239,7 +234,7 @@ describe("summary emails", () => {
   it("Trillian posts 'topicFourToMaria'", () => {
     trilliansBrowser.go(idAddress.origin);
     trilliansBrowser.complex.createAndSaveTopic({ title: topicFourToMaria, body: topicFourToMaria });
-    topicFourToMariaUrl = trilliansBrowser.url().value;
+    topicFourToMariaUrl = trilliansBrowser.getUrl();
   });
 
   it("Maria gets a summary email", () => {
@@ -300,7 +295,7 @@ describe("summary emails", () => {
         { title: topicFiveMariaMonth, body: topicFiveMariaMonth });
    */
 
-    topicFiveMariaMonthUrl = trilliansBrowser.url().value;
+    topicFiveMariaMonthUrl = trilliansBrowser.getUrl();
   });
 
   it("... two weeks elapses, no one gets any summary email", () => {
@@ -355,7 +350,7 @@ describe("summary emails", () => {
   it("Trillian posts 'lastTopicMichael'", () => {
     trilliansBrowser.go(idAddress.origin);
     trilliansBrowser.complex.createAndSaveTopic({ title: lastTopicMichael, body: lastTopicMichael });
-    lastTopicMichaelUrl = trilliansBrowser.url().value;
+    lastTopicMichaelUrl = trilliansBrowser.getUrl();
   });
 
   it("... a week elapses, Michael gets a summary email", () => {

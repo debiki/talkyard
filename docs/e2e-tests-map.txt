@@ -6,6 +6,11 @@ many things. But then it's hard to give it a name that describes everything it d
 here you'll find a map of all things that are e2e tested, and in which files. A single file
 might be listed at many places in the tree, if it tests different things.
 
+Webdriver.io writes: (https://webdriver.io/docs/organizingsuites.html)
+
+> In general, try to test a only a single feature per spec file. Try to not have too many or too few tests in one file. (However, there is no golden rule here.)
+
+
 (ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
 [ABC123] = search all files everywhere
 
@@ -499,6 +504,9 @@ embedded comments:
   import from Disqus xml export file:  (impexp)
           - embedded-comments-create-site-import-disqus.2browsers.test.ts  TyT5KFG0P75
   image links work although <base> tag: (EMBORG)
+  won't load at wrong domain / origin / hostname:
+          - TESTS_MISSING TyT3059J267P, problem in wdio 6
+                embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)

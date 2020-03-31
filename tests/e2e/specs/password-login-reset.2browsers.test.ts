@@ -47,8 +47,11 @@ describe("password-login-reset  TyT5KAES20W", function() {
     everyone.disableRateLimits();
   });
 
-  it("They can login with password", function() {
+  it("Owen logs in with password", function() {
     owen.complex.loginWithPasswordViaTopbar(owen);
+  });
+
+  it("... Michael too", function() {
     michael.complex.loginWithPasswordViaTopbar(michael);
   });
 
@@ -58,11 +61,17 @@ describe("password-login-reset  TyT5KAES20W", function() {
     browserB.topbar.clickLogout();
   });
 
-  it("... but cannot login with the wrong password (they forgot the real ones)", function() {
+  it("But they cannot login with the wrong password (they forgot the real ones)", () => {
     //everyone.topbar.clickLogin(); [EVRYBUG]
     browserA.topbar.clickLogin();
     browserB.topbar.clickLogin();
+  });
+
+  it("... Owen cannot", function() {
     owen.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
+  });
+
+  it("... Michael cannot", function() {
     michael.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
   });
 
@@ -81,8 +90,11 @@ describe("password-login-reset  TyT5KAES20W", function() {
     michael.loginDialog.loginButBadPassword(michael.username, owen.password);
   });
 
-  it("Michael resets his password", function() {
+  it("Michael clicks Forgot Password", function() {
     michael.loginDialog.clickResetPasswordCloseDialogSwitchTab();
+  });
+
+  it("... submits his email address", function() {
     michael.resetPasswordPage.submitAccountOwnerEmailAddress(michael.emailAddress);
   });
 

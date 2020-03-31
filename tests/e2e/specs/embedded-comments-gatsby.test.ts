@@ -5,7 +5,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -99,19 +98,22 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("Changes the embedding url from e2e-test--gatsby-starter-blog, to localhost", () => {
     owensBrowser.waitForVisible('#e_AllowEmbFrom');
-    const oldEmbeddingUrl = owensBrowser.getValue('#e_AllowEmbFrom');
+    const oldEmbeddingUrl = owensBrowser.$('#e_AllowEmbFrom').getValue();
     assert(oldEmbeddingUrl === `http://${specifiedEmbeddingHost}/`);
+
     // Need do this twice, maybe because the first attempt is somehow interrupted by the Save
     // button appearing.
-    owensBrowser.setValue('#e_AllowEmbFrom', blogUrl);
-    owensBrowser.setValue('#e_AllowEmbFrom', blogUrl);
+    // wdio v6: Works now? delete this?
+    //owensBrowser.waitAndSetValue('#e_AllowEmbFrom', blogUrl);
+
+    owensBrowser.waitAndSetValue('#e_AllowEmbFrom', blogUrl);
     owensBrowser.adminArea.settings.clickSaveAll();
   });
 
 
   it("Goes to the Gatsby site, /hi-folks/", () => {
     owensBrowser.go2(blogUrl, { isExternalPage: true });
-    owensBrowser.waitAndClick('a[href*="hi-folks"]');
+    owensBrowser.waitAndClick('a[href*="hi-folks"]', { waitUntilNotOccluded: false });
   });
 
   // Small steps here — was an e2e bug here before, without scrollToBottom() just below.
@@ -135,9 +137,13 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("Goes to /my-second-post", () => {
     owensBrowser.switchToAnyParentFrame();
-    owensBrowser.scrollToTop();
-    owensBrowser.click('a[href="/"]');
-    owensBrowser.waitAndClick('a[href*="my-second-post"]');
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.scrollToTop();  // [E2ENEEDSRETRY]
+      owensBrowser.waitAndClick('a[href="/"]', { waitUntilNotOccluded: false });
+    });
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.waitAndClick('a[href*="my-second-post"]', { waitUntilNotOccluded: false });
+    });
   });
 
   it("... posts a second comment", () => {
@@ -150,9 +156,13 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("... the comment appears on the other page with the same discussion id", () => {
     owensBrowser.switchToAnyParentFrame();
-    owensBrowser.scrollToTop();
-    owensBrowser.click('a[href="/"]');
-    owensBrowser.waitAndClick('a[href*="same-discussion-id-as-2nd-post"]');
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.scrollToTop();  // [E2ENEEDSRETRY]
+      owensBrowser.waitAndClick('a[href="/"]', { waitUntilNotOccluded: false });
+    });
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.waitAndClick('a[href*="same-discussion-id-as-2nd-post"]', { waitUntilNotOccluded: false });
+    });
     owensBrowser.updateIsWhere();
     owensBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);  // because same discussion id
     owensBrowser.topic.postNrContains(c.FirstReplyNr, owens2ndPostComment);
@@ -160,11 +170,15 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("... the last blog post is still empty", () => {
     owensBrowser.switchToAnyParentFrame();
-    owensBrowser.scrollToTop();
-    owensBrowser.waitAndClick('a[href="/"]');
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.scrollToTop();
+      owensBrowser.waitAndClick('a[href="/"]', { waitUntilNotOccluded: false });
+    });
     // This *= selector causes an error in waitUntilElementNotOccluded().
     // There's nothing that can occlude this link, so just skip the check.
-    owensBrowser.waitAndClick('a[href*="hello-world"]', { waitUntilNotOccluded: false });
+    owensBrowser.repeatUntilAtNewUrl(() => {
+      owensBrowser.waitAndClick('a[href*="hello-world"]', { waitUntilNotOccluded: false });
+    });
     owensBrowser.updateIsWhere();
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.waitForVisible('.dw-a-logout'); // then comments have loaded

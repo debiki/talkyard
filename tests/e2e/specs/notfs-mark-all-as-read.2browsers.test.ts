@@ -66,7 +66,7 @@ describe("notfs-mark-all-as-read  TyT5BKAR24H", () => {
 
   it("... creates a topic, page notf level will be set to Watching-All", () => {
     mariasBrowser.complex.createAndSaveTopic({ title: "Who are we?", body: "Tell us who we are :-}" });
-    discussionPageUrl = mariasBrowser.url().value;
+    discussionPageUrl = mariasBrowser.getUrl();
   });
 
   it("... returns to the topic list, so won't see any replies", () => {

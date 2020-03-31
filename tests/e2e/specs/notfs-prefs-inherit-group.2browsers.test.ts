@@ -213,7 +213,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("... another, mentions @mod_modya", () => {
     owensBrowser.complex.replyToOrigPost("Hi @mod_modya");
-    url = owensBrowser.url().value;
+    url = owensBrowser.getUrl();
     numEmailsToModya += 1;
     numEmailsTotal += 1;
   });
@@ -436,7 +436,7 @@ describe("notfs-prefs-inherit-group  TyT5RKT2WJ04", () => {
 
   it("Owen posts a reply, mentions Modya for the 3rd time", () => {
     owensBrowser.complex.replyToOrigPost("Hi 3rd time @mod_modya");
-    url = owensBrowser.url().value;
+    url = owensBrowser.getUrl();
     numEmailsToModya += 1;
     numEmailsTotal += 1;
   });

@@ -5,7 +5,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -209,7 +208,7 @@ describe("emb cmts guest login  TyT8FUKB2T4", () => {
   });
 
   it("A dog, named Fido, takes Gunde's laptop, logs out Gunde", () => {
-    fidosBrowser.switchToEmbeddedCommentsIrame();  // [6UKB2FQ]
+    fidosBrowser.switchToEmbeddedCommentsIrame()
     fidosBrowser.metabar.clickLogout();
   });
 

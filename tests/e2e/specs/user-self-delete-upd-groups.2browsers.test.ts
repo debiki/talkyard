@@ -118,7 +118,7 @@ describe("user-self-delete-upd-groups  TyT6DMSNW3560", () => {
 
   it("Parinia posts a topic", () => {
     pariniasBrowser.complex.createAndSaveTopic(pariniasTopic);
-    discussionPageUrl = pariniasBrowser.url().value;
+    discussionPageUrl = pariniasBrowser.getUrl();
   });
 
   it("A stranger can see Parinia's name, as the topic author", () => {

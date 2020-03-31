@@ -90,7 +90,7 @@ describe("mod-review  TyT5WB2R0", () => {
     mallorysBrowser.go(discussionPageUrl);
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
     mallorysBrowser.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText);
-    directMessageUrl = mallorysBrowser.url().value;
+    directMessageUrl = mallorysBrowser.getUrl();
   });
 
   it("Michael flags two angry replies by Mallory", () => {

@@ -6,7 +6,6 @@ import { execSync} from 'child_process';
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -450,7 +449,7 @@ ${htmlToPaste}
 
   function convertDisqusFileToTalkyardFile(src: string, dst: string) {
     execSync(
-        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+        'nodejs ../../to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
           `--disqusXmlExportFile=${src} ` +
           `--writeTo=${dst}`);
   }
@@ -462,7 +461,7 @@ ${htmlToPaste}
 
   function postCommentsToTalkyard(filePath: string) {
     const cmd =
-        'nodejs to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
+        'nodejs ../../to-talkyard/dist/to-talkyard/src/to-talkyard.js ' +
           `--talkyardJsonPatchFile=${filePath} ` +
           `--sysbotApiSecret=${apiSecret} ` +
           `--sendTo=${talkyardSiteOrigin}`

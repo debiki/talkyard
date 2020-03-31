@@ -86,7 +86,7 @@ describe("priv chat", () => {
   it("Owen creates a private chat", () => {
     owensBrowser.complex.createChatChannelViaWatchbar({
         name: chatTopicTitle, purpose: chatTopicPurpose, public_: false });
-    topicUrl = owensBrowser.url().value;
+    topicUrl = owensBrowser.getUrl();
   });
 
   it("... and adds Michael", () => {

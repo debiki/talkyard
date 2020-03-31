@@ -62,7 +62,7 @@ describe("admin-user-staff [TyT2GKFI594]", function() {
     owensBrowser.adminArea.users.waitForLoaded();
     owensBrowser.adminArea.users.goToUser(michael);
     owensBrowser.adminArea.user.assertEnabled();
-    michaelsPageUrl = owensBrowser.url().value;
+    michaelsPageUrl = owensBrowser.getUrl();
   });
 
   it("Owen grants Moderator to Michael", function() {

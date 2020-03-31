@@ -85,7 +85,7 @@ describe("categories", function() {
   it("Owen sees Marias' topic", function() {
     owen.refresh();
     owen.forumCategoryList.openCategory(WastelandCategoryName);
-    //owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true); // [7JUKDQ4]
+    owen.forumTopicList.waitForTopicVisible(mariasFirstTopicTitle);
     owen.forumTopicList.assertTopicNrVisible(1, mariasFirstTopicTitle);
   });
 
@@ -140,7 +140,7 @@ describe("categories", function() {
 
   it("... he can create a new topic in Wasteland", function() {
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
-    urlToMonsPage = mons.url().value;
+    urlToMonsPage = mons.getUrl();
   });
 
   it("Maria no longer sees Wasteland, but can access pages in the category", function() {
@@ -182,7 +182,7 @@ describe("categories", function() {
       title: "Mons Only Staff Create Topic",
       body: "Mons Only Staff Create text text text.",
     });
-    urlToMonsPage2 = mons.url().value;
+    urlToMonsPage2 = mons.getUrl();
   });
 
   it("Maria sees the category and the topic", function() {
@@ -230,7 +230,7 @@ describe("categories", function() {
     assert(mons.isVisible(WastelandCategorySelector));   // cmp w (410RKE5) below
     mons.forumCategoryList.openCategory(WastelandCategoryNameStaffOnly);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
-    urlToMonsPage3 = mons.url().value;
+    urlToMonsPage3 = mons.getUrl();
   });
 
   it("Maria doesn't see the category", function() {

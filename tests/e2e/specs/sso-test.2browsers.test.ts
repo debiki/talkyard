@@ -9,6 +9,7 @@ import { buildSite } from '../utils/site-builder';
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import c = require('../test-constants');
+import * as lad from '../utils/log-and-die';
 
 declare var browser: any;
 declare var browserA: any;
@@ -147,7 +148,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
   });
 
   it("... and gets to the dummy external login page, at localhost:8080", () => {
-    const url = owensBrowser.url().value;
+    const url = owensBrowser.getUrl();
     assert.equal(url, ssoUrlVarsReplaced);
   });
 
@@ -182,7 +183,7 @@ describe("sso-test  TyT4ABKRW0268", () => {
   });
 
   it("The Talkayrd server logs him in, and redirects him back to where he started", () => {
-    const url = owensBrowser.url().value;
+    const url = owensBrowser.getUrl();
     assert.equal(siteIdAddress.origin + '/-/sso-test', url);
   });
 

@@ -5,7 +5,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -70,7 +69,7 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
     mariasBrowser.swithToOtherTabOrWindow();
     mariasBrowser.loginDialog.createPasswordAccount(maria);
-    mariasBrowser.close();  // close the popup with a check-your-email message
+    mariasBrowser.closeWindowSwitchToOther();  // close the popup with a check-your-email message
   });
 
   it("... clicks an email verif link", () => {

@@ -4,7 +4,6 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
@@ -64,7 +63,7 @@ describe("Page statuses and bottom comments  TyT602AKK73", () => {
   it("She posts a topic, type Problem", () => {
     mariasBrowser.complex.createAndSaveTopic({
       type: c.TestPageRole.Problem, title: "Marias Problem Title", body: "Marias Problem Text" });
-    mariasTopicUrl = mariasBrowser.url().value;
+    mariasTopicUrl = mariasBrowser.getUrl();
   });
 
   it("It starts in status New, with a problem icon", () => {
@@ -104,7 +103,7 @@ describe("Page statuses and bottom comments  TyT602AKK73", () => {
   });
 
   it("Four status change events appear (after page refresh)", () => {
-    mariasBrowser.refresh(); // [2PKRRSZ0]
+    mariasBrowser.topic.refreshUntilPostNrAppears(5, { isMetaPost: true }); // [2PKRRSZ0]
     mariasBrowser.topic.waitForPostNrVisible(5);  // 2, 3, 4 an 5  (1 is the orig post)
   });
 

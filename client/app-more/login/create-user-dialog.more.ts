@@ -469,11 +469,12 @@ const CreateUserResultDialog = createComponent({
     const id = this.state.isLoggedIn ? 'te_WelcomeLoggedIn' : 'e2eNeedVerifyEmailDialog';
     const text = this.state.isLoggedIn ? t.cud.DoneLoggedIn : t.cud.AlmostDone;
     // Don't show a close-dialog button if there nothing on the page, after dialog closed.
-    const footer = !this.state.mayClose || eds.isInLoginPopup ? null :
+    const mayClose = this.state.mayClose && !eds.isInLoginPopup;
+    const footer = !mayClose ? null :
         ModalFooter({},
           PrimaryButton({ onClick: this.close }, t.Okay));
     return (
-      Modal({ show: this.state.isOpen, onHide: this.state.mayClose ? this.close : undefined, id },
+      Modal({ show: this.state.isOpen, onHide: mayClose ? this.close : undefined, id },
         // People don't read the dialog body, so let the title be "Check your email".
         ModalHeader({}, ModalTitle({}, this.state.checkEmail ? t.CheckYourEmail : t.Welcome)),
         ModalBody({}, r.p({}, text)),

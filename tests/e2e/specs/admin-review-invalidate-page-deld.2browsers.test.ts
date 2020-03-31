@@ -108,7 +108,8 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
 
   it("Owen goes to the discussion page", () => {
     owensBrowser.go(discussionPageUrl);
-    owensBrowser.topic.waitUntilTitleMatches(forum.topics.byMichaelCategoryA.title);
+    owensBrowser.topic.waitUntilPostTextMatches(
+        c.TitleNr, forum.topics.byMichaelCategoryA.title);
   });
 
   it("... and deletes the whole page", () => {

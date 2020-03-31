@@ -126,21 +126,21 @@ describe("weird-usernames.2browsers  TyT5ABKPUW2", () => {
   });
 
   it("Maria can click Michael's mentioned username, to open about user dialogs  TyT2WAB5UY", () => {
-    mariasBrowser.click(`a.esMention=@${michaelsUsername}`);
+    mariasBrowser.topic.clickFirstMentionOf(michaelsUsername);  // CROK
     const usernameInAboutDialog = mariasBrowser.aboutUserDialog.getUsername();
     assert.equal(usernameInAboutDialog, michaelsUsername);
   });
 
   it("... and Modya's mention", () => {
     mariasBrowser.aboutUserDialog.close();
-    mariasBrowser.click(`a.esMention=@${modyasUsername}`);
+    mariasBrowser.topic.clickFirstMentionOf(modyasUsername);  // CROK
     const usernameInAboutDialog = mariasBrowser.aboutUserDialog.getUsername();
     assert.equal(usernameInAboutDialog, modyasUsername);
   });
 
   it("... and Corax'", () => {
     mariasBrowser.aboutUserDialog.close();
-    mariasBrowser.click(`a.esMention=@${coraxUsername}`);
+    mariasBrowser.topic.clickFirstMentionOf(coraxUsername);  // CROK
     const usernameInAboutDialog = mariasBrowser.aboutUserDialog.getUsername();
     assert.equal(usernameInAboutDialog, coraxUsername);
   });

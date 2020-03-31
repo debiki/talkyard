@@ -41,7 +41,15 @@ const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);
 
 if (args.v || args.verbose) {
-  settings.logLevel = 'verbose';
+  settings.logLevel = 'trace';
+}
+
+if (args.i || args.invisible) {
+  settings.headless = true;
+}
+
+if (args.dt || args.devtools) {
+  settings.useDevtoolsProtocol = true;
 }
 
 // (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework

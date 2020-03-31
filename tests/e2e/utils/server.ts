@@ -6,7 +6,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import utils = require('./utils');
 import c = require('../test-constants');
-import { logMessage, logWarning, logServerRequest, die, dieIf } from './log-and-die';
+import { logMessage, logWarning, logError, logServerRequest, die, dieIf } from './log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -16,12 +16,28 @@ let xsrfTokenAndCookies;
 
 let settings: TestSettings;
 
-function initOrDie(theSettings) {
+/// Exits on failure — otherwise wdio prints a 100+ lines long help text,
+/// so people wouldn't see any error messages logged below.
+/// (Any e2e tests cannot run anyway, if this won't work.)
+///
+function initOrExit(theSettings) {
   settings = theSettings;
-  const response = syncRequest('GET', settings.mainSiteOrigin);
-  dieIf(response.statusCode !== 200,
-      "Error getting xsrf token and cookies from " + settings.mainSiteOrigin + " [EsE2FKE3]",
-      showResponse(response));
+  let response;
+  try {
+    response = syncRequest('GET', settings.mainSiteOrigin);
+  }
+  catch (ex) {
+    logError(`Error talking with:  ${settings.mainSiteOrigin}\n` +
+        `Is the server not running?  [TyEE2ESRVOFF]\n\n`, ex);
+    process.exit(1);
+  }
+
+  if (response.statusCode !== 200) {
+    logError(`Error response from:  ${settings.mainSiteOrigin}  ` +
+        `when requesting xsrf token and cookies [TyEE2ESRVSTS]\n`);
+    logError(showResponse(response));
+    process.exit(1);
+  }
 
   let cookieString = '';
   let xsrfToken = '';
@@ -37,7 +53,15 @@ function initOrDie(theSettings) {
       xsrfToken = value;
     }
   });
-  dieIf(!xsrfToken, "Got no xsrf token from " + settings.mainSiteOrigin + " [EsE8GLK2]");
+
+  if (!xsrfToken) {
+    logError(
+        `Got no xsrf token from:  ${settings.mainSiteOrigin}   [TyEE2ESRVXSRF]\n` +
+        `Cookie headers:\n` +
+        `    ${JSON.stringify(cookies)}\n`);
+    process.exit(1);
+  }
+
   xsrfTokenAndCookies = [xsrfToken, cookieString];
 }
 
@@ -93,7 +117,10 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
       opts.retryIfXsrfTokenExpired !== false) {
     // The xsrf token expires, if we playTime...() too much.
     logMessage("Getting a new xsrf token; the old one has expired ...");
-    initOrDie(settings);
+
+    // If this won't work, the tests won't work anyway, feels ok to exit?
+    initOrExit(settings);
+
     logMessage("... Done getting new xsrf token.");
     return postOrDie(url, data, { ...opts, retryIfXsrfTokenExpired: false });
   }
@@ -410,9 +437,9 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
     if (!hasDebugLoggedLastEmail && (tenSecondsPassed || testEndsSoon)) {
       //hasDebugLoggedLastEmail = true;
       logWarning(
-        '\n' +
-        "This test will fail? " + (!email ? `No email sent to ${emailAddress}` :
-            `Last email to ${emailAddress} is still:\n${email.subject}\n${email.bodyHtmlText}`) +
+        `Waiting for email to: ${emailAddress} to match: ${JSON.stringify(textsToMatch)} ` +
+        (!email ? ` — but no email sent to that address` :
+            `\nLast email is:\n${email.subject}\n${email.bodyHtmlText}`) +
         '\n');
     }
 
@@ -499,7 +526,7 @@ function listUsers(ps: { origin: string, usernamePrefix: string }): ListUsersApi
 // ----- Export functions
 
 export = {
-  initOrDie,
+  initOrExit: initOrExit,
   importRealSiteData,
   importSiteData: importTestSiteData,
   deleteOldTestSite,

@@ -189,7 +189,7 @@ describe("user-profile-change-email.test.ts  TyT305MHPJ25", () => {
   let mariasEmailsUrl;
 
   it("Maria logs out", () => {
-    mariasEmailsUrl = mariasBrowser.url().value;
+    mariasEmailsUrl = mariasBrowser.getUrl();
     mariasBrowser.go(idAddress.origin);
     mariasBrowser.topbar.clickLogout();
   });

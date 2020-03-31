@@ -452,7 +452,7 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
 
     const withBeacon = useBeacon ? ', with beacon' : '';
 
-    // If empty. Delete any old draft.
+    // If empty. Delete any old draft.  BUG [DRAFTS_BUG] preview doesn't get deleted properly
     if (!text) {
       if (oldDraft) {
         console.debug(`Deleting draft${withBeacon}...`);
@@ -510,12 +510,12 @@ const ChatMessageEditor = createFactory<any, ChatMessageEditorState>({
 
     // A bit dupl code [7WKABF2]
     const draft: Draft = state.draft;
-    const draftStatus = draft && draft.text === text
+    const draftStatus = draft && draft.text === text  // ? .trim()
       ? DraftStatus.EditsUndone
       : DraftStatus.ShouldSave;
 
     const textChanged = state.text !== text;
-    const textNowEmpty = !text;
+    const textNowEmpty = !text;  // isBlank(text); ?
 
     // COULD use store.isEditorOpen instead — but I think it hasn't been updated yet?
     if (textChanged && !this.state.advancedEditorInstead) {

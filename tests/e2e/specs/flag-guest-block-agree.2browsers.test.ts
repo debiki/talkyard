@@ -108,14 +108,14 @@ describe("spam test, no external services:", () => {
     guestsBrowser.complex.replyToOrigPost("Wanna buy carrots?");
     guestsBrowser.complex.replyToOrigPost("A carrot for your cat!");
     guestsBrowser.complex.replyToOrigPost("Carrots for your kittens!");
-    topics.oldTopicUrl = guestsBrowser.url().value;
+    topics.oldTopicUrl = guestsBrowser.getUrl();
   });
 
   it("... posts a topic no replies", () => {
     guestsBrowser.go(idAddress.origin);
     guestsBrowser.complex.createAndSaveTopic(
       { title: topics.birdsNoRepliesTitle, body: "Donald Duck and Uncle Scrooge." });
-    topics.birdsNoRepliesUrl = guestsBrowser.url().value;
+    topics.birdsNoRepliesUrl = guestsBrowser.getUrl();
   });
 
 

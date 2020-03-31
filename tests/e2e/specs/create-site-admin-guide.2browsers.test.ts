@@ -72,7 +72,7 @@ describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
     owen.waitAndClick('#e2eContinue');
     console.log("Creates a forum");
     owen.createSomething.createForum(forumTitle);
-    siteUrl = owen.url().value;
+    siteUrl = owen.getUrl();
   });
 
   it("Maria sees it", function() {
