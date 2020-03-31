@@ -68,41 +68,44 @@ REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 # Start Selenium server
 # ----------------------
 
-if [ -z "`which xvfb-run`" ]; then
-  echo
-  echo 'Note:'
-  echo 'xvfb not installed, cannot run tests headlessly. To install it:'
-  echo 'run:  sudo apt-get install xvfb'
-  echo '(works on Linux only, perhaps Mac)'
-  echo
-fi
-
-chromedrivers="$(ls -1 node_modules/selenium-standalone/.selenium/chromedriver/)"
-if [ -z "$chromedrivers" ]; then
-  echo 'You need to install browser drivers for End-to-End tests. Do in another shell:
-
-  s/selenium-install
-'
-  die_if_in_script
-fi
-
-
-# No longer works, a new version of Selenium suddenly fails with an internal
-# server error, so this if-else never thinks Selenium is running.
-#test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
-#if $($test_selenium_up) ; then
-#  echo 'Selenium already running, fine.'
-#else
-#  echo 'Do in another shell: (so I can run end-to-end tests)
-#
-#  s/selenium-start-invisible
-#'
-#  printf 'Waiting for you'
-#  until $($test_selenium_up); do
-#    printf '.'
-#    sleep 2
-#  done
+#if [ -z "`which xvfb-run`" ]; then
+#  echo
+#  echo 'Note:'
+#  echo 'xvfb not installed, cannot run tests headlessly. To install it:'
+#  echo 'run:  sudo apt-get install xvfb'
+#  echo '(works on Linux only, perhaps Mac)'
+#  echo
 #fi
+#
+#chromedrivers="$(ls -1 node_modules/selenium-standalone/.selenium/chromedriver/)"
+#if [ -z "$chromedrivers" ]; then
+#  echo 'You need to install browser drivers for End-to-End tests. Do in another shell:
+#
+#  s/selenium-install
+#'
+#  die_if_in_script
+#fi
+
+
+test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
+if $($test_selenium_up) ; then
+  echo
+  echo 'Selenium already running, fine.'
+  echo
+else
+  echo "Do in another shell: (so I can run end-to-end tests)"
+  echo
+  echo "    d/selenium"
+  echo
+  echo "Waiting for you ..."
+  until $($test_selenium_up); do
+    printf '.'
+    sleep 2
+  done
+  echo
+  echo 'Selenium running, thanks.'
+  echo
+fi
 
 
 

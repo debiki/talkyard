@@ -7,6 +7,7 @@ dash_debug="-debug"
 browser_name="chrome"
 container_name="tye2ebrowser"
 
+image_version="3.141.59"
 
 
 for arg in "$@"; do
@@ -51,7 +52,13 @@ done
 
 
 # E.g.: selenium/standalone-chrome-debug
-image_name="selenium/standalone-${browser_name}${dash_debug}"
+image_name="selenium/standalone-${browser_name}${dash_debug}:${image_version}"
+
+# The names are like:
+#   selenium/standalone-firefox-debug:3.141.59
+#   selenium/standalone-firefox:3.141.59
+#   selenium/standalone-chrome:3.141.59
+#   selenium/standalone-chrome-debug:3.141.59
 
 
 echo

@@ -10,6 +10,7 @@ module.exports = {
       // Find new versions here:
       //   https://chromedriver.storage.googleapis.com/index.html
       version: '80.0.3987.16',
+      //version: '81.0.4044.69',
     },
   },
 }
