@@ -1,3 +1,5 @@
 User-agent: *
 Disallow: /-/
-
+# Googlebot needs the CSS files to know that Talkyard is mobile friendly.
+# Probably good to let it access Javascript too?
+Allow: /-/assets/
