@@ -953,9 +953,14 @@ html.touch .dw-p-mark-click
   text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
   color: yellow;
 
+// These dots currently make people confused — one thought they're an online indicator.
+// Also, they don't work with RTL (see position: absolute, below), so yet another
+// reason to hide them for now. — But might as well keep them active otherwise,
+// so I'll keep the code up-to-date (fix compilation errors etc).
 .s_P_H_Unr
+  display: none;  // see comment above
   font-size: 8px;
-  position: absolute;
+  position: absolute;  // won't work with RTL
   color: hsl(207, 100%, 71%);
   transition: opacity 1s;
 // Percent read –> fade away the unread mark. [8LKW204R]
