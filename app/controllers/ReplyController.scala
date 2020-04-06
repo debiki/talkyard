@@ -72,7 +72,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)),
-      "EdEZBXK3M2")
+      "TyEM0REPLY_")
 
     REFACTOR; COULD // intstead: [5FLK02]
     // val authzContext = dao.getPageAuthzContext(requester, pageMeta)

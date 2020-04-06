@@ -43,7 +43,7 @@ settings.block3rdPartyCookies = args.block3rdPartyCookies || args.b3c;
 const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);
 
-if (args.v || args.verbose) {
+if (args.v || args.verbose || args.t || args.trace) {
   settings.logLevel = 'trace';
 }
 

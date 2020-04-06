@@ -228,10 +228,11 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
   const api = {
 
+    /*
     debug: () => {
       if (settings.noDebug) return; // doesn't seem to work, why not?
       browser.debug.apply(browser, arguments);
-    },
+    }, */
 
     origin: (): string => {
       return api._findOrigin();
@@ -1081,13 +1082,26 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
 
     waitForVisibleText: function(selector: string, ps: { timeoutMs?: number } = {}) {
-      let isVisible;
+      let isExisting;
+      let isDisplayed;
       let text;
       api.waitUntil(() => {
         const elem: WebdriverIO.Element = $(selector);
         try {
-          isVisible = elem?.isDisplayed?.();
-          text = elem?.getText?.();
+          // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
+          // also isn't, sometimes? They're undefined, then, or what? And why?
+          // Anyway, let's use: `?.()`.
+          isExisting = elem?.isExisting?.();
+          if (!isExisting)
+            return false;
+          isDisplayed = elem.isDisplayed?.();
+          if (!isDisplayed)
+            return false;
+          // This one blocks until the elem appears — so, need 'return' above.
+          // Enable DEBUG WebdriverIO log level and you'll see:
+          // """DEBUG webdriverio: command getText was called on an element ("#post-670")
+          //       that wasn't found, waiting for it... """
+          text = elem.getText?.();
         }
         catch (ex) {
           if (isBadElemException(ex)) {
@@ -1096,11 +1110,11 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           }
           throw ex;
         }
-        return isVisible && !!text;
+        return !!text;
       }, {
         ...ps,
         message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
-            `    is visible now: ${isVisible}, text now:  "${text}"`,
+            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText:  "${text}"`,
       })
     },
 
@@ -3432,7 +3446,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         api.topic.waitUntilChangePageDialogOpen();
       },
 
-      canBumpPageStatus: function() {
+      canBumpPageStatus: (): boolean => {
         return browser.isVisible(api.pageTitle.__changePageButtonSelector);
       },
     },
@@ -4427,8 +4441,20 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         api.editHistoryDialog.waitUntilVisible();
       },
 
-      clickMoreForPostNr: function(postNr: PostNr) {
+      clickMoreForPostNr: function(postNr: PostNr) {  // RENAME to openMoreDialogForPostNr()?
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      },
+
+      isPostMoreDialogVisible: (): boolean => {
+        return api.isVisible(api.topic.__flagPostSelector);
+      },
+
+      closePostMoreDialog: () => {
+        assert.ok(api.topic.isPostMoreDialogVisible());
+        // Break out close dialog fn?  [E2ECLOSEDLGFN]
+        api.waitAndClick('.esDropModal_CloseB');
+        api.waitUntilGone('.esDropModal_CloseB');
+        api.waitUntilModalGone();
       },
 
       openShareDialogForPostNr: function(postNr: PostNr) {
@@ -4538,12 +4564,12 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      canVoteLike: function(postNr: PostNr) {
+      canVoteLike: function(postNr: PostNr): boolean {
         const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
         return browser.isVisible(likeVoteSelector);
       },
 
-      canVoteUnwanted: function(postNr: PostNr) {
+      canVoteUnwanted: function(postNr: PostNr): boolean {
         api.topic.clickMoreVotesForPostNr(postNr);
         api.waitForVisible('.esDropModal_content .dw-a-like');
         const canVote = browser.isVisible('.esDropModal_content .dw-a-unwanted');
@@ -4551,22 +4577,34 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         return canVote;
       },
 
+      __flagPostSelector: '.icon-flag',  // for now, later: e_...
+
       clickFlagPost: function(postNr: PostNr) {
         api.topic.clickMoreForPostNr(postNr);
-        api.waitAndClick('.icon-flag');  // for now, later: e_...
+        api.waitAndClick(api.topic.__flagPostSelector);
         // This opens  api.flagDialog.
       },
 
+      __deletePostSelector: '.dw-a-delete',
+
       deletePost: function(postNr: PostNr) {
         api.topic.clickMoreForPostNr(postNr);
-        api.waitAndClick('.dw-a-delete');
+        api.waitAndClick(api.topic.__deletePostSelector);
         api.waitAndClick('.dw-delete-post-dialog .e_YesDel');
         api.waitUntilGone('.dw-delete-post-dialog');
         api.waitUntilLoadingOverlayGone();
         api.waitForVisible(`#post-${postNr}.dw-p-dl`);
       },
 
-      canSelectAnswer: function() {
+      canDeletePost: function(postNr: PostNr): boolean {
+        api.topic.clickMoreForPostNr(postNr);
+        api.waitForVisible('.esDropModal_content .dw-a-flag');
+        const canDelete = api.isVisible(api.topic.__deletePostSelector);
+        api.topic.closePostMoreDialog();
+        return canDelete;
+      },
+
+      canSelectAnswer: (): boolean => {
         return browser.isVisible('.dw-a-solve');
       },
 
@@ -4627,6 +4665,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           //  browser.leftClick('.modal-backdrop', 10, 10);
           //}
           // Instead: (and is this even slightly better?)
+          // (Break out close dialog fn?  [E2ECLOSEDLGFN])
           if (browser.isVisible('.esDropModal_CloseB')) {
             api.waitAndClick('.esDropModal_CloseB');
           }
@@ -4651,7 +4690,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         api.waitUntilGone('.dw-p-ttl .icon-block');
       },
 
-      canCloseOrReopen: function() {
+      canCloseOrReopen: (): boolean => {
         browser.waitForVisible('.dw-a-more'); // so all buttons have appeared
         if (!browser.isVisible('.dw-a-change'))
           return false;
@@ -5556,7 +5595,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             api.waitForVisible('.s_UP_EmLg_EmAdded');
           },
 
-          canRemoveEmailAddress: function() {
+          canRemoveEmailAddress: (): boolean => {
             api.waitForVisible('.e_AddEmail');
             // Now any remove button should have appeared.
             return browser.isVisible('.e_RemoveEmB');
@@ -5575,7 +5614,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             }
           },
 
-          canMakeOtherEmailPrimary: function() {
+          canMakeOtherEmailPrimary: (): boolean => {
             // Only call this function if another email has been added (then there's a Remove button).
             api.waitForVisible('.e_RemoveEmB');
             // Now the make-primary button would also have appeared, if it's here.
@@ -6680,6 +6719,10 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       waitForTooManyPendingMaybeSpamPostsError: function() {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
         api.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
+      },
+
+      waitForCannotReplyPostDeletedError: () => {
+        api.serverErrorDialog.waitAndAssertTextMatches(/has been deleted.*TyEM0REPLY_/s);
       },
 
       close: function() {

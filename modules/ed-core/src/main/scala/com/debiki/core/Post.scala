@@ -261,6 +261,7 @@ case class DraftLocator(
     case DraftType.Topic =>
       require(categoryId.isDefined && pageId.isDefined, s"Bad new topic draft: $this [TyE4WABG701]")
       /* BUG Ooops, the test above failed twice.  Maybe fixed now, after 55ba93707eaf5 "Fix emb cmts draft bugs."? Couldn't reproduce this far.
+Repro: Click (+) when on user/group profile page.
         {"severity":"ERROR","context":{"reportLocation":{"filePath":"SafeActions.scala",
         "lineNumber":210,"functionName":"ed$server$http$SafeActions$$internalError","className":"ed.server.http.SafeActions"}},
         "message":

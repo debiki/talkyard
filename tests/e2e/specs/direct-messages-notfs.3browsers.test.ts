@@ -57,13 +57,13 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
 
     const owen = site.members[0];
     assert.equal(owen.username, 'owen_owner');
-    owen.emailNotfPrefs = EmailNotfPrefs.ReceiveAlways;  // (6029WKHU4)
+    owen.emailNotfPrefs = EmailNotfPrefs.ReceiveAlways;  // [6029WKHU4]
 
     memberAlice = make.memberAdminAlice();
     site.members.push(memberAlice);
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria({
-      emailNotfPrefs: EmailNotfPrefs.ReceiveAlways, // (6029WKHU4)
+      emailNotfPrefs: EmailNotfPrefs.ReceiveAlways, // [6029WKHU4]
     }));
     idAddress = server.importSiteData(site);
     siteId = idAddress.id;
@@ -154,7 +154,7 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
 
     // This can break, unless Owen always gets notified via email,
     // also about replies he has seen already.
-    // That's configured for this test, here: (6029WKHU4).
+    // That's configured for this test, here: [6029WKHU4].
     //
     // (He's looking at the page where Maria's reply appears, so normally
     // he wouldn't get notified via email since the browser notices

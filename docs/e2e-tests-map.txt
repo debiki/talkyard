@@ -463,7 +463,13 @@ post -
   submit reply, after having navigated to other page:
     should ask: "Jump back and view your new reply? It's on another page" [JMPBCK]
 
-chat -
+direct messages:
+          - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+  delete posts,
+  test email notf link:
+          - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
+
+chat:
   create channel:  chat.2browsers.test.ts  (4FE2)
     two users chat:         ==
   add/remove member:  private-chat.3browsers.test.ts
@@ -683,6 +689,14 @@ delete user:    NEXT was a bug, when deleted by admin
   deletes henself:
   deleted by admin:
 
+delete posts:
+  cannot delete someone elses posts:
+          - direct-messages-delete.2browsers.test.ts  TyT05GKRD45
+  cannot delete one's own:
+          - direct-messages-delete.2browsers.test.ts  TyT6036SKSSP
+  reply to deleted post:
+          - direct-messages-delete.2browsers.test.ts  TyT6026RSP3J  BUG [063KRTL64]
+
 moderators:
   profile says is moderator:
   can list users:
@@ -771,6 +785,7 @@ notifications:
   about review tasks:   — see (502M7)
   about direct messages:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+          - direct-messages-delete.2browsers.test.ts  TyT603KDTP74
   about public chat messages:
           ?
   about private chat messages:
@@ -822,6 +837,8 @@ email notifications:  (5ABKR024)
   new discourse reply:
   new direct message reply:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
+    test email link:
+          - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   new private chat messages:
           - private-chat.3browsers.test.ts  TyT2ABKR045
   mention:
