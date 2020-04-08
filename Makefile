@@ -1,3 +1,8 @@
+# GNU Make tips:
+# Variables:
+#   $@  The file name of the target of the rule
+
+
 # E.g.  make watch what=target
 watch:
 	while true; do \
@@ -12,18 +17,30 @@ watch:
   up \
   down \
   dead \
+  debug_asset_bundles \
+  debug_asset_bundles_files \
   selenium-server \
   invisible-selenium-server \
   git-subm-init-upd \
   minified-asset-bundles \
+  node_modules \
   play-cli \
-  prod-images
+  prod-images \
+  up
 
 .DEFAULT_GOAL := print_help
 
 print_help:
 	@echo
-	@echo "This is Talkyard's Makefile. Usage:"
+	@echo "This is Talkyard's Makefile."
+	@echo
+	@echo "(How do you debug a Makefile, when it does weird things?"
+	@echo "Like so:   make -nd the_target    e.g.:  make -nd up"
+	@echo "And to show only interesting things like commands: (not indented)"
+	@echo "make -nd  debug_asset_bundles | grep -v 'older than' | egrep -i -C2 '^[^ ]|newer than|does not exist|must remake'"
+	@echo ")"
+	@echo
+	@echo "Usage:"
 	@echo
 	@echo "Building production images"
 	@echo "--------------------------"
@@ -113,8 +130,6 @@ zipped_bundles:=\
   images/web/assets/talkyard-service-worker.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/jquery-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/jquery-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
@@ -141,7 +156,6 @@ zipped_bundles:=\
   images/web/assets/$(TALKYARD_VERSION)/translations/ru_RU/i18n.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/sv_SE/i18n.min.js.gz \
-  images/app/assets/server-bundle.js \
   images/app/assets/server-bundle.min.js \
   images/app/assets/translations/en_US/i18n.js \
   images/app/assets/translations/en_US/i18n.min.js \
@@ -154,6 +168,61 @@ minified-asset-bundles: node_modules $(zipped_bundles)
 
 $(zipped_bundles): $@
 	s/d-gulp release
+
+
+debug_asset_bundles_files: \
+  images/app/assets/server-bundle.js \
+  images/web/assets/talkyard-comments.js \
+  images/web/assets/talkyard-service-worker.js \
+  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js \
+  images/web/assets/$(TALKYARD_VERSION)/more-bundle.js \
+  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js \
+  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js \
+  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css
+
+
+images/app/assets/server-bundle.js: \
+       $(shell find client/server/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileServerTypescriptConcatJavascript-concatScripts
+
+images/web/assets/talkyard-comments.js: \
+       $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileBlogCommentsTypescript-concatScripts
+
+images/web/assets/talkyard-service-worker.js: \
+       $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileSwTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js: \
+       $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileEditorTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/more-bundle.js: \
+       $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileMoreTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js: \
+       $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileSlimTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js: \
+       $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+	@echo "Regenerating $@"
+	s/d-gulp  compileStaffTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css: \
+       $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )
+	@echo "Regenerating $@"
+	s/d-gulp  compile-stylus
+
+
+debug_asset_bundles: debug_asset_bundles_files
 
 
 # ----- To-Talkyard Javascript
@@ -228,7 +297,7 @@ db-cli:
 build:
 	s/d build
 
-up: minified-asset-bundles
+up: minified-asset-bundles debug_asset_bundles
 	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."

@@ -34,6 +34,7 @@ const cleanCSS = require('gulp-clean-css');
 const concat = require('gulp-concat');
 const insert = require('gulp-insert');
 const replace = require('gulp-replace');
+const through2 = require('through2');
 const del = require('del');
 const rename = require("gulp-rename");
 const gzip = require('gulp-gzip');
@@ -118,6 +119,26 @@ function updateVersionVars() {
 }
 
 updateVersionVars();
+
+
+const now = new Date();
+
+// Updates the mtime and atime of a generated bundle — otherwise Gulp uses some
+// older mtmie/atime from some source file, only updates the ctime of the
+// generated bundle. And then tools like GNU Make would always rebuild.
+//
+// See: https://github.com/gulp-community/gulp-less/issues/301#issuecomment-420780708
+//
+const updateAtimeAndMtime = function() {
+  return through2.obj(function(file, enc, cb) {
+    // Don't know why `file` or `file.stat` is undefined sometimes.
+    if (file && file.stat) {
+      file.stat.atime = now;
+      file.stat.mtime = now;
+    }
+    cb(null, file);
+  });
+}
 
 
 /*
@@ -341,6 +362,7 @@ gulp.task('compileTranslations', () => {
         types: ['core-js']
       }));
   return stream.js
+      .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest(webDestTranslations))
       .pipe(gulp.dest(serverDestTranslations))
       .pipe(gzip({ gzipOptions }))
@@ -363,6 +385,7 @@ gulp.task('wrapJavascript', () => {
     // Avoid any line breaks before 'contents', so any error will be reported
     // with the correct line number.
     .pipe(insert.wrap('(function() { ', '\n}).call(this);'))
+    .pipe(updateAtimeAndMtime())
     .pipe(gulp.dest('./target/client/'));
 });
 
@@ -402,6 +425,7 @@ function compileServerTypescriptConcatJavascript() {
 
   return merge2(javascriptStream, typescriptStream)
       .pipe(concat('server-bundle.js'))
+      .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest(serverDest));
 }
 
@@ -425,6 +449,7 @@ function compileSwTypescript() {
     .pipe(plumber())
     .pipe(insert.transform(nextFileTemplate))
     .pipe(swTypescriptProject())
+    .pipe(updateAtimeAndMtime())
     .pipe(gulp.dest('target/client/'));
 }
 
@@ -433,6 +458,7 @@ function compileSlimTypescript() {
     .pipe(plumber())
     .pipe(insert.transform(nextFileTemplate))
     .pipe(slimTypescriptProject())
+    .pipe(updateAtimeAndMtime())
     .pipe(gulp.dest('target/client/'));
 }
 
@@ -441,6 +467,7 @@ function compileOtherTypescript(typescriptProject) {
     .pipe(plumber())
     .pipe(insert.transform(nextFileTemplate))
     .pipe(typescriptProject())
+    .pipe(updateAtimeAndMtime())
     .pipe(gulp.dest('target/client/'));
 }
 
@@ -535,6 +562,7 @@ function makeConcatWebScriptsStream() {
         .pipe(concat(outputFileName))
         .pipe(insert.prepend(thisIsAConcatenationMessage))
         .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
+        .pipe(updateAtimeAndMtime())
         .pipe(gulp.dest(dest))
         .pipe(gzip({ gzipOptions }))
         .pipe(gulp.dest(dest));
@@ -551,6 +579,7 @@ function makeConcatWebScriptsStream() {
       makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
           .pipe(plumber())
+          .pipe(updateAtimeAndMtime())
           .pipe(gulp.dest(webDestVersioned))
           .pipe(gzip({ gzipOptions }))
           .pipe(gulp.dest(webDestVersioned)))
@@ -587,6 +616,7 @@ gulp.task('minifyTranslations', gulp.series('buildTranslations', () => {
       .pipe(insert.prepend(makeTranslationsCopyrightAndLicenseBanner()))
       // The Scala app server code wants non-gz files. Nginx wants both non-gz
       // and gz [UNCOMPRAST].
+      .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest(serverDestTranslations))
       .pipe(gulp.dest(webDestTranslations))
       .pipe(gzip({ gzipOptions }))
@@ -610,6 +640,7 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
+      .pipe(updateAtimeAndMtime())
       .pipe(gulp.dest(sourceAndDest));
     if (gzipped) {
       stream = stream
@@ -672,6 +703,7 @@ gulp.task('compile-stylus', () => {
       // Make the .rtl styles work by removing this hacky text.
       .pipe(replace('__RTL__', ''))
       .pipe(concat(`styles-bundle${rtlSuffix}.css`))
+      .pipe(updateAtimeAndMtime())
       // Generate non-minified files:
       .pipe(save('111'))
         .pipe(gulp.dest(webDestVersioned))
@@ -756,7 +788,7 @@ gulp.task('default', gulp.series(
   ));
 
 
-gulp.task('watch', gulp.series('default', (done) => {
+gulp.task('watch', gulp.series((done) => {
   gulp.watch(
       ['client/server/**/*.ts', ...serverJavascriptSrc],
       gulp.series('compileServerTypescriptConcatJavascript-concatScripts'))
