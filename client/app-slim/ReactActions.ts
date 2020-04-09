@@ -1443,8 +1443,12 @@ export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use
 
 
 function sendToEditorIframe(message) {
-  // Send the message to the embedding page; it'll forward it to the appropriate iframe.
-  window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
+  // Send the message to any embedding page; it'll forward it to the appropriate iframe.
+  // But only if we're in an iframe — otherwise, in Safari, there's an error (but
+  // not in Chrome or FF; they do nothing instead).
+  if (eds.isInIframe) {
+    window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
+  }
 }
 
 // An alias, for better readability.

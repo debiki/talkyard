@@ -83,7 +83,14 @@ function postJson(urlPath: string, requestData: RequestData) {
       // Remove any AngularJS safe json prefix. [5LKW02D4]
       let response = xhr.response.replace(/^\)]}',\n/, '');
       response = response ? JSON.parse(response) : null;
-      requestData.success(response);
+      try {
+        requestData.success(response);
+      }
+      catch (ex) {
+        console.error(`Error handling POST response for: ${url}  [TyEPOSTRSPCLBK]`, ex);
+        pagedialogs.getServerErrorDialog().openForBrowserError(
+            ex.toString?.() || 'Unknown error [TyEUNKN3]');
+      }
     }
   }).catch(errorObj => {
     removeWaitForRequestOverlay(timeoutHandle);
@@ -382,7 +389,14 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
       response = xhr.response.replace(/^\)]}',\n/, '');
       response = JSON.parse(response);
     }
-    successFn(response, xhr);
+    try {
+      successFn(response, xhr);
+    }
+    catch (ex) {
+      console.error(`Error handling GET response for: ${uri}  [TyEGETRSPCLBK]`, ex);
+      pagedialogs.getServerErrorDialog().openForBrowserError(
+          ex.toString?.() || 'Unknown error [TyEUNKN4]');
+    }
   }).catch(errorObj => {
     removeWaitForRequestOverlay(timeoutHandle);
     const errorAsJson = JSON.stringify(errorObj);
