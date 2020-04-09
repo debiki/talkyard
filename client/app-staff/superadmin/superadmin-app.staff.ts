@@ -118,6 +118,7 @@ const DashboardPanel = createFactory({
         r.div({ className: 's_SA_Filter' },
           r.div({}, "Filter hostnames, staff names, emails: (at least 2 chars)"),
           r.input({
+            tabindex: 1,
             value: this.state.filter,
             onChange: (event) => this.setState({
               filter: event.target.value.toLowerCase(),

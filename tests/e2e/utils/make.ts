@@ -273,6 +273,19 @@ const make = {
     };
   },
 
+  minion: function(oneWordName: string): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: `minion_${oneWordName.toLowerCase()}`,
+      fullName: `Minion ${oneWordName}`,
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: `e2e-test--minion-${oneWordName.toLowerCase()}@example.com`,
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:pub-min020",
+      password: "pub-min020",
+    };
+  },
+
   guestGunnar: function(): TestGuest {
     return {
       id: -10,

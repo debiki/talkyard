@@ -7,7 +7,14 @@ namespace rb {
   export var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
   export var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
+  // How to use, async:
+  // https://github.com/JedWatson/react-select/blob/677dd4fe7b219954c934176756c4d6239751e9f7/examples/src/components/Contributors.js#L39
+  // Docs and demo, v1:
+  //   https://v1.react-select.com/
+  //   https://github.com/JedWatson/react-select/tree/v1.x
   export var ReactSelect = reactCreateFactory(window['Select']);
+  export var ReactSelectAsync = reactCreateFactory(window['Select'].Async);
+
   export var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
   export var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
   export var Tabs = reactCreateFactory(ReactBootstrap.Tabs);

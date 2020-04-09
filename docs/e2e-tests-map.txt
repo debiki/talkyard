@@ -188,6 +188,8 @@ groups:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
           - invite-to-groups.2browsers.test.ts  TyT7WKTJ40ZT22
+    when many:
+          - many-users-mention-list-join-group.2browsers.test.ts  TyT602857SKR
 
   update when user deleted:
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
@@ -400,7 +402,8 @@ mentions:
           - group-mentions.2browsers  TyT4AWJL208R
   channel mentions:
   no dupl mentions when combining @channel, @member, @group:
-
+  when really many members:
+          - many-users-mention-list-join-group.2browsers.test.ts  TyT2602SKJJ356
 
 discussion -
   users on page:
@@ -619,6 +622,9 @@ admin -
     - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
   cannot bad-click break an admin, e.g. unverifying hens email or unapproving, rejecting:
     - (missing) [5AEWBN0]
+  members tab:
+    - really many members:
+          - many-users-mention-list-join-group.2browsers.test.ts   TESTS_MISSING  TyT60295KTDT
 
 moderation,
 review posts,

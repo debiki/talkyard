@@ -234,23 +234,25 @@ const config: WebdriverIO.Config = {
   // (This binary: node_modules/selenium-standalone/.selenium/selenium-server/3.141.5-server.jar )
   // Does use a Docker container with Chrome — so, can be invisible.
   //
-  services: [['selenium-standalone', {
-    logPath: 'logs',
-    installArgs: {
-      drivers: {
-        // 81.0.4044.92
-        chrome: { version: '81.0.4044.69' },
-        // Minimum Firefox version >= 60
-        firefox: { version: '0.26.0' }
-      }
-    },
-    args: {
-      drivers: {
-        chrome: { version: '81.0.4044.69' },
-        firefox: { version: '0.26.0' }
-      }
-    },
-  }]],
+  services: [
+    settings.useChromedriver ? 'chromedriver' : (
+      settings.useDevtoolsProtocol ? 'devtools' : (
+        ['selenium-standalone', {
+        logPath: 'logs',
+        installArgs: {
+          drivers: {
+            // 81.0.4044.92
+            chrome: { version: '81.0.4044.69' },
+            // Minimum Firefox version >= 60
+            firefox: { version: '0.26.0' }
+          }
+        },
+        args: {
+          drivers: {
+            chrome: { version: '81.0.4044.69' },
+            firefox: { version: '0.26.0' }
+          }
+        }}]))],
 
   //   'sauce',
   //
@@ -468,15 +470,6 @@ const config: WebdriverIO.Config = {
 
 };
 
-
-if (settings.useDevtoolsProtocol) {
-  // Overwrite whatever is the default above, unless devtools already.
-  // For now:
-  if (config.services.length > 1)
-    throw Error("--devtools: Don't know how to reconfigure services, >= 2  [TyE052SKG]");
-
-  config.services = ['devtools'];
-}
 
 // Options to be passed to Mocha. See the full list at http://mochajs.org.
 // (There's a WebdriverIO MochaOptsConfig interface somewhere, but how import it?)

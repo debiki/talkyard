@@ -228,6 +228,11 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
   const api = {
 
+    debug: () => {
+      if (settings.noDebug) return; // doesn't seem to work, why not?
+      browser.debug.apply(browser, arguments);
+    },
+
     origin: (): string => {
       return api._findOrigin();
     },
@@ -426,8 +431,8 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           const done = fn();
           if (done) {
             if (loggedAnything) {
-              logBoring(`Done: ${ps.message ?
-                  getOrCall(ps.message) : "Wait until something."}`);
+              logMessage(`Done: ${ps.message ?
+                  getOrCall(ps.message) : "Waiting for something."}`);
             }
             return true;
           }
@@ -435,7 +440,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           elapsedMs = Date.now() - startMs;
           if (elapsedMs > AnnoyinglyLongMs) {
             loggedAnything = true;
-            logBoring(`${elapsedMs} ms elapsed: ${ps.message ?
+            logMessage(`${elapsedMs} ms elapsed: ${ps.message ?
                 getOrCall(ps.message) : "Wait until what? ..."}`);
           }
 
@@ -1079,9 +1084,18 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       let isVisible;
       let text;
       api.waitUntil(() => {
-        const elem = $(selector);
-        isVisible = elem.isDisplayed();
-        text = elem.getText();
+        const elem: WebdriverIO.Element = $(selector);
+        try {
+          isVisible = elem?.isDisplayed?.();
+          text = elem?.getText?.();
+        }
+        catch (ex) {
+          if (isBadElemException(ex)) {
+            // Fine, maybe it didn't appear yet?
+            return false;
+          }
+          throw ex;
+        }
         return isVisible && !!text;
       }, {
         ...ps,
@@ -1239,7 +1253,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
     },
 
 
-    waitUntilGone: function(what: string, ps: { timeoutMs?: number } = {}) {   // RENAME to waitUntilCannotSee ?
+    waitUntilGone: function(what: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {   // RENAME to waitUntilCannotSee ?
       api.waitUntil(() => {
         try {
           const elem = $(what);
@@ -1332,10 +1346,12 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       api.waitUntilGone('.fade.modal');
     },
 
-    waitUntilElementNotOccluded: (selector: string, opts: { okayOccluders?: string } = {}) => {
+    waitUntilElementNotOccluded: (selector: string, opts: {
+          okayOccluders?: string, timeoutMs?: number, timeoutIsFine?: boolean } = {}) => {
       dieIf(!selector, '!selector,  [TyE7WKSH206]');
-      for (let i = 0; i < 9999; ++i) {
-        const result = browser.execute(function(selector, okayOccluders): boolean | string {
+      let result: string | true;
+      api.waitUntil(() => {
+        result = <string | true> browser.execute(function(selector, okayOccluders): boolean | string {
           var elem = document.querySelector(selector);
           if (!elem)
             return `No elem matches:  ${selector}`;
@@ -1391,20 +1407,19 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }, selector, opts.okayOccluders || '');
 
         dieIf(!_.isBoolean(result) && !_.isString(result),
-            `Error checking if elem interactable, result: ${ JSON.stringify(result) }`);
+            `Error checking if elem interactable, result: ${
+                JSON.stringify(result) }  [TyE306KT73S]`);
 
-        if (result === true) {
-          if (i >= 1) {
-            logMessage(`Fine, elem [ ${selector} ] no longer occluded. Continuing`)
-          }
-          break;
-        }
+        return result === true;
+      }, {
+        timeoutMs: opts.timeoutMs,
+        timeoutIsFine: opts.timeoutIsFine,
+        message: () =>
+            `Waiting for elem [ ${selector} ] to not be occluded, ` +
+                `okayOccluders: [ ${opts.okayOccluders} ],\n` +
+            `problem: ${result}`,
 
-        logMessage(`Waiting for elem [ ${selector} ] to not be occluded, ` +
-            `okayOccluders: [ ${opts.okayOccluders} ],\n` +
-            `problem: ${result}`);
-        browser.pause(200);
-      }
+      });
     },
 
     waitForAtLeast: function(num, selector) {
@@ -1418,7 +1433,6 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
     },
 
     waitForAtMost: function(num, selector) {
-d("waitForAtMost: function(num, selector)  UNTESTED v6")
       let numNow = 0;
       api.waitUntil(() => {
         numNow = api.count(selector);
@@ -1475,7 +1489,8 @@ d("waitForAtMost: function(num, selector)  UNTESTED v6")
       if (_.isString(value)) {
         // Chrome/Webdriverio/whatever for some reason changes a single space
         // to a weird char. (259267730)
-        dieIf(isBlank(value) && value.length > 0,
+        // But '\n' seems to result in Enter in Chrome and FF. [E2EENTERKEY]
+        dieIf(isBlank(value) && value.length > 0 && value !== '\n',
             `Chrome or Webdriverio dislikes whitespace [TyE50KDTGF34]`);
       }
 
@@ -1513,7 +1528,7 @@ d("waitForAtMost: function(num, selector)  UNTESTED v6")
           else if (_.isNumber(value)) {
             elem.setValue(value);
           }
-          else if (!value || !value.trim()) {
+          else if (!value) {
             // elem.clearValue();  // doesn't work, triggers no React.js events
             // elem.setValue('');  // also triggers no event
             // elem.setValue(' '); // adds a weird square char, why? (259267730) Looks
@@ -3788,13 +3803,36 @@ d("waitForAtMost: function(num, selector)  UNTESTED v6")
 
 
     addUsersToPageDialog: {
-      addOneUser: function(username: string) {
+      focusNameInputField: () => {
         api.waitAndClick('#e2eAddUsD .Select-placeholder');
+      },
 
-        // Clicking Return = complicated!  Only + \n  works in FF:
-        // The Select input is special: the <input> is occluded, but still works fine.
-        api.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n',
-            { okayOccluders: '.Select-placeholder' });
+      startTypingNewName: (chars: string) => {
+        api.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
+            { okayOccluders: '.Select-placeholder', checkAndRetry: true });
+      },
+
+      appendChars: (chars: string) => {
+        $('#e2eAddUsD .Select-input > input').addValue(chars);
+      },
+
+      hitEnterToSelectUser: () => {
+        // Might not work in Firefox. Didn't in wdio v4.
+        //browser.pause(200);  // why is this needed?
+        browser.keys(['Return']);
+      },
+
+      addOneUser: function(username: string) {
+        api.addUsersToPageDialog.focusNameInputField();
+        api.addUsersToPageDialog.startTypingNewName(
+            // Clicking Return = complicated!  Only + \n  works in FF:  [E2EENTERKEY]
+            // The Select input is special: the <input> is occluded, but still works fine.
+            // Update: Stopped working properly in Wdio v6.  Try with 'Enter' again.
+            // username + '\n');
+            username);
+
+        api.addUsersToPageDialog.hitEnterToSelectUser();
+
 
         // Works in Chrome but not FF:
         // api.keys(['Return']);  — so we append \n above, work as a Return press.
@@ -3840,7 +3878,14 @@ d("waitForAtMost: function(num, selector)  UNTESTED v6")
       },
 
       submit: function(ps: { closeStupidDialogAndRefresh?: true } = {}) {
-        api.waitAndClick('#e2eAddUsD_SubmitB');
+          // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
+          // the Submit button moves a bit?). Then, the Add More Group Members button will
+          // remain occluded.
+        const submitSelector = '#e2eAddUsD_SubmitB';
+        utils.tryManyTimes(`Submit members`, 2, () => {
+          api.waitAndClick(submitSelector);
+          api.waitUntilGone(submitSelector, { timeoutMs: 2000, timeoutIsFine: true });
+        });
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
         if (ps.closeStupidDialogAndRefresh) {
@@ -5197,8 +5242,12 @@ d("waitForAtMost: function(num, selector)  UNTESTED v6")
           return api.count('.s_G_Mbrs .esP_By_U');
         },
 
-        addOneMember: (username: string) => {
+        openAddMemberDialog: () => {
           api.waitAndClick('.e_AddMbrsB');
+        },
+
+        addOneMember: (username: string) => {
+          api.userProfilePage.groupMembers.openAddMemberDialog();
           api.addUsersToPageDialog.addOneUser(username);
           api.addUsersToPageDialog.submit();
           api.userProfilePage.groupMembers.waitUntilMemberPresent(username);

@@ -60,17 +60,18 @@ const AddPeopleDialog = createComponent({
   open: function(alreadyAddedIds: UserId[], onDone: (newIds: UserId[]) => void) {
     this.setState({
       isOpen: true,
-      isLoading: true,
       alreadyAddedIds,
+      selectedLabelValues: [],
       onDone,
     });
-    Server.listAllUsernames('', (allUsers: MemberIdName[]) => {
+  },
+
+  loadUsernameOptions: function(prefix: string,
+        callback: (error, options: { options: any[] }) => void) {
+    Server.listAllUsernames(prefix, (users: MemberIdName[]) => {
       if (this.isGone || !this.state.isOpen) return;
-      this.setState({
-        selectedLabelValues: [],
-        allUsers,
-        isLoading: false,
-      });
+      const options = makeLabelValues(users, this.state.alreadyAddedIds);
+      callback(null, { options });
     });
   },
 
@@ -90,16 +91,13 @@ const AddPeopleDialog = createComponent({
   },
 
   render: function () {
-    if (this.state.isLoading)
-      return r.p({}, t.Loading);
-
     let content;
     if (this.state.isOpen) {
       content =
         r.div({ id: 'e2eAddUsD'},
-          rb.ReactSelect({ multi: true, value: this.state.selectedLabelValues,
+          rb.ReactSelectAsync({ multi: true, value: this.state.selectedLabelValues,
             placeholder: t.sud.SelectUsers,
-            options: makeLabelValues(this.state.allUsers, this.state.alreadyAddedIds),
+            loadOptions: this.loadUsernameOptions,
             onChange: this.onSelectChange }));
     }
 

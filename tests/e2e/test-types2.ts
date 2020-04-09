@@ -26,7 +26,10 @@ const enum IsWhere {
 
 interface TestSettings {
   debug: boolean;
+  noDebug?: true;
   headless?: boolean;
+  useChromedriver?: boolean;
+  useSelenium?: boolean;
   useDevtoolsProtocol?: boolean;
   parallel?: number;
   prod: boolean;
@@ -532,6 +535,8 @@ interface EmptyTestForum {
     maja?: Member;
     michael?: Member;
     mallory?: Member;
+    // If adding really many users.
+    minions?: Member[];
   };
   guests: {
   };

@@ -35,6 +35,9 @@ settings.debugBefore = args.debugBefore || args.db;
 settings.debugAfterwards = args.debugAfterwards || args.da || args.dant;
 settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;
 
+// Quick way to disable all browser.debug():
+settings.noDebug = args.nodebug || args.nd;
+
 settings.block3rdPartyCookies = args.block3rdPartyCookies || args.b3c;
 
 const parallelStr = args.parallel || args.p;
@@ -48,7 +51,21 @@ if (args.i || args.invisible) {
   settings.headless = true;
 }
 
+if (args.cd || args.chromedrier) {
+  settings.useChromedriver = true;
+}
+
+if (args.se || args.selenium) {
+  dieIf(settings.useChromedriver,
+    `Cannot use Chromedriver and Selenium services at the same time [TyE03KTSLJG3]`);
+  settings.useSelenium = true;
+}
+
 if (args.dt || args.devtools) {
+  dieIf(settings.useChromedriver,
+    `Cannot use DevTools and Chromedriver services at the same time? [TyE395KRDG2]`);
+  dieIf(settings.useSelenium,
+    `Cannot use DevTools and Selenium services at the same time [TyE306RKTDH2]`);
   settings.useDevtoolsProtocol = true;
 }
 

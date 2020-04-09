@@ -160,6 +160,17 @@ function buildSite(site?: SiteData) {
     },
 
 
+    addMinions: function(oneWordName: string, howMany: number): Member[] {
+      const newMinions = [];
+      for (let i = 0; i < howMany; ++i) {
+        const minion = make.minion(oneWordName + (howMany >= 2 ? i + 1 : ''));
+        site.members.push(minion);
+        newMinions.push(minion);
+      }
+      return newMinions;
+    },
+
+
     addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
           : EmptyTestForum {
       const members = opts.members || ['mons', 'modya', 'regina', 'corax', 'maria', 'michael', 'mallory'];
