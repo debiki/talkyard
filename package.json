@@ -43,7 +43,6 @@
     "@types/minimist": "^1.2.0",
     "@types/node": "^13.9.8",
     "@wdio/cli": "^6.0.9",
-    "@wdio/concise-reporter": "^6.0.14",
     "@wdio/devtools-service": "^6.0.12",
     "@wdio/dot-reporter": "^6.0.8",
     "@wdio/firefox-profile-service": "^6.0.8",

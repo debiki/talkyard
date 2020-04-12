@@ -120,7 +120,7 @@ const LoginDialog = createClassAndFactory({
           // If clicking Back would take us to the Admin Area, hide that button
           // — because if browser-Back-going there whilst impersonating someone,
           // the admin area looks half broken — harmless but looks weird.
-          // (Maybe checking document.referrer here is anti-React style? Fine, harmless.)
+          // (Is checking document.referrer here anti-React [ANTI_REACT] style? Fine, harmless.)
           document.referrer.indexOf(AdminRoot) >= 0 ? null :
             Button({ onClick: () => history.back(), className: 'e_ImpBackB' },
               "Go back"),

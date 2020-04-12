@@ -135,9 +135,6 @@ const config: WebdriverIO.Config = {
 
   exclude: [
     'specs/**/*__e2e-test-template__*.ts',
-    //'specs/**/*2browsers*.ts',
-    //'specs/**/*3browsers*.ts',
-    //'specs/**/*embedded*.ts',
   ],
 
 
@@ -206,7 +203,7 @@ const config: WebdriverIO.Config = {
 
   // Default timeout in milliseconds for request
   // if browser driver or grid doesn't send response
-  connectionRetryTimeout: settings.waitforTimeout || 90000,
+  connectionRetryTimeout: Math.max(settings.waitforTimeout || 90000),
 
   // Default request retries count
   connectionRetryCount: 3,

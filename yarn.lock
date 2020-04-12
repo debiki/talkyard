@@ -289,15 +289,6 @@
     yargs "^15.0.1"
     yarn-install "^1.0.0"
 
-"@wdio/concise-reporter@^6.0.14":
-  version "6.0.14"
-  resolved "https://registry.yarnpkg.com/@wdio/concise-reporter/-/concise-reporter-6.0.14.tgz#515a09dbb17a71e407129ccfc0ca7b6762351a75"
-  integrity sha512-Ngc8YlcYLrWm8DZXCtcjuIaYTG3ng/PQzRtZlwEfuMjNKuFp7Rfhdb4knJwCOzrpwJ4DSnUf4Gb4S2zxXPU29g==
-  dependencies:
-    "@wdio/reporter" "6.0.14"
-    chalk "^3.0.0"
-    pretty-ms "^6.0.0"
-
 "@wdio/config@6.0.12":
   version "6.0.12"
   resolved "https://registry.yarnpkg.com/@wdio/config/-/config-6.0.12.tgz#90c5a7ca4900ef991653c64febd9cdfa6d52c55d"
