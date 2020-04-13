@@ -660,36 +660,50 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
 
     switchBackToFirstTabOrWindow: () => {
-      // If no id specified, will switch to the first tab.
+      // There should be no other windows, except for maybe a login popup.
+      // Wait until it closes. However if a developer has opened more tabs and
+      // does some experiments, so there're many open windows — then, continue anyway.
+      let numWindows;
+      api.waitUntil(() => {
+        const ids = browser.getWindowHandles();
+        numWindows = ids.length;
+        return numWindows <= 1;
+      }, {
+        message:`Waiting for any loging popup to auto close, to avoid ` +
+              `invalid window ID errors. Num windows open: ${numWindows}`,
+        timeoutMs: 3000,
+        timeoutIsFine: true,
+      });
 
-      // [E2EBUG] In this test: embedded-comments-navigation-as-guest.test.ts
-      // then this:
-      //api.pause(500);    ...  makes the next command block forever
-      let ids = browser.getTabIds();   // ... this'd block
-      if (ids.length > 1) {
-        // I've tested "everything else", nothing works.
-        logMessage("Waiting for any OAuth loging popup to auto close, to prevent weird " +
-            "invalid window ID errors");
-        // api.pause(2000);  ??
-      }
-      ids = browser.getTabIds();
-      if (ids.length > 1) {
-        // So far all other tabs have been closed when we run this function. So > 1 tab = not tested,
-        // so warn about that:
-        logMessage("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
-      }
+      const winIds = browser.getWindowHandles();
+      logWarningIf(winIds.length >= 2,
+          `Still many windows open, window ids: ${JSON.stringify(winIds)}`);
+
       try {
-        logMessage("Now switching to tab ids[0] = " + ids[0]);
-        browser.switchTab(ids[0]);
+        let switchToId;
+        // The very first window that got opened is probably where we should continue.
+        if (winIds.indexOf(firstWindowHandle) >= 0) {
+          logMessage(`Switching to firstWindowHandle = ${firstWindowHandle}`);
+          switchToId = firstWindowHandle;
+        }
+        else {
+          // (Warning logged above, if >= 2 windows.)
+          logMessage(`Switching to winIds[0] = ${winIds[0]}`);
+          switchToId = winIds[0];
+        }
+        browser.switchTab(switchToId);
       }
-      catch (dummy) {
-        // Probably a tab just got closed? Google and Facebook auto closes login popup tabs, [3GRQU5]
-        // if one is logged in already at their websites. Try again.
-        logMessage(`Error switching to tab [0]: ${dummy.toString()}.\nTrying again... [EdM1WKY5F]`);
-        //browser.pause(2500);
-        const idsAgain = browser.getTabIds();
+      catch (ex) {
+        // A race? The window just closed itself? Google and Facebook auto closes
+        // login popup tabs, [3GRQU5] if one is logged in already at their
+        // websites. Try again.
+        logError(`Error switching window [TyEE2ESWWIN]`, ex);
+        const idsAgain = browser.getWindowHandles();
+        logMessage(`Trying again, switching to idsAgain[0]: ${idsAgain[0]} ...`);
         browser.switchTab(idsAgain[0]);
+        // Don't catch.
       }
+
       api.__updateIsWhere();
     },
 
