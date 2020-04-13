@@ -287,6 +287,7 @@ function runAllE2eTests {
   $r s/wdio --only direct-messages-delete.2browsers $args
   $r s/wdio --only chat-basic.2browsers $args  #  broken [DRAFTS_BUG]
   $r s/wdio --only chat-create-from-direct-message.2browsers $args
+  $r s/wdio --only chat-create-from-profile-pages.2browsers $args
 
   $r s/wdio --only categories-basic.3browsers $args
   #$r s/wdio --only categories-delete.2browsers $args

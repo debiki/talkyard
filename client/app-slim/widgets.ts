@@ -154,7 +154,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       // @endif
 
       const href = newProps.href;
-      const linksToAdminArea = href && href.search('/-/admin/') === 0; // dupl (5JKSW20)
+      const linksToAdminArea = href && href.indexOf('/-/admin/') === 0; // dupl (5JKSW20)
       isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
 
       if (!isExternal) {
@@ -223,8 +223,8 @@ export function MenuItemLink(props, ...children) {
   // If we're in the admin area, use <a href> because then the destinations are in another
   // single-page-app. And if we're in the forum app, use Link, for instant
   // within-the-SPA navigation.  A bit dupl, see (5JKSW20)
-  const linksToAdminArea = props.to.search('/-/admin/') === 0;
-  const isExternal = props.to.search('//') >= 0;  // e.g. https://  or  //hostname/...
+  const linksToAdminArea = props.to.indexOf('/-/admin/') === 0;
+  const isExternal = props.to.indexOf('//') >= 0;  // e.g. https://  or  //hostname/...
   const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
 
   // If useSinglePageAppLink, create a Link({ to: ... }),
@@ -258,7 +258,7 @@ export function UserName(props: {
 
   // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
   // only used in that if branch, below.)
-  const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
+  const isStackExchangeUser = user.username && user.username.indexOf('__sx_') === 0; // [2QWGRC8P]
 
   const isUnknown = user.id === UnknownUserId;
 

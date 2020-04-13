@@ -873,11 +873,11 @@ function markAnyNotificationAsSeen(postNr: number) {
 }
 
 
-export function onEditorOpen(ps: EditorPatch, onDone?: () => void) {
+export function onEditorOpen(ps: EditorStorePatch, onDone?: () => void) {
   if (eds.isInEmbeddedEditor) {
     sendToCommentsIframe(['onEditorOpen', ps]);
   }
-  const patch: EditorPatch = { ...ps, setEditorOpen: true };
+  const patch: EditorStorePatch = { ...ps, setEditorOpen: true };
   patchTheStore(patch, onDone);
 }
 
@@ -1124,6 +1124,7 @@ export function hideEditorAndPreview(ps: HideEditorAndPreviewParams) {
 export function deleteDraftPost(pageId: PageId, draftPost: Post) {
   const store: Store = ReactStore.allData();
 
+  // This is a post on an already existing page — no category id needed.
   const draftLocator: DraftLocator = {
     draftType: postType_toDraftType(draftPost.postType),
     pageId: pageId,
@@ -1145,6 +1146,7 @@ export function deleteDraftPost(pageId: PageId, draftPost: Post) {
 export function deleteDraft(pageId: PageId, draft: Draft, deleteDraftPost: boolean,
       onDoneOrBeacon?: OnDoneOrBeacon, onError?: ErrorStatusHandler) {
 
+  // What about category id, for new topics?  [DRAFTS_BUG]
   const draftDeletor: DraftDeletor = {
     pageId,
     draftNr: draft.draftNr,

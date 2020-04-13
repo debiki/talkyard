@@ -34,6 +34,7 @@ debiki.internal.commentsServerOrigin =
   for (var i = 0; i < scripts.length; ++i) {
     script = scripts[i];
     var srcAttr = script.src;
+    // CLEAN_UP use indexOf not search()  — but remove regex escapes first
     var isEmbeddedCommentsScript = srcAttr.search(/\/-\/ed-comments.(min\.)?js/) !== -1; // old [2EBG05]
     if (!isEmbeddedCommentsScript) {
       isEmbeddedCommentsScript = srcAttr.search(/\/-\/talkyard-comments.(min\.)?js/) !== -1; // new name

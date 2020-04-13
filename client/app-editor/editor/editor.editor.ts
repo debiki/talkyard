@@ -589,6 +589,7 @@ export const Editor = createFactory<any, EditorState>({
     const newState: Partial<EditorState> = {
       anyPostType: null,
       editorsCategories: store.currentCategories,
+      // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
       editorsPageId: store.currentPageId,
       newForumTopicCategoryId: categoryId,
       newPageRole: role,
@@ -638,6 +639,7 @@ export const Editor = createFactory<any, EditorState>({
     const store: Store = this.state.store;
     const newState: Partial<EditorState> = {
       editorsCategories: store.currentCategories,
+      // The current page doens't matter, when creating a new page. [DRAFTS_BUG] set to undefined
       editorsPageId: store.currentPageId,
       messageToUserIds: [userId],
       text: '',
@@ -679,8 +681,11 @@ export const Editor = createFactory<any, EditorState>({
 
     const state: EditorState = this.state;
     const store: Store = state.store;
+
+    // REFACTOR: Remove allFine? Not needed?
     const allFine = state.draftStatus <= DraftStatus.NeedNotSave &&
         store.currentPageId === state.editorsPageId;
+
     const maybeAlert = allFine ? (x: any) => {} : alert;
     let seemsBad = false;
 
@@ -1012,30 +1017,58 @@ export const Editor = createFactory<any, EditorState>({
     }
   },
 
-  makeEmptyDraft: function(): Draft | undefined {
+  makeEmptyDraft: function(): Draft | U {
     const state: EditorState = this.state;
-    const anyPostType: PostType | undefined = state.anyPostType;
+    const anyPostType: PostType | U = state.anyPostType;
     const locator: DraftLocator = { draftType: DraftType.Scratch };
     const mainStore: Store = eds.isInEmbeddedEditor ? getMainWinStore() : state.store;
 
     // If we're in an iframe, the page might have gotten lazy-created; then
     // we need to use eds.embeddedPageId.
-    const editorsPageId = state.editorsPageId || eds.embeddedPageId;
+    // Is undefined if we're e.g. on a user profil page and click Create Chat
+    // or Send Message. [NEWTOPIC0CURPAGE]
+    const editorsPageId: PageId | U = state.editorsPageId || eds.embeddedPageId;
+
+    const isNewDirectMessage = state.messageToUserIds && state.messageToUserIds.length;
+    const isReplying = state.replyToPostNrs?.length;  // CLEAN_UP can remove '?.', never undef? [TyE502KRDL35]
 
     let postType: PostType;
 
+    // But there's an annoying db constraint: (as of 2020-04)
+    // drafts_c_type_topic:
+    ///   check (draft_type <> 2   /* that's NewTopic,  DirectMessage is 3 */
+    //    or category_id is not null
+    //    and topic_type is not null and page_id is not null and post_nr is null
+    //    and post_id is null and post_type is null and to_user_id is null)
+    // which prevents drafts for new tocips created in the API section,
+    // no current page id.
+    // For now, then just don't create any draft.  [DRAFTS_BUG]
+    // There'll be a 'Will save draft ...' status message bet it's wrong.
+    if (!editorsPageId && state.newForumTopicCategoryId)
+      return undefined;
+
     // @ifdef DEBUG
     dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
-    const pageExists = !!state.editorsPageId;
-    // Cannot *edit* sth, if page doesn't exist.
-    dieIf(!pageExists && state.editingPostNr, '[TyE40JMABN42]');
-    // Cannot create forum topics, if the forum page itself doesn't exist.
-    dieIf(!pageExists && state.newForumTopicCategoryId, '[TyE40JMABN43]');
-    // Cannot post chat messages on non-existing pages.
-    dieIf(!pageExists && state.isWritingChatMessage, '[TyE40JMABN44]');
-    // But yes — can post new replies, if the page doesn't exist,
-    // because PageRole.EmbeddedComments pages get created lazily.
-    // Also direct message topics get created lazily (messageToUserIds).
+    // The new draft cannot be for a new topic, and for edits or a reply, at the same time.
+    if (state.newForumTopicCategoryId) {
+      dieIf(isReplying, '[TyE603956RKTSH]');
+      dieIf(anyPostType, '[TyE306KDGR24]');
+      dieIf(state.editingPostNr, '[TyE40602TKSJ]');
+    }
+    if (isNewDirectMessage) {
+      dieIf(isReplying, '[TyE502KRTJ5]');
+      dieIf(anyPostType, '[TyE02EKRDL6]');
+      dieIf(state.editingPostNr, '[TyE4AKVTGL045]');
+    }
+    // If there's no current page, we cannot be editing or chatting or replying.
+    if (!state.editorsPageId) {
+      dieIf(state.editingPostNr, '[TyE40JMABN42]');
+      // Cannot post chat messages on non-existing pages.
+      dieIf(state.isWritingChatMessage, '[TyE40JMABN44]');
+      // Just sometimes we can post new replies, if the page doesn't exist
+      // — because PageRole.EmbeddedComments pages get created lazily.
+      dieIf(isReplying && !eds.isInEmbeddedEditor, '[TyE02RKJF45602]');
+    }
     // @endif
 
     if (state.editingPostNr) {
@@ -1044,7 +1077,7 @@ export const Editor = createFactory<any, EditorState>({
       locator.postId = state.editingPostUid;
       locator.postNr = state.editingPostNr;
     }
-    else if (state.replyToPostNrs?.length) {  // can remove '?.', never undef? [TyE502KRDL35]
+    else if (isReplying) {
       // @ifdef DEBUG
       dieIf(anyPostType !== PostType.Normal &&
           anyPostType !== PostType.BottomComment, 'TyE25KSTJ30');
@@ -1066,7 +1099,7 @@ export const Editor = createFactory<any, EditorState>({
       locator.postId = store_getPostId(mainStore, locator.pageId, locator.postNr);
       postType = PostType.ChatMessage;
     }
-    else if (state.messageToUserIds && state.messageToUserIds.length) {
+    else if (isNewDirectMessage) {
       locator.draftType = DraftType.DirectMessage;
       locator.toUserId = state.messageToUserIds[0];  // for now
     }
@@ -1074,8 +1107,8 @@ export const Editor = createFactory<any, EditorState>({
       locator.draftType = DraftType.Topic;
       locator.categoryId = state.newForumTopicCategoryId;
       // Need to know in which forum (sub community) the new page should be placed.
-      // (Hmm or could lookup via category id?)
-      locator.pageId = editorsPageId;
+      // (Hmm or could lookup via category id?)  [NEWTOPIC0CURPAGE]
+      locator.pageId = editorsPageId;  //[DRAFTS_BUG] should *not* store new topics by page id
     }
     else {
       // Editor probably closed, state gone.
@@ -1156,7 +1189,8 @@ export const Editor = createFactory<any, EditorState>({
         const deleteDraftPost = false;
 
         ReactActions.deleteDraft(
-            state.editorsPageId, oldDraft, deleteDraftPost, useBeacon || (() => {
+            state.editorsPageId,  // why needed? Won't delete a new topic draft? [DRAFTS_BUG]
+            oldDraft, deleteDraftPost, useBeacon || (() => {
           this.isSavingDraft = false;
           console.debug("...Deleted draft.");
 
@@ -1314,6 +1348,7 @@ export const Editor = createFactory<any, EditorState>({
       pageBody: state.text,
       deleteDraftNr: this.anyDraftNr(),
     };
+    // [DRAFTS_BUG] This doesn't delete the draft? (if any)
     Server.createPage(data, (newPageId: string) => {
       // Could, but not needed, since assign() below:
       //   this.callOnDoneCallback(true);
@@ -1333,6 +1368,7 @@ export const Editor = createFactory<any, EditorState>({
   startPrivateGroupTalk: function() {
     this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
     const state: EditorState = this.state;
+    // [DRAFTS_BUG] I think this *does* delete any draft?  this.anyDraftNr() below
     Server.startPrivateGroupTalk(state.title, state.text, state.newPageRole,
         state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
       // Could, but not needed, since assign() below:
@@ -1411,7 +1447,7 @@ export const Editor = createFactory<any, EditorState>({
     const newState: Partial<EditorState> = { ...statePatch, visible: true };
     this.setState(newState);
 
-    const params: EditorPatch = {
+    const params: EditorStorePatch = {
       editorsPageId: newState.editorsPageId || oldState.editorsPageId,
       replyingToPostNr: newState.replyToPostNrs?.[0],
       editingPostId: newState.editingPostUid,
@@ -1435,6 +1471,7 @@ export const Editor = createFactory<any, EditorState>({
 
     if (!ps.keepDraft && anyDraft) {
       const deleteDraftPost = true;
+      // What about  state.newForumTopicCategoryId, for new topics?  [DRAFTS_BUG]
       ReactActions.deleteDraft(state.editorsPageId, anyDraft, deleteDraftPost);
     }
 
@@ -1459,7 +1496,7 @@ export const Editor = createFactory<any, EditorState>({
       params.keepPreview = true;
     }
 
-    // Hide any preview we created when opening the editor (TGLPRVW),
+    // Hide any preview post we created when opening the editor (TGLPRVW),
     // and reenable any Reply buttons.
     ReactActions.hideEditorAndPreview(params);
 

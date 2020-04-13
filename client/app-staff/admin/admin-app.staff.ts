@@ -206,7 +206,7 @@ const AdminAppComponent = createReactClass(<any> {
       // Otherwise, if it suddenly unmounts, some Review page buttons fail to update properly
       // Didn't happened, with Chrome Dev Tools' React.js plugin installed — so, to reproduce,
       // open an incognito browser window (then, dev tools React plugin shouldn't load).
-      if (location.pathname.search('/review') >= 0) {
+      if (location.pathname.indexOf('/review') >= 0) {
         setTimeout(() => {
           if (this.isGone) return;
           console.debug("Unmount issue workaround [TyD4WKQR2]");

@@ -24,7 +24,7 @@
 export function highlightActiveLinkInHeader() {
   const className = 'esActiveHeaderLink';
   $h.removeClasses($first('.' + className), className);
-  if (location.pathname.search('/-/') === 0) {
+  if (location.pathname.indexOf(ApiUrlPathPrefix) === 0) {
     // We're in the user profile area, or some other special place.
     return;
   }

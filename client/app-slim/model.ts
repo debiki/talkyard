@@ -180,6 +180,7 @@ interface DraftLocator {
   categoryId?: number;
   toUserId?: UserId;
   postId?: PostId;
+  // pageId + postNr says which post one is replying to.
   pageId?: PageId;
   // This is useful on embedded blog comments pages, if the Talkyard page hasn't yet
   // been created, so there's no page id. [BLGCMNT1]
@@ -880,7 +881,7 @@ interface Origins {
 }
 
 
-interface Store extends Origins, PartialEditorState {
+interface Store extends Origins, PartialEditorStoreState {
   widthLayout: WidthLayout;
   isEmbedded: boolean;
   appVersion: string;
@@ -913,7 +914,7 @@ interface Store extends Origins, PartialEditorState {
   pageMetaBriefById: { [pageId: string]: PageMetaBrief };
 
   isEditorOpen?: boolean;  // default: false
-  // From PartialEditorState:
+  // From PartialEditorStoreState:
   // editorsPageId?: PageId;
   // replyingToPostNr?: PostNr;
   // editingPostId?: PostId;
@@ -1406,7 +1407,7 @@ interface SearchHit {
 /**
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
-interface StorePatch extends EditorPatch {
+interface StorePatch extends EditorStorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
@@ -1434,13 +1435,14 @@ interface StorePatch extends EditorPatch {
   newlyCreatedOrigPostId?: PostId;
 }
 
-interface PartialEditorState {
+// So we know which post to highlight, to indicate it's being replied to.
+interface PartialEditorStoreState {
   editorsPageId?: PageId;
   replyingToPostNr?: PostNr;
   editingPostId?: PostId;
 }
 
-interface EditorPatch extends PartialEditorState {
+interface EditorStorePatch extends PartialEditorStoreState {
   setEditorOpen?: boolean;
 }
 

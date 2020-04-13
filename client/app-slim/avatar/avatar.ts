@@ -63,7 +63,7 @@ export const Avatar = createComponent({
     let isGuestClass = '';
     let manyLettersClass = '';
 
-    if (user.username && user.username.search('__sx_') === -1) {  // [2QWGRC8P]
+    if (user.username && user.username.indexOf('__sx_') === -1) {  // [2QWGRC8P]
       firstLetterInName = user.username[0].toUpperCase();
     }
     else if (user.fullName) {

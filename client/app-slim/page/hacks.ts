@@ -69,7 +69,7 @@ export function reactRouterLinkifyTopHeaderLinks() {
     // Try internal single-page-app navigation, if it's a link to a page here on the same site.
     const href = elem.href;
     let newUrlPath;
-    if (href.search('//') === -1) {
+    if (href.indexOf('//') === -1) {
       if (href[0] === '/') {
         // And absolute url path, like '/some/page'.
         newUrlPath = href;
@@ -79,11 +79,11 @@ export function reactRouterLinkifyTopHeaderLinks() {
         return;
       }
     }
-    else if (href.search(location.origin) === 0) {
+    else if (href.indexOf(location.origin) === 0) {
       // Something like 'https://this.server.com/page/path' — keep '/page/path' only.
       newUrlPath = href.substr(location.origin.length)
     }
-    else if (href.search(`//${location.hostname}/`) === 0) {
+    else if (href.indexOf(`//${location.hostname}/`) === 0) {
       // Something like '//this.server.com/page/path' — keep '/page/path' only.
       newUrlPath = href.substr(location.hostname.length + 2);
     }

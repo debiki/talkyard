@@ -228,7 +228,7 @@ export function maybeLoadGlobalStaffScript() {
   // We don't want any global feedback widget scripts or whatever, to load for e2e tests
   // (because the tests would break, if they clicked those widgets) — so don't load any
   // script, for '-test-' hostnames (but do load, for 'test--' hostnames).
-  if (location.hostname.search('-test-') >= 0) return;
+  if (location.hostname.indexOf('-test-') >= 0) return;
   if (!globalStaffScriptLoaded && eds.loadGlobalStaffScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalStaffScript.js');
     globalStaffScriptLoaded = true;
@@ -239,7 +239,7 @@ export function maybeLoadGlobalStaffScript() {
 let globalAdminScriptLoaded = false;
 
 export function maybeLoadGlobalAdminScript() {
-  if (location.hostname.search('-test-') >= 0) return;  // [5UKF03]
+  if (location.hostname.indexOf('-test-') >= 0) return;  // [5UKF03]
   if (!globalAdminScriptLoaded && eds.loadGlobalAdminScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalAdminScript.js');
     globalAdminScriptLoaded = true;
@@ -1728,6 +1728,7 @@ export function listCategoriesAllSections(success: (response: Category[]) => voi
 
 
 export function createPage(data, success: (newPageId: string) => void) {
+  // [DRAFTS_BUG] This doesn't delete the draft? (if any)
   postJson('/-/create-page', {
     data: data,
     success: (response) => {

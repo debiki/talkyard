@@ -246,10 +246,9 @@ export function linkToUpload(origins: Origins, uploadsPath: string): string {
 
 export function rememberBackUrl(url?: string) {
   const theUrl = url || location.pathname + location.search + location.hash;
-  // Skip API pages — those are the ones we're returning *from*. (Don't require === 0 match;
-  // there might be a hostname. Matching anywhere is ok, because the prefix is '/-/' and
-  // that substring isn't allowed in other non-api paths.)
-  if (theUrl.search(ApiUrlPathPrefix) >= 0) {
+  // Skip API pages — those are the ones we're returning *from*.
+  if (url && url.indexOf(ApiUrlPathPrefix) >= 0 ||  // not === 0, might be a hostname
+      location.pathname.indexOf(ApiUrlPathPrefix) === 0) {
     return;
   }
   debiki2.putInSessionStorage('returnToSiteUrl', theUrl);

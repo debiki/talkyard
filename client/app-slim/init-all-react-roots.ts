@@ -123,7 +123,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
     const sectionsAndPages = [
       // If starting on one of the routes that need more-bundle.js, that bundle is
       // included directly in a <script> tag. Good for performance? [5WKE24]
-      Route({ path: '/-/', component: MoreScriptsRoutesComponent })];
+      Route({ path: ApiUrlPathPrefix, component: MoreScriptsRoutesComponent })];
 
     // Routes for the forum, or maybe many forums (if there're different sub communities).
     const store: Store = ReactStore.allData();

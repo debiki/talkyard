@@ -480,6 +480,7 @@ chat:
   pin globally —> appears in watchbar:  (6KWQ2)
   create, when in no site section:
           - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
+          - chat-create-from-profile-pages.2browsers.test.ts  TyT306RAKN2 TyTPAGENOTF
   switch to advanced editor:
           - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   delete chat message:
@@ -817,6 +818,7 @@ live notifications -
     Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
   new page, added to:
           - chat-create-from-direct-message  TyTPAGENOTF
+          - chat-create-from-profile-pages.2browsers.test.ts  TyT306RAKN2 TyTPAGENOTF
 
 notf prefs inherited:
   one's own, from site, to cat, to topic:

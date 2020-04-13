@@ -234,7 +234,7 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   handleCreateUserResponse: function(response: GuestLoginResponse) {
-    const anyReturnToUrl = this.props.anyReturnToUrl;
+    const anyReturnToUrl: string | U = this.props.anyReturnToUrl;
     if (!response.userCreatedAndLoggedIn) {
       dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
@@ -247,7 +247,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       getAddressVerificationEmailSentDialog().sayVerifEmailSent(mayCloseDialog);
     }
     else if (anyReturnToUrl && !eds.isInLoginPopup &&
-        anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
+        anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
       const returnToUrl = anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
       // old comment: /*

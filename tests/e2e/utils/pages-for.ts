@@ -5124,6 +5124,11 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
     preferences: '',
     userPreferences: '',
+
+    /*
+    groupProfilePage
+    groupsProfilePage
+    usersProfilePage */
     userProfilePage: {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 

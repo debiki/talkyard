@@ -108,8 +108,8 @@ function registerEventHandlersFireLoginOut() {
  */
 function chooseInitialLayout() {
   const queryString = window.location.search;
-  const shallEnable2d = queryString.search('2d=true') !== -1;
-  const shallDisable2d = queryString.search('2d=false') !== -1 ||
+  const shallEnable2d = queryString.indexOf('2d=true') !== -1;
+  const shallDisable2d = queryString.indexOf('2d=false') !== -1 ||
       // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
       // be a bit inexact because of browser window borders).
       Math.max(window.outerWidth, window.outerHeight) < 1000;
@@ -188,7 +188,7 @@ function renderPageInBrowser() {
     // reuse the html from the server. [7TMW4ZJ5]
     reactRenderMethod = 'render';
   }
-  else if (location.pathname.search('/-/') === 0) {
+  else if (location.pathname.indexOf(ApiUrlPathPrefix) === 0) {
     // This isn't rendered server side, so there's no html to reuse.
     reactRenderMethod = 'render';
   }
