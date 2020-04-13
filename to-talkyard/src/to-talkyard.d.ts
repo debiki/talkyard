@@ -1,6 +1,6 @@
 /// <reference path="../../client/types-and-const-enums.ts" />
 
-type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
+//type SiteData = any;   // try moving `interface SiteData` [3SD5PB7] to here
 
 
 interface CategoryDumpV0 {

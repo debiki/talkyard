@@ -163,7 +163,7 @@ trait TwoPeopleChatSpecTrait {
       if (numNewNotfs > 0) {
         newNotfCheckFn(
             curDump.notifications.takeRight(numNewNotfs)
-              .asInstanceOf[Seq[Notification.NewPost]])
+              .asInstanceOf[Seq[Notification.NewPost]].sortBy(_.id))
       }
 
       prevSiteDump = curDump

@@ -133,7 +133,6 @@ fi
 # ----------------------
 
 if [ -z "$skip_e2e_tests" ]; then
-  s/d-gulp build-e2e
 
   # If there's a development Docker network, there'll be an IP address space clash
   # when creating a prodution test network later below. Delete any dev network.

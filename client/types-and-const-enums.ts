@@ -25,6 +25,8 @@
 //
 type U = undefined;
 
+type SiteData = any;   // [3SD5PB7]
+
 type PageId = string;
 type PostId = number;
 type PostNr = number;

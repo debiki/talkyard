@@ -51,12 +51,12 @@ const api = {
     const exceptionIndented = '   ' + ex.toString().replace(/\n/g, "\n   ");
     console.log(exceptionColor(exceptionIndented));
   },
-  logErrorIf: function (test: boolean, message: string, ex?) {
+  logErrorIf: function (test: boolean, message: string, ex?: any) {
     if (test) {
       api.logError(message, ex);
     }
   },
-  logError: function (message: string, ex?) {
+  logError: function (message: string, ex?: any) {
     const m = errorColor(message);
     // Avoid printing 'undefined' if ex is undefined.
     if (_.isUndefined(ex)) console.error(m);

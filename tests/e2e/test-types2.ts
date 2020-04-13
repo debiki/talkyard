@@ -3,8 +3,6 @@
 
 type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
 
-type SiteData = any;
-
 type BoolOrFn = boolean | (() => boolean);
 type StringOrFn = string | (() => string);
 
@@ -21,7 +19,7 @@ const enum IsWhere {
   // Another server, e.g. Google's OAuth login page. But not an
   // embedding blog post page.
   External = 10,
-};
+}
 
 
 interface TestSettings {
@@ -87,7 +85,7 @@ interface TestCounters {
 const enum SiteType {
   Forum = 1,
   EmbeddedCommments = 2,
-};
+}
 
 
 interface NewSiteResult {
@@ -184,7 +182,7 @@ interface SiteData2 {   // [3SD5PB7]
   pages: Page[];
   pagePaths: PagePathWithId[];
   pageIdsByAltIds: { [lookupId: string]: string };
-  permsOnPages: PermsOnPage[];
+  permsOnPages: any[]; // PermsOnPage[];
   drafts: any[];
   posts: TestPost[];
   postActions: any[];
@@ -296,7 +294,7 @@ interface SimpleCategory extends TestCategory {
     activeTopics: string;
     topTopics: string;
     newTopics: string;
-  }
+  };
 }
 
 interface TestCategoryPatch {  // or Partial<TestCategory>?

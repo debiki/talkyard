@@ -87,7 +87,7 @@ REPO=`sed -nr 's/DOCKER_REPOSITORY=([a-zA-Z0-9\._-]*).*/\1/p' .env`
 #fi
 
 
-test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
+test_selenium_up='curl --output /dev/null --silent --fail http://127.0.0.1:4444'
 if $($test_selenium_up) ; then
   echo
   echo 'Selenium already running, fine.'
