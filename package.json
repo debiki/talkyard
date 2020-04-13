@@ -75,7 +75,7 @@
     "lodash": "^4.17.11",
     "lodash-cli": "^4.17.5",
     "merge2": "^1.2.3",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.3",
     "request": "^2.88.0",
     "stylus": "^0.54.7",
     "sync-request": "^6.0.0",
