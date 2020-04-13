@@ -381,8 +381,33 @@ const config: WebdriverIO.Config = {
    * Function to be executed before a test (in Mocha/Jasmine) starts.
    */
   beforeTest: function (test, context) {
+    const oneBrowser = global.browserA || global.browser;
     if (settings.debugEachStep) {
-      global.browser.debug();
+      oneBrowser.debug();
+    }
+    else if (settings.sloooooooow) {
+      oneBrowser.pause(10000);
+    }
+    else if (settings.slooooooow) {
+      oneBrowser.pause(8000);
+    }
+    else if (settings.sloooooow) {
+      oneBrowser.pause(6000);
+    }
+    else if (settings.slooooow) {
+      oneBrowser.pause(5000);
+    }
+    else if (settings.sloooow) {
+      oneBrowser.pause(4000);
+    }
+    else if (settings.slooow) {
+      oneBrowser.pause(3000);
+    }
+    else if (settings.sloow) {
+      oneBrowser.pause(2000);
+    }
+    else if (settings.slow) {
+      oneBrowser.pause(1000);
     }
   },
 

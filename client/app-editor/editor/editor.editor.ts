@@ -1025,36 +1025,39 @@ export const Editor = createFactory<any, EditorState>({
 
     // If we're in an iframe, the page might have gotten lazy-created; then
     // we need to use eds.embeddedPageId.
-    // Is undefined if we're e.g. on a user profil page and click Create Chat
+    // Is undefined e.g. if we're on someone's user profile page and click Create Chat
     // or Send Message. [NEWTOPIC0CURPAGE]
     const editorsPageId: PageId | U = state.editorsPageId || eds.embeddedPageId;
 
+    const isNewTopic = state.newForumTopicCategoryId;
     const isNewDirectMessage = state.messageToUserIds && state.messageToUserIds.length;
     const isReplying = state.replyToPostNrs?.length;  // CLEAN_UP can remove '?.', never undef? [TyE502KRDL35]
 
     let postType: PostType;
 
-    // But there's an annoying db constraint: (as of 2020-04)
+    // There's an annoying db constraint, when creating topics: (as of 2020-04)
     // drafts_c_type_topic:
     ///   check (draft_type <> 2   /* that's NewTopic,  DirectMessage is 3 */
     //    or category_id is not null
     //    and topic_type is not null and page_id is not null and post_nr is null
     //    and post_id is null and post_type is null and to_user_id is null)
     // which prevents drafts for new tocips created in the API section,
-    // no current page id.
+    // where there's no current page id.
     // For now, then just don't create any draft.  [DRAFTS_BUG]
-    // There'll be a 'Will save draft ...' status message bet it's wrong.
-    if (!editorsPageId && state.newForumTopicCategoryId)
+    // There'll be an incorrect 'Will save draft ...' status message.
+    if (isNewTopic && !editorsPageId)
       return undefined;
 
+    // ---------------------------------------------------------
     // @ifdef DEBUG
     dieIf(!state.replyToPostNrs, '[TyE502KRDL35]');
     // The new draft cannot be for a new topic, and for edits or a reply, at the same time.
-    if (state.newForumTopicCategoryId) {
+    if (isNewTopic) {
       dieIf(isReplying, '[TyE603956RKTSH]');
       dieIf(anyPostType, '[TyE306KDGR24]');
       dieIf(state.editingPostNr, '[TyE40602TKSJ]');
     }
+    // Same (as above) for new direct messages.
     if (isNewDirectMessage) {
       dieIf(isReplying, '[TyE502KRTJ5]');
       dieIf(anyPostType, '[TyE02EKRDL6]');
@@ -1070,6 +1073,7 @@ export const Editor = createFactory<any, EditorState>({
       dieIf(isReplying && !eds.isInEmbeddedEditor, '[TyE02RKJF45602]');
     }
     // @endif
+    // ---------------------------------------------------------
 
     if (state.editingPostNr) {
       locator.draftType = DraftType.Edit;

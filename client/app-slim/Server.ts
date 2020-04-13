@@ -87,9 +87,10 @@ function postJson(urlPath: string, requestData: RequestData) {
         requestData.success(response);
       }
       catch (ex) {
-        console.error(`Error handling POST response for: ${url}  [TyEPOSTRSPCLBK]`, ex);
+        const message = "Error handling POST response [TyEPOSTCLBK]";
+        console.error(`${message} from: ${url}`, ex);
         pagedialogs.getServerErrorDialog().openForBrowserError(
-            ex.toString?.() || 'Unknown error [TyEUNKN3]');
+            ex.toString?.() || message);
       }
     }
   }).catch(errorObj => {
@@ -393,9 +394,10 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
       successFn(response, xhr);
     }
     catch (ex) {
-      console.error(`Error handling GET response for: ${uri}  [TyEGETRSPCLBK]`, ex);
+      const message = "Error handling GET response [TyEGETCLBK]"
+      console.error(`${message} from: ${uri}`, ex);
       pagedialogs.getServerErrorDialog().openForBrowserError(
-          ex.toString?.() || 'Unknown error [TyEUNKN4]');
+          ex.toString?.() || message);
     }
   }).catch(errorObj => {
     removeWaitForRequestOverlay(timeoutHandle);

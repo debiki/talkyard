@@ -46,10 +46,13 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
       members: undefined, // default = everyone
     });
 
+    // Add 100 members: Minion Mia1, Mia2, Mia3 ... Mia100.
     builder.addMinions("Mia", 100);
+    // Add Minion Zelda.
     [zelda] = builder.addMinions("Zelda", 1);
+
     assert.ok(builder.getSite() === forum.siteData);
-    assert.ok(builder.getSite().members.length > 101);
+    assert.greaterThan(builder.getSite().members.length, 101);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
   });
@@ -129,7 +132,7 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     owensBrowser.addUsersToPageDialog.hitEnterToSelectUser();
   });
 
-  it("... saves Michael and --not-- Minion_Mia77", () => {
+  it("... saves Michael and Minion_Mia77", () => {
     owensBrowser.addUsersToPageDialog.submit();
   });
 
@@ -137,15 +140,15 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     owensBrowser.userProfilePage.groupMembers.addOneMember(zelda.username);
   });
 
-  it("There are now 4  --no 3 -- people in the group", () => {
+  it("There are now 4 people in the group", () => {
     assert.eq(owensBrowser.userProfilePage.groupMembers.getNumMembers(), 4);
   });
 
   it("... namely Maria, Michael and the minions", () => {
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(maria.username);
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(michael.username);
-    //owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent('minion_mia77');
-    owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent('minion_zelda');
+    owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent('minion_mia77');
+    owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(zelda.username);
   });
 
 
@@ -171,7 +174,7 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
-  it("Maria starts typing Michael", () => {
+  it("Maria starts typing Michael's name:  '@mi...'", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
     mariasBrowser.editor.editText(`Hello @mi`);
   });

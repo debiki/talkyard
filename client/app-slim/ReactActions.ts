@@ -1446,10 +1446,17 @@ export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use
 
 function sendToEditorIframe(message) {
   // Send the message to any embedding page; it'll forward it to the appropriate iframe.
-  // But only if we're in an iframe — otherwise, in Safari, there's an error (but
-  // not in Chrome or FF; they do nothing instead).
+  // But only if we're in an iframe — otherwise, in Safari, there's an error. Not in
+  // Chrome or FF; they do nothing instead.
   if (eds.isInIframe) {
-    window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
+    try {
+      window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
+    }
+    catch (ex) {
+      // Don't propagate this. Probably better to let the current frame continue
+      // as best it can with whatever it's doing.
+      console.error(`Error posting to parent frame [TyEPSTPRNT]`, ex);
+    }
   }
 }
 

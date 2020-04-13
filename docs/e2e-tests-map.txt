@@ -839,7 +839,7 @@ email notifications:  (5ABKR024)
   new discourse reply:
   new direct message reply:
           - direct-messages-notfs.3browsers.test.ts  TyT602RKDL42
-    test email link:
+    email notf link:
           - direct-messages-delete.2browsers.test.ts   TyT5033FKSNS57
   new private chat messages:
           - private-chat.3browsers.test.ts  TyT2ABKR045

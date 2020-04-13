@@ -3832,7 +3832,6 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
       hitEnterToSelectUser: () => {
         // Might not work in Firefox. Didn't in wdio v4.
-        //browser.pause(200);  // why is this needed?
         browser.keys(['Return']);
       },
 
@@ -3841,7 +3840,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         api.addUsersToPageDialog.startTypingNewName(
             // Clicking Return = complicated!  Only + \n  works in FF:  [E2EENTERKEY]
             // The Select input is special: the <input> is occluded, but still works fine.
-            // Update: Stopped working properly in Wdio v6.  Try with 'Enter' again.
+            // Update: '\n' stopped working properly in Wdio v6?  Try with 'Enter' again.
             // username + '\n');
             username);
 
@@ -4446,6 +4445,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       },
 
       isPostMoreDialogVisible: (): boolean => {
+        // This works for now.
         return api.isVisible(api.topic.__flagPostSelector);
       },
 

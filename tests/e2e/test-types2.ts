@@ -27,6 +27,14 @@ const enum IsWhere {
 interface TestSettings {
   debug: boolean;
   noDebug?: true;
+  slow?: true;
+  sloow?: true;
+  slooow?: true;
+  sloooow?: true;
+  slooooow?: true;
+  sloooooow?: true;
+  slooooooow?: true;
+  sloooooooow?: true;
   headless?: boolean;
   useChromedriver?: boolean;
   useSelenium?: boolean;

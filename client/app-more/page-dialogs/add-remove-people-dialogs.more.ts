@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -67,9 +67,13 @@ const AddPeopleDialog = createComponent({
   },
 
   loadUsernameOptions: function(prefix: string,
-        callback: (error, options: { options: any[] }) => void) {
+        callback: (error, result: { options: ReactSelectV1Option[] }) => void) {
     Server.listAllUsernames(prefix, (users: MemberIdName[]) => {
-      if (this.isGone || !this.state.isOpen) return;
+      if (this.isGone || !this.state.isOpen) {
+        // Hope it's ok to never call the React-Select callback? Since that component
+        // is now gone.
+        return;
+      }
       const options = makeLabelValues(users, this.state.alreadyAddedIds);
       callback(null, { options });
     });
@@ -113,7 +117,7 @@ const AddPeopleDialog = createComponent({
 });
 
 
-function makeLabelValues(users: MemberIdName[], pageMemberIds: UserId[]) {
+function makeLabelValues(users: MemberIdName[], pageMemberIds: UserId[]): ReactSelectV1Option[] {
   return users.map((user: MemberIdName) => {
     let prettyName = user.username;
     if (user.fullName) {

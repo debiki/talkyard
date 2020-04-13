@@ -16,6 +16,7 @@
  */
 
 /// <reference path="./../types-and-const-enums.ts" />
+/// <reference path="./../third-party/third-party-types.d.ts" />
 
 type DateMs = WhenMs;  // use When instead? sounds better since using When server side too
 

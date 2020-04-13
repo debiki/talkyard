@@ -100,7 +100,7 @@ describe("direct-messages-delete.2browsers.test.ts  TyT5033FKSNS57", () => {
     michaelsBrowser.go2(replyNotfLink);
   });
 
-  it("... logs in", () => {
+  it("... direct messages are private — he needs to log in", () => {
     michaelsBrowser.loginDialog.loginWithPassword(michael);
   });
 
@@ -180,7 +180,7 @@ describe("direct-messages-delete.2browsers.test.ts  TyT5033FKSNS57", () => {
         c.FirstReplyNr + 3, michaelsLastReply);
   });
 
-  it("... Maria sees this last reply too", () => {
+  it("... Maria sees it too — and feels good that now there are three replies", () => {
     mariasBrowser.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr + 3, michaelsLastReply);
   });
