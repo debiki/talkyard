@@ -1272,7 +1272,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   private def listAllUsersImpl(usernamePrefix: String, request: ApiRequest[_]): JsArray = {
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     // ... stop doing that?
-    val members = request.dao.loadUsersWithUsernamePrefix(usernamePrefix, limit = 50)
+    val members = request.dao.loadUsersWithUsernamePrefix(
+      usernamePrefix, caseSensitive = false, limit = 50)
     JsArray(
       members map { member =>
         // [PUB_API] .ts: ListUsersApiResponse, ListGroupsApiResponse, ListMembersApiResponse
@@ -1300,7 +1301,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       tooManyPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
-    val names = dao.listUsernames(pageId = pageId, prefix = prefix)
+    val names = dao.listUsernames(
+      pageId = pageId, prefix = prefix, caseSensitive = false, limit = 50)
+
     val json = JsArray(
       names map { nameAndUsername =>
         Json.obj(

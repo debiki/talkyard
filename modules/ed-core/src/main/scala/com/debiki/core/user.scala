@@ -742,6 +742,9 @@ case class User(
     case None => theUsername
   }
 
+  def nameAndUsername: NameAndUsername =
+    NameAndUsername(id = id, fullName = fullName.getOrElse(""), username = theUsername)
+
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 

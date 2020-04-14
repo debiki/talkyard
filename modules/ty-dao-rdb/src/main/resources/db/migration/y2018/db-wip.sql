@@ -9,6 +9,10 @@ alter table settings3 add constraint settings_c_mediainposts check (
 
 
 ---------------
+-- Add mixed case username index?
+-- Currently there's only:  dw1_users_site_usernamelower__u
+
+---------------
 -- Prefix alt page ids with:  'diid:'  unless is http(s)://... or url path:  /...  [J402RKDT]
 -- From edc:
 > select distinct alt_page_id from alt_page_ids3 where alt_page_id like '%:%' and alt_page_id not like 'http:%'  and alt_page_id not like 'https:%';

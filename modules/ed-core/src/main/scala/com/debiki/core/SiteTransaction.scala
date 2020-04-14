@@ -478,7 +478,10 @@ trait SiteTransaction {
   def loadUserInclDetailsByExtId(externalId: String): Option[UserInclDetails]
   def loadUserInclDetailsByEmailAddr(email: String): Option[UserInclDetails]
 
-  def loadUsersWithUsernamePrefix(usernamePrefix: String, limit: Int = 50): immutable.Seq[User]
+  def loadUsersWithUsernamePrefix(
+    usernamePrefix: String, caseSensitive: Boolean = false, limit: Int = 50): immutable.Seq[User]
+
+  def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername]
 
   def loadAdmins(): immutable.Seq[User] =
     loadStaffUsers().filter(_.isAdmin)
@@ -566,8 +569,6 @@ trait SiteTransaction {
   def loadPageNotfPrefsOnSite(): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutPage(pageId: PageId, memberIds: Seq[MemberId]): Seq[PageNotfPref]
   def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref]
-
-  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 
   def saveUnsentEmail(email: Email): Unit
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])

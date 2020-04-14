@@ -950,23 +950,34 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadUsersWithUsernamePrefix(usernamePrefix: String, limit: Int): immutable.Seq[User] = {
-    // Would it be better UX to do lowercase match?
-    val withPrefixAnd = usernamePrefix.isEmpty ? "" | "username like ? and"
+  // See also:  listUsernamesOnPage(pageId): Seq[NameAndUsername]
+  //
+  def loadUsersWithUsernamePrefix(usernamePrefix: String,
+        caseSensitive: Boolean, limit: Int): immutable.Seq[User] = {
+    // There's an index on username lowercase: dw1_users_site_usernamelower__u
+    // but not mixed case. Currently, we do only lowercase matching though.
+    dieIf(caseSensitive, "TyE062KDS40", "No index for case sensitive username lookup")
+
+    // Better to have Postgres do 'lower(?)' rather than in the JVM?
+    // So both done in the same way? Doesn't matter I suppose.
+    val andUsernameLike = usernamePrefix.isEmpty ?
+      "" | " and lower(u.username) like lower(?)"
+
+    COULD_OPTIMIZE // Usually don't need all fields — only the name and avatar url. [ONLYNAME]
     val query = i"""
       select $UserSelectListItemsNoGuests
       from users3 u
-      where $withPrefixAnd u.site_id = ?
+      where u.site_id = ? $andUsernameLike
         and u.user_id >= $LowestTalkToMemberId
         and u.trust_level is not null  -- or  u.is_group nowadays?
-      order by u.username
+      order by lower(u.username)
       limit $limit
       """
-    var values = List(siteId.asAnyRef)
-    if (withPrefixAnd.nonEmpty) {
-      values ::= usernamePrefix + '%'
+    val values = ArrayBuffer(siteId.asAnyRef)
+    if (andUsernameLike.nonEmpty) {
+      values.append(usernamePrefix + '%')
     }
-    runQueryFindMany(query, values, getUser)
+    runQueryFindMany(query, values.toList, getUser)
   }
 
 
@@ -1304,17 +1315,9 @@ trait UserSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] = {
-    if (prefix.isEmpty) {
-      listUsernamesOnPage(pageId)
-    }
-    else {
-      listUsernamesWithPrefix(prefix)
-    }
-  }
-
-
-  private def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername] = {
+  // See also:  loadUsersWithUsernamePrefix(usernamePrefix, ...): Seq[User]
+  //
+  def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername] = {
     val sql = """
       select distinct u.user_id, u.full_name, u.USERNAME
       from posts3 p inner join users3 u
@@ -1331,26 +1334,6 @@ trait UserSiteDaoMixin extends SiteTransaction {
         val username = rs.getString("USERNAME")
         dieIf(username eq null, "DwE5BKG1")
         result += NameAndUsername(userId, fullName = fullName, username = username)
-      }
-    })
-    result.to[immutable.Seq]
-  }
-
-
-  private def listUsernamesWithPrefix(prefix: String): Seq[NameAndUsername] = {
-    val sql = s"""
-      select distinct user_id, full_name, USERNAME
-      from users3
-      where SITE_ID = ? and lower(USERNAME) like lower(?) and USER_ID >= $LowestNonGuestId
-      """
-    val values = List(siteId.asAnyRef, prefix + "%")
-    val result = ArrayBuffer[NameAndUsername]()
-    db.queryAtnms(sql, values, rs => {
-      while (rs.next()) {
-        result += NameAndUsername(
-          id = rs.getInt("user_id"),
-          fullName = Option(rs.getString("full_name")) getOrElse "",
-          username = rs.getString("USERNAME"))
       }
     })
     result.to[immutable.Seq]
