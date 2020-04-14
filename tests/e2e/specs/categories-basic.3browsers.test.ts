@@ -4,16 +4,16 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
-declare var browserC: any;
+
+
+
+
 
 let everyone;
 let owen;
@@ -32,9 +32,9 @@ describe("categories", function() {
 
   it("initialize people", function() {
     everyone = browser;
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
-    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    mons = _.assign(new TyE2eTestBrowser(browserB), make.memberModeratorMons());
+    maria = _.assign(new TyE2eTestBrowser(browserC), make.memberMaria());
   });
 
   it("import a site", function() {

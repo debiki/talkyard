@@ -25,6 +25,9 @@ const api = {
   logMessage: function (message: StringOrFn) {
     console.log(normalColor(message));
   },
+  logMessageIf: function (test: boolean, message: StringOrFn) {
+    if (test) console.log(normalColor(message));
+  },
   logBoring: function (message: StringOrFn) {
     console.log(boringColor(getOrCall(message)));
   },

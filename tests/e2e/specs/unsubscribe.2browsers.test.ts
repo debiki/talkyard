@@ -4,21 +4,17 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser, TyAllE2eTestBrowsers, MemberBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
-declare let browserA: any;
-declare let browserB: any;
-
-let everyone;
-let owen;
-let maria;
-let guest; // should rename to guestsBrowser
-let guestsBrowser;
+let everyone: TyAllE2eTestBrowsers;
+let owen: MemberBrowser;
+let maria: MemberBrowser;
+let guest: TyE2eTestBrowser; // should rename to guestsBrowser
+let guestsBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: SiteId;
@@ -46,9 +42,9 @@ const mariaMentionsOwen = "mariaMentionsOwen @owen_owner, hi!";
 describe("unsubscribe  TyT2ABKG4RUR", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
     // Reuse the same browser.
     guest = maria;
     guestsBrowser = guest;
@@ -124,7 +120,7 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
   // So, if Owen gets the notf, but the guest doesn't, then the don't-send-notfs-before-
   // email-verified stuff works.
   it("Owen gets a 2nd reply notf email — it arrives, although ...", () => {
-    server.waitUntilLastEmailMatches(idAddress.id, owen.emailAddress, 'guestsText2MentionsOwen', browser);
+    server.waitUntilLastEmailMatches(idAddress.id, owen.emailAddress, 'guestsText2MentionsOwen');
     owensLastUnsubLink =
         server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
   });
@@ -160,8 +156,8 @@ describe("unsubscribe  TyT2ABKG4RUR", () => {
     //everyone.waitAndClick('input[type="submit"]');  [EVRYBUG]
     //  —> "TypeError: Cannot read property 'promise' of undefined"
     // in webdriverio/build/lib/multibrowser.js
-    browserA.unsubscribePage.confirmUnsubscription();
-    browserB.unsubscribePage.confirmUnsubscription();
+    owen.unsubscribePage.confirmUnsubscription();
+    maria.unsubscribePage.confirmUnsubscription();
   });
 
   it("The guest again @mentions Owen, in a new topic", () => {

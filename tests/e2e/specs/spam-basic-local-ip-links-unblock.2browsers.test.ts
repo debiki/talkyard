@@ -4,21 +4,21 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
 let everyone;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Basic Spam Ip Link And Unblock Test Forum";
@@ -27,11 +27,11 @@ let forumTitle = "Basic Spam Ip Link And Unblock Test Forum";
 describe("spam test, no external services, ip links & unblock  TyT602RGL4X", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
+    everyone = new TyE2eTestBrowser(wdioBrowser);
     owen = make.memberOwenOwner();
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
     maria = make.memberMaria();
-    mariasBrowser = _.assign(browserB, pagesFor(browserB));
+    mariasBrowser = new TyE2eTestBrowser(browserB);
   });
 
   it("import a site", () => {

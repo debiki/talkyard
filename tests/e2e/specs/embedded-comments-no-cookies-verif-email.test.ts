@@ -5,17 +5,17 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -38,7 +38,7 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     mariasBrowser = everyonesBrowsers;
     maria = make.memberMaria();
   });
@@ -80,7 +80,7 @@ describe("emb cmts no cookies verif email   TyT795KB69285", () => {
     // on that embedding page then find, and sends to the iframe, which in turn
     // sends it to the server, and gets back a login session id.
 
-    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, mariasBrowser);
+    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         idAddress.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     mariasBrowser.go(link);

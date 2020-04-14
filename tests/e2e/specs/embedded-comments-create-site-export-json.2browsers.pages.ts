@@ -1,6 +1,6 @@
 /// <reference path="../test-types.ts"/>
 
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 
 const slugs = {
   threeRepliesPageSlug: 'impexp-three-replies',

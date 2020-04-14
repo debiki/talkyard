@@ -4,15 +4,15 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 var everyone;
 var owen;
@@ -33,9 +33,9 @@ var origPostReplyText = "Orig post reply text";
 describe("impersonate  TyT502KNG24", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
   });
 
   it("import a site", () => {

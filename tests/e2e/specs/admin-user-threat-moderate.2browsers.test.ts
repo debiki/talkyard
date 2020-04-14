@@ -5,24 +5,24 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: LargeTestForum;
 
 let everyonesBrowsers;
-let othersBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
-let strangersBrowser;
+let mariasBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let forumTitle = "Admin User Threat Moderate";
@@ -42,11 +42,11 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    othersBrowser = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
 
     maria = forum.members.maria;
     mariasBrowser = othersBrowser;

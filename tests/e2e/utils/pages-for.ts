@@ -7,7 +7,7 @@ import * as tyAssert from '../utils/ty-assert';
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
 import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logWarning, logWarningIf,
-    logException, logMessage, logBoring,
+    logException, logMessage, logMessageIf, logBoring,
     logServerRequest, printBoringToStdout } from './log-and-die';
 
 import * as path from 'path';
@@ -16,22 +16,14 @@ import settings = require('./settings');
 import server = require('./server');
 import utils = require('../utils/utils');
 import c = require('../test-constants');
-import { slugs } from 'specs/embedded-comments-create-site-export-json.2browsers.pages';
 
 
-//  RENAME  this file, but to what?  TalkyardE2eBrowser? (RichBrowser like Scala's RichString etc?)
+//  RENAME  this file to ty-e2e-test-browser.ts but wait a bit,
+//           I'll want to code review the wdio v4 —> v6 upgr first?
 //  RENAME  waitAndGetSth, waitAndClick... to just getSth, click, etc,
 //          and fns that don't wait, call them  getSthNow  and clickNow  instead,
 //          since almost all fns wait until ok to procceed, so that's the 95% normal
 //          case — then better that those names are brief.
-
-
-type WaitForOptsReverse = {
-  timeout?: number,
-  interval?: number,
-  timeoutMsg?: string,
-  reverse: true,        //  <—— notice
-}
 
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
@@ -61,14 +53,6 @@ function makeTimeoutMs(suggestedTimeoutMs?: number): number {
 
 type ElemRect = { x: number, y: number, width: number, height: number };
 
-// [E2EBUG] Stop using browser.waitUntil — it crashes, on any exception inside,
-// instead of propagating to caller. E.g. a harmless & ok stale elem ref error,
-// crashes the test, instead of propagating to the util.tryManyTimes retry loop.
-
-
-function count(elems): number {
-  return elems && elems.value ? elems.value.length : 0;
-}
 
 function isBlank(x: string): boolean {
   return _.isEmpty(x) || !x.trim();
@@ -103,7 +87,7 @@ type ByBrowserResult<T> = { [browserName: string]: T };
 function byBrowser(result): ByBrowserAnyResults {  // dupl code [4WKET0] move all to here?
   let r;
   if (!_.isObject(result) || _.isArray(result) || (<any> result).value) {
-    // This is the results from one single browser. Create a dummy by-browser
+    // This is the results from one single browser. Create a dummy browser
     // result map.
     r = { onlyOneBrowser: result };
   }
@@ -133,14 +117,17 @@ function allBrowserValues(result) {
   return _.values(resultByBrowser);
 }
 
-function isResponseOk(response): boolean {
-  // Previously, .status === 0' worked, but now .status instead a function that seems to
-  // return the object itself (weird). Use '._status' instead + check '.state' too  :-P
-  // Now, Selenium 6.7, .state is undefined, remove it too.
-  return response._status === 0;
+
+function isWindowClosedException(ex): boolean {
+  const windowAlreadyClosedExceptionText =
+      // The full text is: "no such window: window was already closed"
+      'window was already closed';
+
+  return ex.toString?.().toLowerCase().indexOf(
+      windowAlreadyClosedExceptionText) >= 0;
 }
 
-function isBadElemException(ex) {
+function isBadElemException(ex): boolean {
   // Webdriver says one of these: (what's the difference?)
   const StaleElem1 = 'Request encountered a stale element';
   const StaleElem2 = 'stale element reference: element is not attached to the page document'
@@ -159,152 +146,159 @@ function typeAndAsString(sth): string {
   return `type: ${typeof sth}, as string: ${JSON.stringify(sth)}`;
 }
 
-
-interface WdioV4BackwCompatBrower extends WebdriverIO.BrowserObject {
-  isVisible: (selector: string) => boolean;
-  waitForVisible: (selector: string, options?: WebdriverIO.WaitForOptions) => boolean;
-  isEnabled: (selector: string) => boolean;
-  isExisting: (selector: string) => boolean;
-  getHTML: (selector: string) => string;
-  getTabIds: () => string[];
-  getCurrentTabId: () => string;
-  switchTab: (newTabId) => void;
+// Don't use, deprecated.
+export interface MemberBrowser extends TyE2eTestBrowser, Member {
 }
 
-
-// There might be many browsers, when using Webdriver.io's multiremote testing, so
-// `browser` is an argument.
+// Later, change TyAllE2eTestBrowsers to a class / interface that
+// only makes available the TyE2eTestBrowser methods that work with all
+// browsers at once. (Like  allBrowsers.go(url) or
+// allBrowsers.waitForVisible(a-new-reply)).
+// But for now:
 //
-function pagesFor(browser: WdioV4BackwCompatBrower) {
+export type TyAllE2eTestBrowsers = TyE2eTestBrowser;
 
-  // The global $ might be for the wrong browser somehow, so:
 
-  const $ = (selector: string | Function | object): WebdriverIO.Element => {
+export class TyE2eTestBrowser {
+
+  #br: WebdriverIO.BrowserObject;
+
+  constructor(aWdioBrowser: WebdriverIO.BrowserObject) {
+    this.#br = aWdioBrowser;
+  }
+
+  // The global $ might be for the wrong this.#br somehow, so:
+
+  $(selector: string | Function | object): WebdriverIO.Element {
     // Webdriver doesn't show the bad selector in any error message.
     dieIf(!_.isString(selector),
         `Selector is not a string: ${typeAndAsString(selector)}  [TyEE2E506QKSG35]`);
-    return browser.$(selector);
+    return this.#br.$(selector);
   }
 
-  const $$ = (selector: string | Function): WebdriverIO.ElementArray => {
+  $$(selector: string | Function): WebdriverIO.ElementArray {
     dieIf(!_.isString(selector),
         `Selector is not a string: ${typeAndAsString(selector)}  [TyEE2E702RMJ40673]`);
-    return browser.$$(selector);
+    return this.#br.$$(selector);
   }
 
   // This is short and nice, when debugging via log messages.
-  const l = logDebug as ((any) => void);
+  l = logDebug as ((any) => void);
 
-  // Short and nice.
-  function d(anyMessage?: string | number | (() => string)) {
+    // Short and nice.
+  d(anyMessage?: string | number | (() => string)) {
     if (_.isFunction(anyMessage)) anyMessage = anyMessage();
     if (anyMessage) logUnusual('' + anyMessage);
-    browser.debug();
+    this.#br.debug();
   }
 
-  let firstWindowHandle;
-  const hostsVisited = {};
-  let isWhere: IsWhere | U;
-  let isOnEmbeddedCommentsPage = false;
+  #firstWindowHandle;
+  #hostsVisited = {};
+  #isWhere: IsWhere | U;
+  #isOnEmbeddedCommentsPage = false;
 
-  function isOnEmbeddedPage() {
-    return isWhere && IsWhere.EmbFirst <= isWhere && isWhere <= IsWhere.EmbLast;
+  isOnEmbeddedPage(): boolean {
+    return this.#isWhere && IsWhere.EmbFirst <= this.#isWhere && this.#isWhere <= IsWhere.EmbLast;
   }
 
-  browser.isVisible = (selector: string) => $(selector).isDisplayed();
-  browser.waitForVisible = (s, os): boolean => $(s).waitForDisplayed(os);
-  browser.isEnabled = (selector: string) => $(selector).isEnabled();
-  browser.isExisting = (selector: string) => $(selector).isExisting();
-  browser.getHTML = (selector: string) => $(selector).getHTML();
-  browser.getTabIds = () => browser.getWindowHandles();
-  browser.getCurrentTabId = () => browser.getWindowHandle();
 
-  // Don't invoke debug() in more than one browser.
-  //browser.debug = browserA ? browserA.debug.bind(browserA) : browser.debug.bind(browser);
+    debug() {
+      if (!settings.noDebug) { // doesn't seem to work, why not?
+        this.#br.debug();
+      }
+    }
 
-  // There's also:  browser.switchWindow(urlOrTitleToMatch: string | RegExp)
-  browser.switchTab = function() { browser.switchToWindow.apply(browser, arguments) };
+    origin(): string {
+      return this._findOrigin();
+    }
 
-
-  const api = {
-
-    /*
-    debug: () => {
-      if (settings.noDebug) return; // doesn't seem to work, why not?
-      browser.debug.apply(browser, arguments);
-    }, */
-
-    origin: (): string => {
-      return api._findOrigin();
-    },
-
-    // (Cannot replace browser.getUrl() — it's read-only.)
-    getUrl: (): string => {
-      const url = browser.getUrl();
+    // (Cannot replace this.#br.getUrl() — it's read-only.)
+    getUrl(): string {
+      const url = this.#br.getUrl();
       dieIf(url.indexOf('chrome-error:') >= 0,  // wasn't matched here, although present, weird.
           `You forgot to start an e2e test help server?  [TyENOHELPSRVR]`);
       return url;
-    },
+    }
 
     /** @deprecated */
-    getSource: () => browser.getPageSource(),  // backw compat
+    getSource = () => this.#br.getPageSource();  // backw compat
 
-    host: (): string => {
-      const origin = api.origin();
+    host(): string {
+      const origin = this.origin();
       return origin.replace(/https?:\/\//, '');
-    },
+    }
 
-    _findOrigin: (anyUrl?: string): string => {
-      const url = anyUrl || browser.getUrl();
+    _findOrigin(anyUrl?: string): string {
+      const url = anyUrl || this.#br.getUrl();
       const matches = url.match(/(https?:\/\/[^\/]+)\//);
       if (!matches) {
         throw Error('NoOrigin');
       }
       return matches[1];
-    },
+    }
 
-    urlNoHash: (): string => {
-      return browser.getUrl().replace(/#.*$/, '');;
-    },
+    urlNoHash(): string {
+      return this.#br.getUrl().replace(/#.*$/, '');;
+    }
 
-    urlPathQueryHash: (): string => {
-      return browser.execute(function() {
+    urlPathQueryHash(): string {
+      return this.#br.execute(function() {
         return location.pathname + location.search + location.hash;
       });
-    },
+    }
 
-    urlPath: (): string => {
-      return browser.execute(function() {
+    urlPath(): string {
+      return this.#br.execute(function() {
         return location.pathname;
       });
-    },
+    }
 
+    deleteCookie(cookieName: string) {
+      this.#br.deleteCookie(cookieName);
+    }
+
+    deleteAllCookies() {
+      this.#br.deleteAllCookies();
+    }
+
+    execute<T>(script: ((...args: any[]) => T), ...args: any[]): T {
+      return this.#br.execute.apply(this.#br, arguments);
+    }
+
+    refresh() {
+      this.#br.refresh();
+    }
 
     // Change all refresh() to refresh2, then remove '2' from name.
     // (Would need to add  waitForPageType: false  anywhere? Don't think so?)
-    refresh2: () => {
-      browser.refresh();
-      api.__updateIsWhere();
-    },
+    refresh2() {
+      this.#br.refresh();
+      this.__updateIsWhere();
+    }
 
+    back() {
+      this.#br.back();
+    }
 
     // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
-    go: (url, opts: { useRateLimits?: boolean } = {}) => {
-      api.go2(url, { ...opts, waitForPageType: false });
-    },
+    go(url, opts: { useRateLimits?: boolean } = {}) {
+      this.go2(url, { ...opts, waitForPageType: false });
+    }
 
-    go2: (url, opts: { useRateLimits?: boolean, waitForPageType?: false, isExternalPage?: true } = {}) => {
+    go2(url, opts: { useRateLimits?: boolean, waitForPageType?: false,
+          isExternalPage?: true } = {}) {
+
       let shallDisableRateLimits = false;
 
-      firstWindowHandle = browser.getWindowHandle();
+      this.#firstWindowHandle = this.#br.getWindowHandle();
 
       if (url[0] === '/') {
         // Local url, need to add origin.
 
         // Backw compat: wdio v4 navigated relative the top frame (but wdio v6 doesn't).
-        api.switchToAnyParentFrame();
+        this.switchToAnyParentFrame();
 
-        try { url = api._findOrigin() + url; }
+        try { url = this._findOrigin() + url; }
         catch (ex) {
           dieIf(ex.message === 'NoOrigin',
               `When opening the first page: ${url}, you need to specify the server origin [TyE7UKHW2]`);
@@ -316,9 +310,9 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         if (!opts.useRateLimits) {
           const parts = url.split('/');
           const host = parts[2];
-          if (!hostsVisited[host]) {
+          if (!this.#hostsVisited[host]) {
             shallDisableRateLimits = true;
-            hostsVisited[host] = true;
+            this.#hostsVisited[host] = true;
           }
         }
       }
@@ -326,7 +320,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       const message = `Go: ${url}${shallDisableRateLimits ? "  & disable rate limits" : ''}`;
       logServerRequest(message);
       try {
-        browser.navigateTo(url);
+        this.#br.navigateTo(url);
       }
       catch (ex) {
         const exStr = ex.toString();
@@ -345,55 +339,55 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
       // Wait for some Talkyard thing to appear, so we'll know what type of page this is.
       if (opts.isExternalPage) {
-        isWhere = IsWhere.External;
+        this.#isWhere = IsWhere.External;
       }
       else if (opts.waitForPageType === false) {
         // Backw compat.
-        isOnEmbeddedCommentsPage = false;
+        this.#isOnEmbeddedCommentsPage = false;
       }
       else {
-        api.__updateIsWhere();
+        this.__updateIsWhere();
       }
 
 
       if (shallDisableRateLimits) {
-        api.disableRateLimits();
+        this.disableRateLimits();
       }
-    },
+    }
 
 
-    isWhere: (): IsWhere => isWhere,
+    isWhere(): IsWhere { return this.#isWhere }
 
 
-    updateIsWhere: () => {
-      api.__updateIsWhere();
-    },
+    updateIsWhere() {
+      this.__updateIsWhere();
+    }
 
 
-    __updateIsWhere: () => {
+    __updateIsWhere() {
       // .DW = discussion / topic list page.  .btn = e.g. a Continue-after-having-verified
       // -one's-email-addr page.
       // ('ed-comments' is old, deprecated, class name.)
-      api.waitForExist('.DW, .talkyard-comments, .ed-comments, .btn');
-      isOnEmbeddedCommentsPage =
-          $('.talkyard-comments').isExisting() ||
-          $('.ed-comments').isExisting();
-      isWhere = isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
-    },
+      this.waitForExist('.DW, .talkyard-comments, .ed-comments, .btn');
+      this.#isOnEmbeddedCommentsPage =
+          this.$('.talkyard-comments').isExisting() ||
+          this.$('.ed-comments').isExisting();
+      this.#isWhere = this.#isOnEmbeddedCommentsPage ? IsWhere.EmbeddingPage : IsWhere.Forum;
+    }
 
 
-    goAndWaitForNewUrl: function(url) {
+    goAndWaitForNewUrl(url) {
       logMessage("Go: " + url);
-      api.rememberCurrentUrl();
-      browser.url(url);
-      api.waitForNewUrl();
-    },
+      this.rememberCurrentUrl();
+      this.#br.url(url);
+      this.waitForNewUrl();
+    }
 
 
-    disableRateLimits: () => {
+    disableRateLimits() {
       // Old, before I added the no-3rd-party-cookies tests.
       // Maybe instead always: server.skipRateLimits(siteId)  ?
-      browser.execute(function(pwd) {
+      this.#br.execute(function(pwd) {
         var value =
             "esCoE2eTestPassword=" + pwd +
             "; expires=Fri, 31 Dec 9999 23:59:59 GMT";
@@ -404,22 +398,23 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
         document.cookie = value;
       }, settings.e2eTestPassword || '');
-    },
+    }
 
 
-    pause: (millis: number) => {
+    pause(millis: number) {
       logBoring(`Pausing ${millis} ms...`);
-      browser.pause(millis);
-    },
+      this.#br.pause(millis);
+    }
 
     // The real waitUntil doesn't work, the first test makes any  $('sth')
-    // inside be just an empty obj {}.
-    // Also, this one can log a message about what we're waiting for.
-    waitUntil: (fn: () => Boolean, ps: {
+    // inside be just an empty obj {}.  — Mabe I forgot 'this'? Should be: this.$().
+    // Anyway, this wait fn logs a message about what we're waiting for, can be nice.
+    //
+    waitUntil(fn: () => Boolean, ps: {
         timeoutMs?: number,
         timeoutIsFine?: boolean,
         message?: StringOrFn,
-      } = {}): boolean => {
+      } = {}): boolean {
 
       let delayMs = PollMs;
       let elapsedMs = 0;
@@ -445,43 +440,43 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
                 getOrCall(ps.message) : "Wait until what? ..."}`);
           }
 
-          browser.pause(delayMs);
+          this.#br.pause(delayMs);
           delayMs = expBackoff(delayMs);
         }
         while (elapsedMs < timeoutMs);
       }
       catch (ex) {
-        logError(`Error in api.waitUntil(): [TyEE2EWAIT]\n`, ex);
+        logError(`Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
         throw ex;
       }
 
       if (ps.timeoutIsFine !== true)
         tyAssert.fail(
-            `api.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
-    },
+            `this.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
+    }
 
 
-    getPageId: (): PageId => {
-      const result = browser.execute(function() {
+    getPageId(): PageId {
+      const result = this.#br.execute(function() {
         return window['theStore'].currentPageId;
       });
       dieIf(!result,
           `Error getting page id, result: ${JSON.stringify(result)} [TyE503KTTHA24]`);
       return result;
-    },
+    }
 
 
-    getSiteId: function(): SiteId {
-      const result = browser.execute(function() {
+    getSiteId(): SiteId {
+      const result = this.#br.execute(function() {
         return window['eds'].siteId;
       });
       dieIf(!result || _.isNaN(parseInt(result)),
           "Error getting site id, result: " + JSON.stringify(result));
       return result;  // ? return  parseInt(result.value)  instead ?
-    },
+    }
 
 
-    createNewSite: (data: NewSiteData): NewSiteResult => {
+    createNewSite(data: NewSiteData): NewSiteResult {
       // Dupl code [502SKHFSKN53]
       let url;
       if (data.siteType === SiteType.Forum) {
@@ -492,53 +487,53 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         console.log("Go to create Embedded Comments site page ...");
         url = utils.makeCreateEmbeddedSiteWithFakeIpUrl();
       }
-      api.go2(url);
-      api.disableRateLimits();
+      this.go2(url);
+      this.disableRateLimits();
 
       console.log("Fill in fields and submit...");
-      api.createSite.fillInFieldsAndSubmit(data);
+      this.createSite.fillInFieldsAndSubmit(data);
 
       // New site; disable rate limits here too.
-      api.disableRateLimits();
-      const siteId = api.getSiteId();
-      const talkyardSiteOrigin = api.origin();
+      this.disableRateLimits();
+      const siteId = this.getSiteId();
+      const talkyardSiteOrigin = this.origin();
 
       console.log("Click sign up as owner ...");
-      api.createSite.clickOwnerSignupButton();
+      this.createSite.clickOwnerSignupButton();
 
       console.log("... sign up as owner ...");
       switch (data.newSiteOwner) {
         case NewSiteOwnerType.OwenOwner:
-          api.loginDialog.createPasswordAccount(data, true);
-          const email = server.getLastEmailSenTo(siteId, data.email, api);
+          this.loginDialog.createPasswordAccount(data, true);
+          const email = server.getLastEmailSenTo(siteId, data.email, this);
           const link = utils.findFirstLinkToUrlIn(
             data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-          api.go(link);
-          api.waitAndClick('#e2eContinue');
+          this.go(link);
+          this.waitAndClick('#e2eContinue');
           break;
         case NewSiteOwnerType.GmailAccount:
-          api.loginDialog.createGmailAccount({
+          this.loginDialog.createGmailAccount({
             email: settings.gmailEmail,
             password: settings.gmailPassword,
             username: data.username,
           }, { shallBecomeOwner: true });
           break;
         case NewSiteOwnerType.FacebookAccount:
-          api.loginDialog.createFacebookAccount({
+          this.loginDialog.createFacebookAccount({
             email: settings.facebookAdminEmail,
             password: settings.facebookAdminPassword,
             username: data.username,
           }, true);
           break;
         case NewSiteOwnerType.GitHubAccount:
-          api.loginDialog.createGitHubAccount({
+          this.loginDialog.createGitHubAccount({
               username: settings.githubUsernameMixedCase,
               password: settings.githubPassword,
               shallBecomeOwner: true,
               alreadyLoggedInAtGitHub: data.alreadyLoggedInAtIdProvider });
           break;
         case NewSiteOwnerType.LinkedInAccount:
-          api.loginDialog.createLinkedInAccount({
+          this.loginDialog.createLinkedInAccount({
             email: settings.linkedinEmail,
             password: settings.linkedinPassword,
             username: data.username,
@@ -556,11 +551,11 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         siteId,
         talkyardSiteOrigin,
       }
-    },
+    }
 
 
-    makeNewSiteDataForEmbeddedComments: (ps: { shortName: string, longName: string })
-          : NewSiteData => {
+    makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
+          : NewSiteData {
       // Dupl code [502KGAWH0]
       const testId = utils.generateTestId();
       const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
@@ -580,92 +575,97 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         username: 'owen_owner',
         password: 'publ-ow020',
       }
-    },
+    }
 
 
-    numTabs: (): number => {
-      return browser.getTabIds().length;
-    },
+    numWindowsOpen(): number {
+      return this.#br.getWindowHandles().length;
+    }
 
-    waitForMinBrowserTabs: (howMany: number) => {
+
+    numTabs(): number {
+      return this.#br.getWindowHandles().length;
+    }
+
+    waitForMinBrowserTabs(howMany: number) {
       let numNow = -1;
       const message = () => `Waiting for >= ${howMany} tabs, currently ${numNow} tabs...`;
-      api.waitUntil(function () {
-        numNow = browser.getTabIds().length;
+      this.waitUntil(() => {
+        numNow = this.numWindowsOpen();
         return numNow >= howMany;
       }, { message });
-    },
+    }
 
-    waitForMaxBrowserTabs: (howMany: number) => {
+    waitForMaxBrowserTabs(howMany: number) {
       let numNow = -1;
       const message = () => `Waiting for <= ${howMany} tabs, currently ${numNow} tabs...`;
-      api.waitUntil(() => {
+      this.waitUntil(() => {
         // Cannot be 0, that'd mean the test made itself disappear?
-        numNow = browser.getWindowHandles().length; // browser.getTabIds().length;
+        numNow = this.#br.getWindowHandles().length;
         return numNow <= Math.max(1, howMany);
       }, { message });
-    },
+    }
 
 
-    closeWindowSwitchToOther: () => {
-      browser.closeWindow();
+    closeWindowSwitchToOther() {
+      this.#br.closeWindow();
       // WebdriverIO would continue sending commands to the now closed window, unless:
-      const handles = browser.getWindowHandles();
+      const handles = this.#br.getWindowHandles();
       dieIf(!handles.length, 'TyE396WKDEG2');
       if (handles.length === 1) {
-        browser.switchToWindow(handles[0]);
+        this.#br.switchToWindow(handles[0]);
       }
       if (handles.length >= 2) {
-        // Maybe a developer has debug-opened other browser tabs?
+        // Maybe a developer has debug-opened other this.#br tabs?
         // Switch back to the original window, if possible.
-        if (firstWindowHandle && handles.indexOf(firstWindowHandle)) {
+        if (this.#firstWindowHandle && handles.indexOf(this.#firstWindowHandle)) {
           logUnusual(`There're ${handles.length} open windows — ` +
               `switching back to the original window...`);
-          browser.switchToWindow(firstWindowHandle);
+          this.#br.switchToWindow(this.#firstWindowHandle);
         }
         else {
           die(`Don't know which window to switch to now. The original window is gone. [TyE05KPES]`);
         }
       }
-    },
+    }
 
 
-    swithToOtherTabOrWindow: function(isWhereAfter?: IsWhere) {
+    swithToOtherTabOrWindow(isWhereAfter?: IsWhere) {
       for (let i = 0; i < 3; ++i) {
         logMessage("Waiting for other window to open, to prevent weird Selenium errors...");
-        browser.pause(1500);
-        if (browser.getTabIds().length > 1)
+        this.#br.pause(1500);
+        if (this.numWindowsOpen() > 1)
           break;
       }
-      const ids = browser.getTabIds();
-      const currentId = browser.getCurrentTabId();
+      const ids = this.#br.getWindowHandles();
+      const currentId = this.#br.getWindowHandle();
       for (let i = 0; i < ids.length; ++i) {
         const id = ids[i];
         if (id !== currentId) {
-          logMessage(`Calling browser.switchTab(id), id = ${id}...`);
-          browser.switchTab(id);
-          logMessage(`... done, current tab id is now: ${browser.getCurrentTabId()}.`);
+          logMessage(`Calling this.#br.switchToWindow(id), id = ${id}...`);
+          this.#br.switchToWindow(id);
+          logMessage(`... done, current tab id is now: ${this.#br.getWindowHandle()}.`);
           if (isWhereAfter) {
-            isWhere = isWhereAfter;
+            this.#isWhere = isWhereAfter;
           }
           else {
-            api.__updateIsWhere();
+            this.__updateIsWhere();
           }
           return;
         }
       }
       // Might be a login popup that got auto closed? [3GRQU5]
       logMessage("Didn't find any other window to switch to. [EdM2WPDL0]");
-    },
+    }
 
 
-    switchBackToFirstTabOrWindow: () => {
+    switchBackToFirstTabOrWindow() {
       // There should be no other windows, except for maybe a login popup.
       // Wait until it closes. However if a developer has opened more tabs and
       // does some experiments, so there're many open windows — then, continue anyway.
       let numWindows;
-      api.waitUntil(() => {
-        const ids = browser.getWindowHandles();
+      this.waitUntil(() => {
+        const ids = this.#br.getWindowHandles();
         numWindows = ids.length;
         return numWindows <= 1;
       }, {
@@ -675,186 +675,186 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         timeoutIsFine: true,
       });
 
-      const winIds = browser.getWindowHandles();
+      const winIds = this.#br.getWindowHandles();
       logWarningIf(winIds.length >= 2,
           `Still many windows open, window ids: ${JSON.stringify(winIds)}`);
 
       try {
         let switchToId;
         // The very first window that got opened is probably where we should continue.
-        if (winIds.indexOf(firstWindowHandle) >= 0) {
-          logMessage(`Switching to firstWindowHandle = ${firstWindowHandle}`);
-          switchToId = firstWindowHandle;
+        if (winIds.indexOf(this.#firstWindowHandle) >= 0) {
+          logMessage(`Switching to this.#firstWindowHandle = ${this.#firstWindowHandle}`);
+          switchToId = this.#firstWindowHandle;
         }
         else {
           // (Warning logged above, if >= 2 windows.)
           logMessage(`Switching to winIds[0] = ${winIds[0]}`);
           switchToId = winIds[0];
         }
-        browser.switchTab(switchToId);
+        this.#br.switchToWindow(switchToId);
       }
       catch (ex) {
         // A race? The window just closed itself? Google and Facebook auto closes
         // login popup tabs, [3GRQU5] if one is logged in already at their
         // websites. Try again.
         logError(`Error switching window [TyEE2ESWWIN]`, ex);
-        const idsAgain = browser.getWindowHandles();
+        const idsAgain = this.#br.getWindowHandles();
         logMessage(`Trying again, switching to idsAgain[0]: ${idsAgain[0]} ...`);
-        browser.switchTab(idsAgain[0]);
+        this.#br.switchToWindow(idsAgain[0]);
         // Don't catch.
       }
 
-      api.__updateIsWhere();
-    },
+      this.__updateIsWhere();
+    }
 
 
-    _currentUrl: '',
+    _currentUrl = '';
 
-    rememberCurrentUrl: function() {
-      api._currentUrl = browser.getUrl();
-    },
+    rememberCurrentUrl() {
+      this._currentUrl = this.#br.getUrl();
+    }
 
-    waitForNewUrl: function() {
-      assert(!!api._currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
-      while (api._currentUrl === browser.getUrl()) {
-        browser.pause(250);
+    waitForNewUrl() {
+      assert(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
+      while (this._currentUrl === this.#br.getUrl()) {
+        this.#br.pause(250);
       }
-      delete api._currentUrl;
-    },
+      delete this._currentUrl;
+    }
 
-    repeatUntilAtNewUrl: function(fn: () => void) {
-      const urlBefore = browser.getUrl();
+    repeatUntilAtNewUrl(fn: () => void) {
+      const urlBefore = this.#br.getUrl();
       fn();
-      browser.pause(250);
-      while (urlBefore === browser.getUrl()) {
+      this.#br.pause(250);
+      while (urlBefore === this.#br.getUrl()) {
         // E2EBUG RACE: if the url changes right here, maybe fn() below won't work,
         // will block.
         fn();
-        browser.pause(250);
+        this.#br.pause(250);
       }
-    },
+    }
 
-    waitForNewOrigin: function(anyCurrentUrl?: string) {
-      const currentUrl = anyCurrentUrl || api._currentUrl;
-      assert(!!currentUrl, "Please call browser.rememberCurrentUrl() first [TyE603RK54]");
-      const curOrigin = api._findOrigin(currentUrl);
-      while (curOrigin === api.origin()) {
-        browser.pause(250);
+    waitForNewOrigin(anyCurrentUrl?: string) {
+      const currentUrl = anyCurrentUrl || this._currentUrl;
+      assert(!!currentUrl, "Please call this.#br.rememberCurrentUrl() first [TyE603RK54]");
+      const curOrigin = this._findOrigin(currentUrl);
+      while (curOrigin === this.origin()) {
+        this.#br.pause(250);
       }
-      api._currentUrl = '';
-    },
+      this._currentUrl = '';
+    }
 
 
     // Could rename to isInTalkyardIframe.
-    // NO, use isWhere instead — just remember in which frame we are, instead of polling. ?
-    isInIframe: (): boolean => {
-      return browser.execute(function() {
+    // NO, use this.#isWhere instead — just remember in which frame we are, instead of polling. ?
+    isInIframe(): boolean {
+      return this.#br.execute(function() {
         return window['eds'] && window['eds'].isInIframe;
       });
-    },
+    }
 
 
-    frameParent: () => {
+    frameParent() {
       die("Use switchToAnyParentFrame() instead [TyE306WKHJP2]");
-    },
+    }
 
 
-    switchToAnyParentFrame: () => {
-      if (api.isInIframe()) {
-        browser.switchToParentFrame();
+    switchToAnyParentFrame() {
+      if (this.isInIframe()) {
+        this.#br.switchToParentFrame();
         // Skip, was some other oddity:
         // // Need to wait, otherwise apparently WebDriver can in rare cases run
         // // the next command in the wrong frame. Currently Talkyard or the e2e tests
         // // don't have iframes in iframes, so this'll work:
-        // api.waitUntil(() => browser.execute(function() { return window.self === window.top; }), {
-        //   message: `Waiting for browser to enter parent frame, until window.self === top`
+        // this.waitUntil(() => this.#br.execute(function() { return window.self === window.top; }), {
+        //   message: `Waiting for this.#br to enter parent frame, until window.self === top`
         // });
         logMessage("Switched to parent frame.");
-        isWhere = IsWhere.EmbeddingPage;
+        this.#isWhere = IsWhere.EmbeddingPage;
       }
-    },
+    }
 
 
-    switchToFrame: function(selector) {
+    switchToFrame(selector) {
       printBoringToStdout(`Switching to frame ${selector}...`);
-      api.waitForExist(selector);
-      const iframe = $(selector);
-      browser.switchToFrame(iframe);
+      this.waitForExist(selector);
+      const iframe = this.$(selector);
+      this.#br.switchToFrame(iframe);
       printBoringToStdout(` done, now in frame  ${selector}.\n`);
-    },
+    }
 
 
-    switchToLoginPopupIfEmbedded: () => {
-      if (isOnEmbeddedPage()) {
-        api.swithToOtherTabOrWindow(IsWhere.LoginPopup);
+    switchToLoginPopupIfEmbedded() {
+      if (this.isOnEmbeddedPage()) {
+        this.swithToOtherTabOrWindow(IsWhere.LoginPopup);
       }
-    },
+    }
 
 
-    switchBackToFirstTabIfNeeded: () => {
-      if (isWhere === IsWhere.LoginPopup) {
-        api.switchBackToFirstTabOrWindow();
+    switchBackToFirstTabIfNeeded() {
+      if (this.#isWhere === IsWhere.LoginPopup) {
+        this.switchBackToFirstTabOrWindow();
       }
-    },
+    }
 
 
-    waitForEmbeddedCommentsIframe: function() {
+    waitForEmbeddedCommentsIframe() {
       // Can there be any emb comments iframe here?
-      dieIf(isWhere && isWhere !== IsWhere.External &&
-          isWhere != IsWhere.EmbeddingPage,
-          `No comments iframe here, isWhere: ${isWhere} [TyE6RKB2GR04]`);
-      api.waitForExist('iframe#ed-embedded-comments');
-      if (isWhere) isWhere = IsWhere.EmbeddingPage;
-    },
+      dieIf(this.#isWhere && this.#isWhere !== IsWhere.External &&
+          this.#isWhere != IsWhere.EmbeddingPage,
+          `No comments iframe here, this.#isWhere: ${this.#isWhere} [TyE6RKB2GR04]`);
+      this.waitForExist('iframe#ed-embedded-comments');
+      if (this.#isWhere) this.#isWhere = IsWhere.EmbeddingPage;
+    }
 
 
-    switchToEmbCommentsIframeIfNeeded: () => {
-      if (!isWhere || isWhere == IsWhere.Forum)
+    switchToEmbCommentsIframeIfNeeded() {
+      if (!this.#isWhere || this.#isWhere == IsWhere.Forum)
         return;
-      dieIf(!isOnEmbeddedPage(), `No embedded things here, isWhere: ${isWhere} [TyE703TKDLJ4]`);
-      if (isWhere !== IsWhere.EmbCommentsIframe) {
-        api.switchToEmbeddedCommentsIrame();
+      dieIf(!this.isOnEmbeddedPage(), `No embedded things here, this.#isWhere: ${this.#isWhere} [TyE703TKDLJ4]`);
+      if (this.#isWhere !== IsWhere.EmbCommentsIframe) {
+        this.switchToEmbeddedCommentsIrame();
       }
-    },
+    }
 
 
-    switchToEmbEditorIframeIfNeeded: () => {
-      if (!isWhere || isWhere == IsWhere.Forum)
+    switchToEmbEditorIframeIfNeeded() {
+      if (!this.#isWhere || this.#isWhere == IsWhere.Forum)
         return;
-      dieIf(!isOnEmbeddedPage(), `No embedded things here, isWhere: ${isWhere} [TyE306WKH2]`);
-      if (isWhere !== IsWhere.EmbEditorIframe) {
-        api.switchToEmbeddedEditorIrame();
+      dieIf(!this.isOnEmbeddedPage(), `No embedded things here, this.#isWhere: ${this.#isWhere} [TyE306WKH2]`);
+      if (this.#isWhere !== IsWhere.EmbEditorIframe) {
+        this.switchToEmbeddedEditorIrame();
       }
-    },
+    }
 
 
-    switchToEmbeddedCommentsIrame: (ps: { waitForContent?: false } = {}) => {
-      api.switchToAnyParentFrame();
+    switchToEmbeddedCommentsIrame(ps: { waitForContent?: false } = {}) {
+      this.switchToAnyParentFrame();
       // Let's wait for the editor iframe, so Reply buttons etc will work.
-      api.waitForExist('iframe#ed-embedded-editor');
-      api.switchToFrame('iframe#ed-embedded-comments');
+      this.waitForExist('iframe#ed-embedded-editor');
+      this.switchToFrame('iframe#ed-embedded-comments');
       if (ps.waitForContent !== false) {
-        api.waitForExist('.DW');
+        this.waitForExist('.DW');
       }
-      isWhere = IsWhere.EmbCommentsIframe;
-    },
+      this.#isWhere = IsWhere.EmbCommentsIframe;
+    }
 
 
-    switchToEmbeddedEditorIrame: function() {
-      api.switchToAnyParentFrame();
+    switchToEmbeddedEditorIrame() {
+      this.switchToAnyParentFrame();
       // Let's wait for the comments iframe, so it can receive any messages from the editor iframe.
-      api.waitForExist('iframe#ed-embedded-comments');
-      api.switchToFrame('iframe#ed-embedded-editor');
-      isWhere = IsWhere.EmbEditorIframe;
-    },
+      this.waitForExist('iframe#ed-embedded-comments');
+      this.switchToFrame('iframe#ed-embedded-editor');
+      this.#isWhere = IsWhere.EmbEditorIframe;
+    }
 
 
-    getBoundingClientRect: (selector: string): ElemRect => {
+    getBoundingClientRect(selector: string): ElemRect {
       // Something like this might work too:
-      //   const elemId: string = browser.findElement('css selector', selector);
-      //   browser.getElementRect(elemId);  — how get the id?
+      //   const elemId: string = this.#br.findElement('css selector', selector);
+      //   this.#br.getElementRect(elemId);  — how get the id?
       // But this already works:
-      const result = browser.execute(function(selector) {
+      const result = this.#br.execute(function(selector) {
         var elem = document.querySelector(selector);
         if (!elem) return null;
         var rect = elem.getBoundingClientRect();
@@ -863,33 +863,33 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
       dieIf(!result, `Cannot find selector:  ${selector}  [TyE046WKSTH24]`);
       return result;
-    },
+    }
 
 
-    getWindowHeight: (): number => {
+    getWindowHeight(): number {
        // Webdriver.io v5, just this?:
-      // return browser.getWindowRect().height
-      const result = browser.execute(function() {
+      // return this.#br.getWindowRect().height
+      const result = this.#br.execute(function() {
         return window.innerHeight;
       });
       dieIf(!result, 'TyE7WKJP42');
       return result;
-    },
+    }
 
 
-    getPageScrollY: (): number => {
-      return browser.execute(function(): number {
+    getPageScrollY(): number {
+      return this.#br.execute(function(): number {
         var pageColumn = document.getElementById('esPageColumn');
         // ?? this works inside execute()?
         if (!pageColumn) throw Error("No #esPageColumn on this page [TyE7KBAQ2]");
         return pageColumn.scrollTop;
       });
-    },
+    }
 
 
-    scrollIntoViewInPageColumn: (selector: string) => {   // RENAME to  scrollIntoView
+    scrollIntoViewInPageColumn(selector: string) {   // RENAME to  scrollIntoView
       dieIf(!selector, '!selector [TyE05RKCD5]');
-      const isInPageColResult = browser.execute(function(selector) {
+      const isInPageColResult = this.#br.execute(function(selector) {
         var pageColumn = document.getElementById('esPageColumn');
         if (!pageColumn)
           return false;
@@ -897,34 +897,34 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         return pageColumn.contains(elem);
       }, selector);
       if (isInPageColResult) {
-        api._real_scrollIntoViewInPageColumn(selector);
+        this._real_scrollIntoViewInPageColumn(selector);
       }
       else {
         // Elem outside page column (e.g. modal dialog), or there is no page column.
-        browser.execute(function(selector) {
-          // Not logMessage — we're in the browser.
+        this.#br.execute(function(selector) {
+          // Not logMessage — we're in the this.#br.
           console.log(`Scrolling into view in window: ${selector}`);
           var elem = document.querySelector(selector);
           // Edge and Safari don't suppor 'smooth' though (as of 2019-01).
           elem.scrollIntoView({ behavior: 'smooth' });
         }, selector);
       }
-    },
+    }
 
 
-    _real_scrollIntoViewInPageColumn: (selector: string) => { // RENAME to _scrollIntoViewInPageColumn
+    _real_scrollIntoViewInPageColumn (selector: string) { // RENAME to _scrollIntoViewInPageColumn
       dieIf(!selector, '!selector [TyE5WKT02JK4]');
-      api.waitForVisible(selector);
-      let lastScrollY = api.getPageScrollY();
+      this.waitForVisible(selector);
+      let lastScrollY = this.getPageScrollY();
       for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
-        browser.execute(function(selector) {
-          // Not logMessage — we're in the browser.
+        this.#br.execute(function(selector) {
+          // Not logMessage — we're in the this.#br.
           console.log(`Scrolling into view in page column: ${selector}`);
           window['debiki2'].utils.scrollIntoViewInPageColumn(
               selector, { marginTop: 100, marginBottom: 100, duration: 100 });
         }, selector);
-        browser.pause(150);
-        const curScrollY = api.getPageScrollY();
+        this.#br.pause(150);
+        const curScrollY = this.getPageScrollY();
         if (lastScrollY === curScrollY) {
           // Done scrolling;
           return;
@@ -933,18 +933,18 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         lastScrollY = curScrollY;
       }
       assert.fail(`Cannot scroll to: ${selector}`);
-    },
+    }
 
 
-    scrollToTop: function() {
-      // Sometimes, the browser won't scroll to the top. [E2ENEEDSRETRY]
+    scrollToTop() {
+      // Sometimes, the this.#br won't scroll to the top. [E2ENEEDSRETRY]
       // Who knows why. So try trice.
       utils.tryManyTimes('scrollToTop', 3, () => {
         // // I think some browsers wants to scroll <body> others want to scroll <html>, so do both.
         // // And if we're viewing a topic, need to scroll the page column insetad.  (4ABKW20)
-        // browser.scroll('body', 0, 0);
-        // browser.scroll('html', 0, 0);
-        browser.execute(function() {
+        // this.#br.scroll('body', 0, 0);
+        // this.#br.scroll('html', 0, 0);
+        this.#br.execute(function() {
           window.scrollTo(0, 0);
           document.documentElement.scrollTop = 0; // not needed? but why not
           // If we're on a Talkyard page, scroll to its top.
@@ -955,8 +955,8 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         // Need to wait for the scroll to actually happen, otherwise Selenium/Webdriver
         // continues running subsequent test steps, without being at the top.
         let scrollTop;
-        browser.waitUntil(() => {
-          scrollTop = browser.execute(function() {
+        this.#br.waitUntil(() => {
+          scrollTop = this.#br.execute(function() {
             return ('' +
                 document.body.scrollTop + ',' +
                 document.documentElement.scrollTop + ',' + (
@@ -969,18 +969,18 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           timeoutMsg: `Couldn't scroll to top, scrollTop: ${scrollTop}`,
         });
       });
-    },
+    }
 
 
-    scrollToBottom: function() {
-      //browser.scroll('body', 0, 999*1000);
-      //browser.scroll('html', 0, 999*1000);
-      //if (browser.isVisible('#esPageColumn')) {
-      //  browser.execute(function() {
+    scrollToBottom() {
+      //this.#br.scroll('body', 0, 999*1000);
+      //this.#br.scroll('html', 0, 999*1000);
+      //if (this.isVisible('#esPageColumn')) {
+      //  this.#br.execute(function() {
       //    document.getElementById('esPageColumn').scrollTop = 999*1000;
       //  });
       //}
-      browser.execute(function() {
+      this.#br.execute(function() {
         window.scrollTo(0, 999*1000);
         document.documentElement.scrollTop = 999*1000; // not needed? but why not
         // If we're on a Talkyard page, scroll to its bottom too.
@@ -991,19 +991,19 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       // Need to wait for the scroll to actually happen. COULD instead maybe
       // waitUntil scrollTop = document height - viewport height?  but will probably be
       // one-pixel-too-litle-too-much errors? For now:
-      browser.pause(500);
-    },
+      this.#br.pause(500);
+    }
 
 
-    clickBackdrop: () => {
-      api.waitAndClick('.fade.in.modal');
-    },
+    clickBackdrop() {
+      this.waitAndClick('.fade.in.modal');
+    }
 
 
-    playTimeSeconds: function(seconds: number) {  // [4WKBISQ2]
+    playTimeSeconds(seconds: number) {  // [4WKBISQ2]
       dieIf(!seconds, '!seconds [TyE503RKTSH25]');
-      browser.execute(function (seconds) {
-        // Don't use  logMessage in here; this is in the browser (!).
+      this.#br.execute(function (seconds) {
+        // Don't use  logMessage in here; this is in the this.#br (!).
         console.log("Playing time, seconds: " + seconds);
         window['debiki2'].addTestExtraMillis(seconds * 1000);
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -1015,69 +1015,74 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         console.log("Time now: " + window['debiki2'].getNowMs());
       }, seconds);
       logMessage(`... ${seconds} seconds pass by ...`);
-    },
+    }
 
 
-    waitForMyDataAdded: function() {
-      api.waitForVisible('.e2eMyDataAdded');
-    },
+    waitForMyDataAdded() {
+      this.waitForVisible('.e2eMyDataAdded');
+    }
 
 
     // Can be used to wait until a fade-&-scroll-in dialog is done scrolling in, for example.
     //
-    waitUntilDoesNotMove: function(buttonSelector: string, pollInterval?: number) {
+    waitUntilDoesNotMove(buttonSelector: string, pollInterval?: number) {
       for (let attemptNr = 1; attemptNr <= 30; ++attemptNr) {
-        const location = api.getBoundingClientRect(buttonSelector);
-        browser.pause(pollInterval || 50);
-        const locationLater = api.getBoundingClientRect(buttonSelector);
+        const location = this.getBoundingClientRect(buttonSelector);
+        this.#br.pause(pollInterval || 50);
+        const locationLater = this.getBoundingClientRect(buttonSelector);
         if (location.y === locationLater.y && location.x === locationLater.x)
           return;
       }
       die(`Never stops moving: '${buttonSelector}' [EdE7KFYU0]`);
-    },
+    }
 
 
-    count: (selector: string): number =>
-      $$(selector).length,
+    count(selector: string): number { return this.$$(selector).length }
 
 
-    isVisible: (selector: string) =>
-      $(selector).isDisplayed(),
+    isExisting(selector: string): boolean { return this.$(selector).isExisting() }
+
+    isEnabled(selector: string): boolean { return this.$(selector).isEnabled() }
+
+    isVisible(selector: string): boolean { return this.$(selector).isDisplayed() }
 
 
-    waitForVisible: function(selector: string, ps: { timeoutMs?: number } = {}) {
-                                              //  options?: WebdriverIO.WaitForOptions) {
-      api.waitUntil(() => {
-        const elem = $(selector);
+    waitForDisplayed(selector: string, ps: { timeoutMs?: number } = {}) {
+      this.waitForVisible(selector, ps);
+    }
+
+    waitForVisible(selector: string, ps: { timeoutMs?: number } = {}) {  // RENAME to waitForDisplayed() above
+      this.waitUntil(() => {
+        const elem = this.$(selector);
         if (elem && elem.isExisting() && elem.isDisplayed())
           return true;
       }, {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
-    },
+    }
 
 
-    waitForNotVisible: function(selector: string, timeoutMillis?: number) {
+    waitForNotVisible(selector: string, timeoutMillis?: number) {
       for (let elapsed = 0; elapsed < timeoutMillis || true ; elapsed += PollMs) {
-        if (!$(selector).isDisplayed())
+        if (!this.$(selector).isDisplayed())
           return;
-        browser.pause(PollMs);
+        this.#br.pause(PollMs);
       }
       /*
-      // API is: browser.waitForVisible(selector[,ms][,reverse])
-      logMessage(`browser.waitForVisible('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
+      // API is: this.waitForDisplayed(selector[,ms][,reverse])
+      logMessage(`this.waitForDisplayed('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
       logWarning(`BUG just waits forever [2ABKRP83]`);
       assert(false);
-      browser.waitForVisible(selector, timeoutMillis || true, timeoutMillis ? true : undefined);
+      this.waitForDisplayed(selector, timeoutMillis || true, timeoutMillis ? true : undefined);
       */
-    },
+    }
 
 
     // deprecated
-    isDisplayedWithText: function(selector: string, text: string): boolean {
+    isDisplayedWithText(selector: string, text: string): boolean {
       // COULD_OPTIMIZE   test all at once — now the caller calls this fn many times instead.
-      const elems = $$(selector);
+      const elems = this.$$(selector);
       for (let elem of elems) {
         if (!elem.isDisplayed())
           continue;
@@ -1086,21 +1091,21 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           return true;
       }
       return false;
-    },
+    }
 
 
-    waitForEnabled: function(selector: string, options?: WebdriverIO.WaitForOptions) {
-      $(selector).waitForEnabled(options)
-      // origWaitForEnabled.apply(browser, arguments);
-    },
+    waitForEnabled(selector: string, options?: WebdriverIO.WaitForOptions) {
+      this.$(selector).waitForEnabled(options)
+      // origWaitForEnabled.apply(this.#br, arguments);
+    }
 
 
-    waitForVisibleText: function(selector: string, ps: { timeoutMs?: number } = {}) {
+    waitForVisibleText(selector: string, ps: { timeoutMs?: number } = {}) {
       let isExisting;
       let isDisplayed;
       let text;
-      api.waitUntil(() => {
-        const elem: WebdriverIO.Element = $(selector);
+      this.waitUntil(() => {
+        const elem: WebdriverIO.Element = this.$(selector);
         try {
           // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
           // also isn't, sometimes? They're undefined, then, or what? And why?
@@ -1130,93 +1135,93 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
             `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText:  "${text}"`,
       })
-    },
+    }
 
-    getWholePageJsonStrAndObj: (): [string, any] => {
-      // Chrome: The browser wraps the json response in a <html><body><pre> tag.
+    getWholePageJsonStrAndObj(): [string, any] {
+      // Chrome: The this.#br wraps the json response in a <html><body><pre> tag.
       // Firefox: Shows pretty json with expand/collapse sub trees buttons,
       // and we need click a #rawdata-tab to get a <pre> with json text to copy.
       return utils.tryManyTimes("copy json", 3, () => {
-        api.waitForVisible('#rawdata-tab, pre');
-        if (browser.isVisible('#rawdata-tab')) {
-          api.waitAndClick('#rawdata-tab');
+        this.waitForVisible('#rawdata-tab, pre');
+        if (this.isVisible('#rawdata-tab')) {
+          this.waitAndClick('#rawdata-tab');
         }
-        const jsonStr: string = api.waitAndGetText('pre');
+        const jsonStr: string = this.waitAndGetText('pre');
         const obj: any = JSON.parse(jsonStr);
         return [jsonStr, obj];
       });
-    },
+    }
 
-    waitUntilValueIs: function(selector: string, desiredValue: string) {
+    waitUntilValueIs(selector: string, desiredValue: string) {
       let currentValue;
-      api.waitForVisible(selector);
-      api.waitUntil(() => {
-        currentValue = $(selector).getValue();
+      this.waitForVisible(selector);
+      this.waitUntil(() => {
+        currentValue = this.$(selector).getValue();
         return currentValue === desiredValue;
       }, {
         message: `Waiting for value of:  ${selector}  to be:  ${desiredValue}\n` +
         `  now it is: ${currentValue}`,
       });
-    },
+    }
 
-    waitForExist: function(selector: string, ps: { timeoutMs?: number } = {}) {
-      api.waitUntil(() => {
-        const elem = $(selector);
+    waitForExist(selector: string, ps: { timeoutMs?: number } = {}) {
+      this.waitUntil(() => {
+        const elem = this.$(selector);
         if (elem && elem.isExisting())
           return true;
       }, {
         ...ps,
         message: `Waiting until exists:  ${selector}`,
       });
-    },
+    }
 
-    waitForGone: function(selector: string, ps: { timeoutMs?: number } = {}) {
-      api.waitUntilGone(selector, ps);
-    },
+    waitForGone(selector: string, ps: { timeoutMs?: number } = {}) {
+      this.waitUntilGone(selector, ps);
+    }
 
-    waitAndClick: function(selector: string,
+    waitAndClick(selector: string,
           opts: { maybeMoves?: boolean, clickFirst?: boolean, mayScroll?: boolean,
             waitUntilNotOccluded?: boolean, timeoutMs?: number } = {}) {
-      api._waitAndClickImpl(selector, opts);
-    },
+      this._waitAndClickImpl(selector, opts);
+    }
 
 
-    waitAndClickFirst: function(selector: string, opts: { maybeMoves?: boolean } = {}) {
-      api._waitAndClickImpl(selector, { ...opts, clickFirst: true });
-    },
+    waitAndClickFirst(selector: string, opts: { maybeMoves?: boolean } = {}) {
+      this._waitAndClickImpl(selector, { ...opts, clickFirst: true });
+    }
 
 
-    waitAndClickLast: function(selector: string) {
-      api.waitAndClickNth(selector, -1);
-    },
+    waitAndClickLast(selector: string) {
+      this.waitAndClickNth(selector, -1);
+    }
 
 
     // Works with many browsers at the same time.
-    _waitAndClickImpl: function(selector: string,
+    _waitAndClickImpl(selector: string,
           opts: { clickFirst?: boolean, maybeMoves?: boolean, mayScroll?: boolean,
             waitUntilNotOccluded?: boolean, timeoutMs?: number } = {}) {
       selector = selector.trim(); // so selector[0] below, works
-      api._waitForClickable(selector, opts);
+      this._waitForClickable(selector, opts);
 
       if (selector[0] !== '#' && !opts.clickFirst) {
-        const elems = $$(selector);
+        const elems = this.$$(selector);
         dieIf(elems.length > 1,
             `Don't know which one of ${elems.length} elems to click. ` +
             `Selector:  ${selector} [TyE305KSU]`);
       }
-     $(selector).click();
-    },
+     this.$(selector).click();
+    }
 
 
-    // For one browser at a time only.
+    // For one this.#br at a time only.
     // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
-    waitAndClickNth: function(selector, n) {   // BUG will only scroll the 1st elem into view [05YKTDTH4]
+    waitAndClickNth(selector: string, n: number) {   // BUG will only scroll the 1st elem into view [05YKTDTH4]
       dieIf(n <= 0, "n starts on 1, change from 0 to 1 please");
       logWarningIf(n !== 1,
-          `n = ${n} !== 1, won't scroll into view before trying to click:  ${selector} [05YKTDTH4]`);
+          `n = ${n} !== 1, won't scroll into view before trying to click, maybe will miss:  ${selector} [05YKTDTH4]`);
 
-      api._waitForClickable(selector);
-      const elems = $$(selector);
+      this._waitForClickable(selector);
+      const elems = this.$$(selector);
       assert(elems.length >= n, `Elem ${n} missing: Only ${elems.length} elems match: ${selector}`);
       const index = n > 0
           ? n - 1
@@ -1225,45 +1230,45 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       const elemToClick = elems[index];
       dieIf(!elemToClick, selector + ' TyE36KT74356');
       elemToClick.click();
-    },
+    }
 
 
-    _waitForClickable: function(selector,  // RENAME? to scrollToAndWaitUntilCanInteract
+    _waitForClickable (selector: string,  // RENAME? to scrollToAndWaitUntilCanInteract
           opts: { maybeMoves?: boolean, timeoutMs?: number, mayScroll?: boolean,
               okayOccluders?: string, waitUntilNotOccluded?: boolean } = {}) {
-      api.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
-      api.waitForEnabled(selector, { timeout: opts.timeoutMs });
+      this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
+      this.waitForEnabled(selector, { timeout: opts.timeoutMs });
       if (opts.mayScroll !== false) {
-        api.scrollIntoViewInPageColumn(selector);
+        this.scrollIntoViewInPageColumn(selector);
       }
       if (opts.maybeMoves) {
-        api.waitUntilDoesNotMove(selector);
+        this.waitUntilDoesNotMove(selector);
       }
 
       // Sometimes, a not-yet-done-loading-data-from-server overlays the element and steals
       // any click. Or a modal dialog, or nested modal dialog, that is fading away, steals
       // the click. Unless:
       if (opts.waitUntilNotOccluded !== false) {
-        api.waitUntilElementNotOccluded(selector, { okayOccluders: opts.okayOccluders });
+        this.waitUntilElementNotOccluded(selector, { okayOccluders: opts.okayOccluders });
       }
       else {
         // We can at least do this — until then, nothing is clickable.
-        api.waitUntilLoadingOverlayGone();
+        this.waitUntilLoadingOverlayGone();
       }
-    },
+    }
 
 
-    waitAndClickLinkToNewPage: function(selector: string, refreshBetweenTests?: boolean) {
+    waitAndClickLinkToNewPage(selector: string, refreshBetweenTests?: boolean) {
       // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
       let delay = 30;
       //let count = 0;
       //logMessage(`waitAndClickLinkToNewPage ${selector} ...`);
-      api.waitUntilLoadingOverlayGone();
+      this.waitUntilLoadingOverlayGone();
       while (true) {
-        api.waitForMyDataAdded();
-        browser.pause(delay);
+        this.waitForMyDataAdded();
+        this.#br.pause(delay);
         //logMessage(`waitAndClickLinkToNewPage ${selector} testing:`);
-        if (browser.isVisible(selector) && browser.isEnabled(selector)) {
+        if (this.isVisible(selector) && this.isEnabled(selector)) {
           //logMessage(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
           // count += 1;
           // if (count >= 6)
@@ -1271,20 +1276,20 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
         else {
           //logMessage(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
-          if (refreshBetweenTests) browser.refresh();
+          if (refreshBetweenTests) this.#br.refresh();
           delay *= 1.67;
         }
       }
-      api.rememberCurrentUrl();
-      api.waitAndClick(selector);
-      api.waitForNewUrl();
-    },
+      this.rememberCurrentUrl();
+      this.waitAndClick(selector);
+      this.waitForNewUrl();
+    }
 
 
-    waitUntilGone: function(what: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {   // RENAME to waitUntilCannotSee ?
-      api.waitUntil(() => {
+    waitUntilGone(what: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {   // RENAME to waitUntilCannotSee ?
+      this.waitUntil(() => {
         try {
-          const elem = $(what);
+          const elem = this.$(what);
           const gone = !elem || !elem.isExisting() || !elem.isDisplayed();
           if (gone)
             return true;
@@ -1303,83 +1308,83 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         message: `Waiting until gone:  ${what}  ... [TyME2EWAITGONE]`
       });
         /*
-        const resultsByBrowser = api.isVisible(what);
+        const resultsByBrowser = this.isVisible(what);
         const values = allBrowserValues(resultsByBrowser);
         return _.every(values, x => !x ); */
-    },
+    }
 
-    focus: (selector: string, opts?: { maybeMoves?: true,
-          timeoutMs?: number, okayOccluders?: string }) => {
-      api._waitForClickable(selector, opts);
-      $(selector).click();
-    },
+    focus(selector: string, opts?: { maybeMoves?: true,
+          timeoutMs?: number, okayOccluders?: string }) {
+      this._waitForClickable(selector, opts);
+      this.$(selector).click();
+    }
 
-    refreshUntil: (test: () => boolean) => {
+    refreshUntil(test: () => boolean) {
       while (true) {
         if (test())
           return;
-        browser.pause(PollMs / 3);
-        browser.refresh();
-        browser.pause(PollMs * 2 / 3);
+        this.#br.pause(PollMs / 3);
+        this.#br.refresh();
+        this.#br.pause(PollMs * 2 / 3);
       }
-    },
+    }
 
-    refreshUntilGone: function(what) {
+    refreshUntilGone(what) {
       while (true) {
-        let resultsByBrowser = browser.isVisible(what);
+        let resultsByBrowser = this.isVisible(what);
         let isVisibleValues = allBrowserValues(resultsByBrowser);
         let goneEverywhere = !_.some(isVisibleValues);
         if (goneEverywhere) break;
-        browser.refresh();
-        browser.pause(250);
+        this.#br.refresh();
+        this.#br.pause(250);
       }
-    },
+    }
 
-    __theLoadingOveraySelector: '#theLoadingOverlay',
+    __theLoadingOveraySelector = '#theLoadingOverlay';
 
-    waitUntilLoadingOverlayGone: () => {
-      api.waitUntilGone(api.__theLoadingOveraySelector);
-    },
+    waitUntilLoadingOverlayGone() {
+      this.waitUntilGone(this.__theLoadingOveraySelector);
+    }
 
-    waitUntilLoadingOverlayVisible_raceCond: () => {
+    waitUntilLoadingOverlayVisible_raceCond () {
       // The loading overlay might disappear at any time, when done loading. (309362485)
       // So not impossible that e2e tests that use this fn, sometimes break
       // (that's fine, we'll just retry them).
-      api.waitForVisible(api.__theLoadingOveraySelector);
-    },
+      this.waitForVisible(this.__theLoadingOveraySelector);
+    }
 
-    isLoadingOverlayVisible_raceCond: (): boolean => {
+    isLoadingOverlayVisible_raceCond (): boolean {
       // A race: It might disappear at any time. (309362485)
-      return browser.isVisible(api.__theLoadingOveraySelector);
-    },
+      return this.isVisible(this.__theLoadingOveraySelector);
+    }
 
-    waitUntilModalGone: function() {
-      browser.waitUntil(function () {
+    waitUntilModalGone() {
+      this.#br.waitUntil(() => {
         // Check for the modal backdrop (it makes the stuff not in the dialog darker).
-        let resultsByBrowser = browser.isVisible('.modal-backdrop');
+        let resultsByBrowser = this.isVisible('.modal-backdrop');
         let values = allBrowserValues(resultsByBrowser);
         let anyVisible = _.some(values, x => x);
         if (anyVisible)
           return false;
         // Check for the block containing the modal itself.
         // This sometimes fails, if waitUntilModalGone() is done in 'everyonesBrowser'.  [4JBKF20]
-        // I suppose in one browser, the modal is present, but in another, it's gone... somehow
+        // I suppose in one this.#br, the modal is present, but in another, it's gone... somehow
         // resulting in Selenium failing with a """ERROR: stale element reference: element
         // is not attached to the page document""" error.
-        resultsByBrowser = browser.isVisible('.fade.modal');
+        resultsByBrowser = this.isVisible('.fade.modal');
         values = allBrowserValues(resultsByBrowser);
         anyVisible = _.some(values, x => x);
         return !anyVisible;
       });
-      api.waitUntilGone('.fade.modal');
-    },
+      this.waitUntilGone('.fade.modal');
+    }
 
-    waitUntilElementNotOccluded: (selector: string, opts: {
-          okayOccluders?: string, timeoutMs?: number, timeoutIsFine?: boolean } = {}) => {
+    waitUntilElementNotOccluded(selector: string, opts: {
+          okayOccluders?: string, timeoutMs?: number, timeoutIsFine?: boolean } = {}) {
       dieIf(!selector, '!selector,  [TyE7WKSH206]');
       let result: string | true;
-      api.waitUntil(() => {
-        result = <string | true> browser.execute(function(selector, okayOccluders): boolean | string {
+      this.waitUntil(() => {
+        result = <string | true> this.#br.execute(function(selector, okayOccluders): boolean | string {
           var elem = document.querySelector(selector);
           if (!elem)
             return `No elem matches:  ${selector}`;
@@ -1448,32 +1453,32 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             `problem: ${result}`,
 
       });
-    },
+    }
 
-    waitForAtLeast: function(num, selector) {
+    waitForAtLeast(num: number, selector: string) {
       let numNow = 0;
-      api.waitUntil(() => {
-        numNow = api.count(selector);
+      this.waitUntil(() => {
+        numNow = this.count(selector);
         return numNow >= num;
       }, {
         message: () => `Waiting for >= ${num}  ${selector}  there are only: ${numNow}`
       });
-    },
+    }
 
-    waitForAtMost: function(num, selector) {
+    waitForAtMost(num: number, selector: string) {
       let numNow = 0;
-      api.waitUntil(() => {
-        numNow = api.count(selector);
+      this.waitUntil(() => {
+        numNow = this.count(selector);
         return numNow <= num;
       }, {
         message: () => `Waiting for <= ${num}  ${selector}  there are: ${numNow}`
       });
-    },
+    }
 
-    assertExactly: function(num, selector) {
+    assertExactly(num: number, selector: string) {
       let errorString = '';
-      const elems = $$(selector);
-      //let resultsByBrowser = byBrowser(browser.elements(selector));
+      const elems = this.$$(selector);
+      //let resultsByBrowser = byBrowser(this.#br.elements(selector));
       //_.forOwn(resultsByBrowser, (result, browserName) => {
         if (elems.length !== num) {
           //errorString += browserNamePrefix(browserName) + ...
@@ -1482,33 +1487,37 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       //});
       assert.ok(!errorString, errorString);
-    },
+    }
 
 
-    waitAndPasteClipboard: (selector: string, opts?: { maybeMoves?: true,
-          timeoutMs?: number, okayOccluders?: string }) => {
-      api.focus(selector, opts);
+    keys(keyStrokes: string | string[]) {
+      this.#br.keys(keyStrokes);
+    }
+
+    waitAndPasteClipboard(selector: string, opts?: { maybeMoves?: true,
+          timeoutMs?: number, okayOccluders?: string }) {
+      this.focus(selector, opts);
       // Different keys:
       // https://w3c.github.io/webdriver/#keyboard-actions
-      browser.keys(['Control','v']);
-    },
+      this.#br.keys(['Control','v']);
+    }
 
 
-    waitAndSelectFile: (selector: string, fileNameInTargetDir: string) => {
+    waitAndSelectFile(selector: string, fileNameInTargetDir: string) {
       // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
       const pathToUpload = path.join(__dirname, '..', 'target', fileNameInTargetDir);
       logMessage("Uploading file: " + pathToUpload.toString());
       logWarningIf(settings.useDevtoolsProtocol,
-          `BUT browser.uploadFile() DOES NOT WORK WITH THIS PROTOCOL, 'DevTools' [TyEE2EBADPROTO]`);
+          `BUT this.#br.uploadFile() DOES NOT WORK WITH THIS PROTOCOL, 'DevTools' [TyEE2EBADPROTO]`);
       // Requires Selenium or Chromedriver; the devtools protocol ('webtools' service) won't work.
-      const remoteFilePath = browser.uploadFile(pathToUpload);
-      $(selector).setValue(remoteFilePath);
-    },
+      const remoteFilePath = this.#br.uploadFile(pathToUpload);
+      this.$(selector).setValue(remoteFilePath);
+    }
 
 
-    waitAndSetValue: (selector: string, value: string | number,
+    waitAndSetValue(selector: string, value: string | number,
         opts: { maybeMoves?: true, checkAndRetry?: true, timeoutMs?: number,
-            okayOccluders?: string, append?: boolean, skipWait?: true } = {}) => {
+            okayOccluders?: string, append?: boolean, skipWait?: true } = {}) {
 
       if (opts.append) {
         dieIf(!_.isString(value), `Can only append strings [TyE692RKR3J]`);
@@ -1525,28 +1534,28 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       //// Sometimes these tests aren't enough! [6AKBR45] The elem still isn't editable.
       //// How is that possible? What more to check for?
       //// Results in an "<element> is not reachable by keyboard" error.
-      //api.waitForVisible(selector, opts.timeoutMs);
-      //api.waitForEnabled(selector);
-      //api.waitUntilLoadingOverlayGone();
+      //this.waitForVisible(selector, opts.timeoutMs);
+      //this.waitForEnabled(selector);
+      //this.waitUntilLoadingOverlayGone();
       //if (opts.maybeMoves) {
-      //  api.waitUntilDoesNotMove(selector);
+      //  this.waitUntilDoesNotMove(selector);
       //}
       if (!opts.skipWait) {
-        api._waitForClickable(selector, opts);
+        this._waitForClickable(selector, opts);
       }
 
         // Sometimes, when starting typing, React does a refresh / unmount?
         // — maybe the mysterious unmount e2e test problem [5QKBRQ] ? [E2EBUG]
         // so the remaining characters gets lost. Then, try again.
-      api.waitUntil(() => {
+      this.waitUntil(() => {
           // Old comment, DO_AFTER 2020-08-01: Delete this comment.
           // This used to work, and still works in FF, but Chrome nowadays (2018-12)
           // just appends instead — now works again, with Webdriverio v6.
-          //browser.setValue(selector, value);
+          //this.#br.setValue(selector, value);
           // GitHub issue and a more recent & better workaround?:
           //  https://github.com/webdriverio/webdriverio/issues/3024#issuecomment-542888255
           
-          const elem = $(selector);
+          const elem = this.$(selector);
           const oldText = elem.getValue();
 
           if (opts.append) {
@@ -1563,10 +1572,10 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
                      //  like a flower instead though, if printed in the Linux console.
             // But this:
             //elem.setValue('x'); // eh, stopped working, WebdriverIO v6.0.14 —> 6.0.15 ? what ?
-            //browser.keys(['Backspace']);  // properly triggers React.js event
+            //this.#br.keys(['Backspace']);  // properly triggers React.js event
             // Instead:
             elem.setValue('x');  // focus it without clicking (in case a placeholder above)
-            browser.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
+            this.#br.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
           }
           else {
             // --------------------------------
@@ -1576,7 +1585,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             elem.setValue('x');  // appends, and focuses it without clicking
                                   // (in case a placeholder text above)
             // Delete chars one at a time:
-            browser.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
+            this.#br.keys(Array(oldText.length + 1).fill('Backspace'));  // + 1 = the 'x'
             // --------------------------------
             elem.setValue(value);
           }
@@ -1584,7 +1593,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           if (!opts.checkAndRetry)
             return true;
 
-          browser.pause(200);
+          this.#br.pause(200);
 
           const valueReadBack = elem.getValue();
           const desiredValue = (opts.append ? oldText : '') + value;
@@ -1597,52 +1606,52 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             `   got back when reading:  ${valueReadBack}\n` +
             `                selector:  ${selector}   — trying again... [TyME2E5MKSRJ2]`);
       });
-    },
+    }
 
 
-    waitAndSetValueForId: function(id, value) {
-      api.waitAndSetValue('#' + id, value);
-    },
+    waitAndSetValueForId(id, value) {
+      this.waitAndSetValue('#' + id, value);
+    }
 
 
-    waitAndClickSelectorWithText: (selector: string, regex: string | RegExp) => {
-      api.waitForThenClickText(selector, regex);
-    },
+    waitAndClickSelectorWithText(selector: string, regex: string | RegExp) {
+      this.waitForThenClickText(selector, regex);
+    }
 
-    waitForThenClickText: (selector: string, regex: string | RegExp) => {   // RENAME to waitAndClickSelectorWithText (above)
+    waitForThenClickText(selector: string, regex: string | RegExp) {   // RENAME to waitAndClickSelectorWithText (above)
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
-        const elem = api.waitAndGetElemWithText(selector, regex);
+        const elem = this.waitAndGetElemWithText(selector, regex);
         elem.click();
       });
-    },
+    }
 
 
-    waitUntilTextMatches: (selector: string, regex: string | RegExp) => {
-      api.waitAndGetElemWithText(selector, regex);
-    },
+    waitUntilTextMatches(selector: string, regex: string | RegExp) {
+      this.waitAndGetElemWithText(selector, regex);
+    }
 
 
-    waitUntilHtmlMatches: function(selector: string, regexOrStr: string | RegExp | any[]) {
-      api.waitForExist(selector);
+    waitUntilHtmlMatches(selector: string, regexOrStr: string | RegExp | any[]) {
+      this.waitForExist(selector);
 
       for (let i = 0; true; ++i) {
-        const html = browser.getHTML(selector);
-        const anyMiss = api._findHtmlMatchMiss(html, true, regexOrStr);
+        const html = this.$(selector).getHTML();
+        const anyMiss = this._findHtmlMatchMiss(html, true, regexOrStr);
         if (!anyMiss)
           break;
 
-        browser.pause(PollMs);
+        this.#br.pause(PollMs);
         if (i > 10 && (i % 10 === 0)) {
           console.log(`Waiting for '${selector}' to match: \`${anyMiss}'\n` +
             `but the html is:\n-----${html}\n----`);
         }
       }
-    },
+    }
 
 
-    _findHtmlMatchMiss: (html: string, shouldMatch: boolean, regexOrStr: string | RegExp | any[])
-          : string | null => {
+    _findHtmlMatchMiss (html: string, shouldMatch: boolean, regexOrStr: string | RegExp | any[])
+          : string | null {
 
       const matchMiss = shouldMatch ? "match" : "miss";
       if (settings.logLevel === 'verbose') {
@@ -1669,12 +1678,12 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           return ros;
       }
       return null;
-    },
+    }
 
 
-    waitAndAssertVisibleTextMatches: (selector: string, stringOrRegex: string | RegExp) => {
+    waitAndAssertVisibleTextMatches(selector: string, stringOrRegex: string | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
-      const text = api.waitAndGetVisibleText(selector);
+      const text = this.waitAndGetVisibleText(selector);
       // This is easy to read:  [E2EEASYREAD]
       tyAssert.ok(regex.test(text), '\n\n' +
           `  Text of element selected by:  ${selector}\n` +
@@ -1683,19 +1692,19 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           `------------------------------------\n` +
           `${text}\n` +
           `------------------------------------\n`);
-    },
+    }
 
 
-    waitAndGetElemWithText: (selector: string, stringOrRegex: string | RegExp,
-          timeoutMs?: number): WebdriverIO.Element => {
+    waitAndGetElemWithText(selector: string, stringOrRegex: string | RegExp,
+          timeoutMs?: number): WebdriverIO.Element {
       const regex = getRegExpOrDie(stringOrRegex);
 
-      // Don't use browser.waitUntil(..) — exceptions in waitUntil apparently don't
+      // Don't use this.#br.waitUntil(..) — exceptions in waitUntil apparently don't
       // propagade to the caller, and instead always break the test. E.g. using
       // a stale elem ref in an ok harmless way, apparently breaks the test.
       const startMs = Date.now();
       for (let pauseMs = PollMs; true; pauseMs *= PollExpBackoff) {
-        const elems = $$(selector);
+        const elems = this.$$(selector);
         let texts = '';
         for (let i = 0; i < elems.length; ++i) {
           const elem = elems[i];
@@ -1723,47 +1732,47 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             `Instead, the matching selectors texts are: [${texts}]  [TyE40MRBL25]`)
         }
 
-        browser.pause(Math.min(pauseMs, PollMaxMs));
+        this.#br.pause(Math.min(pauseMs, PollMaxMs));
       }
-    },
+    }
 
 
-    getText: function(selector: string): string {  // RENAME to waitAndGetText
-                                              // and thereafter, die(...) in api.getText().
-      return api.waitAndGetText.apply(browser, arguments);
-    },
+    getText(selector: string): string {  // RENAME to waitAndGetText
+                                              // and thereafter, die(...) in this.getText().
+      return this.waitAndGetText(selector);
+    }
 
 
-    waitAndGetText: (selector: string): string => {
+    waitAndGetText(selector: string): string {
       // Maybe not visible, if empty text? So use  waitForExist() here — and,
       // in waitAndGetVisibleText() just below, we waitForVisible() instead.
-      api.waitForExist(selector);
-      return $(selector).getText();
-    },
+      this.waitForExist(selector);
+      return this.$(selector).getText();
+    }
 
 
-    waitAndGetValue: (selector: string): string => {
-      api.waitForExist(selector);
-      return $(selector).getValue();
-    },
+    waitAndGetValue(selector: string): string {
+      this.waitForExist(selector);
+      return this.$(selector).getValue();
+    }
 
 
-    waitAndGetVisibleText: (selector): string => {
-      api.waitForVisibleText(selector);
-      return $(selector).getText();
-    },
+    waitAndGetVisibleText(selector): string {
+      this.waitForVisibleText(selector);
+      return this.$(selector).getText();
+    }
 
 
-    assertTextMatches: (selector: string, regex: string | RegExp, regex2?: string | RegExp) => {
-      api._assertOneOrAnyTextMatches(false, selector, regex, regex2);
-    },
+    assertTextMatches(selector: string, regex: string | RegExp, regex2?: string | RegExp) {
+      this._assertOneOrAnyTextMatches(false, selector, regex, regex2);
+    }
 
 
-    waitUntilAnyTextMatches: (selector: string, stringOrRegex: string | RegExp) => {
+    waitUntilAnyTextMatches(selector: string, stringOrRegex: string | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
       let num;
-      api.waitUntil(() => {
-        const items = $$(selector);
+      this.waitUntil(() => {
+        const items = this.$$(selector);
         num = items.length;
         for (let item of items) {
           if (regex.test(item.getText()))
@@ -1772,24 +1781,24 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       }, {
         message: `Waiting for any  ${selector}  (there are ${num}, now) to match:  ${regex}`
       })
-    },
+    }
 
 
-    assertAnyTextMatches: (selector: string, regex: string | RegExp,
-          regex2?: string | RegExp, fast?) => {
-      api._assertOneOrAnyTextMatches(true, selector, regex, regex2, fast);
-    },
+    assertAnyTextMatches(selector: string, regex: string | RegExp,
+          regex2?: string | RegExp, fast?) {
+      this._assertOneOrAnyTextMatches(true, selector, regex, regex2, fast);
+    }
 
 
     // n starts on 1 not 0.
     // Also see:  assertNthClassIncludes
-    assertNthTextMatches: (selector: string, n: number,
-          stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp) => {
+    assertNthTextMatches(selector: string, n: number,
+          stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
       const regex2 = getAnyRegExpOrDie(stringOrRegex2);
 
       assert(n >= 1, "n starts on 1, change from 0 to 1 please");
-      const items = $$(selector);
+      const items = this.$$(selector);
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
 
       const text = items[n - 1].getText();
@@ -1807,14 +1816,14 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
             regex2.toString() + ", actual text: '" + text + "'");
       }
-    },
+    }
 
 
     // n starts on 1 not 0.
     // Also see:  assertNthTextMatches
-    assertNthClassIncludes: function(selector, n, classToFind) {
+    assertNthClassIncludes(selector: string, n: number, classToFind: string) {
       assert(n >= 1, "n starts on 1, change from 0 to 1 please");
-      const items = $$(selector);
+      const items = this.$$(selector);
       assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
       const actuallClassAttr = getNthFromStartOrEnd(n, items).getAttribute('class');
       const regex = new RegExp(`\\b${classToFind}\\b`);
@@ -1823,20 +1832,20 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         `       Elem ${n} selected by:  ${selector}\n` +
            `  doesn't have this class:  ${classToFind}\n` +
            `           instead it has:  ${actuallClassAttr}\n`);
-    },
+    }
 
 
-    assertNoTextMatches: function(selector: string, regex: string | RegExp) {
-      api._assertAnyOrNoneMatches(selector, false, regex);
-    },
+    assertNoTextMatches(selector: string, regex: string | RegExp) {
+      this._assertAnyOrNoneMatches(selector, false, regex);
+    }
 
 
-    _assertOneOrAnyTextMatches: function(many, selector, regex: string | RegExp,
+    _assertOneOrAnyTextMatches (many, selector: string, regex: string | RegExp,
           regex2?: string | RegExp, fast?) {
       //process.stdout.write('■');
       //if (fast === 'FAST') {
-        // This works with only one browser at a time, so only use if FAST, or tests will break.
-        api._assertAnyOrNoneMatches(selector, true, regex, regex2);
+        // This works with only one this.#br at a time, so only use if FAST, or tests will break.
+        this._assertAnyOrNoneMatches(selector, true, regex, regex2);
       /*
         //process.stdout.write('F ');
         return;
@@ -1860,10 +1869,10 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       // Log a friendly error, if the selector is absent — that'd be a test suite bug.
       // Without this assert...isVisible, Webdriver just prints "Error" and one won't know
       // what the problem is.
-      assert(browser.isVisible(selector), `Selector '${selector}' not visible, cannot match text [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
-      const textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
+      assert(this.isVisible(selector), `Selector '${selector}' not visible, cannot match text [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
+      const textByBrowserName = byBrowser(this.#br.getText(selector));  // SLOW !!
       _.forOwn(textByBrowserName, function(text, browserName) {
-        const whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
+        const whichBrowser = isTheOnly(browserName) ? '' : ", this.#br: " + browserName;
         if (!many) {
           assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
         }
@@ -1883,10 +1892,10 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       });
       //process.stdout.write('S ');
       */
-    },
+    }
 
 
-    _assertAnyOrNoneMatches: function(selector: string, shallMatch: boolean,
+    _assertAnyOrNoneMatches (selector: string, shallMatch: boolean,
           stringOrRegex: string | RegExp, stringOrRegex2?: string | RegExp) {
       const regex = getRegExpOrDie(stringOrRegex);
       const regex2 = getAnyRegExpOrDie(stringOrRegex2);
@@ -1894,7 +1903,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       dieIf(_.isString(regex2) && !shallMatch,
           `two regexps only supported if shallMatch = true`);
 
-      const elems = $$(selector);
+      const elems = this.$$(selector);
 
       // If many browsers, we got back {browserName: ...., otherBrowserName: ...} instead.
       tyAssert.ok(_.isArray(elems) || !_.isObject(elems), '\n\n' +
@@ -1949,90 +1958,90 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
       assert.fail(`Text match failure, selector:  ${selector}  shallMatch: ${shallMatch}\n` +
         `problems:\n` + problems);
-    },
+    }
 
 
-    waitUntilIsOnHomepage: function() {
-      api.waitUntil(() => {
-        const url = browser.getUrl();
+    waitUntilIsOnHomepage() {
+      this.waitUntil(() => {
+        const url = this.#br.getUrl();
         return /https?:\/\/[^/?#]+(\/latest|\/top|\/)?(#.*)?$/.test(url);
       });
-    },
+    }
 
 
     // RENAME to assertPageTitlePostMatches
-    assertPageTitleMatches: function(regex: string | RegExp) {
-      api.waitForVisible('h1.dw-p-ttl');
-      api.waitUntilTextMatches('h1.dw-p-ttl', regex);
-      //api.assertTextMatches('h1.dw-p-ttl', regex);
-    },
+    assertPageTitleMatches(regex: string | RegExp) {
+      this.waitForVisible('h1.dw-p-ttl');
+      this.waitUntilTextMatches('h1.dw-p-ttl', regex);
+      //this.assertTextMatches('h1.dw-p-ttl', regex);
+    }
 
 
     // RENAME to assertPageBodyPostMatches
-    assertPageBodyMatches: function(regex: string | RegExp) {
-      api.waitForVisible('.esOrigPost');
-      //api.waitUntilTextMatches('.esOrigPost', regex);
-      api.assertTextMatches('.esOrigPost', regex);
-    },
+    assertPageBodyMatches(regex: string | RegExp) {
+      this.waitForVisible('.esOrigPost');
+      //this.waitUntilTextMatches('.esOrigPost', regex);
+      this.assertTextMatches('.esOrigPost', regex);
+    }
 
 
-    assertPageHtmlSourceMatches_1: (toMatch: string | RegExp) => {
-      // _1 = only for 1 browser
-      const source = browser.getPageSource();
+    assertPageHtmlSourceMatches_1 (toMatch: string | RegExp) {
+      // _1 = only for 1 this.#br
+      const source = this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch);
       assert(regex.test(source), "Page source does match " + regex);
-    },
+    }
 
 
     /**
      * Useful if navigating to a new page, but don't know exactly when will have done that.
      */
-    waitUntilPageHtmlSourceMatches_1: (toMatch: string | RegExp) => {
-      // _1 = only for 1 browser
+    waitUntilPageHtmlSourceMatches_1 (toMatch: string | RegExp) {
+      // _1 = only for 1 this.#br
       const regex = getRegExpOrDie(toMatch);
-      api.waitUntil(() => {
-        const source = browser.getPageSource();
+      this.waitUntil(() => {
+        const source = this.#br.getPageSource();
         return regex.test(source);
       }, {
         message: `Waiting for page source to match:  ${regex}`,
       });
-    },
+    }
 
 
-    assertPageHtmlSourceDoesNotMatch: (toMatch: string | RegExp) => {
-      const source = browser.getPageSource();
+    assertPageHtmlSourceDoesNotMatch(toMatch: string | RegExp) {
+      const source = this.#br.getPageSource();
       const regex = getRegExpOrDie(toMatch)
       assert(!regex.test(source), `Page source *does* match: ${regex}`);
-      //let resultsByBrowser = byBrowser(browser.getPageSource());
+      //let resultsByBrowser = byBrowser(this.#br.getPageSource());
       //_.forOwn(resultsByBrowser, (text, browserName) => {
       //  assert(!regex.test(text), browserNamePrefix(browserName) + "Page source does match " + regex);
       //});
-    },
+    }
 
 
-    _pageNotFoundOrAccessDenied: /Page not found, or Access Denied/,
+    _pageNotFoundOrAccessDenied = /Page not found, or Access Denied/;
 
-    // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
-    assertWholePageHidden: function() {
-      let resultsByBrowser = byBrowser(browser.getPageSource());
+    // Also see this.#br.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
+    assertWholePageHidden() {
+      let resultsByBrowser = byBrowser(this.#br.getPageSource());
       _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
-          assert(api._pageNotFoundOrAccessDenied.test(text),
+          assert(this._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
           assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
         }
       });
-    },
+    }
 
 
-    // Also see api.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
-    assertMayNotSeePage: function() {
-      let resultsByBrowser = byBrowser(browser.getPageSource());
+    // Also see this.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
+    assertMayNotSeePage() {
+      let resultsByBrowser = byBrowser(this.#br.getPageSource());
       _.forOwn(resultsByBrowser, (text: any, browserName) => {
         if (settings.prod) {
-          assert(api._pageNotFoundOrAccessDenied.test(text),
+          assert(this._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
@@ -2040,60 +2049,60 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
               "User can see page. Or did you forget the --prod flag? (for Prod mode)");
         }
       });
-    },
+    }
 
 
-    assertMayNotLoginBecauseNotYetApproved: function() {
-      api.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
-    },
+    assertMayNotLoginBecauseNotYetApproved() {
+      this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
+    }
 
 
-    assertMayNotLoginBecauseRejected: function() {
-      api.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
-    },
+    assertMayNotLoginBecauseRejected() {
+      this.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
+    }
 
 
-    assertNotFoundError: function() {
+    assertNotFoundError() {
       for (let i = 0; i < 20; ++i) {
-        let source = browser.getPageSource();
+        let source = this.#br.getPageSource();
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
         let is404 = /404 Not Found.+TyE404_/s.test(source);
         if (!is404) {
-          browser.pause(250);
-          browser.refresh();
+          this.#br.pause(250);
+          this.#br.refresh();
           continue;
         }
         return;
       }
       die('EdE5FKW2', "404 Not Found never appears");
-    },
+    }
 
 
-    assertUrlIs: function(expectedUrl) {
-      let url = browser.getUrl();
+    assertUrlIs(expectedUrl) {
+      let url = this.#br.getUrl();
       assert(url === expectedUrl);
-    },
+    }
 
-    goToSearchPage: (query?: string) => {
+    goToSearchPage(query?: string) {
       const q = query ? '?q=' + query : '';
-      api.go('/-/search' + q);
-      api.waitForVisible('.s_SP_QueryTI');
-    },
+      this.go('/-/search' + q);
+      this.waitForVisible('.s_SP_QueryTI');
+    }
 
-    acceptAnyAlert: (howMany: number = 1): boolean => {
-      return api.dismissAcceptAnyAlert(howMany, true);
-    },
+    acceptAnyAlert(howMany: number = 1): boolean {
+      return this.dismissAcceptAnyAlert(howMany, true);
+    }
 
-    dismissAnyAlert: (howMany: number = 1): boolean => {
-      return api.dismissAcceptAnyAlert(howMany, false);
-    },
+    dismissAnyAlert(howMany: number = 1): boolean {
+      return this.dismissAcceptAnyAlert(howMany, false);
+    }
 
-    dismissAcceptAnyAlert: (howMany: number, accept: boolean): boolean => {
+    dismissAcceptAnyAlert(howMany: number, accept: boolean): boolean {
       let numDone = 0;
-      api.waitUntil(() => {
+      this.waitUntil(() => {
         try {
-          if (accept) browser.acceptAlert();
-          else browser.dismissAlert();
+          if (accept) this.#br.acceptAlert();
+          else this.#br.dismissAlert();
           logMessage(accept ? "Accepted." : "Dismissed.");
           numDone += 1;
           if (numDone === howMany)
@@ -2109,58 +2118,58 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       });
       logMessage(`Handled ${numDone} out of <= ${howMany} maybe-alerts.`);
       return numDone >= 1;
-    },
+    }
 
-    countLongPollingsDone: () => {
-      const result = browser.execute(function() {
+    countLongPollingsDone() {
+      const result = this.#br.execute(function() {
         return window['debiki2'].Server.testGetLongPollingNr();
       });
       dieIf(!_.isNumber(result), "Error getting long polling count, result: " + JSON.stringify(result));
       const count = result; // parseInt(result);
       dieIf(_.isNaN(count), "Long polling count is weird: " + JSON.stringify(result));
       return count;
-    },
+    }
 
-    createSite: {
-      fillInFieldsAndSubmit: function(data: NewSiteData) {
+    createSite = {
+      fillInFieldsAndSubmit: (data: NewSiteData) => {
         if (data.embeddingUrl) {
-          api.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
+          this.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
-          api.waitAndSetValue('#dwLocalHostname', data.localHostname);
+          this.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
-        api.waitAndClick('#e2eNext3');
-        api.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
-        api.waitAndClick('input[type=submit]');
-        api.waitForVisible('#t_OwnerSignupB');
-        assert.equal(data.origin, api.origin());
+        this.waitAndClick('#e2eNext3');
+        this.waitAndSetValue('#e2eOrgName', data.orgName || data.localHostname);
+        this.waitAndClick('input[type=submit]');
+        this.waitForVisible('#t_OwnerSignupB');
+        assert.equal(data.origin, this.origin());
       },
 
       clickOwnerSignupButton: () => {
-        api.waitAndClick('#t_OwnerSignupB');
+        this.waitAndClick('#t_OwnerSignupB');
       }
-    },
+    };
 
 
-    createSomething: {
+    createSomething = {
       createForum: (forumTitle: string) => {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
-        // api.waitAndClick('#e2eCreateForum');
-        browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
+        // this.waitAndClick('#e2eCreateForum');
+        this.#br.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
         logMessage(`Typig forum title: "${forumTitle}" ...`);
-        api.waitAndSetValue('input[type="text"]', forumTitle, { checkAndRetry: true });
+        this.waitAndSetValue('input[type="text"]', forumTitle, { checkAndRetry: true });
         // Click Next, Next ... to accept all default choices.
         /*  [NODEFCATS]
-        api.waitAndClick('.e_Next');
-        browser.pause(200); // Wait for next button
-        api.waitAndClick('.e_Next');
-        browser.pause(200);
-        api.waitAndClick('.e_Next');
-        browser.pause(200);
+        this.waitAndClick('.e_Next');
+        this.#br.pause(200); // Wait for next button
+        this.waitAndClick('.e_Next');
+        this.#br.pause(200);
+        this.waitAndClick('.e_Next');
+        this.#br.pause(200);
         */
         logMessage(`Clicking Next ...`);
-        api.waitAndClick('.e_Next');
+        this.waitAndClick('.e_Next');
 
         /*
         DB_CONFICT: A Postgres serialization error might happen here, sth like 1 in 12, or 0 in 22:
@@ -2253,196 +2262,196 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             */
 
         logMessage(`Creating the forum ...`);
-        api.waitAndClick('#e2eDoCreateForum');
+        this.waitAndClick('#e2eDoCreateForum');
         logMessage(`Waiting for title ...`);
-        const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
+        const actualTitle = this.waitAndGetVisibleText('h1.dw-p-ttl');
         logMessage(`Done? The forum title is: "${actualTitle}"`);
         assert.equal(actualTitle, forumTitle);
       },
-    },
+    };
 
 
-    topbar: {
+    topbar = {
       isVisible: (): boolean => {
-        return browser.isVisible('.esTopbar');
+        return this.isVisible('.esTopbar');
       },
 
-      waitForVisible: function() {  // old name? use waitForMyMenuVisible instead only?
-        api.topbar.waitForMyMenuVisible();
+      waitForVisible: () => {  // old name? use waitForMyMenuVisible instead only?
+        this.topbar.waitForMyMenuVisible();
       },
 
-      waitForMyMenuVisible: function() {  // RENAME to waitForMyMenuButtonVisible?
-        api.waitForVisible('.esMyMenu');
+      waitForMyMenuVisible: () => {  // RENAME to waitForMyMenuButtonVisible?
+        this.waitForVisible('.esMyMenu');
       },
 
-      clickBack: function() {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('.esTopbar_custom_backToSite');
+      clickBack: () => {
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('.esTopbar_custom_backToSite');
         });
       },
 
-      clickHome: function() {
-        if (browser.isVisible('.esLegal_home_link')) {
-          api.rememberCurrentUrl();
-          api.waitAndClick('.esLegal_home_link');
-          api.waitForNewUrl();
+      clickHome: () => {
+        if (this.isVisible('.esLegal_home_link')) {
+          this.rememberCurrentUrl();
+          this.waitAndClick('.esLegal_home_link');
+          this.waitForNewUrl();
         }
         else {
           // (Already waits for new url.)
-          api.topbar.clickAncestor("Home");
+          this.topbar.clickAncestor("Home");
         }
       },
 
-      clickAncestor: function(categoryName: string) {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
+      clickAncestor: (categoryName: string) => {
+        this.repeatUntilAtNewUrl(() => {
+          this.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
         });
       },
 
       // COULD FASTER_E2E_TESTS can set  wait:false at most places
-      assertMyUsernameMatches: function(username: string, ps: { wait?: boolean } = {}) {
+      assertMyUsernameMatches: (username: string, ps: { wait?: boolean } = {}) => {
         if (ps.wait !== false) {
-          browser.waitForVisible('.esMyMenu .esAvtrName_name');
+          this.waitForDisplayed('.esMyMenu .esAvtrName_name');
         }
-        api.assertTextMatches('.esMyMenu .esAvtrName_name', username);
+        this.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
 
-      waitForNumPendingUrgentReviews: function(numUrgent: IntAtLeastOne) {
+      waitForNumPendingUrgentReviews: (numUrgent: IntAtLeastOne) => {
         assert(numUrgent >= 1, "Zero tasks won't ever become visible [TyE5GKRBQQ2]");
-        api.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
+        this.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
       },
 
-      waitForNumPendingOtherReviews: function(numOther: IntAtLeastOne) {
+      waitForNumPendingOtherReviews: (numOther: IntAtLeastOne) => {
         assert(numOther >= 1, "Zero tasks won't ever become visible [TyE2WKBPJR3]");
-        api.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
+        this.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
       },
 
-      isNeedsReviewUrgentVisible: function() {
-        return browser.isVisible('.esNotfIcon-reviewUrgent');
+      isNeedsReviewUrgentVisible: () => {
+        return this.isVisible('.esNotfIcon-reviewUrgent');
       },
 
-      isNeedsReviewOtherVisible: function() {
-        return browser.isVisible('.esNotfIcon-reviewOther');
+      isNeedsReviewOtherVisible: () => {
+        return this.isVisible('.esNotfIcon-reviewOther');
       },
 
-      getMyUsername: function() {
-        return api.waitAndGetVisibleText('.esMyMenu .esAvtrName_name');
+      getMyUsername: () => {
+        return this.waitAndGetVisibleText('.esMyMenu .esAvtrName_name');
       },
 
-      clickLogin: function() {
-        api.waitAndClick('.esTopbar_logIn');
-        api.waitUntilLoadingOverlayGone();
+      clickLogin: () => {
+        this.waitAndClick('.esTopbar_logIn');
+        this.waitUntilLoadingOverlayGone();
       },
 
-      clickSignUp: function() {
-        api.waitAndClick('.esTopbar_signUp');
-        api.waitUntilLoadingOverlayGone();
+      clickSignUp: () => {
+        this.waitAndClick('.esTopbar_signUp');
+        this.waitUntilLoadingOverlayGone();
       },
 
-      clickLogout: function(options: { waitForLoginButton?: boolean } = {}) {   // RENAME to logout
-        api.topbar.openMyMenu();
-        api.waitAndClick('#e2eMM_Logout');
-        api.waitAndClick('.e_ByeD .btn-primary');
+      clickLogout: (options: { waitForLoginButton?: boolean } = {}) => {   // RENAME to logout
+        this.topbar.openMyMenu();
+        this.waitAndClick('#e2eMM_Logout');
+        this.waitAndClick('.e_ByeD .btn-primary');
         if (options.waitForLoginButton === false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
           // Or we got redirected to an SSO login window.
         } else {
-          api.waitUntilModalGone();
-          api.topbar.waitUntilLoginButtonVisible();
+          this.waitUntilModalGone();
+          this.topbar.waitUntilLoginButtonVisible();
         }
         // If on a users profile page, might start reloading something (because different user & perms).
-        api.waitUntilLoadingOverlayGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      waitUntilLoginButtonVisible: function() {
-        api.waitForVisible('.esTopbar_logIn');
+      waitUntilLoginButtonVisible: () => {
+        this.waitForVisible('.esTopbar_logIn');
       },
 
-      openMyMenu: function() {
-        api.waitAndClick('.esMyMenu');
-        api.waitUntilLoadingOverlayGone();
+      openMyMenu: () => {
+        this.waitAndClick('.esMyMenu');
+        this.waitUntilLoadingOverlayGone();
         // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
         // attempts to click instantly, before the show-menu anim has completed and the elem
         // has appeared. So pause for a short while. [E2EBUG]
-        browser.pause(333);
+        this.#br.pause(333);
       },
 
       closeMyMenuIfOpen: () => {
-        if (browser.isVisible('.s_MM .esDropModal_CloseB')) {
-          api.waitAndClick('.s_MM .esDropModal_CloseB');
-          api.waitForGone('.s_MM .esDropModal_CloseB');
+        if (this.isVisible('.s_MM .esDropModal_CloseB')) {
+          this.waitAndClick('.s_MM .esDropModal_CloseB');
+          this.waitForGone('.s_MM .esDropModal_CloseB');
         }
       },
 
-      clickGoToAdmin: function() {
-        api.rememberCurrentUrl();
-        api.topbar.openMyMenu();
-        api.waitAndClick('.esMyMenu_admin a');
-        api.waitForNewUrl();
-        api.waitUntilLoadingOverlayGone();
+      clickGoToAdmin: () => {
+        this.rememberCurrentUrl();
+        this.topbar.openMyMenu();
+        this.waitAndClick('.esMyMenu_admin a');
+        this.waitForNewUrl();
+        this.waitUntilLoadingOverlayGone();
       },
 
       navigateToGroups: () => {
-        api.rememberCurrentUrl();
-        api.topbar.openMyMenu();
-        api.waitAndClick('#te_VwGrps');
-        api.waitForNewUrl();
-        api.groupListPage.waitUntilLoaded();
+        this.rememberCurrentUrl();
+        this.topbar.openMyMenu();
+        this.waitAndClick('#te_VwGrps');
+        this.waitForNewUrl();
+        this.groupListPage.waitUntilLoaded();
       },
 
-      clickGoToProfile: function() {
-        api.rememberCurrentUrl();
-        api.topbar.openMyMenu();
-        api.waitAndClick('#e2eMM_Profile');
-        api.waitForNewUrl();
-        api.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
+      clickGoToProfile: () => {
+        this.rememberCurrentUrl();
+        this.topbar.openMyMenu();
+        this.waitAndClick('#e2eMM_Profile');
+        this.waitForNewUrl();
+        this.waitForVisible(this.userProfilePage.avatarAboutButtonsSelector);
       },
 
-      clickStopImpersonating: function() {
-        let oldName = api.topbar.getMyUsername();
+      clickStopImpersonating: () => {
+        let oldName = this.topbar.getMyUsername();
         let newName;
-        api.topbar.openMyMenu();
-        api.waitAndClick('.s_MM_StopImpB');
+        this.topbar.openMyMenu();
+        this.waitAndClick('.s_MM_StopImpB');
         // Wait for page to reload:
-        api.waitForGone('.s_MMB-IsImp');  // first, page reloads: the is-impersonating mark, disappears
-        api.waitForVisible('.esMyMenu');  // then the page reappears
+        this.waitForGone('.s_MMB-IsImp');  // first, page reloads: the is-impersonating mark, disappears
+        this.waitForVisible('.esMyMenu');  // then the page reappears
         do {
-          newName = api.topbar.getMyUsername();
+          newName = this.topbar.getMyUsername();
         }
         while (oldName === newName);
       },
 
-      searchFor: function(phrase: string) {
-        api.waitAndClick('.esTB_SearchBtn');
+      searchFor: (phrase: string) => {
+        this.waitAndClick('.esTB_SearchBtn');
         // The search text field should grab focus, so we can just start typing:
         // But this causes a "RuntimeError" in Webdriver.io v4:
-        // browser.keys(phrase);
+        // this.#br.keys(phrase);
         // This works though (although won't test if has focus):
-        api.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
-        api.waitAndClick('.e_SearchB');
-        api.searchResultsPage.waitForResults(phrase);
+        this.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
+        this.waitAndClick('.e_SearchB');
+        this.searchResultsPage.waitForResults(phrase);
       },
 
-      assertNotfToMe: function() {
-        assert(browser.isVisible('.esTopbar .esNotfIcon-toMe'));
+      assertNotfToMe: () => {
+        assert(this.isVisible('.esTopbar .esNotfIcon-toMe'));
       },
 
       notfsToMeClass: '.esTopbar .esNotfIcon-toMe',
       otherNotfsClass: '.esTopbar .esNotfIcon-toOthers',
 
-      waitForNumDirectNotfs: function(numNotfs: IntAtLeastOne) {
+      waitForNumDirectNotfs: (numNotfs: IntAtLeastOne) => {
         assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE5GKRBQQ03]");
-        api.waitUntilTextMatches(api.topbar.notfsToMeClass, '^' + numNotfs + '$');
+        this.waitUntilTextMatches(this.topbar.notfsToMeClass, '^' + numNotfs + '$');
       },
 
-      waitForNoDirectNotfs: function() {
-        api.waitForGone(api.topbar.notfsToMeClass);
+      waitForNoDirectNotfs: () => {
+        this.waitForGone(this.topbar.notfsToMeClass);
       },
 
-      waitForNumOtherNotfs: function(numNotfs: IntAtLeastOne) {
+      waitForNumOtherNotfs: (numNotfs: IntAtLeastOne) => {
         assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE4ABKF024]");
-        api.waitUntilTextMatches(api.topbar.otherNotfsClass, '^' + numNotfs + '$');
+        this.waitUntilTextMatches(this.topbar.otherNotfsClass, '^' + numNotfs + '$');
       },
 
       refreshUntilNumOtherNotfs: (desiredNumNotfs: number) => {
@@ -2451,13 +2460,13 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         while (true) {
           let isWhat;
           if (desiredNumNotfs === 0) {
-            if (!browser.isVisible(api.topbar.otherNotfsClass)) {
+            if (!this.isVisible(this.topbar.otherNotfsClass)) {
               break;
             }
             isWhat = '>= 1';
           }
           else {
-            const text = api.waitAndGetVisibleText(api.topbar.otherNotfsClass);
+            const text = this.waitAndGetVisibleText(this.topbar.otherNotfsClass);
             const actualNumNotfs = parseInt(text);
             if (actualNumNotfs === desiredNumNotfs) {
               break;
@@ -2465,7 +2474,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             isWhat = '' + actualNumNotfs;
           }
           const pauseMs = 1000;
-          browser.pause(pauseMs);
+          this.#br.pause(pauseMs);
 
           // Because of some race condition, in rare cases, notifications won't get marked
           // as seen. Hard to reproduce, only happens 1 in 10 in invisible e2e tests.
@@ -2474,211 +2483,211 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           if (millisLeftToRefresh < 0) {
             logUnusual(`Refreshing page. Num-other-notfs count is currently ${isWhat} ` +
                 `and refuses to become ${desiredNumNotfs}...`);
-            browser.refresh();
+            this.#br.refresh();
             millisLeftToRefresh = millisBetweenRefresh;
           }
         }
       },
 
-      waitForNoOtherNotfs: function() {
-        api.waitForGone(api.topbar.otherNotfsClass);
+      waitForNoOtherNotfs: () => {
+        this.waitForGone(this.topbar.otherNotfsClass);
       },
 
-      openNotfToMe: function(options: { waitForNewUrl?: boolean } = {}) {
-        api.topbar.openLatestNotf(options);
+      openNotfToMe: (options: { waitForNewUrl?: boolean } = {}) => {
+        this.topbar.openLatestNotf(options);
       },
 
-      openLatestNotf: function(options: { waitForNewUrl?: boolean, toMe?: true } = {}) {
-        api.topbar.openMyMenu();
-        api.rememberCurrentUrl();
-        api.waitAndClickFirst('.s_MM .dropdown-menu ' + (options.toMe ? '.esNotf-toMe' : '.esNotf'));
+      openLatestNotf: (options: { waitForNewUrl?: boolean, toMe?: true } = {}) => {
+        this.topbar.openMyMenu();
+        this.rememberCurrentUrl();
+        this.waitAndClickFirst('.s_MM .dropdown-menu ' + (options.toMe ? '.esNotf-toMe' : '.esNotf'));
         if (options.waitForNewUrl !== false) {
-          api.waitForNewUrl();
+          this.waitForNewUrl();
         }
       },
 
-      viewAsStranger: function() {
-        api.topbar.openMyMenu();
-        api.waitAndClick('.s_MM_ViewAsB');
+      viewAsStranger: () => {
+        this.topbar.openMyMenu();
+        this.waitAndClick('.s_MM_ViewAsB');
         // Currently there's just one view-as button, namely to view-as-stranger.
-        api.waitAndClick('.s_VAD_Sbd button');
+        this.waitAndClick('.s_VAD_Sbd button');
         // Now there's a warning, close it.
-        api.stupidDialog.clickClose();
+        this.stupidDialog.clickClose();
         // Then another stupid-dialog appears. Wait for a while so we won't click the
         // button in the first dialog, before it has disappeared.
-        browser.pause(800);  // COULD give incrementing ids to the stupid dialogs,
+        this.#br.pause(800);  // COULD give incrementing ids to the stupid dialogs,
                               // so can avoid this pause?
-        api.stupidDialog.close();
+        this.stupidDialog.close();
       },
 
       stopViewingAsStranger: () => {
-        api.topbar.openMyMenu();
-        api.waitAndClick('.s_MM_StopImpB a');
+        this.topbar.openMyMenu();
+        this.waitAndClick('.s_MM_StopImpB a');
       },
 
       myMenu: {
         goToAdminReview: () => {
-          api.topbar.myMenu.goToImpl('#e2eMM_Review');
-          api.adminArea.review.waitUntilLoaded();
+          this.topbar.myMenu.goToImpl('#e2eMM_Review');
+          this.adminArea.review.waitUntilLoaded();
         },
 
         goToDraftsEtc: () => {
-          api.topbar.myMenu.goToImpl('.e_MyDfsB');
-          api.userProfilePage.draftsEtc.waitUntilLoaded();
+          this.topbar.myMenu.goToImpl('.e_MyDfsB');
+          this.userProfilePage.draftsEtc.waitUntilLoaded();
         },
 
         goToImpl: (selector: string) => {
-          api.rememberCurrentUrl();
-          api.topbar.openMyMenu();
-          api.waitAndClick(selector);
-          api.waitForNewUrl();
+          this.rememberCurrentUrl();
+          this.topbar.openMyMenu();
+          this.waitAndClick(selector);
+          this.waitForNewUrl();
         },
 
         dismNotfsBtnClass: '.e_DismNotfs',
 
         markAllNotfsRead: () => {
-          api.topbar.openMyMenu();
-          api.waitAndClick(api.topbar.myMenu.dismNotfsBtnClass);
+          this.topbar.openMyMenu();
+          this.waitAndClick(this.topbar.myMenu.dismNotfsBtnClass);
         },
 
         isMarkAllNotfsReadVisibleOpenClose: (): boolean => {
-          api.topbar.openMyMenu();
-          api.waitForVisible('.s_MM_NotfsBs');  // (test code bug: sometimes absent — if 0 notfs)
-          const isVisible = browser.isVisible(api.topbar.myMenu.dismNotfsBtnClass);
-          api.topbar.closeMyMenuIfOpen();
+          this.topbar.openMyMenu();
+          this.waitForVisible('.s_MM_NotfsBs');  // (test code bug: sometimes absent — if 0 notfs)
+          const isVisible = this.isVisible(this.topbar.myMenu.dismNotfsBtnClass);
+          this.topbar.closeMyMenuIfOpen();
           return isVisible;
         },
       },
 
       pageTools: {
         deletePage: () => {
-          api.waitAndClick('.dw-a-tools');
-          api.waitUntilDoesNotMove('.e_DelPg');
-          api.waitAndClick('.e_DelPg');
-          api.waitUntilModalGone();
-          api.waitForVisible('.s_Pg_DdInf');
+          this.waitAndClick('.dw-a-tools');
+          this.waitUntilDoesNotMove('.e_DelPg');
+          this.waitAndClick('.e_DelPg');
+          this.waitUntilModalGone();
+          this.waitForVisible('.s_Pg_DdInf');
         },
 
         restorePage: () => {
-          api.waitAndClick('.dw-a-tools');
-          api.waitUntilDoesNotMove('.e_RstrPg');
-          api.waitAndClick('.e_RstrPg');
-          api.waitUntilModalGone();
-          api.waitUntilGone('.s_Pg_DdInf');
+          this.waitAndClick('.dw-a-tools');
+          this.waitUntilDoesNotMove('.e_RstrPg');
+          this.waitAndClick('.e_RstrPg');
+          this.waitUntilModalGone();
+          this.waitUntilGone('.s_Pg_DdInf');
         },
       },
-    },
+    };
 
 
-    watchbar: {
+    watchbar = {
       titleSelector: '.esWB_T_Title',
 
-      open: function() {
-        api.waitAndClick('.esOpenWatchbarBtn');
-        api.waitForVisible('#esWatchbarColumn');
+      open: () => {
+        this.waitAndClick('.esOpenWatchbarBtn');
+        this.waitForVisible('#esWatchbarColumn');
       },
 
-      openIfNeeded: function() {
-        if (!browser.isVisible('#esWatchbarColumn')) {
-          api.watchbar.open();
+      openIfNeeded: () => {
+        if (!this.isVisible('#esWatchbarColumn')) {
+          this.watchbar.open();
         }
       },
 
-      close: function() {
-        api.waitAndClick('.esWB_CloseB');
-        api.waitUntilGone('#esWatchbarColumn');
+      close: () => {
+        this.waitAndClick('.esWB_CloseB');
+        this.waitUntilGone('#esWatchbarColumn');
       },
 
       waitForTopicVisible: (title: string) => {
-        api.waitUntilAnyTextMatches(api.watchbar.titleSelector, title);
+        this.waitUntilAnyTextMatches(this.watchbar.titleSelector, title);
       },
 
-      assertTopicVisible: function(title: string) {
-        api.waitForVisible(api.watchbar.titleSelector);
-        api.assertAnyTextMatches(api.watchbar.titleSelector, title);
+      assertTopicVisible: (title: string) => {
+        this.waitForVisible(this.watchbar.titleSelector);
+        this.assertAnyTextMatches(this.watchbar.titleSelector, title);
       },
 
-      assertTopicAbsent: function(title: string) {
-        api.waitForVisible(api.watchbar.titleSelector);
-        api.assertNoTextMatches(api.watchbar.titleSelector, title);
+      assertTopicAbsent: (title: string) => {
+        this.waitForVisible(this.watchbar.titleSelector);
+        this.assertNoTextMatches(this.watchbar.titleSelector, title);
       },
 
-      asserExactlyNumTopics: function(num: number) {
+      asserExactlyNumTopics: (num: number) => {
         if (num > 0) {
-          api.waitForVisible(api.watchbar.titleSelector);
+          this.waitForVisible(this.watchbar.titleSelector);
         }
-        api.assertExactly(num, api.watchbar.titleSelector);
+        this.assertExactly(num, this.watchbar.titleSelector);
       },
 
-      numUnreadTopics: (num: number): number => {
-        return api.count('.esWB_T-Unread');
+      numUnreadTopics: (): number => {
+        return this.count('.esWB_T-Unread');
       },
 
       openUnreadTopic: (index: number = 1) => {
         dieIf(index !== 1, 'unimpl [TyE6927KTS]');
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('.esWB_T-Unread');
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('.esWB_T-Unread');
         });
       },
 
       waitUntilNumUnreadTopics: (num: number) => {
         assert.ok(num > 0, 'TyE0578WNSYG');
-        api.waitForAtLeast(num, '.esWB_T-Unread');
-        api.assertExactly(num, '.esWB_T-Unread');
+        this.waitForAtLeast(num, '.esWB_T-Unread');
+        this.assertExactly(num, '.esWB_T-Unread');
       },
 
-      goToTopic: function(title: string, opts: { isHome?: true } = {}) {
-        api.rememberCurrentUrl();
-        api.waitForThenClickText(
-            api.watchbar.titleSelector, opts.isHome ? c.WatchbarHomeLinkTitle : title);
-        api.waitForNewUrl();
-        api.assertPageTitleMatches(title);
+      goToTopic: (title: string, opts: { isHome?: true } = {}) => {
+        this.rememberCurrentUrl();
+        this.waitForThenClickText(
+            this.watchbar.titleSelector, opts.isHome ? c.WatchbarHomeLinkTitle : title);
+        this.waitForNewUrl();
+        this.assertPageTitleMatches(title);
       },
 
-      clickCreateChat: function() {
-        api.waitAndClick('#e2eCreateChatB');
+      clickCreateChat: () => {
+        this.waitAndClick('#e2eCreateChatB');
       },
 
-      clickCreateChatWaitForEditor: function() {
-        api.waitAndClick('#e2eCreateChatB');
-        api.waitForVisible('.esEdtr_titleEtc');
+      clickCreateChatWaitForEditor: () => {
+        this.waitAndClick('#e2eCreateChatB');
+        this.waitForVisible('.esEdtr_titleEtc');
       },
 
-      clickViewPeople: function() {
-        api.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        api.waitAndClick('#e2eWB_ViewPeopleB');
-        api.waitUntilModalGone();
-        api.waitForVisible('.esCtxbar_list_title');
+      clickViewPeople: () => {
+        this.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        this.waitAndClick('#e2eWB_ViewPeopleB');
+        this.waitUntilModalGone();
+        this.waitForVisible('.esCtxbar_list_title');
       },
 
-      clickLeaveChat: function() {
-        api.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        api.waitAndClick('#e2eWB_LeaveB');
-        api.waitUntilModalGone();
-        api.waitForVisible('#theJoinChatB');
+      clickLeaveChat: () => {
+        this.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        this.waitAndClick('#e2eWB_LeaveB');
+        this.waitUntilModalGone();
+        this.waitForVisible('#theJoinChatB');
       },
-    },
+    };
 
 
-    contextbar: {
-      close: function() {
-        api.waitAndClick('.esCtxbar_close');
-        api.waitUntilGone('#esThisbarColumn');
-      },
-
-      clickAddPeople: function() {
-        api.waitAndClick('#e2eCB_AddPeopleB');
-        api.waitForVisible('#e2eAddUsD');
+    contextbar = {
+      close: () => {
+        this.waitAndClick('.esCtxbar_close');
+        this.waitUntilGone('#esThisbarColumn');
       },
 
-      clickUser: function(username: string) {
-        api.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
+      clickAddPeople: () => {
+        this.waitAndClick('#e2eCB_AddPeopleB');
+        this.waitForVisible('#e2eAddUsD');
       },
 
-      assertUserPresent: function(username: string) {
-        api.waitForVisible('.esCtxbar_onlineCol');
-        api.waitForVisible('.esCtxbar_list .esAvtrName_username');
-        var elems = $$('.esCtxbar_list .esAvtrName_username');
+      clickUser: (username: string) => {
+        this.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
+      },
+
+      assertUserPresent: (username: string) => {
+        this.waitForVisible('.esCtxbar_onlineCol');
+        this.waitForVisible('.esCtxbar_list .esAvtrName_username');
+        var elems = this.$$('.esCtxbar_list .esAvtrName_username');
         var usernamesPresent = elems.map((elem) => {
           return elem.getText();
         });
@@ -2688,53 +2697,53 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         assert(_.includes(usernamesPresent, username), "User missing: " + username +
             ", those present are: " + namesPresent);
       },
-    },
+    };
 
 
-    loginDialog: {
-      refreshUntilFullScreen: function() {
+    loginDialog = {
+      refreshUntilFullScreen: () => {
         let startMs = Date.now();
         let dialogShown = false;
         let lap = 0;
         while (Date.now() - startMs < settings.waitforTimeout) {
-          browser.refresh();
+          this.#br.refresh();
           // Give the page enough time to load:
           lap += 1;
-          browser.pause(200 * Math.pow(1.5, lap));
-          dialogShown = browser.isVisible('.dw-login-modal') && browser.isVisible('.esLD');
+          this.#br.pause(200 * Math.pow(1.5, lap));
+          dialogShown = this.isVisible('.dw-login-modal') && this.isVisible('.esLD');
           if (dialogShown)
             break;
         }
         assert(dialogShown, "The login dialog never appeared");
-        api.loginDialog.waitAssertFullScreen();
+        this.loginDialog.waitAssertFullScreen();
       },
 
-      waitAssertFullScreen: function() {
-        api.waitForVisible('.dw-login-modal');
-        api.waitForVisible('.esLD');
+      waitAssertFullScreen: () => {
+        this.waitForVisible('.dw-login-modal');
+        this.waitForVisible('.esLD');
         // Forum not shown.
-        assert(!browser.isVisible('.dw-forum'));
-        assert(!browser.isVisible('.dw-forum-actionbar'));
+        assert(!this.isVisible('.dw-forum'));
+        assert(!this.isVisible('.dw-forum-actionbar'));
         // No forum topic shown.
-        assert(!browser.isVisible('h1'));
-        assert(!browser.isVisible('.dw-p'));
-        assert(!browser.isVisible('.dw-p-ttl'));
+        assert(!this.isVisible('h1'));
+        assert(!this.isVisible('.dw-p'));
+        assert(!this.isVisible('.dw-p-ttl'));
         // Admin area not shown.
-        assert(!browser.isVisible('.esTopbar_custom_backToSite'));
-        assert(!browser.isVisible('#dw-react-admin-app'));
+        assert(!this.isVisible('.esTopbar_custom_backToSite'));
+        assert(!this.isVisible('#dw-react-admin-app'));
         // User profile not shown.
-        assert(!browser.isVisible(api.userProfilePage.avatarAboutButtonsSelector));
+        assert(!this.isVisible(this.userProfilePage.avatarAboutButtonsSelector));
       },
 
       clickSingleSignOnButton: () => {
-        api.waitAndClick('.s_LD_SsoB');
+        this.waitAndClick('.s_LD_SsoB');
       },
 
       waitForSingleSignOnButton: () => {
-        browser.waitForVisible('.s_LD_SsoB');
+        this.waitForDisplayed('.s_LD_SsoB');
       },
 
-      createPasswordAccount: function(data: {
+      createPasswordAccount: (data: MemberToCreate | {
             fullName?: string,
             username: string,
             email?: string,
@@ -2745,69 +2754,69 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
            },
             // Legacy:
             shallBecomeOwner?: boolean,
-            anyVerifyEmail?: 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
+            anyVerifyEmail?: 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') => {
 
         // Switch from the guest login form to the create-real-account form, if needed.
-        api.waitForVisible('#e2eFullName');
-        if (browser.isVisible('.s_LD_CreateAccount')) {
-          api.waitAndClick('.s_LD_CreateAccount');
-          api.waitForVisible('#e2ePassword');
+        this.waitForVisible('#e2eFullName');
+        if (this.isVisible('.s_LD_CreateAccount')) {
+          this.waitAndClick('.s_LD_CreateAccount');
+          this.waitForVisible('#e2ePassword');
         }
 
         // Dupl code (035BKAS20)
 
         logMessage('createPasswordAccount: fillInFullName...');
-        if (data.fullName) api.loginDialog.fillInFullName(data.fullName);
+        if (data.fullName) this.loginDialog.fillInFullName(data.fullName);
         logMessage('fillInUsername...');
-        api.loginDialog.fillInUsername(data.username);
+        this.loginDialog.fillInUsername(data.username);
         logMessage('fillInEmail...');
         const theEmail = data.email || data.emailAddress;
-        if (theEmail) api.loginDialog.fillInEmail(theEmail);
+        if (theEmail) this.loginDialog.fillInEmail(theEmail);
         logMessage('fillInPassword...');
-        api.loginDialog.fillInPassword(data.password);
+        this.loginDialog.fillInPassword(data.password);
         logMessage('clickSubmit...');
-        api.loginDialog.clickSubmit();
+        this.loginDialog.clickSubmit();
         logMessage('acceptTerms...');
-        api.loginDialog.acceptTerms(data.shallBecomeOwner || shallBecomeOwner);
+        this.loginDialog.acceptTerms(data.shallBecomeOwner || shallBecomeOwner);
         if (data.willNeedToVerifyEmail !== false &&
             anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
           logMessage('waitForNeedVerifyEmailDialog...');
-          api.loginDialog.waitForNeedVerifyEmailDialog();
+          this.loginDialog.waitForNeedVerifyEmailDialog();
         }
         logMessage('createPasswordAccount: done');
       },
 
-      fillInFullName: function(fullName) {
-        api.waitAndSetValue('#e2eFullName', fullName);
+      fillInFullName: (fullName: string) => {
+        this.waitAndSetValue('#e2eFullName', fullName);
       },
 
-      fillInUsername: function(username) {
-        api.waitAndSetValue('#e2eUsername', username);
+      fillInUsername: (username: string) => {
+        this.waitAndSetValue('#e2eUsername', username);
       },
 
-      fillInEmail: function(emailAddress) {
-        api.waitAndSetValue('#e2eEmail', emailAddress);
+      fillInEmail: (emailAddress: string) => {
+        this.waitAndSetValue('#e2eEmail', emailAddress);
       },
 
-      waitForNeedVerifyEmailDialog: function() {
-        api.waitForVisible('#e2eNeedVerifyEmailDialog');
+      waitForNeedVerifyEmailDialog: () => {
+        this.waitForVisible('#e2eNeedVerifyEmailDialog');
       },
 
-      waitForAndCloseWelcomeLoggedInDialog: function() {
-        api.waitForVisible('#te_WelcomeLoggedIn');
-        api.waitAndClick('#te_WelcomeLoggedIn button');
-        api.waitUntilModalGone();
+      waitForAndCloseWelcomeLoggedInDialog: () => {
+        this.waitForVisible('#te_WelcomeLoggedIn');
+        this.waitAndClick('#te_WelcomeLoggedIn button');
+        this.waitUntilModalGone();
       },
 
-      fillInPassword: function(password) {
-        api.waitAndSetValue('#e2ePassword', password);
+      fillInPassword: (password) => {
+        this.waitAndSetValue('#e2ePassword', password);
       },
 
-      waitForBadLoginMessage: function() {
-        api.waitForVisible('.esLoginDlg_badPwd');
+      waitForBadLoginMessage: () => {
+        this.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      loginWithPassword: (username: string | { username: string, password: string },
+      loginWithPassword: (username: string | Member | { username: string, password: string },
             password?, opts?: { resultInError?: boolean }) => {
 
         if (!opts && password && _.isObject(password)) {
@@ -2819,164 +2828,164 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           password = username.password;
           username = username.username;
         }
-        const numTabs = api.numTabs();
-        api.loginDialog.tryLogin(username, password);
+        const numTabs = this.numTabs();
+        this.loginDialog.tryLogin(username, password);
         if (opts && opts.resultInError)
           return;
-        if (isWhere === IsWhere.LoginPopup) {
+        if (this.#isWhere === IsWhere.LoginPopup) {
           // Wait for this login popup tab/window to close.
-          api.waitForMaxBrowserTabs(numTabs - 1);
-          api.switchBackToFirstTabIfNeeded();
+          this.waitForMaxBrowserTabs(numTabs - 1);
+          this.switchBackToFirstTabIfNeeded();
         }
         else {
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         }
       },
 
-      loginWithEmailAndPassword: function(emailAddress: string, password: string, badLogin) {
-        api.loginDialog.tryLogin(emailAddress, password);
+      loginWithEmailAndPassword: (emailAddress: string, password: string, badLogin?: 'BAD_LOGIN') => {
+        this.loginDialog.tryLogin(emailAddress, password);
         if (badLogin !== 'BAD_LOGIN') {
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         }
       },
 
       // Embedded discussions do all logins in popups.
       loginWithPasswordInPopup:
-          (username: string | { username: string, password: string }, password?: string) => {
-        api.swithToOtherTabOrWindow(IsWhere.LoginPopup);
-        api.disableRateLimits();
+          (username: string | NameAndPassword, password?: string) => {
+        this.swithToOtherTabOrWindow(IsWhere.LoginPopup);
+        this.disableRateLimits();
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
         }
-        const numTabs = api.numTabs();
-        api.loginDialog.tryLogin(username, password);
+        const numTabs = this.numTabs();
+        this.loginDialog.tryLogin(username, password);
         // The popup auto closes after login.
-        api.waitForMaxBrowserTabs(numTabs - 1);
-        api.switchBackToFirstTabOrWindow();
+        this.waitForMaxBrowserTabs(numTabs - 1);
+        this.switchBackToFirstTabOrWindow();
       },
 
-      loginButBadPassword: function(username: string, password: string) {
-        api.loginDialog.tryLogin(username, password);
-        api.waitForVisible('.esLoginDlg_badPwd');
+      loginButBadPassword: (username: string, password: string) => {
+        this.loginDialog.tryLogin(username, password);
+        this.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      tryLogin: function(username: string, password: string) {
-        api.loginDialog.switchToLoginIfIsSignup();
-        api.loginDialog.fillInUsername(username);
-        api.loginDialog.fillInPassword(password);
-        api.loginDialog.clickSubmit();
+      tryLogin: (username: string, password: string) => {
+        this.loginDialog.switchToLoginIfIsSignup();
+        this.loginDialog.fillInUsername(username);
+        this.loginDialog.fillInPassword(password);
+        this.loginDialog.clickSubmit();
       },
 
-      waitForEmailUnverifiedError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyEEML0VERIF_');
+      waitForEmailUnverifiedError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyEEML0VERIF_');
       },
 
-      waitForAccountSuspendedError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
+      waitForAccountSuspendedError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
       },
 
       waitForNotCreatedPasswordDialog: () => {
-        api.waitForVisible('.e_NoPwD');
+        this.waitForVisible('.e_NoPwD');
       },
 
       clickCreatePasswordButton: () => {
-        api.waitAndClick('.e_NoPwD button');
+        this.waitAndClick('.e_NoPwD button');
       },
 
-      signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
+      signUpAsGuest: (name: string, email?: string) => { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
         logMessage('createPasswordAccount with no email: fillInFullName...');
-        api.loginDialog.fillInFullName(name);
+        this.loginDialog.fillInFullName(name);
         logMessage('fillInUsername...');
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
-        api.loginDialog.fillInUsername(username);
+        this.loginDialog.fillInUsername(username);
         if (email) {
           logMessage('fillInEmail...');
-          api.loginDialog.fillInEmail(email);
+          this.loginDialog.fillInEmail(email);
         }
         else {
           logMessage('fillInEmail anyway, because for now, always require email [0KPS2J]');
-          api.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
+          this.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
         }
         logMessage('fillInPassword...');
-        api.loginDialog.fillInPassword("public1234");
+        this.loginDialog.fillInPassword("public1234");
         logMessage('clickSubmit...');
-        api.loginDialog.clickSubmit();
+        this.loginDialog.clickSubmit();
         logMessage('acceptTerms...');
-        api.loginDialog.acceptTerms();
+        this.loginDialog.acceptTerms();
         logMessage('waitForWelcomeLoggedInDialog...');
-        api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
+        this.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         logMessage('createPasswordAccount with no email: done');
         // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]? [E2EBUG] ?
-        const nameInHtml = api.waitAndGetText('.esTopbar .esAvtrName_name');
+        const nameInHtml = this.waitAndGetText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === username);
       },
 
-      logInAsGuest: function(name: string, email_noLongerNeeded?: string) { // CLEAN_UP [8JTW4] is just pwd login?
+      logInAsGuest: (name: string, email_noLongerNeeded?: string) => { // CLEAN_UP [8JTW4] is just pwd login?
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
         logMessage('logInAsGuest: fillInFullName...');
-        api.loginDialog.fillInUsername(name);
+        this.loginDialog.fillInUsername(name);
         logMessage('fillInPassword...');
-        api.loginDialog.fillInPassword("public1234");
+        this.loginDialog.fillInPassword("public1234");
         logMessage('clickSubmit...');
-        api.loginDialog.clickSubmit();
+        this.loginDialog.clickSubmit();
         logMessage('logInAsGuest with no email: done');
-        const nameInHtml = api.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        const nameInHtml = this.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
       // For guests, there's a combined signup and login form.
-      signUpLogInAs_Real_Guest: function(name: string, email?: string) {  // RENAME remove '_Real_' [8JTW4]
-        api.loginDialog.fillInFullName(name);
+      signUpLogInAs_Real_Guest: (name: string, email?: string) => {  // RENAME remove '_Real_' [8JTW4]
+        this.loginDialog.fillInFullName(name);
         if (email) {
-          api.loginDialog.fillInEmail(email);
+          this.loginDialog.fillInEmail(email);
         }
-        api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(false);
+        this.loginDialog.clickSubmit();
+        this.loginDialog.acceptTerms(false);
       },
 
-      clickCreateAccountInstead: function() {
-        api.waitAndClick('.esLD_Switch_L');
-        api.waitForVisible('.esCreateUser');
-        api.waitForVisible('#e2eUsername');
-        api.waitForVisible('#e2ePassword');
+      clickCreateAccountInstead: () => {
+        this.waitAndClick('.esLD_Switch_L');
+        this.waitForVisible('.esCreateUser');
+        this.waitForVisible('#e2eUsername');
+        this.waitForVisible('#e2ePassword');
       },
 
-      switchToLoginIfIsSignup: function() {
+      switchToLoginIfIsSignup: () => {
         // Switch to login form, if we're currently showing the signup form.
         while (true) {
-          if (browser.isVisible('.esCreateUser')) {
-            api.waitAndClick('.esLD_Switch_L');
+          if (this.isVisible('.esCreateUser')) {
+            this.waitAndClick('.esLD_Switch_L');
             // Don't waitForVisible('.dw-reset-pswd') — that can hang forever (weird?).
           }
-          else if (browser.isVisible('.dw-reset-pswd')) {
+          else if (this.isVisible('.dw-reset-pswd')) {
             // Then the login form is shown, fine.
             break;
           }
-          browser.pause(PollMs);
+          this.#br.pause(PollMs);
         }
       },
 
 
-      createGmailAccount: function(data: { email: string, password: string, username: string },
+      createGmailAccount: (data: { email: string, password: string, username: string },
             ps: { isInPopupAlready?: true, shallBecomeOwner?: boolean,
-                anyWelcomeDialog?: string, isInFullScreenLogin?: boolean } = {}) {
-        api.loginDialog.loginWithGmail(
+                anyWelcomeDialog?: string, isInFullScreenLogin?: boolean } = {}) => {
+        this.loginDialog.loginWithGmail(
               data, ps.isInPopupAlready, { isInFullScreenLogin: ps.isInFullScreenLogin });
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("filling in username ...");
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username, { checkAndRetry: true });
-        api.loginDialog.clickSubmit();
+        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username, { checkAndRetry: true });
+        this.loginDialog.clickSubmit();
         logMessage("accepting terms ...");
-        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
         if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
           logMessage("waiting for and clicking ok in welcome dialog...");
-          api.loginDialog.waitAndClickOkInWelcomeDialog();
+          this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
         if (ps.isInPopupAlready) {
           // Then the whole popup will close, now. Don't wait for any dialogs in it to
@@ -2989,24 +2998,24 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
         else {
           logMessage("waiting for login dialogs to close ...");
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         }
         logMessage("... done signing up with Gmail.");
       },
 
-      loginWithGmail: function(data: { email: string, password: string },
-            isInPopupAlready?: boolean,
-            ps?: { stayInPopup?: boolean, isInFullScreenLogin?: boolean }) {
-        // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
-        browser.pause(150);
-        api.waitAndClick('#e2eLoginGoogle');
+      loginWithGmail: (data: { email: string, password: string },
+            isInPopupAlready: boolean | U,
+            ps?: { stayInPopup?: boolean, isInFullScreenLogin?: boolean, anyWelcomeDialog?: 'THERE_WILL_BE_NO_WELCOME_DIALOG' }) => {
+        // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
+        this.#br.pause(150);
+        this.waitAndClick('#e2eLoginGoogle');
         ps = ps || {};
 
         // Switch to a login popup window that got opened, for Google:
         if (!isInPopupAlready && !ps.isInFullScreenLogin) {
           logMessage(`Switching to login popup ...`);
-          api.swithToOtherTabOrWindow(IsWhere.External);
+          this.swithToOtherTabOrWindow(IsWhere.External);
         }
         else {
           logMessage(`Already in popup, need not switch window.`);
@@ -3018,22 +3027,31 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         const passwordNext = '#passwordNext';
 
         // We'll get logged in immediately via Gmail, if we're already logged in to
-        // one (and only one) Gmail account in the current browser. Wait for either
+        // one (and only one) Gmail account in the current this.#br. Wait for either
         // the Gmail login widgets to load, or for us to be back in Talkyard again.
         while (true) {
           if (ps.isInFullScreenLogin) {
-            if (browser.isExisting('.dw-login-modal')) {
-              // We're back in Talkyard.
+            // If logged in both at Google and Ty directly: There's a race?
+            // Sometimes we'll see Ty's login dialog briefly before it closes and
+            // one's username appears. — This is fine, the tests should work anyway.
+            const googleLoginDone = this.isExisting('.dw-login-modal');
+            logMessageIf(googleLoginDone,
+                `Got logged in directly at Google`);
+
+            const googleAndTalkyardLoginDone = this.isExisting('.esMyMenu .esAvtrName_name');
+            logMessageIf(googleAndTalkyardLoginDone,
+                `Got logged in directly at both Google and Talkyard`);
+
+            if (googleLoginDone || googleAndTalkyardLoginDone)
               return;
-            }
           }
-          else if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+          else if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
             // We're back in Talkyard.
-            api.switchBackToFirstTabOrWindow();
+            this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (browser.isExisting(emailInputSelector)) {
+            if (this.isExisting(emailInputSelector)) {
               // That's a Gmail login widget. Continue with Gmail login.
               break;
             }
@@ -3042,40 +3060,40 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             logMessage(`didn't find ${emailInputSelector}, ` +
                 "tab closed? already logged in? [EdM5PKWT0B]");
           }
-          browser.pause(PollMs);
+          this.#br.pause(PollMs);
         }
 
-        browser.pause(250);
+        this.#br.pause(250);
         logMessage(`typing Gmail email: ${data.email}...`);
-        api.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
+        this.waitAndSetValue(emailInputSelector, data.email, { checkAndRetry: true });
 
-        browser.pause(500);
-        if (browser.isExisting(emailNext)) {
+        this.#br.pause(500);
+        if (this.isExisting(emailNext)) {
           logMessage(`clicking ${emailNext}...`);
-          api.waitAndClick(emailNext);
+          this.waitAndClick(emailNext);
         }
 
-        browser.pause(250);
+        this.#br.pause(250);
         logMessage("typing Gmail password...");
-        api.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
+        this.waitAndSetValue(passwordInputSelector, data.password, { checkAndRetry: true });
 
-        browser.pause(500);
-        if (browser.isExisting(passwordNext)) {
+        this.#br.pause(500);
+        if (this.isExisting(passwordNext)) {
           logMessage(`clicking ${passwordNext}...`);
-          api.waitAndClick(passwordNext);
+          this.waitAndClick(passwordNext);
         }
 
         /*
-        api.waitAndClick('#signIn');
-        api.waitForEnabled('#submit_approve_access');
-        api.waitAndClick('#submit_approve_access'); */
+        this.waitAndClick('#signIn');
+        this.waitForEnabled('#submit_approve_access');
+        this.waitAndClick('#submit_approve_access'); */
 
         // If you need to verify you're a human:
-        // browser.deb ug();
+        // this.#br.deb ug();
 
         if (!isInPopupAlready && (!ps || !ps.stayInPopup)) {
           logMessage("switching back to first tab...");
-          api.switchBackToFirstTabOrWindow();
+          this.switchBackToFirstTabOrWindow();
         }
       },
 
@@ -3084,42 +3102,42 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             anyWelcomeDialog?, alreadyLoggedInAtGitHub: boolean }) => {
 
         // This should fill in email (usually) and username (definitely).
-        api.loginDialog.logInWithGitHub(ps);
+        this.loginDialog.logInWithGitHub(ps);
 
-        api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        this.loginDialog.clickSubmit();
+        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
         if (ps.anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
-          api.loginDialog.waitAndClickOkInWelcomeDialog();
+          this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
+        this.waitUntilModalGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
       logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
-        api.waitAndClick('#e2eLoginGitHub');
+        this.waitAndClick('#e2eLoginGitHub');
 
         if (ps.alreadyLoggedInAtGitHub) {
           // The GitHub login window will auto-log the user in an close directly.
-          api.waitForVisible('.esCreateUserDlg');
+          this.waitForVisible('.esCreateUserDlg');
           return;
         }
 
         //if (!isInPopupAlready)
         logMessage("Switching to GitHub login window...");
-        api.swithToOtherTabOrWindow(IsWhere.External);
+        this.swithToOtherTabOrWindow(IsWhere.External);
 
-        browser.waitForVisible('.auth-form-body');
-        api.waitAndSetValue('.auth-form-body #login_field', ps.username);
-        browser.pause(340); // so less risk GitHub think this is a computer?
-        api.waitAndSetValue('.auth-form-body #password', ps.password);
-        browser.pause(340); // so less risk GitHub think this is a computer?
-        api.waitAndClick('.auth-form-body input[type="submit"]');
+        this.waitForDisplayed('.auth-form-body');
+        this.waitAndSetValue('.auth-form-body #login_field', ps.username);
+        this.#br.pause(340); // so less risk GitHub think this is a computer?
+        this.waitAndSetValue('.auth-form-body #password', ps.password);
+        this.#br.pause(340); // so less risk GitHub think this is a computer?
+        this.waitAndClick('.auth-form-body input[type="submit"]');
         while (true) {
-          browser.pause(200);
+          this.#br.pause(200);
           try {
-            if (browser.isVisible('#js-oauth-authorize-btn')) {
+            if (this.isVisible('#js-oauth-authorize-btn')) {
               logMessage("Authorizing Talkyard to handle this GitHub login ... [TyT4ABKR02F]");
-              api.waitAndClick('#js-oauth-authorize-btn');
+              this.waitAndClick('#js-oauth-authorize-btn');
               break;
             }
           }
@@ -3130,64 +3148,66 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           }
         }
         logMessage("Switching back to first window...");
-        api.switchBackToFirstTabOrWindow();
+        this.switchBackToFirstTabOrWindow();
       },
 
 
-      createFacebookAccount: function(data: { email: string, password: string, username: string },
-            shallBecomeOwner?: boolean, anyWelcomeDialog?) {
-        api.loginDialog.loginWithFacebook(data);
+      createFacebookAccount: (data: {
+            email: string, password: string, username: string },
+            shallBecomeOwner?: boolean, anyWelcomeDialog?) => {
+        this.loginDialog.loginWithFacebook(data);
         // This should be the first time we login with Facebook at this site, so we'll be asked
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing Facebook user's new username...");
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
-        api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(shallBecomeOwner);
+        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        this.loginDialog.clickSubmit();
+        this.loginDialog.acceptTerms(shallBecomeOwner);
         if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
-          api.loginDialog.waitAndClickOkInWelcomeDialog();
+          this.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
+        this.waitUntilModalGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      loginWithFacebook: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
-        // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
-        browser.pause(100);
-        api.waitAndClick('#e2eLoginFacebook');
+      loginWithFacebook: (data: {
+            email: string, password: string }, isInPopupAlready?: boolean) => {
+        // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
+        this.#br.pause(100);
+        this.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
         if (!isInPopupAlready)
-          api.swithToOtherTabOrWindow(IsWhere.External);
+          this.swithToOtherTabOrWindow(IsWhere.External);
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
         // a short while to find out what'll happen.
         while (true) {
-          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            api.switchBackToFirstTabOrWindow();
+          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (browser.isExisting('#email'))
+            if (this.isExisting('#email'))
               break;
           }
           catch (dummy) {
             logMessage("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
           }
-          browser.pause(300);
+          this.#br.pause(300);
         }
 
         logMessage("typing Facebook user's email and password...");
-        browser.pause(340); // so less risk Facebook think this is a computer?
-        api.waitAndSetValue('#email', data.email);
-        browser.pause(380);
-        api.waitAndSetValue('#pass', data.password);
-        browser.pause(280);
+        this.#br.pause(340); // so less risk Facebook think this is a computer?
+        this.waitAndSetValue('#email', data.email);
+        this.#br.pause(380);
+        this.waitAndSetValue('#pass', data.password);
+        this.#br.pause(280);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
         logMessage("submitting Facebook login dialog...");
-        api.waitAndClick('#loginbutton'); // or: [type=submit]');
+        this.waitAndClick('#loginbutton'); // or: [type=submit]');
 
         // Facebook somehow auto accepts the confirmation dialog, perhaps because
         // I'm using a Facebook API test user. So need not do this:
@@ -3196,14 +3216,14 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
 
         if (!isInPopupAlready) {
           logMessage("switching back to first tab...");
-          api.switchBackToFirstTabOrWindow();
+          this.switchBackToFirstTabOrWindow();
         }
       },
 
 
-      createLinkedInAccount: function(ps: { email: string, password: string, username: string,
-        shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) {
-        api.loginDialog.loginWithLinkedIn({
+      createLinkedInAccount: (ps: { email: string, password: string, username: string,
+        shallBecomeOwner: boolean, alreadyLoggedInAtLinkedIn: boolean }) => {
+        this.loginDialog.loginWithLinkedIn({
           email: ps.email,
           password: ps.password,
           alreadyLoggedIn: ps.alreadyLoggedInAtLinkedIn,
@@ -3213,63 +3233,63 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         logMessage("typing LinkedIn user's new username...");
-        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
-        api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms(ps.shallBecomeOwner);
+        this.waitAndSetValue('.esCreateUserDlg #e2eUsername', ps.username);
+        this.loginDialog.clickSubmit();
+        this.loginDialog.acceptTerms(ps.shallBecomeOwner);
         // LinkedIn email addresses might not have been verified (or?) so need
         // to click an email addr verif link.
-        const siteId = api.getSiteId();
-        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, ps.email, browser);
-        api.go2(link);
-        api.waitAndClick('#e2eContinue');
+        const siteId = this.getSiteId();
+        const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, ps.email, this.#br);
+        this.go2(link);
+        this.waitAndClick('#e2eContinue');
       },
 
 
-      loginWithLinkedIn: function(data: { email: string, password: string,
-            alreadyLoggedIn?: boolean, isInPopupAlready?: boolean }) {
-        // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
-        browser.pause(100);
-        api.waitAndClick('#e2eLoginLinkedIn');
+      loginWithLinkedIn: (data: { email: string, password: string,
+            alreadyLoggedIn?: boolean, isInPopupAlready?: boolean }) => {
+        // Pause or sometimes the click misses the button. Is the this.#br doing some re-layout?
+        this.#br.pause(100);
+        this.waitAndClick('#e2eLoginLinkedIn');
 
         // Switch to LinkedIn's login popup window.
         if (!data.isInPopupAlready)
-          api.swithToOtherTabOrWindow(IsWhere.External);
+          this.swithToOtherTabOrWindow(IsWhere.External);
 
         // Wait until popup window done loading.
         while (true) {
-          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            api.switchBackToFirstTabOrWindow();
+          if (this.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            this.switchBackToFirstTabOrWindow();
             return;
           }
           try {
-            if (browser.isExisting('input#username'))
+            if (this.isExisting('input#username'))
               break;
           }
           catch (dummy) {
             logMessage("Didn't find input#username. Tab closed because already logged in?");
           }
-          browser.pause(300);
+          this.#br.pause(300);
         }
 
         logMessage("typing LinkedIn user's email and password...");
-        browser.pause(340); // so less risk LinkedIn thinks this is a computer?
+        this.#br.pause(340); // so less risk LinkedIn thinks this is a computer?
         // This is over at LinkedIn, and, as username, one can type one's email.
-        api.waitAndSetValue('#username', data.email);
-        browser.pause(380);
-        api.waitAndSetValue('#password', data.password);
-        browser.pause(280);
+        this.waitAndSetValue('#username', data.email);
+        this.#br.pause(380);
+        this.waitAndSetValue('#password', data.password);
+        this.#br.pause(280);
 
         logMessage("submitting LinkedIn login dialog...");
-        api.waitAndClick('button[type="submit"]');
+        this.waitAndClick('button[type="submit"]');
 
         // If needed, confirm permissions: click an Allow button.
         try {
           for (let i = 0; i < 10; ++i) {
-            if (browser.isVisible('#oauth__auth-form__submit-btn')) {
-              api.waitAndClick('#oauth__auth-form__submit-btn');
+            if (this.isVisible('#oauth__auth-form__submit-btn')) {
+              this.waitAndClick('#oauth__auth-form__submit-btn');
             }
             else {
-              const url = browser.getUrl();
+              const url = this.#br.getUrl();
               if (url.indexOf('linkedin.com') === -1) {
                 logMessage("Didn't need to click any Allow button: Left linkedin.com");
                 break;
@@ -3278,21 +3298,25 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           }
         }
         catch (ex) {
-          logMessage("Didn't need to click Allow button: Exception caught, login popup closed itself?");
-          logException(ex);
+          const seemsFine = isWindowClosedException(ex);
+          logMessage("Didn't need to click Allow button: " + (
+              seemsFine ? "The login popup window closed itself." : "Unexpected exception:"));
+          if (!seemsFine) {
+            logException(ex);
+          }
         }
 
         if (!data.isInPopupAlready) {
           logMessage("switching back to first tab...");
-          api.switchBackToFirstTabOrWindow();
+          this.switchBackToFirstTabOrWindow();
         }
       },
 
-      loginPopupClosedBecauseAlreadyLoggedIn: () => {
+      loginPopupClosedBecauseAlreadyLoggedIn: (): boolean => {
         try {
           logMessage("checking if we got logged in instantly... [EdM2PG44Y0]");
-          const yes = browser.getTabIds().length === 1;// ||  // login tab was auto closed
-              //browser.isExisting('.e_AlreadyLoggedIn');    // server shows logged-in-already page
+          const yes = this.numWindowsOpen() === 1;// ||  // login tab was auto closed
+              //this.isExisting('.e_AlreadyLoggedIn');    // server shows logged-in-already page
               //  ^--- sometimes blocks forever, how is that possible?
           logMessage(yes ? "yes seems so" : "no don't think so");
           return yes;
@@ -3306,34 +3330,34 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      waitAndClickOkInWelcomeDialog: function() {
-        api.waitAndClick('#te_WelcomeLoggedIn .btn');
+      waitAndClickOkInWelcomeDialog: () => {
+        this.waitAndClick('#te_WelcomeLoggedIn .btn');
       },
 
-      clickResetPasswordCloseDialogSwitchTab: function() {
+      clickResetPasswordCloseDialogSwitchTab: () => {
         // This click opens a new tab.
-        api.waitAndClick('.dw-reset-pswd');
+        this.waitAndClick('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
-        api.swithToOtherTabOrWindow();
-        api.waitForVisible('#e2eRPP_emailI');
+        this.waitUntilModalGone();
+        this.waitUntilLoadingOverlayGone();
+        this.swithToOtherTabOrWindow();
+        this.waitForVisible('#e2eRPP_emailI');
       },
 
-      clickSubmit: function() {
-        api.waitAndClick('#e2eSubmit');
+      clickSubmit: () => {
+        this.waitAndClick('#e2eSubmit');
       },
 
-      clickCancel: function() {
-        api.waitAndClick('#e2eLD_Cancel');
-        api.waitUntilModalGone();
+      clickCancel: () => {
+        this.waitAndClick('#e2eLD_Cancel');
+        this.waitUntilModalGone();
       },
 
-      acceptTerms: function(isForSiteOwner?: boolean) {
-        api.waitForVisible('#e_TermsL');
-        api.waitForVisible('#e_PrivacyL');
-        const termsLinkHtml = browser.getHTML('#e_TermsL');
-        const privacyLinkHtml = browser.getHTML('#e_PrivacyL');
+      acceptTerms: (isForSiteOwner?: boolean) => {
+        this.waitForVisible('#e_TermsL');
+        this.waitForVisible('#e_PrivacyL');
+        const termsLinkHtml = this.$('#e_TermsL').getHTML();
+        const privacyLinkHtml = this.$('#e_PrivacyL').getHTML();
         if (isForSiteOwner) {
           // In dev-test, the below dummy urls are defined [5ADS24], but not in prod.
           if (!settings.prod) {
@@ -3345,265 +3369,265 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           assert(termsLinkHtml.indexOf('/-/terms-of-use') >= 0);
           assert(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
         }
-        setCheckbox('.s_TermsD_CB input', true);
-        api.waitAndClick('.s_TermsD_B');
+        this.setCheckbox('.s_TermsD_CB input', true);
+        this.waitAndClick('.s_TermsD_B');
       },
 
-      reopenToClearAnyError: function() {
-        api.loginDialog.clickCancel();
-        api.topbar.clickLogin();
+      reopenToClearAnyError: () => {
+        this.loginDialog.clickCancel();
+        this.topbar.clickLogin();
       },
-    },
+    };
 
 
-    resetPasswordPage: {
-      submitAccountOwnerEmailAddress: function(emailAddress: string) {
+    resetPasswordPage = {
+      submitAccountOwnerEmailAddress: (emailAddress: string) => {
         logBoring(`Types email address ...`);
-        api.resetPasswordPage.fillInAccountOwnerEmailAddress(emailAddress);
-        api.rememberCurrentUrl();
+        this.resetPasswordPage.fillInAccountOwnerEmailAddress(emailAddress);
+        this.rememberCurrentUrl();
         logBoring(`Submits ...`);
-        api.resetPasswordPage.clickSubmit();
+        this.resetPasswordPage.clickSubmit();
         logBoring(`Waits for confirmation that a password reset email got sent ...`);
-        api.waitForNewUrl();
-        api.waitForVisible('#e2eRPP_ResetEmailSent');
+        this.waitForNewUrl();
+        this.waitForVisible('#e2eRPP_ResetEmailSent');
         logBoring(`... Done`);
       },
 
-      fillInAccountOwnerEmailAddress: function(emailAddress: string) {
-        api.waitAndSetValue('#e2eRPP_emailI', emailAddress);
+      fillInAccountOwnerEmailAddress: (emailAddress: string) => {
+        this.waitAndSetValue('#e2eRPP_emailI', emailAddress);
       },
 
-      clickSubmit: function() {
-        api.waitAndClick('#e2eRPP_SubmitB');
+      clickSubmit: () => {
+        this.waitAndClick('#e2eRPP_SubmitB');
       },
-    },
+    };
 
 
-    chooseNewPasswordPage: {
+    chooseNewPasswordPage = {
       typeAndSaveNewPassword: (password: string, opts: { oldPassword?: string } = {}) => {
-        api.chooseNewPasswordPage.typeNewPassword(password);
+        this.chooseNewPasswordPage.typeNewPassword(password);
         if (!opts.oldPassword) {
           // There's a <span> with the below class, just to show this test that there's
           // no type-old-password input field.
-          assert(browser.isExisting('.e_NoOldPwI'));
+          assert(this.isExisting('.e_NoOldPwI'));
         }
-        api.chooseNewPasswordPage.submit();
-        api.chooseNewPasswordPage.waitUntilPasswordChanged();
+        this.chooseNewPasswordPage.submit();
+        this.chooseNewPasswordPage.waitUntilPasswordChanged();
       },
 
       typeNewPassword: (password: string) => {
-        api.waitAndSetValue('#e2ePassword', password);
+        this.waitAndSetValue('#e2ePassword', password);
       },
 
       submit: () => {
-        api.waitAndClick('.e_SbmNewPwB');
+        this.waitAndClick('.e_SbmNewPwB');
       },
 
       waitUntilPasswordChanged: () => {
         // Stays at the same url.
-        api.waitForVisible("#e2eRPP_PasswordChanged");
+        this.waitForVisible("#e2eRPP_PasswordChanged");
       },
 
       navToHomepage: () => {
         logMessage("Following homepage link...");
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('a[href="/"]');
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('a[href="/"]');
         });
       },
-    },
+    }
 
 
-    pageTitle: {
-      clickEdit: function() {
-        api.waitAndClick('#e2eEditTitle');
+    pageTitle = {
+      clickEdit: () => {
+        this.waitAndClick('#e2eEditTitle');
       },
 
-      editTitle: function(title: string) {
-        api.waitAndSetValue('#e2eTitleInput', title);
+      editTitle: (title: string) => {
+        this.waitAndSetValue('#e2eTitleInput', title);
       },
 
-      save: function() {
-        api.waitAndClick('.e_Ttl_SaveB');
-        api.pageTitle.waitForVisible();
+      save: () => {
+        this.waitAndClick('.e_Ttl_SaveB');
+        this.pageTitle.waitForVisible();
       },
 
-      waitForVisible: function() {
-        api.waitForVisible('.dw-p-ttl h1');
+      waitForVisible: () => {
+        this.waitForVisible('.dw-p-ttl h1');
       },
 
-      openAboutAuthorDialog: function() {
+      openAboutAuthorDialog: () => {
         const selector = '.dw-ar-p-hd .esP_By';
-        api.waitForVisible(selector);
-        api.topic.clickPostActionButton(selector);
-        api.waitForVisible('.esUsrDlg');
+        this.waitForVisible(selector);
+        this.topic.clickPostActionButton(selector);
+        this.waitForVisible('.esUsrDlg');
       },
 
-      assertMatches: function(regex: string | RegExp) {
-        api.assertPageTitleMatches(regex);
+      assertMatches: (regex: string | RegExp) => {
+        this.assertPageTitleMatches(regex);
       },
 
-      // Also see api.assertWholePageHidden().
-      assertPageHidden: function() {
-        api.pageTitle.waitForVisible();
-        assert(browser.isVisible('.dw-p-ttl .icon-eye-off'));
+      // Also see this.assertWholePageHidden().
+      assertPageHidden: () => {
+        this.pageTitle.waitForVisible();
+        assert(this.isVisible('.dw-p-ttl .icon-eye-off'));
       },
 
-      assertPageNotHidden: function() {
-        api.pageTitle.waitForVisible();
-        assert(!browser.isVisible('.dw-p-ttl .icon-eye-off'));
+      assertPageNotHidden: () => {
+        this.pageTitle.waitForVisible();
+        assert(!this.isVisible('.dw-p-ttl .icon-eye-off'));
       },
 
       __changePageButtonSelector: '.dw-p-ttl .dw-clickable',
 
-      openChangePageDialog: function() {
-        api.waitAndClick(api.pageTitle.__changePageButtonSelector);
-        api.topic.waitUntilChangePageDialogOpen();
+      openChangePageDialog: () => {
+        this.waitAndClick(this.pageTitle.__changePageButtonSelector);
+        this.topic.waitUntilChangePageDialogOpen();
       },
 
       canBumpPageStatus: (): boolean => {
-        return browser.isVisible(api.pageTitle.__changePageButtonSelector);
+        return this.isVisible(this.pageTitle.__changePageButtonSelector);
       },
-    },
+    }
 
 
-    forumButtons: {
-      clickEditIntroText: function() {
-        api.waitAndClick('.esForumIntro_edit');
-        api.waitAndClick('#e2eEID_EditIntroB');
-        api.waitUntilModalGone();
-      },
-
-      clickRemoveIntroText: function() {
-        api.waitAndClick('.esForumIntro_edit');
-        api.waitAndClick('#e2eEID_RemoveIntroB');
-        api.waitUntilModalGone();
+    forumButtons = {
+      clickEditIntroText: () => {
+        this.waitAndClick('.esForumIntro_edit');
+        this.waitAndClick('#e2eEID_EditIntroB');
+        this.waitUntilModalGone();
       },
 
-      clickViewCategories: function() {
-        api.waitAndClick('#e_ViewCatsB');
+      clickRemoveIntroText: () => {
+        this.waitAndClick('.esForumIntro_edit');
+        this.waitAndClick('#e2eEID_RemoveIntroB');
+        this.waitUntilModalGone();
       },
 
-      viewTopics: function(ps: { waitForTopics?: false } = {}) {
-        api.waitAndClick('#e2eViewTopicsB');
+      clickViewCategories: () => {
+        this.waitAndClick('#e_ViewCatsB');
+      },
+
+      viewTopics: (ps: { waitForTopics?: false } = {}) => {
+        this.waitAndClick('#e2eViewTopicsB');
         if (ps.waitForTopics !== false) {
-          api.forumTopicList.waitForTopics();
+          this.forumTopicList.waitForTopics();
         }
       },
 
-      clickViewNew: function() {
-        api.waitAndClick('#e_SortNewB');
+      clickViewNew: () => {
+        this.waitAndClick('#e_SortNewB');
       },
 
-      clickCreateCategory: function() {
-        api.waitAndClick('#e2eCreateCategoryB');
+      clickCreateCategory: () => {
+        this.waitAndClick('#e2eCreateCategoryB');
       },
 
-      clickEditCategory: function() {
-        api.waitAndClick('.s_F_Ts_Cat_Edt');
+      clickEditCategory: () => {
+        this.waitAndClick('.s_F_Ts_Cat_Edt');
         // Wait until slide-in animation done, otherwise subsequent clicks inside
         // the dialog might miss.
-        api.waitForVisible('#t_CD_Tabs');
-        api.waitUntilDoesNotMove('#t_CD_Tabs');
+        this.waitForVisible('#t_CD_Tabs');
+        this.waitUntilDoesNotMove('#t_CD_Tabs');
       },
 
-      clickCreateTopic: function() {
-        api.waitAndClick('#e2eCreateSth');
+      clickCreateTopic: () => {
+        this.waitAndClick('#e2eCreateSth');
       },
 
-      assertNoCreateTopicButton: function() {
+      assertNoCreateTopicButton: () => {
         // Wait until the button bar has loaded.
-        api.waitForVisible('#e_ViewCatsB');
-        assert(!browser.isVisible('#e2eCreateSth'));
+        this.waitForVisible('#e_ViewCatsB');
+        assert(!this.isVisible('#e2eCreateSth'));
       },
 
-      listDeletedTopics: function() {
-        api.waitAndClick('.esForum_filterBtn');
-        api.waitAndClick('.s_F_BB_TF_Dd');
-        api.forumTopicList.waitForTopics();
+      listDeletedTopics: () => {
+        this.waitAndClick('.esForum_filterBtn');
+        this.waitAndClick('.s_F_BB_TF_Dd');
+        this.forumTopicList.waitForTopics();
       },
-    },
+    }
 
 
-    forumTopicList: {  // RENAME to topicList
+    forumTopicList = {  // RENAME to topicList
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
       goHere: (ps: { origin?: string, categorySlug?: string } = {}) => {
         const origin = ps.origin || '';
-        api.go(origin + '/latest/' + (ps.categorySlug || ''));
+        this.go(origin + '/latest/' + (ps.categorySlug || ''));
       },
 
-      waitUntilKnowsIsEmpty: function() {
-        api.waitForVisible('#e2eF_NoTopics');
+      waitUntilKnowsIsEmpty: () => {
+        this.waitForVisible('#e2eF_NoTopics');
       },
 
       waitForCategoryName: (name: string, ps: { isSubCategory?: true } = {}) => {
         const selector = ps.isSubCategory ? '.s_F_Ts_Cat_Ttl-SubCat' : '.s_F_Ts_Cat_Ttl';
-        api.waitAndGetElemWithText(selector, name);
+        this.waitAndGetElemWithText(selector, name);
       },
 
-      waitForTopics: function() {
-        api.waitForVisible('.e2eF_T', { timeoutMs: 1000 });
+      waitForTopics: () => {
+        this.waitForVisible('.e2eF_T', { timeoutMs: 1000 });
       },
 
       waitForTopicVisible: (title: string) => {
-        api.waitUntilAnyTextMatches(api.forumTopicList.titleSelector, title);
+        this.waitUntilAnyTextMatches(this.forumTopicList.titleSelector, title);
       },
 
       clickLoadMore: (opts: { mayScroll?: boolean } = {}) => {
-        api.waitAndClick('.load-more', opts);
+        this.waitAndClick('.load-more', opts);
       },
 
       switchToCategory: (toCatName: string) => {
-        api.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
-        api.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
-        api.forumTopicList.waitForCategoryName(toCatName);
+        this.waitAndClick('.esForum_catsDrop.s_F_Ts_Cat_Ttl');
+        this.waitAndClickSelectorWithText('.s_F_BB_CsM a', toCatName);
+        this.forumTopicList.waitForCategoryName(toCatName);
       },
 
-      clickViewLatest: function() {
-        api.waitAndClick('#e2eSortLatestB');
-        api.waitUntilGone('.s_F_SI_TopB');
+      clickViewLatest: () => {
+        this.waitAndClick('#e2eSortLatestB');
+        this.waitUntilGone('.s_F_SI_TopB');
         // Means topics loaded.
-        api.waitForVisible('.e_SrtOrdr-1'); // TopicSortOrder.BumpTime
+        this.waitForVisible('.e_SrtOrdr-1'); // TopicSortOrder.BumpTime
       },
 
-      viewNewest: function() {
-        api.forumButtons.clickViewNew();
-        api.waitUntilGone('.s_F_SI_TopB');
+      viewNewest: () => {
+        this.forumButtons.clickViewNew();
+        this.waitUntilGone('.s_F_SI_TopB');
         // This means topics loaded:
-        api.waitForVisible('.e_SrtOrdr-2'); // TopicSortOrder.CreatedAt
+        this.waitForVisible('.e_SrtOrdr-2'); // TopicSortOrder.CreatedAt
       },
 
-      clickViewTop: function() {
-        api.waitAndClick('#e2eSortTopB');
-        api.waitForVisible('.s_F_SI_TopB');
-        api.waitForVisible('.e_SrtOrdr-3'); // TopicSortOrder.ScoreAndBumpTime
+      clickViewTop: () => {
+        this.waitAndClick('#e2eSortTopB');
+        this.waitForVisible('.s_F_SI_TopB');
+        this.waitForVisible('.e_SrtOrdr-3'); // TopicSortOrder.ScoreAndBumpTime
       },
 
-      openAboutUserDialogForUsername: function(username: string) {
-        api.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
+      openAboutUserDialogForUsername: (username: string) => {
+        this.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
       },
 
       goToTopic: (title: string) => {   // RENAME to navToTopic
-        api.forumTopicList.navToTopic(title);
+        this.forumTopicList.navToTopic(title);
       },
 
       navToTopic: (title: string) => {
-        api.rememberCurrentUrl();
-        api.waitForThenClickText(api.forumTopicList.titleSelector, title);
-        api.waitForNewUrl();
-        api.assertPageTitleMatches(title);
+        this.rememberCurrentUrl();
+        this.waitForThenClickText(this.forumTopicList.titleSelector, title);
+        this.waitForNewUrl();
+        this.assertPageTitleMatches(title);
       },
 
       assertNumVisible: (howMany: number, ps: { wait?: boolean } = {}) => {
         if (ps.wait) {
-          api.forumTopicList.waitForTopics();
+          this.forumTopicList.waitForTopics();
         }
-        api.assertExactly(howMany, '.e2eTopicTitle');
+        this.assertExactly(howMany, '.e2eTopicTitle');
       },
 
-      assertTopicTitlesAreAndOrder: function(titles: string[]) {
-        const els = <any> browser.$$(api.forumTopicList.titleSelector);
+      assertTopicTitlesAreAndOrder: (titles: string[]) => {
+        const els = this.$$(this.forumTopicList.titleSelector);
         for (let i = 0; i < titles.length; ++i) {
           const titleShouldBe = titles[i];
           const actualTitleElem = els[i];
@@ -3617,268 +3641,268 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      assertTopicVisible: function(title) {
-        api.assertAnyTextMatches(api.forumTopicList.titleSelector, title, null, 'FAST');
-        api.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicVisible: (title: string) => {
+        this.assertAnyTextMatches(this.forumTopicList.titleSelector, title, null, 'FAST');
+        this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
-      assertTopicNrVisible: function(nr: number, title: string) {
-        api.assertNthTextMatches(api.forumTopicList.titleSelector, nr, title);
-        api.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicNrVisible: (nr: number, title: string) => {
+        this.assertNthTextMatches(this.forumTopicList.titleSelector, nr, title);
+        this.assertNoTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
-      assertTopicNotVisible: function(title) {
-        api.assertNoTextMatches(api.forumTopicList.titleSelector, title);
+      assertTopicNotVisible: (title: string) => {
+        this.assertNoTextMatches(this.forumTopicList.titleSelector, title);
       },
 
-      assertTopicVisibleAsHidden: function(title) {
-        api.assertAnyTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+      assertTopicVisibleAsHidden: (title: string) => {
+        this.assertAnyTextMatches(this.forumTopicList.hiddenTopicTitleSelector, title);
       },
-    },
+    }
 
 
-    forumCategoryList: {   // RENAME to categoryList
+    forumCategoryList = {   // RENAME to categoryList
       categoryNameSelector: '.esForum_cats_cat .forum-title',
       subCategoryNameSelector: '.s_F_Cs_C_ChildCs_C',
 
       goHere: (origin?: string) => {
-        api.go((origin || '') + '/categories');
-        api.forumCategoryList.waitForCategories();
+        this.go((origin || '') + '/categories');
+        this.forumCategoryList.waitForCategories();
       },
 
-      waitForCategories: function() {
-        api.waitForVisible('.s_F_Cs');
+      waitForCategories: () => {
+        this.waitForVisible('.s_F_Cs');
       },
 
       waitForNumCategoriesVisible: (num: number) => {
-        api.waitForAtLeast(num, api.forumCategoryList.categoryNameSelector);
+        this.waitForAtLeast(num, this.forumCategoryList.categoryNameSelector);
       },
 
       namesOfVisibleCategories: (): string[] =>
-        $$(api.forumCategoryList.categoryNameSelector).map(e => e.getText()),
+        this.$$(this.forumCategoryList.categoryNameSelector).map(e => e.getText()),
 
       numCategoriesVisible: (): number =>
-        $$(api.forumCategoryList.categoryNameSelector).length,
+        this.$$(this.forumCategoryList.categoryNameSelector).length,
 
       numSubCategoriesVisible: (): number =>
-        $$(api.forumCategoryList.subCategoryNameSelector).length,
+        this.$$(this.forumCategoryList.subCategoryNameSelector).length,
 
-      isCategoryVisible: function(categoryName: string): boolean {
-        return api.isDisplayedWithText(
-            api.forumCategoryList.categoryNameSelector, categoryName);
+      isCategoryVisible: (categoryName: string): boolean => {
+        return this.isDisplayedWithText(
+            this.forumCategoryList.categoryNameSelector, categoryName);
       },
 
-      isSubCategoryVisible: function(categoryName: string): boolean {
-        return api.isDisplayedWithText(
-            api.forumCategoryList.subCategoryNameSelector, categoryName);
+      isSubCategoryVisible: (categoryName: string): boolean => {
+        return this.isDisplayedWithText(
+            this.forumCategoryList.subCategoryNameSelector, categoryName);
       },
 
-      openCategory: function(categoryName: string) {
-        api.forumCategoryList._openCategoryImpl(
-            categoryName, api.forumCategoryList.categoryNameSelector);
+      openCategory: (categoryName: string) => {
+        this.forumCategoryList._openCategoryImpl(
+            categoryName, this.forumCategoryList.categoryNameSelector);
       },
 
-      openSubCategory: function(categoryName: string) {
-        api.forumCategoryList._openCategoryImpl(
-            categoryName, api.forumCategoryList.subCategoryNameSelector);
+      openSubCategory: (categoryName: string) => {
+        this.forumCategoryList._openCategoryImpl(
+            categoryName, this.forumCategoryList.subCategoryNameSelector);
       },
 
-      _openCategoryImpl: function(categoryName: string, selector: string) {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitForThenClickText(selector, categoryName);
+      _openCategoryImpl: (categoryName: string, selector: string) => {
+        this.repeatUntilAtNewUrl(() => {
+          this.waitForThenClickText(selector, categoryName);
         });
-        api.waitForVisible('.s_F_Ts_Cat_Ttl');
-        const titleSelector = selector === api.forumCategoryList.subCategoryNameSelector
+        this.waitForVisible('.s_F_Ts_Cat_Ttl');
+        const titleSelector = selector === this.forumCategoryList.subCategoryNameSelector
             ? '.s_F_Ts_Cat_Ttl-SubCat'
             : '.s_F_Ts_Cat_Ttl';
-        api.assertTextMatches(titleSelector, categoryName);
+        this.assertTextMatches(titleSelector, categoryName);
       },
 
       // RENAME to setNotfLevelForCategoryNr?
       setCatNrNotfLevel: (categoryNr: number, notfLevel: PageNotfLevel) => {
-        api.waitAndClickNth('.dw-notf-level', categoryNr);
-        api.notfLevelDropdown.clickNotfLevel(notfLevel);
+        this.waitAndClickNth('.dw-notf-level', categoryNr);
+        this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
 
-      assertCategoryNotFoundOrMayNotAccess: function() {
-        api.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
+      assertCategoryNotFoundOrMayNotAccess: () => {
+        this.assertAnyTextMatches('.dw-forum', '_TyE0CAT');
       }
-    },
+    }
 
 
-    categoryDialog: {
-      fillInFields: function(data: { name?: string, slug?: string,
-            setAsDefault?: boolean, extId?: string }) {
+    categoryDialog = {
+      fillInFields: (data: { name?: string, slug?: string,
+            setAsDefault?: boolean, extId?: string }) => {
         if (data.name) {
-          api.waitAndSetValue('#e2eCatNameI', data.name);
+          this.waitAndSetValue('#e2eCatNameI', data.name);
         }
         if (data.slug) {
-          api.waitAndClick('#e2eShowCatSlug');
-          api.waitAndSetValue('#e2eCatSlug', data.slug);
+          this.waitAndClick('#e2eShowCatSlug');
+          this.waitAndSetValue('#e2eCatSlug', data.slug);
         }
         if (data.setAsDefault) {
-          api.waitAndClick('#e2eSetDefCat');
+          this.waitAndClick('#e2eSetDefCat');
         }
         if (data.extId) {
-          api.waitAndClick('#te_ShowExtId');
-          api.waitAndSetValue('#te_CatExtId', data.extId);
+          this.waitAndClick('#te_ShowExtId');
+          this.waitAndSetValue('#te_CatExtId', data.extId);
         }
       },
 
-      submit: function() {
+      submit: () => {
         // ---- Some scroll-to-Save-button problem. So do a bit double scrolling.
-        api.scrollIntoViewInPageColumn('#e2eSaveCatB')
-        api.scrollToBottom();
+        this.scrollIntoViewInPageColumn('#e2eSaveCatB')
+        this.scrollToBottom();
         // ----
-        api.waitAndClick('#e2eSaveCatB');
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
+        this.waitAndClick('#e2eSaveCatB');
+        this.waitUntilModalGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      setCategoryUnlisted: function() {
-        api.waitAndClick('#e_ShowUnlRBs');
-        api.waitAndClick('.e_UnlCatRB input');
+      setCategoryUnlisted: () => {
+        this.waitAndClick('#e_ShowUnlRBs');
+        this.waitAndClick('.e_UnlCatRB input');
       },
 
-      setTopicsUnlisted: function() {
-        api.waitAndClick('#e_ShowUnlRBs');
-        api.waitAndClick('.e_UnlTpcsRB input');
+      setTopicsUnlisted: () => {
+        this.waitAndClick('#e_ShowUnlRBs');
+        this.waitAndClick('.e_UnlTpcsRB input');
       },
 
-      setNotUnlisted: function() {
-        api.waitAndClick('#e_ShowUnlRBs');
-        api.waitAndClick('.e_DontUnlRB input');
+      setNotUnlisted: () => {
+        this.waitAndClick('#e_ShowUnlRBs');
+        this.waitAndClick('.e_DontUnlRB input');
       },
 
-      openSecurityTab: function() {
-        api.waitAndClick('#t_CD_Tabs-tab-2');
-        api.waitForVisible('.s_CD_Sec_AddB');
+      openSecurityTab: () => {
+        this.waitAndClick('#t_CD_Tabs-tab-2');
+        this.waitForVisible('.s_CD_Sec_AddB');
       },
 
       securityTab: {
-        switchGroupFromTo(fromGroupName: string, toGroupName: string) {
-          api.waitAndClickSelectorWithText('.s_PoP_Un button', fromGroupName);
-          api.waitAndClickSelectorWithText('.esDropModal_content .esExplDrp_entry', toGroupName);
+        switchGroupFromTo: (fromGroupName: string, toGroupName: string) => {
+          this.waitAndClickSelectorWithText('.s_PoP_Un button', fromGroupName);
+          this.waitAndClickSelectorWithText('.esDropModal_content .esExplDrp_entry', toGroupName);
         },
 
-        setMayCreate: function(groupId: UserId, may: boolean) {
+        setMayCreate: (groupId: UserId, may: boolean) => {
           // For now, just click once
-          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
         },
 
-        setMayReply: function(groupId: UserId, may: boolean) {
+        setMayReply: (groupId: UserId, may: boolean) => {
           // For now, just click once
-          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
         },
 
-        setMaySee: function(groupId: UserId, may: boolean) {
+        setMaySee: (groupId: UserId, may: boolean) => {
           // For now, just click once
-          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
         },
       }
-    },
+    }
 
 
-    aboutUserDialog: {
+    aboutUserDialog = {
       waitForLoaded: () => {
-        api.waitUntilLoadingOverlayGone();
-        api.waitForEnabled('.s_UD .e_CloseB');
-        api.waitUntilDoesNotMove('.s_UD .e_CloseB');
+        this.waitUntilLoadingOverlayGone();
+        this.waitForEnabled('.s_UD .e_CloseB');
+        this.waitUntilDoesNotMove('.s_UD .e_CloseB');
       },
 
       getUsername: (): string => {
-        api.aboutUserDialog.waitForLoaded();
-        return api.waitAndGetVisibleText('.s_UD_Un');
+        this.aboutUserDialog.waitForLoaded();
+        return this.waitAndGetVisibleText('.s_UD_Un');
       },
 
       close: () => {
-        api.aboutUserDialog.waitForLoaded();
-        api.waitAndClick('.s_UD .e_CloseB');
-        api.waitForGone('.s_UD');
-        api.waitUntilModalGone();
+        this.aboutUserDialog.waitForLoaded();
+        this.waitAndClick('.s_UD .e_CloseB');
+        this.waitForGone('.s_UD');
+        this.waitUntilModalGone();
       },
 
       clickSendMessage: () => {
-        api.aboutUserDialog.waitForLoaded();
-        api.rememberCurrentUrl();
-        api.waitAndClick('#e2eUD_MessageB');
-        api.waitForNewUrl();
+        this.aboutUserDialog.waitForLoaded();
+        this.rememberCurrentUrl();
+        this.waitAndClick('#e2eUD_MessageB');
+        this.waitForNewUrl();
         // Wait until new-message title can be edited.
         // For some reason, FF is so fast, so typing the title now after new page load, fails
-        // the first time  [6AKBR45] [E2EBUG] — but only in an invisible browser, and within
+        // the first time  [6AKBR45] [E2EBUG] — but only in an invisible this.#br, and within
         // fractions of a second after page load, so hard to fix. As of 2019-01.
         utils.tryManyTimes("Clearing the title field", 2, () => {
-          api.editor.editTitle('');
+          this.editor.editTitle('');
         });
       },
 
       clickViewProfile: () => {
-        api.aboutUserDialog.waitForLoaded();
-        api.rememberCurrentUrl();
-        api.waitAndClick('#e2eUD_ProfileB');
-        api.waitForNewUrl();
+        this.aboutUserDialog.waitForLoaded();
+        this.rememberCurrentUrl();
+        this.waitAndClick('#e2eUD_ProfileB');
+        this.waitForNewUrl();
       },
 
       clickRemoveFromPage: () => {
-        api.aboutUserDialog.waitForLoaded();
-        api.waitAndClick('#e2eUD_RemoveB');
-        // Later: browser.waitUntilModalGone();
+        this.aboutUserDialog.waitForLoaded();
+        this.waitAndClick('#e2eUD_RemoveB');
+        // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
-        api.waitForVisible('.esStupidDlg');
-        browser.refresh();
+        this.waitForVisible('.esStupidDlg');
+        this.#br.refresh();
       },
-    },
+    }
 
 
-    addUsersToPageDialog: {
+    addUsersToPageDialog = {
       focusNameInputField: () => {
-        api.waitAndClick('#e2eAddUsD .Select-placeholder');
+        this.waitAndClick('#e2eAddUsD .Select-placeholder');
       },
 
       startTypingNewName: (chars: string) => {
-        api.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
+        this.waitAndSetValue('#e2eAddUsD .Select-input > input', chars,
             { okayOccluders: '.Select-placeholder', checkAndRetry: true });
       },
 
       appendChars: (chars: string) => {
-        $('#e2eAddUsD .Select-input > input').addValue(chars);
+        this.$('#e2eAddUsD .Select-input > input').addValue(chars);
       },
 
       hitEnterToSelectUser: () => {
         // Might not work in Firefox. Didn't in wdio v4.
-        browser.keys(['Return']);
+        this.#br.keys(['Return']);
       },
 
-      addOneUser: function(username: string) {
-        api.addUsersToPageDialog.focusNameInputField();
-        api.addUsersToPageDialog.startTypingNewName(
+      addOneUser: (username: string) => {
+        this.addUsersToPageDialog.focusNameInputField();
+        this.addUsersToPageDialog.startTypingNewName(
             // Clicking Return = complicated!  Only + \n  works in FF:  [E2EENTERKEY]
             // The Select input is special: the <input> is occluded, but still works fine.
             // Update: '\n' stopped working properly in Wdio v6?  Try with 'Enter' again.
             // username + '\n');
             username);
 
-        api.addUsersToPageDialog.hitEnterToSelectUser();
+        this.addUsersToPageDialog.hitEnterToSelectUser();
 
 
         // Works in Chrome but not FF:
-        // api.keys(['Return']);  — so we append \n above, work as a Return press.
+        // this.keys(['Return']);  — so we append \n above, work as a Return press.
 
         /* Need to?:
-          if (browser.options.desiredCapabilities.browserName == "MicrosoftEdge")
+          if (this.#br.options.desiredCapabilities.browserName == "MicrosoftEdge")
             element.setValue(...);
-            browser.keys("\uE007");
+            this.#br.keys("\uE007");
           others:
             element.setValue(`...\n`);
         } */
 
         // None of this works:  DELETE_LATER after year 2019?
         /*
-        browser.keys(['Enter']);
-        browser.keys('\n');
-        browser.keys('(\ue007');
-        browser.keys('\uE006');
-        browser.actions([{
+        this.#br.keys(['Enter']);
+        this.#br.keys('\n');
+        this.#br.keys('(\ue007');
+        this.#br.keys('\uE006');
+        this.#br.actions([{
           "type": "key",
           //"id": "keyboard",
           "id": "keys",
@@ -3887,80 +3911,81 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             { "type": "keyUp", "value": "Enter" }
           ]
         }]);
-        const result = browser.elementActive();
+        const result = this.#br.elementActive();
         const activeElement = result.value && result.value.ELEMENT;
         if(activeElement){
-          browser.elementIdValue(activeElement, ['Return']);
+          this.#br.elementIdValue(activeElement, ['Return']);
         }
-        const result = browser.elementActive();
+        const result = this.#br.elementActive();
         const activeElement = result.value && result.value.ELEMENT;
         if(activeElement){
-          browser.elementIdValue(activeElement, '\uE006');
+          this.#br.elementIdValue(activeElement, '\uE006');
         } */
 
         // Weird. The react-select dropdown is open and needs to be closed, otherwise
         // a modal overlay hides everything? Can be closed like so:
         // No, now in rc.10 (instead of previous version, rc.3), the dropdown auto closes, after select.
-        // browser.click('#e2eAddUsD_SubmitB');
+        // this.#br.click('#e2eAddUsD_SubmitB');
       },
 
-      submit: function(ps: { closeStupidDialogAndRefresh?: true } = {}) {
+      submit: (ps: { closeStupidDialogAndRefresh?: true } = {}) => {
           // Sometimes the click fails (maybe the dialog resizes, once a member is selected, so
           // the Submit button moves a bit?). Then, the Add More Group Members button will
           // remain occluded.
         const submitSelector = '#e2eAddUsD_SubmitB';
         utils.tryManyTimes(`Submit members`, 2, () => {
-          api.waitAndClick(submitSelector);
-          api.waitUntilGone(submitSelector, { timeoutMs: 2000, timeoutIsFine: true });
+          this.waitAndClick(submitSelector);
+          this.waitUntilGone(submitSelector, { timeoutMs: 2000, timeoutIsFine: true });
         });
-        // Later: browser.waitUntilModalGone();
+        // Later: this.#br.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
         if (ps.closeStupidDialogAndRefresh) {
-          api.waitForVisible('.esStupidDlg');
-          browser.refresh();
+          this.waitForVisible('.esStupidDlg');
+          this.#br.refresh();
         }
       }
-    },
+    };
 
 
-    editor: {
-      editTitle: function(title, opts: { checkAndRetry?: true } = {}) {
-        api.waitAndSetValue('.esEdtr_titleEtc_title', title, opts);
+    editor = {
+      editTitle: (title: string, opts: { checkAndRetry?: true } = {}) => {
+        this.waitAndSetValue('.esEdtr_titleEtc_title', title, opts);
       },
 
-      isTitleVisible: function() {
-        browser.waitForVisible('.editor-area');
-        return browser.isVisible('.editor-area .esEdtr_titleEtc_title');
+      isTitleVisible: () => {
+        this.waitForDisplayed('.editor-area');
+        return this.isVisible('.editor-area .esEdtr_titleEtc_title');
       },
 
       getTitle: (): string => {
-        return $('.editor-area .esEdtr_titleEtc_title').getText();
+        return this.$('.editor-area .esEdtr_titleEtc_title').getText();
       },
 
       waitForSimilarTopics: () => {
-        api.waitForVisible('.s_E_SimlTpcs');
+        this.waitForVisible('.s_E_SimlTpcs');
       },
 
       numSimilarTopics: (): number => {
-        return api.count('.s_E_SimlTpcs_L_It');
+        return this.count('.s_E_SimlTpcs_L_It');
       },
 
       isSimilarTopicTitlePresent: (title: string) => {
-        const text = api.waitAndGetVisibleText('.s_E_SimlTpcs')
+        const text = this.waitAndGetVisibleText('.s_E_SimlTpcs')
         return text.search(title) >= 0;
       },
 
-      editText: function(text, opts: {
-          timeoutMs?: number, checkAndRetry?: true, append?: boolean, skipWait?: true } = {}) {
-        api.switchToEmbEditorIframeIfNeeded();
-        api.waitAndSetValue('.esEdtr_textarea', text, opts);
+      editText: (text: string, opts: {
+          timeoutMs?: number, checkAndRetry?: true,
+          append?: boolean, skipWait?: true } = {}) => {
+        this.switchToEmbEditorIframeIfNeeded();
+        this.waitAndSetValue('.esEdtr_textarea', text, opts);
       },
 
       getText: (): string => {
-        return api.waitAndGetValue('.editor-area textarea');
+        return this.waitAndGetValue('.editor-area textarea');
       },
 
-      setTopicType: function(type: PageRole) {
+      setTopicType: (type: PageRole) => {
         let optionId = null;
         let needsClickMore = false;
         switch (type) {
@@ -3974,177 +3999,177 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           case c.TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
-        api.waitAndClick('.esTopicType_dropdown');
+        this.waitAndClick('.esTopicType_dropdown');
         if (needsClickMore) {
-          api.waitAndClick('.esPageRole_showMore');
+          this.waitAndClick('.esPageRole_showMore');
         }
-        api.waitAndClick(optionId);
-        api.waitUntilModalGone();
+        this.waitAndClick(optionId);
+        this.waitUntilModalGone();
       },
 
-      cancelNoHelp: function() {  // REMOVE just use cancel() now, help dialog removed
+      cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
         const buttonSelector = '#debiki-editor-controller .e_EdCancelB';
-        api.waitAndClick(buttonSelector);
+        this.waitAndClick(buttonSelector);
         // waitForGone won't work — the editor just gets display:none but is still there.
-        api.waitForNotVisible(buttonSelector);
+        this.waitForNotVisible(buttonSelector);
       },
 
-      cancel: function() {
-        api.editor.cancelNoHelp();
+      cancel: () => {
+        this.editor.cancelNoHelp();
       },
 
-      closeIfOpen: function() {
-        if (browser.isVisible('#debiki-editor-controller .e_EdCancelB')) {
-          api.editor.cancel();
+      closeIfOpen: () => {
+        if (this.isVisible('#debiki-editor-controller .e_EdCancelB')) {
+          this.editor.cancel();
         }
       },
 
-      switchToSimpleEditor: function() {
-        api.waitAndClick('.e_EdCancelB'); // could use different class, weird name
-        api.waitForVisible('.esC_Edtr');
+      switchToSimpleEditor: () => {
+        this.waitAndClick('.e_EdCancelB'); // could use different class, weird name
+        this.waitForVisible('.esC_Edtr');
       },
 
-      save: function() {
-        api.switchToEmbEditorIframeIfNeeded();
-        api.editor.clickSave();
-        api.waitUntilLoadingOverlayGone();
+      save: () => {
+        this.switchToEmbEditorIframeIfNeeded();
+        this.editor.clickSave();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      clickSave: function() {
-        api.waitAndClick('.e_E_SaveB');
+      clickSave: () => {
+        this.waitAndClick('.e_E_SaveB');
       },
 
-      saveWaitForNewPage: function() {
-        api.rememberCurrentUrl();
-        api.editor.save();
-        api.waitForNewUrl();
+      saveWaitForNewPage: () => {
+        this.rememberCurrentUrl();
+        this.editor.save();
+        this.waitForNewUrl();
       },
 
-      isDraftJustSaved: function() {
-        browser.isVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      isDraftJustSaved: () => {
+        this.isVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftSaved: function() {
-        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      waitForDraftSaved: () => {
+        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftSavedInBrowser: function() {
-        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.SavedInBrowser);
+      waitForDraftSavedInBrowser: () => {
+        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.SavedInBrowser);
       },
 
-      waitForDraftDeleted: function() {
-        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      waitForDraftDeleted: () => {
+        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
       },
 
-      waitForDraftTitleToLoad: function(text: string) {
-        api.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
+      waitForDraftTitleToLoad: (text: string) => {
+        this.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
       },
 
-      waitForDraftTextToLoad: function(text: string) {
-        api.waitUntilValueIs('.editor-area textarea', text);
+      waitForDraftTextToLoad: (text: string) => {
+        this.waitUntilValueIs('.editor-area textarea', text);
       },
-    },
+    };
 
 
-    preview: {
+    preview = {
       __inPagePreviewSelector: '.s_P-Prvw ',
       __inEditorPreviewSelector: '#t_E_Preview ', // '#debiki-editor-controller .preview ';
 
       waitForExist: (
             selector: string, opts: { where: 'InEditor' | 'InPage' }) => {
         if (opts.where === 'InEditor') {
-          api.switchToEmbEditorIframeIfNeeded();
-          api.waitForExist(api.preview.__inEditorPreviewSelector + selector);
+          this.switchToEmbEditorIframeIfNeeded();
+          this.waitForExist(this.preview.__inEditorPreviewSelector + selector);
         }
         else {
-          api.switchToEmbCommentsIframeIfNeeded();
-          api.waitForExist(api.preview.__inPagePreviewSelector + selector);
+          this.switchToEmbCommentsIframeIfNeeded();
+          this.waitForExist(this.preview.__inPagePreviewSelector + selector);
         }
       },
 
       waitUntilPreviewHtmlMatches: (
             text: string, opts: { where: 'InEditor' | 'InPage' }) => {
         if (opts.where === 'InEditor') {
-          api.switchToEmbEditorIframeIfNeeded();
-          api.waitUntilHtmlMatches(api.preview.__inEditorPreviewSelector, text);
+          this.switchToEmbEditorIframeIfNeeded();
+          this.waitUntilHtmlMatches(this.preview.__inEditorPreviewSelector, text);
         }
         else {
-          api.switchToEmbCommentsIframeIfNeeded();
-          api.waitUntilHtmlMatches(api.preview.__inPagePreviewSelector, text);
+          this.switchToEmbCommentsIframeIfNeeded();
+          this.waitUntilHtmlMatches(this.preview.__inPagePreviewSelector, text);
         }
       },
-    },
+    };
 
 
-    metabar: {
+    metabar = {
       isVisible: (): boolean => {
-        return browser.isVisible('.dw-cmts-tlbr-summary');
+        return this.isVisible('.dw-cmts-tlbr-summary');
       },
 
       clickLogin: () => {
-        api.waitAndClick('.esMetabar .dw-a-login');
+        this.waitAndClick('.esMetabar .dw-a-login');
       },
 
       waitForLoginButtonVisible: () => {
-        api.waitForVisible('.esMetabar .dw-a-login');
+        this.waitForVisible('.esMetabar .dw-a-login');
       },
 
       waitUntilLoggedIn: () => {
-        api.waitForVisible('.dw-a-logout');
+        this.waitForVisible('.dw-a-logout');
       },
 
       getMyFullName: (): string => {
-        return api.waitAndGetVisibleText('.s_MB_Name .esP_By_F');
+        return this.waitAndGetVisibleText('.s_MB_Name .esP_By_F');
       },
 
       getMyUsernameInclAt: (): string => {
-        return api.waitAndGetVisibleText('.s_MB_Name .esP_By_U');
+        return this.waitAndGetVisibleText('.s_MB_Name .esP_By_U');
       },
 
       clickLogout: () => {
-        const wasInIframe = api.isInIframe();
-        api.waitAndClick('.esMetabar .dw-a-logout');
-        api.waitUntilGone('.esMetabar .dw-a-logout');
+        const wasInIframe = this.isInIframe();
+        this.waitAndClick('.esMetabar .dw-a-logout');
+        this.waitUntilGone('.esMetabar .dw-a-logout');
         // Is there a race? Any iframe might reload, after logout. Better re-enter it?
         // Otherwise the wait-for .esMetabar below can fail.
         if (wasInIframe) {
-          api.switchToAnyParentFrame();
-          api.switchToEmbeddedCommentsIrame();
+          this.switchToAnyParentFrame();
+          this.switchToEmbeddedCommentsIrame();
         }
-        api.waitForVisible('.esMetabar');
+        this.waitForVisible('.esMetabar');
       },
 
       openMetabar: () => {
-        api.waitAndClick('.dw-page-notf-level');
-        api.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
+        this.waitAndClick('.dw-page-notf-level');
+        this.waitForVisible('.esMB_Dtls_Ntfs_Lbl');
       },
 
       openMetabarIfNeeded: () => {
-        if (!browser.isVisible('.esMB_Dtls_Ntfs_Lbl')) {
-          api.metabar.openMetabar();
+        if (!this.isVisible('.esMB_Dtls_Ntfs_Lbl')) {
+          this.metabar.openMetabar();
         }
       },
 
       chooseNotfLevelWatchAll: () => {
-        api.waitAndClick('.dw-notf-level');
-        api.waitAndClick('.e_NtfAll');
-        api.waitForGone('.e_NtfAll');
+        this.waitAndClick('.dw-notf-level');
+        this.waitAndClick('.e_NtfAll');
+        this.waitForGone('.e_NtfAll');
       },
 
       setPageNotfLevel: (notfLevel: PageNotfLevel) => {
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.metabar.openMetabarIfNeeded();
-        api.waitAndClick('.dw-notf-level');
-        api.notfLevelDropdown.clickNotfLevel(notfLevel);
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.metabar.openMetabarIfNeeded();
+        this.waitAndClick('.dw-notf-level');
+        this.notfLevelDropdown.clickNotfLevel(notfLevel);
       },
-    },
+    };
 
 
-    topic: {
+    topic = {
       postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd`,
 
       forAllPostIndexNrElem: (fn: (index: number, postNr: PostNr, elem) => void) => {
-        const postElems = $$('[id^="post-"]');
+        const postElems = this.$$('[id^="post-"]');
         for (let index = 0; index < postElems.length; ++index) {
           const elem = postElems[index];
           const idAttr = elem.getAttribute('id');
@@ -4161,87 +4186,87 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      clickHomeNavLink: function() {
-        // api.waitAndClick() results in this error:
+      clickHomeNavLink: () => {
+        // this.waitAndClick() results in this error:
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
         // Instead:
-        $("a=Home").click();
+        this.$("a=Home").click();
       },
 
-      waitForLoaded: function() {
-        api.waitForVisible('.dw-ar-t');
+      waitForLoaded: () => {
+        this.waitForVisible('.dw-ar-t');
       },
 
-      assertPagePendingApprovalBodyHidden: function() {
-        api.topic.waitForLoaded();
-        assert(api.topic._isTitlePendingApprovalVisible());
-        assert(api.topic._isOrigPostPendingApprovalVisible());
-        assert(!api.topic._isOrigPostBodyVisible());
+      assertPagePendingApprovalBodyHidden: () => {
+        this.topic.waitForLoaded();
+        assert(this.topic._isTitlePendingApprovalVisible());
+        assert(this.topic._isOrigPostPendingApprovalVisible());
+        assert(!this.topic._isOrigPostBodyVisible());
       },
 
-      assertPagePendingApprovalBodyVisible: function() {
-        api.topic.waitForLoaded();
-        assert(api.topic._isTitlePendingApprovalVisible());
-        assert(api.topic._isOrigPostPendingApprovalVisible());
-        assert(api.topic._isOrigPostBodyVisible());
+      assertPagePendingApprovalBodyVisible: () => {
+        this.topic.waitForLoaded();
+        assert(this.topic._isTitlePendingApprovalVisible());
+        assert(this.topic._isOrigPostPendingApprovalVisible());
+        assert(this.topic._isOrigPostBodyVisible());
       },
 
-      assertPageNotPendingApproval: function() {
-        api.topic.waitForLoaded();
-        assert(!api.topic._isOrigPostPendingApprovalVisible());
-        assert(api.topic._isOrigPostBodyVisible());
+      assertPageNotPendingApproval: () => {
+        this.topic.waitForLoaded();
+        assert(!this.topic._isOrigPostPendingApprovalVisible());
+        assert(this.topic._isOrigPostBodyVisible());
       },
 
-      isPostNrDescendantOf: function(postNr, maybeParentNr) {
-        api.switchToEmbCommentsIframeIfNeeded();
-        return browser.isVisible(
+      isPostNrDescendantOf: (postNr, maybeParentNr) => {
+        this.switchToEmbCommentsIframeIfNeeded();
+        return this.isVisible(
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: function(postNr) {
-        api.switchToEmbCommentsIframeIfNeeded();
-        return browser.isVisible('#post-' + postNr);
+      isPostNrVisible: (postNr) => {
+        this.switchToEmbCommentsIframeIfNeeded();
+        return this.isVisible('#post-' + postNr);
       },
 
-      waitForPostNrVisible: function(postNr) {  // RENAME to ...VisibleText?
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.waitForVisibleText('#post-' + postNr);
+      waitForPostNrVisible: (postNr) => {  // RENAME to ...VisibleText?
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitForVisibleText('#post-' + postNr);
       },
 
-      waitForPostAssertTextMatches: function(postNr, text: string | RegExp) {
+      waitForPostAssertTextMatches: (postNr, text: string | RegExp) => {
         dieIf(!_.isString(text) && !_.isRegExp(text),
             "Test broken: `text` is not a string nor a regex [TyEJ53068MSK]");
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.waitForVisibleText(api.topic.postBodySelector(postNr));
-        api.topic.assertPostTextMatches(postNr, text);
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitForVisibleText(this.topic.postBodySelector(postNr));
+        this.topic.assertPostTextMatches(postNr, text);
       },
 
       // waitUntilPostTextMatches — see below
 
       waitUntilPostHtmlMatches: (postNr, regexOrString: string | RegExp | any[]) => {
-        const selector = api.topic.postBodySelector(postNr);
-        api.waitUntilHtmlMatches(selector, regexOrString)
+        const selector = this.topic.postBodySelector(postNr);
+        this.waitUntilHtmlMatches(selector, regexOrString)
       },
 
       assertPostHtmlDoesNotMatch: (postNr, regexOrString: string | RegExp | any[]) => {
-        const selector = api.topic.postBodySelector(postNr);
-        const html = browser.getHTML(selector);
-        const badMatch = api._findHtmlMatchMiss(html, false, regexOrString);
+        const selector = this.topic.postBodySelector(postNr);
+        const html = this.$(selector).getHTML();
+        const badMatch = this._findHtmlMatchMiss(html, false, regexOrString);
         if (badMatch) {
           assert(false,
               `Found text that shouldn't be there [TyE53DTEGJ4]:\n\n  ${badMatch}\n`);
         }
       },
 
-      assertPostOrderIs: function(expectedPostNrs: PostNr[], selector: string = '[id^="post-"]') {
+      assertPostOrderIs: (expectedPostNrs: PostNr[], selector: string = '[id^="post-"]') => {
         dieIf(!expectedPostNrs || !expectedPostNrs.length, `No expected posts [TyEE062856]`);
 
         // Replace other dupl code with this fn.  [59SKEDT0652]
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.waitForVisible(selector);
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitForVisible(selector);
 
-        const postElems = $$(selector);
+        const postElems = this.$$(selector);
 
         if (postElems.length >= expectedPostNrs.length) {
           logMessage(
@@ -4271,60 +4296,60 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      postNrContains: function(postNr: PostNr, selector: string) {
-        return browser.isExisting(api.topic.postBodySelector(postNr) + ' ' + selector);
+      postNrContains: (postNr: PostNr, selector: string) => {
+        return this.isExisting(this.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
-      postNrContainsVisible: function(postNr: PostNr, selector: string) {
-        return browser.isVisible(api.topic.postBodySelector(postNr) + ' ' + selector);
+      postNrContainsVisible: (postNr: PostNr, selector: string) => {
+        return this.isVisible(this.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
-      assertPostTextMatches: function(postNr: PostNr, text: string | RegExp) {
-        api.assertTextMatches(api.topic.postBodySelector(postNr), text)
+      assertPostTextMatches: (postNr: PostNr, text: string | RegExp) => {
+        this.assertTextMatches(this.topic.postBodySelector(postNr), text)
       },
 
-      waitUntilPostTextMatches: function(postNr: PostNr, regex: string | RegExp) {
-        api.waitUntilTextMatches(api.topic.postBodySelector(postNr), regex);
+      waitUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp) => {
+        this.waitUntilTextMatches(this.topic.postBodySelector(postNr), regex);
       },
 
-      refreshUntilPostNrAppears: function(postNr: PostNr,
-            ps: { isEmbedded?: true, isMetaPost?: true } = {}) {
-        if (ps.isEmbedded) api.switchToEmbeddedCommentsIrame();
+      refreshUntilPostNrAppears: (postNr: PostNr,
+            ps: { isEmbedded?: true, isMetaPost?: true } = {}) => {
+        if (ps.isEmbedded) this.switchToEmbeddedCommentsIrame();
         const selector = ps.isMetaPost
             ? `#post-${postNr} .s_MP_Text`
-            : api.topic.postBodySelector(postNr);
-        api.topic.refreshUntilAppears(selector, ps);
+            : this.topic.postBodySelector(postNr);
+        this.topic.refreshUntilAppears(selector, ps);
       },
 
-      refreshUntilAppears: function(selector: string, ps: { isEmbedded?: true } = {}) {
-        // Maybe use api.waitUntil()? But it's ok to call it from inside itself?
+      refreshUntilAppears: (selector: string, ps: { isEmbedded?: true } = {}) => {
+        // Maybe use this.waitUntil()? But it's ok to call it from inside itself?
         let delayMs = RefreshPollMs;
-        while (!browser.isVisible(selector)) {
+        while (!this.isVisible(selector)) {
           logMessage(`Refreshing page until appears:  ${selector}  [TyE2EMREFRWAIT]`);
-          browser.refresh();
+          this.#br.refresh();
           // Pause *after* the refresh, so there's some time for the post to get loaded & appear.
-          browser.pause(delayMs);
+          this.#br.pause(delayMs);
           // Give the thing more and more time to appear, after page reresh, in case
           // for whatever reason it won't show up immediately.
           delayMs = expBackoff(delayMs);
-          if (ps.isEmbedded) api.switchToEmbeddedCommentsIrame();
+          if (ps.isEmbedded) this.switchToEmbeddedCommentsIrame();
         }
       },
 
-      refreshUntilPostTextMatches: function(postNr: PostNr, regex: string | RegExp) {
+      refreshUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp) => {
         regex = getRegExpOrDie(regex);
         while (true) {
-          const text = api.waitAndGetVisibleText(api.topic.postBodySelector(postNr));
+          const text = this.waitAndGetVisibleText(this.topic.postBodySelector(postNr));
           if (text.match(regex)) {
             break;
           }
-          browser.pause(200);
-          browser.refresh();
+          this.#br.pause(200);
+          this.#br.refresh();
         }
       },
 
-      assertMetaPostTextMatches: function(postNr: PostNr, text: string) {
-        api.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
+      assertMetaPostTextMatches: (postNr: PostNr, text: string) => {
+        this.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
       },
 
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
@@ -4334,304 +4359,303 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       anyReplyButtonSelector: '.dw-a-reply',
       addProgressReplySelector: '.s_OpReB-Prg',
 
-      waitForReplyButtonAssertCommentsVisible: function() {
-        api.waitForVisible(api.topic.anyReplyButtonSelector);
-        assert(browser.isVisible(api.topic.anyCommentSelector));
+      waitForReplyButtonAssertCommentsVisible: () => {
+        this.waitForVisible(this.topic.anyReplyButtonSelector);
+        assert(this.isVisible(this.topic.anyCommentSelector));
       },
 
-      waitForReplyButtonAssertNoComments: function() {
-        api.waitForVisible(api.topic.anyReplyButtonSelector);
-        assert(!browser.isVisible(api.topic.anyCommentSelector));
+      waitForReplyButtonAssertNoComments: () => {
+        this.waitForVisible(this.topic.anyReplyButtonSelector);
+        assert(!this.isVisible(this.topic.anyCommentSelector));
       },
 
       countReplies: (ps: { skipWait?: boolean } = {}): NumReplies => {
         if (!ps.skipWait) {
-          api.waitForMyDataAdded();
+          this.waitForMyDataAdded();
         }
-        let numNormal = api.count(api.topic.replySelector);
-        const numUnapproved = api.count(api.topic.replySelector + '.dw-p-unapproved');
-        const numDeleted = api.count(api.topic.replySelector + '.dw-p-dl');
+        let numNormal = this.count(this.topic.replySelector);
+        const numUnapproved = this.count(this.topic.replySelector + '.dw-p-unapproved');
+        const numDeleted = this.count(this.topic.replySelector + '.dw-p-dl');
         numNormal = numNormal - numUnapproved - numDeleted;
         return { numNormal, numUnapproved, numDeleted };
       },
 
-      assertNumRepliesVisible: function(num: number) {
-        api.waitForMyDataAdded();
-        api.assertExactly(num, api.topic.replySelector);
+      assertNumRepliesVisible: (num: number) => {
+        this.waitForMyDataAdded();
+        this.assertExactly(num, this.topic.replySelector);
       },
 
-      assertNumOrigPostRepliesVisible: function(num: number) {
-        api.waitForMyDataAdded();
-        api.assertExactly(num, api.topic.topLevelReplySelector);
+      assertNumOrigPostRepliesVisible: (num: number) => {
+        this.waitForMyDataAdded();
+        this.assertExactly(num, this.topic.topLevelReplySelector);
       },
 
-      assertNoReplyMatches: function(text) {
-        api.waitForMyDataAdded();
-        api.assertNoTextMatches(api.topic.allRepliesTextSelector, text);
+      assertNoReplyMatches: (text) => {
+        this.waitForMyDataAdded();
+        this.assertNoTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertSomeReplyMatches: function(text) {
-        api.waitForMyDataAdded();
-        api.assertTextMatches(api.topic.allRepliesTextSelector, text);
+      assertSomeReplyMatches: (text) => {
+        this.waitForMyDataAdded();
+        this.assertTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertNoAuthorMissing: function() {
+      assertNoAuthorMissing: () => {
         // There's this error code if a post author isn't included on the page.
-        api.topic.assertNoReplyMatches("EsE4FK07_");
+        this.topic.assertNoReplyMatches("EsE4FK07_");
       },
 
-      getTopicAuthorUsernameInclAt: function(): string {
-        return api.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
+      getTopicAuthorUsernameInclAt: (): string => {
+        return this.waitAndGetVisibleText('.dw-ar-p-hd .esP_By_U');
       },
 
-      clickFirstMentionOf: function(username: string) {
-        browser.waitForVisible(`a.esMention=@${username}`);
-        const elem = $(`a.esMention=@${username}`);
+      clickFirstMentionOf: (username: string) => {
+        this.waitForDisplayed(`a.esMention=@${username}`);
+        const elem = this.$(`a.esMention=@${username}`);
         elem.click();
       },
 
-      clickReplyToOrigPost: function(whichButton?: 'DiscussionSection') {
+      clickReplyToOrigPost: (whichButton?: 'DiscussionSection') => {
         const selector = whichButton === 'DiscussionSection' ?
             '.s_OpReB-Dsc' : '.dw-ar-p + .esPA .dw-a-reply';
-        api.topic.clickPostActionButton(selector);
+        this.topic.clickPostActionButton(selector);
       },
 
-      clickReplyToEmbeddingBlogPost: function() {
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
+      clickReplyToEmbeddingBlogPost: () => {
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
       },
 
-      clickReplyToPostNr: function(postNr: PostNr) {
-        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+      clickReplyToPostNr: (postNr: PostNr) => {
+        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
       },
 
-      clickAddProgressReply: function() {
-        api._waitForClickable(api.topic.addProgressReplySelector);
-        api.topic.clickPostActionButton(api.topic.addProgressReplySelector);
+      clickAddProgressReply: () => {
+        this._waitForClickable(this.topic.addProgressReplySelector);
+        this.topic.clickPostActionButton(this.topic.addProgressReplySelector);
         // Dismiss any help dialog that explains what bottom comments are.
-        browser.pause(150);
-        if (browser.isVisible('.e_HelpOk')) {
-          api.waitAndClick('.e_HelpOk');
-          api.waitUntilModalGone();
+        this.#br.pause(150);
+        if (this.isVisible('.e_HelpOk')) {
+          this.waitAndClick('.e_HelpOk');
+          this.waitUntilModalGone();
         }
       },
 
-      canEditSomething: function(): boolean {
-        return browser.isVisible('.dw-a-edit');
+      canEditSomething: (): boolean => {
+        return this.isVisible('.dw-a-edit');
       },
 
-      canReplyToSomething: function(): boolean {
-        return browser.isVisible('.dw-a-reply');
+      canReplyToSomething: (): boolean => {
+        return this.isVisible('.dw-a-reply');
       },
 
-      canEditOrigPost: function(): boolean {
-        return api.topic.canEditPostNr(c.BodyNr);
+      canEditOrigPost: (): boolean => {
+        return this.topic.canEditPostNr(c.BodyNr);
       },
 
-      canEditPostNr: function(postNr: number): boolean {
+      canEditPostNr: (postNr: number): boolean => {
         const selector = `#post-${postNr} + .esPA .dw-a-edit`;
-        return browser.isVisible(selector) && browser.isEnabled(selector);
+        return this.isVisible(selector) && this.isEnabled(selector);
       },
 
-      clickEditOrigPost: function() {
-        api.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
+      clickEditOrigPost: () => {
+        this.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
       },
 
-      clickEditoPostNr: function(postNr: PostNr) {
-        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
+      clickEditoPostNr: (postNr: PostNr) => {
+        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
       },
 
       waitForViewEditsButton: (postNr: PostNr) => {
-        api.waitForVisible(`#post-${postNr} .esP_viewHist`);
+        this.waitForVisible(`#post-${postNr} .esP_viewHist`);
       },
 
       isViewEditsButtonVisible: (postNr: PostNr): boolean => {
-        return browser.isVisible(`#post-${postNr} .esP_viewHist`);
+        return this.isVisible(`#post-${postNr} .esP_viewHist`);
       },
 
       openEditHistory: (postNr: PostNr) => {
-        api.waitAndClick(`#post-${postNr} .esP_viewHist`);
-        api.editHistoryDialog.waitUntilVisible();
+        this.waitAndClick(`#post-${postNr} .esP_viewHist`);
+        this.editHistoryDialog.waitUntilVisible();
       },
 
-      clickMoreForPostNr: function(postNr: PostNr) {  // RENAME to openMoreDialogForPostNr()?
-        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      clickMoreForPostNr: (postNr: PostNr) => {  // RENAME to openMoreDialogForPostNr()?
+        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
       },
 
       isPostMoreDialogVisible: (): boolean => {
         // This works for now.
-        return api.isVisible(api.topic.__flagPostSelector);
+        return this.isVisible(this.topic.__flagPostSelector);
       },
 
       closePostMoreDialog: () => {
-        assert.ok(api.topic.isPostMoreDialogVisible());
+        assert.ok(this.topic.isPostMoreDialogVisible());
         // Break out close dialog fn?  [E2ECLOSEDLGFN]
-        api.waitAndClick('.esDropModal_CloseB');
-        api.waitUntilGone('.esDropModal_CloseB');
-        api.waitUntilModalGone();
+        this.waitAndClick('.esDropModal_CloseB');
+        this.waitUntilGone('.esDropModal_CloseB');
+        this.waitUntilModalGone();
       },
 
-      openShareDialogForPostNr: function(postNr: PostNr) {
-        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-link`);
-        api.waitForVisible('.s_ShareD');
+      openShareDialogForPostNr: (postNr: PostNr) => {
+        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-link`);
+        this.waitForVisible('.s_ShareD');
       },
 
       openMoveDialogForPostNr: (postNr: PostNr) => {
         // This always works, when the tests are visible and I look at them.
-        // But can block forever, in an invisible browser. Just repeat until works.
+        // But can block forever, in an invisible this.#br. Just repeat until works.
         utils.tryManyTimes("Open move post dialog", 3, () => {
-          if (!browser.isVisible('.s_PA_MvB')) {
-            api.topic.clickMoreForPostNr(postNr);
+          if (!this.isVisible('.s_PA_MvB')) {
+            this.topic.clickMoreForPostNr(postNr);
           }
-          api.waitAndClick('.s_PA_MvB', { timeoutMs: 500 });
-          api.waitForVisible('.s_MvPD', { timeoutMs: 500 });
+          this.waitAndClick('.s_PA_MvB', { timeoutMs: 500 });
+          this.waitForVisible('.s_MvPD', { timeoutMs: 500 });
         });
       },
 
-      clickMoreVotesForPostNr: function(postNr: PostNr) {
-        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
+      clickMoreVotesForPostNr: (postNr: PostNr) => {
+        this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
       },
 
       makeLikeVoteSelector: (postNr: PostNr, ps: { byMe?: true } = {}): string => {
         // Embedded comments pages lack the orig post — instead, there's the
         // blog post, on the embedding page.
-        const startSelector = isOnEmbeddedCommentsPage && postNr === c.BodyNr
+        const startSelector = this.#isOnEmbeddedCommentsPage && postNr === c.BodyNr
             ? '.dw-ar-t > ' :`#post-${postNr} + `;
         let result = startSelector + '.esPA .dw-a-like';
         if (ps.byMe) result += '.dw-my-vote'
         return result;
       },
 
-      clickLikeVote: function(postNr: PostNr, opts: { logInAs? } = {}) {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
+      clickLikeVote: (postNr: PostNr, opts: { logInAs? } = {}) => {
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
 
         utils.tryUntilTrue("click Like", 3, () => {
-          api.waitAndClick(likeVoteSelector);
-          if (!opts.logInAs || !api.isInIframe())
+          this.waitAndClick(likeVoteSelector);
+          if (!opts.logInAs || !this.isInIframe())
             return true;
           // A login popup should open.
-          browser.pause(200);
-          const ids = browser.getTabIds();
-          return ids.length >= 2;
+          this.#br.pause(200);
+          return this.numWindowsOpen() >= 2;
         });
 
         if (opts.logInAs) {
-          api.switchToLoginPopupIfEmbedded();
-          api.loginDialog.loginWithPassword(opts.logInAs);
-          api.switchToEmbCommentsIframeIfNeeded();
+          this.switchToLoginPopupIfEmbedded();
+          this.loginDialog.loginWithPassword(opts.logInAs);
+          this.switchToEmbCommentsIframeIfNeeded();
         }
       },
 
       clickLikeVoteForBlogPost: () => {
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitAndClick('.dw-ar-t > .esPA > .dw-a-like');
       },
 
-      toggleLikeVote: function(postNr: PostNr, opts: { logInAs? } = {}) {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
-        api.switchToEmbCommentsIframeIfNeeded();
-        const isLikedBefore = browser.isVisible(likeVoteSelector + '.dw-my-vote');
-        api.topic.clickLikeVote(postNr, opts);
-        api.switchToEmbCommentsIframeIfNeeded();
+      toggleLikeVote: (postNr: PostNr, opts: { logInAs? } = {}) => {
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
+        this.switchToEmbCommentsIframeIfNeeded();
+        const isLikedBefore = this.isVisible(likeVoteSelector + '.dw-my-vote');
+        this.topic.clickLikeVote(postNr, opts);
+        this.switchToEmbCommentsIframeIfNeeded();
         let delay = 133;
         while (true) {
           // Wait for the server to reply and the page to get updated.
-          browser.pause(delay);
+          this.#br.pause(delay);
           delay *= 1.5;
-          const isLikedAfter = browser.isVisible(likeVoteSelector + '.dw-my-vote');
+          const isLikedAfter = this.isVisible(likeVoteSelector + '.dw-my-vote');
           if (isLikedBefore !== isLikedAfter)
             break;
         }
       },
 
-      isPostLikedByMe: function(postNr: PostNr) {
-        return api.topic.isPostLiked(postNr, { byMe: true });
+      isPostLikedByMe: (postNr: PostNr) => {
+        return this.topic.isPostLiked(postNr, { byMe: true });
       },
 
       isPostLiked: (postNr: PostNr, ps: { byMe?: true } = {}) => {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr, ps);
-        return browser.isVisible(likeVoteSelector);
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        return this.isVisible(likeVoteSelector);
       },
 
       waitForLikeVote: (postNr: PostNr, ps: { byMe?: true } = {}) => {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr, ps);
-        api.waitForVisible(likeVoteSelector);
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr, ps);
+        this.waitForVisible(likeVoteSelector);
       },
 
-      toggleDisagreeVote: function(postNr: PostNr) {
-        api.topic._toggleMoreVote(postNr, '.dw-a-wrong');
+      toggleDisagreeVote: (postNr: PostNr) => {
+        this.topic._toggleMoreVote(postNr, '.dw-a-wrong');
       },
 
-      toggleBuryVote: function(postNr: PostNr) {
-        api.topic._toggleMoreVote(postNr, '.dw-a-bury');
+      toggleBuryVote: (postNr: PostNr) => {
+        this.topic._toggleMoreVote(postNr, '.dw-a-bury');
       },
 
-      toggleUnwantedVote: function(postNr: PostNr) {
-        api.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
+      toggleUnwantedVote: (postNr: PostNr) => {
+        this.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
       },
 
-      _toggleMoreVote: function(postNr: PostNr, selector: string) {
-        api.topic.clickMoreVotesForPostNr(postNr);
+      _toggleMoreVote: (postNr: PostNr, selector: string) => {
+        this.topic.clickMoreVotesForPostNr(postNr);
         // The vote button appears in a modal dropdown.
-        api.waitAndClick('.esDropModal_content ' + selector);
-        api.waitUntilModalGone();
-        api.waitUntilLoadingOverlayGone();
+        this.waitAndClick('.esDropModal_content ' + selector);
+        this.waitUntilModalGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      canVoteLike: function(postNr: PostNr): boolean {
-        const likeVoteSelector = api.topic.makeLikeVoteSelector(postNr);
-        return browser.isVisible(likeVoteSelector);
+      canVoteLike: (postNr: PostNr): boolean => {
+        const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
+        return this.isVisible(likeVoteSelector);
       },
 
-      canVoteUnwanted: function(postNr: PostNr): boolean {
-        api.topic.clickMoreVotesForPostNr(postNr);
-        api.waitForVisible('.esDropModal_content .dw-a-like');
-        const canVote = browser.isVisible('.esDropModal_content .dw-a-unwanted');
+      canVoteUnwanted: (postNr: PostNr): boolean => {
+        this.topic.clickMoreVotesForPostNr(postNr);
+        this.waitForVisible('.esDropModal_content .dw-a-like');
+        const canVote = this.isVisible('.esDropModal_content .dw-a-unwanted');
         assert(false); // how close modal? to do... later when needed
         return canVote;
       },
 
       __flagPostSelector: '.icon-flag',  // for now, later: e_...
 
-      clickFlagPost: function(postNr: PostNr) {
-        api.topic.clickMoreForPostNr(postNr);
-        api.waitAndClick(api.topic.__flagPostSelector);
-        // This opens  api.flagDialog.
+      clickFlagPost: (postNr: PostNr) => {
+        this.topic.clickMoreForPostNr(postNr);
+        this.waitAndClick(this.topic.__flagPostSelector);
+        // This opens  this.flagDialog.
       },
 
       __deletePostSelector: '.dw-a-delete',
 
-      deletePost: function(postNr: PostNr) {
-        api.topic.clickMoreForPostNr(postNr);
-        api.waitAndClick(api.topic.__deletePostSelector);
-        api.waitAndClick('.dw-delete-post-dialog .e_YesDel');
-        api.waitUntilGone('.dw-delete-post-dialog');
-        api.waitUntilLoadingOverlayGone();
-        api.waitForVisible(`#post-${postNr}.dw-p-dl`);
+      deletePost: (postNr: PostNr) => {
+        this.topic.clickMoreForPostNr(postNr);
+        this.waitAndClick(this.topic.__deletePostSelector);
+        this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        this.waitUntilGone('.dw-delete-post-dialog');
+        this.waitUntilLoadingOverlayGone();
+        this.waitForVisible(`#post-${postNr}.dw-p-dl`);
       },
 
-      canDeletePost: function(postNr: PostNr): boolean {
-        api.topic.clickMoreForPostNr(postNr);
-        api.waitForVisible('.esDropModal_content .dw-a-flag');
-        const canDelete = api.isVisible(api.topic.__deletePostSelector);
-        api.topic.closePostMoreDialog();
+      canDeletePost: (postNr: PostNr): boolean => {
+        this.topic.clickMoreForPostNr(postNr);
+        this.waitForVisible('.esDropModal_content .dw-a-flag');
+        const canDelete = this.isVisible(this.topic.__deletePostSelector);
+        this.topic.closePostMoreDialog();
         return canDelete;
       },
 
       canSelectAnswer: (): boolean => {
-        return browser.isVisible('.dw-a-solve');
+        return this.isVisible('.dw-a-solve');
       },
 
-      selectPostNrAsAnswer: function(postNr) {
-        assert(!browser.isVisible(api.topic._makeUnsolveSelector(postNr)));
-        api.topic.clickPostActionButton(api.topic._makeSolveSelector(postNr));
-        api.waitForVisible(api.topic._makeUnsolveSelector(postNr));
+      selectPostNrAsAnswer: (postNr) => {
+        assert(!this.isVisible(this.topic._makeUnsolveSelector(postNr)));
+        this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
+        this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
       },
 
-      unselectPostNrAsAnswer: function(postNr) {
-        assert(!browser.isVisible(api.topic._makeSolveSelector(postNr)));
-        api.topic.clickPostActionButton(api.topic._makeUnsolveSelector(postNr));
-        api.waitForVisible(api.topic._makeSolveSelector(postNr));
+      unselectPostNrAsAnswer: (postNr) => {
+        assert(!this.isVisible(this.topic._makeSolveSelector(postNr)));
+        this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
+        this.waitForVisible(this.topic._makeSolveSelector(postNr));
       },
 
       _makeSolveSelector(postNr) {
@@ -4643,171 +4667,172 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       },
 
       openChangePageDialog: () => {
-        api.waitAndClick('.dw-a-change');
-        api.topic.waitUntilChangePageDialogOpen();   // CROK
+        this.waitAndClick('.dw-a-change');
+        this.topic.waitUntilChangePageDialogOpen();   // CROK
       },
 
       __changePageDialogSelector: '.s_ChPgD .esDropModal_content',
 
       // Could break out to  changePageDialog: { ... } obj.
       waitUntilChangePageDialogOpen: () => {
-        api.waitForVisible(api.topic.__changePageDialogSelector);  // CROK
-        browser.waitForVisible('.modal-backdrop');
+        this.waitForVisible(this.topic.__changePageDialogSelector);  // CROK
+        this.waitForDisplayed('.modal-backdrop');
       },
 
       isChangePageDialogOpen: () => {
-        return browser.isVisible(api.topic.__changePageDialogSelector);  // CROK
+        return this.isVisible(this.topic.__changePageDialogSelector);  // CROK
       },
 
       waitUntilChangePageDialogGone: () => {
-        api.waitUntilGone(api.topic.__changePageDialogSelector);
-        api.waitUntilGone('.modal-backdrop');
+        this.waitUntilGone(this.topic.__changePageDialogSelector);
+        this.waitUntilGone('.modal-backdrop');
       },
 
       closeChangePageDialog: () => {
-        dieIf(!api.topic.isChangePageDialogOpen(), 'TyE5AKTDFF2');
-        // Don't: api.waitAndClick('.modal-backdrop');
+        dieIf(!this.topic.isChangePageDialogOpen(), 'TyE5AKTDFF2');
+        // Don't: this.waitAndClick('.modal-backdrop');
         // That might block forever, waiting for the dialog that's in front of the backdrop
         // to stop occluding (parts of) the backdrop.
         // Instead:
         while (true) {
           // This no longer works, why not? Chrome 77. The click has no effect —
           // maybe it doesn't click at 10,10 any longer? Or what?
-          //if (browser.isVisible('.modal-backdrop')) {
+          //if (this.isVisible('.modal-backdrop')) {
           //  // Click the upper left corner — if any dialog is open, it'd be somewhere in
           //  // the middle and the upper left corner, shouldn't hit it.
-          //  browser.leftClick('.modal-backdrop', 10, 10);
+          //  this.#br.leftClick('.modal-backdrop', 10, 10);
           //}
           // Instead: (and is this even slightly better?)
           // (Break out close dialog fn?  [E2ECLOSEDLGFN])
-          if (browser.isVisible('.esDropModal_CloseB')) {
-            api.waitAndClick('.esDropModal_CloseB');
+          if (this.isVisible('.esDropModal_CloseB')) {
+            this.waitAndClick('.esDropModal_CloseB');
           }
-          if (!api.topic.isChangePageDialogOpen())
+          if (!this.topic.isChangePageDialogOpen())
             break;
-          browser.pause(PollMs);
+          this.#br.pause(PollMs);
         }
-        api.waitUntilModalGone();
+        this.waitUntilModalGone();
       },
 
-      closeTopic: function() {
-        api.topic.openChangePageDialog();
-        api.waitAndClick(api.topic._closeButtonSelector);
-        api.topic.waitUntilChangePageDialogGone();
-        api.waitForVisible('.dw-p-ttl .icon-block');
+      closeTopic: () => {
+        this.topic.openChangePageDialog();
+        this.waitAndClick(this.topic._closeButtonSelector);
+        this.topic.waitUntilChangePageDialogGone();
+        this.waitForVisible('.dw-p-ttl .icon-block');
       },
 
-      reopenTopic: function() {
-        api.topic.openChangePageDialog();
-        api.waitAndClick(api.topic._reopenButtonSelector);
-        api.topic.waitUntilChangePageDialogGone();
-        api.waitUntilGone('.dw-p-ttl .icon-block');
+      reopenTopic: () => {
+        this.topic.openChangePageDialog();
+        this.waitAndClick(this.topic._reopenButtonSelector);
+        this.topic.waitUntilChangePageDialogGone();
+        this.waitUntilGone('.dw-p-ttl .icon-block');
       },
 
       canCloseOrReopen: (): boolean => {
-        browser.waitForVisible('.dw-a-more'); // so all buttons have appeared
-        if (!browser.isVisible('.dw-a-change'))
+        this.waitForDisplayed('.dw-a-more'); // so all buttons have appeared
+        if (!this.isVisible('.dw-a-change'))
           return false;
-        api.topic.openChangePageDialog();
+        this.topic.openChangePageDialog();
         let result = false;
-        if (browser.isVisible(api.topic._closeButtonSelector)) result = true;
-        else if (browser.isVisible(api.topic._reopenButtonSelector)) result = true;
-        api.topic.closeChangePageDialog();
+        if (this.isVisible(this.topic._closeButtonSelector)) result = true;
+        else if (this.isVisible(this.topic._reopenButtonSelector)) result = true;
+        this.topic.closeChangePageDialog();
         return result;
       },
 
       setDoingStatus: (newStatus: 'New' | 'Planned' | 'Started' | 'Done') => {
-        api.topic.openChangePageDialog();
-        api.waitAndClick('.e_PgSt-' + newStatus);
-        api.topic.waitUntilChangePageDialogGone();
+        this.topic.openChangePageDialog();
+        this.waitAndClick('.e_PgSt-' + newStatus);
+        this.topic.waitUntilChangePageDialogGone();
       },
 
       _closeButtonSelector: '.s_ChPgD .e_ClosePgB',
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
-      refreshUntilBodyHidden: function(postNr: PostNr) {  // RENAME to refreshUntilPostBodyHidden
+      refreshUntilBodyHidden: (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
         while (true) {
-          let isBodyHidden = api.topic.isPostBodyHidden(postNr);
+          let isBodyHidden = this.topic.isPostBodyHidden(postNr);
           if (isBodyHidden) break;
-          browser.pause(RefreshPollMs);
-          browser.refresh();
+          this.#br.pause(RefreshPollMs);
+          this.#br.refresh();
         }
       },
 
-      refreshUntilPostPresentBodyNotHidden: function(postNr: PostNr) {
+      refreshUntilPostPresentBodyNotHidden: (postNr: PostNr) => {
         while (true) {
-          let isVisible = browser.isVisible(`#post-${postNr}`);
-          let isBodyHidden = api.topic.isPostBodyHidden(postNr);
+          let isVisible = this.isVisible(`#post-${postNr}`);
+          let isBodyHidden = this.topic.isPostBodyHidden(postNr);
           if (isVisible && !isBodyHidden) break;
-          browser.pause(RefreshPollMs);
-          browser.refresh();
+          this.#br.pause(RefreshPollMs);
+          this.#br.refresh();
         }
       },
 
-      isPostBodyHidden: function(postNr) {
-        return browser.isVisible(`#post-${postNr}.s_P-Hdn`);
+      isPostBodyHidden: (postNr) => {
+        return this.isVisible(`#post-${postNr}.s_P-Hdn`);
       },
 
-      waitForPostVisibleAsDeleted: function(postNr: PostNr) {
-        browser.waitForVisible(`#post-${postNr}.s_P-Dd`);
+      waitForPostVisibleAsDeleted: (postNr: PostNr) => {
+        this.waitForDisplayed(`#post-${postNr}.s_P-Dd`);
       },
 
-      assertPostHidden: function(postNr: PostNr) {
-        assert(api.topic.isPostBodyHidden(postNr));
+      assertPostHidden: (postNr: PostNr) => {
+        assert(this.topic.isPostBodyHidden(postNr));
       },
 
-      assertPostNotHidden: function(postNr: PostNr) {
-        assert(!browser.isVisible(`#post-${postNr}.s_P-Hdn`));
-        assert(browser.isVisible(`#post-${postNr}`));
+      assertPostNotHidden: (postNr: PostNr) => {
+        assert(!this.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(this.isVisible(`#post-${postNr}`));
         // Check -Hdn again, to prevent some races (but not all), namely that the post gets
         // loaded, and is invisible, but the first -Hdn check didn't find it because at that time
         // it hadn't yet been loaded.
-        assert(!browser.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(!this.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
-      assertPostNeedsApprovalBodyVisible: function(postNr: PostNr) {
-        assert(api.topic._hasPendingModClass(postNr));
-        assert(!api.topic._hasUnapprovedClass(postNr));
-        assert(api.topic._isBodyVisible(postNr));
+      assertPostNeedsApprovalBodyVisible: (postNr: PostNr) => {
+        assert(this.topic._hasPendingModClass(postNr));
+        assert(!this.topic._hasUnapprovedClass(postNr));
+        assert(this.topic._isBodyVisible(postNr));
       },
 
-      assertPostNeedsApprovalBodyHidden: function(postNr: PostNr) {
-        assert(!api.topic._hasPendingModClass(postNr));
-        assert(api.topic._hasUnapprovedClass(postNr));
-        assert(!api.topic._isBodyVisible(postNr));
+      assertPostNeedsApprovalBodyHidden: (postNr: PostNr) => {
+        assert(!this.topic._hasPendingModClass(postNr));
+        assert(this.topic._hasUnapprovedClass(postNr));
+        assert(!this.topic._isBodyVisible(postNr));
       },
 
-      refreshUntilPostNotPendingApproval: function(postNr: PostNr) {
+      refreshUntilPostNotPendingApproval: (postNr: PostNr) => {
         for (let i = 0; i < 15; ++i) {
-          if (api.topic.isPostNotPendingApproval(postNr))
+          if (this.topic.isPostNotPendingApproval(postNr))
             return;
-          browser.pause(500);
-          browser.refresh();
+          this.#br.pause(500);
+          this.#br.refresh();
         }
         die('EdEKW05Y', `Post nr ${postNr} never gets approved`);
       },
 
-      assertPostNotPendingApproval: function(postNr: PostNr, ps: { wait?: false } = {}) {
+      assertPostNotPendingApproval: (postNr: PostNr, ps: { wait?: false } = {}) => {
         if (ps.wait !== false) {
-          api.topic.waitForPostNrVisible(postNr);
+          this.topic.waitForPostNrVisible(postNr);
         }
-        assert(api.topic.isPostNotPendingApproval(postNr));
+        assert(this.topic.isPostNotPendingApproval(postNr));
       },
 
-      isPostNotPendingApproval: function(postNr: PostNr) {
-        return !api.topic._hasUnapprovedClass(postNr) &&
-            !api.topic._hasPendingModClass(postNr) &&
-            api.topic._isBodyVisible(postNr);
+      isPostNotPendingApproval: (postNr: PostNr) => {
+        return !this.topic._hasUnapprovedClass(postNr) &&
+            !this.topic._hasPendingModClass(postNr) &&
+            this.topic._isBodyVisible(postNr);
       },
 
       // Not needed? Just use  waitAndClick()  instead?
-      clickPostActionButton: function(buttonSelector: string, opts: { clickFirst?: boolean } = {}) {   // RENAME to api.scrollAndClick?
-        api.switchToEmbCommentsIframeIfNeeded();
-        api.waitAndClick(buttonSelector, opts);
+      clickPostActionButton: (buttonSelector: string,
+            opts: { clickFirst?: boolean } = {}) => {   // RENAME to this.scrollAndClick?
+        this.switchToEmbCommentsIframeIfNeeded();
+        this.waitAndClick(buttonSelector, opts);
         return;
         // DO_AFTER 2020-06-01: CLEAN_UP REMOVE the rest of this function.
         let hasScrolled = false;
-        const isInIframe = api.isInIframe();
+        const isInIframe = this.isInIframe();
 
         // If the button is close to the bottom of the window, the fixed bottom bar might
         // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
@@ -4815,14 +4840,14 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         // If so, scroll down to the reply button.
         //
         // Why try twice? The scroll buttons aren't shown until a few 100 ms after page load.
-        // So, `browser.isVisible(api.scrollButtons.fixedBarSelector)` might evaluate to false,
-        // and then we won't scroll down — but then just before `api.waitAndClick`
+        // So, `this.isVisible(this.scrollButtons.fixedBarSelector)` might evaluate to false,
+        // and then we won't scroll down — but then just before `this.waitAndClick`
         // they appear, so the click fails. That's why we try once more.
         //
-        api.waitForVisible(buttonSelector);
+        this.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
           for (let i = 0; i < 20; ++i) {  // because FF sometimes won't realize it's done scrolling
-            //OLD: const buttonLocation = browser.getLocationInView(buttonSelector);
+            //OLD: const buttonLocation = this.#br.getLocationInView(buttonSelector);
             //  for unknown reasons, scrolls back to the top, at least in FF. Weird. Breaks everything.
 
             // If is array, could use [0] — but apparently the button locations are returned
@@ -4834,16 +4859,16 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             //if (opts.clickFirst)
             //  break; // cannot scroll, see above. Currently the tests don't need to scroll (good luck)
 
-            die(`Fn gone: api.getRectOfFirst()`)
-            const buttonRect: any = undefined; // = api.getRectOfFirst(buttonSelector);
+            die(`Fn gone: this.getRectOfFirst()`)
+            const buttonRect: any = undefined; // = this.getRectOfFirst(buttonSelector);
 
             // E.g. the admin area, /-/admin.
-            const isOnAutoPage = browser.getUrl().indexOf('/-/') >= 0;
+            const isOnAutoPage = this.#br.getUrl().indexOf('/-/') >= 0;
 
             /*
             // ? Why did I add this can-scroll test ? Maybe, if can *not* scroll, this loop never got
             // happy with the current scroll position (0, 0?) and continued trying-to-scroll forever?
-            let hasScrollBtns = browser.isVisible(api.scrollButtons.fixedBarSelector);
+            let hasScrollBtns = this.isVisible(this.scrollButtons.fixedBarSelector);
             // If in admin area or user's profile, there're no scroll buttons, but can maybe
             // scroll anyway.
             const canScroll = hasScrollBtns || isOnAutoPage;
@@ -4853,13 +4878,13 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
               break;
             } */
 
-            let bottomY = api.getWindowHeight();
+            let bottomY = this.getWindowHeight();
             if (true) { // hasScrollBtns) {
               // Need to place the button we want to click, above the scroll bar — otherwise,
               // the scroll buttons can be on top of the button, and steal the click.
               bottomY -= 35;  // scroll button height [6WRD25]
               // Or could:
-              //   bottomY = api.getRectOfFirst(api.scrollButtons.fixedBarSelector).y;
+              //   bottomY = this.getRectOfFirst(this.scrollButtons.fixedBarSelector).y;
             }
 
             const topY = isInIframe
@@ -4868,7 +4893,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
                     ? 100  // fixed topbar, might float drop —> 90 px tall
                     : 60); // fixed topbar, about 40px tall
 
-            // The browser clicks in the middle of the button?
+            // The this.#br clicks in the middle of the button?
             const buttonMiddleY = buttonRect.y + buttonRect.height / 2;
             const clickMargin = 5;
             if (buttonMiddleY > topY + clickMargin && buttonMiddleY < bottomY - clickMargin)
@@ -4879,7 +4904,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
                 `buttonRect = ${JSON.stringify(buttonRect)}, buttonMiddleY = ${buttonMiddleY}, ` +
                 `bottomY: ${bottomY}`);
             const scrollMargin = clickMargin + 10;
-            browser.execute(function(selector, topY, scrollMargin) {
+            this.#br.execute(function(selector, topY, scrollMargin) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(selector, {
                 marginTop: topY + scrollMargin,
                 marginBottom: 70 + scrollMargin,   // 70 > scroll button heights
@@ -4887,7 +4912,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
               });
             }, buttonSelector, topY, scrollMargin);
             hasScrolled = true;
-            browser.pause(150 + 100);
+            this.#br.pause(150 + 100);
           }
           try {
             // If in iframe, we might not have scrolled anything above, and will
@@ -4896,7 +4921,7 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             const opts2 = { ...opts, maybeMoves };
             logMessage(`clickPostActionButton:  CLICK  ${buttonSelector}  ` +
                 `${JSON.stringify(opts2)}  [TyME2ECLICK]`);
-            api._waitAndClickImpl(buttonSelector, opts2);
+            this._waitAndClickImpl(buttonSelector, opts2);
             break;
           }
           catch (exception) {
@@ -4911,272 +4936,272 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      _isOrigPostBodyVisible: function() {
-        return !!$('#post-1 > .dw-p-bd').getText();
+      _isOrigPostBodyVisible: () => {
+        return !!this.$('#post-1 > .dw-p-bd').getText();
       },
 
-      _isTitlePendingApprovalVisible: function() {
-        return browser.isVisible('.dw-p-ttl .esPendingApproval');
+      _isTitlePendingApprovalVisible: () => {
+        return this.isVisible('.dw-p-ttl .esPendingApproval');
       },
 
-      _isOrigPostPendingApprovalVisible: function() {
-        return browser.isVisible('.dw-ar-t > .esPendingApproval');
+      _isOrigPostPendingApprovalVisible: () => {
+        return this.isVisible('.dw-ar-t > .esPendingApproval');
       },
 
-      _isBodyVisible: function(postNr: PostNr) {
-        return browser.isVisible(`#post-${postNr} .dw-p-bd`);
+      _isBodyVisible: (postNr: PostNr) => {
+        return this.isVisible(`#post-${postNr} .dw-p-bd`);
       },
 
-      _hasPendingModClass: function(postNr: PostNr) {
-        return browser.isVisible(`#post-${postNr} .dw-p-pending-mod`);
+      _hasPendingModClass: (postNr: PostNr) => {
+        return this.isVisible(`#post-${postNr} .dw-p-pending-mod`);
       },
 
-      _hasUnapprovedClass: function(postNr: PostNr) {
-        return browser.isVisible(`#post-${postNr}.dw-p-unapproved`);
+      _hasUnapprovedClass: (postNr: PostNr) => {
+        return this.isVisible(`#post-${postNr}.dw-p-unapproved`);
       },
-    },
+    };
 
 
-    chat: {
+    chat = {
       joinChat: () => {
-        api.waitAndClick('#theJoinChatB');
+        this.waitAndClick('#theJoinChatB');
       },
 
       waitAndAssertPurposeMatches: (regex: RegExp | string) => {
-        api.waitAndAssertVisibleTextMatches('.esChatChnl_about', regex);
+        this.waitAndAssertVisibleTextMatches('.esChatChnl_about', regex);
       },
 
       addChatMessage: (text: string) => {
-        api.chat.editChatMessage(text);
-        api.chat.submitChatMessage();
+        this.chat.editChatMessage(text);
+        this.chat.submitChatMessage();
         // could verify visible
       },
 
       __previewSelector: '.s_C_M-Prvw',
 
       editChatMessage: (text: string) => {
-        api.waitAndSetValue('.esC_Edtr_textarea', text);
+        this.waitAndSetValue('.esC_Edtr_textarea', text);
         // Wait for a message preview to appear — because it can push the submit button down,
         // so when we click it, when done editing, we'd miss it, if we click at
         // exacty the same time. (Happens like 1 in 5.)
-        if (text) api.waitForVisible(api.chat.__previewSelector);
-        else api.waitForGone(api.chat.__previewSelector);
+        if (text) this.waitForVisible(this.chat.__previewSelector);
+        else this.waitForGone(this.chat.__previewSelector);
       },
 
-      getChatInputText: function(): string {
-        return api.waitAndGetText('.esC_Edtr_textarea');
+      getChatInputText: (): string => {
+        return this.waitAndGetText('.esC_Edtr_textarea');
       },
 
-      waitForDraftSaved: function() {
-        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      waitForDraftSaved: () => {
+        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
-      waitForDraftDeleted: function() {
-        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      waitForDraftDeleted: () => {
+        this.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
       },
 
-      waitForDraftChatMessageToLoad: function(text: string) {
-        api.waitUntilValueIs('.esC_Edtr textarea', text);
+      waitForDraftChatMessageToLoad: (text: string) => {
+        this.waitUntilValueIs('.esC_Edtr textarea', text);
       },
 
-      submitChatMessage: function() {
-        api.waitAndClick('.esC_Edtr_SaveB');
-        api.waitUntilLoadingOverlayGone();
-        //api.waitForGone('.s_C_M-Prvw'); [DRAFTS_BUG] — add this, see if works?
+      submitChatMessage: () => {
+        this.waitAndClick('.esC_Edtr_SaveB');
+        this.waitUntilLoadingOverlayGone();
+        //this.waitForGone('.s_C_M-Prvw'); [DRAFTS_BUG] — add this, see if works?
       },
 
-      waitForNumMessages: function(howMany: number) {
-        api.waitForAtLeast(howMany, '.esC_M');
+      waitForNumMessages: (howMany: number) => {
+        this.waitForAtLeast(howMany, '.esC_M');
       },
 
       countMessages: (ps: { inclAnyPreview?: boolean } = {}): number =>
-        api.count(
+        this.count(
             `.esC_M${ps.inclAnyPreview === false ? '' : ':not(.s_C_M-Prvw)'}`),
 
       assertMessageNrMatches: (messageNr, regex: RegExp | string) => {
         const postNr = messageNr + 1;
-        api.topic.waitForPostAssertTextMatches(postNr, regex);
+        this.topic.waitForPostAssertTextMatches(postNr, regex);
       },
 
-      openAdvancedEditor: function() {
-        api.waitAndClick('.esC_Edtr_AdvB');
+      openAdvancedEditor: () => {
+        this.waitAndClick('.esC_Edtr_AdvB');
       },
 
       deleteChatMessageNr: (nr: PostNr) => {
         const postSelector = `#post-${nr}`;
-        api.waitAndClick(`${postSelector} .s_C_M_B-Dl`);
-        api.waitAndClick('.dw-delete-post-dialog .e_YesDel');
-        api.waitUntilLoadingOverlayGone();
-        api.waitForVisible(`${postSelector}.s_C_M-Dd`);
+        this.waitAndClick(`${postSelector} .s_C_M_B-Dl`);
+        this.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        this.waitUntilLoadingOverlayGone();
+        this.waitForVisible(`${postSelector}.s_C_M-Dd`);
       },
-    },
+    };
 
 
-    customForm: {
-      submit: function() {
-        api.waitAndClick('form input[type="submit"]');
-        api.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
+    customForm = {
+      submit: () => {
+        this.waitAndClick('form input[type="submit"]');
+        this.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
       },
 
-      assertNumSubmissionVisible: function(num: number) {
-        api.waitForMyDataAdded();
-        api.assertExactly(num, '.dw-p-flat');
+      assertNumSubmissionVisible: (num: number) => {
+        this.waitForMyDataAdded();
+        this.assertExactly(num, '.dw-p-flat');
       },
-    },
+    };
 
 
-    scrollButtons: {
+    scrollButtons = {
       fixedBarSelector: '.esScrollBtns_fixedBar',
-    },
+    };
 
 
-    searchResultsPage: {
+    searchResultsPage = {
       waitForSearchInputField: () => {
-        api.waitForVisible('.s_SP_QueryTI');
+        this.waitForVisible('.s_SP_QueryTI');
       },
 
-      assertPhraseNotFound: function(phrase: string) {
-        api.searchResultsPage.waitForResults(phrase);
-        assert(browser.isVisible('#e_SP_NothingFound'));
+      assertPhraseNotFound: (phrase: string) => {
+        this.searchResultsPage.waitForResults(phrase);
+        assert(this.isVisible('#e_SP_NothingFound'));
       },
 
-      waitForAssertNumPagesFound: function(phrase: string, numPages: number) {
-        api.searchResultsPage.waitForResults(phrase);
+      waitForAssertNumPagesFound: (phrase: string, numPages: number) => {
+        this.searchResultsPage.waitForResults(phrase);
         // oops, search-search-loop needed ...
         // for now:
-        api.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
-        api.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+        this.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
+        this.assertExactly(numPages, '.esSERP_Hit_PageTitle');
       },
 
-      searchForWaitForResults: function(phrase: string) {
-        api.waitAndSetValue('.s_SP_QueryTI', phrase);
-        api.searchResultsPage.clickSearchButton();
+      searchForWaitForResults: (phrase: string) => {
+        this.waitAndSetValue('.s_SP_QueryTI', phrase);
+        this.searchResultsPage.clickSearchButton();
         // Later, with Nginx 1.11.0+, wait until a $request_id in the page has changed [5FK02FP]
-        api.searchResultsPage.waitForResults(phrase);
+        this.searchResultsPage.waitForResults(phrase);
       },
 
-      searchForUntilNumPagesFound: function(phrase: string, numResultsToFind: number) {
+      searchForUntilNumPagesFound: (phrase: string, numResultsToFind: number) => {
         while (true) {
-          api.searchResultsPage.searchForWaitForResults(phrase);
-          const numFound = api.searchResultsPage.countNumPagesFound_1();
+          this.searchResultsPage.searchForWaitForResults(phrase);
+          const numFound = this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             assert(numFound === numResultsToFind);
             break;
           }
-          browser.pause(333);
+          this.#br.pause(333);
         }
       },
 
-      clickSearchButton: function() {
-        api.waitAndClick('.s_SP_SearchB');
+      clickSearchButton: () => {
+        this.waitAndClick('.s_SP_SearchB');
       },
 
-      waitForResults: function(phrase: string) {
+      waitForResults: (phrase: string) => {
         // Later, check Nginx $request_id to find out if the page has been refreshed
         // unique request identifier generated from 16 random bytes, in hexadecimal (1.11.0).
-        api.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
+        this.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
       },
 
       countNumPagesFound_1: (): number =>
-        $$('.esSERP_Hit_PageTitle').length,
+        this.$$('.esSERP_Hit_PageTitle').length,
 
       assertResultPageTitlePresent: (title: string) => {
-        api.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, 1);
+        this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, 1);
       },
 
-      goToSearchResult: function(linkText?: string) {
-        api.repeatUntilAtNewUrl(() => {
+      goToSearchResult: (linkText?: string) => {
+        this.repeatUntilAtNewUrl(() => {
           if (!linkText) {
-            api.waitAndClick('.esSERP_Hit_PageTitle a');
+            this.waitAndClick('.esSERP_Hit_PageTitle a');
           }
           else {
-            api.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+            this.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
           }
         });
       },
-    },
+    };
 
 
-    groupListPage: {
+    groupListPage = {
       goHere: (origin?: string) => {
-        api.go((origin || '') + '/-/groups/');
-        api.groupListPage.waitUntilLoaded();
+        this.go((origin || '') + '/-/groups/');
+        this.groupListPage.waitUntilLoaded();
       },
 
       waitUntilLoaded: () => {
-        api.waitForVisible('.s_GP');
+        this.waitForVisible('.s_GP');
       },
 
       countCustomGroups: (): number => {
-        return api.count('.s_Gs-Custom .s_Gs_G');
+        return this.count('.s_Gs-Custom .s_Gs_G');
       },
 
       openTrustedMembersGroup: () => {
-        api.waitForThenClickText('.s_Gs_G_Lk .esP_By', 'trusted_members');
-        api.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
+        this.waitForThenClickText('.s_Gs_G_Lk .esP_By', 'trusted_members');
+        this.waitAndAssertVisibleTextMatches('.esUP_Un', "trusted_members");
       },
 
       createGroup: (ps: { username: string, fullName: string }) => {
-        api.waitAndClick('.s_GP_CrGB');
-        api.waitAndSetValue('#te_CrGD_Un', ps.username);
-        api.waitAndSetValue('#te_CrGD_FN', ps.fullName);
-        api.waitAndClick('.s_CrGD .btn-primary');
-        api.waitForVisible('.e_AddMbrsB');
+        this.waitAndClick('.s_GP_CrGB');
+        this.waitAndSetValue('#te_CrGD_Un', ps.username);
+        this.waitAndSetValue('#te_CrGD_FN', ps.fullName);
+        this.waitAndClick('.s_CrGD .btn-primary');
+        this.waitForVisible('.e_AddMbrsB');
       },
 
       waitUntilGroupPresent: (ps: { username: string, fullName: string }) => {
-        api.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_U', ps.username);
-        api.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_F', ps.fullName);
+        this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_U', ps.username);
+        this.waitAndGetElemWithText('.s_Gs_G_Lk .esP_By_F', ps.fullName);
       },
 
       openGroupWithUsername: (username: string) => {
-        api.waitForThenClickText('.s_Gs_G_Lk .esP_By_U', username);
-        api.userProfilePage.groupMembers.waitUntilLoaded();
+        this.waitForThenClickText('.s_Gs_G_Lk .esP_By_U', username);
+        this.userProfilePage.groupMembers.waitUntilLoaded();
       }
-    },
+    };
 
 
-    preferences: '',
-    userPreferences: '',
+    preferences = '';
+    userPreferences = '';
 
     /*
     groupProfilePage
     groupsProfilePage
     usersProfilePage */
-    userProfilePage: {
+    userProfilePage = {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
-      waitUntilUsernameVisible: function() {
-        api.waitForVisible('.esUP_Un');
+      waitUntilUsernameVisible: () => {
+        this.waitForVisible('.esUP_Un');
       },
 
       waitUntilUsernameIs: (username) => {
-        api.waitAndGetElemWithText('.esUP_Un', username);
+        this.waitAndGetElemWithText('.esUP_Un', username);
       },
 
       waitAndGetUsername: (): string => {
-        return api.waitAndGetVisibleText('.esUP_Un');
+        return this.waitAndGetVisibleText('.esUP_Un');
       },
 
       waitAndGetFullName: (): string => {
-        return api.waitAndGetVisibleText('.esUP_FN');
+        return this.waitAndGetVisibleText('.esUP_FN');
       },
 
       waitUntilDeletedOrDeactivated: () => {
-        browser.waitForVisible('.e_ActDd');
+        this.waitForDisplayed('.e_ActDd');
       },
 
       navBackToGroups: () => {
-        api.userProfilePage._navigateBackToUsersOrGroupsList(true);
+        this.userProfilePage._navigateBackToUsersOrGroupsList(true);
       },
 
       _navigateBackToUsersOrGroupsList: (isGroup: boolean) => {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('.esTopbar_custom_title a');
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('.esTopbar_custom_title a');
         });
-        if (api.urlPath().startsWith(c.GroupsUrlPrefix)) {
+        if (this.urlPath().startsWith(c.GroupsUrlPrefix)) {
           assert(isGroup);
-          api.groupListPage.waitUntilLoaded();
+          this.groupListPage.waitUntilLoaded();
         }
         else {
           assert(!isGroup);
@@ -5184,735 +5209,735 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         }
       },
 
-      openActivityFor: function(who: string, origin?: string) {
-        api.go((origin || '') + `/-/users/${who}/activity/posts`);
-        api.waitUntilLoadingOverlayGone();
+      openActivityFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/activity/posts`);
+        this.waitUntilLoadingOverlayGone();
       },
 
-      openNotfsFor: function(who: string, origin?: string) {
-        api.go((origin || '') + `/-/users/${who}/notifications`);
-        api.waitUntilLoadingOverlayGone();
+      openNotfsFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/notifications`);
+        this.waitUntilLoadingOverlayGone();
       },
 
-      openNotfPrefsFor: function(who: string, origin?: string) {  // oops, dupl (443300222), remove this
-        api.go((origin || '') + `/-/users/${who}/preferences/notifications`);
-        api.waitUntilLoadingOverlayGone();
+      openNotfPrefsFor: (who: string | UserId, origin?: string) => {  // oops, dupl (443300222), remove this
+        this.go((origin || '') + `/-/users/${who}/preferences/notifications`);
+        this.waitUntilLoadingOverlayGone();
       },
 
-      openDraftsEtcFor: function(who: string, origin?: string) {
-        api.go((origin || '') + `/-/users/${who}/drafts-etc`);
-        api.waitUntilLoadingOverlayGone();
+      openDraftsEtcFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/drafts-etc`);
+        this.waitUntilLoadingOverlayGone();
       },
 
-      openPreferencesFor: function(who: string, origin?: string) {
-        api.go((origin || '') + `/-/users/${who}/preferences`);
-        api.waitUntilLoadingOverlayGone();
+      openPreferencesFor: (who: string | UserId, origin?: string) => {
+        this.go((origin || '') + `/-/users/${who}/preferences`);
+        this.waitUntilLoadingOverlayGone();
       },
 
-      goToActivity: function() {
-        api.waitAndClick('.e_UP_ActivityB');
-        api.waitForVisible('.s_UP_Act_List');
-        api.waitUntilLoadingOverlayGone();
+      goToActivity: () => {
+        this.waitAndClick('.e_UP_ActivityB');
+        this.waitForVisible('.s_UP_Act_List');
+        this.waitUntilLoadingOverlayGone();
       },
 
-      tabToNotfs: function() {
-        api.waitAndClick('.e_UP_NotfsB');
-        api.userProfilePage.notfs.waitUntilSeesNotfs();
-        api.waitUntilLoadingOverlayGone();
+      tabToNotfs: () => {
+        this.waitAndClick('.e_UP_NotfsB');
+        this.userProfilePage.notfs.waitUntilSeesNotfs();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      goToPreferences: function() {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
-        api.userProfilePage.clickGoToPreferences();
+      goToPreferences: () => {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
+        this.userProfilePage.clickGoToPreferences();
       },
 
       // rename
-      clickGoToPreferences: function() {
-        api.waitAndClick('#e2eUP_PrefsB');
-        api.waitForVisible('.e_UP_Prefs_FN');
-        api.waitUntilLoadingOverlayGone();
+      clickGoToPreferences: () => {
+        this.waitAndClick('#e2eUP_PrefsB');
+        this.waitForVisible('.e_UP_Prefs_FN');
+        this.waitUntilLoadingOverlayGone();
       },
 
       switchToInvites: () => {
-        api.waitAndClick('.e_InvTabB');
-        api.invitedUsersList.waitUntilLoaded();
+        this.waitAndClick('.e_InvTabB');
+        this.invitedUsersList.waitUntilLoaded();
       },
 
       waitForTabsVisible: () => {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
-        api.waitForVisible('.e_UP_ActivityB');
+        this.waitForVisible('.e_UP_ActivityB');
       },
 
       isInvitesTabVisible: () => {
-        api.userProfilePage.waitForTabsVisible();
-        return browser.isVisible('.e_InvTabB');
+        this.userProfilePage.waitForTabsVisible();
+        return this.isVisible('.e_InvTabB');
       },
 
-      isNotfsTabVisible: function() {
-        api.userProfilePage.waitForTabsVisible();
-        return browser.isVisible('.e_UP_NotfsB');
+      isNotfsTabVisible: () => {
+        this.userProfilePage.waitForTabsVisible();
+        return this.isVisible('.e_UP_NotfsB');
       },
 
-      isPrefsTabVisible: function() {
-        api.userProfilePage.waitForTabsVisible();
-        return browser.isVisible('#e2eUP_PrefsB');
+      isPrefsTabVisible: () => {
+        this.userProfilePage.waitForTabsVisible();
+        return this.isVisible('#e2eUP_PrefsB');
       },
 
-      assertIsMyProfile: function() {
-        api.waitForVisible('.esUP_Un');
-        assert(browser.isVisible('.esProfile_isYou'));
+      assertIsMyProfile: () => {
+        this.waitForVisible('.esUP_Un');
+        assert(this.isVisible('.esProfile_isYou'));
       },
 
-      assertUsernameIs: function(username: string) {
-        api.assertTextMatches('.esUP_Un', username);
+      assertUsernameIs: (username: string) => {
+        this.assertTextMatches('.esUP_Un', username);
       },
 
-      assertFullNameIs: function(name: string) {
-        api.assertTextMatches('.esUP_FN', name);
+      assertFullNameIs: (name: string) => {
+        this.assertTextMatches('.esUP_FN', name);
       },
 
-      assertFullNameIsNot: function(name: string) {
-        api.assertNoTextMatches('.esUP_FN', name);
+      assertFullNameIsNot: (name: string) => {
+        this.assertNoTextMatches('.esUP_FN', name);
       },
 
-      clickSendMessage: function() {
-        api.waitAndClick('.s_UP_SendMsgB');
+      clickSendMessage: () => {
+        this.waitAndClick('.s_UP_SendMsgB');
       },
 
       _goHere: (username: string, ps: { isGroup?: true, origin?: string }, suffix: string) => {
-        api.go(`${ps.origin || ''}/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
+        this.go(`${ps.origin || ''}/-/${ps.isGroup ? 'groups' : 'users'}/${username}${suffix}`);
       },
 
       groupMembers: {
         goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          api.userProfilePage._goHere(username, ps, '/members');
-          api.userProfilePage.groupMembers.waitUntilLoaded();
+          this.userProfilePage._goHere(username, ps, '/members');
+          this.userProfilePage.groupMembers.waitUntilLoaded();
         },
 
         waitUntilLoaded: () => {
-          api.waitForExist('.s_G_Mbrs, .s_G_Mbrs-Dnd');
+          this.waitForExist('.s_G_Mbrs, .s_G_Mbrs-Dnd');
         },
 
         waitUntilMemberPresent: (username: string) => {
-          api.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
+          this.waitUntilTextMatches('.s_G_Mbrs .esP_By_U', username);
         },
 
         getNumMembers: (): number => {
-          return api.count('.s_G_Mbrs .esP_By_U');
+          return this.count('.s_G_Mbrs .esP_By_U');
         },
 
         openAddMemberDialog: () => {
-          api.waitAndClick('.e_AddMbrsB');
+          this.waitAndClick('.e_AddMbrsB');
         },
 
         addOneMember: (username: string) => {
-          api.userProfilePage.groupMembers.openAddMemberDialog();
-          api.addUsersToPageDialog.addOneUser(username);
-          api.addUsersToPageDialog.submit();
-          api.userProfilePage.groupMembers.waitUntilMemberPresent(username);
+          this.userProfilePage.groupMembers.openAddMemberDialog();
+          this.addUsersToPageDialog.addOneUser(username);
+          this.addUsersToPageDialog.submit();
+          this.userProfilePage.groupMembers.waitUntilMemberPresent(username);
         },
 
         removeFirstMember: () => {
-          api.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
-          api.waitAndClick('.e_RmMbr');
+          this.waitAndClick('.s_G_Mbrs_Mbr .e_MngMbr');
+          this.waitAndClick('.e_RmMbr');
           // (Could wait until 1 fewer member? or name gone?)
         }
       },
 
       activity: {
-        switchToPosts: function(opts: { shallFindPosts: boolean | 'NoSinceActivityHidden' }) {
-          api.waitAndClick('.s_UP_Act_Nav_PostsB');
+        switchToPosts: (opts: { shallFindPosts: boolean | 'NoSinceActivityHidden' }) => {
+          this.waitAndClick('.s_UP_Act_Nav_PostsB');
           if (opts.shallFindPosts === 'NoSinceActivityHidden') {
-            api.userProfilePage.activity.posts.waitForNothingToShow();
+            this.userProfilePage.activity.posts.waitForNothingToShow();
           }
           else if (opts.shallFindPosts) {
-            api.waitForVisible('.s_UP_Act_Ps');
-            api.waitForVisible('.s_UP_Act_Ps_P');
+            this.waitForVisible('.s_UP_Act_Ps');
+            this.waitForVisible('.s_UP_Act_Ps_P');
           }
           else {
-            api.userProfilePage.activity.posts.waitForNoPosts();
+            this.userProfilePage.activity.posts.waitForNoPosts();
           }
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
-        switchToTopics: function(opts: { shallFindTopics: boolean | 'NoSinceActivityHidden' }) {
-          api.waitAndClick('.s_UP_Act_Nav_TopicsB');
-          api.waitForVisible('.s_UP_Act_Ts');
+        switchToTopics: (opts: { shallFindTopics: boolean | 'NoSinceActivityHidden' }) => {
+          this.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          this.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics === 'NoSinceActivityHidden') {
-            api.userProfilePage.activity.topics.waitForNothingToShow();
+            this.userProfilePage.activity.topics.waitForNothingToShow();
           }
           else if (opts.shallFindTopics) {
-            api.waitForVisible('.e2eTopicTitle');
+            this.waitForVisible('.e2eTopicTitle');
           }
           else {
-            api.userProfilePage.activity.topics.waitForNoTopics();
+            this.userProfilePage.activity.topics.waitForNoTopics();
           }
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
-          waitForNothingToShow: function() {
-            api.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          waitForNothingToShow: () => {
+            this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
-          waitForNoPosts: function() {
-            api.waitForVisible('.e_NoPosts');
+          waitForNoPosts: () => {
+            this.waitForVisible('.e_NoPosts');
           },
 
-          assertExactly: function(num: number) {
-            api.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
+          assertExactly: (num: number) => {
+            this.assertExactly(num, this.userProfilePage.activity.posts.postSelector);
           },
 
           // Do this separately, because can take rather long (suprisingly?).
-          waitForPostTextsVisible: function() {
-            api.waitForVisible(api.userProfilePage.activity.posts.postSelector);
+          waitForPostTextsVisible: () => {
+            this.waitForVisible(this.userProfilePage.activity.posts.postSelector);
           },
 
-          assertPostTextVisible: function(postText: string) {
-            let selector = api.userProfilePage.activity.posts.postSelector;
-            api.assertAnyTextMatches(selector, postText, null, 'FAST');
+          assertPostTextVisible: (postText: string) => {
+            let selector = this.userProfilePage.activity.posts.postSelector;
+            this.assertAnyTextMatches(selector, postText, null, 'FAST');
           },
 
-          assertPostTextAbsent: function(postText: string) {
-            let selector = api.userProfilePage.activity.posts.postSelector;
-            api.assertNoTextMatches(selector, postText);
+          assertPostTextAbsent: (postText: string) => {
+            let selector = this.userProfilePage.activity.posts.postSelector;
+            this.assertNoTextMatches(selector, postText);
           },
         },
 
         topics: {
           topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
 
-          waitForNothingToShow: function() {
-            api.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          waitForNothingToShow: () => {
+            this.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
-          waitForNoTopics: function() {
-            api.waitForVisible('.e_NoTopics');
+          waitForNoTopics: () => {
+            this.waitForVisible('.e_NoTopics');
           },
 
-          assertExactly: function(num: number) {
-            api.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
+          assertExactly: (num: number) => {
+            this.assertExactly(num, this.userProfilePage.activity.topics.topicsSelector);
           },
 
-          waitForTopicTitlesVisible: function() {
-            api.waitForVisible(api.userProfilePage.activity.topics.topicsSelector);
+          waitForTopicTitlesVisible: () => {
+            this.waitForVisible(this.userProfilePage.activity.topics.topicsSelector);
           },
 
-          assertTopicTitleVisible: function(title: string) {
-            let selector = api.userProfilePage.activity.topics.topicsSelector;
-            api.assertAnyTextMatches(selector, title, null, 'FAST');
+          assertTopicTitleVisible: (title: string) => {
+            let selector = this.userProfilePage.activity.topics.topicsSelector;
+            this.assertAnyTextMatches(selector, title, null, 'FAST');
           },
 
-          assertTopicTitleAbsent: function(title: string) {
-            let selector = api.userProfilePage.activity.topics.topicsSelector;
-            api.assertNoTextMatches(selector, title);
+          assertTopicTitleAbsent: (title: string) => {
+            let selector = this.userProfilePage.activity.topics.topicsSelector;
+            this.assertNoTextMatches(selector, title);
           },
         }
       },
 
       notfs: {
-        waitUntilKnowsIsEmpty: function() {
-          api.waitForVisible('.e_UP_Notfs_None');
+        waitUntilKnowsIsEmpty: () => {
+          this.waitForVisible('.e_UP_Notfs_None');
         },
 
-        waitUntilSeesNotfs: function() {
-          api.waitForVisible('.esUP .esNotfs li a');
+        waitUntilSeesNotfs: () => {
+          this.waitForVisible('.esUP .esNotfs li a');
         },
 
         numNotfs: (): number => {
-          return api.count('.esUP .esNotfs li a');
+          return this.count('.esUP .esNotfs li a');
         },
 
-        openPageNotfWithText: function(text) {
-          api.repeatUntilAtNewUrl(() => {
-            api.waitForThenClickText('.esNotf_page', text);
+        openPageNotfWithText: (text) => {
+          this.repeatUntilAtNewUrl(() => {
+            this.waitForThenClickText('.esNotf_page', text);
           });
         },
 
-        assertMayNotSeeNotfs: function() {
-          api.waitForVisible('.e_UP_Notfs_Err');
-          api.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
+        assertMayNotSeeNotfs: () => {
+          this.waitForVisible('.e_UP_Notfs_Err');
+          this.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
       },
 
       draftsEtc: {
-        waitUntilLoaded: function() {
-          api.waitForExist('.s_Dfs');
+        waitUntilLoaded: () => {
+          this.waitForExist('.s_Dfs');
         },
 
-        refreshUntilNumDraftsListed: function(numDrafts: number) {
+        refreshUntilNumDraftsListed: (numDrafts: number) => {
           while (true) {
-            const elems = $$('.s_Dfs_Df');
+            const elems = this.$$('.s_Dfs_Df');
             if (elems.length === numDrafts)
               return;
-            browser.pause(125);
+            this.#br.pause(125);
           }
         },
 
-        waitUntilNumDraftsListed: function(numDrafts: number) {
+        waitUntilNumDraftsListed: (numDrafts: number) => {
           if (numDrafts === 0) {
-            browser.waitForVisible('.e_Dfs_None');
+            this.waitForDisplayed('.e_Dfs_None');
           }
           else {
-            api.waitForAtLeast(numDrafts, '.s_Dfs_Df');
-            api.assertExactly(numDrafts, '.s_Dfs_Df');
+            this.waitForAtLeast(numDrafts, '.s_Dfs_Df');
+            this.assertExactly(numDrafts, '.s_Dfs_Df');
           }
         },
 
-        openDraftIndex: function(index) {
-          api.repeatUntilAtNewUrl(() => {
-            api.waitAndClickNth('.s_Dfs_Df', index);
+        openDraftIndex: (index: number) => {
+          this.repeatUntilAtNewUrl(() => {
+            this.waitAndClickNth('.s_Dfs_Df', index);
           });
         },
       },
 
       invites: {
         clickSendInvite: () => {
-          api.waitAndClick('.e_SndInvB');
+          this.waitAndClick('.e_SndInvB');
         }
       },
 
       preferences: {  // RENAME to prefs
         goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {
-          api.userProfilePage._goHere(username, ps, '/preferences');
+          this.userProfilePage._goHere(username, ps, '/preferences');
         },
 
-        switchToEmailsLogins: function() {  // RENAME to tabToAccount
-          api.waitAndClick('.s_UP_Prf_Nav_EmLgL');
-          if (api.urlPath().startsWith(c.UsersUrlPrefix)) {
+        switchToEmailsLogins: () => {  // RENAME to tabToAccount
+          this.waitAndClick('.s_UP_Prf_Nav_EmLgL');
+          if (this.urlPath().startsWith(c.UsersUrlPrefix)) {
             // Wait for user emails loaded.
-            api.waitForVisible('.s_UP_EmLg_EmL');
+            this.waitForVisible('.s_UP_EmLg_EmL');
           }
           else {
             // Currently (May 2019) just this section with a delete button.
-            api.waitForVisible('.s_UP_EmLg');
+            this.waitForVisible('.s_UP_EmLg');
           }
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
-        switchToAbout: function() {
-          api.waitAndClick('.s_UP_Prf_Nav_AbtL');
-          api.waitForVisible('.e_UP_Prefs_FN');
+        switchToAbout: () => {
+          this.waitAndClick('.s_UP_Prf_Nav_AbtL');
+          this.waitForVisible('.e_UP_Prefs_FN');
         },
 
-        switchToNotifications: function() {
-          api.waitAndClick('.s_UP_Prf_Nav_NtfsL');
-          api.waitForVisible('.dw-notf-level.btn');
+        switchToNotifications: () => {
+          this.waitAndClick('.s_UP_Prf_Nav_NtfsL');
+          this.waitForVisible('.dw-notf-level.btn');
         },
 
-        switchToPrivacy: function() {
-          api.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          api.waitForVisible('.e_HideActivityAllCB');
+        switchToPrivacy: () => {
+          this.waitAndClick('.e_UP_Prf_Nav_PrivL');
+          this.waitForVisible('.e_HideActivityAllCB');
         },
 
         // ---- Should be wrapped in `about { .. }`:
 
-        setFullName: function(fullName: string) {
-          api.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
+        setFullName: (fullName: string) => {
+          this.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
-        startChangingUsername: function() {
-          api.waitAndClick('.s_UP_Prefs_ChangeUNB');
-          api.stupidDialog.close();
+        startChangingUsername: () => {
+          this.waitAndClick('.s_UP_Prefs_ChangeUNB');
+          this.stupidDialog.close();
         },
 
-        setUsername: function(username: string) {
-          api.waitAndSetValue('.s_UP_Prefs_UN input', username);
+        setUsername: (username: string) => {
+          this.waitAndSetValue('.s_UP_Prefs_UN input', username);
         },
 
-        setSummaryEmailsEnabled: function(enabled: boolean) {
-          setCheckbox('#sendSummaryEmails', enabled);
+        setSummaryEmailsEnabled: (enabled: boolean) => {
+          this.setCheckbox('#sendSummaryEmails', enabled);
         },
 
-        clickChangePassword: function() {
-          api.waitAndClick('.s_UP_Prefs_ChangePwB');
+        clickChangePassword: () => {
+          this.waitAndClick('.s_UP_Prefs_ChangePwB');
         },
 
-        save: function() {
-          api.userProfilePage.preferences.clickSave();
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+        save: () => {
+          this.userProfilePage.preferences.clickSave();
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
-        clickSave: function() {
-          api.waitAndClick('#e2eUP_Prefs_SaveB');
+        clickSave: () => {
+          this.waitAndClick('#e2eUP_Prefs_SaveB');
         },
         // ---- /END should be wrapped in `about { .. }`.
 
-        notfs: {  // api.userProfilePage.preferences.notfs
+        notfs: {  // this.userProfilePage.preferences.notfs
 
           goHere: (username: string, ps: { isGroup?: true, origin?: string } = {}) => {  // oops, dupl (443300222), keep this
-            api.userProfilePage._goHere(username, ps, '/preferences/notifications');
+            this.userProfilePage._goHere(username, ps, '/preferences/notifications');
           },
 
           setSiteNotfLevel: (notfLevel: PageNotfLevel) => {  // RENAME to setNotfLevelForWholeSite?
             // The site notfs btn is the topmost one.
-            api.waitAndClickFirst('.dw-notf-level');
-            api.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitAndClickFirst('.dw-notf-level');
+            this.notfLevelDropdown.clickNotfLevel(notfLevel);
           },
 
           setNotfLevelForCategoryId: (categoryId: CategoryId, notfLevel: PageNotfLevel) => {
-            api.waitAndClick(`.e_CId-${categoryId} .dw-notf-level`);
-            api.notfLevelDropdown.clickNotfLevel(notfLevel);
+            this.waitAndClick(`.e_CId-${categoryId} .dw-notf-level`);
+            this.notfLevelDropdown.clickNotfLevel(notfLevel);
           },
         },
 
         privacy: {
-          setHideActivityForStrangers: function(enabled: boolean) {
-            setCheckbox('.e_HideActivityStrangersCB input', enabled);
+          setHideActivityForStrangers: (enabled: boolean) => {
+            this.setCheckbox('.e_HideActivityStrangersCB input', enabled);
           },
 
-          setHideActivityForAll: function(enabled: boolean) {
-            setCheckbox('.e_HideActivityAllCB input', enabled);
+          setHideActivityForAll: (enabled: boolean) => {
+            this.setCheckbox('.e_HideActivityAllCB input', enabled);
           },
 
-          savePrivacySettings: function() {
-            dieIf(browser.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
-            api.waitAndClick('.e_SavePrivacy');
-            api.waitForVisible('.e_Saved');
+          savePrivacySettings: () => {
+            dieIf(this.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
+            this.waitAndClick('.e_SavePrivacy');
+            this.waitForVisible('.e_Saved');
           },
         },
 
         emailsLogins: {   // RENAME to `account`
-          getEmailAddress: function() {
-            return api.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
+          getEmailAddress: () => {
+            return this.waitAndGetVisibleText('.s_UP_EmLg_EmL_It_Em');
           },
 
-          waitUntilEmailAddressListed: function(addrRegexStr: string,
-                  opts: { shallBeVerified?: boolean } = {}) {
+          waitUntilEmailAddressListed: (addrRegexStr: string,
+                  opts: { shallBeVerified?: boolean } = {}) => {
             const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
               opts.shallBeVerified === false ? '.e_EmNotVerfd' : '');
-            api.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
+            this.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
           waitAndAssertLoginMethodId: (ps: { providerName: string, id: string }) => {
-            const actualName = api.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_How');
+            const actualName = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_How');
             assert.equal(actualName.toLowerCase(), ps.providerName.toLowerCase());
-            const actualId = api.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Id');
+            const actualId = this.waitAndGetVisibleText('.s_UP_EmLg_LgL_It_Id');
             assert.equal(actualId, ps.id);  // don't convert to lowercase
           },
 
-          addEmailAddress: function(address) {
-            const emailsLogins = api.userProfilePage.preferences.emailsLogins;
+          addEmailAddress: (address) => {
+            const emailsLogins = this.userProfilePage.preferences.emailsLogins;
             emailsLogins.clickAddEmailAddress();
             emailsLogins.typeNewEmailAddress(address);
             emailsLogins.saveNewEmailAddress();
           },
 
-          clickAddEmailAddress: function() {
-            api.waitAndClick('.e_AddEmail');
-            api.waitForVisible('.e_NewEmail input');
+          clickAddEmailAddress: () => {
+            this.waitAndClick('.e_AddEmail');
+            this.waitForVisible('.e_NewEmail input');
           },
 
-          typeNewEmailAddress: function(emailAddress) {
-            api.waitAndSetValue('.e_NewEmail input', emailAddress);
+          typeNewEmailAddress: (emailAddress) => {
+            this.waitAndSetValue('.e_NewEmail input', emailAddress);
           },
 
-          saveNewEmailAddress: function() {
-            api.waitAndClick('.e_SaveEmB');
-            api.waitForVisible('.s_UP_EmLg_EmAdded');
+          saveNewEmailAddress: () => {
+            this.waitAndClick('.e_SaveEmB');
+            this.waitForVisible('.s_UP_EmLg_EmAdded');
           },
 
           canRemoveEmailAddress: (): boolean => {
-            api.waitForVisible('.e_AddEmail');
+            this.waitForVisible('.e_AddEmail');
             // Now any remove button should have appeared.
-            return browser.isVisible('.e_RemoveEmB');
+            return this.isVisible('.e_RemoveEmB');
           },
 
-          removeFirstEmailAddrOutOf: function(numCanRemoveTotal: number) {
-            for (let i = 0; api.count('.e_RemoveEmB') !== numCanRemoveTotal; ++i) {
-              browser.pause(PollMs);
+          removeFirstEmailAddrOutOf: (numCanRemoveTotal: number) => {
+            for (let i = 0; this.count('.e_RemoveEmB') !== numCanRemoveTotal; ++i) {
+              this.#br.pause(PollMs);
               if (i >= 10 && (i % 10) === 0) {
                 logWarning(`Waiting for ${numCanRemoveTotal} remove buttons ...`);
               }
             }
-            api.waitAndClick('.e_RemoveEmB', { clickFirst: true });
-            while (api.count('.e_RemoveEmB') !== numCanRemoveTotal - 1) {
-              browser.pause(PollMs);
+            this.waitAndClick('.e_RemoveEmB', { clickFirst: true });
+            while (this.count('.e_RemoveEmB') !== numCanRemoveTotal - 1) {
+              this.#br.pause(PollMs);
             }
           },
 
           canMakeOtherEmailPrimary: (): boolean => {
             // Only call this function if another email has been added (then there's a Remove button).
-            api.waitForVisible('.e_RemoveEmB');
+            this.waitForVisible('.e_RemoveEmB');
             // Now the make-primary button would also have appeared, if it's here.
-            return browser.isVisible('.e_MakeEmPrimaryB');
+            return this.isVisible('.e_MakeEmPrimaryB');
           },
 
-          makeOtherEmailPrimary: function() {
-            api.waitAndClick('.e_MakeEmPrimaryB');
+          makeOtherEmailPrimary: () => {
+            this.waitAndClick('.e_MakeEmPrimaryB');
           },
 
           deleteAccount: () => {
-            api.rememberCurrentUrl();
-            api.waitAndClick('.e_DlAct');
-            api.waitAndClick('.e_SD_SecB');
-            api.waitForNewUrl();
+            this.rememberCurrentUrl();
+            this.waitAndClick('.e_DlAct');
+            this.waitAndClick('.e_SD_SecB');
+            this.waitForNewUrl();
           }
         }
       }
-    },
+    };
 
 
-    hasVerifiedSignupEmailPage: {
+    hasVerifiedSignupEmailPage = {
       clickContinue: () => {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('#e2eContinue');
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('#e2eContinue');
         });
       }
-    },
+    };
 
 
-    hasVerifiedEmailPage: {  // for additional addresses, RENAME?
-      waitUntilLoaded: function(opts: { needToLogin: boolean }) {
-        api.waitForVisible('.e_HasVerifiedEmail');
-        api.waitForVisible('.e_ViewProfileL');
-        api.waitForVisible('.e_HomepageL');
-        assert(opts.needToLogin === browser.isVisible('.e_NeedToLogin'));
+    hasVerifiedEmailPage = {  // for additional addresses, RENAME?
+      waitUntilLoaded: (opts: { needToLogin: boolean }) => {
+        this.waitForVisible('.e_HasVerifiedEmail');
+        this.waitForVisible('.e_ViewProfileL');
+        this.waitForVisible('.e_HomepageL');
+        assert(opts.needToLogin === this.isVisible('.e_NeedToLogin'));
       },
 
-      goToHomepage: function() {
-        api.waitAndClick('.e_HomepageL');
+      goToHomepage: () => {
+        this.waitAndClick('.e_HomepageL');
       },
 
-      goToProfile: function() {
-        api.waitAndClick('.e_ViewProfileL');
+      goToProfile: () => {
+        this.waitAndClick('.e_ViewProfileL');
       }
-    },
+    };
 
 
-    flagDialog: {
-      waitUntilFadedIn: function() {
-        api.waitUntilDoesNotMove('.e_FD_InaptRB');
+    flagDialog = {
+      waitUntilFadedIn: () => {
+        this.waitUntilDoesNotMove('.e_FD_InaptRB');
       },
 
-      clickInappropriate: function() {
-        api.waitAndClick('.e_FD_InaptRB label');
+      clickInappropriate: () => {
+        this.waitAndClick('.e_FD_InaptRB label');
       },
 
-      submit: function() {
-        api.waitAndClick('.e_FD_SubmitB');
-        api.waitUntilLoadingOverlayGone();
-        // Don't: api.waitUntilModalGone(), because now the stupid-dialog pop ups
+      submit: () => {
+        this.waitAndClick('.e_FD_SubmitB');
+        this.waitUntilLoadingOverlayGone();
+        // Don't: this.waitUntilModalGone(), because now the stupid-dialog pop ups
         // and says "Thanks", and needs to be closed.
       },
-    },
+    };
 
 
-    stupidDialog: {
-      clickClose: function() {
-        api.waitAndClick('.e_SD_CloseB');
+    stupidDialog = {
+      clickClose: () => {
+        this.waitAndClick('.e_SD_CloseB');
       },
 
-      close: function() {
-        api.stupidDialog.clickClose();
-        api.waitUntilModalGone();
+      close: () => {
+        this.stupidDialog.clickClose();
+        this.waitUntilModalGone();
       },
-    },
+    };
 
 
-    adminArea: {
-      waitAssertVisible: function() {
-        api.waitForVisible('h1.esTopbar_custom_title');
-        api.assertTextMatches('h1', "Admin Area");
+    adminArea = {
+      waitAssertVisible: () => {
+        this.waitForVisible('h1.esTopbar_custom_title');
+        this.assertTextMatches('h1', "Admin Area");
       },
 
-      clickLeaveAdminArea: function() {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('.esTopbar_custom_backToSite');
+      clickLeaveAdminArea: () => {
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('.esTopbar_custom_backToSite');
         });
       },
 
-      goToLoginSettings: function(origin?: string, opts: { loginAs? } = {}) {
-        api.go((origin || '') + '/-/admin/settings/login');
+      goToLoginSettings: (origin?: string, opts: { loginAs? } = {}) => {
+        this.go((origin || '') + '/-/admin/settings/login');
         if (opts.loginAs) {
-          api.loginDialog.loginWithPassword(opts.loginAs);
-          api.adminArea.waitAssertVisible();
+          this.loginDialog.loginWithPassword(opts.loginAs);
+          this.adminArea.waitAssertVisible();
         }
       },
 
-      goToUsersEnabled: function(origin?: string) {
-        api.go((origin || '') + '/-/admin/users');
+      goToUsersEnabled: (origin?: string) => {
+        this.go((origin || '') + '/-/admin/users');
       },
 
-      goToUser: function(member: Member | UserId, origin?: string) {
+      goToUser: (member: Member | UserId, origin?: string) => {
         const userId = _.isNumber(member) ? member : member.id;
-        api.go((origin || '') + `/-/admin/users/id/${userId}`);
+        this.go((origin || '') + `/-/admin/users/id/${userId}`);
       },
 
-      navToGroups: function() {
-        api.repeatUntilAtNewUrl(() => {
-          api.waitAndClick('.e_GrpsB');
+      navToGroups: () => {
+        this.repeatUntilAtNewUrl(() => {
+          this.waitAndClick('.e_GrpsB');
         });
       },
 
       goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
-        api.go((origin || '') + '/-/admin/users/invited');
+        this.go((origin || '') + '/-/admin/users/invited');
         if (opts.loginAs) {
-          api.loginDialog.loginWithPassword(opts.loginAs);
+          this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        api.adminArea.users.invites.waitUntilLoaded();
+        this.adminArea.users.invites.waitUntilLoaded();
       },
 
       goToBackupsTab: (origin?: string, opts: { loginAs? } = {}) => {
-        api.adminArea._goToMaybeLogin(origin, '/-/admin/backup', opts);
-        api.adminArea.backupsTab.waitUntilLoaded();
+        this.adminArea._goToMaybeLogin(origin, '/-/admin/backup', opts);
+        this.adminArea.backupsTab.waitUntilLoaded();
       },
 
-      goToApi: function(origin?: string, opts: { loginAs? } = {}) {
-        api.go((origin || '') + '/-/admin/api');
+      goToApi: (origin?: string, opts: { loginAs? } = {}) => {
+        this.go((origin || '') + '/-/admin/api');
         if (opts.loginAs) {
-          api.loginDialog.loginWithPassword(opts.loginAs);
+          this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        api.adminArea.apiTab.waitUntilLoaded();
+        this.adminArea.apiTab.waitUntilLoaded();
       },
 
-      goToReview: function(origin?: string, opts: { loginAs? } = {}) {
-        api.go((origin || '') + '/-/admin/review/all');
+      goToReview: (origin?: string, opts: { loginAs? } = {}) => {
+        this.go((origin || '') + '/-/admin/review/all');
         if (opts.loginAs) {
-          api.loginDialog.loginWithPassword(opts.loginAs);
+          this.loginDialog.loginWithPassword(opts.loginAs);
         }
-        api.adminArea.review.waitUntilLoaded();
+        this.adminArea.review.waitUntilLoaded();
       },
 
       _goToMaybeLogin: (origin: string, endpoint: string, opts: { loginAs? } = {}) => {
-        api.go((origin || '') + endpoint);
+        this.go((origin || '') + endpoint);
         if (opts.loginAs) {
-          api.loginDialog.loginWithPassword(opts.loginAs);
+          this.loginDialog.loginWithPassword(opts.loginAs);
         }
       },
 
       goToAdminExtraLogin: (origin?: string) => {
-        api.go((origin || '') + '/-/admin-login');
+        this.go((origin || '') + '/-/admin-login');
       },
 
       isReviewTabVisible: () => {
-        return browser.isVisible('.e_RvwB');
+        return this.isVisible('.e_RvwB');
       },
 
       isUsersTabVisible: () => {
-        return browser.isVisible('.e_UsrsB');
+        return this.isVisible('.e_UsrsB');
       },
 
       numTabsVisible: () =>
-        $$('.esAdminArea .dw-main-nav > li').length,
+        this.$$('.esAdminArea .dw-main-nav > li').length,
 
       settings: {
-        clickSaveAll: function() {
-          api.scrollToBottom();
-          api.waitAndClick('.esA_SaveBar_SaveAllB');
-          api.waitUntilLoadingOverlayGone();
+        clickSaveAll: () => {
+          this.scrollToBottom();
+          this.waitAndClick('.esA_SaveBar_SaveAllB');
+          this.waitUntilLoadingOverlayGone();
         },
 
-        clickLegalNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_LegalL');
-          api.waitForVisible('#e2eAA_Ss_OrgNameTI');
+        clickLegalNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_LegalL');
+          this.waitForVisible('#e2eAA_Ss_OrgNameTI');
         },
 
-        clickLoginNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_LoginL');
-          api.waitForVisible('#e2eLoginRequiredCB');
+        clickLoginNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_LoginL');
+          this.waitForVisible('#e2eLoginRequiredCB');
         },
 
-        clickModerationNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_ModL');
+        clickModerationNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_ModL');
         },
 
-        clickAnalyticsNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_AnalyticsL');
+        clickAnalyticsNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_AnalyticsL');
         },
 
-        clickAdvancedNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_AdvancedL');
+        clickAdvancedNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_AdvancedL');
         },
 
-        clickExperimentalNavLink: function() {
-          api.waitAndClick('#e2eAA_Ss_ExpL');
+        clickExperimentalNavLink: () => {
+          this.waitAndClick('#e2eAA_Ss_ExpL');
         },
 
         legal: {
-          editOrgName: function(newName: string) {
-            api.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
+          editOrgName: (newName: string) => {
+            this.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
           },
 
-          editOrgNameShort: function(newName: string) {
-            api.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
+          editOrgNameShort: (newName: string) => {
+            this.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
           },
         },
 
         login: {
           goHere: () => {
-            api.adminArea.goToLoginSettings();
+            this.adminArea.goToLoginSettings();
           },
 
-          setRequireVerifiedEmail: function(isRequired: boolean) {
-            setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
+          setRequireVerifiedEmail: (isRequired: boolean) => {
+            this.setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
           },
 
-          setLoginRequired: function(isRequired: boolean) {
-            setCheckbox('#e2eLoginRequiredCB', isRequired);
+          setLoginRequired: (isRequired: boolean) => {
+            this.setCheckbox('#e2eLoginRequiredCB', isRequired);
           },
 
-          setApproveUsers: function(isRequired: boolean) {
-            setCheckbox('#e_ApproveUsersCB', isRequired);
+          setApproveUsers: (isRequired: boolean) => {
+            this.setCheckbox('#e_ApproveUsersCB', isRequired);
           },
 
-          clickAllowGuestLogin: function() {
-            api.waitAndClick('#e2eAllowGuestsCB');
+          clickAllowGuestLogin: () => {
+            this.waitAndClick('#e2eAllowGuestsCB');
           },
 
           setExpireIdleAfterMinutes: (minutes: number) => {
-            api.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
-            api.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
+            this.scrollIntoViewInPageColumn('.e_LgoIdlAftMins input');
+            this.waitAndSetValue('.e_LgoIdlAftMins input', minutes, { checkAndRetry: true });
           },
 
           setEmailDomainWhitelist: (text: string) => {
-            api.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
-            api.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
+            this.scrollIntoViewInPageColumn('.e_EmailWhitelist textarea');
+            this.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
           },
 
           setEmailDomainBlacklist: (text: string) => {
-            api.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
-            api.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
+            this.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
+            this.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
           },
 
           typeSsoUrl: (url: string) => {
-            api.scrollIntoViewInPageColumn('.e_SsoUrl input');
-            api.waitUntilDoesNotMove('.e_SsoUrl input');
-            api.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
+            this.scrollIntoViewInPageColumn('.e_SsoUrl input');
+            this.waitUntilDoesNotMove('.e_SsoUrl input');
+            this.waitAndSetValue('.e_SsoUrl input', url, { checkAndRetry: true });
           },
 
           setSsoLoginRequiredLogoutUrl: (url: string) => {
-            api.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
-            api.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
-            api.waitAndSetValue('.e_SsoAftLgoUrl input', url, { checkAndRetry: true });
+            this.scrollIntoViewInPageColumn('.e_SsoAftLgoUrl input');
+            this.waitUntilDoesNotMove('.e_SsoAftLgoUrl input');
+            this.waitAndSetValue('.e_SsoAftLgoUrl input', url, { checkAndRetry: true });
           },
 
           setEnableSso: (enabled: boolean) => {
-            api.scrollIntoViewInPageColumn('.e_EnblSso input');
-            api.waitUntilDoesNotMove('.e_EnblSso input');
-            setCheckbox('.e_EnblSso input', enabled);
+            this.scrollIntoViewInPageColumn('.e_EnblSso input');
+            this.waitUntilDoesNotMove('.e_EnblSso input');
+            this.setCheckbox('.e_EnblSso input', enabled);
           },
 
           goToSsoTestPage: () => {
-            api.repeatUntilAtNewUrl(() => {
-              api.waitAndClickFirst('.e_SsoTestL');
+            this.repeatUntilAtNewUrl(() => {
+              this.waitAndClickFirst('.e_SsoTestL');
             });
           }
         },
 
         embedded: {
           goHere: (origin?: string) => {
-            api.go((origin || '') + '/-/admin/settings/embedded-comments');
+            this.go((origin || '') + '/-/admin/settings/embedded-comments');
           },
 
           setAllowEmbeddingFrom: (value: string) => {
-            api.waitAndSetValue('#e_AllowEmbFrom', value);
+            this.waitAndSetValue('#e_AllowEmbFrom', value);
           },
 
           createSaveEmbeddingPage: (ps: { urlPath: string, discussionId?: string }) => {
-            const htmlToPaste = api.waitAndGetVisibleText('#e_EmbCmtsHtml');
+            const htmlToPaste = this.waitAndGetVisibleText('#e_EmbCmtsHtml');
             const pageHtml = utils.makeEmbeddedCommentsHtml({
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
@@ -5925,47 +5950,47 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           redirHostnamesSelector: '.s_A_Ss_S-Hostnames-Redr pre',
 
           getHostname: (): string => {
-            return api.waitAndGetVisibleText('.esA_Ss_S_Hostname');
+            return this.waitAndGetVisibleText('.esA_Ss_S_Hostname');
           },
 
           getDuplicatingHostnames: (): string => {
-            return api.waitAndGetVisibleText(api.adminArea.settings.advanced.duplHostnamesSelector);
+            return this.waitAndGetVisibleText(this.adminArea.settings.advanced.duplHostnamesSelector);
           },
 
           isDuplicatingHostnamesVisible: (): boolean => {
-            return api.isVisible(api.adminArea.settings.advanced.duplHostnamesSelector);
+            return this.isVisible(this.adminArea.settings.advanced.duplHostnamesSelector);
           },
 
           getRedirectingHostnames: (): string => {
-            return api.waitAndGetVisibleText(api.adminArea.settings.advanced.redirHostnamesSelector);
+            return this.waitAndGetVisibleText(this.adminArea.settings.advanced.redirHostnamesSelector);
           },
 
           isRedirectingHostnamesVisible: (): boolean => {
-            return api.isVisible(api.adminArea.settings.advanced.redirHostnamesSelector);
+            return this.isVisible(this.adminArea.settings.advanced.redirHostnamesSelector);
           },
 
           clickChangeSiteAddress: () => {
-            api.waitAndClick('.e_ChAdrB');
+            this.waitAndClick('.e_ChAdrB');
           },
 
           typeNewSiteAddress: (newAddress: string) => {
-            api.waitAndSetValue('.s_A_NewAdrD_HostnI input', newAddress);
+            this.waitAndSetValue('.s_A_NewAdrD_HostnI input', newAddress);
           },
 
           saveNewSiteAddress: () => {
-            api.waitAndClick('.s_A_NewAdrD .btn-primary');
+            this.waitAndClick('.s_A_NewAdrD .btn-primary');
           },
 
           waitForNewSiteRedirectLink: () => {
-            api.waitForVisible('.e_NewSiteAddr');
+            this.waitForVisible('.e_NewSiteAddr');
           },
 
           followLinkToNewSiteAddr: () => {
-            api.waitAndClick('.e_NewSiteAddr');
+            this.waitAndClick('.e_NewSiteAddr');
           },
 
           clickRedirectOldSiteAddresses: () => {
-            api.waitAndClick('.e_RedirOldAddrB');
+            this.waitAndClick('.e_RedirOldAddrB');
           }
         },
       },
@@ -5979,156 +6004,157 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         setEmailNotVerifiedButtonSelector: '.e_SetEmNotVerifB',
         sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
 
-        waitForLoaded: function() {
-          api.waitForVisible('.esA_Us_U_Rows');
+        waitForLoaded: () => {
+          this.waitForVisible('.esA_Us_U_Rows');
         },
 
         viewPublProfile: () => {
-          api.waitAndClick('.e_VwPblPrfB');
+          this.waitAndClick('.e_VwPblPrfB');
         },
 
         assertUsernameIs: (usernameOrMember: string | Member) => {
           const username = _.isString(usernameOrMember) ?
               usernameOrMember : (usernameOrMember as Member).username;
-          api.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
+          this.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
         },
 
-        assertEnabled: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible(api.adminArea.user.enabledSelector));
+        assertEnabled: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible(this.adminArea.user.enabledSelector));
         },
 
-        assertEmailVerified: function() {
-          assert(browser.isVisible(api.adminArea.user.setEmailNotVerifiedButtonSelector));
+        assertEmailVerified: () => {
+          assert(this.isVisible(this.adminArea.user.setEmailNotVerifiedButtonSelector));
         },
 
-        assertEmailNotVerified: function() {
-          assert(browser.isVisible(api.adminArea.user.setEmailVerifiedButtonSelector));
+        assertEmailNotVerified: () => {
+          assert(this.isVisible(this.adminArea.user.setEmailVerifiedButtonSelector));
         },
 
-        setEmailToVerified: function(verified: boolean) {
-          const u = api.adminArea.user;
-          api.waitAndClick(
+        setEmailToVerified: (verified: boolean) => {
+          const u = this.adminArea.user;
+          this.waitAndClick(
               verified ? u.setEmailVerifiedButtonSelector : u.setEmailNotVerifiedButtonSelector);
           // Wait for the request to complete — then, the opposite buttons will be shown:
-          api.waitForVisible(
+          this.waitForVisible(
               verified ? u.setEmailNotVerifiedButtonSelector : u.setEmailVerifiedButtonSelector);
         },
 
-        resendEmailVerifEmail: function () {
-          api.waitAndClick(api.adminArea.user.sendEmVerEmButtonSelector);
+        resendEmailVerifEmail: () => {
+          this.waitAndClick(this.adminArea.user.sendEmVerEmButtonSelector);
         },
 
-        assertDisabledBecauseNotYetApproved: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible(api.adminArea.user.disabledSelector));
-          assert(browser.isVisible(api.adminArea.user.disabledBecauseWaitingForApproval));
+        assertDisabledBecauseNotYetApproved: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible(this.adminArea.user.disabledSelector));
+          assert(this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
           // If email not verified, wouldn't be considered waiting.
-          assert(!browser.isVisible(api.adminArea.user.disabledBecauseEmailUnverified));
+          assert(!this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
         },
 
-        assertDisabledBecauseEmailNotVerified: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible(api.adminArea.user.disabledSelector));
-          assert(browser.isVisible(api.adminArea.user.disabledBecauseEmailUnverified));
+        assertDisabledBecauseEmailNotVerified: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible(this.adminArea.user.disabledSelector));
+          assert(this.isVisible(this.adminArea.user.disabledBecauseEmailUnverified));
           // Isn't considered waiting, until after email approved.
-          assert(!browser.isVisible(api.adminArea.user.disabledBecauseWaitingForApproval));
+          assert(!this.isVisible(this.adminArea.user.disabledBecauseWaitingForApproval));
         },
 
-        assertApprovedInfoAbsent: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isExisting('.e_Appr_Info-Absent'));
+        assertApprovedInfoAbsent: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isExisting('.e_Appr_Info-Absent'));
         },
 
-        assertApproved: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible('.e_Appr_Yes'));
+        assertApproved: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible('.e_Appr_Yes'));
         },
 
-        assertRejected: function() {
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible('.e_Appr_No'));
+        assertRejected: () => {
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible('.e_Appr_No'));
         },
 
-        assertWaitingForApproval: function() {   // RENAME to  assertApprovalUndecided
-          api.adminArea.user.waitForLoaded();
-          assert(browser.isVisible('.e_Appr_Undecided'));
+        assertWaitingForApproval: () => {   // RENAME to  assertApprovalUndecided
+          this.adminArea.user.waitForLoaded();
+          assert(this.isVisible('.e_Appr_Undecided'));
         },
 
-        approveUser: function() {
-          api.waitAndClick('.e_Appr_ApprB');
-          api.waitForVisible('.e_Appr_Yes');
+        approveUser: () => {
+          this.waitAndClick('.e_Appr_ApprB');
+          this.waitForVisible('.e_Appr_Yes');
         },
 
-        rejectUser: function() {
-          api.waitAndClick('.e_Appr_RejB');
-          api.waitForVisible('.e_Appr_No');
+        rejectUser: () => {
+          this.waitAndClick('.e_Appr_RejB');
+          this.waitForVisible('.e_Appr_No');
         },
 
-        undoApproveOrReject: function() {
-          api.waitAndClick('.e_Appr_UndoB');
-          api.waitForVisible('.e_Appr_Undecided');
+        undoApproveOrReject: () => {
+          this.waitAndClick('.e_Appr_UndoB');
+          this.waitForVisible('.e_Appr_Undecided');
         },
 
-        suspendUser: function(opts: { days: number, reason: string } = { days: 10, reason: "Because." }) {
-          api.waitAndClick('.e_Suspend');
-          api.waitUntilDoesNotMove('.e_SuspDays');
-          api.waitAndSetValue('.e_SuspDays input', opts.days);
-          api.waitAndSetValue('.e_SuspReason input', opts.reason);
-          api.waitAndClick('.e_DoSuspendB');
-          api.waitForVisible('.e_Unuspend');
+        suspendUser: (opts: {
+              days: number, reason: string } = { days: 10, reason: "Because." }) => {
+          this.waitAndClick('.e_Suspend');
+          this.waitUntilDoesNotMove('.e_SuspDays');
+          this.waitAndSetValue('.e_SuspDays input', opts.days);
+          this.waitAndSetValue('.e_SuspReason input', opts.reason);
+          this.waitAndClick('.e_DoSuspendB');
+          this.waitForVisible('.e_Unuspend');
         },
 
-        unsuspendUser: function() {
-          api.waitAndClick('.e_Unuspend');
-          api.waitForVisible('.e_Suspend');
+        unsuspendUser: () => {
+          this.waitAndClick('.e_Unuspend');
+          this.waitForVisible('.e_Suspend');
         },
 
-        markAsMildThreat: function() {
-          api.waitAndClick('.e_ThreatLvlB');
-          api.waitAndClick('.e_MildThreatB');
-          api.waitForVisible('.e_ThreatLvlIsLkd');
+        markAsMildThreat: () => {
+          this.waitAndClick('.e_ThreatLvlB');
+          this.waitAndClick('.e_MildThreatB');
+          this.waitForVisible('.e_ThreatLvlIsLkd');
         },
 
-        markAsModerateThreat: function() {
-          api.waitAndClick('.e_ThreatLvlB');
-          api.waitAndClick('.e_ModerateThreatB');
-          api.waitForVisible('.e_ThreatLvlIsLkd');
+        markAsModerateThreat: () => {
+          this.waitAndClick('.e_ThreatLvlB');
+          this.waitAndClick('.e_ModerateThreatB');
+          this.waitForVisible('.e_ThreatLvlIsLkd');
         },
 
-        unlockThreatLevel: function() {
-          api.waitAndClick('.e_ThreatLvlB');
-          api.waitAndClick('.e_UnlockThreatB');
-          api.waitForVisible('.e_ThreatLvlNotLkd');
+        unlockThreatLevel: () => {
+          this.waitAndClick('.e_ThreatLvlB');
+          this.waitAndClick('.e_UnlockThreatB');
+          this.waitForVisible('.e_ThreatLvlNotLkd');
         },
 
-        grantAdmin: function() {
-          api.waitForVisible('.e_Adm-No');
-          api.waitAndClick('.e_ToggleAdminB');
-          api.waitForVisible('.e_Adm-Yes');
+        grantAdmin: () => {
+          this.waitForVisible('.e_Adm-No');
+          this.waitAndClick('.e_ToggleAdminB');
+          this.waitForVisible('.e_Adm-Yes');
         },
 
-        revokeAdmin: function() {
-          api.waitForVisible('.e_Adm-Yes');
-          api.waitAndClick('.e_ToggleAdminB');
-          api.waitForVisible('.e_Adm-No');
+        revokeAdmin: () => {
+          this.waitForVisible('.e_Adm-Yes');
+          this.waitAndClick('.e_ToggleAdminB');
+          this.waitForVisible('.e_Adm-No');
         },
 
-        grantModerator: function() {
-          api.waitForVisible('.e_Mod-No');
-          api.waitAndClick('.e_ToggleModB');
-          api.waitForVisible('.e_Mod-Yes');
+        grantModerator: () => {
+          this.waitForVisible('.e_Mod-No');
+          this.waitAndClick('.e_ToggleModB');
+          this.waitForVisible('.e_Mod-Yes');
         },
 
-        revokeModerator: function() {
-          api.waitForVisible('.e_Mod-Yes');
-          api.waitAndClick('.e_ToggleModB');
-          api.waitForVisible('.e_Mod-No');
+        revokeModerator: () => {
+          this.waitForVisible('.e_Mod-Yes');
+          this.waitAndClick('.e_ToggleModB');
+          this.waitForVisible('.e_Mod-No');
         },
 
-        startImpersonating: function() {
-          api.repeatUntilAtNewUrl(() => {
-            api.waitAndClick('#e2eA_Us_U_ImpersonateB');
+        startImpersonating: () => {
+          this.repeatUntilAtNewUrl(() => {
+            this.waitAndClick('#e2eA_Us_U_ImpersonateB');
           });
         },
       },
@@ -6138,223 +6164,223 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         enabledUsersTabSelector: '.e_EnabledUsB',
         waitingUsersTabSelector: '.e_WaitingUsB',
 
-        waitForLoaded: function() {
-          api.waitForVisible('.e_AdminUsersList');
+        waitForLoaded: () => {
+          this.waitForVisible('.e_AdminUsersList');
         },
 
-        goToUser: function(user: string | Member) {
+        goToUser: (user: string | Member) => {
           const username = _.isString(user) ? user : user.username;
-          api.rememberCurrentUrl();
-          api.waitForThenClickText(api.adminArea.users.usernameSelector, username);
-          api.waitForNewUrl();
-          api.adminArea.user.assertUsernameIs(user);
+          this.rememberCurrentUrl();
+          this.waitForThenClickText(this.adminArea.users.usernameSelector, username);
+          this.waitForNewUrl();
+          this.adminArea.user.assertUsernameIs(user);
         },
 
-        assertUserListEmpty: function(member: Member) {
-          api.adminArea.users.waitForLoaded();
-          assert(browser.isVisible('.e_NoSuchUsers'));
+        assertUserListEmpty: () => {
+          this.adminArea.users.waitForLoaded();
+          assert(this.isVisible('.e_NoSuchUsers'));
         },
 
-        assertUserListed: function(member: Member) {
-          api.adminArea.users.waitForLoaded();
-          api.assertAnyTextMatches(api.adminArea.users.usernameSelector, member.username);
+        assertUserListed: (member: { username: string }) => {
+          this.adminArea.users.waitForLoaded();
+          this.assertAnyTextMatches(this.adminArea.users.usernameSelector, member.username);
         },
 
-        assertUserAbsent: function(member: Member) {
-          api.adminArea.users.waitForLoaded();
-          api.assertNoTextMatches(api.adminArea.users.usernameSelector, member.username);
+        assertUserAbsent: (member: { username: string }) => {
+          this.adminArea.users.waitForLoaded();
+          this.assertNoTextMatches(this.adminArea.users.usernameSelector, member.username);
         },
 
-        asserExactlyNumUsers: function(num: number) {
-          api.adminArea.users.waitForLoaded();
-          api.assertExactly(num, api.adminArea.users.usernameSelector);
+        asserExactlyNumUsers: (num: number) => {
+          this.adminArea.users.waitForLoaded();
+          this.assertExactly(num, this.adminArea.users.usernameSelector);
         },
 
         // Works only if exactly 1 user listed.
-        assertEmailVerified_1_user: function(member: Member, verified: boolean) {
+        assertEmailVerified_1_user: (member: Member, verified: boolean) => {
           // for now:  --
-          api.adminArea.users.assertUserListed(member);
+          this.adminArea.users.assertUserListed(member);
           // later, check the relevant user row.
           // ------------
           if (verified) {
-            assert(!browser.isVisible('.e_EmNotVerfd'));
+            assert(!this.isVisible('.e_EmNotVerfd'));
           }
           else {
-            assert(browser.isVisible('.e_EmNotVerfd'));
+            assert(this.isVisible('.e_EmNotVerfd'));
           }
         },
 
-        switchToEnabled: function() {
-          api.waitAndClick(api.adminArea.users.enabledUsersTabSelector);
-          api.waitForVisible('.e_EnabledUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToEnabled: () => {
+          this.waitAndClick(this.adminArea.users.enabledUsersTabSelector);
+          this.waitForVisible('.e_EnabledUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        switchToWaiting: function() {
-          api.waitAndClick(api.adminArea.users.waitingUsersTabSelector);
-          api.waitForVisible('.e_WaitingUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToWaiting: () => {
+          this.waitAndClick(this.adminArea.users.waitingUsersTabSelector);
+          this.waitForVisible('.e_WaitingUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        isWaitingTabVisible: function() {
-          api.waitForVisible(api.adminArea.users.enabledUsersTabSelector);
-          return browser.isVisible(api.adminArea.users.waitingUsersTabSelector);
+        isWaitingTabVisible: () => {
+          this.waitForVisible(this.adminArea.users.enabledUsersTabSelector);
+          return this.isVisible(this.adminArea.users.waitingUsersTabSelector);
         },
 
-        switchToNew: function() {
-          api.waitAndClick('.e_NewUsB');
-          api.waitForVisible('.e_NewUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToNew: () => {
+          this.waitAndClick('.e_NewUsB');
+          this.waitForVisible('.e_NewUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        switchToStaff: function() {
-          api.waitAndClick('.e_StaffUsB');
-          api.waitForVisible('.e_StaffUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToStaff: () => {
+          this.waitAndClick('.e_StaffUsB');
+          this.waitForVisible('.e_StaffUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        switchToSuspended: function() {
-          api.waitAndClick('.e_SuspendedUsB');
-          api.waitForVisible('.e_SuspendedUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToSuspended: () => {
+          this.waitAndClick('.e_SuspendedUsB');
+          this.waitForVisible('.e_SuspendedUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        switchToWatching: function() {
-          api.waitAndClick('.e_WatchingUsB');
-          api.waitForVisible('.e_ThreatsUsersIntro');
-          api.adminArea.users.waitForLoaded();
+        switchToWatching: () => {
+          this.waitAndClick('.e_WatchingUsB');
+          this.waitForVisible('.e_ThreatsUsersIntro');
+          this.adminArea.users.waitForLoaded();
         },
 
-        switchToInvites: function() {
-          api.waitAndClick('.e_InvitedUsB');
-          api.adminArea.users.invites.waitUntilLoaded();
+        switchToInvites: () => {
+          this.waitAndClick('.e_InvitedUsB');
+          this.adminArea.users.invites.waitUntilLoaded();
         },
 
         waiting: {
           undoSelector: '.e_UndoApprRjctB',
 
-          approveFirstListedUser: function() {
-            api.waitAndClickFirst('.e_ApproveUserB');
-            api.waitForVisible(api.adminArea.users.waiting.undoSelector);
+          approveFirstListedUser: () => {
+            this.waitAndClickFirst('.e_ApproveUserB');
+            this.waitForVisible(this.adminArea.users.waiting.undoSelector);
           },
 
-          rejectFirstListedUser: function() {
-            api.waitAndClickFirst('.e_RejectUserB');
-            api.waitForVisible(api.adminArea.users.waiting.undoSelector);
+          rejectFirstListedUser: () => {
+            this.waitAndClickFirst('.e_RejectUserB');
+            this.waitForVisible(this.adminArea.users.waiting.undoSelector);
           },
 
-          undoApproveOrReject: function() {
-            api.waitAndClickFirst(api.adminArea.users.waiting.undoSelector);
-            api.waitUntilGone(api.adminArea.users.waiting.undoSelector);
+          undoApproveOrReject: () => {
+            this.waitAndClickFirst(this.adminArea.users.waiting.undoSelector);
+            this.waitUntilGone(this.adminArea.users.waiting.undoSelector);
           },
         },
 
         invites: {
           waitUntilLoaded: () => {
             // When this elem present, any invited-users-data has also been loaded.
-            api.waitForExist('.s_InvsL');
+            this.waitForExist('.s_InvsL');
           },
 
           clickSendInvite: () => {
-            api.waitAndClick('.s_AA_Us_Inv_SendB');
+            this.waitAndClick('.s_AA_Us_Inv_SendB');
           },
         }
       },
 
       interface: {
         goHere: (origin?: string, opts: { loginAs? } = {}) => {
-          api.adminArea._goToMaybeLogin(origin, '/-/admin/customize/basic', opts);
+          this.adminArea._goToMaybeLogin(origin, '/-/admin/customize/basic', opts);
         },
 
         waitUntilLoaded: () => {
-          api.waitForVisible('.s_A_Ss_S');
+          this.waitForVisible('.s_A_Ss_S');
           // Top tab pane unmount bug workaround apparently not needed here. [5QKBRQ] [E2EBUG]
           // Can be removed elsewhere too?
         },
 
         areTopicSectionSettingsVisible: () => {
-          return browser.isVisible('.e_DscPrgSct');
+          return this.isVisible('.e_DscPrgSct');
         },
 
         setSortOrder: (value: number) => {
           dieIf(value === 0, "Cannot set to default — that'd clear the value, " +
-              "but browser drivers are buggy / weird, won't work with Webdriver v4 [TyE06KUDS]");
+              "but this.#br drivers are buggy / weird, won't work with Webdriver v4 [TyE06KUDS]");
           // 0 = default.
           const valueOrEmpty = value === 0 ? '' : value;
-          api.waitAndSetValue('.e_BlgSrtOdr input', valueOrEmpty, { checkAndRetry: true });
+          this.waitAndSetValue('.e_BlgSrtOdr input', valueOrEmpty, { checkAndRetry: true });
         },
 
         setBlogPostLikeVotes: (value: number) => {
-          api.waitAndSetValue('.e_BlgPstVts input', value, { checkAndRetry: true });
+          this.waitAndSetValue('.e_BlgPstVts input', value, { checkAndRetry: true });
         },
 
         setAddCommentBtnTitle: (title: string) => {
-          api.waitAndSetValue('.e_AddCmtBtnTtl input', title, { checkAndRetry: true });
+          this.waitAndSetValue('.e_AddCmtBtnTtl input', title, { checkAndRetry: true });
         },
 
       },
 
       backupsTab: {
         waitUntilLoaded: () => {
-          api.waitForVisible('.s_A_Bkp');
+          this.waitForVisible('.s_A_Bkp');
         },
 
         clickRestore: () => {
-          api.waitAndClick('.e_RstBkp');
+          this.waitAndClick('.e_RstBkp');
         },
 
         selectFileToRestore: (fileNameInTargetDir: string) => {
-          api.waitAndSelectFile('.e_SelFil', fileNameInTargetDir);
+          this.waitAndSelectFile('.e_SelFil', fileNameInTargetDir);
         },
       },
 
       apiTab: {
         waitUntilLoaded: () => {
-          api.waitForVisible('.s_A_Api');
+          this.waitForVisible('.s_A_Api');
         },
 
         generateSecret: () => {
-          api.waitAndClick('.e_GenSecrB');
+          this.waitAndClick('.e_GenSecrB');
         },
 
         showAndCopyMostRecentSecret: (): string => {
-          api.waitAndClick('.e_ShowSecrB');
-          return api.waitAndGetVisibleText('.esStupidDlg .e_SecrVal');
+          this.waitAndClick('.e_ShowSecrB');
+          return this.waitAndGetVisibleText('.esStupidDlg .e_SecrVal');
         },
       },
 
       review: {
         goHere: (origin?: string, opts: { loginAs? } = {}) => {
-          api.adminArea.goToReview(origin, opts);
+          this.adminArea.goToReview(origin, opts);
         },
 
-        waitUntilLoaded: function() {
-          api.waitForVisible('.s_A_Rvw');
+        waitUntilLoaded: () => {
+          this.waitForVisible('.s_A_Rvw');
           //----
           // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].  [E2EBUG]
           // Going to the Settings tab, makes the Review tab pane unmount, and after that,
           // it won't surprise-unmount ever again (until page reload).
-          api.waitAndClick('.e_UsrsB');
-          api.waitAndClick('.e_RvwB');
-          api.waitForVisible('.s_A_Rvw');
+          this.waitAndClick('.e_UsrsB');
+          this.waitAndClick('.e_RvwB');
+          this.waitForVisible('.s_A_Rvw');
           //----
         },
 
-        playTimePastUndo: function() {
-          // Make the server and browser believe we've waited for the review timeout seconds.
+        playTimePastUndo: () => {
+          // Make the server and this.#br believe we've waited for the review timeout seconds.
           server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
-          api.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          this.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
         },
 
-        waitForServerToCarryOutDecisions: function(pageId?: PageId, postNr?: PostNr) {
+        waitForServerToCarryOutDecisions: (pageId?: PageId, postNr?: PostNr) => {
           // Then wait for the server to actually do something.
           // The UI will reload the task list and auto-update itself [2WBKG7E], when
           // the review decisions have been carried out server side. Then the buttons
           // tested for below, hide.
           while (true) {
-            browser.pause(c.JanitorThreadIntervalMs + 200);
+            this.#br.pause(c.JanitorThreadIntervalMs + 200);
             if (!pageId) {
-              if (!browser.isVisible('.s_A_Rvw_Tsk_UndoB'))
+              if (!this.isVisible('.s_A_Rvw_Tsk_UndoB'))
                 break;
             }
             else {
@@ -6364,225 +6390,232 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
               assert(_.isNumber(postNr));
               const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
               const anyButtonsVisible = (
-                browser.isVisible(pagePostSelector + ' .s_A_Rvw_Tsk_UndoB') ||
-                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
-                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'));
+                this.isVisible(pagePostSelector + ' .s_A_Rvw_Tsk_UndoB') ||
+                this.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
+                this.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'));
               if (!anyButtonsVisible)
                 break;
             }
             //----
             // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]
-            browser.refresh();
-            api.adminArea.review.waitUntilLoaded();
+            this.#br.refresh();
+            this.adminArea.review.waitUntilLoaded();
             //----
           }
-          api.waitUntilLoadingOverlayGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
-        goToPostForTaskIndex: function(index: number) {
+        goToPostForTaskIndex: (index: number) => {
           die("Won't work, opens in new tab [TyE5NA2953");
-          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
-          api.topic.waitForLoaded();
+          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
+          this.topic.waitForLoaded();
         },
 
-        approvePostForMostRecentTask: function() {
-          api.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+        approvePostForMostRecentTask: () => {
+          this.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
         approvePostForTaskIndex: (index: number) => {
-          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
         rejectDeleteTaskIndex: (index: number) => {
-          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
-          api.waitUntilModalGone();
-          api.waitUntilLoadingOverlayGone();
+          this.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
+          this.waitUntilModalGone();
+          this.waitUntilLoadingOverlayGone();
         },
 
-        countReviewTasksFor: function(pageId, postNr, opts: { waiting: boolean }): number {
+        countReviewTasksFor: (pageId, postNr, opts: { waiting: boolean }): number => {
           const pageIdPostNrSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
           const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
           const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
-          const elems = $$(selector);
+          const elems = this.$$(selector);
           logMessage(`Counted to ${elems.length} of these: ${selector}`);
           return elems.length;
         },
 
-        isMoreStuffToReview: function() {
-          return browser.isVisible('.e_A_Rvw_Tsk_AcptB');
+        isMoreStuffToReview: () => {
+          return this.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
-        waitForTextToReview: function(text, ps: { index?: number } = {}) {
+        waitForTextToReview: (text, ps: { index?: number } = {}) => {
           let selector = '.esReviewTask_it';
           if (ps.index !== undefined) {
             selector = `.e_RT-Ix-${ps.index} ${selector}`;
           }
-          api.waitUntilTextMatches(selector, text);
+          this.waitUntilTextMatches(selector, text);
         },
 
         // RENAME to countReviewTasks? and add countReviewTasksWaiting?
         countThingsToReview: (): number =>
-          $$('.esReviewTask_it').length,
+          this.$$('.esReviewTask_it').length,
 
-        isTasksPostDeleted: function(taskIndex: number): boolean {
-          return browser.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
+        isTasksPostDeleted: (taskIndex: number): boolean => {
+          return this.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
         }
       },
 
       adminExtraLogin: {
         submitEmailAddress: (emailAddress: string) => {
-          api.waitAndSetValue('.e_AdmEmI', emailAddress);
-          api.waitAndClick('.e_SbmB');
-          api.waitForGone('.e_SbmB');
+          this.waitAndSetValue('.e_AdmEmI', emailAddress);
+          this.waitAndClick('.e_SbmB');
+          this.waitForGone('.e_SbmB');
         },
 
         assertIsBadEmailAddress: () => {
-          api.assertPageHtmlSourceMatches_1('TyE0ADMEML_');
+          this.assertPageHtmlSourceMatches_1('TyE0ADMEML_');
         },
 
         assertEmailSentMessage: () => {
-          api.assertPageHtmlSourceMatches_1('Email sent');
+          this.assertPageHtmlSourceMatches_1('Email sent');
         }
       }
-    },
+    };
 
 
-    inviteDialog: {
+    inviteDialog = {
       waitUntilLoaded: () => {
-        api.waitForVisible('.s_InvD');
+        this.waitForVisible('.s_InvD');
       },
 
       typeAndSubmitInvite: (emailAddress: string, ps: { numWillBeSent?: number } = {}) => {
-        api.inviteDialog.typeInvite(emailAddress);
-        api.inviteDialog.clickSubmit();
+        this.inviteDialog.typeInvite(emailAddress);
+        this.inviteDialog.clickSubmit();
         if (ps.numWillBeSent !== undefined) {
-          api.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
+          this.inviteDialog.waitForCorrectNumSent(ps.numWillBeSent);
         }
-        api.inviteDialog.closeResultsDialog();
+        this.inviteDialog.closeResultsDialog();
       },
 
       typeInvite: (emailAddress: string) => {
-        api.waitAndSetValue('.s_InvD textarea', emailAddress, { maybeMoves: true });
+        this.waitAndSetValue('.s_InvD textarea', emailAddress, { maybeMoves: true });
       },
 
       clickSubmit: () => {
-        api.waitAndClick('.s_InvD .btn-primary');
+        this.waitAndClick('.s_InvD .btn-primary');
       },
 
       cancel: () => {
-        api.waitAndClick('.s_InvD .e_Cncl');
+        this.waitAndClick('.s_InvD .e_Cncl');
       },
 
       waitForCorrectNumSent: (num: number) => {
-        api.waitForVisible('.e_Invd-' + num);
+        this.waitForVisible('.e_Invd-' + num);
       },
 
       assertAlreadyJoined: (emailAddr: string) => {
-        api.waitForVisible('.e_InvJoind');
-        assert.equal(api.count('.e_InvJoind li'), 1);
-        assert.equal(api.waitAndGetVisibleText('.e_InvJoind li'), emailAddr);
+        this.waitForVisible('.e_InvJoind');
+        assert.equal(this.count('.e_InvJoind li'), 1);
+        assert.equal(this.waitAndGetVisibleText('.e_InvJoind li'), emailAddr);
       },
 
       assertAlreadyInvited: (emailAddr: string) => {
-        api.waitForVisible('.e_InvRtr');
-        assert.equal(api.count('.e_InvRtr li'), 1);
-        assert.equal(api.waitAndGetVisibleText('.e_InvRtr li'), emailAddr);
+        this.waitForVisible('.e_InvRtr');
+        assert.equal(this.count('.e_InvRtr li'), 1);
+        assert.equal(this.waitAndGetVisibleText('.e_InvRtr li'), emailAddr);
       },
 
       closeResultsDialog: () => {
-        api.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
+        this.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
       },
 
       isInviteAgainVisible: (): boolean => {
-        api.waitForVisible('.s_InvD .btn-primary');
-        return browser.isVisible('.e_InvAgain');
+        this.waitForVisible('.s_InvD .btn-primary');
+        return this.isVisible('.e_InvAgain');
       }
-    },
+    };
 
 
-    invitedUsersList: {
+    invitedUsersList = {
       invitedUserSelector: '.e_Inv_U',
 
       waitUntilLoaded: () => {
         // When this elem present, any invited-users-data has also been loaded.
-        api.waitForExist('.s_InvsL');
+        this.waitForExist('.s_InvsL');
       },
 
       setHideOld: (value: boolean) => {
-        setCheckbox('.e_OnlPend input', value);
+        this.setCheckbox('.e_OnlPend input', value);
       },
 
       setShowOnePerUserOnly: (value: boolean) => {
-        setCheckbox('.e_OnePerP input', value);
+        this.setCheckbox('.e_OnePerP input', value);
       },
 
       assertHasAcceptedInvite: (username: string) => {
-        api.assertAnyTextMatches(api.invitedUsersList.invitedUserSelector, username);
+        this.assertAnyTextMatches(this.invitedUsersList.invitedUserSelector, username);
       },
 
       assertHasNotAcceptedInvite: (username: string) => {
-        api.assertNoTextMatches(api.invitedUsersList.invitedUserSelector, username);
+        this.assertNoTextMatches(this.invitedUsersList.invitedUserSelector, username);
       },
 
       waitAssertInviteRowPresent: (index: number, opts: {
-            email: string, accepted: boolean, acceptedByUsername?: string, sentByUsername?: string,
-            deleted: boolean }) => {
-        api.waitForAtLeast(index, '.s_InvsL_It');
-        api.assertNthTextMatches('.e_Inv_Em', index, opts.email);
+            email: string, accepted?: boolean, acceptedByUsername?: string, sentByUsername?: string,
+            deleted?: boolean }) => {
+
+        dieIf(opts.accepted === false && !_.isUndefined(opts.acceptedByUsername), 'TyE06WKTJ3');
+        dieIf(
+            _.isUndefined(opts.deleted) &&
+            _.isUndefined(opts.accepted) &&
+            _.isUndefined(opts.acceptedByUsername), 'TyE502RKDL24');
+
+        this.waitForAtLeast(index, '.s_InvsL_It');
+        this.assertNthTextMatches('.e_Inv_Em', index, opts.email);
         if (opts.accepted === false) {
-          api.assertNthTextMatches('.e_Inv_U', index, /^$/);
+          this.assertNthTextMatches('.e_Inv_U', index, /^$/);
         }
         if (opts.deleted) {
-          api.assertNthClassIncludes('.s_InvsL_It', index, 's_InvsL_It-Dd');
+          this.assertNthClassIncludes('.s_InvsL_It', index, 's_InvsL_It-Dd');
         }
         if (opts.acceptedByUsername) {
-          api.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
+          this.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
         }
         if (opts.sentByUsername) {
-          api.assertNthTextMatches('.e_Inv_SentByU', index, opts.sentByUsername);
+          this.assertNthTextMatches('.e_Inv_SentByU', index, opts.sentByUsername);
         }
       },
 
       countNumInvited: (): number =>
-        $$('.s_InvsL_It').length,
-    },
+        this.$$('.s_InvsL_It').length,
+    };
 
 
-    apiV0: {
+    apiV0 = {
       loginWithSecret: (ps: { origin: string, oneTimeSecret: string, thenGoTo: string }): void => {
-        api.go(ps.origin +
+        this.go(ps.origin +
             `/-/v0/login-with-secret?oneTimeSecret=${ps.oneTimeSecret}&thenGoTo=${ps.thenGoTo}`);
       },
-    },
+    };
 
 
-    unsubscribePage: {
+    unsubscribePage = {
       confirmUnsubscription: () => {
-        api.rememberCurrentUrl();
-        api.waitAndClick('input[type="submit"]');
-        api.waitForNewUrl();
-        browser.waitForVisible('#e2eBeenUnsubscribed');
+        this.rememberCurrentUrl();
+        this.waitAndClick('input[type="submit"]');
+        this.waitForNewUrl();
+        this.waitForDisplayed('#e2eBeenUnsubscribed');
       },
-    },
+    };
 
 
-    changePasswordDialog: {
+    changePasswordDialog = {
       clickYesChange: () => {
-        api.waitAndClick('.esStupidDlg .btn-primary');
+        this.waitAndClick('.esStupidDlg .btn-primary');
       },
-    },
+    };
 
 
-    notfLevelDropdown: {
+    notfLevelDropdown = {
       clickNotfLevel: (notfLevel: PageNotfLevel) => {
         switch (notfLevel) {
           case c.TestPageNotfLevel.EveryPost:
-            api.waitAndClick('.e_NtfAll');
-            api.waitForGone('.e_NtfAll');
+            this.waitAndClick('.e_NtfAll');
+            this.waitForGone('.e_NtfAll');
             break;
           case c.TestPageNotfLevel.TopicProgress:
             die('unimpl');
@@ -6591,68 +6624,68 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
             die('unimpl');
             break;
           case c.TestPageNotfLevel.NewTopics:
-            api.waitAndClick('.e_NtfFst');
-            api.waitForGone('.e_NtfFst');
+            this.waitAndClick('.e_NtfFst');
+            this.waitForGone('.e_NtfFst');
             break;
           case c.TestPageNotfLevel.Tracking:
             die('unimpl');
             break;
           case c.TestPageNotfLevel.Normal:
-            api.waitAndClick('.e_NtfNml');
-            api.waitForGone('.e_NtfNml');
+            this.waitAndClick('.e_NtfNml');
+            this.waitForGone('.e_NtfNml');
             break;
           case c.TestPageNotfLevel.Hushed:
-            api.waitAndClick('.e_NtfHsh');
-            api.waitForGone('.e_NtfHsh');
+            this.waitAndClick('.e_NtfHsh');
+            this.waitForGone('.e_NtfHsh');
             break;
           case c.TestPageNotfLevel.Muted:
-            api.waitAndClick('.e_NtfMtd');
-            api.waitForGone('.e_NtfMtd');
+            this.waitAndClick('.e_NtfMtd');
+            this.waitForGone('.e_NtfMtd');
             break;
           default:
             die('e2e bug');
         }
       },
-    },
+    };
 
 
-    shareDialog: {
+    shareDialog = {
       copyLinkToPost: () => {
-        api.waitAndClick('.s_ShareD_Link');
+        this.waitAndClick('.s_ShareD_Link');
       },
 
       close: () => {
-        api.waitAndClick('.esDropModal_CloseB');  // currently not inside .s_ShareD
+        this.waitAndClick('.esDropModal_CloseB');  // currently not inside .s_ShareD
       }
-    },
+    };
 
 
-    movePostDialog: {
+    movePostDialog = {
       moveToOtherSection: () => {
-        api.waitAndClick('.s_MPD_OtrSct .btn');
-        api.waitAndClick('.esStupidDlg a');
+        this.waitAndClick('.s_MPD_OtrSct .btn');
+        this.waitAndClick('.esStupidDlg a');
       },
 
       pastePostLinkMoveToThere: () => {
-        api.waitAndPasteClipboard('#te_MvPI');
-        api.waitAndClick('.e_MvPB');
+        this.waitAndPasteClipboard('#te_MvPI');
+        this.waitAndClick('.e_MvPB');
       }
-    },
+    };
 
 
-    editHistoryDialog: {
+    editHistoryDialog = {
       close: () => {
-        api.waitAndClick('.dw-edit-history .modal-footer .btn');
-        api.waitUntilGone('.dw-edit-history');
+        this.waitAndClick('.dw-edit-history .modal-footer .btn');
+        this.waitUntilGone('.dw-edit-history');
       },
 
       countDiffs: (): number => {
-        return api.count('.dw-edit-history pre');
+        return this.count('.dw-edit-history pre');
       },
 
       waitUntilVisible: () => {
-        api.waitForVisible('.dw-edit-history');
-        api.waitUntilDoesNotMove('.dw-edit-history');
+        this.waitForVisible('.dw-edit-history');
+        this.waitUntilDoesNotMove('.dw-edit-history');
       },
 
       waitGetAuthorAndDiff: (editEntryNr: number): EditHistoryEntry => {
@@ -6660,38 +6693,38 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         // Nr 1 is a help text, nr 2 is the first diff entry — so add +1.
         const selector =
             `.dw-edit-history .modal-body > div > .ed-revision:nth-child(${editEntryNr + 1})`;
-        browser.waitForVisible(selector);
-        const authorUsername = api.waitAndGetVisibleText(selector + ' .dw-username');
-        const diffHtml = browser.getHTML(selector + ' pre');
+        this.waitForDisplayed(selector);
+        const authorUsername = this.waitAndGetVisibleText(selector + ' .dw-username');
+        const diffHtml = this.$(selector + ' pre').getHTML();
         return {
           authorUsername,
           diffHtml,
         }
       },
-    },
+    };
 
 
-    serverErrorDialog: {
-      waitForNotLoggedInError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyE0LGDIN_');
+    serverErrorDialog = {
+      waitForNotLoggedInError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyE0LGDIN_');
       },
 
-      waitForNotLoggedInAsAdminError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyE0LGIADM_');
+      waitForNotLoggedInAsAdminError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyE0LGIADM_');
       },
 
-      waitForJustGotSuspendedError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
+      waitForJustGotSuspendedError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
-      dismissReloadPageAlert: function() {
-        // Seems this alert appears only in a visible browser (not in an invisible headless browser).
+      dismissReloadPageAlert: () => {
+        // Seems this alert appears only in a visible this.#br (not in an invisible headless this.#br).
         for (let i = 0; i < 5; ++i) {
           // Clicking anywhere triggers an alert about reloading the page, although has started
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.
-          $('.modal-body').click();
-          const gotDismissed = api.dismissAnyAlert();
+          this.$('.modal-body').click();
+          const gotDismissed = this.dismissAnyAlert();
           if (gotDismissed) {
             logMessage("Dismissed got-logged-out but-had-started-writing related alert.");
             return;
@@ -6701,58 +6734,58 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       },
 
       waitAndAssertTextMatches: (regex: string | RegExp) => {
-        api.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+        this.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
       },
 
-      waitForBadEmailAddressError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
+      waitForBadEmailAddressError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
       },
 
-      waitForBadEmailDomainError: function() {
+      waitForBadEmailDomainError: () => {
         // Sometimes there's this error:
         //   stale element reference: element is not attached to the page document
         // Why? Maybe there's another dialog .modal-body that fades away and disappears
         // before the server error dialog's .modal-body appears?
         utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
-          api.waitUntilTextMatches('.s_SED_Wrap .modal-body', 'TyEBADEMLDMN_');
+          this.waitUntilTextMatches('.s_SED_Wrap .modal-body', 'TyEBADEMLDMN_');
         });
       },
 
-      waitForTooManyInvitesError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
+      waitForTooManyInvitesError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
       },
 
-      waitForTooManyInvitesLastWeekError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
+      waitForTooManyInvitesLastWeekError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
       },
 
-      waitForXsrfTokenExpiredError: function() {
-        api.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
+      waitForXsrfTokenExpiredError: () => {
+        this.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
       },
 
-      waitForIsRegistrationSpamError: function() {
+      waitForIsRegistrationSpamError: () => {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        api.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
+        this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyEPWREGSPM_/s);
       },
 
-      waitForTooManyPendingMaybeSpamPostsError: function() {
+      waitForTooManyPendingMaybeSpamPostsError: () => {
         // The //s regex modifier makes '.' match newlines. But it's not available before ES2018.
-        api.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
+        this.serverErrorDialog.waitAndAssertTextMatches(/spam.*TyENEWMBRSPM_/s);
       },
 
       waitForCannotReplyPostDeletedError: () => {
-        api.serverErrorDialog.waitAndAssertTextMatches(/has been deleted.*TyEM0REPLY_/s);
+        this.serverErrorDialog.waitAndAssertTextMatches(/has been deleted.*TyEM0REPLY_/s);
       },
 
-      close: function() {
-        api.waitAndClick('.e_SED_CloseB');
-        api.waitUntilGone('.modal-dialog.dw-server-error');
+      close: () => {
+        this.waitAndClick('.e_SED_CloseB');
+        this.waitUntilGone('.modal-dialog.dw-server-error');
       }
-    },
+    };
 
-    tour: {
+    tour = {
       runToursAlthoughE2eTest: () => {
-        browser.execute(function() {
+        this.#br.execute(function() {
           localStorage.setItem('runToursAlthoughE2eTest', 'true');
         });
       },
@@ -6762,36 +6795,36 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         // than just waiting for a while. It appears within about a second.
         // Note that this is also used to test that the tour *does* appear fast enough,
         // not only that it does *not* appear — to test, that this test, works.)
-        api.waitUntil(() => browser.isVisible('.s_Tour'), {
+        this.waitUntil(() => this.isVisible('.s_Tour'), {
           timeoutMs: 3500,
           timeoutIsFine: true,
           message: `Will the intro tour start? ...`,
         });
-        assert.equal(browser.isVisible('.s_Tour'), shallStart);
+        assert.equal(this.isVisible('.s_Tour'), shallStart);
       },
 
       clickNextForStepNr: (stepNr: number) => {
         // Don't scroll — the tour will scroll for us. (Scrolling here too, could scroll
         // too much, and the click might fail.)
-        api.waitAndClick(`.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
+        this.waitAndClick(`.s_Tour-Step-${stepNr} .s_Tour_D_Bs_NextB`, { mayScroll: false });
       },
 
       exitTour: () => {
-        api.waitAndClick(`.s_Tour_D_Bs_ExitB`, { mayScroll: false });
+        this.waitAndClick(`.s_Tour_D_Bs_ExitB`, { mayScroll: false });
       },
-    },
+    };
 
-    helpDialog: {
-      waitForThenClose: function() {
-        api.waitAndClick('.esHelpDlg .btn-primary');
-        api.waitUntilModalGone();
+    helpDialog = {
+      waitForThenClose: () => {
+        this.waitAndClick('.esHelpDlg .btn-primary');
+        this.waitUntilModalGone();
       },
-    },
+    };
 
-    complex: {
+    complex = {
       waitUntilLoggedIn: () => {
-        browser.waitUntil(function () {
-          return browser.execute(function() {
+        this.#br.waitUntil(() => {
+          return this.#br.execute(function() {
             try {
               return window['debiki2'].ReactStore.getMe().isLoggedIn;
             }
@@ -6801,13 +6834,13 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
           });
         });
 
-        if (api.metabar.isVisible()) {
+        if (this.metabar.isVisible()) {
           // Extra test, if in embedded comments iframe:
-          api.metabar.waitUntilLoggedIn();
+          this.metabar.waitUntilLoggedIn();
         }
-        else if (api.topbar.isVisible()) {
+        else if (this.topbar.isVisible()) {
           // Extra test, if on topic list pages or discussion pages, but not comments iframes:
-          api.topbar.waitForMyMenuVisible();
+          this.topbar.waitForMyMenuVisible();
         }
         else if (false) {  // if is in editor iframe
           // then what?
@@ -6815,38 +6848,40 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       },
 
 
-      waitForLoggedInInEmbeddedCommentsIrames: function() {
-        api.switchToEmbeddedCommentsIrame();
-        api.complex.waitUntilLoggedIn();
-        api.switchToEmbeddedEditorIrame();
-        api.complex.waitUntilLoggedIn();
-        api.switchToAnyParentFrame();
+      waitForLoggedInInEmbeddedCommentsIrames: () => {
+        this.switchToEmbeddedCommentsIrame();
+        this.complex.waitUntilLoggedIn();
+        this.switchToEmbeddedEditorIrame();
+        this.complex.waitUntilLoggedIn();
+        this.switchToAnyParentFrame();
       },
 
-      waitForNotLoggedInInEmbeddedCommentsIframe: function() {
-        api.switchToEmbeddedCommentsIrame();
-        api.waitForMyDataAdded();
-        api.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
-        api.switchToAnyParentFrame();
+      waitForNotLoggedInInEmbeddedCommentsIframe: () => {
+        this.switchToEmbeddedCommentsIrame();
+        this.waitForMyDataAdded();
+        this.metabar.waitForLoginButtonVisible();  // ok? or is this a race?
+        this.switchToAnyParentFrame();
       },
 
-      loginWithPasswordViaTopbar: (username: string | { username, password },
-            password?: string, opts?: { resultInError?: boolean }) => {
+      loginWithPasswordViaTopbar: (username: string | Member | { username, password },
+            optsOrPassword?: string | { resultInError?: boolean }) => {
+        let password = optsOrPassword;
+        let opts;
         console.log(`TyE2eApi: loginWithPasswordViaTopbar`);
-        if (!opts && password && _.isObject(password)) {
+        if (password && _.isObject(password)) {
           opts = <any> password;
           password = null;
         }
-        api.topbar.clickLogin();
+        this.topbar.clickLogin();
         const credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };
-        api.loginDialog.loginWithPassword(credentials, opts || {});
+        this.loginDialog.loginWithPassword(credentials, opts || {});
       },
 
-      signUpAsMemberViaTopbar: function(
-            member: { emailAddress: string, username: string, password: string }) {
-        api.topbar.clickSignUp();
-        api.loginDialog.createPasswordAccount({
+      signUpAsMemberViaTopbar: (
+            member: Member | { emailAddress: string, username: string, password: string }) => {
+        this.topbar.clickSignUp();
+        this.loginDialog.createPasswordAccount({
           username: member.username,
           emailAddress: member.emailAddress,
           password: member.password,
@@ -6855,8 +6890,8 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
       },
 
       signUpAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
-        api.disableRateLimits();
-        api.topbar.clickSignUp();
+        this.disableRateLimits();
+        this.topbar.clickSignUp();
         let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
@@ -6866,18 +6901,18 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         else {
           name = nameOrObj;
         }
-        api.loginDialog.signUpAsGuest(name, email);
+        this.loginDialog.signUpAsGuest(name, email);
       },
 
-      signUpAsGmailUserViaTopbar: function({ username }) {
-        api.disableRateLimits();
-        api.topbar.clickSignUp();
-        api.loginDialog.createGmailAccount({
+      signUpAsGmailUserViaTopbar: ({ username }) => {
+        this.disableRateLimits();
+        this.topbar.clickSignUp();
+        this.loginDialog.createGmailAccount({
             email: settings.gmailEmail, password: settings.gmailPassword, username });
       },
 
-      logInAsGuestViaTopbar: function(nameOrObj: string | { fullName, emailAddress }, email?: string) {
-        api.topbar.clickLogin();
+      logInAsGuestViaTopbar: (nameOrObj: string | { fullName, emailAddress }, email?: string) => {
+        this.topbar.clickLogin();
         let name: string;
         if (_.isObject(nameOrObj)) {
           assert(!email);
@@ -6887,213 +6922,213 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
         else {
           name = nameOrObj;
         }
-        api.loginDialog.logInAsGuest(name, email);
+        this.loginDialog.logInAsGuest(name, email);
       },
 
-      loginWithPasswordViaMetabar: (ps: { username: string, password: string }) => {
-        api.metabar.clickLogin();
-        api.loginDialog.loginWithPasswordInPopup(ps);
+      loginWithPasswordViaMetabar: (ps: NameAndPassword) => {
+        this.metabar.clickLogin();
+        this.loginDialog.loginWithPasswordInPopup(ps);
       },
 
-      closeSidebars: function() {
-        if (browser.isVisible('#esWatchbarColumn')) {
-          api.watchbar.close();
+      closeSidebars: () => {
+        if (this.isVisible('#esWatchbarColumn')) {
+          this.watchbar.close();
         }
-        if (browser.isVisible('#esThisbarColumn')) {
-          api.contextbar.close();
+        if (this.isVisible('#esThisbarColumn')) {
+          this.contextbar.close();
         }
       },
 
       createCategory: (ps: { name: string, extId?: string }) => {
-        api.forumButtons.clickCreateCategory();
-        api.categoryDialog.fillInFields(ps);
-        api.categoryDialog.submit();
+        this.forumButtons.clickCreateCategory();
+        this.categoryDialog.fillInFields(ps);
+        this.categoryDialog.submit();
       },
 
-      createAndSaveTopic: function(data: { title: string, body: string, type?: PageRole,
+      createAndSaveTopic: (data: { title: string, body: string, type?: PageRole,
             matchAfter?: boolean, titleMatchAfter?: string | false,
-            bodyMatchAfter?: string | false, resultInError?: boolean }) {
-        api.forumButtons.clickCreateTopic();
-        api.editor.editTitle(data.title);
-        api.editor.editText(data.body);
+            bodyMatchAfter?: string | false, resultInError?: boolean }) => {
+        this.forumButtons.clickCreateTopic();
+        this.editor.editTitle(data.title);
+        this.editor.editText(data.body);
         if (data.type) {
-          api.editor.setTopicType(data.type);
+          this.editor.setTopicType(data.type);
         }
-        api.complex.saveTopic(data);
+        this.complex.saveTopic(data);
       },
 
-      saveTopic: function(data: { title: string, body: string,
+      saveTopic: (data: { title: string, body: string,
             matchAfter?: boolean, titleMatchAfter?: string | false,
-            bodyMatchAfter?: string | false, resultInError?: boolean }) {
-        api.rememberCurrentUrl();
-        api.editor.save();
+            bodyMatchAfter?: string | false, resultInError?: boolean }) => {
+        this.rememberCurrentUrl();
+        this.editor.save();
         if (!data.resultInError) {
-          api.waitForNewUrl();
+          this.waitForNewUrl();
           if (data.matchAfter !== false && data.titleMatchAfter !== false) {
-            api.assertPageTitleMatches(data.titleMatchAfter || data.title);
+            this.assertPageTitleMatches(data.titleMatchAfter || data.title);
           }
           if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
-            api.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+            this.assertPageBodyMatches(data.bodyMatchAfter || data.body);
           }
         }
-        api.waitUntilLoadingOverlayGone();
+        this.waitUntilLoadingOverlayGone();
       },
 
-      editPageTitle: function(newTitle: string) {
-        api.pageTitle.clickEdit();
-        api.pageTitle.editTitle(newTitle);
-        api.pageTitle.save();
-        api.topic.waitUntilPostTextMatches(c.TitleNr, newTitle);
-        api.assertPageTitleMatches(newTitle);
+      editPageTitle: (newTitle: string) => {
+        this.pageTitle.clickEdit();
+        this.pageTitle.editTitle(newTitle);
+        this.pageTitle.save();
+        this.topic.waitUntilPostTextMatches(c.TitleNr, newTitle);
+        this.assertPageTitleMatches(newTitle);
       },
 
-      editPageBody: function(newText: string, opts: { append?: boolean } = {}) {
-        api.topic.clickEditOrigPost();
-        api.editor.editText(newText, opts);
-        api.editor.save();
-        api.topic.waitUntilPostTextMatches(c.BodyNr, newText);
-        api.assertPageBodyMatches(newText);
+      editPageBody: (newText: string, opts: { append?: boolean } = {}) => {
+        this.topic.clickEditOrigPost();
+        this.editor.editText(newText, opts);
+        this.editor.save();
+        this.topic.waitUntilPostTextMatches(c.BodyNr, newText);
+        this.assertPageBodyMatches(newText);
       },
 
-      editPostNr: function(postNr: PostNr, newText: string, opts: { append?: boolean } = {}) {
-        api.topic.clickEditoPostNr(postNr);
-        api.editor.editText(newText, opts);
-        api.editor.save();
-        api.topic.waitUntilPostTextMatches(postNr, newText);
+      editPostNr: (postNr: PostNr, newText: string, opts: { append?: boolean } = {}) => {
+        this.topic.clickEditoPostNr(postNr);
+        this.editor.editText(newText, opts);
+        this.editor.save();
+        this.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: function(text: string, whichButton?: 'DiscussionSection') {
-        api.topic.clickReplyToOrigPost(whichButton);
-        api.editor.editText(text);
-        api.editor.save();
+      replyToOrigPost: (text: string, whichButton?: 'DiscussionSection') => {
+        this.topic.clickReplyToOrigPost(whichButton);
+        this.editor.editText(text);
+        this.editor.save();
       },
 
-      replyToEmbeddingBlogPost: function(text: string,
-            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) {
+      replyToEmbeddingBlogPost: (text: string,
+            opts: { signUpWithPaswordAfterAs?, needVerifyEmail?: boolean } = {}) => {
         // Apparently, if FF cannot click the Reply button, now when in an iframe,
         // then FF says "all fine I clicked the button", but in fact does nothing,
         // also won't log any error or anything, so that later on, we'll block
         // forever when waiting for the editor.
         // So sometimes this neeeds to be in a retry loop, + timeoutMs below. [4RDEDA0]
-        api.switchToEmbeddedCommentsIrame();
+        this.switchToEmbeddedCommentsIrame();
         logMessage("comments iframe: Clicking Reply ...");
-        api.topic.clickReplyToEmbeddingBlogPost();
+        this.topic.clickReplyToEmbeddingBlogPost();
         //if (opts.loginWithPaswordBeforeAs) {
-          //api.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
+          //this.loginDialog.loginWithPasswordInPopup(opts.loginWithPaswordBeforeAs);
         //}
-        api.switchToEmbeddedEditorIrame();
+        this.switchToEmbeddedEditorIrame();
         logMessage("editor iframe: Composing a reply ...");
         // Previously, before retrying scroll-to-top, this could hang forever in FF.
         // Add a timeout here so the retry (see comment above) will work.
-        api.editor.editText(text, { timeoutMs: 3000 });
+        this.editor.editText(text, { timeoutMs: 3000 });
         logMessage("editor iframe: Saving ...");
-        api.editor.save();
+        this.editor.save();
 
         if (opts.signUpWithPaswordAfterAs) {
           logMessage("editor iframe: Switching to login popup to log in / sign up ...");
-          api.swithToOtherTabOrWindow();
-          api.disableRateLimits();
-          api.loginDialog.createPasswordAccount(
+          this.swithToOtherTabOrWindow();
+          this.disableRateLimits();
+          this.loginDialog.createPasswordAccount(
               opts.signUpWithPaswordAfterAs, false,
               opts.needVerifyEmail === false ? 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG' : null);
-          api.switchBackToFirstTabOrWindow();
+          this.switchBackToFirstTabOrWindow();
         }
 
         logMessage("editor iframe: Done.");
-        api.switchToEmbeddedCommentsIrame();
+        this.switchToEmbeddedCommentsIrame();
       },
 
-      addProgressReply: function(text: string) {
-        api.topic.clickAddProgressReply();
-        api.editor.editText(text);
-        api.editor.save();
+      addProgressReply: (text: string) => {
+        this.topic.clickAddProgressReply();
+        this.editor.editText(text);
+        this.editor.save();
       },
 
-      replyToPostNr: function(postNr: PostNr, text: string, opts: { isEmbedded?: true } = {}) {
-        if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
+      replyToPostNr: (postNr: PostNr, text: string, opts: { isEmbedded?: true } = {}) => {
+        if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
 
         // Sometimes the click fails — maybe a sidebar opens, making the button move a bit? Or
         // the window scrolls, making the click miss? Or whatever. If the click misses the
         // button, most likely, the editor won't open. So, if after clicking, the editor
         // won't appear, then click again.
-        api.topic.waitForPostNrVisible(postNr);
-        browser.pause(50); // makes the first click more likely to succeed (without,
+        this.topic.waitForPostNrVisible(postNr);
+        this.#br.pause(50); // makes the first click more likely to succeed (without,
         // failed 2 times out of 4 at a place in unsubscribe.2browsers.test.ts — but with,
         // failed 2 times out of 20).
         for (let clickAttempt = 0; true; ++clickAttempt) {
-          api.topic.clickReplyToPostNr(postNr);
+          this.topic.clickReplyToPostNr(postNr);
           try {
-            if (opts.isEmbedded) api.switchToEmbeddedEditorIrame();
-            api.waitForVisible('.esEdtr_textarea', { timeoutMs: 5000 });
+            if (opts.isEmbedded) this.switchToEmbeddedEditorIrame();
+            this.waitForVisible('.esEdtr_textarea', { timeoutMs: 5000 });
             break;
           }
           catch (ignore) {
             logUnusual("When clicking the Reply button, the editor didn't open. Trying again");
             dieIf(clickAttempt === 3, "Couldn't click Reply and write a reply [EdE7FKAC2]");
-            if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
+            if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
           }
         }
-        api.editor.editText(text);
-        api.editor.save();
-        if (opts.isEmbedded) api.switchToEmbeddedCommentsIrame();
+        this.editor.editText(text);
+        this.editor.save();
+        if (opts.isEmbedded) this.switchToEmbeddedCommentsIrame();
       },
 
-      flagPost: function(postNr: PostNr, reason: 'Inapt' | 'Spam') {
-        api.topic.clickFlagPost(postNr);
-        api.flagDialog.waitUntilFadedIn();
+      flagPost: (postNr: PostNr, reason: 'Inapt' | 'Spam') => {
+        this.topic.clickFlagPost(postNr);
+        this.flagDialog.waitUntilFadedIn();
         if (reason === 'Inapt') {
-          api.flagDialog.clickInappropriate();
+          this.flagDialog.clickInappropriate();
         }
         else {
           die('Test code bug, only Inapt implemented in tests, yet [EdE7WK5FY0]');
         }
-        api.flagDialog.submit();
-        api.stupidDialog.close();
+        this.flagDialog.submit();
+        this.stupidDialog.close();
       },
 
-      openPageAuthorProfilePage: function() {
+      openPageAuthorProfilePage: () => {
         logMessage(`Open about author dialog...`);
-        api.pageTitle.openAboutAuthorDialog();
+        this.pageTitle.openAboutAuthorDialog();
         logMessage(`Click view profile...`);
-        api.aboutUserDialog.clickViewProfile();
+        this.aboutUserDialog.clickViewProfile();
       },
 
-      sendMessageToPageAuthor: function(messageTitle: string, messageText: string) {
-        api.pageTitle.openAboutAuthorDialog();
+      sendMessageToPageAuthor: (messageTitle: string, messageText: string) => {
+        this.pageTitle.openAboutAuthorDialog();
         logMessage(`Click Send Message...`);
-        api.aboutUserDialog.clickSendMessage();
+        this.aboutUserDialog.clickSendMessage();
         logMessage(`Edit message title...`);
-        api.editor.editTitle(messageTitle);
+        this.editor.editTitle(messageTitle);
         logMessage(`Edit message text...`);
-        api.editor.editText(messageText);
+        this.editor.editText(messageText);
         logMessage(`Submit...`);
-        api.editor.saveWaitForNewPage();
+        this.editor.saveWaitForNewPage();
       },
 
-      createChatChannelViaWatchbar: function(
-            data: { name: string, purpose: string, public_?: boolean }) {
-        api.watchbar.clickCreateChatWaitForEditor();
-        api.editor.editTitle(data.name);
-        api.editor.editText(data.purpose);
+      createChatChannelViaWatchbar: (
+            data: { name: string, purpose: string, public_?: boolean }) => {
+        this.watchbar.clickCreateChatWaitForEditor();
+        this.editor.editTitle(data.name);
+        this.editor.editText(data.purpose);
         if (data.public_ === false) {
-          api.editor.setTopicType(c.TestPageRole.PrivateChat);
+          this.editor.setTopicType(c.TestPageRole.PrivateChat);
         }
-        api.rememberCurrentUrl();
-        api.editor.save();
-        api.waitForNewUrl();
-        api.assertPageTitleMatches(data.name);
+        this.rememberCurrentUrl();
+        this.editor.save();
+        this.waitForNewUrl();
+        this.assertPageTitleMatches(data.name);
       },
 
-      addPeopleToPageViaContextbar(usernames: string[]) {
-        api.contextbar.clickAddPeople();
-        _.each(usernames, api.addUsersToPageDialog.addOneUser);
-        api.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
-        _.each(usernames, api.contextbar.assertUserPresent);
+      addPeopleToPageViaContextbar: (usernames: string[]) => {
+        this.contextbar.clickAddPeople();
+        _.each(usernames, this.addUsersToPageDialog.addOneUser);
+        this.addUsersToPageDialog.submit({ closeStupidDialogAndRefresh: true });
+        _.each(usernames, this.contextbar.assertUserPresent);
       }
     }
-  };
 
-  function setCheckbox(selector: string, checked: boolean) {
+
+  setCheckbox(selector: string, checked: boolean) {
     dieIf(_.isUndefined(checked), "setCheckbox: Pass true or false  [TyE036WKDP45]");
     // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
     // caused the checkbox to move? so the click missed? Therefore, try many times.
@@ -7108,41 +7143,41 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
     //   #sendSummaryEmails is checked: true
     //   #sendSummaryEmails is checked: false   <— amazing, it does that by itself?
     //   #sendSummaryEmails is checked: false     (all this was running in an *invisible*
-    //   #sendSummaryEmails is checked: false      browser, no real mouse interactions possible)
+    //   #sendSummaryEmails is checked: false      this.#br, no real mouse interactions possible)
     // So need to loop, ... until it stops undoing the click? Really weird.
     //
-    api.waitForVisible(selector);
+    this.waitForVisible(selector);
     let bugRetry = 0;
     const maxBugRetry = 2;
     for (; bugRetry <= maxBugRetry; ++bugRetry) {
       logMessage(selector + ' is visible, should be checked: ' + checked);
       for (let i = 0; i < 99; ++i) {
-        let isChecked = $(selector).isSelected();
+        let isChecked = this.$(selector).isSelected();
         logMessage(selector + ' is checked: ' + isChecked);
         if (isChecked === checked)
           break;
-        api.waitAndClick(selector);
+        this.waitAndClick(selector);
         logMessage(selector + ' **click**');
       }
       // Somehow once this function exited with isChecked !== isRequired. Race condition?
       // Let's find out:
-      let isChecked = $(selector).isSelected();
+      let isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
-      browser.pause(300);
-      isChecked = $(selector).isSelected();
+      this.#br.pause(300);
+      isChecked = this.$(selector).isSelected();
       logMessage(selector + ' is checked: ' + isChecked);
-      browser.pause(400);
-      isChecked = $(selector).isSelected();
+      this.#br.pause(400);
+      isChecked = this.$(selector).isSelected();
       /* maybe works better now? (many months later)
       logMessage(selector + ' is checked: ' + isChecked);
-      browser.pause(500);
-      isChecked = browser.isSelected(selector);
+      this.#br.pause(500);
+      isChecked = this.#br.isSelected(selector);
       logMessage(selector + ' is checked: ' + isChecked);
-      browser.pause(600);
-      isChecked = browser.isSelected(selector);
+      this.#br.pause(600);
+      isChecked = this.#br.isSelected(selector);
       logMessage(selector + ' is checked: ' + isChecked);
-      browser.pause(700);
-      isChecked = browser.isSelected(selector);
+      this.#br.pause(700);
+      isChecked = this.#br.isSelected(selector);
       logMessage(selector + ' is checked: ' + isChecked); */
       if (isChecked === checked)
         break;
@@ -7150,12 +7185,4 @@ function pagesFor(browser: WdioV4BackwCompatBrower) {
     }
     assert(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
   }
-
-  // backw compat, for now
-  api['replies'] = api.topic;
-
-  return api;
 }
-
-export = pagesFor;
-

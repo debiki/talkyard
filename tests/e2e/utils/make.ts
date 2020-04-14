@@ -273,13 +273,17 @@ const make = {
     };
   },
 
-  minion: function(oneWordName: string): Member {
+  minion: function(ps: { oneWordNameAndNumber: string,
+          mixedCaseUsernameStartWithUpper: boolean }): Member {
+    const nameLowercase = ps.oneWordNameAndNumber.toLowerCase();
     return {
       id: getAndBumpNextUserId(),
-      username: `minion_${oneWordName.toLowerCase()}`,
-      fullName: `Minion ${oneWordName}`,
+      username: ps.mixedCaseUsernameStartWithUpper
+          ? `Minion_${ps.oneWordNameAndNumber}`
+          : `minion_${nameLowercase}`,
+      fullName: `Minion ${ps.oneWordNameAndNumber}`,
       createdAtMs: DefaultCreatedAtMs,
-      emailAddress: `e2e-test--minion-${oneWordName.toLowerCase()}@example.com`,
+      emailAddress: `e2e-test--minion-${nameLowercase}@example.com`,
       emailVerifiedAtMs: DefaultCreatedAtMs,
       passwordHash: "cleartext:pub-min020",
       password: "pub-min020",

@@ -4,21 +4,17 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser, MemberBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
-declare let browserA: any;
-declare let browserB: any;
-
-let everyone;
-let owen;
-let maria;
-let stranger;
-let guest;
+let everyone: TyAllE2eTestBrowsers;
+let owen: MemberBrowser;
+let maria: MemberBrowser;
+let stranger: TyE2eTestBrowser;
+let guest: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Publ Search Forum";
@@ -40,9 +36,9 @@ let xyzTitle = "xyz_title";
 describe("basic publ search:", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
     // Reuse the same browser.
     stranger = maria;
     guest = maria;
@@ -59,8 +55,8 @@ describe("basic publ search:", () => {
 
   it("Owen and Maria go to the homepage and log in", () => {
     everyone.go(idAddress.origin);
-    browserA.assertPageTitleMatches(forumTitle);
-    browserB.assertPageTitleMatches(forumTitle);
+    owen.assertPageTitleMatches(forumTitle);
+    maria.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     maria.complex.loginWithPasswordViaTopbar(maria);
     // Maria will search a lot.

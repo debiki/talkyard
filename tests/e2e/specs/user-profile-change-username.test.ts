@@ -4,24 +4,24 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import { buildSite } from '../utils/site-builder';
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let forum;
 
 let everyone;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Change Username Test Forum";
@@ -41,7 +41,7 @@ describe("user profile access:", () => {
   });
 
   it("initialize people", () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     everyone = browser;
     owen = forum.members.owen;
     owensBrowser = browser;

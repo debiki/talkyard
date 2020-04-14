@@ -4,21 +4,21 @@ import * as _ from 'lodash';
 import server = require('../utils/server');
 import assert = require('assert');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 const SystemUserId = 1;  // [commonjs]
 
-declare var browser: any;
+let browser: TyE2eTestBrowser;
 
 
 describe('all links', function() {
 
 
   it('create site with all links', function() {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     let site: SiteData = make.emptySiteOwnedByOwen();
     site.members.push(make.memberAdminAdam());
     site.members.push(make.memberAdminAlice());

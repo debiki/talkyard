@@ -4,36 +4,36 @@ import * as _ from 'lodash';
 import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import { makeSiteOwnedByOwenBuilder } from '../utils/site-builder';
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let siteBuilder;
 let forum: any;
 
 let everyone;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let mons;
-let monsBrowser;
+let monsBrowser: TyE2eTestBrowser;
 let modya;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 let maja;
-let majasBrowser;
+let majasBrowser: TyE2eTestBrowser;
 let corax;
-let coraxBrowser;
+let coraxBrowser: TyE2eTestBrowser;
 let guest;
-let guestsBrowser;
-let strangersBrowser;
+let guestsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 const guestsPostNr = c.FirstReplyNr; // (46WUKT0)
@@ -332,7 +332,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
 
 
   it("initialize people", () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     everyone = browser;
     owen = forum.members.owen;
     owensBrowser = browser;

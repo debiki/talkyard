@@ -5,20 +5,20 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
 let maja;
-let majasBrowser;
+let majasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let data;
 let idAddress: IdAddress;
@@ -42,7 +42,7 @@ describe("emb cmts all logins", () => {
   }
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     majasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;
     maja = make.memberMaria();

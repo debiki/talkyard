@@ -5,24 +5,24 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: EmptyTestForum;
 
 let everyonesBrowsers;
-let staffsBrowser;
-let othersBrowser;
+let staffsBrowser: TyE2eTestBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
 let modya: Member;
-let modyasBrowser;
-let janesBrowser;
+let modyasBrowser: TyE2eTestBrowser;
+let janesBrowser: TyE2eTestBrowser;
 
 let siteId;
 let siteIdAddress: IdAddress;
@@ -47,9 +47,9 @@ describe("invites-by-mod-try-signup-after TyT4FGJA20M", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    staffsBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    staffsBrowser = new TyE2eTestBrowser(browserA);
+    othersBrowser = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     modya = forum.members.modya;
@@ -71,7 +71,7 @@ describe("invites-by-mod-try-signup-after TyT4FGJA20M", () => {
 
   it("... it appears in the Invites-Sent list", () => {
     modyasBrowser.invitedUsersList.waitAssertInviteRowPresent(
-        1, { email: janesEmailAddress, sentByUsername: modya.username });
+        1, { email: janesEmailAddress, accepted: false, sentByUsername: modya.username });
     assert(modyasBrowser.invitedUsersList.countNumInvited() === 1);
     modyasBrowser.invitedUsersList.assertHasNotAcceptedInvite(janesUsername);
   });

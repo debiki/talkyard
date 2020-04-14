@@ -4,7 +4,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
@@ -13,7 +13,7 @@ const logMessage = logAndDie.logMessage;
 
 const testName = '/-/create-site  @createsite';
 let idAddress: IdAddress;
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 
 describe(testName, () => {
@@ -24,7 +24,7 @@ describe(testName, () => {
   }
 
   it("create site", () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     let site: SiteData = make.forumOwnedByOwen('oauth-login', { title: "OAuth Login Forum" });
     idAddress = server.importSiteData(site);
   });
@@ -59,7 +59,7 @@ describe(testName, () => {
     browser.loginDialog.loginWithGmail({
       email: settings.gmailEmail,
       password: settings.gmailPassword,
-    });
+    }, undefined);
     browser.topbar.assertMyUsernameMatches('gmail_user');
   });
 

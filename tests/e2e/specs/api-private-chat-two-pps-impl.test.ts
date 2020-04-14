@@ -5,26 +5,26 @@ import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
-let owensBrowser;
-let charliesBrowser;
-let chumasBrowser;
+let owensBrowser: TyE2eTestBrowser;
+let charliesBrowser: TyE2eTestBrowser;
+let chumasBrowser: TyE2eTestBrowser;
 let maria;
 let michael;
 let mallory;
-let mallorysBrowser;
-let strangersBrowser;
+let mallorysBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -144,8 +144,8 @@ export default function addApiChatTestSteps(variants: {
   });
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

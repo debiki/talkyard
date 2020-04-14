@@ -5,19 +5,19 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
 let owen: Member;
-let owensBrowser;
-let fidosBrowser;
-let guestsBrowser;
+let owensBrowser: TyE2eTestBrowser;
+let fidosBrowser: TyE2eTestBrowser;
+let guestsBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -42,7 +42,7 @@ const pageUrl = embeddingOrigin + '/' + pageSlug;
 describe("emb cmts guest login  TyT8FUKB2T4", () => {
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     guestsBrowser = everyonesBrowsers;
     fidosBrowser = everyonesBrowsers;
     owensBrowser = everyonesBrowsers;

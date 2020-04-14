@@ -5,21 +5,21 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: LargeTestForum;
 
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 
 
 let siteIdAddress: IdAddress;
@@ -51,8 +51,8 @@ describe("chat-create-from-direct-message  TyT5FKB2A", () => {
   });
 
   it("initialize people", () => {
-    michaelsBrowser = _.assign(browserA, pagesFor(browserA));
-    mariasBrowser = _.assign(browserB, pagesFor(browserB));
+    michaelsBrowser = new TyE2eTestBrowser(browserA);
+    mariasBrowser = new TyE2eTestBrowser(browserB);
     maria = forum.members.maria;
     michael = forum.members.michael;
   });

@@ -4,17 +4,17 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
 let maja;
-let majasBrowser;
+let majasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -34,7 +34,7 @@ const pageUrl = embeddingOrigin + '/' + pageSlug;
 describe("emb cmts edit and vote", () => {
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     majasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;
     maja = make.memberMaja();

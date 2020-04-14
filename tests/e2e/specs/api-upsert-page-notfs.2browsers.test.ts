@@ -5,24 +5,24 @@ import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let corax: Member;
 let maja: Member;
-let majasBrowser;
+let majasBrowser: TyE2eTestBrowser;
 let maria: Member;
-let strangersBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -109,8 +109,8 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
   });
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     owensBrowser = richBrowserA;
 
@@ -243,7 +243,7 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
   let upsertedPageUrlFromEmail: string;
 
   it("Maja finds a page link in her email", () => {
-    const email = server.getLastEmailSenTo(siteId, maja.emailAddress, majasBrowser);
+    const email = server.getLastEmailSenTo(siteId, maja.emailAddress, wdioBrowserA);
     upsertedPageUrlFromEmail = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical

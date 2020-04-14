@@ -5,23 +5,23 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: LargeTestForum;
 
 let everyonesBrowsers;
-let othersBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
-let strangersBrowser;
+let mariasBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let forumTitle = "Admin User Suspend";
@@ -39,10 +39,10 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     owen = forum.members.owen;
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    owensBrowser = new TyE2eTestBrowser(browserA);
+    othersBrowser = new TyE2eTestBrowser(browserB);
     maria = forum.members.maria;
     mariasBrowser = othersBrowser;
     strangersBrowser = othersBrowser;

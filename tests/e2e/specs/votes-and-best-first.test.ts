@@ -4,32 +4,32 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import { buildSite } from '../utils/site-builder';
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare const browser: any;
+let browser: TyE2eTestBrowser;
 declare const $$: any; // webdriver.io global utility   DELETE use  assertPostOrderIs insted [59SKEDT0652]
 
 let everyonesBrowsers;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let modya;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let mons;
-let monsBrowser;
+let monsBrowser: TyE2eTestBrowser;
 let corax;
-let coraxBrowser;
+let coraxBrowser: TyE2eTestBrowser;
 let regina;
-let reginasBrowser;
+let reginasBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -113,7 +113,7 @@ describe("votes and best first", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
 
     owensBrowser = everyonesBrowsers;
     modyasBrowser = owensBrowser;
@@ -174,7 +174,7 @@ describe("votes and best first", () => {
   it("Posts get sorted correctly", () => {
     // Dupl code, and won't work with > 1 browser. Instead: topic.assertPostOrderIs()  [59SKEDT0652]
     modyasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = modyasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrAA}`);  // AA has 3 likes
     assert(els[1].getAttribute('id') === `post-${postNrBB}`);  // BB has 2
@@ -196,7 +196,7 @@ describe("votes and best first", () => {
 
   it("Now BB gets placed first, before AA (and CC)", () => {
     reginasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = reginasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`);  // BB first, has 3 likes
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);  // AA has 2 likes
@@ -216,7 +216,7 @@ describe("votes and best first", () => {
 
   it("Now XX gets placed last, not because of the Disagree, but because read-but-not-Liked", () => {
     reginasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = reginasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`);
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);
@@ -232,7 +232,7 @@ describe("votes and best first", () => {
 
   it("But has no effect, since still hasn't gotten any Like vote", () => {
     reginasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = reginasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`);
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);
@@ -252,7 +252,7 @@ describe("votes and best first", () => {
 
   it("Now YY placed last, also after the Disagree:d votes, but CC unaffected, because liked", () => {
     reginasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = reginasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`);
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);
@@ -269,7 +269,7 @@ describe("votes and best first", () => {
 
   it("Now XX placed before ZZ and YY again", () => {
     reginasBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = reginasBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`);
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);
@@ -290,7 +290,7 @@ describe("votes and best first", () => {
 
   it("so BB gets placed last", () => {
     coraxBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = coraxBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrAA}`);
     assert(els[1].getAttribute('id') === `post-${postNrCC}`); // a Like, a Disagree, and a Bury
@@ -306,7 +306,7 @@ describe("votes and best first", () => {
 
   it("now BB gets moved back to first, again", () => {
     coraxBrowser.refresh();
-    const els = $$('.dw-depth-1 .dw-p');
+    const els = coraxBrowser.$$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
     assert(els[0].getAttribute('id') === `post-${postNrBB}`); // Unwanted (by core member, bad bad)
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);

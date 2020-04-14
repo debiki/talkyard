@@ -160,10 +160,14 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addMinions: function(oneWordName: string, howMany: number): Member[] {
+    addMinions: function(ps: { oneWordName: string, howMany: number,
+          mixedCaseUsernameStartWithUpper: boolean }): Member[] {
       const newMinions = [];
-      for (let i = 0; i < howMany; ++i) {
-        const minion = make.minion(oneWordName + (howMany >= 2 ? i + 1 : ''));
+      for (let i = 0; i < ps.howMany; ++i) {
+        const minion = make.minion({
+          oneWordNameAndNumber: ps.oneWordName + (ps.howMany >= 2 ? i + 1 : ''),
+          mixedCaseUsernameStartWithUpper: ps.mixedCaseUsernameStartWithUpper,
+        });
         site.members.push(minion);
         newMinions.push(minion);
       }

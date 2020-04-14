@@ -4,28 +4,24 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
-declare let browserA: any;
-declare let browserB: any;
-
-let everyone;
-let owen;
-let owensBrowser;
-let maria;
-let mariasBrowser;
-let mallory;
-let mallorysBrowser;
-let mons;
-let monsBrowser;
-let guest;
-let guestsBrowser;
-let strangersBrowser;
+let everyone: TyAllE2eTestBrowsers;
+let owen: Member;
+let owensBrowser: TyE2eTestBrowser;
+let maria: Member;
+let mariasBrowser: TyE2eTestBrowser;
+let mallory: Member;
+let mallorysBrowser: TyE2eTestBrowser;
+let mons: Member;
+let monsBrowser: TyE2eTestBrowser;
+let guest: TestGuest;
+let guestsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Basic Spam Test Forum";
@@ -38,15 +34,15 @@ let post3Selector = '#post-3';
 describe("spam test, no external services  TyT530KRM1R", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
+    everyone = new TyE2eTestBrowser(wdioBrowser);
     owen = make.memberOwenOwner();
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
     mons = make.memberModeratorMons();
     maria = make.memberMaria();
     mallory = make.memberMallory();
     guest = make.guestGunnar();
     // Reuse the same browser.
-    monsBrowser = _.assign(browserB, pagesFor(browserB));
+    monsBrowser = new TyE2eTestBrowser(browserB);
     mariasBrowser = monsBrowser;
     mallorysBrowser = monsBrowser;
     guestsBrowser = monsBrowser;
@@ -65,8 +61,8 @@ describe("spam test, no external services  TyT530KRM1R", () => {
 
   it("Owen and Mallory go to the homepage and log in", () => {
     everyone.go(idAddress.origin);
-    browserA.assertPageTitleMatches(forumTitle);
-    browserB.assertPageTitleMatches(forumTitle);
+    owensBrowser.assertPageTitleMatches(forumTitle);
+    mallorysBrowser.assertPageTitleMatches(forumTitle);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     owensBrowser.disableRateLimits();
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);

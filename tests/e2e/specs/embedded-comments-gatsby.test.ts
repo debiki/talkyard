@@ -5,20 +5,20 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyonesBrowsers;
 let owen;
-let owensBrowser;
-let gmailUsersBrowser;
+let owensBrowser: TyE2eTestBrowser;
+let gmailUsersBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let data;
 
@@ -43,7 +43,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   }
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
 
     owensBrowser = everyonesBrowsers;
     mariasBrowser = everyonesBrowsers;
@@ -83,7 +83,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
+    const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go2(link);

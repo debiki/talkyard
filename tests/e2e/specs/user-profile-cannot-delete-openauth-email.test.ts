@@ -5,18 +5,18 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import make = require('../utils/make');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import { buildSite } from '../utils/site-builder';
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let forum: EmptyTestForum;
 
-let everyonesBrowser;
-let gmailUsersBrowser;
+let everyonesBrowser: TyE2eTestBrowser;
+let gmailUsersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId;
@@ -32,7 +32,7 @@ describe("user profile cannot delete openauth email:", () => {
     return;
 
   it("import a site, init people", () => {
-    everyonesBrowser = _.assign(browser, pagesFor(browser));
+    everyonesBrowser = new TyE2eTestBrowser(wdioBrowser);
     gmailUsersBrowser = everyonesBrowser;
 
     forum = buildSite().addEmptyForum({ title: forumTitle });

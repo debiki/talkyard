@@ -5,23 +5,23 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maja: Member;
-let majasBrowser;
-let strangersBrowser;
+let majasBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -81,9 +81,9 @@ describe("api-upsert-categories  TyT94DFKHQC24", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

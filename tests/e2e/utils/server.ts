@@ -266,7 +266,9 @@ function getTestCounters(): TestCounters {
 }
 
 
-function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubjectBody | null {
+function getLastEmailSenTo(siteId: SiteId, email: string,
+      pause: any // CLEAN_UP: wrong type — was a wdio browser obj in the past.
+      ): EmailSubjectBody | null {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
@@ -281,9 +283,9 @@ function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubject
       const lastEmail = lastEmails[lastEmails.length - 1];
       return lastEmail;
     }
-    // Internal functions can pass null, if they pause themselves.
-    if (browser) {
-      browser.pause(500 - 100); // 100 ms for a request, perhaps?
+    // Internal functions can pass false, if they pause themselves.
+    if (pause !== false) {
+      (wdioBrowserA || wdioBrowser).pause(500 - 100); // 100 ms for a request, perhaps?
     }
     else {
       return null;
@@ -391,10 +393,10 @@ function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string,
 
 function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email = getLastEmailSenTo(siteId, emailAddress, null);
+    const email = getLastEmailSenTo(siteId, emailAddress, false);
     const link = !email ? null : utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
     if (!link)
-      browser.pause(500 - 100); // 100 ms for a request, perhaps?
+      (wdioBrowserA || wdioBrowser).pause(500 - 100); // 100 ms for a request, perhaps?
     else
       return link;
   }
@@ -402,7 +404,7 @@ function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string
 
 
 function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
-        textOrTextsToMatch: string | string[], browser): EmailMatchResult {
+        textOrTextsToMatch: string | string[], browser?): EmailMatchResult {
   const textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const startMs = Date.now();
@@ -410,7 +412,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
   let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email: EmailSubjectBody | U = getLastEmailSenTo(siteId, emailAddress, null);
+    const email: EmailSubjectBody | U = getLastEmailSenTo(siteId, emailAddress, false);
     misses = [];
     let matchingStrings: string[] = [];
     for (let i = 0; i < regexs.length; ++i) {
@@ -443,7 +445,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         '\n');
     }
 
-    browser.pause(500 - 50);
+    (wdioBrowserA || wdioBrowser).pause(500 - 50);
   }
   const missesString = misses.join(', ');
   die(`Never got any email to ${emailAddress} matching ${missesString} [EdE5JGK2Q1]`);

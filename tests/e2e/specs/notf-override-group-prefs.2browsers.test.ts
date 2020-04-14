@@ -4,33 +4,33 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare const browser: any;
-declare var browserA: any;
-declare var browserB: any;
+let browser: TyE2eTestBrowser;
+
+
 
 let richBrowserA;
 let richBrowserB;
 
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let trillian;
-let trilliansBrowser;
+let trilliansBrowser: TyE2eTestBrowser;
 let modya;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let mons;
-let monsBrowser;
+let monsBrowser: TyE2eTestBrowser;
 let maja;
-let majasBrowser;
+let majasBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -50,8 +50,8 @@ const owensTopicBodyTwo = 'owensTopicBodyTwo';
 describe("notfs overr grp prfs TyT6BKWDGY24", () => {
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
     owensBrowser = richBrowserA;
     modyasBrowser = richBrowserB;
     monsBrowser = richBrowserB;

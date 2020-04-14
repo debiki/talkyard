@@ -4,13 +4,12 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
 declare let browserA: any;
 declare let browserB: any;
 declare let browserC: any;
@@ -20,7 +19,7 @@ let owen;
 let michael;
 let maria;
 let memberAlice;
-let alicesBrowser;
+let alicesBrowser: TyE2eTestBrowser;
 let guest;
 let stranger;
 
@@ -40,10 +39,10 @@ let siteId;
 describe("private chat direct message notfs  TyT602RKDL42", () => {
 
   it("initialize people", () => {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
-    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    michael = _.assign(new TyE2eTestBrowser(browserB), make.memberMichael());
+    maria = _.assign(new TyE2eTestBrowser(browserC), make.memberMaria());
     // Let's reuse the same browser.
     alicesBrowser = maria;
     guest = michael;

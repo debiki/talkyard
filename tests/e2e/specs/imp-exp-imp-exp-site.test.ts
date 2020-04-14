@@ -5,35 +5,35 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let mons: Member;
-let monsBrowser;
+let monsBrowser: TyE2eTestBrowser;
 let modya: Member;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let corax: Member;
-let coraxBrowser;
+let coraxBrowser: TyE2eTestBrowser;
 let regina: Member;
-let reginasBrowser;
+let reginasBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 let mallory: Member;
-let mallorysBrowser;
-let strangersBrowser;
+let mallorysBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -76,9 +76,9 @@ describe("imp-exp-imp-exp-site [TyT5BKW2ZY]", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    richBrowserA = everyonesBrowsers;//_.assign(browserA, pagesFor(browserA));
-    richBrowserB = everyonesBrowsers;//_.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    richBrowserA = everyonesBrowsers;
+    richBrowserB = everyonesBrowsers;
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

@@ -4,21 +4,17 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser, MemberBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
-declare var browserC: any;
 
 var everyone;
-var owen;
-var mons;
-var maria;
+var owen: MemberBrowser;
+var mons: MemberBrowser;
+var maria: MemberBrowser;
 var strangerA;
 var strangerB;
 var guest;
@@ -85,10 +81,10 @@ let mariaInputText1 = "Maria text input 1";
 describe("private chat", function() {
 
   it("initialize people", function() {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
-    mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
-    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
+    mons = _.assign(new TyE2eTestBrowser(browserB), make.memberModeratorMons());
+    maria = _.assign(new TyE2eTestBrowser(browserC), make.memberMaria());
     // Let's reuse the same browser.
     strangerA = mons;
     strangerB = maria;
@@ -108,7 +104,7 @@ describe("private chat", function() {
   it("Owen creates a custom form", function() {
     owen.go(idAddress.origin);
     owen.assertPageTitleMatches(forumTitle);
-    owen.complex.loginWithPasswordViaTopbar(owen);
+    owen.complex.loginWithPasswordViaTopbar(owen as Member);
     owen.complex.createAndSaveTopic(
         { title: formPageTitle, body: formPageBody, type: c.TestPageRole.Form,
           bodyMatchAfter: false });
@@ -117,12 +113,12 @@ describe("private chat", function() {
 
   it("Everyone goes to the form page", function() {
     everyone.go(formPageUrl);
-    browserA.assertPageTitleMatches(formPageTitle);
-    browserB.assertPageTitleMatches(formPageTitle);
-    browserC.assertPageTitleMatches(formPageTitle);
-    browserA.assertPageBodyMatches(formPageIntroText);
-    browserB.assertPageBodyMatches(formPageIntroText);
-    browserC.assertPageBodyMatches(formPageIntroText);
+    owen.assertPageTitleMatches(formPageTitle);
+    mons.assertPageTitleMatches(formPageTitle);
+    maria.assertPageTitleMatches(formPageTitle);
+    owen.assertPageBodyMatches(formPageIntroText);
+    mons.assertPageBodyMatches(formPageIntroText);
+    maria.assertPageBodyMatches(formPageIntroText);
     //everyone.assertPageBodyMatches(formPageIntroText);
   });
 
@@ -155,28 +151,28 @@ describe("private chat", function() {
   it("Stranger A and B doesn't see any submission", function() {
     strangerA.refresh();
     strangerA.customForm.assertNumSubmissionVisible(0);
-    strangerA.replies.assertNoReplyMatches(strangerAInputText1);
-    strangerA.replies.assertNoReplyMatches(strangerBInputText1);
+    strangerA.topic.assertNoReplyMatches(strangerAInputText1);
+    strangerA.topic.assertNoReplyMatches(strangerBInputText1);
     strangerA.assertPageHtmlSourceDoesNotMatch(strangerAInputText1);
     strangerA.assertPageHtmlSourceDoesNotMatch(strangerBInputText1);
     strangerB.refresh();
     strangerB.customForm.assertNumSubmissionVisible(0);
-    strangerB.replies.assertNoReplyMatches(strangerAInputText1);
-    strangerB.replies.assertNoReplyMatches(strangerBInputText1);
+    strangerB.topic.assertNoReplyMatches(strangerAInputText1);
+    strangerB.topic.assertNoReplyMatches(strangerBInputText1);
     strangerB.assertPageHtmlSourceDoesNotMatch(strangerAInputText1);
     strangerB.assertPageHtmlSourceDoesNotMatch(strangerBInputText1);
   });
 
   it("Owen (who is admin) sees A and B's submissions", function() {
     owen.customForm.assertNumSubmissionVisible(2);
-    owen.replies.assertSomeReplyMatches(strangerAInputText1);
-    owen.replies.assertSomeReplyMatches(strangerBInputText1);
+    owen.topic.assertSomeReplyMatches(strangerAInputText1);
+    owen.topic.assertSomeReplyMatches(strangerBInputText1);
   });
 
   it("... they were submitted by the Unknown user, not by a missing user", function() {
-    owen.replies.assertSomeReplyMatches("Unknown");
-    owen.replies.assertNoReplyMatches("missing");
-    owen.replies.assertNoAuthorMissing();
+    owen.topic.assertSomeReplyMatches("Unknown");
+    owen.topic.assertNoReplyMatches("missing");
+    owen.topic.assertNoAuthorMissing();
   });
 
   it("Mons logs in (in stranger A's browser)", function() {
@@ -220,23 +216,23 @@ describe("private chat", function() {
 
   it("Mons and Maria see no submissions", function() {
     mons.customForm.assertNumSubmissionVisible(0);
-    mons.replies.assertNoReplyMatches(strangerAInputText1);
-    mons.replies.assertNoReplyMatches(strangerBInputText1);
-    mons.replies.assertNoReplyMatches(monsInputText1);
-    mons.replies.assertNoReplyMatches(mariaInputText1);
+    mons.topic.assertNoReplyMatches(strangerAInputText1);
+    mons.topic.assertNoReplyMatches(strangerBInputText1);
+    mons.topic.assertNoReplyMatches(monsInputText1);
+    mons.topic.assertNoReplyMatches(mariaInputText1);
     maria.customForm.assertNumSubmissionVisible(0);
-    maria.replies.assertNoReplyMatches(strangerAInputText1);
-    maria.replies.assertNoReplyMatches(strangerBInputText1);
-    maria.replies.assertNoReplyMatches(monsInputText1);
-    maria.replies.assertNoReplyMatches(mariaInputText1);
+    maria.topic.assertNoReplyMatches(strangerAInputText1);
+    maria.topic.assertNoReplyMatches(strangerBInputText1);
+    maria.topic.assertNoReplyMatches(monsInputText1);
+    maria.topic.assertNoReplyMatches(mariaInputText1);
   });
 
   it("Owen sees all", function() {
     owen.customForm.assertNumSubmissionVisible(4);
-    owen.replies.assertSomeReplyMatches(strangerAInputText1);
-    owen.replies.assertSomeReplyMatches(strangerBInputText1);
-    owen.replies.assertSomeReplyMatches(monsInputText1);
-    owen.replies.assertSomeReplyMatches(mariaInputText1);
+    owen.topic.assertSomeReplyMatches(strangerAInputText1);
+    owen.topic.assertSomeReplyMatches(strangerBInputText1);
+    owen.topic.assertSomeReplyMatches(monsInputText1);
+    owen.topic.assertSomeReplyMatches(mariaInputText1);
   });
 
   it("A guest logs in (in Maria's browser)", function() {

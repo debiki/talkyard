@@ -6,29 +6,29 @@ import server = require('../utils/server');
 import utils = require('../utils/utils');
 import make = require('../utils/make');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let richBrowserA;
 let richBrowserB;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let mons: Member;
-let monsBrowser;
+let monsBrowser: TyE2eTestBrowser;
 let modya: Member;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let corax: Member;
 let regina: Member;
 let trillian: Member;
 let maja: Member;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
 let mallory: Member;
 
@@ -73,8 +73,8 @@ describe("group-mentions-built-in.2browsers  TyT4AWJL208R", () => {
   });
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

@@ -5,28 +5,28 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: LargeTestForum;
 
 let everyonesBrowsers;
-let staffsBrowser;
-let othersBrowser;
+let staffsBrowser: TyE2eTestBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 let mallory: Member;
-let mallorysBrowser;
-let strangersBrowser;
+let mallorysBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 
 let siteIdAddress: IdAddress;
@@ -52,9 +52,9 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    staffsBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    staffsBrowser = new TyE2eTestBrowser(browserA);
+    othersBrowser = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;

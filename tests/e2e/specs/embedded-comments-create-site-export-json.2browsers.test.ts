@@ -5,26 +5,26 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 import * as embPages from './embedded-comments-create-site-export-json.2browsers.pages';
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
 let everyonesBrowsers;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
-let guestsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let guestsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let data: NewSiteData;
 let siteId: any;
@@ -39,9 +39,9 @@ describe("embedded comments export json  TyT7FKDJF3", () => {
   }
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
-    mariasBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    owensBrowser = new TyE2eTestBrowser(browserA);
+    mariasBrowser = new TyE2eTestBrowser(browserB);
     michaelsBrowser = mariasBrowser;
     strangersBrowser = mariasBrowser;
     guestsBrowser = strangersBrowser;

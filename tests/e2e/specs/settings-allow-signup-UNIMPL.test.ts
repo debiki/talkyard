@@ -4,19 +4,19 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let everyone;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "(Dis)Allow Signup Forum";
@@ -25,7 +25,7 @@ let forumTitle = "(Dis)Allow Signup Forum";
 describe("(dis)allow signup:", () => {
 
   it("initialize people", () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     everyone = browser;
     owen = make.memberOwenOwner();
     owensBrowser = browser;

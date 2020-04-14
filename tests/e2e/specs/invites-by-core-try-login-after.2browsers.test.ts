@@ -5,24 +5,24 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: EmptyTestForum;
 
-let staffsBrowser;
-let othersBrowser;
+let staffsBrowser: TyE2eTestBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let corax: Member;
-let coraxBrowser;
-let janesBrowser;
+let coraxBrowser: TyE2eTestBrowser;
+let janesBrowser: TyE2eTestBrowser;
 
 let siteId;
 let siteIdAddress: IdAddress;
@@ -47,8 +47,8 @@ describe("invites-by-core-try-login-after TyT2WKF5PF30", () => {
   });
 
   it("initialize people", () => {
-    staffsBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    staffsBrowser = new TyE2eTestBrowser(browserA);
+    othersBrowser = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;
@@ -73,7 +73,8 @@ describe("invites-by-core-try-login-after TyT2WKF5PF30", () => {
   });
 
   it("... it appears in the Invites-Sent list", () => {
-    coraxBrowser.invitedUsersList.waitAssertInviteRowPresent(1, { email: janesEmailAddress });
+    coraxBrowser.invitedUsersList.waitAssertInviteRowPresent(
+        1, { email: janesEmailAddress, accepted: false });
     assert(coraxBrowser.invitedUsersList.countNumInvited() === 1);
     coraxBrowser.invitedUsersList.assertHasNotAcceptedInvite(janesUsername);
   });

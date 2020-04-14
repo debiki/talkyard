@@ -4,25 +4,25 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare const browser: any;
-declare var browserA: any;
-declare var browserB: any;
+let browser: TyE2eTestBrowser;
+
+
 
 let richBrowserA;
 let richBrowserB;
 
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let modya;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -49,8 +49,8 @@ let numExpectedEmailsTotal = 0;
 describe("notfs-prefs-inherit-own  TyT4RKK7Q2J", () => {
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
     owensBrowser = richBrowserA;
     modyasBrowser = richBrowserB;
     mariasBrowser = richBrowserB;

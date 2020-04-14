@@ -5,24 +5,24 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
 let everyonesBrowsers;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let data;
 let idAddress: IdAddress;
@@ -39,11 +39,11 @@ const owensCommentText = 'owensCommentText';
 describe("embedded comments, new site", () => {
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
 
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
 
-    mariasBrowser = _.assign(browserB, pagesFor(browserB));
+    mariasBrowser = new TyE2eTestBrowser(browserB);
     michaelsBrowser = mariasBrowser;
     strangersBrowser = mariasBrowser;
 
@@ -85,7 +85,7 @@ describe("embedded comments, new site", () => {
     owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
+    const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);
@@ -156,7 +156,7 @@ ${htmlToPaste}
 
   it("... verifies her email", () => {
     const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, owensBrowser);
+    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     mariasBrowser.go(link);

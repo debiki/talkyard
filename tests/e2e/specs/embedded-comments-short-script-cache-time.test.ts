@@ -2,11 +2,11 @@
 
 import * as _ from 'lodash';
 import assert = require('../utils/ty-assert');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 const syncRequest = require('sync-request');
 
-declare const browser: any;
+let browser: TyE2eTestBrowser;
 let everyonesBrowsers;
 
 const scriptUrl = `${settings.scheme}://localhost/-/ed-comments.min.js`;
@@ -19,7 +19,7 @@ const desiredCacheHeader = settings.prod ?
 describe("the embedded comments script is cached for a day only", () => {
 
   it("load comments script", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
     everyonesBrowsers.go(scriptUrl);
   });
 

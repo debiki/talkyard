@@ -4,13 +4,13 @@ import * as _ from 'lodash';
 import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
+
 
 var owen;
 var maria;
@@ -22,7 +22,7 @@ var forumTitle = "Impersonate Each Other Forum";
 describe("impersonate-restricted-areas  TyT6502PKSNR57", () => {
 
   it("initialize people", () => {
-    owen = _.assign(browser, pagesFor(browser), make.memberOwenOwner());
+    owen = _.assign(new TyE2eTestBrowser(wdioBrowser), make.memberOwenOwner());
   });
 
   it("import a site", () => {

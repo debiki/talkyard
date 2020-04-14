@@ -4,14 +4,14 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let everyone;
 let owen;
@@ -36,11 +36,11 @@ const mariasTopicText = "mariasTopicText";
 describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
 
   it("initialize people", function() {
-    everyone = _.assign(browser, pagesFor(browser));
-    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    everyone = new TyE2eTestBrowser(wdioBrowser);
+    owen = _.assign(new TyE2eTestBrowser(browserA), make.memberOwenOwner());
     // Use an unique address so won't run into max-sites-per-email limit.
     owen.emailAddress = "e2e-test--owen-" + testId + "@example.com";
-    maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
+    maria = _.assign(new TyE2eTestBrowser(browserB), make.memberMaria());
   });
 
   it("Owen creates a site", function() {

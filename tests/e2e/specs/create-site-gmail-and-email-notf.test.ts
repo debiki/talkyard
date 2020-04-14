@@ -4,14 +4,14 @@ import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import createTestData = require('./create-site-impl');
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logMessage = logAndDie.logMessage;
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 const newMembersEmail = 'e2e-test--mia@example.com';
 const newMembersTopicTitle = 'newMembersTopicTitle';
@@ -25,7 +25,7 @@ describe('create-site-gmail  @createsite  @login @gmail TyT7KKTEHS24', () => {
   }
 
   it('initialize', () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
   });
 
   it('can create a new site as a Gmail user, when not logged in to Gmail', () => {

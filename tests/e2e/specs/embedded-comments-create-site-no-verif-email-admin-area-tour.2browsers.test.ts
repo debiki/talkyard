@@ -5,24 +5,24 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
 let everyonesBrowsers;
 let owen;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let data;
 let idAddress: IdAddress;
@@ -39,11 +39,11 @@ const owensCommentText = 'owensCommentText';
 describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
 
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
 
-    mariasBrowser = _.assign(browserB, pagesFor(browserB));
+    mariasBrowser = new TyE2eTestBrowser(browserB);
     michaelsBrowser = mariasBrowser;
     strangersBrowser = mariasBrowser;
 
@@ -73,21 +73,29 @@ describe("embedded comments, new site, admin tour  TyT6KRKV20", () => {
     }
   }
 
-  it('Owen creates an embedded comments site as a Password user  @login @password', () => {
+  it('Owen creates an embedded comments site as a Password user  @login @password:', () => {
     // Dupl code [502SKHFSKN53]
     data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
+  });
+
+  it(`... He fills in fields`, () => {
     owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     owensBrowser.disableRateLimits();
 
     owensBrowser.tour.runToursAlthoughE2eTest();
+  });
 
+  it(`... Sings up as owner, at the new site`, () => {
     owensBrowser.createSite.clickOwnerSignupButton();
-    owensBrowser.loginDialog.createPasswordAccount(data, true);
-    const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
+    owensBrowser.loginDialog.createPasswordAccount({ ...data, shallBecomeOwner: true });
+  });
+
+  it(`... Clicks an email verification link`, () => {
+    siteId = owensBrowser.getSiteId();
+    const email = server.getLastEmailSenTo(siteId, data.email, wdioBrowserA);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);

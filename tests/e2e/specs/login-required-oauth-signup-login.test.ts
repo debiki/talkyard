@@ -4,14 +4,14 @@ import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 let idAddress: IdAddress;
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 const googleUSersTopic =
     { title: "I am the Goog of Email", body: "Faster than snails I send mails" };
@@ -27,7 +27,7 @@ describe(`${testName}  TyT406MRTJW2`, () => {
   }
 
   it("create site", () => {
-    browser = _.assign(browser, pagesFor(browser));
+    browser = new TyE2eTestBrowser(wdioBrowser);
     const site: SiteData2 = make.forumOwnedByOwen('oauth-login', { title: "OAuth Login Forum" });
     site.settings.userMustBeAuthenticated = true;
     idAddress = server.importSiteData(site);
@@ -77,12 +77,15 @@ describe(`${testName}  TyT406MRTJW2`, () => {
   // ---------- Login with OpenAuth, when wesite requires login
 
 
-  it("Can log in with Gmail @login @gmail @google", () => {
+  it("Reloads the page", () => {
     browser.refresh();
+  });
+
+  it("Can log in with Gmail @login @gmail @google", () => {
     browser.loginDialog.loginWithGmail({
       email: settings.gmailEmail,
       password: settings.gmailPassword,
-    }, {
+    }, undefined, {
       isInFullScreenLogin: true,
       anyWelcomeDialog: 'THERE_WILL_BE_NO_WELCOME_DIALOG',
     });

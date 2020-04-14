@@ -4,24 +4,24 @@ import assert = require('assert');
 import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 declare let browserA: any;
 declare let browserB: any;
 
 let everyonesBrowsers;
 let maria;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 let owen;
-let owensBrowser;
-let strangersBrowser;
+let owensBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress: IdAddress;
 let siteId: any;
@@ -35,9 +35,9 @@ const reopenEventPostNr = 7;
 describe("Page type question", () => {
 
   it("Initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    mariasBrowser = _.assign(browserA, pagesFor(browserA));
-    strangersBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    mariasBrowser = new TyE2eTestBrowser(browserA);
+    strangersBrowser = new TyE2eTestBrowser(browserB);
     michaelsBrowser = strangersBrowser;
     owensBrowser = strangersBrowser;
     maria = make.memberMaria();

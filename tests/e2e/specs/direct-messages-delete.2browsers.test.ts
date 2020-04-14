@@ -4,22 +4,22 @@ import * as _ from 'lodash';
 import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browserA: any;
-declare var browserB: any;
+
+
 
 let richBrowserA;
 let richBrowserB;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
-let strangersBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let idAddress;
 let forumTitle = "Delete Messages Forum";
@@ -38,8 +38,8 @@ const michaelsLastReply = 'michaelsLastReply';
 describe("direct-messages-delete.2browsers.test.ts  TyT5033FKSNS57", () => {
 
   it("initialize people", () => {
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     michael = make.memberMichael();
     // New members cannot send direct messages.

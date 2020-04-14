@@ -5,18 +5,18 @@ import fs = require('fs');
 import assert = require('assert');
 import tyAssert = require('../utils/ty-assert');
 import server = require('../utils/server');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import { buildSite } from '../utils/site-builder';
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 import utils = require('../utils/utils');
 const logMessage = lad.logMessage;
 
-declare let browser: any;
+let browser: TyE2eTestBrowser;
 
 let forum: LargeTestForum;
 
-let usersBrowser;
+let usersBrowser: TyE2eTestBrowser;
 
 let initResult: InitResult;
 let who: string;
@@ -35,7 +35,7 @@ const newTopicText = "Follow the white rabbit";
 let nextPostNr = c.FirstReplyNr;
 
 
-function assertPublicTopicsVisible(browser) {
+function assertPublicTopicsVisible(browser: TyE2eTestBrowser) {
   // browser.forumTopicList.assertTopicTitlesAreAndOrder()
   browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryA.title);
   browser.forumTopicList.waitForTopicVisible(forum.topics.byMariaCategoryANr2.title);
@@ -94,7 +94,7 @@ function makeWholeSpec(initFn: () => InitResult) {
     });
 
     it("init brower", () => {
-      usersBrowser = _.assign(browser, pagesFor(browser));
+      usersBrowser = new TyE2eTestBrowser(wdioBrowser);
     });
 
     it("go to forum", () => {
@@ -558,7 +558,7 @@ function addSearchPageTests(searchPhrase) {
   });
 
   it(`Found correct search phrase`, () => {
-    const text = browser.$('.esSERP_Hit_Text').getText();
+    const text = usersBrowser.$('.esSERP_Hit_Text').getText();
     assert(text === newTopicText, `Found text: "${text}", should have been: "${newTopicText}"`);
   });
 }

@@ -4,23 +4,23 @@ import * as _ from 'lodash';
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let everyone;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let michael: Member;
-let michaelsBrowser;
+let michaelsBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
-let strangersBrowser;
+let mariasBrowser: TyE2eTestBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress;
 const forumTitle = "Approve Members Forum";
@@ -29,11 +29,11 @@ const forumTitle = "Approve Members Forum";
 describe("settings-approve-members [TyT2HUWX8]", function() {
 
   it("initialize people", function() {
-    everyone = _.assign(browser, pagesFor(browser));
+    everyone = new TyE2eTestBrowser(wdioBrowser);
     owen = make.memberOwenOwner();
-    owensBrowser = _.assign(browserA, pagesFor(browserA));
+    owensBrowser = new TyE2eTestBrowser(browserA);
     michael = make.memberMichael();
-    michaelsBrowser = _.assign(browserB, pagesFor(browserB));
+    michaelsBrowser = new TyE2eTestBrowser(browserB);
     maria = make.memberMaria();
     mariasBrowser = michaelsBrowser;
     strangersBrowser = michaelsBrowser;

@@ -5,22 +5,22 @@ import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
+
+
+
 
 let forum: EmptyTestForum;
 
 let everyonesBrowsers;
-let staffsBrowser;
-let othersBrowser;
+let staffsBrowser: TyE2eTestBrowser;
+let othersBrowser: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 
 let siteId;
 let siteIdAddress: IdAddress;
@@ -96,9 +96,9 @@ describe("invites-many-retry  TyT5BKA2WA30", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    staffsBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    staffsBrowser = new TyE2eTestBrowser(browserA);
+    othersBrowser = new TyE2eTestBrowser(browserB);
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;
   });

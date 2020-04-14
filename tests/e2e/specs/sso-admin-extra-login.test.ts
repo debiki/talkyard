@@ -5,22 +5,22 @@ import assert = require('assert');
 import server = require('../utils/server');
 //import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 //import settings = require('../utils/settings');
 //import logAndDie = require('../utils/log-and-die');
 //import c = require('../test-constants');
 
-declare var browser: any;
+
 //declare var browserA: any;
 
 let everyonesBrowsers;
 let richBrowserA;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let modya: Member;
-let modyasBrowser;
+let modyasBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -47,9 +47,8 @@ describe("sso-admin-extra-login  TyT03WKDTRP50", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    //browserA = browser;
-    richBrowserA = everyonesBrowsers; //_.assign(browserA, pagesFor(browserA));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    richBrowserA = everyonesBrowsers;
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

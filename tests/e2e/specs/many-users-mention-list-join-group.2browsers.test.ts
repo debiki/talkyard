@@ -5,26 +5,26 @@ import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import pagesFor = require('../utils/pages-for');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-declare var browser: any;
-declare var browserA: any;
-declare var browserB: any;
 
-let everyonesBrowsers;
-let richBrowserA;
-let richBrowserB;
+
+
+
+let everyonesBrowsers: TyE2eTestBrowser;
+let richBrowserA: TyE2eTestBrowser;
+let richBrowserB: TyE2eTestBrowser;
 let owen: Member;
-let owensBrowser;
+let owensBrowser: TyE2eTestBrowser;
 let maria: Member;
-let mariasBrowser;
+let mariasBrowser: TyE2eTestBrowser;
 
 let michael: Member;
 let zelda: Member;
-let strangersBrowser;
+let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
 let siteId;
@@ -47,20 +47,26 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     });
 
     // Add 100 members: Minion Mia1, Mia2, Mia3 ... Mia100.
-    builder.addMinions("Mia", 100);
+    // They'll have lowercase usernames:  minion_mia1, ...mia2,  ...mia3  and so on.
+    builder.addMinions({ oneWordName: "Mia", howMany: 100, mixedCaseUsernameStartWithUpper: false });
+
+    // These will have mixed case usernames:  Minion_Mina1, ...Mina2 etc.
+    builder.addMinions({ oneWordName: "Mina", howMany: 150, mixedCaseUsernameStartWithUpper: true });
+
     // Add Minion Zelda.
-    [zelda] = builder.addMinions("Zelda", 1);
+    [zelda] = builder.addMinions({ oneWordName: "Zelda", howMany: 1,
+        mixedCaseUsernameStartWithUpper: false });
 
     assert.ok(builder.getSite() === forum.siteData);
-    assert.greaterThan(builder.getSite().members.length, 101);
+    assert.greaterThan(builder.getSite().members.length, 251);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    richBrowserA = _.assign(browserA, pagesFor(browserA));
-    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    richBrowserA = new TyE2eTestBrowser(browserA);
+    richBrowserB = new TyE2eTestBrowser(browserB);
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;
@@ -136,18 +142,25 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
     owensBrowser.addUsersToPageDialog.submit();
   });
 
+  it("... adds 'Minion Mina134' — with first username letter in Uppercase", () => {
+    owensBrowser.userProfilePage.groupMembers.openAddMemberDialog();
+    owensBrowser.addUsersToPageDialog.addOneUser('Minion_Mina134')
+    owensBrowser.addUsersToPageDialog.submit();
+  });
+
   it("Owen adds Zelda — she's listed *after* all the minions", () => {
     owensBrowser.userProfilePage.groupMembers.addOneMember(zelda.username);
   });
 
-  it("There are now 4 people in the group", () => {
-    assert.eq(owensBrowser.userProfilePage.groupMembers.getNumMembers(), 4);
+  it("There are now 5 people in the group", () => {
+    assert.eq(owensBrowser.userProfilePage.groupMembers.getNumMembers(), 5);
   });
 
   it("... namely Maria, Michael and the minions", () => {
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(maria.username);
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(michael.username);
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent('minion_mia77');
+    owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent('Minion_Mina134');
     owensBrowser.userProfilePage.groupMembers.waitUntilMemberPresent(zelda.username);
   });
 
@@ -188,7 +201,7 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
   });
 
   it("... there're > 30 minions", () => {
-    assert.greaterThan(mariasBrowser.count('.rta__entity'), 30);
+    mariasBrowser.waitForAtLeast(30, '.rta__entity');
   });
 
   it("Maria clicks Enter to auto-complete Michael's name", () => {
@@ -204,10 +217,24 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
   });
 
   it("... there's just that single name starting with Z", () => {
+    mariasBrowser.waitForAtLeast(1, '.rta__entity');
     assert.eq(mariasBrowser.count('.rta__entity'), 1);
   });
 
   it("Maria clicks Enter to auto-complete Zelda's name", () => {
+    mariasBrowser.keys(['Enter']);
+  });
+
+  it("Maria mentions one of the Uppercase username minions too: types Minion_Mina103", () => {
+    mariasBrowser.editor.editText(` and @Minion_Mina103`, { append: true });
+  });
+
+  it("... there's only one such minion", () => {
+    mariasBrowser.waitForAtMost(1, '.rta__entity');
+    assert.eq(mariasBrowser.count('.rta__entity'), 1);
+  });
+
+  it("... hits Enter to select @Minion_Mina103", () => {
     mariasBrowser.keys(['Enter']);
   });
 
@@ -218,13 +245,19 @@ describe("many-users-mention-list-join-group  TyT0326SKDGW2", () => {
   it("Michael gets notified", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, michael.emailAddress,
-        [michael.username, zelda.username], browserA);
+        [michael.username, zelda.username, 'Minion_Mina103']);
   });
 
   it("... and Zelda", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, zelda.emailAddress,
-        [michael.username, zelda.username], browserA);
+        [michael.username, zelda.username, 'Minion_Mina103']);
+  });
+
+  it("... and, last but not least — really not least — Minion_Mina103", () => {
+    server.waitUntilLastEmailMatches(
+        siteIdAddress.id, zelda.emailAddress,
+        [michael.username, zelda.username, 'Minion_Mina103']);
   });
 
 
