@@ -53,9 +53,7 @@ case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
   */
 class Nashorn(
   // CLEAN_UP don't expose. Barely matters.
-  val globals: Globals) {
-
-  private val logger = play.api.Logger
+  val globals: Globals) extends play.api.Logging {
 
   /** The Nashorn Javascript engine isn't thread safe.  */
   private val javascriptEngines =
@@ -147,13 +145,15 @@ class Nashorn(
     }
     catch {
       case throwable: Throwable =>
-        if (Play.maybeApplication.isEmpty || throwable.isInstanceOf[Globals.NoStateError]) {
+        if (// [PLAY28] ?? Play.maybeApplication.isEmpty ||
+            throwable.isInstanceOf[Globals.NoStateError]) {
+          /* [PLAY28] ??
           if (!Globals.isProd) {
             logger.debug("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
           }
-          else {
+          else { */
             logger.error("Error creating Javascript engine: No server [EsE6JY22]", throwable)
-          }
+          //}
         }
         else if (isVeryFirstEngine) {
           logger.error("Error creating the very first Javascript engine: [DwE6KG25Z]", throwable)

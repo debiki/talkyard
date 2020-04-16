@@ -23,11 +23,9 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
-import play.api._
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
-import LoginController._
-import ed.server.security.EdSecurity
+import talkyard.server.TyLogging
 
 
 /** Logs in and out.
@@ -37,6 +35,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   import context.globals
   import context.security.DiscardingSessionCookie
+  import LoginController._
 
 
   def showLoginPage(as: Option[String], to: Option[String]): Action[Unit] = GetActionIsLogin { apiReq =>
@@ -171,7 +170,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
 }
 
 
-object LoginController {
+object LoginController extends TyLogging {
 
   val AsSuperadmin = "superadmin"
   val AsAdmin = "admin"
@@ -191,7 +190,7 @@ object LoginController {
         request.context.globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
           val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfValName}' missing"
-          Logger.error(s"$errorMessage [$errorCode]")
+          logger.error(s"$errorMessage [$errorCode]")
           throwInternalError(errorCode, errorMessage)
         }
 

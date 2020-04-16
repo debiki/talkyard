@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{BodyNr, TitleNr}
 import debiki._
-import play.api.Logger
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -62,8 +61,6 @@ trait PageStuffDao {
   // Most text initially hidden, only first line shown. On click, everything shown — so
   // include fairly many chars.
   val StartLength = 250
-
-  val logger: Logger.type = play.api.Logger
 
   memCache.onPageSaved { sitePageId =>
     memCache.remove(cacheKey(sitePageId))

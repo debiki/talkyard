@@ -24,16 +24,14 @@ import debiki.EdHttp.throwForbidden
 import debiki.JsonUtils.readOptString
 import java.{net => jn}
 import java.net.UnknownHostException
-import play.{api => p}
 import play.api.libs.ws._
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
+import play.api.libs.json.{JsArray, JsObject, Json}
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.Future.successful
 import scala.util.Success
-
+import talkyard.server.TyLogger
 
 
 object ApiKeyInvalidException extends QuickException
@@ -125,6 +123,8 @@ class SpamChecker(
   wsClient: WSClient,
   textAndHtmlMaker: TextAndHtmlMaker) {
 
+  private val logger = TyLogger("SpamChecker")
+
   private implicit val execCtx: ExecutionContext = executionContext
 
   /*
@@ -175,7 +175,7 @@ class SpamChecker(
   val spamChecksEnabled: Boolean = {
     val enabled = playConf.getOptional[Boolean](SpamChecksEnabledConfValName) getOrElse true
     if (!enabled) {
-      play.api.Logger.info(s"Spam checks disabled; conf val $SpamChecksEnabledConfValName = false")
+      logger.info(s"Spam checks disabled; conf val $SpamChecksEnabledConfValName = false")
     }
     enabled
   }
@@ -221,16 +221,16 @@ class SpamChecker(
       val isValid = body.trim == "valid"
       if (!isValid) {
         val debugHelp = response.header("X-akismet-debug-help")
-        p.Logger.error(o"""Akismet key is not valid [DwE4PKW0], response: '$body', debug help:
+        logger.error(o"""Akismet key is not valid [DwE4PKW0], response: '$body', debug help:
             $debugHelp""")
       }
       else {
-        p.Logger.info(s"Akismet key is valid [DwM2KWS4]")
+        logger.info(s"Akismet key is valid [DwM2KWS4]")
       }
       akismetKeyIsValidPromise.success(isValid)
     }).recover({
       case ex: Exception =>
-        p.Logger.error("Error verifying Akismet API key [TyE2AKB5R0]", ex)
+        logger.error("Error verifying Akismet API key [TyE2AKB5R0]", ex)
         akismetKeyIsValidPromise.success(false)
     })
   }
@@ -293,11 +293,11 @@ class SpamChecker(
       SHOULD // insert into audit log (or some spam log?), gather stats
 
       if (spamFoundResults.nonEmpty) {
-        p.Logger.info(i"""Registration spam detected: [EdM4FK0W2]
+        logger.info(i"""Registration spam detected: [EdM4FK0W2]
             | $spamCheckTask
             |""")
         spamFoundResults foreach { spamReason =>
-          p.Logger.info(s"Spam reason [EdM5GKP0R]: $spamReason")
+          logger.info(s"Spam reason [EdM5GKP0R]: $spamReason")
         }
       }
       results
@@ -345,7 +345,7 @@ class SpamChecker(
           else {
             originOfSiteId(spamCheckTask.siteId) match {
               case None =>
-                p.Logger.warn(s"Site not found: ${spamCheckTask.siteId} [TyE5KA2Y8]")
+                logger.warn(s"Site not found: ${spamCheckTask.siteId} [TyE5KA2Y8]")
                 None
               case Some(siteOrigin) =>
                 makeAkismetRequestBody(spamCheckTask) flatMap checkViaAkismet
@@ -363,7 +363,7 @@ class SpamChecker(
       // Auto blocking happens here: [PENDNSPM].
 
       if (spamFoundResults.nonEmpty) {
-        p.Logger.debug(i"""Text spam detected [TyM8YKF0]:
+        logger.debug(i"""Text spam detected [TyM8YKF0]:
             | - who: ${spamCheckTask.who}
             | - post: $postToSpamCheck
             | - req: ${spamCheckTask.requestStuff}
@@ -398,7 +398,7 @@ class SpamChecker(
         case ex: Exception =>
           // COULD rate limit requests to stopforumspam, seems as if otherwise it rejects connections?
           // Got this:  java.net.ConnectException  when running lots of e2e tests at the same time.
-          p.Logger.warn(s"Error querying stopforumspam.com [TyE2PWC7]", ex)
+          logger.warn(s"Error querying stopforumspam.com [TyE2PWC7]", ex)
           SpamCheckResult.Error(StopForumSpamDomain)
       })
   }
@@ -414,19 +414,19 @@ class SpamChecker(
       try Json.parse(response.body)
       catch {
         case ex: Exception =>
-          p.Logger.warn(s"Bad JSON from api.stopforumspam.org: $prettyJson", ex)
+          logger.warn(s"Bad JSON from api.stopforumspam.org: $prettyJson", ex)
           return SpamCheckResult.Error(StopForumSpamDomain)
       }
 
     if ((json \ "success").asOpt[Int] isNot 1) {
-      p.Logger.warn(s"api.stopforumspam.org returned success != 1: $prettyJson")
+      logger.warn(s"api.stopforumspam.org returned success != 1: $prettyJson")
       return SpamCheckResult.NoSpam(StopForumSpamDomain)
     }
 
     val ipJson = json \ "ip"
     (ipJson \ "frequency").asOpt[Int] match {
       case None =>
-        p.Logger.warn(s"api.stopforumspam.org didn't send back any ip.frequency: $prettyJson")
+        logger.warn(s"api.stopforumspam.org didn't send back any ip.frequency: $prettyJson")
       case Some(frequency) =>
         if (frequency >= 1)
           return SpamCheckResult.SpamFound(
@@ -441,7 +441,7 @@ class SpamChecker(
     val emailJson = json \ "email"
     (emailJson \ "frequency").asOpt[Int] match {
       case None =>
-        p.Logger.warn(s"api.stopforumspam.org didn't send back any email.frequency: $prettyJson")
+        logger.warn(s"api.stopforumspam.org didn't send back any email.frequency: $prettyJson")
       case Some(frequency) =>
         if (frequency >= 1)
           return SpamCheckResult.SpamFound(
@@ -569,13 +569,13 @@ class SpamChecker(
                         threatLines += s"$threatType for $platformType:  $badUrl"
                       case None =>
                         error = true
-                        p.Logger.warn(
+                        logger.warn(
                           s"$whichTask: Unexpected JSON from Google Safe Browsing API [TyGSAFEAPIJSN01]" +
                           s"\nReponse body:\n" + response.body)
                     }
                   case None =>
                     error = true
-                    p.Logger.warn(
+                    logger.warn(
                       s"$whichTask: Unexpected JSON from Google Safe Browsing API [TyGSAFEAPIJSN02]" +
                       s"\nReponse body:\n" + response.body)
                 }
@@ -589,7 +589,7 @@ class SpamChecker(
           }
         case weirdStatusCode =>
           // More status codes: https://developers.google.com/safe-browsing/v4/status-codes
-          p.Logger.warn(
+          logger.warn(
             s"$whichTask: Error querying Google Safe Browsing API, " +
               "status: $weirdStatusCode [TyEGSAFEAPISTS]" +
               "\nResponse body:\n" + response.body)
@@ -632,19 +632,19 @@ class SpamChecker(
             |
             |""")
         case weird =>
-          p.Logger.warn(s"Google Safe Browsing API replied with an unexpected status code: $weird")
+          logger.warn(s"Google Safe Browsing API replied with an unexpected status code: $weird")
           None
           */
       }}
       catch {
         case ex: Exception =>
-          p.Logger.warn(s"$whichTask: Error handling Google Safe Browsing API response [TyE5KMRD025]", ex)
+          logger.warn(s"$whichTask: Error handling Google Safe Browsing API response [TyE5KMRD025]", ex)
           SpamCheckResult.Error(GoogleSafeBrowsingApiDomain)
       }
     })
       .recover({
         case ex: Exception =>
-          p.Logger.warn(s"$whichTask: Error querying Google Safe Browsing API [TyE4DRRETV20]", ex)
+          logger.warn(s"$whichTask: Error querying Google Safe Browsing API [TyE4DRRETV20]", ex)
           SpamCheckResult.Error(GoogleSafeBrowsingApiDomain)
       }))
   }
@@ -753,7 +753,7 @@ class SpamChecker(
     })
     .recover({
       case ex: Exception =>
-        p.Logger.warn(s"Error querying $AkismetDomain [TyE8KWBG2], requestBody:\n$requestBody", ex)
+        logger.warn(s"Error querying $AkismetDomain [TyE8KWBG2], requestBody:\n$requestBody", ex)
         SpamCheckResult.Error(AkismetDomain)
     }))
   }
@@ -775,7 +775,7 @@ class SpamChecker(
 
   private def sendAkismetCheckSpamRequest(apiKey: String, payload: String,
         promise: Promise[(Boolean, Boolean)]) {
-    p.Logger.debug("Sending Akismet spam check request...")  // replace with tracing instead [TRACING]
+    logger.debug("Sending Akismet spam check request...")  // replace with tracing instead [TRACING]
     sendAkismetRequest(apiKey, what = "comment-check", payload = payload).map({ response: WSResponse =>
       val body = response.body
       body.trim match {
@@ -783,21 +783,21 @@ class SpamChecker(
           val proTip = response.header("X-akismet-pro-tip")
           val akismetIsCertain = proTip is "discard"
           SECURITY // COULD remember ip and email, check manually? block?
-          p.Logger.debug(s"Akismet found spam: $payload, is totally certain: $akismetIsCertain")
+          logger.debug(s"Akismet found spam: $payload, is totally certain: $akismetIsCertain")
           promise.success((true, akismetIsCertain))
         case "false" =>
-          p.Logger.debug(s"Akismet says not spam: $payload")
+          logger.debug(s"Akismet says not spam: $payload")
           promise.success((false, false))
         case badResponse =>
           val debugHelp = response.header("X-akismet-debug-help")
-          p.Logger.error(o"""Akismet error: Weird spam check response: '$badResponse',
+          logger.error(o"""Akismet error: Weird spam check response: '$badResponse',
                debug help: $debugHelp""")
           promise.failure(BadSpamCheckResponseException)
       }
     })
     .recover({
       case ex: Exception =>
-        p.Logger.warn(s"Error querying $AkismetDomain [TyE2AKBP0], payload:\n$payload", ex)
+        logger.warn(s"Error querying $AkismetDomain [TyE2AKBP0], payload:\n$payload", ex)
         promise.failure(ex)
     })
   }
@@ -821,7 +821,7 @@ class SpamChecker(
 
     val body = new StringBuilder()
     val siteOrigin = originOfSiteId(spamCheckTask.siteId) getOrElse {
-      p.Logger.warn(s"Cannot do spam check, site ${spamCheckTask.siteId} not found [Ty6MBR25]")
+      logger.warn(s"Cannot do spam check, site ${spamCheckTask.siteId} not found [Ty6MBR25]")
       return None
     }
 
@@ -935,7 +935,7 @@ class SpamChecker(
     val akismetResultJson = (resultJson \ AkismetDomain).asOpt[JsObject]
     val akismetSaysIsSpam: Option[Boolean] = akismetResultJson map { json =>
       (json \ "isSpam").asOpt[Boolean] getOrElse {  // written here [02MRHL2]
-        p.Logger.warn("isSpam field missing [TyE58MK3RT2]")
+        logger.warn("isSpam field missing [TyE58MK3RT2]")
         promise.success((0, 0))
         return promise.future
       }
@@ -965,22 +965,22 @@ class SpamChecker(
               // Weird. Couldn't construct request. Warning logged already.
               promise.success((0, 0))
             case Some(requestBody) =>
-              p.Logger.debug(s"Sending Akismet correction to: $doWhat")  // replace w tracing [TRACING]
+              logger.debug(s"Sending Akismet correction to: $doWhat")  // replace w tracing [TRACING]
               sendAkismetRequest(anyAkismetKey.get, what = doWhat, payload = requestBody).map({
                     response: WSResponse =>
                 val responseBody = response.body
                 if (response.status == 200) {
                   if (responseBody != "Thanks for making the web a better place.") {
-                    p.Logger.warn(s"Unexpected Akismet response: $responseBody [TyE702M5BZW]")
+                    logger.warn(s"Unexpected Akismet response: $responseBody [TyE702M5BZW]")
                   }
-                  p.Logger.debug(s"s$siteId: Reported $doWhat to Akismet, post id $postId [TyM602MBWT]")
+                  logger.debug(s"s$siteId: Reported $doWhat to Akismet, post id $postId [TyM602MBWT]")
                   promise.success(
                     // Return (a, b) where a = num false positives, i.e. Akismet thought
                     // "It's spam", when it wasn't, and b = num false negatives.
                     akismetSaysIsSpam.is(true) ? (1, 0) | (0, 1))
                 }
                 else {
-                  p.Logger.warn("Non-200 response from Akismet to misclassification request [TyE5M70J2],"
+                  logger.warn("Non-200 response from Akismet to misclassification request [TyE5M70J2],"
                     + s"\nstatus: ${response.status}"
                     + s"\nrequest body:\n$requestBody"
                     + s"\nresponse body:\n$responseBody")
@@ -989,7 +989,7 @@ class SpamChecker(
               })
                 .recover({
                   case ex: Exception =>
-                    p.Logger.warn("Error sending misclassification request to Akismet [TyE702MR84TD], " +
+                    logger.warn("Error sending misclassification request to Akismet [TyE702MR84TD], " +
                       s"requestBody:\n$requestBody", ex)
                     promise.success((0, 0))
                 })

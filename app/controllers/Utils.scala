@@ -51,7 +51,9 @@ object Utils extends Results with http.ContentTypes {
 
   /** Gatling doesn't understand this prefix */
   private val safeJsonPrefix = {
-    val safePrefix = ")]}',\n"  // [5LKW02D4]
+    // safePrefix =
+    ")]}',\n"  // [5LKW02D4]
+    /* This doesn't work in Play 2.8, and currently isn't needed anyay.  [PLAY28]
     Play.maybeApplication match {
       case Some(app) =>
         if (app.configuration.getBoolean("talkyard.addSafeJsonPrefix")
@@ -59,7 +61,7 @@ object Utils extends Results with http.ContentTypes {
         else safePrefix
       case None =>
         safePrefix
-    }
+    } */
   }
 
 

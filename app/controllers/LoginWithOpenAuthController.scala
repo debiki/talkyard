@@ -36,11 +36,11 @@ import ed.server.security.EdSecurity
 import javax.inject.Inject
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
-import play.{api => p}
 import play.api.mvc._
 import play.api.Configuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import talkyard.server.TyLogging
 
 
 
@@ -54,7 +54,7 @@ import scala.concurrent.duration._
   * login.domain.com, and redirects you back to X with a session id and an XSRF token.
   */
 class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.security._
@@ -214,13 +214,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val handlerMissing = ex.getMessage.contains(noStateHandlerMessage)
         val result =
           if (handlerMissing) {
-            p.Logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
+            logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
             BadReqResult("TYEOAUTMTPLL", "\nYou need to login within 5 minutes, and " +
               "you cannot login in different browser tabs, at the same time. Error logging in.")
           }
           else {
             val errorCode = "TYE0AUUNKN"
-            p.Logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
+            logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
             import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
             InternalErrorResult(errorCode, "Unknown login error", moreDetails =
               s"Error when signing in with $providerName: ${ex.getMessage}\n\n" +
@@ -233,7 +233,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def handleAuthenticationData(request: GetRequest, profile: SocialProfile)
         : Future[Result] = {
-    p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
+    logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
     val (anyReturnToSiteOrigin: Option[String], anyReturnToSiteXsrfToken: Option[String]) =
       request.cookies.get(ReturnToSiteOriginTokenCookieName) match {
@@ -915,7 +915,8 @@ class CustomGitHubProfileParser(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient,
   val githubApiBaseUrl: String)
-  extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info] {
+  extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info]
+  with TyLogging {
 
   import play.api.libs.ws
 
@@ -1002,12 +1003,12 @@ class CustomGitHubProfileParser(
       }
       catch {
         case ex: Exception =>
-          p.Logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
+          logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
           (None, None)
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        p.Logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
+        logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
         Future.successful((None, None))
     })(executionContext)
   }
@@ -1071,7 +1072,8 @@ class CustomLinkedInProvider(
 class LinkedInProfileParserApiV2(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient)
-  extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
+  extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info]
+  with TyLogging {
 
   override def parse(json: JsValue, authInfo: OAuth2Info): Future[CommonSocialProfile] = {
     loadEmailAddr(authInfo).map({ anyEmail =>
@@ -1147,12 +1149,12 @@ class LinkedInProfileParserApiV2(
       }
       catch {
         case ex: Exception =>
-          p.Logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
+          logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
           None
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        p.Logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
+        logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
         Future.successful(None)
     })(executionContext)
   }

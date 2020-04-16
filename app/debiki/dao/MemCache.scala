@@ -24,7 +24,7 @@ import nl.grons.metrics.scala.Meter
 import java.{util => ju}
 import scala.reflect.ClassTag
 import MemCache._
-import play.{api => p}
+import talkyard.server.TyLogger
 
 
 
@@ -36,6 +36,8 @@ object MemCache {
 
 
 class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetrics) {
+
+  private val logger = TyLogger("MemCache")
 
   // COULD delete & rewrite this listener stuff. It's error prone & complicated, bug just killed.
   // Something like this?
@@ -186,7 +188,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
   def put(key: MemCacheKey, value: DaoMemCacheAnyItem) {
     cache.put(key.toString, value)
-    p.Logger.trace(s"s${key.siteId}: Mem cache: Inserting: ${key.rest} ")
+    logger.trace(s"s${key.siteId}: Mem cache: Inserting: ${key.rest} ")
   }
 
 
@@ -197,7 +199,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
     val itemInCacheAfter = cache.get(key.toString, javaFn)
     val wasInserted = itemInCacheAfter eq value
     if (wasInserted) {
-      p.Logger.trace(s"s${key.siteId}: Mem cache: Inserted, was absent: ${key.rest} ")
+      logger.trace(s"s${key.siteId}: Mem cache: Inserted, was absent: ${key.rest} ")
     }
     wasInserted
   }
@@ -207,19 +209,19 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
     */
   def replace(key: MemCacheKey, oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem)
         : Boolean = {
-    p.Logger.trace(s"s${key.siteId}: Mem cache: Replacing: ${key.rest} ")
+    logger.trace(s"s${key.siteId}: Mem cache: Replacing: ${key.rest} ")
     cache.asMap().replace(key.toString, oldValue, newValue)
   }
 
 
   def remove(key: MemCacheKey) {
-    p.Logger.trace(s"s${key.siteId}: Mem cache: Removing: ${key.rest}")
+    logger.trace(s"s${key.siteId}: Mem cache: Removing: ${key.rest}")
     cache.invalidate(key.toString)
   }
 
 
   def clearAllSites() {
-    p.Logger.trace("Emptying the whole mem cache.")
+    logger.trace("Emptying the whole mem cache.")
     cache.invalidateAll()
   }
 
@@ -230,7 +232,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
 
   private def clearSingleSite(siteId: SiteId) {
-    p.Logger.trace(s"s$siteId: Emptying mem cache.")
+    logger.trace(s"s$siteId: Emptying mem cache.")
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
     cache.put(siteCacheVersionKey(siteId), MemCacheItem(nextVersion, -1))

@@ -32,6 +32,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import talkyard.server.JsX.JsUser
+import talkyard.server.TyLogger
 
 
 sealed trait Message {
@@ -79,7 +80,7 @@ object PubSub {
     implicit val execCtx: ExecutionContext = globals.executionContext
     val actorRef = globals.actorSystem.actorOf(Props(
       new PubSubActor(nginxHost, globals)), name = s"PubSub-$testInstanceCounter")
-    globals.actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
+    globals.actorSystem.scheduler.scheduleWithFixedDelay(60.seconds, 10.seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
     (new PubSubApi(actorRef), new StrangerCounterApi(actorRef))
   }
@@ -166,6 +167,8 @@ case class UserWhenPages(user: Participant, when: When, watchingPageIds: Set[Pag
   */
 class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
+  private val logger = TyLogger("PubSubActor")
+
   def wsClient: WSClient = globals.wsClient
   def redisClient: RedisClient = globals.redisClient
 
@@ -193,8 +196,11 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   // Could check what is Nchan's long-polling inactive timeout, if any?
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
 
-  private def redisCacheForAllSites = RedisCache.forAllSites(redisClient, globals.now)
-  private def redisCacheForSite(siteId: SiteId) = RedisCache.forSite(siteId, redisClient, globals.now)
+  private def redisCacheForAllSites =
+    RedisCache.forAllSites(redisClient, () => globals.now())
+
+  private def redisCacheForSite(siteId: SiteId) =
+    RedisCache.forSite(siteId, redisClient, () => globals.now())
 
 
   def receive: PartialFunction[Any, Unit] = {
@@ -241,7 +247,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     case ex: Exception =>
       // Akka would otherwise discard this actor and create another one, but then
       // its state (which is probably fine) gets lost.
-      p.Logger.error("Error in PubSub actor [TyEPUBCATCH]", ex)
+      logger.error("Error in PubSub actor [TyEPUBCATCH]", ex)
   }
 
 
@@ -408,7 +414,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         .map(handlePublishResponse)
         .recover({
           case ex: Exception =>
-            p.Logger.warn(o"""s$siteId: Error Nchan-publishing to users $toUserIds [TyEPUB2BRWSR]:
+            logger.warn(o"""s$siteId: Error Nchan-publishing to users $toUserIds [TyEPUB2BRWSR]:
                 , tyype: $tyype, json: $json""", ex)
         })
     }
@@ -417,7 +423,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def handlePublishResponse(response: WSResponse) {
     if (response.status < 200 || 299 < response.status) {
-      p.Logger.warn(o"""Bad nchan status code after sending publish request [TyENCHANSTS]:
+      logger.warn(o"""Bad nchan status code after sending publish request [TyENCHANSTS]:
         ${response.status} ${response.statusText} — see the nginx error log for details?
         Response body: '${response.body}""")
     }
@@ -477,7 +483,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
 
   def traceLog(siteId: SiteId, message: => String): Unit =
-    p.Logger.trace(s"s$siteId: PubSub: $message")
+    logger.trace(s"s$siteId: PubSub: $message")
 
   private def anyPrettyUser(anyUser: Option[Participant], userId: UserId) = anyUser match {
     case Some(user) => prettyUser(user)

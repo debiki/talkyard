@@ -38,21 +38,19 @@ import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
-import play.api.Play
 import play.api.libs.ws.WSClient
 import redis.RedisClient
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, TimeoutException}
 import scala.util.matching.Regex
-import Globals._
 import ed.server.EdContext
 import ed.server.http.GetRequest
 import ed.server.jobs.Janitor
 import play.api.mvc.RequestHeader
 
 
-object Globals {
+object Globals extends play.api.Logging {
 
   class NoStateError extends AssertionError(
     "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
@@ -107,9 +105,11 @@ class Globals(
   val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
   val actorSystem: ActorSystem,
-  val tracer: io.opentracing.Tracer) {
+  val tracer: io.opentracing.Tracer) extends play.api.Logging {
 
   def outer: Globals = this
+
+  import Globals._
 
   def setEdContext(edContext: EdContext) {
     dieIf(this.edContext ne null, "EdE7UBR10")
@@ -127,8 +127,26 @@ class Globals(
 
   val config = new Config(conf)
 
+  // Dupl [305926XFG24] -------------------
   private def getBoolOrFalse(confValueName: String): Boolean =
     conf.getOptional[Boolean](confValueName) getOrElse false
+
+  private def getIntOrDefault(confName: String, default: Int): Int =
+    conf.getOptional[Int](confName) getOrElse default
+
+  private def getBoolOrDefault[A](confName: String, default: Boolean): Boolean =
+    conf.getOptional[Boolean](confName) getOrElse default
+
+  private def getStringOrEmpty[A](confName: String): String =
+    conf.getOptional[String](confName) getOrElse ""
+
+  private def getStringOrDefault[A](confName: String, default: String): String =
+    conf.getOptional[String](confName).trimNoneIfBlank getOrElse default
+
+  private def getStringNoneIfBlank[A](confName: String): Option[String] =
+    conf.getOptional[String](confName).noneIfBlank
+  // --------------------------------------
+
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
@@ -137,23 +155,23 @@ class Globals(
   val isProd: Boolean = Globals.isProd
 
   def testsDoneServerGone: Boolean =
-    isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
+    isOrWasTest && (!isInitialized )  // [PLAY28] ?? || Play.maybeApplication.isEmpty)
 
   val isTestDisableScripts: Boolean = isOrWasTest && {
-    val disable = conf.getBoolean("isTestDisableScripts").getOrElse(false)
+    val disable = getBoolOrFalse("isTestDisableScripts")
     if (disable) {
-      p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
+      logger.info("Is test with scripts disabled. [EsM4GY82]")
     }
     disable
   }
 
   lazy val (isTestDisableBackgroundJobs, isTestEnableJanitor): (Boolean, Boolean) =
       if (isProd) (false, false) else {
-    val disableJobs = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
-    val butEnableJanitor = conf.getBoolean("isTestEnableJanitor").getOrElse(false)
+    val disableJobs = getBoolOrFalse("isTestDisableBackgroundJobs")
+    val butEnableJanitor = getBoolOrFalse("isTestEnableJanitor")
     if (disableJobs) {
       val butJanitor = if (butEnableJanitor) ", except for the Janitor" else ", incl the Janitor"
-      p.Logger.info(s"Is test with background jobs disabled$butJanitor. [EsM6JY0K2]")
+      logger.info(s"Is test with background jobs disabled$butJanitor. [EsM6JY0K2]")
     }
     (disableJobs, butEnableJanitor)
   }
@@ -170,7 +188,7 @@ class Globals(
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
-        p.Logger.warn("Accessing state before it's been created. I'm still trying to start.")
+        logger.warn("Accessing state before it's been created. I'm still trying to start.")
         throw anyException getOrElse StillConnectingException
     }
   }
@@ -190,7 +208,7 @@ class Globals(
     */
   sun.misc.Signal.handle(new sun.misc.Signal("TERM"), new sun.misc.SignalHandler () {
     def handle(signal: sun.misc.Signal) {
-      p.Logger.info("Got SIGTERM, exiting with status 0 [EsMSIGTERM]")
+      logger.info("Got SIGTERM, exiting with status 0 [EsMSIGTERM]")
       killed = true
       System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
     }
@@ -198,7 +216,7 @@ class Globals(
 
   sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler () {
     def handle(signal: sun.misc.Signal) {
-      p.Logger.info("Got SIGINT, exiting with status 0 [EsMSIGINT]")
+      logger.info("Got SIGINT, exiting with status 0 [EsMSIGINT]")
       killed = true
       System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
     }
@@ -220,8 +238,8 @@ class Globals(
   private var _appSecret: String = _
 
   private def reloadAppSecret() {
-    _appSecret = conf.getString(AppSecretConfValName).orElse(
-      conf.getString("play.crypto.secret")).noneIfBlank.getOrDie(
+    _appSecret = conf.getOptional[String](AppSecretConfValName).orElse(
+      conf.getOptional[String]("play.crypto.secret")).noneIfBlank.getOrDie(
       s"Config value '$AppSecretConfValName' missing [EdENOAPPSECRET]")
   }
 
@@ -230,12 +248,13 @@ class Globals(
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
     * The e2e test sites will have ids like {{{test__...}}} so that they can be deleted safely.
     */
-  val e2eTestPassword: Option[String] = conf.getString("talkyard.e2eTestPassword").noneIfBlank
+
+  val e2eTestPassword: Option[String] = getStringNoneIfBlank("talkyard.e2eTestPassword")
 
   /** Lets people do some forbidden things, like creating a site with a too short
     * local hostname.
     */
-  val forbiddenPassword: Option[String] = conf.getString("talkyard.forbiddenPassword").noneIfBlank
+  val forbiddenPassword: Option[String] = getStringNoneIfBlank("talkyard.forbiddenPassword")
 
   /** Maybe later, let individual sites require longer passwords. This conf val will then be the
     * minimum length, for all sites. (So server admins can require a min length they're ok with.)
@@ -243,7 +262,7 @@ class Globals(
     * 10 = can be good passwords.
     */
   val minPasswordLengthAllSites: Int =
-    conf.getInt("talkyard.minPasswordLength") match {
+    conf.getOptional[Int]("talkyard.minPasswordLength") match {
       case None =>
         AllSettings.MinPasswordLengthHardcodedDefault
       case Some(length) =>
@@ -254,7 +273,7 @@ class Globals(
 
   val mayFastForwardTime: Boolean =
     if (!isProd) true
-    else conf.getBoolean("talkyard.mayFastForwardTime") getOrElse false
+    else getBoolOrFalse("talkyard.mayFastForwardTime")
 
   def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
@@ -298,10 +317,10 @@ class Globals(
 
   /* Add configurable support email address?  [CONFADDRS]
   val supportEmailAddress: Option[String] =
-    conf.getString("talkyard.supportEmailAddress").noneIfBlank */
+    getStringNoneIfBlank("talkyard.supportEmailAddress") */
 
   val securityComplaintsEmailAddress: Option[String] =
-    conf.getString("talkyard.securityComplaintsEmailAddress").noneIfBlank
+    getStringNoneIfBlank("talkyard.securityComplaintsEmailAddress")
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -324,8 +343,8 @@ class Globals(
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
   val secure: Boolean =
-    conf.getBoolean("talkyard.secure") getOrElse {
-      p.Logger.info("Config value 'talkyard.secure' missing; defaulting to true. [DwM3KEF2]")
+    conf.getOptional[Boolean]("talkyard.secure") getOrElse {
+      logger.info("Config value 'talkyard.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
 
@@ -337,7 +356,7 @@ class Globals(
       (Some(s"$scheme://$baseDomainWithPort"), None)
     }
     else {
-      val anyOrigin = conf.getString(LoginOriginConfValName) orElse {
+      val anyOrigin = conf.getOptional[String](LoginOriginConfValName) orElse {
         defaultSiteHostname map { hostname =>
           s"$scheme://$hostname$colonPort"
         }
@@ -346,7 +365,7 @@ class Globals(
       anyOrigin foreach { origin =>
         if (secure && !origin.startsWith("https:")) {
           anyError = Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
-          p.Logger.error(s"Disabling OAuth: ${anyError.get}. It is: '$origin' [DwE6KW5]")
+          logger.error(s"Disabling OAuth: ${anyError.get}. It is: '$origin' [DwE6KW5]")
         }
       }
       (anyOrigin, anyError)
@@ -359,23 +378,23 @@ class Globals(
     val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.google.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.google.authorizationURL"),
         accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
         redirectURL = makeRedirectUrl("google"),
         clientID = getGoogle("silhouette.google.clientID"),
         clientSecret = getGoogle("silhouette.google.clientSecret"),
-        scope = conf.getString("silhouette.google.scope"))
+        scope = getStringNoneIfBlank("silhouette.google.scope"))
     }
 
     val facebookOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.facebook.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.facebook.authorizationURL"),
         accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
         redirectURL = makeRedirectUrl("facebook"),
         clientID = getFacebook("silhouette.facebook.clientID"),
         clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-        scope = conf.getString("silhouette.facebook.scope"))
+        scope = getStringNoneIfBlank("silhouette.facebook.scope"))
     }
 
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
@@ -392,30 +411,30 @@ class Globals(
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.github.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.github.authorizationURL"),
         accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
         redirectURL = makeRedirectUrl("github"),
-        apiURL = conf.getString("silhouette.github.apiURL"),
+        apiURL = getStringNoneIfBlank("silhouette.github.apiURL"),
         clientID = getGitHub("silhouette.github.clientID"),
         clientSecret = getGitHub("silhouette.github.clientSecret"),
-        scope = conf.getString("silhouette.github.scope"))
+        scope = getStringNoneIfBlank("silhouette.github.scope"))
     }
 
     val gitlabOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getGitLab(confValName: String) = getConfValOrThrowDisabled(confValName, "GitLab")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.gitlab.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.gitlab.authorizationURL"),
         accessTokenURL = getGitLab("silhouette.gitlab.accessTokenURL"),
         redirectURL = makeRedirectUrl("gitlab"),
         clientID = getGitLab("silhouette.gitlab.clientID"),
         clientSecret = getGitLab("silhouette.gitlab.clientSecret"),
-        scope = conf.getString("silhouette.gitlab.scope"))
+        scope = getStringNoneIfBlank("silhouette.gitlab.scope"))
     }
 
     val linkedInOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getLinkedin(confValName: String) = getConfValOrThrowDisabled(confValName, "LinkedIn")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.linkedin.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.linkedin.authorizationURL"),
         accessTokenURL = getLinkedin("silhouette.linkedin.accessTokenURL"),
         redirectURL = makeRedirectUrl("linkedin"),
         // These fields no longer available in LinkedIn's API v2, unless one somehow
@@ -426,29 +445,29 @@ class Globals(
         apiURL = Some("https://api.linkedin.com/v2/me?fields=id,firstName,lastName&oauth2_access_token=%s"),
         clientID = getLinkedin("silhouette.linkedin.clientID"),
         clientSecret = getLinkedin("silhouette.linkedin.clientSecret"),
-        scope = conf.getString("silhouette.linkedin.scope"))
+        scope = getStringNoneIfBlank("silhouette.linkedin.scope"))
     }
 
     val vkOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getVk(confValName: String) = getConfValOrThrowDisabled(confValName, "VK")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.vk.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.vk.authorizationURL"),
         accessTokenURL = getVk("silhouette.vk.accessTokenURL"),
         redirectURL = makeRedirectUrl("vk"),
         clientID = getVk("silhouette.vk.clientID"),
         clientSecret = getVk("silhouette.vk.clientSecret"),
-        scope = conf.getString("silhouette.vk.scope"))
+        scope = getStringNoneIfBlank("silhouette.vk.scope"))
     }
 
     val instagramOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
       def getInstagram(confValName: String) = getConfValOrThrowDisabled(confValName, "Instagram")
       OAuth2Settings(
-        authorizationURL = conf.getString("silhouette.instagram.authorizationURL"),
+        authorizationURL = getStringNoneIfBlank("silhouette.instagram.authorizationURL"),
         accessTokenURL = getInstagram("silhouette.instagram.accessTokenURL"),
         redirectURL = makeRedirectUrl("instagram"),
         clientID = getInstagram("silhouette.instagram.clientID"),
         clientSecret = getInstagram("silhouette.instagram.clientSecret"),
-        scope = conf.getString("silhouette.instagram.scope"))
+        scope = getStringNoneIfBlank("silhouette.instagram.scope"))
     }
 
 
@@ -459,7 +478,7 @@ class Globals(
       }
 
     private def getConfValOrThrowDisabled(confValName: String, providerName: String): String =
-      conf.getString(confValName) getOrElse {
+      getStringNoneIfBlank(confValName) getOrElse {
         throw new QuickMessageException(
           s"Login via $providerName not possible: Config value missing: $confValName [TyE0SOCIALCONF")
       }
@@ -504,7 +523,7 @@ class Globals(
       sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
     }
     else {
-      conf.getInt("talkyard.port") getOrElse {
+      conf.getOptional[Int]("talkyard.port") getOrElse {
         if (secure) 443
         else 80
       }
@@ -518,7 +537,7 @@ class Globals(
 
   val baseDomainNoPort: String =
     if (isOrWasTest) "localhost"
-    else conf.getString("talkyard.baseDomain").noneIfBlank getOrElse "localhost"
+    else getStringNoneIfBlank("talkyard.baseDomain") getOrElse "localhost"
 
   val baseDomainWithPort: String =  // [CONFADDRS]
     if (secure && port == 443) baseDomainNoPort
@@ -529,38 +548,40 @@ class Globals(
   /** Accessing this hostname will return the default site, namely site 1 (or defaultSiteId,
     * if configured.)
     */
-  val defaultSiteHostname: Option[String] = conf.getString(DefaultSiteHostnameConfValName).noneIfBlank
+  val defaultSiteHostname: Option[String] =
+    getStringNoneIfBlank(DefaultSiteHostnameConfValName)
 
   if (defaultSiteHostname.exists(_ contains ':'))
-    p.Logger.error(s"Config value $DefaultSiteHostnameConfValName contains ':' [DwE4KUWF7]")
+    logger.error(s"Config value $DefaultSiteHostnameConfValName contains ':' [DwE4KUWF7]")
 
   val becomeFirstSiteOwnerEmail: Option[String] =
-    conf.getString(BecomeOwnerEmailConfValName).noneIfBlank
+    getStringNoneIfBlank(BecomeOwnerEmailConfValName)
 
   val siteOwnerTermsUrl: Option[String] =
-    conf.getString(SiteOwnerTermsUrl).noneIfBlank
+    getStringNoneIfBlank(SiteOwnerTermsUrl)
 
   val siteOwnerPrivacyUrl: Option[String] =
-    conf.getString(SiteOwnerPrivacyUrl).noneIfBlank
+    getStringNoneIfBlank(SiteOwnerPrivacyUrl)
 
   /** If accessing the server via ip address, then, if no website with a matching ip has been
     * configured in the database, we'll show the site with id 'defaultSiteId'. If not defined,
     * we'll use FirstSiteId (i.e. 1, one).
     */
-  val defaultSiteId: SiteId = conf.getInt(DefaultSiteIdConfValName) getOrElse FirstSiteId
+
+  val defaultSiteId: SiteId = getIntOrDefault(DefaultSiteIdConfValName, FirstSiteId)
 
   /** New sites may be created only from this hostname. */
   val anyCreateSiteHostname: Option[String] =
-    conf.getString(CreateSiteHostnameConfValName).noneIfBlank
+    getStringNoneIfBlank(CreateSiteHostnameConfValName)
   val anyCreateTestSiteHostname: Option[String] =
-    conf.getString("talkyard.createTestSiteHostname").noneIfBlank
+    getStringNoneIfBlank("talkyard.createTestSiteHostname")
 
   val maxUploadSizeBytes: Int =
-    (conf.getInt("talkyard.uploads.maxKiloBytesPerFile") orElse
-      conf.getInt("talkyard.uploads.maxKiloBytes")).map(_ * 1000).getOrElse(3*1000*1000)
+    (conf.getOptional[Int]("talkyard.uploads.maxKiloBytesPerFile") orElse
+      conf.getOptional[Int]("talkyard.uploads.maxKiloBytes")).map(_ * 1000).getOrElse(3*1000*1000)
 
   val anyUploadsDir: Option[String] = {
-    val value = conf.getString(LocalhostUploadsDirConfValName).noneIfBlank
+    val value = getStringNoneIfBlank(LocalhostUploadsDirConfValName)
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
     pathSlash match {
       case None =>
@@ -568,7 +589,7 @@ class Globals(
       case Some(path) =>
         // SECURITY COULD test more dangerous dirs. Or whitelist instead?
         if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
-          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfValName specifies
+          logger.warn(o"""Config value $LocalhostUploadsDirConfValName specifies
                 a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
           None
         }
@@ -759,7 +780,7 @@ class Globals(
     }
 
     createStateFuture foreach { _ =>
-      p.Logger.info("State created. [EsMSTATEREADY]")
+      logger.info("State created. [EsMSTATEREADY]")
     }
 
     // When testing, never proceed before the server has started properly, or tests will fail (I think).
@@ -767,7 +788,7 @@ class Globals(
       try {
         Await.ready(createStateFuture, 99 seconds)
         if (killed) {
-          p.Logger.info("Killed. Bye. [EsMKILLED]")
+          logger.info("Killed. Bye. [EsMKILLED]")
           // Don't know how to tell Play to exit? Maybe might as well just:
           System.exit(0)
           // However this leaves a RUNNING_PID file. So the docker container deletes it
@@ -781,7 +802,7 @@ class Globals(
       }
       catch {
         case _: TimeoutException =>
-          p.Logger.error("Creating state takes too long, something is amiss? [EsESTATESLOW]")
+          logger.error("Creating state takes too long, something is amiss? [EsESTATESLOW]")
           System.exit(0)
       }
     }
@@ -789,7 +810,7 @@ class Globals(
 
 
   private def tryCreateStateUntilKilled() {
-    p.Logger.info("Creating state.... [EdMCREATESTATE]")
+    logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
     var firsAttempt = true
 
@@ -799,7 +820,7 @@ class Globals(
         // with "Error connecting to database ..." are quickly generated.
         Thread.sleep(4000)
         if (killed || shallStopStuff) {
-          p.Logger.info(killed ? "Killed. Bye. [EsM200KILLED]" |
+          logger.info(killed ? "Killed. Bye. [EsM200KILLED]" |
               "Aborting create-state loop, shall stop stuff [EsMSTOPSTATE1]")
           return
         }
@@ -811,7 +832,7 @@ class Globals(
         if (isProd && _appSecret == AppSecretDefVal)
           throw AppSecretNotChangedException
 
-        p.Logger.info("Connecting to database... [EsM200CONNDB]")
+        logger.info("Connecting to database... [EsM200CONNDB]")
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
@@ -820,37 +841,37 @@ class Globals(
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
-        p.Logger.info("Running database migrations... [EsM200MIGRDB]")
+        logger.info("Running database migrations... [EsM200MIGRDB]")
         new SystemDao(dbDaoFactory, cache, this).applyEvolutions()
 
-        p.Logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
+        logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
         val newState = new State(dbDaoFactory, cache)
 
-        if (isOrWasTest && conf.getBoolean("isTestShallEmptyDatabase").contains(true)) {
-          p.Logger.info("Emptying database... [EsM200EMPTYDB]")
+        if (isOrWasTest && conf.getOptional[Boolean]("isTestShallEmptyDatabase").contains(true)) {
+          logger.info("Emptying database... [EsM200EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
 
         _state = Good(newState)
-        p.Logger.info("Done creating state [EsMSTATEOK]")
+        logger.info("Done creating state [EsMSTATEOK]")
       }
       catch {
         case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
           _state = Bad(Some(new DatabasePoolInitializationException(ex)))
         case ex @ AppSecretNotChangedException =>
-          p.Logger.error(s"Admin error: The admin hasn't edited '$AppSecretConfValName' [EdE2QCHP4]", ex)
+          logger.error(s"Admin error: The admin hasn't edited '$AppSecretConfValName' [EdE2QCHP4]", ex)
           _state = Bad(Some(ex))
         case ex @ StillConnectingException =>
-          p.Logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
+          logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
           _state = Bad(Some(ex))
         case ex: Exception =>
-          p.Logger.error("Unknown state creation error [EsE4GY67]", ex)
+          logger.error("Unknown state creation error [EsE4GY67]", ex)
           _state = Bad(Some(ex))
       }
     }
 
     if (killed || shallStopStuff) {
-      p.Logger.info("Aborting create-state loop [EsMSTOPSTATE2]")
+      logger.info("Aborting create-state loop [EsMSTOPSTATE2]")
       return
     }
 
@@ -864,7 +885,7 @@ class Globals(
           RenderContentService.RegenerateStaleHtml)(executionContext)
     }
 
-    p.Logger.info("Done creating rendering engines [EsMENGDONE]")
+    logger.info("Done creating rendering engines [EsMENGDONE]")
   }
 
 
@@ -991,7 +1012,7 @@ class Globals(
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
     val redisHost: ErrorMessage =
-      conf.getString("talkyard.redis.host").noneIfBlank getOrElse "localhost"
+      conf.getOptional[String]("talkyard.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient: RedisClient = RedisClient(host = redisHost)(actorSystem)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
@@ -1037,8 +1058,8 @@ class Globals(
       if (isTestDisableBackgroundJobs) None
       else Some(Notifier.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
-    def indexerBatchSize: Int = conf.getInt("talkyard.search.indexer.batchSize") getOrElse 100
-    def indexerIntervalSeconds: Int = conf.getInt("talkyard.search.indexer.intervalSeconds") getOrElse 5
+    def indexerBatchSize: Int = getIntOrDefault("talkyard.search.indexer.batchSize", 100)
+    def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 5)
 
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -1046,9 +1067,9 @@ class Globals(
           indexerBatchSize, indexerIntervalSeconds, executionContext,
           elasticSearchClient, actorSystem, systemDao))
 
-    def spamCheckBatchSize: Int = conf.getInt("talkyard.spamcheck.batchSize") getOrElse 20
-    def spamCheckIntervalSeconds: Int = conf.getInt("talkyard.spamcheck.intervalSeconds").getOrElse(
-      if (isOrWasTest) 1 else 4)
+    def spamCheckBatchSize: Int = getIntOrDefault("talkyard.spamcheck.batchSize", 20)
+    def spamCheckIntervalSeconds: Int =
+      getIntOrDefault("talkyard.spamcheck.intervalSeconds", if (isOrWasTest) 1 else 4)
 
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -1056,7 +1077,7 @@ class Globals(
         spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, executionContext, systemDao))
 
     val nginxHost: String =
-      conf.getString("talkyard.nginx.host").noneIfBlank getOrElse "localhost"
+      conf.getOptional[String]("talkyard.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
@@ -1089,8 +1110,11 @@ object Config {
 }
 
 
-class Config(conf: play.api.Configuration) {
+class Config(conf: play.api.Configuration) extends play.api.Logging {
 
+  import Globals._
+
+  // Dupl [305926XFG24] -------------------
   private def getIntOrDefault(confName: String, default: Int): Int =
     conf.getOptional[Int](confName) getOrElse default
 
@@ -1102,6 +1126,7 @@ class Config(conf: play.api.Configuration) {
 
   private def getStringOrDefault[A](confName: String, default: String): String =
     conf.getOptional[String](confName).trimNoneIfBlank getOrElse default
+  // --------------------------------------
 
   val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = true)
 
@@ -1126,23 +1151,23 @@ class Config(conf: play.api.Configuration) {
     // anything). In dev mode though, allow time for debugging & breakpoints.
     // Short time-to-live is good, mitigates session fixation attacks?
     // Maybe just 15 seconds would be better? Let's wait with that.
-    default = if (isProd) 30 else 30 * 60).toLong
+    default = if (Globals.isProd) 30 else 30 * 60).toLong
 
   val featureFlags: Map[String, FeatureOnOff] = {
-    val flagsMultiLineString = conf.getString("talkyard.featureFlags").noneIfBlank
+    val flagsMultiLineString = conf.getOptional[String]("talkyard.featureFlags").noneIfBlank
     Map.empty  // for now
   }
 
   val isTestDisableRateLimits: Boolean = {
     val disable = getBoolOrDefault("talkyard.isTestDisableRateLimits", default = false)
     if (disable) {
-      p.Logger.info("Is test with rate limits disabled. [TyM0RATELIM]")
+      logger.info("Is test with rate limits disabled. [TyM0RATELIM]")
     }
     disable
   }
 
   val dnsCnameTargetHost: Option[String] =
-    conf.getString(Config.DnsCnameTargetHostConfValName).noneIfBlank
+    conf.getOptional[String](Config.DnsCnameTargetHostConfValName).noneIfBlank
 
   CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
@@ -1180,7 +1205,7 @@ class Config(conf: play.api.Configuration) {
   object cdn {
     /** No trailing slash. */
     val origin: Option[String] =
-      conf.getString(CdnOriginConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
+      conf.getOptional[String](CdnOriginConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
 
     def uploadsUrlPrefix: Option[String] = origin.map(_ + uploadsUrlPath)
   }
@@ -1189,13 +1214,13 @@ class Config(conf: play.api.Configuration) {
     private def path = Config.CreateSitePath
 
     REFACTOR; RENAME // to ...tooManyTryLaterUrl
-    val tooManyTryLaterPagePath: Option[String] = conf.getString(s"$path.tooManyTryLaterPagePath")
+    val tooManyTryLaterPagePath: Option[String] = conf.getOptional[String](s"$path.tooManyTryLaterPagePath")
 
-    val maxSitesPerPerson: Int = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
-    val maxTestSitesPerPerson: Int = conf.getInt(s"$path.maxTestSitesPerIp") getOrElse maxSitesPerPerson * 3
+    val maxSitesPerPerson: Int = getIntOrDefault(s"$path.maxSitesPerIp", 10)
+    val maxTestSitesPerPerson: Int = getIntOrDefault(s"$path.maxTestSitesPerIp", maxSitesPerPerson * 3)
 
-    val maxSitesTotal: Int = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
-    val maxTestSitesTotal: Int = conf.getInt(s"$path.maxTestSitesTotal") getOrElse maxSitesTotal * 3
+    val maxSitesTotal: Int = getIntOrDefault(s"$path.maxSitesTotal", 1000)
+    val maxTestSitesTotal: Int = getIntOrDefault(s"$path.maxTestSitesTotal", maxSitesTotal * 3)
 
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
     def quotaLimitMegabytes(isForBlogComments: Boolean, isTestSite: Boolean): Option[Int] = {
@@ -1214,19 +1239,19 @@ class Config(conf: play.api.Configuration) {
     }
 
     private val quotaLimitMegabytesForum: Option[Int] =
-      conf.getInt("talkyard.newSite.quotaLimitMegabytesForum") orElse
-      conf.getInt("talkyard.newSite.quotaLimitMegabytes")
+      conf.getOptional[Int]("talkyard.newSite.quotaLimitMegabytesForum") orElse
+      conf.getOptional[Int]("talkyard.newSite.quotaLimitMegabytes")
 
     private val quotaLimitMegabytesBlogComments: Option[Int] =
-      conf.getInt("talkyard.newSite.quotaLimitMegabytesBlogComments")
+      conf.getOptional[Int]("talkyard.newSite.quotaLimitMegabytesBlogComments")
   }
 
   object superAdmin {
     private def path = Config.SuperAdminPath
-    val hostname: Option[String] = conf.getString(s"$path.hostname")
-    val siteIdString: Option[String] = conf.getString(s"$path.siteId")
+    val hostname: Option[String] = conf.getOptional[String](s"$path.hostname")
+    val siteIdString: Option[String] = conf.getOptional[String](s"$path.siteId")
     val emailAddresses: immutable.Seq[String] =
-      conf.getString(Config.SuperAdminEmailAddressesPath) match {
+      conf.getOptional[String](Config.SuperAdminEmailAddressesPath) match {
         case None => Nil
         case Some(emails) => emails.split(',').map(_.trim).toVector
       }

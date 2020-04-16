@@ -17,11 +17,11 @@
 
 package debiki
 
-import java.lang.management.{ThreadInfo, ManagementFactory}
+import java.lang.management.{ManagementFactory, ThreadInfo}
 import java.util.concurrent.Executors
 import java.{util => ju}
-import play.{api => p}
 import scala.collection.mutable
+import talkyard.server.TyLogging
 
 
 /** Detects and logs warnings about deadlocks.
@@ -29,7 +29,7 @@ import scala.collection.mutable
   * You'll find all deadlock related log messages in the log files by
   * searching for "DwEDEADLOCK".
   */
-object DeadlockDetector {
+object DeadlockDetector extends TyLogging {
 
   private val IntervalSeconds = if (Globals.isProd) 60 else 10
 
@@ -59,27 +59,27 @@ object DeadlockDetector {
     val threadIds: Array[Long] = threadMxBean.findDeadlockedThreads()
     if ((threadIds eq null) || threadIds.isEmpty) {
       if (oldDeadlockedThreadIds.nonEmpty) {
-        p.Logger.info("All deadlocks gone [DwEDEADLOCK0]")
+        logger.info("All deadlocks gone [DwEDEADLOCK0]")
         oldDeadlockedThreadIds.clear()
       }
     }
     else {
       for (threadId <- threadIds) {
         if (oldDeadlockedThreadIds.contains(threadId)) {
-          p.Logger.warn(s"Thread still deadlocked, id: $threadId [DwEDEADLOCKC]")
+          logger.warn(s"Thread still deadlocked, id: $threadId [DwEDEADLOCKC]")
         }
         else {
           oldDeadlockedThreadIds.add(threadId)
           val threadInfo = threadMxBean.getThreadInfo(threadId, Int.MaxValue)
           if (threadInfo eq null) {
-            p.Logger.warn(s"Got null ThreadInfo for deadlocked thread id $threadId [DwEDEADLOCKX]")
+            logger.warn(s"Got null ThreadInfo for deadlocked thread id $threadId [DwEDEADLOCKX]")
           }
           else {
             val stackTrace: Array[StackTraceElement] = threadInfo.getStackTrace
             val stackTraceMessage =
               if (stackTrace.length > 0) "stack trace:"
               else "no stack trace available"
-            p.Logger.warn(
+            logger.warn(
               s"Deadlock detected, thread id: $threadId, $stackTraceMessage [DwEDEADLOCKN]" +
                 stackTraceToString(stackTrace))
           }
@@ -101,15 +101,15 @@ object DeadlockDetector {
   def createDebugTestDeadlock() {
     val lockOne = new Object
     val lockTwo = new Object
-    p.Logger.warn("Intentionally deadlocking two new threads... [DwEDEADLOCKI]")
+    logger.warn("Intentionally deadlocking two new threads... [DwEDEADLOCKI]")
 
     new Thread(new Runnable() {
       override def run() {
         lockOne.synchronized {
-          p.Logger.warn("First thread got lock 1")
+          logger.warn("First thread got lock 1")
           Thread.sleep(1000)
           lockTwo.synchronized {
-            p.Logger.warn("First thread got lock 2")
+            logger.warn("First thread got lock 2")
           }
         }
       }
@@ -127,9 +127,9 @@ object DeadlockDetector {
         }
         else {
           lockTwo.synchronized {
-            p.Logger.warn("Second thread got lock 2")
+            logger.warn("Second thread got lock 2")
             lockOne.synchronized {
-              p.Logger.warn("Second thread got lock 1")
+              logger.warn("Second thread got lock 1")
             }
           }
         }

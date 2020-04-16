@@ -26,8 +26,9 @@ import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
 import ed.server.spam.ClearCheckingSpamNowCache
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
 import talkyard.server.JsX
+import talkyard.server.TyLogger
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -41,6 +42,7 @@ class SystemDao(
   val globals: Globals) {
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
+  private lazy val logger = TyLogger("SystemDao")
 
   val memCache = new MemCache(NoSiteId, cache, globals.mostMetrics)
 
@@ -389,7 +391,7 @@ class SystemDao(
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site, details) =>
-        play.api.Logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
+        logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
     } } }

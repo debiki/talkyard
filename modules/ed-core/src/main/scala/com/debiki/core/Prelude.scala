@@ -605,7 +605,7 @@ object Prelude {
   implicit class BlankStringToNone(underlying: Option[String]) {
     def noneIfBlank: Option[String] =
       if (underlying.exists(_.trim.isEmpty)) None else underlying
-
+    // But this is the same as above is it not:
     def trimNoneIfBlank: Option[String] =
       underlying.map(_.trim) match {
         case Some("") => None
@@ -750,9 +750,6 @@ object Prelude {
    */
   implicit class StripIndentStringInterpolator(val stringContext: StringContext) {
     // Find test cases in StringInterpolatorsTest.
-
-    @deprecated("from today", "use `i` instead")
-    def ind(args: Any*) = i(args:_*)
 
     def i(args: Any*): String = {
       stringContext.checkLengths(args)

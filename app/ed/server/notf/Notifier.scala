@@ -23,11 +23,10 @@ import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.Notifier._
-import org.owasp.encoder.Encode
-import play.{api => p}
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import talkyard.server.TyLogger
 
 
 
@@ -59,9 +58,9 @@ object Notifier {
     // For now, check for emails more often, so e2e tests won't have to wait for them to
     // get sent. SHOULD wait at least for the ninja edit interval before sending any notf email.
     // But how make that work, with tests?
-    actorSystem.scheduler.schedule(4 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
-    actorSystem.scheduler.schedule(3 seconds, 2 seconds, actorRef, "SendSummaries")
-    actorSystem.scheduler.schedule(10 seconds, 1 hour, actorRef, "SendUtxReminders")
+    actorSystem.scheduler.scheduleWithFixedDelay(4 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
+    actorSystem.scheduler.scheduleWithFixedDelay(3 seconds, 2 seconds, actorRef, "SendSummaries")
+    actorSystem.scheduler.scheduleWithFixedDelay(10 seconds, 1 hour, actorRef, "SendUtxReminders")
     testInstanceCounter += 1
     actorRef
   }
@@ -88,7 +87,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
   import systemDao.globals
 
-  val logger = play.api.Logger("app.notifier")
+  private val logger = TyLogger("Notifier")
 
 
   def receive: PartialFunction[Any, Unit] = {
@@ -106,11 +105,11 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       catch {
         case ex: java.sql.SQLException =>
           if (!isConnectionClosedBecauseTestsDone(ex, globals)) {
-            p.Logger.error("SQL error when sending notfs or summaries [EdE2WPFR1]", ex)
+            logger.error("SQL error when sending notfs or summaries [EdE2WPFR1]", ex)
             throw ex
           }
         case throwable: Throwable =>
-          p.Logger.error("Error when sending notfs or summaries [EdE2WPFR2]", throwable)
+          logger.error("Error when sending notfs or summaries [EdE2WPFR2]", throwable)
           throw throwable
       }
   }
@@ -163,7 +162,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       user = userWithDetails.noDetails  // weird. Maybe copy fns to InclDetails class too? Oh well
       if user.email.nonEmpty
       userName <- user.anyName orElse user.anyUsername
-      if userId <= 101 || globals.conf.getBoolean("utx.reminders.enabled").is(true)
+      if userId <= 101 || globals.conf.getOptional[Boolean]("utx.reminders.enabled").is(true)
     } { HACK; SHOULD // remove when done testing live
       val UtxTestQueueCategoryId = 5
 

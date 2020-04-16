@@ -24,8 +24,10 @@ import debiki.onebox.engines._
 import javax.{script => js}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
+import talkyard.server.TyLogger
 
 
 
@@ -56,7 +58,7 @@ object RenderOnboxResult {
   */
 abstract class OneboxEngine(globals: Globals, val nashorn: Nashorn) {
 
-  def regex: scala.util.matching.Regex
+  def regex: Regex
 
   def cssClassName: String
 
@@ -68,7 +70,7 @@ abstract class OneboxEngine(globals: Globals, val nashorn: Nashorn) {
   protected def alreadySanitized = false
 
   // (?:...) is a non-capturing group.  (for local dev search: /-/u/ below.)
-  val uploadsLinkRegex =
+  val uploadsLinkRegex: Regex =
     """=['"](?:(?:(?:https?:)?//[^/]+)?/-/(?:u|uploads/public)/)([a-zA-Z0-9/\._-]+)['"]""".r
 
   private def pointUrlsToCdn(safeHtml: String): String = {
@@ -142,7 +144,7 @@ abstract class InstantOneboxEngine(globals: Globals, nashorn: Nashorn)
   */
 class Onebox(val globals: Globals, val nashorn: Nashorn) {
 
-  private val logger = play.api.Logger
+  private val logger = TyLogger("Onebox")
   private val pendingRequestsByUrl = mutable.HashMap[String, Future[String]]()
   private val oneboxHtmlByUrl = mutable.HashMap[String, String]()
   private val failedUrls = mutable.HashSet[String]()

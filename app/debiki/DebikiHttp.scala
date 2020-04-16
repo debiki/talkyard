@@ -218,7 +218,7 @@ object EdHttp {
     throw ResultException(EntityTooLargeResult(errCode, message))
 
   def throwTooManyRequests(message: String): Nothing =
-    throw ResultException(R.TooManyRequest(message))
+    throw ResultException(R.TooManyRequests(message))
 
   /** Happens e.g. if the user attempts to upvote his/her own comment or
     * vote twice on another comment.

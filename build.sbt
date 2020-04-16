@@ -78,8 +78,8 @@ val appDependencies = Seq(
    in /opt/talkyard/conf/play-framework.conf.
 
    */
-  "com.mohiva" %% "play-silhouette" % "5.0.7",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.7",
+  "com.mohiva" %% "play-silhouette" % "7.0.0",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
@@ -121,12 +121,12 @@ val appDependencies = Seq(
   "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test", // but prefer ScalaTest
+  "org.scalatest" %% "scalatest" % "3.1.1" % "test", // but prefer ScalaTest
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test)
 
 
 val main = (project in file("."))
-  .enablePlugins(play.sbt.Play, BuildInfoPlugin)
+  .enablePlugins(play.sbt.PlayWeb, BuildInfoPlugin)
   .settings(mainSettings: _*)
   .dependsOn(
     edCore % "test->test;compile->compile",

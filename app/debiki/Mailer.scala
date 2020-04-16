@@ -27,10 +27,12 @@ import play.{api => p}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Promise
+import talkyard.server.TyLogger
 
 
 object Mailer {
 
+  private val logger = TyLogger("Mailer")
 
   /** Starts a single email sending actor.
     *
@@ -44,21 +46,26 @@ object Mailer {
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory, config: p.Configuration,
         now: () => When, isProd: Boolean): ActorRef = {
 
+    // Dupl [305926XFG24]
+    def getBoolOr(confValueName: String, default: Boolean): Boolean =
+      config.getOptional[Boolean](confValueName) getOrElse default
+    def getStringNoneIfBlank[A](confName: String): Option[String] =
+      config.getOptional[String](confName).noneIfBlank
     // ----- Read in config
 
-    val anySmtpServerName = config.getString("talkyard.smtp.host").orElse(
-      config.getString("talkyard.smtp.server")).noneIfBlank // old deprecated name
+    val anySmtpServerName = getStringNoneIfBlank("talkyard.smtp.host").orElse(
+      getStringNoneIfBlank("talkyard.smtp.server")) // old deprecated name
 
-    val anySmtpPort = config.getInt("talkyard.smtp.port")
-    val anySmtpTlsPort = config.getInt("talkyard.smtp.tlsPort") orElse {
+    val anySmtpPort = config.getOptional[Int]("talkyard.smtp.port")
+    val anySmtpTlsPort = config.getOptional[Int]("talkyard.smtp.tlsPort") orElse {
       // Depreacted name, because SSL is insecure and in fact disabled. [NOSSL]
-      config.getInt("talkyard.smtp.sslPort")
+      config.getOptional[Int]("talkyard.smtp.sslPort")
     }
-    val anySmtpUserName = config.getString("talkyard.smtp.user").noneIfBlank
-    val anySmtpPassword = config.getString("talkyard.smtp.password").noneIfBlank
-    val anyFromAddress = config.getString("talkyard.smtp.fromAddress").noneIfBlank
-    val anyBounceAddress = config.getString("talkyard.smtp.bounceAddress").noneIfBlank
-    val debug = config.getBoolean("talkyard.smtp.debug") getOrElse false
+    val anySmtpUserName = getStringNoneIfBlank("talkyard.smtp.user")
+    val anySmtpPassword = getStringNoneIfBlank("talkyard.smtp.password")
+    val anyFromAddress = getStringNoneIfBlank("talkyard.smtp.fromAddress")
+    val anyBounceAddress = getStringNoneIfBlank("talkyard.smtp.bounceAddress")
+    val debug = getBoolOr("talkyard.smtp.debug", default = false)
 
     // About STARTTLS and TLS/SSL and ports 25, 587, 465:
     // https://www.fastmail.com/help/technical/ssltlsstarttls.html
@@ -69,21 +76,21 @@ object Mailer {
 
     // This will use & require STARTTLS = starts in unencrypted plaintext on the smtp port
     // (typically 587, or, in the past, 25) and upgrades to TLS.
-    val requireStartTls = config.getBoolean("talkyard.smtp.requireStartTls") getOrElse false
+    val requireStartTls = getBoolOr("talkyard.smtp.requireStartTls", default = false)
 
-    val enableStartTls = config.getBoolean("talkyard.smtp.enableStartTls") getOrElse true
+    val enableStartTls = getBoolOr("talkyard.smtp.enableStartTls", default = true)
 
     // This with instead start with TLS directly on the tls/ssl port (typically 465).
-    val connectWithTls = config.getBoolean("talkyard.smtp.connectWithTls") orElse {
+    val connectWithTls = config.getOptional[Boolean]("talkyard.smtp.connectWithTls") orElse {
       // Deprecated name, because SSL is insecure and in fact disabled. [NOSSL]
-      config.getBoolean("talkyard.smtp.useSslOrTls")
+      config.getOptional[Boolean]("talkyard.smtp.useSslOrTls")
     } getOrElse !requireStartTls
 
     val checkServerIdentity =
-      config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(enableStartTls || connectWithTls)
+      getBoolOr("talkyard.smtp.checkServerIdentity", enableStartTls || connectWithTls)
 
     val insecureTrustAllHosts =
-      config.getBoolean("talkyard.smtp.insecureTrustAllHosts") getOrElse false
+      getBoolOr("talkyard.smtp.insecureTrustAllHosts", default = false)
 
     // ----- Config makes sense?
 
@@ -121,8 +128,8 @@ object Mailer {
     val actorRef =
       if (errorMessage.nonEmpty) {
         val logMessage = s"I won't send emails, because: $errorMessage [TyEEMAILCONF]"
-        if (isProd) p.Logger.error(logMessage)
-        else p.Logger.info(logMessage)
+        if (isProd) logger.error(logMessage)
+        else logger.info(logMessage)
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory, now, serverName = "", port = None,
@@ -136,7 +143,7 @@ object Mailer {
         val serverName = anySmtpServerName getOrDie "TyE3KPD78"
         val userName = anySmtpUserName
         val fromAddress = anyFromAddress getOrDie "TyE2QKJ93"
-        p.Logger.info(o"""Will use email server: $serverName as user $userName,
+        logger.info(o"""Will use email server: $serverName as user $userName,
             smtp port: $anySmtpPort,
             smtp tls port: $anySmtpTlsPort,
             require STARTTLS: $requireStartTls,
@@ -146,7 +153,7 @@ object Mailer {
             insecureTrustAllHosts: $insecureTrustAllHosts,
             from addr: $fromAddress [TyMEMAILCONF]""")
         if (requireStartTls && connectWithTls) {
-          p.Logger.warn(o"""Weird email config: both require-STARTTLS and
+          logger.warn(o"""Weird email config: both require-STARTTLS and
           connect-directly-with-TLS have been configured, but I can do only *one*
           of those things. I'll try STARTTLS. but won't connect directly over TLS.
           — In play-framework.conf, please comment out one of:
@@ -219,7 +226,7 @@ class Mailer(
   val broken: Boolean,
   val isProd: Boolean) extends Actor {
 
-  private val logger = play.api.Logger("app.mailer")
+  private val logger = TyLogger("app.mailer")
 
   private val e2eTestEmails = mutable.HashMap[String, Promise[Vector[Email]]]()
 
@@ -317,7 +324,7 @@ class Mailer(
     case ex: Exception =>
       // Akka would otherwise discard this actor and create another one, but then
       // its state, incl num emails sent counter, gets lost.
-      p.Logger.error("Error in Mailer actor [TyE2RDH4F]", ex)
+      logger.error("Error in Mailer actor [TyE2RDH4F]", ex)
   }
 
 
@@ -467,7 +474,7 @@ class Mailer(
     * email accessible to end-to-end tests.
     */
   def fakeSend(email: Email, siteDao: SiteDao) {
-    play.api.Logger.debug(i"""
+    logger.debug(i"""
       |Fake-sending email, logging to console only: [TyM123FAKEMAIL]
       |————————————————————————————————————————————————————————————
       |$email
@@ -483,7 +490,7 @@ class Mailer(
     e2eTestEmails.get(siteIdColonEmailAddress) match {
       case Some(promise) =>
         if (promise.isCompleted) {
-          p.Logger.debug(
+          logger.debug(
               s"Appending e2e test email to: ${email.sentTo}, subject: ${email.subject} [DwM2PK3]")
           val oldEmails = promise.future.value.get.toOption getOrDie "EdE4FSBBK2"
           val moreEmails = oldEmails :+ email

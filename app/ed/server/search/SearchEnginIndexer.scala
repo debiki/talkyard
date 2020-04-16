@@ -24,12 +24,11 @@ import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse}
 import org.{elasticsearch => es}
-import play.{api => p}
 import scala.concurrent.duration._
 import Prelude._
+import talkyard.server.TyLogger
 import org.elasticsearch.common.xcontent.XContentType
 import org.postgresql.util.PSQLException
-import play.api.Logger
 import scala.concurrent.ExecutionContext
 
 
@@ -69,15 +68,15 @@ object SearchEngineIndexer {
       val response: CreateIndexResponse =
         client.admin().indices().create(createIndexRequest).actionGet()
       if (response.isAcknowledged)
-        p.Logger.info("Created ElasticSearch index and mapping.")
+        logger.info("Created ElasticSearch index and mapping.")
       else
-        p.Logger.warn("ElasticSearch index creation request not acknowledged? What does that mean?")
+        logger.warn("ElasticSearch index creation request not acknowledged? What does that mean?")
     }
     catch {
       case _: es.indices.IndexAlreadyExistsException =>
-        p.Logger.info("ElasticSearch index has already been created, fine.")
+        logger.info("ElasticSearch index has already been created, fine.")
       case NonFatal(error) =>
-        p.Logger.warn("Error trying to create ElasticSearch index [DwE84dKf0]", error)
+        logger.warn("Error trying to create ElasticSearch index [DwE84dKf0]", error)
         throw error
     }
   }
@@ -88,13 +87,13 @@ object SearchEngineIndexer {
     try {
       val response = client.admin.indices.delete(deleteRequest).actionGet()
       if (response.isAcknowledged)
-        p.Logger.info("Deleted the ElasticSearch index.")
+        logger.info("Deleted the ElasticSearch index.")
       else
-        p.Logger.warn("ElasticSearch index deletion request not acknowledged? What does that mean?")
+        logger.warn("ElasticSearch index deletion request not acknowledged? What does that mean?")
     }
     catch {
       case _: org.elasticsearch.indices.IndexMissingException => // ignore
-      case NonFatal(ex) => p.Logger.warn("Error deleting ElasticSearch index [DwE5Hf39]:", ex)
+      case NonFatal(ex) => logger.warn("Error deleting ElasticSearch index [DwE5Hf39]:", ex)
     }
   }
   */
@@ -143,6 +142,8 @@ class IndexingActor(
   private val batchSize: Int,
   private val client: es.client.Client,
   private val systemDao: SystemDao) extends Actor {
+
+  private val logger = TyLogger("IndexingActor")
 
   val indexCreator = new IndexCreator()
   val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
@@ -196,7 +197,7 @@ class IndexingActor(
 
   private def indexPost(post: Post, siteId: SiteId, stuffToIndex: StuffToIndex) {
     val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
-      Logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
+      logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
       return
     }
     val tags = stuffToIndex.tags(siteId, post.id)
@@ -211,7 +212,7 @@ class IndexingActor(
 
     requestBuilder.execute(new ActionListener[IndexResponse] {
       def onResponse(response: IndexResponse) {
-        p.Logger.debug("Indexed site:post " + docId)
+        logger.debug("Indexed site:post " + docId)
         // This isn't the actor's thread. This is some thread controlled by ElasticSearch.
         // So don't call systemDao.deleteFromIndexQueue(post, siteId) from here
         // — because then the index queue apparently gets updated by many threads
@@ -221,7 +222,7 @@ class IndexingActor(
       }
 
       def onFailure(ex: Exception) {
-        p.Logger.error(i"Error when indexing siteId:postId: $docId", ex)
+        logger.error(i"Error when indexing siteId:postId: $docId", ex)
       }
     })
   }
@@ -237,11 +238,11 @@ class IndexingActor(
       try systemDao.deleteFromIndexQueue(siteIdAndPost.post, siteIdAndPost.siteId)
       catch {
         case ex: PSQLException if ex.getSQLState == "40001" =>  // [PGSERZERR]
-          p.Logger.error(
+          logger.error(
             o"""PostgreSQL serialization error when deleting
                 siteId:postId: $siteIdAndPost from index queue [EdE40001IQ]""", ex)
         case ex: Exception =>
-          p.Logger.error(
+          logger.error(
             s"error when deleting siteId:postId: $siteIdAndPost from index queue [EdE5PKW20]", ex)
       }
     }
@@ -265,20 +266,20 @@ class IndexingActor(
         // (This isn't the actor's thread. This is some thread controlled by ElasticSearch.)
         if (response.hasFailures) {
           val theError = response.buildFailureMessage
-          p.Logger.error(o"""Unindexed ${posts.length} posts, but something went wrong:
+          logger.error(o"""Unindexed ${posts.length} posts, but something went wrong:
                $theError [EsE4GKY2]""")
           COULD // analyze the response and delete from the index queue those that were
           // successfully unindexed.
         }
         else {
-          p.Logger.debug(s"Unindexed ${posts.length} posts [EsM2Y5KF0]")
+          logger.debug(s"Unindexed ${posts.length} posts [EsM2Y5KF0]")
           COULD_OPTIMIZE // batch delete
           posts.foreach(systemDao.deleteFromIndexQueue(_, siteId))
         }
       }
 
       def onFailure(ex: Exception) {
-        p.Logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", ex)
+        logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", ex)
       }
     })
   }
