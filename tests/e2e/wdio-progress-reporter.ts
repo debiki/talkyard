@@ -1,5 +1,6 @@
 import WDIOReporter from '@wdio/reporter'
 import * as ansiColors from 'ansi-colors';
+import * as fs from 'fs';
 //import WDIOReporter from '@wdio/reporter';
 //import { default as ansiColors } from 'ansi-colors';
 
@@ -24,8 +25,24 @@ function nowString(): string {
 // process and it'll never get the chance to tell you which test hanged).
 //
 class TyWdioReporter extends WDIOReporter {
+    #options: WDIOReporter.Options;
+    #logFilePath: string | U;
+
     constructor(options: WDIOReporter.Options) {
       super(options)
+      this.#options = options;
+
+      const directory = 'target/e2e-test-logs/';
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true, mode: 0o777 });
+      }
+
+      // Unique file name, so won't overwrite. (Don't want to try to find
+      // any reliable Nodejs atomic-file-append lib. How would I know that
+      // it actually works? (doesn't sometimes overwrite and lose test results))
+      const randNrStr = Math.random().toString().substr(2, 15);  // substr drops '0.'
+      const fileName = `ty-e2e-log-${Date.now()}-${randNrStr}.txt`;
+      this.#logFilePath = directory + fileName;
     }
 
     reporterName = 'TyWdioReporter';
@@ -46,9 +63,11 @@ class TyWdioReporter extends WDIOReporter {
     }
 
     onRunnerEnd() {
+      //this.printToFile();
+      //this.printToConsole();
     }
 
-    printAllResults() {
+    printToConsole() {
       logProgrBold(`\n` +
           `---------------------------------------------------------------------\n` +
           `Done running ${this.#numSpecs} specs, results:\n` +
@@ -89,6 +108,43 @@ class TyWdioReporter extends WDIOReporter {
           `---------------------------------------------------------------------`);
     }
 
+    printToFile() {
+      // A bug in WebdriverIO?  let suite of this.#suites  is always the same
+      // suite, and *before* it starts — also when running many.  [WDIOREPTRBUG]
+      let text = '';
+      for (let suite of this.#suites) {
+        text += `SUITE: ${suite.title}\n`;
+        let ok = true;
+        let test: WDIOReporter.Test;
+        let worstState: WDIOReporter.TestState | U = undefined;
+        for (test of suite['tests']) {
+          // State is:  'passed' | 'pending' | 'failed' | 'skipped'
+          if (test.state === 'failed') {
+            worstState = test.state;
+            ok = false;
+            text += `----- FAILED:  ${suite.title}:  ${test.title}\n`;
+            for (let error of test.errors) {
+              text += `  Stack trace: ${error.stack}\n`;
+            }
+          }
+          else if (test.state === 'skipped' || test.state === 'pending') {
+            if (worstState !== 'failed') {
+              worstState = test.state;
+            }
+          }
+          else {
+            worstState = test.state;
+          }
+        }
+        if (ok) {
+          // For now:
+          text += `----- ${worstState}:  ${suite.title}\n`;
+        }
+      }
+
+      fs.writeFileSync(this.#logFilePath, text);
+    }
+
     onSuiteStart(suite: WDIOReporter.Suite) {
       /*
       // Don't log this, for nested suites (a  describe(){...} inside a test file).
@@ -107,6 +163,9 @@ class TyWdioReporter extends WDIOReporter {
     }
 
     onSuiteEnd(suite: WDIOReporter.Suite) {
+      //[WDIOREPTRBUG] wdio bug? this is always the same suite, and: "type": "suite:start"
+      // but this is on-End?
+      // console.log(`\n\nSUITE END:\n${JSON.stringify(suite, undefined, 2)}\n`);
       this.#suites.push(suite);
       //if (suite.title !== suite.parent) return;
       const endMs = Date.now();
@@ -141,6 +200,13 @@ class TyWdioReporter extends WDIOReporter {
       //console.log(`Stack traces:\n${test.error.stack}`);
       logProgr(`Stack trace:\n${test.error.stack}`);
       logProgr(``);
+
+      // For now, instead of printToFile() above:    [WDIOREPTRBUG]
+      let text = `----- FAILED:  ${test.fullTitle}\n`;
+      for (let error of test.errors) {
+        text += `${error.stack}\n`;
+      }
+      fs.writeFileSync(this.#logFilePath, text + '\n');
     }
 
     onTestSkip(test: WDIOReporter.Test) {

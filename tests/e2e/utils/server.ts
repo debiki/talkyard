@@ -459,7 +459,7 @@ function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
 
 
 function lastEmailMatches(siteId: SiteId, emailAddress: string,
-      textOrTextsToMatch: string | string[], browser, assertMatches?: true): string | false {
+      textOrTextsToMatch: string | string[], browser?, assertMatches?: true): string | false {
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));

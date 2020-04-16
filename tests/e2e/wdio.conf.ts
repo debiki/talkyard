@@ -363,6 +363,8 @@ const config: WebdriverIO.Config = {
     if (!global.browserA && _.isArray(capabilities) && capabilities.length === 1) {
       global.browserA = global.browser;
     }
+    // Let's do this instead:
+    global.oneWdioBrowser = global.browserA || global.browser;
 
     global.wdioBrowser = global.browser;
     global.wdioBrowserA = global.browserA;

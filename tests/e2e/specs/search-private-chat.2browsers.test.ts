@@ -10,18 +10,14 @@ import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
-let browser: TyE2eTestBrowser;
-declare let browserA: any;
-declare let browserB: any;
-
 let everyone;
-let michael;
+let michael: Member;
 let michaelsBrowser: TyE2eTestBrowser;
-let owen;
+let owen: Member;
 let owensBrowser: TyE2eTestBrowser;
-let alice;
+let alice: Member;
 let alicesBrowser: TyE2eTestBrowser;
-let mallory;
+let mallory: Member;
 let mallorysBrowser: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 let guest;
@@ -113,8 +109,8 @@ describe("priv chat", () => {
 
   it("... they see each other's messages", () => {
     //everyone.chat.waitForNumMessages(4);
-    browserA.chat.waitForNumMessages(4);
-    browserB.chat.waitForNumMessages(4);
+    owensBrowser.chat.waitForNumMessages(4);
+    michaelsBrowser.chat.waitForNumMessages(4);
   });
 
   it("Michael can find the topic by searching", () => {
