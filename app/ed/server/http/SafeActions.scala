@@ -23,12 +23,11 @@ import com.debiki.core.Prelude._
 import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
 import debiki._
 import ed.server.security.EdSecurity
-import play.{api => p}
 import play.api.mvc._
 import play.api.libs.typedmap.TypedKey
-import play.api.Logger
 import scala.concurrent.{ExecutionContext, Future}
 import SafeActions._
+import talkyard.server.TyLogging
 
 
 object SafeActions {
@@ -41,7 +40,8 @@ object SafeActions {
  * require a valid xsrf token for POST requests.
  * Also understand Debiki's internal throwBadReq etcetera functions.
  */
-class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayBodyParsers) {
+class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayBodyParsers)
+  extends TyLogging {
 
   import EdHttp._
 
@@ -66,9 +66,10 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
 
   val allowFakeIp: Boolean = {
-    val allow = !globals.isProd || globals.conf.getBoolean("talkyard.allowFakeIp").getOrElse(false)
+    val allow = !globals.isProd ||
+      globals.conf.getOptional[Boolean]("talkyard.allowFakeIp").getOrElse(false)
     if (allow) {
-      Logger.info("Enabling fake IPs [DwM0Fk258]")
+      logger.info("Enabling fake IPs [TyM0Fk258]")
     }
     allow
   }
@@ -80,6 +81,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
   object ExceptionAction extends ActionBuilder[Request, AnyContent] {
+    SECURITY // stop using ExceptionAction at most places — change to PlainApiActionImpl + rate limits
 
     val parser: BodyParser[AnyContent] = parsers.anyContent  // [play26ask]
 
@@ -207,7 +209,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   private def internalError(request: Request[_], throwable: Throwable,
         errorCode: String) = {
     val url = request.method + " //" + request.host + request.uri
-    p.Logger.error(s"Replying internal error to: $url [$errorCode]",
+    logger.error(s"Replying internal error to: $url [$errorCode]",
       throwable)
     Results.InternalServerError(i"""500 Internal Server Error
       |
@@ -286,7 +288,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
             "TyEDATABCONN2", "Or did a query take too long?")
       }
 
-    p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
+    logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
 
     val (hasItStoppedPerhaps, fixProblemTips) =
       if (globals.isProd)

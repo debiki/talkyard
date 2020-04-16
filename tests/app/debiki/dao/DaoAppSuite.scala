@@ -22,13 +22,12 @@ import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml, TextAndHtmlMaker}
 import ed.server.{EdAppComponents, EdContext}
 import org.scalatest._
-import org.scalatestplus.play.{BaseOneAppPerSuite, BaseOneAppPerTest, FakeApplicationFactory}
+import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
 import DaoAppSuite._
 import java.io.File
 
 import play.api.inject.DefaultApplicationLifecycle
 import play.api._
-import play.core.DefaultWebCommands
 
 
 
@@ -64,19 +63,22 @@ class DaoAppSuite(
 
   override def fakeApplication: Application = {
     val env = Environment.simple(new File("."))
-    val fileConfig = Configuration.load(env)
-    val totalConfig = fileConfig ++ testConfig
-    val appLoaderContext = ApplicationLoader.Context(
-      environment = env,
-      sourceMapper = None,
-      webCommands = new DefaultWebCommands(),
-      initialConfiguration = totalConfig,
-      lifecycle = new DefaultApplicationLifecycle()
-    )
 
+    // Done automatically by Play 2.8:?
+    // — See Context.create(..., initialSettings = ...) docs.
+    // val fileConfig = Configuration.load(env)
+    // val totalConfig = fileConfig ++ testConfig
+
+    val appLoaderContext = ApplicationLoader.Context.create(
+      environment = env,
+      initialSettings = testConfig,
+      lifecycle = new DefaultApplicationLifecycle(),
+      devContext = None)
+
+    /*  [PLAY28] this still needed?
     LoggerConfigurator(env.classLoader).foreach {
       _.configure(env, totalConfig, optionalProperties = Map.empty)
-    }
+    } */
 
     edAppComponents = new EdAppComponents(appLoaderContext)
     setTime(startTime) // now 'globals' is available
@@ -84,7 +86,7 @@ class DaoAppSuite(
   }
 
 
-  private def testConfig: Configuration = {
+  private def testConfig: Map[String, String] = {
     var configMap = Map[String, String](
       "isTestShallEmptyDatabase" -> "true",
       "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
@@ -97,7 +99,7 @@ class DaoAppSuite(
     minPasswordLength foreach { min =>
       configMap = configMap.updated("talkyard.minPasswordLength", min.toString)
     }
-    Configuration.from(extraConfig ++ configMap)
+    extraConfig ++ configMap
   }
 
 
@@ -230,14 +232,14 @@ class DaoAppSuite(
 
 
   def updateMemberPreferences(dao: SiteDao, memberId: UserId,
-        fn: Function1[AboutUserPrefs, AboutUserPrefs]) {
+        fn: AboutUserPrefs => AboutUserPrefs) {
     val member = dao.loadTheUserInclDetailsById(memberId)
     dao.saveAboutMemberPrefs(fn(member.preferences_debugTest), Who(memberId, browserIdData))
   }
 
 
   def updateGroupPreferences(dao: SiteDao, groupId: UserId, byWho: Who,
-        fn: Function1[AboutGroupPrefs, AboutGroupPrefs]) {
+        fn: AboutGroupPrefs => AboutGroupPrefs) {
     val group = dao.loadTheGroupInclDetailsById(groupId)
     dao.saveAboutGroupPrefs(fn(group.preferences), byWho)
   }

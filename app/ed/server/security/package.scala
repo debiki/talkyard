@@ -22,10 +22,10 @@ import com.debiki.core.Prelude._
 import debiki.{EdHttp, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, Request}
-import play.api.Logger
 import scala.util.Try
 import EdSecurity._
 import ed.server.auth.MayMaybe
+import talkyard.server.TyLogger
 
 
 sealed abstract class XsrfStatus { def isOk = false }
@@ -129,6 +129,8 @@ class EdSecurity(globals: Globals) {
 
   import EdHttp._
 
+  private val logger = TyLogger("TySecurity")
+
   private val XsrfTokenInputName = "dw-fi-xsrf"
 
   /** Let the xsrf token one gets when logging in, expire a bit after the session,
@@ -176,7 +178,7 @@ class EdSecurity(globals: Globals) {
         // Accept this request, and create new XSRF token if needed.
 
         if (!sessionIdStatus.canUse && !sessionIdStatus.isInstanceOf[SidExpired])
-          Logger.warn(s"Bad SID: $sessionIdStatus, from IP: ${realOrFakeIpOf(request)}")
+          logger.warn(s"Bad SID: $sessionIdStatus, from IP: ${realOrFakeIpOf(request)}")
 
         val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
           if (anyXsrfCookieValue.isDefined) {

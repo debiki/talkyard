@@ -12,9 +12,12 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import scala.concurrent.{ExecutionContext, Future}
+import talkyard.server.TyLogger
 
 
 class EdAppLoader extends ApplicationLoader {
+
+  private val logger = TyLogger("TyAppLoader")
 
   def load(context: ApplicationLoader.Context): Application = {
     LoggerConfigurator(context.environment.classLoader).foreach {
@@ -24,9 +27,9 @@ class EdAppLoader extends ApplicationLoader {
     val isProd = context.environment.mode == play.api.Mode.Prod
     Globals.setIsProdForever(isProd)
 
-    p.Logger.info("Starting... [TyMHELLO]")
+    logger.info("Starting... [TyMHELLO]")
     val app = new EdAppComponents(context).application
-    p.Logger.info("Started. [TyMSTARTED]")
+    logger.info("Started. [TyMSTARTED]")
     app
   }
 
@@ -37,8 +40,10 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   with AhcWSComponents
   with _root_.controllers.AssetsComponents {
 
+  private val logger = TyLogger("TyAppComponents")
+
   actorSystem registerOnTermination {
-    p.Logger.info("Akka actor system has shut down. [TyMACTRSGONE]")
+    logger.info("Akka actor system has shut down. [TyMACTRSGONE]")
   }
 
   // Could instead extend HttpFiltersComponents, but it adds a weird localhost-only filter.
@@ -73,10 +78,10 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   applicationLifecycle.addStopHook { () =>
     Future.successful {
-      p.Logger.info("Shutting down... [EsMBYESOON]")
+      logger.info("Shutting down... [EsMBYESOON]")
       tracer.close()
       globals.stopStuff()
-      p.Logger.info("Done shutting down. [EsMBYE]")
+      logger.info("Done shutting down. [EsMBYE]")
     }
   }
 

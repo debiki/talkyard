@@ -20,8 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki.EdHttp._
 import play.api._
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
-import play.api.mvc.BodyParsers.parse.empty
+import play.api.mvc.{Action, ControllerComponents}
 import Prelude._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
@@ -68,17 +67,17 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
       case UnsubDone => PreventResub
       case PreventResub => ResubPrevented
       case ResubPrevented => "unused-value"
-      case x => die("DwE3029541", "Bad 'do' url param value: " + x)
+      case x => throwForbidden("TyE3029541", "Bad 'do' url param value: " + x)
     })
 
 
-  def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(empty) { request =>
+  def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) { request =>
     Ok(views.html.unsubscribePage(emailId, doWhat(request), nextPage(request)))
   }
 
 
   def handleForm(emailId: EmailId): Action[Map[String, Seq[String]]] =
-        ExceptionAction(parse.urlFormEncoded(maxLength = 200)) { request =>
+        ExceptionAction(cc.parsers.formUrlEncoded(maxLength = 200)) { request =>
     val site = globals.lookupSiteOrThrow(request)
 
     SECURITY; SHOULD // rate limit and check email type.
@@ -107,7 +106,7 @@ class UnsubscriptionController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(empty) { _ =>
+  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     Ok(views.html.unsubscribe.youHaveBeenUnsubscribed().body) as HTML
   }
 

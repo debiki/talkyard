@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import ed.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
+import talkyard.server.TyLogger
 
 import scala.collection.immutable
 import scala.collection.mutable
@@ -37,8 +38,6 @@ import ed.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
-
-import com.debiki.core
 import talkyard.server.PostRendererSettings
 
 
@@ -122,6 +121,8 @@ class SiteDao(
   with SummaryEmailsDao
   with FeedsDao
   with AuditDao {
+
+  protected lazy val logger: play.api.Logger = TyLogger("SiteDao")
 
   // Could be protected instead? Then need to move parts of ApiV0Controller to inside the Dao.
   lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)

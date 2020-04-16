@@ -24,11 +24,14 @@ import debiki.EdHttp.throwTooManyRequests
 import ed.server.http.DebikiRequest
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
+import talkyard.server.TyLogger
 import ed.server.security.EdSecurity
 
 
 
 class RateLimiter(globals: Globals, security: EdSecurity) {
+
+  private val logger = TyLogger("RateLimiter")
 
   /** Don't place this cache in Redis because 1) the rate limiter should be really fast,
     * not do any calls to other processes. And 2) it's just fine if sometimes a bit too
@@ -162,7 +165,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
         s"\n\nEmail: ${globals.securityComplaintsEmailAddress.get}"
 
 
-    play.api.Logger.debug(s"Rate limiting ${classNameOf(rateLimits)} for key: $key [DwM429RLMT]")
+    logger.debug(s"Rate limiting ${classNameOf(rateLimits)} for key: $key [DwM429RLMT]")
     throwTooManyRequests(errorMessage)
   }
 

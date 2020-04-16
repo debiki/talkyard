@@ -28,14 +28,14 @@ import org.elasticsearch.action.ActionListener
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder
 import org.{elasticsearch => es}
 import org.scalactic.{Bad, Good}
-import play.{api => p}
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
+import talkyard.server.TyLogging
 
 
 class SearchEngine(
   private val siteId: SiteId,
-  private val elasticSearchClient: Client) {
+  private val elasticSearchClient: Client) extends TyLogging {
 
   def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[Participant])
         : Future[immutable.Seq[SearchHit]] = {
@@ -121,7 +121,7 @@ class SearchEngine(
           parseElasticSearchJsonDoc(elasticSearchHit) match {
             case Good(hit) => Some(hit)
             case Bad(errorMessage) =>
-              p.Logger.error(o"""Error when parsing search query result, query: $searchQuery
+              logger.error(o"""Error when parsing search query result, query: $searchQuery
                    result: $errorMessage""")
               None
           }
@@ -130,7 +130,7 @@ class SearchEngine(
       }
 
       def onFailure(ex: Exception) {
-        p.Logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", ex)
+        logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", ex)
         promise.failure(ex)
       }
     })

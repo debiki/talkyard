@@ -93,7 +93,7 @@ trait UploadsDao {
               // there's a maybe-workaround, but doesn't seem to generate a BufferedImage:
               //   https://stackoverflow.com/a/23851091/694469 —>
               //   —> https://github.com/DhyanB/Open-Imaging
-              p.Logger.warn(o"""Java ArrayIndexOutOfBoundsException: '4096' bug when reading
+              logger.warn(o"""Java ArrayIndexOutOfBoundsException: '4096' bug when reading
                   uploaded image, site: $siteId, file name: $uploadedFileName, user: $uploadedById""")
               None
             }
@@ -179,7 +179,7 @@ trait UploadsDao {
       case _: jf.FileAlreadyExistsException =>
         // Fine. Same name -> same hash -> same content.
       case ex: Exception =>
-        p.Logger.error(o"""Error moving file into place, name: $uploadedFileName, file path:
+        logger.error(o"""Error moving file into place, name: $uploadedFileName, file path:
           ${optimizedFile.getPath}, destination: ${destinationFile.getPath} [DwE8MF2]""", ex)
         throw ex
     }

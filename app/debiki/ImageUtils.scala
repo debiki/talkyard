@@ -24,6 +24,7 @@ import java.awt.image.BufferedImage
 import java.{io => jio}
 import javax.imageio.{IIOImage, ImageWriteParam, ImageWriter, ImageIO}
 import javax.imageio.stream.FileImageOutputStream
+import talkyard.server.TyLogger
 
 
 /** COULD instead compress client side. And only verify server side that compression level > X
@@ -54,6 +55,7 @@ object ImageUtils {
   // For now only!
   private val Mutex = new Object
 
+  private val logger = TyLogger("ImageUtils")
 
   /** Estimates the image size. Assumes 65k colors, seems to work okay when combined
     * with jpgCompressionQualityForSizeBytes(the-size) just below.
@@ -99,7 +101,7 @@ object ImageUtils {
     val imageRgb = new BufferedImage(imagePerhapsAlpha.getWidth, imagePerhapsAlpha.getHeight,
       BufferedImage.TYPE_INT_RGB)
     val done = imageRgb.getGraphics.drawImage(imagePerhapsAlpha, 0, 0, null)
-    if (!done) play.api.Logger.warn(o"""Not done removing alpha, will the image be broken?
+    if (!done) logger.warn(o"""Not done removing alpha, will the image be broken?
       Destination: ${destination.toPath.toString}""")
 
     // Apparently (see http://info.michael-simons.eu/2012/01/25/the-dangers-of-javas-imageio/ )

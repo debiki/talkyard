@@ -27,7 +27,7 @@ class StripIndentStringInterpolatorTest extends Specification {
 
     "interpolate strings" in {
       val arg = "CD"
-      ind"ab${arg}ef" must_== "abCDef"
+      i"ab${arg}ef" must_== "abCDef"
     }
 
     "indent arguments" in {
@@ -39,7 +39,7 @@ class StripIndentStringInterpolatorTest extends Specification {
           |GH
         """.stripMargin
 
-      ind"""
+      i"""
         ab
           ${arg}
           ij""" must_== """
@@ -52,7 +52,7 @@ class StripIndentStringInterpolatorTest extends Specification {
     }
 
     "strip margin" in {
-      ind"""
+      i"""
           |CD
           |  EF
           |GH

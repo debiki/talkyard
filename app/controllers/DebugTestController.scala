@@ -37,12 +37,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.Future._
 import scala.util.Try
+import talkyard.server.TyLogging
 
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
 class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.safeActions.ExceptionAction
@@ -57,7 +58,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
     // If there are super many errors, perhaps all of them is the same error. Don't log too many.
     val firstErrors = allErrorMessages take 20
     firstErrors foreach { message =>
-      p.Logger.warn(o"""Browser error,
+      logger.warn(o"""Browser error,
       ip: ${request.ip},
       user: ${request.user.map(_.id)},
       site: ${request.siteId}

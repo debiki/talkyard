@@ -16,6 +16,7 @@ declare const describe: any;
 // It's unclear if 'browser' refers to an instance of TyE2eTestBrowser
 // or WebdriverIO.BrowserObject, so let's avoid that name.
 declare const wdioBrowser: WebdriverIO.BrowserObject;  // RENAME to allWdioBrowsers
+declare const allWdioBrowsers: WebdriverIO.BrowserObject;  // ... started
 declare const oneWdioBrowser: WebdriverIO.BrowserObject;
 declare const wdioBrowserA: WebdriverIO.BrowserObject;
 declare const wdioBrowserB: WebdriverIO.BrowserObject | U;

@@ -21,9 +21,9 @@ import com.debiki.core._
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
 import org.elasticsearch.common.xcontent.XContentType
 import org.{elasticsearch => es}
-import play.{api => p}
 import scala.util.control.NonFatal
 import scala.collection.mutable
+import talkyard.server.TyLogger
 import Prelude._
 
 
@@ -31,6 +31,7 @@ import Prelude._
 class IndexCreator {
 
   private val languagesLogged = mutable.HashSet[String]()
+  private val logger = TyLogger("IndexCreator");
 
   /** Returns all indexes that were created. Everything in the languages used in these
     * indexes should be (re)indexed.
@@ -58,10 +59,10 @@ class IndexCreator {
         client.admin().indices().create(createIndexRequest).actionGet()
       val message = s"Created search index for '$language' [EsM8KZO2]."
       if (response.isAcknowledged) {
-        p.Logger.info(message)
+        logger.info(message)
       }
       else {
-        p.Logger.warn(o"""$message But the index mappings have not yet propagated
+        logger.warn(o"""$message But the index mappings have not yet propagated
             to all nodes in the cluster [EsW6YKF24].""")
       }
       true
@@ -69,11 +70,11 @@ class IndexCreator {
     catch {
       case _: es.ResourceAlreadyExistsException =>
         if (!languagesLogged.contains(indexSettings.language)) {
-          p.Logger.info(o"""Search index already created for '$language', fine [EsM2FG40]""")
+          logger.info(o"""Search index already created for '$language', fine [EsM2FG40]""")
         }
         false
       case NonFatal(error) =>
-        p.Logger.error(s"Error creating search index for '$language' [EsE8BF5]", error)
+        logger.error(s"Error creating search index for '$language' [EsE8BF5]", error)
         throw error
     }
 

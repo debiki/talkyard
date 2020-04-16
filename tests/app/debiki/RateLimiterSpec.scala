@@ -18,11 +18,10 @@
 package debiki
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki.dao.DaoAppSuite
 import ed.server.http.DebikiRequest
-import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
+import org.mockito.Mockito
 import play.api.http.Status.TOO_MANY_REQUESTS
 import play.{api => p}
 import java.{util => ju}
@@ -33,8 +32,7 @@ import play.api.test.FakeHeaders
 
 class RateLimiterSpec
   extends DaoAppSuite(
-    extraConfig = Map("talkyard.isTestDisableRateLimits" -> "false"))
-  with MockitoSugar {
+    extraConfig = Map("talkyard.isTestDisableRateLimits" -> "false")) {
 
   import RateLimits.Unlimited
 
@@ -44,7 +42,7 @@ class RateLimiterSpec
 
   def mockRequest(now: UnixTime, ip: String = null, roleId: UserId = 0, siteId: SiteId = NoSiteId)
         : DebikiRequest[AnyContentAsEmpty.type] = {
-    val requestMock = mock[DebikiRequest[AnyContentAsEmpty.type]]
+    val requestMock = Mockito.mock(classOf[DebikiRequest[AnyContentAsEmpty.type]])
     // `now` might be small, close to 0, so add a few months.
     val fourMonthsSeconds = 10*1000*1000 // roughly four months
     val theIp = if (ip ne null) ip else {
@@ -67,7 +65,7 @@ class RateLimiterSpec
 
 
   def mockUser(roleId: RoleId): Participant = {
-    val userMock = mock[Participant]
+    val userMock = Mockito.mock(classOf[Participant])
     when(userMock.anyMemberId).thenReturn(Some(roleId))
     userMock
   }

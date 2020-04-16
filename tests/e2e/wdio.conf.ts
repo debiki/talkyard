@@ -363,8 +363,11 @@ const config: WebdriverIO.Config = {
     if (!global.browserA && _.isArray(capabilities) && capabilities.length === 1) {
       global.browserA = global.browser;
     }
-    // Let's do this instead:
+    // Let's do this instead: (if the test uses only one browser, then,
+    // browserA is undefined, and .browser is the only browser. But, in multiremote,
+    // browserA is one single browser, .browser runs each command in *all* browsers.)
     global.oneWdioBrowser = global.browserA || global.browser;
+    global.allWdioBrowsers = global.browser;
 
     global.wdioBrowser = global.browser;
     global.wdioBrowserA = global.browserA;
