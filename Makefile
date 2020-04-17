@@ -170,15 +170,18 @@ $(zipped_bundles): $@
 	s/d-gulp release
 
 
+# Use .js.gz, because .js files get deleted (aren't needed). [UNCOMPRAST]
+# Except for the server bundle — it loads non-gz scripts.
 debug_asset_bundles_files: \
   images/app/assets/server-bundle.js \
-  images/web/assets/talkyard-comments.js \
-  images/web/assets/talkyard-service-worker.js \
-  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js \
-  images/web/assets/$(TALKYARD_VERSION)/more-bundle.js \
-  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css
+  images/web/assets/talkyard-comments.js.gz \
+  images/web/assets/talkyard-service-worker.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
+  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz
 
 
 images/app/assets/server-bundle.js: \
@@ -215,6 +218,11 @@ images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js: \
        $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileStaffTypescript-concatScripts
+
+images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
+       node_modules/zxcvbn/dist/zxcvbn.js
+	@echo "Bundling $@"
+	s/d-gulp  bundleZxcvbn
 
 images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css: \
        $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )

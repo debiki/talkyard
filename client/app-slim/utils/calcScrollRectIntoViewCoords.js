@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var d = { i: debiki.internal };
 
-
-d.i.calcScrollRectIntoViewCoords = function(rect, options) {
+debiki.internal.calcScrollRectIntoViewCoords = function(rect, options) {
   var marginTop = options.marginTop || 15;
   var marginBottom = options.marginBottom || 15;
   var marginLeft = options.marginLeft || 15;

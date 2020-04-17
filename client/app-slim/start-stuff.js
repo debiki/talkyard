@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+(function() {
+
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
@@ -65,4 +67,5 @@ debiki2.dieIf(location.port && eds.debugOrigin.indexOf(':' + location.port) === 
   "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 
 
+})();
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
