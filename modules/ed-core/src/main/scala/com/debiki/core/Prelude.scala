@@ -346,11 +346,41 @@ object Prelude {
    *  date and time).
    */
   def toIso8601(date: ju.Date): String = {
+    toIso8601NoT(date) /*
     // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss'Z'")
     sdf.setTimeZone(_timezoneUtc)
     sdf.format(date).toString
+    */
   }
+
+  // E.g. "2011-12-03T10:15:30Z". Thread safe.
+  private val timeFormatterIsoSecondsUtc =
+    java.time.format.DateTimeFormatter.ISO_INSTANT.withZone(
+      java.time.ZoneOffset.UTC)
+
+  def toIso8601T(millis: Long): String =
+    timeFormatterIsoSecondsUtc.format(java.time.Instant.ofEpochMilli(millis))
+
+  def toIso8601T(date: ju.Date): String = toIso8601T(date.getTime)
+
+  def toIso8601NoT(millis: Long): String =
+    toIso8601T(millis).replaceAllLiterally("T", " ")
+
+  def toIso8601NoT(date: ju.Date): String =
+    toIso8601NoT(date.getTime)
+
+
+  // E.g. "2011-12-03". Thread safe.
+  private val timeFormatterIsoDayUtc =
+    java.time.format.DateTimeFormatter.ISO_LOCAL_DATE.withZone(
+      java.time.ZoneOffset.UTC)
+
+  def toIso8601Day(millis: Long): String =
+    timeFormatterIsoDayUtc.format(java.time.Instant.ofEpochMilli(millis))
+
+  def toIso8601Day(date: ju.Date): String = toIso8601Day(date.getTime)
+
 
   /** A date like "2015-12-31 23:59Z", i.e. no T and no seconds.
     *
@@ -368,6 +398,7 @@ object Prelude {
     sdf.format(date) + "Z"
   }
 
+  /*
   def toIso8601T(date: ju.Date): String = {
     // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -380,7 +411,7 @@ object Prelude {
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd")
     sdf.setTimeZone(_timezoneUtc)
     sdf.format(date).toString
-  }
+  } */
 
   /** Changes any ' ' in a ISO 8601 date string to a 'T' (changes all spaces).
    *
