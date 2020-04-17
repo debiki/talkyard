@@ -113,6 +113,7 @@ trait NotificationsSiteDaoMixin extends SiteTransaction {
     val query = s"""
       select * from notifications3
       where site_id = ?
+      order by notf_id asc
       """
     val values = List(siteId.asAnyRef)
     runQueryFindMany(query, values, rs => {
