@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+(function() {
+
 
 nodejsUtilInherits = function(constructor, superConstructor) {
   constructor.super_ = superConstructor;
@@ -108,4 +110,6 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
 
 debiki.internal.MentionsMarkdownItPlugin = MentionsMarkdownItPlugin;
 
+
+})();
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

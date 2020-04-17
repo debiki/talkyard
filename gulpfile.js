@@ -16,6 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+// Try to migrate to Webpack v5, and stop using Gulp?
+//
+// First, maybe good to convert all JS to Typescript?
+// https://www.typescriptlang.org/docs/handbook/migrating-from-javascript.html
+//
+// And need to start using ES6 modules instead of Typescript's namespaces?
+// Ideas about how to do that, gradually:
+//  - websearch: "typescript migrate namespace to module"
+//  - https://github.com/microsoft/TypeScript/issues/12473
+//  - https://www.geekytidbits.com/typescript-progressively-convert-namespaces-to-modules/
+//  - https://stackoverflow.com/questions/50458469/convert-namespace-to-module-based-typescript-code
+
+
 /**
  * Commands:
  *
@@ -230,7 +244,7 @@ var slimJsFiles = [
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
       'node_modules/react-dom-factories/index.js',
-      'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
+      'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
       'client/third-party/bliss.shy.js',
       'client/app-slim/util/stupid-lightbox.js',
@@ -244,14 +258,13 @@ var slimJsFiles = [
       'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
-      //'target/client/app-slim/posts/monitor-reading-progress-unused.js',
       //'target/client/app-slim/posts/unread-unused.js',
-      'target/client/app-slim/utils/util.js',
-      'target/client/app-slim/utils/util-browser.js',
+      'client/app-slim/utils/util.js',
+      'client/app-slim/utils/util-browser.js',
       'client/third-party/popuplib.js',
-      'target/client/app-slim/login/login-popup.js',
+      'client/app-slim/login/login-popup.js',
       'target/client/slim-typescript.js',
-      'target/client/app-slim/start-stuff.js'];
+      'client/app-slim/start-stuff.js'];
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
@@ -285,8 +298,8 @@ var editorJsFiles = [
       'node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
-      'target/client/app-editor/editor/mentions-markdown-it-plugin.js',
-      'target/client/app-editor/editor/onebox-markdown-it-plugin.js',
+      'client/app-editor/editor/mentions-markdown-it-plugin.js',
+      'client/app-editor/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
 /* For 2d layout horizontal scrolling, now disabled. [2D_LAYOUT]
@@ -300,20 +313,20 @@ var jqueryJsFiles = [
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
 var embeddedJsFiles = [
-      // Don't use target/client/... for the parent-header.js and -footer.js, because if processed
-      // individually, they contain unbalanced {} braces.
-      'client/embedded-comments/parent-header.js',  // not ^target/client/...
+      'client/embedded-comments/parent-header.js',
       'client/third-party/bliss.shy.js',
       'client/third-party/smoothscroll-tiny.js',
       //'client/third-party/jquery-scrollable.js',
       //'client/third-party/jquery.browser.js',
       //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
       //'target/client/app-2d/utterscroll/utterscroll-init-tips.js',
-      'target/client/app-slim/utils/calcScrollRectIntoViewCoords.js',
+      'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'target/client/blog-comments-typescript.js',
-      'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
+      'client/embedded-comments/parent-footer.js'];
 
 
+// TRY TO REMOVE THIS: (and pass all JS files to Typescript instead)
+//
 // Separating different source files with ==== and including the file name at the top,
 // simplifies reading the generated bundles, and debugging.
 // Don't insert any newline before the contents — that'd result in incorrect line numbers reported,
@@ -376,18 +389,6 @@ gulp.task('buildTranslations', gulp.series('cleanTranslations', 'compileTranslat
 // ========================================================================
 //  Runtime bundles
 // ========================================================================
-
-
-gulp.task('wrapJavascript', () => {
-  // Prevent Javascript variables from polluting the global scope.
-  return gulp.src('client/**/*.js')
-    .pipe(plumber())
-    // Avoid any line breaks before 'contents', so any error will be reported
-    // with the correct line number.
-    .pipe(insert.wrap('(function() { ', '\n}).call(this);'))
-    .pipe(updateAtimeAndMtime())
-    .pipe(gulp.dest('./target/client/'));
-});
 
 
 var serverTypescriptProject = typeScript.createProject("client/server/tsconfig.json");
@@ -475,83 +476,72 @@ gulp.task('compileServerTypescriptConcatJavascript', () => {
   return compileServerTypescriptConcatJavascript();
 });
 
+
 gulp.task('compileSwTypescript', () => {
   return compileSwTypescript();
 });
+gulp.task('compileSwTypescript-concatScripts',
+        gulp.series('compileSwTypescript',() => {
+  return makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer', false);
+}));
+
 
 gulp.task('compileSlimTypescript', () => {
   return compileSlimTypescript();
 });
+gulp.task('compileSlimTypescript-concatScripts',
+        gulp.series('compileSlimTypescript',() => {
+  return makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer');
+}));
+
 
 gulp.task('compileMoreTypescript', () => {
   return compileOtherTypescript(moreTypescriptProject);
 });
+gulp.task('compileMoreTypescript-concatScripts',
+        gulp.series('compileMoreTypescript',() => {
+  return makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer');
+}));
 
 /*
 gulp.task('compile2dTypescript', () => { // [SLIMTYPE]
   return compileOtherTypescript(_2dTypescriptProject);
-}); */
+});
+gulp.task('compile2dTypescript-concatScripts',
+        gulp.series('compile2dTypescript',() => {
+  return makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'); // [SLIMTYPE]
+}));
+ */
 
 gulp.task('compileStaffTypescript', () => {
   return compileOtherTypescript(staffTypescriptProject);
 });
+gulp.task('compileStaffTypescript-concatScripts',
+        gulp.series('compileStaffTypescript',() => {
+  return makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer');
+}));
+
 
 gulp.task('compileEditorTypescript', () => {
   return compileOtherTypescript(editorTypescriptProject);
 });
+gulp.task('compileEditorTypescript-concatScripts',
+        gulp.series('compileEditorTypescript',() => {
+  return makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer');
+}));
+
 
 gulp.task('compileBlogCommentsTypescript', () => {
   return compileOtherTypescript(blogCommentsTypescriptProject);
 });
-
-gulp.task('compileAllTypescript', () => {
-  return merge2(  // can speed up with gulp.parallel?  (GLPPPRL)
-      compileServerTypescriptConcatJavascript(),
-      compileSwTypescript(),
-      compileSlimTypescript(),
-      compileOtherTypescript(moreTypescriptProject),
-      //compileOtherTypescript(_2dTypescriptProject), // [SLIMTYPE]
-      compileOtherTypescript(staffTypescriptProject),
-      compileOtherTypescript(editorTypescriptProject),
-      compileOtherTypescript(blogCommentsTypescriptProject));
-});
-
-
-var compileTsTaskNames = [
-  'compileServerTypescriptConcatJavascript',
-  'compileSwTypescript',
-  'compileSlimTypescript',
-  'compileMoreTypescript',
-  //'compile2dTypescript', [SLIMTYPE]
-  'compileStaffTypescript',
-  'compileEditorTypescript',
-  'compileBlogCommentsTypescript'];
-
-for (var i = 0; i < compileTsTaskNames.length; ++i) {
-  var compileTaskName = compileTsTaskNames[i];
-  gulp.task(compileTaskName + '-concatScripts', gulp.series(compileTaskName, () => {
-    // Don't need to do this for more than the relevant bundle, but simpler to do for
-    // all. Talkes almost no time.
-    return makeConcatWebScriptsStream();
-  }));
-}
-
-
-
-gulp.task('compileConcatAllScripts', gulp.series('wrapJavascript', 'compileAllTypescript', () => {
-  return makeConcatWebScriptsStream();
-}));
-
-
-// Skips compilation.
-gulp.task('concatAllScripts', gulp.series(() => {
-  return makeConcatWebScriptsStream();
+gulp.task('compileBlogCommentsTypescript-concatScripts',
+        gulp.series('compileBlogCommentsTypescript',() => {
+  return makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false);
 }));
 
 
 
-function makeConcatWebScriptsStream() {
-  function makeConcatStream(outputFileName, filesToConcat, checkIfNewer, versioned) {
+function makeConcatStream(outputFileName, filesToConcat, checkIfNewer, versioned) {
     let stream = gulp.src(filesToConcat).pipe(plumber());
     const dest = versioned === false ? webDest : webDestVersioned;
     if (checkIfNewer) {
@@ -563,35 +553,32 @@ function makeConcatWebScriptsStream() {
         .pipe(insert.prepend(thisIsAConcatenationMessage))
         .pipe(insert.prepend(makeCopyrightAndLicenseBanner()))
         .pipe(updateAtimeAndMtime())
-        .pipe(gulp.dest(dest))
+        .pipe(gulp.dest(dest))  // <— not needed? deleted anyway by task 'delete-non-gzipped'
         .pipe(gzip({ gzipOptions }))
         .pipe(gulp.dest(dest));
-  }
-
-  return merge2(
-      makeConcatStream('talkyard-service-worker.js', swJsFiles, 'DoCheckNewer', false),
-      makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
-      makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
-      //makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'), [SLIMTYPE]
-      makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
-      makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
-      //makeConcatStream('jquery-bundle.js', jqueryJsFiles, 'DoCheckNewer'),
-      makeConcatStream('talkyard-comments.js', embeddedJsFiles, 'DoCheckNewer', false),
-      gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
-          .pipe(plumber())
-          .pipe(updateAtimeAndMtime())
-          .pipe(gulp.dest(webDestVersioned))
-          .pipe(gzip({ gzipOptions }))
-          .pipe(gulp.dest(webDestVersioned)))
-      .pipe(plumber());
 }
 
 
+gulp.task('bundleZxcvbn', () => {
+  return gulp.src('node_modules/zxcvbn/dist/zxcvbn.js')
+          .pipe(plumber())
+          .pipe(updateAtimeAndMtime())
+          .pipe(gulp.dest(webDestVersioned))  // <— not needed? deleted by 'delete-non-gzipped'
+          .pipe(gzip({ gzipOptions }))
+          .pipe(gulp.dest(webDestVersioned));
+});
 
-gulp.task('wrap-javascript-concat-scripts', gulp.series('wrapJavascript', () => {
-  return makeConcatWebScriptsStream();
-}));
 
+gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? (GLPPPRL)
+  'compileServerTypescriptConcatJavascript',
+  'compileSwTypescript-concatScripts',
+  'compileSlimTypescript-concatScripts',
+  'compileMoreTypescript-concatScripts',
+  // _2dTypescriptProject: disabled
+  'compileStaffTypescript-concatScripts',
+  'compileEditorTypescript-concatScripts',
+  'compileBlogCommentsTypescript-concatScripts',
+  'bundleZxcvbn'));
 
 
 gulp.task('enable-prod-stuff', (done) => {
@@ -706,7 +693,7 @@ gulp.task('compile-stylus', () => {
       .pipe(updateAtimeAndMtime())
       // Generate non-minified files:
       .pipe(save('111'))
-        .pipe(gulp.dest(webDestVersioned))
+        .pipe(gulp.dest(webDestVersioned))  // <— not needed? deleted by 'delete-non-gzipped'
         .pipe(gzip({ gzipOptions }))
         .pipe(gulp.dest(webDestVersioned))
       .pipe(save.restore('111'))
@@ -790,41 +777,38 @@ gulp.task('default', gulp.series(
 
 gulp.task('watch', gulp.series((done) => {
   gulp.watch(
-      ['client/server/**/*.ts', ...serverJavascriptSrc],
-      gulp.series('compileServerTypescriptConcatJavascript-concatScripts'))
+      ['client/server/**/*.js', 'client/server/**/*.ts', ...serverJavascriptSrc],
+      gulp.series('compileServerTypescriptConcatJavascript'))
     .on('change', logChangeFn('Server typescript'));
 
   gulp.watch(
-      ['client/serviceworker/**/*.ts'],
+      ['client/serviceworker/**/*.js', 'client/serviceworker/**/*.ts'],
       gulp.series('compileSwTypescript-concatScripts'))
     .on('change', logChangeFn('Service worker typescript'));
 
   gulp.watch(
-      ['client/app-slim/**/*.ts'],
+      ['client/app-slim/**/*.js', 'client/app-slim/**/*.ts'],
+         // ...slimJsFiles], — maybe generating the typescript.js would trigger a 2nd build?
       gulp.series('compileSlimTypescript-concatScripts'))
     .on('change', logChangeFn('Slim typescript'));
 
   gulp.watch(
-      ['client/app-more/**/*.ts'],
+      ['client/app-more/**/*.js', 'client/app-more/**/*.ts'],
       gulp.series('compileMoreTypescript-concatScripts'))
     .on('change', logChangeFn('More typescript'));
 
   gulp.watch(
-      ['client/app-staff/**/*.ts'],
+      ['client/app-staff/**/*.js', 'client/app-staff/**/*.ts'],
       gulp.series('compileStaffTypescript-concatScripts'))
     .on('change', logChangeFn('Staff typescript'));
 
-  gulp.watch(['client/app-editor/**/*.ts'],
+  gulp.watch(['client/app-editor/**/*.js', 'client/app-editor/**/*.ts'],
       gulp.series('compileEditorTypescript-concatScripts'))
     .on('change', logChangeFn('Editor typescript'));
 
   gulp.watch(['client/embedded-comments/**/*.js', 'client/embedded-comments/**/*.ts'],
       gulp.series('compileBlogCommentsTypescript-concatScripts'))
     .on('change', logChangeFn('Blog comments typescript'));
-
-  gulp.watch('client/**/*.js',
-      gulp.series('wrap-javascript-concat-scripts'))
-    .on('change', logChangeFn('Javascript'));
 
   gulp.watch(
       'client/**/*.styl',
@@ -870,7 +854,7 @@ gulp.task('delete-non-gzipped', () => {
 });
 
 
-gulp.task('clean', () => {
+gulp.task('clean', () => {   // but task 'cleanTranslations' ?
   return del([
     `${webDest}/*`,
     `!${webDest}/.gitkeep`,
