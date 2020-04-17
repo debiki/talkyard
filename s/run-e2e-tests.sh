@@ -71,7 +71,7 @@ function runE2eTest {
 
   # This hostname will avoid using the same hostname, for different tests at the same time,
   # if running many tests in parallel.
-  local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
+  local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl [5WAKEF02]
 
   # Later: Run only every $every test, starting at offset $offset.
   # Then, can run many tests in parallel. For example, run this script with
@@ -170,7 +170,7 @@ function runE2eTest {
         echo
         # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
         # (But first add a cname entry for -manual.)
-        cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
+        cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl [5WAKEF02]
         # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
         # root first su:s to another user. Check the --is-root command line flag instead.
         #if [ -z "$is_root" ]; then

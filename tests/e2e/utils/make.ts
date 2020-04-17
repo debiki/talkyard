@@ -22,9 +22,19 @@ function getAndBumpNextUserId() {
   return nextUserId - 1;
 }
 
-const localHostname = settings.localHostname || 'e2e-test-site';
 
-const emptySite: SiteData = {
+function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
+  log.dieAndExitIf(!(global as any).wdioBeforeHookHasRun && !ps.okInitEarly,
+      "Calling makeEmptySite() before the wdio.conf.ts before() hook has run — " +
+      "that means this spec hasn't been inited properly yet; variables might be " +
+      "`undefined` [TyE8503SKDS46]");
+
+  // Don't access global.localHostname too early (outside this function),
+  // because it wouldn't have been initialized yet; it'd be undefined.
+  const localHostname =
+      (global as any).thisSpecLocalHostname || settings.localHostname || 'e2e-test-site';
+
+  return {
   meta: {
     id: undefined,
     name: localHostname + '-' + Date.now(),
@@ -52,14 +62,14 @@ const emptySite: SiteData = {
   uploads: [],
   auditLog: [],
   reviewTasks: [],
-};
+}};
 
 
 const make = {
   defaultCreatedAtMs: DefaultCreatedAtMs,
 
-  emptySiteOwnedByOwen: function(): SiteData {
-    const site = _.cloneDeep(emptySite);
+  emptySiteOwnedByOwen: function(ps: { okInitEarly?: boolean } = {}): SiteData {
+    const site = _.cloneDeep(makeEmptySite(ps));
     const owner = make.memberOwenOwner();
     site.members.push(owner);
     site.meta.creatorEmailAddress = owner.emailAddress;

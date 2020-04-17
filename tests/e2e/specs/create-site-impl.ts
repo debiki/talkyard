@@ -12,8 +12,9 @@ function createPasswordTestData(ps: {
 
   // Dupl code [502KGAWH0]
   const testId = utils.generateTestId();
-  const localHostname = settings.localHostname ||
+  const localHostname = global['localHostname'] || settings.localHostname ||
                       settings.testLocalHostnamePrefix + 'create-site-' + testId;
+
   return {
     siteType: SiteType.Forum,
     testId: testId,

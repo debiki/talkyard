@@ -3,11 +3,11 @@
 import { TyE2eTestBrowser } from '../utils/pages-for';
 
 const slugs = {
-  threeRepliesPageSlug: 'impexp-three-replies',
-  replyWithImagePageSlug: 'impexp-reply-w-image',
-  onlyLikeVotePageSlug: 'impexp-like-vote',
-  onlySubscrNotfsPageSlug: 'impexp-subscr-notfs',
-  guestReplyPageSlug: 'impexp-guest-reply',
+  threeRepliesPageSlug: 'impexp-three-replies.html',
+  replyWithImagePageSlug: 'impexp-reply-w-image.html',
+  onlyLikeVotePageSlug: 'impexp-like-vote.html',
+  onlySubscrNotfsPageSlug: 'impexp-subscr-notfs.html',
+  guestReplyPageSlug: 'impexp-guest-reply.html',
 };
 
 const texts = {
@@ -20,7 +20,7 @@ const texts = {
   guestsEmail: 'e2e-garboguest@x.co',
 };
 
-function createEmbeddingPages(browser) {
+function createEmbeddingPages(browser: TyE2eTestBrowser) {
   const mkPage = browser.adminArea.settings.embedded.createSaveEmbeddingPage;
   mkPage({ urlPath: slugs.threeRepliesPageSlug });
   mkPage({ urlPath: slugs.replyWithImagePageSlug });

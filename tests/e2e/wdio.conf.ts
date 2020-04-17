@@ -18,6 +18,17 @@ server.initOrExit(settings);
 //  Which specs?
 // --------------------------------------------------------------------
 
+// Unfortunately, cannot access stdin. Wdio reads stdin here:
+//  https://github.com/webdriverio/webdriverio/blob/7919ff09d4d52f26a38c02649e044508af500c6a/packages/wdio-cli/src/commands/run.js#L109
+// and launches a 'Launcher' with the specs to run from stdin:
+//  https://github.com/webdriverio/webdriverio/blob/7919ff09d4d52f26a38c02649e044508af500c6a/packages/wdio-cli/src/commands/run.js#L120
+// the Launcher then reads the config file:
+//  https://github.com/webdriverio/webdriverio/blob/7919ff09d4d52f26a38c02649e044508af500c6a/packages/wdio-cli/src/launcher.js#L20
+// but here in the config file, apparently stdin has been consumed,
+// and we don't know which files were specified.
+// So cannot look at the file names, to determine which capabilities we need.
+// Instead, we need to use the command line args, i.e. `settings` (USESTNGS).
+
 let specs = ['./specs/**/*.ts'];
 
 // This now not needed? wdio v6 has  --spec
@@ -56,6 +67,24 @@ if (browserNameAndOpts.browserName === 'chrome') {
       // Apparently also not needed: (good because the hostname is "never" the same)
       //'--unsafely-treat-insecure-origin-as-secure=https://comments-for-...-localhost-8080.localhost'
     ],
+    // --- Trying to disable "Save password?" popup --------
+    prefs: {
+      //'profile.password_manager_enabled': false,
+      //credentials_enable_service: false,
+      //password_manager_enabled: false,
+    },
+    //profile: {
+    //  password_manager_enabled: false
+    //},
+    // --------------------------------------------------
+
+    // There's also:
+    // download: {
+    //   default_directory: process.env.REMOTE_DOWNLOAD_DIR,
+    //   prompt_for_download: false,
+    //   directory_upgrade: true,
+    //   extensions_to_open: '',
+    // },
   };
   if (settings.block3rdPartyCookies) {
     // Seems `profile.block_third_party_cookies` isn't documented anywhere on the Internet,
@@ -65,10 +94,8 @@ if (browserNameAndOpts.browserName === 'chrome') {
     //   http://chromedriver.chromium.org/capabilities
     //   https://chromium.googlesource.com/chromium/src/+/lkgr/docs/user_data_dir.md#linux )
     // It's a json file, with lots of settings, one of which is for 3rd party cookies.
-    opts.prefs = {
-      profile: {
-        block_third_party_cookies: true,
-      }
+    opts.prefs.profile = {
+      block_third_party_cookies: true,
     };
   }
 
@@ -174,7 +201,7 @@ const config: WebdriverIO.Config = {
   // Define all options that are relevant for the WebdriverIO instance here
 
   // Level of logging verbosity: trace | debug | info | warn | error | silent
-  logLevel: <any> settings.logLevel || 'warn',  // — config this where instead?
+  logLevel: settings.logLevel || 'warn',
   // Set specific log levels per logger
   // loggers:
   // - webdriver, webdriverio
@@ -253,23 +280,13 @@ const config: WebdriverIO.Config = {
             chrome: { version: '81.0.4044.69' },
             firefox: { version: '0.26.0' }
           }
-        }}]))],
+        }}])),
 
   //   'sauce',
   //
   //    // https://webdriver.io/docs/wdio-chromedriver-service.html
   //    // Would need to install Chromedriver: npm install chromedriver --save-dev
   //   'wdio-chromedriver-service',
-  //
-  //   // https://webdriver.io/docs/static-server-service.html
-  //   // Won't work, if runs in a Docker container? — no, doesn't.
-  //   // Would need to use Host networking?
-  //   ['static-server', {
-  //     port: 8080,
-  //     folders: [
-  //       // Embedded comments tests generate their own embedding pages (fake blog posts).
-  //       { mount: './target', path: '/' }]
-  //   }]
 
   //   // https://webdriver.io/docs/selenium-standalone-service.html
   //   'selenium-standalone',
@@ -284,6 +301,8 @@ const config: WebdriverIO.Config = {
   //   'docker',
   //
   //   'intercept'],
+
+  ],
 
   // Framework you want to run your specs with.
   // The following are supported: Mocha, Jasmine, and Cucumber
@@ -333,8 +352,13 @@ const config: WebdriverIO.Config = {
    * @param  {[type]} args     object that will be merged with the main configuration once worker is initialised
    * @param  {[type]} execArgv list of string arguments passed to the worker process
    */
-  // onWorkerStart: function (cid, caps, specs, args: WebdriverIO.Config, execArgv) {
-  // },
+  onWorkerStart: function (cid: string, caps: WebDriver.DesiredCapabilities,
+        specs: string[], args: WebdriverIO.Config, execArgv: string[]) {
+    // This is in the main wdio process (not one of the worker processes that
+    // actually runs the tests).
+    // Maybe pass local hostname, and the cid, to the worker here?
+    //     ... instead of this hack, in the reporter: [052RKTL40]
+  },
 
   /**
    * Gets executed just before initialising the webdriver session and test framework. It allows you
@@ -352,11 +376,28 @@ const config: WebdriverIO.Config = {
    * @param {Array.<Object>} capabilities list of capabilities details
    * @param {Array.<String>} specs List of spec file paths that are to be run
    */
-  before: function (capabilities, specs) {
+  before: function (capabilities: WebDriver.DesiredCapabilities, specs: string[]) {
+    // Any way to get the 'cid' here?
+
+    // This is in a wdio worker process — it has different 'global.*' than the main process,
+    // and any local variables from the main wdio process are "gone" here.
+
+    global.wdioBeforeHookHasRun = true;
+
     // In case configured in some other way than via --devtools flag.
     settings.useDevtoolsProtocol =
         !!config.services.find(s => s === 'devtools' || s[0] === 'devtools');
     global.settings = settings;
+
+    // Unless otherwise specified on the command line, generate unique hostnames
+    // for eacch spec, so they won't overite / try-to-use each other's sites.
+    // (I wonder if overwriting `settings.localHostname`, that would affect other
+    // specs we're running in parallel with the current one?)
+    // Update: Now done here:  [052RKTL40]  instead, where the  cid  is available.
+    //if (!settings.localHostname) {
+    //  global.localHostname = nextLocalHostname();
+    //  console.log(`Generated local hostname: ${global.localHostname}`);
+    //}
 
     // It's nice if browserA is available also in not-multiremote tests with one browser.
     // so there's a way to refer to just *one* browser instead of 
@@ -543,6 +584,54 @@ const config: WebdriverIO.Config = {
 };
 
 
+
+// --------------------------------------------------------------------
+//  Static file server?
+// --------------------------------------------------------------------
+
+// We need a static file server, for blog comments tests:
+// Embedded comments tests generate their own "dummy blogs" with
+// blog posts that embed Talkyard's comments.
+
+// This won't work if files piped via stdin — then, specs won't include those files.
+// (USESTNGS)
+//const anyEmbCommentsTestNotGatsby =
+//    config.specs.find(path =>
+//        path.indexOf('emmbedded-') >= 0 && path.indexOf('gatsby-') === -1);
+
+if (settings.staticServer8080) {
+  // https://webdriver.io/docs/static-server-service.html
+  const server: WebdriverIO.ServiceEntry = ['static-server', {
+    port: 8080,  // note: eighty-eighy
+    folders: [
+      { path: './target/', mount: '/' }],
+  }];
+  console.log(`I'll start a static server:  ${JSON.stringify(server)}`)
+  config.services.push(server);
+}
+
+if (settings.staticServerGatsbyNew8000) {
+  // TODO use port 8081 instead of colliding with 8000, so can run in prallel.
+  const server: WebdriverIO.ServiceEntry = ['static-server', {
+    port: 8000, // eight thousand
+    folders: [
+      { path: '../../modules/gatsby-starter-blog/public/', mount: '/' }],
+  }];
+  console.log(`I'll start a static server for Gatsby:  ${JSON.stringify(server)}`)
+  config.services.push(server);
+}
+
+if (settings.staticServerGatsbyOld8000) {
+    // TODO use port 8082 instead of colliding with 8000
+  const server: WebdriverIO.ServiceEntry = ['static-server', {
+    port: 8000, // eight thousand
+    folders: [
+      { path: '../../modules/gatsby-starter-blog-ed-comments-0.4.4/public/', mount: '/' }],
+  }];
+  console.log(`I'll start a static server for Gatsby, old:  ${JSON.stringify(server)}`)
+  config.services.push(server);
+}
+
 // --------------------------------------------------------------------
 //  Many browsers?
 // --------------------------------------------------------------------
@@ -551,11 +640,16 @@ const config: WebdriverIO.Config = {
 // at the same time, e.g. two browsers typing different chat messages to each other.
 
 const maybeInvisible = settings.headless ? ' invisible' : '';
+const browserName = config.capabilities[0].browserName;
 
+// onlyAndSpec won't work with files from stdin unfortunately. (USESTNGS)
 const onlyAndSpec = (settings.only || '') + ((settings as any).spec || '');
 const needsNumBrowsers =
-    onlyAndSpec.indexOf('3browsers') >= 0 ? 3 : (
-        onlyAndSpec.indexOf('2browsers') >= 0 ? 2 : 1);
+    onlyAndSpec.indexOf('3browsers') >= 0 || settings.numBrowsers >= 3
+        ? 3
+        : (onlyAndSpec.indexOf('2browsers') >= 0 || settings.numBrowsers === 2
+            ? 2
+            : 1);
 
 if (needsNumBrowsers >= 2) {
   const theCaps = config.capabilities[0];
@@ -578,10 +672,10 @@ if (needsNumBrowsers >= 2) {
     };
   };
 
-  console.log(`I'll start ${needsNumBrowsers}${maybeInvisible} browsers.`);
+  console.log(`I'll start ${needsNumBrowsers}${maybeInvisible} ${browserName} browsers.`);
 }
 else {
-  console.log(`I'll start one${maybeInvisible} browser.`);
+  console.log(`I'll start one${maybeInvisible} ${browserName} browser.`);
 }
 
 

@@ -2,8 +2,6 @@
 /// <reference path="../../client/types-and-const-enums.ts" />
 
 
-type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
-
 type BoolOrFn = boolean | (() => boolean);
 type StringOrFn = string | (() => string);
 
@@ -20,6 +18,10 @@ interface TestSettings {
   slooooooow?: true;
   sloooooooow?: true;
   headless?: boolean;
+  numBrowsers: number;
+  staticServer8080?: boolean;
+  staticServerGatsbyNew8000?: boolean;
+  staticServerGatsbyOld8000?: boolean;
   useChromedriver?: boolean;
   useSelenium?: boolean;
   useDevtoolsProtocol?: boolean;
@@ -39,7 +41,8 @@ interface TestSettings {
   newSiteDomain: string;
   bail?: number;
   waitforTimeout: number;
-  logLevel: LogLevel;
+  noTimeout?: boolean;
+  logLevel: WebDriver.WebDriverLogTypes;
   debugEachStep: boolean;
   debugBefore: boolean;
   debugAfterwards: boolean;

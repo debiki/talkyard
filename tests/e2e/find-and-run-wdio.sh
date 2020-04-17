@@ -1,53 +1,53 @@
 #!/bin/bash
 
 
+# For now, later, create new dir?
+rm -f ./target/e2e-test-logs/*
+
+
+if [ -z "SKIP" ]; then
+  echo ""  # noop
+fi  # / SKIP
+
+
+
 # ===== Forum tests
 
-find specs/ -type f  \
-    | egrep -v '[23]browsers|embedded-|UNIMPL|imp-exp-imp-exp-site'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js
 
+find specs/ -type f  \
+    | egrep -v '[23]browsers'  \
+    | egrep -v 'embedded-|UNIMPL|-impl\.|imp-exp-imp-exp-site'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --parallel 3
+
+    # | grep 'navigation-as' \
 
 find specs/ -type f  \
     | egrep '2browsers'  \
-    | egrep -v 'embedded-|UNIMPL'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js  --only 2browsers
-
+    | egrep -v 'embedded-|UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --2browsers
 
 find specs/ -type f  \
     | egrep '3browsers'  \
-    | egrep -v 'embedded-|UNIMPL'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js  --only 3browsers
+    | egrep -v 'embedded-|UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --3browsers
 
 
 
 # ===== Embedded comments tests
 
 
-# Start a http server, for the embedding html pages.
-# There's a wdio-static-server-service, but I couldn't get it working,
-# and there's this bug report: https://github.com/webdriverio/webdriverio/issues/5240
-#
-server_port_8080=$(netstat -nl | grep ':8080.*LISTEN')
-server_port_8080_pid=''
-if [ -z "$server_port_8080" ]; then
-  echo "Starting a http server for embedded comments html pages..."
-  ./node_modules/.bin/http-server -p8080 target/ &
-  # Field 2 is the process id.
-  server_port_8080_pid=$(jobs -l | grep p8080 | awk '{ printf $2; }')
-fi
-# else: a server already running — hopefully the one we need? Do nothing.
-
-# Todo: Gatsby server too, port 8000.
-
-
 # With cookies tests.
 find specs/ -type f  \
     | egrep 'embedded-'  \
+    | egrep -v 'gatsby'  \
     | egrep -v 'no-cookies'  \
     | egrep -v 'embedded-forum'  \
-    | egrep -v '[23]browsers|UNIMPL'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js
+    | egrep -v '[23]browsers|UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-8080
 
 
 # Cookies blocked tests.
@@ -55,14 +55,55 @@ find specs/ -type f  \
     | egrep 'embedded-'  \
     | egrep 'no-cookies'  \
     | egrep -v 'embedded-forum'  \
-    | egrep -v '[23]browsers|UNIMPL'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js  --b3c
+    | egrep -v '[23]browsers|UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-8080  --b3c
 
-
-# (There are no 2browsers tests witout cookies.)
+# Two browsers tests. (There are none without cookies.)
+rm -f ./target/emb-comments-site-dump.json  # for the export-import tests
 find specs/ -type f  \
     | egrep '2browsers'  \
     | egrep 'embedded-'  \
-    | ../../node_modules/.bin/wdio  wdio.conf.js  --only 2browsers
+    | egrep -v 'UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-8080  --2browsers
+
+# Gatsby, v1.
+find specs/ -type f  \
+    | egrep 'embedded-'  \
+    | egrep 'gatsby'  \
+    | egrep -v 'UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-gatsby-v1-8000
+
+# Gatsby, old deprecated Talkyard names.
+find specs/ -type f  \
+    | egrep 'embedded-'  \
+    | egrep 'gatsby'  \
+    | egrep -v 'UNIMPL|-impl\.'  \
+    | sort \
+    | ../../node_modules/.bin/wdio  wdio.conf.js  --static-server-gatsby-v1-old-ty-8000
 
 
+
+# ===== Report results
+
+
+cat_failures='cat target/e2e-test-logs/*'
+
+echo "======================================================================="
+echo "Done. Failures: (between --- and ====)"
+echo "-----------------------------------------------------------------------"
+echo "$cat_failures"
+$cat_failures
+echo "======================================================================="
+
+
+fail_files="$(ls ./target/e2e-test-logs/)"
+if [ -z "$fail_files" ]; then
+  echo "All fine — no failure files found. Exiting with status 0."
+  exit 0
+else
+  echo "TESTS FAILED: Failure files found, see above. Exiting with status 1."
+  exit 1
+fi

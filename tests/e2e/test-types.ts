@@ -2,6 +2,11 @@
 /// <reference path="./pub-api.ts" />
 
 
+// Unique hostname for the current test run, so sites won't overwrite each other.
+declare const thisSpecLocalHostname: string | undefined;
+declare function getCidOrDie(): string;
+
+
 // ----- Test framework
 
 // This results in a weird outside-the-project error:

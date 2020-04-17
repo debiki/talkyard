@@ -44,7 +44,7 @@ let numPublicTopicsByMaria = 4;
 let numPublicPostsByMaria = 5;  // 4 topic original-posts, and her reply to Michaeel
 
 
-describe("user profile access:", () => {
+describe("user-profile-access.test.ts  TyT067AKSTN260", () => {
 
   it("import a site", () => {
     forum = buildSite().addLargeForum({ title: forumTitle });

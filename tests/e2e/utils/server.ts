@@ -97,7 +97,7 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
     curlHeadersTexts.push(`-H '${key}: ${value}'`);
   });
   let curlDataText = JSON.stringify(data).replace("'", "'\\''");
-  if (curlDataText.length > 1000 && settings.logLevel != 'verbose') {
+  if (curlDataText.length > 1000 && settings.logLevel != 'trace') {
     // This is a bit much json, makes the logs annoyingly verbose. So truncate. Won't be
     // copy-pasteable.
     curlDataText = curlDataText.substr(0, 1000) + '\n       ...';

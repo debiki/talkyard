@@ -44,7 +44,7 @@ describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
   });
 
   it("Owen creates a site", function() {
-    var localHostname = settings.localHostname ||
+    var localHostname = global['localHostname'] || settings.localHostname ||
                         settings.testLocalHostnamePrefix + 'create-site-' + testId;
     var newSiteData = {
       testId: testId,

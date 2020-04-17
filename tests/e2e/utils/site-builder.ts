@@ -15,10 +15,16 @@ function makeSiteOwnedByOwenBuilder() {
 }
 
 
-function buildSite(site?: SiteData) {
+function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean } = {}) {
+  // Wdio seems to retry, if we just throw an exception here. So exit the process instead
+  // (because the test is buggy, better fix the bug).
+  log.dieAndExitIf(!(global as any).wdioBeforeHookHasRun && !ps.okInitEarly,
+      "Calling buildSite(site?) before the wdio.conf.ts before() hook has run — " +
+      "that means this spec hasn't been inited properly yet; variables might be " +
+      "`undefined` [TyE603AKRTDH24]");
 
   if (!site) {
-    site = make.emptySiteOwnedByOwen();
+    site = make.emptySiteOwnedByOwen(ps);
   }
 
   const api = {

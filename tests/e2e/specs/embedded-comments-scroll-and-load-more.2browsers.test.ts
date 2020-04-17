@@ -172,19 +172,10 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
     assert.not(strangersBrowser.topic.isPostNrVisible(31 + 1));
   });
 
-  it("The stranger clicks  'Show more replies...' just below", () => {
+  it("The stranger clicks  'Show more replies...' below — now comment 31 (post 32) appears", () => {
     strangersBrowser.switchToAnyParentFrame(); // cannot scroll in comments iframe
     strangersBrowser.switchToEmbCommentsIframeIfNeeded();
-
-    // This would be really fragile, because waitAndClickLast won't
-    // scroll [05YKTDTH4]: (only scrolls to the *first* thing)
-    // strangersBrowser.waitAndClickLast('.dw-x-show');
-    // Instead:
-    strangersBrowser.waitAndClick('.s_X_Show-PostNr-32', { maybeMoves: true });
-  });
-
-  it("... Now comment 31 (post 32) appears", () => {
-    strangersBrowser.topic.waitForPostNrVisible(31 + 1);
+    strangersBrowser.topic.clickShowMorePosts({ nextPostNr: 32 });
     assert.ok(strangersBrowser.topic.isPostNrVisible(31 + 1));  // tests the test
   });
 
