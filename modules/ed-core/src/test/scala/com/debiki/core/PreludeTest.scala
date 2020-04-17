@@ -264,11 +264,18 @@ class PreludeTest extends FreeSpec with MustMatchers {
 
   "ISO time functions can" - {
 
-    "write a date" in {
+    "write a date time" in {
       val datiStr: String = toIso8601T(new ju.Date(0))
-      val datiStrNoT: String = toIso8601(new ju.Date(0))
+      val datiStrNoT: String = toIso8601NoT(new ju.Date(0))
       datiStr mustBe "1970-01-01T00:00:00Z"
       datiStrNoT mustBe "1970-01-01 00:00:00Z"
+    }
+
+    "write a date, days" in {
+      val datiStr1: String = toIso8601Day(new ju.Date(0))
+      val datiStr2: String = toIso8601Day(0)
+      datiStr1 mustBe "1970-01-01"
+      datiStr2 mustBe "1970-01-01"
     }
 
     "parse a date" in {

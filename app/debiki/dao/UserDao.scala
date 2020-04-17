@@ -669,7 +669,7 @@ trait UserDao {
       if (user.suspendedAt.isDefined) {
         val forHowLong = user.suspendedTill match {
           case None => "forever"
-          case Some(date) => "until " + toIso8601(date)
+          case Some(date) => "until " + toIso8601NoT(date)
         }
         throwForbidden("TyEUSRSSPNDD_", o"""Account suspended $forHowLong,
             reason: ${user.suspendedReason getOrElse "?"}""")

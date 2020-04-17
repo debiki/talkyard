@@ -17,10 +17,8 @@
 
 package ed.stackdriver
 
-import ch.qos.logback.classic.spi.{ILoggingEvent, IThrowableProxy, ThrowableProxy}
+import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxy}
 import ch.qos.logback.core.{CoreConstants, LayoutBase}
-import java.time.{ZoneOffset, ZonedDateTime}
-import java.time.format.DateTimeFormatter
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.libs.json._
 import com.debiki.core.Prelude.toIso8601T

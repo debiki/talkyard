@@ -271,7 +271,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   def createDeadlock: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     throwForbiddenIf(globals.isProd, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()
-    Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
+    Ok("Deadlock created, current time: " + toIso8601NoT(new ju.Date)) as TEXT
   }
 
 
