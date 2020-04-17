@@ -62,11 +62,13 @@ function makeWholeSpec(initFn: () => InitResult) {
   // Only for testing guests. -----
   const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
   const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
-  const embeddingPageSlug = 'emb-cmts-guest.html';
-  const embeddingPageUrl = embeddingOrigin + '/' + embeddingPageSlug;
+  // Different tests might run in parallel, so need different slugs.
+  // WON'T WORK but fine, for now. — Also need to use different localHostname, see above.
+  const embeddingPageSlug = (): string => `emb-cmts-guest-${getCidOrDie()}.html`;
+  const embeddingPageUrl = (): string => `${embeddingOrigin}/${embeddingPageSlug()}`;
   // ------------------------------
 
-  forum = buildSite().addLargeForum({
+  forum = buildSite(undefined, { okInitEarly: true }).addLargeForum({
     title: forumTitle,
     members: ['alice', 'maria', 'michael'],
   });
@@ -87,13 +89,26 @@ function makeWholeSpec(initFn: () => InitResult) {
 
   describe(`Navigation as ${who}:`, () => {
 
+    it("update site hostname", () => {
+      if (initResult.isGuest) {
+        console.log(`Is embedded test, keeping hostname: ${
+            forum.siteData.meta.localHostname}`);
+      }
+      else {
+        const hn = (global as any).thisSpecLocalHostname;
+        console.log(`Setting hostname: ${hn}`);
+        forum.siteData.meta.localHostname = hn;
+      }
+    });
+
     it("import a site", () => {
       idAddress = server.importSiteData(forum.siteData);
+      assert.ok(idAddress.origin !== 'http://e2e-test-site.localhost');
       siteId = idAddress.id;
       server.skipRateLimits(siteId);
     });
 
-    it("init brower", () => {
+    it("init browser", () => {
       usersBrowser = new TyE2eTestBrowser(wdioBrowser);
     });
 
@@ -115,14 +130,14 @@ function makeWholeSpec(initFn: () => InitResult) {
       willBeLoggedIn = true;
 
       it("Creates an embedding page", () => {
-        fs.writeFileSync(`target/${embeddingPageSlug}`, makeHtml('b3c-aaa', '#500'));
+        fs.writeFileSync(`target/${embeddingPageSlug()}`, makeHtml('b3c-aaa', '#500'));
         function makeHtml(pageName: string, bgColor: string): string {
           return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
         }
       });
 
       it(`... opens it`, () => {
-        usersBrowser.go(embeddingPageUrl);
+        usersBrowser.go(embeddingPageUrl());
       });
 
       it(`... logs in as guest ${initResult.fullName}`, () => {

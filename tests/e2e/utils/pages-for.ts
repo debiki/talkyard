@@ -1,5 +1,18 @@
 import * as _ from 'lodash';
 
+
+// Why are many WebdriverIO's functions reimplemented here?
+//
+// Because they're either 1) quiet, whilst waiting. No way to find out what's
+// wrong, when a test times out. Or, 2) they log frustratingly much log messages, always,
+// if you enable detailed log levels.
+//
+// Talkyards waitFor[Something](), though, logs nothing, *unless* after a short
+// while Something hasn't happened. *Then* Talkyard starts logging what is
+// being waited for. — More readable logs, when you need them.
+
+
+
 // Assertions tests if Talkyard works, ...
 import * as assert from 'assert';
 import * as tyAssert from '../utils/ty-assert';
@@ -25,6 +38,10 @@ import c = require('../test-constants');
 //          since almost all fns wait until ok to procceed, so that's the 95% normal
 //          case — then better that those names are brief.
 
+
+const traceOrDebug =
+    settings.logLevel === 'trace' ||
+    settings.logLevel === 'debug';
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -99,7 +116,7 @@ function byBrowser(result): ByBrowserAnyResults {  // dupl code [4WKET0] move al
     // That's what we want.
     r = result as ByBrowserAnyResults;
   }
-  console.log(`byBrowser_: r = ${JSON.stringify(r)}`);
+  //console.log(`byBrowser_: r = ${JSON.stringify(r)}`);
   return r;
 }
 
@@ -281,11 +298,11 @@ export class TyE2eTestBrowser {
     }
 
     // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
-    go(url, opts: { useRateLimits?: boolean } = {}) {
+    go(url: string, opts: { useRateLimits?: boolean } = {}) {
       this.go2(url, { ...opts, waitForPageType: false });
     }
 
-    go2(url, opts: { useRateLimits?: boolean, waitForPageType?: false,
+    go2(url: string, opts: { useRateLimits?: boolean, waitForPageType?: false,
           isExternalPage?: true } = {}) {
 
       let shallDisableRateLimits = false;
@@ -376,7 +393,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    goAndWaitForNewUrl(url) {
+    goAndWaitForNewUrl(url: string) {
       logMessage("Go: " + url);
       this.rememberCurrentUrl();
       this.#br.url(url);
@@ -437,7 +454,7 @@ export class TyE2eTestBrowser {
           if (elapsedMs > AnnoyinglyLongMs) {
             loggedAnything = true;
             logMessage(`${elapsedMs} ms elapsed: ${ps.message ?
-                getOrCall(ps.message) : "Wait until what? ..."}`);
+                getOrCall(ps.message) : "Wait until what?"} ...`);
           }
 
           this.#br.pause(delayMs);
@@ -453,6 +470,8 @@ export class TyE2eTestBrowser {
       if (ps.timeoutIsFine !== true)
         tyAssert.fail(
             `this.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
+
+      return false;
     }
 
 
@@ -557,11 +576,13 @@ export class TyE2eTestBrowser {
     makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
           : NewSiteData {
       // Dupl code [502KGAWH0]
+      // Need to generate new local hostname, since we're going to create a new site.
       const testId = utils.generateTestId();
       const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
       const localHostname = `e2e-test--${ps.shortName}-${testId}-localhost-8080`;
       //const localHostname = settings.localHostname ||
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+
       return {
         testId: testId,
         siteType: SiteType.EmbeddedCommments,
@@ -716,21 +737,28 @@ export class TyE2eTestBrowser {
 
     waitForNewUrl() {
       assert(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
-      while (this._currentUrl === this.#br.getUrl()) {
-        this.#br.pause(250);
-      }
+      this.waitUntil(() => {
+        return this._currentUrl !== this.#br.getUrl();
+      }, {
+        message: `Waiting for new URL, currently at: ${this._currentUrl}`
+      });
       delete this._currentUrl;
     }
 
     repeatUntilAtNewUrl(fn: () => void) {
       const urlBefore = this.#br.getUrl();
       fn();
-      this.#br.pause(250);
+      const initDelayMs = 250;
+      let delayMs = initDelayMs;
+      this.#br.pause(delayMs);
       while (urlBefore === this.#br.getUrl()) {
+        logMessageIf(delayMs > initDelayMs,
+            `Repeating sth until at new URL, currently at: ${urlBefore}`);
         // E2EBUG RACE: if the url changes right here, maybe fn() below won't work,
         // will block.
         fn();
-        this.#br.pause(250);
+        delayMs = expBackoff(delayMs);
+        this.#br.pause(delayMs);
       }
     }
 
@@ -775,7 +803,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    switchToFrame(selector) {
+    switchToFrame(selector: string) {
       printBoringToStdout(`Switching to frame ${selector}...`);
       this.waitForExist(selector);
       const iframe = this.$(selector);
@@ -1094,17 +1122,24 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForEnabled(selector: string, options?: WebdriverIO.WaitForOptions) {
-      this.$(selector).waitForEnabled(options)
-      // origWaitForEnabled.apply(this.#br, arguments);
+    waitForEnabled(selector: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {
+      this.waitUntil(() => {
+        const elem = this.$(selector);
+        if (elem && elem.isExisting() && elem.isDisplayed() && elem.isEnabled())
+          return true;
+      }, {
+        ...ps,
+        message: `Waiting for visible:  ${selector}`,
+      });
     }
 
 
-    waitForVisibleText(selector: string, ps: { timeoutMs?: number } = {}) {
+    waitForVisibleText(selector: string,
+          ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}): boolean {
       let isExisting;
       let isDisplayed;
       let text;
-      this.waitUntil(() => {
+      return this.waitUntil(() => {
         const elem: WebdriverIO.Element = this.$(selector);
         try {
           // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
@@ -1133,8 +1168,9 @@ export class TyE2eTestBrowser {
       }, {
         ...ps,
         message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
-            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText:  "${text}"`,
-      })
+            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText: ${
+            _.isUndefined(text) ? 'undefined' : `"${text}"`}`,
+      });
     }
 
     getWholePageJsonStrAndObj(): [string, any] {
@@ -1237,7 +1273,7 @@ export class TyE2eTestBrowser {
           opts: { maybeMoves?: boolean, timeoutMs?: number, mayScroll?: boolean,
               okayOccluders?: string, waitUntilNotOccluded?: boolean } = {}) {
       this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
-      this.waitForEnabled(selector, { timeout: opts.timeoutMs });
+      this.waitForEnabled(selector, { timeoutMs: opts.timeoutMs });
       if (opts.mayScroll !== false) {
         this.scrollIntoViewInPageColumn(selector);
       }
@@ -1329,7 +1365,7 @@ export class TyE2eTestBrowser {
       }
     }
 
-    refreshUntilGone(what) {
+    refreshUntilGone(what: string) {
       while (true) {
         let resultsByBrowser = this.isVisible(what);
         let isVisibleValues = allBrowserValues(resultsByBrowser);
@@ -1609,7 +1645,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndSetValueForId(id, value) {
+    waitAndSetValueForId(id: string, value: string | number) {
       this.waitAndSetValue('#' + id, value);
     }
 
@@ -1654,7 +1690,7 @@ export class TyE2eTestBrowser {
           : string | null {
 
       const matchMiss = shouldMatch ? "match" : "miss";
-      if (settings.logLevel === 'verbose') {
+      if (traceOrDebug) {
         logMessage(
           `Finding ${matchMiss}es in this html:\n------\n${html}\n------`);
       }
@@ -1667,7 +1703,7 @@ export class TyE2eTestBrowser {
             : ros;
         const doesMatch = regex.test(html);
 
-        if (settings.logLevel === 'verbose') {
+        if (traceOrDebug) {
           logMessage(
               `Should ${matchMiss}: ${regex}, does ${matchMiss}: ` +
                 `${ shouldMatch ? doesMatch : !doesMatch }`);
@@ -4229,9 +4265,31 @@ export class TyE2eTestBrowser {
         return this.isVisible('#post-' + postNr);
       },
 
-      waitForPostNrVisible: (postNr) => {  // RENAME to ...VisibleText?
+      clickShowMorePosts: (ps: { nextPostNr: PostNr }) => {
+        // This would be fragile, because waitAndClickLast won't
+        // scroll [05YKTDTH4]: (only scrolls to the *first* thing)
+        //
+        //   strangersBrowser.waitAndClickLast('.dw-x-show');
+        //
+        // Instead:
+
+        const nxtNr = ps.nextPostNr;
+        const nrs = `${nxtNr}, ${nxtNr + 1}, ${nxtNr + 2}`;
+        const selector = `.s_X_Show-PostNr-${nxtNr}`;
+
+        utils.tryUntilTrue(`show more posts: ${nrs} ...`, 3, (): boolean => {
+          if (this.isVisible(selector)) {
+            this.waitAndClick(selector, { maybeMoves: true });
+          }
+          return this.topic.waitForPostNrVisible(
+              31 + 1, { timeoutMs: 1500, timeoutIsFine: true });
+        });
+      },
+
+      waitForPostNrVisible: (postNr, ps: { timeoutMs?: number,  // RENAME to ...VisibleText?
+              timeoutIsFine?: boolean } = {}): boolean => {
         this.switchToEmbCommentsIframeIfNeeded();
-        this.waitForVisibleText('#post-' + postNr);
+        return this.waitForVisibleText('#post-' + postNr, ps);
       },
 
       waitForPostAssertTextMatches: (postNr, text: string | RegExp) => {
@@ -5941,7 +5999,7 @@ export class TyE2eTestBrowser {
             const pageHtml = utils.makeEmbeddedCommentsHtml({
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
-            fs.writeFileSync(`target/${ps.urlPath}.html`, pageHtml);
+            fs.writeFileSync(`target/${ps.urlPath}`, pageHtml);
           },
         },
 
@@ -6718,8 +6776,8 @@ export class TyE2eTestBrowser {
       },
 
       dismissReloadPageAlert: () => {
-        // Seems this alert appears only in a visible this.#br (not in an invisible headless this.#br).
-        for (let i = 0; i < 5; ++i) {
+        // Seems this alert appears only in a visible browser (but not if invisible/headless).
+        for (let i = 0; i < 3; ++i) {
           // Clicking anywhere triggers an alert about reloading the page, although has started
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.
@@ -7103,6 +7161,7 @@ export class TyE2eTestBrowser {
         this.editor.editText(messageText);
         logMessage(`Submit...`);
         this.editor.saveWaitForNewPage();
+        logMessage(`Done, now at new page: ${this.urlPath()}`);
       },
 
       createChatChannelViaWatchbar: (

@@ -7,7 +7,7 @@ const unusualColor = logAndDie.unusualColor;
 const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 const logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
 
-let settings: any = {
+let settings: Partial<TestSettings> = {
   host: 'localhost',
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
@@ -51,6 +51,24 @@ if (args.i || args.invisible) {
   settings.headless = true;
 }
 
+if (args['ss]'] || args['static-server-8080']) {
+  settings.staticServer8080 = true;
+}
+if (args['ssgn]'] || args['static-server-gatsby-v1-8000']) {
+  settings.staticServerGatsbyNew8000 = true;
+}
+if (args['ssgo]'] || args['static-server-gatsby-v1-old-ty-8000']) {
+  settings.staticServerGatsbyOld8000 = true;
+}
+
+settings.numBrowsers = 1;
+if (args['2br'] || args['2browsers']) {
+  settings.numBrowsers = 2;
+}
+if (args['3br'] || args['3browsers']) {
+  settings.numBrowsers = 3;
+}
+
 if (args.cd || args.chromedrier) {
   settings.useChromedriver = true;
 }
@@ -87,9 +105,9 @@ if (args['3'] || args.include3rdPartyDependentTests) {
   settings.include3rdPartyDependentTests = true;
 }
 
-if (settings.password && !settings.e2eTestPassword) {
-  settings.e2eTestPassword = settings.password;
-  delete settings.password;
+if (settings['password'] && !settings.e2eTestPassword) {
+  settings.e2eTestPassword = settings['password'];
+  delete settings['password'];
 }
 
 

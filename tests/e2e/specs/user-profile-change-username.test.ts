@@ -33,7 +33,7 @@ let mariasUsername4 = "maria4";
 let mariasUsername5 = "maria5";
 
 
-describe("user profile access:", () => {
+describe("user-profile-change-username.test.ts  TyT4026WSH46", () => {
 
   it("import a site", () => {
     forum = buildSite().addLargeForum({ title: forumTitle });

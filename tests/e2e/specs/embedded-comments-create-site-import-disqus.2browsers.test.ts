@@ -60,11 +60,13 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
 
   function createPasswordTestData() {
     // Dupl code [502KGAWH0]
+    // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
     const embeddingHostPort = `e2e-test--imp-dsq-${testId}.localhost:8080`;
     const localHostname     = `e2e-test--imp-dsq-${testId}-localhost-8080`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+
     return {
       testId: testId,
       embeddingUrl: `http://${embeddingHostPort}/`,
@@ -105,12 +107,12 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
   });
 
 
-  const fourRepliesPageUrlPath = 'four-replies';
-  const oneReplyPageUrlPath = '2019/a-blog-post-one-reply';
+  const fourRepliesPageUrlPath = 'four-replies.html';
+  const oneReplyPageUrlPath = '2019/a-blog-post-one-reply.html';
   const oneReplyPageDiscussionId = 'node/2 With Spaces.';
-  const oneReplyPageViaDiscussionIdPagePath = 'whatever-different-url-path';
-  const pageCreatedLaterUrlPath = 'page-created-later';
-  const noDisqusRepliesPageUrlPath = 'no-dsq-comments';
+  const oneReplyPageViaDiscussionIdPagePath = 'whatever-different-url-path.html';
+  const pageCreatedLaterUrlPath = 'page-created-later.html';
+  const noDisqusRepliesPageUrlPath = 'no-dsq-comments.html';
 
   it("He creates four embedding pages", () => {
     // 2019 is for the oneReplyPageUrlPath.
@@ -133,7 +135,7 @@ describe("embedded comments, new site, import Disqus comments  TyT5KFG0P75", () 
       htmlToPaste = htmlToPaste.replace(
           ` data-discussion-id=""`, ` data-discussion-id="${discussionId}"`)
     }
-    fs.writeFileSync(`${dirPath}/${urlPath}.html`, `
+    fs.writeFileSync(`${dirPath}/${urlPath}`, `
 <html>
 <head>
 <title>Embedded comments E2E test: Importing Disqus comments</title>

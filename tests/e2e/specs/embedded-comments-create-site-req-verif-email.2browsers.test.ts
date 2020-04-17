@@ -54,12 +54,14 @@ describe("embedded comments, new site", () => {
 
 
   function createPasswordTestData() {
-      // Dupl code [502KGAWH0]
+    // Dupl code [502KGAWH0]
+    // Need to generate new local hostname, since we're going to create a new site.
     const testId = utils.generateTestId();
     const embeddingHostPort = `e2e-test--ec-${testId}.localhost:8080`;
     const localHostname     = `e2e-test--ec-${testId}-localhost-8080`;
     //const localHostname = settings.localHostname ||
     //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+
     return {
       testId: testId,
       embeddingUrl: `http://${embeddingHostPort}/`,

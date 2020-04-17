@@ -83,6 +83,14 @@ const api = {
     if (test) {
       api.die(message, details);
     }
+  },
+  dieAndExitIf: function(test: boolean, message: string, details?: string) {
+    if (test) {
+      api.logError(`\n\n${message}${details ? '\n' + details : ''}\n` +
+          `Exiting process, error status 1. Bye.\n`);
+      console.trace();
+      process.exit(1);
+    }
   }
 };
 
