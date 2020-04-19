@@ -40,6 +40,16 @@ let forum: TwoPagesTestForum;  // or: LargeTestForum
 
 let discussionPageUrl: string;
 
+const apiSecret: TestApiSecret = {
+  nr: 1,
+  userId: c.SysbotUserId,
+  createdAt: c.MinUnixMillis,
+  deletedAt: undefined,
+  isDeleted: false,
+  secretKey: 'publicE2eTestSecretKeyAbc123',
+};
+
+
 
 describe("some-e2e-test  TyT1234ABC", () => {
 
@@ -49,24 +59,39 @@ describe("some-e2e-test  TyT1234ABC", () => {
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });
-    builder.addPost({
-      page: forum.topics.byMichaelCategoryA,
-      nr: c.FirstReplyNr,
-      parentNr: c.BodyNr,
-      authorId: forum.members.mallory.id,
-      approvedSource: "I give you goldy golden gold coins, glittery glittering!",
-    });
-    const newPage = builder.addPage({
+
+    const newPage: PageJustAdded = builder.addPage({
       id: 'extraPageId',
       folder: '/',
       showId: false,
       slug: 'extra-page',
       role: c.TestPageRole.Discussion,
-      title: "Download $100 000 and a new car",
-      body: "Type your email and password, and the you can download a new car",
+      title: "In the middle",
+      body: "In the middle of difficulty lies opportunity",
       categoryId: forum.categories.categoryA.id,
-      authorId: forum.members.mallory.id,
+      authorId: forum.members.maria.id,
     });
+
+    builder.addPost({
+      page: newPage,  // or e.g.: forum.topics.byMichaelCategoryA,
+      nr: c.FirstReplyNr,
+      parentNr: c.BodyNr,
+      authorId: forum.members.maria.id,
+      approvedSource: "The secret of getting ahead is getting started",
+    });
+
+    // Disable notifications, or notf email counts will be off (since Owen would get emails).
+    builder.settings({ numFirstPostsToReview: 0, numFirstPostsToApprove: 0 });
+    builder.getSite().pageNotfPrefs = [{
+      memberId: forum.members.owen.id,
+      notfLevel: c.TestPageNotfLevel.Muted,
+      wholeSite: true,
+    }];
+
+    // Enable API.
+    builder.settings({ enableApi: true });
+    builder.getSite().apiSecrets = [apiSecret];
+
     assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;

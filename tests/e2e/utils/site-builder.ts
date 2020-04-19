@@ -34,6 +34,10 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       return site;
     },
 
+    settings: (settings: Partial<TestSiteSettings>) => {
+      site.settings = { ...site.settings, ...settings };
+    },
+
     defaultCreatedAtMs: make.defaultCreatedAtMs,
 
     addForumPageAndRootCategory: function(opts: {

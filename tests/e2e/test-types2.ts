@@ -129,29 +129,7 @@ const enum NewSiteOwnerType {
 
 interface SiteData2 {   // [3SD5PB7]
   meta: SiteMeta;
-  settings: {
-    companyFullName: string,
-    allowEmbeddingFrom?: string;
-    // inviteOnly?: boolean;
-    allowSignup?: boolean;
-    // allowLocalSignup?: boolean;
-    allowGuestLogin?: boolean;
-    userMustBeAuthenticated?: boolean;  // = loginRequired
-    requireVerifiedEmail?: boolean;
-    emailDomainBlacklist?: string;
-    emailDomainWhitelist?: string;
-    mayComposeBeforeSignup?: boolean;
-    mayPostBeforeEmailVerified?: boolean;
-    numFirstPostsToReview?: number;
-    numFirstPostsToApprove?: number;
-    numFirstPostsToAllow?: number;
-    numFlagsToHidePost?: number;
-    numFlagsToBlockNewUser?: number;
-    numFlaggersToBlockNewUser?: number;
-    enableApi?: boolean;
-    ssoUrl?: string;
-    enableSso?: boolean;
-  };
+  settings: TestSiteSettings,
   apiSecrets: TestApiSecret[];
   guests: TestGuest[];
   groups: GroupInclDetails[];
@@ -180,6 +158,31 @@ interface SiteData2 {   // [3SD5PB7]
   //uploads: any[];
   //auditLog: any[];
   reviewTasks: any[];
+}
+
+
+interface TestSiteSettings {
+  companyFullName: string,
+  allowEmbeddingFrom?: string;
+  // inviteOnly?: boolean;
+  allowSignup?: boolean;
+  // allowLocalSignup?: boolean;
+  allowGuestLogin?: boolean;
+  userMustBeAuthenticated?: boolean;  // = loginRequired
+  requireVerifiedEmail?: boolean;
+  emailDomainBlacklist?: string;
+  emailDomainWhitelist?: string;
+  mayComposeBeforeSignup?: boolean;
+  mayPostBeforeEmailVerified?: boolean;
+  numFirstPostsToReview?: number;
+  numFirstPostsToApprove?: number;
+  numFirstPostsToAllow?: number;
+  numFlagsToHidePost?: number;
+  numFlagsToBlockNewUser?: number;
+  numFlaggersToBlockNewUser?: number;
+  enableApi?: boolean;
+  ssoUrl?: string;
+  enableSso?: boolean;
 }
 
 

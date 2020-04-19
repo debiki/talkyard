@@ -411,6 +411,8 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2browsers $args
 
+  $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
+
 
   # API
   # ------------
@@ -420,8 +422,7 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-page-notfs.2browsers $args
   $r s/wdio --only api-upsert-posts.2browsers $args
 
-  $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
-
+  $r s/wdio --only api-search-full-text $args
 
   # wip:
   # settings-allow-local-signup

@@ -37,7 +37,8 @@ class SearchEngine(
   private val siteId: SiteId,
   private val elasticSearchClient: Client) extends TyLogging {
 
-  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[Participant])
+  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[Participant],
+        addMarkTagClasses: Boolean)
         : Future[immutable.Seq[SearchHit]] = {
 
     if (searchQuery.isEmpty)
@@ -86,7 +87,8 @@ class SearchEngine(
       // The first tags are used for better matches — but apparently the additional tags
       // are used by the Fast Vector Highlighter only, see:
       //   https://www.elastic.co/guide/en/elasticsearch/reference/master/search-request-highlighting.html#tags
-      .preTags("<mark class='esHL1'>", "<mark class='esHL2'>", "<mark class='esHL3'>",
+      .preTags(!addMarkTagClasses ? "<mark>" |
+        "<mark class='esHL1'>", "<mark class='esHL2'>", "<mark class='esHL3'>",
         "<mark class='esHL4'>", "<mark class='esHL5'>", "<mark class='esHL6'>",
         "<mark class='esHL7'>")
       .postTags("</mark>")

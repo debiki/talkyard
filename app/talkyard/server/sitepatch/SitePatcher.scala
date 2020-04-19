@@ -1284,7 +1284,7 @@ case class SitePatcher(globals: debiki.Globals) {
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
         tx.insertPost(post)
-        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
+        tx.indexPostsSoon(post)  // [TyT036WKHW2]
       }
 
       siteData.postActions foreach { postAction =>

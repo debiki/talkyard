@@ -307,7 +307,9 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  tryUntilTrue: function<R>(what, maxNumTimes, fn: () => boolean) {
+  tryUntilTrue: function<R>(what: string, maxNumTimes: number | 'ExpBackoff', fn: () => boolean) {
+    let delayMs = 300;
+
     for (let retryCount = 0; true; ++retryCount) {
       if (retryCount === maxNumTimes)
         throw Error(`Tried ${maxNumTimes} times but failed:  ${what}`)
@@ -319,6 +321,12 @@ ${ htmlToPaste ? htmlToPaste : `
       }
       catch (error) {
         logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+      }
+
+      if (maxNumTimes === 'ExpBackoff') {
+        oneWdioBrowser.pause(delayMs);
+        delayMs = delayMs * 1.3
+        delayMs = Math.min(1200, delayMs);
       }
     }
   },

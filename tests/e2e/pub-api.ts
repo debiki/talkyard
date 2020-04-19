@@ -22,3 +22,19 @@ interface UserIdName {
   fullName?: string;
 }
 
+
+interface SearchResultsApiResponse {
+  searchResults: PageAndHits[];
+}
+
+interface PageAndHits {
+  pageTitle: string;
+  pageUrl: string;
+  postHits: PostHit[];
+}
+
+interface PostHit {
+  isPageTitle?: boolean;
+  isPageBody?: boolean;
+  htmlWithMarks: string[];
+}

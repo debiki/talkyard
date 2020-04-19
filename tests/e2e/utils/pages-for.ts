@@ -187,6 +187,8 @@ export class TyE2eTestBrowser {
   #br: WebdriverIO.BrowserObject;
 
   constructor(aWdioBrowser: WebdriverIO.BrowserObject) {
+    dieIf(!aWdioBrowser?.getPageSource,
+        `Not a Wdio browser:  ${JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`);
     this.#br = aWdioBrowser;
   }
 
@@ -2005,11 +2007,15 @@ export class TyE2eTestBrowser {
 
         if (shallMatch) {
           if (!matchesRegex1) {
-            problems += `  Elem ix ${i}: Misses regex 1: ${regex}, actual text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Misses regex 1:  ${regex}\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (regex2 && !matchesAnyRegex2) {
-            problems += `  Elem ix ${i}: Misses regex 2: ${regex2}, actual text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Misses regex 2:  ${regex2}\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           // All fine, forget all problems — it's enough if one elem matches.
@@ -2017,11 +2023,15 @@ export class TyE2eTestBrowser {
         }
         else {
           if (matchesRegex1) {
-            problems += `  Elem ix ${i}: Matches regex 1: ${regex} (but should not), text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Matches regex 1:  ${regex}  (but should not)\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (regex2 && matchesAnyRegex2) {
-            problems += `  Elem ix ${i}: Matcheses regex 2: ${regex2} (but should not), text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Matches regex 2:  ${regex2}  (but should not)\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (!problems && i === (elems.length - 1)) {

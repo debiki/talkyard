@@ -484,6 +484,20 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 
 // ----- API v0
 
+
+function fullTextSearch(ps: { origin: string, queryText: string })
+      : SearchResultsApiResponse {
+  const url = ps.origin + '/-/v0/search';
+  const response = postOrDie(
+      url, { searchQuery: { queryText: ps.queryText }});
+
+  const responseJson = response.bodyJson();
+  const searchResults = (responseJson as SearchResultsApiResponse).searchResults;
+  assert.ok(searchResults);
+  return responseJson as SearchResultsApiResponse;
+}
+
+
 function upsertUserGetLoginSecret(ps: { origin: string, apiRequesterId?: UserId, apiSecret: string,
       externalUser: ExternalUser, fail?: boolean }): string {
   const url = ps.origin + '/-/v0/sso-upsert-user-generate-login-secret';
@@ -557,6 +571,7 @@ export = {
   lastEmailMatches,
   assertLastEmailMatches,
   apiV0: {
+    fullTextSearch,
     upsertUserGetLoginSecret,
     upsertSimple,
     listUsers,
