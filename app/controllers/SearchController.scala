@@ -50,12 +50,15 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def doSearch(): Action[JsValue] = AsyncPostJsonAction(RateLimits.FullTextSearch, maxBytes = 1000) {
         request: JsonPostRequest =>
+    import request.{dao, user => requester}
+
     val rawQuery = (request.body \ "rawQuery").as[String]
     val searchQuery = parseRawSearchQueryString(rawQuery, categorySlug => {
       // BUG (need not fix now): What if many sub communities, with the same cat slug? [4GWRQA28]
-      request.dao.getCategoryBySlug(categorySlug).map(_.id)
+      dao.getCategoryBySlug(categorySlug).map(_.id)
     })
-    request.dao.fullTextSearch(searchQuery, None, request.user) map {
+
+    dao.fullTextSearch(searchQuery, None, requester, addMarkTagClasses = true) map {
       searchResults: Seq[PageAndHits] =>
         import play.api.libs.json._
         OkSafeJson(Json.obj(
@@ -68,11 +71,44 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 "postId" -> hit.postId,
                 "postNr" -> hit.postNr,
                 "approvedRevisionNr" -> hit.approvedRevisionNr,
-                "approvedTextWithHighligtsHtml" -> Json.arr(hit.approvedTextWithHighligtsHtml),
+                "approvedTextWithHighlightsHtml" -> Json.arr(hit.approvedTextWithHighligtsHtml),
                 "currentRevisionNr" -> hit.currentRevisionNr
               ))))
           })
         ))
+    }
+  }
+
+
+  def doSearchPubApi(q: String, pretty: Option[Boolean]): Action[Unit] = AsyncGetActionRateLimited(  // [PUB_API]
+          RateLimits.FullTextSearch) { request: GetRequest =>
+    import request.{dao, user => requester}
+
+    TESTS_MISSING
+
+    val searchQuery = parseRawSearchQueryString(q, categorySlug => {
+      // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
+      dao.getCategoryBySlug(categorySlug).map(_.id)
+    })
+
+    // No <mark> tag class. Instead, just: " ... <mark>text hit</mark> ...",
+    // that is, don't:  <mark class="...">  — so people cannot write code that
+    // relies on those classes.
+    dao.fullTextSearch(searchQuery, None, requester, addMarkTagClasses = false) map {
+      searchResults: Seq[PageAndHits] =>
+        import play.api.libs.json._
+        OkApiJson(Json.obj(  // Typescript: SearchResultsApiResponse
+          "searchResults" -> searchResults.map((pageAndHits: PageAndHits) => {
+            Json.obj(
+              "pageTitle" -> pageAndHits.pageTitle,
+              "pageUrl" -> s"${request.origin}/-${pageAndHits.pageId}",
+              "postHits" -> JsArray(pageAndHits.hitsByScoreDesc.map((hit: SearchHit) => Json.obj(
+                "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
+                "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
+                "htmlWithMarks" -> Json.arr(hit.approvedTextWithHighligtsHtml)
+              ))))
+          })
+        ), pretty = pretty is true)
     }
   }
 
@@ -90,7 +126,7 @@ object SearchController {
 
 
   def parseRawSearchQueryString(rawQuery: String,
-        getCategoryIdFn: (String) => Option[CategoryId]): SearchQuery = {
+        getCategoryIdFn: String => Option[CategoryId]): SearchQuery = {
     // Sync with parseSearchQueryInputText(text) in JS [5FK8W2R]
     var fullTextQuery = rawQuery
 

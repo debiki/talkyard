@@ -54,6 +54,7 @@ GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbedde
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
+GET   /-/v0/search              controllers.SearchController.doSearchPubApi(q, pretty: Option[Boolean])
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage

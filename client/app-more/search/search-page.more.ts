@@ -386,7 +386,7 @@ function SearchResultHit(props: { hit: any, pageId: PageId, key?: string | numbe
   let hit: SearchHit = props.hit;
   let pageId = props.pageId;
   // Any html stuff was escaped here: [7YK24W].
-  let safeHtml = hit.approvedTextWithHighligtsHtml.join(" <b>...</b> ");
+  let safeHtml = hit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
   return (
     r.li({ className: 's_SR_Hit', key: props.key },
       r.span({ className: 'esSERP_Hit_In' },
