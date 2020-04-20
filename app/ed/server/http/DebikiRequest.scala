@@ -94,9 +94,12 @@ abstract class DebikiRequest[A] {
 
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
 
+  // A bit dupl code, see the WebSocket endpoint. [WSHTTPREQ]
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now
 
+  // Hmm will need this also for WebSocket? [WS] remember this, from
+  // the initial HTTP upgrade request?
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),

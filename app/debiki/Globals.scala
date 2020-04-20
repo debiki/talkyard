@@ -678,7 +678,7 @@ class Globals(
   }
 
 
-  def lookupSiteOrThrow(host: String, pathAndQuery: String): SiteBrief = {
+  private def lookupSiteOrThrow(host: String, pathAndQuery: String): SiteBrief = {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
@@ -699,7 +699,7 @@ class Globals(
       }
     }
 
-    if (defaultSiteHostname.contains(hostname))
+    if (defaultSiteHostname is hostname)
       return defaultSiteIdAndHostname
 
     // If the hostname is like "site-123.example.com" then we'll just lookup site id 123.
@@ -901,20 +901,43 @@ class Globals(
       shallStopStuff = true
     }
     else {
+      if (isDevOrTest) {
+        // Could wait for this to complete, but doesn't matter — just dev & test.
+        logger.info(s"Closing WebSockets ...")
+        pubSub.closeWebSocketConnections()
+      }
+
+      logger.info(s"Stopping actors ...")
+
       // Shutdown the notifier before the mailer, so no notifications are lost
       // because there was no mailer that could send them.
-      shutdownActorAndWait(state.notifierActorRef)
-      shutdownActorAndWait(state.mailerActorRef)
-      shutdownActorAndWait(state.renderContentActorRef)
-      shutdownActorAndWait(state.indexerActorRef)
-      shutdownActorAndWait(state.spamCheckActorRef)
-      shutdownActorAndWait(state.janitorActorRef)
+      val (name, future) = stopPlease(state.notifierActorRef)
+      Await.result(future, ShutdownTimeout)
+
+      // Shutdown in parallel.
+      val futureShutdownResults = Seq(
+            stopPlease(state.mailerActorRef),
+            stopPlease(state.renderContentActorRef),
+            stopPlease(state.indexerActorRef),
+            stopPlease(state.spamCheckActorRef),
+            stopPlease(state.janitorActorRef),
+            stopPlease(state.pubSubActorRef))
+
       state.elasticSearchClient.close()
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
       wsClient.close()
+
+      // Wait ... (Also see:
+      // https://stackoverflow.com/questions/16256279/how-to-wait-for-several-futures )
+      futureShutdownResults foreach { nameAndFutureResult =>
+        logger.info(s"Waiting for ${nameAndFutureResult._1} to stop ...")
+        Await.result(nameAndFutureResult._2, ShutdownTimeout)
+      }
+      logger.info(s"All actors stopped")
     }
+
     _state = null
     timeStartMillis = None
     timeOffsetMillis = 0
@@ -923,16 +946,17 @@ class Globals(
   }
 
 
-  private def shutdownActorAndWait(anyActorRef: Option[ActorRef]): Boolean = anyActorRef match {
-    case None => true
-    case Some(ref) => shutdownActorAndWait(ref)
+  private def stopPlease(anyActorRef: Option[ActorRef])
+        : (String, Future[Boolean]) = anyActorRef match {
+    case None => ("None", Future.successful(true))
+    case Some(ref) => stopPlease(ref)
   }
 
 
-  private def shutdownActorAndWait(actorRef: ActorRef): Boolean = {
+  private def stopPlease(actorRef: ActorRef): (String, Future[Boolean]) = {
+    logger.info(s"Telling actor to stop: ${actorRef.path}")
     val future = gracefulStop(actorRef, ShutdownTimeout)
-    val stopped = Await.result(future, ShutdownTimeout)
-    stopped
+    (actorRef.path.name, future)
   }
 
 
@@ -1082,7 +1106,7 @@ class Globals(
 
     val nginxHost: String =
       conf.getOptional[String]("talkyard.nginx.host").noneIfBlank getOrElse "localhost"
-    val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
+    val (pubSub, pubSubActorRef, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
       RenderContentService.startNewActor(outer, edContext.nashorn)

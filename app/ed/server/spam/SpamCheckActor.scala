@@ -93,6 +93,9 @@ class SpamCheckActor(
 
   private def checkMorePostsForSpam() {
     val spamCheckTasks = systemDao.loadStuffToSpamCheck(limit = batchSize)
+    if (spamCheckTasks.isEmpty)
+      return
+
     logger.debug(s"Checking ${spamCheckTasks.length} spam check tasks ... [TyM70295MA4]")
 
     val manyFutureResults: Seq[(SpamCheckTask, Future[SpamCheckResults])] = spamCheckTasks flatMap {

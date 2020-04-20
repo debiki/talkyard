@@ -33,6 +33,7 @@
 
 FROM alpine:3.9
 
+# [WS] upgr to 1.16.1
 ENV NGINX_VERSION 1.15.12
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
@@ -134,10 +135,11 @@ ENV CONFIG "\
 	# LuaJIT needs the devel kit.
 	--add-module=/tmp/nginx-modules/ngx_devel_kit \
 	--add-module=/tmp/nginx-modules/lua-nginx-module \
+	# [WS] DELETE
 	--add-module=/tmp/nginx-modules/nchan \
 	"
 
-# Copy nchan source code
+# Copy nchan source code   [WS] DELETE nchan Git repo.
 COPY modules /tmp/nginx-modules/
 
 # Build LuaJIT

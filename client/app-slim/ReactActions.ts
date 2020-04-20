@@ -131,9 +131,10 @@ export function logoutClientSideOnly() {
     patchTheStore({ setEditorOpen: false });
   }
 
-  // Abort any long polling request, so we won't receive data, for this user, after we've
-  // logged out: (not really needed, because we reload() below)
-  Server.abortAnyLongPollingRequest();
+  // Disconnect WebSocket so we won't receive data, for this user, after we've
+  // logged out: (we reload() below — but the service-worker might stay connected)
+  Server.disconnectWebSocket();
+
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload(); // [502098SK]
 }

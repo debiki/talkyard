@@ -119,6 +119,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           "TyE0APIGET", "The API may be called only via Basic Auth and an API secret")
         sitePatchController.exportSiteJsonImpl(request)
 
+      // [GETLOGIN] should generate browser id cookie.
       // ex: http://localhost/-/v0/sso-login?oneTimeSecret=nnnnn&thenGoTo=/
       case "sso-login" | // deprecated name, remove (because login secrets are generated
            // in more ways than just sso. E.g. for one-time-login via email, [305KDDN24]).

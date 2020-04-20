@@ -29,25 +29,61 @@ declare var skipWaiting: any;
 declare var clients;
 
 
+const enum WebSocketMessageTypes {
+  IdleSeconds = 2,  // works as keep-alive
+  Bye = 3,
+}
+
+
+/*
+
+WebSocket partial "state machine"
+==================================
+
+Human logs in  —>  Connects  —> Connected
+
+Connected  ——> Human gone ——> Stay connected
+  |                           (since already connected, anyway)
+  |
+   `——> Disconnected —> Browser window open?
+                           \
+                            \———[no]——> Stay disconnected (don't reconnect
+                             \                     the service worker alone)
+                              \
+                              [yes]——> Human there? ———[yes] ———> Try to reconnect
+                                            \
+                                             [no, gone] —–—> Stay disonnected
+                                                           (since already disconnected)
+*/
+
+
+
 //------------------------------------------------------------------------------
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-console.log(`Service worker ${TalkyardVersion} loading [TyMSWVLDNG]`);  // [sw]
 
+console.log(`SW: Service worker ${TalkyardVersion} loading [TyMSWVLDNG]`);  // [sw]
 
-type ErrorStatusHandler = (errorStatusCode?: number) => void;
+let wsUserId: UserId | U;
+let wsConnection: WebSocket | U;
+// Nice if debugging?
+let lastWsUserId: UserId | U;
+let lastWsConnection: WebSocket | U;
 
-let longPollingReqNr = 0;
-let longPollingPromise = null;
-let justAbortedLongPollingReqNr = -1;
-let currentChannelId: string = undefined;
+let wsMessageNr = 0;
+let hasAuthenticated: boolean;
+
+let nextKeepAliveScheduled: boolean | U;
+let nextKeepAliveMessageIdleSecs: number | U;
+const KeepAliveIntervalSeconds = 30;
+
 
 
 oninstall = function(event) {
   // Later: Here, can start populating an IndexedDB, and caching site assets — making
   // things available for offline use.
-  console.log("Service worker installing... [TyMSWINSTLD]");
+  console.log("SW: Installing... [TyMSWINSTLD]");
 
   // Make this the active service worker, for all clients, including any other
   // already "since long ago" open browser tabs. (Otherwise, would need to wait
@@ -59,12 +95,13 @@ oninstall = function(event) {
 };
 
 
+
 onactivate = function(event) {
   // Here, can cleanup resources used by previous sw versions that are no longer needed,
   // and e.g. migrate any database. Which cannot be done in oninstall, since then an
   // old service worker might still be running. Note that an old database that's to
   // be migrated, might be many versions old, not always the previous version.
-  console.log("Service worker activating... [TyMSWACTIVD]");
+  console.log("SW: Activating... [TyMSWACTIVD]");
 
   // On the very very first Talkyard page load, the browser page tab loads without any
   // service worker, and thus won't get any live notifications, because it'll have no
@@ -77,64 +114,184 @@ onactivate = function(event) {
   // Nice: https://serviceworke.rs/immediate-claim_service-worker_doc.html
   if (!clients.claim) return;
   event.waitUntil(clients.claim().then(() => {
-    console.log("Service worker claimed the clients. [TyMSWCLDCLS]");
+    console.log("SW: I claimed all clients. [TyMSWCLDCLS]");
   }));
 };
 
 
+
 if (registration.onupdatefound) registration.onupdatefound = function() {
-  console.log("This service worker about to be replaced by a newer version. [TyMSWUPDFND]");
-  abortAnyLongPollingRequest();
+  console.log("SW: I'm about to get replaced by a newer version. [TyMSWUPDFND]");
+  wsConnection?.close();
+  wsConnection = null;
 };
 
 
+
 onmessage = function(event: any) {
-  console.debug(`Service worker got message: '${JSON.stringify(event.data)}' [TyMSWGOTMSG]` +
-    ` from: ${event.origin}`);
+  console.debug(`SW: Win says:  ${JSON.stringify(event.data)}  ` +
+    ` [TyMSWWINMSG]`);  // from ${event.origin}
+
   const untypedMessage: MessageToServiceWorker = event.data;
+
   switch (untypedMessage.doWhat) {
-    case SwDo.TellMeYourVersion:
+    case SwDo.TellMeYourVersion: {
       event.source.postMessage({ // <MyVersionIsMessageFromSw> {
         type: 'MyVersionIs',  // old, start using ...
         saysWhat: SwSays.MyVersionIs,  // ... <— this instead
         talkyardVersion: TalkyardVersion,
       });
       break;
-    case SwDo.SubscribeToEvents:
+    }
+    case SwDo.SubscribeToEvents: {
       const message = <SubscribeToEventsSwMessage> untypedMessage;
       if (!message.myId) {
         // We've logged out. Don't ask for any events — if everyone did that,
         // that could put the server under an a bit high load? And not much interesting
         // to be notified about anyway, when haven't joined the site yet / not logged in.
-        console.debug(`You're not logged in. Aborting any long polling. [TyMSWLOGOUT]`);
-        abortAnyLongPollingRequest();
+        console.debug(`SW: Not logged in. [TyMSWLOGOUT]`);
+        if (wsConnection) {
+          console.debug(`SW: Closing connection. [TyMSWEND01]`);
+          wsConnection.close();
+          wsConnection = null;
+          wsUserId = null;
+        }
         return;
       }
-      // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
-      // must also be included in the request. So this should be safe.
-      // The site id is included, because users at different sites can have the same id. [7YGK082]
-      const channelId = message.siteId + '-' + message.myId;
-      if (currentChannelId === channelId) {
-        console.debug(`Already subscribed to channel ${channelId}, need do nothing. [TyMSWALRSUBS]`);
+
+      if (message.myId <= MaxGuestId) {
+        console.error(`Guest account: ${message.myId}`);
+        return;
       }
-      else {
-        // This'll cancel any ongoing long polling request — it'd be for the wrong user.
-        // And start a new one, for the new `myId`.
-        console.debug(`Subscribing to channel ${channelId} [TyMSWNEWSUBS]`);
-        subscribeToServerEvents(channelId);
-        currentChannelId = channelId;
+
+      if (wsUserId === message.myId) {
+        console.trace(`SW: Already connected w WebSocket as user ${wsUserId}. [TyMSWALRCON]`);
+        return;
+      }
+
+      // Could incl the req nr in the URL, for debugging, so knows which lines in
+      // chrome://net-internals/#events and in the Nginx logs are for which browser request.
+      const wsUrl = (this.location.protocol === 'http:' ? 'ws:' : 'wss:') +
+          this.location.host + '/-/websocket';
+
+      console.debug(`SW: Opening WebSocket to:  ${wsUrl}  [TyMSWNEW]`);
+
+      wsUserId = message.myId;
+      wsConnection = new WebSocket(wsUrl);
+      hasAuthenticated = false;
+
+      wsConnection.onerror = function(event: Event) {
+        // Which one of toString() or stringify? Try both.
+        const errorText = event.toString?.() || JSON.stringify(event);
+        console.warn(`SW: WebSocket error:  ${errorText}  [TyMSWERR]`);
+        // Apparently there's always a close event after onerror, see:
+        // https://stackoverflow.com/a/40084550/694469
+        // https://html.spec.whatwg.org/multipage/web-sockets.html#feedback-from-the-protocol%3Aconcept-websocket-closed
+        // — let's notify the browsers from the onclose() event, not here.
+      };
+
+      wsConnection.onopen = function(event: Event) {
+        // Todo: Remove any "No internet" message. [NOINETMSG]  already done?
+        // sendToAllBrowserTabs({ type: 'connected', data: longPollingState.nextReqNr });
+        //   —>  $h.removeClasses(document.documentElement, 's_NoInet');
+
+        console.debug(`SW: WebSocket connection open [TyMSWSOPN]`);
+        // Double quotes — the server wants json.
+        wsConnection.send(`"${message.xsrfToken}"`);
+      };
+
+      wsConnection.onmessage = function(event: MessageEvent) {
+        // We just got authenticated? Then the server says: "OkHi @username".
+        if (event.data.indexOf('"OkHi ') === 0) {  // double quotes because is json
+          if (hasAuthenticated) {
+            // Should get only one 'OkHi'.
+            console.warn(`SW: Unexpected 'OkHi' [TyESWUNEXPOKHI]`);
+            return;
+          }
+          hasAuthenticated = true;
+          console.debug(`SW: Server: 'OkHi' [TyMSWOKHI]`);
+          sendToAllBrowserTabs({ type: 'connected', data: wsMessageNr });
+          return;
+        }
+
+        if (!hasAuthenticated) {
+          console.warn(`SW: Server, before 'OkHi': ${event.data} [TyESW0OKHI]`);
+          return;
+        }
+
+        console.debug(`SW: Server: ${event.data} [TyMSWSVSAYS]`);
+        const message = JSON.parse(event.data)
+        sendToAllBrowserTabs(message);
+      }
+
+      wsConnection.onclose = function(event: CloseEvent) {
+        // CloseEvent codes: (for event.code)
+        //  https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+        const logFn = event.wasClean ? console.debug : console.error;
+        logFn(`SW: Connection closed, code: ${event.code}, ` +
+            `reason: ${event.reason}, clean: ${event.wasClean}  [TyMSWEND02]`);
+
+        sendToAllBrowserTabs({ type: event.wasClean ? 'disconnected' : 'eventsBroken' });
+        lastWsConnection = wsConnection;
+        lastWsUserId = wsUserId;
+        wsUserId = null;
+        wsConnection = null;
+
+        // ?  [NOINETMSG]
       }
       break;
-    case SwDo.StartMagicTime:
-      const message3 = <StartMagicTimeSwMessage> untypedMessage;
-      startMagicTime(message3.startTimeMs);
+    }
+    case SwDo.KeepWebSocketAlive: {
+      // One or more browser windows are open — so keep any WebSocket connection alive,
+      // by sending regular short messages so proxy servers notice the connection is
+      // actually in use.
+
+      const message = <WebSocketKeepAliveSwMessage> untypedMessage;
+
+      // If active in different browser windows, the idle time is the shortest one,
+      // from the most recently active window.
+      nextKeepAliveMessageIdleSecs = Math.min(
+          message.idleSecs, nextKeepAliveMessageIdleSecs);
+
+      if (!isConnected()) {
+        // This timeout must be higher than the startKeepAliveMessages()
+        // intervl [KEEPALVINTV] [5AR20ZJ], otherwise we might never reconnect.
+        if (message.idleSecs < 60) {
+          tryToReconnect();
+        }
+        else {
+          // Noop. A browser window is open — but the human isn't there. Don't
+          // reconnect, until maybe later when hen is back.
+        }
+      }
+      else if (!nextKeepAliveScheduled) {
+        if (message.myId !== wsUserId) {
+          console.warn(`SW: message.myId: ${message.myId} !== wsUserId: ${wsUserId} [TyE06KTH3]`);
+        }
+        nextKeepAliveScheduled = true;
+        magicTimeout(KeepAliveIntervalSeconds * 1000, function() {
+          nextKeepAliveScheduled = false;
+          trySendWebSocketMessage(
+              WebSocketMessageTypes.IdleSeconds, nextKeepAliveMessageIdleSecs);
+        });
+      }
+
       break;
-    case SwDo.PlayTime:
-      const message2 = <PlayTimeSwMessage> untypedMessage;
-      addTestExtraMillis(message2.extraTimeMs);
+    }
+    case SwDo.StartMagicTime: {
+      const message = <StartMagicTimeSwMessage> untypedMessage;
+      startMagicTime(message.startTimeMs);
       break;
+    }
+    case SwDo.PlayTime: {
+      const message = <PlayTimeSwMessage> untypedMessage;
+      addTestExtraMillis(message.extraTimeMs);
+      break;
+    }
   }
 };
+
+
 
 function sendToAllBrowserTabs(message) {
   clients.matchAll({ type: 'window' }).then(function (cs) {
@@ -144,25 +301,54 @@ function sendToAllBrowserTabs(message) {
   });
 }
 
+
+function tryToReconnect() {
+  if (isConnected()) {
+    return;
+  }
+  // See (OLDRECON) below.
+}
+
+
+
+function isConnected(): boolean {
+  return wsConnection?.readyState === WebSocket.OPEN;
+}
+
+
+
+function trySendWebSocketMessage(messageType: WebSocketMessageTypes, data: any) {
+  if (!isConnected()) {
+    console.debug(`SW: Not connected, cannot send [TyMSW0CON]:  ` +
+      `${messageType}  ${JSON.stringify(data)}`);
+    return;
+  }
+
+  // Each message has its own sequence number, so the server can tell us which message
+  // it replies to (if it replies to a specific message).
+  wsMessageNr += 1;
+
+  // Also, tell the server what message we're replying to. 0 means not replying.
+  const replyingToServerMessageNr = 0;
+
+  // Talkyard's WebSocket protocol.
+  const jsonText = JSON.stringify([
+      wsMessageNr, replyingToServerMessageNr, messageType, data]);
+
+  console.debug(`SW: Sending to server: ${jsonText}`)
+  wsConnection.send(jsonText);
+}
+
+
+
 const RetryAfterMsDefault = 5000;
-const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]
+const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]  No! Don't give up that soon?
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
 
 
 
-/**
- * Deletes any old event subscription (long polling) and creates a new
- * for the current user (sends a new long polling request).
- */
-function subscribeToServerEvents(channelId: string) {
-  abortAnyLongPollingRequest();
-
-  // Remove the "No internet" message, in case the network works (again).
-  // If disconnected, the "No internet" message [NOINETMSG] will reappear immediately when this
-  // netw request fails (unless if not logged in — then, won't see live notifications anyway,
-  // so no need for the message).
-  sendToAllBrowserTabs({ type: 'connected', data: longPollingState.nextReqNr });
+/* Old reconnect code, from long ago when Long Polling was used:  (OLDRECON)
 
   sendLongPollingRequest(channelId, (response) => {
     console.debug("Long polling request done, sending another... [TyMSWLPDONE]");
@@ -172,8 +358,7 @@ function subscribeToServerEvents(channelId: string) {
     retryAfterMs = RetryAfterMsDefault;
     startedFailingAtMs = undefined;
 
-    //dieIf(!response.type, 'TyE2WCX59');
-    //dieIf(!response.data, 'TyE4YKP02');
+
     sendToAllBrowserTabs(response);
   }, (errorStatusCode?: number) => {
     // Error. Don't retry immediately — that could result in super many error log messages,
@@ -212,188 +397,8 @@ function subscribeToServerEvents(channelId: string) {
     }
   });
 }
+*/
 
-
-interface OngoingRequestWithNr extends Promise<any> {
-  reqNr?: number;
-  anyAbortController?: AbortController;
-}
-
-interface LongPollingState {
-  ongoingRequest?: OngoingRequestWithNr;
-  lastModified?;
-  lastEtag?;
-  nextReqNr: number;
-}
-
-const longPollingState: LongPollingState = { nextReqNr: 1 };
-
-// Should be less than the Nchan timeout [2ALJH9] but let's try the other way around for
-// a short while, setting it to longer (60 vs 40) maybe working around an Nginx segfault [NGXSEGFBUG].
-const LongPollingSeconds = 60;
-
-
-
-function sendLongPollingRequest(channelId: string, successFn: (response) => void,  // dupl [7KVAWBY0]
-      errorFn: ErrorStatusHandler, resendIfNeeded: () => void) {
-
-  if (longPollingState.ongoingRequest)
-    throw `Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`;
-
-  // For debugging.
-  const reqNr = longPollingState.nextReqNr;
-  longPollingState.nextReqNr = reqNr + 1;
-
-  console.debug(
-      `Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
-
-
-  /*
-  const options: GetOptions = {
-    dataType: 'json',
-    // Don't show any error dialog if there is a disconnection, maybe laptop goes to sleep?
-    // or server restarts? or sth. The error dialog is so distracting — and the browser
-    // resubscribes automatically in a while. Instead, we show a non-intrusive message [NOINETMSG]
-    // about that, and an error dialog not until absolutely needed.
-    //
-    // (Old?: Firefox always calls the error callback if a long polling request is ongoing when
-    // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
-    // 2018-06-30: Or was this in fact jQuery that called error(), when FF called abort()? )
-    suppressErrorDialog: true,
-  }; */
-
-  const anyAbortController = ('AbortController' in self) ? new AbortController() : undefined;
-
-  let options: any = {
-    credentials: 'same-origin',
-    referrer: 'no-referrer',
-    redirect: 'error',
-    signal: anyAbortController ? anyAbortController.signal : undefined,
-  };
-
-  // The below headers make Nchan return the next message in the channel's message queue,
-  // or, if queue empty, Nchan waits with replying, until a message arrives. Our very first
-  // request, though, will lack headers — then Nchan returns the oldest message in the queue.
-  if (longPollingState.lastEtag) {
-    options.headers = {
-      // Should *not* be quoted, see:
-      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
-      'If-Modified-Since': longPollingState.lastModified,
-      // *Should* be quoted, see:
-      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
-      // """a string of ASCII characters placed between double quotes (Like "675af34563dc-tr34")"""
-      // Not sure if Nchan always includes quotes in the response (it *should*), so remove & add-back '"'.
-      'If-None-Match': `"${longPollingState.lastEtag.replace(/"/g, '')}"`,
-      // 'Content-Type': 'application/json',  <— don't forget, if POSTing.
-      // Nice: URLSearchParams
-    };
-  }
-
-  let requestDone = false;
-
-  // We incl the req nr in the URL, for debugging, so knows which lines in
-  // chrome://net-internals/#events and in the Nginx logs are for which request in the browser.
-  const pollUrl = `/-/pubsub/subscribe/${channelId}?reqNr=${reqNr}&talkyardVersion=${TalkyardVersion}`;
-
-  longPollingState.ongoingRequest = fetch(pollUrl, options).then(function(response) {
-    // This means the response http headers have arrived — we also need to wait
-    // for the response body.
-
-    if (response.status === 200) {
-      console.trace(
-          `Long polling request ${reqNr} response headers, status 200 OK [TyMSWLPRHDRS]`);
-      response.json().then(function(json) {
-        longPollingState.ongoingRequest = null;
-        console.debug(`Long polling request ${reqNr} response json [TyMSWLPRRESP]: ` +
-            JSON.stringify(json));
-
-        // Don't bump these until now, when we have the whole response:
-        longPollingState.lastModified = response.headers.get('Last-Modified');
-        // (In case evil proxy servers remove the Etag header from the response, there's
-        // a workaround, see the Nchan docs:  nchan_subscriber_message_id_custom_etag_header)
-        longPollingState.lastEtag = response.headers.get('Etag');
-
-        requestDone = true;
-        successFn(json);
-      }).catch(function(error) {
-        longPollingState.ongoingRequest = null;
-        requestDone = true;
-        console.warn(`Long polling request ${reqNr} failed: got headers, status 200, ` +
-            `but no json [TyESWLP0JSN]`);
-        errorFn(200);
-      });
-    }
-    else if (response.status === 408) {
-      // Fine.
-      console.debug(`Long polling request ${reqNr} done, status 408 Timeout [TyMSWLPRTMT]`);
-      resendIfNeeded();
-    }
-    else {
-      console.warn(
-          `Long polling request  ${reqNr} error response, status ${response.status} [TyESWLPRERR]`);
-      errorFn(response.status);
-    }
-  }).catch(function(error) {
-    longPollingState.ongoingRequest = null;
-    requestDone = true;
-    if (justAbortedLongPollingReqNr === reqNr) {
-      console.debug(`Long polling request ${reqNr} failed: aborted, fine [TyMSWLPRABRTD]`);
-    }
-    else {
-      console.warn(`Long polling request ${reqNr} failed, no response [TyESWLP0RSP]`);
-      errorFn(0);
-    }
-  });
-
-  longPollingState.ongoingRequest.anyAbortController = anyAbortController;
-  longPollingState.ongoingRequest.reqNr = reqNr;
-
-  // Cancel and send a new request after half a minute.
-
-  // Otherwise firewalls and other infrastructure might think the request is broken,
-  // since no data gets sent. Then they might kill it, sometimes (I think) without
-  // this browser or Talkyard server getting a chance to notice this — so we'd think
-  // the request was alive, but in fact it had been silently terminated, and we
-  // wouldn't get any more notifications.
-
-  // And don't update last-modified and etag, since when cancelling, we don't get any
-  // more recent data from the server.
-
-  const currentRequest = longPollingState.ongoingRequest;
-
-  magicTimeout(LongPollingSeconds * 1000, function () {
-    if (requestDone)
-      return;
-    console.debug(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
-    if (currentRequest.anyAbortController) {
-      justAbortedLongPollingReqNr = reqNr;
-      currentRequest.anyAbortController.abort();
-    }
-    // Unless a new request has been started, reset the state.
-    if (currentRequest === longPollingState.ongoingRequest) {
-      longPollingState.ongoingRequest = null;
-    }
-    resendIfNeeded();
-  });
-}
-
-
-function isLongPollingNow(): boolean {
-  return !!longPollingState.ongoingRequest;
-}
-
-
-function abortAnyLongPollingRequest() {
-  const ongReq = longPollingState.ongoingRequest;
-  if (ongReq) {
-    console.debug(`Aborting long polling request ${ongReq.reqNr} [TyMLPRABRT2]`);
-    if (ongReq.anyAbortController) {
-      justAbortedLongPollingReqNr = ongReq.reqNr;
-      ongReq.anyAbortController.abort();
-    }
-    longPollingState.ongoingRequest = null;
-  }
-}
 
 
 //------------------------------------------------------------------------------

@@ -45,7 +45,7 @@ debiki.serviceWorkerPromise = new Promise<ServiceWorker>(function (resolve, reje
 // "uncaught exception: ..." error, if we intentionally reject the promise
 // because we've disabled service workers / they aren't supported.
 debiki.serviceWorkerPromise.catch(function(ex) {
-  if (ex !== 'ok')
+  if (ex !== 'skip_sw')
     console.warn("Error subscribing to events via service worker [TyE5RM57]", ex);
 });
 
@@ -337,7 +337,7 @@ function renderPageInBrowser() {
         });
 
     swPromise.finally(lastStep).catch(function(ex) {
-      if (ex !== 'ok')
+      if (ex !== 'skip_sw')
         console.error("Error in lastStep() [TyELSTSTP]", ex);
     });
   });
@@ -346,6 +346,7 @@ function renderPageInBrowser() {
     debiki2.startMagicTime(eds.testNowMs);
     pageStarted = true;
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });
+    debiki2.pubsub.startKeepAliveMessages();
     logM("Page started. [TyMPGSTRTD]");
   }
 
@@ -372,10 +373,12 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
     else {
       logM("Not using any service worker. [TyMSWSKIPD]");
     }
-    rejectServiceWorkerPromise('ok');
+    rejectServiceWorkerPromise('skip_sw');
     return;
   }
 
+  // This happens if the service worker changes, e.g. a new worker skips waiting,
+  // and is now the new active worker.
   navigator.serviceWorker.addEventListener('controllerchange', (controllerchangeevent) => {
     logM("Service worker controllerchange event [TyMSWCTRCHG]");
   });
@@ -388,6 +391,7 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
   //
   const embeddedOriginorEmpty = eds.isInIframe ? location.origin : '';
   const scriptUrl = `${embeddedOriginorEmpty}/talkyard-service-worker.${eds.minMaxJs}`;
+
   navigator.serviceWorker.register(scriptUrl)
       .then(function(registration) {
         logM("Service worker registered. [TyMSWREGOK]");
@@ -422,15 +426,15 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
 
           // Now there's *some* service worker for this browser tab — maybe the wrong version?
           // When the page loads, that'll happen using the currently installed service
-          // worker, possibly an old version, could be a year old, if the user hasn't
-          // visited this site in a year.
+          // worker, possibly an old version, could be almost a year old, if the user hasn't
+          // visited this site in almost a year.
           // It's *error prone* to write code that works with arbitrarily old service workers?
           // So if it's of a different (older) version, wait until the new one we
           // started installing above, has claimed [SWCLMTBS] this browser tab. Let's
           // poll-ask the service worker about its version, until it's the same version.
-          // (Or if newer version — should tell user to refresh page [NEWSWVER]. Not impl.)
+          // (Or if newer version: Tell user to refresh page [NEWSWVER]. Not impl.)
           if (i === 1)
-            logM("Service worker active — but which version? [TyMSWACTV]");
+            logM("Service worker active, but which version? [TyMSWACTV]");
 
           if ((i % 20) === 4)
             logM("Waiting for service worker to maybe update ... [TyMWAITSWUPD]");
@@ -445,7 +449,8 @@ function registerServiceWorkerWaitForSameVersion() {  // [REGSW]
           // This variable gets updated when the service worker replies to the messages
           // we send just above. (Could use a MessageChannel instead? But this works fine.)
           if (serviceWorkerIsSameVersion) {  // [SWSAMEVER]
-            logM(`Service worker is same version: ${TalkyardVersion}, fine [TyMEQSWVER]`);
+            logM(`Service worker version: ${TalkyardVersion
+                  } — good, same as this code [TyMEQSWVER]`);
             clearInterval(intervalHandle);
             resolveServiceWorkerPromise(theServiceWorker);
           }

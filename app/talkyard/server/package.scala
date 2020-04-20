@@ -16,4 +16,21 @@ package object server {
     protected val logger: play.api.Logger = TyLogger(getClass.getName.stripSuffix("$"))
   }
 
+
+  implicit class RichResult(val underlying: play.api.mvc.Result) {
+    def statusCode: Int = underlying.header.status
+
+    def bodyAsUtf8String: String = {
+      import play.api.http.HttpEntity
+      underlying.body match {
+        case HttpEntity.Strict(byteString, _) =>
+          byteString.utf8String
+        case _: HttpEntity.Chunked =>
+          "(chunked response)"
+        case _: HttpEntity.Streamed =>
+          "(streamed response)"
+      }
+    }
+  }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,11 +16,24 @@
  */
 
 
+// RENAME to detect-activity.ts ?
+
 //------------------------------------------------------------------------------
    namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-const pendingCallbacks: (() => void)[] = [];
+let lastActivityAtMs: number;
+let idleSeconds = 0;
+
+// So can cancel interval, if annoying, when debugging.
+let ideIntervalHandle;
+
+// Reports number of seconds the user has been idle.
+//
+export const getIdleSeconds = (): number => idleSeconds;
+
+
+const pendingMouseCallbacks: (() => void)[] = [];
 
 export let isMouseDetected: boolean = undefined;
 
@@ -37,7 +50,7 @@ export let isMouseDetected: boolean = undefined;
  * Not sure if this will work on all touch devices. Works on my Fair Phone Android
  * anyway.
  */
-export function startDetectingMouse() {
+export function startDetectingMouse() {    // RENAME to startDetectingActivity()
   Bliss.once(document, {
     'touchstart touchend touchmove mousemove': function(event) {
       if (event.type === 'mousemove') {
@@ -48,6 +61,27 @@ export function startDetectingMouse() {
       }
     }
   });
+
+  lastActivityAtMs = getNowMs();
+
+  // Not needed — uninteresting *or* triggers some other event too?:
+  //   submit change mouseenter resize dblclick.
+  /*  for (let event of ['mousedown', 'mousemove', 'keypress', 'scroll',
+      'touchmove ', 'touchstart']) {
+    window.addEventListener(event,
+  */
+  Bliss.bind(window, {
+    'mousedown mousemove keypress scroll touchmove touchstart': function() {
+      lastActivityAtMs = getNowMs();
+      idleSeconds = 0;
+    }
+  });
+
+  // Once a second (instead of, say, 30 secons) makes magic time addTestExtraMillis()
+  // responsive, during e2e tests.
+  ideIntervalHandle = setInterval(function() {
+    idleSeconds = Math.trunc((getNowMs() - lastActivityAtMs) / 1000);
+  }, 1000);
 }
 
 
@@ -59,7 +93,7 @@ export function onMouseDetected(callback: () => void) {
     callback();
   }
   else {
-    pendingCallbacks.push(callback);
+    pendingMouseCallbacks.push(callback);
   }
 }
 
@@ -74,9 +108,10 @@ function onFirstMouseMove() {
   logM('Mouse detected. [TyMMOUSE]');
   isMouseDetected = true;
   document.documentElement.className += ' mouse';
-  for (let i = 0; i < pendingCallbacks.length; ++i) {
-    pendingCallbacks[i]();
+  for (let i = 0; i < pendingMouseCallbacks.length; ++i) {
+    pendingMouseCallbacks[i]();
   }
+  pendingMouseCallbacks.length = 0; // clear array
 }
 
 

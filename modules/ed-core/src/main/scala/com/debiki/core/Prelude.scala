@@ -815,17 +815,29 @@ object Prelude {
   implicit class RichLinkedHashMap[K, V](val underlying: mutable.LinkedHashMap[K, V])
       extends AnyVal {
 
-    def removeWhile(predicate: ((K, V)) => Boolean) {
+    def removeWhile(predicate: ((K, V)) => Boolean): Unit = {
       val keysToRemove = underlying.iterator.takeWhile(predicate).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileValue(predicate: V => Boolean) {
+    def removeAtMostWhile(howMany: Int, predicate: ((K, V)) => Boolean): Unit = {
+      var numGone = 0
+      removeWhile(kv => {
+        if (numGone >= howMany) false
+        else {
+          val removeThisOne = predicate(kv)
+          numGone += 1
+          removeThisOne
+        }
+      })
+    }
+
+    def removeWhileValue(predicate: V => Boolean): Unit = {
       val keysToRemove = underlying.iterator.takeWhile(entry => predicate(entry._2)).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileKey(predicate: K => Boolean) {
+    def removeWhileKey(predicate: K => Boolean): Unit = {
       val keysToRemove = underlying.keysIterator.takeWhile(predicate)
       keysToRemove.foreach(underlying.remove)
     }

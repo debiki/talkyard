@@ -386,6 +386,12 @@ export function post_shallRenderAsHidden(post: Post): boolean {
 // Me
 //----------------------------------
 
+export function me_isUser(me: Myself): boolean {
+  return (!isGuest(me) && !me.isGroup &&
+      // Don't need both these? Oh well.
+      me.isAuthenticated && me_isAuthenticated(me));
+}
+
 export function me_hasRead(me: Myself, post: Post) {
   // If not logged in, we have no idea.
   dieIf(!me.isLoggedIn, 'EdE2WKA0');

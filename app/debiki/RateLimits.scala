@@ -172,6 +172,16 @@ object RateLimits {
   }
 
 
+  object ConnectWebSocket extends RateLimits {
+    val key = "WS"
+    val what = "Connected WebSocket too quickly"
+    def maxPerFifteenSeconds = 50              // 200/min
+    def maxPerFifteenMinutes: Int =  50 * 15   //  50/min
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
   object ExpensiveGetRequest extends RateLimits {
     val key = "ExRq"
     val what = "sent too many complicated HTTP GET requests"

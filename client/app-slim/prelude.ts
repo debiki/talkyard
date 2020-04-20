@@ -124,7 +124,7 @@ export function logM(message, ex?) {
 /// console.debug() everywhere.
 ///
 export function logD(message, ex?) {
-  console.debug(message, ex);
+  console.debug.apply(console, arguments);
 }
 
 

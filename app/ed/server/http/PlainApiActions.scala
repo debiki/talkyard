@@ -238,21 +238,23 @@ class PlainApiActions(
         !shallAvoid
       }
 
+      // A bit dupl code, the same as for Websockets, the HTTP upgrade request. [WSHTTPREQ]
       val dao = globals.siteDao(site.id)
       val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
 
       val (actualSidStatus, xsrfOk, newCookies) =
         security.checkSidAndXsrfToken(
-          request, siteId = site.id, expireIdleAfterMins, maySetCookies = maySetCookies)
+          request, anyRequestBody = Some(request.body), siteId = site.id,
+          expireIdleAfterMins, maySetCookies = maySetCookies)
 
       // Ignore and delete any broken or expired session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
         if (actualSidStatus.canUse) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (browserId, newBrowserIdCookie) =  // [5JKWQ21]
+      val (anyBrowserId, newBrowserIdCookie) =  // [5JKWQ21]
         if (maySetCookies) {
-          security.getBrowserIdCookieMaybeCreate(request)
+          security.getBrowserIdCreateCookieIfMissing(request, isLogin = isLogin)
         }
         else {
           // Then use any xsrf token, if present. It stays the same until page reload,
@@ -270,10 +272,10 @@ class PlainApiActions(
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          dao.perhapsBlockRequest(request, mendedSidStatus, browserId)
+          dao.perhapsBlockRequest(request, mendedSidStatus, anyBrowserId)
           val anyUserMaybeSuspended = dao.getUserBySessionId(mendedSidStatus)
           runBlockIfAuthOk(request, site, dao, anyUserMaybeSuspended,
-              mendedSidStatus, xsrfOk, browserId, block)
+              mendedSidStatus, xsrfOk, anyBrowserId, block)
         }
         catch {
           case _: LoginNotFoundException =>

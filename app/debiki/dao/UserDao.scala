@@ -1865,7 +1865,7 @@ trait UserDao {
   }
 
 
-  def perhapsBlockRequest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
+  def perhapsBlockRequest(request: play.api.mvc.RequestHeader, sidStatus: SidStatus,
         browserId: Option[BrowserId]) {
     if (request.method == "GET")
       return

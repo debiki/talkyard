@@ -99,6 +99,8 @@ export function startMagicTime(anyStartTimeMs?: number) {
 
   startTimeMs = anyStartTimeMs;
   // @ifdef DEBUG
+  // (logD maybe not available — we might be in the service worker)
+  console.debug(`Magic time: ${anyStartTimeMs || 'No'}  [TyMMAGICTIME]`);
   /* causes errors in some Chrome social_NotificationsOgbUi thing:
   const setTimeoutOrig = window.setTimeout;
   window.setTimeout = <any> function(fn, timeout, args?: any[]) {

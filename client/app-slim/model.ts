@@ -1809,6 +1809,7 @@ const enum SwDo {  // Service worker, do: ....
   SubscribeToEvents = 2,
   StartMagicTime = 3,
   PlayTime = 4,  // sync with e2e tests [4092RMT5]
+  KeepWebSocketAlive = 5,
 }
 
 //enum SwSays {  // Service worker says: ....
@@ -1822,7 +1823,8 @@ interface MessageToServiceWorker {
   // compatible with the service worker. Then the sw can reply "Please refresh the page".
   // This can happen if you open a browser page, wait some days until
   // a new service worker version is released, then open a 2nd page, which
-  // installs the new service worker — which claims the old tab.
+  // installs the new service worker — and the new worker, would claim
+  // the old tab [SWCLMTBS], but they might be incompatible.
   talkyardVersion: string;
 }
 
@@ -1835,6 +1837,16 @@ interface TellMeYourVersionSwMessage extends MessageToServiceWorker {
 interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
   doWhat: SwDo.SubscribeToEvents;
   siteId: SiteId;
+  myId: UserId;
+  xsrfToken: string;
+}
+
+
+// This could include more data [VIAWS], or be sent less often,
+// if we're sending other messages anyway.
+interface WebSocketKeepAliveSwMessage extends MessageToServiceWorker {
+  doWhat: SwDo.KeepWebSocketAlive;
+  idleSecs: number;
   myId: UserId;
 }
 

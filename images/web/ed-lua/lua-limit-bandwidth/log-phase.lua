@@ -4,10 +4,11 @@ local ip = ngx.var.remote_addr
 local server_name = ngx.var.server_name
 local bytes_sent = ngx.var.bytes_sent
 
--- Skip internal requests to port 81 — they're for publishing via Nchan, or viewing status.
-if server_name == '_internal_port_81_' then
-  return
-end
+-- Can skip internal requests to internal servers as follows: (previously Nchan
+-- at port 81, now gone)
+-- if server_name == '_internal_port_81_' then
+--   return
+-- end
 
 local used_ip_bw = util.get_used_bw(ngx.shared.bw_by_ip, ip)
 local used_server_bw = util.get_used_bw(ngx.shared.bw_by_server, server_name)
