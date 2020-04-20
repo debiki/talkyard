@@ -31,6 +31,7 @@ declare const browserA: WebdriverIO.BrowserObject;
 declare const browserB: WebdriverIO.BrowserObject | U;
 declare const browserC: WebdriverIO.BrowserObject | U;
 
+type SelectorOrElem = string | WebdriverIO.Element;
 
 const enum IsWhere {
   Forum = 1,

@@ -19,7 +19,8 @@ import * as tyAssert from '../utils/ty-assert';
 
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
-import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logWarning, logWarningIf,
+import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logErrorIf,
+    logWarning, logWarningIf,
     logException, logMessage, logMessageIf, logBoring,
     logServerRequest, printBoringToStdout } from './log-and-die';
 
@@ -156,6 +157,11 @@ function isBadElemException(ex): boolean {
     exStr.indexOf(StaleElem2) >= 0 ||
     exStr.indexOf(CannotFindId) >= 0);
 }
+
+function isClickInterceptedException(ex): boolean {
+  return ex.toString?.().toLowerCase().indexOf('element click intercepted') >= 0;
+}
+
 
 const sfy: (any) => string = JSON.stringify;
 
@@ -438,6 +444,7 @@ export class TyE2eTestBrowser {
       const timeoutMs = makeTimeoutMs(ps.timeoutMs);
       const startMs = Date.now();
       let loggedAnything = false;
+      let loggedErrorAlready = false;
 
       try {
         do {
@@ -457,13 +464,27 @@ export class TyE2eTestBrowser {
                 getOrCall(ps.message) : "Wait until what?"} ...`);
           }
 
+          // Any unrecoverable error dialog? E.g. the server replied Error to a request.
+          // However if the waiting message text is like "Waiting for .s_SED_Msg", then we're
+          // waiting for the dialog itself, so then it's fine when it appears.
+          // (This '.s_SED_Msg' test is a bit hacky, but works (and if stops working,
+          // some server error dialog tests should start failing — easy to notice.)
+          const waitingForServerError = () =>
+              ps.message && getOrCall(ps.message).indexOf('s_SED_Msg') >= 0;
+          if (elapsedMs > 500 && !waitingForServerError()) {
+            if (this.serverErrorDialog.isDisplayed()) {
+              loggedErrorAlready = true;
+              this.serverErrorDialog.failTestAndShowDialogText();
+            }
+          }
+
           this.#br.pause(delayMs);
           delayMs = expBackoff(delayMs);
         }
         while (elapsedMs < timeoutMs);
       }
       catch (ex) {
-        logError(`Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
+        logErrorIf(!loggedErrorAlready, `Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
         throw ex;
       }
 
@@ -1245,9 +1266,25 @@ export class TyE2eTestBrowser {
             `Don't know which one of ${elems.length} elems to click. ` +
             `Selector:  ${selector} [TyE305KSU]`);
       }
-     this.$(selector).click();
+     this.click(selector);
     }
 
+
+    click(selEl: SelectorOrElem) {
+      try {
+        if (_.isString(selEl)) this.$(selEl).click();
+        else selEl.click();
+      }
+      catch (ex) {
+        if (isClickInterceptedException(ex)) {
+          // Often, this is because server error dialog appeared.
+          if (this.serverErrorDialog.isDisplayed()) {
+            this.serverErrorDialog.failTestAndShowDialogText();
+          }
+        }
+        throw ex;
+      }
+    }
 
     // For one this.#br at a time only.
     // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
@@ -1265,7 +1302,7 @@ export class TyE2eTestBrowser {
 
       const elemToClick = elems[index];
       dieIf(!elemToClick, selector + ' TyE36KT74356');
-      elemToClick.click();
+      this.click(elemToClick);
     }
 
 
@@ -1352,7 +1389,7 @@ export class TyE2eTestBrowser {
     focus(selector: string, opts?: { maybeMoves?: true,
           timeoutMs?: number, okayOccluders?: string }) {
       this._waitForClickable(selector, opts);
-      this.$(selector).click();
+      this.click(selector);
     }
 
     refreshUntil(test: () => boolean) {
@@ -1658,7 +1695,7 @@ export class TyE2eTestBrowser {
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
         const elem = this.waitAndGetElemWithText(selector, regex);
-        elem.click();
+        this.click(elem);
       });
     }
 
@@ -4227,7 +4264,7 @@ export class TyE2eTestBrowser {
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
         // Instead:
-        this.$("a=Home").click();
+        this.click("a=Home");
       },
 
       waitForLoaded: () => {
@@ -4468,9 +4505,7 @@ export class TyE2eTestBrowser {
       },
 
       clickFirstMentionOf: (username: string) => {
-        this.waitForDisplayed(`a.esMention=@${username}`);
-        const elem = this.$(`a.esMention=@${username}`);
-        elem.click();
+        this.waitAndClick(`a.esMention=@${username}`);
       },
 
       clickReplyToOrigPost: (whichButton?: 'DiscussionSection') => {
@@ -6763,16 +6798,31 @@ export class TyE2eTestBrowser {
 
 
     serverErrorDialog = {
+      isDisplayed: (): boolean => {
+        return this.isVisible('.s_SED_Msg');
+      },
+
+      failTestAndShowDialogText: () => {
+        tyAssert.ok(this.serverErrorDialog.isDisplayed());
+        const title = this.waitAndGetText('.s_SED_Ttl');
+        const text = this.$('.s_SED_Msg').getHTML();
+        console.trace();
+        assert.fail(
+            `Unexpected error dialog: [TyEERRDLG]\n` +
+            `title: ${title}\n` +
+            `text: ${text}`);
+      },
+
       waitForNotLoggedInError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyE0LGDIN_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGDIN_');
       },
 
       waitForNotLoggedInAsAdminError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyE0LGIADM_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGIADM_');
       },
 
       waitForJustGotSuspendedError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
       dismissReloadPageAlert: () => {
@@ -6792,11 +6842,11 @@ export class TyE2eTestBrowser {
       },
 
       waitAndAssertTextMatches: (regex: string | RegExp) => {
-        this.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+        this.waitAndAssertVisibleTextMatches('.s_SED_Msg', regex);
       },
 
       waitForBadEmailAddressError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLADR_');
       },
 
       waitForBadEmailDomainError: () => {
@@ -6805,20 +6855,20 @@ export class TyE2eTestBrowser {
         // Why? Maybe there's another dialog .modal-body that fades away and disappears
         // before the server error dialog's .modal-body appears?
         utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
-          this.waitUntilTextMatches('.s_SED_Wrap .modal-body', 'TyEBADEMLDMN_');
+          this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLDMN_');
         });
       },
 
       waitForTooManyInvitesError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyETOOMANYBULKINV_');
       },
 
       waitForTooManyInvitesLastWeekError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyINVMANYWEEK_');
       },
 
       waitForXsrfTokenExpiredError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyEXSRFEXP_');
       },
 
       waitForIsRegistrationSpamError: () => {

@@ -46,7 +46,7 @@ object IncludeInSummaries {
   *
   * @param id
   * @param sectionPageId
-  * @param parentId
+  * @param parentId — is empty, for root categories.
   * @param defaultSubCatId — if creating a topic in this category (typically, a forum root
   *  category), then, if no category specified, the new topic will be placed in this sub category.
   * @param name
