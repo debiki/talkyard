@@ -25,7 +25,6 @@ import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
-import debiki.Globals.NoStateError
 import debiki.EdHttp._
 import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
@@ -205,7 +204,7 @@ class Globals(
   // Futures timed out after [5 seconds]
   // """
   // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
-  val ShutdownTimeout: FiniteDuration = 10 seconds
+  val ShutdownTimeout: FiniteDuration = 10.seconds
 
   /** For now (forever?), ignore platforms that don't send Linux signals.
     */
@@ -624,7 +623,7 @@ class Globals(
         sudo docker-compose restart web app""")
     s"$scheme://$hostname$colonPort"
   }
-  def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
+  def originOf(request: p.mvc.RequestHeader): String = s"$scheme://${request.host}"
 
   def originOf(request: GetRequest): String =
     originOf(request.underlying)
@@ -678,7 +677,7 @@ class Globals(
   }
 
 
-  def lookupSiteOrThrow(host: String, pathAndQuery: String): SiteBrief = {
+  private def lookupSiteOrThrow(host: String, pathAndQuery: String): SiteBrief = {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
@@ -699,7 +698,7 @@ class Globals(
       }
     }
 
-    if (defaultSiteHostname.contains(hostname))
+    if (defaultSiteHostname is hostname)
       return defaultSiteIdAndHostname
 
     // If the hostname is like "site-123.example.com" then we'll just lookup site id 123.
@@ -789,7 +788,7 @@ class Globals(
     // When testing, never proceed before the server has started properly, or tests will fail (I think).
     if (isOrWasTest) {
       try {
-        Await.ready(createStateFuture, 99 seconds)
+        Await.ready(createStateFuture, 99.seconds)
         if (killed) {
           logger.info("Killed. Bye. [EsMKILLED]")
           // Don't know how to tell Play to exit? Maybe might as well just:
@@ -884,7 +883,7 @@ class Globals(
     edContext.nashorn.startCreatingRenderEngines()
 
     if (!isTestDisableBackgroundJobs) {
-      actorSystem.scheduler.scheduleOnce(5 seconds, state.renderContentActorRef,
+      actorSystem.scheduler.scheduleOnce(5.seconds, state.renderContentActorRef,
           RenderContentService.RegenerateStaleHtml)(executionContext)
     }
 
@@ -901,20 +900,43 @@ class Globals(
       shallStopStuff = true
     }
     else {
-      // Shutdown the notifier before the mailer, so no notifications are lost
-      // because there was no mailer that could send them.
-      shutdownActorAndWait(state.notifierActorRef)
-      shutdownActorAndWait(state.mailerActorRef)
-      shutdownActorAndWait(state.renderContentActorRef)
-      shutdownActorAndWait(state.indexerActorRef)
-      shutdownActorAndWait(state.spamCheckActorRef)
-      shutdownActorAndWait(state.janitorActorRef)
+      if (isDevOrTest) {
+        // Could wait for this to complete, but doesn't matter — just dev & test.
+        logger.info(s"Closing WebSockets ...")
+        pubSub.closeWebSocketConnections()
+      }
+
+      // Shutdown the NotifierActor before the MailerActor, so no notifications
+      // are lost because the MailerActor was gone, couldn't send them.
+      logger.info(s"Stopping the NotifierActor ...")
+      val (name, future) = stopPlease(state.notifierActorRef)
+      Await.result(future, ShutdownTimeout)
+
+      // Shutdown in parallel.
+      logger.info(s"Stopping remaining actors ...")
+      val futureShutdownResults = Seq(
+            stopPlease(state.mailerActorRef),
+            stopPlease(state.renderContentActorRef),
+            stopPlease(state.indexerActorRef),
+            stopPlease(state.spamCheckActorRef),
+            stopPlease(state.janitorActorRef),
+            stopPlease(state.pubSubActorRef))
+
       state.elasticSearchClient.close()
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
       wsClient.close()
+
+      // Wait ... (Also see:
+      // https://stackoverflow.com/questions/16256279/how-to-wait-for-several-futures )
+      futureShutdownResults foreach { nameAndFutureResult =>
+        logger.info(s"Waiting for ${nameAndFutureResult._1} to stop ...")
+        Await.result(nameAndFutureResult._2, ShutdownTimeout)
+      }
+      logger.info(s"All actors stopped")
     }
+
     _state = null
     timeStartMillis = None
     timeOffsetMillis = 0
@@ -923,16 +945,17 @@ class Globals(
   }
 
 
-  private def shutdownActorAndWait(anyActorRef: Option[ActorRef]): Boolean = anyActorRef match {
-    case None => true
-    case Some(ref) => shutdownActorAndWait(ref)
+  private def stopPlease(anyActorRef: Option[ActorRef])
+        : (String, Future[Boolean]) = anyActorRef match {
+    case None => ("None", Future.successful(true))
+    case Some(ref) => stopPlease(ref)
   }
 
 
-  private def shutdownActorAndWait(actorRef: ActorRef): Boolean = {
+  private def stopPlease(actorRef: ActorRef): (String, Future[Boolean]) = {
+    logger.info(s"Telling actor to stop: ${actorRef.path}")
     val future = gracefulStop(actorRef, ShutdownTimeout)
-    val stopped = Await.result(future, ShutdownTimeout)
-    stopped
+    (actorRef.path.name, future)
   }
 
 
@@ -1080,9 +1103,11 @@ class Globals(
       else Some(SpamCheckActor.startNewActor(
         spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, executionContext, systemDao))
 
+    // (Currently not in use, now with WebSocket ending in Play not in Nginx.)
     val nginxHost: String =
       conf.getOptional[String]("talkyard.nginx.host").noneIfBlank getOrElse "localhost"
-    val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
+
+    val (pubSub, pubSubActorRef, strangerCounter) = PubSub.startNewActor(outer)
 
     val renderContentActorRef: ActorRef =
       RenderContentService.startNewActor(outer, edContext.nashorn)
@@ -1133,6 +1158,9 @@ class Config(conf: play.api.Configuration) extends TyLogging {
   // --------------------------------------
 
   val useServiceWorker: Boolean = getBoolOrDefault("talkyard.useServiceWorker", default = true)
+
+  val maxWebSocketConnectionsAllSitesTotal: Int =
+    getIntOrDefault("talkyard.maxWebSockets", 200)
 
   // Remove these later — just for now, new feature switches.
   // Don't set to true just yet — Apple iOS 12 handles None as Strict,

@@ -210,8 +210,12 @@ object EdHttp {
     throw ResultException(NotFoundResult(errCode, message))
 
   def throwSiteNotFound(hostname: String, debugCode: => String = ""): Nothing = {
+    throw ResultException(SiteNotFoundResult(hostname, debugCode))
+  }
+
+  def SiteNotFoundResult(hostname: String, debugCode: => String = ""): Result = {
     val dashDebug = if (Globals.isProd || debugCode.isEmpty) "" else "-" + debugCode
-    throwNotFound("TyE404HOSTNAME" + dashDebug, s"There is no site with hostname '$hostname'")
+    NotFoundResult("TyE404HOSTNAME" + dashDebug, s"There is no site with hostname '$hostname'")
   }
 
   def throwEntityTooLargeIf(condition: Boolean, errCode: String, message: String): Unit =
@@ -259,7 +263,7 @@ object EdHttp {
     if (test) throwNotImplemented(errorCode, message)
   }
 
-  def throwLoginAsSuperAdmin(request: Request[_]): Nothing =
+  def throwLoginAsSuperAdmin(request: RequestHeader): Nothing =
     if (isAjax(request)) throwForbidden2("EsE54YK2", "Not super admin")
     else throwLoginAsSuperAdminTo(request.uri)
 
@@ -267,7 +271,7 @@ object EdHttp {
     throwLoginAsTo(LoginController.AsSuperadmin, path)
 
 
-  def throwLoginAsAdmin(request: Request[_]): Nothing =
+  def throwLoginAsAdmin(request: RequestHeader): Nothing =
     if (isAjax(request)) throwForbidden2("TyE0LGIADM_", "You need to be logged in as an admin, for this")
     else throwLoginAsAdminTo(request.uri)
 
@@ -275,7 +279,7 @@ object EdHttp {
     throwLoginAsTo(LoginController.AsAdmin, path)
 
 
-  def throwLoginAsStaff(request: Request[_]): Nothing =
+  def throwLoginAsStaff(request: RequestHeader): Nothing =
     if (isAjax(request)) throwForbidden2("EsE4GP6D", "Not staff")
     else throwLoginAsStaffTo(request.uri)
 
@@ -286,7 +290,7 @@ object EdHttp {
   private def throwLoginAsTo(as: String, to: String): Nothing =
     throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
-  def urlDecodeCookie(name: String, request: Request[_]): Option[String] =
+  def urlDecodeCookie(name: String, request: RequestHeader): Option[String] =
     request.cookies.get(name).map(cookie => urlDecode(cookie.value))
 
   def urlEncode(in: String): String = {
@@ -372,7 +376,7 @@ object EdHttp {
 
 
 
-  def isAjax(request: Request[_]): Boolean =
+  def isAjax(request: RequestHeader): Boolean =
     request.headers.get("X-Requested-With").contains("XMLHttpRequest")
 
 

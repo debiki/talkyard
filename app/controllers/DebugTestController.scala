@@ -25,6 +25,7 @@ import debiki.dao.PagePartsDao
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.pop.PagePopularityCalculator
+import ed.server.pubsub.WebSocketClient
 import java.lang.management.ManagementFactory
 import java.{io => jio, util => ju}
 import javax.inject.Inject
@@ -384,18 +385,65 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def showPubSubSubscribers(siteId: Option[SiteId]): Action[Unit] = AsyncAdminGetAction { request =>
-    globals.pubSub.debugGetSubscribers(siteId getOrElse request.siteId) map { pubSubState =>
+  def showPubSubSubscribers(siteId: Option[SiteId]): Action[Unit] = AsyncAdminGetAction {
+        request =>
+    import request.dao
+    val theSiteId = siteId getOrElse request.siteId
+
+    globals.pubSub.debugGetSubscribers(theSiteId) map { pubSubState =>
+      val clientsByUserId: Map[UserId, WebSocketClient] =
+            pubSubState.clientsByUserIdBySiteId.getOrElse(theSiteId, Map.empty)
+
+      val watcherIdsByPageId: Map[PageId, Set[UserId]] =
+            pubSubState.watcherIdsByPageIdBySiteId.getOrElse(theSiteId, Map.empty)
+
+      val watchersTexts = watcherIdsByPageId map { case (pageId, watcherIds) =>
+        val pagePath = dao.getPagePath2(pageId)
+        val sb = StringBuilder.newBuilder
+        val pageIdText = "%6s " format pageId
+        sb.append(pageIdText).append(pagePath.map(_.value).getOrElse("?")).append(":")
+        watcherIds foreach { id =>
+          clientsByUserId.get(id) match {
+            case None =>
+              sb.append(s"\n    ? #$id  — client missing")
+            case Some(client) =>
+              sb.append(s"\n    ${client.user.nameHashId}")
+          }
+        }
+        sb.toString
+      }
+
       Ok(i"""
-        |Subscribers by site and user id
-        |==================================
-        |${pubSubState.subscribersBySite}
+        |Site id: $theSiteId
         |
-        |Watchers by site and page id
+        |${clientsByUserId.size} subscribers:
         |==================================
-        |${pubSubState.watcherIdsByPageSiteId}
-        """)
+        |${clientsByUserId.valuesIterator.map(_.toStringPadded).mkString("\n")}
+        |
+        |Watchers by page:
+        |==================================
+        |${watchersTexts.mkString("\n\n")}
+        |""")
     }
+  }
+
+
+  def showWebSocketClientsAllSites(): Action[Unit] = AsyncSuperAdminGetAction { request =>
+      globals.pubSub.debugGetClientsAllSites() map { clientsAllSites =>
+        val siteUserIdAndClients = clientsAllSites.clientsInactiveFirst
+        Ok(i"""
+        |All sites.
+        |
+        |${siteUserIdAndClients.length} subscribers:
+        |==================================
+        |${
+          siteUserIdAndClients map { case (siteUserId, client) =>
+            val siteIdPadded = siteUserId.siteId.toString.padTo(4, ' ')
+            s"$siteIdPadded: ${client.toStringPadded}"
+          } mkString "\n"
+        }
+        |""")
+      }
   }
 
 

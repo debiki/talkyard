@@ -55,7 +55,7 @@ trait MessagesDao {
 
     quickCheckIfSpamThenThrow(sentByWho, body, spamRelReqStuff)
 
-    val (pagePath, notfs) = readWriteTransaction { tx =>
+    val (pagePath, notfs, sender) = readWriteTransaction { tx =>
       val sender = loadUserAndLevels(sentByWho, tx)
 
       // 1) Don't let unpolite users start private-messaging other well behaved users.
@@ -93,20 +93,23 @@ trait MessagesDao {
       deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id, nr))
 
       tx.saveDeleteNotifications(notifications)
-      (pagePath, notifications)
+      (pagePath, notifications, sender)
     }
 
     (toUserIds + sentById) foreach { userId =>
-      // BUG. Race condition.
+      RACE // [WATCHBRACE]
       var watchbar: BareWatchbar = getOrCreateWatchbar(userId)
-      val hasSeenIt = userId == sentByWho.id
+      val hasSeenIt = userId == sender.id
       watchbar = watchbar.addPage(pagePath.pageId, pageRole, hasSeenIt)
       saveWatchbar(userId, watchbar)
 
       // We know that the sender is online currently, so s/he should start watching the
       // page immediately. Other page members, however, might be offline. Ignore them.
-      if (userId == sentById) {
-        pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds) ;RACE
+      if (userId == sender.id) {
+        logger.debug(s"s$siteId: Telling PubSubActor: ${
+              sender.nameHashId} starts watching page ${pagePath.pageId} [TyM50AKTG3]")
+
+        pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds)
       }
     }
 

@@ -2222,15 +2222,16 @@ export class TyE2eTestBrowser {
       return numDone >= 1;
     }
 
-    countLongPollingsDone() {
+    /*
+    countLongPollingsDone() {  TyT20956QKSP2
       const result = this.#br.execute(function() {
-        return window['debiki2'].Server.testGetLongPollingNr();
+        return window['debiki2'].Server.testGetLongPol  lingNr();  —  fn gone
       });
       dieIf(!_.isNumber(result), "Error getting long polling count, result: " + JSON.stringify(result));
       const count = result; // parseInt(result);
       dieIf(_.isNaN(count), "Long polling count is weird: " + JSON.stringify(result));
       return count;
-    }
+    } */
 
     createSite = {
       fillInFieldsAndSubmit: (data: NewSiteData) => {

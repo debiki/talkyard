@@ -852,19 +852,19 @@ trait UserDao {
   /**
     * Loads a user from the database.
     * Verifies that the loaded id match the id encoded in the session identifier,
-    * and throws a LoginNotFoundException on mismatch (happens e.g. if
+    * and throws NO *returns* a LoginNotFoundException on mismatch (happens e.g. if
     * I've connected the server to another backend, or access many backends
     * via the same hostname but different ports).
     */
-  def getUserBySessionId(sid: SidStatus): Option[Participant] = {
-    sid.userId map { sidUserId =>
+  def getUserBySessionId(sid: SidStatus): Option[Participant] Or LoginNotFoundException = {
+    Good(sid.userId map { sidUserId =>
       val user = getParticipant(sidUserId) getOrElse {
         // This might happen 1) if the server connected to a new database
         // (e.g. a standby where the login entry hasn't yet been
         // created), or 2) during testing, when I sometimes manually
         // delete stuff from the database (including login entries).
         logger.warn(s"Didn't find user $siteId:$sidUserId [EdE01521U35]")
-        throw LoginNotFoundException(siteId, sidUserId)
+        return Bad(LoginNotFoundException(siteId, sidUserId))
       }
       if (user.id != sidUserId) {
         // Sometimes I access different databases via different ports,
@@ -872,10 +872,10 @@ trait UserDao {
         // port numbers when sending cookies. So they sometimes send
         // the wrong login-id and user-id to the server.
         logger.warn(s"DAO loaded the wrong user, session: $sid, user: $user [EdE0KDBL4]")
-        throw LoginNotFoundException(siteId, sidUserId)
+        return Bad(LoginNotFoundException(siteId, sidUserId))
       }
       user
-    }
+    })
   }
 
 
@@ -1129,12 +1129,15 @@ trait UserDao {
     val chatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
     BUG // Don't join a chat again, if has left it. Needn't fix now, barely matters.
     val joinedChats = ArrayBuffer[PageMeta]()
+
     chatsInclForbidden foreach { chatPageMeta =>
       val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, Some(user))
       if (maySee) {
         val couldntAdd = mutable.Set[UserId]()
-        joinLeavePageImpl(Set(user.id), chatPageMeta.pageId, add = true, byWho = Who.System,
-            couldntAdd, tx)
+
+        joinLeavePage(Set(user.id), chatPageMeta.pageId, add = true,
+            byWho = Who.System, couldntAdd, tx)
+
         if (!couldntAdd.contains(user.id)) {
           joinedChats += chatPageMeta
         }
@@ -1169,7 +1172,8 @@ trait UserDao {
     val couldntAdd = mutable.Set[UserId]()
 
     val pageMeta = readWriteTransaction { tx =>
-      joinLeavePageImpl(userIds, pageId, add, byWho, couldntAdd, tx)
+      // This checks if byWho may see the page, and may add userIds to it.
+      joinLeavePage(userIds, pageId, add, byWho, couldntAdd, tx)
     }
 
     SHOULD // push new member notf to browsers, so that this gets updated: [5FKE0WY2]
@@ -1266,6 +1270,9 @@ trait UserDao {
         : Option[BareWatchbar] = {
     BUG; RACE // when loading & saving the watchbar. E.g. if a user joins a page herself, and
     // another member adds her to the page, or another page, at the same time.
+
+    SECURITY // [WATCHSEC] allowed to access the pages? Verify the caller has done
+    // the authz check — if not, shouldn't add pages to the user's watchbar!
 
     val oldWatchbar = getOrCreateWatchbar(userId)
     var newWatchbar = oldWatchbar
@@ -1865,7 +1872,7 @@ trait UserDao {
   }
 
 
-  def perhapsBlockRequest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
+  def perhapsBlockRequest(request: play.api.mvc.RequestHeader, sidStatus: SidStatus,
         browserId: Option[BrowserId]) {
     if (request.method == "GET")
       return

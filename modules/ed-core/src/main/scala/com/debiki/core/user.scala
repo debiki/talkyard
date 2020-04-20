@@ -625,6 +625,8 @@ sealed trait Participant {
   def isGroup: Boolean = false
   def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
+  def accountType: String = if (isGuest) "guest" else if (isGroup) "group" else "user"
+
   def isSuspendedAt(when: ju.Date): Boolean =
     Participant.isSuspendedAt(when, suspendedTill = suspendedTill)
 
@@ -639,7 +641,9 @@ sealed trait Participant {
   def anyUsername: Option[String] = None
 
   def usernameOrGuestName: String
-  def usernameSpaceOtherName: String = (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
+  def usernameSpaceOtherName: String =
+    (anyUsername.getOrElse("") + " " + anyName.getOrElse("")).trim
+
   def nameOrUsername: String
 
   def idSpaceName: String =
@@ -647,6 +651,9 @@ sealed trait Participant {
 
   def nameParaId: String =
     anyUsername.map(un => s"@$un (id $id)") getOrElse s"'$usernameOrGuestName' (id $id)"
+
+  def nameHashId: String =
+    anyUsername.map(un => s"@$un #$id") getOrElse s"'$usernameOrGuestName' #$id"
 
   def toMemberOrThrow: Member = {
     this match {

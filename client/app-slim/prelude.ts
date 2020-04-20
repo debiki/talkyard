@@ -117,6 +117,13 @@ export function logM(message, ex?) {
   }
 }
 
+export function logW(message, ex?) {
+  console.warn.apply(console, arguments);
+}
+
+export function logE(message, ex?) {
+  console.error.apply(console, arguments);
+}
 
 /// Wrapper for console.debug().
 ///
@@ -124,7 +131,7 @@ export function logM(message, ex?) {
 /// console.debug() everywhere.
 ///
 export function logD(message, ex?) {
-  console.debug(message, ex);
+  console.debug.apply(console, arguments);
 }
 
 

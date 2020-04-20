@@ -88,7 +88,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
     redis.zrem(usersOnlineKey(siteId), userId)
     // As of now we don't know if the user left, or if s/he is still online.
     // Let's assume s/he left — so don't add any stranger-online here.
-    // (SECURITY Hmm, is it a privacy issue, if one sees user X online, and then X goes
+    PRIVACY // Hmm, is it a privacy issue, if one sees user X online, and then X goes
     // offline but the stranger counter changes from say 1 to 2? Then "everyone"
     // sees that X is in fact still online, although s/he went offline.
     // How solve that? Perhaps show a num-strangers interval, like "less than 5 online"
@@ -96,7 +96,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  def isUserActive(userId: UserId): Boolean = {
+  def isUserActive(userId: UserId): Boolean = {  COULD; NEXT // return WhenMs instead?
     // There's no z-is-member, so use zscore, it's O(1).
     val anyScoreFuture: Future[Option[Double]] = redis.zscore(usersOnlineKey(siteId), userId)
     val anyScore = try Await.result(anyScoreFuture, DefaultTimeout)
@@ -249,7 +249,7 @@ class RedisCacheAllSites(redisClient: RedisClient, now: () => When) {
   def removeNoLongerOnlineUserIds(): collection.Map[SiteId, collection.Set[UserId]] = {
     COULD_OPTIMIZE // Redis.keys can be slow — but according to the docs, on a laptop,
     // it handles 1 million keys in 40ms. So a lot faster than fast-enough, for us.
-    val siteIdsFuture: Future[Seq[String]] = redisClient.keys("*-uo")
+    val siteIdsFuture: Future[Seq[String]] = redisClient.keys("*-uo")  // uo = usersOnlineKey
     val siteIds: Seq[SiteId] =
       try {
         // Use flatMap and toIntOption, because previously site ids were strings.

@@ -194,7 +194,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
 
-    provider.authenticate()(request.underlying) flatMap {  // (529JZ24)
+    provider.authenticate()(request.request) flatMap {  // (529JZ24)
       case Left(result) =>
         // We're starting authentication.
         Future.successful(result)
@@ -719,7 +719,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
     * a session id and xsrf token included in the GET request.
     */
-  private def loginViaLoginOrigin(providerName: String, request: Request[Unit]): Future[Result] = {
+  private def loginViaLoginOrigin(providerName: String, request: RequestHeader): Future[Result] = {
     // Parallel logins? Is the same user logging in in two browser tabs, at the same time?
     // People sometimes do, for some reason, and if that won't work, they sometimes contact
     // the Talkyard developers and ask what's wrong. Only to avoid these support requests,

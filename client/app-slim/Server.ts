@@ -73,6 +73,9 @@ function postJson(urlPath: string, requestData: RequestData) {
 
   addAnyNoCookieHeaders(headers);
 
+  // DO_AFTER 2021-01-01: Use the native fetch() [FETCHEX]
+  // IE11 needs a shim: https://github.com/github/fetch
+
   Bliss.fetch(url, {
     method: 'POST',
     data: JSON.stringify(requestData.data || null),
@@ -121,6 +124,54 @@ function postJson(urlPath: string, requestData: RequestData) {
   });
 }
 
+
+/* The real native fetch(), usage example:  [FETCHEX]
+
+function sendFetchRequest(channelId: string, onDone: (response) => void,
+      onError: ErrorStatusHandler) {
+
+  const anyAbortController = ('AbortController' in self) ? new AbortController() : undefined;
+
+  let options: any = {
+    credentials: 'same-origin',
+    referrer: 'no-referrer',
+    redirect: 'error',
+    signal: anyAbortController ? anyAbortController.signal : undefined,
+    headers: {
+      'Content-Type': 'application/json',  // don't forget, if POSTing.
+    },
+  }
+
+  const ongoingRequest = fetch('/something', options).then(function(response) {
+    // This means the response http headers have arrived — we also need to wait
+    // for the response body.
+    if (response.status === 200) {
+      console.trace(`Request response headers, status 200 OK`);
+      response.json().then(function(json) {
+        console.debug(`Response json [TyMSWLPRRESP]: ` + JSON.stringify(json));
+        onDone(json);
+      }).catch(function(error) {
+        console.warn(`Request failed: got headers, status 200, ` +
+            `but no json [TyESWLP0JSN]`);
+        onError(200);
+      });
+    }
+    else if (response.status === 408) {
+      console.debug(`Request status 408 Timeout [TyMSWLPRTMT]`);
+    }
+    else {
+      console.warn(`Request error response, status ${response.status} [TyESWLPRERR]`);
+      onError(response.status);
+    }
+  }).catch(function(error) {
+    console.warn(`Request failed, no response [TyESWLP0RSP]`);
+    onError(0);
+  });
+
+  anyAbortController.abort();
+}
+
+*/
 
 export function uploadFiles(endpoint: string, files: any[], onDone, onError) {
   dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);
@@ -1835,8 +1886,7 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 }
 
 
-// COULD perhaps merge with sendLongPollingRequest() a bit below? So reading activity is
-// reported whenever a new long-polling-request is started?
+// COULD send via WebSocket instead [VIAWS].
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
       postsRead: Post[], anyOnDone?: () => void) {
@@ -1877,165 +1927,6 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
 export function markTourTipsSeen(tourTipsId: string) {
   postJsonSuccess('/-/mark-tour-tips-seen', function() {}, { tourTipsId },
         () => ShowNoErrorDialog, { showLoadingOverlay: false }); // [NOINETMSG]
-}
-
-
-interface OngoingRequestWithNr extends OngoingRequest {
-  reqNr?: number;
-}
-
-interface LongPollingState {
-  ongoingRequest?: OngoingRequestWithNr;
-  lastModified?;
-  lastEtag?;
-  nextReqNr: number;
-}
-
-const longPollingState: LongPollingState = { nextReqNr: 1 };
-
-// Should be less than the Nchan timeout [2ALJH9] but let's try the other way around for
-// a short while, setting it to longer (60 vs 40) maybe working around an Nginx segfault [NGXSEGFBUG].
-const LongPollingSeconds = 60;
-
-
-// For end-to-end tests, so they can verify that new long polling requests seem to
-// get sent.
-export function testGetLongPollingNr() {
-  return longPollingState.nextReqNr - 1;
-}
-
-export function debugSetLongPollingNr(nr: number) {
-  return longPollingState.nextReqNr = nr;
-}
-
-/**
- * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
- *
- * COULD use this instead?:  https://www.npmjs.com/package/nchan  it supports WebSocket.
- * this file:  https://github.com/slact/nchan.js/blob/master/NchanSubscriber.js
- *
- * COULD How avoid "nchan client prematurely closed connection" info message in the Nginx logs?
- * I asked: https://github.com/slact/nchan/issues/466
- */
-export function sendLongPollingRequest(userId: UserId, successFn: (response) => void, // dupl.. [7KVAWBY0]
-      errorFn: ErrorStatusHandler, resendIfNeeded: () => void) {                  // break out fn
-                                                                                  // to own file
-  if (longPollingState.ongoingRequest) {
-    die(`Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`);
-  }
-
-  // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
-  // must also be included in the request. So this should be safe.
-  // The site id is included, because users at different sites can have the same id. [7YGK082]
-  const channelId = eds.siteId + '-' + userId;
-
-  // For debugging.
-  const reqNr = longPollingState.nextReqNr;
-  longPollingState.nextReqNr = reqNr + 1;
-
-  logD(`Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
-
-
-  const options: GetOptions = {
-    dataType: 'json',
-    // Don't show any error dialog if there is a disconnection, maybe laptop goes to sleep?
-    // or server restarts? or sth. The error dialog is so distracting — and the browser
-    // resubscribes automatically in a while. Instead, we show a non-intrusive message [NOINETMSG]
-    // about that, and an error dialog not until absolutely needed.
-    //
-    // (Old?: Firefox always calls the error callback if a long polling request is ongoing when
-    // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
-    // 2018-06-30: Or was this in fact jQuery that called error(), when FF called abort()? )
-    suppressErrorDialog: true,
-  };
-
-  // The below headers make Nchan return the next message in the channel's message queue,
-  // or, if queue empty, Nchan waits with replying, until a message arrives. Our very first
-  // request, though, will lack headers — then Nchan returns the oldest message in the queue.
-  if (longPollingState.lastEtag) {
-    options.headers = {
-      // Should *not* be quoted, see:
-      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
-      'If-Modified-Since': longPollingState.lastModified,
-      // *Should* be quoted, see:
-      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
-      // """a string of ASCII characters placed between double quotes (Like "675af34563dc-tr34")"""
-      // Not sure if Nchan always includes quotes in the response (it *should*), so remove & add-back '"'.
-      'If-None-Match': `"${longPollingState.lastEtag.replace(/"/g, '')}"`,
-    };
-  }
-
-  let requestDone = false;
-
-  // We incl the req nr in the URL, for debugging, so knows which lines in
-  // chrome://net-internals/#events and in the Nginx logs are for which request in the browser.
-  const pollUrl = `/-/pubsub/subscribe/${channelId}?reqNr=${reqNr}`;
-
-  longPollingState.ongoingRequest =
-      get(pollUrl, (response, xhr) => {
-        logD(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
-        longPollingState.ongoingRequest = null;
-        longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
-        // (In case evil proxy servers remove the Etag header from the response, there's
-        // a workaround, see the Nchan docs:  nchan_subscriber_message_id_custom_etag_header)
-        longPollingState.lastEtag = xhr.getResponseHeader('Etag');
-        requestDone = true;
-        successFn(response);
-      }, (errorDetails, statusCode?: number) => {
-        longPollingState.ongoingRequest = null;
-        requestDone = true;
-        if (statusCode === 408) {
-          // Fine.
-          logD(`Long polling request ${reqNr} done, status 408 Timeout [TyELPRTMT]`);
-          resendIfNeeded();
-        }
-        else {
-          console.warn(`Long polling request ${reqNr} error [TyELPRERR]`);
-          errorFn(statusCode);
-        }
-      }, options);
-
-  longPollingState.ongoingRequest.reqNr = reqNr;
-
-  // Cancel and send a new request after half a minute.
-
-  // Otherwise firewalls and other infrastructure might think the request is broken,
-  // since no data gets sent. Then they might kill it, sometimes (I think) without
-  // this browser or Talkyard server getting a chance to notice this — so we'd think
-  // the request was alive, but in fact it had been silently terminated, and we
-  // wouldn't get any more notifications.
-
-  // And don't update last-modified and etag, since when cancelling, we don't get any
-  // more recent data from the server.
-
-  const currentRequest = longPollingState.ongoingRequest;
-
-  magicTimeout(LongPollingSeconds * 1000, function () {
-    if (requestDone)
-      return;
-    logD(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
-    currentRequest.abort();
-    // Unless a new request has been started, reset the state.
-    if (currentRequest === longPollingState.ongoingRequest) {
-      longPollingState.ongoingRequest = null;
-    }
-    resendIfNeeded();
-  });
-}
-
-
-export function isLongPollingNow(): boolean {
-  return !!longPollingState.ongoingRequest;
-}
-
-
-export function abortAnyLongPollingRequest() {
-  if (longPollingState.ongoingRequest) {
-    const reqNr = longPollingState.ongoingRequest.reqNr;
-    logD(`Aborting long polling request ${reqNr} [TyMLPRABRT2]`);
-    longPollingState.ongoingRequest.abort();
-    longPollingState.ongoingRequest = null;
-  }
 }
 
 

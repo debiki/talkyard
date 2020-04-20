@@ -230,9 +230,10 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  //   SECURITY send as query param, so less risk accidentally ends up in sth that logs URL paths
+  SECURITY // send as query param, so less risk accidentally ends up in sth that logs URL paths
+  // This logs in via a GET request. [GETLOGIN]
   //
-  def acceptInvite(secretKey: String): Action[Unit] = GetActionAllowAnyone { request =>
+  def acceptInvite(secretKey: String): Action[Unit] = GetActionIsLogin { request =>
     // Below, we accept invites already sent, even if SSO now enabled. (Makes sense? Or not?
     // Or config option?) However, rejected here: (4RBKA20).
 

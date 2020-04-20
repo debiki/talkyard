@@ -631,6 +631,9 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
 
+    SECURITY // [WATCHSEC] allowed to access the page in pageRequest ? Verify the caller has
+    // done the authz check — if not, shouldn't add the page to the user's watchbar below!
+
     val permissions = pageRequest.authzContext.tooManyPermissions
 
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)

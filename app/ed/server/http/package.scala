@@ -30,7 +30,18 @@ package object http {
     _root_.controllers.Utils.OkSafeJson(json)
 
 
-  case class ApiRequest[A](
+  case class AuthnReqHeaderImpl(
+    site: SiteBrief,
+    sid: SidStatus,
+    xsrfToken: XsrfOk,
+    browserId: Option[BrowserId],
+    user: Option[Participant],
+    dao: SiteDao,
+    request: RequestHeader) extends AuthnReqHeader {
+  }
+
+
+  case class ApiRequest[A](   // RENAME to AuthnReqImpl
     site: SiteBrief,
     sid: SidStatus,
     xsrfToken: XsrfOk,

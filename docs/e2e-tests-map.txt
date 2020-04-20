@@ -837,10 +837,15 @@ notifications:
           - api-upsert-page-notfs.2browsers.test.ts  TyT502RKTLXM296
           - ... more, which?
 
+websocket,
 live notfs,
 live notifications -
+  attacker tries to bypass authentication:
+          -  TESTS_MISSING  TyTWSAUTH
+  reconnects after disconnection:
+          -  TESTS_MISSING  TyT20956QKSP2
   works after many long-polls:
-    - basic-chat.2browsers.test.ts  [8T5WKBQT]
+    - basic-chat.2browsers.test.ts  [8T5WKBQT]  — can be removed? now with WebSocket instead
   works after disconnection: |   [5YVBAR2]
     There's: browser.setNetworkConnection(); see http://webdriver.io/api/mobile/setNetworkConnection.html
     and ChromeDriver set_network_conditions, seems more flexible: https://stackoverflow.com/a/46672769/694469

@@ -21,11 +21,29 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
 import debiki.EdHttp.throwTooManyRequests
-import ed.server.http.DebikiRequest
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
 import talkyard.server.TyLogger
 import ed.server.security.EdSecurity
+
+
+trait SomethingToRateLimit {
+  def siteId: SiteId
+  def user: Option[Participant]
+  def ip: IpAddress
+  def ctime: java.util.Date
+  def shallSkipRateLimitsBecauseIsTest: Boolean
+  def hasOkE2eTestPassword: Boolean
+}
+
+
+case class SomethingToRateLimitImpl(
+  siteId: SiteId,
+  user: Option[Participant],
+  ip: IpAddress,
+  ctime: java.util.Date,
+  shallSkipRateLimitsBecauseIsTest: Boolean,
+  hasOkE2eTestPassword: Boolean) extends SomethingToRateLimit
 
 
 
@@ -56,7 +74,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
   }
 
 
-  def rateLimit(rateLimits: RateLimits, request: DebikiRequest[_]) {
+  def rateLimit(rateLimits: RateLimits, request: SomethingToRateLimit) {
     if (request.user.exists(_.isAdmin))
       return
 
@@ -66,8 +84,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
-    if (request.shallSkipRateLimitsBecauseIsTest ||
-        security.hasOkE2eTestPassword(request.underlying))
+    if (request.shallSkipRateLimitsBecauseIsTest || request.hasOkE2eTestPassword)
       return
 
     if (rateLimits.noRequestsAllowed(isNewUser = false)) {

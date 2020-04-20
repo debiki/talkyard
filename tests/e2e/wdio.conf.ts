@@ -536,10 +536,8 @@ const config: WebdriverIO.Config = {
   after: function (result, capabilities, specs) {
     if (settings.debugAfterwards || settings.debugEachStep) {
       console.log("");
-      console.log("*** Paused, just before exiting test. Now you can connect a debugger. ***");
-      // Call debug() in only browserA, if there're many browsers open,
-      // otherwise would need to hit CTRL+C many times (once per open browser).
-      (global.browserA || global.browser).debug();
+      console.log("*** Paused, before exiting test. You can connect a debugger ***");
+      global.browser.debug();
     }
   },
 

@@ -33,6 +33,7 @@
 
 FROM alpine:3.9
 
+# [WS] upgr to 1.16.1
 ENV NGINX_VERSION 1.15.12
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx

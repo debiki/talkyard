@@ -238,21 +238,24 @@ class PlainApiActions(
         !shallAvoid
       }
 
+      // Below: A bit dupl code, same as for WebSocket upgrade requests. [WSHTTPREQ]
+
       val dao = globals.siteDao(site.id)
       val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
 
       val (actualSidStatus, xsrfOk, newCookies) =
         security.checkSidAndXsrfToken(
-          request, siteId = site.id, expireIdleAfterMins, maySetCookies = maySetCookies)
+          request, anyRequestBody = Some(request.body), siteId = site.id,
+          expireIdleAfterMins, maySetCookies = maySetCookies)
 
       // Ignore and delete any broken or expired session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
         if (actualSidStatus.canUse) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (browserId, newBrowserIdCookie) =  // [5JKWQ21]
+      val (anyBrowserId, newBrowserIdCookie) =  // [5JKWQ21]
         if (maySetCookies) {
-          security.getBrowserIdCookieMaybeCreate(request)
+          security.getBrowserIdCreateCookieIfMissing(request, isLogin = isLogin)
         }
         else {
           // Then use any xsrf token, if present. It stays the same until page reload,
@@ -270,10 +273,14 @@ class PlainApiActions(
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          dao.perhapsBlockRequest(request, mendedSidStatus, browserId)
-          val anyUserMaybeSuspended = dao.getUserBySessionId(mendedSidStatus)
+          dao.perhapsBlockRequest(request, mendedSidStatus, anyBrowserId)
+          val anyUserMaybeSuspended =
+                dao.getUserBySessionId(mendedSidStatus) getOrIfBad { ex =>
+                  throw ex
+                }
+
           runBlockIfAuthOk(request, site, dao, anyUserMaybeSuspended,
-              mendedSidStatus, xsrfOk, browserId, block)
+                mendedSidStatus, xsrfOk, anyBrowserId, block)
         }
         catch {
           case _: LoginNotFoundException =>
@@ -334,6 +341,7 @@ class PlainApiActions(
 
       // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
       // so they can reactivate this site, in case this site is the superadmin site itself.
+      // Sync w WebSocket endpoint. [SITESTATUS].
       if (!superAdminOnly) site.status match {
         case SiteStatus.NoAdmin | SiteStatus.Active | SiteStatus.ReadAndCleanOnly =>
           // Fine
@@ -455,6 +463,7 @@ class PlainApiActions(
         block(apiRequest)
       }
       catch {
+        // case ProblemException ?  NEXT [ADMERRLOG] + tracer tag?
         case ex: ResultException =>
           // This is fine, probably just a 403 Forbidden exception or 404 Not Found, whatever.
           logger.debug(
@@ -479,6 +488,8 @@ class PlainApiActions(
           //logger.debug(
             //s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
         case Failure(exception) =>
+          // exception –> case ProblemException ?  [ADMERRLOG]
+          //            case ex: ResultException ?
           logger.debug(
             s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
       }

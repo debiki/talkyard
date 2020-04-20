@@ -589,6 +589,12 @@ object Prelude {
     def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
   }
 
+  implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
+    def isEq(value: T): Boolean = underlying.exists(_ eq value)
+    def isNotEq(value: T): Boolean = underlying.forall(_ ne value)
+    def isSomethingNotEq(value: T): Boolean = underlying.isDefined && isNotEq(value)
+  }
+
   // Doesn't work, causes error: maxOptBy is not a member of Seq[com.debiki.core.Post]
   implicit class RichSeq[T](underlying: scala.collection.Seq[T]) {
     def maxOptBy[B](f: T => B)(implicit cmp: Ordering[B]): Option[T] = {
@@ -815,17 +821,29 @@ object Prelude {
   implicit class RichLinkedHashMap[K, V](val underlying: mutable.LinkedHashMap[K, V])
       extends AnyVal {
 
-    def removeWhile(predicate: ((K, V)) => Boolean) {
+    def removeWhile(predicate: ((K, V)) => Boolean): Unit = {
       val keysToRemove = underlying.iterator.takeWhile(predicate).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileValue(predicate: V => Boolean) {
+    def removeAtMostWhile(howMany: Int, predicate: ((K, V)) => Boolean): Unit = {
+      var numGone = 0
+      removeWhile(kv => {
+        if (numGone >= howMany) false
+        else {
+          val removeThisOne = predicate(kv)
+          if (removeThisOne) numGone += 1
+          removeThisOne
+        }
+      })
+    }
+
+    def removeWhileValue(predicate: V => Boolean): Unit = {
       val keysToRemove = underlying.iterator.takeWhile(entry => predicate(entry._2)).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileKey(predicate: K => Boolean) {
+    def removeWhileKey(predicate: K => Boolean): Unit = {
       val keysToRemove = underlying.keysIterator.takeWhile(predicate)
       keysToRemove.foreach(underlying.remove)
     }

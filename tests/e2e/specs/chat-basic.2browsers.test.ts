@@ -49,9 +49,12 @@ describe('chat', function() {
     owensBrowser.disableRateLimits();
   });
 
-  it("Owen logs in, creates a chat topic", function() {
+  it("Owen logs in", () => {
     owensBrowser.watchbar.clickCreateChat();
     owensBrowser.loginDialog.loginWithPassword(owen);
+  });
+
+  it("... creates a chat topic", () => {
     owensBrowser.editor.editTitle("Chat channel title");
     owensBrowser.editor.editText("Chat channel purpose");
     owensBrowser.rememberCurrentUrl();
@@ -81,8 +84,11 @@ describe('chat', function() {
     prevNumEmails = num;
   });
 
-  it("Maria opens the chat page, sees Owens message", function() {
+  it("Maria opens the chat page", () => {
     mariasBrowser.go(owensBrowser.getUrl());
+  });
+
+  it("... sees Owens message", () => {
     mariasBrowser.chat.waitForNumMessages(1);
     mariasBrowser.assertTextMatches('.esC_M', /Owen/);
   });
@@ -116,8 +122,8 @@ describe('chat', function() {
   });
 
   it("A minute elapses, ... the browsers re-send long polling requests", () => { // break out fn? [4KWBFG5]  [8T5WKBQT]
-    const mariaReqNrBefore = mariasBrowser.countLongPollingsDone();
-    const owenReqNrBefore = owensBrowser.countLongPollingsDone();
+    //const mariaReqNrBefore = mariasBrowser.countLongPollingsDone();
+    //const owenReqNrBefore = owensBrowser.countLongPollingsDone();
 
     // This'll make the browsers send 2 new long polling requests.
     everyone.playTimeSeconds(60);
@@ -125,11 +131,15 @@ describe('chat', function() {
     everyone.playTimeSeconds(60);
     everyone.pause(c.MagicTimeoutPollMs + 100);  // ... nr 2
 
+    /*
     const mariaReqNrAfter = mariasBrowser.countLongPollingsDone();
     const owenReqNrAfter = owensBrowser.countLongPollingsDone();
 
     console.log(`Maria's num long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
     console.log(`Owen's num long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
+
+    TESTS_MISSING  TyT20956QKSP2  these were for LongPolling — are some similar types of tests
+    needed for WebSocket? Maybe disconnect and reconnect tests?
 
     assert.ok(mariaReqNrAfter > mariaReqNrBefore + 1,
         `Maria's browser: Long polling didn't happen? Req nr after: ${mariaReqNrAfter}, ` +
@@ -137,6 +147,7 @@ describe('chat', function() {
     assert.ok(owenReqNrAfter > owenReqNrBefore + 1,
         `Owen's browser: Long polling didn't happen? Req nr after: ${owenReqNrAfter}, ` +
         `before: ${owenReqNrBefore} [TyE4WKBZW2]`);
+        */
   });
 
   it("Maria replies, and Owen posts another message", function() {

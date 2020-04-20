@@ -310,6 +310,7 @@ function trackReadingActivity() {
     // BUG this won't retry, if there's a netw disconnection. Instead, somehow merge with
     // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
     // See subscribeToServerEvents().
+    // Later, send via WebSocket [VIAWS]. COULD_OPTIMIZE
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
         unreportedPostsRead, () => {
       talksWithSererAlready = false;

@@ -166,6 +166,23 @@ package object core {
 
   type ApiSecretNr = Int
 
+  sealed abstract class AnyProblem { def isFine: Boolean = false }
+  case object Fine extends AnyProblem { override def isFine: Boolean = true }
+
+  /**
+    * @param message — for end users
+    * @param siteId
+    * @param adminInfo — more details, for site admins
+    * @param debugInfo — more details, for Talkyard developers
+    */
+  case class Problem(
+    message: ErrorMessage,
+    siteId: SiteId,
+    adminInfo: String = "",
+    debugInfo: String = "",
+  ) extends AnyProblem {
+  }
+
   case class ErrorMessageCode(message: ErrorMessage, code: String)
 
   /** Where to start rendering a page. The specified post and all its successors
@@ -319,6 +336,7 @@ package object core {
   case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
+    def nameHashId: String = user.nameHashId
   }
 
   case class AnyUserAndThreatLevel(user: Option[Participant], threatLevel: ThreatLevel)
@@ -1132,6 +1150,7 @@ package object core {
     *   egrep -Ir 'UNTESTED|SECURITY|MUST|TODO' app/ test/ client/ modules/ *
     * (remove spaces around *) and add test cases and fix security issues.
     */
+  def NEXT = ()           // Would be quick / fun to do next
   def UNTESTED = ()       // If the code might not work, e.g. has never been run.
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
   def ADD_TO_DOCS = ()

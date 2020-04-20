@@ -32,9 +32,19 @@ import play.api.mvc
 import play.api.mvc._
 
 
+// Split into  TyReq and AuthnTyReq? Where AuthnTyReq always has a Member as the requester.
+abstract class DebikiRequest[A] extends AuthnReqHeader {
+  def request: Request[A]
+  override def underlying: Request[A] = request
+  def body: A = request.body
+}
+
+
 /**
  */
-abstract class DebikiRequest[A] {
+// Split into  TyReqHeader<U = Option[User]> and AuthnTyReqHeader = TyReqHeader<U = User>?
+// Rename RequestHeader to p_RequestHeader and Result to p_Result?
+abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def context: EdContext = dao.context
   private def security = dao.context.security
@@ -47,7 +57,14 @@ abstract class DebikiRequest[A] {
   def user: Option[Participant] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
                         // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
-  def request: Request[A]
+
+  def theSiteUserId: SiteUserId = SiteUserId(site.id, theUser.id)
+
+  def request: RequestHeader
+
+  def hasOkE2eTestPassword: Boolean = security.hasOkE2eTestPassword(underlying)
+
+  def underlying: RequestHeader = request
 
   def tracerSpan: io.opentracing.Span =
     request.attrs(SafeActions.TracerSpanKey)
@@ -64,8 +81,6 @@ abstract class DebikiRequest[A] {
     case SidOk("_api_secret_", 0, _) => true
     case _ => false
   }
-
-  def underlying: Request[A] = request
 
   require(site.id == dao.siteId, "EsE76YW2")
   require(user.forall(_.id == sid.userId.getOrDie("TyE2KWQP4")), "TyE7PUUY2")
@@ -97,6 +112,8 @@ abstract class DebikiRequest[A] {
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now
 
+  // Hmm will need this also for WebSocket? [WSSPAM] Remember this, from
+  // the initial HTTP upgrade request?
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),
@@ -167,8 +184,6 @@ abstract class DebikiRequest[A] {
   def queryString: Map[String, Seq[String]] = request.queryString
 
   def rawQueryString: String = request.rawQueryString
-
-  def body: A = request.body
 
   def headers: Headers = request.headers
 
