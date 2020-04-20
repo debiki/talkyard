@@ -71,7 +71,8 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 "postId" -> hit.postId,
                 "postNr" -> hit.postNr,
                 "approvedRevisionNr" -> hit.approvedRevisionNr,
-                "approvedTextWithHighlightsHtml" -> Json.arr(hit.approvedTextWithHighligtsHtml),
+                "approvedTextWithHighlightsHtml" ->
+                    Json.arr(hit.approvedTextWithHighligtsHtml),  // BUG: double array. Harmless, is waht the browse expects :- P
                 "currentRevisionNr" -> hit.currentRevisionNr
               ))))
           })
@@ -105,7 +106,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
               "postHits" -> JsArray(pageAndHits.hitsByScoreDesc.map((hit: SearchHit) => Json.obj(
                 "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
                 "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
-                "htmlWithMarks" -> Json.arr(hit.approvedTextWithHighligtsHtml)
+                "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString)
               ))))
           })
         ), pretty = pretty is true)
