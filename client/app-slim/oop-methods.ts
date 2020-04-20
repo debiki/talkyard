@@ -528,9 +528,9 @@ export function store_isPageDeleted(store: Store): boolean {
 }
 
 
-export function store_mayICreateTopics(store: Store, category: Category): boolean {
+export function store_mayICreateTopics(store: Store, category: Category | U): boolean {
   const settings: SettingsVisibleClientSide = store.settings;
-  if (settings.enableForum === false)
+  if (settings.enableForum === false || !category)
     return false;
 
   let may: boolean;
@@ -686,6 +686,8 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 }
 
 
+// Also see: store_getCurrOrDefaultCat(store) [GETACTDEFCAT]
+//
 export function store_findTheDefaultCategory(store: Store): Category | undefined {
   return _.find(store.currentCategories, (category: Category) => {
     return category.isDefaultCategory;
