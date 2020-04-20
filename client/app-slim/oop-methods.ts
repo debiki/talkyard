@@ -686,6 +686,8 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 }
 
 
+// Also see: store_getCurrOrDefaultCat(store) [GETACTDEFCAT]
+//
 export function store_findTheDefaultCategory(store: Store): Category | undefined {
   return _.find(store.currentCategories, (category: Category) => {
     return category.isDefaultCategory;
