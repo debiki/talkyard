@@ -593,11 +593,12 @@ const ForumButtons = createComponent({
     // get placed. Instead they get placed in a default category. Find out which
     // one that is, so can show the correct create topic button title (depends
     // on the default topic type in the default category).
-    const activeOrDefCat: Category =
+    const activeOrDefCat: Category | U =
         activeCategory.isForumItself ?
             store_findTheDefaultCategory(store) : activeCategory;
     // @ifdef DEBUG
-    dieIf(!activeOrDefCat, "No active or default category [TyE0DEFCAT]");
+    dieIf(!isServerSide() && !activeOrDefCat,
+        "No active or default category [TyE0DEFCAT]");
     // @endif
 
     let createTopicBtn;

@@ -528,9 +528,9 @@ export function store_isPageDeleted(store: Store): boolean {
 }
 
 
-export function store_mayICreateTopics(store: Store, category: Category): boolean {
+export function store_mayICreateTopics(store: Store, category: Category | U): boolean {
   const settings: SettingsVisibleClientSide = store.settings;
-  if (settings.enableForum === false)
+  if (settings.enableForum === false || !category)
     return false;
 
   let may: boolean;
