@@ -3,7 +3,6 @@ import * as ansiColors from 'ansi-colors';
 import * as fs from 'fs';
 //import WDIOReporter from '@wdio/reporter';
 //import { default as ansiColors } from 'ansi-colors';
-import settings = require('./utils/settings');
 
 
 function logProgr(message: string) {
@@ -65,11 +64,11 @@ class TyWdioReporter extends WDIOReporter {
       const cid: string = arg.cid;
       const cidNoBrackets = cid.replace(/[\[\]]/g, '');
       const now4seconds = Date.now().toString().substring(5, 9);  // last 4 seconds of now()
-      const localHostname = `e2e-test-cid-${cidNoBrackets}-now-${now4seconds}`;
-      if (!settings.localHostname) {
-        // Could use onWorkerStart() instead? [052RKTL40]
-        (global as any).thisSpecLocalHostname = localHostname;
-      }
+
+      // Could use onWorkerStart() instead? [052RKTL40]
+      (global as any).__thisSpecLocalHostname =
+          `e2e-test-cid-${cidNoBrackets}-now-${now4seconds}`;
+
       // Hack, better send cid via the worker hook somehow? [052RKTL40]
       (global as any).getCidOrDie = () => cidNoBrackets;
 

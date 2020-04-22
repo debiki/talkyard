@@ -1,6 +1,7 @@
 import constructEmbCommentsImportTest from './embedded-comments-create-site-export-import-impl';
 
 
-constructEmbCommentsImportTest(`${__filename}  TyT4SLCD24S`, {
+constructEmbCommentsImportTest(
+    `embedded-comments-import-json-create-new-site.2browsers.test.ts  TyT4SLCD24S`, {
     importToNewSite: true });
 

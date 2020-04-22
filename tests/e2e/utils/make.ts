@@ -7,6 +7,7 @@ declare function require(...whatever: any[]): any;
 
 import _ = require('lodash');
 import c = require('../test-constants');
+import utils = require('../utils/utils');
 
 const DefaultCreatedAtMs = 1449198824000;
 
@@ -29,10 +30,9 @@ function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
       "that means this spec hasn't been inited properly yet; variables might be " +
       "`undefined` [TyE8503SKDS46]");
 
-  // Don't access global.localHostname too early (outside this function),
-  // because it wouldn't have been initialized yet; it'd be undefined.
-  const localHostname =
-      (global as any).thisSpecLocalHostname || settings.localHostname || 'e2e-test-site';
+  // Don't call getLocalHostname() too early (outside this function), because
+  // it accesses global.__thisSpecLocalHostname which would be undefined.
+  const localHostname = utils.getLocalHostname();
 
   return {
   meta: {

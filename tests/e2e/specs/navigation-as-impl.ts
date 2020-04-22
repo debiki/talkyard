@@ -95,15 +95,16 @@ function makeWholeSpec(initFn: () => InitResult) {
             forum.siteData.meta.localHostname}`);
       }
       else {
-        const hn = (global as any).thisSpecLocalHostname;
-        console.log(`Setting hostname: ${hn}`);
-        forum.siteData.meta.localHostname = hn;
+        const localHostname = utils.getLocalHostname();
+        console.log(`Setting name and local hostname: ${localHostname}`);
+        (forum.siteData as SiteData2).meta.name = localHostname;
+        (forum.siteData as SiteData2).meta.localHostname = localHostname;
       }
     });
 
     it("import a site", () => {
       idAddress = server.importSiteData(forum.siteData);
-      assert.ok(idAddress.origin !== 'http://e2e-test-site.localhost');
+      tyAssert.excludes(idAddress.origin, '//e2e-test-site.localhost');
       siteId = idAddress.id;
       server.skipRateLimits(siteId);
     });

@@ -3,10 +3,10 @@
 import * as _ from 'lodash';
 import * as assert from './ty-assert';
 import { logMessage, logUnusual, dieIf } from './log-and-die';
+import settings = require('./settings');
 import c = require('../test-constants');
 
 
-declare const settings;
 
 function firstDefinedOf(x, y, z?) {
   return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
@@ -28,6 +28,13 @@ const utils = {
 
   generateTestId: function(): string {
     return Date.now().toString().slice(3, 10);
+  },
+
+  getLocalHostname(anyDefaultNameExclTestPrefix?: string): string {
+    return settings.localHostname || (
+        anyDefaultNameExclTestPrefix
+            ? settings.testLocalHostnamePrefix + anyDefaultNameExclTestPrefix
+            : (global as any).__thisSpecLocalHostname);
   },
 
   makeSiteOrigin: function(localHostname: string): string {

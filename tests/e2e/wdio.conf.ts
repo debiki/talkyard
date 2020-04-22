@@ -392,7 +392,8 @@ const config: WebdriverIO.Config = {
     // Unless otherwise specified on the command line, generate unique hostnames
     // for eacch spec, so they won't overite / try-to-use each other's sites.
     // (I wonder if overwriting `settings.localHostname`, that would affect other
-    // specs we're running in parallel with the current one?)
+    // specs we're running in parallel with the current one? — No, wouldn't;
+    // they run in different Nodejs processes.)
     // Update: Now done here:  [052RKTL40]  instead, where the  cid  is available.
     //if (!settings.localHostname) {
     //  global.localHostname = nextLocalHostname();
@@ -410,8 +411,8 @@ const config: WebdriverIO.Config = {
     global.oneWdioBrowser = global.browserA || global.browser;
     global.allWdioBrowsers = global.browser;
 
-    global.wdioBrowser = global.browser;
-    global.wdioBrowserA = global.browserA;
+    global.wdioBrowser = global.oneWdioBrowser;
+    global.wdioBrowserA = global.oneWdioBrowser;
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —
 
@@ -622,7 +623,7 @@ if (settings.staticServerGatsbyNew8000) {
 }
 
 if (settings.staticServerGatsbyOld8000) {
-    // TODO use port 8082 instead of colliding with 8000
+  // TODO use port 8082 instead of colliding with 8000
   const server: WebdriverIO.ServiceEntry = ['static-server', {
     port: 8000, // eight thousand
     folders: [

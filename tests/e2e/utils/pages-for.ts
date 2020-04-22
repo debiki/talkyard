@@ -436,6 +436,7 @@ export class TyE2eTestBrowser {
     waitUntil(fn: () => Boolean, ps: {
         timeoutMs?: number,
         timeoutIsFine?: boolean,
+        serverErrorDialogIsFine?: boolean,
         message?: StringOrFn,
       } = {}): boolean {
 
@@ -467,11 +468,12 @@ export class TyE2eTestBrowser {
           // Any unrecoverable error dialog? E.g. the server replied Error to a request.
           // However if the waiting message text is like "Waiting for .s_SED_Msg", then we're
           // waiting for the dialog itself, so then it's fine when it appears.
-          // (This '.s_SED_Msg' test is a bit hacky, but works (and if stops working,
-          // some server error dialog tests should start failing — easy to notice.)
+          // (Looking for '.s_SED_Msg' in ps.message is a bit hacky? but works.
+          // And if stops working, some server error dialog tests should start
+          // failing — easy to notice.)
           const waitingForServerError = () =>
               ps.message && getOrCall(ps.message).indexOf('s_SED_Msg') >= 0;
-          if (elapsedMs > 500 && !waitingForServerError()) {
+          if (elapsedMs > 500 && !waitingForServerError() && !ps.serverErrorDialogIsFine) {
             if (this.serverErrorDialog.isDisplayed()) {
               loggedErrorAlready = true;
               this.serverErrorDialog.failTestAndShowDialogText();
@@ -1091,9 +1093,17 @@ export class TyE2eTestBrowser {
 
     isExisting(selector: string): boolean { return this.$(selector).isExisting() }
 
-    isEnabled(selector: string): boolean { return this.$(selector).isEnabled() }
+    isEnabled(selector: string): boolean {
+      const elem = this.$(selector);
+      // Sometimes these methods are missing, why?  [MISSINGFNS]
+      return elem && elem.isExisting?.() && elem.isDisplayed?.() && elem.isEnabled?.();
+    }
 
-    isVisible(selector: string): boolean { return this.$(selector).isDisplayed() }
+    isVisible(selector: string): boolean {
+      // Sometimes the methods below are missing, weird.  [MISSINGFNS]
+      const elem = this.$(selector);
+      return elem && elem.isExisting?.() && elem.isDisplayed?.();
+    }
 
 
     waitForDisplayed(selector: string, ps: { timeoutMs?: number } = {}) {
@@ -1101,11 +1111,7 @@ export class TyE2eTestBrowser {
     }
 
     waitForVisible(selector: string, ps: { timeoutMs?: number } = {}) {  // RENAME to waitForDisplayed() above
-      this.waitUntil(() => {
-        const elem = this.$(selector);
-        if (elem && elem.isExisting() && elem.isDisplayed())
-          return true;
-      }, {
+      this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
@@ -1144,11 +1150,7 @@ export class TyE2eTestBrowser {
 
 
     waitForEnabled(selector: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {
-      this.waitUntil(() => {
-        const elem = this.$(selector);
-        if (elem && elem.isExisting() && elem.isDisplayed() && elem.isEnabled())
-          return true;
-      }, {
+      this.waitUntil(() => this.isEnabled(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
@@ -1266,18 +1268,18 @@ export class TyE2eTestBrowser {
             `Don't know which one of ${elems.length} elems to click. ` +
             `Selector:  ${selector} [TyE305KSU]`);
       }
-     this.click(selector);
+     this.clickNow(selector);
     }
 
 
-    click(selEl: SelectorOrElem) {
+    clickNow(selEl: SelectorOrElem) {
       try {
         if (_.isString(selEl)) this.$(selEl).click();
         else selEl.click();
       }
       catch (ex) {
         if (isClickInterceptedException(ex)) {
-          // Often, this is because server error dialog appeared.
+          // This can happen if server error dialog appeared.
           if (this.serverErrorDialog.isDisplayed()) {
             this.serverErrorDialog.failTestAndShowDialogText();
           }
@@ -1302,7 +1304,7 @@ export class TyE2eTestBrowser {
 
       const elemToClick = elems[index];
       dieIf(!elemToClick, selector + ' TyE36KT74356');
-      this.click(elemToClick);
+      this.clickNow(elemToClick);
     }
 
 
@@ -1389,7 +1391,7 @@ export class TyE2eTestBrowser {
     focus(selector: string, opts?: { maybeMoves?: true,
           timeoutMs?: number, okayOccluders?: string }) {
       this._waitForClickable(selector, opts);
-      this.click(selector);
+      this.clickNow(selector);
     }
 
     refreshUntil(test: () => boolean) {
@@ -1695,7 +1697,7 @@ export class TyE2eTestBrowser {
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
         const elem = this.waitAndGetElemWithText(selector, regex);
-        this.click(elem);
+        this.clickNow(elem);
       });
     }
 
@@ -2151,7 +2153,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertUrlIs(expectedUrl) {
+    assertUrlIs(expectedUrl: string) {
       let url = this.#br.getUrl();
       assert(url === expectedUrl);
     }
@@ -2187,6 +2189,7 @@ export class TyE2eTestBrowser {
       }, {
         timeoutMs: 1000,
         timeoutIsFine: true,
+        serverErrorDialogIsFine: true,
         message: `Waiting for alert(s), handled ${numDone} out of <= ${howMany}`
       });
       logMessage(`Handled ${numDone} out of <= ${howMany} maybe-alerts.`);
@@ -2881,7 +2884,7 @@ export class TyE2eTestBrowser {
         this.waitUntilModalGone();
       },
 
-      fillInPassword: (password) => {
+      fillInPassword: (password: string) => {
         this.waitAndSetValue('#e2ePassword', password);
       },
 
@@ -4264,7 +4267,7 @@ export class TyE2eTestBrowser {
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
         // Instead:
-        this.click("a=Home");
+        this.clickNow("a=Home");
       },
 
       waitForLoaded: () => {
@@ -4291,13 +4294,13 @@ export class TyE2eTestBrowser {
         assert(this.topic._isOrigPostBodyVisible());
       },
 
-      isPostNrDescendantOf: (postNr, maybeParentNr) => {
+      isPostNrDescendantOf: (postNr: PostNr, maybeParentNr: PostNr) => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.isVisible(
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: (postNr) => {
+      isPostNrVisible: (postNr: PostNr) => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.isVisible('#post-' + postNr);
       },
@@ -4319,17 +4322,17 @@ export class TyE2eTestBrowser {
             this.waitAndClick(selector, { maybeMoves: true });
           }
           return this.topic.waitForPostNrVisible(
-              31 + 1, { timeoutMs: 1500, timeoutIsFine: true });
+              ps.nextPostNr, { timeoutMs: 1500, timeoutIsFine: true });
         });
       },
 
-      waitForPostNrVisible: (postNr, ps: { timeoutMs?: number,  // RENAME to ...VisibleText?
+      waitForPostNrVisible: (postNr: PostNr, ps: { timeoutMs?: number,  // RENAME to ...VisibleText?
               timeoutIsFine?: boolean } = {}): boolean => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.waitForVisibleText('#post-' + postNr, ps);
       },
 
-      waitForPostAssertTextMatches: (postNr, text: string | RegExp) => {
+      waitForPostAssertTextMatches: (postNr: PostNr, text: string | RegExp) => {
         dieIf(!_.isString(text) && !_.isRegExp(text),
             "Test broken: `text` is not a string nor a regex [TyEJ53068MSK]");
         this.switchToEmbCommentsIframeIfNeeded();
@@ -4339,12 +4342,12 @@ export class TyE2eTestBrowser {
 
       // waitUntilPostTextMatches — see below
 
-      waitUntilPostHtmlMatches: (postNr, regexOrString: string | RegExp | any[]) => {
+      waitUntilPostHtmlMatches: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
         const selector = this.topic.postBodySelector(postNr);
         this.waitUntilHtmlMatches(selector, regexOrString)
       },
 
-      assertPostHtmlDoesNotMatch: (postNr, regexOrString: string | RegExp | any[]) => {
+      assertPostHtmlDoesNotMatch: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
         const selector = this.topic.postBodySelector(postNr);
         const html = this.$(selector).getHTML();
         const badMatch = this._findHtmlMatchMiss(html, false, regexOrString);
@@ -4485,12 +4488,12 @@ export class TyE2eTestBrowser {
         this.assertExactly(num, this.topic.topLevelReplySelector);
       },
 
-      assertNoReplyMatches: (text) => {
+      assertNoReplyMatches: (text: string | RegExp) => {
         this.waitForMyDataAdded();
         this.assertNoTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertSomeReplyMatches: (text) => {
+      assertSomeReplyMatches: (text: string | RegExp) => {
         this.waitForMyDataAdded();
         this.assertTextMatches(this.topic.allRepliesTextSelector, text);
       },
@@ -4739,23 +4742,23 @@ export class TyE2eTestBrowser {
         return this.isVisible('.dw-a-solve');
       },
 
-      selectPostNrAsAnswer: (postNr) => {
+      selectPostNrAsAnswer: (postNr: PostNr) => {
         assert(!this.isVisible(this.topic._makeUnsolveSelector(postNr)));
         this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
         this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
       },
 
-      unselectPostNrAsAnswer: (postNr) => {
+      unselectPostNrAsAnswer: (postNr: PostNr) => {
         assert(!this.isVisible(this.topic._makeSolveSelector(postNr)));
         this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
         this.waitForVisible(this.topic._makeSolveSelector(postNr));
       },
 
-      _makeSolveSelector(postNr) {
+      _makeSolveSelector(postNr: PostNr) {
         return `#post-${postNr} + .esPA .dw-a-solve`;
       },
 
-      _makeUnsolveSelector(postNr) {
+      _makeUnsolveSelector(postNr: PostNr) {
         return `#post-${postNr} + .esPA .dw-a-unsolve`;
       },
 
@@ -4861,7 +4864,7 @@ export class TyE2eTestBrowser {
         }
       },
 
-      isPostBodyHidden: (postNr) => {
+      isPostBodyHidden: (postNr: PostNr) => {
         return this.isVisible(`#post-${postNr}.s_P-Hdn`);
       },
 
@@ -6522,7 +6525,8 @@ export class TyE2eTestBrowser {
           this.waitUntilLoadingOverlayGone();
         },
 
-        countReviewTasksFor: (pageId, postNr, opts: { waiting: boolean }): number => {
+        countReviewTasksFor: (pageId: PageId, postNr: PostNr,
+              opts: { waiting: boolean }): number => {
           const pageIdPostNrSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
           const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
           const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
@@ -6535,7 +6539,7 @@ export class TyE2eTestBrowser {
           return this.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
-        waitForTextToReview: (text, ps: { index?: number } = {}) => {
+        waitForTextToReview: (text: string | RegExp, ps: { index?: number } = {}) => {
           let selector = '.esReviewTask_it';
           if (ps.index !== undefined) {
             selector = `.e_RT-Ix-${ps.index} ${selector}`;
@@ -6809,8 +6813,10 @@ export class TyE2eTestBrowser {
         console.trace();
         assert.fail(
             `Unexpected error dialog: [TyEERRDLG]\n` +
-            `title: ${title}\n` +
-            `text: ${text}`);
+            `title:  ${title}\n` +
+            `text: --------------------------------------------------------------\n` +
+            `${text}\n` +
+            `--------------------------------------------------------------------\n`);
       },
 
       waitForNotLoggedInError: () => {

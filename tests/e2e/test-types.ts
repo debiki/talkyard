@@ -3,7 +3,7 @@
 
 
 // Unique hostname for the current test run, so sites won't overwrite each other.
-declare const thisSpecLocalHostname: string | undefined;
+declare const __thisSpecLocalHostname: string | undefined;
 declare function getCidOrDie(): string;
 
 
