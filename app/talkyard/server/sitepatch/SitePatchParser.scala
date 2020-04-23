@@ -174,7 +174,7 @@ case class SitePatchParser(context: EdContext) {
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         pagePopularityScoresJson, pageParticipantsJson,
         categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson,
-        isTestSiteOkDelete) =
+        isTestSiteOkDelete, isTestSiteIndexAnyway) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
@@ -187,7 +187,8 @@ case class SitePatchParser(context: EdContext) {
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
           readJsArray(bodyJson, "reviewTasks", optional = true),
-          readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false))
+          readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false),
+          readOptBool(bodyJson, "isTestSiteIndexAnyway").getOrElse(false))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -425,7 +426,8 @@ case class SitePatchParser(context: EdContext) {
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,
       drafts, posts, postActions, permsOnPages, reviewTasks,
-      isTestSiteOkDelete = isTestSiteOkDelete)
+      isTestSiteOkDelete = isTestSiteOkDelete,
+      isTestSiteIndexAnyway = isTestSiteIndexAnyway)
   }
 
 

@@ -60,7 +60,7 @@ function makeWholeSpec(initFn: () => InitResult) {
   let willBeLoggedIn = false;
 
   // Only for testing guests. -----
-  const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
+  const embeddedLocalHostname = 'comments-for-e2e-test-embguest-localhost-8080';
   const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
   // Different tests might run in parallel, so need different slugs.
   // WON'T WORK but fine, for now. — Also need to use different localHostname, see above.
@@ -73,13 +73,6 @@ function makeWholeSpec(initFn: () => InitResult) {
     members: ['alice', 'maria', 'michael'],
   });
 
-  if (initResult.isGuest) {
-    // Create an embedded comments site.
-    forum.siteData.meta.localHostname = localHostname;
-    forum.siteData.settings.allowEmbeddingFrom = embeddingOrigin;
-    forum.siteData.settings.allowGuestLogin = true;
-  }
-
   who = (
       memberIsAdmin ? "admin " : (
         memberName ? "member " : (
@@ -89,20 +82,25 @@ function makeWholeSpec(initFn: () => InitResult) {
 
   describe(`Navigation as ${who}:`, () => {
 
-    it("update site hostname", () => {
+    it("update site hostname and settings", () => {
+      const site = (forum.siteData as SiteData2);
+      let localHostname: string;
       if (initResult.isGuest) {
-        console.log(`Is embedded test, keeping hostname: ${
-            forum.siteData.meta.localHostname}`);
+        // Create an embedded comments site.
+        localHostname = embeddedLocalHostname;
+        site.settings.allowEmbeddingFrom = embeddingOrigin;
+        site.settings.allowGuestLogin = true;
       }
       else {
-        const localHostname = utils.getLocalHostname();
-        console.log(`Setting name and local hostname: ${localHostname}`);
-        (forum.siteData as SiteData2).meta.name = localHostname;
-        (forum.siteData as SiteData2).meta.localHostname = localHostname;
+        localHostname = utils.getLocalHostname();
       }
+      console.log(`Setting name and local hostname: ${localHostname}`);
+      site.meta.name = localHostname;
+      site.meta.localHostname = localHostname;
     });
 
-    it("import a site", () => {
+    it("import site", () => {
+      forum.siteData.isTestSiteIndexAnyway = true;
       idAddress = server.importSiteData(forum.siteData);
       tyAssert.excludes(idAddress.origin, '//e2e-test-site.localhost');
       siteId = idAddress.id;
@@ -131,9 +129,12 @@ function makeWholeSpec(initFn: () => InitResult) {
       willBeLoggedIn = true;
 
       it("Creates an embedding page", () => {
-        fs.writeFileSync(`target/${embeddingPageSlug()}`, makeHtml('b3c-aaa', '#500'));
+        const path = `target/${embeddingPageSlug()}`;
+        logMessage(`At: ${path}`);
+        fs.writeFileSync(path, makeHtml('b3c-aaa', '#500'));
         function makeHtml(pageName: string, bgColor: string): string {
-          return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
+          return utils.makeEmbeddedCommentsHtml({
+            pageName, discussionId: '', localHostname: embeddedLocalHostname, bgColor});
         }
       });
 

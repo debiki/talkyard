@@ -158,6 +158,8 @@ interface SiteData2 {   // [3SD5PB7]
   //uploads: any[];
   //auditLog: any[];
   reviewTasks: any[];
+  isTestSiteOkDelete?: boolean;
+  isTestSiteIndexAnyway?: boolean;
 }
 
 

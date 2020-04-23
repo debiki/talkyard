@@ -208,7 +208,7 @@ function showResponseBodyJson(body) {
 }
 
 
-function importRealSiteData(siteData: SiteData): IdAddress {
+function importRealSiteData(siteData: SiteData2): IdAddress {
   // We're importing test data, to a "real" endpoint that works also
   // in Prod mode. [06KWFNDS2]
   const url = settings.mainSiteOrigin + '/-/import-site-json?deleteOldSite=true';

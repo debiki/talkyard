@@ -85,7 +85,8 @@ case class SitePatch(
   // This might be different from if the server runs in Test mode, or if
   // we're upserting via an e2e test endpoint or not — see importRealSiteData()
   // in tests/e2e/  [06KWFNDS2].
-  isTestSiteOkDelete: Boolean = false) {
+  isTestSiteOkDelete: Boolean = false,
+  isTestSiteIndexAnyway: Boolean = false) {
 
   /* MISSING:
  public | audit_log3              | table    | edc

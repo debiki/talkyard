@@ -411,7 +411,7 @@ const config: WebdriverIO.Config = {
     global.oneWdioBrowser = global.browserA || global.browser;
     global.allWdioBrowsers = global.browser;
 
-    global.wdioBrowser = global.oneWdioBrowser;
+    global.wdioBrowser = global.allWdioBrowsers;  // deprecated
     global.wdioBrowserA = global.oneWdioBrowser;
     global.wdioBrowserB = global.browserB; // only in multiremote tests
     global.wdioBrowserC = global.browserC; //  — "" —

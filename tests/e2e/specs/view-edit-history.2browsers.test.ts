@@ -72,7 +72,7 @@ describe("view-edit-history  TyT60RKDWL25", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
+    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
     richBrowserA = new TyE2eTestBrowser(browserA);
     richBrowserB = new TyE2eTestBrowser(browserB);
 

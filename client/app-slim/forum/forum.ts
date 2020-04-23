@@ -597,8 +597,10 @@ const ForumButtons = createComponent({
         activeCategory.isForumItself ?
             store_findTheDefaultCategory(store) : activeCategory;
     // @ifdef DEBUG
-    dieIf(!isServerSide() && !activeOrDefCat,
-        "No active or default category [TyE0DEFCAT]");
+    // But this can happen, if the default category is private — then it won't be
+    // included in the json from the server. How handle that, UX wise? [TyT0DEFCAT]
+    //dieIf(!isServerSide() && !activeOrDefCat,
+    //    "No active or default category [TyE0DEFCAT]");
     // @endif
 
     let createTopicBtn;

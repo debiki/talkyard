@@ -117,6 +117,8 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
     let forumPage = forum.forumPage = siteBuilder.addForumPageAndRootCategory({
       id: 'fmp',
       rootCategoryId: rootCategoryId,
+      // This category is restricted. That's weird. Commented out this
+      // debug assertion to make this test work.  [TyT0DEFCAT]
       defaultCategoryId: defaultCategoryId,
       title: 'Authz Basic Forum',
       introText: 'Authz Basic Forum intro text',

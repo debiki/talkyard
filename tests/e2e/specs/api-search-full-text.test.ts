@@ -84,6 +84,8 @@ describe("some-e2e-test  TyT1234ABC", () => {
       approvedSource: mariasReply,
     });
 
+    builder.getSite().isTestSiteIndexAnyway = true;
+
     // Disable notifications, or notf email counts will be off (since Owen would get emails).
     builder.settings({ numFirstPostsToReview: 0, numFirstPostsToApprove: 0 });
     builder.getSite().pageNotfPrefs = [{

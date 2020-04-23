@@ -649,7 +649,7 @@ export class TyE2eTestBrowser {
         // Cannot be 0, that'd mean the test made itself disappear?
         numNow = this.#br.getWindowHandles().length;
         return numNow <= Math.max(1, howMany);
-      }, { message });
+      }, { message, serverErrorDialogIsFine: true });
     }
 
 
@@ -715,10 +715,11 @@ export class TyE2eTestBrowser {
         numWindows = ids.length;
         return numWindows <= 1;
       }, {
-        message:`Waiting for any loging popup to auto close, to avoid ` +
+        message: () => `Waiting for any loging popup to auto close, to avoid ` +
               `invalid window ID errors. Num windows open: ${numWindows}`,
         timeoutMs: 3000,
         timeoutIsFine: true,
+        serverErrorDialogIsFine: true,
       });
 
       const winIds = this.#br.getWindowHandles();
@@ -3200,6 +3201,7 @@ export class TyE2eTestBrowser {
       },
 
       logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
+        logMessage("Clicking GitHub login");
         this.waitAndClick('#e2eLoginGitHub');
 
         if (ps.alreadyLoggedInAtGitHub) {
@@ -3209,14 +3211,19 @@ export class TyE2eTestBrowser {
         }
 
         //if (!isInPopupAlready)
-        logMessage("Switching to GitHub login window...");
+        logMessage("Switching to GitHub login popup...");
         this.swithToOtherTabOrWindow(IsWhere.External);
 
+        logMessage("Typing GitHub username ...");
         this.waitForDisplayed('.auth-form-body');
         this.waitAndSetValue('.auth-form-body #login_field', ps.username);
         this.#br.pause(340); // so less risk GitHub think this is a computer?
+
+        logMessage("Typing GitHub password ...");
         this.waitAndSetValue('.auth-form-body #password', ps.password);
         this.#br.pause(340); // so less risk GitHub think this is a computer?
+
+        logMessage("Submitting GitHub login form ...");
         this.waitAndClick('.auth-form-body input[type="submit"]');
         while (true) {
           this.#br.pause(200);
@@ -3228,12 +3235,19 @@ export class TyE2eTestBrowser {
             }
           }
           catch (ex) {
-            // This error should mean that the login window closed. We've clicked the Authorize
-            // button in the past, already.
+            if (isWindowClosedException(ex)) {
+              // The login window closed itself. We've clicked the Authorize
+              // button in the past, already.
+              logMessage("The GitHub login popup closed itself, fine.");
+            }
+            else {
+              logWarning(`GitHub login popup exception: ${ex.toStRing()}`);
+            }
             break;
           }
         }
-        logMessage("Switching back to first window...");
+
+        logMessage("GitHub login done — switching back to first window...");
         this.switchBackToFirstTabOrWindow();
       },
 
@@ -4276,8 +4290,9 @@ export class TyE2eTestBrowser {
         // this.waitAndClick() results in this error:
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
-        // Instead:
-        this.clickNow("a=Home");
+        // Instead:  [EQSELEC]
+        this.waitForDisplayed(`a=Home`);
+        this.$("a=Home").click();
       },
 
       waitForLoaded: () => {
@@ -4518,7 +4533,16 @@ export class TyE2eTestBrowser {
       },
 
       clickFirstMentionOf: (username: string) => {
-        this.waitAndClick(`a.esMention=@${username}`);
+        // This:  this.waitAndClick(`a.esMention=@${username}`);
+        // fails:
+        //    Failed to execute 'querySelector' on 'Document':
+        //      'a.esMention=@michael.lastname' is not a valid selector
+        // because  scrollIntoViewInPageColumn()  sends Javascript to the browser,
+        // but only Wdio, not the browser, understands these Wdio / WebDriver
+        // "magic" selectors:  [EQSELEC]
+        this.waitForDisplayed(`a.esMention=@${username}`);
+        const elem = this.$(`a.esMention=@${username}`);
+        elem.click();
       },
 
       clickReplyToOrigPost: (whichButton?: 'DiscussionSection') => {
