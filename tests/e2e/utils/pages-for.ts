@@ -137,12 +137,18 @@ function allBrowserValues(result) {
 
 
 function isWindowClosedException(ex): boolean {
-  const windowAlreadyClosedExceptionText =
+  // (Don't check for "no such window" — that might mean something else,
+  // e.g. the window never existed at all.)
+  const windowClosedText1 =
       // The full text is: "no such window: window was already closed"
       'window was already closed';
-
-  return ex.toString?.().toLowerCase().indexOf(
-      windowAlreadyClosedExceptionText) >= 0;
+  const windowClosedText2 =
+      // Full text: "no such window: target window already closed";
+      "target window already closed";
+  const exStr = ex.toString();
+  return (
+      exStr.indexOf(windowClosedText1) >= 0 ||
+      exStr.indexOf(windowClosedText2) >= 0);
 }
 
 function isBadElemException(ex): boolean {
@@ -153,9 +159,9 @@ function isBadElemException(ex): boolean {
   const CannotFindId = 'Cannot find context with specified id';
   const exStr = ex.toString();
   return (
-    exStr.indexOf(StaleElem1) >= 0 ||
-    exStr.indexOf(StaleElem2) >= 0 ||
-    exStr.indexOf(CannotFindId) >= 0);
+      exStr.indexOf(StaleElem1) >= 0 ||
+      exStr.indexOf(StaleElem2) >= 0 ||
+      exStr.indexOf(CannotFindId) >= 0);
 }
 
 function isClickInterceptedException(ex): boolean {
@@ -3241,7 +3247,7 @@ export class TyE2eTestBrowser {
               logMessage("The GitHub login popup closed itself, fine.");
             }
             else {
-              logWarning(`GitHub login popup exception: ${ex.toStRing()}`);
+              logWarning(`GitHub login popup exception: ${ex.toString()}`);
             }
             break;
           }

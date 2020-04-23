@@ -40,7 +40,7 @@ import play.api.mvc._
 import play.api.Configuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import talkyard.server.TyLogging
+import talkyard.server.{ProdConfFilePath, TyLogging}
 
 
 
@@ -927,6 +927,7 @@ class CustomGitHubProfileParser(
     val anyEmailsFuture = loadPublicAndVerifiedEmailAddrs(authInfo)
     anyEmailsFuture.map({ case (anyPublAddr, anyPrimAddr) =>
       try {
+        // GitHub user Json docs:  https://developer.github.com/v3/users/#response
         ExternalSocialProfile(
           providerId = GitHubProvider.ID,
           providerUserId = (json \ "id").as[Long].toString,
@@ -943,7 +944,9 @@ class CustomGitHubProfileParser(
           company = (json \ "company").asOptStringNoneIfBlank,
           location = (json \ "location").asOptStringNoneIfBlank,
           aboutUser = (json \ "bio").asOptStringNoneIfBlank,
-          githubUrl = (json \ "url").asOptStringNoneIfBlank,
+          // api url, for loading user json: (json \ "url"), but we
+          // want the html profile page url, and that's 'html_url'.
+          githubUrl = (json \ "html_url").asOptStringNoneIfBlank,
           createdAt = (json \ "created_at").asOptStringNoneIfBlank)
       }
       catch {
@@ -963,43 +966,55 @@ class CustomGitHubProfileParser(
     */
   private def loadPublicAndVerifiedEmailAddrs(oauth2AuthInfo: OAuth2Info)
         : Future[(Option[ExternalEmailAddr], Option[ExternalEmailAddr])] = {
+    // List user email addresses docs:
+    //   https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    val url = s"$githubApiBaseUrl/emails"
     val githubRequest: ws.WSRequest =
-      wsClient.url(s"$githubApiBaseUrl/user/emails").withHeaders(
+      wsClient.url(url).withHttpHeaders(
+        // Auth docs: https://developer.github.com/v3/#oauth2-token-sent-in-a-header
         // OAuth2 bearer token. GitHub will automatically know which user the request concerns
         // (although not mentioned in the request URL).
-        "Authorization" -> s"token ${oauth2AuthInfo.accessToken}",
+        play.api.http.HeaderNames.AUTHORIZATION -> s"token ${oauth2AuthInfo.accessToken}",
         // Use version 3 of the API, it's the most recent one (as of 2019-03).
         // https://developer.github.com/v3/#current-version
-        "Accept" -> "application/vnd.github.v3+json")
+        play.api.http.HeaderNames.ACCEPT -> "application/vnd.github.v3+json")
 
     githubRequest.get().map({ response: ws.WSResponse =>
       // GitHub's response is (as of 2018-10-13) like:
       // https://developer.github.com/v3/users/emails/#list-email-addresses-for-a-user
       // [{ "email": "a@b.c", "verified": true, "primary": true, "visibility": "public" }]
       try {
+        val statusCode = response.status
         val bodyAsText = response.body
-        val bodyAsJson = Json.parse(bodyAsText)
-        val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
-        val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
-          val emailObj = emailObjUntyped.asInstanceOf[JsObject]
-          ExternalEmailAddr(
-            emailAddr = emailObj.value.get("email").map(_.asInstanceOf[JsString].value)
-              .getOrDie("TyE5RKBW20P", s"Bad JSON from GitHub: $bodyAsText"),
-            isVerified = emailObj.value.get("verified") is JsTrue,
-            isPrimary = emailObj.value.get("primary") is JsTrue,
-            isPublic = emailObj.value.get("visibility") is JsString("public"))
-        })
+        if (statusCode != 200) {
+          logger.warn(o"""Unexpected status: $statusCode, from GitHub
+            when loading email address [TyEGITHUBEMLS], url: $url, response: $bodyAsText""")
+          (None, None)
+        }
+        else {
+          val bodyAsJson = Json.parse(bodyAsText)
+          val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
+          val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
+            val emailObj = emailObjUntyped.asInstanceOf[JsObject]
+            ExternalEmailAddr(
+              emailAddr = emailObj.value.get("email").map(_.asInstanceOf[JsString].value)
+                .getOrDie("TyE5RKBW20P", s"Bad JSON from GitHub: $bodyAsText"),
+              isVerified = emailObj.value.get("verified") is JsTrue,
+              isPrimary = emailObj.value.get("primary") is JsTrue,
+              isPublic = emailObj.value.get("visibility") is JsString("public"))
+          })
 
-        val anyPublAddr =
-          emails.find(e => e.isPublic && e.isVerified) orElse
-            emails.find(_.isPublic)
-
-        val anyPrimaryAddr =  // [7KRBGQ20]
-          emails.find(e => e.isPrimary && e.isVerified) orElse
+          val anyPublAddr =
             emails.find(e => e.isPublic && e.isVerified) orElse
-            emails.find(_.isVerified)
+              emails.find(_.isPublic)
 
-        (anyPublAddr, anyPrimaryAddr)
+          val anyPrimaryAddr =  // [7KRBGQ20]
+            emails.find(e => e.isPrimary && e.isVerified) orElse
+              emails.find(e => e.isPublic && e.isVerified) orElse
+              emails.find(_.isVerified)
+
+          (anyPublAddr, anyPrimaryAddr)
+        }
       }
       catch {
         case ex: Exception =>
@@ -1026,14 +1041,35 @@ class CustomGitHubProvider(
                                         // "Ty" prefix = clarifies isn't Silhouette's built-in class.
 
   // This is the base api url, used to construct requests to the GitHub server.
-  val apiBaseUrl: String = apiUserUrl.dropRightWhile(_ != '/').dropRight(1)
+  val apiBaseUrl: String = apiUserUrl
+
+  private var warnedAboutOldAuth = false
+
+  override protected val urls: Map[String, String] = Map("api" -> apiUserUrl)
 
   // The url to fetch the user's profile, from the GitHub server.
-  // For GitHub.com, it's GitHubProvider.API = "https://api.github.com/user?access_token=%s".
+  // For GitHub.com, it's GitHubProvider.API = "https://api.github.com/user".
   // And for GitHub Enterprise, it's "https://own.github/api/v3/user?access_token=%s".
   // Dropping-right up to and incl the rightmost '/' results in the api base url,
   // which can be used to construct other requests to GitHub.
-  def apiUserUrl: String = settings.apiURL.getOrElse(
+  def apiUserUrl: String = settings.apiURL.map(url => {
+    // From 2020-02-10, Git revision 2c94117d54319c1a, Silhouette no longer wants
+    // "?access_token=%s", but instead uses the auth header:
+    //     Authorization: Bearer the-access-token
+    // However, the Talkyard config might still include the "?access_token=%s" suffix,
+    // which would make GitHub reply 400 Bad Request. So:
+    var u = url.trim()
+    val accessTokenQueryParam = "?access_token=%s"
+    if (u.contains(accessTokenQueryParam)) {
+      u = u.replaceAllLiterally(accessTokenQueryParam, "")
+      if (!warnedAboutOldAuth) {
+        warnedAboutOldAuth = true
+        logger.warn(o"""Deprecated GitHub auth conf: Remove "$accessTokenQueryParam" from
+            the  github.apiURL  config value, in  $ProdConfFilePath.""")
+      }
+    }
+    u
+  }).getOrElse(
     com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider.API)
 
   type Self = CustomGitHubProvider
