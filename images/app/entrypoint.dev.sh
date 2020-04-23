@@ -18,10 +18,12 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
   adduser -u $file_owner_id -h /home/owner/ -D owner
-else
-  # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
-  mkdir -p /home/owner/
 fi
+
+ # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
+mkdir -p /home/owner/
+mkdir -p /home/owner/.coursier/
+mkdir -p /home/owner/.cache/coursier/
 
 
 if [ -z "$*" ] ; then
@@ -34,9 +36,12 @@ echo Running the Play CMD:
 if [ $file_owner_id -ne 0 ] ; then
   # Prevent a file-not-found exception in case ~/.ivy2 and ~/.sbt didn't exist, so Docker
   # created them resulting in them being owned by root:
-  # (/home/owner/.ivy2 and .sbt are mounted in docker-compose.yml)
+  # (/home/owner/.ivy2, .sbt and .coursier are mounted in docker-compose.yml [SBTHOME])
   chown owner /home/owner/.ivy2
   chown owner /home/owner/.sbt
+  chown owner /home/owner/.coursier
+  chown owner /home/owner/.cache
+  chown owner /home/owner/.cache/.coursier
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
   chown owner /opt/talkyard/uploads/
   chown owner /var/log/talkyard/

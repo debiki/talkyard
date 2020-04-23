@@ -22,7 +22,7 @@ watch:
   selenium-server \
   invisible-selenium-server \
   git-subm-init-upd \
-  minified-asset-bundles \
+  prod_asset_bundles \
   node_modules \
   play-cli \
   prod-images \
@@ -123,24 +123,16 @@ node_modules/.bin/gulp: git-subm-init-upd
 # BUG RISK sync with Gulp so won't accidentally forget to (re)build? [GZPATHS]
 # Sync with the languages in the /translations/ dir. [5JUKQR2]
 #  public/res/2d-bundle.min.js.gz // [SLIMTYPE]
-zipped_bundles:=\
-  images/web/assets/talkyard-comments.js.gz \
+prod_asset_bundle_files:=\
   images/web/assets/talkyard-comments.min.js.gz \
-  images/web/assets/talkyard-service-worker.js.gz \
   images/web/assets/talkyard-service-worker.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/staff-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.min.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.min.css.gz \
-  images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/translations/en_US/i18n.min.js.gz \
@@ -164,9 +156,9 @@ zipped_bundles:=\
   images/app/assets/translations/pl_PL/i18n.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 
-minified-asset-bundles: node_modules $(zipped_bundles)
+prod_asset_bundles: node_modules debug_asset_bundles $(prod_asset_bundle_files)
 
-$(zipped_bundles): $@
+$(prod_asset_bundle_files): $@
 	s/d-gulp release
 
 
@@ -189,32 +181,32 @@ images/app/assets/server-bundle.js: \
 	@echo "Regenerating $@"
 	s/d-gulp  compileServerTypescriptConcatJavascript-concatScripts
 
-images/web/assets/talkyard-comments.js: \
+images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileBlogCommentsTypescript-concatScripts
 
-images/web/assets/talkyard-service-worker.js: \
+images/web/assets/talkyard-service-worker.js.gz: \
        $(shell find client/serviceworker/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileSwTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js: \
+images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz: \
        $(shell find client/app-editor/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileEditorTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/more-bundle.js: \
+images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz: \
        $(shell find client/app-more/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileMoreTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js: \
+images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
        $(shell find client/app-slim/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileSlimTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js: \
+images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
        $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
 	s/d-gulp  compileStaffTypescript-concatScripts
@@ -224,7 +216,7 @@ images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
 	@echo "Bundling $@"
 	s/d-gulp  bundleZxcvbn
 
-images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css: \
+images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz: \
        $(shell  find client/  -type f  \(  -name '*.styl'  -o  -name '*.css'  \)  )
 	@echo "Regenerating $@"
 	s/d-gulp  compile-stylus
@@ -290,7 +282,7 @@ pristine: clean
 # Starts an SBT shell where you can run unit tests by typing 'test'. These test require
 # the minified asset bundles, to run (because the app server loads and execs React Javascript
 # server side.)
-play-cli: minified-asset-bundles
+play-cli: prod_asset_bundles
 	s/d-cli
 
 db-cli:
@@ -305,7 +297,7 @@ db-cli:
 build:
 	s/d build
 
-up: minified-asset-bundles debug_asset_bundles
+up: prod_asset_bundles
 	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
@@ -419,7 +411,7 @@ visible-e2e-tests: selenium-server
 # ========================================
 
 
-dev-images: minified-asset-bundles
+dev-images: prod_asset_bundles
 	sudo docker-compose build
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
@@ -430,7 +422,7 @@ _kill_old_prod_build_project:
 prod-images: \
 			_kill_old_prod_build_project \
 			invisible-selenium-server
-	@# This builds minified-asset-bundles.
+	@# This builds prod_asset_bundles.
 	s/build-prod-images.sh
 
 

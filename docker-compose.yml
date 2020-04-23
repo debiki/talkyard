@@ -59,6 +59,9 @@ services:
       - ./images/app/assets/:/opt/talkyard/app/assets/:ro
       - ./version.txt:/opt/talkyard/app/version.txt:ro
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
+      # This is for Linux:  (https://get-coursier.io/docs/cache.html#default-location)
+      - ${HOME}/.coursier/:/home/owner/.coursier/
+      - ${HOME}/.cache/:/home/owner/.cache/
       - ${HOME}/.ivy2/:/home/owner/.ivy2/
       - ${HOME}/.sbt/:/home/owner/.sbt/
     networks:
