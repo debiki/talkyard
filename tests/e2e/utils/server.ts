@@ -491,10 +491,10 @@ function fullTextSearch(ps: { origin: string, queryText: string })
   const response = postOrDie(
       url, { searchQuery: { queryText: ps.queryText }});
 
-  const responseJson = response.bodyJson();
-  const searchResults = (responseJson as SearchResultsApiResponse).searchResults;
-  assert.ok(searchResults);
-  return responseJson as SearchResultsApiResponse;
+  const result = response.bodyJson() as SearchResultsApiResponse;
+  assert.ok(result.searchResults);
+  assert.ok(_.isArray(result.searchResults));
+  return result;
 }
 
 

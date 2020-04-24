@@ -83,7 +83,7 @@ function makeWholeSpec(initFn: () => InitResult) {
   describe(`Navigation as ${who}:`, () => {
 
     it("update site hostname and settings", () => {
-      const site = (forum.siteData as SiteData2);
+      const site = forum.siteData as SiteData2;
       let localHostname: string;
       if (initResult.isGuest) {
         // Create an embedded comments site.

@@ -460,8 +460,7 @@ export class TyE2eTestBrowser {
           const done = fn();
           if (done) {
             if (loggedAnything) {
-              logMessage(`Done: ${ps.message ?
-                  getOrCall(ps.message) : "Waiting for something."}`);
+              logMessage(`Done: ${ getOrCall(ps.message) || "Waiting for something." }`);
             }
             return true;
           }
@@ -469,8 +468,8 @@ export class TyE2eTestBrowser {
           elapsedMs = Date.now() - startMs;
           if (elapsedMs > AnnoyinglyLongMs) {
             loggedAnything = true;
-            logMessage(`${elapsedMs} ms elapsed: ${ps.message ?
-                getOrCall(ps.message) : "Wait until what?"} ...`);
+            logMessage(`${elapsedMs} ms elapsed: ${
+                getOrCall(ps.message) || "Wait until what?" } ...`);
           }
 
           // Any unrecoverable error dialog? E.g. the server replied Error to a request.
@@ -479,8 +478,7 @@ export class TyE2eTestBrowser {
           // (Looking for '.s_SED_Msg' in ps.message is a bit hacky? but works.
           // And if stops working, some server error dialog tests should start
           // failing — easy to notice.)
-          const waitingForServerError = () =>
-              ps.message && getOrCall(ps.message).indexOf('s_SED_Msg') >= 0;
+          const waitingForServerError = () => getOrCall(ps.message)?.indexOf('s_SED_Msg') >= 0;
           if (elapsedMs > 500 && !waitingForServerError() && !ps.serverErrorDialogIsFine) {
             if (this.serverErrorDialog.isDisplayed()) {
               loggedErrorAlready = true;
@@ -499,7 +497,7 @@ export class TyE2eTestBrowser {
       }
 
       if (ps.timeoutIsFine === true) {
-        const what = ps.message ? getOrCall(ps.message) : "Something";
+        const what = getOrCall(ps.message) ||  "Something";
         logUnusual(`Timed out, but that's fine:  ${what}`);
       }
       else {
@@ -5231,16 +5229,18 @@ export class TyE2eTestBrowser {
       },
 
       searchForUntilNumPagesFound: (phrase: string, numResultsToFind: number) => {
+        let numFound;
         this.waitUntil(() => {
           this.searchResultsPage.searchForWaitForResults(phrase);
-          const numFound = this.searchResultsPage.countNumPagesFound_1();
+          numFound = this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             assert(numFound === numResultsToFind);
             return true;
           }
           this.#br.pause(111);
         }, {
-          message: `Waiting for ${numResultsToFind} pages found for phrase:  "${phrase}"`,
+          message: `Waiting for ${numResultsToFind} pages found for search ` +
+              `phrase:  "${phrase}"  found this far: ${numFound}`,
         });
       },
 

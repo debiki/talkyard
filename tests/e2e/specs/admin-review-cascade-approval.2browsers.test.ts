@@ -204,6 +204,10 @@ describe("admin-review-cascade-approval  TyT0SKDE24", () => {
       return counts.numNormal === 2;
     });
     assert.deepEq(counts, { numNormal: 2, numUnapproved: 2, numDeleted: 0 });
+    // Apparently can take a short while before React has shown the .dw-p (post body),
+    // this error happened:
+    //     "Text match failure, selector:  #post-2 .dw-p-bd,  No elems match the selector."
+    strangersBrowser.topic.waitForPostNrVisible(c.FirstReplyNr);
   });
 
   // Without running into any errors because some of those posts have:

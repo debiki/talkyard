@@ -13,7 +13,7 @@ const unusualColor = ansiColors.black.bgGreen;
 const serverRequestColor = ansiColors.bold.cyan;
 const serverResponseColor = ansiColors.bold.blue;
 
-function getOrCall<V>(valueOrFn: V | (() => V)): V {
+function getOrCall<V>(valueOrFn: U | V | (() => V)): U | V {
   return _.isFunction(valueOrFn) ? valueOrFn() : valueOrFn;
 }
 

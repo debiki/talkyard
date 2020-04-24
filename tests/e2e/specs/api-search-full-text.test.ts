@@ -6,8 +6,7 @@ import assert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
-import { TyE2eTestBrowser, TyAllE2eTestBrowsers } from '../utils/pages-for';
-import settings = require('../utils/settings');
+import { TyE2eTestBrowser } from '../utils/pages-for';
 import lad = require('../utils/log-and-die');
 import c = require('../test-constants');
 
@@ -35,7 +34,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
 
   it("import a site", () => {
     const builder = buildSite();
-    forum = builder.addTwoPagesForum({  // or: builder.addLargeForum
+    forum = builder.addTwoPagesForum({
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });
@@ -86,14 +85,6 @@ describe("some-e2e-test  TyT1234ABC", () => {
 
     builder.getSite().isTestSiteIndexAnyway = true;
 
-    // Disable notifications, or notf email counts will be off (since Owen would get emails).
-    builder.settings({ numFirstPostsToReview: 0, numFirstPostsToApprove: 0 });
-    builder.getSite().pageNotfPrefs = [{
-      memberId: forum.members.owen.id,
-      notfLevel: c.TestPageNotfLevel.Muted,
-      wholeSite: true,
-    }];
-
     assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
@@ -107,7 +98,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
   });
 
 
-  // Show the site, this spec becomes simpler to troubleshoot.
+  // Show the site, so this spec becomes simpler to troubleshoot.
   it("Maria goes to the forum", () => {
     mariasBrowser.go2(siteIdAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
@@ -143,7 +134,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
   let bodyHit: PostHit;
   let replyHit: PostHit;
 
-  it("The title, body and a reply was found", () => {
+  it("The title, body and Maria's reply was found", () => {
     assert.eq(pageAndHits.postHits.length, 3);
 
     titleHit = pageAndHits.postHits.find((ph: PostHit) => ph.isPageTitle);
