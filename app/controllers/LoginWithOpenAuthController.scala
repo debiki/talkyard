@@ -1112,8 +1112,17 @@ class LinkedInProfileParserApiV2(
   with TyLogging {
 
   override def parse(json: JsValue, authInfo: OAuth2Info): Future[CommonSocialProfile] = {
-    loadEmailAddr(authInfo).map({ anyEmail =>
-      // The json from API v2 is like:
+    // Silhouette now includes the email in the json, so skip loadEmailAddr().
+    // loadEmailAddr(authInfo).map({ anyEmail =>
+
+      // See  BaseLinkedInProvider.buildProfile().
+      val apiJsonObj   = json \ "api"
+      val emailJsonObj = json \ "email"
+      val photoJsonObj = json \ "photo"
+
+      val anyEmail = (emailJsonObj \\ "emailAddress").headOption.flatMap(_.asOpt[String])
+
+      // The apiJsonObj from API v2 is like:
       // {
       //   "lastName":{
       //     "localized":{"en_US":"MyLastName"},
@@ -1129,9 +1138,9 @@ class LinkedInProfileParserApiV2(
       // you'll see that one needs to "have applied and been approved for a LinkedIn Partner Program",
       // to access more fields.
 
-      val userID = (json \ "id").as[String]
+      val userId = (apiJsonObj \ "id").as[String]
       def readName(fieldName: String): Option[String] = {
-        (json \ fieldName).asOpt[JsObject] flatMap { jsObj =>
+        (apiJsonObj \ fieldName).asOpt[JsObject] flatMap { jsObj =>
           (jsObj \ "localized").asOpt[JsObject] flatMap { jsObj =>
             jsObj.fields.headOption.map(_._2) flatMap { nameInAnyLocale =>
               nameInAnyLocale match {
@@ -1145,20 +1154,30 @@ class LinkedInProfileParserApiV2(
       val firstName = readName("firstName")
       val lastName = readName("lastName")
 
-      CommonSocialProfile(
-        loginInfo = LoginInfo(LinkedInProvider.ID, userID),
+      val profile = CommonSocialProfile(
+        loginInfo = LoginInfo(LinkedInProvider.ID, userId),
         firstName = firstName,
         lastName = lastName,
         fullName = None,    // not incl in LinkedIn API v2
         avatarURL = None,   // not incl in LinkedIn API v2
         email = anyEmail)
-    })(executionContext)
+
+    Future.successful(profile)
+    //})(executionContext)
   }
 
 
   /** LinkedIn API v2 requires a separate request to fetch the email address.
+    *
+    * Update, 2020-04: Silhouette 7.0 now loads the email in a 2nd request itself.
+    * So, disabling this fn for now.
+    *
+    * But keep it commented in, so can fix complation errors, keep it somewhat
+    * up-to-date, maybe needed soon again?
     */
   private def loadEmailAddr(oauth2AuthInfo: OAuth2Info): Future[Option[String]] = {
+    die("TyE39572KTSP3", "loadEmailAddr() not needed, don't call")
+
     import play.api.libs.ws
     val emailRequestUrl =
       "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))" +
