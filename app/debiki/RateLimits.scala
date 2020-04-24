@@ -152,8 +152,9 @@ object RateLimits {
   object ViewPage extends RateLimits {
     val key = "VP"
     val what = "viewed pages too quickly"
-    def maxPerFifteenSeconds = 40             // 160/min
-    def maxPerFifteenMinutes: Int = 60 * 15   //  60/min
+    // 4*  because: [UNIDEADL]
+    def maxPerFifteenSeconds = 4* 40             // 160/min
+    def maxPerFifteenMinutes: Int = 4* 60 * 15   //  60/min
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -163,8 +164,9 @@ object RateLimits {
   object ViewPageNoCache extends RateLimits {
     val key = "VPNC"
     val what = "viewed uncacheable pages too quickly"
+    // 2*  because: [UNIDEADL]
     def maxPerFifteenSeconds = 6              // 24/min
-    def maxPerFifteenMinutes: Int = 8 * 15    //  8/min
+    def maxPerFifteenMinutes: Int = 2* 8 * 15    //  8/min
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -183,8 +185,9 @@ object RateLimits {
   object ReadsFromDb extends RateLimits {
     val key = "DbRq"
     val what = "sent too many a bit complicated HTTP GET requests"
-    def maxPerFifteenSeconds = 25             //  100/min
-    def maxPerFifteenMinutes: Int = 30 * 15   //   30/min
+    // 3*  because: [UNIDEADL]
+    def maxPerFifteenSeconds = 3* 25             //  100/min
+    def maxPerFifteenMinutes: Int = 3* 30 * 15   //   30/min
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -192,7 +195,8 @@ object RateLimits {
 
   object TrackReadingActivity extends RateLimits {
     val IntervalSeconds = 30 // dupl constant, in js too [6AK2WX0G]
-    private val MaxReadersPerIp = 100
+    // 4*  because: [UNIDEADL]
+    private val MaxReadersPerIp = 4* 100
     private val BurstFactor = 1.5
     val key = "TRA"
     val what = "sent too many I've-read-this-and-that messages"
@@ -266,7 +270,8 @@ object RateLimits {
   object Login extends RateLimits {
     val key = "Lgi"
     val what = "logged in too many times"
-    def maxPerFifteenSeconds = 20
+    // 2*  because: [UNIDEADL]
+    def maxPerFifteenSeconds = 2*  20
     def maxPerFifteenMinutes: Int = 150
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
@@ -276,9 +281,12 @@ object RateLimits {
   object CreateUser extends RateLimits {
     val key = "CrUs"
     val what = "signed up too many times"
-    def maxPerFifteenSeconds = 3
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 25
+    // Many students from a school signed up the same day, just before a deadline. [UNIDEADL]
+    // For now, bump the limits so that scenario works fine.
+    // SHOULD make per site configurable. And maybe a maxPerWeek too?
+    def maxPerFifteenSeconds = 15  // 3
+    def maxPerFifteenMinutes = 50  // 10
+    def maxPerDay = 200            // 25
     def maxPerDayNewUser: Int = Unlimited
   }
 
@@ -310,9 +318,10 @@ object RateLimits {
   object ConfirmEmailAddress extends RateLimits {
     val key = "CfEA"
     val what = "confirmed email addresses too many times"
-    def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 50
+    // Higher, because: [UNIDEADL]
+    def maxPerFifteenSeconds = 15   // 5
+    def maxPerFifteenMinutes = 50   // 10
+    def maxPerDay = 200             // 50
     def maxPerDayNewUser: Int = Unlimited
   }
 
@@ -322,8 +331,8 @@ object RateLimits {
     val key = "NPwP"
     val what = "specified new password too frequently"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 50
+    def maxPerFifteenMinutes = 25
+    def maxPerDay = 75
     def maxPerDayNewUser: Int = Unlimited
   }
 
@@ -342,9 +351,10 @@ object RateLimits {
   object ResetPassword extends RateLimits {
     val key = "RsPw"
     val what = "reset your password too many times"
-    def maxPerFifteenSeconds = 2
-    def maxPerFifteenMinutes = 7
-    def maxPerDay = 12
+    // This is per ip address, not per account, right, so not too low.
+    def maxPerFifteenSeconds = 5
+    def maxPerFifteenMinutes = 25
+    def maxPerDay = 75
     def maxPerDayNewUser: Int = Unlimited
   }
 
@@ -406,10 +416,10 @@ object RateLimits {
   object CreateTopic extends RateLimits {
     val key = "CrTp"
     val what = "created too many topics"
-    val maxPerFifteenSeconds = 1
+    val maxPerFifteenSeconds = 2
     val maxPerFifteenMinutes = 8
     val maxPerDay = 20
-    val maxPerDayNewUser = 5
+    val maxPerDayNewUser = 7
   }
 
 
@@ -453,7 +463,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 3
     def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay: Int = Unlimited
-    def maxPerDayNewUser = 10
+    def maxPerDayNewUser = 20
   }
 
 
@@ -463,6 +473,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 15  // 60/min = one per second, auto-saving every 2nd second [7AKBJ42]
     def maxPerFifteenMinutes: Int = Unlimited
     // 3 people at the same ip, edits constantly for 2.5 hours = 150 min, auto-saving 30 times / minute.
+    // But this is per logged in user though, not per ip.
     def maxPerDay: Int = 3 * 150 * 30
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -501,7 +512,7 @@ object RateLimits {
     val what = "edited too many posts"
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes: Int = Unlimited
-    def maxPerDay = 30
+    def maxPerDay = 40
     def maxPerDayNewUser: Int = Unlimited
   }
 
