@@ -297,6 +297,7 @@ function runAllE2eTests {
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
   $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
   $r s/wdio --only drafts-new-topic.2browsers $args
+  $r s/wdio --only drafts-new-topic-from-cats-page $args
   $r s/wdio --only drafts-reply-edit-dir-msg.2browsers $args
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args

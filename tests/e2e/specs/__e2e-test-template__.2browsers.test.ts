@@ -34,7 +34,7 @@ let mallorysBrowser: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 
 let siteIdAddress: IdAddress;
-let siteId;
+let siteId: SiteId;
 
 let forum: TwoPagesTestForum;  // or: LargeTestForum
 
@@ -130,7 +130,7 @@ describe("some-e2e-test  TyT1234ABC", () => {
   });
 
   it("Maria logs in", () => {
-    mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    mariasBrowser.go2(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 

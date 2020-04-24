@@ -331,7 +331,9 @@ topics -
           - api-upsert-pages.2browsers.test.ts  TyT602FKUDLSV
   create topic -
     in no category:  create-site-all-logins, part of create-with-password-account (7UC2)
-    in a category:
+    in a category: ("almost all" tests do this)
+    from categories list:
+          - drafts-new-topic-from-cats-page.test.ts  TyT502RKD472
     change category:
     change topic type:
   edit -
@@ -720,6 +722,7 @@ draft: [7WKABZP2]
           - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5ABKR20
   new topic:
           - drafts-new-topic.2browsers.test.ts  TyT5BR20P4
+          - drafts-new-topic-from-cats-page.test.ts  TyT502RKD472
   direct message:
           - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5ABKR20
   edits:
