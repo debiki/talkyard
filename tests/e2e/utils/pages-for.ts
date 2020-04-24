@@ -498,9 +498,14 @@ export class TyE2eTestBrowser {
         throw ex;
       }
 
-      if (ps.timeoutIsFine !== true)
+      if (ps.timeoutIsFine === true) {
+        const what = ps.message ? getOrCall(ps.message) : "Something";
+        logUnusual(`Timed out, but that's fine:  ${what}`);
+      }
+      else {
         tyAssert.fail(
             `this.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
+      }
 
       return false;
     }
@@ -4691,17 +4696,22 @@ export class TyE2eTestBrowser {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
         this.switchToEmbCommentsIframeIfNeeded();
         const isLikedBefore = this.isVisible(likeVoteSelector + '.dw-my-vote');
-        this.topic.clickLikeVote(postNr, opts);
-        this.switchToEmbCommentsIframeIfNeeded();
-        let delay = 133;
-        while (true) {
-          // Wait for the server to reply and the page to get updated.
-          this.#br.pause(delay);
-          delay *= 1.5;
-          const isLikedAfter = this.isVisible(likeVoteSelector + '.dw-my-vote');
-          if (isLikedBefore !== isLikedAfter)
-            break;
-        }
+        // This click for some reason won't always work, here: [E2ECLICK03962]
+        utils.tryUntilTrue(`toggle Like vote`, 3, () => {
+          this.switchToEmbCommentsIframeIfNeeded();
+          this.topic.clickLikeVote(postNr, opts);
+          // Wait for the server to reply, and the page to get updated.
+          const gotToggled = this.waitUntil(() => {
+            const likedNow = this.isVisible(likeVoteSelector + '.dw-my-vote');
+            //this.l(`isLikedBefore: ${isLikedBefore}  likedNow: ${likedNow}`)
+            return isLikedBefore !== likedNow;
+          }, {
+            message: `Waiting for post ${postNr} to get like-voted = ${!isLikedBefore}`,
+            timeoutMs: 2500,
+            timeoutIsFine: true,
+          });
+          return gotToggled;
+        });
       },
 
       isPostLikedByMe: (postNr: PostNr) => {
@@ -4830,7 +4840,7 @@ export class TyE2eTestBrowser {
         // That might block forever, waiting for the dialog that's in front of the backdrop
         // to stop occluding (parts of) the backdrop.
         // Instead:
-        while (true) {
+        this.waitUntil(() => {
           // This no longer works, why not? Chrome 77. The click has no effect —
           // maybe it doesn't click at 10,10 any longer? Or what?
           //if (this.isVisible('.modal-backdrop')) {
@@ -4843,10 +4853,10 @@ export class TyE2eTestBrowser {
           if (this.isVisible('.esDropModal_CloseB')) {
             this.waitAndClick('.esDropModal_CloseB');
           }
-          if (!this.topic.isChangePageDialogOpen())
-            break;
-          this.#br.pause(PollMs);
-        }
+          return !this.topic.isChangePageDialogOpen();
+        }, {
+          message: `Waiting for Change Page dialog to close`,
+        });
         this.waitUntilModalGone();
       },
 
@@ -4886,22 +4896,26 @@ export class TyE2eTestBrowser {
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
       refreshUntilBodyHidden: (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
-        while (true) {
+        this.waitUntil(() => {
           let isBodyHidden = this.topic.isPostBodyHidden(postNr);
-          if (isBodyHidden) break;
+          if (isBodyHidden) return true;
           this.#br.pause(RefreshPollMs);
           this.#br.refresh();
-        }
+        }, {
+          message: `Waiting for post nr ${postNr}'s body to hide`,
+        });
       },
 
       refreshUntilPostPresentBodyNotHidden: (postNr: PostNr) => {
-        while (true) {
+        this.waitUntil(() => {
           let isVisible = this.isVisible(`#post-${postNr}`);
           let isBodyHidden = this.topic.isPostBodyHidden(postNr);
-          if (isVisible && !isBodyHidden) break;
+          if (isVisible && !isBodyHidden) return true;
           this.#br.pause(RefreshPollMs);
           this.#br.refresh();
-        }
+        }, {
+          message: `Waiting for post nr ${postNr}: isVisible && !isBodyHidden`,
+        });
       },
 
       isPostBodyHidden: (postNr: PostNr) => {
@@ -5217,15 +5231,17 @@ export class TyE2eTestBrowser {
       },
 
       searchForUntilNumPagesFound: (phrase: string, numResultsToFind: number) => {
-        while (true) {
+        this.waitUntil(() => {
           this.searchResultsPage.searchForWaitForResults(phrase);
           const numFound = this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             assert(numFound === numResultsToFind);
-            break;
+            return true;
           }
-          this.#br.pause(333);
-        }
+          this.#br.pause(111);
+        }, {
+          message: `Waiting for ${numResultsToFind} pages found for phrase:  "${phrase}"`,
+        });
       },
 
       clickSearchButton: () => {
@@ -5603,12 +5619,15 @@ export class TyE2eTestBrowser {
         },
 
         refreshUntilNumDraftsListed: (numDrafts: number) => {
-          while (true) {
-            const elems = this.$$('.s_Dfs_Df');
-            if (elems.length === numDrafts)
-              return;
-            this.#br.pause(125);
-          }
+          // But this doesn't refresh the page? Hmm
+          let numNow: number;
+          this.waitUntil(() => {
+            numNow = this.$$('.s_Dfs_Df').length;
+            if (numNow === numDrafts)
+              return true;
+          }, {
+            message: `Waiting for ${numDrafts} drafts, num now: ${numNow}`,
+          });
         },
 
         waitUntilNumDraftsListed: (numDrafts: number) => {

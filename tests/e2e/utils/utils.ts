@@ -318,9 +318,11 @@ ${ htmlToPaste ? htmlToPaste : `
         const done = fn();
         if (done)
           return;
+
+        logUnusual(`Retrying: ${what}  [TyME2ERETRYA]`);
       }
       catch (error) {
-        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        logUnusual(`Retrying: ${what}  [TyME2ERETRYB], because error: ${error.toString()}`);
       }
 
       if (maxNumTimes === 'ExpBackoff') {
