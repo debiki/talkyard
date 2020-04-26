@@ -35,7 +35,7 @@ case class PageStuff(
   // Need not cache these urls per server origin? [5JKWBP2]
   bodyImageUrls: immutable.Seq[String],
   popularRepliesImageUrls: immutable.Seq[String],
-  authorUserId: UserId,
+  authorUserId: UserId,  // RENAME to just authorId
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
 

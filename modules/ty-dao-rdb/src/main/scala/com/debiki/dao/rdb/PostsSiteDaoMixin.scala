@@ -691,6 +691,28 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
+  def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId] = {
+    // Tested here: TyT5086XJW2 (the e2e test api-search-full-text.test.ts)
+    if (postIds.isEmpty)
+      return Map.empty
+
+    val query = s"""
+      select unique_post_id, created_by_id
+      from posts3
+      where site_id = ?
+        and unique_post_id in(${makeInListFor(postIds)}) """
+
+    val values = ArrayBuffer(siteId)
+    values.append(postIds.toSeq: _*)
+
+    runQueryBuildMap(query, values.toList.map(_.asAnyRef), rs => {
+      val postId = rs.getInt("unique_post_id")
+      val authorId = rs.getInt("created_by_id")
+      postId -> authorId
+    })
+  }
+
+
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
         : Boolean = {
     val statement = """

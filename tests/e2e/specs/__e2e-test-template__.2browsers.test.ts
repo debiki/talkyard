@@ -60,6 +60,9 @@ describe("some-e2e-test  TyT1234ABC", () => {
       members: undefined, // default = everyone
     });
 
+    // Adding a new member:
+    const newMember: Member = builder.addMmember('hens_username');
+
     const newPage: PageJustAdded = builder.addPage({
       id: 'extraPageId',
       folder: '/',
@@ -91,6 +94,9 @@ describe("some-e2e-test  TyT1234ABC", () => {
     // Enable API.
     builder.settings({ enableApi: true });
     builder.getSite().apiSecrets = [apiSecret];
+
+    // Add an ext id to a category.
+    // forum.categories.specificCategory.extId = 'specific cat ext id';
 
     assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);

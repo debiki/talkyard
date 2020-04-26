@@ -61,6 +61,7 @@ class SiteDaoFactory (
 
 trait ReadOnlySiteDao {
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage  // repl w ParsedRef?
+  def getCategoryByParsedRef(parsedRef: ParsedRef): Option[Category]
   def getPageMetaByParsedRef(parsedRef: ParsedRef): Option[PageMeta]
   def getPageMetaByExtId(extId: ExtId): Option[PageMeta]
   def getParticipantByRef(ref: Ref): Option[Participant] Or ErrorMessage  // remove?
@@ -284,8 +285,22 @@ class SiteDao(
 
   def theSiteOrigin(): String = theSiteNameAndOrigin()._2
 
-  def theSiteNameAndOrigin(): (String, String) = {
+  def theSiteIdsOrigins(): SiteIdOrigins = {
     val site = theSite()
+    val (_, siteOrigin) = theSiteNameAndOriginImpl(site)
+    val uploadsOrigin = globals.anyCdnOrigin.getOrElse(siteOrigin)
+    SiteIdOrigins(
+      siteId = site.id,
+      pubId = site.pubId,
+      siteOrigin = siteOrigin,
+      uploadsOrigin = uploadsOrigin)
+  }
+
+  def theSiteNameAndOrigin(): (String, String) = {
+    theSiteNameAndOriginImpl(theSite())
+  }
+
+  private def theSiteNameAndOriginImpl(site: Site): (String, String) = {
     val anyHostname = site.canonicalHostname.map(_.hostname)
     val anyOrigin = anyHostname.map(globals.schemeColonSlashSlash + _ + globals.colonPort)
     val siteNameOrHostname = anyHostname getOrElse site.name

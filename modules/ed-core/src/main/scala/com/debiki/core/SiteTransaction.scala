@@ -185,6 +185,9 @@ trait SiteTransaction {
   def insertPostRevision(revision: PostRevision)
   def updatePostRevision(revision: PostRevision)
 
+  // Also see: loadVoterIds(postId) and  listUsernamesOnPage(pageId)
+  def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId]
+
   def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
@@ -192,7 +195,8 @@ trait SiteTransaction {
   def insertPostAction(postAction: PostAction)
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
-  /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02] */
+  /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]
+    * Also see: loadAuthorIdsByPostId() */
   def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId]
 
   /** Remembers that the specified posts have been read by a certain user.
@@ -481,6 +485,7 @@ trait SiteTransaction {
   def loadUsersWithUsernamePrefix(
     usernamePrefix: String, caseSensitive: Boolean = false, limit: Int = 50): immutable.Seq[User]
 
+  // Also see: loadAuthorIdsByPostId(postIds)
   def listUsernamesOnPage(pageId: PageId): Seq[NameAndUsername]
 
   def loadAdmins(): immutable.Seq[User] =

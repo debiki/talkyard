@@ -29,6 +29,7 @@ import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.mvc.{Action, ControllerComponents, Result}
 import scala.concurrent.Future
+import talkyard.server.api.ThingsFoundJson
 
 
 /** Full text search, for a whole site, or for a site section, e.g. a single
@@ -56,11 +57,13 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val rawQuery = (request.body \ "rawQuery").as[String]
     val searchQuery = parseRawSearchQueryString(rawQuery, categorySlug => {
       // BUG (need not fix now): What if many sub communities, with the same cat slug? [4GWRQA28]
+      // Then, could prefix with the community / forum-page name, when selecting category?
+      // And if unspecified — search all cats w matching slug?
       dao.getCategoryBySlug(categorySlug).map(_.id)
     })
 
-    dao.fullTextSearch(searchQuery, None, requester, addMarkTagClasses = true) map {
-      searchResults: Seq[PageAndHits] =>
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+          addMarkTagClasses = true) map { searchResults: Seq[PageAndHits] =>
         import play.api.libs.json._
         OkSafeJson(Json.obj(
           "pagesAndHits" -> searchResults.map((pageAndHits: PageAndHits) => {
@@ -68,6 +71,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
               "pageId" -> pageAndHits.pageId,
               "pageTitle" -> pageAndHits.pageTitle,
               "pageType" -> pageAndHits.pageType.toInt,
+              "urlPath" -> pageAndHits.pagePath.value,
               "hits" -> JsArray(pageAndHits.hitsByScoreDesc.map((hit: SearchHit) => Json.obj(
                 "postId" -> hit.postId,
                 "postNr" -> hit.postNr,
@@ -98,16 +102,19 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def doSearchPubApiPost(): Action[JsValue] = AsyncPostJsonAction(  // [PUB_API]
           RateLimits.FullTextSearch, maxBytes = 1000) { request: JsonPostRequest =>
-    import request.{body, dao, user => requester}
+    import request.{body, dao}
 
     val pretty = (body \ "pretty").asOpt[Boolean].getOrElse(false)
     val searchQueryJson = (body \ "searchQuery").as[JsObject]
-    val q = (searchQueryJson \ "queryText").as[String]
+    val q = (searchQueryJson \ "freetext").as[String]
 
     val searchQuery = parseRawSearchQueryString(q, categorySlug => {
       // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
       dao.getCategoryBySlug(categorySlug).map(_.id)
     })
+
+    // Public API — run the search query as a not logged in user, None.
+    val requester: Option[User] = None
 
     doSearchPubApiImpl(searchQuery, dao, request, requester, pretty)
   }
@@ -120,21 +127,9 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // No <mark> tag class. Instead, just: " ... <mark>text hit</mark> ...",
     // that is, don't:  <mark class="...">  — so people cannot write code that
     // relies on those classes.
-    dao.fullTextSearch(searchQuery, None, requester, addMarkTagClasses = false) map {
-      searchResults: Seq[PageAndHits] =>
-        import play.api.libs.json._
-        OkApiJson(Json.obj(  // Typescript: SearchResultsApiResponse
-          "searchResults" -> searchResults.map((pageAndHits: PageAndHits) => {
-            Json.obj(
-              "pageTitle" -> pageAndHits.pageTitle,
-              "pageUrl" -> s"${request.origin}/-${pageAndHits.pageId}",
-              "postHits" -> JsArray(pageAndHits.hitsByScoreDesc.map((hit: SearchHit) => Json.obj(
-                "isPageTitle" -> JsBoolean(hit.postNr == PageParts.TitleNr),
-                "isPageBody" -> JsBoolean(hit.postNr == PageParts.BodyNr),
-                "htmlWithMarks" -> JsArray(hit.approvedTextWithHighligtsHtml map JsString)
-              ))))
-          })
-        ), pretty = pretty)
+    dao.fullTextSearch(searchQuery, anyRootPageId = None, requester,
+          addMarkTagClasses = false) map { searchResults: Seq[PageAndHits] =>
+      ThingsFoundJson.makePagesFoundSearchResponse(searchResults, dao, pretty)
     }
   }
 

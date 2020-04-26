@@ -328,7 +328,7 @@ ${ htmlToPaste ? htmlToPaste : `
       if (maxNumTimes === 'ExpBackoff') {
         oneWdioBrowser.pause(delayMs);
         delayMs = delayMs * 1.3
-        delayMs = Math.min(1200, delayMs);
+        delayMs = Math.min(2500, delayMs);
       }
     }
   },

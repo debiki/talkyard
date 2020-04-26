@@ -13,7 +13,7 @@ const logMessage = logAndDie.logMessage;
 
 let browser: TyE2eTestBrowser;
 
-describe('create-site-linkedin  @createsite @login @linkedin  TyT8KA9AW3', () => {
+describe('create-site-linkedin  @createsite @login @linkedin  TyT402KDTT5Z', () => {
 
   if (!settings.include3rdPartyDependentTests) {
     console.log("Skipping this spec; no 3rd party login credentials specified.");

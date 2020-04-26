@@ -460,8 +460,14 @@ class PlainApiActions(
           logger.debug(
             s"API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
           throw ex
+        case ex: play.api.libs.json.JsResultException =>
+          // A bug in Talkyard's JSON parsing, or the client sent bad JSON?
+          logger.warn(i"""s${site.id}: Bad JSON exception [TyEJSONEX]
+              |$requestUriAndIp""", ex)
+          throw ex
         case ex: Exception =>
-          logger.warn(s"API request unexpected exception [EsE4JYU0], $requestUriAndIp", ex)
+          logger.error(i"""s${site.id}: API request unexpected exception [TyEUNEXPEX],
+              |$requestUriAndIp""", ex)
           throw ex
       }
       finally {

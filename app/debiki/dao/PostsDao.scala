@@ -2141,8 +2141,13 @@ trait PostsDao {
     readOnlyTransaction(_.loadPostsReadStats(pageId))
 
 
+  def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId] =
+    readOnlyTransaction(_.loadAuthorIdsByPostId(postIds))
+
+
   def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post] =
     loadPost(pageId, postNr)
+
 
   def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =  // RENAME to loadPostByPageIdNr just above
     readOnlyTransaction(_.loadPost(pageId, postNr))

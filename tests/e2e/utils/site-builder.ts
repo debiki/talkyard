@@ -170,6 +170,13 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
     },
 
 
+    addMmember: function(username: string): Member {
+      const member = make.member(username, {});
+      (site as SiteData2).members.push(member);
+      return member;
+    },
+
+
     addMinions: function(ps: { oneWordName: string, howMany: number,
           mixedCaseUsernameStartWithUpper: boolean }): Member[] {
       const newMinions = [];

@@ -704,7 +704,17 @@ trait UserDao {
   }
 
 
+  def getParticipantsAsMap(userIds: Iterable[UserId]): Map[UserId, Participant] = {
+    getParticipantsImpl(userIds).groupByKeepOne(_.id)
+  }
+
+
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[Participant] = {
+    getParticipantsImpl(userIds).toVector
+  }
+
+
+  private def getParticipantsImpl(userIds: Iterable[UserId]): ArrayBuffer[Participant] = {
     // Somewhat dupl code [5KWE02]. Break out helper function getManyById[K, V](keys) ?
     val usersFound = ArrayBuffer[Participant]()
     val missingIds = ArrayBuffer[UserId]()
@@ -718,7 +728,7 @@ trait UserDao {
       val moreUsers = readOnlyTransaction(_.loadParticipants(missingIds))
       usersFound.appendAll(moreUsers)
     }
-    usersFound.toVector
+    usersFound
   }
 
 

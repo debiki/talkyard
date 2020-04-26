@@ -200,6 +200,9 @@ object EdHttp {
   def throwNotImplemented(errorCode: String, message: String = "") =
     throw ResultException(NotImplementedResult(errorCode, message))
 
+  def throwUnimplementedIf(test: Boolean, errorCode: String, message: => String = ""): Unit =
+    if (test) throwNotImplemented(errorCode, message)
+
   def throwServiceUnavailable(errorCode: String, message: String = "") =
     throw ResultException(ServiceUnavailableResult(errorCode, message))
 

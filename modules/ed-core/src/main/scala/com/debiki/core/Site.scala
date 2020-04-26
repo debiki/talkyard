@@ -173,6 +173,10 @@ object SiteStatus {
 }
 
 
+case class SiteIdOrigins(
+  siteId: SiteId, pubId: PublSiteId, siteOrigin: String, uploadsOrigin: String)
+
+
 /** A website.
   */
 case class Site(  // delete? Use only SiteInclDetails instead?

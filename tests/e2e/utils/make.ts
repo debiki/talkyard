@@ -283,6 +283,20 @@ const make = {
     };
   },
 
+  member: function(username: string, template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username,
+      fullName: undefined,
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: `e2e-test--${username}@example.com`,
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: 'cleartext:pub-mem020',
+      password: 'pub-mem020',
+    };
+  },
+
   minion: function(ps: { oneWordNameAndNumber: string,
           mixedCaseUsernameStartWithUpper: boolean }): Member {
     const nameLowercase = ps.oneWordNameAndNumber.toLowerCase();

@@ -3890,8 +3890,16 @@ export class TyE2eTestBrowser {
 
       securityTab: {
         switchGroupFromTo: (fromGroupName: string, toGroupName: string) => {
-          this.waitAndClickSelectorWithText('.s_PoP_Un button', fromGroupName);
-          this.waitAndClickSelectorWithText('.esDropModal_content .esExplDrp_entry', toGroupName);
+          this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
+          this.waitAndClickSelectorWithText(
+              '.esDropModal_content .esExplDrp_entry', toGroupName);
+        },
+
+        addGroup: (groupName: string) => {
+          this.waitAndClick('.s_CD_Sec_AddB');
+          this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
+          this.waitAndClickSelectorWithText(
+              '.esDropModal_content .esExplDrp_entry', groupName);
         },
 
         setMayCreate: (groupId: UserId, may: boolean) => {
@@ -3936,13 +3944,14 @@ export class TyE2eTestBrowser {
         this.rememberCurrentUrl();
         this.waitAndClick('#e2eUD_MessageB');
         this.waitForNewUrl();
+        /*  DO_AFTER having tested this in FF with Wdio 6.0: Remove this:
         // Wait until new-message title can be edited.
         // For some reason, FF is so fast, so typing the title now after new page load, fails
         // the first time  [6AKBR45] [E2EBUG] — but only in an invisible this.#br, and within
         // fractions of a second after page load, so hard to fix. As of 2019-01.
         utils.tryManyTimes("Clearing the title field", 2, () => {
           this.editor.editTitle('');
-        });
+        }); */
       },
 
       clickViewProfile: () => {
@@ -4618,6 +4627,11 @@ export class TyE2eTestBrowser {
         this.editHistoryDialog.waitUntilVisible();
       },
 
+      openAboutUserDialogForPostNr: (postNr: PostNr) => {
+        this.waitAndClick(`#post-${postNr} .esP_By`);
+        this.aboutUserDialog.waitForLoaded();
+      },
+
       clickMoreForPostNr: (postNr: PostNr) => {  // RENAME to openMoreDialogForPostNr()?
         this.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
       },
@@ -5234,7 +5248,7 @@ export class TyE2eTestBrowser {
           this.searchResultsPage.searchForWaitForResults(phrase);
           numFound = this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
-            assert(numFound === numResultsToFind);
+            tyAssert.eq(numFound, numResultsToFind);
             return true;
           }
           this.#br.pause(111);
@@ -6994,6 +7008,8 @@ export class TyE2eTestBrowser {
       },
     };
 
+    // REFACTOR  MOVE all these fns to the contexts where they can be called?
+    // so autocomplete can be used
     complex = {
       waitUntilLoggedIn: () => {
         this.#br.waitUntil(() => {
@@ -7267,7 +7283,18 @@ export class TyE2eTestBrowser {
       },
 
       sendMessageToPageAuthor: (messageTitle: string, messageText: string) => {
+        logMessage(`Opens page author's About dialog...`);
         this.pageTitle.openAboutAuthorDialog();
+        this.complex.__sendMessageImpl(messageTitle, messageText);
+      },
+
+      sendMessageToPostNrAuthor: (postNr: PostNr, messageTitle: string, messageText: string) => {
+        logMessage(`Opens post nr ${postNr} author's About dialog ...`);
+        this.topic.openAboutUserDialogForPostNr(postNr);
+        this.complex.__sendMessageImpl(messageTitle, messageText);
+      },
+
+      __sendMessageImpl: (messageTitle: string, messageText: string) => {
         logMessage(`Click Send Message...`);
         this.aboutUserDialog.clickSendMessage();
         logMessage(`Edit message title...`);

@@ -282,7 +282,7 @@ interface TestCategory {  // try to merge with Category in model.ts?
   slug: string;
   position?: number;
   description?: string;
-  newTopicTypes?: string;
+  newTopicTypes?: number[]; // currently ignored, server side [962MRYPG]
   defaultTopicType: number;
   createdAtMs: number;
   updatedAtMs: number;

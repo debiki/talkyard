@@ -83,8 +83,10 @@ trait SearchDao {
     // Add page meta and also sort hits by score, desc.
     val pageStuffAndHitsTotallySorted: Seq[PageAndHits] =
       pageIdsAndHitsSorted flatMap { case (pageId, hits) =>
-        pageStuffByPageId.get(pageId) map { pageStuff =>
-          PageAndHits(pageStuff, hitsByScoreDesc = hits.sortBy(-_.score))
+        pageStuffByPageId.get(pageId) flatMap { pageStuff =>
+          getPagePath2(pageStuff.pageId) map { path =>
+            PageAndHits(pageStuff, path, hitsByScoreDesc = hits.sortBy(-_.score))
+          }
         }
       }
 

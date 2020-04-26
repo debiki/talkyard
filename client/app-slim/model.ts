@@ -1392,6 +1392,7 @@ interface PageAndHits {
   pageId: PageId;
   pageTitle: string;
   pageType: PageRole;
+  urlPath: string;
   hits: SearchHit[];
 }
 

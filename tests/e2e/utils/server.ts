@@ -4,6 +4,7 @@
 
 import _ = require('lodash');
 import assert = require('assert');
+import tyAssert = require('./ty-assert');
 import utils = require('./utils');
 import c = require('../test-constants');
 import { logMessage, logWarning, logError, logServerRequest, die, dieIf } from './log-and-die';
@@ -485,15 +486,48 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 // ----- API v0
 
 
-function fullTextSearch(ps: { origin: string, queryText: string })
-      : SearchResultsApiResponse {
-  const url = ps.origin + '/-/v0/search';
-  const response = postOrDie(
-      url, { searchQuery: { queryText: ps.queryText }});
+const isApiErrorResponse = (response: ApiResponse<any>)
+    : response is ApiErrorResponse =>
+  (response as ApiErrorResponse).error !== undefined;
 
-  const result = response.bodyJson() as SearchResultsApiResponse;
-  assert.ok(result.searchResults);
-  assert.ok(_.isArray(result.searchResults));
+
+function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: string })
+      :  SearchQueryResults<T> {
+  const url = ps.origin + '/-/v0/search';
+  const requestBody: SearchQueryApiRequest = {
+    searchQuery: { freetext: ps.queryText },
+    pretty: true,
+  };
+  const responseObj = postOrDie(url, requestBody);
+  const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;
+  const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
+      ? responseBody
+      : die(`POST request failed to ${url} [TyE35RKDH4]`, showResponse(responseObj));
+
+  assert.ok(result.thingsFound);
+  assert.ok(_.isArray(result.thingsFound));
+
+  return result;
+}
+
+
+function listQuery<T extends ThingFound>(ps: {
+      origin: string, listQuery: ListQuery, sortOrder?: SortOrder })
+      :  ListQueryResults<T> {
+  const url = ps.origin + '/-/v0/list';
+  const requestBody: ListQueryApiRequest = {
+    listQuery: ps.listQuery,
+    pretty: true,
+  };
+  const responseObj = postOrDie(url, requestBody);
+  const responseBody = responseObj.bodyJson() as ListQueryApiResponse<T>;
+  const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
+      ? responseBody
+      : die(`POST request failed to ${url} [TyE0WKHLS6M]`, showResponse(responseObj));
+
+  assert.ok(result.thingsFound);
+  assert.ok(_.isArray(result.thingsFound));
+
   return result;
 }
 
@@ -572,6 +606,7 @@ export = {
   assertLastEmailMatches,
   apiV0: {
     fullTextSearch,
+    listQuery,
     upsertUserGetLoginSecret,
     upsertSimple,
     listUsers,
