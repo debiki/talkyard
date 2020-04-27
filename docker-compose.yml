@@ -60,7 +60,7 @@ services:
       - ./version.txt:/opt/talkyard/app/version.txt:ro
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       # This is for Linux:  (https://get-coursier.io/docs/cache.html#default-location)
-      - ${HOME}/.coursier/:/home/owner/.coursier/
+      #- ${HOME}/.coursier/:/home/owner/.coursier/
       #
       # This won't work:
       # - ${HOME}/.cache/.coursier/:/home/owner/.cache/.coursier/
@@ -84,8 +84,19 @@ services:
       #       [error] 	at lmcoursier.internal.shaded.coursier.cache.FileCache.$anonfun$download$32(FileCache.scala:508)
       #       [error] 	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
       # This works:
-      - ${HOME}/.cache/:/home/owner/.cache/
-      #
+      # Not any longer!
+      # - ${HOME}/.cache/:/home/owner/.cache/
+      # Now there's this error:
+      # [error] java.io.FileNotFoundException: /home/owner/.cache/coursier/v1/.structure.lock (Permission denied)
+      #       [error]   at java.io.FileOutputStream.open0(Native Method)
+      #       [error]   at java.io.FileOutputStream.open(FileOutputStream.java:270)
+      #       [error]   at java.io.FileOutputStream.<init>(FileOutputStream.java:213)
+      #       [error]   at java.io.FileOutputStream.<init>(FileOutputStream.java:162)
+      #       [error]   at lmcoursier.internal.shaded.coursier.paths.CachePath.withStructureLock(CachePath.java:132)
+      #       [error]   at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withStructureLock(CacheLocks.scala:22)
+      #       [error]   at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withLockOr(CacheLocks.scala:39)
+      #       [error]   at lmcoursier.internal.shaded.coursier.cache.FileCache.$anonfun$download$32(FileCache.scala:508)
+      #       [error]   at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
       #
       - ${HOME}/.ivy2/:/home/owner/.ivy2/
       - ${HOME}/.sbt/:/home/owner/.sbt/

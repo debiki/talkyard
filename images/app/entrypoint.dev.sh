@@ -22,8 +22,8 @@ fi
 
  # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
 mkdir -p /home/owner/
-mkdir -p /home/owner/.coursier/
-mkdir -p /home/owner/.cache/coursier/
+#mkdir -p /home/owner/.coursier/
+#mkdir -p /home/owner/.cache/coursier/
 
 
 if [ -z "$*" ] ; then
@@ -39,8 +39,8 @@ if [ $file_owner_id -ne 0 ] ; then
   # (/home/owner/.ivy2, .sbt and .coursier are mounted in docker-compose.yml [SBTHOME])
   chown -R owner /home/owner/.ivy2
   chown -R owner /home/owner/.sbt
-  chown -R owner /home/owner/.coursier
-  chown -R owner /home/owner/.cache/.coursier
+  #chown -R owner /home/owner/.coursier
+  #chown -R owner /home/owner/.cache/.coursier
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
   chown -R owner /opt/talkyard/uploads/
   chown -R owner /var/log/talkyard/

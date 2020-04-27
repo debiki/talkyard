@@ -44,6 +44,7 @@ lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
+ThisBuild / useCoursier := false
 
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
