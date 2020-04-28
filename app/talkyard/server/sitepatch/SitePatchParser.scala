@@ -1140,6 +1140,8 @@ case class SitePatchParser(context: EdContext) {
 
   def readCategoryOrBad(jsValue: JsValue, mustBePatch: Boolean, isE2eTest: Boolean)
         : Either[Category, CategoryPatch] Or ErrorMessage = {
+    import collection.immutable.Seq
+
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -1198,6 +1200,8 @@ case class SitePatchParser(context: EdContext) {
       }
       // ------------------------------------------------------------------------
 
+      val defaultTopicType = (jsObj \ "defaultTopicType").asOpt[Int] flatMap PageType.fromInt
+
       Good(Left(Category(
         id = theId,
         extImpId = extId,
@@ -1208,7 +1212,7 @@ case class SitePatchParser(context: EdContext) {
         slug = slug,
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
-        newTopicTypes = Nil, // fix later [readlater]
+        newTopicTypes = defaultTopicType.toVector, // [962MRYPG]
         unlistCategory = readOptBool(jsObj, "unlistCategory").getOrElse(false),
         unlistTopics = readOptBool(jsObj, "unlistTopics").getOrElse(false),
         includeInSummaries = includeInSummaries,

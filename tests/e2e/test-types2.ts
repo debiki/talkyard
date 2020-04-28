@@ -353,6 +353,7 @@ interface CategoryJustAdded {
   deletedAtMs?: number;
   aboutPageText?: string;
   aboutPage?: PageJustAdded;
+  defaultTopicType?: PageRole;
 }
 
 

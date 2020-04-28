@@ -3643,6 +3643,10 @@ export class TyE2eTestBrowser {
         this.waitAndClick('#e2eCreateSth');
       },
 
+      getCreateTopicButtonText: (): string => {
+        return this.waitAndGetVisibleText('#e2eCreateSth');
+      },
+
       assertNoCreateTopicButton: () => {
         // Wait until the button bar has loaded.
         this.waitForVisible('#e_ViewCatsB');

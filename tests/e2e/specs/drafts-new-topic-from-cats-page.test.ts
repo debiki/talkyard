@@ -36,6 +36,10 @@ describe("drafts-new-topic-from-cats-page.test.ts  TyT502RKD472", () => {
       members: undefined, // default = everyone
     });
 
+    // The create-topic button showld read "Ask a Question",
+    // because of this topic type.
+    forum.categories.categoryA.defaultTopicType = PageRole.Question;
+
     assert.refEq(builder.getSite(), forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
@@ -52,6 +56,14 @@ describe("drafts-new-topic-from-cats-page.test.ts  TyT502RKD472", () => {
   it("Maria logs in", () => {
     mariasBrowser.forumCategoryList.goHere(siteIdAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+  });
+
+  it("She's on the category list page (not in any specific category)", () => {
+    mariasBrowser.forumCategoryList.waitForCategories();
+  });
+
+  it("The create-topic button title is 'Ask a Question'", () => {
+    assert.eq(mariasBrowser.forumButtons.getCreateTopicButtonText(), "Ask a Question");
   });
 
   it("Maria starts typing a question", () => {
