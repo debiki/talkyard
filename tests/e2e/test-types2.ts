@@ -42,7 +42,8 @@ interface TestSettings {
   bail?: number;
   waitforTimeout: number;
   noTimeout?: boolean;
-  logLevel: WebDriver.WebDriverLogTypes;
+  // Should be: WebDriver.WebDriverLogTypes; — but missing in to-talkyard/.
+  logLevel: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
   debugEachStep: boolean;
   debugBefore: boolean;
   debugAfterwards: boolean;
@@ -129,7 +130,7 @@ const enum NewSiteOwnerType {
 
 interface SiteData2 {   // [3SD5PB7]
   meta: SiteMeta;
-  settings: TestSiteSettings,
+  settings: TestSiteSettings;
   apiSecrets: TestApiSecret[];
   guests: TestGuest[];
   groups: GroupInclDetails[];
@@ -164,7 +165,7 @@ interface SiteData2 {   // [3SD5PB7]
 
 
 interface TestSiteSettings {
-  companyFullName: string,
+  companyFullName: string;
   allowEmbeddingFrom?: string;
   // inviteOnly?: boolean;
   allowSignup?: boolean;
