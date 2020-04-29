@@ -71,7 +71,7 @@ function runE2eTest {
 
   # This hostname will avoid using the same hostname, for different tests at the same time,
   # if running many tests in parallel.
-  local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
+  local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl [5WAKEF02]
 
   # Later: Run only every $every test, starting at offset $offset.
   # Then, can run many tests in parallel. For example, run this script with
@@ -170,7 +170,7 @@ function runE2eTest {
         echo
         # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
         # (But first add a cname entry for -manual.)
-        cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
+        cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl [5WAKEF02]
         # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
         # root first su:s to another user. Check the --is-root command line flag instead.
         #if [ -z "$is_root" ]; then
@@ -282,6 +282,7 @@ function runAllE2eTests {
 
   $r s/wdio --only editor-onebox $args
   $r s/wdio --only view-edit-history.2browsers $args
+  $r s/wdio --only upload-images-and-files $args
 
   $r s/wdio --only direct-messages-notfs.3browsers $args
   $r s/wdio --only direct-messages-delete.2browsers $args
@@ -297,6 +298,7 @@ function runAllE2eTests {
   # Is named 'forum-' because there's another test with 'drafts-not-logged-in' in the name.
   $r s/wdio --only forum-drafts-not-logged-in.2browsers $args
   $r s/wdio --only drafts-new-topic.2browsers $args
+  $r s/wdio --only drafts-new-topic-from-cats-page $args
   $r s/wdio --only drafts-reply-edit-dir-msg.2browsers $args
   $r s/wdio --only drafts-chat-adv-ed.2browsers $args
   $r s/wdio --only drafts-delete $args
@@ -411,6 +413,8 @@ function runAllE2eTests {
 
   $r s/wdio --only group-permissions-similar-topics.2browsers $args
 
+  $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
+
 
   # API
   # ------------
@@ -420,8 +424,8 @@ function runAllE2eTests {
   $r s/wdio --only api-upsert-page-notfs.2browsers $args
   $r s/wdio --only api-upsert-posts.2browsers $args
 
-  $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
-
+  $r s/wdio --only api-search-full-text $args
+  $r s/wdio --only api-list-query-for-topics $args
 
   # wip:
   # settings-allow-local-signup

@@ -1284,7 +1284,14 @@ case class SitePatcher(globals: debiki.Globals) {
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
         tx.insertPost(post)
-        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
+        if (isTest && !siteData.isTestSiteIndexAnyway) {
+          // Don't index. Currently would cause Postgres errors:
+          //    Couldn't lock site -123 for updates
+          //    at debiki.dao.SiteDao$.synchronizeOnSiteId
+        }
+        else {
+          tx.indexPostsSoon(post) // [TyT036WKHW2]
+        }
       }
 
       siteData.postActions foreach { postAction =>

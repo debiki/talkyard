@@ -26,11 +26,11 @@ import debiki.dao.{LoginNotFoundException, SiteDao}
 import ed.server._
 import ed.server.security._
 import java.{util => ju}
-import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import EdSecurity.AvoidCookiesHeaderName
+import talkyard.server.TyLogging
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
@@ -39,7 +39,7 @@ class PlainApiActions(
   val safeActions: SafeActions,
   val globals: Globals,
   val security: EdSecurity,
-  val rateLimiter: RateLimiter) {
+  val rateLimiter: RateLimiter) extends TyLogging {
 
   import EdHttp._
   import security.DiscardingSecureCookie
@@ -437,7 +437,7 @@ class PlainApiActions(
 
       // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
       val requestUriAndIp = s"site $site, ip ${apiRequest.ip}: ${apiRequest.uri}"
-      //p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
+      //logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
 
       import apiRequest.tracerSpan
@@ -457,11 +457,17 @@ class PlainApiActions(
       catch {
         case ex: ResultException =>
           // This is fine, probably just a 403 Forbidden exception or 404 Not Found, whatever.
-          p.Logger.debug(
+          logger.debug(
             s"API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
           throw ex
+        case ex: play.api.libs.json.JsResultException =>
+          // A bug in Talkyard's JSON parsing, or the client sent bad JSON?
+          logger.warn(i"""s${site.id}: Bad JSON exception [TyEJSONEX]
+              |$requestUriAndIp""", ex)
+          throw ex
         case ex: Exception =>
-          p.Logger.warn(s"API request unexpected exception [EsE4JYU0], $requestUriAndIp", ex)
+          logger.error(i"""s${site.id}: API request unexpected exception [TyEUNEXPEX],
+              |$requestUriAndIp""", ex)
           throw ex
       }
       finally {
@@ -470,10 +476,10 @@ class PlainApiActions(
 
       result onComplete {
         case Success(_) =>
-          //p.Logger.debug(
+          //logger.debug(
             //s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
         case Failure(exception) =>
-          p.Logger.debug(
+          logger.debug(
             s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
       }
 

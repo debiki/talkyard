@@ -372,25 +372,25 @@ function makeTagLabelValues(tagsStuff: TagsStuff) {
 function SearchResultListItem(props: { pageAndHits: PageAndHits, key?: string | number }) {
   let pageAndHits: PageAndHits = props.pageAndHits;
   let hits = pageAndHits.hits.map(hit =>
-      SearchResultHit({ hit: hit, pageId: pageAndHits.pageId, key: hit.postNr }));
+      SearchResultHit({ hit: hit, urlPath: pageAndHits.urlPath, key: hit.postNr }));
   return (
     r.li({ className: 's_SR', key: props.key },
       r.h3({ className: 'esSERP_Hit_PageTitle' },
-        r.a({ href: `/-${pageAndHits.pageId}` }, pageAndHits.pageTitle)),
+        r.a({ href: pageAndHits.urlPath }, pageAndHits.pageTitle)),
       r.ol({}, hits)));
 }
 
 
 
-function SearchResultHit(props: { hit: any, pageId: PageId, key?: string | number }) {
+function SearchResultHit(props: { hit: any, urlPath: string, key?: string | number }) {
   let hit: SearchHit = props.hit;
-  let pageId = props.pageId;
   // Any html stuff was escaped here: [7YK24W].
-  let safeHtml = hit.approvedTextWithHighligtsHtml.join(" <b>...</b> ");
+  let safeHtml = hit.approvedTextWithHighlightsHtml.join(" <b>...</b> ");
   return (
     r.li({ className: 's_SR_Hit', key: props.key },
       r.span({ className: 'esSERP_Hit_In' },
-        "In ", r.a({ href: `/-${pageId}#post-${hit.postNr}`, className: 'esSERP_Hit_In_Where' },
+        "In ", r.a({ href: `${props.urlPath}#post-${hit.postNr}`,   // I18N
+                  className: 'esSERP_Hit_In_Where' },
           foundWhere(hit)), ':'),
       r.p({ className: 'esSERP_Hit_Text',
           dangerouslySetInnerHTML: { __html: safeHtml }})));

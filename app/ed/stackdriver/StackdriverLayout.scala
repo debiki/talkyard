@@ -17,22 +17,14 @@
 
 package ed.stackdriver
 
-import ch.qos.logback.classic.spi.{ILoggingEvent, IThrowableProxy, ThrowableProxy}
+import ch.qos.logback.classic.spi.{ILoggingEvent, ThrowableProxy}
 import ch.qos.logback.core.{CoreConstants, LayoutBase}
-import java.time.{ZoneOffset, ZonedDateTime}
-import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAccessor
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.libs.json._
+import com.debiki.core.Prelude.toIso8601T
 
 
 class StackdriverLayout extends LayoutBase[ILoggingEvent] {
-
-  val timeFormatter = DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC)
-
-  def toIso8601(millis: Long): String = {
-    timeFormatter.format(java.time.Instant.ofEpochMilli(millis))
-  }
 
   /** Google StackDriver wants:
     * (see: https://cloud.google.com/error-reporting/docs/formatting-error-messages )
@@ -63,7 +55,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
     *    }
     *  }
     */
-  override def doLayout(event: ILoggingEvent) = {
+  override def doLayout(event: ILoggingEvent): String = {
 
     /*
     var totalJson = Json.obj(
@@ -135,7 +127,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
     // Expensive. Not sure if can be null or empty?
     val callerData = event.getCallerData
     val reportLocationJson =
-      if ((callerData ne null) && callerData.length >= 1) {
+      if ((callerData ne null) && callerData.nonEmpty) {
         val stackFrame = callerData(0)
         Json.obj(
           "filePath" -> stackFrame.getFileName,
@@ -146,7 +138,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
       else JsNull
 
     var json = makeKvsJson(event)
-
+    json += "eventTime" -> JsString(toIso8601T(System.currentTimeMillis()))
     json += "message" -> JsString(message)
     json += "severity" -> JsString(event.getLevel.levelStr)
     json += "serviceContext" -> Json.obj(

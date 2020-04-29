@@ -138,10 +138,11 @@ describe("emb-cmts-scroll-load-post  TyT603MRKH592S", () => {
 
   it("Maria arrives, and Like-upvotes #comment-9 = #post-10", () => {
     mariasBrowser.topic.toggleLikeVote(10, { logInAs: maria });
-
   });
 
   it("... and its 2rd = middle reply,  #comment-11 = #post-12", () => {
+    // This click can fail, maybe because scrolls then clicks? So toggleLikeVote()
+    // tries more than once. [E2ECLICK03962]
     mariasBrowser.topic.toggleLikeVote(12);
   });
 

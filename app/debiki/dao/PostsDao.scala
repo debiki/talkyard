@@ -929,7 +929,7 @@ trait PostsDao {
           // Review task should already have been created.
           val tasks = tx.loadReviewTasksAboutPostIds(Seq(editedPost.id))
           if (tasks.isEmpty) {
-            p.Logger.warn(s"s$siteId: Post ${editedPost.id} slips past review? [TyE4WKA02]")
+            logger.warn(s"s$siteId: Post ${editedPost.id} slips past review? [TyE4WKA02]")
           }
           None
         }
@@ -1049,7 +1049,7 @@ trait PostsDao {
     uploadRefsRemoved foreach { hashPathSuffix =>
       val gone = tx.deleteUploadedFileReference(postToEdit.id, hashPathSuffix)
       if (!gone) {
-        p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
+        logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
             ${postToEdit.id} [TyE7UJRH03M]""")
       }
     }
@@ -2141,8 +2141,13 @@ trait PostsDao {
     readOnlyTransaction(_.loadPostsReadStats(pageId))
 
 
+  def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId] =
+    readOnlyTransaction(_.loadAuthorIdsByPostId(postIds))
+
+
   def loadPostByPageIdNr(pageId: PageId, postNr: PostNr): Option[Post] =
     loadPost(pageId, postNr)
+
 
   def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =  // RENAME to loadPostByPageIdNr just above
     readOnlyTransaction(_.loadPost(pageId, postNr))

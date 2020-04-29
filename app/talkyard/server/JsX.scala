@@ -648,7 +648,7 @@ object JsX {
   def DateEpochOrNull(value: Option[ju.Date]): JsValue =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
 
-  def date(value: ju.Date) =
+  private def date(value: ju.Date) =
     JsString(toIso8601NoSecondsNoT(value))
 
   def dateOrNull(value: Option[ju.Date]): JsValue = value match {

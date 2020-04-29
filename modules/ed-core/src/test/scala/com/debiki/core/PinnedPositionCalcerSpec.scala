@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.debiki.core
+//package com.debiki.core
 
 import org.scalatest._
 import java.{util => ju}

@@ -518,7 +518,7 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
         updatePermissions(allPerms2);
       }}, "Remove");
 
-  const peopleClass = forGroup ? 's_PoP-Grp-' + forGroup.id : '';
+  const peopleClass = forGroup ? 's_PoP-Grp-' + forGroup.id : 's_PoP-Select-Grp';
 
   return r.li({ className: 's_PoP ' + peopleClass, key: thisPerm.id },
     r.div({ className: 's_PoP_Expl' }, "These people: "),
@@ -628,8 +628,13 @@ const SelectGroupDropdown = createClassAndFactory({
 
     const title = selectedGroup ? nameOf(selectedGroup) : "Select group ...";
 
+    // Make the Select Group button stand out, until one has selected a group
+    // — so one notices one is to select a group.
+    const whichButton = selectedGroup ? Button : PrimaryButton;
+
     const dropdownButton =
-      Button({ onClick: this.open, ref: 'btn' }, title + ' ', r.span({ className: 'caret' }));
+      whichButton({ onClick: this.open, ref: 'btn', className: 'e_SelGrpB' },
+          title + ' ', r.span({ className: 'caret' }));
 
     // Sort by id, so will always appear in the same order, and also, so built-in groups
     // like "Everyone" appear first (it's typically interesting to know what permissions

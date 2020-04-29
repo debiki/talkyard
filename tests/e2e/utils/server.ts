@@ -4,6 +4,7 @@
 
 import _ = require('lodash');
 import assert = require('assert');
+import tyAssert = require('./ty-assert');
 import utils = require('./utils');
 import c = require('../test-constants');
 import { logMessage, logWarning, logError, logServerRequest, die, dieIf } from './log-and-die';
@@ -97,7 +98,7 @@ function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: strin
     curlHeadersTexts.push(`-H '${key}: ${value}'`);
   });
   let curlDataText = JSON.stringify(data).replace("'", "'\\''");
-  if (curlDataText.length > 1000 && settings.logLevel != 'verbose') {
+  if (curlDataText.length > 1000 && settings.logLevel != 'trace') {
     // This is a bit much json, makes the logs annoyingly verbose. So truncate. Won't be
     // copy-pasteable.
     curlDataText = curlDataText.substr(0, 1000) + '\n       ...';
@@ -208,7 +209,7 @@ function showResponseBodyJson(body) {
 }
 
 
-function importRealSiteData(siteData: SiteData): IdAddress {
+function importRealSiteData(siteData: SiteData2): IdAddress {
   // We're importing test data, to a "real" endpoint that works also
   // in Prod mode. [06KWFNDS2]
   const url = settings.mainSiteOrigin + '/-/import-site-json?deleteOldSite=true';
@@ -459,7 +460,7 @@ function assertLastEmailMatches(siteId: SiteId, emailAddress: string,
 
 
 function lastEmailMatches(siteId: SiteId, emailAddress: string,
-      textOrTextsToMatch: string | string[], browser, assertMatches?: true): string | false {
+      textOrTextsToMatch: string | string[], browser?, assertMatches?: true): string | false {
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
@@ -483,6 +484,53 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 
 
 // ----- API v0
+
+
+const isApiErrorResponse = (response: ApiResponse<any>)
+    : response is ApiErrorResponse =>
+  (response as ApiErrorResponse).error !== undefined;
+
+
+function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: string })
+      :  SearchQueryResults<T> {
+  const url = ps.origin + '/-/v0/search';
+  const requestBody: SearchQueryApiRequest = {
+    searchQuery: { freetext: ps.queryText },
+    pretty: true,
+  };
+  const responseObj = postOrDie(url, requestBody);
+  const responseBody = responseObj.bodyJson() as SearchQueryApiResponse<T>;
+  const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
+      ? responseBody
+      : die(`POST request failed to ${url} [TyE35RKDH4]`, showResponse(responseObj));
+
+  assert.ok(result.thingsFound);
+  assert.ok(_.isArray(result.thingsFound));
+
+  return result;
+}
+
+
+function listQuery<T extends ThingFound>(ps: {
+      origin: string, listQuery: ListQuery, sortOrder?: SortOrder })
+      :  ListQueryResults<T> {
+  const url = ps.origin + '/-/v0/list';
+  const requestBody: ListQueryApiRequest = {
+    listQuery: ps.listQuery,
+    pretty: true,
+  };
+  const responseObj = postOrDie(url, requestBody);
+  const responseBody = responseObj.bodyJson() as ListQueryApiResponse<T>;
+  const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
+      ? responseBody
+      : die(`POST request failed to ${url} [TyE0WKHLS6M]`, showResponse(responseObj));
+
+  assert.ok(result.thingsFound);
+  assert.ok(_.isArray(result.thingsFound));
+
+  return result;
+}
+
 
 function upsertUserGetLoginSecret(ps: { origin: string, apiRequesterId?: UserId, apiSecret: string,
       externalUser: ExternalUser, fail?: boolean }): string {
@@ -557,6 +605,8 @@ export = {
   lastEmailMatches,
   assertLastEmailMatches,
   apiV0: {
+    fullTextSearch,
+    listQuery,
     upsertUserGetLoginSecret,
     upsertSimple,
     listUsers,

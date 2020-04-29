@@ -107,7 +107,8 @@ html.js:not(.dw-react-started)
 .esForum_navLink,
 .esForum_catsDrop,
 .esForum_filterBtn,
-.esF_BB_CreateBtn
+.s_F_BB_NewCatB,
+.esF_BB_NewTpcB
   font-size: 15px;
 
 .esF_BB_PageTitle
@@ -196,9 +197,17 @@ html.js:not(.dw-react-started)
     transform: scale(1.1, 1.1);
     margin-left: 7px;
 
-.esF_BB_CreateBtn
+// Could replace some more 7px elsewhere with this too.
+$forumButtonPaddingBottom = 7px;
+
+.s_F_BB_NewCatB,
+.esF_BB_NewTpcB
   padding-top: 7px;
-  padding-bottom: 7px;
+  padding-bottom: $forumButtonPaddingBottom;
+
+.s_F_BB_NewCatB
+  margin-right: 9px;    // there's a New Topic button to the right
+  padding-bottom: $forumButtonPaddingBottom - 1;  // because 1px border
 
 .esForum_topicsCatsHelp
   max-width: 500px !important;

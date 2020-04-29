@@ -173,7 +173,7 @@ trait ReviewsDao {
 
       task.postNr foreach { postNr =>
         val post = tx.loadPost(task.postId getOrDie "EsE5YGK02") getOrElse {
-          p.Logger.warn(s"s$siteId: Review task $taskId: Post ${task.postId} gone, why? [TyE5KQIBQ2]")
+          logger.warn(s"s$siteId: Review task $taskId: Post ${task.postId} gone, why? [TyE5KQIBQ2]")
           return
         }
 

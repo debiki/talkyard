@@ -7,6 +7,7 @@ declare function require(...whatever: any[]): any;
 
 import _ = require('lodash');
 import c = require('../test-constants');
+import utils = require('../utils/utils');
 
 const DefaultCreatedAtMs = 1449198824000;
 
@@ -22,9 +23,18 @@ function getAndBumpNextUserId() {
   return nextUserId - 1;
 }
 
-const localHostname = settings.localHostname || 'e2e-test-site';
 
-const emptySite: SiteData = {
+function makeEmptySite(ps: { okInitEarly?: boolean } = {}): SiteData {
+  log.dieAndExitIf(!(global as any).wdioBeforeHookHasRun && !ps.okInitEarly,
+      "Calling makeEmptySite() before the wdio.conf.ts before() hook has run — " +
+      "that means this spec hasn't been inited properly yet; variables might be " +
+      "`undefined` [TyE8503SKDS46]");
+
+  // Don't call getLocalHostname() too early (outside this function), because
+  // it accesses global.__thisSpecLocalHostname which would be undefined.
+  const localHostname = utils.getLocalHostname();
+
+  return {
   meta: {
     id: undefined,
     name: localHostname + '-' + Date.now(),
@@ -52,14 +62,14 @@ const emptySite: SiteData = {
   uploads: [],
   auditLog: [],
   reviewTasks: [],
-};
+}};
 
 
 const make = {
   defaultCreatedAtMs: DefaultCreatedAtMs,
 
-  emptySiteOwnedByOwen: function(): SiteData {
-    const site = _.cloneDeep(emptySite);
+  emptySiteOwnedByOwen: function(ps: { okInitEarly?: boolean } = {}): SiteData {
+    const site = _.cloneDeep(makeEmptySite(ps));
     const owner = make.memberOwenOwner();
     site.members.push(owner);
     site.meta.creatorEmailAddress = owner.emailAddress;
@@ -270,6 +280,20 @@ const make = {
       // so will be different from Maja's password.
       passwordHash: "cleartext:publ-ml020",
       password: "publ-ml020",
+    };
+  },
+
+  member: function(username: string, template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username,
+      fullName: undefined,
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: `e2e-test--${username}@example.com`,
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: 'cleartext:pub-mem020',
+      password: 'pub-mem020',
     };
   },
 

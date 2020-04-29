@@ -3,7 +3,7 @@ Making *.localhost addresses work
 
 Chrome seems to handle `*.localhost` addresses in a good way, i.e. it sends the HTTP request
 to 127.0.0.1. However, for other browsers, and for test suites that send API requests
-outside the browser, you need to make `*.localohst` addresses work (resolve to localhost).
+outside the browser, you need to make `*.localhost` addresses work (resolve to localhost).
 
 Why? Because the tests generates website addresses like: `e2e-test-site-random_id.localhost`.
 

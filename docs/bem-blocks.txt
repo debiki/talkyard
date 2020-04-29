@@ -31,6 +31,7 @@ Pw = password, e.g. NewPwI
 St = status or state
 R = table row
 U  = user
+FI = file input
 G  = group
 Pp = participant
 P, Pg = page

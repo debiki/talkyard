@@ -1833,7 +1833,21 @@ function SomethingElseInstructions(props: BlogInstrProps) {
         ", paste the following HTML in a blog page template, or web page, " +
         "where you want comments to appear:"),
       BlogCommentsHtmlTags(props),
-      ThenRestart());
+      ThenRestart(),
+      r.h3({}, "Moving blog posts to new URLs"),
+      r.p({},
+        "You can set the ", r.code({}, "data-discussion-id"), " attribute " +
+        "(see the HTML code snippet above) to a per blog post ID, " +
+        "to tell Talkyard which blog post is being shown, " +
+        "regardless of the URL in the browser address bar. " +
+        "This would be an ID provided by ", r.i({}, "you"), " — e.g. a never changing " +
+        "database ID for the blog post page."),
+      r.p({},
+        "Later, if you move the blog post to a new URL, then, Talkyard " +
+        "will know it's the same blog post — and can show the same comments. " +
+        "Otherwise, Talkyard would think the blog post, when at the new URL, " +
+        "is a different blog post, and won't load the comments — " +
+        "the comments would seem to be gone."));
 }
 
 

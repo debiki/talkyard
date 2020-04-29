@@ -1392,6 +1392,7 @@ interface PageAndHits {
   pageId: PageId;
   pageTitle: string;
   pageType: PageRole;
+  urlPath: string;
   hits: SearchHit[];
 }
 
@@ -1400,7 +1401,7 @@ interface SearchHit {
   postId: PostId;
   postNr: PostNr;
   approvedRevisionNr: number;
-  approvedTextWithHighligtsHtml: string[];
+  approvedTextWithHighlightsHtml: string[];
   currentRevisionNr: number;
 }
 

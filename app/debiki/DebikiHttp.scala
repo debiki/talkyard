@@ -200,6 +200,9 @@ object EdHttp {
   def throwNotImplemented(errorCode: String, message: String = "") =
     throw ResultException(NotImplementedResult(errorCode, message))
 
+  def throwUnimplementedIf(test: Boolean, errorCode: String, message: => String = ""): Unit =
+    if (test) throwNotImplemented(errorCode, message)
+
   def throwServiceUnavailable(errorCode: String, message: String = "") =
     throw ResultException(ServiceUnavailableResult(errorCode, message))
 
@@ -218,7 +221,7 @@ object EdHttp {
     throw ResultException(EntityTooLargeResult(errCode, message))
 
   def throwTooManyRequests(message: String): Nothing =
-    throw ResultException(R.TooManyRequest(message))
+    throw ResultException(R.TooManyRequests(message))
 
   /** Happens e.g. if the user attempts to upvote his/her own comment or
     * vote twice on another comment.

@@ -176,14 +176,17 @@ trait CategoriesDao {
     getCategoryAndRoot(categoryId).map(_._1)
   }
 
-
   def getCategoryByRef(ref: Ref): Option[Category] Or ErrorMessage = {
+    parseRef(ref, allowParticipantRef = false) map getCategoryByParsedRef
+  }
+
+  def getCategoryByParsedRef(parsedRef: ParsedRef): Option[Category] = {
     val cats = getAllCategories()
-    parseRef(ref, allowParticipantRef = false) map {
+    parsedRef match {
       case ParsedRef.ExternalId(extId) =>
         cats.find(_.extImpId is extId)
       case ParsedRef.TalkyardId(tyId) =>
-        val catId = tyId.toIntOption getOrElse { return Good(None) }
+        val catId = tyId.toIntOption getOrElse { return None }
         cats.find(_.id == catId)
     }
   }
@@ -347,6 +350,8 @@ trait CategoriesDao {
   def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery,
         includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, limit: Int)
         : Seq[PagePathAndMeta] = {
+    COULD_OPTIMIZE // could cache
+
     // COULD instead of PagePathAndMeta use some "ListedPage" class that also includes  [7IKA2V]
     // the popularity score, + doesn't include stuff not needed to render forum topics etc.
     SECURITY; TESTS_MISSING  // securified

@@ -418,16 +418,10 @@ const ForumButtons = createComponent({
     });
   },
 
-  createTopic: function() {
+  createTopic: function(category: Category) {
     const anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       if (this.isGone) return;
-      let category: Category = this.props.activeCategory;
-      if (category.isForumItself) {
-        category = store_findTheDefaultCategory(this.props.store);
-        dieIf(!category,
-          "There is no default category, so I don't know where to place this new topic. [TyE0DEFCAT]");
-      }
       const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
         debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
@@ -500,12 +494,6 @@ const ForumButtons = createComponent({
     // Or would a Back btn somewhere be better?
     const topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, t.fb.TopicList, 'e2eViewTopicsB', 'esForum_navLink');
-
-    // If the All Categories dummy category is active, that's not where new topics
-    // get placed. Instead they get placed in a default category. Find out which
-    // one that is, so can show the correct create topic button title (the title
-    // depends on the default topic type in the default category).
-    let activeOrDefaultCategory: Category = activeCategory;
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = this.props.sortOrderRoute;
@@ -601,17 +589,34 @@ const ForumButtons = createComponent({
               disabled: true, title: "Not completely implemented" }));
     */
 
+    // If the All Categories dummy category is active, that's not where new topics
+    // get placed. Instead they get placed in a default category. Find out which
+    // one that is, so can show the correct create topic button title (depends
+    // on the default topic type in the default category).
+    const activeOrDefCat: Category | U =
+        activeCategory.isForumItself ?
+            store_findTheDefaultCategory(store) : activeCategory;
+    // @ifdef DEBUG
+    // But this can happen, if the default category is private — then it won't be
+    // included in the json from the server. How handle that, UX wise? [TyT0DEFCAT]
+    //dieIf(!isServerSide() && !activeOrDefCat,
+    //    "No active or default category [TyE0DEFCAT]");
+    // @endif
+
     let createTopicBtn;
-    const mayCreateTopics = store_mayICreateTopics(store, activeCategory);
-    if (!showsCategoryTree && mayCreateTopics) {
-      createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
-          className: 'esF_BB_CreateBtn'},
-        createTopicBtnTitle(activeOrDefaultCategory));
+    const mayCreateTopics = store_mayICreateTopics(store, activeOrDefCat);
+    if (mayCreateTopics && activeOrDefCat) {
+      // TESTS_MISSING iff showsCategoryTree.
+      createTopicBtn = PrimaryButton({
+          onClick: () => this.createTopic(activeOrDefCat), id: 'e2eCreateSth',
+          className: 'esF_BB_NewTpcB'},
+        createTopicBtnTitle(activeOrDefCat));
     }
 
     let createCategoryBtn;
     if (showsCategoryTree && me.isAdmin) {
-      createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
+      createCategoryBtn = Button({ onClick: this.createCategory, id: 'e2eCreateCategoryB',
+         className: 's_F_BB_NewCatB' },
         t.fb.CreateCat);
     }
 

@@ -78,8 +78,8 @@ input { min-width: 11em; }
     case "prevent-resub" => { @preventResubForm }
     case "resub-prevented" => { @resubsPreventedInfo }
     case _ => {
-      play.api.Logger.error("Bad doWhat: "+ doWhat)
-      <p>Internal server error</p>
+      talkyard.server.TyLogger("unsubscribePage").error("Bad doWhat: "+ doWhat + " [TyEBADDOWHAT]")
+      <p>Internal server error [TyEBADDOWHAT]</p>
     }
   }
 </body>

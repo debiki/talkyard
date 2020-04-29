@@ -7,7 +7,7 @@ import utils = require('../utils/utils');
 import { TyE2eTestBrowser } from '../utils/pages-for';
 import settings = require('../utils/settings');
 import make = require('../utils/make');
-import logAndDie = require('../utils/log-and-die');
+import { logMessage } from '../utils/log-and-die';
 
 
 
@@ -44,9 +44,10 @@ describe("create site, follow the admin guide  TyT62RJHLPK4", function() {
   });
 
   it("Owen creates a site", function() {
-    var localHostname = settings.localHostname ||
-                        settings.testLocalHostnamePrefix + 'create-site-' + testId;
-    var newSiteData = {
+    const localHostname = utils.getLocalHostname('create-site-' + testId);
+    logMessage(`Generated local hostname: ${localHostname}`);
+
+    const newSiteData = {
       testId: testId,
       localHostname: localHostname,
       name: localHostname,

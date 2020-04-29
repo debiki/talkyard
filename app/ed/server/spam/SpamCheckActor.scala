@@ -26,6 +26,7 @@ import play.{api => p}
 import scala.concurrent.duration._
 import debiki.Globals
 import scala.concurrent.{ExecutionContext, Future}
+import talkyard.server.TyLogger
 
 
 
@@ -38,7 +39,7 @@ object SpamCheckActor {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new SpamCheckActor(postBatchSize, systemDao)), name = s"SpamCheckActor")
-    actorSystem.scheduler.schedule(
+    actorSystem.scheduler.scheduleWithFixedDelay(
         initialDelay = intervalSeconds seconds, intervalSeconds seconds, actorRef, CheckForSpam)
     actorRef
   }
@@ -56,6 +57,8 @@ case class ClearCheckingSpamNowCache(siteIds: Set[SiteId])
 class SpamCheckActor(
   private val batchSize: Int,
   private val systemDao: SystemDao) extends Actor {
+
+  private val logger = TyLogger("SpamCheckActor")
 
   // Here we remember which spam check tasks we've started checking — so we won't
   // re-check the same things many times (if a request is still in-flight, when
@@ -79,7 +82,7 @@ class SpamCheckActor(
       }
       catch {
         case ex: Exception =>
-          p.Logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
+          logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
       }
     case ClearCheckingSpamNowCache(siteIds) =>
       COULD_OPTIMIZE // remove items only for siteIds — no need to clear
@@ -90,7 +93,7 @@ class SpamCheckActor(
 
   private def checkMorePostsForSpam() {
     val spamCheckTasks = systemDao.loadStuffToSpamCheck(limit = batchSize)
-    p.Logger.debug(s"Checking ${spamCheckTasks.length} spam check tasks ... [TyM70295MA4]")
+    logger.debug(s"Checking ${spamCheckTasks.length} spam check tasks ... [TyM70295MA4]")
 
     val manyFutureResults: Seq[(SpamCheckTask, Future[SpamCheckResults])] = spamCheckTasks flatMap {
         task =>
@@ -116,7 +119,7 @@ class SpamCheckActor(
         case throwable: Throwable =>
           // Noop. We'll retry later after the checkingNowCache item has expired. [205FKPJ096]
           // (Or could do exponential backoff? Skip this spam check forever after X attempts?)
-          p.Logger.warn(
+          logger.warn(
               s"Error executing this spam check task: $spamCheckTask [TyE306MWDNF2]", throwable)
       }) (execCtx)
     } (execCtx)
@@ -132,7 +135,7 @@ class SpamCheckActor(
       }
       catch {
         case ex: Exception =>
-          p.Logger.error(
+          logger.error(
               s"Error dealing with spam, post: ${spamCheckTask.postToSpamCheckShort} [EdE7GSB4]", ex)
       }
   }

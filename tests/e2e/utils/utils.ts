@@ -3,10 +3,10 @@
 import * as _ from 'lodash';
 import * as assert from './ty-assert';
 import { logMessage, logUnusual, dieIf } from './log-and-die';
+import settings = require('./settings');
 import c = require('../test-constants');
 
 
-declare const settings;
 
 function firstDefinedOf(x, y, z?) {
   return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
@@ -28,6 +28,13 @@ const utils = {
 
   generateTestId: function(): string {
     return Date.now().toString().slice(3, 10);
+  },
+
+  getLocalHostname(anyDefaultNameExclTestPrefix?: string): string {
+    return settings.localHostname || (
+        anyDefaultNameExclTestPrefix
+            ? settings.testLocalHostnamePrefix + anyDefaultNameExclTestPrefix
+            : (global as any).__thisSpecLocalHostname);
   },
 
   makeSiteOrigin: function(localHostname: string): string {
@@ -300,7 +307,9 @@ ${ htmlToPaste ? htmlToPaste : `
   },
 
 
-  tryUntilTrue: function<R>(what, maxNumTimes, fn: () => boolean) {
+  tryUntilTrue: function<R>(what: string, maxNumTimes: number | 'ExpBackoff', fn: () => boolean) {
+    let delayMs = 300;
+
     for (let retryCount = 0; true; ++retryCount) {
       if (retryCount === maxNumTimes)
         throw Error(`Tried ${maxNumTimes} times but failed:  ${what}`)
@@ -309,9 +318,17 @@ ${ htmlToPaste ? htmlToPaste : `
         const done = fn();
         if (done)
           return;
+
+        logUnusual(`Retrying: ${what}  [TyME2ERETRYA]`);
       }
       catch (error) {
-        logUnusual(`RETRYING: ${what}  [TyME2ERETRY], because error: ${error.toString()}`);
+        logUnusual(`Retrying: ${what}  [TyME2ERETRYB], because error: ${error.toString()}`);
+      }
+
+      if (maxNumTimes === 'ExpBackoff') {
+        oneWdioBrowser.pause(delayMs);
+        delayMs = delayMs * 1.3
+        delayMs = Math.min(2500, delayMs);
       }
     }
   },

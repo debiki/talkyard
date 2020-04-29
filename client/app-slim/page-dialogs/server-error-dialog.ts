@@ -154,13 +154,13 @@ const ServerErrorDialog = createComponent({
           r.div({ className: 'modal-dialog dw-server-error' },
             r.div({ className: 'modal-content', role: 'document' },
               r.div({ className: 'modal-header' },
-                r.h4({ className: 'modal-title' }, title)),
+                r.h4({ className: 's_SED_Ttl modal-title' }, title)),
               r.div({ className: 'modal-body' },
-                r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
+                r.div({ className: 's_SED_Msg' }, message)),
               r.div({ className: 'modal-footer' },
                 this.state.mayClose === false ? null :
                   PrimaryButton({ onClick: this.close, className: 'e_SED_CloseB' },
-                    "Close")))))));
+                    t.Close)))))));
   }
 });
 

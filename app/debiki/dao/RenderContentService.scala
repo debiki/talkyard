@@ -21,11 +21,11 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals, Nashorn}
-import play.{api => p}
 import scala.concurrent.duration._
 import RenderContentService._
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.concurrent.ExecutionContext
+import talkyard.server.TyLogger
 
 
 /** Renders page contents using React.js and Nashorn. Is done in background threads
@@ -55,6 +55,8 @@ class RenderContentActor(
   val globals: Globals,
   val nashorn: Nashorn) extends Actor {
 
+  private val logger = TyLogger("RenderContentActor")
+
   def execCtx: ExecutionContext = globals.executionContext
 
   var avgMillisToBackgroundRender: Double = 50
@@ -79,10 +81,10 @@ class RenderContentActor(
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-          p.Logger.warn(o"""Cannot render a got-message-about page,
+          logger.warn(o"""Cannot render a got-message-about page,
                database connection closed [DwE4YKF2]""")
         case throwable: Throwable =>
-          p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
+          logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
       }
     case RegenerateStaleHtml =>
       val nanosBeore = System.nanoTime()
@@ -112,14 +114,14 @@ class RenderContentActor(
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-          p.Logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
+          logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
         case throwable: Throwable =>
           if (!globals.isOrWasTest)
-            p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
+            logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
       }
       finally {
         if (globals.testsDoneServerGone) {
-          p.Logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
+          logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
         }
         else {
           // Typically takes 5 - 50 millis to render a page (my core i7 laptop, released 2015).
@@ -130,7 +132,7 @@ class RenderContentActor(
           var millisToPause = math.max(50, avgMillisToBackgroundRender.toLong)
           if (numBackgroundRenderErrorsInARow > 5) {
             // This almost certainly isn't recoverable. Source code bug, needs fix & redeployment.
-            p.Logger.warn("Slowing down background rendering: There are errors, and don't want to " +
+            logger.warn("Slowing down background rendering: There are errors, and don't want to " +
               "fill the disks with error log messages. Retrying once every 30 seconds. [TyE5WKBAQ25]")
             millisToPause = 30 * 1000
           }
@@ -147,10 +149,10 @@ class RenderContentActor(
     }
     catch {
       case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-        p.Logger.warn("Cannot render page, database connection closed [DwE5YJK1]")
+        logger.warn("Cannot render page, database connection closed [DwE5YJK1]")
         Bad("Database connection closed [TyE5YJK2]")
       case ex: Exception =>
-        p.Logger.error(s"Error rerendering page $sitePageId [DwE2WKP4]", ex)
+        logger.error(s"Error rerendering page $sitePageId [DwE2WKP4]", ex)
         Bad("Exception [TyE5YJK5KQ3]")
     }
   }
@@ -162,7 +164,7 @@ class RenderContentActor(
     // COULD add Metrics that times this.
 
     val dao = globals.siteDao(sitePageId.siteId)
-    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString}, $anyCustomParams... [TyMBGRSTART]")
+    logger.debug(s"Background rendering ${sitePageId.toPrettyString}, $anyCustomParams... [TyMBGRSTART]")
 
     // If we got custom params, rerender only for those params (maybe other param combos = up-to-date).
     anyCustomParams foreach { paramsHash =>
@@ -233,7 +235,7 @@ class RenderContentActor(
     }
 
     if (!isOutOfDate) {
-      p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
+      logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
              is up-to-date, ignoring re-render message. [DwE4KPL8]""")
       return Good(false)
     }
@@ -245,7 +247,7 @@ class RenderContentActor(
       case Good(html) => html
       case bad @ Bad(errorMessage) =>
       // The error has been logged already.
-      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [TyEBGRERR]")
+      logger.error(s"Error rendering ${sitePageId.toPrettyString} [TyEBGRERR]")
       return bad
     }
 
@@ -258,7 +260,7 @@ class RenderContentActor(
     val width = (if (renderParams.widthLayout == WidthLayout.Tiny) "tiny" else "medium") + " width"
     val embedded = if (renderParams.isEmbedded) ", embedded" else ""
     val custom = if (freshStoreJsonHash.isDefined) ", custom" else ""
-    p.Logger.debug(o"""Background rendered $whichPage, $width$embedded$custom [TyMBGRDONE]""")
+    logger.debug(o"""Background rendered $whichPage, $width$embedded$custom [TyMBGRDONE]""")
 
     Good(true)
   }

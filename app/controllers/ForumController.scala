@@ -356,6 +356,8 @@ object ForumController {
   }
 
 
+  // Vaguely similar code: ThingsFoundJson.makePagesFoundResponseImpl()  [406RKD2JB]
+  //
   def makeTopicsResponse(categoryId: Option[CategoryId], topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val category: Option[Category] = categoryId.flatMap(dao.getCategory)
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
@@ -370,6 +372,8 @@ object ForumController {
   }
 
 
+  // Vaguely similar code: ThingsFoundJson.JsPageFound()  [4026RKCN2]
+  //
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
     Json.obj(

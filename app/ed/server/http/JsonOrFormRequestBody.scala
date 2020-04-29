@@ -17,10 +17,9 @@
 
 package ed.server.http
 
-import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import play.api.mvc.{BodyParser, BodyParsers}
+import play.api.mvc.{BodyParser, ControllerComponents}
 import play.api.libs.json._
 import scala.concurrent.ExecutionContext
 
@@ -100,38 +99,37 @@ case class JsonOrFormDataBody(
       _.value.get(param).map(_.as[List[String]]))
       match {
         case None => Nil
-        case Some(values) => values.filterNot(_ isEmpty)
+        case Some(values) => values.filterNot(_.isEmpty)
       }
   }
 }
 
 
-class JsonOrFormDataBodyParser(val executionContext: ExecutionContext) {
+class JsonOrFormDataBodyParser(
+  val executionContext: ExecutionContext,
+  val cc: ControllerComponents) {
 
-  import BodyParsers.parse
-  implicit val execCtc = executionContext
+  def parser(maxBytes: Long): BodyParser[JsonOrFormDataBody] =
+        BodyParser("json-or-form-urlencoded") { request =>
 
-  def parser(maxBytes: Int): BodyParser[JsonOrFormDataBody] = parse.using { requestHeader =>
-    requestHeader.contentType match {
+    request.contentType match {
       case Some("application/x-www-form-urlencoded") =>
-        parse.urlFormEncoded(maxLength = maxBytes) map {
-          formDataBody: Map[String, Seq[String]] =>
-            JsonOrFormDataBody(Some(formDataBody), jsonBody = None)
-        }
+        cc.parsers.formUrlEncoded(maxLength = maxBytes)(request).map(_.right.map(
+          (formDataBody: Map[String, Seq[String]]) =>
+            JsonOrFormDataBody(Some(formDataBody), jsonBody = None)))(executionContext)
       case Some("application/json") =>
-        parse.json(maxLength = maxBytes) map { jsValue: JsValue =>
-          jsValue match {
-            case jsObject: JsObject =>
-              JsonOrFormDataBody(formDataBody = None, jsonBody = Some(jsObject))
-            case _ =>
-              throwBadReq("DwE48BW72", "JSON data is not an object but a " +
-                  classNameOf(jsValue))
-          }
-        }
+        cc.parsers.json(maxLength = maxBytes)(request).map(_.right.map {
+          case jsObject: JsObject =>
+            JsonOrFormDataBody(formDataBody = None, jsonBody = Some(jsObject))
+          case jsOther =>
+            throwBadReq(
+              "DwE48BW72",
+              s"JSON data is not an object but a ${classNameOf(jsOther)}")
+        })(executionContext)
       case Some(x) =>
-        throwBadReq("DwE40IZ35", "Unsupported content type: "+ x)
+        throwBadReq("TyE40IZ35", "Unsupported content type: "+ x)
       case None =>
-        throwBadReq("DwE40UX93", "No content type specified")
+        throwBadReq("TyE40UX93", "No content type specified")
     }
   }
 

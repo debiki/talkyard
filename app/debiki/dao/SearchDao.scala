@@ -44,9 +44,14 @@ trait SearchDao {
   implicit def executionContext: ExecutionContext = context.executionContext
 
 
-  def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId], user: Option[Participant])
-        : Future[Seq[PageAndHits]] = {
-    searchEngine.search(searchQuery, anyRootPageId, user) map { hits: Seq[SearchHit] =>
+  /**
+    * @param addMarkTagClasses — if the html class here:
+    *   <mark class="esHL1">text hit</mark> should be included or not.
+    */
+  def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId],
+        user: Option[Participant], addMarkTagClasses: Boolean): Future[Seq[PageAndHits]] = {
+    searchEngine.search(searchQuery, anyRootPageId, user,
+        addMarkTagClasses = addMarkTagClasses) map { hits: Seq[SearchHit] =>
       groupByPageFilterAndSort(hits, user)
     }
   }
@@ -78,8 +83,10 @@ trait SearchDao {
     // Add page meta and also sort hits by score, desc.
     val pageStuffAndHitsTotallySorted: Seq[PageAndHits] =
       pageIdsAndHitsSorted flatMap { case (pageId, hits) =>
-        pageStuffByPageId.get(pageId) map { pageStuff =>
-          PageAndHits(pageStuff, hitsByScoreDesc = hits.sortBy(-_.score))
+        pageStuffByPageId.get(pageId) flatMap { pageStuff =>
+          getPagePath2(pageStuff.pageId) map { path =>
+            PageAndHits(pageStuff, path, hitsByScoreDesc = hits.sortBy(-_.score))
+          }
         }
       }
 

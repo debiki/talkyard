@@ -52,7 +52,7 @@ trait UserDao {
       return
 
     val stats = tx.loadUserStats(moreStats.userId) getOrElse {
-      p.Logger.warn(s"s$siteId: Stats missing for user ${moreStats.userId} [TyE2W5Z8A4]")
+      logger.warn(s"s$siteId: Stats missing for user ${moreStats.userId} [TyE2W5Z8A4]")
       return
     }
 
@@ -131,7 +131,7 @@ trait UserDao {
             invalidatedAt = Some(tx.now.toJavaDate)))
       }
 
-      p.Logger.debug(
+      logger.debug(
         s"s$siteId: Creating invited user @$username, email addr: ${invite.emailAddress} [TyD6KWA02]")
 
       var newUser = invite.makeUser(userId, username = username, tx.now.toJavaDate)
@@ -669,7 +669,7 @@ trait UserDao {
       if (user.suspendedAt.isDefined) {
         val forHowLong = user.suspendedTill match {
           case None => "forever"
-          case Some(date) => "until " + toIso8601(date)
+          case Some(date) => "until " + toIso8601NoT(date)
         }
         throwForbidden("TyEUSRSSPNDD_", o"""Account suspended $forHowLong,
             reason: ${user.suspendedReason getOrElse "?"}""")
@@ -704,7 +704,17 @@ trait UserDao {
   }
 
 
+  def getParticipantsAsMap(userIds: Iterable[UserId]): Map[UserId, Participant] = {
+    getParticipantsImpl(userIds).groupByKeepOne(_.id)
+  }
+
+
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[Participant] = {
+    getParticipantsImpl(userIds).toVector
+  }
+
+
+  private def getParticipantsImpl(userIds: Iterable[UserId]): ArrayBuffer[Participant] = {
     // Somewhat dupl code [5KWE02]. Break out helper function getManyById[K, V](keys) ?
     val usersFound = ArrayBuffer[Participant]()
     val missingIds = ArrayBuffer[UserId]()
@@ -718,7 +728,7 @@ trait UserDao {
       val moreUsers = readOnlyTransaction(_.loadParticipants(missingIds))
       usersFound.appendAll(moreUsers)
     }
-    usersFound.toVector
+    usersFound
   }
 
 
@@ -853,7 +863,7 @@ trait UserDao {
         // (e.g. a standby where the login entry hasn't yet been
         // created), or 2) during testing, when I sometimes manually
         // delete stuff from the database (including login entries).
-        p.Logger.warn(s"Didn't find user $siteId:$sidUserId [EdE01521U35]")
+        logger.warn(s"Didn't find user $siteId:$sidUserId [EdE01521U35]")
         throw LoginNotFoundException(siteId, sidUserId)
       }
       if (user.id != sidUserId) {
@@ -861,7 +871,7 @@ trait UserDao {
         // but from the same host name. Browsers, however, usually ignore
         // port numbers when sending cookies. So they sometimes send
         // the wrong login-id and user-id to the server.
-        p.Logger.warn(s"DAO loaded the wrong user, session: $sid, user: $user [EdE0KDBL4]")
+        logger.warn(s"DAO loaded the wrong user, session: $sid, user: $user [EdE0KDBL4]")
         throw LoginNotFoundException(siteId, sidUserId)
       }
       user

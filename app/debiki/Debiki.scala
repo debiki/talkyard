@@ -20,17 +20,19 @@ package debiki
 import com.debiki.core.Prelude._
 import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import play.{api => p}
+import talkyard.server.TyLogger
 
 
 // COULD rename / move, to what, where?
 object Debiki {
 
+  private val logger = TyLogger("Debiki")
 
   def createPostgresHikariDataSource(readOnly: Boolean, conf: p.Configuration, isTest: Boolean)
         : HikariDataSource = {
 
     def configStr(path: String): String =
-      conf.getString(path).getOrDie("TyE93KI2", "Config value missing: "+ path)
+      conf.getOptional[String](path).getOrDie("TyE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod
@@ -53,7 +55,7 @@ object Debiki {
     val port = configStr("talkyard.postgresql.port").toInt
 
     val readOrWrite = readOnly ? "read only" | "read-write"
-    play.Logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")
+    logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")
 
     // Weird now with Hikari I can no longer call setReadOnly or setTransactionIsolation. [5JKF2]
     val config = new HikariConfig()
@@ -121,17 +123,17 @@ object Debiki {
     // + the database cache (instead of per connection in the pool) because then just 1 cache
     // for all connections. (If I understood correctly?)
 
-    // Slow loggin: Configure in PostgreSQL instead.
+    // Slow logging: Configure in PostgreSQL instead.
 
     val dataSource =
       try new HikariDataSource(config)
       catch {
         case ex: Exception =>
-          p.Logger.error(s"Error connecting to database, for ${config.getPoolName} [EsE7JK4]", ex)
+          logger.error(s"Error connecting to database, for ${config.getPoolName} [EsE7JK4]", ex)
           throw ex
       }
 
-    p.Logger.info("Connected to database. [EsM2KP40]")
+    logger.info("Connected to database. [EsM2KP40]")
 
     // Currently I'm sometimes using > 1 connection per http request (will fix later),
     // so in order to avoid out-of-connection deadlocks, set a large pool size.

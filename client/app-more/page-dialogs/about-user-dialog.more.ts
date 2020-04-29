@@ -264,7 +264,7 @@ const AboutUser = createComponent({
         false);
 
     return (
-      r.div({},
+      r.div({ 'data-username': user.username },
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
           viewInAdminAreaButton,

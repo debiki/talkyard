@@ -36,11 +36,11 @@ import ed.server.security.EdSecurity
 import javax.inject.Inject
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
-import play.{api => p}
 import play.api.mvc._
 import play.api.Configuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import talkyard.server.{ProdConfFilePath, TyLogging}
 
 
 
@@ -54,7 +54,7 @@ import scala.concurrent.duration._
   * login.domain.com, and redirects you back to X with a session id and an XSRF token.
   */
 class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.security._
@@ -214,13 +214,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val handlerMissing = ex.getMessage.contains(noStateHandlerMessage)
         val result =
           if (handlerMissing) {
-            p.Logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
+            logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
             BadReqResult("TYEOAUTMTPLL", "\nYou need to login within 5 minutes, and " +
               "you cannot login in different browser tabs, at the same time. Error logging in.")
           }
           else {
             val errorCode = "TYE0AUUNKN"
-            p.Logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
+            logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
             import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
             InternalErrorResult(errorCode, "Unknown login error", moreDetails =
               s"Error when signing in with $providerName: ${ex.getMessage}\n\n" +
@@ -233,7 +233,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def handleAuthenticationData(request: GetRequest, profile: SocialProfile)
         : Future[Result] = {
-    p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
+    logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
     val (anyReturnToSiteOrigin: Option[String], anyReturnToSiteXsrfToken: Option[String]) =
       request.cookies.get(ReturnToSiteOriginTokenCookieName) match {
@@ -915,7 +915,8 @@ class CustomGitHubProfileParser(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient,
   val githubApiBaseUrl: String)
-  extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info] {
+  extends SocialProfileParser[JsValue, ExternalSocialProfile, OAuth2Info]
+  with TyLogging {
 
   import play.api.libs.ws
 
@@ -926,6 +927,7 @@ class CustomGitHubProfileParser(
     val anyEmailsFuture = loadPublicAndVerifiedEmailAddrs(authInfo)
     anyEmailsFuture.map({ case (anyPublAddr, anyPrimAddr) =>
       try {
+        // GitHub user Json docs:  https://developer.github.com/v3/users/#response
         ExternalSocialProfile(
           providerId = GitHubProvider.ID,
           providerUserId = (json \ "id").as[Long].toString,
@@ -942,7 +944,9 @@ class CustomGitHubProfileParser(
           company = (json \ "company").asOptStringNoneIfBlank,
           location = (json \ "location").asOptStringNoneIfBlank,
           aboutUser = (json \ "bio").asOptStringNoneIfBlank,
-          githubUrl = (json \ "url").asOptStringNoneIfBlank,
+          // api url, for loading user json: (json \ "url"), but we
+          // want the html profile page url, and that's 'html_url'.
+          githubUrl = (json \ "html_url").asOptStringNoneIfBlank,
           createdAt = (json \ "created_at").asOptStringNoneIfBlank)
       }
       catch {
@@ -962,52 +966,64 @@ class CustomGitHubProfileParser(
     */
   private def loadPublicAndVerifiedEmailAddrs(oauth2AuthInfo: OAuth2Info)
         : Future[(Option[ExternalEmailAddr], Option[ExternalEmailAddr])] = {
+    // List user email addresses docs:
+    //   https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    val url = s"$githubApiBaseUrl/emails"
     val githubRequest: ws.WSRequest =
-      wsClient.url(s"$githubApiBaseUrl/user/emails").withHeaders(
+      wsClient.url(url).withHttpHeaders(
+        // Auth docs: https://developer.github.com/v3/#oauth2-token-sent-in-a-header
         // OAuth2 bearer token. GitHub will automatically know which user the request concerns
         // (although not mentioned in the request URL).
-        "Authorization" -> s"token ${oauth2AuthInfo.accessToken}",
+        play.api.http.HeaderNames.AUTHORIZATION -> s"token ${oauth2AuthInfo.accessToken}",
         // Use version 3 of the API, it's the most recent one (as of 2019-03).
         // https://developer.github.com/v3/#current-version
-        "Accept" -> "application/vnd.github.v3+json")
+        play.api.http.HeaderNames.ACCEPT -> "application/vnd.github.v3+json")
 
     githubRequest.get().map({ response: ws.WSResponse =>
       // GitHub's response is (as of 2018-10-13) like:
       // https://developer.github.com/v3/users/emails/#list-email-addresses-for-a-user
       // [{ "email": "a@b.c", "verified": true, "primary": true, "visibility": "public" }]
       try {
+        val statusCode = response.status
         val bodyAsText = response.body
-        val bodyAsJson = Json.parse(bodyAsText)
-        val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
-        val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
-          val emailObj = emailObjUntyped.asInstanceOf[JsObject]
-          ExternalEmailAddr(
-            emailAddr = emailObj.value.get("email").map(_.asInstanceOf[JsString].value)
-              .getOrDie("TyE5RKBW20P", s"Bad JSON from GitHub: $bodyAsText"),
-            isVerified = emailObj.value.get("verified") is JsTrue,
-            isPrimary = emailObj.value.get("primary") is JsTrue,
-            isPublic = emailObj.value.get("visibility") is JsString("public"))
-        })
+        if (statusCode != 200) {
+          logger.warn(o"""Unexpected status: $statusCode, from GitHub
+            when loading email address [TyEGITHUBEMLS], url: $url, response: $bodyAsText""")
+          (None, None)
+        }
+        else {
+          val bodyAsJson = Json.parse(bodyAsText)
+          val emailObjs: Seq[JsValue] = bodyAsJson.asInstanceOf[JsArray].value
+          val emails: Seq[ExternalEmailAddr] = emailObjs.map({ emailObjUntyped: JsValue =>
+            val emailObj = emailObjUntyped.asInstanceOf[JsObject]
+            ExternalEmailAddr(
+              emailAddr = emailObj.value.get("email").map(_.asInstanceOf[JsString].value)
+                .getOrDie("TyE5RKBW20P", s"Bad JSON from GitHub: $bodyAsText"),
+              isVerified = emailObj.value.get("verified") is JsTrue,
+              isPrimary = emailObj.value.get("primary") is JsTrue,
+              isPublic = emailObj.value.get("visibility") is JsString("public"))
+          })
 
-        val anyPublAddr =
-          emails.find(e => e.isPublic && e.isVerified) orElse
-            emails.find(_.isPublic)
-
-        val anyPrimaryAddr =  // [7KRBGQ20]
-          emails.find(e => e.isPrimary && e.isVerified) orElse
+          val anyPublAddr =
             emails.find(e => e.isPublic && e.isVerified) orElse
-            emails.find(_.isVerified)
+              emails.find(_.isPublic)
 
-        (anyPublAddr, anyPrimaryAddr)
+          val anyPrimaryAddr =  // [7KRBGQ20]
+            emails.find(e => e.isPrimary && e.isVerified) orElse
+              emails.find(e => e.isPublic && e.isVerified) orElse
+              emails.find(_.isVerified)
+
+          (anyPublAddr, anyPrimaryAddr)
+        }
       }
       catch {
         case ex: Exception =>
-          p.Logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
+          logger.warn("Error parsing GitHub email addresses JSON [TyE4ABK2LR7]", ex)
           (None, None)
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        p.Logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
+        logger.warn("Error asking GitHub for user's email addresses [TyE8BKAS225]", ex)
         Future.successful((None, None))
     })(executionContext)
   }
@@ -1025,14 +1041,35 @@ class CustomGitHubProvider(
                                         // "Ty" prefix = clarifies isn't Silhouette's built-in class.
 
   // This is the base api url, used to construct requests to the GitHub server.
-  val apiBaseUrl: String = apiUserUrl.dropRightWhile(_ != '/').dropRight(1)
+  val apiBaseUrl: String = apiUserUrl
+
+  private var warnedAboutOldAuth = false
+
+  override protected val urls: Map[String, String] = Map("api" -> apiUserUrl)
 
   // The url to fetch the user's profile, from the GitHub server.
-  // For GitHub.com, it's GitHubProvider.API = "https://api.github.com/user?access_token=%s".
+  // For GitHub.com, it's GitHubProvider.API = "https://api.github.com/user".
   // And for GitHub Enterprise, it's "https://own.github/api/v3/user?access_token=%s".
   // Dropping-right up to and incl the rightmost '/' results in the api base url,
   // which can be used to construct other requests to GitHub.
-  def apiUserUrl: String = settings.apiURL.getOrElse(
+  def apiUserUrl: String = settings.apiURL.map(url => {
+    // From 2020-02-10, Git revision 2c94117d54319c1a, Silhouette no longer wants
+    // "?access_token=%s", but instead uses the auth header:
+    //     Authorization: Bearer the-access-token
+    // However, the Talkyard config might still include the "?access_token=%s" suffix,
+    // which would make GitHub reply 400 Bad Request. So:
+    var u = url.trim()
+    val accessTokenQueryParam = "?access_token=%s"
+    if (u.contains(accessTokenQueryParam)) {
+      u = u.replaceAllLiterally(accessTokenQueryParam, "")
+      if (!warnedAboutOldAuth) {
+        warnedAboutOldAuth = true
+        logger.warn(o"""Deprecated GitHub auth conf: Remove "$accessTokenQueryParam" from
+            the  github.apiURL  config value, in  $ProdConfFilePath.""")
+      }
+    }
+    u
+  }).getOrElse(
     com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider.API)
 
   type Self = CustomGitHubProvider
@@ -1071,11 +1108,21 @@ class CustomLinkedInProvider(
 class LinkedInProfileParserApiV2(
   val executionContext: ExecutionContext,
   val wsClient: play.api.libs.ws.WSClient)
-  extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info] {
+  extends SocialProfileParser[JsValue, CommonSocialProfile, OAuth2Info]
+  with TyLogging {
 
   override def parse(json: JsValue, authInfo: OAuth2Info): Future[CommonSocialProfile] = {
-    loadEmailAddr(authInfo).map({ anyEmail =>
-      // The json from API v2 is like:
+    // Silhouette now includes the email in the json, so skip loadEmailAddr().
+    // loadEmailAddr(authInfo).map({ anyEmail =>
+
+      // See  BaseLinkedInProvider.buildProfile().
+      val apiJsonObj   = json \ "api"
+      val emailJsonObj = json \ "email"
+      val photoJsonObj = json \ "photo"
+
+      val anyEmail = (emailJsonObj \\ "emailAddress").headOption.flatMap(_.asOpt[String])
+
+      // The apiJsonObj from API v2 is like:
       // {
       //   "lastName":{
       //     "localized":{"en_US":"MyLastName"},
@@ -1091,9 +1138,9 @@ class LinkedInProfileParserApiV2(
       // you'll see that one needs to "have applied and been approved for a LinkedIn Partner Program",
       // to access more fields.
 
-      val userID = (json \ "id").as[String]
+      val userId = (apiJsonObj \ "id").as[String]
       def readName(fieldName: String): Option[String] = {
-        (json \ fieldName).asOpt[JsObject] flatMap { jsObj =>
+        (apiJsonObj \ fieldName).asOpt[JsObject] flatMap { jsObj =>
           (jsObj \ "localized").asOpt[JsObject] flatMap { jsObj =>
             jsObj.fields.headOption.map(_._2) flatMap { nameInAnyLocale =>
               nameInAnyLocale match {
@@ -1107,20 +1154,30 @@ class LinkedInProfileParserApiV2(
       val firstName = readName("firstName")
       val lastName = readName("lastName")
 
-      CommonSocialProfile(
-        loginInfo = LoginInfo(LinkedInProvider.ID, userID),
+      val profile = CommonSocialProfile(
+        loginInfo = LoginInfo(LinkedInProvider.ID, userId),
         firstName = firstName,
         lastName = lastName,
         fullName = None,    // not incl in LinkedIn API v2
         avatarURL = None,   // not incl in LinkedIn API v2
         email = anyEmail)
-    })(executionContext)
+
+    Future.successful(profile)
+    //})(executionContext)
   }
 
 
   /** LinkedIn API v2 requires a separate request to fetch the email address.
+    *
+    * Update, 2020-04: Silhouette 7.0 now loads the email in a 2nd request itself.
+    * So, disabling this fn for now.
+    *
+    * But keep it commented in, so can fix complation errors, keep it somewhat
+    * up-to-date, maybe needed soon again?
     */
   private def loadEmailAddr(oauth2AuthInfo: OAuth2Info): Future[Option[String]] = {
+    die("TyE39572KTSP3", "loadEmailAddr() not needed, don't call")
+
     import play.api.libs.ws
     val emailRequestUrl =
       "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))" +
@@ -1147,12 +1204,12 @@ class LinkedInProfileParserApiV2(
       }
       catch {
         case ex: Exception =>
-          p.Logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
+          logger.warn("Error parsing LinkedIn email address JSON [TyE7UABKT32]", ex)
           None
       }
     })(executionContext).recoverWith({
       case ex: Exception =>
-        p.Logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
+        logger.warn("Error asking LinkedIn for user's email address [TyE5KAW2J]", ex)
         Future.successful(None)
     })(executionContext)
   }

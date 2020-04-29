@@ -35,12 +35,13 @@ import ed.server.auth.Authz
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import talkyard.server.JsX._
+import talkyard.server.TyLogging
 
 
 /** Handles requests related to users.
  */
 class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   import context.globals
@@ -1029,7 +1030,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwForbidden("TyE5RKPW025", s"Bad post nr, smaller than BodyNr: $badNr")
     }
 
-    play.api.Logger.trace(
+    logger.trace(
       s"s$siteId, page $anyPageId: Post nrs read: $postNrsRead, seconds reading: $secondsReading")
 
     val now = globals.now()

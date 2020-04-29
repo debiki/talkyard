@@ -93,7 +93,7 @@ trait UploadsDao {
               // there's a maybe-workaround, but doesn't seem to generate a BufferedImage:
               //   https://stackoverflow.com/a/23851091/694469 —>
               //   —> https://github.com/DhyanB/Open-Imaging
-              p.Logger.warn(o"""Java ArrayIndexOutOfBoundsException: '4096' bug when reading
+              logger.warn(o"""Java ArrayIndexOutOfBoundsException: '4096' bug when reading
                   uploaded image, site: $siteId, file name: $uploadedFileName, user: $uploadedById""")
               None
             }
@@ -179,7 +179,7 @@ trait UploadsDao {
       case _: jf.FileAlreadyExistsException =>
         // Fine. Same name -> same hash -> same content.
       case ex: Exception =>
-        p.Logger.error(o"""Error moving file into place, name: $uploadedFileName, file path:
+        logger.error(o"""Error moving file into place, name: $uploadedFileName, file path:
           ${optimizedFile.getPath}, destination: ${destinationFile.getPath} [DwE8MF2]""", ex)
         throw ex
     }
@@ -422,10 +422,6 @@ object UploadsDao {
     // Common movie file formats: (https://en.wikipedia.org/wiki/Video_file_format)
     if ("webm mkv ogv ogg gifv mp4 m4v".contains(suffix))
       return suffix
-
-    if (fileName.count(_ == '.') > 1) throwForbidden(
-      "DwE2FPYU0", o"""The file name should have exactly one dot, otherwise I don't know where
-           the file suffix starts""")
 
     if (!fileName.exists(_ == '.'))
       throwForbidden("DwE6UPM5", "The file has no suffix")

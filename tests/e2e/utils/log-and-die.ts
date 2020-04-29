@@ -13,7 +13,7 @@ const unusualColor = ansiColors.black.bgGreen;
 const serverRequestColor = ansiColors.bold.cyan;
 const serverResponseColor = ansiColors.bold.blue;
 
-function getOrCall<V>(valueOrFn: V | (() => V)): V {
+function getOrCall<V>(valueOrFn: U | V | (() => V)): U | V {
   return _.isFunction(valueOrFn) ? valueOrFn() : valueOrFn;
 }
 
@@ -82,6 +82,14 @@ const api = {
   dieIf: function(test: boolean, message: string, details?: string) {
     if (test) {
       api.die(message, details);
+    }
+  },
+  dieAndExitIf: function(test: boolean, message: string, details?: string) {
+    if (test) {
+      api.logError(`\n\n${message}${details ? '\n' + details : ''}\n` +
+          `Exiting process, error status 1. Bye.\n`);
+      console.trace();
+      process.exit(1);
     }
   }
 };

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+(function() {
 
 var pluginId = 'Onebox';
 
@@ -99,4 +100,5 @@ function renderOnebox(tokens, index, options, env, renderer) {
 }
 
 
+})();
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

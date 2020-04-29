@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+(function() {
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal };
 
 
 d.i.createLoginPopup = function(url) {
@@ -141,4 +142,6 @@ d.i.createLoginPopup = function(url) {
 // openid.ext1.value.country=SE
 // }}}
 
+
+})();
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

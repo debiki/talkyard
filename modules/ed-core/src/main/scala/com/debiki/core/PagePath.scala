@@ -128,6 +128,15 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?  [e
 
   def thePageId: PageId = pageId getOrDie "EsE6JMY3"
 
+  def toNew(canonical: Boolean): PagePathWithId = {
+    PagePathWithId(
+      folder,
+      pageId = thePageId,
+      showId = showId,
+      pageSlug = pageSlug,
+      canonical = canonical)
+  }
+
   def value: String =
     if (showId) {
       val id = pageId.getOrDie( //Break out GuidLookup so cannot happen?

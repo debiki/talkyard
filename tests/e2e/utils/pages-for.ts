@@ -1,12 +1,26 @@
 import * as _ from 'lodash';
 
+
+// Why are many WebdriverIO's functions reimplemented here?
+//
+// Because they're either 1) quiet, whilst waiting. No way to find out what's
+// wrong, when a test times out. Or, 2) they log frustratingly much log messages, always,
+// if you enable detailed log levels.
+//
+// Talkyards waitFor[Something](), though, logs nothing, *unless* after a short
+// while Something hasn't happened. *Then* Talkyard starts logging what is
+// being waited for. — More readable logs, when you need them.
+
+
+
 // Assertions tests if Talkyard works, ...
 import * as assert from 'assert';
 import * as tyAssert from '../utils/ty-assert';
 
 // ... Use die() and dieIf(), though, if an e2e test is broken
 // (rather than Talkyard itself).
-import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logWarning, logWarningIf,
+import { getOrCall, die, dieIf, logUnusual, logDebug, logError, logErrorIf,
+    logWarning, logWarningIf,
     logException, logMessage, logMessageIf, logBoring,
     logServerRequest, printBoringToStdout } from './log-and-die';
 
@@ -25,6 +39,10 @@ import c = require('../test-constants');
 //          since almost all fns wait until ok to procceed, so that's the 95% normal
 //          case — then better that those names are brief.
 
+
+const traceOrDebug =
+    settings.logLevel === 'trace' ||
+    settings.logLevel === 'debug';
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -99,7 +117,7 @@ function byBrowser(result): ByBrowserAnyResults {  // dupl code [4WKET0] move al
     // That's what we want.
     r = result as ByBrowserAnyResults;
   }
-  console.log(`byBrowser_: r = ${JSON.stringify(r)}`);
+  //console.log(`byBrowser_: r = ${JSON.stringify(r)}`);
   return r;
 }
 
@@ -119,12 +137,18 @@ function allBrowserValues(result) {
 
 
 function isWindowClosedException(ex): boolean {
-  const windowAlreadyClosedExceptionText =
+  // (Don't check for "no such window" — that might mean something else,
+  // e.g. the window never existed at all.)
+  const windowClosedText1 =
       // The full text is: "no such window: window was already closed"
       'window was already closed';
-
-  return ex.toString?.().toLowerCase().indexOf(
-      windowAlreadyClosedExceptionText) >= 0;
+  const windowClosedText2 =
+      // Full text: "no such window: target window already closed";
+      "target window already closed";
+  const exStr = ex.toString();
+  return (
+      exStr.indexOf(windowClosedText1) >= 0 ||
+      exStr.indexOf(windowClosedText2) >= 0);
 }
 
 function isBadElemException(ex): boolean {
@@ -135,10 +159,15 @@ function isBadElemException(ex): boolean {
   const CannotFindId = 'Cannot find context with specified id';
   const exStr = ex.toString();
   return (
-    exStr.indexOf(StaleElem1) >= 0 ||
-    exStr.indexOf(StaleElem2) >= 0 ||
-    exStr.indexOf(CannotFindId) >= 0);
+      exStr.indexOf(StaleElem1) >= 0 ||
+      exStr.indexOf(StaleElem2) >= 0 ||
+      exStr.indexOf(CannotFindId) >= 0);
 }
+
+function isClickInterceptedException(ex): boolean {
+  return ex.toString?.().toLowerCase().indexOf('element click intercepted') >= 0;
+}
+
 
 const sfy: (any) => string = JSON.stringify;
 
@@ -164,6 +193,8 @@ export class TyE2eTestBrowser {
   #br: WebdriverIO.BrowserObject;
 
   constructor(aWdioBrowser: WebdriverIO.BrowserObject) {
+    dieIf(!aWdioBrowser?.getPageSource,
+        `Not a Wdio browser:  ${JSON.stringify(aWdioBrowser)}  [TyE2E7J02SAD35]`);
     this.#br = aWdioBrowser;
   }
 
@@ -281,11 +312,11 @@ export class TyE2eTestBrowser {
     }
 
     // Don't use. Change to go2 everywhere, then rename to 'go', and remove this old 'go'.
-    go(url, opts: { useRateLimits?: boolean } = {}) {
+    go(url: string, opts: { useRateLimits?: boolean } = {}) {
       this.go2(url, { ...opts, waitForPageType: false });
     }
 
-    go2(url, opts: { useRateLimits?: boolean, waitForPageType?: false,
+    go2(url: string, opts: { useRateLimits?: boolean, waitForPageType?: false,
           isExternalPage?: true } = {}) {
 
       let shallDisableRateLimits = false;
@@ -376,7 +407,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    goAndWaitForNewUrl(url) {
+    goAndWaitForNewUrl(url: string) {
       logMessage("Go: " + url);
       this.rememberCurrentUrl();
       this.#br.url(url);
@@ -413,6 +444,7 @@ export class TyE2eTestBrowser {
     waitUntil(fn: () => Boolean, ps: {
         timeoutMs?: number,
         timeoutIsFine?: boolean,
+        serverErrorDialogIsFine?: boolean,
         message?: StringOrFn,
       } = {}): boolean {
 
@@ -421,14 +453,14 @@ export class TyE2eTestBrowser {
       const timeoutMs = makeTimeoutMs(ps.timeoutMs);
       const startMs = Date.now();
       let loggedAnything = false;
+      let loggedErrorAlready = false;
 
       try {
         do {
           const done = fn();
           if (done) {
             if (loggedAnything) {
-              logMessage(`Done: ${ps.message ?
-                  getOrCall(ps.message) : "Waiting for something."}`);
+              logMessage(`Done: ${ getOrCall(ps.message) || "Waiting for something." }`);
             }
             return true;
           }
@@ -436,8 +468,22 @@ export class TyE2eTestBrowser {
           elapsedMs = Date.now() - startMs;
           if (elapsedMs > AnnoyinglyLongMs) {
             loggedAnything = true;
-            logMessage(`${elapsedMs} ms elapsed: ${ps.message ?
-                getOrCall(ps.message) : "Wait until what? ..."}`);
+            logMessage(`${elapsedMs} ms elapsed: ${
+                getOrCall(ps.message) || "Wait until what?" } ...`);
+          }
+
+          // Any unrecoverable error dialog? E.g. the server replied Error to a request.
+          // However if the waiting message text is like "Waiting for .s_SED_Msg", then we're
+          // waiting for the dialog itself, so then it's fine when it appears.
+          // (Looking for '.s_SED_Msg' in ps.message is a bit hacky? but works.
+          // And if stops working, some server error dialog tests should start
+          // failing — easy to notice.)
+          const waitingForServerError = () => getOrCall(ps.message)?.indexOf('s_SED_Msg') >= 0;
+          if (elapsedMs > 500 && !waitingForServerError() && !ps.serverErrorDialogIsFine) {
+            if (this.serverErrorDialog.isDisplayed()) {
+              loggedErrorAlready = true;
+              this.serverErrorDialog.failTestAndShowDialogText();
+            }
           }
 
           this.#br.pause(delayMs);
@@ -446,13 +492,20 @@ export class TyE2eTestBrowser {
         while (elapsedMs < timeoutMs);
       }
       catch (ex) {
-        logError(`Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
+        logErrorIf(!loggedErrorAlready, `Error in this.waitUntil(): [TyEE2EWAIT]\n`, ex);
         throw ex;
       }
 
-      if (ps.timeoutIsFine !== true)
+      if (ps.timeoutIsFine === true) {
+        const what = getOrCall(ps.message) ||  "Something";
+        logUnusual(`Timed out, but that's fine:  ${what}`);
+      }
+      else {
         tyAssert.fail(
             `this.waitUntil() timeout after ${elapsedMs} millis  [TyEE2ETIMEOUT]`);
+      }
+
+      return false;
     }
 
 
@@ -557,11 +610,13 @@ export class TyE2eTestBrowser {
     makeNewSiteDataForEmbeddedComments(ps: { shortName: string, longName: string })
           : NewSiteData {
       // Dupl code [502KGAWH0]
+      // Need to generate new local hostname, since we're going to create a new site.
       const testId = utils.generateTestId();
       const embeddingHostPort = `e2e-test--${ps.shortName}-${testId}.localhost:8080`;
       const localHostname = `e2e-test--${ps.shortName}-${testId}-localhost-8080`;
       //const localHostname = settings.localHostname ||
       //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
+
       return {
         testId: testId,
         siteType: SiteType.EmbeddedCommments,
@@ -603,7 +658,7 @@ export class TyE2eTestBrowser {
         // Cannot be 0, that'd mean the test made itself disappear?
         numNow = this.#br.getWindowHandles().length;
         return numNow <= Math.max(1, howMany);
-      }, { message });
+      }, { message, serverErrorDialogIsFine: true });
     }
 
 
@@ -669,10 +724,11 @@ export class TyE2eTestBrowser {
         numWindows = ids.length;
         return numWindows <= 1;
       }, {
-        message:`Waiting for any loging popup to auto close, to avoid ` +
+        message: () => `Waiting for any loging popup to auto close, to avoid ` +
               `invalid window ID errors. Num windows open: ${numWindows}`,
         timeoutMs: 3000,
         timeoutIsFine: true,
+        serverErrorDialogIsFine: true,
       });
 
       const winIds = this.#br.getWindowHandles();
@@ -716,21 +772,28 @@ export class TyE2eTestBrowser {
 
     waitForNewUrl() {
       assert(!!this._currentUrl, "Please call this.#br.rememberCurrentUrl() first [EsE7JYK24]");
-      while (this._currentUrl === this.#br.getUrl()) {
-        this.#br.pause(250);
-      }
+      this.waitUntil(() => {
+        return this._currentUrl !== this.#br.getUrl();
+      }, {
+        message: `Waiting for new URL, currently at: ${this._currentUrl}`
+      });
       delete this._currentUrl;
     }
 
     repeatUntilAtNewUrl(fn: () => void) {
       const urlBefore = this.#br.getUrl();
       fn();
-      this.#br.pause(250);
+      const initDelayMs = 250;
+      let delayMs = initDelayMs;
+      this.#br.pause(delayMs);
       while (urlBefore === this.#br.getUrl()) {
+        logMessageIf(delayMs > initDelayMs,
+            `Repeating sth until at new URL, currently at: ${urlBefore}`);
         // E2EBUG RACE: if the url changes right here, maybe fn() below won't work,
         // will block.
         fn();
-        this.#br.pause(250);
+        delayMs = expBackoff(delayMs);
+        this.#br.pause(delayMs);
       }
     }
 
@@ -775,7 +838,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    switchToFrame(selector) {
+    switchToFrame(selector: string) {
       printBoringToStdout(`Switching to frame ${selector}...`);
       this.waitForExist(selector);
       const iframe = this.$(selector);
@@ -1042,9 +1105,17 @@ export class TyE2eTestBrowser {
 
     isExisting(selector: string): boolean { return this.$(selector).isExisting() }
 
-    isEnabled(selector: string): boolean { return this.$(selector).isEnabled() }
+    isEnabled(selector: string): boolean {
+      const elem = this.$(selector);
+      // Sometimes these methods are missing, why?  [MISSINGFNS]
+      return elem && elem.isExisting?.() && elem.isDisplayed?.() && elem.isEnabled?.();
+    }
 
-    isVisible(selector: string): boolean { return this.$(selector).isDisplayed() }
+    isVisible(selector: string): boolean {
+      // Sometimes the methods below are missing, weird.  [MISSINGFNS]
+      const elem = this.$(selector);
+      return elem && elem.isExisting?.() && elem.isDisplayed?.();
+    }
 
 
     waitForDisplayed(selector: string, ps: { timeoutMs?: number } = {}) {
@@ -1052,11 +1123,7 @@ export class TyE2eTestBrowser {
     }
 
     waitForVisible(selector: string, ps: { timeoutMs?: number } = {}) {  // RENAME to waitForDisplayed() above
-      this.waitUntil(() => {
-        const elem = this.$(selector);
-        if (elem && elem.isExisting() && elem.isDisplayed())
-          return true;
-      }, {
+      this.waitUntil(() => this.isVisible(selector), {
         ...ps,
         message: `Waiting for visible:  ${selector}`,
       });
@@ -1094,17 +1161,20 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitForEnabled(selector: string, options?: WebdriverIO.WaitForOptions) {
-      this.$(selector).waitForEnabled(options)
-      // origWaitForEnabled.apply(this.#br, arguments);
+    waitForEnabled(selector: string, ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}) {
+      this.waitUntil(() => this.isEnabled(selector), {
+        ...ps,
+        message: `Waiting for visible:  ${selector}`,
+      });
     }
 
 
-    waitForVisibleText(selector: string, ps: { timeoutMs?: number } = {}) {
+    waitForVisibleText(selector: string,
+          ps: { timeoutMs?: number, timeoutIsFine?: boolean } = {}): boolean {
       let isExisting;
       let isDisplayed;
       let text;
-      this.waitUntil(() => {
+      return this.waitUntil(() => {
         const elem: WebdriverIO.Element = this.$(selector);
         try {
           // Oddly enough, sometimes isDisplayed is not a function, below. Maybe isExisting()
@@ -1133,8 +1203,9 @@ export class TyE2eTestBrowser {
       }, {
         ...ps,
         message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
-            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText:  "${text}"`,
-      })
+            `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText: ${
+            _.isUndefined(text) ? 'undefined' : `"${text}"`}`,
+      });
     }
 
     getWholePageJsonStrAndObj(): [string, any] {
@@ -1209,9 +1280,25 @@ export class TyE2eTestBrowser {
             `Don't know which one of ${elems.length} elems to click. ` +
             `Selector:  ${selector} [TyE305KSU]`);
       }
-     this.$(selector).click();
+     this.clickNow(selector);
     }
 
+
+    clickNow(selEl: SelectorOrElem) {
+      try {
+        if (_.isString(selEl)) this.$(selEl).click();
+        else selEl.click();
+      }
+      catch (ex) {
+        if (isClickInterceptedException(ex)) {
+          // This can happen if server error dialog appeared.
+          if (this.serverErrorDialog.isDisplayed()) {
+            this.serverErrorDialog.failTestAndShowDialogText();
+          }
+        }
+        throw ex;
+      }
+    }
 
     // For one this.#br at a time only.
     // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
@@ -1229,7 +1316,7 @@ export class TyE2eTestBrowser {
 
       const elemToClick = elems[index];
       dieIf(!elemToClick, selector + ' TyE36KT74356');
-      elemToClick.click();
+      this.clickNow(elemToClick);
     }
 
 
@@ -1237,7 +1324,7 @@ export class TyE2eTestBrowser {
           opts: { maybeMoves?: boolean, timeoutMs?: number, mayScroll?: boolean,
               okayOccluders?: string, waitUntilNotOccluded?: boolean } = {}) {
       this.waitForVisible(selector, { timeoutMs: opts.timeoutMs });
-      this.waitForEnabled(selector, { timeout: opts.timeoutMs });
+      this.waitForEnabled(selector, { timeoutMs: opts.timeoutMs });
       if (opts.mayScroll !== false) {
         this.scrollIntoViewInPageColumn(selector);
       }
@@ -1316,7 +1403,7 @@ export class TyE2eTestBrowser {
     focus(selector: string, opts?: { maybeMoves?: true,
           timeoutMs?: number, okayOccluders?: string }) {
       this._waitForClickable(selector, opts);
-      this.$(selector).click();
+      this.clickNow(selector);
     }
 
     refreshUntil(test: () => boolean) {
@@ -1329,7 +1416,7 @@ export class TyE2eTestBrowser {
       }
     }
 
-    refreshUntilGone(what) {
+    refreshUntilGone(what: string) {
       while (true) {
         let resultsByBrowser = this.isVisible(what);
         let isVisibleValues = allBrowserValues(resultsByBrowser);
@@ -1503,9 +1590,15 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndSelectFile(selector: string, fileNameInTargetDir: string) {
-      // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
-      const pathToUpload = path.join(__dirname, '..', 'target', fileNameInTargetDir);
+    waitAndSelectFile(selector: string, whichDir: 'TargetDir' | 'TestMediaDir',
+        fileName: string) {
+
+      const pathToUpload = (whichDir === 'TargetDir'
+          // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
+          ? path.join(__dirname, '..', 'target', fileName)
+          // Step down-up from  tests/e2e/utils/  to  tests/test-media/.
+          : path.join(__dirname, '..', '..', 'test-media', fileName));
+
       logMessage("Uploading file: " + pathToUpload.toString());
       logWarningIf(settings.useDevtoolsProtocol,
           `BUT this.#br.uploadFile() DOES NOT WORK WITH THIS PROTOCOL, 'DevTools' [TyEE2EBADPROTO]`);
@@ -1609,7 +1702,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndSetValueForId(id, value) {
+    waitAndSetValueForId(id: string, value: string | number) {
       this.waitAndSetValue('#' + id, value);
     }
 
@@ -1622,7 +1715,7 @@ export class TyE2eTestBrowser {
       // [E2EBUG] COULD check if visible and enabled, and loading overlay gone? before clicking
       utils.tryManyTimes(`waitForThenClickText(${selector}, ${regex})`, 3, () => {
         const elem = this.waitAndGetElemWithText(selector, regex);
-        elem.click();
+        this.clickNow(elem);
       });
     }
 
@@ -1654,7 +1747,7 @@ export class TyE2eTestBrowser {
           : string | null {
 
       const matchMiss = shouldMatch ? "match" : "miss";
-      if (settings.logLevel === 'verbose') {
+      if (traceOrDebug) {
         logMessage(
           `Finding ${matchMiss}es in this html:\n------\n${html}\n------`);
       }
@@ -1667,7 +1760,7 @@ export class TyE2eTestBrowser {
             : ros;
         const doesMatch = regex.test(html);
 
-        if (settings.logLevel === 'verbose') {
+        if (traceOrDebug) {
           logMessage(
               `Should ${matchMiss}: ${regex}, does ${matchMiss}: ` +
                 `${ shouldMatch ? doesMatch : !doesMatch }`);
@@ -1930,11 +2023,15 @@ export class TyE2eTestBrowser {
 
         if (shallMatch) {
           if (!matchesRegex1) {
-            problems += `  Elem ix ${i}: Misses regex 1: ${regex}, actual text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Misses regex 1:  ${regex}\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (regex2 && !matchesAnyRegex2) {
-            problems += `  Elem ix ${i}: Misses regex 2: ${regex2}, actual text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Misses regex 2:  ${regex2}\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           // All fine, forget all problems — it's enough if one elem matches.
@@ -1942,11 +2039,15 @@ export class TyE2eTestBrowser {
         }
         else {
           if (matchesRegex1) {
-            problems += `  Elem ix ${i}: Matches regex 1: ${regex} (but should not), text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Matches regex 1:  ${regex}  (but should not)\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (regex2 && matchesAnyRegex2) {
-            problems += `  Elem ix ${i}: Matcheses regex 2: ${regex2} (but should not), text: "${text}"\n`;
+            problems +=
+                `  Elem ix ${i}: Matches regex 2:  ${regex2}  (but should not)\n` +
+                `    elem text:  "${text}"\n`;
             continue;
           }
           if (!problems && i === (elems.length - 1)) {
@@ -2078,7 +2179,7 @@ export class TyE2eTestBrowser {
     }
 
 
-    assertUrlIs(expectedUrl) {
+    assertUrlIs(expectedUrl: string) {
       let url = this.#br.getUrl();
       assert(url === expectedUrl);
     }
@@ -2114,6 +2215,7 @@ export class TyE2eTestBrowser {
       }, {
         timeoutMs: 1000,
         timeoutIsFine: true,
+        serverErrorDialogIsFine: true,
         message: `Waiting for alert(s), handled ${numDone} out of <= ${howMany}`
       });
       logMessage(`Handled ${numDone} out of <= ${howMany} maybe-alerts.`);
@@ -2808,7 +2910,7 @@ export class TyE2eTestBrowser {
         this.waitUntilModalGone();
       },
 
-      fillInPassword: (password) => {
+      fillInPassword: (password: string) => {
         this.waitAndSetValue('#e2ePassword', password);
       },
 
@@ -3114,6 +3216,7 @@ export class TyE2eTestBrowser {
       },
 
       logInWithGitHub: (ps: { username: string, password: string, alreadyLoggedInAtGitHub: boolean }) => {
+        logMessage("Clicking GitHub login");
         this.waitAndClick('#e2eLoginGitHub');
 
         if (ps.alreadyLoggedInAtGitHub) {
@@ -3123,14 +3226,19 @@ export class TyE2eTestBrowser {
         }
 
         //if (!isInPopupAlready)
-        logMessage("Switching to GitHub login window...");
+        logMessage("Switching to GitHub login popup...");
         this.swithToOtherTabOrWindow(IsWhere.External);
 
+        logMessage("Typing GitHub username ...");
         this.waitForDisplayed('.auth-form-body');
         this.waitAndSetValue('.auth-form-body #login_field', ps.username);
         this.#br.pause(340); // so less risk GitHub think this is a computer?
+
+        logMessage("Typing GitHub password ...");
         this.waitAndSetValue('.auth-form-body #password', ps.password);
         this.#br.pause(340); // so less risk GitHub think this is a computer?
+
+        logMessage("Submitting GitHub login form ...");
         this.waitAndClick('.auth-form-body input[type="submit"]');
         while (true) {
           this.#br.pause(200);
@@ -3142,12 +3250,19 @@ export class TyE2eTestBrowser {
             }
           }
           catch (ex) {
-            // This error should mean that the login window closed. We've clicked the Authorize
-            // button in the past, already.
+            if (isWindowClosedException(ex)) {
+              // The login window closed itself. We've clicked the Authorize
+              // button in the past, already.
+              logMessage("The GitHub login popup closed itself, fine.");
+            }
+            else {
+              logWarning(`GitHub login popup exception: ${ex.toString()}`);
+            }
             break;
           }
         }
-        logMessage("Switching back to first window...");
+
+        logMessage("GitHub login done — switching back to first window...");
         this.switchBackToFirstTabOrWindow();
       },
 
@@ -3534,6 +3649,10 @@ export class TyE2eTestBrowser {
         this.waitAndClick('#e2eCreateSth');
       },
 
+      getCreateTopicButtonText: (): string => {
+        return this.waitAndGetVisibleText('#e2eCreateSth');
+      },
+
       assertNoCreateTopicButton: () => {
         // Wait until the button bar has loaded.
         this.waitForVisible('#e_ViewCatsB');
@@ -3781,8 +3900,16 @@ export class TyE2eTestBrowser {
 
       securityTab: {
         switchGroupFromTo: (fromGroupName: string, toGroupName: string) => {
-          this.waitAndClickSelectorWithText('.s_PoP_Un button', fromGroupName);
-          this.waitAndClickSelectorWithText('.esDropModal_content .esExplDrp_entry', toGroupName);
+          this.waitAndClickSelectorWithText('.s_PoP_Un .e_SelGrpB', fromGroupName);
+          this.waitAndClickSelectorWithText(
+              '.esDropModal_content .esExplDrp_entry', toGroupName);
+        },
+
+        addGroup: (groupName: string) => {
+          this.waitAndClick('.s_CD_Sec_AddB');
+          this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
+          this.waitAndClickSelectorWithText(
+              '.esDropModal_content .esExplDrp_entry', groupName);
         },
 
         setMayCreate: (groupId: UserId, may: boolean) => {
@@ -3827,13 +3954,14 @@ export class TyE2eTestBrowser {
         this.rememberCurrentUrl();
         this.waitAndClick('#e2eUD_MessageB');
         this.waitForNewUrl();
+        /*  DO_AFTER having tested this in FF with Wdio 6.0: Remove this:
         // Wait until new-message title can be edited.
         // For some reason, FF is so fast, so typing the title now after new page load, fails
         // the first time  [6AKBR45] [E2EBUG] — but only in an invisible this.#br, and within
         // fractions of a second after page load, so hard to fix. As of 2019-01.
         utils.tryManyTimes("Clearing the title field", 2, () => {
           this.editor.editTitle('');
-        });
+        }); */
       },
 
       clickViewProfile: () => {
@@ -4005,6 +4133,19 @@ export class TyE2eTestBrowser {
         }
         this.waitAndClick(optionId);
         this.waitUntilModalGone();
+      },
+
+      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: string) => {
+        //this.waitAndClick('.e_UplB');
+        // There'll be a file <input> not interactable error, unless we change
+        // its size to sth larger than 0 x 0.
+        this.#br.execute(function() {
+          var elem = document.querySelector('.e_EdUplFI');
+          // Use ['style'] because this:  elem.style  causes a compilation error.
+          elem['style'].width = '70px';
+          elem['style'].height = '20px';
+        });
+        this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
       },
 
       cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
@@ -4190,7 +4331,8 @@ export class TyE2eTestBrowser {
         // this.waitAndClick() results in this error:
         //   Failed to execute 'querySelector' on 'Document':
         //   'a=Home' is not a valid selector.
-        // Instead:
+        // Instead:  [EQSELEC]
+        this.waitForDisplayed(`a=Home`);
         this.$("a=Home").click();
       },
 
@@ -4218,23 +4360,45 @@ export class TyE2eTestBrowser {
         assert(this.topic._isOrigPostBodyVisible());
       },
 
-      isPostNrDescendantOf: (postNr, maybeParentNr) => {
+      isPostNrDescendantOf: (postNr: PostNr, maybeParentNr: PostNr) => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.isVisible(
             `#post-${maybeParentNr} + .dw-p-as + .dw-single-and-multireplies #post-${postNr}`);
       },
 
-      isPostNrVisible: (postNr) => {
+      isPostNrVisible: (postNr: PostNr) => {
         this.switchToEmbCommentsIframeIfNeeded();
         return this.isVisible('#post-' + postNr);
       },
 
-      waitForPostNrVisible: (postNr) => {  // RENAME to ...VisibleText?
-        this.switchToEmbCommentsIframeIfNeeded();
-        this.waitForVisibleText('#post-' + postNr);
+      clickShowMorePosts: (ps: { nextPostNr: PostNr }) => {
+        // This would be fragile, because waitAndClickLast won't
+        // scroll [05YKTDTH4]: (only scrolls to the *first* thing)
+        //
+        //   strangersBrowser.waitAndClickLast('.dw-x-show');
+        //
+        // Instead:
+
+        const nxtNr = ps.nextPostNr;
+        const nrs = `${nxtNr}, ${nxtNr + 1}, ${nxtNr + 2}`;
+        const selector = `.s_X_Show-PostNr-${nxtNr}`;
+
+        utils.tryUntilTrue(`show more posts: ${nrs} ...`, 3, (): boolean => {
+          if (this.isVisible(selector)) {
+            this.waitAndClick(selector, { maybeMoves: true });
+          }
+          return this.topic.waitForPostNrVisible(
+              ps.nextPostNr, { timeoutMs: 1500, timeoutIsFine: true });
+        });
       },
 
-      waitForPostAssertTextMatches: (postNr, text: string | RegExp) => {
+      waitForPostNrVisible: (postNr: PostNr, ps: { timeoutMs?: number,  // RENAME to ...VisibleText?
+              timeoutIsFine?: boolean } = {}): boolean => {
+        this.switchToEmbCommentsIframeIfNeeded();
+        return this.waitForVisibleText('#post-' + postNr, ps);
+      },
+
+      waitForPostAssertTextMatches: (postNr: PostNr, text: string | RegExp) => {
         dieIf(!_.isString(text) && !_.isRegExp(text),
             "Test broken: `text` is not a string nor a regex [TyEJ53068MSK]");
         this.switchToEmbCommentsIframeIfNeeded();
@@ -4244,12 +4408,12 @@ export class TyE2eTestBrowser {
 
       // waitUntilPostTextMatches — see below
 
-      waitUntilPostHtmlMatches: (postNr, regexOrString: string | RegExp | any[]) => {
+      waitUntilPostHtmlMatches: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
         const selector = this.topic.postBodySelector(postNr);
         this.waitUntilHtmlMatches(selector, regexOrString)
       },
 
-      assertPostHtmlDoesNotMatch: (postNr, regexOrString: string | RegExp | any[]) => {
+      assertPostHtmlDoesNotMatch: (postNr: PostNr, regexOrString: string | RegExp | any[]) => {
         const selector = this.topic.postBodySelector(postNr);
         const html = this.$(selector).getHTML();
         const badMatch = this._findHtmlMatchMiss(html, false, regexOrString);
@@ -4390,12 +4554,12 @@ export class TyE2eTestBrowser {
         this.assertExactly(num, this.topic.topLevelReplySelector);
       },
 
-      assertNoReplyMatches: (text) => {
+      assertNoReplyMatches: (text: string | RegExp) => {
         this.waitForMyDataAdded();
         this.assertNoTextMatches(this.topic.allRepliesTextSelector, text);
       },
 
-      assertSomeReplyMatches: (text) => {
+      assertSomeReplyMatches: (text: string | RegExp) => {
         this.waitForMyDataAdded();
         this.assertTextMatches(this.topic.allRepliesTextSelector, text);
       },
@@ -4410,6 +4574,13 @@ export class TyE2eTestBrowser {
       },
 
       clickFirstMentionOf: (username: string) => {
+        // This:  this.waitAndClick(`a.esMention=@${username}`);
+        // fails:
+        //    Failed to execute 'querySelector' on 'Document':
+        //      'a.esMention=@michael.lastname' is not a valid selector
+        // because  scrollIntoViewInPageColumn()  sends Javascript to the browser,
+        // but only Wdio, not the browser, understands these Wdio / WebDriver
+        // "magic" selectors:  [EQSELEC]
         this.waitForDisplayed(`a.esMention=@${username}`);
         const elem = this.$(`a.esMention=@${username}`);
         elem.click();
@@ -4477,6 +4648,11 @@ export class TyE2eTestBrowser {
       openEditHistory: (postNr: PostNr) => {
         this.waitAndClick(`#post-${postNr} .esP_viewHist`);
         this.editHistoryDialog.waitUntilVisible();
+      },
+
+      openAboutUserDialogForPostNr: (postNr: PostNr) => {
+        this.waitAndClick(`#post-${postNr} .esP_By`);
+        this.aboutUserDialog.waitForLoaded();
       },
 
       clickMoreForPostNr: (postNr: PostNr) => {  // RENAME to openMoreDialogForPostNr()?
@@ -4555,17 +4731,22 @@ export class TyE2eTestBrowser {
         const likeVoteSelector = this.topic.makeLikeVoteSelector(postNr);
         this.switchToEmbCommentsIframeIfNeeded();
         const isLikedBefore = this.isVisible(likeVoteSelector + '.dw-my-vote');
-        this.topic.clickLikeVote(postNr, opts);
-        this.switchToEmbCommentsIframeIfNeeded();
-        let delay = 133;
-        while (true) {
-          // Wait for the server to reply and the page to get updated.
-          this.#br.pause(delay);
-          delay *= 1.5;
-          const isLikedAfter = this.isVisible(likeVoteSelector + '.dw-my-vote');
-          if (isLikedBefore !== isLikedAfter)
-            break;
-        }
+        // This click for some reason won't always work, here: [E2ECLICK03962]
+        utils.tryUntilTrue(`toggle Like vote`, 3, () => {
+          this.switchToEmbCommentsIframeIfNeeded();
+          this.topic.clickLikeVote(postNr, opts);
+          // Wait for the server to reply, and the page to get updated.
+          const gotToggled = this.waitUntil(() => {
+            const likedNow = this.isVisible(likeVoteSelector + '.dw-my-vote');
+            //this.l(`isLikedBefore: ${isLikedBefore}  likedNow: ${likedNow}`)
+            return isLikedBefore !== likedNow;
+          }, {
+            message: `Waiting for post ${postNr} to get like-voted = ${!isLikedBefore}`,
+            timeoutMs: 2500,
+            timeoutIsFine: true,
+          });
+          return gotToggled;
+        });
       },
 
       isPostLikedByMe: (postNr: PostNr) => {
@@ -4646,23 +4827,23 @@ export class TyE2eTestBrowser {
         return this.isVisible('.dw-a-solve');
       },
 
-      selectPostNrAsAnswer: (postNr) => {
+      selectPostNrAsAnswer: (postNr: PostNr) => {
         assert(!this.isVisible(this.topic._makeUnsolveSelector(postNr)));
         this.topic.clickPostActionButton(this.topic._makeSolveSelector(postNr));
         this.waitForVisible(this.topic._makeUnsolveSelector(postNr));
       },
 
-      unselectPostNrAsAnswer: (postNr) => {
+      unselectPostNrAsAnswer: (postNr: PostNr) => {
         assert(!this.isVisible(this.topic._makeSolveSelector(postNr)));
         this.topic.clickPostActionButton(this.topic._makeUnsolveSelector(postNr));
         this.waitForVisible(this.topic._makeSolveSelector(postNr));
       },
 
-      _makeSolveSelector(postNr) {
+      _makeSolveSelector(postNr: PostNr) {
         return `#post-${postNr} + .esPA .dw-a-solve`;
       },
 
-      _makeUnsolveSelector(postNr) {
+      _makeUnsolveSelector(postNr: PostNr) {
         return `#post-${postNr} + .esPA .dw-a-unsolve`;
       },
 
@@ -4694,7 +4875,7 @@ export class TyE2eTestBrowser {
         // That might block forever, waiting for the dialog that's in front of the backdrop
         // to stop occluding (parts of) the backdrop.
         // Instead:
-        while (true) {
+        this.waitUntil(() => {
           // This no longer works, why not? Chrome 77. The click has no effect —
           // maybe it doesn't click at 10,10 any longer? Or what?
           //if (this.isVisible('.modal-backdrop')) {
@@ -4707,10 +4888,10 @@ export class TyE2eTestBrowser {
           if (this.isVisible('.esDropModal_CloseB')) {
             this.waitAndClick('.esDropModal_CloseB');
           }
-          if (!this.topic.isChangePageDialogOpen())
-            break;
-          this.#br.pause(PollMs);
-        }
+          return !this.topic.isChangePageDialogOpen();
+        }, {
+          message: `Waiting for Change Page dialog to close`,
+        });
         this.waitUntilModalGone();
       },
 
@@ -4750,25 +4931,29 @@ export class TyE2eTestBrowser {
       _reopenButtonSelector: '.s_ChPgD .e_ReopenPgB',
 
       refreshUntilBodyHidden: (postNr: PostNr) => {  // RENAME to refreshUntilPostBodyHidden
-        while (true) {
+        this.waitUntil(() => {
           let isBodyHidden = this.topic.isPostBodyHidden(postNr);
-          if (isBodyHidden) break;
+          if (isBodyHidden) return true;
           this.#br.pause(RefreshPollMs);
           this.#br.refresh();
-        }
+        }, {
+          message: `Waiting for post nr ${postNr}'s body to hide`,
+        });
       },
 
       refreshUntilPostPresentBodyNotHidden: (postNr: PostNr) => {
-        while (true) {
+        this.waitUntil(() => {
           let isVisible = this.isVisible(`#post-${postNr}`);
           let isBodyHidden = this.topic.isPostBodyHidden(postNr);
-          if (isVisible && !isBodyHidden) break;
+          if (isVisible && !isBodyHidden) return true;
           this.#br.pause(RefreshPollMs);
           this.#br.refresh();
-        }
+        }, {
+          message: `Waiting for post nr ${postNr}: isVisible && !isBodyHidden`,
+        });
       },
 
-      isPostBodyHidden: (postNr) => {
+      isPostBodyHidden: (postNr: PostNr) => {
         return this.isVisible(`#post-${postNr}.s_P-Hdn`);
       },
 
@@ -5081,15 +5266,19 @@ export class TyE2eTestBrowser {
       },
 
       searchForUntilNumPagesFound: (phrase: string, numResultsToFind: number) => {
-        while (true) {
+        let numFound;
+        this.waitUntil(() => {
           this.searchResultsPage.searchForWaitForResults(phrase);
-          const numFound = this.searchResultsPage.countNumPagesFound_1();
+          numFound = this.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
-            assert(numFound === numResultsToFind);
-            break;
+            tyAssert.eq(numFound, numResultsToFind);
+            return true;
           }
-          this.#br.pause(333);
-        }
+          this.#br.pause(111);
+        }, {
+          message: `Waiting for ${numResultsToFind} pages found for search ` +
+              `phrase:  "${phrase}"  found this far: ${numFound}`,
+        });
       },
 
       clickSearchButton: () => {
@@ -5467,12 +5656,15 @@ export class TyE2eTestBrowser {
         },
 
         refreshUntilNumDraftsListed: (numDrafts: number) => {
-          while (true) {
-            const elems = this.$$('.s_Dfs_Df');
-            if (elems.length === numDrafts)
-              return;
-            this.#br.pause(125);
-          }
+          // But this doesn't refresh the page? Hmm
+          let numNow: number;
+          this.waitUntil(() => {
+            numNow = this.$$('.s_Dfs_Df').length;
+            if (numNow === numDrafts)
+              return true;
+          }, {
+            message: `Waiting for ${numDrafts} drafts, num now: ${numNow}`,
+          });
         },
 
         waitUntilNumDraftsListed: (numDrafts: number) => {
@@ -5941,7 +6133,7 @@ export class TyE2eTestBrowser {
             const pageHtml = utils.makeEmbeddedCommentsHtml({
                 htmlToPaste, discussionId: ps.discussionId,
                 pageName: ps.urlPath, color: 'black', bgColor: '#a359fc' });
-            fs.writeFileSync(`target/${ps.urlPath}.html`, pageHtml);
+            fs.writeFileSync(`target/${ps.urlPath}`, pageHtml);
           },
         },
 
@@ -6330,7 +6522,7 @@ export class TyE2eTestBrowser {
         },
 
         selectFileToRestore: (fileNameInTargetDir: string) => {
-          this.waitAndSelectFile('.e_SelFil', fileNameInTargetDir);
+          this.waitAndSelectFile('.e_SelFil', 'TargetDir', fileNameInTargetDir);
         },
       },
 
@@ -6429,7 +6621,8 @@ export class TyE2eTestBrowser {
           this.waitUntilLoadingOverlayGone();
         },
 
-        countReviewTasksFor: (pageId, postNr, opts: { waiting: boolean }): number => {
+        countReviewTasksFor: (pageId: PageId, postNr: PostNr,
+              opts: { waiting: boolean }): number => {
           const pageIdPostNrSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
           const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
           const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
@@ -6442,7 +6635,7 @@ export class TyE2eTestBrowser {
           return this.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
-        waitForTextToReview: (text, ps: { index?: number } = {}) => {
+        waitForTextToReview: (text: string | RegExp, ps: { index?: number } = {}) => {
           let selector = '.esReviewTask_it';
           if (ps.index !== undefined) {
             selector = `.e_RT-Ix-${ps.index} ${selector}`;
@@ -6705,21 +6898,38 @@ export class TyE2eTestBrowser {
 
 
     serverErrorDialog = {
+      isDisplayed: (): boolean => {
+        return this.isVisible('.s_SED_Msg');
+      },
+
+      failTestAndShowDialogText: () => {
+        tyAssert.ok(this.serverErrorDialog.isDisplayed());
+        const title = this.waitAndGetText('.s_SED_Ttl');
+        const text = this.$('.s_SED_Msg').getHTML();
+        console.trace();
+        assert.fail(
+            `Unexpected error dialog: [TyEERRDLG]\n` +
+            `title:  ${title}\n` +
+            `text: --------------------------------------------------------------\n` +
+            `${text}\n` +
+            `--------------------------------------------------------------------\n`);
+      },
+
       waitForNotLoggedInError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyE0LGDIN_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGDIN_');
       },
 
       waitForNotLoggedInAsAdminError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyE0LGIADM_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyE0LGIADM_');
       },
 
       waitForJustGotSuspendedError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
       dismissReloadPageAlert: () => {
-        // Seems this alert appears only in a visible this.#br (not in an invisible headless this.#br).
-        for (let i = 0; i < 5; ++i) {
+        // Seems this alert appears only in a visible browser (but not if invisible/headless).
+        for (let i = 0; i < 3; ++i) {
           // Clicking anywhere triggers an alert about reloading the page, although has started
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.
@@ -6734,11 +6944,11 @@ export class TyE2eTestBrowser {
       },
 
       waitAndAssertTextMatches: (regex: string | RegExp) => {
-        this.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+        this.waitAndAssertVisibleTextMatches('.s_SED_Msg', regex);
       },
 
       waitForBadEmailAddressError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLADR_');
       },
 
       waitForBadEmailDomainError: () => {
@@ -6747,20 +6957,20 @@ export class TyE2eTestBrowser {
         // Why? Maybe there's another dialog .modal-body that fades away and disappears
         // before the server error dialog's .modal-body appears?
         utils.tryManyTimes("waitForBadEmailDomainError", 2, () => {
-          this.waitUntilTextMatches('.s_SED_Wrap .modal-body', 'TyEBADEMLDMN_');
+          this.waitUntilTextMatches('.s_SED_Msg', 'TyEBADEMLDMN_');
         });
       },
 
       waitForTooManyInvitesError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyETOOMANYBULKINV_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyETOOMANYBULKINV_');
       },
 
       waitForTooManyInvitesLastWeekError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyINVMANYWEEK_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyINVMANYWEEK_');
       },
 
       waitForXsrfTokenExpiredError: () => {
-        this.waitUntilTextMatches('.modal-body', 'TyEXSRFEXP_');
+        this.waitUntilTextMatches('.s_SED_Msg', 'TyEXSRFEXP_');
       },
 
       waitForIsRegistrationSpamError: () => {
@@ -6821,6 +7031,8 @@ export class TyE2eTestBrowser {
       },
     };
 
+    // REFACTOR  MOVE all these fns to the contexts where they can be called?
+    // so autocomplete can be used
     complex = {
       waitUntilLoggedIn: () => {
         this.#br.waitUntil(() => {
@@ -7094,7 +7306,18 @@ export class TyE2eTestBrowser {
       },
 
       sendMessageToPageAuthor: (messageTitle: string, messageText: string) => {
+        logMessage(`Opens page author's About dialog...`);
         this.pageTitle.openAboutAuthorDialog();
+        this.complex.__sendMessageImpl(messageTitle, messageText);
+      },
+
+      sendMessageToPostNrAuthor: (postNr: PostNr, messageTitle: string, messageText: string) => {
+        logMessage(`Opens post nr ${postNr} author's About dialog ...`);
+        this.topic.openAboutUserDialogForPostNr(postNr);
+        this.complex.__sendMessageImpl(messageTitle, messageText);
+      },
+
+      __sendMessageImpl: (messageTitle: string, messageText: string) => {
         logMessage(`Click Send Message...`);
         this.aboutUserDialog.clickSendMessage();
         logMessage(`Edit message title...`);
@@ -7103,6 +7326,7 @@ export class TyE2eTestBrowser {
         this.editor.editText(messageText);
         logMessage(`Submit...`);
         this.editor.saveWaitForNewPage();
+        logMessage(`Done, now at new page: ${this.urlPath()}`);
       },
 
       createChatChannelViaWatchbar: (

@@ -176,9 +176,19 @@ export function store_canUndeletePage(store: Store): boolean {
 
 // Returns the current category, or if none, the default category.
 //
+// Don't use if on a PageType.Forum page, see dieIf below.
+//
+// Also see: store_findTheDefaultCategory(store) [GETACTDEFCAT]
+//
 export function store_getCurrOrDefaultCat(store: Store): Category {
   const currCatId = store.currentPage.categoryId;
   const currCat = _.find(store.currentCategories, (c: Category) => c.id === currCatId);
+
+  // @ifdef DEBUG
+  dieIf(currCat && !currCat.parentId, `Don't use store_getCurrOrDefaultCat() when on a ` +
+      `PageType.Forum page — ForumComponent has its own this.props.activeCategory [TyEACTVCAT]`);
+  // @endif
+
   if (currCat)
     return currCat;
 

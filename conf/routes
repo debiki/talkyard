@@ -54,6 +54,8 @@ GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbedde
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
+#GET  /-/v0/search              controllers.SearchController.doSearchPubApiGet(q, pretty: Option[Boolean])
+POST  /-/v0/search              controllers.SearchController.doSearchPubApiPost
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
@@ -326,6 +328,8 @@ POST  /-/update-sites            controllers.SuperAdminController.updateSites
 GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
 POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
 POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
+
+POST  /-/v0/list                talkyard.server.api.ListController.listThingsPubApi
 
 GET   /-/v0/list-users          controllers.UserController.listMembersPubApi(usernamePrefix, usersOnly: Boolean = true)
 #ET   /-/v0/list-groups — only groups

@@ -18,13 +18,13 @@
 package ed.server.jobs
 
 import akka.actor.{Actor, ActorRef, Props}
-import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals}
 import play.{api => p}
 import scala.concurrent.duration._
 import Janitor._
 import scala.concurrent.ExecutionContext
+import talkyard.server.TyLogger
 
 
 
@@ -52,11 +52,11 @@ object Janitor {
 
     // Sync the is-test intervals below (100.millis currently) with the test suites. [2YPBJ6L]
 
-    globals.actorSystem.scheduler.schedule(
+    globals.actorSystem.scheduler.scheduleWithFixedDelay(
       isOrWasTest ? 2.seconds | 60.seconds,
       isOrWasTest ? 100.millis | 10.seconds, actorRef, DeleteOldStuff)
 
-    globals.actorSystem.scheduler.schedule(
+    globals.actorSystem.scheduler.scheduleWithFixedDelay(
       isOrWasTest ? 2.seconds | 13.seconds,
       isOrWasTest ? 100.millis | 3.seconds, actorRef, ExecuteReviewTasks)
 
@@ -71,6 +71,8 @@ object Janitor {
 
 class JanitorActor(val globals: Globals) extends Actor {
 
+  private val logger = TyLogger("JanitorActor")
+
   def execCtx: ExecutionContext = globals.executionContext
 
   override def receive: Receive = {
@@ -78,17 +80,17 @@ class JanitorActor(val globals: Globals) extends Actor {
       try findAndDeleteOldStuff()
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-          p.Logger.warn("Cannot delete old stuff, database connection closed [TyE2FKQS4]")
+          logger.warn("Cannot delete old stuff, database connection closed [TyE2FKQS4]")
         case throwable: Throwable =>
-          p.Logger.error("Error deleting old stuff [TyE52QBU04]", throwable)
+          logger.error("Error deleting old stuff [TyE52QBU04]", throwable)
       }
     case ExecuteReviewTasks =>
       try executePendingReviewTasks()
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
-          p.Logger.warn("Cannot exec review tasks, database connection closed [TyE2FKQS5]")
+          logger.warn("Cannot exec review tasks, database connection closed [TyE2FKQS5]")
         case throwable: Throwable =>
-          p.Logger.error("Error executing review tasks [TyE52QBU05]", throwable)
+          logger.error("Error executing review tasks [TyE52QBU05]", throwable)
       }
   }
 

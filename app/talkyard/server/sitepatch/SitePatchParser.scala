@@ -174,7 +174,7 @@ case class SitePatchParser(context: EdContext) {
     val (permsOnPagesJson, pagesJson, pathsJson, pageIdsByAltIdsJson,
         pagePopularityScoresJson, pageParticipantsJson,
         categoriesJson, draftsJson, postsJson, postActionsJson, reviewTasksJson,
-        isTestSiteOkDelete) =
+        isTestSiteOkDelete, isTestSiteIndexAnyway) =
       try {
         (readJsArray(bodyJson, "permsOnPages", optional = true),
           readJsArray(bodyJson, "pages", optional = true),
@@ -187,7 +187,8 @@ case class SitePatchParser(context: EdContext) {
           readJsArray(bodyJson, "posts", optional = true),
           readJsArray(bodyJson, "postActions", optional = true),
           readJsArray(bodyJson, "reviewTasks", optional = true),
-          readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false))
+          readOptBool(bodyJson, "isTestSiteOkDelete").getOrElse(false),
+          readOptBool(bodyJson, "isTestSiteIndexAnyway").getOrElse(false))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -425,7 +426,8 @@ case class SitePatchParser(context: EdContext) {
       pages, paths, pageIdsByAltIds, pagePopularityScores,
       pageNotfPrefs, pageParticipants,
       drafts, posts, postActions, permsOnPages, reviewTasks,
-      isTestSiteOkDelete = isTestSiteOkDelete)
+      isTestSiteOkDelete = isTestSiteOkDelete,
+      isTestSiteIndexAnyway = isTestSiteIndexAnyway)
   }
 
 
@@ -1138,6 +1140,8 @@ case class SitePatchParser(context: EdContext) {
 
   def readCategoryOrBad(jsValue: JsValue, mustBePatch: Boolean, isE2eTest: Boolean)
         : Either[Category, CategoryPatch] Or ErrorMessage = {
+    import collection.immutable.Seq
+
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -1196,6 +1200,8 @@ case class SitePatchParser(context: EdContext) {
       }
       // ------------------------------------------------------------------------
 
+      val defaultTopicType = (jsObj \ "defaultTopicType").asOpt[Int] flatMap PageType.fromInt
+
       Good(Left(Category(
         id = theId,
         extImpId = extId,
@@ -1206,7 +1212,7 @@ case class SitePatchParser(context: EdContext) {
         slug = slug,
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
         description = readOptString(jsObj, "description"),
-        newTopicTypes = Nil, // fix later [readlater]
+        newTopicTypes = defaultTopicType.toVector, // [962MRYPG]
         unlistCategory = readOptBool(jsObj, "unlistCategory").getOrElse(false),
         unlistTopics = readOptBool(jsObj, "unlistTopics").getOrElse(false),
         includeInSummaries = includeInSummaries,

@@ -39,7 +39,7 @@ import Utils.ValidationImplicits._
 object LoginWithOpenIdController extends mvc.Controller {
 
 
-  val Logger = play.api.Logger("app.openid")
+  val Logger = play.api.Lo  gger("app.openid")
 
   val RequiredAttrs = Seq(
     "email" -> "http://schema.openid.net/contact/email",

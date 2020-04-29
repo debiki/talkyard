@@ -178,7 +178,8 @@ describe("invites-by-core-try-login-after TyT2WKF5PF30", () => {
 
   it("... and that she was inited by Corax", () => {
     owensBrowser.invitedUsersList.waitAssertInviteRowPresent(
-        1, { email: janesEmailAddress, sentByUsername: corax.username });
+        1, { email: janesEmailAddress, sentByUsername: corax.username,
+            acceptedByUsername: janesUsername });
   });
 
 });

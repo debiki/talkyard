@@ -47,7 +47,7 @@ object JsonUtils {
           "EsE2YMP7", s"'$fieldName' is not a JsObject, but a ${classNameOf(bad)}")
     }
 
-
+  // Add a 2nd fn, or a param: all elems be of the same type? See below: [PARSEJSARR]
   def readJsArray(json: JsValue, fieldName: String, optional: Boolean = false): JsArray = {
     val array = (json \ fieldName).toOption getOrElse {
       if (optional) return JsArray()
@@ -60,6 +60,22 @@ object JsonUtils {
           "EsE4GLK3", s"'$fieldName' is not a JsArray, but a ${classNameOf(bad)}")
     }
   }
+
+  /*
+  // No way to shorten this?  [PARSEJSARR]
+  (jsObj \ "newTopicTypes").asOpt[Seq[JsValue]] match {
+    case Some(list) if list.isInstanceOf[JsArray] =>
+      // Should be only one topic type. [5YKW294]
+      list.asInstanceOf[JsArray].value.headOption match {
+        case Some(jsValue) =>
+          jsValue match {
+            case JsNumber(number) => PageType.fromInt(number.toInt).toVector
+            case _ => Nil
+          }
+        case _ => Nil
+      }
+    case _ => Nil
+  } */
 
 
   def readString(json: JsValue, fieldName: String): String =

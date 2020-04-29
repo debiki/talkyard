@@ -24,21 +24,21 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
-import play.api._
 import play.api.libs.json.{JsString, JsValue}
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
+import talkyard.server.TyLogging
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
   */
 class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.security.createSessionIdAndXsrfToken
 
 
-  def start = mvc.Action { _ =>
+  def start = GetActionAllowAnyone { _ =>
     Redirect(routes.ResetPasswordController.showResetPasswordPage().url)
   }
 
@@ -66,15 +66,15 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
         dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
         var isCreating = false
         if (user.passwordHash.isDefined) {
-          Logger.info(s"s$siteId: Sending password reset email ${toWho(user)} [TyM2AKEG5]")
+          logger.info(s"s$siteId: Sending password reset email ${toWho(user)} [TyM2AKEG5]")
         }
         else {
-          Logger.info(s"s$siteId: Sending create password email ${toWho(user)} [TyM6WKBA20]")
+          logger.info(s"s$siteId: Sending create password email ${toWho(user)} [TyM6WKBA20]")
           isCreating = true
         }
         sendChangePasswordEmailTo(user, request, isCreating = isCreating)
       case None =>
-        Logger.info(o"""s$siteId: Not sending password reset email to non-existing
+        logger.info(o"""s$siteId: Not sending password reset email to non-existing
              user or email address: $emailOrUsername""")
         if (isEmailAddress) {
           // Don't tell the user that this email address doesn't exist; that'd be a
@@ -111,10 +111,10 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     throwForbiddenIf(member.emailVerifiedAt.isEmpty, "TyE5KBRE21", "Email address not verified")
 
     if (member.passwordHash.isDefined) {
-      Logger.info(s"s$siteId: Sending password reset email ${toWho(member)} [TyM5BKFW0]")
+      logger.info(s"s$siteId: Sending password reset email ${toWho(member)} [TyM5BKFW0]")
     }
     else {
-      Logger.info(s"s$siteId: Sending create password email ${toWho(member)} [TyM2AKBP05]")
+      logger.info(s"s$siteId: Sending create password email ${toWho(member)} [TyM2AKBP05]")
     }
     sendChangePasswordEmailTo(member.briefUser, request, isCreating = member.passwordHash.isEmpty)
     OkSafeJson(JsString("Ok."))

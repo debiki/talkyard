@@ -44,6 +44,7 @@ lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
+ThisBuild / useCoursier := false
 
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
@@ -78,10 +79,10 @@ val appDependencies = Seq(
    in /opt/talkyard/conf/play-framework.conf.
 
    */
-  "com.mohiva" %% "play-silhouette" % "5.0.7",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.7",
+  "com.mohiva" %% "play-silhouette" % "7.0.0",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
   // PostgreSQL JDBC client driver
-  // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
+  // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
   // HikariCP — "A solid high-performance JDBC connection pool at last"
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
@@ -115,18 +116,18 @@ val appDependencies = Seq(
   //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
   //   [error] (class java.lang.RuntimeException/bad constant pool tag 9 at byte 125)
   //   [warn] Class javax.annotation.CheckReturnValue not found ..."""
-  // See: http://code.google.com/p/guava-libraries/issues/detail?id=776
-  // and: http://stackoverflow.com/questions/10007994/
+  // See: https://code.google.com/p/guava-libraries/issues/detail?id=776
+  // and: https://stackoverflow.com/questions/10007994/
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test", // but prefer ScalaTest
+  "org.scalatest" %% "scalatest" % "3.1.1" % "test", // but prefer ScalaTest
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test)
 
 
 val main = (project in file("."))
-  .enablePlugins(play.sbt.Play, BuildInfoPlugin)
+  .enablePlugins(play.sbt.PlayWeb, BuildInfoPlugin)
   .settings(mainSettings: _*)
   .dependsOn(
     edCore % "test->test;compile->compile",
@@ -212,12 +213,12 @@ def mainSettings = List(
   //listJarsTask)
 
 // This is supposedly needed when using ScalaTest instead of Specs2,
-// see: http://stackoverflow.com/a/10378430/694469, but I haven't
+// see: https://stackoverflow.com/a/10378430/694469, but I haven't
 // activated this, because ScalaTest works fine anyway:
 // `testOptions in Test := Nil`
 
 // Lists dependencies.
-// See: http://stackoverflow.com/a/6509428/694469
+// See: https://stackoverflow.com/a/6509428/694469
 // ((Could do that before and after upgrading Play Framework, and run a diff,
 // to find changed dependencies, in case terribly weird compilation
 // errors arise, e.g. "not enough arguments for method" or
@@ -229,7 +230,7 @@ def mainSettings = List(
 // Causes deprecation warning:
 // The sbt 0.10 style DSL is deprecated: '(k1, k2) map { (x, y) => ... }'
 // should now be '{ val x = k1.value; val y = k2.value }'.
-// See http://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html
+// See https://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html
 def listJars = TaskKey[Unit]("list-jars")
 def listJarsTask = listJars := (target, fullClasspath in Runtime) map {
   (target, cp) =>

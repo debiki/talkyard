@@ -55,15 +55,14 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
   sitePatchController: talkyard.server.sitepatch.SitePatchController)
   extends EdController(cc, edContext) {
 
-  import context.{security, globals}
-  import play.api.Logger
+  private val logger = talkyard.server.TyLogger("ApiV0Controller")
 
+  import context.{security, globals}
 
   def getFromApi(apiEndpoint: String): Action[Unit] =
         GetActionRateLimited(RateLimits.NoRateLimits) { request: GetRequest =>
 
-    import request.{siteId, queryString, dao, theRequester => requester}
-    lazy val now = context.globals.now()
+    import request.{siteId, queryString, dao}
 
     val settings = dao.getWholeSiteSettings()
 
@@ -194,7 +193,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             // some week, after having searched for BAD_REDIR_URL in the logs:
             if (!isOk) {
               val onlyPath = Prelude.stripOrigin(url)
-              Logger.warn(s"BAD_REDIR_URL: $url, changed to $onlyPath [TyE20549RKT4]")
+              logger.warn(s"BAD_REDIR_URL: $url, changed to $onlyPath [TyE20549RKT4]")
               onlyPath getOrElse "/"
             }
             else {
@@ -255,7 +254,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
   def postToApi(apiEndpoint: String): Action[JsValue] =
         PostJsonAction(RateLimits.NoRateLimits, maxBytes = 1000) { request: JsonPostRequest =>
 
-    import request.{siteId, body, dao, theRequester => requester}
+    import request.{siteId, body, dao}
     lazy val now = context.globals.now()
 
     throwForbiddenIf(!request.isViaApiSecret,
@@ -337,7 +336,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             // single-sign-on logging in as that user, for the first time. Connect this Talkyard account
             // with the external user account, and, in the future, we'll find it via external
             // id lookup instead (in code block (7KAB2BA) above).
-            Logger.info(o"""s$siteId:
+            logger.info(o"""s$siteId:
                 Connecting Talkyard user ${user.usernameHashId}
                 to external user 'ssoid:${extUser.ssoId}', because they have the same
                 email address: ${extUser.primaryEmailAddress}, and the Talkyard
@@ -356,7 +355,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             val okayUsername = Participant.makeOkayUsername(usernameToTry, allowDotDash = false,  // [CANONUN]
               tx.isUsernameInUse)  getOrElse throwForbidden("TyE2GKRC4C2", s"Cannot generate username")
 
-            Logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,
+            logger.info(o"""s$siteId: Creating new Talkyard user, with username @$okayUsername,
                 for external user 'ssoid:${extUser.ssoId}'... [TyM5BKA2WA0]""")
 
             val userData = // [5LKKWA10]

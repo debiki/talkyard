@@ -129,6 +129,7 @@ package object search {
 
   case class PageAndHits(
     pageStuff: PageStuff,
+    pagePath: PagePathWithId,
     hitsByScoreDesc: immutable.Seq[SearchHit]) {
     def pageId: PageId = pageStuff.pageId
     def pageTitle: String = pageStuff.title
@@ -214,8 +215,8 @@ package object search {
     // Later: index plain text instead of markdown source.
     val UnapprovedSource = "unapprovedSource"
     val CreatedAtUnixSeconds = "createdAt"
-    val Tags = "tags"
-    val PageTags = "pageTags"  // later
+    val Tags = "tags"  // all posts, page and replies
+    val PageTags = "pageTags"  // later — the page / article / orig post, only
     val CategoryId = "categoryId"
   }
 

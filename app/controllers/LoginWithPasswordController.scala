@@ -27,29 +27,31 @@ import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import org.scalactic.{Bad, Good}
-import play.api._
 import play.api.mvc._
 import play.api.libs.json._
-import LoginWithPasswordController._
 import ed.server.security.{EdSecurity, SidOk}
 import org.owasp.encoder.Encode
+import talkyard.server.TyLogging
 
 
 
 /** Logs in users via username and password.
   */
 class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
-  extends EdController(cc, edContext) {
+  extends EdController(cc, edContext) with TyLogging {
 
   import context.globals
   import context.security.createSessionIdAndXsrfToken
 
 
-  def login: Action[JsonOrFormDataBody] = JsonOrFormDataPostAction(
+  def login: Action[JsValue] = PostJsonAction(
         RateLimits.Login, maxBytes = 1000, isLogin = true) { request =>
-    val email = request.body.getOrThrowBadReq("email")
-    val password = request.body.getOrThrowBadReq("password")
-    val anyReturnToUrl = request.body.getFirst("returnToUrl")
+
+    import request.body
+
+    val email: String = (body \ "email").as[String]
+    val password: String = (body \"password").as[String]
+    val anyReturnToUrl: Option[String] = (body \"returnToUrl").asOpt[String]
 
     val maybeCannotUseCookies =
       request.headers.get(EdSecurity.AvoidCookiesHeaderName) is EdSecurity.Avoid
@@ -131,7 +133,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val dao = daoFor(request.request)
     if (dao.siteId != request.dao.siteId) {
       if (globals.isProd) {
-        play.api.Logger.warn("Weird: dao.siteId != request.dao.siteId  [TyEWEIRDDAO]")
+        logger.warn("Weird: dao.siteId != request.dao.siteId  [TyEWEIRDDAO]")
       }
       else {
         die("TyE305AKTFWJ2", "Wrong dao, *harmmless* but why?")
@@ -240,7 +242,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         case _: DbDao.DuplicateUserEmail =>
           // Send account reminder email. But don't otherwise indicate that the account exists,
           // so no email addresses are leaked.
-          sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+          LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
             dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
           (None, Nil)
       }
@@ -269,7 +271,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
   def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
                                         host: String, dao: SiteDao) {
-    val email = createEmailAddrVerifEmailLogDontSend(user, anyReturnToUrl, host, dao)
+    val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
+      user, anyReturnToUrl, host, dao)
     globals.sendEmail(email, dao.siteId)
   }
 
@@ -349,7 +352,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
     email.sentOn match {
       case None =>
-        Logger.warn(o"""Got an address verification email ID, although email not yet sent,
+        logger.warn(o"""Got an address verification email ID, although email not yet sent,
             site: ${request.siteId}, email id: $emailId""")
         throwForbidden("DwE8Gfh32", "Address verification email not yet sent")
       case Some(_) =>
@@ -372,15 +375,16 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 }
 
 
-object LoginWithPasswordController {
+object LoginWithPasswordController extends TyLogging {
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
 
   private val MaxAddressVerificationEmailAgeInHours = 25
 
 
-  def createEmailAddrVerifEmailLogDontSend(user: User, anyReturnToUrl: Option[String],
-                                           host: String, dao: SiteDao): Email = {
+  def createEmailAddrVerifEmailLogDontSend(
+        user: User, anyReturnToUrl: Option[String],
+        host: String, dao: SiteDao): Email = {
 
     import dao.context.globals
     val (siteName, origin) = dao.theSiteNameAndOrigin()
@@ -417,7 +421,7 @@ object LoginWithPasswordController {
     dao.saveUnsentEmail(email)
 
     if (user.isOwner) {
-      play.api.Logger.info(i"""
+      logger.info(i"""
         |
         |————————————————————————————————————————————————————————————
         |Copy this site-owner-email-address-verification-URL into your web browser: [EdM5KF0W2]

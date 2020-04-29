@@ -10,10 +10,9 @@ function createPasswordTestData(ps: {
   alreadyLoggedInAtIdProvider?: boolean,
 } = {}): NewSiteData {
 
-  // Dupl code [502KGAWH0]
   const testId = utils.generateTestId();
-  const localHostname = settings.localHostname ||
-                      settings.testLocalHostnamePrefix + 'create-site-' + testId;
+  const localHostname = utils.getLocalHostname('create-site-' + testId);
+
   return {
     siteType: SiteType.Forum,
     testId: testId,

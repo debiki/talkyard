@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+(function() {
+
 var d = { u: debiki.v0.util };
 
 
@@ -88,5 +90,5 @@ d.u.zoomListeners = [];
 }());
 
 
-
+})();
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

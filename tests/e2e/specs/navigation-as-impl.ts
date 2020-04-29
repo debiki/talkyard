@@ -60,23 +60,18 @@ function makeWholeSpec(initFn: () => InitResult) {
   let willBeLoggedIn = false;
 
   // Only for testing guests. -----
-  const localHostname = 'comments-for-e2e-test-embguest-localhost-8080';
+  const embeddedLocalHostname = 'comments-for-e2e-test-embguest-localhost-8080';
   const embeddingOrigin = 'http://e2e-test-embguest.localhost:8080';
-  const embeddingPageSlug = 'emb-cmts-guest.html';
-  const embeddingPageUrl = embeddingOrigin + '/' + embeddingPageSlug;
+  // Different tests might run in parallel, so need different slugs.
+  // WON'T WORK but fine, for now. — Also need to use different localHostname, see above.
+  const embeddingPageSlug = (): string => `emb-cmts-guest-${getCidOrDie()}.html`;
+  const embeddingPageUrl = (): string => `${embeddingOrigin}/${embeddingPageSlug()}`;
   // ------------------------------
 
-  forum = buildSite().addLargeForum({
+  forum = buildSite(undefined, { okInitEarly: true }).addLargeForum({
     title: forumTitle,
     members: ['alice', 'maria', 'michael'],
   });
-
-  if (initResult.isGuest) {
-    // Create an embedded comments site.
-    forum.siteData.meta.localHostname = localHostname;
-    forum.siteData.settings.allowEmbeddingFrom = embeddingOrigin;
-    forum.siteData.settings.allowGuestLogin = true;
-  }
 
   who = (
       memberIsAdmin ? "admin " : (
@@ -87,13 +82,32 @@ function makeWholeSpec(initFn: () => InitResult) {
 
   describe(`Navigation as ${who}:`, () => {
 
-    it("import a site", () => {
+    it("update site hostname and settings", () => {
+      const site = forum.siteData as SiteData2;
+      let localHostname: string;
+      if (initResult.isGuest) {
+        // Create an embedded comments site.
+        localHostname = embeddedLocalHostname;
+        site.settings.allowEmbeddingFrom = embeddingOrigin;
+        site.settings.allowGuestLogin = true;
+      }
+      else {
+        localHostname = utils.getLocalHostname();
+      }
+      console.log(`Setting name and local hostname: ${localHostname}`);
+      site.meta.name = localHostname;
+      site.meta.localHostname = localHostname;
+    });
+
+    it("import site", () => {
+      forum.siteData.isTestSiteIndexAnyway = true;
       idAddress = server.importSiteData(forum.siteData);
+      tyAssert.excludes(idAddress.origin, '//e2e-test-site.localhost');
       siteId = idAddress.id;
       server.skipRateLimits(siteId);
     });
 
-    it("init brower", () => {
+    it("init browser", () => {
       usersBrowser = new TyE2eTestBrowser(wdioBrowser);
     });
 
@@ -115,14 +129,17 @@ function makeWholeSpec(initFn: () => InitResult) {
       willBeLoggedIn = true;
 
       it("Creates an embedding page", () => {
-        fs.writeFileSync(`target/${embeddingPageSlug}`, makeHtml('b3c-aaa', '#500'));
+        const path = `target/${embeddingPageSlug()}`;
+        logMessage(`At: ${path}`);
+        fs.writeFileSync(path, makeHtml('b3c-aaa', '#500'));
         function makeHtml(pageName: string, bgColor: string): string {
-          return utils.makeEmbeddedCommentsHtml({ pageName, discussionId: '', localHostname, bgColor});
+          return utils.makeEmbeddedCommentsHtml({
+            pageName, discussionId: '', localHostname: embeddedLocalHostname, bgColor});
         }
       });
 
       it(`... opens it`, () => {
-        usersBrowser.go(embeddingPageUrl);
+        usersBrowser.go(embeddingPageUrl());
       });
 
       it(`... logs in as guest ${initResult.fullName}`, () => {
@@ -405,7 +422,7 @@ function makeWholeSpec(initFn: () => InitResult) {
       it("start at search page, with q=CategoryB", () => {
         usersBrowser.goToSearchPage('CategoryB');
       });
-      addSearchPageTests('CategoryB');
+      addSearchPageTests('CategoryB', 2);
 
       if (memberIsAdmin) {
         it("start in admin area, review section, search for staff-only page  TyT85WABR0", () => {
@@ -521,16 +538,19 @@ function addOwnProfileTest(prefix: string) {
 }
 
 
-function addSearchPageTests(searchPhrase) {
+function addSearchPageTests(searchPhrase, numPagesToHit?: number) {
 
   it(`Did search for: "${searchPhrase}"`, () => {
     usersBrowser.searchResultsPage.waitForResults(searchPhrase);
   });
 
-  // Currently uploaded site contents isn't indexed. [2WBKP05]
-  //it(`Found correct number of pages`, () => {
-  //  usersBrowser.searchResultsPage.countNumPagesFound_1(???);
-  //});
+  if (numPagesToHit) it(`... found ${numPagesToHit} pages`, () => {
+    // This requires the server to be done indexing the pages we upserted,
+    // when creating the site — and it really should be, lots of time has elapsed.
+    // (The pages get added to the index queue here: [TyT036WKHW2])
+    tyAssert.eq(
+        usersBrowser.searchResultsPage.countNumPagesFound_1(), numPagesToHit);
+  });
 
   it(`Then search for: "Black gremlins"`, () => {
     usersBrowser.pause(200);  // [E2EBUG] without this, sometimes:

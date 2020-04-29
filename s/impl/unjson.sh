@@ -39,7 +39,7 @@ do
     elif [[ "$line" =~ ^app_ ]] ; then
       # The program 'jq' extracts the timestamp, severity, message etc fields from a json log message.
       # The -j flag removes surrounding quotes.
-      json=$( egrep -o '\{".*\}' <<< "$line" )
+      json=$( egrep -o '^ *\{".*\}' <<< "$line" )
       if [ -n "$json" ]; then
         pretty_json=$(echo "$json" | jq -j '.severity, "  ", .message, "  kvs: ", .kvs' )
         app="$(echo "$line" | sed -r 's/^([^|]+\|)(.*)$/\1/')"

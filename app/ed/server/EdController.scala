@@ -75,19 +75,20 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def JsonOrFormDataPostAction(rateLimits: RateLimits, maxBytes: Int,
         allowAnyone: Boolean = false, isLogin: Boolean = false)
   (f: ApiRequest[JsonOrFormDataBody] => Result): Action[JsonOrFormDataBody] =
-    PlainApiAction(new JsonOrFormDataBodyParser(executionContext).parser(maxBytes = maxBytes),
+    PlainApiAction(new JsonOrFormDataBodyParser(executionContext, cc).parser(maxBytes = maxBytes),
       rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
-  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
-        avoidCookies: Boolean = false)(
+  def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int,
+        allowAnyone: Boolean = false, avoidCookies: Boolean = false)(
         f: JsonPostRequest => Future[Result]): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
       rateLimits, allowAnyone = allowAnyone, avoidCookies = avoidCookies).async(f)
 
-  def PostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
+  def PostJsonAction(rateLimits: RateLimits, maxBytes: Int,
+        allowAnyone: Boolean = false, isLogin: Boolean = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(cc.parsers.json(maxLength = maxBytes),
-      rateLimits, allowAnyone = allowAnyone)(f)
+      rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
   def PostTextAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[String] => Result): Action[String] =

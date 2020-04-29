@@ -23,7 +23,6 @@ import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
-import play.api.mvc.BodyParsers.parse.empty
 import UnsubFromSummariesController._
 
 
@@ -58,7 +57,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
   import context.globals
 
 
-  def showUnsubForm(emailId: EmailId): Action[Unit] = ExceptionAction(empty) { request =>
+  def showUnsubForm(emailId: EmailId): Action[Unit] = ExceptionAction(cc.parsers.empty) { request =>
     val site = globals.lookupSiteOrThrow(request)
     val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE5JGKW0", "Bad email id")
@@ -67,7 +66,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
 
 
   def handleForm: Action[JsonOrFormDataBody] =
-        ExceptionAction(new JsonOrFormDataBodyParser(executionContext).parser(maxBytes = 200)) {
+        ExceptionAction(new JsonOrFormDataBodyParser(executionContext, cc).parser(maxBytes = 200)) {
           request =>
 
     val emailId = request.body.getFirst(EmailIdInpName) getOrElse throwParamMissing(
@@ -105,7 +104,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
   }
 
 
-  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(empty) { _ =>
+  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     Ok(views.html.summaryemails.unsubFromSummariesDonePage())
   }
 
