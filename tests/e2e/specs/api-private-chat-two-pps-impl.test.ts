@@ -222,14 +222,14 @@ export default function addApiChatTestSteps(variants: {
       assert.eq(listUsersResponse.users.length, 2);
     });
 
-    let charlieFromApi: UserIdName;
+    let charlieFromApi: UserFound;
 
     it("... namely Charlie", () => {
       charlieFromApi = listUsersResponse.users[0];
       assert.eq(charlieFromApi.username, charlieExtUser.username);
     });
 
-    let chumaFromApi: UserIdName;
+    let chumaFromApi: UserFound;
 
     it("... and Chuma", () => {
       chumaFromApi = listUsersResponse.users[1];
