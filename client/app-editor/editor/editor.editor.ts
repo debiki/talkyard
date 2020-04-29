@@ -1930,9 +1930,10 @@ export const Editor = createFactory<any, EditorState>({
     const textareaButtons =
       r.div({ className: 'esEdtr_txtBtns' },
         r.button({ onClick: this.selectAndUploadFile, title: t.e.UploadBtnTooltip,
-            className: 'esEdtr_txtBtn' },
+            className: 'esEdtr_txtBtn e_UplB' },
           r.span({ className: 'icon-upload' })),
         r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
+          className: 'e_EdUplFI',
           ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
         r.button({ onClick: this.makeTextBold, title: t.e.BoldBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'B'),

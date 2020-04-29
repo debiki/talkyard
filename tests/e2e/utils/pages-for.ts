@@ -1590,9 +1590,15 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitAndSelectFile(selector: string, fileNameInTargetDir: string) {
-      // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
-      const pathToUpload = path.join(__dirname, '..', 'target', fileNameInTargetDir);
+    waitAndSelectFile(selector: string, whichDir: 'TargetDir' | 'TestMediaDir',
+        fileName: string) {
+
+      const pathToUpload = (whichDir === 'TargetDir'
+          // Step up from  tests/e2e/utils/  to  tests/e2e/target/:
+          ? path.join(__dirname, '..', 'target', fileName)
+          // Step down-up from  tests/e2e/utils/  to  tests/test-media/.
+          : path.join(__dirname, '..', '..', 'test-media', fileName));
+
       logMessage("Uploading file: " + pathToUpload.toString());
       logWarningIf(settings.useDevtoolsProtocol,
           `BUT this.#br.uploadFile() DOES NOT WORK WITH THIS PROTOCOL, 'DevTools' [TyEE2EBADPROTO]`);
@@ -4129,6 +4135,19 @@ export class TyE2eTestBrowser {
         this.waitUntilModalGone();
       },
 
+      uploadFile: (whichDir: 'TargetDir' | 'TestMediaDir', fileName: string) => {
+        //this.waitAndClick('.e_UplB');
+        // There'll be a file <input> not interactable error, unless we change
+        // its size to sth larger than 0 x 0.
+        this.#br.execute(function() {
+          var elem = document.querySelector('.e_EdUplFI');
+          // Use ['style'] because this:  elem.style  causes a compilation error.
+          elem['style'].width = '70px';
+          elem['style'].height = '20px';
+        });
+        this.waitAndSelectFile('.e_EdUplFI', whichDir, fileName);
+      },
+
       cancelNoHelp: () => {  // REMOVE just use cancel() now, help dialog removed
         const buttonSelector = '#debiki-editor-controller .e_EdCancelB';
         this.waitAndClick(buttonSelector);
@@ -6503,7 +6522,7 @@ export class TyE2eTestBrowser {
         },
 
         selectFileToRestore: (fileNameInTargetDir: string) => {
-          this.waitAndSelectFile('.e_SelFil', fileNameInTargetDir);
+          this.waitAndSelectFile('.e_SelFil', 'TargetDir', fileNameInTargetDir);
         },
       },
 

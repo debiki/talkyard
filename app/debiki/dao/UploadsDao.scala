@@ -423,10 +423,6 @@ object UploadsDao {
     if ("webm mkv ogv ogg gifv mp4 m4v".contains(suffix))
       return suffix
 
-    if (fileName.count(_ == '.') > 1) throwForbidden(
-      "DwE2FPYU0", o"""The file name should have exactly one dot, otherwise I don't know where
-           the file suffix starts""")
-
     if (!fileName.exists(_ == '.'))
       throwForbidden("DwE6UPM5", "The file has no suffix")
 

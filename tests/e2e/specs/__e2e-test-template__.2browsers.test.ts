@@ -106,9 +106,9 @@ describe("some-e2e-test  TyT1234ABC", () => {
   });
 
   it("initialize people", () => {
-    everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);
-    richBrowserA = new TyE2eTestBrowser(browserA);
-    richBrowserB = new TyE2eTestBrowser(browserB);
+    everyonesBrowsers = new TyE2eTestBrowser(allWdioBrowsers);
+    richBrowserA = new TyE2eTestBrowser(wdioBrowserA);
+    richBrowserB = new TyE2eTestBrowser(wdioBrowserB);
 
     owen = forum.members.owen;
     owensBrowser = richBrowserA;

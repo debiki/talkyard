@@ -546,6 +546,9 @@ embedded comments:
                 embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
 
 uploads -  (7KFC2)
+  upload posts with pics:
+          - upload-images-and-files.test.ts  TyT50E6KTDU7
+          TESTS_MISSING: Verify the images actually appears — Wdio visual regression test
   upload profile pic:  (8PK2)
   upload jpg, png:
           - TESTS_MISSING  embedded-comments-create-site-export-json.2browsers.test.ts  [402KGS4RQ]

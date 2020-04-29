@@ -282,6 +282,7 @@ function runAllE2eTests {
 
   $r s/wdio --only editor-onebox $args
   $r s/wdio --only view-edit-history.2browsers $args
+  $r s/wdio --only upload-images-and-files $args
 
   $r s/wdio --only direct-messages-notfs.3browsers $args
   $r s/wdio --only direct-messages-delete.2browsers $args
