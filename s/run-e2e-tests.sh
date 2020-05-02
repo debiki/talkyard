@@ -256,7 +256,7 @@ function runAllE2eTests {
   r=runE2eTest
 
   # If you want to skip the first tests, then move the end-if down wards.
-  if [ -z "skip these tests" ]; then
+  if [ -z "SKIP these tests" ]; then
     echo
   fi
 

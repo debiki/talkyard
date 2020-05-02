@@ -18,7 +18,7 @@
      - Commit cdbd41fa "Remove ed-logging, to simplify build" in this repo.
     So don't use ed.stackdriver.StackdriverLayout, in dev-test mode. Instead: -->
     <encoder>
-      <pattern>%coloredLevel %logger{15} - %message%n%xException{30}</pattern>
+      <pattern>%date{HH:mm:ss.SSS} %coloredLevel %logger{15} %message%n%xException{30}</pattern>
     </encoder>
   </appender>
 

@@ -812,20 +812,20 @@ object Prelude {
   val CollapseSpacesRegex: Regex = """\s\s*""".r
 
 
-  implicit class RichLinkedHashMap[A, B](val underlying: mutable.LinkedHashMap[A, B])
+  implicit class RichLinkedHashMap[K, V](val underlying: mutable.LinkedHashMap[K, V])
       extends AnyVal {
 
-    def removeWhile(predicate: ((A, B)) => Boolean) {
+    def removeWhile(predicate: ((K, V)) => Boolean) {
       val keysToRemove = underlying.iterator.takeWhile(predicate).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileValue(predicate: (B) => Boolean) {
+    def removeWhileValue(predicate: V => Boolean) {
       val keysToRemove = underlying.iterator.takeWhile(entry => predicate(entry._2)).map(_._1)
       keysToRemove.foreach(underlying.remove)
     }
 
-    def removeWhileKey(predicate: (A) => Boolean) {
+    def removeWhileKey(predicate: K => Boolean) {
       val keysToRemove = underlying.keysIterator.takeWhile(predicate)
       keysToRemove.foreach(underlying.remove)
     }
