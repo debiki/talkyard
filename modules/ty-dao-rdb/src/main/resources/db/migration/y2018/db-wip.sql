@@ -7,6 +7,7 @@ alter table settings3 add column media_in_posts int;
 alter table settings3 add constraint settings_c_mediainposts check (
     media_in_posts between 0 and 100);
 
+-- REMOVE:  embedded_comments_category_id
 
 ---------------
 -- Add mixed case username index?
