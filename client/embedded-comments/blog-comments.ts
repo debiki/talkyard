@@ -157,6 +157,12 @@ function loadCommentsCreateEditor() {
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
+  // NEXT:
+  // + data-page      = places comments on that page / auto-creates it
+  // + data-category  = places any lazy-created page in that category
+  // + data-tags      = adds these tags to the page, *iff* gets lazy-created
+  // + data-title
+
   var discussionTitle = commentsElem.getAttribute('data-iframe-title');
   var htmlClass = commentsElem.getAttribute('data-iframe-html-class');
 
