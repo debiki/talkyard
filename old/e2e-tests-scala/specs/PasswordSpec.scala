@@ -112,7 +112,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
 
         "find password reset email, go to password reset page" in {
           eventually {
-            val url = debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+            val url = debiki.MailerActor.EndToEndTest.getAndForgetMostRecentEmail() match {
               case None => fail()
               case Some(email: Email) => extractResetPasswordPageUrl(email)
             }
@@ -177,7 +177,7 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
 
         "get an you-already-have-an-account email reminder" in {
           val email = eventually {
-            debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+            debiki.MailerActor.EndToEndTest.getAndForgetMostRecentEmail() match {
               case None => fail()
               case Some(email: Email) => email
             }

@@ -31,7 +31,7 @@ import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import ed.server.search.SearchEngineIndexer
-import ed.server.notf.Notifier
+import ed.server.notf.NotifierActor
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
 import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
@@ -1055,11 +1055,12 @@ class Globals(
     val siteDaoFactory = new SiteDaoFactory(
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
-    val mailerActorRef: ActorRef = Mailer.startNewActor(actorSystem, siteDaoFactory, conf, now, isProd)
+    val mailerActorRef: ActorRef = MailerActor.startNewActor(actorSystem, siteDaoFactory, conf, now, isProd)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
-      else Some(Notifier.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
+      else Some(
+        NotifierActor.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
     def indexerBatchSize: Int = getIntOrDefault("talkyard.search.indexer.batchSize", 100)
     def indexerIntervalSeconds: Int = getIntOrDefault("talkyard.search.indexer.intervalSeconds", 5)
