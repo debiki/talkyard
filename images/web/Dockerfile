@@ -135,11 +135,9 @@ ENV CONFIG "\
 	# LuaJIT needs the devel kit.
 	--add-module=/tmp/nginx-modules/ngx_devel_kit \
 	--add-module=/tmp/nginx-modules/lua-nginx-module \
-	# [WS] DELETE
-	--add-module=/tmp/nginx-modules/nchan \
 	"
 
-# Copy nchan source code   [WS] DELETE nchan Git repo.
+# Copy Lua modules.
 COPY modules /tmp/nginx-modules/
 
 # Build LuaJIT
