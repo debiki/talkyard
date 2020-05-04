@@ -179,7 +179,7 @@ debug_asset_bundles_files: \
 images/app/assets/server-bundle.js: \
        $(shell find client/server/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
 	@echo "Regenerating $@"
-	s/d-gulp  compileServerTypescriptConcatJavascript-concatScripts
+	s/d-gulp  compileServerTypescriptConcatJavascript
 
 images/web/assets/talkyard-comments.js.gz: \
        $(shell find client/embedded-comments/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
