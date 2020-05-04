@@ -392,15 +392,15 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
     globals.pubSub.debugGetSubscribers(theSiteId) map { pubSubState =>
       val clientsByUserId: Map[UserId, WebSocketClient] =
-            pubSubState.subscribersBySite.getOrElse(theSiteId, Map.empty)
+            pubSubState.clientsByUserIdBySiteId.getOrElse(theSiteId, Map.empty)
 
       val watcherIdsByPageId: Map[PageId, Set[UserId]] =
-            pubSubState.watcherIdsByPageSiteId.getOrElse(theSiteId, Map.empty)
+            pubSubState.watcherIdsByPageIdBySiteId.getOrElse(theSiteId, Map.empty)
 
       val watchersTexts = watcherIdsByPageId map { case (pageId, watcherIds) =>
         val pagePath = dao.getPagePath2(pageId)
         val sb = StringBuilder.newBuilder
-        val pageIdText = "%8s " format pageId
+        val pageIdText = "%6s " format pageId
         sb.append(pageIdText).append(pagePath.map(_.value).getOrElse("?")).append(":")
         watcherIds foreach { id =>
           clientsByUserId.get(id) match {
@@ -425,6 +425,24 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
         |${watchersTexts.mkString("\n\n")}
         |""")
     }
+  }
+
+
+  def showWebSocketClientsAllSites(): Action[Unit] = AsyncSuperAdminGetAction { request =>
+      globals.pubSub.debugGetClientsAllSites() map { clientsAllSites =>
+        val siteUserIdAndClients = clientsAllSites.clientsInactiveFirst
+        Ok(i"""
+        |All sites:
+        |
+        |${siteUserIdAndClients.length} subscribers:
+        |==================================
+        |${
+          siteUserIdAndClients map { case (siteUserId, client) =>
+            s"${siteUserId.siteId}: ${client.toString}"
+          } mkString "\n"
+        }
+        |""")
+      }
   }
 
 

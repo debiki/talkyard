@@ -151,6 +151,9 @@ class EdSecurity(globals: Globals) {
    * is no XSRF cookie, creates no new cookies, and returns XsrfOk("").
    * (No cookies should be set if the response might be cached by a proxy
    * server.)
+   *
+   * WebSocket: xsrf token checked in 1st message from the client instead [WSXSRF]
+   * but not here (the WebSocket upgrade request has no body, no custom headers).
    */
   def checkSidAndXsrfToken[A](request: RequestHeader, anyRequestBody: Option[A],
         siteId: SiteId, expireIdleAfterMins: Long, maySetCookies: Boolean)
@@ -176,6 +179,7 @@ class EdSecurity(globals: Globals) {
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
       if (request.method == "GET") {
         // Accept this request, and create new XSRF token if needed.
+        // Don't throw anything (for now at least). [GETNOTHROW]
 
         if (!sessionIdStatus.canUse && !sessionIdStatus.isInstanceOf[SidExpired])
           logger.warn(s"Bad SID: $sessionIdStatus, from IP: ${realOrFakeIpOf(request)}")
@@ -186,7 +190,7 @@ class EdSecurity(globals: Globals) {
           }
           else if (!maySetCookies) {
             // No XSRF token available, and none needed, since this a GET request. [2WKA40]
-            // BUT WHAT ABOUT WEBSOCKETS? [WS] then good to require xsrf token?
+            // (If is WebSocket, then, xsrf handled elsewhere: [WSXSRF].)
             // Also, this makes [privacy-badger] happy. [NOCOOKIES]
             // Could set the xsrf token to any xsrf header value? But then ought to check if
             // it's been properly crypto hash signed — would be better to avoid (don't want to
@@ -620,8 +624,9 @@ class EdSecurity(globals: Globals) {
       }
     }
 
-    // This request tries to do something (POST request). Try to remember the browser, so
-    // can maybe block or rate limit it, if needed. And maybe detect astroturfing.
+    // This request tries to do something (POST request, or GET login). Try to remember
+    // the browser, so can maybe block or rate limit it, if needed. And maybe
+    // detect astroturfing.
     createBrowserIdCookie()
   }
 

@@ -98,7 +98,7 @@ abstract class DebikiRequest[A] {
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now
 
-  // Hmm will need this also for WebSocket? [WS] remember this, from
+  // Hmm will need this also for WebSocket? [WSSPAM] Remember this, from
   // the initial HTTP upgrade request?
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),

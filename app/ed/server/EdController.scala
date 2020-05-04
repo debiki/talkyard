@@ -71,6 +71,9 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def SuperAdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionSuperAdminOnly(cc.parsers.empty)(f)
 
+  def AsyncSuperAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
+    PlainApiActionSuperAdminOnly(cc.parsers.empty).async(f)
+
 
   def JsonOrFormDataPostAction(rateLimits: RateLimits, maxBytes: Int,
         allowAnyone: Boolean = false, isLogin: Boolean = false)

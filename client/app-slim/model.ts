@@ -1819,6 +1819,11 @@ const enum SwDo {  // Service worker, do: ....
 
 interface MessageToServiceWorker {
   doWhat: SwDo;
+
+  // For double checking that the service worker and the browser window
+  // agrees who the current user is. (If not, that's a bug.)
+  myId: UserId | U;
+
   // So the service worker knows if this page's js is old, and perhaps not
   // compatible with the service worker. Then the sw can reply "Please refresh the page".
   // This can happen if you open a browser page, wait some days until
@@ -1847,7 +1852,6 @@ interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
 interface WebSocketKeepAliveSwMessage extends MessageToServiceWorker {
   doWhat: SwDo.KeepWebSocketAlive;
   idleSecs: number;
-  myId: UserId;
 }
 
 // For e2e tests.

@@ -907,14 +907,14 @@ class Globals(
         pubSub.closeWebSocketConnections()
       }
 
-      logger.info(s"Stopping actors ...")
-
-      // Shutdown the notifier before the mailer, so no notifications are lost
-      // because there was no mailer that could send them.
+      // Shutdown the NotifierActor before the MailerActor, so no notifications
+      // are lost because the MailerActor was gone, couldn't send them.
+      logger.info(s"Stopping the NotifierActor ...")
       val (name, future) = stopPlease(state.notifierActorRef)
       Await.result(future, ShutdownTimeout)
 
       // Shutdown in parallel.
+      logger.info(s"Stopping remaining actors ...")
       val futureShutdownResults = Seq(
             stopPlease(state.mailerActorRef),
             stopPlease(state.renderContentActorRef),

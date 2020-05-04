@@ -9,6 +9,8 @@ local bytes_sent = ngx.var.bytes_sent
 -- if server_name == '_internal_port_81_' then
 --   return
 -- end
+-- This'd be: `server_name _internal_port_81_`  in the Nginx .conf.
+
 
 local used_ip_bw = util.get_used_bw(ngx.shared.bw_by_ip, ip)
 local used_server_bw = util.get_used_bw(ngx.shared.bw_by_server, server_name)

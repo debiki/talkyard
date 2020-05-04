@@ -826,7 +826,7 @@ object Prelude {
         if (numGone >= howMany) false
         else {
           val removeThisOne = predicate(kv)
-          numGone += 1
+          if (removeThisOne) numGone += 1
           removeThisOne
         }
       })

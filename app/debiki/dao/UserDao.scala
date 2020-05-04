@@ -1267,6 +1267,9 @@ trait UserDao {
     BUG; RACE // when loading & saving the watchbar. E.g. if a user joins a page herself, and
     // another member adds her to the page, or another page, at the same time.
 
+    SECURITY // [WATCHSEC] allowed to access the pages? Verify the caller has done
+    // the authz check — if not, shouldn't add pages to the user's watchbar!
+
     val oldWatchbar = getOrCreateWatchbar(userId)
     var newWatchbar = oldWatchbar
     for (pageMeta <- pages) {

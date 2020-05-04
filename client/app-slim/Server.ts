@@ -1931,7 +1931,7 @@ export function markTourTipsSeen(tourTipsId: string) {
 
 
 export function disconnectWebSocket() {
-  // TODO
+  // TODO !
   logD(`Disconnecting WebSocket: TODO [TyMLPRABRT2]`);
 }
 

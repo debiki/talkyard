@@ -134,6 +134,18 @@ onmessage = function(event: any) {
 
   const untypedMessage: MessageToServiceWorker = event.data;
 
+  // The user in some browser window who sent this event.
+  const browserUserId: UserId | U = untypedMessage.myId;
+
+  if (browserUserId && wsUserId && browserUserId !== wsUserId) {
+    // Weird.
+    const problem = `SW: message.myId: ${browserUserId} ` +
+        `!== wsUserId: ${wsUserId} [TyE06KTH3]`;
+    console.warn(problem);
+    closeWebSocket();
+    return;
+  }
+
   switch (untypedMessage.doWhat) {
     case SwDo.TellMeYourVersion: {
       event.source.postMessage({ // <MyVersionIsMessageFromSw> {
@@ -143,104 +155,35 @@ onmessage = function(event: any) {
       });
       break;
     }
+
     case SwDo.SubscribeToEvents: {
       const message = <SubscribeToEventsSwMessage> untypedMessage;
-      if (!message.myId) {
+      if (!browserUserId) {
         // We've logged out. Don't ask for any events — if everyone did that,
         // that could put the server under an a bit high load? And not much interesting
         // to be notified about anyway, when haven't joined the site yet / not logged in.
         console.debug(`SW: Not logged in. [TyMSWLOGOUT]`);
         if (wsConnection) {
-          console.debug(`SW: Closing connection. [TyMSWEND01]`);
-          wsConnection.close();
-          wsConnection = null;
-          wsUserId = null;
+          console.debug(`SW: Closing WebSocket. [TyMSWEND01]`);
+          closeWebSocket();
         }
-        return;
+        break;
       }
 
-      if (message.myId <= MaxGuestId) {
-        console.error(`Guest account: ${message.myId}`);
-        return;
+      if (browserUserId <= MaxGuestId) {
+        console.error(`Guest account: ${browserUserId}`);
+        break;
       }
 
-      if (wsUserId === message.myId) {
-        console.trace(`SW: Already connected w WebSocket as user ${wsUserId}. [TyMSWALRCON]`);
-        return;
+      if (wsUserId === browserUserId) {
+        console.trace(`SW: Already a WebSocket for user ${browserUserId}. [TyMSWALRCON]`);
+        break;
       }
 
-      // Could incl the req nr in the URL, for debugging, so knows which lines in
-      // chrome://net-internals/#events and in the Nginx logs are for which browser request.
-      const wsUrl = (this.location.protocol === 'http:' ? 'ws:' : 'wss:') +
-          this.location.host + '/-/websocket';
-
-      console.debug(`SW: Opening WebSocket to:  ${wsUrl}  [TyMSWNEW]`);
-
-      wsUserId = message.myId;
-      wsConnection = new WebSocket(wsUrl);
-      hasAuthenticated = false;
-
-      wsConnection.onerror = function(event: Event) {
-        // Which one of toString() or stringify? Try both.
-        const errorText = event.toString?.() || JSON.stringify(event);
-        console.warn(`SW: WebSocket error:  ${errorText}  [TyMSWERR]`);
-        // Apparently there's always a close event after onerror, see:
-        // https://stackoverflow.com/a/40084550/694469
-        // https://html.spec.whatwg.org/multipage/web-sockets.html#feedback-from-the-protocol%3Aconcept-websocket-closed
-        // — let's notify the browsers from the onclose() event, not here.
-      };
-
-      wsConnection.onopen = function(event: Event) {
-        // Todo: Remove any "No internet" message. [NOINETMSG]  already done?
-        // sendToAllBrowserTabs({ type: 'connected', data: longPollingState.nextReqNr });
-        //   —>  $h.removeClasses(document.documentElement, 's_NoInet');
-
-        console.debug(`SW: WebSocket connection open [TyMSWSOPN]`);
-        // Double quotes — the server wants json.
-        wsConnection.send(`"${message.xsrfToken}"`);
-      };
-
-      wsConnection.onmessage = function(event: MessageEvent) {
-        // We just got authenticated? Then the server says: "OkHi @username".
-        if (event.data.indexOf('"OkHi ') === 0) {  // double quotes because is json
-          if (hasAuthenticated) {
-            // Should get only one 'OkHi'.
-            console.warn(`SW: Unexpected 'OkHi' [TyESWUNEXPOKHI]`);
-            return;
-          }
-          hasAuthenticated = true;
-          console.debug(`SW: Server: 'OkHi' [TyMSWOKHI]`);
-          sendToAllBrowserTabs({ type: 'connected', data: wsMessageNr });
-          return;
-        }
-
-        if (!hasAuthenticated) {
-          console.warn(`SW: Server, before 'OkHi': ${event.data} [TyESW0OKHI]`);
-          return;
-        }
-
-        console.debug(`SW: Server: ${event.data} [TyMSWSVSAYS]`);
-        const message = JSON.parse(event.data)
-        sendToAllBrowserTabs(message);
-      }
-
-      wsConnection.onclose = function(event: CloseEvent) {
-        // CloseEvent codes: (for event.code)
-        //  https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
-        const logFn = event.wasClean ? console.debug : console.error;
-        logFn(`SW: Connection closed, code: ${event.code}, ` +
-            `reason: ${event.reason}, clean: ${event.wasClean}  [TyMSWEND02]`);
-
-        sendToAllBrowserTabs({ type: event.wasClean ? 'disconnected' : 'eventsBroken' });
-        lastWsConnection = wsConnection;
-        lastWsUserId = wsUserId;
-        wsUserId = null;
-        wsConnection = null;
-
-        // ?  [NOINETMSG]
-      }
+      connectWebSocket(browserUserId, message.xsrfToken);
       break;
     }
+
     case SwDo.KeepWebSocketAlive: {
       // One or more browser windows are open — so keep any WebSocket connection alive,
       // by sending regular short messages so proxy servers notice the connection is
@@ -248,41 +191,46 @@ onmessage = function(event: any) {
 
       const message = <WebSocketKeepAliveSwMessage> untypedMessage;
 
-      // If active in different browser windows, the idle time is the shortest one,
-      // from the most recently active window.
+      // If active in different browser windows, use the idle time from the most
+      // recently active window.
       nextKeepAliveMessageIdleSecs = Math.min(
           message.idleSecs, nextKeepAliveMessageIdleSecs);
 
       if (!isConnected()) {
-        // This timeout must be higher than the startKeepAliveMessages()
+        // This human-gone timeout must be higher than the startKeepAliveMessages()
         // intervl [KEEPALVINTV] [5AR20ZJ], otherwise we might never reconnect.
-        if (message.idleSecs < 60) {
-          tryToReconnect();
+        if (message.idleSecs > 90) {
+          // Don't reconnect — seems the human is gone? Just a browser window
+          // left open.
         }
         else {
-          // Noop. A browser window is open — but the human isn't there. Don't
-          // reconnect, until maybe later when hen is back.
+          tryReonnectWebSocket();
         }
+        break;
       }
-      else if (!nextKeepAliveScheduled) {
-        if (message.myId !== wsUserId) {
-          console.warn(`SW: message.myId: ${message.myId} !== wsUserId: ${wsUserId} [TyE06KTH3]`);
-        }
-        nextKeepAliveScheduled = true;
-        magicTimeout(KeepAliveIntervalSeconds * 1000, function() {
-          nextKeepAliveScheduled = false;
-          trySendWebSocketMessage(
-              WebSocketMessageTypes.IdleSeconds, nextKeepAliveMessageIdleSecs);
-        });
+
+      if (nextKeepAliveScheduled) {
+        // Don't schedule another one now — wait until later, when a browser window
+        // again tells us it's still open.
+        break;
       }
+
+      nextKeepAliveScheduled = true;
+      magicTimeout(KeepAliveIntervalSeconds * 1000, function() {
+        nextKeepAliveScheduled = false;
+        trySendWebSocketMessage(
+            WebSocketMessageTypes.IdleSeconds, nextKeepAliveMessageIdleSecs);
+      });
 
       break;
     }
+
     case SwDo.StartMagicTime: {
       const message = <StartMagicTimeSwMessage> untypedMessage;
       startMagicTime(message.startTimeMs);
       break;
     }
+
     case SwDo.PlayTime: {
       const message = <PlayTimeSwMessage> untypedMessage;
       addTestExtraMillis(message.extraTimeMs);
@@ -302,14 +250,6 @@ function sendToAllBrowserTabs(message) {
 }
 
 
-function tryToReconnect() {
-  if (isConnected()) {
-    return;
-  }
-  // See (OLDRECON) below.
-}
-
-
 
 function isConnected(): boolean {
   return wsConnection?.readyState === WebSocket.OPEN;
@@ -317,10 +257,116 @@ function isConnected(): boolean {
 
 
 
+function closeWebSocket() {
+  if (!wsConnection)
+    return;
+  wsConnection.close();
+  lastWsConnection = wsConnection;
+  lastWsUserId = wsUserId;
+  wsConnection = null;
+  wsUserId = null;
+}
+
+
+
+function connectWebSocket(browserUserId: UserId, xsrfToken: string) {
+  if (isConnected()) {
+    console.warn(`SW: Double connect [TyESWWS402RKJS]`);
+    return;
+  }
+
+  // Could incl the req nr in the URL, for debugging, so knows which lines in
+  // chrome://net-internals/#events and in the Nginx logs are for which browser request.
+  const wsUrl =
+      (this.location.protocol === 'http:' ? 'ws:' : 'wss:') +
+      this.location.host + '/-/websocket';
+
+  console.debug(`SW: Opening WebSocket to:  ${wsUrl}  for user: ${
+      browserUserId} [TyMSWWSOPEN]`);
+
+  wsUserId = browserUserId;
+  wsConnection = new WebSocket(wsUrl);
+  hasAuthenticated = false;
+
+  wsConnection.onopen = function(event: Event) {
+    console.debug(`SW: WebSocket connection open [TyMSWSOPN]`);
+    // Double quotes — the server wants json.
+    wsConnection.send(`"${xsrfToken}"`);
+  };
+
+  wsConnection.onmessage = function(event: MessageEvent) {
+    // We just got authenticated? Then the server says: "OkHi @username".
+    if (event.data.indexOf('"OkHi ') === 0) {  // double quotes because is json
+      if (hasAuthenticated) {
+        // Should get only one 'OkHi'.
+        console.warn(`SW: Got more than one 'OkHi' [TyESWUNEXPOKHI]`);
+        return;
+      }
+
+      // COULD check that the OkHi is to wsUserId?
+
+      hasAuthenticated = true;
+      console.debug(`SW: WebSocket authenticated: ${event.data} [TyMSWOKHI]`);
+      // This removes any "No internet" message. [NOINETMSG]
+      sendToAllBrowserTabs({ type: 'connected' });
+      return;
+    }
+
+    if (!hasAuthenticated) {
+      console.warn(`SW: Server, before 'OkHi': ${event.data} [TyESW0OKHI]`);
+      return;
+    }
+
+    console.debug(`SW: Server: ${event.data} [TyMSWSVSAYS]`);
+    const message = JSON.parse(event.data);
+    sendToAllBrowserTabs(message);
+  };
+
+  wsConnection.onerror = function(event: Event) {
+    // Which one of toString() or stringify? Try both.
+    const errorText = event.toString?.() || JSON.stringify(event);
+    console.warn(`SW: WebSocket error:  ${errorText}  [TyMSWERR]`);
+
+    // Do nothing — let's clear variables from the onclose() event, and also notify
+    // the browser windows from there, not here.
+
+    // (Apparently there's always a close event after onerror, see:
+    // https://stackoverflow.com/a/40084550/694469
+    // https://html.spec.whatwg.org/multipage/web-sockets.html#feedback-from-the-protocol%3Aconcept-websocket-closed )
+  };
+
+  wsConnection.onclose = function(event: CloseEvent) {
+    // CloseEvent codes: (for event.code)
+    //  https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+    const logFn = event.wasClean ? console.debug : console.error;
+    logFn(`SW: WebSocket closed, code: ${event.code}, ` +
+        `reason: ${event.reason}, clean: ${event.wasClean}  [TyMSWEND02]`);
+
+    // This can add a "No internet" message. [NOINETMSG]
+    sendToAllBrowserTabs({ type: event.wasClean ? 'disconnected' : 'eventsBroken' });
+    if (wsConnection) {
+      lastWsUserId = wsUserId;
+      lastWsConnection = wsConnection;
+    }
+    wsUserId = null;
+    wsConnection = null;
+    hasAuthenticated = false;
+  };
+}
+
+
+
+function tryReonnectWebSocket() {
+  // See (OLDRECON) below.
+  console.debug(`SW: Should reconnect WebSocekt, but not impl. [TyMSWNORECON]`);
+}
+
+
+
 function trySendWebSocketMessage(messageType: WebSocketMessageTypes, data: any) {
   if (!isConnected()) {
     console.debug(`SW: Not connected, cannot send [TyMSW0CON]:  ` +
-      `${messageType}  ${JSON.stringify(data)}`);
+        `${messageType}  ${JSON.stringify(data)}`);
     return;
   }
 
@@ -341,14 +387,14 @@ function trySendWebSocketMessage(messageType: WebSocketMessageTypes, data: any) 
 
 
 
+/* Old reconnect code, from long ago when Long Polling was used:  (OLDRECON)
+
 const RetryAfterMsDefault = 5000;
 const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]  No! Don't give up that soon?
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
 
 
-
-/* Old reconnect code, from long ago when Long Polling was used:  (OLDRECON)
 
   sendLongPollingRequest(channelId, (response) => {
     console.debug("Long polling request done, sending another... [TyMSWLPDONE]");

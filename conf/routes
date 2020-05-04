@@ -299,7 +299,8 @@ GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestE
 GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
-GET  /-/pubsub-state            controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])
+GET  /-/ws-state                controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])
+GET  /-/ws-state-all-sites      controllers.DebugTestController.showWebSocketClientsAllSites()
 
 GET   /-/site/:pubSiteId/*file  controllers.SiteAssetBundlesController.customAsset(pubSiteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)

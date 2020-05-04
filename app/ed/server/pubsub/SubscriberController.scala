@@ -67,6 +67,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // Todo: If too many subscribesr for  site,  or in total, reject.
     // Need server config value?
 
+    // globals.pubSub.mayConnectClient(site.id)  // ??
+
     SECURITY // max N WebSockets per server in total,
     // max M per site?
 
@@ -93,6 +95,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
   }
 
 
+  // Later: If accepting new topics and replies via WebSocket, then, need to
+  // remember a SpamRelReqStuff here? [WSSPAM]
   private class OkWebSocketUpgradeRequest(
     val site: SiteBrief,
     val xsrfToken: String,
@@ -124,10 +128,11 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     val dao = globals.siteDao(site.id)
     val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
 
-    // Eh, hmm, this won't work — there's no xsrf token header.
-    // Use the WebSocket's "protocol" thing, for xsrf token?
+    // We check the xsrf token later — since WebSocket upgrade requests
+    // don't have any request body or custom headers with a xsrf token.
+    // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
     val (actualSidStatus, xsrfOk, _ /* newCookies */) =
-        security.checkSidAndXsrfToken(   // throws things — want that?
+        security.checkSidAndXsrfToken(
             request, anyRequestBody = None, siteId = site.id,
             expireIdleAfterMins = expireIdleAfterMins, maySetCookies = false)
 
@@ -204,7 +209,7 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     var authenticatedViaWebSocket = false
 
     @volatile
-    var anyWebSocketClient: Option[UserSubscribed] = None
+    var anyWebSocketClient: Option[UserConnected] = None
 
     val foreachSink = Sink.foreach[JsValue](jsValue => {
       anyWebSocketClient match {
@@ -269,7 +274,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
         val dao = globals.siteDao(site.id)
         val watchbar = dao.getOrCreateWatchbar(requester.id)
 
-        anyWebSocketClient = Some(UserSubscribed(
+        anyWebSocketClient = Some(
+          UserConnected(
             site.id, requester, browserIdData, watchbar.watchedPageIds, outboundMat))
 
         logger.debug(s"WS conn: ${requester.nameParaId} [TyMWSCON]")
