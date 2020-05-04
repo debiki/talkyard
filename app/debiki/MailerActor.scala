@@ -30,7 +30,7 @@ import scala.concurrent.Promise
 import talkyard.server.TyLogger
 
 
-object Mailer {
+object MailerActor {
 
   private val logger = TyLogger("Mailer")
 
@@ -131,7 +131,7 @@ object Mailer {
         if (isProd) logger.error(logMessage)
         else logger.info(logMessage)
         actorSystem.actorOf(
-          Props(new Mailer(
+          Props(new MailerActor(
             daoFactory, now, serverName = "", port = None,
             tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
             checkServerIdentity = false, insecureTrustAllHosts = false,
@@ -161,7 +161,7 @@ object Mailer {
           (You can keep talkyard.smtp.enableStartTls though.) [TyEDBLMAILCONF]""")  // [DBLMAILCONF]
         }
         actorSystem.actorOf(
-          Props(new Mailer(
+          Props(new MailerActor(
             daoFactory,
             now,
             serverName = anySmtpServerName getOrDie "TyE3KPD78",
@@ -207,7 +207,7 @@ case class NumEndToEndTestEmailsSent(siteId: SiteId)
   * is used instead. I removed the SES code in commit
   * 0489d88e on 2014-07-11: "Send emails via SMTP, not Amazon AWS' SES API."
   */
-class Mailer(
+class MailerActor(
   val daoFactory: SiteDaoFactory,
   val now: () => When,
   val serverName: String,

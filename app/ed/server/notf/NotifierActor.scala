@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
-import ed.server.notf.Notifier._
+import ed.server.notf.NotifierActor._
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -30,7 +30,7 @@ import talkyard.server.TyLogger
 
 
 
-object Notifier {
+object NotifierActor {
 
   val MaxNotificationsPerEmail = 5
 
@@ -53,7 +53,7 @@ object Notifier {
         : ActorRef = {
     implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
-      new Notifier(systemDao, siteDaoFactory)),
+      new NotifierActor(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
     // For now, check for emails more often, so e2e tests won't have to wait for them to
     // get sent. SHOULD wait at least for the ninja edit interval before sending any notf email.
@@ -82,7 +82,7 @@ object Notifier {
  *
  * Thread safe.
  */
-class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
+class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   extends Actor {
 
   import systemDao.globals

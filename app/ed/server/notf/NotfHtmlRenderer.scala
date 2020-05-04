@@ -73,7 +73,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       val postsById = transaction.loadPostsByUniqueId(postIds)
       val pageIds = postsById.values.map(_.pageId)
       val pageStuffById = siteDao.loadPageStuffById(pageIds, transaction)
-      val maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
+      val maxNotificationLength = NotifierActor.MaxEmailBodyLength / notfs.length
       // Later: do support reply-via-email.
       var result: NodeSeq =
         <p>(If you want to reply, click the links below -- but don't reply to this email.)</p>

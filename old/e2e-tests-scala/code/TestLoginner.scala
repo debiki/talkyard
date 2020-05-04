@@ -226,7 +226,7 @@ trait TestLoginner extends DebikiSelectors {
     }
 
     eventually {
-      val nextPageUrl = debiki.Mailer.EndToEndTest.getAndForgetMostRecentEmail() match {
+      val nextPageUrl = debiki.MailerActor.EndToEndTest.getAndForgetMostRecentEmail() match {
         case None =>
           fail()
         case Some(email: Email) =>
