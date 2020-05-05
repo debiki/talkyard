@@ -1810,6 +1810,7 @@ const enum SwDo {  // Service worker, do: ....
   StartMagicTime = 3,
   PlayTime = 4,  // sync with e2e tests [4092RMT5]
   KeepWebSocketAlive = 5,
+  Disconnect = 6,
 }
 
 //enum SwSays {  // Service worker says: ....
@@ -1851,7 +1852,7 @@ interface SubscribeToEventsSwMessage extends MessageToServiceWorker {
 // if we're sending other messages anyway.
 interface WebSocketKeepAliveSwMessage extends MessageToServiceWorker {
   doWhat: SwDo.KeepWebSocketAlive;
-  idleSecs: number;
+  humanActiveAtMs: number;
 }
 
 // For e2e tests.

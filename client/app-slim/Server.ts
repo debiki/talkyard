@@ -1930,12 +1930,6 @@ export function markTourTipsSeen(tourTipsId: string) {
 }
 
 
-export function disconnectWebSocket() {
-  // TODO !
-  logD(`Disconnecting WebSocket: TODO [TyMLPRABRT2]`);
-}
-
-
 export function loadOnlineUsers() {
   get('/-/load-online-users', (response) => {
     ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, response.onlineUsers);

@@ -589,6 +589,12 @@ object Prelude {
     def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
   }
 
+  implicit class RichOptionEq[T <: AnyRef](underlying: Option[T]) {
+    def isEq(value: T): Boolean = underlying.exists(_ eq value)
+    def isNotEq(value: T): Boolean = underlying.forall(_ ne value)
+    def isSomethingNotEq(value: T): Boolean = underlying.isDefined && isNotEq(value)
+  }
+
   // Doesn't work, causes error: maxOptBy is not a member of Seq[com.debiki.core.Post]
   implicit class RichSeq[T](underlying: scala.collection.Seq[T]) {
     def maxOptBy[B](f: T => B)(implicit cmp: Ordering[B]): Option[T] = {

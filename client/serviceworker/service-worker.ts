@@ -30,7 +30,7 @@ declare var clients;
 
 
 const enum WebSocketMessageTypes {
-  IdleSeconds = 2,  // works as keep-alive
+  LastActivityAtSecs = 2,  // works as keep-alive
   Bye = 3,
 }
 
@@ -51,9 +51,9 @@ Connected  ——> Human gone ——> Stay connected
                              \                     the service worker alone)
                               \
                               [yes]——> Human there? ———[yes] ———> Try to reconnect
-                                            \
-                                             [no, gone] —–—> Stay disonnected
-                                                           (since already disconnected)
+                                          \
+                                         [no, gone] —–—> Stay disonnected [HUMANGONE]
+                                                      (since already disconnected)
 */
 
 
@@ -74,8 +74,8 @@ let lastWsConnection: WebSocket | U;
 let wsMessageNr = 0;
 let hasAuthenticated: boolean;
 
+let humanLastActiveAtMs: number | U;
 let nextKeepAliveScheduled: boolean | U;
-let nextKeepAliveMessageIdleSecs: number | U;
 const KeepAliveIntervalSeconds = 30;
 
 
@@ -140,7 +140,7 @@ onmessage = function(event: any) {
   if (browserUserId && wsUserId && browserUserId !== wsUserId) {
     // Weird.
     const problem = `SW: message.myId: ${browserUserId} ` +
-        `!== wsUserId: ${wsUserId} [TyE06KTH3]`;
+        `!== wsUserId: ${wsUserId}, closing WebSocket [TyE06KTH3]`;
     console.warn(problem);
     closeWebSocket();
     return;
@@ -191,17 +191,26 @@ onmessage = function(event: any) {
 
       const message = <WebSocketKeepAliveSwMessage> untypedMessage;
 
-      // If active in different browser windows, use the idle time from the most
-      // recently active window.
-      nextKeepAliveMessageIdleSecs = Math.min(
-          message.idleSecs, nextKeepAliveMessageIdleSecs);
+      // If active in different browser windows, use the most recent acitiviy time
+      // (this'll work also if the most recently active window was closed).
+      humanLastActiveAtMs = Math.max(humanLastActiveAtMs, message.humanActiveAtMs);
+      // In case Date.now() is wrong in one window (weird):
+      const nowMs = Date.now();
+      humanLastActiveAtMs = Math.min(nowMs, humanLastActiveAtMs);
+
+      const idleMs = nowMs - humanLastActiveAtMs;
+
+      // However, if one window was active a lot, but now got closed — whilst another
+      // window has been *inactive* for long. Then, hereafter, only the *in*actve win
+      // will send a really long idle time. Which would suddenly bump the idle time
+      // to sth a bit much.
 
       if (!isConnected()) {
         // This human-gone timeout must be higher than the startKeepAliveMessages()
         // intervl [KEEPALVINTV] [5AR20ZJ], otherwise we might never reconnect.
-        if (message.idleSecs > 90) {
+        if (idleMs > 90 * 1000) {
           // Don't reconnect — seems the human is gone? Just a browser window
-          // left open.
+          // left open. [HUMANGONE]
         }
         else {
           tryReonnectWebSocket();
@@ -218,10 +227,20 @@ onmessage = function(event: any) {
       nextKeepAliveScheduled = true;
       magicTimeout(KeepAliveIntervalSeconds * 1000, function() {
         nextKeepAliveScheduled = false;
+        if (!isConnected()) {
+          // Just logged out? Fine.
+          return;
+        }
         trySendWebSocketMessage(
-            WebSocketMessageTypes.IdleSeconds, nextKeepAliveMessageIdleSecs);
+            WebSocketMessageTypes.LastActivityAtSecs,
+            Math.trunc(humanLastActiveAtMs / 1000));
       });
 
+      break;
+    }
+
+    case SwDo.Disconnect: {
+      closeWebSocket();
       break;
     }
 
@@ -260,7 +279,10 @@ function isConnected(): boolean {
 function closeWebSocket() {
   if (!wsConnection)
     return;
+
+  // If already closed, does nothing.
   wsConnection.close();
+
   lastWsConnection = wsConnection;
   lastWsUserId = wsUserId;
   wsConnection = null;
@@ -271,7 +293,8 @@ function closeWebSocket() {
 
 function connectWebSocket(browserUserId: UserId, xsrfToken: string) {
   if (isConnected()) {
-    console.warn(`SW: Double connect [TyESWWS402RKJS]`);
+    console.warn(`SW: Double connect, wsUserId: ${wsUserId
+        }, browserUserId: ${browserUserId} [TyESWWS402RKJS]`);
     return;
   }
 
@@ -359,13 +382,15 @@ function connectWebSocket(browserUserId: UserId, xsrfToken: string) {
 function tryReonnectWebSocket() {
   // See (OLDRECON) below.
   console.debug(`SW: Should reconnect WebSocekt, but not impl. [TyMSWNORECON]`);
+  // Use lastWsUserId ?
+  // But NOT if intentionally disconnected, e.g. logged out.
 }
 
 
 
 function trySendWebSocketMessage(messageType: WebSocketMessageTypes, data: any) {
   if (!isConnected()) {
-    console.debug(`SW: Not connected, cannot send [TyMSW0CON]:  ` +
+    console.warn(`SW: Not connected, cannot send [TyMSW0CON]:  ` +
         `${messageType}  ${JSON.stringify(data)}`);
     return;
   }

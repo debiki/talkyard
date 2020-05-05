@@ -128,8 +128,8 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     val dao = globals.siteDao(site.id)
     val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
 
-    // We check the xsrf token later — since WebSocket upgrade requests
-    // don't have any request body or custom headers with a xsrf token.
+    // We check the xsrf token later — since a WebSocket upgrade request
+    // cannot have a request body or custom header with xsrf token.
     // (checkSidAndXsrfToken() won't throw for GET requests. [GETNOTHROW])
     val (actualSidStatus, xsrfOk, _ /* newCookies */) =
         security.checkSidAndXsrfToken(

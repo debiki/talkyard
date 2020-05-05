@@ -72,7 +72,7 @@ if (eds.useServiceWorker) {
         // stopped caching events for this client, stopped waiting for it to reappear.
         // See [WSMSGQ].
         // But *skip* dialog for now — reconnections didn't work previously anyway (with
-        // long polling) and the dialog can be really annoying, por UX.
+        // long polling) and the dialog can be annoying.
         $h.addClasses(document.documentElement, 's_NoInet');
         logM(`WebSocket broken? Didn't popup any dialog about that, maybe later. [TyE502KDG3]`);
         /*
@@ -105,7 +105,7 @@ export function startKeepAliveMessages() {
 
   debiki.serviceWorkerPromise.then(function(sw: ServiceWorker) {
     function sendKeepAlive() {
-      const idleSeconds = utils.getIdleSeconds();
+      const humanActiveAtMs = utils.getHumanLastActiveAtMs();
       const store: Store = ReactStore.allData();
       const me = store.me;
 
@@ -115,7 +115,7 @@ export function startKeepAliveMessages() {
         const message: WebSocketKeepAliveSwMessage = {
           doWhat: SwDo.KeepWebSocketAlive,
           myId: me.id,
-          idleSecs: idleSeconds,
+          humanActiveAtMs,
           talkyardVersion: TalkyardVersion,
         };
         sw.postMessage(message);
@@ -127,7 +127,7 @@ export function startKeepAliveMessages() {
     magicTimeout(intervalMs, sendKeepAlive);
 
   }).catch(ex => {
-    logW("Error subscribing to events via service worker [TyESBUEVTS]", ex);
+    logW("Error starting sendKeepAlive() in service worker promise [TyE7SBEV8S]", ex);
   });;
 }
 
@@ -174,7 +174,7 @@ export function subscribeToServerEvents(me: Myself) {
       };
       sw.postMessage(message);
     }).catch(ex => {
-      console.log("Error subscribing to events via service worker", ex);
+      console.log("Error subscribing to events via service worker [TyE70AKD4]", ex);
     });
   }
   else {
@@ -183,6 +183,22 @@ export function subscribeToServerEvents(me: Myself) {
     // Maybe reimplemelt later, breaking out reusable code from service-worker.ts:
     // subscribeToServerEventsDirectly(me);
   }
+}
+
+
+
+export function disconnectWebSocket() {
+  if (!eds.useServiceWorker)
+    return;
+
+  debiki.serviceWorkerPromise.then(function(sw: ServiceWorker) {
+    const message: MessageToServiceWorker = {
+      doWhat: SwDo.Disconnect,
+      talkyardVersion: TalkyardVersion,
+      myId: undefined,
+    };
+    sw.postMessage(message);
+  });
 }
 
 

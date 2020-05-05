@@ -133,7 +133,7 @@ export function logoutClientSideOnly() {
 
   // Disconnect WebSocket so we won't receive data, for this user, after we've
   // logged out: (we reload() below — but the service-worker might stay connected)
-  Server.disconnectWebSocket();
+  pubsub.disconnectWebSocket();
 
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload(); // [502098SK]

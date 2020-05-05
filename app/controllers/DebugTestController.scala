@@ -432,13 +432,14 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       globals.pubSub.debugGetClientsAllSites() map { clientsAllSites =>
         val siteUserIdAndClients = clientsAllSites.clientsInactiveFirst
         Ok(i"""
-        |All sites:
+        |All sites.
         |
         |${siteUserIdAndClients.length} subscribers:
         |==================================
         |${
           siteUserIdAndClients map { case (siteUserId, client) =>
-            s"${siteUserId.siteId}: ${client.toString}"
+            val siteIdPadded = siteUserId.siteId.toString.padTo(4, ' ')
+            s"$siteIdPadded: ${client.toString}"
           } mkString "\n"
         }
         |""")

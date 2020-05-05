@@ -22,15 +22,12 @@
    namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-let lastActivityAtMs: number;
-let idleSeconds = 0;
 
-// So can cancel interval, if annoying, when debugging.
-let ideIntervalHandle;
-
-// Reports number of seconds the user has been idle.
+// Last time the human did something.
 //
-export const getIdleSeconds = (): number => idleSeconds;
+export const getHumanLastActiveAtMs = (): number => humanLastActivityMs;
+
+let humanLastActivityMs: number;
 
 
 const pendingMouseCallbacks: (() => void)[] = [];
@@ -62,7 +59,7 @@ export function startDetectingMouse() {    // RENAME to startDetectingActivity()
     }
   });
 
-  lastActivityAtMs = getNowMs();
+  humanLastActivityMs = getNowMs();
 
   // Not needed — uninteresting *or* triggers some other event too?:
   //   submit change mouseenter resize dblclick.
@@ -72,16 +69,9 @@ export function startDetectingMouse() {    // RENAME to startDetectingActivity()
   */
   Bliss.bind(window, {
     'mousedown mousemove keypress scroll touchmove touchstart': function() {
-      lastActivityAtMs = getNowMs();
-      idleSeconds = 0;
+      humanLastActivityMs = getNowMs();
     }
   });
-
-  // Once a second (instead of, say, 30 secons) makes magic time addTestExtraMillis()
-  // responsive, during e2e tests.
-  ideIntervalHandle = setInterval(function() {
-    idleSeconds = Math.trunc((getNowMs() - lastActivityAtMs) / 1000);
-  }, 1000);
 }
 
 
