@@ -247,9 +247,10 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
             logger.trace(s"$prefix $who sent: $jsValue [TyEWSGOTMSG]")
             // globals.pubSub.onMessage( ... )  ?
 
-            // Later: Only if really active!
-            globals.pubSub.userIsActive(
-                client.siteId, client.user, client.browserIdData)
+            // And, if the message means the human was active:
+            // globals.pubSub.userIsActive(
+            //     client.siteId, client.user, client.browserIdData)
+            // — but that'd be done by the message/request handler.
           }
       }
     })
