@@ -155,14 +155,27 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
-        edPageId: Option[PageId]): Action[Unit] = AsyncGetActionMaybeSkipCookies(avoidCookies = true) {
-        request =>
+          edPageId: Option[PageId]): Action[Unit] =
+        AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
+    import request.{dao, requester}
+
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
-    val tpi = new EditPageTpi(request, PageType.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
-      anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
+    val tpi = new EditPageTpi(request, PageType.EmbeddedComments,
+          anyEmbeddedPageId = anyRealPageId, anyAltPageId = discussionId,
+          anyEmbeddingUrl = Some(embeddingUrl))
     val htmlStr = views.html.embeddedEditor(tpi).body
+
+    for {
+      pageId <- anyRealPageId
+      pageMeta <- dao.getPageMeta(pageId)
+    } {
+      val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, requester)
+      if (!maySee)
+        security.throwIndistinguishableNotFound(debugCode)
+    }
+
     ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
-      unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
+        unapprovedPostAuthorIds = Set.empty, request, embeddingUrl = Some(embeddingUrl))
   }
 
 

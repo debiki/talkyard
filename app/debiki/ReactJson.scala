@@ -631,9 +631,6 @@ class JsonMaker(dao: SiteDao) {
       return None
     }
 
-    SECURITY // [WATCHSEC] allowed to access the page in pageRequest ? Verify the caller has
-    // done the authz check — if not, shouldn't add the page to the user's watchbar below!
-
     val permissions = pageRequest.authzContext.tooManyPermissions
 
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(requester.id)
@@ -643,6 +640,13 @@ class JsonMaker(dao: SiteDao) {
       watchbar.tryAddRecentTopicMarkSeen(pageRequest.thePageMeta) match {
         case None => // watchbar wasn't modified
         case Some(modifiedWatchbar) =>
+
+          // Double check we may see the page(s) we're adding to the watchbar. [WATCHSEC]
+          val (maySee, debugCode) = dao.maySeePageUseCache(
+                pageRequest.thePageMeta, Some(requester))
+          if (!maySee)
+            dao.context.security.throwIndistinguishableNotFound(debugCode)
+
           watchbar = modifiedWatchbar
           dao.saveWatchbar(requester.id, watchbar)
           dao.pubSub.userWatchesPages(pageRequest.siteId, requester.id, watchbar.watchedPageIds) ;RACE
