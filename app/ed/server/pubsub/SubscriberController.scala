@@ -67,9 +67,9 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
     // Todo: If too many subscribesr for  site,  or in total, reject.
     // Need server config value?
 
-    // globals.pubSub.mayConnectClient(site.id)  // ??
+    // globals.pubSub.mayConnectClient(site.id)  // ?? .
 
-    SECURITY // max N WebSockets per server in total,
+    SECURITY // max N WebSockets per server in total,  .
     // max M per site?
 
     SECURITY // max N WebSockets per server in total,
@@ -252,7 +252,29 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
           }
           else {
             logger.trace(s"$prefix $who sent: $jsValue [TyEWSGOTMSG]")
+
+            // ? maybe use:
+            //   https://github.com/circe/circe
+            //     val decodedFoo = decode[Foo](json)
+            //     no runtime reflection
+            //     Wow! It's like 3-4x faster than Play, for parsing? and 2-10x for writing?
+            //     https://github.com/circe/circe-benchmarks
+            //     Argonaut, Json4s, Play, Spray are all slower.
+            //     https://github.com/circe/circe-derivation
+            //       macro-supported derivation of circe's type class instances
+
+            //   https://github.com/tototoshi/play-json4s — from Lift (don't like)
+            //     "Case classes can be used to extract values from parsed JSON"
+            //     json.extract[Person]
+            //     Apparently uses reflection — so avoid.
+            //       https://stackoverflow.com/a/41333676/694469
+            //       jon4s: "you provide a Scala Manifest for it". Because Manifest
+            //       is a Scala trait used for reflection"
+
             // globals.pubSub.onMessage( ... )  ?
+            // — no. Instead, dispatch the message as if it was a normal http request?
+            // it's just that now we know already who the user is, no authentication needed
+            // (only authorization).
 
             // And, if the message means the human was active:
             // globals.pubSub.userIsActive(
