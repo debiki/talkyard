@@ -221,7 +221,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
 
   def clearAllSites() {
-    logger.trace("Emptying the whole mem cache.")
+    logger.debug("Emptying the whole mem cache.")
     cache.invalidateAll()
   }
 
@@ -232,7 +232,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
 
   private def clearSingleSite(siteId: SiteId) {
-    logger.trace(s"s$siteId: Emptying mem cache.")
+    logger.debug(s"s$siteId: Emptying mem cache.")
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
     cache.put(siteCacheVersionKey(siteId), MemCacheItem(nextVersion, -1))
