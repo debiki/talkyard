@@ -1153,6 +1153,7 @@ package object core {
   def NEXT = ()           // Would be quick / fun to do next
   def UNTESTED = ()       // If the code might not work, e.g. has never been run.
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
+  def SEC_TESTS_MISSING = ()
   def ADD_TO_DOCS = ()
   def SHOULD_CODE_REVIEW = ()
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)

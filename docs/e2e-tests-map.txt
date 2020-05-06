@@ -219,6 +219,12 @@ security:
   add group to category security settings:
             - api-list-query-for-topics.test.ts  TyT69WKTEJG4
             - api-search-full-text.test.ts       TyT69WKTEJG4
+  join page one may not see:
+            - TyT502RKTJF4  SEC_TEST_MISSING
+  add to watchbar a page one may not see:
+            -  TyT602KRGJG SEC_TESTS_MISSING
+
+  misc security: SEC_TEST_MISSING
 
 
 invites -
@@ -544,6 +550,9 @@ embedded comments:
   won't load at wrong domain / origin / hostname:
           - TESTS_MISSING TyT3059J267P, problem in wdio 6
                 embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
+  embedded editor:
+          - may not see page:   TyT035KRGMTW2  TESTS_MISSING  SEC_TEST_MISSING
+
 
 uploads -  (7KFC2)
   upload posts with pics:

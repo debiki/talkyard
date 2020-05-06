@@ -1201,19 +1201,24 @@ trait UserDao {
   }
 
 
-  private def joinLeavePageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
-    byWho: Who, couldntAdd: mutable.Set[UserId], tx: SiteTransaction): PageMeta = {
+  private def joinLeavePage(userIds: Set[UserId], pageId: PageId, add: Boolean,
+        byWho: Who, couldntAdd: mutable.Set[UserId], tx: SiteTransaction): PageMeta = {
+    SEC_TESTS_MISSING // TyT502RKTJF4  trying to join a page on may not see: open page
+
+    val usersById = tx.loadUsersAsMap(userIds + byWho.id)
+    val me = usersById.getOrElse(byWho.id, throwForbidden(
+          "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
+
     val pageMeta = tx.loadPageMeta(pageId) getOrElse
-      security.throwIndistinguishableNotFound("42PKD0")
+          security.throwIndistinguishableNotFound("42PKD0")
+
+    // AuthZ check 1/2.
+    throwIfMayNotSeePage(pageMeta, Some(me))(tx)
 
     // Right now, to join a forum page = sub community, one just adds it to one's watchbar.
     // But we don't add/remove the user from the page members list, so nothing to do here.
     if (pageMeta.pageType == PageType.Forum)
       return pageMeta
-
-    val usersById = tx.loadUsersAsMap(userIds + byWho.id)
-    val me = usersById.getOrElse(byWho.id, throwForbidden(
-      "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
     lazy val numMembersAlready = tx.loadMessageMembers(pageId).size
     if (add && numMembersAlready + userIds.size > 400) {
@@ -1223,10 +1228,9 @@ trait UserDao {
             isn't allowed. There are $numMembersAlready page members already""")
     }
 
-    throwIfMayNotSeePage(pageMeta, Some(me))(tx)
-
     val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == me.id
 
+    // AuthZ check 2/2.
     if (!me.isStaff && me.id != pageMeta.authorId && !addingRemovingMyselfOnly)
       throwForbidden(
         "EsE28PDW9", "Only staff and the page author may add/remove people to/from the page")
@@ -1271,8 +1275,19 @@ trait UserDao {
     BUG; RACE // when loading & saving the watchbar. E.g. if a user joins a page herself, and
     // another member adds her to the page, or another page, at the same time.
 
-    SECURITY // [WATCHSEC] allowed to access the pages? Verify the caller has done
-    // the authz check — if not, shouldn't add pages to the user's watchbar!
+    if (add) {
+      // Check (double check?) if the user may access the pages. [WATCHSEC]
+      SEC_TESTS_MISSING // TyT602KRGJG  add page one may not see
+      val anyMayNotSeePage = pages find { page =>
+        val user = getParticipant(userId)
+        val (maySee, _) = maySeePageUseCache(page, user)
+        !maySee
+      }
+      anyMayNotSeePage foreach { page =>
+        throwForbidden("TyE305KDJW2",
+            s"Participant $userId may not see page ${page.pageId}")
+      }
+    }
 
     val oldWatchbar = getOrCreateWatchbar(userId)
     var newWatchbar = oldWatchbar
