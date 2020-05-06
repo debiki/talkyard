@@ -208,19 +208,20 @@ services:
         ipv4_address: ${INTERNAL_NET_FAKEMAIL_IP}
 
   # Jaeger Tracing. Access at http://localhost:16686.
-  tracer:
-    image: jaegertracing/all-in-one:1.7
-    ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
-      #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
-      - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
-      - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
-      - '5778:5778'      # Agent. serve configs
-      - '16686:16686'    # Query. Web interface + find traces.
-      - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
-      #- '9411:9411'     # Collector. Zipkin compatible endpoint
-    networks:
-      internal_net:
-        ipv4_address: ${INTERNAL_NET_TRACER_IP}
+  # Not currently in use.
+  #tracer:
+  #  image: jaegertracing/all-in-one:1.7
+  #  ports:               # Component. What. (https://www.jaegertracing.io/docs/1.6/getting-started/)
+  #    #- '5775:5775/udp' # Agent. accept zipkin.thrift over compact thrift protocol
+  #    - '6831:6831/udp'  # Agent. accept jaeger.thrift over compact thrift protocol
+  #    - '6832:6832/udp'  # Agent. accept jaeger.thrift over binary thrift protocol
+  #    - '5778:5778'      # Agent. serve configs
+  #    - '16686:16686'    # Query. Web interface + find traces.
+  #    - '14268:14268'    # Collector. accept jaeger.thrift directly from clients
+  #    #- '9411:9411'     # Collector. Zipkin compatible endpoint
+  #  networks:
+  #    internal_net:
+  #      ipv4_address: ${INTERNAL_NET_TRACER_IP}
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
@@ -231,6 +232,76 @@ services:
     volumes:
       - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
+
+
+  # KeyCloak, for testing OpenID Connect (OIDC) authentication.
+  #
+  # Nice, read?:
+  #    https://news.ycombinator.com/item?id=22871180
+  #
+  # (What about auto testing OpenLDAP, ORY Kratos, FreeIPA?
+  # Do they support OIDC? ORY Kratos does.
+  # Keycloak sort of corresponds to all ORY products in one piece of software,
+  # plus management interface and login. )
+  #
+  # Comment in the below container, type:  s/d up -d keycloak
+  # then, go here: http://localhost:8080/auth/admin
+  # Mouse hover on "Master" in the upper left corner, then click "Add realm".
+  # Create this realm:  'talkyard_keycloak_test_realm'
+  # Click Users to the left,
+  #   create user: 'kcuser',
+  #   click Save.
+  # Click Credentials at the top,
+  #   set password: 'pub-kcpw',
+  #   make the password permanent: click 'On' next to Temporary to toggle to Off,
+  #   click  Set Password.
+  #
+  # Test login here: http://localhost:8080/auth/realms/talkyard_keycloak_test_realm/account
+  # (You can use a different browser.)
+  #
+  # Create an OIDC app for Talkyard:
+  # Click 'Clients' to the left, then fill in:
+  # Client id: 'talkyard_keycloak_test_client'
+  # Protocol: 'openid-connect'
+  # Access Type: Change from 'public' 'confidential' ('public' is for mobile apps
+  # and single page apps — they have no OIDC client app API secret.)
+  # Keep the 'Standard' flow = 'code' flow enabled.
+  #   Do not enable 'Implicit' flow — it's not so secure.
+  # Root URL: 
+  #   1) KeyCloack has this OpenID Connect demo login app you can try,
+  #      if you want to:  https://www.keycloak.org/app/
+  #   2) But later, change the Root URL to ... what?
+  #      sth like:  e2e-test-keycloak.localhost ?
+  #                            http://localhost/-/login-oidc/keycloak <—— now when testing
+  #
+  # Since you selected 'confidential' above, a tab 'Credentials' appear once you click Save,
+  # go there and copy the client secret.
+  #
+  #
+  # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
+  #     docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
+  #         quay.io/keycloak/keycloak:10.0.0
+  #     + -e DB_VENDOR=h2  is a good idea, see below.
+  #
+  # For auto tests, can import a previously exported realm:
+  #   -e KEYCLOAK_IMPORT=/tmp/example-realm.json -v /tmp/example-realm.json:/tmp/example-realm.json
+  # See:
+  #   https://github.com/keycloak/keycloak-containers/blob/master/server/README.md#importing-a-realm
+  #
+  keycloak:
+    image: quay.io/keycloak/keycloak:10.0.0
+    ports:
+      - '8080:8080'   # oops, conflicts with blog comments static pages server 8080
+    environment:
+      # Without 'h2', KeyCloak uses internal heuristics that sometimes wants a non-existing
+      # MySQL database, blocks for a minute, logs a 3066 lines long error message and exits.
+      DB_VENDOR: 'h2'
+      KEYCLOAK_USER: 'admin'
+      KEYCLOAK_PASSWORD: 'pub-admin'
+    networks:
+      internal_net:
+        ipv4_address: ${INTERNAL_NET_KEYCLOAK_IP}
+
 
   # Would like to remove, but is incl in talkyard-prod-one's Compose file already,
   # and would cause errors, if removed here, and people then upgrade? (because new version
