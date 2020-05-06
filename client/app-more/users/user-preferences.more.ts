@@ -659,6 +659,10 @@ const PrivacyPrefsTab = createFactory({
 
     return (
       r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
+
+        // If in the future, adding options for being a bit invisible and not receiving
+        // messages from others — then, stop publishing presence here: [PRESPRIV].
+
         Input({ type: 'checkbox', className: 'e_HideActivityStrangersCB',
             label: rFragment({},
               t.upp.HideActivityStrangers_1, r.br(),

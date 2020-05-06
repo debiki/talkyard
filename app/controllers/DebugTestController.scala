@@ -418,7 +418,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
         |
         |${clientsByUserId.size} subscribers:
         |==================================
-        |${clientsByUserId.valuesIterator.map(_.toString).mkString("\n")}
+        |${clientsByUserId.valuesIterator.map(_.toStringPadded).mkString("\n")}
         |
         |Watchers by page:
         |==================================
@@ -439,7 +439,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
         |${
           siteUserIdAndClients map { case (siteUserId, client) =>
             val siteIdPadded = siteUserId.siteId.toString.padTo(4, ' ')
-            s"$siteIdPadded: ${client.toString}"
+            s"$siteIdPadded: ${client.toStringPadded}"
           } mkString "\n"
         }
         |""")

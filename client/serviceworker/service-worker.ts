@@ -74,7 +74,7 @@ let lastWsConnection: WebSocket | U;
 let wsMessageNr = 0;
 let hasAuthenticated: boolean;
 
-let humanLastActiveAtMs: number | U;
+let humanLastActiveAtMs = Date.now();
 let nextKeepAliveScheduled: boolean | U;
 const KeepAliveIntervalSeconds = 30;
 

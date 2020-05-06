@@ -319,6 +319,7 @@ package object core {
   case class UserAndLevels(user: Participant, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
+    def nameHashId: String = user.nameHashId
   }
 
   case class AnyUserAndThreatLevel(user: Option[Participant], threatLevel: ThreatLevel)

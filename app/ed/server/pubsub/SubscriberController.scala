@@ -231,10 +231,17 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
                 }
                 else {
                   // Let's talk.
-                  logger.debug(s"$prefix $who connected  [TyMWSCONN]")
+                  logger.debug(o"""$prefix $who connected, telling PubSubActor, it'll
+                      watch page ids: ${client.watchedPageIds}  [TyMWSCONN]""")
                   client.wsOut.offer(JsString(s"OkHi @${client.user.usernameOrGuestName}"))
                   authenticatedViaWebSocket = true
-                  globals.pubSub.userSubscribed(client)
+
+                  RACE // [WATCHBRACE]
+                  val dao = globals.siteDao(site.id)
+                  val watchbar = dao.getOrCreateWatchbar(requester.id)
+                  val clientWithPages = client.copy(watchedPageIds = watchbar.watchedPageIds)
+
+                  globals.pubSub.userSubscribed(clientWithPages)
                 }
               case other =>
                 // Close — got no xsrf token.
@@ -270,14 +277,11 @@ class SubscriberController @Inject()(cc: ControllerComponents, tyCtx: EdContext)
       Flow.fromSinkAndSourceMat(inSink,  outSource) { (_, outboundMat: SourceQueue) =>
         // The WebSocket is now active. Wait for the client to send its
         // session id — because checking the cookie and Origin header, might
-        // not be enough, if the browser is weird.
-
-        val dao = globals.siteDao(site.id)
-        val watchbar = dao.getOrCreateWatchbar(requester.id)
+        // not be enough, if the client is weird.
 
         anyWebSocketClient = Some(
-          UserConnected(
-            site.id, requester, browserIdData, watchbar.watchedPageIds, outboundMat))
+            UserConnected(
+              site.id, requester, browserIdData, Set.empty, outboundMat))
 
         logger.debug(s"WS conn: ${requester.nameParaId} [TyMWSCON]")
       }

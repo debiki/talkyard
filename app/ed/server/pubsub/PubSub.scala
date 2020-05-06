@@ -193,14 +193,14 @@ case class WebSocketClient(
   watchingPageIds: Set[PageId],
   wsOut: SourceQueueWithComplete[JsValue]) {
 
-  def toStringNotPadded: String =
+  override def toString: String =
     o"""${user.nameHashId},
         first connected: ${toIso8601T(firstConnectedAt.toJavaDate)},
         connected: ${toIso8601T(connectedAt.toJavaDate)},
         active: ${toIso8601T(humanActiveAt.toJavaDate)},
         watches: [${watchingPageIds.mkString(", ")}]"""
 
-  override def toString: String =
+  def toStringPadded: String =
     user.anyUsername.getOrElse("").padTo(Participant.MaxUsernameLength, ' ') +
       " #" + user.id.toString.padTo(5, ' ') + ' ' + o"""
         first connected: ${toIso8601T(firstConnectedAt.toJavaDate)},
@@ -268,7 +268,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   private def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
       val user = globals.siteDao(siteId).getParticipant(userId) getOrElse { return }
-      updateWatchedPagesAndActivity(siteId, userId, pageIds)
+      updateWatchedPages(siteId, userId, watchingPageIdsNow = Some(pageIds))
 
       // Break out fn (305KTSS)
       publishPresenceIfChanged(siteId, Some(user), Presence.Active)
@@ -296,19 +296,25 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
             clientsBySiteUserIdInactiveFirst.remove(SiteUserId(siteId, user.id))
 
       // Place last: (if possible)
-      if (anyClientA ne anyClientB) {
-        logger.error(o"""Bug: Different per-user-id-per-site-id and
-            per-site-user-id clients: $anyClientA  and $anyClientB [TyE50KTD5X7]""")
+      if (anyClientA.isDefined != anyClientB.isDefined) {
+        logger.error(o"""Bug: Per-user-id-per-site-id or
+            per-site-user-id client missing: $anyClientA, $anyClientB [TyE603KRSTD4]""")
       }
       else if (anyClientA.isEmpty) {
-        // Apparently not connected via WebSocket, probably fine.
+        // Maybe just disconnected?
         logger.debug(o"""s$siteId: Got ${user.nameHashId} activity message but
             there's no such WebSocket client [TyM502KRDKJ5]""")
       }
       else {
-        val client = anyClientA.get
-        clientsById.put(user.id, client)
-        clientsBySiteUserIdInactiveFirst.put(SiteUserId(siteId, user.id), client)
+        val clientA = anyClientA.get
+        val clientB = anyClientB.get
+        if (clientA ne clientB) {
+          logger.error(o"""Bug: Different per-user-id-per-site-id and
+              per-site-user-id clients: $clientA  and $clientB [TyE50KTD5X7]""")
+        }
+        // Here we place last.
+        clientsById.put(user.id, clientA)
+        clientsBySiteUserIdInactiveFirst.put(SiteUserId(siteId, user.id), clientB)
       }
 
     case newClient @ UserConnected(siteId, user, browserIdData, watchedPageIds, wsOut) =>
@@ -368,16 +374,24 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  private def updateWatchedPagesAndActivity(siteId: SiteId, userId: UserId,
-        newPageIds: Set[PageId]) {
+  private def updateWatchedPages(siteId: SiteId, userId: UserId,
+        watchingPageIdsNow: Option[Set[PageId]] = None,
+        stoppedWatchingPageId: Option[PageId] = None) {
+
+    dieIf(watchingPageIdsNow.isDefined && stoppedWatchingPageId.isDefined, "TyE703RKDHF24")
 
     val clientsById = clientsByUserIdForSite(siteId)
     val clientBefore: WebSocketClient = clientsById.getOrElse(userId, {
       // Do nothing, not yet subscribed. Soon the browser should subscribe to
       // events, and *then* we'll remember the set-of-watched-pages. (No point in
       // remembering watched pages, before user has subscribed and it's time to send events.)
+      logger.debug(
+          s"s$siteId: Not updating watched pages for $userId: Not connected [TyM503RSKD]")
       return
     })
+
+    val newPageIds = watchingPageIdsNow.getOrElse(
+          clientBefore.watchingPageIds - stoppedWatchingPageId.getOrDie("TyE05KTS5JI"))
 
     val updatedClient = clientBefore.copy(
           watchingPageIds = newPageIds,
@@ -443,21 +457,26 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     val anyClientA = clientsBySiteUserIdInactiveFirst.remove(SiteUserId(siteId, user.id))
     val anyClientB = clientsByUserIdForSite(siteId).remove(user.id)
 
-    if (anyClientA ne anyClientB) {
-      logger.error(o"""Bug: Different per-user-id-per-site-id and
-          per-site-user-id clients: $anyClientA  and $anyClientB [TyE7WKJ25ZR]""")
+    if (anyClientA.isDefined != anyClientB.isDefined) {
+      logger.error(o"""Bug: Per-user-id-per-site-id or
+            per-site-user-id client missing: $anyClientA, $anyClientB [TyE502KTDH4]""")
     }
 
-    val anyClient: Option[WebSocketClient] = anyClientA.orElse(anyClientB)
-
-    anyClient map { client: WebSocketClient =>
-      traceLog(siteId, s"Disconnecting WebSocket for ${user.nameHashId} [TyMRMSUBSC]")
-      client.wsOut.complete() // disconnects
-      client.watchingPageIds
-    } getOrElse {
+    if (anyClientA.isEmpty) {
       traceLog(siteId, s"No WebSocket for ${user.nameHashId} to disconnect [TyM05RKDH2]")
-      Set.empty
+      return Set.empty
     }
+
+    val clientA = anyClientA.get
+    val clientB = anyClientB.get
+    if (clientA ne clientB) {
+      logger.error(o"""Bug: Different per-user-id-per-site-id and
+          per-site-user-id clients: $clientA  and $clientB [TyE703KDW4]""")
+    }
+
+    traceLog(siteId, s"Disconnecting WebSocket for ${user.nameHashId} [TyMRMSUBSC]")
+    clientA.wsOut.complete() // disconnects
+    clientA.watchingPageIds
   }
 
 
@@ -491,6 +510,10 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     val toUserIds = clientsByUserId.keySet - user.id
     traceLog(siteId, s"Pupl presence ${user.nameHashId}: $presence [TyDPRESCNS]")
 
+    // If some time later, users can be "invisible", stop publishing their
+    // presence here.  [PRESPRIV]
+    // Compare with pages one may not see: [WATCHSEC].
+
     sendPublishRequest(siteId, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
       "presence" -> presence.toInt))
@@ -507,6 +530,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         // UX COULD send an updated num-pending-review-tasks counter, though?
         !notf.tyype.isAboutReviewTask
     }
+
     notfsReceiverIsOnline foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
@@ -522,18 +546,45 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
     message match {
       case patchMessage: StorePatchMessage =>
-        val userIds = usersWatchingPage(
-          patchMessage.siteId, pageId = patchMessage.toUsersViewingPage).filter(_ != byId)
-        userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
+        val pageId = patchMessage.toUsersViewingPage
+        val userIdsMayMaybe = usersWatchingPage(
+              patchMessage.siteId, pageId = pageId).filter(_ != byId)
 
-        SECURITY // excl users who may not access that page [PUBLSEC] [WATCHSEC]  + e2e test
-        // and here lazy-*remove* pages they may not see, from their watchbar?
+        // Access control.
+        val usersMayMaybeSee = userIdsMayMaybe.flatMap(siteDao.getUser)
+        // (Shouldn't be any non-existing users — deleting database row not implemented.)
+        val (usersMaySee, usersMayNotSee) = usersMayMaybeSee partition { user =>
+          siteDao.getPageMeta(pageId) match {
+            case None =>
+              // Cannot see a non-existing page.
+              false
+            case Some(pageMeta) =>
+              TESTS_MISSING  // [WATCHSEC]
+              val (maySee, _) = siteDao.maySeePageUseCache(pageMeta, Some(user))
+              maySee
+          }
+        }
 
-        def lazyMessage = s"Publ storePatch to ${lazyPrettyUsers.mkString(", ")} [TyDPUBLPTCH]"
-        def lazyPrettyUsers: Iterable[String] = userIds.map(id => anyPrettyUser(siteDao.getParticipant(id), id))
+        usersMayNotSee foreach { user =>
+          // Remove the user from the page watchers list.
+          // This user was allowed to start watching the page — but now, hen may not
+          // see it. Apparently, access was recently revoked.
+          logger.debug(s"Removing ${user.nameHashId} from page ${pageId
+                } watchers, hen may not see that page [TyM405WKTD2]")
+          updateWatchedPages(message.siteId, user.id, stoppedWatchingPageId = Some(pageId))
+        }
+
+        usersMaySee foreach { user =>
+          siteDao.markPageAsUnreadInWatchbar(user.id, patchMessage.toUsersViewingPage)
+        }
+
+        def lazyMessage = s"Publ storePatch to: [${
+              usersMaySee.map(_.nameHashId).mkString(", ")}]  [TyDPUBLPTCH]"
+
         traceLog(message.siteId, lazyMessage)
 
-        sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
+        sendPublishRequest(
+              patchMessage.siteId, usersMaySee.map(_.id), "storePatch", patchMessage.json)
 
       case newPageMessage: NewPageMessage =>
         COULD // send a patch to everyone looking at the topic list, so they'll
@@ -541,7 +592,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         // Exclude private page members though — they got notified above,
         // via the notifications list.
 
-        SECURITY // excl users who may not access the category
+        // sendPublishRequest( .... )
+        //  — but excl users who may not access the category, see [WATCHSEC] above.
 
       case x =>
         unimplemented(s"Publishing ${classNameOf(x)} [TyEPUBWHAT]")
@@ -560,6 +612,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         stopped: $pageIdsRemoved [TyDWTCHPGS]""")
 
     pageIdsRemoved foreach { pageId =>
+      // If not yet any by-page-id Set, we do Not insert one: getOrElse(),
+      // but not getOrElseUpdate().
       val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
       watcherIds.remove(userId)
       if (watcherIds.isEmpty) {
@@ -567,6 +621,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
       }
     }
     pageIdsAdded foreach { pageId =>
+      // If not yet any by-page-id Set, we insert one: getOrElseUpdate().
       val watcherIds = watcherIdsByPageId.getOrElseUpdate(pageId, mutable.Set.empty)
       watcherIds.add(userId)
     }
@@ -581,20 +636,19 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def sendPublishRequest(siteId: SiteId, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
-    SECURITY; SHOULD // extra check that I won't send messages about pages a user may not access. [PUBLSEC] [WATCHSEC]
     dieIf(siteId == NoSiteId, "EsE7UW7Y2", "Cannot send requests to NoSiteId")
 
-    val usersById: collection.Map[UserId, WebSocketClient] =
+    val clientsById: collection.Map[UserId, WebSocketClient] =
       clientsByUserIdBySiteId.getOrElse(siteId, Map.empty)
 
     toUserIds foreach { userId =>
-      usersById.get(userId) match {
+      clientsById.get(userId) match {
         case None =>
-        case Some(wsClient) =>
+        case Some(client) =>
           val message = Json.obj(
             "type" -> tyype,
             "data" -> json)
-          wsClient.wsOut.offer(message)
+          client.wsOut.offer(message)
       }
     }
   }
