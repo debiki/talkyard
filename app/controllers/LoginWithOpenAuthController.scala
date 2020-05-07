@@ -141,16 +141,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     if (anyClient.isEmpty) {
       val conf = new org.pac4j.oidc.config.KeycloakOidcConfiguration()
       conf.setResponseType("code")
-      conf.setResponseMode("") // what's that?
+
+      //conf.setResponseMode("") // what's that?
+
       conf.setUseNonce(true)
       conf.setMaxClockSkew(30) // seconds, default is 30
+
       // Could:
         // conf.setPreferredJwsAlgorithm(JWSAlgorithm.RS256) — but which alg?
         // select display mode: page, popup, touch, and wap
         // conf.addCustomParam("display", "popup")
         // select prompt mode: none, consent, select_account
         // conf.addCustomParam("prompt", "select_account")
-        // conf.setWithState(true)
+      conf.setWithState(true)
         // conf.setStateData("custom-state-value")  ? no such method
         // Can look at response to find out for how long to stay logged in:
         // conf.setExpireSessionWithToken(true); — no, look at callback data instead?
@@ -187,16 +190,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // default allows callback urls below the base URL
     client.setCallbackUrl("http://localhost/-/login-oidc/keycloak/callback")
 
+
     // Or instead?:
     // val context = new org.pac4j.core.context.MockWebContext()
-    val sessionStoreNotNeeded = new org.pac4j.play.store.PlayCookieSessionStore()
+
+
     val context = new org.pac4j.play.PlayWebContext(
-          request.underlying, sessionStoreNotNeeded)
+          request.underlying, getPac4jSessionStore())
 
     // This'll make the OidcConfiguration make a HTTP request to get the
     // OIDC metadata. Here:
-    // pac4j-oidc-4.0.0-sources.jar!/org/pac4j/oidc/config/OidcConfiguration.java
-    // protected void internalInit() { ...  new URL(this.getDiscoveryURI()) ... }
+    //   pac4j-oidc-4.0.0-sources.jar!/org/pac4j/oidc/config/OidcConfiguration.java
+    //   protected void internalInit() { ...  new URL(this.getDiscoveryURI()) ... }
     //
     // Weird that Pac4j does HTTP requests from inside a config values class!
     //
@@ -204,7 +209,29 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     System.out.println(s"Pac4j now will download ODIC metadata from: $discoveryUrl")
 
     val redirectActionOpt: ju.Optional[org.pac4j.core.exception.http.RedirectionAction] =
-          client.getRedirectionAction(context)
+      try client.getRedirectionAction(context)
+      catch {
+        case ex: org.pac4j.core.exception.TechnicalException =>
+          val anyCause = ex.getCause
+          if ((anyCause ne null) && anyCause.isInstanceOf[java.io.FileNotFoundException]) {
+            // Pac4j apparently throws File Not Found when the remote server
+            // replies 404 Not Found.
+            SECURITY // Ask OIDC people: The discovery URL is not secret, can it ever be?
+            throwNotFound("TyEOIDCDISCURL", i"""
+                |The OpenID Connect provider's discovery URL seems to reply 404 Not Found.
+                |Did the Talkyard site admin configure the wrong URL?
+                |
+                |Here's the configured discovery URL:
+                |
+                |   $discoveryUrl
+                |
+                |You can copy-paste it into your browser and try to find out what's wrong.
+                |""")
+          }
+          else {
+            throw ex
+          }
+      }
 
     val redirectToUrl: String = redirectActionOpt.get()
           .asInstanceOf[org.pac4j.core.exception.http.FoundAction]
@@ -262,12 +289,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     // Or instead?:
     // val context = new org.pac4j.core.context.MockWebContext()
-    val sessionStoreNotNeeded = new org.pac4j.play.store.PlayCookieSessionStore()
+
     val context = new org.pac4j.play.PlayWebContext(
-      request.underlying, sessionStoreNotNeeded)
+          request.underlying, getPac4jSessionStore())
 
     val credentials: ju.Optional[org.pac4j.oidc.credentials.OidcCredentials] =
-          client.getCredentials(context)
+          client.getCredentials(context)  // <—— throws "TechnicalException: State parameter is different from the one sent in authentication request"
 
     val genericProfile: org.pac4j.core.profile.UserProfile =
           client.getUserProfile(credentials.get(), context).get()
@@ -294,6 +321,23 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
 
+  def getPac4jSessionStore(): org.pac4j.play.store.PlayCacheSessionStore = {
+    // Play Framework in a nutshell: Abstraction on abstraction on abstraction
+    // on abstraction on abstraction.
+
+    val asyncCache: play.cache.caffeine.NamedCaffeineCache[Any, Any] =
+      edContext.playCacheManager.getCache[Any, Any]("Pac4jPlayCacheSessionStore")
+
+    val asyncCacheApi: play.api.cache.AsyncCacheApi =
+      new play.api.cache.caffeine.CaffeineCacheApi(asyncCache)
+
+    val syncCache = new play.api.cache.DefaultSyncCacheApi(asyncCacheApi)
+
+    val syncCacheJavaStyle: play.cache.SyncCacheApi =
+      new play.cache.SyncCacheApiAdapter(syncCache)
+
+    new org.pac4j.play.store.PlayCacheSessionStore(syncCacheJavaStyle)
+  }
 
 
   def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =

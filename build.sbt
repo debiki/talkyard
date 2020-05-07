@@ -93,7 +93,8 @@ val appDependencies = Seq(
   // HikariCP — "A solid high-performance JDBC connection pool at last"
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",   // newest, as of 18-07-17
+  caffeine,
+  //"com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",   // newest, as of 18-07-17
   "com.github.etaty" %% "rediscala" % "1.8.0",              // newest, as of 18-07-17
   // Search engine, in https://mvnrepository.com.
   "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.

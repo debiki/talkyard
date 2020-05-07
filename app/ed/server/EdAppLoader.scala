@@ -2,15 +2,17 @@ package ed.server
 
 import com.debiki.core._
 import debiki.onebox.Onebox
-import debiki.{Globals, RateLimiter, Nashorn, TextAndHtmlMaker}
+import debiki.{Globals, Nashorn, RateLimiter, TextAndHtmlMaker}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
 import play.{api => p}
 import play.api._
+import play.api.cache.caffeine.{CacheManagerProvider, CaffeineCacheManager}
 import play.api.http.FileMimeTypes
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
+
 import scala.concurrent.{ExecutionContext, Future}
 import talkyard.server.TyLogger
 
@@ -59,6 +61,9 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     io.jaegertracing.Configuration.fromEnv(tracerServiceName).getTracer
   }
 
+  val playCacheManager: CaffeineCacheManager =
+        new CacheManagerProvider(appLoaderContext.initialConfiguration).get
+
   val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem, tracer)
   val security = new ed.server.security.EdSecurity(globals)
   val rateLimiter = new RateLimiter(globals, security)
@@ -70,7 +75,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   nashorn.setOneboxes(oneboxes)
 
   val context = new EdContext(
-    globals, security, safeActions, plainApiActions, nashorn, oneboxes,
+    globals, playCacheManager, security, safeActions, plainApiActions, nashorn, oneboxes,
     materializer, controllerComponents)
 
   globals.setEdContext(context)
@@ -143,6 +148,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
 class EdContext(
   val globals: Globals,
+  val playCacheManager: CaffeineCacheManager,
   val security: EdSecurity,
   val safeActions: SafeActions,
   val plainApiActions: PlainApiActions,
