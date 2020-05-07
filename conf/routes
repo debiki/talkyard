@@ -29,13 +29,23 @@ POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
 POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
+
+# Delete old OpenID:
 #GET   /-/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 # also: /-/v0/sso-login via ApiV0Controller
 
+GET   /-/login-oidc/:provider           controllers.LoginWithOpenAuthController.loginOidcStart(provider, returnToUrl)
+GET   /-/login-oidc/:provider/callback  controllers.LoginWithOpenAuthController.loginOidcCallback(provider)
+GET   /-/logout-oidc/:provider  controllers.LoginWithOpenAuthController.logoutOidcCallback(provider, returnToUrl)
+
+# Would like to rename to:
+# GET   /-/login-oauth/:provider
+# GET   /-/login-oauth/:provider/callback
 GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
 GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
+
 GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
 GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
 POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog

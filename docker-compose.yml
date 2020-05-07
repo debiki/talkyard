@@ -282,7 +282,7 @@ services:
   # Comment in the below container, type:  s/d up -d keycloak
   # then, go here: http://localhost:8080/auth/admin
   # Mouse hover on "Master" in the upper left corner, then click "Add realm".
-  # Create this realm:  'tyrealm'
+  # Create this realm:  'talkyard_keycloak_test_realm'
   # Click Users to the left,
   #   create user: 'kcuser',
   #   click Save.
@@ -291,28 +291,38 @@ services:
   #   make the password permanent: click 'On' next to Temporary to toggle to Off,
   #   click  Set Password.
   #
-  # Test login here: http://localhost:8080/auth/realms/tyrealm/account
+  # Test login here: http://localhost:8080/auth/realms/talkyard_keycloak_test_realm/account
   # (You can use a different browser.)
   #
   # Create an OIDC app for Talkyard:
   # Click 'Clients' to the left, then fill in:
-  # Client id: 'tyclient'
+  # Client id: 'talkyard_keycloak_test_client'
   # Protocol: 'openid-connect'
   # Root URL: 
   #   1) KeyCloack has this OpenID Connect demo login app you can try,
   #      if you want to:  https://www.keycloak.org/app/
   #   2) But later, change the Root URL to ... what?
   #      sth like:  e2e-test-keycloak.localhost ?
+  #                            http://localhost/-/login-oidc/keycloak <—— now when testing
   #
   # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
   #     docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \
   #         quay.io/keycloak/keycloak:10.0.0
+  #     + -e DB_VENDOR=h2  is a good idea, see below.
+  #
+  # For auto tests, can import a previously exported realm:
+  #   -e KEYCLOAK_IMPORT=/tmp/example-realm.json -v /tmp/example-realm.json:/tmp/example-realm.json
+  # See:
+  #   https://github.com/keycloak/keycloak-containers/blob/master/server/README.md#importing-a-realm
   #
   keycloak:
     image: quay.io/keycloak/keycloak:10.0.0
     ports:
       - '8080:8080'   # oops, conflicts with blog comments static pages server 8080
     environment:
+      # Without 'h2', KeyCloak uses internal heuristics that sometimes wants a non-existing
+      # MySQL database, blocks for a minute, logs a 3066 lines long error message and exits.
+      DB_VENDOR: 'h2'
       KEYCLOAK_USER: 'admin'
       KEYCLOAK_PASSWORD: 'pub-admin'
     networks:

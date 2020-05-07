@@ -50,7 +50,7 @@ val appDependencies = Seq(
   play.sbt.PlayImport.ws,
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
-  "com.typesafe.play" %% "play-json" % "2.6.9",             // newest, as of 18-07-17
+  "com.typesafe.play" %% "play-json" % "2.8.1",
   // OpenAuth and OpenID etc Authentication.
   // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
   // would require everyone that uses Talkyard to reconfigure their Google auth app.
@@ -79,8 +79,14 @@ val appDependencies = Seq(
    in /opt/talkyard/conf/play-framework.conf.
 
    */
+  // Could alternatively use Pac4j: https://www.pac4j.org/docs/clients/oauth.html
   "com.mohiva" %% "play-silhouette" % "7.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
+  // OpenID Connect: (with Pac4j, https://github.com/pac4j/pac4j )
+  "org.pac4j" % "pac4j-core" % "4.0.0",
+  "org.pac4j" % "pac4j-oidc" % "4.0.0",
+  "org.pac4j" %% "play-pac4j" % "10.0.0",  // needed only for PlayWebContext. v10 for Pac4j v4.
+  "org.apache.shiro" % "shiro-core" % "1.5.3",  // Pac4j-Play needs, thinks it's 'provided'
   // PostgreSQL JDBC client driver
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]

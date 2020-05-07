@@ -34,6 +34,7 @@ import ed.server._
 import ed.server.http._
 import ed.server.security.EdSecurity
 import javax.inject.Inject
+import java.{util => ju}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
@@ -92,6 +93,207 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // BUG SHOULD use Redis, so the key won't disappear after server restart.
     .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES)
     .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
+
+
+  // SAML = no, wait.
+  // Complicated, not fun?: https://news.ycombinator.com/item?id=13129570:
+
+  // Threading: Fix later
+  @volatile
+  private var anyClient: Option[org.pac4j.oidc.client.KeycloakOidcClient] = None
+
+  def loginOidcStart(provider: String, returnToUrl: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+    // Wow! This one seems pretty good:
+    // https://connect2id.com/learn/openid-connect
+    // "OpenID Connect explained" — seems to be about all one needs to know
+    // (and just a little bit more).
+    // Also nice (but about OAuth not OIDC): https://www.oauth.com/
+
+    // Talkyard uses Pac4j:
+    //   https://github.com/pac4j/pac4j
+    //   https://github.com/pac4j/play-pac4j
+    // Docs: https://www.pac4j.org/docs/clients/openid-connect.html
+    // And: https://www.pac4j.org/docs/how-to-implement-pac4j-for-a-new-framework.html#b-handle-callback-for-indirect-client
+
+    // Pac4j uses NimbusDS which is developed by a company Connect2id (https://connect2id.com/about)
+    // incorporated in Bulgaria (as of 2020-05), formerly NimbusDS.com but they didn't renew
+    // that domain name.
+    // Their Git repo:
+    //   https://bitbucket.org/connect2id/oauth-2.0-sdk-with-openid-connect-extensions/src/master/
+    //   (linked from: https://connect2id.com/products/nimbus-oauth-openid-connect-sdk/download )
+    // (Connect2id sells a "Connect2id server" — and they've made their oidc client
+    // libs available open-source, Apache2.)
+    //
+    // Connect2id writes:
+    // """ you can use our own open source OpenID Connect SDK directly, or via a web
+    // framework, such as Spring Security or Pac4j, whichever is be easier to use.
+    // Spring Security and Pac4j also support SAML """
+    // (https://connect2id.com/products/server/docs/guides/identity-federation )
+    // And Pac4j is what Talkyard uses.
+    // Can also use Nimbus directly:
+    //   "Nimbus OAuth 2.0 SDK with OpenID Connect extensions"
+    //   https://connect2id.com/products/nimbus-oauth-openid-connect-sdk
+
+        // There's also ScribeJava but it doesn't support OIDC:
+        // https://github.com/scribejava/scribejava/pull/646
+
+    if (anyClient.isEmpty) {
+      val conf = new org.pac4j.oidc.config.KeycloakOidcConfiguration()
+      conf.setResponseType("code")
+      conf.setResponseMode("") // what's that?
+      conf.setUseNonce(true)
+      conf.setMaxClockSkew(30) // seconds, default is 30
+      // Could:
+        // conf.setPreferredJwsAlgorithm(JWSAlgorithm.RS256) — but which alg?
+        // select display mode: page, popup, touch, and wap
+        // conf.addCustomParam("display", "popup")
+        // select prompt mode: none, consent, select_account
+        // conf.addCustomParam("prompt", "select_account")
+        // conf.setWithState(true)
+        // conf.setStateData("custom-state-value")  ? no such method
+        // Can look at response to find out for how long to stay logged in:
+        // conf.setExpireSessionWithToken(true); — no, look at callback data instead?
+
+        conf.setScope("openid email profile")
+      // The client id and secret are from the OpenID Connect provider.
+      conf.setClientId("talkyard_keycloak_test_client")
+      conf.setSecret("...")
+
+      // Discovery url:
+      // This constructs the OIDC discovery url:
+      //   baseUri + "/realms/" + realm + "/.well-known/openid-configuration"
+        // e.p.  https://keycloak.example.com/auth
+
+      // Docker will resolve 'keycloak' to the Docker KeyCloak container.
+      // ('localhost' would have worked, if we used Docker's host networking.)
+      conf.setBaseUri("http://keycloak:8080/auth")
+      conf.setRealm("talkyard_keycloak_test_realm")
+      anyClient = Some(new org.pac4j.oidc.client.KeycloakOidcClient(conf))
+    }
+
+    val client = anyClient.get
+
+    // new org.pac4j.oidc.profile.keycloak.KeycloakOidcProfile — no extra fields,
+    // just like: extends org.pac4j.oidc.profile.OidcProfile {}.
+
+    // This is the OIDC "Redirection Endpoint",
+    // docs:  https://tools.ietf.org/html/rfc6749#section-3.1.2
+    // It should not change — not even the query string, see:
+    // https://www.oauth.com/oauth2-servers/redirect-uris/redirect-uri-registration/
+    // Instead, use the 'state' parameter to get back e.g. a session / user id,
+    // when redirected from the OIDC provider back to here.
+    // It's below  /-/login-oidc/(provider)/ because at least KeyCloak by
+    // default allows callback urls below the base URL
+    client.setCallbackUrl("http://localhost/-/login-oidc/keycloak/callback")
+
+    // Or instead?:
+    // val context = new org.pac4j.core.context.MockWebContext()
+    val sessionStoreNotNeeded = new org.pac4j.play.store.PlayCookieSessionStore()
+    val context = new org.pac4j.play.PlayWebContext(
+          request.underlying, sessionStoreNotNeeded)
+
+    // This'll make the OidcConfiguration make a HTTP request to get the
+    // OIDC metadata. Here:
+    // pac4j-oidc-4.0.0-sources.jar!/org/pac4j/oidc/config/OidcConfiguration.java
+    // protected void internalInit() { ...  new URL(this.getDiscoveryURI()) ... }
+    //
+    // Weird that Pac4j does HTTP requests from inside a config values class!
+    //
+    val discoveryUrl = client.getConfiguration.getDiscoveryURI
+    System.out.println(s"Pac4j now will download ODIC metadata from: $discoveryUrl")
+
+    val redirectActionOpt: ju.Optional[org.pac4j.core.exception.http.RedirectionAction] =
+          client.getRedirectionAction(context)
+
+    val redirectToUrl: String = redirectActionOpt.get()
+          .asInstanceOf[org.pac4j.core.exception.http.FoundAction]
+          .getLocation
+
+    /*
+    val action: org.pac4j.core.exception.http.HttpAction =
+          client.getRedirectionAction(context).get()
+            .asInstanceOf[org.pac4j.core.exception.http.HttpAction] */
+
+          // call  profile.removeLoginData() afterwards to remove the OIDC tokens.
+
+    //   PlayHttpActionAdapter.INSTANCE.adapt(action, context)
+    // startAuthenticationImpl(provider, returnToUrl, request)
+    // throwTemporaryRedirect(redirectToUrl)
+
+    System.out.println(s"Pac4j got back URL: $redirectToUrl")
+
+    val testHost = "://keycloak:8080/"
+    val redir2 =
+      if (redirectToUrl.contains("http" + testHost) ||
+          redirectToUrl.contains("https" + testHost)) {
+        // We're testing on localhost?
+        // Then, change to 'localhost'. Otherwise the e2e test browsers
+        // cannot access KeyCloak — they don't run inside the Docker network
+        // and the 'keycloak' hostname exists only in that network.
+        redirectToUrl.replaceAllLiterally(testHost, "://localhost:8080/")
+      }
+      else {
+        // This is for real (not a test).
+        redirectToUrl
+      }
+
+    System.out.println(s"Redirecting the browser to: $redir2")
+
+    Future.successful(
+        play.api.mvc.Results.Redirect(
+          redir2, status = play.api.http.Status.SEE_OTHER))
+  }
+
+
+  def loginOidcCallback(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+    // Docs: https://www.pac4j.org/docs/user-profile.html
+    //    val credentials: Optional[Credentials] = client.getCredentials(context)
+    //    val profile: UserProfile = client.getUserProfile(credentials.get(), context).get()
+
+    val client: org.pac4j.oidc.client.KeycloakOidcClient = anyClient.get
+
+    // The URL is sth like:
+    //  GET /-/login-oidc/keycloak/callback
+    //     ? client_name=KeycloakOidcClient
+    //     & state=8JZ5h.....JafCD7_Cwk
+    //     & session_state=9ebda6d1-d9....1fec0c5
+    //     & code=5718c...really..long..dd0b0
+
+    // Or instead?:
+    // val context = new org.pac4j.core.context.MockWebContext()
+    val sessionStoreNotNeeded = new org.pac4j.play.store.PlayCookieSessionStore()
+    val context = new org.pac4j.play.PlayWebContext(
+      request.underlying, sessionStoreNotNeeded)
+
+    val credentials: ju.Optional[org.pac4j.oidc.credentials.OidcCredentials] =
+          client.getCredentials(context)
+
+    val genericProfile: org.pac4j.core.profile.UserProfile =
+          client.getUserProfile(credentials.get(), context).get()
+
+    val oidcProfile: org.pac4j.oidc.profile.OidcProfile =
+          genericProfile.asInstanceOf[org.pac4j.oidc.profile.OidcProfile]
+
+    Future.successful(Ok(i"""
+        |Hello
+        |
+        |Logged in as: ${oidcProfile.getUsername}
+        |Email: ${oidcProfile.getEmail}
+        |Verified: ${oidcProfile.getEmailVerified}
+        |
+        |toString: ${oidcProfile.toString}
+        |"""))
+  }
+
+
+  def logoutOidcCallback(provider: String, returnToUrl: String): Action[Unit] =
+    AsyncGetActionIsLogin { request =>
+      // Docs: https://www.pac4j.org/docs/how-to-implement-pac4j-for-a-new-framework.html#c-logout
+      ???
+    }
+
+
 
 
   def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
