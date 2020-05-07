@@ -140,10 +140,14 @@ object EdHttp {
 
   /** Sets a Cache-Control max-age = 1 week, so that permanent redirects can be undone. [7KEW2Z]
     * Otherwise browsers might cache them forever.
+    *
+    * No, set just a few days: 2 instead of 7. It's annoying when someone moves
+    * a Talkyard site from A to B and then wants to move it back to A, but the browsers
+    * have cache an A —> B redirect response.
     */
   def throwPermanentRedirect(url: String) =
     throw ResultException(R.Redirect(url).withHeaders(
-      p.http.HeaderNames.CACHE_CONTROL -> ("public, max-age=" + 3600 * 24 * 7)))
+      p.http.HeaderNames.CACHE_CONTROL -> ("public, max-age=" + 3600 * 24 * 2)))
     // Test that the above cache control headers work, before I redirect permanently,
     // otherwise browsers might cache the redirect *forever*, can never be undone.
     // So, right now, don't:
