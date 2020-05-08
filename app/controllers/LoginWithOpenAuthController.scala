@@ -148,6 +148,20 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // it somehow was using a different cache (which?).
     // Hours hours lost trying to figure out how Pac4j + Play Fmw use some cache
     // and Play features, when in fact I don't want to use that *at all*.
+    // https://github.com/pac4j/play-pac4j/issues/66
+    // ...
+    /*
+
+    "pac4j State parameter is different from the one sent in authentication request"
+
+    
+    T.L.D.R : state isn't saved in session but in memory.
+
+    I've the same problem and after hours of search, it's seems that the pac4j implementation saving the "state" is stateful.
+    StorageHelper, which backend is in fact an in memory cache
+      ...
+      For play-pac4j version 2.0, the StorageHelper has been removed and there is now a CacheStore: its name obviously states how it works. I also updated the documentation to avoid people to have the same issue: https://github.com/pac4j/play-pac4j/pull/73/files#diff-04c6e90faac2675aa89e2176d2eec7d8R174
+    */
     //
     // What's more well spent time: Fighting against Pac4j and Play when they try
     // to make me use their features I don't want,
