@@ -81,3 +81,26 @@ Also better not use Python or Ruby for server code.
 SECURITY [to_ty_risky] to-talkyard is a bit risky: nodejs code that parses user defined data.
 Use a different lang? Run in sandbox?
 
+
+
+=== Vendor everything
+
+Vendor all dependencies, i.e. bundle their source code (or at least
+JARs) together with Talkyard.
+
+Four reasons:
+
+- Security. Can diff changes in vendored deps.
+- Developer friendliness. Seems some people are behind company firewalls and proxy servers
+  that break downloading some dependencies.
+  But accessing Git seems to have worked for everyone.
+- Continuous Integration. Then good if can build offline?
+- Working offline. If the wifi stops working and your phone too (no tethering).
+
+Place the vendored stuff in Git submodules.
+Then, if the vendored stuff's Git repos eventually grows large because of old
+historical commit objects,
+those Git submodules can be squashed or sth like that, making them small again
+— without affecting the history in the main repo (it'd just be updated to point to
+the squashed stuff).
+
