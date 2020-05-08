@@ -1,0 +1,129 @@
+Talkyard Coding Style
+=====================
+
+Quotes below are from the Linux Kernel coding style [1] (unless otherwise mentioned).
+
+(Old Talkyard code often doesn't follow these coding styles (unfortunately). +
+Do not rewrite such old code only to make it follow the coding style.)
+
+
+=== Simplicity
+
+> _"Avoid tricky expressions."_
+
+Talkyard's code should be _easy to read_. Not necessarily as short as possible.
+
+Sometimes, adding an intermeidate variable and writing out its type, makes
+the code simpler to read — and a bit longer. Or adding line breaks,
+so the "important" method invokations are visible at _the start of the line_,
+or in their own paragraphs, so you find them easily, when glancing at the code.
+
+Talkyard maybe never will use something like Cats (a Sala funcional programming library).
+Cats makes the code shorter, but _harder to read_?
+Example: `EitherT.liftF("a".some)` — what's that — everyone would need to learn
+Cats too, not just Scala.
+
+
+=== Indentation
+
+> _"The whole idea behind indentation is to clearly define where a block
+> of control starts and ends. Especially when you've been looking at your screen
+> for 20 straight hours, you'll find it a lot easier to see how the indentation
+> works if you have large indentations."_
+
+Talkyard: Scala code continuation indentation inside a method: 6 spaces.  +
+Indented _statements_: 2 spaces as typical in Scala code.
+
+
+=== Lines and statements
+
+> _"Don't put multiple statements on a single line unless you have something to hide:"_
+> ```
+> if (condition) do_this;
+>   do_something_everytime;
+> ```
+
+200? 400? chars long lines, I have seen, Doing 5-6? 10? different things on the same line.
+
+Talkyard: Only one "interesting" thing should happen per line.
+
+Talkyard: Max 95 chars per line. Then you can have two editor tabs open side by side
+on a 14'' 1920 px wide laptop
+(1920 is a typical laptop resolution, at least now year 2020).
+
+> _"Do not unnecessarily use braces where a single statement will do."_
+
+This is fine in Talkyard:
+
+```
+if (something)
+  doTheThing();
+
+otherStuff();
+```
+
+_as long as_ after the `if` follows a blank line, or keyword like `else`, `return`
+— then you see at a glance that the `if` is just one statement.
+
+
+=== Names
+
+> _"LOCAL variable names should be short, and to the point. If you have some
+> random integer loop counter, it should probably be called i. Calling it
+> loop_counter is non-productive, if there is no chance of it being mis-understood"_
+
+
+=== Comments
+
+Sometimes people are confused about comments. But the kernel coding style knows:
+
+> _"[Don't explain] HOW your code works [...]
+> better to write the code so that the working is obvious [...]_
+>
+> _[Do tell] people what [the code] does, and possibly WHY it does it"_
+
+There you go: Uppercase `WHY` explain why the code does what it does (when needed).
+
+Also, sometimes you need to tell peolpe what the code does _Not_ do — because there
+can be many ways to do something, and you decided against the other ways.
+ — whatfor? Is it important that others don't rewrite and
+do the stuff in one of those other ways?
+
+Is there something you thought about doing, but avoided? For example, why did
+you _Not_ clear a certain cache? What are the reasons you know the cache
+is not stale? — If you don't add a comment explaining why, then, a helpful person
+might clear the cache, in the future, although was never needed.
+
+
+
+=== Avoid exceptions, use Hopefully[_]
+
+With exceptions it's not easy to know about all different exceptions
+all code patchs reachable by a method call, might throw.
+So the program might misbehave, needlessly, e.g. return 500 Internal Error,
+instead of a user friendly _"Please instead try this: ..."_ message.
+
+Look at Rust: https://doc.rust-lang.org/book/ch09-00-error-handling.html
+
+> _"Rust doesn’t have exceptions. Instead,
+> it has the type Result<T, E> for recoverable errors"_
+
+In the same way, Talkyard's Scala code has `Hopefully[T, E]`
+when something hopefully returns a `T`
+but might fail with an error of type `E`. — In this way, it's really hard
+to accidentally forget to handle a recoverable error.
+(The name `Result` is used by Play Framework.)
+
+
+
+=== Never use Scala's `implicit` parameters
+
+It's not so easy to understand the code when it hides some parameters for you,
+so you don't know they're there and change how things work.
+
+(Extending classes with extra methods is fine though, i.e. `implicit class ...`.
+Then, everything visible.)
+
+
+
+1: https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst
