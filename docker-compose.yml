@@ -298,12 +298,20 @@ services:
   # Click 'Clients' to the left, then fill in:
   # Client id: 'talkyard_keycloak_test_client'
   # Protocol: 'openid-connect'
+  # Access Type: Change from 'public' 'confidential' ('public' is for mobile apps
+  # and single page apps — they have no OIDC client app API secret.)
+  # Keep the 'Standard' flow = 'code' flow enabled.
+  #   Do not enable 'Implicit' flow — it's not so secure.
   # Root URL: 
   #   1) KeyCloack has this OpenID Connect demo login app you can try,
   #      if you want to:  https://www.keycloak.org/app/
   #   2) But later, change the Root URL to ... what?
   #      sth like:  e2e-test-keycloak.localhost ?
   #                            http://localhost/-/login-oidc/keycloak <—— now when testing
+  #
+  # Since you selected 'confidential' above, a tab 'Credentials' appear once you click Save,
+  # go there and copy the client secret.
+  #
   #
   # From the docs, https://www.keycloak.org/getting-started/getting-started-docker:
   #     docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin \

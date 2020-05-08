@@ -36,7 +36,7 @@ GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.co
 #GET   /-/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 # also: /-/v0/sso-login via ApiV0Controller
 
-GET   /-/login-oidc/:provider           controllers.LoginWithOpenAuthController.loginOidcStart(provider, returnToUrl)
+GET   /-/login-oidc/:provider           controllers.LoginWithOpenAuthController.loginOidcStart(provider, returnToUrl: String = "/")
 GET   /-/login-oidc/:provider/callback  controllers.LoginWithOpenAuthController.loginOidcCallback(provider)
 GET   /-/logout-oidc/:provider  controllers.LoginWithOpenAuthController.logoutOidcCallback(provider, returnToUrl)
 

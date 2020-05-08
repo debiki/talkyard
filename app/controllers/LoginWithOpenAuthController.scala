@@ -27,12 +27,19 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Servi
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
+import com.nimbusds.oauth2.sdk.auth.{Secret => n_Secret}
+import com.nimbusds.oauth2.sdk.id.{ClientID => n_ClientID, State => n_State}
+import com.nimbusds.oauth2.sdk.{AuthorizationCode => n_AuthorizationCode, AccessTokenResponse => n_AccessTokenResponse, ErrorObject => n_ErrorObject, ParseException => n_ParseException, SerializeException => n_SerializeException, TokenErrorResponse => n_TokenErrorResponse, TokenResponse => n_TokenResponse}
+import com.nimbusds.openid.connect.sdk.{AuthenticationErrorResponse => n_AuthenticationErrorResponse, AuthenticationResponse => n_AuthenticationResponse, AuthenticationResponseParser => n_AuthenticationResponseParser, AuthenticationSuccessResponse => n_AuthenticationSuccessResponse, Nonce => n_Nonce, OIDCTokenResponse => n_OIDCTokenResponse, OIDCTokenResponseParser => n_OIDCTokenResponseParser}
+import com.nimbusds.openid.connect.sdk.op.{OIDCProviderMetadata => n_OIDCProviderMetadata}
+import com.nimbusds.openid.connect.sdk.token.{OIDCTokens => n_OIDCTokens}
 import ed.server.spam.SpamChecker
 import debiki._
 import debiki.EdHttp._
 import ed.server._
 import ed.server.http._
-import ed.server.security.EdSecurity
+import ed.server.security.{BrowserId, EdSecurity}
+import java.io.InputStream
 import javax.inject.Inject
 import java.{util => ju}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
@@ -102,7 +109,392 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   @volatile
   private var anyClient: Option[org.pac4j.oidc.client.KeycloakOidcClient] = None
 
-  def loginOidcStart(provider: String, returnToUrl: String): Action[Unit] =
+
+  private case class StateAndNonce(browserIdOrEmpty: String, nonce: String)
+
+  val oidcOpOrigin = "http://keycloak:8080"
+  val odicOpConfUrlPath =
+    "/auth/realms/talkyard_keycloak_test_realm/.well-known/openid-configuration"
+  val oidcOpConfUrl: String = oidcOpOrigin + odicOpConfUrlPath
+
+  val redirectUrlPath = "/-/login-oidc/keycloak/callback"
+
+  private val oidcProviderMetadataByConfigUrl = caffeine.cache.Caffeine.newBuilder()
+    // 2000 sites with OIDC enabled on this server is a lot
+    .maximumSize(2000)
+    // Let's refresh daily? Caching forever would be ok too.
+    .expireAfterWrite(24, java.util.concurrent.TimeUnit.HOURS)
+    .build().asInstanceOf[caffeine.cache.Cache[String, n_OIDCProviderMetadata]]
+
+  private val oidcStateNonceCache = caffeine.cache.Caffeine.newBuilder()
+    .maximumSize(20*1000) // [ADJMEMUSG]
+    .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES) // [4WHKTP06]
+    .build().asInstanceOf[caffeine.cache.Cache[String, StateAndNonce]]
+
+  def loginOidcStart(provider: String, returnToUrl: String)
+        : Action[Unit] = AsyncGetActionIsLogin { request =>
+
+    // Why use Nimbus directly, not Pac4j?
+    // Because 1) Pac4j sent a blocking HTTP request from inside a get-set values
+    // configuration class. I got surprised and felt worried about other possibly
+    // weird things Pac4j might do.
+    // 2) Apparently Pac4j is synchronous — old code base?
+    // 3) I was fighting against Pac4j all the time: it uses Play Framework features
+    // I don't want to use: some cache, which took 2 hours to find out how to
+    // construct and send to Pacj4 (Play Fmw required me to add 6 abstraction on top of
+    // each other to construct this cache! Don't want to use this.)
+    // But still, after I've given Pac4j its cache, the same always, it continued
+    // to somehow *not* find the OIDC state in the cache — no idea why or if
+    // it somehow was using a different cache (which?).
+    // Hours hours lost trying to figure out how Pac4j + Play Fmw use some cache
+    // and Play features, when in fact I don't want to use that *at all*.
+    //
+    // What's more well spent time: Fighting against Pac4j and Play when they try
+    // to make me use their features I don't want,
+    // or learning OIDC and reading security best practices?  The latter I think.
+    // The fewer Play features Talkyard uses, the simpler to migrate to sth else
+    // if needed. After all, Vertx and Rust-Actix-Web are like 10 x faster than Play,
+    // and have simpler to understand APIs and code bases (me having had a quick look).
+    //
+    // Read:
+    // https://news.ycombinator.com/item?id=23080240
+    //  —> https://tools.ietf.org/html/draft-ietf-oauth-security-topics-15
+    // "OAuth 2.0 Security Best Current Practice
+    //  draft-ietf-oauth-security-topics-15"
+    //
+    // Read:
+    // https://openid.net/2016/07/16/preventing-mix-up-attacks-with-openid-connect/
+    //
+    // "if one OP was compromised for example, it could be used to attack the other OPs"
+    //
+    // Me: A compromised OP could send a fake auth response to a relying party's callback
+    // for a *different* OP? And pretend to have authenticated a user from that other OP?
+    // (Or else, what it this about?)
+    //
+    // """Register a different redirect URI for each OP, and record the redirect URI used in the outgoing authorization request in the user’s session together with state and nonce. On receiving the authorization code in the response, verify that the user’s session contains the state value of the response, and that the redirect URI of the response matches the one used in the request.
+    // Always use nonce with the code flow (even though that parameter is optional to use). After performing the code exchange, compare the nonce in the returned id token to the nonce associated to the user’s session from when the request was made, and don’t accept the authorization if they don’t match."""
+    //
+
+    // Read:
+    // https://news.ycombinator.com/item?id=23080240
+
+    // JUST TESTNIG
+
+    val providerMetadata: n_OIDCProviderMetadata = oidcProviderMetadataByConfigUrl.get(
+          oidcOpConfUrl, (confUrl: String) => {
+
+      //val issuerURI: java.net.URI = new java.net.URI(oidcOpOrigin)
+      //val providerConfigurationURL: java.net.URL = issuerURI.resolve(odicOpConfUrlPath).toURL
+
+      val providerConfigurationURL = new java.net.URI(confUrl).toURL
+
+      COULD_OPTIMIZE; BLOCKING_REQ
+      val stream: InputStream =
+        try providerConfigurationURL.openStream()
+        catch{
+          case ex: java.net.UnknownHostException =>
+            // 'java.net.UnknownHostException: keycloakkk"
+            // message seems to be hostname
+            throw ex
+          case ex: javax.net.ssl.SSLException =>
+            // "javax.net.ssl.SSLException: Unrecognized SSL message, plaintext connection?"
+            // tried to connect with https, but server uses http (maybe testing on localhost)
+            throw ex
+          case ex: java.io.FileNotFoundException =>
+            // if host says 404 Not Found.
+            throw ex
+        }
+
+      // Read all data from URL
+      var providerInfo: String = ""
+      val s = new java.util.Scanner(stream)
+      try {
+        providerInfo =
+          if (s.useDelimiter("\\A").hasNext()) s.next()
+          else ""
+      }
+      finally {
+        s.close()
+      }
+
+      n_OIDCProviderMetadata.parse(providerInfo)
+    })
+
+    val r = i"""
+    |providerMetadata: n_OIDCProviderMetadata =
+    |${providerMetadata.toJSONObject.toJSONString}
+    """
+
+    // Generate random state string for pairing the response to the request
+    // Intellisense:  33   "State" classes. WTF. ... Found the right one.
+
+    // To remember state between request to OIDC provider and callback
+    // when back here at Talkyard, plus to stop xsrf attacks.
+    // Part of the OAuth 2.0 protocol.
+    val browserIdOrEmpty: String = request.browserId.map(_.cookieValue).getOrElse("")
+    val randomValue: String = nextRandomString()
+    val stateValue: String = randomValue + ":" + browserIdOrEmpty
+
+    val state = new n_State(stateValue)
+
+    // Implicit Grant = bad:  [OIDC_NO_TOKEN]
+    // """access tokens in the authorization response are vulnerable to
+    // access token leakage and access token replay
+    // [...] SHOULD NOT use the implicit   grant (response type "token") """
+    // https://tools.ietf.org/html/draft-ietf-oauth-security-topics-15#section-2.1.2
+
+    // Random, unique string, will get included in the OIDC ID Token
+    // and to mitigate replay attacks.
+    // Apparently should be in a browser cookie too?
+    // " ... [the nounce must be] bound to the client and the user agent in which
+    // the transaction was started ..."
+    // https://tools.ietf.org/html/draft-ietf-oauth-security-topics-15#section-2.1.1
+    val nonce = new n_Nonce()
+
+    oidcStateNonceCache.put(
+        randomValue, StateAndNonce(browserIdOrEmpty, nonce = nonce.getValue))
+
+    // Specify scope
+    val scope = com.nimbusds.oauth2.sdk.Scope.parse("openid email profile")
+
+    // Compose the request
+
+    val authenticationRequest = new com.nimbusds.openid.connect.sdk.AuthenticationRequest(
+          providerMetadata.getAuthorizationEndpointURI,
+          new com.nimbusds.oauth2.sdk.ResponseType(
+                // *Not* response type 'token' — that's not so secure. [OIDC_NO_TOKEN]
+                com.nimbusds.oauth2.sdk.ResponseType.Value.CODE),
+          scope,
+          new n_ClientID("talkyard_keycloak_test_client"),
+          new java.net.URI(request.origin + redirectUrlPath),
+          state,
+          nonce)
+
+    val authRequestUri: java.net.URI = authenticationRequest.toURI
+
+    val authRequestUrlString = authRequestUri.toString
+
+    val testHost = "://keycloak:8080/"
+    val redir2 =
+      if (authRequestUrlString.contains("http" + testHost) ||
+        authRequestUrlString.contains("https" + testHost)) {
+        // We're testing on localhost?
+        // Then, change to 'localhost'. Otherwise the e2e test browsers
+        // cannot access KeyCloak — they don't run inside the Docker network
+        // and the 'keycloak' hostname exists only in that network.
+        authRequestUrlString.replaceAllLiterally(testHost, "://localhost:8080/")
+      }
+      else {
+        // Not a test.
+        authRequestUrlString
+      }
+
+    // The redirect to OIDC provider URL looks sth like:
+    // http://localhost:8080/auth/realms/talkyard_keycloak_test_realm/
+    //    protocol/openid-connect/auth
+    //    ? scope=openid
+    //    & response_type=code
+    //    & redirect_uri=http%3A%2F%2Flocalhost%2F-%2Flogin-oidc%2Fkeycloak%2Fcallback
+    //    & state=WfqI9LJTPVXkYGpfU_SW5AuGTf5qZNjVeTgh-52IYlo
+    //    & nonce=Sjd4aT1mxGuqv9xynz3x-tEcwHUP01XHw7fkj0K3HfE
+    //    & client_id=talkyard_keycloak_test_client
+    //
+    // ... And it will, after login, send the browser back to the
+    // "Redirection endpoint", like:
+    //
+    // http://localhost/-/login-oidc/keycloak/redirection-endpoint
+    //     ? state=WfqI9LJTPVXkYGpfU_SW5AuGTf5qZNjVeTgh-52IYlo
+    //     & session_state=6a178cf3-ea24-40bc-bd03-69523a30b523
+    //     & code=85c0bae7-8c1 ... 110 chars ... 1dd-847ed83dd0b0
+    //
+
+    System.out.println(s"Redirecting the browser to: $redir2")
+    Future.successful(
+        play.api.mvc.Results.Redirect(
+          redir2, status = play.api.http.Status.SEE_OTHER))
+  }
+
+
+  def loginOidcCallback(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+    val authResp: n_AuthenticationResponse = {
+      try n_AuthenticationResponseParser.parse(new java.net.URI(request.uri))
+      catch {
+        case ex @ (_: n_ParseException | _: java.net.URISyntaxException) =>
+          throwBadRequest("TyE_OIDC_CLBKURL", ex.getMessage)
+      }
+    }
+
+    dieIf(authResp eq null, "TyE603KDLF456")
+
+    val successResponse: n_AuthenticationSuccessResponse =
+      authResp match {
+        case r: n_AuthenticationSuccessResponse => r
+        case errorResponse: n_AuthenticationErrorResponse =>
+          val errorObj: n_ErrorObject = errorResponse.getErrorObject
+          throwForbidden("TyE_OIDC_CLBKRESP", errorObj.toJSONObject.toJSONString)
+      }
+
+    // Check state and nonce.
+
+    val stateInAuthResponse: String =
+          Option(successResponse.getState).map(_.getValue) getOrThrowBadRequest(
+            "TyE_OIDC_0STATE", "No state")
+// change ':' to '~', no need to url encode  USE xsrf cookie instead of brid
+    val (randomValueInResp, colonBrowserIdInResp) = stateInAuthResponse.span(_ != ':')
+    val rememberedStateNonce: StateAndNonce =
+          Option(oidcStateNonceCache.getIfPresent(randomValueInResp)) getOrThrowBadRequest(
+            "TyE_OIDC_BADSTATE", o"""You took too long with logging in?
+            State expired, or never existed, or I got the wrong xsrf random value""")
+
+    // Hmm this can actually happen if the browser id cookie expires whilst logging in
+    // at the OIDC provider.
+    val browserIdInResp = colonBrowserIdInResp.drop(1)
+    val browserIdInCookie = request.browserId.map(_.cookieValue).getOrElse("")
+
+    throwForbiddenIf(browserIdInResp != browserIdInCookie,
+        "TyE_OIDC_BRID", "Browser id mismatch. You didn't just disable cookies?")
+
+    throwForbiddenIf(successResponse.getIDToken ne null,
+         "TyE_OIDC_GOTID", o"""Got a JWT ID token directly in the auth response —
+         that's how the OIDC Implicit flow works, but Talkyard uses OIDC Code flow.
+         Something is amiss.""")
+
+
+    val anyAuthCode: Option[n_AuthorizationCode] =
+          Option(successResponse.getAuthorizationCode)
+
+
+    // Token Request?
+    // ----------
+    import com.nimbusds.oauth2.sdk.{TokenRequest => n_TokenRequest}
+    import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic
+    import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant
+    import com.nimbusds.oauth2.sdk.http.HTTPResponse
+
+    val providerMetadata: n_OIDCProviderMetadata =
+          oidcProviderMetadataByConfigUrl.getIfPresent(oidcOpConfUrl)  ; SHOULD // fetch again if needed
+
+    val tokenReq = new n_TokenRequest(
+          providerMetadata.getTokenEndpointURI,
+          new ClientSecretBasic(
+                new n_ClientID("talkyard_keycloak_test_client"),
+                // This is just a KeyCloak localhost test realm secret, fine.
+                new n_Secret("68502806-b6fc-4e9e-98d2-80d2d6d9a44c")),
+          new AuthorizationCodeGrant(
+                anyAuthCode.get,
+                new java.net.URI(request.origin + redirectUrlPath)))
+
+    // Send the code, get back the OIDC id token (i.e. user profile data).
+    COULD_OPTIMIZE; BLOCKING_REQ
+    val tokenHTTPResp: HTTPResponse = {
+      try tokenReq.toHTTPRequest.send()
+      catch {
+        case ex @ (_: n_SerializeException | _: java.io.IOException) =>
+          // TODO proper error handling
+          throw ex
+      }
+    }
+
+    // Parse the response.
+    val tokenResponse: n_TokenResponse = {
+      try n_OIDCTokenResponseParser.parse(tokenHTTPResp)
+      catch {
+        case ex: n_ParseException =>
+          // TODO proper error handling
+          throw ex
+      }
+    }
+
+    val oidcFinalResponse: n_OIDCTokenResponse = tokenResponse match {
+      case r: n_OIDCTokenResponse =>
+        r
+
+      case r: n_AccessTokenResponse =>
+        // Should have gotten a n_OIDCTokenResponse, a sub class of n_AccessTokenResponse.
+        throwForbidden("TyE_OIDC_TKNTYPE", o"""Unexpected response type from
+            OIDC provider JWT ID token request: ${classNameOf(r)}""")
+
+      case r: n_TokenErrorResponse =>
+        val error: n_ErrorObject = r.getErrorObject
+        throwForbidden("TyE_OIDC_TKNRESP", o"""Error response from OIDC provider
+              JWT ID token request: ${error.toJSONObject.toString}""")
+    }
+
+    val oidcTokens: n_OIDCTokens = oidcFinalResponse.getOIDCTokens
+    dieIf(oidcTokens eq null, "TyE4062K45") // cannot be null says the docs
+
+    val maybeNonce = oidcTokens.getIDToken.getJWTClaimsSet.getClaim("nonce")
+
+    val nonceInIdToken: String = maybeNonce match {
+      case n: String =>
+        n
+      case null =>
+        val message = s"Nonce missing from JWT ID token in OIDC response"
+        // If prod, be brief — maybe the ID token response includes things
+        // not intended for the end user (maybe hen is even an attacker?).
+        throwForbiddenIf(globals.isProd, "TyE_OIDC_0NONCE", message)
+
+        // If dev, include debug info.
+        import scala.collection.JavaConverters._
+        throwForbidden("TyE_OIDC_0NONCE_DBG", i"""
+              |$message
+              |
+              |*** The below info is included in Dev and Test mode only ***
+              |
+              |oidcFinalResponse.getCustomParameters.asScala.toString:
+              |${oidcFinalResponse.getCustomParameters.asScala.toString}
+              |
+              |oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString:
+              |${oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString}
+              |
+              |oidcTokens.getIDToken.getJWTClaimsSet.toJSONObject:
+              |${oidcTokens.getIDToken.getJWTClaimsSet.toJSONObject(
+                      true /* includeClaimsWithNullValues */).toString}
+              |""")
+
+      case Some(x) =>
+        throwForbidden("TyE_OIDC_WEIRDNONCE",
+              s"Weird nonce in JWT ID token in OIDC response, not a string but a: ${
+              classNameOf(x)}")
+    }
+
+    throwForbiddenIf(nonceInIdToken != rememberedStateNonce.nonce,
+        "TyE_OIDC_BADNONCE",
+        "Bad nonce in JWT ID token in OIDC response, differs from cached")
+
+    // More nonce checks:
+    // https://stackoverflow.com/a/58049569
+    // The nonce parameter value needs to include per-session state and be unguessable
+    //     to attackers. One method to achieve this for Web Server Clients is to store a
+    //     cryptographically random value as an HttpOnly session cookie and use a
+    //     cryptographic hash of the value as the nonce parameter. In that case, the nonce
+    //     in the returned ID Token is compared to the hash of the session cookie to detect
+    //     ID Token replay by third parties
+
+    // ? Let the browser specify parts of the nonce ?
+    // ----------
+
+
+    Future.successful(Ok(i"""
+        |authCode: ${anyAuthCode.map(_.toJSONString)}
+        |
+        |successResponse.getIDToken: ${Option(successResponse.getIDToken)}
+        |
+        |id token getHeader: ${Option(successResponse.getIDToken).map(_.getHeader.toString)}
+        |
+        |successResponse.toParameters: ${Option(successResponse.toParameters)}
+        |
+        |successResponse: ${Option(successResponse.toString)}
+        |
+        |=============
+        |
+        |oidcFinalResponse.getOIDCTokens.toJSONObject.toJSONString:
+        |${oidcFinalResponse.getOIDCTokens.toJSONObject.toJSONString}
+        |"""))
+  }
+
+
+  def loginOidcStartOLD(provider: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
     // Wow! This one seems pretty good:
     // https://connect2id.com/learn/openid-connect
@@ -167,6 +559,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // This constructs the OIDC discovery url:
       //   baseUri + "/realms/" + realm + "/.well-known/openid-configuration"
         // e.p.  https://keycloak.example.com/auth
+      // https://keycloak:8080/auth/realms/talkyard_keycloak_test_realm/.well-known/openid-configuration
 
       // Docker will resolve 'keycloak' to the Docker KeyCloak container.
       // ('localhost' would have worked, if we used Docker's host networking.)
@@ -273,7 +666,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def loginOidcCallback(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+  def loginOidcCallback_OLD(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
     // Docs: https://www.pac4j.org/docs/user-profile.html
     //    val credentials: Optional[Credentials] = client.getCredentials(context)
     //    val profile: UserProfile = client.getUserProfile(credentials.get(), context).get()
