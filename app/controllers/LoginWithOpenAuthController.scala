@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,14 +23,21 @@ import com.github.benmanes.caffeine
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.exceptions.SilhouetteException
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
+import com.nimbusds.jose.crypto.{RSASSAVerifier => n_RSASSAVerifier}
+import com.nimbusds.jose.{JOSEException => n_JOSEException}
+import com.nimbusds.jose.jwk.{RSAKey => n_RSAKey}
+import com.nimbusds.jwt.{JWT => n_JWT}
 import com.nimbusds.oauth2.sdk.auth.{Secret => n_Secret}
+import com.nimbusds.oauth2.sdk.http.{HTTPResponse => n_HTTPResponse}
 import com.nimbusds.oauth2.sdk.id.{ClientID => n_ClientID, State => n_State}
-import com.nimbusds.oauth2.sdk.{AuthorizationCode => n_AuthorizationCode, AccessTokenResponse => n_AccessTokenResponse, ErrorObject => n_ErrorObject, ParseException => n_ParseException, SerializeException => n_SerializeException, TokenErrorResponse => n_TokenErrorResponse, TokenResponse => n_TokenResponse}
-import com.nimbusds.openid.connect.sdk.{AuthenticationErrorResponse => n_AuthenticationErrorResponse, AuthenticationResponse => n_AuthenticationResponse, AuthenticationResponseParser => n_AuthenticationResponseParser, AuthenticationSuccessResponse => n_AuthenticationSuccessResponse, Nonce => n_Nonce, OIDCTokenResponse => n_OIDCTokenResponse, OIDCTokenResponseParser => n_OIDCTokenResponseParser}
+import com.nimbusds.oauth2.sdk.token.{BearerAccessToken => n_BearerAccessToken}
+import com.nimbusds.oauth2.sdk.{AccessTokenResponse => n_AccessTokenResponse, AuthorizationCode => n_AuthorizationCode, ErrorObject => n_ErrorObject, ParseException => n_ParseException, SerializeException => n_SerializeException, TokenErrorResponse => n_TokenErrorResponse, TokenResponse => n_TokenResponse}
+import com.nimbusds.openid.connect.sdk.{AuthenticationErrorResponse => n_AuthenticationErrorResponse, AuthenticationResponse => n_AuthenticationResponse, AuthenticationResponseParser => n_AuthenticationResponseParser, AuthenticationSuccessResponse => n_AuthenticationSuccessResponse, Nonce => n_Nonce, OIDCTokenResponse => n_OIDCTokenResponse, OIDCTokenResponseParser => n_OIDCTokenResponseParser, UserInfoErrorResponse => n_UserInfoErrorResponse, UserInfoRequest => n_UserInfoRequest, UserInfoResponse => n_UserInfoResponse, UserInfoSuccessResponse => n_UserInfoSuccessResponse}
 import com.nimbusds.openid.connect.sdk.op.{OIDCProviderMetadata => n_OIDCProviderMetadata}
 import com.nimbusds.openid.connect.sdk.token.{OIDCTokens => n_OIDCTokens}
 import ed.server.spam.SpamChecker
@@ -39,9 +46,10 @@ import debiki.EdHttp._
 import ed.server._
 import ed.server.http._
 import ed.server.security.{BrowserId, EdSecurity}
-import java.io.InputStream
+import java.io.{InputStream, IOException => j_IOException}
 import javax.inject.Inject
 import java.{util => ju}
+import net.minidev.{json => nmj}
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
@@ -66,6 +74,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   import context.globals
   import context.security._
+
+  type AuthnProvider = SocialProvider // with CommonSocialProfileBuilder
 
   private val LoginTimeoutMins = 15
   private val Separator = '|'
@@ -138,7 +148,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Because 1) Pac4j sent a blocking HTTP request from inside a get-set values
     // configuration class. I got surprised and felt worried about other possibly
     // weird things Pac4j might do.
+    //   ... and now I stumbled on an 'extract(): OidcCredentials' method that, surprise (to me)
+    // starts setting HTTP response headers for replying:
+    // https://github.com/pac4j/pac4j/blob/0c84a1b35d7ec1c626b7a7934a482011f1ee0b62/pac4j-oidc/src/main/java/org/pac4j/oidc/credentials/extractor/OidcExtractor.java#L74
+    //
     // 2) Apparently Pac4j is synchronous — old code base?
+    //
     // 3) I was fighting against Pac4j all the time: it uses Play Framework features
     // I don't want to use: some cache, which took 2 hours to find out how to
     // construct and send to Pacj4 (Play Fmw required me to add 6 abstraction on top of
@@ -151,12 +166,18 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // https://github.com/pac4j/play-pac4j/issues/66
     // ...
     /*
+    https://groups.google.com/forum/#!searchin/pac4j-users/State$20parameter$20is$20different$20from$20the$20one$20sent$20in$20authentication$20request|sort:date/pac4j-users/SJ8v36qIJk8/kC66jfJ_AgAJ
+    Zeppelin 0.8.2 Authentification with Keycloak 7.0.1 failure
+    org.pac4j.core.exception.TechnicalException: State parameter is different from the one sent in authentication request
 
+    https://groups.google.com/forum/#!searchin/pac4j-users/State$20parameter$20is$20different$20from$20the$20one$20sent$20in$20authentication$20request|sort:date/pac4j-users/Lh5453enHa4/VcHQvCF2BgAJ
+     After I enter my credentials and I a redirected back to my site, I get the "State parameter is different from the ones sent in authentication request" and I cannot figure out why that is
+       ... generated state saved into the web session ... Generally, it's related to the web session management
+
+    https://github.com/pac4j/play-pac4j/issues/66
+    Missing state parameter
     "pac4j State parameter is different from the one sent in authentication request"
-
-    
     T.L.D.R : state isn't saved in session but in memory.
-
     I've the same problem and after hours of search, it's seems that the pac4j implementation saving the "state" is stateful.
     StorageHelper, which backend is in fact an in memory cache
       ...
@@ -191,6 +212,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     // Read:
     // https://news.ycombinator.com/item?id=23080240
+    // —> https://tools.ietf.org/html/draft-ietf-oauth-security-topics-15
+    // "OAuth 2.0 Security Best Current Practice
+    // draft-ietf-oauth-security-topics-15"
 
     // JUST TESTNIG
 
@@ -348,7 +372,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           throwForbidden("TyE_OIDC_CLBKRESP", errorObj.toJSONObject.toJSONString)
       }
 
-    // Check state and nonce.
+    // Check state
 
     val stateInAuthResponse: String =
           Option(successResponse.getState).map(_.getValue) getOrThrowBadRequest(
@@ -378,12 +402,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           Option(successResponse.getAuthorizationCode)
 
 
-    // Token Request?
+    // Token Request
     // ----------
+
     import com.nimbusds.oauth2.sdk.{TokenRequest => n_TokenRequest}
     import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic
     import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant
-    import com.nimbusds.oauth2.sdk.http.HTTPResponse
 
     val providerMetadata: n_OIDCProviderMetadata =
           oidcProviderMetadataByConfigUrl.getIfPresent(oidcOpConfUrl)  ; SHOULD // fetch again if needed
@@ -398,12 +422,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 anyAuthCode.get,
                 new java.net.URI(request.origin + redirectUrlPath)))
 
-    // Send the code, get back the OIDC id token (i.e. user profile data).
+    // Send the code, get back the OIDC id token.
     COULD_OPTIMIZE; BLOCKING_REQ
-    val tokenHTTPResp: HTTPResponse = {
+    val tokenHTTPResp: n_HTTPResponse = {
       try tokenReq.toHTTPRequest.send()
       catch {
-        case ex @ (_: n_SerializeException | _: java.io.IOException) =>
+        case ex @ (_: n_SerializeException | _: j_IOException) =>
           // TODO proper error handling
           throw ex
       }
@@ -419,7 +443,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       }
     }
 
-    val oidcFinalResponse: n_OIDCTokenResponse = tokenResponse match {
+    val idTokenAndAccessTokenResponse: n_OIDCTokenResponse = tokenResponse match {
       case r: n_OIDCTokenResponse =>
         r
 
@@ -429,15 +453,73 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             OIDC provider JWT ID token request: ${classNameOf(r)}""")
 
       case r: n_TokenErrorResponse =>
+        // This happens if Talkyard sends the same authorization code to
+        // the OIDC provider more than once — then, the provider thinks that
+        // maybe an attacker got the code, and that one also sends a request
+        // but the provider doesn't know if the 1st or 2nd request is from that
+        // maybe-attacker, so the provider will invalidate the code
+        // and KeyCloak replies:  "Code not valid", "invalid_grant
+        // — and destroy all client sessions / access tokens too?
+        //
+        // To avoid this, when debugging: Close and reopen the browser.
+        // Then, when Talkyard redirects the browser to KeyCloak, the user
+        // needs to login again, and then Talkyard gets a new authorization code.
+        //
+        //   KeyCloak's code 1/2:
+        //   ```
+        //   // Needed to track if code is invalid or was already used.
+        //   userSession = session.sessions().getUserSession(realm, userSessionId);
+        //   if (userSession == null) {
+        //     return result.illegalCode();
+        //   }
+        //   ```
+        //   https://github.com/keycloak/keycloak/blob/6332ed42c03c52b47e9f14af87aac3592959f06f/services/src/main/java/org/keycloak/protocol/oidc/utils/OAuth2CodeParser.java#L108
+        //
+        //   KeyCloak 2/2, construction of the "Code not valid" response:
+        //   ```
+        //   OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
+        //   if (parseResult.isIllegalCode()) {
+        //       AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
+        //       // Attempt to use same code twice should invalidate existing clientSession
+        //       if (clientSession != null) {
+        //           clientSession.detachFromUserSession();
+        //       }
+        //       event.error(Errors.INVALID_CODE);
+        //       throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
+        //   }
+        //   ```
+        //   https://github.com/keycloak/keycloak/blob/6332ed42c03c52b47e9f14af87aac3592959f06f/services/src/main/java/org/keycloak/protocol/oidc/endpoints/TokenEndpoint.java#L295
+        //
+        //
         val error: n_ErrorObject = r.getErrorObject
         throwForbidden("TyE_OIDC_TKNRESP", o"""Error response from OIDC provider
               JWT ID token request: ${error.toJSONObject.toString}""")
     }
 
-    val oidcTokens: n_OIDCTokens = oidcFinalResponse.getOIDCTokens
+    val oidcTokens: n_OIDCTokens = idTokenAndAccessTokenResponse.getOIDCTokens
     dieIf(oidcTokens eq null, "TyE4062K45") // cannot be null says the docs
 
+
+    // Check nonce
+
     val maybeNonce = oidcTokens.getIDToken.getJWTClaimsSet.getClaim("nonce")
+
+    import scala.collection.JavaConverters._
+    System.out.println(i"""
+          |--------------------------------
+          |idTokenAndAccessTokenResponse
+          |
+          |idTokenAndAccessTokenRespons.getCustomParameters.asScala.toString:
+          |${idTokenAndAccessTokenResponse.getCustomParameters.asScala.toString}
+          |
+          |oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString:
+          |${oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString}
+          |
+          |oidcTokens.getIDToken.getJWTClaimsSet.toJSONObject:
+          |${oidcTokens.getIDToken.getJWTClaimsSet.toJSONObject(
+          true /* includeClaimsWithNullValues */).toString}
+          |--------------------------------
+          |""")
 
     val nonceInIdToken: String = maybeNonce match {
       case n: String =>
@@ -455,8 +537,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               |
               |*** The below info is included in Dev and Test mode only ***
               |
-              |oidcFinalResponse.getCustomParameters.asScala.toString:
-              |${oidcFinalResponse.getCustomParameters.asScala.toString}
+              |idTokenAndAccessTokenRespons.getCustomParameters.asScala.toString:
+              |${idTokenAndAccessTokenResponse.getCustomParameters.asScala.toString}
               |
               |oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString:
               |${oidcTokens.getIDToken.getHeader.getCustomParams.asScala.toString}
@@ -486,8 +568,106 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     //     ID Token replay by third parties
 
     // ? Let the browser specify parts of the nonce ?
+
+
+    // Validate the ID token
     // ----------
 
+    // verifyIdToken( ...)
+
+
+    // UserInfo Request
+    // ----------
+
+    System.out.println(i"""
+          |--------------------------------
+          |oidcTokens.getIDToken
+          |
+          |${oidcTokens.getIDToken}
+          |
+          |${oidcTokens.getIDToken.getHeader.toJSONObject}
+          |${/* ex:
+             {"kid":"TrM-967lu9do53nTedAnSN2uuBtQ62g4mil7NgLRy_k","typ":"JWT","alg":"RS256"}
+           */}
+          |
+          |oidcTokens.getAccessToken
+          |
+          |${oidcTokens.getAccessToken.toJSONObject}  <-- the same as ...
+          |${/* ex: (test realm)
+             {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJUck0tOTY
+             3bHU5ZG81M25UZWRBblNOMnV1QnRRNjJnNG1pbDdOZ0xSeV9rIn0.eyJleHAiOjE1ODg5NjE4OT
+             UsImlhd........................................................iI2MjljZTA5Z
+             C04ODFk........................................................YWxob3N0Oj
+             gwODAvY........................................................mF1ZCI6ImFjY
+             291bnQi........................................................NDgiLCJ0eXAi
+             OiJCZWF........................................................sIm5vbmNlIj
+             oiZUdTU........................................................nNlc3Npb25f
+             c3RhdGU........................................................hY3IiOiIwIiw
+             iYWxsb3........................................................NjZXNzIjp7InJ
+             vbGVzIj........................................................Jlc291cmNlX2F
+             jY2Vzcy........................................................FuYWdlLWFjY291
+             bnQtbGl........................................................pbCBwcm9maWxlIiw
+             iZW1haW........................................................VzZXIifQ.qWCU9m
+             QRtLJ92........................................................i8tOI8Icdv850sg
+             p9hsH5h........................................................VVdZoLU4zqBnR
+             ZQT_ZgxHkiTlIooGeTjklZQdH1N3uLegJHnIldUDNGQtJqnXwUcve904aQYyqojmVO7W-N3AFcEZ
+             0bWo1fzhGd5g04fpz-nqrDWR_LXQQiyfeD_fFJnWnHHiqMbbFxIoJZbyRCno6bSdL1LOulIqdnzF
+             43S8L97Re3QQYZg77SF_lvWVpBptPQ"
+             ,"scope":"openid email profile"
+             ,"token_type":"Bearer"
+             ,"expires_in":300}    */}
+          |
+          |
+          |idTokenAndAccessTokenResponse.getTokens.getAccessToken
+          |
+          |${idTokenAndAccessTokenResponse.getTokens.getAccessToken.toJSONObject}  <-- ... this
+          |
+          |--------------------------------
+          |""")
+
+    val accessToken = idTokenAndAccessTokenResponse.getTokens.getBearerAccessToken
+    throwForbiddenIf(accessToken eq null,
+        "TyE_OIDC_0ACCESSTOKEN", "No Bearer access token in OIDC auth response")
+
+    System.out.println(i"""
+    |--------------------------------
+    |Getting user info from: ${providerMetadata.getUserInfoEndpointURI.toString}
+    |using access token:
+    |  ${accessToken.toAuthorizationHeader}
+    |--------------------------------
+    |""")
+    val userInfoReq = new n_UserInfoRequest(
+          providerMetadata.getUserInfoEndpointURI,
+          //idTokenAndAccessTokenResponse.getTokens.getAccessToken.asInstanceOf[n_BearerAccessToken])
+          accessToken)
+      // idTokenAndAccessTokenResponse.getOIDCTokens.getIDToken.asInstanceOf[n_BearerAccessToken])
+
+    val userInfoHTTPResp: n_HTTPResponse =
+          try userInfoReq.toHTTPRequest.send()
+          catch {
+            case ex @ (_: n_SerializeException | _: j_IOException) =>
+              throwForbidden("TyE_OIDC_USRINFREQ",
+                    o"Error sending UserInfo request to OIDC provider: ${ex.getMessage}")
+          }
+
+    val userInfoResponse: n_UserInfoResponse =
+          try n_UserInfoResponse.parse(userInfoHTTPResp)
+          catch {
+            case ex: n_ParseException =>
+              // TODO proper error handling
+              throw ex
+          }
+
+    val successResponse2 = userInfoResponse match {
+      case r: n_UserInfoErrorResponse =>
+        throwForbidden("TyE_OIDC_USRINFRSP",
+              o"UserInfo error response from OIDC provider: ${
+              r.getErrorObject.toJSONObject.toString}")
+      case r: n_UserInfoSuccessResponse =>
+        r
+    }
+
+    val claims: nmj.JSONObject = successResponse2.getUserInfo.toJSONObject
 
     Future.successful(Ok(i"""
         |authCode: ${anyAuthCode.map(_.toJSONString)}
@@ -503,10 +683,65 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         |=============
         |
         |oidcFinalResponse.getOIDCTokens.toJSONObject.toJSONString:
-        |${oidcFinalResponse.getOIDCTokens.toJSONObject.toJSONString}
+        |${idTokenAndAccessTokenResponse.getOIDCTokens.toJSONObject.toJSONString}
+        |
+        |=============
+        |
+        |FINALLY?:
+        |
+        |claims:
+        |
+        |${claims.toJSONString(nmj.JSONStyle.NO_COMPRESS)}
         |"""))
   }
 
+  /*
+  private def verifyIdToken( idToken: n_JWT, providerMetadata: n_OIDCProviderMetadata)
+        : ReadOnlyJWTClaimsSet = {
+    val providerKey: RSAPublicKey =
+      try {
+        val key: JSONObject = getProviderRSAJWK(providerMetadata.getJWKSetURI().toURL().openStream());
+        n_RSAKey.parse(key).toRSAPublicKey();
+      } catch { case ex: NoSuchAlgorithmException | InvalidKeySpecException
+        | j_IOException | java.text.ParseException e =>
+        // TODO error handling
+      }
+
+    DefaultJWTDecoder jwtDecoder = new DefaultJWTDecoder();
+    jwtDecoder.addJWSVerifier(new n_RSASSAVerifier(providerKey));
+    ReadOnlyJWTClaimsSet claims = null;
+    try {
+      claims = jwtDecoder.decodeJWT(idToken);
+    } catch (n_JOSEException | java.text.ParseException e) {
+      // TODO error handling
+    }
+
+    claims
+  }
+
+  private def getProviderRSAJWK(InputStream is): JSONObject = {
+    // Read all data from stream
+    StringBuilder sb = new StringBuilder();
+    try (Scanner scanner = new Scanner(is);) {
+      while (scanner.hasNext()) {
+        sb.append(scanner.next());
+      }
+    }
+
+    // Parse the data as json
+    val jsonString: String = sb.toString()
+    val json: JSONObject = JSONObjectUtils.parse(jsonString)
+
+    // Find the RSA signing key
+    val keyList: JSONArray = (JSONArray) json.get("keys");
+    for (Object key : keyList) {
+      val k: JSONObject = key.asInstanceOf[JSONObject];
+      if (k.get("use").equals("sig") && k.get("kty").equals("RSA")) {
+        return k;
+      }
+    }
+    return null;
+  } */
 
   def loginOidcStartOLD(provider: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
@@ -747,32 +982,46 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
+  def startAuthentication(providerName: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
-    startAuthenticationImpl(provider, returnToUrl, request)
+    startAuthenticationImpl(providerName = providerName, returnToUrl, request)
   }
 
 
-  private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
+  private def startAuthenticationImpl(providerName: String, returnToUrl: String, request: GetRequest)
         : Future[Result] = {
+
+    if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
+      // OAuth providers have been configured to send authentication data to another
+      // origin (namely anyLoginOrigin.get); we need to redirect to that origin
+      // and login from there.
+      return loginViaLoginOrigin(providerName, request.underlying)
+    }
 
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
 
-    var futureResult = startOrFinishAuthenticationWithSilhouette(provider, request)
+    val provider: AuthnProvider = getProvider(providerName, request)
+
+    var futureResult = authenticate(provider, request)
+          .recoverWith(
+            recoverExceptionToErrorResponse(provider, request))(executionContext)
+
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
       }
     }
+
     if (request.rawQueryString.contains("isInLoginPopup")) {
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = IsInLoginPopupCookieName, value = "true", httpOnly = false))
       }
     }
+
     if (request.rawQueryString.contains("mayNotCreateUser")) {
       futureResult = futureResult map { result =>
         result.withCookies(
@@ -783,8 +1032,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def finishAuthentication(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
-    startOrFinishAuthenticationWithSilhouette(provider, request)
+  def finishAuthentication(providerName: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+    val provider: AuthnProvider = getProvider(providerName, request)
+    authenticate(provider, request)
+          .recoverWith(
+            recoverExceptionToErrorResponse(provider, request))(executionContext)
   }
 
 
@@ -797,8 +1049,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     *   https://github.com/mohiva/play-silhouette-seed/blob/master/
     *                     app/controllers/SocialAuthController.scala#L32
     */
-  private def startOrFinishAuthenticationWithSilhouette(
-        providerName: String, request: GetRequest): Future[Result] = {
+  private def getProvider(providerName: String, request: GetRequest): AuthnProvider = {
+
     context.rateLimiter.rateLimit(RateLimits.Login, request)
 
     val settings = request.siteSettings
@@ -806,19 +1058,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(settings.enableSso,
       "TyESSO0OAUTH", "OpenAuth authentication disabled, because SSO enabled")
 
-    DELETE_LATER // after 2019-05-01 (59289560). Just temp test to verif didn't break anything when rewriting
-    // 'if' test.
-    dieIf((globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) !=
-      (globals.anyLoginOrigin isSomethingButNot originOf(request)), "TyE8KBSWG4")
-
-    if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
-      // OAuth providers have been configured to send authentication data to another
-      // origin (namely anyLoginOrigin.get); we need to redirect to that origin
-      // and login from there.
-      return loginViaLoginOrigin(providerName, request.underlying)
-    }
-
-    val provider: SocialProvider = providerName match {   // with TalkyardSocialProfileBuilder?  (TYSOCPROF)
+    val provider: AuthnProvider = providerName match {   // with TalkyardSocialProfileBuilder?  (TYSOCPROF)
       case FacebookProvider.ID =>
         throwForbiddenIf(!settings.enableFacebookLogin, "TyE0FBLOGIN", "Facebook login disabled")
         facebookProvider()
@@ -843,22 +1083,64 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case InstagramProvider.ID =>
         throwForbiddenIf(!settings.enableInstagramLogin, "TyE0INSTALOGIN", "Instagram login disabled")
         instagramProvider()
+      case someOidcProvider if someOidcProvider.startsWith("oidc") =>
+        oidcProvider(settings)
       case x =>
-        return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
+        throwForbidden(s"Bad provider: `$providerName' [DwE2F0D6]")
     }
 
+    provider
+  }
+
+
+  private def authenticate(provider: SocialProvider, request: GetRequest): Future[Result] = {
     provider.authenticate()(request.underlying) flatMap {  // (529JZ24)
       case Left(result) =>
         // We're starting authentication.
-        Future.successful(result)
-      case Right(authInfo) =>
+        val result2 = result /*
+        // No this won't work — causes an error, at least with KeyCloak:
+        "Token verification failed" "invalid_token" http status code 401.
+        Instead, in  /etc/hosts, add:   127.0.0.1 keycloak
+        so your browser can access keycloak.
+        Or maybe   keycloak.localhost  safer?
+
+        if (!changeProviderToLocalhost) result else {
+          val redirTo = result.header.headers.get(
+                play.api.http.HeaderNames.LOCATION).getOrDie("TyE62RKDJW42")
+          val testHost = "://keycloak:8080/"
+            if (redirTo.contains("http" + testHost) ||
+                redirTo.contains("https" + testHost)) {
+              // We're testing on localhost?
+              // Then, change to 'localhost'. Otherwise the e2e test browsers
+              // cannot access KeyCloak — they don't run inside the Docker network
+              // and the 'keycloak' hostname exists only in that network.
+              val localhostRedir = redirTo.replaceAllLiterally(testHost, "://localhost:8080/")
+              result.withHeaders(play.api.http.HeaderNames.LOCATION -> localhostRedir)
+            }
+            else {
+              // Not a test.
+              result
+            }
+        } */
+        Future.successful(result2)
+
+      case Right(authInfo: provider.A) =>
         // We're finishing authentication.
         val futureProfile: Future[SocialProfile] = provider.retrieveProfile(authInfo)
         futureProfile flatMap { profile: SocialProfile =>   // TalkyardSocialProfile?  (TYSOCPROF)
           handleAuthenticationData(request, profile)
         }
-    } recoverWith {
+    }
+  }
+
+
+  private def recoverExceptionToErrorResponse(provider: SocialProvider, request: GetRequest)
+        : PartialFunction[Throwable, Future[Result]] = {
       case ex: Exception =>
+        val debugInfo = ex match {
+          case sEx: SilhouetteException => s" Debug info: ${sEx.debugInfo}"
+          case _ => ""
+        }
         val noStateHandlerMessage: String =
           com.mohiva.play.silhouette.impl.providers.DefaultSocialStateHandler.MissingItemHandlerError
             .dropRight(5)  // trop trailing  %s
@@ -867,20 +1149,21 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val handlerMissing = ex.getMessage.contains(noStateHandlerMessage)
         val result =
           if (handlerMissing) {
-            logger.warn(s"Silhouette handler missing error [TYEOAUTMTPLL2]", ex)
+            logger.warn(s"Silhouette handler missing error. [TYEOAUTMTPLL2]" + debugInfo, ex)
             BadReqResult("TYEOAUTMTPLL", "\nYou need to login within 5 minutes, and " +
               "you cannot login in different browser tabs, at the same time. Error logging in.")
           }
           else {
             val errorCode = "TYE0AUUNKN"
-            logger.error(s"Error during OAuth2 authentication with Silhouette [$errorCode]", ex)
+            logger.error(s"Error during OAuth2 authentication with Silhouette. [$errorCode]" +
+                  debugInfo, ex)
             import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
             InternalErrorResult(errorCode, "Unknown login error", moreDetails =
-              s"Error when signing in with $providerName: ${ex.getMessage}\n\n" +
+              s"Error when signing in with ${provider.id}: ${ex.getMessage}\n\n" +
               "Stack trace:\n" + getStackTrace(ex))
           }
         Future.successful(result)
-    }
+
   }
 
 
@@ -1407,7 +1690,12 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
-    val futureResponse = startOrFinishAuthenticationWithSilhouette(provider, request)
+    val provider_ = getProvider(provider, request)
+
+    val futureResponse = authenticate(provider_, request)
+          .recoverWith(
+            recoverExceptionToErrorResponse(provider_, request))(executionContext)
+
     futureResponse map { response =>
       response.withCookies(
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
@@ -1472,6 +1760,75 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       authStuffSigner,
       Crypter,
       silhouette.api.util.Clock())
+
+
+
+  private def oidcProvider(siteSettings: EffectiveSettings)
+        : OidcProvider with CommonSocialProfileBuilder =
+    new OidcProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(oidcProviderSettings))
+
+  // "http://keycloak:8080"
+  // + "/auth/realms/talkyard_keycloak_test_realm/.well-known/openid-configuration"
+
+  val oidcProviderSettings: OAuth2Settings Or ErrorMessage = Good {
+    val providerMetadata: n_OIDCProviderMetadata = getProviderMetadata(oidcOpConfUrl)
+    //def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
+    OAuth2Settings(
+      authorizationURL = Some(providerMetadata.getAuthorizationEndpointURI.toString),
+      accessTokenURL = providerMetadata.getTokenEndpointURI.toString,
+      redirectURL = Some("/-/login-oidc/keycloak/callback"),
+      apiURL = Some(providerMetadata.getUserInfoEndpointURI.toString),
+      // Some("/-/login-auth-callback/oidc"),
+          //makeRedirectUrl("/-/login-oidc/keycloak/callback"),
+      clientID = "talkyard_keycloak_test_client",
+      // This is just a KeyCloak localhost test realm secret, fine.
+      clientSecret = "68502806-b6fc-4e9e-98d2-80d2d6d9a44c",
+      scope = Some("openid email profile"))
+  }
+
+
+  def getProviderMetadata(oidcOpConfUrl: String): n_OIDCProviderMetadata = {
+    oidcProviderMetadataByConfigUrl.get(oidcOpConfUrl, (confUrl: String) => {
+
+      //val issuerURI: java.net.URI = new java.net.URI(oidcOpOrigin)
+      //val providerConfigurationURL: java.net.URL = issuerURI.resolve(odicOpConfUrlPath).toURL
+
+      val providerConfigurationURL = new java.net.URI(confUrl).toURL
+
+      COULD_OPTIMIZE; BLOCKING_REQ
+      val stream: InputStream =
+        try providerConfigurationURL.openStream()
+        catch {
+          case ex: java.net.UnknownHostException =>
+            // 'java.net.UnknownHostException: keycloakkk"
+            // message seems to be hostname
+            throw ex
+          case ex: javax.net.ssl.SSLException =>
+            // "javax.net.ssl.SSLException: Unrecognized SSL message, plaintext connection?"
+            // tried to connect with https, but server uses http (maybe testing on localhost)
+            throw ex
+          case ex: java.io.FileNotFoundException =>
+            // if host says 404 Not Found.
+            throw ex
+        }
+
+        // Read all data from URL
+        var providerInfo: String = ""
+        val s = new java.util.Scanner(stream)
+        try {
+          providerInfo =
+            if (s.useDelimiter("\\A").hasNext()) s.next()
+            else ""
+        } finally {
+          s.close()
+        }
+
+        n_OIDCProviderMetadata.parse(providerInfo)
+      }
+    )
+  }
+
 
 
   private def googleProvider(): GoogleProvider with CommonSocialProfileBuilder =

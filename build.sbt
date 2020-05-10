@@ -19,8 +19,19 @@ import scala.sys.process._  // "shell command".!! = execute the command, return 
 // Imported automatically, but incl here anyway so can click and open in the IDE:
 import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
+
+// Set Scala version for all projects incl sub projects (the entire build).
+ThisBuild / scalaVersion := "2.12.8"
+
+ThisBuild / useCoursier := false
+
+// Show unchecked and deprecated warnings.
+// scalacOptions in ThisBuild ++= Seq("-deprecation")
+
+
 // If SBT crashes, enable debug to find out which file it crashes in:
 //logLevel := Level.Debug
+
 
 val versionFileContents = {
   val source = scala.io.Source.fromFile("version.txt")
@@ -44,7 +55,20 @@ lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
-ThisBuild / useCoursier := false
+// This is Play-Silhouette, https://github.com/mohiva/play-silhouette,
+// Talkyard's fork — so can apply security updates and Ty specific fixes / tweaks,
+// without waiting for the main project to release new versions.
+
+lazy val silhouetteProj = sbt.Project(
+  id = "play-silhouette",
+  base = file("vendors/silhouette/silhouette")
+)
+
+lazy val silhouetteCryptoJcaProj = sbt.Project(
+  id = "play-silhouette-crypto-jca",
+  base = file("vendors/silhouette/silhouette-crypto-jca")
+).dependsOn(silhouetteProj)
+
 
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
@@ -79,9 +103,10 @@ val appDependencies = Seq(
    in /opt/talkyard/conf/play-framework.conf.
 
    */
-  // Could alternatively use Pac4j: https://www.pac4j.org/docs/clients/oauth.html
-  "com.mohiva" %% "play-silhouette" % "7.0.0",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
+  // Could alternatively use Pac4j: https://www.pac4j.org/docs/clients/oauth.html — No!
+  //"com.mohiva" %% "play-silhouette" % "7.0.0",
+  //"com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
+  //
   // OpenID Connect: (with Pac4j, https://github.com/pac4j/pac4j )
   "org.pac4j" % "pac4j-core" % "4.0.0",
   "org.pac4j" % "pac4j-oidc" % "4.0.0",
@@ -138,9 +163,13 @@ val main = (project in file("."))
   .settings(mainSettings: _*)
   .dependsOn(
     edCore % "test->test;compile->compile",
-    tyDaoRdb)
+    tyDaoRdb,
+    silhouetteProj,
+    silhouetteCryptoJcaProj)
   .aggregate(
-    edCore)
+    edCore,
+    silhouetteProj,
+    silhouetteCryptoJcaProj)
 
 
 def mainSettings = List(
@@ -246,6 +275,3 @@ def listJarsTask = listJars := (target, fullClasspath in Runtime) map {
 } */
 
 
-// Show unchecked and deprecated warnings, in this project and all
-// its modules.
-// scalacOptions in ThisBuild ++= Seq("-deprecation")
