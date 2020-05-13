@@ -17,9 +17,6 @@
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
 	url = https://github.com/debiki/talkyard-versions.git
-[submodule "images/web/modules/nchan"]
-	path = images/web/modules/nchan
-	url = https://github.com/slact/nchan.git
 [submodule "images/web/modules/lua-nginx-module"]
 	path = images/web/modules/lua-nginx-module
 	url = https://github.com/openresty/lua-nginx-module.git
