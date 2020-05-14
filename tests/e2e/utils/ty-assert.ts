@@ -1,8 +1,14 @@
 import * as _ from 'lodash';
 import * as assert from 'assert';
 
+interface TyAssert {
+  // Implement later
+}
 
-const tyAssert = {
+
+const tyAssert: any = {   // : any = works around:
+              // error TS2775: Assertions require every name in the call target
+              // to be declared with an explicit type annotation.
   ...assert,
 
   // Maybe might as well always use this one, instead of  strictEqual  sometimes?

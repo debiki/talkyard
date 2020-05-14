@@ -49,7 +49,7 @@ const concat = require('gulp-concat');
 const insert = require('gulp-insert');
 const replace = require('gulp-replace');
 const through2 = require('through2');
-const del = require('del');
+const g_del = require('del');
 const rename = require("gulp-rename");
 const gzip = require('gulp-gzip');
 const merge2 = require('merge2');
@@ -359,9 +359,13 @@ const nextFileTemplate = function(contents, file) {
 
 
 gulp.task('cleanTranslations', () => {
-  return del([
-      `${serverDestTranslations}/**/*`,
-      `${webDestTranslations}/**/*`]);
+  return g_del([
+          `${serverDestTranslations}/**/*`,
+          `${webDestTranslations}/**/*`])
+      .then(function(deletedPaths) {
+        console.log('Deleted translations:\n  - ' + deletedPaths.join('\n  - '));
+        return deletedPaths;
+      });
 });
 
 // Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
@@ -842,25 +846,33 @@ gulp.task('watch', gulp.series((done) => {
 // Or using ngx_http_gunzip_module — but that'd cause slightly higher CPU load?))
 //
 gulp.task('delete-non-gzipped', () => {
-  return del([
-      `${webDest}/**/*.js`,
-      `!${webDest}/**/*.min.js`,
-      `${webDest}/**/*.css`,
-      `!${webDest}/**/*.min.css`,
-      // Needed in dev mode:
-      //`${serverDest}/**/*.js`,
-      //`!${serverDest}/**/*.min.js`,
-      ]);
+  return g_del([
+          `${webDest}/**/*.js`,
+          `!${webDest}/**/*.min.js`,
+          `${webDest}/**/*.css`,
+          `!${webDest}/**/*.min.css`,
+          // Needed in dev mode:
+          //`${serverDest}/**/*.js`,
+          //`!${serverDest}/**/*.min.js`,
+          ])
+      .then(function(deletedPaths) {
+        console.log('Deleted some non-gzipped:\n  - ' + deletedPaths.join('\n  - '));
+        return deletedPaths;
+      });
 });
 
 
-gulp.task('clean', () => {   // but task 'cleanTranslations' ?
-  return del([
-    `${webDest}/*`,
-    `!${webDest}/.gitkeep`,
-    `${serverDest}/*`,
-    `!${serverDest}/.gitkeep`]);
-});
+gulp.task('clean', gulp.series('cleanTranslations', () => {
+  return g_del([
+          `${webDest}/*`,
+          `!${webDest}/.gitkeep`,
+          `${serverDest}/*`,
+          `!${serverDest}/.gitkeep`])
+      .then(function(deletedPaths) {
+        console.log('Deleted clean:\n  - ' + deletedPaths.join('\n  - '));
+        return deletedPaths;
+      });
+}));
 
 
 gulp.task('release', gulp.series(  // [MKBUNDLS]
@@ -876,7 +888,7 @@ gulp.task('release', gulp.series(  // [MKBUNDLS]
 // ========================================================================
 
 //gulp.task('clean-security-tests', function () {
-//  return del([
+//  return g_del([
 //    'target/security-tests/**/*']);
 //});
 //
