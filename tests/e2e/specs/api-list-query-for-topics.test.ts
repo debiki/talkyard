@@ -55,9 +55,9 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
     });
 
     margaret = builder.addMmember('margaret');
-
     pageAaaJustAdded = builder.addPage({
       id: 'pageAaaId',
+      createdAtMs: c.JanOne2020HalfPastFive + 10*1000,
       folder: '/',
       showId: false,
       slug: 'page-aaa',
@@ -70,6 +70,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
 
     margaretsPageJustAdded = builder.addPage({
       id: 'margaretsPageId',
+      createdAtMs: c.JanOne2020HalfPastFive + 20*1000,
       folder: '/',
       showId: false,
       slug: 'page-mmm',
@@ -83,6 +84,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
     // We add page Zzz last; this makes it the most recently active page.
     pageZzzJustAdded = builder.addPage({
       id: 'pageZzzId',
+      createdAtMs: c.JanOne2020HalfPastFive + 30*1000,
       folder: '/',
       showId: false,
       slug: 'page-zzz',
@@ -95,6 +97,7 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
 
     staffOnlyPageJustAdded = builder.addPage({
       id: 'staffPageId',
+      createdAtMs: c.JanOne2020HalfPastFive + 40*1000,
       folder: '/',
       showId: false,
       slug: 'staff-page',

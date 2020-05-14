@@ -9,6 +9,7 @@ import _ = require('lodash');
 import c = require('../test-constants');
 import utils = require('../utils/utils');
 
+// This is 2015-12-04T03:13:44+00:00, hmm, why?
 const DefaultCreatedAtMs = 1449198824000;
 
 let nextPostId = 101;
