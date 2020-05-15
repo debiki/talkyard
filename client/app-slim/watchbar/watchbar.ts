@@ -253,7 +253,7 @@ const DirectMessages = createComponent({
 const SingleTopic = createComponent({
   displayName: 'SingleTopic',
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     const topic: WatchbarTopic = this.props.topic;
     this._url = linkToPageId(topic.pageId);
   },

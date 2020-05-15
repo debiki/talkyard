@@ -777,7 +777,7 @@ ReactStore.removeChangeListener = function(callback) {
 
 
 export var StoreListenerMixin = {
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     ReactStore.addChangeListener(this.onChange);
   },
 

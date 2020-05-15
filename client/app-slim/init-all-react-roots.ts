@@ -164,7 +164,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
 const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBTP0]
   displayName: 'MoreScriptsRoutesComponent',
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     Server.loadMoreScriptsBundle(() => {
       if (this.isGone) return;
       ReactActions.showNewPage(makeAutoPage(), [], [], null, this.props.history);

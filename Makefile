@@ -322,8 +322,11 @@ recreate-web:
 rebuild-restart-web:
 	s/d kill web ; s/d rm -f web ; s/d build web ; s/d up -d web ; s/d-logsf0
 
-rebuild-restart-gulp:
-	s/d kill gulp ; s/d rm -f gulp ; s/d build gulp ; s/d up -d gulp ; s/d-logsf0 gulp
+rebuild-gulp:
+	s/d kill gulp ; s/d rm -f gulp ; s/d build gulp
+
+rebuild-restart-gulp: rebuild-gulp
+	 s/d up -d gulp ; s/d-logsf0 gulp
 
 restart-app:
 	s/d kill app ; s/d start app ; s/d-logsf0

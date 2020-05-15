@@ -45,7 +45,7 @@ export const NewPasswordInput = createFactory({
     };
   },
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
      this.checkPasswordStrength = _.throttle(this.checkPasswordStrength, 250);
   },
 

@@ -47,7 +47,7 @@ let doNavigate: (string) => boolean = function() {
 export const ExtReactRootNavComponent = createReactClass({
   displayName: 'ExtReactRootNavComponent',
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     doNavigate = (path: string) => {
       if (this.props.location.pathname !== path) {
         this.props.history.push(path);

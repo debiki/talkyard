@@ -733,7 +733,7 @@ const LoadAndListTopics = createFactory({
     }
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     // This happens when switching category or showing top topics instead of latest topics.
     this.loadTopics(nextProps, false);
   },
@@ -780,7 +780,8 @@ const LoadAndListTopics = createFactory({
     }
 
     // Avoid loading the same topics many times:
-    // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
+    // - On page load, componentDidMount() and UNSAFE_componentWillReceiveProps()
+    //   both loads topics.
     // - When we're refreshing the page because of Flux events, don't load the same topics again.
     if (!isNewView && !loadMore && (this.state.topics || this.isLoading))
       return;
@@ -1445,7 +1446,7 @@ const LoadAndListCategories = createFactory({
     this.isGone = true;
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     this.loadCategories(nextProps);
   },
 

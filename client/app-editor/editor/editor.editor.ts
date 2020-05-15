@@ -140,7 +140,7 @@ export const Editor = createFactory<any, EditorState>({
     this.setState({ store: debiki2.ReactStore.allData() });
   },
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
 
     this.saveDraftSoon = _.debounce(() => {

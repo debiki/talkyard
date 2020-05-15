@@ -128,7 +128,7 @@ const UsersPosts = createFactory<any, any>({
     this.isGone = true;
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
@@ -216,7 +216,7 @@ const UsersTopics = createFactory<any, any>({
     this.isGone = true;
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;

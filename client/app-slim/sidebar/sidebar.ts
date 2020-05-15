@@ -169,7 +169,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     keymaster.unbind('s', 'all');
   },
 
-  componentWillUpdate: function(newProps, newState) {
+  UNSAFE_componentWillUpdate: function(newProps, newState) {
     // Stop always-showing-the-admin-guide-on-page-load if the admin clicks away from it.
     const store: Store = this.state.store;
     if (store.me.isAdmin && this.state.commentsType !== newState.commentsType) {

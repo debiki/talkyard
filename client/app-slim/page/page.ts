@@ -87,7 +87,7 @@ export const PageWithStateComponent = createReactClass(<any> {
   },
 
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     const location = this.props.location;
     if (!location)
       return;

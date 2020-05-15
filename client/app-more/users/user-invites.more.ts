@@ -46,7 +46,7 @@ export const UserInvites = createFactory({
     this.loadInvites(this.props.user.id);
   },
 
-  componentWillReceiveProps: function(nextProps: any) {
+  UNSAFE_componentWillReceiveProps: function(nextProps: any) {
     const store: Store = this.props.store;
     const nextStore: Store = nextProps.store;
     if (this.props.user.id === nextProps.user.id && store.me.id === nextStore.me.id)

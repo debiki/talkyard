@@ -112,7 +112,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     this.setState({ store, me: store.me });  // remove 'me' [8GKB3QA]
   },
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     const urlQueryParams = parseQueryString(this.props.location.search);
     this.searchUseUrlQuery(urlQueryParams);
     if (urlQueryParams.advanced) {

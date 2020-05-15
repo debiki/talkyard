@@ -740,7 +740,7 @@ const AccountTab = createFactory<any, any>({
     this.isGone = true;
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     const me: Myself = this.props.store.me;
     const user: UserInclDetails = this.props.user;

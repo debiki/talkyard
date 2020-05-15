@@ -77,7 +77,7 @@ const TitleAndLastChatMessages = createComponent({
     this.setState({ hasScrolledDown: true });
   },
 
-  componentWillUpdate: function() {
+  UNSAFE_componentWillUpdate: function() {
     // Scroll down, if comment added, & we're at the bottom already.
     const pageColumnRect = getPageRect();
     // Add +2 because sometimes .bottom is 0.1 more than the-win-height, for some weird reason.

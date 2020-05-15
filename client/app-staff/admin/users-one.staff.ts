@@ -47,7 +47,7 @@ export const UserProfileAdminView = createFactory({
     this.isGone = true;
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  UNSAFE_componentWillReceiveProps: function(nextProps) {
     this.loadCompleteUser();
   },
 

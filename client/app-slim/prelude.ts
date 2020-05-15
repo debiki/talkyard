@@ -51,8 +51,12 @@ const r = ReactDOMFactories;
 
 // Let this be a function, not a variable, so it can be used directly.
 // (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
-function reactCreateFactory(x) {
-  return React['createFactory'](x);
+function reactCreateFactory(type) {
+  // Deprecated, causes warning, from React >= 16.13.0:
+  // `return React['createFactory'](x);`
+  // See: https://reactjs.org/blog/2020/02/26/react-v16.13.0.html#deprecating-reactcreatefactory
+  // Instead:
+  return React.createElement.bind(null, type);
 }
 
 

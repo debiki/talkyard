@@ -197,7 +197,7 @@ var LazyMoreBundleComponent = createComponent({
     return { bundleLoaded: false };
   },
 
-  componentWillMount: function() {
+  UNSAFE_componentWillMount: function() {
     Server.loadMoreScriptsBundle(() => {
       if (this.isGone) return;
       this.setState({ bundleLoaded: true });
