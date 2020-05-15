@@ -48,6 +48,8 @@ echo Running the Gulp CMD:
 if [ $file_owner_id -ne 0 ] ; then
   # Use user owner, which has the same user id as the file owner on the Docker host.
   set -x
+  # Avoid permission errors caused by root sometimes somehow becoming the owner.
+  chown -R owner.owner /opt/talkyard/server/node_modules
   exec su -c "$*" owner
 else
   # We're root (user id 0), both on the Docker host and here in the container.
