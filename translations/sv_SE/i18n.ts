@@ -18,72 +18,72 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 
-  Active: "Active",
-  Activity: "Activity",
-  Add: "Add",
-  AddingDots: "Adding ...",
+  Active: "Aktiva",
+  Activity: "Aktivitet",
+  Add: "Lägg till",
+  AddingDots: "Lägger till ...",
   Admin: "Admin",
-  AdvSearch: "Advanced search",
-  Away: "Away",
-  Back: "Back",
-  BlogN: "Blog",
-  Bookmarks: "Bookmarks",
-  Cancel: "Cancel",
-  Categories: "Categories",
-  Category: "Category",
-  ChangeV: "Change",
-  Continue: "Continue",
-  ClickToShow: "Click to show",
-  ChangeDots: "Change ...",
-  ChatN: "Chat",
-  Chatting: "Chatting",
-  CheckYourEmail: "Check your email",
-  Close: "Close",
-  closed: "closed",
-  Created: "Created",
-  Delete: "Delete",
-  Deleted: "Deleted",
-  DirectMessage: "Direct message",
-  Discussion: "Discussion",
-  discussion: "discussion",
-  done: "done",
-  EditV: "Edit",
-  Editing: "Editing",
-  EmailAddress: "Email address",
-  EmailAddresses: "Email addresses",
-  EmailSentD: "Email sent.",
+  AdvSearch: "Avancerad sökning",
+  Away: "Borta",
+  Back: "Tillbaks",
+  BlogN: "Blogg",
+  Bookmarks: "Bokmärken",
+  Cancel: "Ångra",
+  Categories: "Kategorier",
+  Category: "Kategori",
+  ChangeV: "Ändra",
+  Continue: "Fortsätt",
+  ClickToShow: "Tryck för att visa",
+  ChangeDots: "Ändra ...",
+  ChatN: "Chatt",
+  Chatting: "Chattar",
+  CheckYourEmail: "Kolla din mejl",
+  Close: "Stäng",
+  closed: "Stängd",
+  Created: "Skapad",
+  Delete: "Ta bort",
+  Deleted: "Borttagen",
+  DirectMessage: "Direktmeddelande",
+  Discussion: "Diskussion",
+  discussion: "diskussion",
+  done: "klart",
+  EditV: "Editera",
+  Editing: "Editerar",
+  EmailAddress: "Meljadress",
+  EmailAddresses: "Mejladresser",
+  EmailSentD: "Mejl skickat.",
   Forum: "Forum",
-  GetNotifiedAbout: "Get notified about",
-  GroupsC: "Groups:",
+  GetNotifiedAbout: "Bli notifierad om",
+  GroupsC: "Grupper:",
   Hide: "Göm",
-  Home: "Home",
+  Home: "Hem",
   Idea: "Idé",
   Join: "Joina",
   KbdShrtcsC: "Keyboard shortcuts: ",
   Loading: "Laddar...",
   LoadMore: "Mer ...",
-  LogIn: "Log In",
+  LogIn: "Logga in",
   LoggedInAs: "Logged in as ",
-  LogOut: "Log out",
-  Maybe: "Maybe",
+  LogOut: "Logga ut",
+  Maybe: "Kanske",
   Manage: "Manage",
-  Members: "Members",
-  MessageN: "Message",
-  MoreDots: "More...",
-  Move: "Move",
-  Name: "Name",
-  NameC: "Name:",
-  NewTopic: "New topic",
-  NoCancel: "No, cancel",
+  Members: "Medlemmar",
+  MessageN: "Meddelande",
+  MoreDots: "Mer...",
+  Move: "Flytta",
+  Name: "Namn",
+  NameC: "Namn:",
+  NewTopic: "Nytt ämne",
+  NoCancel: "Nej, ångra",
   Notifications: "Notifications",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
   NoTitle: "No title",
   NoTopics: "No topics.",
-  Okay: "Okay",
-  OkayDots: "Okay ...",
+  Okay: "Okej",
+  OkayDots: "Okej ...",
   Online: "Online",
-  onePerLine: "one per line",
+  onePerLine: "en per rad",
   PreviewV: "Preview",
   Problem: "Problem",
   progressN: "progress",
@@ -98,68 +98,68 @@ var t_sv_SE: TalkyardTranslations = t = {
   Save: "Spara",
   SavingDots: "Sparar ...",
   SavedDot: "Saved.",
-  Search: "Search",
-  SendMsg: "Send Message",
-  ShowPreview: "Show preview",  // MISSING
-  SignUp: "Sign Up",
-  Solution: "Solution",
-  started: "started",
-  Summary: "Summary",
-  Submit: "Submit",
-  Tag: "Tag",  // MISSING
-  Tags: "Tags",  // MISSING
-  Tools: "Tools",
-  Topics: "Topics",
-  TopicTitle: "Topic title",
-  TopicType: "Topic type",
-  UploadingDots: "Uploading...",
-  Username: "Username",
-  Users: "Users",
-  Welcome: "Welcome",
+  Search: "Sök",
+  SendMsg: "Skicka Meddelande",
+  ShowPreview: "Förhandsgranska",
+  SignUp: "Signa Upp",
+  Solution: "Lösning",
+  started: "Påbörjat",
+  Summary: "Sammanfattning",
+  Submit: "Skicka",
+  Tag: "Tagg",
+  Tags: "Tagsar",
+  Tools: "Verktyg",
+  Topics: "Ämnen",
+  TopicTitle: "Ämnenstitel",
+  TopicType: "Ämnestyp",
+  UploadingDots: "Laddar upp...",
+  Username: "Användarnamn",
+  Users: "Medlemmar",
+  Welcome: "Välkommen",
   Wiki: "Wiki",
-  Yes: "Yes",
-  YesBye: "Yes, bye",
-  YesDoThat: "Yes, do that",
-  You: "You",
-  you: "you",
+  Yes: "Ja",
+  YesBye: "Ja, hej då",
+  YesDoThat: "Ja, gör det",
+  You: "Du",
+  you: "du",
 
   // Trust levels.
-  Guest:  "Guest",
-  NewMember: "New member",
-  BasicMember: "Basic member",
-  FullMember: "Full member",
-  TrustedMember: "Trusted member",
-  RegularMember: "Trusted regular",
-  CoreMember: "Core member",
+  Guest:  "Gäst",
+  NewMember: "Ny medlem",
+  BasicMember: "Grundmedlem",
+  FullMember: "Full medlem",
+  TrustedMember: "Betrodd medlem",
+  RegularMember: "Betrodd reguljär",
+  CoreMember: "Kärnmedlem",
 
   // Periods.
-  PastDay: "Past Day",
-  PastWeek: "Past Week",
-  PastMonth: "Past Month",
-  PastQuarter: "Past Quarter",
-  PastYear: "Past Year",
-  AllTime: "All Time",
+  PastDay: "Senaste Dagen",
+  PastWeek: "Senaste Veckan",
+  PastMonth: "Senaste Månaden",
+  PastQuarter: "Senaste Kvartalet",
+  PastYear: "Senaste Året",
+  AllTime: "All Tid",
 
   // Time ago letters.
   // English examples: "3d" in forum topic list means 3 days ago. "5h" is 5 hours.
-  monthsLtr: "mon",  // months
+  monthsLtr: "mån",  // months
   daysLtr: "d",      // days
-  hoursLtr: "h",     // hours
+  hoursLtr: "t",     // hours
   minsLtr: "m",      // minutes
   secsLtr: "s",      // seconds
 
   // Time ago, long text versions.
   daysAgo: (numDays: number) =>
-    numDays === 1 ? "1 day ago" : `${numDays} days ago`,
+    numDays === 1 ? "1 dag sedan" : `${numDays} dagar sedan`,
 
   hoursAgo: (numHours: number) =>
-    numHours === 1 ? "1 hour ago" : `${numHours} hours ago`,
+    numHours === 1 ? "1 timme sedan" : `${numHours} timmar sedan`,
 
   minutesAgo: (numMins: number) =>
-    numMins === 1 ? "1 minute ago" : `${numMins} minutes ago`,
+    numMins === 1 ? "1 minut sedan" : `${numMins} minuter sedan`,
 
   secondsAgo: (numSecs: number) =>
-    numSecs === 1 ? "1 second ago" : `${numSecs} seconds ago`,
+    numSecs === 1 ? "1 sekund sedan" : `${numSecs} sekunder sedan`,
 
 
   // Input fields, e.g. email, name etc.
@@ -236,7 +236,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Forum categories
 
   fcs: {
-    All: "All", // "All (categories)", shorter than AllCats
+    All: "Alla", // "All (categories)", shorter than AllCats
   },
 
 
@@ -289,7 +289,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     CreateCat: "Skapa Kategori",
     CreateTopic: "Skapa Ämne",
     PostIdea: "Posta en idé",
-    AskQuestion: "Fråga en fråga",
+    AskQuestion: "Fråga något",
     ReportProblem: "Rapportera ett problem",
     CreateMindMap: "Skapa en Mind Map",
     CreatePage: "Skapa en sida",
@@ -300,7 +300,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Forum topic list
 
   ft: {
-    ExplIcons: "Explain icons...",
+    ExplIcons: "Förklara ikoner ...",
     IconExplanation: "Icon explanation:",
     ExplGenDisc: "A general discussion.",
     ExplQuestion: "A question with no accepted answer.",
@@ -318,48 +318,48 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     CatHasBeenDeleted: "This category has been deleted",
 
-    TopicsActiveFirst: "Topics, recently active first",
-    TopicsNewestFirst: "Topics, newest first",
+    TopicsActiveFirst: "Ämnen, nyligen aktiva först",
+    TopicsNewestFirst: "Ämnen, nya först",
 
-    CreatedOn: "Created on ",
-    LastReplyOn: "\nLast reply on ",
-    EditedOn: "\nEdited on ",
+    CreatedOn: "Skapat ",
+    LastReplyOn: "\nSenaste svaret ",
+    EditedOn: "\nÄndrat ",
 
     // These are shown as mouse-hover tooltips, or mobile-phone-touch-tips, over the user
     // avatar icons, in the forum topic list.
-    createdTheTopic: "created the topic",
-    frequentPoster: "frequent poster",
-    mostRecentPoster: "most recent poster",
+    createdTheTopic: "skapade ämnet",
+    frequentPoster: "har skrivit mycket",
+    mostRecentPoster: "senaste repliken",
 
-    inC: "in: ",
+    inC: "i: ",
 
-    TitleFixed: "This has been fixed",
-    TitleDone: "This has been done",
-    TitleStarted: "We've started this",
-    TitleStartedFixing: "We've started fixing this",
-    TitleUnsolved: "This is an unsolved problem",
-    TitleIdea: "This is an idea",
-    TitlePlanningFix: "We're planning to fix this",
-    TitlePlanningDo: "We're planning to do this",
-    TitleChat: "This is a chat channel",
-    TitlePrivateChat: "This is a private chat channel",
-    TitlePrivateMessage: "A private message",
-    TitleInfoPage: "This is an info page",
-    TitleDiscussion: "A discussion",
-    IsPinnedGlobally: "\nIt has been pinned, so it's listed first.",
-    IsPinnedInCat: "\nIt has been pinned in its category, so is listed first, in its category.",
+    TitleFixed: "Detta har fixats",
+    TitleDone: "Detta har gjorts",
+    TitleStarted: "Har påbörjats",
+    TitleStartedFixing: "Har börjat fixa",
+    TitleUnsolved: "Detta är ett olöst problem",
+    TitleIdea: "Detta är en ide",
+    TitlePlanningFix: "Vi planerar att fixa detta",
+    TitlePlanningDo: "Vi planerar att göraa detta",
+    TitleChat: "Detta är en chatt",
+    TitlePrivateChat: "Detta är en privat chatt",
+    TitlePrivateMessage: "Detta är ett privat meddelande",
+    TitleInfoPage: "Detta är en informationssida",
+    TitleDiscussion: "Ett samtal",
+    IsPinnedGlobally: "\nFastnålat, så visas först.",
+    IsPinnedInCat: "\nFastnålat i sin kategori, så visas först, där.",
   },
 
 
   // Forum categories list
 
   fc: {
-    RecentTopicsWaiting: "Recent topics (those waiting)",
-    RecentTopicsInclDel: "Recent topics (including deleted)",
-    RecentTopics: "Recent topics",
-    _replies: " replies",
-    _deleted: " (deleted)",
-    _defCat: " (default category)",
+    RecentTopicsWaiting: "Senaste ämnena (som väntar på svar)",
+    RecentTopicsInclDel: "Senaste ämnena (inkl. borttagna)",
+    RecentTopics: "Senaste ämnena",
+    _replies: " svar",
+    _deleted: " (borttaget)",
+    _defCat: " (default kategori)",
   },
 
 
@@ -370,105 +370,105 @@ var t_sv_SE: TalkyardTranslations = t = {
   tb: {
 
     // Opens the right hand sidebar and litst the most recent posts in the current topic.
-    RecentPosts: "Recent posts",
+    RecentPosts: "Senaste replikerna",
 
     // Open right-hand-sidebar button tooltip, if mouse-hovering online-user-count.
-    NumOnlChat: " online in this chat",    // example: "5 online in this chat"
-    NumOnlForum: " online in this forum",
+    NumOnlChat: " online i denna chatt",    // example: "5 online in this chat"
+    NumOnlForum: " online i detta forum",
 
     // Open left-sidebar button title.
-    WatchbBtn: "Your topics",
+    WatchbBtn: "Dina ämnen",
 
     // Tooltip, shown if mouse-hovering the open-left-sidebar button.
-    WatchbToolt: "Your recent topics, joined chats, direct messages",
+    WatchbToolt: "Dina ämnen, chattar, direkta meddelanden",
 
     // Title shown on user profile pages.
-    AbtUsr: "About User",
+    AbtUsr: "Om hen",
 
     // Shortcuts to leave the user profile page, or staff area, and go back to the discussion topics.
-    BackFromUsr: "Back from user profile",
-    BackFromAdm: "Back from admin area",
+    BackFromUsr: "Tillbaks från hens profil",
+    BackFromAdm: "Tillbaks från Admin Area",
 
     // Title shown on full text search page.
-    SearchPg: "Search Page",
+    SearchPg: "Söksida",
   },
 
 
   // Watchbar (the sidebar to the left)
 
   wb: {
-    AddCommunity: "Add ...",
-    RecentlyViewed: "Recently viewed",
-    JoinedChats: "Joined Chats",
-    ChatChannels: "Chat Channels",
-    CreateChat: "Create chat channel",
-    DirectMsgs: "Direct Messages",
-    NoChats: "None",    // meaning: "No chat messages"
-    NoDirMsgs: "None",  // meaning: "No direct messages"
+    AddCommunity: "Lägg till ...",
+    RecentlyViewed: "Nyss besökt",
+    JoinedChats: "Dina chattar",
+    ChatChannels: "Chattkanaler",
+    CreateChat: "Skapa chat",
+    DirectMsgs: "Direkta meddelanden",
+    NoChats: "Inget",    // meaning: "No chat messages"
+    NoDirMsgs: "Inget",  // meaning: "No direct messages"
 
     // The click-topic dropdown menu:
     TopicActions: "Topic actions",
-    ViewPeopleHere: "View people here",
-    ViewAddRemoveMembers: "View / add / remove members",
-    ViewChatMembers: "View chat members",
-    EditChat: "Edit chat title and purpose",
-    LeaveThisChat: "Leave this chat",
-    LeaveThisCommunity: "Leave this community",
-    JoinThisCommunity: "Join this community",
+    ViewPeopleHere: "Se vilka som är här",
+    ViewAddRemoveMembers: "Visa / lägg till / ta bort medlemmar",
+    ViewChatMembers: "Visa chattmedlemmar",
+    EditChat: "Ändra chattens title och syfte",
+    LeaveThisChat: "Lämna chatten",
+    LeaveThisCommunity: "Lämna denna community",
+    JoinThisCommunity: "Gå med i denna community",
   },
 
 
   // Contextbar (the sidebar to the right)
 
   cb: {
-    RecentComments: "Recent comments in this topic:",
-    NoComments: "No comments.",
+    RecentComments: "Senaste inläggen i detta ämnet:",
+    NoComments: "Inget.",
 
-    YourBookmarks: "Your bookmarks:",
+    YourBookmarks: "Dina bokmärken:",
 
-    UsersOnline: "Users online:",
-    UsersOnlineForum: "Users online in this forum:",
-    UsersInThisChat: "Users in this chat:",
-    UsersInThisTopic: "Users in this topic:",
+    UsersOnline: "Folk online:",
+    UsersOnlineForum: "Folk online i detta forum:",
+    UsersInThisChat: "Folk i chatten:",
+    UsersInThisTopic: "Folk i detta samtal:",
 
     GettingStartedGuide: "Admin Guide",
     AdminGuide: "Admin Guide",
     Guide: "Guide",
 
     // How to hide the sidebar.
-    CloseShortcutS: "Close (keyboard shortcut: S)",
+    CloseShortcutS: "Stäng (genäg: 'S')",
 
     // ----- Online users list / Users in current topic
 
-    AddPeople: "Add more people",
+    AddPeople: "Lägg till fler",
 
     // Shown next to one's own username, in a list of users.
-    thatsYou: "that's you",
+    thatsYou: "det är du",
 
     // Info about which people are online.
     // Example, in English: "Online users: You, and 5 people who have not logged in"
-    OnlyYou: "Only you, it seems",
-    YouAnd: "You, and ",
+    OnlyYou: "Bara du, tycks det",
+    YouAnd: "Du, och ",
     NumStrangers: (numStrangers: number) => {
-      const people = numStrangers === 1 ? " person" : " people";
-      const have = numStrangers === 1 ? "has" : "have";
-      return numStrangers + people + " who " + have + " not logged in";
+      const people = numStrangers === 1 ? "en annan" : `${numStrangers} andra`;
+      return people + " som inte har loggat in";
     },
 
     // ----- Recent comments list
 
     // This explains how the Recent tab in the sidebar works.
 
-    RepliesToTheLeft: "The replies to the left are sorted by ",
-    bestFirst: "best-first.",
-    ButBelow: "But below ",
-    insteadBy: " the same replies are instead sorted by ",
-    newestFirst: "newest-first.",
+    RepliesToTheLeft: "Replikerna till vänster är sorterade ",
+    bestFirst: "bäst-först.",
+    ButBelow: "Men nedan ",
+    insteadBy: " är samma repliker istället sorterade ",
+    newestFirst: "nyast-först.",
 
-    SoIfLeave: "So if you leave, and come back here later, below you'll find ",
-    allNewReplies: "all new replies.",
-    Click: "Click",
-    aReplyToReadIt: " a reply below to read it — because only an excerpt is shown, below.",
+    SoIfLeave: "Så om du är borta en stund, och kommer tillbaks, så hittar du ",
+    allNewReplies: "alla nya repliker, nedanför.",
+    Click: "Clicka",
+    aReplyToReadIt: " på en replik nedan, för att se hela — " +
+        "ty nedan visas endast utdrag.",
   },
 
 
@@ -485,12 +485,12 @@ var t_sv_SE: TalkyardTranslations = t = {
 
   // Page doing status, PageDoingStatus
   pds: {
-    aQuestion: "a question",
-    hasAccptAns: "has an accepted answer",
-    aProblem: "a problem",
-    planToFix: "plan to fix",
-    anIdea: "an idea",
-    planToDo: "plan to do",
+    aQuestion: "en fråga",
+    hasAccptAns: "har en lösning",
+    aProblem: "ett problem",
+    planToFix: "planerar fixa",
+    anIdea: "en idé",
+    planToDo: "planerar göra",
   },
 
 
@@ -549,8 +549,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     TooltipPinnedGlob: "\nPinned globally.",
     TooltipPinnedCat: "\nPinned in this category.",
 
-    SolvedClickView_1: "Solved in post #",
-    SolvedClickView_2: ", click to view",
+    SolvedClickView_1: "Löst i post #",
+    SolvedClickView_2: ", clicka för att se",
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Show more replies",
@@ -566,26 +566,26 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     _and: " and",
 
-    repliesTo: "replies to",  // MISSING
-    InReplyTo: "In reply to",
-    YourReplyTo: "Your reply to ",  // MISSING
-    YourChatMsg: "Your chat message: ",   // MISSING
-    YourDraft: "Your draft",    // MISSING
-    YourEdits: "Your edits: ",   // MISSING
+    repliesTo: "svarar till",
+    InReplyTo: "Svar till",
+    YourReplyTo: "Ditt svar till ",
+    YourChatMsg: "Ditt meddelande: ",
+    YourDraft: "Ditt utkast",
+    YourEdits: "Dina ändringar: ",
     YourProgrNoteC: "Your progress note:",  // MISSING
     aProgrNote: "a progress note: ",  // MISSING
 
-    ReplyingToC: "Replying to:",    // MISSING
-    ScrollToPrevw_1: "Scroll to ",  // MISSING
-    ScrollToPrevw_2: "preview",     // MISSING
+    ReplyingToC: "Svarar till:",
+    ScrollToPrevw_1: "Skrolla to ",
+    ScrollToPrevw_2: "förhandsgranska",
 
-    UnfinEdits: "Unfinished edits",  // MISSING
-    ResumeEdting: "Resume editing",  // MISSING
-    DelDraft: "Delete draft",   // MISSING
+    UnfinEdits: "Påbörjade ändringar",
+    ResumeEdting: "Fortsätt skriva",
+    DelDraft: "Radera utkast",
 
-    ClickViewEdits: "Click to view old edits",
+    ClickViewEdits: "Clicka för att se gamla ändringar",
 
-    By: "By ", // ... someones name
+    By: "Av ", // ... someones name
 
     // Discussion ...
     aboutThisIdea: "about how and if to do this idea",
@@ -609,7 +609,7 @@ var t_sv_SE: TalkyardTranslations = t = {
     // If is a direct message topic, members listed below this text.
     Msg: "Message",
 
-    SmrzRepls: "Summarize Replies",
+    SmrzRepls: "Sammanfatta Diskussion",
 
     // Don't bother about being correct with "1 reply", "2,3,4 replies".
     // Just write "replies" always instead? (also if only one)
@@ -636,24 +636,24 @@ var t_sv_SE: TalkyardTranslations = t = {
     ClickUnaccept: "Click to un-accept this answer",
     PostAccepted: "This post has been accepted as the answer",
 
-    NumLikes: (num: number) => num === 1 ? "1 Like" : num + " Likes",
-    NumDisagree: (num: number) => num + " Disagree",
-    NumBury: (num: number) => num === 1 ? "1 Bury" : num + " Burys",
-    NumUnwanted: (num: number) => num === 1 ? "1 Unwanted" : num + " Unwanteds",
+    NumLikes: (num: number) => num + " Gillar",
+    NumDisagree: (num: number) => num + " Håller ej med",
+    NumBury: (num: number) => num + " Flytta nedåt",
+    NumUnwanted: (num: number) => num + " Oönskad",
 
-    MoreVotes: "More votes...",
-    LikeThis: "Like this",
+    MoreVotes: "Fler röster...",
+    LikeThis: "Gilla",
     LinkToPost: "Link to this post",
-    Report: "Report",
-    ReportThisPost: "Report this post",
+    Report: "Anmäl",
+    ReportThisPost: "Anmäl detta",
     Admin: "Admin",
     DiscIx: "Andra diskussioner",
 
-    Disagree: "Disagree",
+    Disagree: "Håller ej med",
     DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
-    Bury: "Bury",
+    Bury: "Flyta ner",
     BuryExpl: "Click to sort other posts before this post. Only the forum staff can see your vote.",
-    Unwanted: "Unwanted",
+    Unwanted: "Oönskad",
     UnwantedExpl: "If you do not want this post on this website. This would reduce the trust I have " +
             "in the post author. Only the forum staff can see your vote.",
 
@@ -679,14 +679,14 @@ var t_sv_SE: TalkyardTranslations = t = {
     About_1: "This is the ",
     About_2: " chat channel, created by ",
     ScrollUpViewComments: "Scroll up to view older comments",
-    Purpose: "Purpose:",
-    edit: "edit",
-    'delete': "delete",
-    MessageDeleted: "(Message deleted)",
-    JoinThisChat: "Join this chat",
-    PostMessage: "Post message",
-    AdvancedEditor: "Advanced editor",
-    TypeHere: "Type here. You can use Markdown and HTML.",
+    Purpose: "Syfte:",
+    edit: "editera",
+    'delete': "ta bort",
+    MessageDeleted: "(Meddelande borttaget)",
+    JoinThisChat: "Gå med i denna chatt",
+    PostMessage: "Skicka meddelande",
+    AdvancedEditor: "Avancerad editor",
+    TypeHere: "Skriv här. Du kan använda Markdown och HTML.",
   },
 
 
@@ -1147,80 +1147,80 @@ var t_sv_SE: TalkyardTranslations = t = {
     exQuoted: "quoted text",
     ExHeading: "Heading",
 
-    TitlePlaceholder: "Type a title — what is this about, in one brief sentence?",
+    TitlePlaceholder: "Skriv en titel — vad handlar detta om, i en kort mening?",
 
-    EditPost_1: "Edit ",
+    EditPost_1: "Editera ",
     EditPost_2: "post ",
 
-    TypeChatMsg: "Type a chat message:",
-    YourMsg: "Your message:",
-    CreateTopic: "Create new topic",
+    TypeChatMsg: "Skriv ett chattmeddelande:",
+    YourMsg: "Ditt meddelande:",
+    CreateTopic: "Skapa nytt ämne",
     CreateCustomHtml: "Create a custom HTML page (add your own <h1> title)",
     CreateInfoPage: "Create an info page",
     CreateCode: "Create a source code page",
-    AskQuestion: "Ask a question",
-    ReportProblem: "Report a problem",
-    SuggestIdea: "Suggest an idea",
+    AskQuestion: "Fråga något",
+    ReportProblem: "Rapportera problem",
+    SuggestIdea: "Föreslå en idé",
     NewChat: "New chat channel title and purpose",
     NewPrivChat: "New private chat title and purpose",
     AppendComment: "Append a comment at the bottom of the page:",
 
-    ReplyTo: "Reply to ",
-    ReplyTo_theOrigPost: "the Original Post",
-    ReplyTo_post: "post ",
-    AddCommentC: "Add a comment:",   // MISSING
+    ReplyTo: "Svara till ",
+    ReplyTo_theOrigPost: "första inlägget",
+    ReplyTo_post: "replik ",
+    AddCommentC: "Skriv en kommentar:",
 
     PleaseSelectPosts: "Please select one or more posts to reply to.",
 
-    Save: "Save",
-    edits: "edits",
+    Save: "Spara",
+    edits: "ändringar",
 
-    PostReply: "Post reply",
+    PostReply: "Posta svar",
 
-    Post: "Post",
-    comment: "comment",
-    question: "question",
+    Post: "Posta",
+    comment: "kommentar",
+    question: "fråga",
 
-    PostMessage: "Post message",
-    SimpleEditor: "Simple editor",
+    PostMessage: "Skicka meddelande",
+    SimpleEditor: "Enkel editor",
 
-    Send: "Send",
-    message: "message",
+    Send: "Skicka",
+    message: "meddelande",
 
-    Create: "Create",
-    page: "page",
-    chat: "chat",
-    idea: "idea",
-    topic: "topic",
+    Create: "Skapa",
+    page: "sida",
+    chat: "chatt",
+    idea: "idé",
+    topic: "ämne",
 
-    Submit: "Submit",
+    Submit: "Posta",
     problem: "problem",
 
-    ViewOldEdits: "View old edits",
+    ViewOldEdits: "Se gamla editeringar",
 
-    UploadBtnTooltip: "Upload a file or image",
-    BoldBtnTooltip: "Make text bold",
-    EmBtnTooltip: "Emphasize",
-    QuoteBtnTooltip: "Quote",
-    PreBtnTooltip: "Preformatted text",
-    HeadingBtnTooltip: "Heading",
+    UploadBtnTooltip: "Ladda upp bild eller fil",
+    BoldBtnTooltip: "Fettext",
+    EmBtnTooltip: "Kursivt",
+    QuoteBtnTooltip: "Citat",
+    PreBtnTooltip: "Monospace",
+    HeadingBtnTooltip: "Rubrik",
 
-    TypeHerePlaceholder: "Type here. You can use Markdown and HTML. Drag and drop to paste images.",
+    TypeHerePlaceholder: "Skriv här. Du kan anända Markdown och HTML, och dra-och-släppa bilder.",
 
-    Maximize: "Maximize",
-    ToNormal: "Back to normal",
-    TileHorizontally: "Tile horizontally",
+    Maximize: "Maximera",
+    ToNormal: "Tillbaks till vanligt",
+    TileHorizontally: "Dela vågrätt",
 
-    PreviewC: "Preview:",
-    TitleExcl: " (title excluded)",
-    ShowEditorAgain: "Show editor again",
-    Minimize: "Minimize",
+    PreviewC: "Förhandsgranska:",
+    TitleExcl: '', // " (titel visas ej)",
+    ShowEditorAgain: "Visa editor istället",
+    Minimize: "Minimera",
 
     IPhoneKbdSpace_1: "(This gray space is reserved",
     IPhoneKbdSpace_2: "for the iPhone keyboard.)",
 
-    PreviewInfo: "Here you can preview how your post will look.",
-    CannotType: "You cannot type here.",
+    PreviewInfo: "Här kan du förhandsgranska din text.",
+    CannotType: "Du kan inte skriva här.",
 
     LoadingDraftDots: "Loading any draft...",
     DraftUnchanged: "Unchanged.",
@@ -1237,7 +1237,7 @@ var t_sv_SE: TalkyardTranslations = t = {
   // Select category dropdown
 
   scd: {
-    SelCat: "Select category",
+    SelCat: "Välj kategori",
   },
 
   // Page type dropdown

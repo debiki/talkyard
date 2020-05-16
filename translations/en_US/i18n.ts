@@ -322,7 +322,7 @@ var t_en_US: TalkyardTranslations = t = {
     CatHasBeenDeleted: "This category has been deleted",
 
     TopicsActiveFirst: "Topics, recently active first",
-    TopicsNewestFirst: "Topics, newest first",
+    TopicsNewestFirst: "Topics, new first",
 
     CreatedOn: "Created on ",
     LastReplyOn: "\nLast reply on ",
