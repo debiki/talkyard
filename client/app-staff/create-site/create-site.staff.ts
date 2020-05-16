@@ -53,6 +53,7 @@ const CreateSomethingComponent = createReactClass({
     // This was needed in the past. Can be simplified now, maybe this whole class can be elliminated.
     return (
       Route({ path: '*', render: (props) => {
+        // [React_Router_v51] skip render(), use hooks and useParams instead.
         return CreateWebsiteComponent({ ...props });
       }}));
   }

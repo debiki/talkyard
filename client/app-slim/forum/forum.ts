@@ -254,6 +254,7 @@ export const ForumComponent = createReactClass(<any> {
         RedirToNoSlash({ path: rootSlash + RoutePathNew + '/' }),
         RedirToNoSlash({ path: rootSlash + RoutePathTop + '/' }),
         RedirToNoSlash({ path: rootSlash + RoutePathCategories + '/' }),
+        // [React_Router_v51] skip render(), use hooks and useParams instead.
         Route({ path: rootSlash + RoutePathCategories, exact: true, strict: true, render: (props) => {
           const propsWithRouterStuff = { ...childProps, ...props, isCategoriesRoute: true };
           return r.div({},

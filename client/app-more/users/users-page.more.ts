@@ -222,6 +222,7 @@ const UserPageComponent = createReactClass(<any> {
     const u = (user.isGroup ? GroupsRoot : UsersRoot) + ':usernameOrId/';
 
     const childRoutes = Switch({},
+      // [React_Router_v51] skip render(), use hooks and useParams instead.
       Route({ path: u + 'activity', exact: true, render: ({ match }) => {
         const hash = this.props.location.hash;
         return Redirect({ to: pathToUser + '/activity/posts' + hash });

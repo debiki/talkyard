@@ -56,6 +56,7 @@ export function RedirPath(props: RedirPathProps) {
   const path = props.path;
   const exact = props.exact;
   const strict = props.strict;
+  // [React_Router_v51] skip render(), use hooks and useParams instead.
   return Route({ path, exact, strict, render: (routeProps) => {
     const newPathname = _.isFunction(props.to) ? props.to(routeProps.match.params) : props.to;
     // @ifdef DEBUG

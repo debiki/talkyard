@@ -118,7 +118,7 @@ const ApiSecretItem = createComponent({
     const secret: ApiSecret = this.props.apiSecret;
     // Don't show secrets that still works, unless one clicks Show — so less risk that they get exposed.
     const secretKeyOrShowButton = secret.isDeleted
-        ? r.span({}, secret.secretKey)
+        ? r.s({}, secret.secretKey)
         : Button({ onClick: () => this.showSecret(secret), className: 'e_ShowSecrB' },
             "Show");
 

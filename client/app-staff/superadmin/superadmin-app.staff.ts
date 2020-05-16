@@ -58,6 +58,7 @@ const AdminAppComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     return (
       r.div({ className: 'container esSA' },
+        // [React_Router_v51] skip render(), use hooks and useParams instead.
         Route({ path: SuperAdminRoot, render: () => DashboardPanel({ store }) })));
   }
 });

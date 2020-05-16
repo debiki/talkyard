@@ -50,6 +50,8 @@ export const UsersActivity = createFactory<any, any>({
       // meaning, the Summary is visible just above.
       // And having it here, means there'll be fewer 1st level navs, which is
       // good in Talkyard's case, since Ty has an "extra" 1st level tab: "Drafts etc".
+      //
+      // [React_Router_v51] skip render(), use hooks and useParams instead.
       Route({ path: '(.*)/summary', exact: true, render: () => UserSummary(childProps) }),
       Route({ path: '(.*)/posts', exact: true, render: () => UsersPosts(childProps) }),
       Route({ path: '(.*)/topics', exact: true, render: () => UsersTopics(childProps) }));

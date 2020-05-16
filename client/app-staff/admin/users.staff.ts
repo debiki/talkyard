@@ -59,6 +59,8 @@ export const UsersTab = createFactory<any>({
                 r.span({ className: 'icon-link-ext' })))),
         r.div({ className: 's_A_Us' },
           Switch({},
+            // [React_Router_v51] skip render(), use hooks and useParams instead.
+            //
             Route({ path: bp + 'enabled', render: () => EnabledUsersPanel(childProps) }),
             showWaiting ? Route({ path: bp + 'waiting', render: () => WaitingUsersPanel(childProps) }) : null,
             Route({ path: bp + 'new', render: () => NewUsersPanel(childProps) }),

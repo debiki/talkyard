@@ -317,6 +317,7 @@ const AdminAppComponent = createReactClass(<any> {
     // if the site is for blog comments.
     const defaultSettingsPath = isBlogCommentsSite() ? '/embedded-comments' : '/legal';
 
+    // [React_Router_v51] skip render(), use hooks and useParams instead.
     const childRoutes = Switch({},
         RedirAppend({ path: ar + 'users', append: '/enabled' }),
         RedirAppend({ path: ar + 'review', append: '/all' }),
@@ -463,6 +464,7 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'site', id: 'e2eAA_Ss_AdvancedL' }, "Site")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
+            // [React_Router_v51] skip render(), use hooks and useParams instead.
             Route({ path: sr + 'legal', render: () => LegalSettings(ps) }),
             Route({ path: sr + 'login', render: () => LoginAndSignupSettings(ps) }),
             Route({ path: sr + 'moderation', render: () => ModerationSettings(ps) }),
@@ -2228,6 +2230,7 @@ const CustomizePanel = createFactory({
           LiNavLink({ to: bp + 'css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
+            // [React_Router_v51] skip render(), use hooks and useParams instead.
             Route({ path: bp + 'basic', render: () => CustomizeBasicPanel(childProps) }),
             Route({ path: bp + 'html', render: () => CustomizeHtmlPanel(childProps) }),
             Route({ path: bp + 'css-js', render: () => CustomizeCssJsPanel(childProps) })),

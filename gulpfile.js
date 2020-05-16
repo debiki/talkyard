@@ -241,6 +241,7 @@ var slimJsFiles = [
       'node_modules/react-dom/umd/react-dom.development.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
+      'node_modules/react-router-dom/umd/react-router-dom.js',
       'node_modules/react-dom-factories/index.js',
       'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
@@ -252,7 +253,6 @@ var slimJsFiles = [
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
       'node_modules/eventemitter3/umd/eventemitter3.min.js',
-      'node_modules/react-router-dom/umd/react-router-dom.js',
       'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
@@ -405,7 +405,7 @@ var serverJavascriptSrc = [
     'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',
     'node_modules/react-dom-factories/index.js',
     'node_modules/create-react-class/create-react-class.min.js',
-    'node_modules/react-router-dom/umd/react-router-dom.js',
+    'node_modules/react-router-dom/umd/react-router-dom.min.js',
     'client/third-party/tiny-querystring.umd.js',
     'node_modules/markdown-it/dist/markdown-it.min.js',
     'client/third-party/lodash-custom.js',
@@ -589,6 +589,7 @@ gulp.task('enable-prod-stuff', (done) => {
   slimJsFiles[1] = 'node_modules/react-dom/umd/react-dom.production.min.js';
   slimJsFiles[2] = 'node_modules/prop-types/prop-types.min.js';
   slimJsFiles[3] = 'node_modules/create-react-class/create-react-class.min.js';
+  slimJsFiles[4] = 'node_modules/react-router-dom/umd/react-router-dom.min.js';
   done();
 });
 
