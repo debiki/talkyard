@@ -387,7 +387,7 @@ function connectWebSocket(browserUserId: UserId, xsrfToken: string) {
 
 
 
-function tryReonnectWebSocket() {
+function tryReonnectWebSocket() {  // [WSRECONN]
   // See (OLDRECON) below.
   console.debug(`SW: Should reconnect WebSocekt, but not impl. [TyMSWNORECON]`);
   // Use lastWsUserId ?
