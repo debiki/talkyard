@@ -18,6 +18,10 @@
 // There's probably some cruft here that can be removed. Previously, the sidebar
 // was *a lot* more complicated and I might not have cleaned up all old styles.
 
+
+// RENAME 'sidebar' to 'contextbar'.
+
+
 #dw-any-sidebar
   z-index: 1010;
   position: relative;
@@ -215,27 +219,33 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       padding: 2px 1px 3px 3px;
 
 
-    .comment-enter,
-    .comment-leave
+    // Fading in a post in the contextbar (right sidebar):
+    // Usually not so interesting. Maybe not worth the CPU? Maybe can add
+    // back later (right now FadeGrowIn shows things instantly). [REACTANIMS]
+    // DO_AFTER 2021-01-01  delete and reimplement w CSS anims.
+    /*
+    .s_FadeGrowIn-enter,
+    .s_FadeGrowIn-exit
       transition-duration: .7s;
       transition-timing-function: ease;
       transition-property: opacity, max-height;
 
-    .comment-enter
+    .s_FadeGrowIn-enter
       opacity: 0;
       max-height: 0px;
 
-    .comment-enter.comment-enter-active
+    .s_FadeGrowIn-enter.s_FadeGrowIn-enter-active
       opacity: 1;
       max-height: 100px;
 
-    .comment-leave
+    .s_FadeGrowIn-exit
       opacity: 1;
       max-height: 100px;
 
-    .comment-leave.comment-leave-active
+    .s_FadeGrowIn-exit.s_FadeGrowIn-exit-active
       opacity: 0.1;
-      max-height: 0;
+      max-height: 0;  */
+
 
 .esCtxbar_onlineCol
   float: right;

@@ -1,22 +1,22 @@
 
+// DO_AFTER 2021-01-01  delete all this anim stuff. Use CSS anims instead. [REACTANIMS]
+
 // COULD rename these classes to... "fade-in--..."?
 
-.compl-stuff-enter,   // old React version?
-.compl-stuff-appear   // new React version?
+.s_FadeGrowIn-enter
   opacity: 0.01;
   height: 1px;
   transition: opacity .6s ease-in;
 
-.compl-stuff-enter.compl-stuff-enter-active,
-.compl-stuff-appear.compl-stuff-appear-active
+.s_FadeGrowIn-enter.s_FadeGrowIn-enter-active
   opacity: 1;
   height: auto;
 
-.compl-stuff-leave
+.s_FadeGrowIn-exit
   opacity: 1;
   transition: opacity .5s ease-in;
 
-.compl-stuff-leave-active
+.s_FadeGrowIn-exit.s_FadeGrowIn-exit-active
   opacity: 0.01;
 
 

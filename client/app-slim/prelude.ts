@@ -29,9 +29,6 @@ declare const createReactClass: any;
 declare const parseQueryString: (s: string) => any;
 declare const stringifyQueryString: (s: any) => string;
 
-// node_modules/@types/react-addons-css-transition-group doesn't work, so use ':any' instead.
-var ReactCSSTransitionGroup: any = isServerSide() ? null :
-    reactCreateFactory(window['ReactTransitionGroup'].CSSTransitionGroup);
 
 const rFragment = reactCreateFactory(React.Fragment);
 

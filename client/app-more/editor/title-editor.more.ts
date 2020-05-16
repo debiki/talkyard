@@ -256,6 +256,7 @@ export const TitleEditor = createComponent({
 
     const selectCategoryInput =
         !page_canChangeCategory(page) || !settings_showCategories(settings, me) ? null :
+      // UX BUG  col-xs-2 beomes needlessly small, when screen narrow.
       Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
           SelectCategoryDropdown({ store: this.props.store, pullLeft: true,
@@ -300,11 +301,9 @@ export const TitleEditor = createComponent({
         // Only allow opening one of layout-and-settings and advanced-stuff at once.
         complicatedStuff ? null : layoutAndSettingsButton,
         layoutAndSettings ? null : advancedStuffButton,
-        ReactCSSTransitionGroup({ transitionName: 'compl-stuff',
-            transitionAppear: true, transitionAppearTimeout: 600,
-            transitionEnterTimeout: 600, transitionLeaveTimeout: 500 },
-          layoutAndSettings,
-          complicatedStuff),
+          utils.FadeGrowIn({},
+            layoutAndSettings,
+            complicatedStuff),
         saveCancel));
   }
 });

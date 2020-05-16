@@ -24,11 +24,25 @@
 const r = ReactDOMFactories;
 
 
+export function FadeGrowIn(props: {}, content, c2?, c3?) {
+  return rFragment({}, content, c2 || null, c3 || null);
+  // Doesn't work, results in:
+  //  """Element type is invalid: expected a string (for built-in components)
+  //   or a class/function (for composite components) but got: undefined."""
+  /*
+  return r_CssTransition({   [REACTANIMS]  — no, instead use pure CSS animations. Faster,
+          key: 1,                             simpler, less code. (Just *skip* fade-out anims.)
+          className: 's_FadeGrowIn',
+          timeout: { enter: 600, exit: 500 }},
+      content); //, c2 || null, c3 || null);   */
+}
+
+
 /**
  * Use e.g. in a dialog to hide complicated settings, and have them fade in
  * if the user clicks "Show advanced stuff".
  */
-export var FadeInOnClick = createClassAndFactory({
+export const FadeInOnClick = createClassAndFactory({
   getInitialState: function() {
     return { show: false };
   },
@@ -38,18 +52,14 @@ export var FadeInOnClick = createClassAndFactory({
   },
 
   render: function() {
-    var contents = this.state.show ? this.props.children : null;
-    var clickToShowButton = this.state.show ? null :
+    const contents = this.state.show ? this.props.children : null;
+    const clickToShowButton = this.state.show ? null :
         r.a({ className: 'dw-click-to-show', onClick: this.show, id: this.props.clickToShowId },
           this.props.clickToShowText);
 
     return (
       r.div({ id: this.props.id, className: this.props.className },
-        ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true,
-            // Is 600 correct? Haven't checked, could do later
-            transitionAppearTimeout: 600, transitionEnterTimeout: 600,
-            transitionLeaveTimeout: 500 },
-          contents),
+        FadeGrowIn({}, contents),
         clickToShowButton));
   }
 });

@@ -241,8 +241,6 @@ var slimJsFiles = [
       'node_modules/react-dom/umd/react-dom.development.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
-      // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
-      'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
       'node_modules/react-dom-factories/index.js',
       'client/app-slim/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
@@ -407,7 +405,6 @@ var serverJavascriptSrc = [
     'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',
     'node_modules/react-dom-factories/index.js',
     'node_modules/create-react-class/create-react-class.min.js',
-    // Don't need React CSS transitions server side.
     'node_modules/react-router-dom/umd/react-router-dom.js',
     'client/third-party/tiny-querystring.umd.js',
     'node_modules/markdown-it/dist/markdown-it.min.js',
@@ -592,7 +589,6 @@ gulp.task('enable-prod-stuff', (done) => {
   slimJsFiles[1] = 'node_modules/react-dom/umd/react-dom.production.min.js';
   slimJsFiles[2] = 'node_modules/prop-types/prop-types.min.js';
   slimJsFiles[3] = 'node_modules/create-react-class/create-react-class.min.js';
-  slimJsFiles[4] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';
   done();
 });
 

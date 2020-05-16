@@ -8,7 +8,6 @@ declare const t: TalkyardTranslations;
 
 // In constants.ts:
 
-declare const ReactCSSTransitionGroup: any;
 declare const ReactDOMFactories: any;
 
 declare function createReactClass<P, S = {}>(spec: React.ComponentSpec<P, S>):
@@ -170,6 +169,7 @@ declare namespace debiki2 {
     var DropdownModal;
     var ModalDropdownButton;
     var FadeInOnClick;
+    function FadeGrowIn(props: {}, content, c2?, c3?): any;
 
     function maybeRunTour(tour: TalkyardTour);
   }

@@ -581,15 +581,12 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           helpMessageBoxTwo,
           helpMessageBoxTree,
           helpMessageBoxFour,
-          (<any> r.div)({ style: dimCommentsStyle },  // [TYPEERROR] weird, no style:  in React 15.6?
+          r.div({ style: dimCommentsStyle },
             r.div({ ref: 'commentsScrollable' },
               r.h3({ className: 'esCtxbar_list_title' }, title),
               tipsGuideOrExtraConfig,
               r.div({},
-                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType,
-                    // Is 600 correct? Haven't checked, could do later
-                    transitionAppearTimeout: 600, transitionEnterTimeout: 600,
-                    transitionLeaveTimeout: 600 },
+                utils.FadeGrowIn({},
                   listItems)),
               addMorePeopleButton)))),
       util.FadingBackdrop({ ref: 'fadingBackdrop' })));  // [6KEP0W2]
