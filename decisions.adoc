@@ -1,0 +1,83 @@
+= Talkyard Decisions
+
+In this file: Decisions made when building Talkyard,
+about how to do things, and how _Not_ do things.
+
+Usage:
+
+1) Before adding any 3rd party lib, e.g. `react-transition-group`, search this file
+for the name of that lib, and related words, e.g. "animations".
+Because maybe a decision was made to _Not_ use that lib
+and do things in _other_ ways instead.
+And it'd be annoying if these decisions got forgotten so that years later,
+things got done in the bad ways.
+
+2) Before making any non-trivial decision, search this file for related words,
+and see if there're related thoughts and previous decisions here, already.
+
+
+
+== Year 2020
+
+
+=== Use Asciidoc for documentation
+
+2020-05-16: Use Asciidoc for docs, not Markdown or CommonMark.
+
+Why? See e.g.: https://news.ycombinator.com/item?id=18848278:
+_"I've entirely replaced markdown and been using asciidoctor
+for both documentation and general writing.
+Asciidoctor is far superior to Markdown [ ...]"_.
+You can also websearch: "site:news.ycombinator.com markdown vs asciidoc".
+
+As of 2020-05 most Ty docs are in Markdown. But don't add any more Markdown docs.
+And some day, can run sth like:
+`find . -type f -name '*.md' -exec pandoc -f markdown -t asciidoc {} \;`
+to convert from .md to .adoc. https://news.ycombinator.com/item?id=22875242
+
+
+=== Use CSS animations
+
+2020-05-16: Don't add `react-transition-group` or any other animations lib. `[REACTANIMS]`
+Only use CSS anims in Ty for now.
+
+CSS animations are simple and fast and keep the bundles small.
+Others agree:
+_"use it instead of importing javascript libraries, your bundle remains small.
+And browser spends fewer resources"_
+https://medium.com/@dmitrynozhenko/5-ways-to-animate-a-reactjs-app-in-2019-56eb9af6e3bf
+
+_"ReactTransitionGroup has small size"_ they write, but:
+`react-transition-group.min.js`  is 5,6K  min.js.gz (v4.4.1, May 2020)
+— that's _too much_ for Talkyard! (at least for now, for slim-bundle).
+
+
+
+=== Don't use Nodejs server side
+
+Don't use Express (expressjs.com) or sth like that.
+Hard to reason about security, e.g.: https://hackerone.com/reports/712065,
+who could have guessed:
+
+----
+const _ = require('lodash');
+.zipObjectDeep(['proto_.z'],[123])
+_.zipObjectDeep(['a.b.__proto__.c'],[456])
+console.log(z) // 123
+console.log(c) // 456
+----
+
+Plus other vulns all the time in js libs it seems to me.
+And 9999 microdependencies —> supply chain attacks made simple.
+_"npm has more than 1.2M of public packages [...] perfect target for cybercriminals"_
+writes https://snyk.io/blog/what-is-a-backdoor.
+Look: is-odd and is-even: https://news.ycombinator.com/item?id=16901188.
+
+Using Javascript in the browser, though, is different —
+as long as the browser talks only with the Ty server.
+
+Also better not use Python or Ruby for server code.
+
+SECURITY [to_ty_risky] to-talkyard is a bit risky: nodejs code that parses user defined data.
+Use a different lang? Run in sandbox?
+
