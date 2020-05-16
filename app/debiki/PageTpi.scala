@@ -229,7 +229,7 @@ class SiteTpi protected (
         // E.g. search engines should work fine although the bundle is broken.
         // Instead, indicate to designers/developers that it's broken, via
         // a Javascript console log message.
-        val messEscaped = ex.getMessage.replaceAllLiterally("'", """\'""")
+        val messEscaped = org.owasp.encoder.Encode.forJavaScript(ex.getMessage)
         <script>{o"""throw new Error(
           'Asset-bundle \'$bundleName\' is broken and was therefore not included
            on the page. Details: $messEscaped');"""
