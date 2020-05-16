@@ -137,7 +137,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       throwBadRequest("EdE8YUF2", o"""Upload a medium size avatar image please""")
     }
 
-    def throwIfTooLarge(whichFile: String, file: jio.File, maxBytes: Int) {
+    def throwIfTooLarge(whichFile: String, file: jio.File, maxBytes: Int): Unit = {
       val length = file.length
       if (length > maxBytes)
         throwForbidden("DwE7YMF2", s"The $whichFile is too large: $length bytes, max is: $maxBytes")

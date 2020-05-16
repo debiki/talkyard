@@ -142,7 +142,7 @@ case class PagePartsDao(
 
   private var _allPosts: immutable.Seq[Post] = _
 
-  def loadAllPosts() {
+  def loadAllPosts(): Unit = {
     if (_allPosts eq null) {
       _allPosts = transaction.loadPostsOnPage(pageId)
     }

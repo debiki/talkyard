@@ -50,42 +50,42 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   private var userCreatedListeners = List[(Participant => Unit)]()
 
 
-  def onPageCreated(callback: (PagePath => Unit)) {
+  def onPageCreated(callback: (PagePath => Unit)): Unit = {
     pageCreatedListeners ::= callback
   }
 
 
-  def firePageCreated(pagePath: PagePath) {
+  def firePageCreated(pagePath: PagePath): Unit = {
     pageCreatedListeners foreach (_(pagePath))
   }
 
 
-  def onPageSaved(callback: (SitePageId => Unit)) {
+  def onPageSaved(callback: (SitePageId => Unit)): Unit = {
     pageSavedListeners ::= callback
   }
 
 
-  def firePageSaved(sitePageId: SitePageId) {
+  def firePageSaved(sitePageId: SitePageId): Unit = {
     pageSavedListeners foreach (_(sitePageId))
   }
 
 
-  def onPageMoved(callback: (PagePath => Unit)) {
+  def onPageMoved(callback: (PagePath => Unit)): Unit = {
     pageMovedListeners ::= callback
   }
 
 
-  def firePageMoved(newPath: PagePath) {
+  def firePageMoved(newPath: PagePath): Unit = {
     pageMovedListeners foreach (_(newPath))
   }
 
 
-  def onUserCreated(callback: (Participant => Unit)) {
+  def onUserCreated(callback: (Participant => Unit)): Unit = {
     userCreatedListeners ::= callback
   }
 
 
-  def fireUserCreated(user: Participant) {
+  def fireUserCreated(user: Participant): Unit = {
     userCreatedListeners foreach (_(user))
   }
 
@@ -186,7 +186,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   }
 
 
-  def put(key: MemCacheKey, value: DaoMemCacheAnyItem) {
+  def put(key: MemCacheKey, value: DaoMemCacheAnyItem): Unit = {
     cache.put(key.toString, value)
     logger.trace(s"s${key.siteId}: Mem cache: Inserting: ${key.rest} ")
   }
@@ -214,24 +214,24 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   }
 
 
-  def remove(key: MemCacheKey) {
+  def remove(key: MemCacheKey): Unit = {
     logger.trace(s"s${key.siteId}: Mem cache: Removing: ${key.rest}")
     cache.invalidate(key.toString)
   }
 
 
-  def clearAllSites() {
+  def clearAllSites(): Unit = {
     logger.debug("Emptying the whole mem cache.")
     cache.invalidateAll()
   }
 
 
-  def clearThisSite() {
+  def clearThisSite(): Unit = {
     clearSingleSite(siteId)
   }
 
 
-  private def clearSingleSite(siteId: SiteId) {
+  private def clearSingleSite(siteId: SiteId): Unit = {
     logger.debug(s"s$siteId: Emptying mem cache.")
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.

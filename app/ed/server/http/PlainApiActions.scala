@@ -421,7 +421,7 @@ class PlainApiActions(
 
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
-        def goToHomepageOrIfXhrThen(block: => Unit) {
+        def goToHomepageOrIfXhrThen(block: => Unit): Unit = {
           if (isXhr) block
           else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
         }

@@ -40,7 +40,7 @@ object DeadlockDetector extends TyLogging {
   @volatile private var scheduled = false
 
 
-  def ensureStarted() {
+  def ensureStarted(): Unit = {
     if (!scheduled) {
       scheduleDeadlockDetection()
       scheduled = true
@@ -48,14 +48,14 @@ object DeadlockDetector extends TyLogging {
   }
 
 
-  private def scheduleDeadlockDetection() {
+  private def scheduleDeadlockDetection(): Unit = {
     val scheduledExecutor = Executors.newSingleThreadScheduledExecutor()
     scheduledExecutor.scheduleAtFixedRate(new Runnable { def run() = detectAndLogDeadlocks() },
       IntervalSeconds, IntervalSeconds, ju.concurrent.TimeUnit.SECONDS)
   }
 
 
-  private def detectAndLogDeadlocks() {
+  private def detectAndLogDeadlocks(): Unit = {
     val threadIds: Array[Long] = threadMxBean.findDeadlockedThreads()
     if ((threadIds eq null) || threadIds.isEmpty) {
       if (oldDeadlockedThreadIds.nonEmpty) {
@@ -98,13 +98,13 @@ object DeadlockDetector extends TyLogging {
   }
 
 
-  def createDebugTestDeadlock() {
+  def createDebugTestDeadlock(): Unit = {
     val lockOne = new Object
     val lockTwo = new Object
     logger.warn("Intentionally deadlocking two new threads... [DwEDEADLOCKI]")
 
     new Thread(new Runnable() {
-      override def run() {
+      override def run(): Unit = {
         lockOne.synchronized {
           logger.warn("First thread got lock 1")
           Thread.sleep(1000)
@@ -116,12 +116,12 @@ object DeadlockDetector extends TyLogging {
     }).start()
 
     new Thread(new Runnable() {
-      override def run() {
+      override def run(): Unit = {
         // Let's make the stack trace a bit deeper so we'll see how it looks in the logs.
         // Then deadlock.
         makeStackTraceDeeper(7)
       }
-      def makeStackTraceDeeper(depth: Int) {
+      def makeStackTraceDeeper(depth: Int): Unit = {
         if (depth > 0) {
           makeStackTraceDeeper(depth - 1)
         }

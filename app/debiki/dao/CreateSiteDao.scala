@@ -26,15 +26,15 @@ import com.debiki.core._
 object CreateSiteDao {  RENAME // but to what. & move, but to where?
 
 
-  def createSystemUser(tx: SiteTransaction) {
+  def createSystemUser(tx: SiteTransaction): Unit = {
     createSysUserImpl(SystemUserId, fullName = SystemUserFullName, username = SystemUserUsername, tx)
   }
 
-  def createSysbotUser(tx: SiteTransaction) {
+  def createSysbotUser(tx: SiteTransaction): Unit = {
     createSysUserImpl(SysbotUserId, fullName = SysbotUserFullName, username = SysbotUserUsername, tx)
   }
 
-  def createSysUserImpl(id: UserId, fullName: String, username: String, tx: SiteTransaction) {
+  def createSysUserImpl(id: UserId, fullName: String, username: String, tx: SiteTransaction): Unit = {
     val sysUser = UserInclDetails(
       id = id,
       ssoId = None,
@@ -58,7 +58,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
 
-  def createUnknownUser(tx: SiteTransaction) {
+  def createUnknownUser(tx: SiteTransaction): Unit = {
     tx.createUnknownUser()
     tx.upsertUserStats(UserStats.forNewUser(
       UnknownUserId, firstSeenAt = tx.now, emailedAt = None))
@@ -95,7 +95,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
 
-  def createDefaultGroupsAndPermissions(tx: SiteTransaction) {
+  def createDefaultGroupsAndPermissions(tx: SiteTransaction): Unit = {
     val groups = makeDefaultGroups(tx.now)
     groups foreach { g =>
       insertGroupAndUsernameUsage(g, tx)
@@ -103,7 +103,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   }
 
 
-  private def insertGroupAndUsernameUsage(group: Group, tx: SiteTransaction) {
+  private def insertGroupAndUsernameUsage(group: Group, tx: SiteTransaction): Unit = {
     tx.insertGroup(group)
     tx.insertUsernameUsage(UsernameUsage(
       usernameLowercase = group.theUsername.toLowerCase,  // [CANONUN]

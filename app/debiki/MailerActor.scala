@@ -328,7 +328,7 @@ class MailerActor(
   }
 
 
-  private def sendEmail(emailMaybeWrongAddr: Email, siteId: SiteId) {
+  private def sendEmail(emailMaybeWrongAddr: Email, siteId: SiteId): Unit = {
 
     val siteDao = daoFactory.newSiteDao(siteId)
 
@@ -473,7 +473,7 @@ class MailerActor(
   /** Updates the database so it looks as if the email has been sent, plus makes the
     * email accessible to end-to-end tests.
     */
-  def fakeSend(email: Email, siteDao: SiteDao) {
+  def fakeSend(email: Email, siteDao: SiteDao): Unit = {
     logger.debug(i"""
       |Fake-sending email, logging to console only: [TyM123FAKEMAIL]
       |————————————————————————————————————————————————————————————
@@ -485,7 +485,7 @@ class MailerActor(
   }
 
 
-  def rememberE2eTestEmail(email: Email, siteDao: SiteDao) {
+  def rememberE2eTestEmail(email: Email, siteDao: SiteDao): Unit = {
     val siteIdColonEmailAddress = s"${siteDao.siteId}:${email.sentTo}"
     e2eTestEmails.get(siteIdColonEmailAddress) match {
       case Some(promise) =>

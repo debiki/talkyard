@@ -720,7 +720,7 @@ trait PostsDao {
   /** Edits the post, if authorized to edit it.
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
-        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: TextAndHtml) {
+        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: TextAndHtml): Unit = {
     val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
@@ -1032,7 +1032,7 @@ trait PostsDao {
 
 
   private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post, editorId: UserId,
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
     // 1) approved version of the post, and 2) the current possibly unapproved version.
     // Because if any of the approved or the current version links to an uploaded file,
@@ -1097,7 +1097,7 @@ trait PostsDao {
 
   private def loadSomeRevisionsWithSourceImpl(postId: PostId, revisionNr: Int,
         revisionsRecentFirst: mutable.ArrayStack[PostRevision], atLeast: Int,
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     tx.loadPostRevision(postId, revisionNr) foreach { revision =>
       loadRevisionsFillInSource(revision, revisionsRecentFirst, atLeast, tx)
     }
@@ -1106,7 +1106,7 @@ trait PostsDao {
 
   private def loadRevisionsFillInSource(revision: PostRevision,
         revisionsRecentFirstWithSource: mutable.ArrayStack[PostRevision],
-        atLeast: Int, tx: SiteTransaction) {
+        atLeast: Int, tx: SiteTransaction): Unit = {
     if (revision.fullSource.isDefined && (atLeast <= 1 || revision.previousNr.isEmpty)) {
       revisionsRecentFirstWithSource.push(revision)
       return
@@ -1170,7 +1170,7 @@ trait PostsDao {
 
 
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
-        changerId: UserId, browserIdData: BrowserIdData) {
+        changerId: UserId, browserIdData: BrowserIdData): Unit = {
     readWriteTransaction { tx =>
       val page = newPageDao(pageId, tx)
       val postBefore = page.parts.thePostByNr(postNr)
@@ -1293,7 +1293,7 @@ trait PostsDao {
     var numOrigPostVisibleRepliesGone = 0
     var numOrigPostVisibleRepliesBack = 0
 
-    def updateNumVisible(postBefore: Post, postAfter: Post) {
+    def updateNumVisible(postBefore: Post, postAfter: Post): Unit = {
       if (!postBefore.isReply)
         return
       if (postBefore.isVisible && !postAfter.isVisible) {
@@ -1444,7 +1444,7 @@ trait PostsDao {
   }
 
 
-  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId, tx: SiteTransaction) {
+  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId, tx: SiteTransaction): Unit = {
 
     val page = newPageDao(pageId, tx)
     val pageMeta = page.meta
@@ -1546,7 +1546,7 @@ trait PostsDao {
 
 
   def autoApprovePendingEarlyPosts(pageId: PageId, posts: Iterable[Post])(
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
 
     if (posts.isEmpty) return
     require(posts.forall(_.pageId == pageId), "EdE2AX5N6")
@@ -1625,7 +1625,7 @@ trait PostsDao {
 
 
   def deletePost(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        browserIdData: BrowserIdData) {
+        browserIdData: BrowserIdData): Unit = {
     readWriteTransaction(deletePostImpl(
       pageId, postNr = postNr, deletedById = deletedById, doingReviewTask = None, browserIdData, _))
     refreshPageInMemCache(pageId)
@@ -1633,7 +1633,7 @@ trait PostsDao {
 
 
   def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        doingReviewTask: Option[ReviewTask], browserIdData: BrowserIdData,  tx: SiteTransaction) {
+        doingReviewTask: Option[ReviewTask], browserIdData: BrowserIdData,  tx: SiteTransaction): Unit = {
     val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
       doingReviewTask = doingReviewTask,
@@ -1643,7 +1643,7 @@ trait PostsDao {
   }
 
 
-  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
+  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE2ABKPGN7")
 
     readWriteTransaction { tx =>
@@ -1677,7 +1677,7 @@ trait PostsDao {
 
 
   def ifAuthAddVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
-        voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]) {
+        voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]): Unit = {
     require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
 
     readWriteTransaction { tx =>
@@ -2064,7 +2064,7 @@ trait PostsDao {
 
 
   private def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     dieIf(posts.exists(_.pageId != pageId), "EdE7GKU23Y4")
     dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; SECURITY ; ANNOYING // end users can trigger internal error
     val postsToHide = posts.filter(!_.isBodyHidden)
@@ -2171,7 +2171,7 @@ trait PostsDao {
     }
 
 
-  private def updateVoteCounts(post: Post, tx: SiteTransaction) {
+  private def updateVoteCounts(post: Post, tx: SiteTransaction): Unit = {
     dieIf(post.nr < PageParts.BodyNr, "TyE4WKAB02")
     val actions = tx.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = tx.loadPostsReadStats(post.pageId, Some(post.nr))

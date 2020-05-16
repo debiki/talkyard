@@ -143,7 +143,7 @@ trait TagsDao {
 
 
   def setTagNotfLevelIfAuth(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel,
-        byWho: Who) {
+        byWho: Who): Unit = {
     throwForbiddenIf(notfLevel != NotfLevel.WatchingFirst && notfLevel != NotfLevel.Normal,
       "EsE5GK02", s"Only ${NotfLevel.WatchingFirst} and ${NotfLevel.Normal} supported, for tags")
     readWriteTransaction { transaction =>

@@ -116,7 +116,7 @@ class SearchEngine(
     val promise = Promise[immutable.Seq[SearchHit]]()
 
     requestBuilder.execute(new ActionListener[SearchResponse] {
-      def onResponse(response: SearchResponse) {
+      def onResponse(response: SearchResponse): Unit = {
         // (This isn't the actor's thread. This is some thread controlled by ElasticSearch.)
         import collection.JavaConverters._
         val hits = response.getHits.asScala.flatMap((elasticSearchHit: es.search.SearchHit) => {
@@ -131,7 +131,7 @@ class SearchEngine(
         promise.success(hits.toVector)
       }
 
-      def onFailure(ex: Exception) {
+      def onFailure(ex: Exception): Unit = {
         logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", ex)
         promise.failure(ex)
       }

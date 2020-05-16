@@ -93,12 +93,12 @@ trait AuthzSiteDaoMixin {
 
 
   @deprecated("now", "use Authz instead and dieOrDenyIf")
-  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(transaction: SiteTransaction) {
+  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(transaction: SiteTransaction): Unit = {
     throwIfMayNotSeePage(page.meta, user)(transaction)
   }
 
 
-  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(transaction: SiteTransaction) {
+  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(transaction: SiteTransaction): Unit = {
     val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(transaction))
     if (!may)
       throwIndistinguishableNotFound(s"EdE5FKAW0-$debugCode")
@@ -184,7 +184,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotSeePost(post: Post, ppt: Option[Participant])(tx: SiteTransaction) {
+  def throwIfMayNotSeePost(post: Post, ppt: Option[Participant])(tx: SiteTransaction): Unit = {
     val (result, debugCode) = maySeePost(post, ppt, maySeeUnlistedPages = true)(tx)
     if (!result.may)
       throwIndistinguishableNotFound(s"EdE4KFA20-$debugCode")
@@ -244,7 +244,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotSeeReviewTaskUseCache(task: ReviewTask, forWho: Who) {
+  def throwIfMayNotSeeReviewTaskUseCache(task: ReviewTask, forWho: Who): Unit = {
     TESTS_MISSING // add security test, not e2e test?
     val postId = task.postId getOrElse { return }
     val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
@@ -274,7 +274,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def uncacheAllPermissions() {
+  def uncacheAllPermissions(): Unit = {
     memCache.remove(allPermsKey)
   }
 

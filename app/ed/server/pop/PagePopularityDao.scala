@@ -23,7 +23,7 @@ import debiki._
 
 trait PagePopularityDao {   // could remove, and keep the below object only
 
-  def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction) {
+  def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction): Unit = {
     PagePopularityDao.updatePagePopularity(pageParts, tx)
   }
 }
@@ -32,7 +32,7 @@ trait PagePopularityDao {   // could remove, and keep the below object only
 
 object PagePopularityDao {
 
-  def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction) {
+  def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction): Unit = {
     SHOULD_OPTIMIZE // if is chat, only load the last 1000 'things'? because topic might be too long.
     val actions = tx.loadActionsOnPage(pageParts.pageId)
     COULD_OPTIMIZE // only load total num visits per period & trust level — don't load each row.

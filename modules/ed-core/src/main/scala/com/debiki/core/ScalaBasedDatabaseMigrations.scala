@@ -25,6 +25,6 @@ package com.debiki.core
   */
 abstract class ScalaBasedDatabaseMigrations {
 
-  def runMigration14(transaction: SystemTransaction)
+  def runMigration14(transaction: SystemTransaction): Unit
 
 }

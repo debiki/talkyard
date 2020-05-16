@@ -259,7 +259,7 @@ object EdHttp {
   def throwForbidden2(errorCode: String, message: String, details: String = ""): Nothing =
     throwForbidden(errorCode , message, details)
 
-  def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = "") {
+  def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = ""): Unit = {
     if (test) throwNotImplemented(errorCode, message)
   }
 

@@ -136,7 +136,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def sendOneTimeLoginEmail(user: User, request: ApiRequest[_],
-                                    emailTitle: String, secret: String) {
+                                    emailTitle: String, secret: String): Unit = {
     import request.dao
 
     val origin = globals.originOf(request.host)

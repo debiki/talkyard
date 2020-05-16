@@ -21,14 +21,14 @@ import scala.collection.immutable
 
 
 trait SystemTransaction {
-  def commit()
-  def rollback()
+  def commit(): Unit
+  def rollback(): Unit
 
   def now: When
 
   /** If test mode, deletes and recreates the database, if there's a validation error.
     */
-  def applyEvolutions()
+  def applyEvolutions(): Unit
 
   // ----- Sites
 
@@ -59,11 +59,11 @@ trait SystemTransaction {
   def loadSite(siteId: SiteId): Option[Site] =
     loadSitesWithIds(Seq(siteId)).headOption
 
-  def updateSites(sites: Seq[SuperAdminSitePatch])
+  def updateSites(sites: Seq[SuperAdminSitePatch]): Unit
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
-  def insertSiteHost(siteId: SiteId, host: Hostname)
+  def insertSiteHost(siteId: SiteId, host: Hostname): Unit
   def deleteAnyHostname(hostname: String): Boolean
 
   /** Returns Some(the-deleted-site) if it existed. */
@@ -94,8 +94,8 @@ trait SystemTransaction {
   // ----- Indexing
 
   def loadStuffToIndex(limit: Int): StuffToIndex
-  def deleteFromIndexQueue(post: Post, siteId: SiteId)
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String])
+  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit
+  def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit
 
   // ----- Spam check queue
 
@@ -104,9 +104,9 @@ trait SystemTransaction {
 
   // ----- The janitor: Old stuff deletion
 
-  def deletePersonalDataFromOldAuditLogEntries()
-  def deletePersonalDataFromOldSpamCheckTasks()
-  def deleteOldUnusedUploads() { /* ... later ... */ }
+  def deletePersonalDataFromOldAuditLogEntries(): Unit
+  def deletePersonalDataFromOldSpamCheckTasks(): Unit
+  def deleteOldUnusedUploads(): Unit = { /* ... later ... */ }
 
   // ----- The janitor: Review decisions
 
@@ -117,7 +117,7 @@ trait SystemTransaction {
   /** Deletes all data from the database. For example, for a RDBMS,
     * would delete all rows from all tables. (Except for some "static" data.)
     */
-  def emptyDatabase()
+  def emptyDatabase(): Unit
 
 }
 

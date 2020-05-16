@@ -47,7 +47,7 @@ trait SettingsDao {
   }
 
 
-  def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who) {
+  def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who): Unit = {
     // COULD test here that settings are valid? No inconsistencies?
 
     throwBadRequestIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
@@ -74,7 +74,7 @@ trait SettingsDao {
         !getEnabled(newSettings) && getEnabled(oldSettings)
 
       // Prevent admins from accidentally locking themselves or other admins out.
-      def throwIfLogsInWith(loginMethodName: String) {
+      def throwIfLogsInWith(loginMethodName: String): Unit = {
         val loginMethodLowercase = loginMethodName.toLowerCase
         for {
           (admin, identities) <- adminsAndIdentities

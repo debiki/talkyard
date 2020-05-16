@@ -40,7 +40,7 @@ package object controllers {
     * not-yet-created scripts. The latter would result in a blank page, with
     * "invisible" 404 script-not-found errors in the dev console.
     */
-  def dieIfAssetsMissingIfDevTest() {
+  def dieIfAssetsMissingIfDevTest(): Unit = {
     if (Globals.isProd) return
 
     val serverJavascriptPath = "/opt/talkyard/app/assets/server-bundle.js"

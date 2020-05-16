@@ -119,7 +119,7 @@ trait AssetBundleDao {
    * of those assets is created later on.
    */
   private def cacheDependencies(  // CLEAN_UP remove this craziness
-        bundleName: String, bundleAndDeps: AssetBundleAndDependencies, siteCacheVersion: Long) {
+        bundleName: String, bundleAndDeps: AssetBundleAndDependencies, siteCacheVersion: Long): Unit = {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
@@ -133,14 +133,14 @@ trait AssetBundleDao {
   }
 
 
-  private def tryUncacheAll(dependencyKey: MemCacheKey) {
+  private def tryUncacheAll(dependencyKey: MemCacheKey): Unit = {
     memCache.lookup[BundleDependencyData](dependencyKey) foreach { depsData =>
       doUncacheAll(depsData)
     }
   }
 
 
-  private def doUncacheAll(bundleDeps: BundleDependencyData) {
+  private def doUncacheAll(bundleDeps: BundleDependencyData): Unit = {
     // First uncache dependencies. Then uncache bundle.
     // (If you uncache the bundle first, another thread might start to regenerate
     // it and cache dependencies, whilst you're still busy uncaching the mostly

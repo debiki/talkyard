@@ -47,7 +47,7 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
       mustBeSerializable = true)
     var committed = false
 
-    def tryCheckQuotaAndCommit() {
+    def tryCheckQuotaAndCommit(): Unit = {
       if (transaction.hasBeenRolledBack)
         return
       if (!allowOverQuota) {

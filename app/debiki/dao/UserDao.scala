@@ -46,7 +46,7 @@ trait UserDao {
 
   import self.context.security
 
-  def addUserStats(moreStats: UserStats)(tx: SiteTransaction) {
+  def addUserStats(moreStats: UserStats)(tx: SiteTransaction): Unit = {
     // Exclude superadmins. Maybe should incl system? [EXCLSYS]
     if (NoUserId < moreStats.userId && moreStats.userId < Participant.LowestNormalMemberId)
       return
@@ -64,7 +64,7 @@ trait UserDao {
   }
 
 
-  def insertInvite(invite: Invite) {
+  def insertInvite(invite: Invite): Unit = {
     readWriteTransaction { tx =>
       tx.insertInvite(invite)
     }
@@ -176,7 +176,7 @@ trait UserDao {
   }
 
 
-  def editUser(memberId: UserId, doWhat: EditUserAction, byWho: Who) {
+  def editUser(memberId: UserId, doWhat: EditUserAction, byWho: Who): Unit = {
     // E2e tested here: [5RBKWEF8]
     val now = globals.now()
 
@@ -241,13 +241,13 @@ trait UserDao {
     def someNow = Some(now.toJavaDate)
     def someById = Some(byMember.id)
 
-    def checkNotPromotingOrDemotingOneself() {
+    def checkNotPromotingOrDemotingOneself(): Unit = {
       // Bad idea to let people accidentally click "Revoke admin" on their profile, and lose access?
       if (member.id == byMember.id)
         throw new QuickMessageException("Cannot change one's own is-admin / moderator status")
     }
 
-    def checkNotPromotingSuspended() {
+    def checkNotPromotingSuspended(): Unit = {
       if (member.isSuspendedAt(now.toJavaDate))
         throw new QuickMessageException("Cannot promote suspended users to admin or moderator")
     }
@@ -287,7 +287,7 @@ trait UserDao {
   }
 
 
-  def lockUserTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]) {
+  def lockUserTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]): Unit = {
     readWriteTransaction { tx =>
       val member = tx.loadTheUserInclDetails(memberId)
       val memberAfter = member.copy(lockedTrustLevel = newTrustLevel)
@@ -300,7 +300,7 @@ trait UserDao {
   }
 
 
-  def lockUserThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
+  def lockUserThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]): Unit = {
     readWriteTransaction { tx =>
       val member: UserInclDetails = tx.loadTheUserInclDetails(memberId)
       val memberAfter = member.copy(lockedThreatLevel = newThreatLevel)
@@ -311,7 +311,7 @@ trait UserDao {
   }
 
 
-  def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]) {
+  def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]): Unit = {
     readWriteTransaction { tx =>
       val guest = tx.loadTheGuest(guestId)
       ??? // lock both ips and guest cookie
@@ -320,7 +320,7 @@ trait UserDao {
   }
 
 
-  def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
+  def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId): Unit = {
     // If later on banning, by setting numDays = none, then look at [4ELBAUPW2], seems
     // it won't notice someone is suspended, unless there's an end date.
     require(numDays >= 1, "DwE4PKF8")
@@ -345,7 +345,7 @@ trait UserDao {
   }
 
 
-  def unsuspendUser(userId: UserId) {
+  def unsuspendUser(userId: UserId): Unit = {
     readWriteTransaction { tx =>
       var user = tx.loadTheUserInclDetails(userId)
       user = user.copy(suspendedAt = None, suspendedTill = None, suspendedById = None,
@@ -356,7 +356,7 @@ trait UserDao {
   }
 
 
-  def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
+  def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId): Unit = {
     val anyChangedGuest: Option[Guest] = readWriteTransaction { tx =>
       val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
@@ -423,7 +423,7 @@ trait UserDao {
   }
 
 
-  def unblockGuest(postNr: PostNr, unblockerId: UserId) {
+  def unblockGuest(postNr: PostNr, unblockerId: UserId): Unit = {
     val anyChangedGuest = readWriteTransaction { tx =>
       val auditLogEntry: AuditLogEntry = tx.loadCreatePostAuditLogEntry(postNr) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
@@ -689,7 +689,7 @@ trait UserDao {
   }
 
 
-  def logout(userId: UserId) {
+  def logout(userId: UserId): Unit = {
     readWriteTransaction { tx =>
       addUserStats(UserStats(userId, lastSeenAt = tx.now))(tx)
     }
@@ -1009,7 +1009,7 @@ trait UserDao {
   }
 
 
-  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId], reqrId: ReqrId) {
+  def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId], reqrId: ReqrId): Unit = {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE206JKDT2", "Cannot add members to built-in automatic groups")
     readWriteTransaction { tx =>
@@ -1058,7 +1058,7 @@ trait UserDao {
   }
 
 
-  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId], reqrId: ReqrId) {
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId], reqrId: ReqrId): Unit = {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE8WKD2T0", "Cannot remove members from built-in automatic groups")
     readWriteTransaction { tx =>
@@ -1072,14 +1072,14 @@ trait UserDao {
   }
 
 
-  private def uncacheGroupsMemberLists(groupIds: Iterable[UserId]) {
+  private def uncacheGroupsMemberLists(groupIds: Iterable[UserId]): Unit = {
     groupIds foreach { groupId =>
       memCache.remove(groupMembersKey(groupId))
     }
   }
 
 
-  def uncacheBuiltInGroups() {
+  def uncacheBuiltInGroups(): Unit = {
     import Group._
     uncacheGroupsMemberLists(
       Vector(EveryoneId, AllMembersId, BasicMembersId, FullMembersId,
@@ -1088,7 +1088,7 @@ trait UserDao {
   }
 
 
-  private def uncacheOnesGroupIds(memberIds: Iterable[UserId]) {
+  private def uncacheOnesGroupIds(memberIds: Iterable[UserId]): Unit = {
     memberIds foreach { memberId =>
       memCache.remove(onesGroupIdsKey(memberId))
     }
@@ -1125,7 +1125,7 @@ trait UserDao {
     * might become visible to hen (e.g. visible only to Trusted users) — and then hen auto-joins
     * those too.
     */
-  def joinGloballyPinnedChats(user: Participant, tx: SiteTransaction) {
+  def joinGloballyPinnedChats(user: Participant, tx: SiteTransaction): Unit = {
     val chatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
     BUG // Don't join a chat again, if has left it. Needn't fix now, barely matters.
     val joinedChats = ArrayBuffer[PageMeta]()
@@ -1147,12 +1147,12 @@ trait UserDao {
   }
 
 
-  def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+  def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who): Unit = {
     joinLeavePageUpdateWatchbar(userIds, pageId, add = true, byWho)
   }
 
 
-  def removeUsersFromPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+  def removeUsersFromPage(userIds: Set[UserId], pageId: PageId, byWho: Who): Unit = {
     joinLeavePageUpdateWatchbar(userIds, pageId, add = false, byWho)
   }
 
@@ -1437,7 +1437,7 @@ trait UserDao {
   }
 
 
-  def rememberTourTipsSeen(user: Participant, anyTourTipsSeen: Option[TourTipsSeen]) {
+  def rememberTourTipsSeen(user: Participant, anyTourTipsSeen: Option[TourTipsSeen]): Unit = {
     require(user.isMember, "TyE5AKR5J") // see above [8PLKW46]
     if (user.id < LowestTalkToMemberId)
       return
@@ -1451,7 +1451,7 @@ trait UserDao {
   }
 
 
-  private def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction) {
+  private def promoteUser(userId: UserId, newTrustLevel: TrustLevel, tx: SiteTransaction): Unit = {
     // If trust level locked, we'll promote the member anyway — but member.effectiveTrustLevel
     // won't change, because it considers the locked trust level first.
     val member = tx.loadTheUserInclDetails(userId)
@@ -1479,7 +1479,7 @@ trait UserDao {
 
 
   REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
-  def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date) {
+  def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date): Unit = {
     readWriteTransaction { tx =>
       var user = tx.loadTheUserInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
@@ -1496,7 +1496,7 @@ trait UserDao {
 
   SECURITY // Harmless right now, but should pass Who and authz.
   def setUserAvatar(userId: UserId, tinyAvatar: Option[UploadRef], smallAvatar: Option[UploadRef],
-        mediumAvatar: Option[UploadRef], browserIdData: BrowserIdData) {
+        mediumAvatar: Option[UploadRef], browserIdData: BrowserIdData): Unit = {
     require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")
     require(smallAvatar.isDefined == mediumAvatar.isDefined, "EsE8YFM2")
     readWriteTransaction { tx =>
@@ -1508,7 +1508,7 @@ trait UserDao {
 
   private def setUserAvatarImpl(userId: UserId, tinyAvatar: Option[UploadRef],
         smallAvatar: Option[UploadRef], mediumAvatar: Option[UploadRef],
-        browserIdData: BrowserIdData, tx: SiteTransaction) {
+        browserIdData: BrowserIdData, tx: SiteTransaction): Unit = {
 
       val userBefore = tx.loadTheUserInclDetails(userId)  ; SECURITY ; COULD // loadTheUserOrThrowForbidden, else logs really long exception
       val userAfter = userBefore.copy(
@@ -1558,7 +1558,7 @@ trait UserDao {
 
   def configRole(userId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None,
-        activitySummaryEmailsIntervalMins: Option[Int] = None) {
+        activitySummaryEmailsIntervalMins: Option[Int] = None): Unit = {
     // Don't specify emailVerifiedAt — use verifyPrimaryEmailAddress() instead; it refreshes the cache.
     readWriteTransaction { tx =>
       var user = tx.loadTheUserInclDetails(userId)
@@ -1575,7 +1575,7 @@ trait UserDao {
   }
 
 
-  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs): Unit = {
     readWriteTransaction { tx =>
       tx.configIdtySimple(ctime = ctime,
         emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
@@ -1605,21 +1605,21 @@ trait UserDao {
   }
 
 
-  def savePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who) {
+  def savePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE2AS0574", "change notf prefs") { tx =>
       tx.upsertPageNotfPref(pageNotfPref)
     }
   }
 
 
-  def deletePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who) {
+  def deletePageNotfPref(pageNotfPref: PageNotfPref, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff(pageNotfPref.peopleId, byWho, "TyE5KP0GJL", "delete notf prefs") { tx =>
       tx.deletePageNotfPref(pageNotfPref)
     }
   }
 
 
-  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who) {
+  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff(preferences.userId, byWho, "TyE4AKT2W", "edit privacy prefs") { tx =>
       val memberBefore = tx.loadTheUserInclDetails(preferences.userId)  // [7FKFA20]
       val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
@@ -1631,7 +1631,7 @@ trait UserDao {
   }
 
 
-  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who) {
+  def saveAboutMemberPrefs(preferences: AboutUserPrefs, byWho: Who): Unit = {
     // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
@@ -1693,7 +1693,7 @@ trait UserDao {
 
 
   def addUsernameUsageOrThrowClientError(memberId: UserId, newUsername: String,
-          me: User, tx: SiteTransaction) {
+          me: User, tx: SiteTransaction): Unit = {
         dieIf(Participant.isGuestId(memberId), "TyE04MSR245")
         throwForbiddenIf(Participant.isBuiltInParticipant(memberId),
           "TyE3HMSTUG563", "Cannot rename built-in members")
@@ -1740,7 +1740,7 @@ trait UserDao {
   }
 
 
-  def saveAboutGroupPrefs(preferences: AboutGroupPrefs, byWho: Who) {
+  def saveAboutGroupPrefs(preferences: AboutGroupPrefs, byWho: Who): Unit = {
     // Similar to saveAboutMemberPrefs above. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
@@ -1780,7 +1780,7 @@ trait UserDao {
   }
 
 
-  def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who) {
+  def saveUiPrefs(memberId: UserId, prefs: JsObject, byWho: Who): Unit = {
     editMemberThrowUnlessSelfStaff2(memberId, byWho, "TyE3ASHW67", "change UI prefs") {
         (tx, memberInclDetails, _) =>
       tx.updateMemberInclDetails(memberInclDetails.copyTrait(uiPrefs = Some(prefs)))
@@ -1802,7 +1802,7 @@ trait UserDao {
 
   /** Should do the same tests as [5LKKWA10].
     */
-  private def throwForbiddenIfBadFullName(fullName: Option[String]) {
+  private def throwForbiddenIfBadFullName(fullName: Option[String]): Unit = {
     throwForbiddenIf(Validation.checkName(fullName).isBad,
       "TyE5KKWDR1", s"Weird name, not allowed: $fullName")
   }
@@ -1810,7 +1810,7 @@ trait UserDao {
 
   /** Should do the same tests as [5LKKWA10].
     */
-  private def throwForbiddenIfBadUsername(username: String) {
+  private def throwForbiddenIfBadUsername(username: String): Unit = {
     throwForbiddenIf(Validation.checkUsername(username).isBad,
       "TyE4KUK02", s"Invalid username: $username")
     throwForbiddenIf(ReservedNames.isUsernameReserved(username),
@@ -1851,7 +1851,7 @@ trait UserDao {
   }
 
 
-  def deleteGroup(groupId: UserId, reqrId: ReqrId) {
+  def deleteGroup(groupId: UserId, reqrId: ReqrId): Unit = {
     throwForbiddenIf(groupId < Participant.LowestAuthenticatedUserId,
       "TyE307DMAT2", "Cannot delete built-in groups")
 
@@ -1876,7 +1876,7 @@ trait UserDao {
   }
 
 
-  def saveGuest(guestId: UserId, name: String) {
+  def saveGuest(guestId: UserId, name: String): Unit = {
     // BUG: the lost update bug.
     readWriteTransaction { tx =>
       var guest = tx.loadTheGuest(guestId)
@@ -1888,7 +1888,7 @@ trait UserDao {
 
 
   def perhapsBlockRequest(request: play.api.mvc.RequestHeader, sidStatus: SidStatus,
-        browserId: Option[BrowserId]) {
+        browserId: Option[BrowserId]): Unit = {
     if (request.method == "GET")
       return
 
@@ -2101,7 +2101,7 @@ trait UserDao {
   }
 
 
-  def removeUserFromMemCache(userId: UserId) {
+  def removeUserFromMemCache(userId: UserId): Unit = {
     memCache.remove(key(userId))
   }
 

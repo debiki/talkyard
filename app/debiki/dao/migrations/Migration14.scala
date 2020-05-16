@@ -43,7 +43,7 @@ object Migration14 {
   var newIdsMap: mutable.HashMap[PagePostId, UniquePostId] = null
   */
 
-  def run(systemTransaction: SystemTransaction) {
+  def run(systemTransaction: SystemTransaction): Unit = {
     return /*
     val allSites = systemTransaction.loadSites()
     for (site <- allSites) {

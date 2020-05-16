@@ -214,7 +214,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean) {
+  private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean): Unit = {
     import ed.server.Whatever
     if (isTest && (
         globals.anyCreateTestSiteHostname.contains(Whatever) ||

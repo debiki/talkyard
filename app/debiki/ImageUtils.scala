@@ -88,7 +88,7 @@ object ImageUtils {
     * Based on: http://stackoverflow.com/a/26319958/694469
     */
   def convertToCompressedJpeg(imagePerhapsAlpha: BufferedImage, origSizeBytes: Int,
-        destination: jio.File) {
+        destination: jio.File): Unit = {
     var writer: ImageWriter = null
     if (destination.exists)
       die("DwE6MPF2", "Destination image file already exists: " + destination.toPath.toString)
@@ -145,7 +145,7 @@ object ImageUtils {
 
   val MimeTypeJpeg = "image/jpeg"
 
-  def throwUnlessJpegWithSideBetween(file: jio.File, which: String, minSide: Int, maxSide: Int) {
+  def throwUnlessJpegWithSideBetween(file: jio.File, which: String, minSide: Int, maxSide: Int): Unit = {
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
     // (This detects mime type based on actual document content, not just the suffix.) dupl [7YKW23]
     val tika = new org.apache.tika.Tika()

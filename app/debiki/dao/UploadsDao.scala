@@ -224,7 +224,7 @@ trait UploadsDao {
   }
 
 
-  private def throwIfUploadedTooMuchRecently(uploaderId: UserId, sizeBytes: Int) {
+  private def throwIfUploadedTooMuchRecently(uploaderId: UserId, sizeBytes: Int): Unit = {
     readOnlyTransaction { transaction =>
       val user = transaction.loadParticipant(uploaderId) getOrElse throwForbidden(
         "EsE7KMW2", "Strangely enough, your user account just disappeared")
@@ -265,7 +265,7 @@ trait UploadsDao {
       val maxBytesWeek = user.isStaff ? uplConf.maxBytesPerWeekStaff | uplConf.maxBytesPerWeekMember
       val maxBytesDay = user.isStaff ? uplConf.maxBytesPerDayStaff | uplConf.maxBytesPerDayMember
 
-      def throwIfTooMuch(actual: Int, max: Int, lastWhat: String) {
+      def throwIfTooMuch(actual: Int, max: Int, lastWhat: String): Unit = {
         if (actual > max)
           throwEntityTooLarge("EsE4MPK02", o"""Sorry but you've uploaded too much stuff the
               last $lastWhat. You can upload at most ${(max - actual) / 1000} more kilobytes""")
@@ -365,7 +365,7 @@ object UploadsDao {
 
     links foreach addUrlIfReferencesUploadedFile
 
-    def addUrlIfReferencesUploadedFile(urlString: String) {
+    def addUrlIfReferencesUploadedFile(urlString: String): Unit = {
       val urlPath =
         if (urlString startsWith "/") urlString
         else {

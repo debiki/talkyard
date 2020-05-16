@@ -200,7 +200,7 @@ trait PagePathMetaDao {
   }
 
 
-  private def _removeCachedPathsTo(pageId: PageId) {
+  private def _removeCachedPathsTo(pageId: PageId): Unit = {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
     readOnlyTransaction(_.loadPagePath(pageId)) foreach { path =>
@@ -220,7 +220,7 @@ trait PagePathMetaDao {
   }
 
 
-  private def uncacheMetaAndAncestors(sitePageId: SitePageId) {
+  private def uncacheMetaAndAncestors(sitePageId: SitePageId): Unit = {
     memCache.remove(ancestorIdsKey(sitePageId))
     memCache.remove(pageMetaByIdKey(sitePageId))
   }

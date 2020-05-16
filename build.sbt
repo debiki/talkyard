@@ -22,6 +22,12 @@ import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 // If SBT crashes, enable debug to find out which file it crashes in:
 //logLevel := Level.Debug
 
+ThisBuild / scalaVersion := "2.12.11"
+
+// Show unchecked and deprecated warnings, in this project and its modules.
+// scalacOptions in ThisBuild ++= Seq("-deprecation")
+
+
 val versionFileContents = {
   val source = scala.io.Source.fromFile("version.txt")
   try source.mkString.trim
@@ -44,13 +50,11 @@ lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
-ThisBuild / useCoursier := false
-
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
-  "com.typesafe.play" %% "play-json" % "2.6.9",             // newest, as of 18-07-17
+  "com.typesafe.play" %% "play-json" % "2.8.1",
   // OpenAuth and OpenID etc Authentication.
   // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
   // would require everyone that uses Talkyard to reconfigure their Google auth app.
@@ -87,7 +91,7 @@ val appDependencies = Seq(
   // HikariCP — "A solid high-performance JDBC connection pool at last"
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",   // newest, as of 18-07-17
+  caffeine,  // was: "com.github.ben-manes.caffeine" % "caffeine"
   "com.github.etaty" %% "rediscala" % "1.8.0",              // newest, as of 18-07-17
   // Search engine, in https://mvnrepository.com.
   "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
@@ -140,7 +144,6 @@ def mainSettings = List(
   name := appName,
   version := appVersion,
   libraryDependencies ++= appDependencies,
-  scalaVersion := "2.12.8",
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
@@ -238,7 +241,3 @@ def listJarsTask = listJars := (target, fullClasspath in Runtime) map {
     println("Full classpath is: "+cp.map(_.data).mkString(":"))
 } */
 
-
-// Show unchecked and deprecated warnings, in this project and all
-// its modules.
-// scalacOptions in ThisBuild ++= Seq("-deprecation")

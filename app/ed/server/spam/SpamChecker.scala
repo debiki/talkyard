@@ -193,12 +193,12 @@ class SpamChecker(
     spamChecksEnabled && anyAkismetKey.nonEmpty
 
 
-  def start() {
+  def start(): Unit = {
     verifyAkismetApiKey()
   }
 
 
-  private def verifyAkismetApiKey() {
+  private def verifyAkismetApiKey(): Unit = {
     if (!akismetEnabled) {
       akismetKeyIsValidPromise.success(false)
       return
@@ -774,7 +774,7 @@ class SpamChecker(
 
 
   private def sendAkismetCheckSpamRequest(apiKey: String, payload: String,
-        promise: Promise[(Boolean, Boolean)]) {
+        promise: Promise[(Boolean, Boolean)]): Unit = {
     logger.debug("Sending Akismet spam check request...")  // replace with tracing instead [TRACING]
     sendAkismetRequest(apiKey, what = "comment-check", payload = payload).map({ response: WSResponse =>
       val body = response.body
@@ -1010,7 +1010,7 @@ class SpamChecker(
 
 object SpamChecker {
 
-  def throwForbiddenIfSpam(spamCheckResults: SpamCheckResults, errorCode: String) {
+  def throwForbiddenIfSpam(spamCheckResults: SpamCheckResults, errorCode: String): Unit = {
     val spamFoundResults = spamCheckResults.collect { case r: SpamCheckResult.SpamFound => r }
     if (spamFoundResults.isEmpty)
       return

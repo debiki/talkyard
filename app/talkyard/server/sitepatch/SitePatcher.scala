@@ -1166,7 +1166,7 @@ case class SitePatcher(globals: debiki.Globals) {
         tx.configIdtySimple(tx.now.toJavaDate, emailAddr, pref)
       }
 
-      def insertUsernameUsageIfMissing(member: MemberInclDetails) {
+      def insertUsernameUsageIfMissing(member: MemberInclDetails): Unit = {
         val usernameLowercase = member.usernameLowercase // [CANONUN]
         def includesCurrentName(usernameUsages: Iterable[UsernameUsage]) =
           usernameUsages.exists(n =>

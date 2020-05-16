@@ -191,7 +191,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         }
       }
 
-      def setTestPasswordCookie(paramName: String, cookieName: String) {
+      def setTestPasswordCookie(paramName: String, cookieName: String): Unit = {
         val anyPassword = request.queryString.get(paramName).flatMap(_.headOption)
         anyPassword foreach { password =>
           futureResult = futureResult map { result =>

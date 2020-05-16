@@ -40,9 +40,9 @@ object Prelude {
   // or release mode.
 
   // Should get rid of this version:
-  def warnDbgDie(errorMsg: String) { warnDbgDie("", errorMsg) }
+  def warnDbgDie(errorMsg: String): Unit = { warnDbgDie("", errorMsg) }
 
-  def warnDbgDie(errorCode: String, warningMsg: String) {
+  def warnDbgDie(errorCode: String, warningMsg: String): Unit = {
     if (true) {
       // Fail hard in debug mode so this error will be fixed.
       throw new AssertionError(warningMsg)
@@ -53,9 +53,9 @@ object Prelude {
   }
 
   // Should get rid of this version:
-  def errDbgDie(errorMsg: String) { errDbgDie("", errorMsg) }
+  def errDbgDie(errorMsg: String): Unit = { errDbgDie("", errorMsg) }
 
-  def errDbgDie(errorCode: String, errorMsg: String) {
+  def errDbgDie(errorCode: String, errorMsg: String): Unit = {
     if (true) {
       throw new AssertionError(errorMsg)
     }
@@ -138,7 +138,7 @@ object Prelude {
     throw new RuntimeException(formatErrorMessage(errorCode, problem), cause)
   }
 
-  def requireIf(condition: Boolean, test: => Boolean, message: => String) {
+  def requireIf(condition: Boolean, test: => Boolean, message: => String): Unit = {
     if (condition) {
       require(test, message)
     }
@@ -152,7 +152,7 @@ object Prelude {
     if (condition) die(errorCode, if (problem != null) problem.toString else null)
 
   def dieIfAny[T](things: Iterable[T], condition: T => Boolean,
-        errorCode: String, problem: T => Any = null) {
+        errorCode: String, problem: T => Any = null): Unit = {
     things.find(condition) foreach { badThing =>
       val details = if (problem ne null) problem(badThing).toString else null
       die(errorCode, details)
@@ -167,7 +167,7 @@ object Prelude {
     if (value.isBad) die(errorCode, if (mkMessage ne null) mkMessage(value.swap.get) else null)
 
   def throwIllegalArgumentIf(condition: Boolean, errorCode: String,
-        problem: => String = null) {
+        problem: => String = null): Unit = {
     if (condition)
       illArgErr(errorCode, problem)
   }
@@ -501,7 +501,7 @@ object Prelude {
   private var _hashSalt = "94k2xIf1AoVkbx928_"
 
   /** Sets the salt used when hashing (no related to the random numbers). */
-  def setHashSalt(salt: String) { _hashSalt = salt }
+  def setHashSalt(salt: String): Unit = { _hashSalt = salt }
 
   def saltAndHash(hashLength: Int)(text: String): String = {
     val saltAndText = _hashSalt + text
@@ -727,11 +727,11 @@ object Prelude {
    * instead I place a breakpoint in this function, and call it from
    * the test suite, on the line where I'd like to have a "breakpoint".
    */
-  def debugBreakpointA {
+  def debugBreakpointA: Unit = {
     println("debugBreakpointA")
   }
 
-  def debugBreakpointB {
+  def debugBreakpointB: Unit = {
     println("debugBreakpointA")
   }
 

@@ -106,28 +106,28 @@ class PubSubApi(private val actorRef: ActorRef) {
     futureReply.asInstanceOf[Future[AnyProblem]]
   }
 
-  def userSubscribed(who: UserConnected) {
+  def userSubscribed(who: UserConnected): Unit = {
     actorRef ! who
   }
 
-  def unsubscribeUser(siteId: SiteId, user: Participant, browserIdData: BrowserIdData) {
+  def unsubscribeUser(siteId: SiteId, user: Participant, browserIdData: BrowserIdData): Unit = {
     actorRef ! DisconnectUser(siteId, user, browserIdData)
   }
 
-  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]): Unit = {
     actorRef ! UserWatchesPages(siteId, userId, pageIds)
   }
 
-  def userIsActive(siteId: SiteId, user: Participant, browserIdData: BrowserIdData) {
+  def userIsActive(siteId: SiteId, user: Participant, browserIdData: BrowserIdData): Unit = {
     actorRef ! UserIsActive(siteId, user, browserIdData)
   }
 
   /** Assumes user byId knows about this already; won't publish to him/her. */
-  def publish(message: Message, byId: UserId) {
+  def publish(message: Message, byId: UserId): Unit = {
     actorRef ! PublishMessage(message, byId)
   }
 
-  def closeWebSocketConnections() {
+  def closeWebSocketConnections(): Unit = {
     actorRef ! CloseWebSocketConnections
   }
 
@@ -147,7 +147,7 @@ class PubSubApi(private val actorRef: ActorRef) {
 
 class StrangerCounterApi(private val actorRef: ActorRef) {
 
-  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
+  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData): Unit = {
     actorRef ! StrangerSeen(siteId, browserIdData)
   }
 }
@@ -395,7 +395,7 @@ class PubSubActor(val globals: Globals) extends Actor {
 
   private def updateWatchedPages(siteId: SiteId, userId: UserId,
         watchingPageIdsNow: Option[Set[PageId]] = None,
-        stoppedWatchingPageId: Option[PageId] = None) {
+        stoppedWatchingPageId: Option[PageId] = None): Unit = {
 
     dieIf(watchingPageIdsNow.isDefined && stoppedWatchingPageId.isDefined, "TyE703RKDHF24")
 
@@ -505,7 +505,7 @@ class PubSubActor(val globals: Globals) extends Actor {
 
 
   private def publishPresenceIfChanged(siteId: SiteId, users: Iterable[Participant],
-        newPresence: Presence) {
+        newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
     users foreach { user =>
       val isActive = redisCacheForSite(siteId).isUserActive(user.id)
@@ -517,7 +517,7 @@ class PubSubActor(val globals: Globals) extends Actor {
   }
 
 
-  private def publishPresenceAlways(siteId: SiteId, users: Iterable[Participant], newPresence: Presence) {
+  private def publishPresenceAlways(siteId: SiteId, users: Iterable[Participant], newPresence: Presence): Unit = {
     COULD_OPTIMIZE // send just 1 WebSocket message, list many users. (5JKWQU01)
     users foreach { user =>
       publishPresenceImpl(siteId, user, newPresence)
@@ -525,7 +525,7 @@ class PubSubActor(val globals: Globals) extends Actor {
   }
 
 
-  private def publishPresenceImpl(siteId: SiteId, user: Participant, presence: Presence) {
+  private def publishPresenceImpl(siteId: SiteId, user: Participant, presence: Presence): Unit = {
     // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
     // other people won't know if a user that logged out, stays online or not.
     // No. *Do* send num-strangers-online. Otherwise I get confused and think here's some bug :-/.
@@ -544,7 +544,7 @@ class PubSubActor(val globals: Globals) extends Actor {
   }
 
 
-  private def publishStorePatchAndNotfs(message: Message, byId: UserId) {
+  private def publishStorePatchAndNotfs(message: Message, byId: UserId): Unit = {
     val siteDao = globals.siteDao(message.siteId)
 
     // ----- Notifications
@@ -637,7 +637,7 @@ class PubSubActor(val globals: Globals) extends Actor {
 
 
   private def updateWatcherIdsByPageId(siteId: SiteId, userId: UserId, oldPageIds: Set[PageId],
-        newPageIds: Set[PageId]) {
+        newPageIds: Set[PageId]): Unit = {
     val watcherIdsByPageId = watcherIdsByPageIdForSite(siteId)
     val pageIdsAdded = newPageIds -- oldPageIds
     val pageIdsRemoved = oldPageIds -- newPageIds
@@ -670,7 +670,7 @@ class PubSubActor(val globals: Globals) extends Actor {
 
 
   private def sendWebSocketMessage(siteId: SiteId, toUserIds: Iterable[UserId],
-        tyype: String, json: JsValue) {
+        tyype: String, json: JsValue): Unit = {
     dieIf(siteId == NoSiteId, "EsE7UW7Y2", "Cannot send requests to NoSiteId")
 
     val clientsById: collection.Map[UserId, WebSocketClient] =
@@ -700,7 +700,7 @@ class PubSubActor(val globals: Globals) extends Actor {
     *
     * Need to cache them. But not for too long. [WSMSGQ]
     */
-  private def disconnectInactiveWebSockets() {
+  private def disconnectInactiveWebSockets(): Unit = {
     // Later:
     // If > X in total, delete the inactive ones older than day?
     // Thereafter, for each site:
@@ -767,7 +767,7 @@ class PubSubActor(val globals: Globals) extends Actor {
   /** Marks the user as inactive. However the user might still be connected via WebSocket or
     * Long Polling. It's just that apparently hen is doing something else right now.
     */
-  private def removeInactiveUserFromRedisPublishAwayPresence() {
+  private def removeInactiveUserFromRedisPublishAwayPresence(): Unit = {
     val inactiveUserIdsBySite = redisCacheForAllSites.removeNoLongerOnlineUserIds()
     for ((siteId, userIds) <- inactiveUserIdsBySite ; if userIds.nonEmpty) {
       val users = globals.siteDao(siteId).getUsersAsSeq(userIds)

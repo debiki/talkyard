@@ -320,7 +320,7 @@ class EdSecurity(globals: Globals) {
 
   def throwErrorIfPasswordBad(
         password: String, username: String, fullName: Option[String], email: String,
-        minPasswordLength: Int, isForOwner: Boolean) {
+        minPasswordLength: Int, isForOwner: Boolean): Unit = {
 
     // **The below checks aren't so important** — this is already done client side via zxcvbn.
     // Here, just quick double checks. (Only maybe reserved-words isn't totally done
@@ -373,7 +373,7 @@ class EdSecurity(globals: Globals) {
     * so whenever one sees a cleartext password, one knows that it is
     * really intended to be public, for tests only (or, if not 'public...', it shouldn't be there).
     */
-  def throwIfBadPassword(passwordHash: String, isTest: Boolean) {
+  def throwIfBadPassword(passwordHash: String, isTest: Boolean): Unit = {
     val array = passwordHash.split(':')
     if (array.length != 2)
       throwIllegalArgument("EsE2YPU5", "Bad password hash: no prefix")
@@ -669,7 +669,7 @@ class EdSecurity(globals: Globals) {
     throwNotFound("TyE404_" + suffix, "Page not found")
   }
 
-  def throwNoUnless(mayMaybe: MayMaybe, errorCode: String) {
+  def throwNoUnless(mayMaybe: MayMaybe, errorCode: String): Unit = {
     import MayMaybe._
     mayMaybe match {
       case Yes => // fine

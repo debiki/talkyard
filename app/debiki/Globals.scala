@@ -84,7 +84,7 @@ object Globals extends TyLogging {
     * remember isProd, forever. (However, is-Dev and is-Test might change, depending on which
     * commands one types in the cli.)
     */
-  def setIsProdForever(isIt: Boolean) {
+  def setIsProdForever(isIt: Boolean): Unit = {
     dieIf(hasSet && isIt != _isProd, "EdE2PWVU07")
     _isProd = isIt
   }
@@ -111,7 +111,7 @@ class Globals(
 
   import Globals._
 
-  def setEdContext(edContext: EdContext) {
+  def setEdContext(edContext: EdContext): Unit = {
     dieIf(this.edContext ne null, "EdE7UBR10")
     this.edContext = edContext
   }
@@ -209,7 +209,7 @@ class Globals(
   /** For now (forever?), ignore platforms that don't send Linux signals.
     */
   sun.misc.Signal.handle(new sun.misc.Signal("TERM"), new sun.misc.SignalHandler () {
-    def handle(signal: sun.misc.Signal) {
+    def handle(signal: sun.misc.Signal): Unit = {
       logger.info("Got SIGTERM, exiting with status 0 [EsMSIGTERM]")
       killed = true
       System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
@@ -217,7 +217,7 @@ class Globals(
   })
 
   sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler () {
-    def handle(signal: sun.misc.Signal) {
+    def handle(signal: sun.misc.Signal): Unit = {
       logger.info("Got SIGINT, exiting with status 0 [EsMSIGINT]")
       killed = true
       System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
@@ -239,7 +239,7 @@ class Globals(
 
   private var _appSecret: String = _
 
-  private def reloadAppSecret() {
+  private def reloadAppSecret(): Unit = {
     _appSecret = conf.getOptional[String](AppSecretConfValName).orElse(
       conf.getOptional[String]("play.crypto.secret")).noneIfBlank.getOrDie(
       s"Config value '$AppSecretConfValName' missing [EdENOAPPSECRET]")
@@ -287,7 +287,7 @@ class Globals(
   def redisClient: RedisClient = state.redisClient
 
 
-  def sendEmail(email: Email, siteId: SiteId) {
+  def sendEmail(email: Email, siteId: SiteId): Unit = {
     state.mailerActorRef ! (email, siteId)
   }
 
@@ -295,7 +295,7 @@ class Globals(
   def spamCheckActor: Option[ActorRef] = state.spamCheckActorRef
 
   def renderPageContentInBackground(
-        sitePageId: SitePageId, customParams: Option[PageRenderParamsAndHash]) {
+        sitePageId: SitePageId, customParams: Option[PageRenderParamsAndHash]): Unit = {
     if (!isTestDisableBackgroundJobs) {
       state.renderContentActorRef ! (sitePageId, customParams)
     }
@@ -304,7 +304,7 @@ class Globals(
   /** Good to stop it, when importing sites via JSON, so can avoid PostgreSQL serialization
     * failures. Later: One single actor for all database writes? + message passing. [one-db-writer]
     */
-  def pauseAutoBackgorundRenderer3Seconds() {
+  def pauseAutoBackgorundRenderer3Seconds(): Unit = {
     if (isTestDisableBackgroundJobs) return
     state.renderContentActorRef ! RenderContentService.PauseThreeSeconds
   }
@@ -763,7 +763,7 @@ class Globals(
   }
 
 
-  def startStuff() {
+  def startStuff(): Unit = {
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
@@ -811,7 +811,7 @@ class Globals(
   }
 
 
-  private def tryCreateStateUntilKilled() {
+  private def tryCreateStateUntilKilled(): Unit = {
     logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
     var firsAttempt = true
@@ -891,7 +891,7 @@ class Globals(
   }
 
 
-  def stopStuff() {
+  def stopStuff(): Unit = {
     // Play.start() first calls Play.stop(), so:
     if (_state eq null)
       return
@@ -959,7 +959,7 @@ class Globals(
   }
 
 
-  def shutdownLogging() {
+  def shutdownLogging(): Unit = {
     // Flush any async log messages, just in case, so they won't get lost.
     // See: https://logback.qos.ch/manual/configuration.html#stopContext
     // and: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
@@ -1002,18 +1002,18 @@ class Globals(
   }
 
   /** When running tests only. */
-  def testSetTime(when: When) {
+  def testSetTime(when: When): Unit = {
     timeStartMillis = Some(when.millis)
     timeOffsetMillis = 0
   }
 
   /** When running tests only. */
-  def testFastForwardTimeMillis(millis: Long) {
+  def testFastForwardTimeMillis(millis: Long): Unit = {
     timeOffsetMillis += millis
   }
 
   /** When running tests only. */
-  def testResetTime() {
+  def testResetTime(): Unit = {
     timeStartMillis = None
     timeOffsetMillis = 0
   }

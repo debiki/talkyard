@@ -330,7 +330,7 @@ abstract class PageParts {
     val postNrsVisited = mutable.HashSet[PostNr]()
 
     // But this cycle check isn't needed? ancestorsOf won't return a cycle; it dieIf instead.
-    def dieIfCycle(postNr: PostNr) {
+    def dieIfCycle(postNr: PostNr): Unit = {
       dieIf(postNrsVisited contains postNr,
         "TyEPSTANCCYCL", s"Post parent nrs form a cycle on page $pageId, these nrs: $postNrsVisited")
       postNrsVisited.add(postNr)

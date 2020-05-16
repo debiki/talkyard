@@ -91,7 +91,7 @@ class SpamCheckActor(
   }
 
 
-  private def checkMorePostsForSpam() {
+  private def checkMorePostsForSpam(): Unit = {
     val spamCheckTasks = systemDao.loadStuffToSpamCheck(limit = batchSize)
     if (spamCheckTasks.isEmpty)
       return
@@ -131,7 +131,7 @@ class SpamCheckActor(
   private val DummyObject = new Object
 
 
-  private def handleResults(spamCheckTask: SpamCheckTask, spamCheckResults: SpamCheckResults) {
+  private def handleResults(spamCheckTask: SpamCheckTask, spamCheckResults: SpamCheckResults): Unit = {
       // We're not inside receive() any longer, so its try..catch is of no use now.
       try {
         systemDao.handleSpamCheckResults(spamCheckTask, spamCheckResults)

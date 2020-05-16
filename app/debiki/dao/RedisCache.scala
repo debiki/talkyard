@@ -67,24 +67,24 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  def saveWatchbar(userId: UserId, watchbar: Watchbar) {
+  def saveWatchbar(userId: UserId, watchbar: Watchbar): Unit = {
     redis.set(watchbarKey(siteId, userId), watchbar.toCompactBareWatchbarString)
   }
 
 
-  def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
+  def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData): Unit = {
     // Could do this in a transaction. Barely matters. [REDITX]
     redis.zadd(usersOnlineKey(siteId), now().toDouble -> userId)
     redis.zrem(strangersOnlineByIpKey(siteId), browserIdData.ip)
   }
 
 
-  def markUserOnline(userId: UserId) {
+  def markUserOnline(userId: UserId): Unit = {
     redis.zadd(usersOnlineKey(siteId), now().toDouble -> userId)
   }
 
 
-  def markUserOffline(userId: UserId) {
+  def markUserOffline(userId: UserId): Unit = {
     redis.zrem(usersOnlineKey(siteId), userId)
     // As of now we don't know if the user left, or if s/he is still online.
     // Let's assume s/he left — so don't add any stranger-online here.
@@ -107,7 +107,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  def markStrangerOnline(browserIdData: BrowserIdData) {
+  def markStrangerOnline(browserIdData: BrowserIdData): Unit = {
     // Could consider browser id cookie too (instead of just ip), but then take care
     // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
     redis.zadd(strangersOnlineByIpKey(siteId), now().toDouble -> browserIdData.ip)
@@ -147,7 +147,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
-  def clearThisSite() {
+  def clearThisSite(): Unit = {
     // Read more here: http://stackoverflow.com/questions/4006324/how-to-atomically-delete-keys-matching-a-pattern-using-redis
     // Latent BUG: This won't work if there're many Redis nodes — the keys should instead be sent as
     // arguments to 'del', so Redis can forward the delete requests to the correct nodes. [0GLKW24]
@@ -162,7 +162,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   private val LoginSecretOffset = 1000 * 1000
   private val UsageCountExpireSeconds = SingleSignOnSecretExpireSeconds * 20
 
-  def saveOneTimeLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None) {
+  def saveOneTimeLoginSecret(secretKey: String, userId: UserId, expireSeconds: Option[Long] = None): Unit = {
     val key = ssoUserBySecretKey(siteId, secretKey)
     val usageCountKey = ssoSecretUsageCountBySecretKey(siteId, secretKey)
     val expSecs: Long = expireSeconds getOrElse SingleSignOnSecretExpireSeconds

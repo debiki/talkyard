@@ -1716,7 +1716,7 @@ object JsonMaker {
     def canStillBeSingleParagraph = numOtherBlocks == 0 && numParagraphBlocks <= 1
 
     val nodeTraversor = new NodeTraversor(new NodeVisitor() {
-      override def head(node: Node, depth: Int) {
+      override def head(node: Node, depth: Int): Unit = {
         node match {
           case textNode: TextNode =>
             if (!firstLineOnly || isInFirstParagraph) {
@@ -1731,7 +1731,7 @@ object JsonMaker {
         }
       }
 
-      override def tail(node: Node, depth: Int) {
+      override def tail(node: Node, depth: Int): Unit = {
         node match {
           case element: Element if result.nonEmpty =>
             val tagName = element.tag.getName

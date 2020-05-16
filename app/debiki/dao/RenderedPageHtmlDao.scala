@@ -220,7 +220,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def rememberForum(forumPageId: PageId) {
+  private def rememberForum(forumPageId: PageId): Unit = {
     // COULD Use ConcurrentMap.merge(k, v, remappingFunction) instead? Maybe break out fn? [5KDKW2A]
     var done = false
     do {
@@ -246,7 +246,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def removePageFromMemCache(sitePageId: SitePageId, pageRenderParams: Option[PageRenderParams] = None) {
+  def removePageFromMemCache(sitePageId: SitePageId, pageRenderParams: Option[PageRenderParams] = None): Unit = {
     pageRenderParams foreach { params =>
       logger.trace(s"Removing mem-cached page: ${sitePageId.toPrettyString}, $params [TyMMW20ZF4]...")
       memCache.remove(renderedPageKey(sitePageId, params))
@@ -262,7 +262,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def uncacheAndRerenderPage(sitePageId: SitePageId) {
+  private def uncacheAndRerenderPage(sitePageId: SitePageId): Unit = {
     removePageFromMemCache(sitePageId)
 
     // Don't remove the database-cached rendered html, because it takes long to regenerate. [6KP368]
@@ -291,7 +291,7 @@ trait RenderedPageHtmlDao {
     * Also, if a new category is added, the parent forum should be rerendered.
     * For simplicity, we here uncache all forums.
     */
-  private def uncacheForums(siteId: SiteId) {
+  private def uncacheForums(siteId: SiteId): Unit = {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
     forAllAccessedOrigins { origin =>
       forumIds foreach { forumId =>
@@ -304,7 +304,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId) {
+  private def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId): Unit = {
     // Try uncache, for all combinations of embedded = true/false and page widths = tiny/medium
     // — we don't remember which requests we've gotten and what we've cached.
 

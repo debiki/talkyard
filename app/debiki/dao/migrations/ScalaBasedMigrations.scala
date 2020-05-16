@@ -22,7 +22,7 @@ import com.debiki.core._
 
 object ScalaBasedMigrations extends ScalaBasedDatabaseMigrations {
 
-  override def runMigration14(transaction: SystemTransaction) {
+  override def runMigration14(transaction: SystemTransaction): Unit = {
     Migration14.run(transaction)
   }
 

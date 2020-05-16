@@ -391,7 +391,7 @@ trait PagesDao {
   }
 
 
-  def unpinPage(pageId: PageId, requester: Participant) {
+  def unpinPage(pageId: PageId, requester: Participant): Unit = {
     pinOrUnpin(pageId, pinWhere = None, pinOrder = None, requester)
   }
 
@@ -402,7 +402,7 @@ trait PagesDao {
 
 
   private def pinOrUnpin(pageId: PageId, pinWhere: Option[PinPageWhere], pinOrder: Option[Int],
-        requester: Participant) {
+        requester: Participant): Unit = {
     require(pinWhere.isDefined == pinOrder.isDefined, "EdE2WRT5")
     val didWhat = pinWhere match {
       case None => "unpinned this topic"
@@ -470,7 +470,7 @@ trait PagesDao {
   }
 
 
-  def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData) {
+  def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData): Unit = {
     readWriteTransaction { tx =>
       val user = tx.loadTheParticipant(userId)
       val oldMeta = tx.loadThePageMeta(pageId)
@@ -526,7 +526,7 @@ trait PagesDao {
 
 
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        undelete: Boolean) {
+        undelete: Boolean): Unit = {
     readWriteTransaction { tx =>
       // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
       // so all topics in the sub community will get deleted.
@@ -540,7 +540,7 @@ trait PagesDao {
 
 
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(tx: SiteTransaction) {
+        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(tx: SiteTransaction): Unit = {
 
     val deleter = tx.loadTheParticipant(deleterId)
     if (!deleter.isStaff)
@@ -615,7 +615,7 @@ trait PagesDao {
 
 
   REFACTOR // Move to PostsDao? This fn creates a post, not a whole page operation.
-  def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction) {
+  def addMetaMessage(doer: Participant, message: String, pageId: PageId, tx: SiteTransaction): Unit = {
     // Some dupl code [3GTKYA02]
     val page = newPageDao(pageId, tx)
     val postId = tx.nextPostId()
@@ -649,7 +649,7 @@ trait PagesDao {
 
 
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     val page = newPageDao(pageId, tx)
     var newMeta = page.meta.copyWithUpdatedStats(page)
     tx.updatePageMeta(newMeta, oldMeta = page.meta,

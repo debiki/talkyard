@@ -121,7 +121,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   }
 
 
-  private def sendChangePasswordEmailTo(user: User, request: ApiRequest[_], isCreating: Boolean) {
+  private def sendChangePasswordEmailTo(user: User, request: ApiRequest[_], isCreating: Boolean): Unit = {
     import request.dao
 
     val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N

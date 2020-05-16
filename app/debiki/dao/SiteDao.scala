@@ -181,7 +181,7 @@ class SiteDao(
     }
   }
 
-  private def uncacheSiteFromMemCache() {
+  private def uncacheSiteFromMemCache(): Unit = {
     val thisSite = memCache.lookup[Site](thisSiteCacheKey)
     memCache.remove(thisSiteCacheKey)
     thisSite.foreach(SystemDao.removeCanonicalHostCacheEntries(_, memCache))
@@ -222,39 +222,39 @@ class SiteDao(
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 
 
-  def refreshPageInMemCache(pageId: PageId) {
+  def refreshPageInMemCache(pageId: PageId): Unit = {
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 
-  def refreshPagesInAnyCache(pageIds: collection.Set[PageId]) {
+  def refreshPagesInAnyCache(pageIds: collection.Set[PageId]): Unit = {
     pageIds.foreach(refreshPageInMemCache)
   }
 
-  def emptyCache() {
+  def emptyCache(): Unit = {
     readWriteTransaction(_.bumpSiteVersion())
     memCache.clearThisSite()
   }
 
-  def emptyDatabaseCache(tx: SiteTransaction) {
+  def emptyDatabaseCache(tx: SiteTransaction): Unit = {
     tx.bumpSiteVersion()
   }
 
-  def emptyInMemoryCache() {
+  def emptyInMemoryCache(): Unit = {
     memCache.clearThisSite()
   }
 
-  def emptyCacheImpl(transaction: SiteTransaction) {  BUG; RACE; // if mem cache refilled before tx ends
+  def emptyCacheImpl(transaction: SiteTransaction): Unit = {  BUG; RACE; // if mem cache refilled before tx ends
     transaction.bumpSiteVersion()
     memCache.clearThisSite()
   }
 
 
-  def removeFromMemCache(key: MemCacheKey) {
+  def removeFromMemCache(key: MemCacheKey): Unit = {
     memCache.remove(key)
   }
 
 
-  def dieOrThrowNoUnless(mayMaybe: MayMaybe, errorCode: String) {
+  def dieOrThrowNoUnless(mayMaybe: MayMaybe, errorCode: String): Unit = {
     COULD // avoid logging harmless internal error, see comment below,
     // by checking Globals.now() - this-dao.createdAt and doing throwForbidden() not die().
     // Later, check if current time minus request start time is small, then just
@@ -329,7 +329,7 @@ class SiteDao(
     }) toSet
   }
 
-  def ensureSiteActiveOrThrow(newMember: UserInclDetails, transaction: SiteTransaction) {
+  def ensureSiteActiveOrThrow(newMember: UserInclDetails, transaction: SiteTransaction): Unit = {
     // The throwForbidden exceptions can be triggered for example if someone starts signing up,
     // then the site gets deleted, and then the person clicks the submit button in
     // the signup form. (I.e. a race condition, and that's fine.)
@@ -365,7 +365,7 @@ class SiteDao(
     readOnlyTransaction(_.loadHostsInclDetails())
   }
 
-  def changeSiteHostname(newHostname: String) {
+  def changeSiteHostname(newHostname: String): Unit = {
     readWriteTransaction { tx =>
       val hostsNewestFirst = tx.loadHostsInclDetails().sortBy(-_.addedAt.millis)
       if (hostsNewestFirst.length > SoftMaxOldHostnames) {
@@ -392,7 +392,7 @@ class SiteDao(
     uncacheSiteFromMemCache()
   }
 
-  def changeExtraHostsRole(newRole: Hostname.Role) {
+  def changeExtraHostsRole(newRole: Hostname.Role): Unit = {
     readWriteTransaction { transaction =>
       transaction.changeExtraHostsRole(newRole)
       uncacheSiteFromMemCache()
@@ -421,7 +421,7 @@ class SiteDao(
   def pubSub: PubSubApi = globals.pubSub
   def strangerCounter: StrangerCounterApi = globals.strangerCounter
 
-  def saveDeleteNotifications(notifications: Notifications) {
+  def saveDeleteNotifications(notifications: Notifications): Unit = {
     readWriteTransaction(_.saveDeleteNotifications(notifications))
   }
 
@@ -433,7 +433,7 @@ class SiteDao(
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
-  def markAllNotfsAsSeen(userId: UserId) {
+  def markAllNotfsAsSeen(userId: UserId): Unit = {
     val user = loadTheUserInclDetailsById(userId)
     readWriteTransaction(_.markNotfsAsSeen(userId, None,
       skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
@@ -470,7 +470,7 @@ class SiteDao(
     }
   }
 
-  def deleteApiSecrets(secretNrs: immutable.Seq[ApiSecretNr]) {
+  def deleteApiSecrets(secretNrs: immutable.Seq[ApiSecretNr]): Unit = {
     val now = globals.now()
     readWriteTransaction(tx => secretNrs.foreach(tx.setApiSecretDeleted(_, now)))
   }
@@ -488,7 +488,7 @@ class SiteDao(
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
     readWriteTransaction(_.saveUnsentEmailConnectToNotfs(email, notfs))
 
-  def updateSentEmail(email: Email) {
+  def updateSentEmail(email: Email): Unit = {
     readWriteTransaction { transaction =>
       transaction.updateSentEmail(email)
       if (email.failureText.isEmpty) {
@@ -506,7 +506,7 @@ class SiteDao(
 
   // ----- Testing
 
-  def skipRateLimitsBecauseIsTest() {
+  def skipRateLimitsBecauseIsTest(): Unit = {
     memCache.put(
       MemCacheKey(siteId, "skip-rate-limits"),
       MemCacheValueIgnoreVersion("y"))

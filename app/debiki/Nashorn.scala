@@ -92,7 +92,7 @@ class Nashorn(
     * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
     * classloader here?
     */
-  def startCreatingRenderEngines() {
+  def startCreatingRenderEngines(): Unit = {
     if (isTestSoDisableScripts)
       return
     if (!javascriptEngines.isEmpty) {
@@ -136,7 +136,7 @@ class Nashorn(
   def numEnginesCreated: RoleId = javascriptEngines.size()
 
 
-  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false) {
+  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false): Unit = {
     val engine = try {
       val engine = makeJavascriptEngine()
       warmupJavascriptEngine(engine)
@@ -478,7 +478,7 @@ class Nashorn(
     var javascriptStream: jio.InputStream = null
     try {
       // Add translations, required by the render-page-code later when it runs.
-      def addTranslation(langCode: String) {
+      def addTranslation(langCode: String): Unit = {
         val translScript = loadAssetAsString(
           s"translations/$langCode/i18n$min.js", isTranslation = true)
         scriptBuilder.append(translScript)
@@ -548,7 +548,7 @@ class Nashorn(
   }
 
 
-  private def warmupJavascriptEngine(engine: js.ScriptEngine) {
+  private def warmupJavascriptEngine(engine: js.ScriptEngine): Unit = {
     logger.debug(o"""Warming up Nashorn engine...""")
     val timeBefore = System.currentTimeMillis()
     // Warming up with three laps seems enough, almost all time is spent in at lap 1.

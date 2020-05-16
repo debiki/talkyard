@@ -4,8 +4,6 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.12.8"
-
 libraryDependencies ++= Seq(
   // PostgreSQL JDBC client driver
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/

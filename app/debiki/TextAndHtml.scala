@@ -109,7 +109,7 @@ object TextAndHtmlMaker {
       addUrl(elem.attr("src"))
     }
 
-    def addUrl(url: String) {
+    def addUrl(url: String): Unit = {
       if (url eq null) return
       val trimmed = url.trim
       if (trimmed.isEmpty) return

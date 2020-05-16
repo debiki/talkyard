@@ -60,7 +60,7 @@ trait SpecialContentDao {
 
 
   def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Option[String],
-        resetToDefaultContent: Boolean, editorId: UserId) {
+        resetToDefaultContent: Boolean, editorId: UserId): Unit = {
 
     if (contentId != SpecialContentPages.StylesheetId &&
         contentId != SpecialContentPages.JavascriptId)
@@ -106,7 +106,7 @@ trait SpecialContentDao {
 
 
   protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
-      source: String, htmlSanitized: String, transaction: SiteTransaction) {
+      source: String, htmlSanitized: String, transaction: SiteTransaction): Unit = {
     val pageMeta = PageMeta.forNewPage(pageId, PageType.SpecialContent, authorId,
       transaction.now.toJavaDate,
       numPostsTotal = 1, // no title post, only body
@@ -137,7 +137,7 @@ trait SpecialContentDao {
 
 
   protected def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId, transaction: SiteTransaction) {
+        editorId: UserId, transaction: SiteTransaction): Unit = {
     if (oldPost.currentSource == newSource)
       return
 

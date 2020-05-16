@@ -69,11 +69,11 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def tracerSpan: io.opentracing.Span =
     request.attrs(SafeActions.TracerSpanKey)
 
-  def tracerSpanLogEvent(eventName: String) {   // [TRACING]
+  def tracerSpanLogEvent(eventName: String): Unit = {   // [TRACING]
     tracerSpan.log(com.google.common.collect.ImmutableMap.of("event", eventName))
   }
 
-  def tracerSpanLogEventValue(eventName: String, value: String) {
+  def tracerSpanLogEventValue(eventName: String, value: String): Unit = {
     tracerSpan.log(com.google.common.collect.ImmutableMap.of("event", eventName, "value", value))
   }
 

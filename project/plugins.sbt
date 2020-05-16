@@ -20,6 +20,8 @@ resolvers ++= Seq(
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.1")
 
+// A refactoring and linting tool for Scala
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.15")
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
 // ---------------------------------------------------------------

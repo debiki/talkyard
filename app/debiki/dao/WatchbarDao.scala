@@ -75,7 +75,7 @@ trait WatchbarDao {
   /* BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
   * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */
-  def saveWatchbar(userId: UserId, watchbar: Watchbar) {
+  def saveWatchbar(userId: UserId, watchbar: Watchbar): Unit = {
     memCache.put(
       key(userId),
       MemCacheValueIgnoreVersion(watchbar))
@@ -83,7 +83,7 @@ trait WatchbarDao {
   }
 
 
-  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId) {
+  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId): Unit = {
     val watchbar = getOrCreateWatchbar(userId)
     val newWatchbar = watchbar.markPageAsUnread(pageId)
     saveWatchbar(userId, newWatchbar)

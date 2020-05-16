@@ -115,7 +115,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
   }
 
 
-  private def createAndSendSummaryEmails() {
+  private def createAndSendSummaryEmails(): Unit = {
     val now = globals.now()
     val siteIdsAndStats: Map[SiteId, immutable.Seq[UserStats]] =
       systemDao.loadStatsForUsersToMaybeEmailSummariesTo(now, limit = 100)
@@ -130,7 +130,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
 
   CLEAN_UP; REFACTOR // break out to ed.server.utx.SomeNewClass? Later...  UtxDao maybe?
-  private def createAndSendUtxReminderEmails() {  // [plugin]
+  private def createAndSendUtxReminderEmails(): Unit = {  // [plugin]
     val now = globals.now()
     val aDayAgo = now.minusDays(1)
     val aWeekAgo = now.minusDays(7)
@@ -219,7 +219,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
   }
 
 
-  private def loadAndSendNotifications() {
+  private def loadAndSendNotifications(): Unit = {
     // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
     // one is allowed to edit a post directly after having posted it, without the edits appearing
     // in the version history. Usually a few minutes. Google for "Discourse ninja edit")
@@ -236,7 +236,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
   /**
    * Sends notifications, for all tenants and notifications specified.
    */
-  private def trySendEmailNotfs(notfsBySiteId: Map[SiteId, Seq[Notification]]) {
+  private def trySendEmailNotfs(notfsBySiteId: Map[SiteId, Seq[Notification]]): Unit = {
 
     for {
       (siteId, siteNotfs) <- notfsBySiteId
@@ -308,7 +308,7 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
 
   private def constructAndSendEmail(siteDao: SiteDao, site: Site,
-        user: Participant, userNotfs: Seq[Notification]) {
+        user: Participant, userNotfs: Seq[Notification]): Unit = {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server

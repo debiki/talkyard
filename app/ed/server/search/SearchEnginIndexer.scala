@@ -102,7 +102,7 @@ object SearchEngineIndexer extends TyLogging {
   /** Waits for the ElasticSearch cluster to start. (Since I've specified 2 shards, it enters
     * yellow status only, not green status, since there's one ElasticSearch node only (not 2).)
     */
-   def debugWaitUntilSearchEngineStarted() {
+   def debugWaitUntilSearchEngineStarted(): Unit = {
     ??? /*
     import es.action.admin.cluster.{health => h}
     val response: h.ClusterHealthResponse =
@@ -119,7 +119,7 @@ object SearchEngineIndexer extends TyLogging {
   /** Waits until all pending index requests have been completed.
     * Intended for test suite code only.
     */
-  def debugRefreshIndexes() {
+  def debugRefreshIndexes(): Unit = {
     /*
     Await.result(
       ask(indexingActorRef, ReplyWhenDoneIndexing)(Timeout(999 seconds)),
@@ -167,12 +167,12 @@ class IndexingActor(
 
   /** Adds all posts and pages in the specified languages to the (re)index queue.
     */
-  def enqueueEverythingInLanguages(languages: Set[String]) {
+  def enqueueEverythingInLanguages(languages: Set[String]): Unit = {
     systemDao.addEverythingInLanguagesToIndexQueue(languages)
   }
 
 
-  private def loadAndIndexPendingPosts() {
+  private def loadAndIndexPendingPosts(): Unit = {
     val stuffToIndex = systemDao.loadStuffToIndex(limit = batchSize)
     stuffToIndex.postsBySite foreach { case (siteId: SiteId, posts: Seq[Post]) =>
       val (toUnindex, toIndex) = posts.partition(post => {
@@ -184,7 +184,7 @@ class IndexingActor(
   }
 
 
-  private def indexPosts(siteId: SiteId, posts: Seq[Post], stuffToIndex: StuffToIndex) {
+  private def indexPosts(siteId: SiteId, posts: Seq[Post], stuffToIndex: StuffToIndex): Unit = {
     if (posts.isEmpty)
       return
 
@@ -195,7 +195,7 @@ class IndexingActor(
   }
 
 
-  private def indexPost(post: Post, siteId: SiteId, stuffToIndex: StuffToIndex) {
+  private def indexPost(post: Post, siteId: SiteId, stuffToIndex: StuffToIndex): Unit = {
     val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
       logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
       return
@@ -211,7 +211,7 @@ class IndexingActor(
         .setRouting(siteId.toString)  // we set this routing when searching too [4YK7CS2]
 
     requestBuilder.execute(new ActionListener[IndexResponse] {
-      def onResponse(response: IndexResponse) {
+      def onResponse(response: IndexResponse): Unit = {
         logger.debug("Indexed site:post " + docId)
         // This isn't the actor's thread. This is some thread controlled by ElasticSearch.
         // So don't call systemDao.deleteFromIndexQueue(post, siteId) from here
@@ -221,14 +221,14 @@ class IndexingActor(
         postsRecentlyIndexed.add(SiteIdAndPost(siteId, post))
       }
 
-      def onFailure(ex: Exception) {
+      def onFailure(ex: Exception): Unit = {
         logger.error(i"Error when indexing siteId:postId: $docId", ex)
       }
     })
   }
 
 
-  private def deleteAlreadyIndexedPostsFromQueue() {
+  private def deleteAlreadyIndexedPostsFromQueue(): Unit = {
     var sitePostIds = Vector[SiteIdAndPost]()
     while (!postsRecentlyIndexed.isEmpty) {
       sitePostIds +:= postsRecentlyIndexed.remove()
@@ -249,7 +249,7 @@ class IndexingActor(
   }
 
 
-  private def unindexPosts(siteId: SiteId, posts: Seq[Post]) {
+  private def unindexPosts(siteId: SiteId, posts: Seq[Post]): Unit = {
     if (posts.isEmpty)
       return
 
@@ -262,7 +262,7 @@ class IndexingActor(
     }
 
     bulkRequestBuilder.execute(new ActionListener[BulkResponse] {
-      def onResponse(response: BulkResponse) {
+      def onResponse(response: BulkResponse): Unit = {
         // (This isn't the actor's thread. This is some thread controlled by ElasticSearch.)
         if (response.hasFailures) {
           val theError = response.buildFailureMessage
@@ -278,7 +278,7 @@ class IndexingActor(
         }
       }
 
-      def onFailure(ex: Exception) {
+      def onFailure(ex: Exception): Unit = {
         logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", ex)
       }
     })

@@ -87,7 +87,7 @@ sealed trait Watchbar {
     */
   def toCompactBareWatchbarString: String = {
     val sb = StringBuilder.newBuilder
-    def append(topics: immutable.Seq[WatchbarTopic]) {
+    def append(topics: immutable.Seq[WatchbarTopic]): Unit = {
       for (topic <- topics) {
         if (sb.nonEmpty && sb.last != '|') sb.append(",")
         sb.append(topic.pageId)

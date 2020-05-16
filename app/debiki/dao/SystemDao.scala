@@ -63,7 +63,7 @@ class SystemDao(
     if (anyOldTx.isDefined) fn(anyOldTx.get)
     else dbDao2.readWriteSystemTransaction(fn)
 
-  def applyEvolutions() {
+  def applyEvolutions(): Unit = {
     dangerous_readWriteTransaction(_.applyEvolutions())
   }
 
@@ -111,7 +111,7 @@ class SystemDao(
   def loadSite(siteId: SiteId): Option[Site] =
     readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
 
-  def updateSites(sites: Seq[SuperAdminSitePatch]) {
+  def updateSites(sites: Seq[SuperAdminSitePatch]): Unit = {
     val sitesToClear = mutable.Set[SiteId]()
     for (patch <- sites) {
       val siteInDb = loadSite(patch.siteId)
@@ -170,7 +170,7 @@ class SystemDao(
     * deadlocks if the transaction here deletes the site, but another request
     * tries to update the same site, in a parallel transaction.
     */
-  def deleteSitesWithNameAndHostnames(siteName: String, hostnames: Set[String]) {
+  def deleteSitesWithNameAndHostnames(siteName: String, hostnames: Set[String]): Unit = {
     dieIfAny(hostnames, (h: String) => !Hostname.isE2eTestHostname(h), "TyE7PK5W8",
       (badName: String) => s"Not an e2e test hostname: $badName")
 
@@ -197,7 +197,7 @@ class SystemDao(
 
 
   def deleteSites(siteIdsToDelete: Set[SiteId], sysTx: SystemTransaction,
-        mayDeleteRealSite: Boolean = false) {
+        mayDeleteRealSite: Boolean = false): Unit = {
 
     val deletedHostnames = mutable.Set[String]()
 
@@ -410,7 +410,7 @@ class SystemDao(
 
   // ----- Pages
 
-  def refreshPageInMemCache(sitePageId: SitePageId) {
+  def refreshPageInMemCache(sitePageId: SitePageId): Unit = {
     memCache.firePageSaved(sitePageId)
   }
 
@@ -460,13 +460,13 @@ class SystemDao(
     }
   }
 
-  def deleteFromIndexQueue(post: Post, siteId: SiteId) {
+  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit = {
     dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
       transaction.deleteFromIndexQueue(post, siteId)
     }
   }
 
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
+  def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit = {
     dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
       transaction.addEverythingInLanguagesToIndexQueue(languages)
     }
@@ -488,7 +488,7 @@ class SystemDao(
     *
     * COULD REFACTOR move to SpamSiteDao, since now uses only a per site tx.
     */
-  def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults) {
+  def handleSpamCheckResults(spamCheckTaskNoResults: SpamCheckTask, spamCheckResults: SpamCheckResults): Unit = {
     val postToSpamCheck= spamCheckTaskNoResults.postToSpamCheck getOrElse {
       // Currently registration spam is checked directly when registering;
       // we don't save anything to the database, and shouldn't find anything here later.
@@ -596,25 +596,25 @@ class SystemDao(
 
   // ----- The janitor actor
 
-  def deletePersonalDataFromOldAuditLogEntries() {
+  def deletePersonalDataFromOldAuditLogEntries(): Unit = {
     dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
       tx.deletePersonalDataFromOldAuditLogEntries()
     }
   }
 
-  def deletePersonalDataFromOldSpamCheckTasks() {
+  def deletePersonalDataFromOldSpamCheckTasks(): Unit = {
     dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
       tx.deletePersonalDataFromOldSpamCheckTasks()
     }
   }
 
-  def deleteOldUnusedUploads()  {
+  def deleteOldUnusedUploads(): Unit =  {
     dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
       tx.deleteOldUnusedUploads()
     }
   }
 
-  def executePendingReviewTasks()  {
+  def executePendingReviewTasks(): Unit =  {
     val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readOnlyTransaction { tx =>
       tx.loadReviewTaskIdsToExecute()
     }
@@ -629,7 +629,7 @@ class SystemDao(
   }
 
 
-  def reportSpamClassificationMistakesBackToSpamCheckServices() {
+  def reportSpamClassificationMistakesBackToSpamCheckServices(): Unit = {
     val spamCheckTasks: immutable.Seq[SpamCheckTask] =
       readOnlyTransaction(_.loadMisclassifiedSpamCheckTasks(22))
 
@@ -651,7 +651,7 @@ class SystemDao(
 
   // ----- Testing
 
-  def emptyDatabase() {
+  def emptyDatabase(): Unit = {
     dangerous_readWriteTransaction { transaction =>
       dieIf(!globals.isOrWasTest, "EsE500EDB0")
       transaction.emptyDatabase()
@@ -659,7 +659,7 @@ class SystemDao(
   }
 
 
-  def forgetHostname(hostname: String) {
+  def forgetHostname(hostname: String): Unit = {
     memCache.remove(canonicalHostKey(hostname))
   }
 
@@ -692,7 +692,7 @@ object SystemDao {
     MemCacheKeyAnySite(s"$host|SiteByOrigin")
 
 
-  def removeCanonicalHostCacheEntries(site: Site, memCache: MemCache) {
+  def removeCanonicalHostCacheEntries(site: Site, memCache: MemCache): Unit = {
     site.hostnames foreach { host =>
       memCache.remove(canonicalHostKey(host.hostname))
     }

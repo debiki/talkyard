@@ -312,7 +312,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]) {
+  private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]): Unit = {
     val postSize = text.length
     val user = request.user_!
     if (user.isAdmin) {

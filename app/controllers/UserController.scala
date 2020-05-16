@@ -421,7 +421,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[Participant], dao: SiteDao) {
+  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[Participant], dao: SiteDao): Unit = {
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
       "TyE4JKKQX3", "Not allowed to list activity for this user")
   }
@@ -1406,7 +1406,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant) {
+  private def throwUnlessMayEditPrefs(userId: UserId, requester: Participant): Unit = {
     val staffOrSelf = requester.isStaff || requester.id == userId
     throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
     throwForbiddenIf(userId < LowestTalkToMemberId,

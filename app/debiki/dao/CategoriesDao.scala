@@ -478,7 +478,7 @@ trait CategoriesDao {
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
       includeDeleted: Boolean,
       inclCatsWithTopicsUnlisted: Boolean,
-      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]): Unit = {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -567,7 +567,7 @@ trait CategoriesDao {
   }
 
 
-  def uncacheAllCategories() {
+  def uncacheAllCategories(): Unit = {
     memCache.remove(allCategoriesKey)
   }
 
@@ -694,7 +694,7 @@ trait CategoriesDao {
   }
 
 
-  def deleteUndeleteCategory(categoryId: CategoryId, delete: Boolean, who: Who) {
+  def deleteUndeleteCategory(categoryId: CategoryId, delete: Boolean, who: Who): Unit = {
     readWriteTransaction { tx =>
       throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
       val categoryBefore = tx.loadCategory(categoryId) getOrElse {
@@ -710,7 +710,7 @@ trait CategoriesDao {
   }
 
 
-  private def setDefaultCategory(category: Category, tx: SiteTransaction) {
+  private def setDefaultCategory(category: Category, tx: SiteTransaction): Unit = {
     val rootCategoryId = category.parentId getOrDie "EsE2PK8O4"
     val rootCategory = tx.loadCategory(rootCategoryId) getOrDie "EsE5KG02"
     if (rootCategory.defaultSubCatId.contains(category.id))

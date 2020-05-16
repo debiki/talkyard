@@ -271,7 +271,7 @@ object PagePath {
    * if it needs to be corrected.
    */
   def checkPath(siteId: SiteId = DummySiteId, folder: String = "/",
-        pageId: Option[String] = None, pageSlug: String = "") {
+        pageId: Option[String] = None, pageSlug: String = ""): Unit = {
     // Construct a PagePath, serialize it
     // and verify that the string can be parsed.
     val path = PagePath(siteId, folder, pageId, showId = false, pageSlug)
@@ -452,7 +452,7 @@ case class PathRanges(
   folders foreach _checkIsFolder
   trees foreach _checkIsFolder
 
-  private def _checkIsFolder(path: String) {
+  private def _checkIsFolder(path: String): Unit = {
     dieIf(!path.startsWith("/"), "DwE83JGF7")
     dieIf(!path.endsWith("/"), "DwE90kX2")
   }

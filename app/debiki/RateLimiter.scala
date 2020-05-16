@@ -74,7 +74,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
   }
 
 
-  def rateLimit(rateLimits: RateLimits, request: SomethingToRateLimit) {
+  def rateLimit(rateLimits: RateLimits, request: SomethingToRateLimit): Unit = {
     if (request.user.exists(_.isAdmin))
       return
 
@@ -139,7 +139,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
 
   private def throwIfTooManyRequests(rateLimits: RateLimits, now: UnixTime,
-        recentRequestTimestamps: Array[UnixTime], key: String) {
+        recentRequestTimestamps: Array[UnixTime], key: String): Unit = {
 
     var index = 0
     var numRequestsLast15Seconds = 0

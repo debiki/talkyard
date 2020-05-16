@@ -24,41 +24,41 @@ import Prelude._
 
 
 trait SiteTransaction {
-  def commit()
-  def rollback()
+  def commit(): Unit
+  def rollback(): Unit
   def hasBeenRolledBack: Boolean
 
   def siteId: SiteId
 
-  def setSiteId(id: SiteId)
+  def setSiteId(id: SiteId): Unit
 
   /** Continues using the same connection. */
   def asSystem: SystemTransaction
 
   def now: When
 
-  def deferConstraints()
+  def deferConstraints(): Unit
 
 
   def loadSite(): Option[Site]
   def loadSiteInclDetails(): Option[SiteInclDetails]
-  def bumpSiteVersion()
-  def updateSite(changedSite: Site)
+  def bumpSiteVersion(): Unit
+  def updateSite(changedSite: Site): Unit
 
 
   // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
-  def createUnknownUser()
+  def createUnknownUser(): Unit
 
   def loadSiteVersion(): Int
 
   def loadSiteSettings(): Option[EditedSettings]
-  def upsertSiteSettings(settings: SettingsToSave)
+  def upsertSiteSettings(settings: SettingsToSave): Unit
 
   def loadHostsInclDetails(): Seq[HostnameInclDetails]
-  def insertSiteHost(host: Hostname)
-  def updateHost(host: Hostname)
-  def changeCanonicalHostRoleToExtra()
-  def changeExtraHostsRole(newRole: Hostname.Role)
+  def insertSiteHost(host: Hostname): Unit
+  def updateHost(host: Hostname): Unit
+  def changeCanonicalHostRoleToExtra(): Unit
+  def changeExtraHostsRole(newRole: Hostname.Role): Unit
 
   def loadResourceUsage(): ResourceUse
 
@@ -69,8 +69,8 @@ trait SiteTransaction {
   }
   def loadCategoryPathRootLast(categoryId: CategoryId): immutable.Seq[Category]
   def nextCategoryId(): Int
-  def insertCategoryMarkSectionPageStale(category: Category)
-  def updateCategoryMarkSectionPageStale(category: Category)
+  def insertCategoryMarkSectionPageStale(category: Category): Unit
+  def updateCategoryMarkSectionPageStale(category: Category): Unit
   def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId]
 
   def loadPost(uniquePostId: PostId): Option[Post]
@@ -128,7 +128,7 @@ trait SiteTransaction {
   }
 
   def nextDraftNr(userId: UserId): DraftNr
-  def upsertDraft(draft: Draft)
+  def upsertDraft(draft: Draft): Unit
   def deleteDraft(userId: UserId, draftNr: DraftNr): Boolean
   def loadAllDrafts(): immutable.Seq[Draft]
   def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
@@ -137,21 +137,21 @@ trait SiteTransaction {
   def listDraftsRecentlyEditedFirst(userId: UserId, limit: Int): immutable.Seq[Draft]
 
   def nextPostId(): PostId
-  def insertPost(newPost: Post)
-  def updatePost(newPost: Post)
+  def insertPost(newPost: Post): Unit
+  def updatePost(newPost: Post): Unit
 
-  def indexPostsSoon(posts: Post*)
-  def indexAllPostsOnPage(pageId: PageId)
-  def indexPagesSoon(pageMeta: PageMeta*)
+  def indexPostsSoon(posts: Post*): Unit
+  def indexAllPostsOnPage(pageId: PageId): Unit
+  def indexPagesSoon(pageMeta: PageMeta*): Unit
 
-  def insertSpamCheckTask(spamCheckTask: SpamCheckTask)
+  def insertSpamCheckTask(spamCheckTask: SpamCheckTask): Unit
   def loadSpamCheckTasksWaitingForHumanLatestLast(postId: PostId): immutable.Seq[SpamCheckTask]
-  def updateSpamCheckTaskForPostWithResults(spamCheckTask: SpamCheckTask)
+  def updateSpamCheckTaskForPostWithResults(spamCheckTask: SpamCheckTask): Unit
 
   // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean
   def removePageMember(pageId: PageId, userId: UserId, removedById: UserId): Boolean
-  def removeDeletedMemberFromAllPages(userId: UserId)
+  def removeDeletedMemberFromAllPages(userId: UserId): Unit
 
   def loadMessageMembers(pageId: PageId): Set[UserId]
 
@@ -168,22 +168,22 @@ trait SiteTransaction {
   def loadReadProgress(userId: UserId, pageId: PageId): Option[PageReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
         : (Option[PageReadingProgress], Boolean)
-  def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: PageReadingProgress)
-  def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When)
+  def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: PageReadingProgress): Unit
+  def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When): Unit
 
   def loadAllPageParticipantsAllPages(): immutable.Seq[PageParticipant]
-  def insertPageParticipant(pagePp: PageParticipant)
+  def insertPageParticipant(pagePp: PageParticipant): Unit
 
   def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
 
   def loadAllPagePopularityScores(): Seq[PagePopularityScores]
   def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores]
-  def upsertPagePopularityScore(scores: PagePopularityScores)
+  def upsertPagePopularityScore(scores: PagePopularityScores): Unit
 
   def loadLastPostRevision(postId: PostId): Option[PostRevision]
   def loadPostRevision(postId: PostId, revisionNr: Int): Option[PostRevision]
-  def insertPostRevision(revision: PostRevision)
-  def updatePostRevision(revision: PostRevision)
+  def insertPostRevision(revision: PostRevision): Unit
+  def updatePostRevision(revision: PostRevision): Unit
 
   // Also see: loadVoterIds(postId) and  listUsernamesOnPage(pageId)
   def loadAuthorIdsByPostId(postIds: Set[PostId]): Map[PostId, UserId]
@@ -192,7 +192,7 @@ trait SiteTransaction {
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
   def loadAllPostActions(): immutable.Seq[PostAction]
-  def insertPostAction(postAction: PostAction)
+  def insertPostAction(postAction: PostAction): Unit
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
   /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02]
@@ -202,18 +202,18 @@ trait SiteTransaction {
   /** Remembers that the specified posts have been read by a certain user.
     */
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr], readById: UserId,
-        readFromIp: String)
+        readFromIp: String): Unit
 
 
   def loadUserStats(userId: UserId): Option[UserStats]
   def loadAllUserStats(): immutable.Seq[UserStats]
-  def upsertUserStats(userStats: UserStats)
+  def upsertUserStats(userStats: UserStats): Unit
 
   /** Also updates the user stats, but avoids races about writing to unrelated fields. */
-  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When])
-  def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When])
+  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When]): Unit
+  def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When]): Unit
 
-  def reconsiderSendingSummaryEmailsTo(memberId: UserId) {
+  def reconsiderSendingSummaryEmailsTo(memberId: UserId): Unit = {
     // When set to null, the user will be considered for summary emails and marked yes-get or no.
     bumpNextSummaryEmailDate(memberId, nextEmailAt = None)
   }
@@ -221,32 +221,32 @@ trait SiteTransaction {
   /** This will make the server have a look at everyone, and see if it's time to send them
     * summary emails (e.g. because the Everyone group's settings were changed).
     */
-  def reconsiderSendingSummaryEmailsToEveryone()
+  def reconsiderSendingSummaryEmailsToEveryone(): Unit
 
 
   def loadAllUserVisitStats(): immutable.Seq[UserVisitStats]
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
-  def upsertUserVisitStats(visitStats: UserVisitStats)
+  def upsertUserVisitStats(visitStats: UserVisitStats): Unit
 
   def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
   def loadPostsReadStats(pageId: PageId): PostsReadStats
   def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
-    newPostNrsByOldNrs: Map[PostNr, PostNr])
+    newPostNrsByOldNrs: Map[PostNr, PostNr]): Unit
 
   def loadAllTagsAsSet(): Set[TagLabel]
   def loadTagsAndStats(): Seq[TagAndStats]
   def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]]
   def loadTagsForPost(postId: PostId): Set[TagLabel] =
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
-  def removeTagsFromPost(labels: Set[TagLabel], postId: PostId)
-  def addTagsToPost(labels: Set[TagLabel], postId: PostId, isPage: Boolean)
-  def renameTag(from: String, to: String)
-  def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel)
+  def removeTagsFromPost(labels: Set[TagLabel], postId: PostId): Unit
+  def addTagsToPost(labels: Set[TagLabel], postId: PostId, isPage: Boolean): Unit
+  def renameTag(from: String, to: String): Unit
+  def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel): Unit
   def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
   def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
 
   def loadFlagsFor(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[PostFlag]
-  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId)
+  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit
 
   def nextPageId(): PageId
 
@@ -265,27 +265,27 @@ trait SiteTransaction {
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasByExtIdAsMap(extImpIds: Iterable[ExtId]): Map[ExtId, PageMeta]
   def loadPageMetasByAltIdAsMap(altIds: Iterable[AltPageId]): Map[AltPageId, PageMeta]
-  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false)
+  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta, isImporting: Boolean = false): Unit
 
-  final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
+  final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean): Unit = {
     dieIf(newMeta.pageType != oldMeta.pageType && !oldMeta.pageType.mayChangeRole, "EsE4KU0W2")
     dieIf(newMeta.version < oldMeta.version, "EsE6JKU0D4")
     updatePageMetaImpl(newMeta, oldMeta = oldMeta, markSectionPageStale)
   }
   protected def updatePageMetaImpl(newMeta: PageMeta, oldMeta: PageMeta,
-        markSectionPageStale: Boolean)
+        markSectionPageStale: Boolean): Unit
 
-  def markPagesWithUserAvatarAsStale(userId: UserId)
-  def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
+  def markPagesWithUserAvatarAsStale(userId: UserId): Unit
+  def markSectionPageContentHtmlAsStale(categoryId: CategoryId): Unit
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
         : Option[(String, CachedPageVersion)]
   def upsertCachedPageContentHtml(
-        pageId: PageId, version: CachedPageVersion, reactStorejsonString: String, html: String)
+        pageId: PageId, version: CachedPageVersion, reactStorejsonString: String, html: String): Unit
 
 
-  def insertAltPageId(altPageId: AltPageId, realPageId: PageId)
-  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId)
-  def deleteAltPageId(altPageId: AltPageId)
+  def insertAltPageId(altPageId: AltPageId, realPageId: PageId): Unit
+  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId): Unit
+  def deleteAltPageId(altPageId: AltPageId): Unit
   def listAltPageIds(realPageId: PageId): Set[AltPageId]
   def loadRealPageId(altPageId: AltPageId): Option[PageId]
   def loadAllAltPageIds(): Map[AltPageId, PageId]
@@ -316,16 +316,16 @@ trait SiteTransaction {
 
   /** Remembers that a file has been uploaded and where it's located. */
   def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int, mimeType: String,
-        dimensions: Option[(Int, Int)])
-  def deleteUploadedFileMeta(uploadRef: UploadRef)
+        dimensions: Option[(Int, Int)]): Unit
+  def deleteUploadedFileMeta(uploadRef: UploadRef): Unit
 
   /** Uploaded files are referenced via 1) URLs in posts (e.g. `<a href=...> <img src=...>`)
     * and 2) from users, if a file is someone's avatar image.
     */
-  def updateUploadedFileReferenceCount(uploadRef: UploadRef)
+  def updateUploadedFileReferenceCount(uploadRef: UploadRef): Unit
 
   /** Remembers that an uploaded file is referenced from this post. */
-  def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef, addedById: UserId)
+  def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef, addedById: UserId): Unit
   def deleteUploadedFileReference(postId: PostId, uploadRef: UploadRef): Boolean
   def loadUploadedFileReferences(postId: PostId): Set[UploadRef]
   def loadSiteIdsUsingUpload(ref: UploadRef): Set[SiteId]
@@ -334,12 +334,12 @@ trait SiteTransaction {
     * images / attachments inserted into posts.
     */
   def filterUploadRefsInUse(uploadRefs: Iterable[UploadRef]): Set[UploadRef]
-  def updateUploadQuotaUse(uploadRef: UploadRef, wasAdded: Boolean)
+  def updateUploadQuotaUse(uploadRef: UploadRef, wasAdded: Boolean): Unit
 
 
-  def insertInvite(invite: Invite)
+  def insertInvite(invite: Invite): Unit
   def updateInvite(invite: Invite): Boolean
-  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String)
+  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit
   def loadInviteBySecretKey(secretKey: String): Option[Invite]
   // COULD RENAME these: append SortByRecentFirst
   def loadInvitesSentTo(emailAddress: String): immutable.Seq[Invite]
@@ -347,23 +347,23 @@ trait SiteTransaction {
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
   def nextIdentityId: IdentityId
-  def insertIdentity(Identity: Identity)
+  def insertIdentity(Identity: Identity): Unit
   def loadIdentities(userId: UserId): immutable.Seq[Identity]
   def loadAllIdentities(): immutable.Seq[Identity]
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
   def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
-  def deleteAllUsersIdentities(userId: UserId)
+  def deleteAllUsersIdentities(userId: UserId): Unit
 
   def nextGuestId: UserId
-  def insertGuest(guest: Guest)
+  def insertGuest(guest: Guest): Unit
 
   def nextMemberId: UserId
-  def insertMember(user: UserInclDetails)
+  def insertMember(user: UserInclDetails): Unit
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
         : MemberLoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
-  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs): Unit
 
   def loadUserInclDetails(userId: UserId): Option[UserInclDetails] =
     loadMemberInclDetailsById(userId) map {
@@ -403,7 +403,7 @@ trait SiteTransaction {
 
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
 
-  def updateMemberInclDetails(member: MemberInclDetails) {
+  def updateMemberInclDetails(member: MemberInclDetails): Unit = {
     member match {
       case g: Group => updateGroup(g)
       case u: UserInclDetails => updateUserInclDetails(u)
@@ -413,16 +413,16 @@ trait SiteTransaction {
   def updateUserInclDetails(user: UserInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
 
-  def insertUserEmailAddress(userEmailAddress: UserEmailAddress)
-  def updateUserEmailAddress(userEmailAddress: UserEmailAddress)
-  def deleteUserEmailAddress(userId: UserId, emailAddress: String)
-  def deleteAllUsersEmailAddresses(userId: UserId)
+  def insertUserEmailAddress(userEmailAddress: UserEmailAddress): Unit
+  def updateUserEmailAddress(userEmailAddress: UserEmailAddress): Unit
+  def deleteUserEmailAddress(userId: UserId, emailAddress: String): Unit
+  def deleteAllUsersEmailAddresses(userId: UserId): Unit
   def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress] // RENAME to loadMember...
   def loadUserEmailAddressesForAllUsers(): Seq[UserEmailAddress]    // RENAME to loadMember...
 
-  def insertUsernameUsage(usage: UsernameUsage)
+  def insertUsernameUsage(usage: UsernameUsage): Unit
   def deleteUsernameUsagesForMemberId(memberId: UserId): Int
-  def updateUsernameUsage(usage: UsernameUsage)
+  def updateUsernameUsage(usage: UsernameUsage): Unit
   def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
   def loadAllUsernameUsages(): Seq[UsernameUsage]
@@ -530,13 +530,13 @@ trait SiteTransaction {
   def loadGroupParticipantsAllCustomGroups(): Vector[GroupParticipant]
   /** Returns the ids of the members that got added (i.e. who were not already members). */
   def addGroupMembers(groupId: UserId, memberIdsToAdd: Set[UserId]): Set[UserId]
-  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId])
-  def removeAllGroupParticipants(groupId: UserId)
-  def removeDeletedMemberFromAllGroups(memberId: UserId)
+  def removeGroupMembers(groupId: UserId, memberIdsToRemove: Set[UserId]): Unit
+  def removeAllGroupParticipants(groupId: UserId): Unit
+  def removeDeletedMemberFromAllGroups(memberId: UserId): Unit
 
-  def insertGroup(group: Group)
-  def deleteGroup(groupId: UserId)
-  def updateGroup(group: Group)
+  def insertGroup(group: Group): Unit
+  def deleteGroup(groupId: UserId): Unit
+  def updateGroup(group: Group): Unit
   def loadAllGroupsAsSeq(): Vector[Group]
   def loadAllGroupsAsMap(): Map[UserId, Group] = loadAllGroupsAsSeq().map(g => g.id -> g).toMap
 
@@ -563,7 +563,7 @@ trait SiteTransaction {
   def loadGroupIdsMemberIdFirst(ppt: Participant): Vector[UserId]
 
 
-  def upsertPageNotfPref(notfPref: PageNotfPref)
+  def upsertPageNotfPref(notfPref: PageNotfPref): Unit
   def deletePageNotfPref(notfPref: PageNotfPref): Boolean  // notf level ignored
   // [REFACTORNOTFS] break out to a Dao, and load just for this member, but also all groups it's in?
   def loadPageNotfLevels(peopleId: UserId, pageId: PageId, categoryId: Option[CategoryId]): PageNotfLevels
@@ -576,15 +576,15 @@ trait SiteTransaction {
   def loadNotfPrefsForMemberAboutCatsTagsSite(memberIds: Seq[MemberId]): Seq[PageNotfPref]
 
   def saveUnsentEmail(email: Email): Unit
-  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit
   def updateSentEmail(email: Email): Unit
   def loadEmailById(emailId: String): Option[Email]
   def loadEmailsSentTo(userIds: Set[UserId], after: When,
         emailType: EmailType): Map[UserId, Seq[Email]]
-  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String)
+  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String): Unit
 
   def nextReviewTaskId(): ReviewTaskId
-  def upsertReviewTask(reviewTask: ReviewTask)
+  def upsertReviewTask(reviewTask: ReviewTask): Unit
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: Option[ju.Date], limit: Int): Seq[ReviewTask]
   def loadAllReviewTasks(): Seq[ReviewTask]
@@ -595,11 +595,11 @@ trait SiteTransaction {
   def loadUndecidedPostReviewTask(postId: PostId, taskCreatedById: UserId): Option[ReviewTask]
 
   def nextNotificationId(): NotificationId
-  def saveDeleteNotifications(notifications: Notifications)
-  def updateNotificationSkipEmail(notifications: Seq[Notification])
+  def saveDeleteNotifications(notifications: Notifications): Unit
+  def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit
 
   /** To mark all as seen, use notfId None. */
-  def markNotfsAsSeen(userId: UserId, notfId: Option[NotificationId], skipEmails: Boolean)
+  def markNotfsAsSeen(userId: UserId, notfId: Option[NotificationId], skipEmails: Boolean): Unit
   def markNotfsForPostIdsAsSeen(userId: UserId, postIds: Set[PostId], skipEmails: Boolean): Int
 
   def loadAllNotifications(): immutable.Seq[Notification]
@@ -616,8 +616,8 @@ trait SiteTransaction {
 
   /** If no id, assigns an id. Returns the perms, with id. */
   def insertPermsOnPages(permsOnContent: PermsOnPages): PermsOnPages
-  def updatePermsOnPages(permsOnContent: PermsOnPages)
-  def deletePermsOnPages(ids: Iterable[PermissionId])
+  def updatePermsOnPages(permsOnContent: PermsOnPages): Unit
+  def deletePermsOnPages(ids: Iterable[PermissionId]): Unit
   def loadPermsOnPages(): immutable.Seq[PermsOnPages]
   def loadPermsOnCategory(categoryId: CategoryId): immutable.Seq[PermsOnPages] = {
     COULD_OPTIMIZE // could filter in db query instead
@@ -625,10 +625,10 @@ trait SiteTransaction {
   }
 
 
-  def startAuditLogBatch()
+  def startAuditLogBatch(): Unit
   /** Returns (entry-id, Option(batch-id)). */
   def nextAuditLogEntryId(): (AuditLogEntryId, Option[AuditLogEntryId])
-  def insertAuditLogEntry(entry: AuditLogEntry)
+  def insertAuditLogEntry(entry: AuditLogEntry): Unit
   def loadCreatePostAuditLogEntry(postId: PostId): Option[AuditLogEntry]
   def loadCreatePostAuditLogEntriesBy(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
         : Seq[AuditLogEntry]
@@ -636,12 +636,12 @@ trait SiteTransaction {
         inclForgotten: Boolean): immutable.Seq[AuditLogEntry]
 
   def loadBlocks(ip: String, browserIdCookie: Option[String]): immutable.Seq[Block]
-  def insertBlock(block: Block)
-  def unblockIp(ip: InetAddress)
-  def unblockBrowser(browserIdCookie: String)
+  def insertBlock(block: Block): Unit
+  def unblockIp(ip: InetAddress): Unit
+  def unblockBrowser(browserIdCookie: String): Unit
 
   def nextApiSecretNr(): DraftNr
-  def insertApiSecret(secret: ApiSecret)
+  def insertApiSecret(secret: ApiSecret): Unit
   def setApiSecretDeleted(secretNr: ApiSecretNr, when: When): Boolean
   def loadApiSecretBySecretKey(secretKey: String): Option[ApiSecret]
   def listApiSecretsRecentlyCreatedFirst(limit: Int): immutable.Seq[ApiSecret]

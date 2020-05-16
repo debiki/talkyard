@@ -81,7 +81,7 @@ object requireMetaMatchesPaths {
   def apply(page: {
     def meta: PageMeta
     def path: PagePath
-  }) {
+  }): Unit = {
     if (page.path.pageId.isDefined) require(page.meta.pageId == page.path.pageId.get)
     else require(page.meta.pageId == "?")
   }
@@ -323,7 +323,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
 
   def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
-  def addUserIdsTo(ids: mutable.Set[UserId]) {
+  def addUserIdsTo(ids: mutable.Set[UserId]): Unit = {
     ids += authorId
     ids ++= frequentPosterIds
     lastApprovedReplyById.foreach(ids += _)

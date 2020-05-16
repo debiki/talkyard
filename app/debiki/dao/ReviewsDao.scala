@@ -58,7 +58,7 @@ trait ReviewsDao {
     * undo-decision timeout.
     */
   def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
-        decision: ReviewDecision) {
+        decision: ReviewDecision): Unit = {
     readWriteTransaction { tx =>
       val task = tx.loadReviewTask(taskId) getOrElse
         throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
@@ -143,7 +143,7 @@ trait ReviewsDao {
   }
 
 
-  def carryOutReviewDecision(taskId: ReviewTaskId) {
+  def carryOutReviewDecision(taskId: ReviewTaskId): Unit = {
     val pageIdsToRefresh = mutable.Set[PageId]()
 
     readWriteTransaction { tx =>
@@ -236,7 +236,7 @@ trait ReviewsDao {
 
 
   private def updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam: Boolean,
-      reviewTask: ReviewTask, tx: SiteTransaction) {
+      reviewTask: ReviewTask, tx: SiteTransaction): Unit = {
 
     val decidedAtRevNr = reviewTask.decidedAtRevNr getOrDie "TyE60ZF2R"
     val postId = reviewTask.postId getOrElse {
@@ -271,7 +271,7 @@ trait ReviewsDao {
 
 
   def updateSpamCheckTaskBecausePostDeleted(post: Post, postAuthor: Participant, deleter: Participant,
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     // [DELSPAM] Would be good with a Delete button that asks the deleter if hen
     // deletes the post because hen considers it spam — or for some other reason.
     // So we know for sure if we should mark the post as spam here, and maybe
@@ -318,7 +318,7 @@ trait ReviewsDao {
     * the user that much.
     */
   private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     val settings = loadWholeSiteSettings(tx)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
@@ -384,13 +384,13 @@ trait ReviewsDao {
 
 
   def invalidateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
-        tx: SiteTransaction) {
+        tx: SiteTransaction): Unit = {
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = true, doingReviewTask, tx)
   }
 
 
   def reactivateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
-         tx: SiteTransaction) {
+         tx: SiteTransaction): Unit = {
     TESTS_MISSING // [UNDELPOST]
     untestedIf(posts.nonEmpty, "TyE2KIFW4", "Reactivating review tasks for undeleted posts") // [2VSP5Q8]
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
@@ -417,7 +417,7 @@ trait ReviewsDao {
 
 
   private def invalidatedReviewTasksImpl(posts: Iterable[Post], shallBeInvalidated: Boolean,
-        doingReviewTask: Option[ReviewTask], tx: SiteTransaction) {
+        doingReviewTask: Option[ReviewTask], tx: SiteTransaction): Unit = {
 
     // If bug then:
     // If somehow some day a review task doesn't get properly invalidated, and

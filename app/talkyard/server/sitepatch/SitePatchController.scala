@@ -68,7 +68,7 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   /** These are dangerous endpoints, DoS attack risk.  [UPSRTPERM] */
-  private def throwIfMayNot(request: DebikiRequest[_], errCode: String, message: => String = null) {
+  private def throwIfMayNot(request: DebikiRequest[_], errCode: String, message: => String = null): Unit = {
     throwForbiddenIf(
       globals.isProd
         // Iff is self hosted, we'd be using the default site — then, allow.

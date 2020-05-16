@@ -161,7 +161,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   /** For performance tests. */
-  def pingCacheImpl(x: Int = 1) {
+  def pingCacheImpl(x: Int = 1): Unit = {
     val redis: RedisClient = globals.redisClient
     val futureGetResult = redis.get("missing_value_" + x)
     Await.result(futureGetResult, 5.seconds)

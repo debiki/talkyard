@@ -270,7 +270,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
 
   def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
-                                        host: String, dao: SiteDao) {
+                                        host: String, dao: SiteDao): Unit = {
     val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
       user, anyReturnToUrl, host, dao)
     globals.sendEmail(email, dao.siteId)
@@ -435,7 +435,7 @@ object LoginWithPasswordController extends TyLogging {
 
 
   def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
+        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId): Unit = {
     val globals = dao.globals
     val email = Email(
       EmailType.Notification,

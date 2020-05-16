@@ -56,7 +56,7 @@ object Validation {
   }
 
 
-  def requireOkEmail(email: String, errorCode: String) {
+  def requireOkEmail(email: String, errorCode: String): Unit = {
     checkEmail(email) badMap { errorMessage =>
       Prelude.throwIllegalArgument(errorCode, s"Bad email: $errorMessage")
     }

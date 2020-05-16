@@ -175,7 +175,7 @@ case class NotificationGenerator(
   }
 
 
-  private def addWatchingSomethingNotfs(page: Page, newPost: Post, pageMemberIds: Set[UserId]) {
+  private def addWatchingSomethingNotfs(page: Page, newPost: Post, pageMemberIds: Set[UserId]): Unit = {
 
     val minNotfLevel =
       if (newPost.isOrigPost) {
@@ -290,7 +290,7 @@ case class NotificationGenerator(
 
   private def makeNewPostNotfs(notfType: NotificationType, newPost: Post,
         categoryId: Option[CategoryId], toUserMaybeGroup: Participant,
-        minNotfLevel: NotfLevel = NotfLevel.Hushed) {
+        minNotfLevel: NotfLevel = NotfLevel.Hushed): Unit = {
     if (sentToUserIds.contains(toUserMaybeGroup.id))
       return
 
@@ -415,7 +415,7 @@ case class NotificationGenerator(
     * Or to 3) pages tagged with some certain tag(s). Or 4) *the whole site*.
     */
   private def makeNewPostSubscrNotfFor(notfPrefs: Seq[PageNotfPref], newPost: Post,
-      minNotfLevel: NotfLevel, memberIdsHandled: mutable.Set[UserId]) {
+      minNotfLevel: NotfLevel, memberIdsHandled: mutable.Set[UserId]): Unit = {
 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
@@ -472,7 +472,7 @@ case class NotificationGenerator(
       maybeMakeNotfs(member, notfPref)
     }
 
-    def maybeMakeNotfs(member: Participant, notfPref: PageNotfPref) {
+    def maybeMakeNotfs(member: Participant, notfPref: PageNotfPref): Unit = {
       // If the member has already been considered, at a more specific content structure specificity,
       // then skip it here. For example, if it has configured a per page notf pref, then, skip it,
       // when considering categories and tags — because per page prefs are more specific.
