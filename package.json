@@ -20,7 +20,7 @@
     "@types/react-dom": "=16.8.0",
     "@webscopeio/react-textarea-autocomplete": "=1.4.1",
     "blacklist": "^1.1.4",
-    "bootstrap": "3.1.1",
+    "bootstrap": "3.4.1",
     "classnames": "^2.2.6",
     "create-react-class": "^15.6.3",
     "eventemitter3": "^4.0.4",
