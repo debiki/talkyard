@@ -13,9 +13,11 @@ package object server {
   def TyLogger(name: String): play.api.Logger = play.api.Logger("tysvapp." + name)
 
   trait TyLogging {
-    protected val logger: play.api.Logger = TyLogger(getClass.getName.stripSuffix("$"))
+    protected val logger: play.api.Logger = newLogger(getClass)
   }
 
+  def newLogger(clazz: Class[_]): play.api.Logger =
+    TyLogger(clazz.getName.stripSuffix("$"))
 
   implicit class RichResult(val underlying: play.api.mvc.Result) {
     def statusCode: Int = underlying.header.status
