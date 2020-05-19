@@ -38,8 +38,6 @@ if [ -z "$*" ] ; then
   exit 0
 fi
 
-echo Running the Gulp CMD:
-
 # Without exec, Docker wouldn't be able to stop the container normally.
 # See: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
 # """uses the exec Bash command so final running application becomes container’s PID 1"""
@@ -47,8 +45,10 @@ echo Running the Gulp CMD:
 # but for me 'su' works fine.
 if [ $file_owner_id -ne 0 ] ; then
   # Use user owner, which has the same user id as the file owner on the Docker host.
+  echo "Running the Gulp CMD as user id $file_owner_id":
   set -x
   # Avoid permission errors caused by root sometimes somehow becoming the owner.
+  chown -R owner.owner /opt/talkyard/server/volumes/gulp-home
   chown -R owner.owner /opt/talkyard/server/node_modules
   exec su -c "$*" owner
 else
@@ -56,6 +56,7 @@ else
   # `exec su ...` is the only way I've found that makes Yarn and Gulp respond to CTRL-C,
   # so using `su` here although we're root already.
   # Specify HOME so files that Node.js caches will persist across container recreations. [NODEHOME])
+  echo "Running the Gulp CMD as root":
   set -x
   exec su -c "HOME=/opt/talkyard/server/volumes/gulp-home $*" root
 fi

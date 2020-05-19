@@ -20,30 +20,26 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   adduser -u $file_owner_id -h /home/owner/ -D owner
 fi
 
- # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
+# Below this dir, sbt and Ivy will cache their files. [SBTHOME]
 mkdir -p /home/owner/
-#mkdir -p /home/owner/.coursier/
-#mkdir -p /home/owner/.cache/coursier/
-
 
 if [ -z "$*" ] ; then
   echo 'No command specified. What do you want to do? Exiting.'
   exit 0
 fi
 
-echo Running the Play CMD:
-
 if [ $file_owner_id -ne 0 ] ; then
   # Prevent a file-not-found exception in case ~/.ivy2 and ~/.sbt didn't exist, so Docker
   # created them resulting in them being owned by root:
   # (/home/owner/.ivy2, .sbt and .coursier are mounted in docker-compose.yml [SBTHOME])
-  chown -R owner /home/owner/.ivy2
-  chown -R owner /home/owner/.sbt
-  #chown -R owner /home/owner/.coursier
-  #chown -R owner /home/owner/.cache/.coursier
+  chown owner.owner /home/owner
+  chown -R owner.owner /home/owner/.ivy2
+  chown -R owner.owner /home/owner/.sbt
+  chown -R owner.owner /home/owner/.coursier
+  chown -R owner.owner /home/owner/.cache
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
-  chown -R owner /opt/talkyard/uploads/
-  chown -R owner /var/log/talkyard/
+  chown -R owner.owner /opt/talkyard/uploads
+  chown -R owner.owner /var/log/talkyard
 
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
@@ -52,6 +48,7 @@ if [ $file_owner_id -ne 0 ] ; then
   # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/talkyard/app/.
   # So instead use 'exec su -c ...'
   # exec gosu owner $*
+  echo "Starting Play as user id $file_owner_id":
   set -x
   exec su -c "$*" owner
 else
@@ -61,6 +58,7 @@ else
   # Set HOME to /home/owner so sbt and Ivy will cache things there [SBTHOME] — that dir
   # is mounted on the host; will persist across container recreations.
   # Otherwise /root/.ivy2 and /root/.sbt would get used, and disappear with the contaner.
+  echo "Starting Play as root":
   set -x
   exec su -c "HOME=/home/owner _JAVA_OPTIONS='-Duser.home=/home/owner' $*" root
 fi

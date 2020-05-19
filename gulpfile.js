@@ -17,7 +17,8 @@
  */
 
 
-// Try to migrate to Webpack v5, and stop using Gulp?
+// Try to migrate to Webpack v5.
+// (Continue using Gulp for some things, or maybe Makefile tasks instead somehow?)
 //
 // First, maybe good to convert all JS to Typescript?
 // https://www.typescriptlang.org/docs/handbook/migrating-from-javascript.html
@@ -29,14 +30,6 @@
 //  - https://www.geekytidbits.com/typescript-progressively-convert-namespaces-to-modules/
 //  - https://stackoverflow.com/questions/50458469/convert-namespace-to-module-based-typescript-code
 
-
-/**
- * Commands:
- *
- *   gulp          - build everything for development
- *   gulp release  - build and minify everything, for release
- *   gulp watch    - continuously rebuild things that change
- */
 
 const gulp = require('gulp');
 const gDebug = require('gulp-debug');
@@ -646,9 +639,6 @@ gulp.task('minifyScriptsImpl', gulp.series(() => {
 }));
 
 
-gulp.task('minifyScripts', gulp.series(
-    'compileConcatAllScripts', 'minifyTranslations', 'minifyScriptsImpl'));
-
 
 gulp.task('testProdMinify', gulp.series(
     'enable-prod-stuff', 'minifyScriptsImpl'));
@@ -772,7 +762,6 @@ gulp.task('default', gulp.series(
   'compileConcatAllScripts',
   'compile-stylus',
   'minifyTranslations',
-  //'build-security-tests',
   ));
 
 
@@ -872,10 +861,13 @@ gulp.task('clean', gulp.series('cleanTranslations', () => {
 }));
 
 
-gulp.task('release', gulp.series(  // [MKBUNDLS]
-    'clean',
+gulp.task('build_release_dont_clean_before', gulp.series(  // [MKBUNDLS]
     'enable-prod-stuff',
-    'minifyScripts',
+    // Need to build everything from scratch, because now using prod versions
+    // of dependenceis.
+    'compileConcatAllScripts',
+    'minifyTranslations',
+    'minifyScriptsImpl',
     'compile-stylus',
     'delete-non-gzipped'));
 

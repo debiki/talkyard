@@ -12,21 +12,19 @@ watch:
 
 .PHONY: \
   clean \
-  build-images \
-  sbt \
+  dev-images \
+  prod-images \
+  build \
   up \
   down \
   dead \
+  prod_asset_bundles \
+  prod_asset_bundle_files \
   debug_asset_bundles \
   debug_asset_bundles_files \
-  selenium-server \
-  invisible-selenium-server \
   git-subm-init-upd \
-  prod_asset_bundles \
   node_modules \
-  play-cli \
-  prod-images \
-  up
+  play-cli
 
 .DEFAULT_GOAL := print_help
 
@@ -59,23 +57,21 @@ print_help:
 	@echo "  View logs:                make logs"
 	@echo
 	@echo "  Open PostgreSQL prompt:   make db-cli"
-	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
+	@echo
+	@echo "  Start a Scala CLI:        make dead-app ; make play-cli"
 	@echo
 	@echo "Running tests"
 	@echo "--------------------------"
 	@echo
-	@echo "End-to-End tests: NO this is old"
-	@echo "  First, start Selenium:    make invisible-selenium-server"
-	@echo "  Then run the tests:       make e2e-tests  # first do: make up"
-	@echo "  Stop Selenium:            make selenium-dead"
-	@echo
-	@echo "Instead?"
-	@echo "  First, start Selenium:    d/selenium chrome"
-	@echo "  Then run the tests:       d/n s/run-e2e-tests"
+	@echo "End-to-End tests:"
+	@echo "  Start Talkyard:           make up
+	@echo "  Start Selenium:           d/selenium chrome"
+	@echo "  Run the tests:            s/run-e2e-tests   # or:  d/n s/run-e2e-tests ?"
 	@echo "  Stop Selenium:            d/selenium kill"
 	@echo
 	@echo "Unit tests:"
-	@echo "  Start a Scala CLI:        make play-cli  # first do: make dead"
+	@echo "  Stop the app server:      make dead-app"
+	@echo "  Start a Scala CLI:        make play-cli"
 	@echo "  Run tests:                test  # in the CLI"
 	@echo
 	@echo "What more do you want to know? Talk with us at"
@@ -156,10 +152,11 @@ prod_asset_bundle_files:=\
   images/app/assets/translations/pl_PL/i18n.js \
   images/app/assets/translations/pl_PL/i18n.min.js
 
+# Sync this task name w e2e test [MKBUNDLS].
 prod_asset_bundles: node_modules debug_asset_bundles $(prod_asset_bundle_files)
 
 $(prod_asset_bundle_files): $@
-	s/d-gulp release
+	s/d-gulp build_release_dont_clean_before
 
 
 # Use .js.gz, because .js files get deleted (aren't needed). [UNCOMPRAST]
@@ -240,11 +237,11 @@ to-talkyard/dist/to-talkyard/src/to-talkyard.js: $(shell find to-talkyard/src/)
 
 # ----- Clean (wip)
 
-clean-bundles:
+clean_bundles:
 	@echo Delting script and style bundles:
 	s/d-gulp clean
 
-clean: clean-bundles
+clean: clean_bundles
 	@# target/ sometimes includes files compilation-created and owned by root.
 	@echo Delting Scala things and other things:
 	@$(call ask_for_root_password)
@@ -257,11 +254,12 @@ clean: clean-bundles
 
 pristine: clean
 	@echo
-	@echo "If you want to, delete Docker volumes, your local config,"
+	@echo "If you want to, also delete Docker volumes, your local config,"
 	@echo "the SBT and Node.js cache, and IDE project files,"
 	@echo "by copy-pasting (some of) this:"
 	@echo
 	@echo "    sudo rm -rf volumes/"
+	@echo
 	@echo "    rm -fr conf/my.conf"
 	@echo
 	@echo "    rm -fr .idea"
@@ -271,19 +269,42 @@ pristine: clean
 	@echo "    rm -fr node_modules/"
 	@echo "    rm -fr modules/*/node_modules/"
 	@echo
+	@echo "    rm -fr images/app/typesafe-activator"
+	@echo
+	@echo "  No, old, now in vendors/jars/:"
 	@echo "    rm -fr ~/.ivy2"
 	@echo "    rm -fr ~/.sbt"
 	@echo
 	@echo
 
 
-# ----- Run targets
+# ----- Development
+
+
+build:
+	@echo "Build what, dev or prod images? Do one of these:"
+	@echo "   make dev-images"
+	@echo "   make prod-images"
+
+
+# Copy to inside the Docker build context, so Docker can access it. [ACTVTRJAR]
+# Use rsync so will update any old but different files with the same name.
+_copy_typesafe_activator:
+	@rsync --delete --recursive vendors/jars/typesafe-activator images/app/
+
+
+# (About prod_asset_bundles: What was the reason the prod bundles are needed here?
+# It's that the app server wants minified translation files? —  see play-cli  below)
+dev-images:  prod_asset_bundles  _copy_typesafe_activator
+	s/d build
+
 
 # Starts an SBT shell where you can run unit tests by typing 'test'. These test require
 # the minified asset bundles, to run (because the app server loads and execs React Javascript
 # server side.)
-play-cli: prod_asset_bundles
+play-cli: prod_asset_bundles _copy_typesafe_activator
 	s/d-cli
+
 
 db-cli:
 	@# Find out which database is currently being used, by looking at my.conf.
@@ -294,15 +315,14 @@ db-cli:
 	  db_user="$${db_user:-$$def_user}" ;\
 	  s/d-psql "$$db_user" "$$db_user"
 
-build:
-	s/d build
 
-up: prod_asset_bundles
+up: prod_asset_bundles _copy_typesafe_activator
 	s/d up -d
 	@echo
 	@echo "Started. Now, tailing logs..."
 	@echo
 	@s/d-logsf0
+
 
 log: tail
 logs: tail
@@ -310,8 +330,9 @@ tails: tail
 tail:
 	s/d-logsf0
 
-restart:
+restart:  prod_asset_bundles
 	s/d-restart
+
 
 restart-web:
 	s/d kill web ; s/d start web ; s/d-logsf0
@@ -322,114 +343,63 @@ recreate-web:
 rebuild-restart-web:
 	s/d kill web ; s/d rm -f web ; s/d build web ; s/d up -d web ; s/d-logsf0
 
+
 rebuild-gulp:
 	s/d kill gulp ; s/d rm -f gulp ; s/d build gulp
 
 rebuild-restart-gulp: rebuild-gulp
 	 s/d up -d gulp ; s/d-logsf0 gulp
 
-restart-app:
-	s/d kill app ; s/d start app ; s/d-logsf0
-
-recreate-app:
-	s/d kill app ; s/d rm -f app ; s/d up -d app ; s/d-logsf0
-
-rebuild-restart-app:
-	s/d kill app ; s/d rm -f app ; s/d build app ; s/d up -d app ; s/d-logsf0
-
-restart-web-app:
-	s/d-restart-web-app
-
 restart-gulp:
 	s/d kill gulp ; s/d start gulp ; s/d-logsf0
 
-down:
-	s/d down
 
-dead:
-	s/d-killdown
+restart-app:  prod_asset_bundles
+	s/d kill app ; s/d start app ; s/d-logsf0
+
+recreate-app:  _copy_typesafe_activator  prod_asset_bundles
+	s/d kill app ; s/d rm -f app ; s/d up -d app ; s/d-logsf0
+
+rebuild-app:  _copy_typesafe_activator  prod_asset_bundles
+	s/d kill app ; s/d rm -f app ; s/d build app
+
+rebuild-restart-app:  rebuild-app
+	 s/d up -d app ; s/d-logsf0
 
 dead-app:
 	s/d kill web app
 
 
+restart-web-app:  prod_asset_bundles
+	s/d-restart-web-app
 
-# E2E tests
+
+down: dead
+	s/d down
+
+dead:
+	@# Kill the ones who are slow to stop.
+	s/d kill app search gulp ; s/d stop
+
+
+
+# Prod images
 # ========================================
 
-
-# ----- Starting Selenium
-
-_selenium_standalone_files := \
-  node_modules/selenium-standalone/bin/selenium-standalone  \
-  node_modules/selenium-standalone/.selenium/chromedriver/ \
-  node_modules/selenium-standalone/.selenium/geckodriver/
-
-$(_selenium_standalone_files): $@
-	s/selenium-install
-
-selenium-dead:
-	kill $$(ps aux | grep selenium | grep -v 'xvfb-run' | awk '{ print $$2 }')
-
-selenium-server: node_modules $(_selenium_standalone_files)
-	@$(call if_selenium_not_running, s/selenium-start)
-
-
-invisible-selenium-server: node_modules $(_selenium_standalone_files)
-	@$(call if_selenium_not_running, s/selenium-start-invisible)
-
-define if_selenium_not_running
-  selenium_line=`netstat -tlpn 2>&1 | grep '4444'` ;\
-  if [ -z "$$selenium_line" ]; then \
-    echo "Starting Selenium." ;\
-    $(1) & echo $$! > .selenium.pid ;\
-  else \
-    echo ;\
-    echo "Selenium already running. Not starting it." ;\
-    echo ;\
-    echo "Look, from netstat, port 4444 is in use:" ;\
-    echo "  $$selenium_line" ;\
-    echo ;\
-  fi
-endef
-
-e2e-tests: invisible-selenium-server to-talkyard
-	s/run-e2e-tests.sh
-	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
-
-visible-e2e-tests: selenium-server
-	s/run-e2e-tests.sh
-	if [ -f .selenium.pid ]; then kill `cat .selenium.pid`; rm .selenium.pid ; fi
-
-# Alternative to above if-then-fi for the PID file;
-# start: server.PID
-# server.PID:
-#     cd bin && { s/selenium-start-invisible & echo $$! > $@; }
-# stop: server.PID
-#     kill `cat $<` && rm $<
-# see: https://stackoverflow.com/a/23366404/694469
-
-
-# Images (wip)
-# ========================================
-
-
-dev-images: prod_asset_bundles
-	sudo docker-compose build
 
 # Any old lingering prod build project, causes netw pool ip addr overlap error.
 _kill_old_prod_build_project:
 	s/d -pedt kill web app search cache rdb ;\
 	s/d -pedt down
 
-prod-images: \
-			_kill_old_prod_build_project \
-			invisible-selenium-server
-	@# This builds prod_asset_bundles.
+
+prod-images:  _kill_old_prod_build_project  _copy_typesafe_activator
+	@# This cleans and builds prod_asset_bundles. [PRODBNDLS]
 	s/build-prod-images.sh
 
 
-tag-and-push-latest-images:  tag-latest-images  push-tagged-images  _print_push_git_tag_command
+tag-and-push-latest-images:  \
+       tag-latest-images  push-tagged-images  _print_push_git_tag_command
 
 
 tag-latest-images:

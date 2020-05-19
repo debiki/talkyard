@@ -56,6 +56,9 @@ images/app/assets/
 images/web/assets/
 !images/web/assets/.gitkeep
 
+# The Makefile copies a file to here. [ACTVTRJAR]
+images/app/typesafe-activator/
+
 
 # When running Chrome browser tests, ChromeDriver generates this file and it
 # seems it's location is hardcoded,

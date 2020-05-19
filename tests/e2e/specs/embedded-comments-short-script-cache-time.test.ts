@@ -34,7 +34,7 @@ describe("the embedded comments script is cached for a day only", () => {
         `\n` +
         `Do this:\n` +
         `\n` +
-        `    s/d gulp release\n` +   // sync w gulpfile.js [MKBUNDLS]
+        `    make prod_asset_bundles\n` +   // sync w Makefile [MKBUNDLS]
         `\n`);
     }
     assert.includes(source, 'edCommentsServerUrl');

@@ -60,46 +60,10 @@ services:
       - ./version.txt:/opt/talkyard/app/version.txt:ro
       # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       # This is for Linux:  (https://get-coursier.io/docs/cache.html#default-location)
-      #- ${HOME}/.coursier/:/home/owner/.coursier/
-      #
-      # This won't work:
-      # - ${HOME}/.cache/.coursier/:/home/owner/.cache/.coursier/
-      # seems to always cause:
-      #       [warn] scala-library-2.12.8.jar no longer exists at /home/owner/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.8/scala-library-2.12.8.jar
-      #       bash: tput: command not found
-      #       [info] Updating
-      #       [info] Resolved  dependencies
-      #       [error] java.nio.file.AccessDeniedException: /home/owner/.cache/coursier/v1
-      #       [error] 	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:84)
-      #       [error] 	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
-      #       [error] 	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
-      #       [error] 	at sun.nio.fs.UnixFileSystemProvider.createDirectory(UnixFileSystemProvider.java:384)
-      #       [error] 	at java.nio.file.Files.createDirectory(Files.java:674)
-      #       [error] 	at java.nio.file.Files.createAndCheckIsDirectory(Files.java:781)
-      #       [error] 	at java.nio.file.Files.createDirectories(Files.java:767)
-      #       [error] 	at lmcoursier.internal.shaded.coursier.paths.Util.createDirectories(Util.java:64)
-      #       [error] 	at lmcoursier.internal.shaded.coursier.paths.CachePath.withStructureLock(CachePath.java:128)
-      #       [error] 	at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withStructureLock(CacheLocks.scala:22)
-      #       [error] 	at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withLockOr(CacheLocks.scala:39)
-      #       [error] 	at lmcoursier.internal.shaded.coursier.cache.FileCache.$anonfun$download$32(FileCache.scala:508)
-      #       [error] 	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
-      # This works:
-      # Not any longer!
-      # - ${HOME}/.cache/:/home/owner/.cache/
-      # Now there's this error:
-      # [error] java.io.FileNotFoundException: /home/owner/.cache/coursier/v1/.structure.lock (Permission denied)
-      #       [error]   at java.io.FileOutputStream.open0(Native Method)
-      #       [error]   at java.io.FileOutputStream.open(FileOutputStream.java:270)
-      #       [error]   at java.io.FileOutputStream.<init>(FileOutputStream.java:213)
-      #       [error]   at java.io.FileOutputStream.<init>(FileOutputStream.java:162)
-      #       [error]   at lmcoursier.internal.shaded.coursier.paths.CachePath.withStructureLock(CachePath.java:132)
-      #       [error]   at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withStructureLock(CacheLocks.scala:22)
-      #       [error]   at lmcoursier.internal.shaded.coursier.cache.CacheLocks$.withLockOr(CacheLocks.scala:39)
-      #       [error]   at lmcoursier.internal.shaded.coursier.cache.FileCache.$anonfun$download$32(FileCache.scala:508)
-      #       [error]   at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
-      #
-      - ${HOME}/.ivy2/:/home/owner/.ivy2/
-      - ${HOME}/.sbt/:/home/owner/.sbt/
+      - ./vendors/jars/cache/:/home/owner/.cache/
+      - ./vendors/jars/coursier/:/home/owner/.coursier/
+      - ./vendors/jars/ivy2/:/home/owner/.ivy2/
+      - ./vendors/jars/sbt/:/home/owner/.sbt/
     networks:
       internal_net:
         ipv4_address: ${INTERNAL_NET_APP_IP}

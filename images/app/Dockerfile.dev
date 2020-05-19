@@ -6,15 +6,17 @@ RUN apk add --no-cache \
   curl unzip git \
   # Nice to have:
   tree less wget net-tools bash \
+  # tput, needed by Coursier somehow
+  ncurses \
   # Telnet, nice for troubleshooting SMTP problems for example.
   busybox-extras
 
+# Typesafe Activator, typesafe-activator-1.3.12-minimal.zip, gets copied
+# from vendors/jars/ to here, by the Makefile. [ACTVTRJAR]
 ENV ACVERSION 1.3.12
 ENV ACTIVATOR activator-$ACVERSION
 
-RUN \
-  curl https://downloads.typesafe.com/typesafe-activator/$ACVERSION/typesafe-$ACTIVATOR-minimal.zip \
-    > /tmp/$ACTIVATOR.zip
+COPY typesafe-activator/typesafe-activator-$ACVERSION-minimal.zip  /tmp/$ACTIVATOR.zip
 
 # Concerning +rw for /opt/typesafe-activator/: Play writes some files to directories
 # within the archive. Otherwise:
@@ -49,6 +51,7 @@ RUN cd $JAVA_HOME/jre/lib/security && \
 
 WORKDIR /opt/talkyard/app/
 
+# Don't do until now, so won't need to rebuild whole image if editing entrypoint.
 COPY entrypoint.dev.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
