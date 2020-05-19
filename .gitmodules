@@ -55,3 +55,6 @@
 [submodule "modules/talkyard-prod-swarm"]
 	path = modules/talkyard-prod-swarm
 	url = https://github.com/debiki/talkyard-prod-swarm.git
+[submodule "vendors/jars"]
+	path = vendors/jars
+	url = https://github.com/kajmagnus/ty-vendors.git
