@@ -1900,6 +1900,8 @@ const LanguageSettings = createFactory({
       // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
       value: 'en_US', label: "English"
     }, {
+      value: 'es_CL', label: "Spanish (Chile)"
+    }, {
       value: 'he_IL', label: "Hebrew — for trying out RTL. Only a few words translated"
     }, {
       value: 'lv_LV', label: "Latvian"

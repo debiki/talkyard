@@ -486,6 +486,7 @@ class Nashorn(
 
       // Sync w languages in /translations/, the admin UI language selector, and the Makefile. [5JUKQR2]
       addTranslation("en_US")
+      addTranslation("es_CL")  // Spanish, Chile
       addTranslation("he_IL")  // Hebrew
       addTranslation("lv_LV")  // Latvian
       addTranslation("pl_PL")  // Polish
