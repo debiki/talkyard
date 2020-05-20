@@ -536,15 +536,20 @@ class Nashorn(
     // Load file directly from disk — otherwise, if using getClass.getResourceAsStream(path),
     // Play Framework for some reason won't pick it up any changes, until after
     // 'sbt clean', which can be confusing and waste time.
+    var source: scala.io.Source = null
     try {
-      scala.io.Source.fromFile(
-        "/opt/talkyard/app/assets/" + path)(scala.io.Codec.UTF8).mkString  // [APPJSPATH]
+      source = scala.io.Source.fromFile(  // [Scala_213] Using(...) { ... }
+            "/opt/talkyard/app/assets/" + path)(scala.io.Codec.UTF8)
+      source.mkString  // [APPJSPATH]
     }
     catch {
       case ex: Exception =>
         val message = makeMissingMessage
         logger.error(message + " [TyELOADJS1]")
         throw new DebikiException("TyELOADJS2", message)
+    }
+    finally {
+      if (source ne null) source.close()
     }
   }
 

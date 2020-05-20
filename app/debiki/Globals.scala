@@ -228,9 +228,18 @@ class Globals(
   val metricRegistry = new metrics.MetricRegistry()
   val mostMetrics = new MostMetrics(metricRegistry)
 
-  val talkyardVersion: String =
+  val talkyardVersion: String = {
     // Placed here by docker-compose.yml, in dev builds, and the Dockerfile, in prod builds.
-    scala.io.Source.fromFile("/opt/talkyard/app/version.txt")(scala.io.Codec.UTF8).mkString.trim
+    // [Scala_213] Using(...) { ... }
+    var source: scala.io.Source = null
+    try {
+      source = scala.io.Source.fromFile("/opt/talkyard/app/version.txt")(scala.io.Codec.UTF8)
+      source.mkString.trim
+    }
+    finally {
+      if (source ne null) source.close()
+    }
+  }
 
   // Could rename to "rendererVersion".
   val applicationVersion = "0.00.66"  // later, read from some build config file

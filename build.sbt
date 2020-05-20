@@ -29,6 +29,7 @@ ThisBuild / scalaVersion := "2.12.11"
 
 
 val versionFileContents = {
+  // [Scala_213] Using(...) { ... }
   val source = scala.io.Source.fromFile("version.txt")
   try source.mkString.trim
   finally source.close()
