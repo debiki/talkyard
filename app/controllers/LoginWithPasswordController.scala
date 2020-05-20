@@ -88,9 +88,13 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       "_TyE403BPWD" + (if (globals.isProd) "" else s"-$debugCode"), "Bad username or password")
 
     // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
-    val loginGrant: MemberLoginGrant =
-      try dao.tryLoginAsMember(loginAttempt)
-      catch {
+    val loginGrant: MemberLoginGrant = dao.tryLoginAsMember(loginAttempt) getOrIfBad { problem =>
+      // For now. Later, anyException will disappear.
+      if (problem.anyException.isEmpty) {
+        // Currently "cannot" happen [6036KEJ5].
+        throwInternalError("TyE306KSD", s"Login problem: ${problem.message}")
+      }
+      problem.anyException.get match {
         case DbDao.NoSuchEmailOrUsernameException => deny("NO_MEM_W_EML")
         case DbDao.BadPasswordException => deny("BAD_PWD")
         case DbDao.IdentityNotFoundException => deny("IDTY_0_FOUND")
@@ -103,7 +107,11 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
           throwForbidden("TyEEML0VERIF_", o"""You have not yet confirmed your email address.
             Please check your email inbox — you should find an email from us with a
             verification link; please click it.""")
+        case ex: QuickMessageException =>
+          logger.warn(s"Deprecated exception [TyEQMSGEX02]", ex)
+          throwForbidden("TyEQMSGEX02", ex.getMessage)
       }
+    }
 
     dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
     val (sid, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)

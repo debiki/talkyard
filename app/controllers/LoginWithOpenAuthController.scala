@@ -189,6 +189,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
 
+    UX; COULD // handle 429 resource exhausted from an OAuth provider in a better way?:
+    //  {"severity":"ERROR","context":{"reportLocation":{"filePath":
+    //  "LoginWithOpenAuthController.scala","lineNumber":223, "functionName":"applyOrElse","className":
+    //    "controllers.LoginWithOpenAuthController$$anonfun$startOrFinishAuthenticationWithSilhouette$14"}},
+    //    "message":"Error during OAuth2 authentication with Silhouette [TYE0AUUNKN]
+    //       \ncom.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException:
+    //       [Silhouette][google] Error retrieving profile information.
+    //      Error code: 429, message: Resource has been exhausted (e.g. check quota).
+    //      \n\tat com.mohiva.play.silhouette.impl.providers.oauth2.BaseGoogleProvider
+    //         .$anonfun$buildProfile$1(GoogleProvider.scala:69)\n\tat  ... }
+
     provider.authenticate()(request.request) flatMap {  // (529JZ24)
       case Left(result) =>
         // We're starting authentication.
@@ -333,12 +344,19 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     //var showsCreateUserDialog = false
-    val result =
-      try {
-        val loginGrant = dao.tryLoginAsMember(loginAttempt)
+
+    val result = dao.tryLoginAsMember(loginAttempt) match {
+      case Good(loginGrant) =>
         createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
-      }
-      catch {
+      case Bad(problem) =>
+        // For now. Later, anyException will disappear.
+        if (problem.anyException.isEmpty) {
+          // This currently "cannot" happen. [6036KEJ5]
+          throwInternalError(
+            "TyEUNEXEXC", s"Error logging in: ${problem.message}")
+        }
+        else problem.anyException.get match {
+        // (Fix indentation below later.)
         case DbDao.IdentityNotFoundException =>
           // Let's check if the user already exists, and if so, create an OpenAuth identity
           // and connect it to the user.
@@ -422,7 +440,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                     create a new account to access this resource.""")
               }
           }
-      }
+        case ex: QuickMessageException =>
+          logger.warn(s"Deprecated exception [TyEQMSGEX03]", ex)
+          throwForbidden("TyEQMSGEX03", ex.getMessage)
+        }
+    }
 
     // COULD avoid deleting cookeis if we have now logged in (which we haven't, if
     // the create-user dialog is shown: showsCreateUserDialog == true). Otherwise,

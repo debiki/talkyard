@@ -21,7 +21,7 @@ package com.debiki.core
 /**
  * Fills in no stack trace, and is therefore cheap to throw (like simple `return`s).
  */
-class QuickException extends Exception {
+class QuickException extends Exception {   REFACTOR ; REMOVE // return Hopefully[R] instead
 
   override def getMessage = "QuickException"
 

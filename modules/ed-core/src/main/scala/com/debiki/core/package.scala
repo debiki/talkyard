@@ -166,6 +166,8 @@ package object core {
 
   type ApiSecretNr = Int
 
+  type Hopefully[R] = R Or Problem
+
   sealed abstract class AnyProblem { def isFine: Boolean = false }
   case object Fine extends AnyProblem { override def isFine: Boolean = true }
 
@@ -174,13 +176,26 @@ package object core {
     * @param siteId
     * @param adminInfo — more details, for site admins
     * @param debugInfo — more details, for Talkyard developers
+    * @param anyException — remove later
     */
   case class Problem(
     message: ErrorMessage,
     siteId: SiteId,
     adminInfo: String = "",
     debugInfo: String = "",
+    @deprecated
+    anyException: Option[Exception] = None
   ) extends AnyProblem {
+
+    // For tests only.
+    def theException_forTests: Exception = anyException.getOrDie("TyENOPROBLEXC")
+  }
+
+  object Problem {
+    def apply(exception: Exception, siteId: SiteId): Problem = {
+      Problem(message = exception.getMessage, siteId = siteId,
+            anyException = Some(exception))
+    }
   }
 
   case class ErrorMessageCode(message: ErrorMessage, code: String)

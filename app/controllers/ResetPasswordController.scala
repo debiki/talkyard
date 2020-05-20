@@ -189,12 +189,22 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     val loginAttempt = EmailLoginAttempt(
       ip = request.ip, date = globals.now().toJavaDate, emailId = resetPasswordEmailId,
       mayLoginAgain = mayLoginAgain)
-    val loginGrant =
-      try request.dao.tryLoginAsMember(loginAttempt)
-      catch {
+    val loginGrant = request.dao.tryLoginAsMember(loginAttempt) getOrIfBad { problem =>
+      // For now. Later, anyException will disappear.
+      if (problem.anyException.isEmpty) {
+        // Currently "cannot" happen. [6036KEJ5]
+        throwInternalError("TyE406@KUTHF", s"Login-by-email problem: ${problem.message}")
+      }
+      problem.anyException.get match {
         case _: DbDao.EmailNotFoundException =>
           throwForbidden("DwE7PWE7", "Email not found")
+        case ex: QuickMessageException =>
+          logger.warn(s"Deprecated exception [TyEQMSGEX01]", ex)
+          throwForbidden("TyEQMSGEX01", ex.getMessage)
+        case ex =>
+          throw ex
       }
+    }
     loginGrant
   }
 

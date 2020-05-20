@@ -645,7 +645,7 @@ trait UserDao {
   }
 
 
-  def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant = {
+  def tryLoginAsMember(loginAttempt: MemberLoginAttempt): Hopefully[MemberLoginGrant] = {
     SECURITY; COULD // add setting that prevents people from logging in by username — because the
     // username is public, can starting guessing passwords directly. (There are rate limits.) Sth like:
     // if (!settings.allowLoginByUsername && loginAttempt.isByUsername) throwForbidden(...)
@@ -653,15 +653,18 @@ trait UserDao {
 
     val settings = getWholeSiteSettings()
     val loginGrant = readWriteTransaction { tx =>
-      val loginGrant = tx.tryLoginAsMember(
-          loginAttempt, requireVerifiedEmail = settings.requireVerifiedEmail)
+      val loginGrant: MemberLoginGrant =
+            tx.tryLoginAsMember(loginAttempt, requireVerifiedEmail =
+                  settings.requireVerifiedEmail) getOrIfBad { problem =>
+              return Bad(problem)
+            }
 
       addUserStats(UserStats(loginGrant.user.id, lastSeenAt = tx.now))(tx)
 
       // What? isSuspendedAt checks only suspendedTill ? what about suspendedAt? [4ELBAUPW2]
       // (Fine for now, maybe need to fix later though)
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
-        return loginGrant
+        return Good(loginGrant)
 
       val user = tx.loadUserInclDetails(loginGrant.user.id) getOrElse throwForbidden(
         "DwE05KW2", "User not found, id: " + loginGrant.user.id)
@@ -685,7 +688,7 @@ trait UserDao {
       key(loginGrant.user.id),
       MemCacheValueIgnoreVersion(loginGrant.user))
 
-    loginGrant
+    Good(loginGrant)
   }
 
 

@@ -43,19 +43,17 @@ class LoginAppSpec extends DaoAppSuite() {
     }
 
     "non-existing members cannot login" in {
-      intercept[DbDao.NoSuchEmailOrUsernameException.type] {
-        dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", globals.now().toJavaDate, "the-wrong-email@x.co", "pwd"))
-      }
+      val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, "the-wrong-email@x.co", "pwd"))
+      result.swap.get.theException_forTests mustBe a[DbDao.NoSuchEmailOrUsernameException.type]
     }
 
     SECURITY // add test that verifies email login is prevented, also if email verification isn't enabled,
     // before the email has been verified. [2PSK5W0R]
     "cannot login before email verified" in {
-      intercept[DbDao.EmailNotVerifiedException.type] {
-        dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
-      }
+      val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
+      result.swap.get.theException_forTests mustBe a[DbDao.EmailNotVerifiedException.type]
     }
 
     "the email gets verified" in {
@@ -63,21 +61,20 @@ class LoginAppSpec extends DaoAppSuite() {
     }
 
     "cannot login with the wrong password" in {
-      intercept[DbDao.BadPasswordException.type] {
-        dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "wrong_password"))
-      }
+      val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "wrong_password"))
+      result.swap.get.theException_forTests mustBe a[DbDao.BadPasswordException.type]
     }
 
     "can login with the correct password" - {
       "via email" in {
         val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password)).get
         loginGrant.user.id mustBe member1.id
       }
       "and via username" in {
         val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", globals.now().toJavaDate, member1.theUsername, Member1Password))
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.theUsername, Member1Password)).get
         loginGrant.user.id mustBe member1.id
       }
     }
@@ -103,31 +100,30 @@ class LoginAppSpec extends DaoAppSuite() {
       }
 
       "now cannot login with the old email addr" in {
-        intercept[DbDao.NoSuchEmailOrUsernameException.type] {
-          dao.tryLoginAsMember(PasswordLoginAttempt(
-            ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "whatever_password"))
-        }
+        val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+              ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "whatever_password"))
+        result.swap.get.theException_forTests mustBe a[DbDao.NoSuchEmailOrUsernameException.type]
       }
 
       "or the old username" in {
-        intercept[DbDao.NoSuchEmailOrUsernameException.type] {
-          dao.tryLoginAsMember(PasswordLoginAttempt(
-            ip = "1.2.3.4", globals.now().toJavaDate, member1.theUsername, "whatever_password"))
-        }
+        val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+              ip = "1.2.3.4", globals.now().toJavaDate,
+              member1.theUsername, "whatever_password"))
+        result.swap.get.theException_forTests mustBe a[DbDao.NoSuchEmailOrUsernameException.type]
       }
 
       "and also cannot login with the new anonNNN username" in {
-        intercept[DbDao.UserDeletedException.type] {
-          dao.tryLoginAsMember(PasswordLoginAttempt(
-            ip = "1.2.3.4", globals.now().toJavaDate, anonNNN.username, "whatever_password"))
-        }
+        val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+              ip = "1.2.3.4", globals.now().toJavaDate,
+              anonNNN.username, "whatever_password"))
+        result.swap.get.theException_forTests mustBe a[DbDao.UserDeletedException.type]
       }
 
       "or anonNNN email" in {
-        intercept[DbDao.UserDeletedException.type] {
-          dao.tryLoginAsMember(PasswordLoginAttempt(
-            ip = "1.2.3.4", globals.now().toJavaDate, anonNNN.primaryEmailAddress, "whatever_password"))
-        }
+        val result = dao.tryLoginAsMember(PasswordLoginAttempt(
+              ip = "1.2.3.4", globals.now().toJavaDate,
+              anonNNN.primaryEmailAddress, "whatever_password"))
+        result.swap.get.theException_forTests mustBe a[DbDao.UserDeletedException.type]
       }
     }
 

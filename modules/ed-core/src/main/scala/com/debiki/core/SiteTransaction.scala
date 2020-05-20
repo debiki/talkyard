@@ -361,7 +361,7 @@ trait SiteTransaction {
   def insertMember(user: UserInclDetails): Unit
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
-        : MemberLoginGrant
+        : Hopefully[MemberLoginGrant]
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs): Unit
 

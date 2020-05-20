@@ -24,6 +24,7 @@ import com.debiki.core.Participant.MaxCustomGuestId
 import java.{sql => js, util => ju}
 import Rdb._
 import RdbUtil._
+import org.scalactic.{Bad, Good}
 
 
 
@@ -38,14 +39,20 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
 
   override def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
-        : MemberLoginGrant = {
-    val loginGrant = loginAttempt match {
+        : Hopefully[MemberLoginGrant] = {
+    CLEAN_UP; REFACTOR // Later: Have the fns below return a Hopefully, instead of throwing.
+    // And remove the try-catch here.
+    val loginGrant: MemberLoginGrant = try { loginAttempt match {
       case x: PasswordLoginAttempt => loginWithPassword(x, requireVerifiedEmail)
       case x: EmailLoginAttempt => loginWithEmailId(x)
       case x: OpenIdLoginAttempt => loginOpenId(x)      // SHOULD check requireVerifiedEmail
       case x: OpenAuthLoginAttempt => loginOpenAuth(x)  // SHOULD check requireVerifiedEmail
+    }}
+    catch {
+      case ex: Exception =>
+        return Bad(Problem(ex, siteId))  // ([6036KEJ5] either excepiton, or Good below.)
     }
-    loginGrant
+    Good(loginGrant)
   }
 
 
@@ -153,6 +160,8 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
     REFACTOR // don't do this via LoginAttempt:s. Load the email directly from UserDao instead [306AS13].
     // Move the logic below, to there. And remove this function.
+
+    REFACTOR //  return:  Hopefully[MemberLoginGrant]  instead; don't throw anything
 
     if (email.toUserId.isEmpty)
       throw BadEmailTypeException(emailId)
