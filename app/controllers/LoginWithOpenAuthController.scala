@@ -153,11 +153,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     throwForbiddenIf(settings.enableSso,
       "TyESSO0OAUTH", "OpenAuth authentication disabled, because SSO enabled")
 
-    DELETE_LATER // after 2019-05-01 (59289560). Just temp test to verif didn't break anything when rewriting
-    // 'if' test.
-    dieIf((globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) !=
-      (globals.anyLoginOrigin isSomethingButNot originOf(request)), "TyE8KBSWG4")
-
     if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
