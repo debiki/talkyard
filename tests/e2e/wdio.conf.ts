@@ -269,15 +269,14 @@ const config: WebdriverIO.Config = {
         logPath: 'logs',
         installArgs: {
           drivers: {
-            // 81.0.4044.92
-            chrome: { version: '81.0.4044.69' },
+            chrome: { version: '83.0.4103.39' },
             // Minimum Firefox version >= 60
             firefox: { version: '0.26.0' }
           }
         },
         args: {
           drivers: {
-            chrome: { version: '81.0.4044.69' },
+            chrome: { version: '83.0.4103.39' },
             firefox: { version: '0.26.0' }
           }
         }}])),

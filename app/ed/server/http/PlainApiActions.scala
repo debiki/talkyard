@@ -421,21 +421,30 @@ class PlainApiActions(
 
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
-        def goToHomepageOrIfXhrThen(block: => Unit): Unit = {
-          if (isXhr) block
+        val isInternalApi = isXhr
+        def isPublicApi = request.path.startsWith("/-/v0/")
+        def isApiReq = isInternalApi || isPublicApi
+
+        def goToHomepageOrIfApiReqThen(block: => Unit): Unit = {
+          if (isApiReq) block
           else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
         }
+
         val siteSettings = dao.getWholeSiteSettings()
 
-        if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
-          goToHomepageOrIfXhrThen(throwForbidden("DwE4HKG5", "Not approved"))
-
         if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated)
-          goToHomepageOrIfXhrThen(throwForbidden("DwE6JGY2", "Not authenticated"))
+          goToHomepageOrIfApiReqThen(throwForbidden(
+                "TyE0AUTHN_", s"Not authenticated. ${
+                      if (isPublicApi) "Please include Basic Auth credentials"
+                      else "You need to be logged in" }"))
 
-        if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isXhr)
+        if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
+          goToHomepageOrIfApiReqThen(throwForbidden(
+                "TyE0APPRVD", "Your user account has not yet been approved"))
+
+        if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isApiReq)
           throwForbidden("DwE7JYK4", o"""Guest access has been disabled, but you're logged in
-            as a guest. Please sign up with a real account instead""")
+                as guest. Please sign up with a real account instead""")
       }
 
       val apiRequest = ApiRequest[A](

@@ -108,7 +108,7 @@ trait PageStuffDao {
 
     // Load titles and bodies for all pages. (Because in forum topic lists, we show excerpts
     // of pinned topics, and the start of other topics.)
-    val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
+    val titlesAndBodies = transaction.loadPostsByNrs(pageIds flatMap { pageId =>
       Seq(PagePostNr(pageId, TitleNr), PagePostNr(pageId, BodyNr))
     })
 

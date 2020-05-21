@@ -22,7 +22,7 @@ import debiki.RateLimits
 import ed.server.http._
 import debiki.EdHttp._
 import Prelude._
-import debiki.dao.{PageStuff, SiteDao}
+import debiki.dao.{LoadPostsResult, PageStuff, SiteDao}
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -44,14 +44,17 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def listThingsPubApiImpl(request: JsonPostRequest): Result = {
-    import request.{body, dao}
+    import request.{body, dao, requester}
 
     val pretty = (body \ "pretty").asOpt[Boolean].getOrElse(false)
     val listQueryJson = (body \ "listQuery").as[JsObject]
 
     val findWhat = (listQueryJson \ "findWhat").as[String]
-    throwUnimplementedIf(findWhat != "Pages",
-      "TyE3056KTM7", "'findWhat' must be 'pages' right now")
+    val Pages = "Pages"
+    val Posts = "Posts"
+
+    throwUnimplementedIf(findWhat != Pages && findWhat != Posts,
+      "TyE3056KTM7", "'findWhat' must be 'Pages' or 'Posts' right now")
 
     val lookWhere = (listQueryJson \ "lookWhere").asOpt[JsObject]
 
@@ -62,34 +65,62 @@ class ListController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwUnimplementedIf(lookInWhichCategories.size >= 2,
       "TyE205KDT53", "Currently at most one lookWhere.inCategories can be specified")
 
-    val categoryRef = lookInWhichCategories.headOption getOrElse {
-      throwNotImplemented(
-        "TyE205KDT56", "Currently lookWhere.inCategories needs to be one category")
+    val anyCategoryRef = lookInWhichCategories.headOption
+
+    def nothingFound = ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
+
+    val anyCategory: Option[Category] = anyCategoryRef map { catRef =>
+      val parsedRef = parseRef(catRef, allowParticipantRef = false) getOrIfBad { problem =>
+        throwForbidden("TyE603KSJL3", s"Bad category ref: $problem")
+      }
+      dao.getCategoryByParsedRef(parsedRef) getOrElse {
+        // Don't return any Not Found — that could help an attacker figure
+        // out which hidden categories exist. Instead:
+        return nothingFound
+      }
     }
 
-    val parsedCatRef = com.debiki.core.parseRef(
-          categoryRef, allowParticipantRef = false) getOrIfBad { problem =>
-      throwForbidden("TyE603KSJL3", s"Bad category ref: $problem")
+    val catOrRootCat = anyCategory getOrElse {
+      val rootCats = dao.getRootCategories()
+      throwUnimplementedIf(rootCats.length >= 2, "TyE0450WKTD")  // [subcats]
+      rootCats.headOption getOrElse {
+        return nothingFound
+      }
     }
 
-    val category = dao.getCategoryByParsedRef(parsedCatRef) getOrElse {
-      // Don't return any Not Found — that could help an attacker figure
-      // out which hidden categories exist. Instead:
-      return ThingsFoundJson.makePagesFoundListResponse(Nil, dao, pretty)
+    val authzCtx = dao.getForumAuthzContext(requester)
+
+    findWhat match {
+      case Pages =>
+        val pageQuery = PageQuery(
+              // Score and bump time, if nothing else specified. [TyT025WKRGJ]
+              PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week),
+              PageFilter(PageFilterType.AllTopics, includeDeleted = false),
+              includeAboutCategoryPages = false)
+
+        val topics = dao.listMaySeeTopicsInclPinned(catOrRootCat.id, pageQuery,
+              includeDescendantCategories = true, authzCtx, limit = 12)
+
+        ThingsFoundJson.makePagesFoundListResponse(topics, dao, pretty)
+
+      case Posts =>
+        val result: LoadPostsResult = dao.loadPostsMaySeeByQuery(
+              requester, OrderBy.MostRecentFirst, limit = 25,
+              // API consumers probably want only approved posts. [4946RKTT2]
+              inclUnapprovedPosts = false,
+              // But they do want unlisted post, probably? Only if is staff.
+              inclUnlistedPagePosts = requester.map(_.isStaff) is true,
+              // Or maybe not include title posts? The fact that titles are posts, is an
+              // implementation detail? Not impossible this'll change, and there'll
+              // be a posts3 title field, instead. [DONTLISTTTL]
+              inclTitles = true, onlyEmbComments = false,
+              writtenById = None)
+
+        PostsListFoundJson.makePostsListFoundResponse(result, dao, pretty)
+
+      case _ =>
+        die("TyE502AKTUDT5", s"findWhat: $findWhat")
     }
-
-    // Public API, no authentication needed.
-    val authzCtx = dao.getForumPublicAuthzContext()
-    val pageQuery = PageQuery(
-      // Score and bump time, if nothing else specified. [TyT025WKRGJ]
-      PageOrderOffset.ByScoreAndBumpTime(offset = None, TopTopicsPeriod.Week),
-      PageFilter(PageFilterType.AllTopics, includeDeleted = false),
-      includeAboutCategoryPages = false)
-
-    val topics = dao.listMaySeeTopicsInclPinned(category.id, pageQuery,
-      includeDescendantCategories = true, authzCtx, limit = 12)
-
-    ThingsFoundJson.makePagesFoundListResponse(topics, dao, pretty)
   }
 
 }

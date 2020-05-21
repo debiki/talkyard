@@ -29,7 +29,7 @@ import talkyard.server.JsX._
 
 
 
-object ThingsFoundJson {
+object ThingsFoundJson {  RENAME // to  PagesFoundJson ?
 
 
   def makePagesFoundListResponse(topics: Seq[PagePathAndMeta], dao: SiteDao,
@@ -108,7 +108,7 @@ object ThingsFoundJson {
 
     val authorsById = dao.getParticipantsAsMap(allAuthorIds)
 
-    // --- Site origin
+    // --- Site origin   dupl code [603RKDJL5]
 
     val siteIdsOrigins = dao.theSiteIdsOrigins()
     val avatarUrlPrefix =

@@ -84,17 +84,17 @@ trait SiteTransaction {
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
   def loadTitleAndOrigPost(pageId: PageId): Seq[Post] =
-    loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr), PagePostNr(pageId, PageParts.BodyNr)))
+    loadPostsByNrs(Seq(PagePostNr(pageId, PageParts.TitleNr), PagePostNr(pageId, PageParts.BodyNr)))
 
   def loadTitle(pageId: PageId): Option[Post] =
-    loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr))).headOption
+    loadPostsByNrs(Seq(PagePostNr(pageId, PageParts.TitleNr))).headOption
 
   def loadOrigPost(pageId: PageId): Option[Post] =
-    loadPosts(Seq(PagePostNr(pageId, PageParts.BodyNr))).headOption
+    loadPostsByNrs(Seq(PagePostNr(pageId, PageParts.BodyNr))).headOption
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
-  def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
+  def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
   def loadPostsByExtIdAsMap(extImpIds: Iterable[ExtId]): immutable.Map[ExtId, Post]
 
@@ -117,11 +117,17 @@ trait SiteTransaction {
   def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]
 
   def loadPostsToReview(): immutable.Seq[Post]
-  def loadPostsSkipTitles(limit: Int, orderBy: OrderBy, byUserId: Option[UserId]): immutable.Seq[Post]
+
+  // Later all these params can be a ListPostsQuery instead.
+  // Also, these params:  includeDeleted,  includeHidden.
+  def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
+        includeTitlePosts: Boolean, inclUnapprovedPosts: Boolean,
+        inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post]
+
   def loadEmbeddedCommentsApprovedNotDeleted(limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
-    val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))
+    val titlePosts = loadPostsByNrs(pageIds.map(PagePostNr(_, PageParts.TitleNr)))
     Map(titlePosts.map(post => {
       post.pageId -> post.approvedSource.getOrElse(post.currentSource)
     }): _*)

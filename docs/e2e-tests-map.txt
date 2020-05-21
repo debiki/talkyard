@@ -953,9 +953,16 @@ api:
           - TyT05RKVJF68
   list topics:
             - api-list-query-for-topics.test.ts  TyT603AKSL25
+  list posts:
+            - api-list-query-for-posts.test.ts  TyT503RKDGF
+  list restricted stuff via api secret:
+            - api-list-query-for-posts.test.ts  TyT702KRJGF57
   search,
   full text search:
             - api-search-full-text.test.ts   TyT70ADNEFTD36
+  atom feed:
+            - TESTS_MISSING
+  rss feed: No, there're only Atom feeds.
 
 
 import,

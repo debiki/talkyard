@@ -229,13 +229,17 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
       case "feed" | EmbeddedCommentsFeedPath =>
         val onlyEmbeddedComments = apiEndpoint == EmbeddedCommentsFeedPath
         /*
-        https://server.address/-/v0/recent-posts.rss
+        https://server.address/-/v0/recent-posts.rss  — No! Explosion of endpoints. Instead:
+
         https://server.address/-/v0/feed?
-            type=atom&
+            type=atom&   — no, *always only* support Atom
             include=replies,chatMessages,topics&
             limit=10&
             minLikeVotes=1&
-            path=/some/category/or/page
+            path=/some/category/or/page  — no
+            category=extid:category_id  — yes
+
+        Look at the List API — use the same  findWhat  and  lookWhere  ?
 
         Just going to:  https://www.talkyard.io/-/feed  = includes all new posts, type Atom, limit 10 maybe.
 
@@ -245,9 +249,17 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           /directory*.atom  = new topics, and (?) use:
             dao.listPagePaths(
               Utils.parsePathRanges(pageReq.pagePath.folder, pageReq.request.queryString,
+
+         Also:
+             Get inspired by, + what can make sense to implement:
+             https://developer.github.com/v3/activity/feeds/
+             (but use Auth header Bearer tokens, not query params).
          */
-        val atomXml = dao.getAtomFeedXml(onlyEmbeddedComments = onlyEmbeddedComments)
+
+        val atomXml = dao.getAtomFeedXml(
+              request, onlyEmbeddedComments = onlyEmbeddedComments)
         OkXml(atomXml, "application/atom+xml; charset=UTF-8")
+
       case _ =>
         throwForbidden("TyEAPIGET404", s"No such API endpoint: $apiEndpoint")
     }

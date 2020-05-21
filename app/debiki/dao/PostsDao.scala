@@ -43,6 +43,11 @@ case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Op
 
 case class ChangePostStatusResult(answerGotDeleted: Boolean)
 
+case class LoadPostsResult(
+  posts: immutable.Seq[Post],
+  pageStuffById: Map[PageId, PageStuff])
+
+
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
@@ -2017,11 +2022,14 @@ trait PostsDao {
       // will get hidden here, because we loaded only the most recent ones, above.
       // — However, new users are rate limited, so not super likely to happen.
 
-      // Censor the user's posts.
+      // Find the user's posts — we'll hide them.
+      // (The whole page gets hidden by hidePostsOnPage() below, if all posts get hidden.)
       val postToMaybeHide =
         if (user.isMember) {
-          tx.loadPostsSkipTitles(limit = numThings, OrderBy.MostRecentFirst, byUserId = Some(userId))
-              .filter(!_.isBodyHidden)
+          tx.loadPostsByQuery(limit = numThings, OrderBy.MostRecentFirst,
+                byUserId = Some(userId), includeTitlePosts = false,
+                inclUnapprovedPosts = true, inclUnlistedPagePosts_unimpl = true)
+                .filter(!_.isBodyHidden)
         }
         else {
           tx.loadPostsByUniqueId(guestPostIds).values.filter(!_.isBodyHidden)
@@ -2161,7 +2169,7 @@ trait PostsDao {
   def loadPostsAllOrError(pageId: PageId, postNrs: Iterable[PostNr])
         : immutable.Seq[Post] Or One[PostNr] =
     readOnlyTransaction { tx =>
-      val posts = tx.loadPosts(postNrs.map(PagePostNr(pageId, _)))
+      val posts = tx.loadPostsByNrs(postNrs.map(PagePostNr(pageId, _)))
       dieIf(posts.length > postNrs.size, "EdE2WBR57")
       if (posts.length < postNrs.size) {
         val firstMissing = postNrs.find(nr => !posts.exists(_.nr == nr)) getOrDie "EdE7UKYWJ2"
@@ -2169,6 +2177,56 @@ trait PostsDao {
       }
       Good(posts)
     }
+
+
+  def loadPostsMaySeeByQuery(
+          requester: Option[Participant], orderBy: OrderBy, limit: Int,
+          inclTitles: Boolean, onlyEmbComments: Boolean, inclUnapprovedPosts: Boolean,
+          inclUnlistedPagePosts: Boolean,
+          writtenById: Option[UserId]): LoadPostsResult = {
+
+    unimplementedIf(orderBy != OrderBy.MostRecentFirst,
+          "Only most recent first supported [TyE403RKTJ]")
+
+    val postsInclForbidden = readOnlyTransaction { tx =>
+      if (onlyEmbComments) {
+        dieIf(inclTitles, "TyE503RKDP5", "Emb cmts have no titles")
+        dieIf(inclUnapprovedPosts, "TyE503KUTRT", "Emb cmts + unapproved")
+        dieIf(writtenById.isDefined, "TyE703RKT3M", "Emb cmts + writtenBy unimpl")
+        // Embedded discussions are typically unlisted, so strangers
+        // cannot super easily list all discussions over at the Talkyard site
+        // (but via the Atom feed, it's ok to list the most recent comments).
+        dieIf(!inclUnlistedPagePosts, "TyE520ATJ3", "Emb cmts + *no* unlisted")
+
+        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = limit, orderBy)
+      }
+      else {
+        tx.loadPostsByQuery(
+              limit = limit, orderBy, byUserId = writtenById,
+              includeTitlePosts = inclTitles, inclUnapprovedPosts = inclUnapprovedPosts,
+              // inclUnlistedPagePosts_unimpl here has no effect, not implemented,
+              // but there's a filter below in the for { ... }.
+              inclUnlistedPagePosts_unimpl = inclUnlistedPagePosts)
+      }
+    }
+
+    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
+    val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)
+
+    val postsOneMaySee = for {
+      post <- postsInclForbidden
+      pageMeta <- pageMetaById.get(post.pageId)
+      maySee = maySeePostUseCache(
+            post, pageMeta, ppt = requester, maySeeUnlistedPages = inclUnlistedPagePosts)
+      if  maySee._1.may
+    }
+      yield post
+
+    val pageIds = postsOneMaySee.map(_.pageId).distinct
+    val pageStuffById = getPageStuffById(pageIds) ; COULD_OPTIMIZE // reuse pageMetaById
+
+    LoadPostsResult(postsOneMaySee, pageStuffById)
+  }
 
 
   private def updateVoteCounts(post: Post, tx: SiteTransaction): Unit = {

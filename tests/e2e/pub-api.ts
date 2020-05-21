@@ -73,6 +73,8 @@ interface Participant_ {
 type FindWhat =
   'Pages' |
 
+  'Posts' |
+
   // Users and groups (not guests).
   'Members' |
 
@@ -152,7 +154,8 @@ interface LookWhere {
 // What you get back
 // -------------------------
 
-type ThingFound = PageFound | ParticipantFound | TagFound | CategoryFound;
+type ThingFound = PageFound | PageListed | PostListed
+                  | ParticipantFound | TagFound | CategoryFound;
 
 
 
@@ -187,7 +190,7 @@ interface GroupFound extends MemberFound {
 
 
 
-interface PageFound {
+interface PageFoundOrListed {
   pageId: PageId;
   title: string;
   // Prefix with the origin (included in the response) to get the full URL.
@@ -195,14 +198,23 @@ interface PageFound {
   excerpt?: string;
   author?: ParticipantFound;
   categoriesMainFirst?: CategoryFound[];
-  postsFound?: PostFound[];
 }
 
+interface PageFound extends PageFoundOrListed {
+  postsFound: PostFound[];
+}
 
-interface PostFound {
+type PageListed = PageFoundOrListed;
+
+
+
+interface PostFoundOrListed {
   isPageTitle?: boolean;
   isPageBody?: boolean;
   author?: ParticipantFound;
+}
+
+interface PostFound extends PostFoundOrListed {
   // With <mark> tags and html escapes, like:
   //   ["When you want to <mark>climb</mark> a tall
   //    &amp; exciting <mark>tree</tree> then",
@@ -210,8 +222,20 @@ interface PostFound {
   htmlWithMarks: string[];
 }
 
+interface PostListed extends PostFoundOrListed {
+  id: number;
+  nr: number;
+  parentNr?: number;
+  pageId: PageId;
+  pageTitle: string;
+  urlPath: string;
+  approvedHtmlSanitized?: string;
+}
+
+
 
 type TagFound = Unimplemented;
+
 
 
 interface CategoryFound {
@@ -246,7 +270,7 @@ interface ListQuery {
   // E.g. username prefix.
   exactPrefix?: string;
   findWhat: FindWhat,
-  lookWhere: LookWhere;
+  lookWhere?: LookWhere;
 }
 
 type ListQueryApiResponse<T extends ThingFound> = ApiResponse<ListQueryResults<T>>;

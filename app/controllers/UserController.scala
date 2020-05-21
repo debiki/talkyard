@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.Participant.{MinUsernameLength, isGuestId}
 import debiki._
-import debiki.dao.{ReadMoreResult, SiteDao}
+import debiki.dao.{LoadPostsResult, ReadMoreResult, SiteDao}
 import debiki.EdHttp._
 import ed.server.http._
 import java.{util => ju}
@@ -293,30 +293,24 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // And if !all, and > 100 posts, add a load-more button.
     val limit = all ? 9999 | 100
 
-    // ----- Dupl code [4AKB2F0]
-    val postsInclForbidden = dao.readOnlyTransaction { tx =>
-      tx.loadPostsSkipTitles(limit = limit, OrderBy.MostRecentFirst, byUserId = Some(authorId))
-    }
-    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
-    val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
+    val LoadPostsResult(postsOneMaySee, pageStuffById) =
+          dao.loadPostsMaySeeByQuery(
+                requester, OrderBy.MostRecentFirst, limit = limit,
+                // One probably wants to see one's own not-yet-approved posts.
+                inclUnapprovedPosts = requesterIsStaffOrAuthor,
+                inclTitles = false, onlyEmbComments = false,
+                inclUnlistedPagePosts = requesterIsStaffOrAuthor,
+                writtenById = Some(authorId))
 
-    val posts = for {
-      post <- postsInclForbidden
-      pageMeta <- pageMetaById.get(post.pageId)
-      if dao.maySeePostUseCache(post, pageMeta, requester,
-        maySeeUnlistedPages = requesterIsStaffOrAuthor)._1.may
-    } yield post
-
-    val pageIds = posts.map(_.pageId).distinct
-    val pageStuffById = dao.getPageStuffById(pageIds)
-    // ----- /Dupl code
+    val posts = postsOneMaySee
     val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
 
     val postsJson = posts flatMap { post =>
-      val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
+      val pageStuff = pageStuffById.get(post.pageId) getOrDie "EdE2KW07E"
+      val pageMeta = pageStuff.pageMeta
       val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageType,
-        showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
+            showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)

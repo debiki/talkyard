@@ -19,7 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.EdHttp.throwNotFound
+import debiki.EdHttp.{throwForbiddenIf, throwNotFound}
+import debiki.RateLimits
+import ed.server.http.ApiRequest
 
 
 /** Generates and caches Atom feeds for recent comments or recent topics.
@@ -29,59 +31,68 @@ trait FeedsDao {
 
 
   memCache.onPageCreated { sitePageId =>
-    memCache.remove(siteFeedKey)
-    memCache.remove(commentsFeedKey)
+    emptyFeedsCache()
   }
 
   memCache.onPageSaved { sitePageId =>
-    memCache.remove(siteFeedKey)
-    memCache.remove(commentsFeedKey)
+    emptyFeedsCache()
   }
 
-
-  def getAtomFeedXml(onlyEmbeddedComments: Boolean): xml.Node = {
-    val key = onlyEmbeddedComments ? commentsFeedKey | siteFeedKey
-    memCache.lookup[xml.Node](
-      key,
-      orCacheAndReturn = {
-        Some(loadAtomFeedXml(onlyEmbeddedComments = onlyEmbeddedComments))
-      }) getOrDie "TyE5KBR7JQ0"
+  private def emptyFeedsCache(): Unit = {   // (CACHHHEE)
+    memCache.remove(siteFeedKey(SysbotUserId))
+    memCache.remove(siteFeedKey(NoUserId))
+    memCache.remove(commentsFeedKey(SysbotUserId))
+    memCache.remove(commentsFeedKey(NoUserId))
   }
 
+  def getAtomFeedXml(request: ApiRequest[_], onlyEmbeddedComments: Boolean)
+        : xml.Node = {
+    import request.{requester => anyRequester}
 
-  def loadAtomFeedXml(onlyEmbeddedComments: Boolean): xml.Node = {
-    // ----- Dupl code [4AKB2F0]
-    val postsInclForbidden = readOnlyTransaction { tx =>
-      if (onlyEmbeddedComments) {
-        tx.loadEmbeddedCommentsApprovedNotDeleted(limit = 25, OrderBy.MostRecentFirst)
-      }
-      else {
-        tx.loadPostsSkipTitles(limit = 25, OrderBy.MostRecentFirst, byUserId = None)
-      }
+    // Cache only the Sysbot user's requests (for now at least),
+    // So won't need to add complicated clear-cache code now.  (CACHHHEE)
+    if (anyRequester.exists(_.id != SysbotUserId)) {
+      self.context.rateLimiter.rateLimit(RateLimits.ExpensiveGetRequest, request)
+      return loadAtomFeedXml(anyRequester, onlyEmbComments = onlyEmbeddedComments)
     }
-    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
-    val pageMetaById = getPageMetasAsMap(pageIdsInclForbidden)
-    val postsOneMaySee = for {
-      post <- postsInclForbidden
-      pageMeta <- pageMetaById.get(post.pageId)
-      if maySeePostUseCache(
-        post, pageMeta, ppt = None, maySeeUnlistedPages = onlyEmbeddedComments)._1.may
-    } yield post
-    val pageIds = postsOneMaySee.map(_.pageId).distinct
-    val pageStuffById = getPageStuffById(pageIds)
-    // ----- /Dupl code
+
+    // This'll be NoUserId or SysbotUserId, see above.
+    val pptId = anyRequester.map(requester => {
+      if (requester.isAuthenticated) requester.id
+      else NoUserId
+    }) getOrElse NoUserId
+
+    dieIf(pptId != NoUserId && pptId != SysbotUserId, "TyE502RKSEH5") // (CACHHHEE)
+
+    val key = onlyEmbeddedComments ? commentsFeedKey(pptId) | siteFeedKey(pptId)
+
+    memCache.lookup[xml.Node](key, orCacheAndReturn = Some {
+      loadAtomFeedXml(anyRequester, onlyEmbComments = onlyEmbeddedComments)
+    }) getOrDie "TyE5KBR7JQ0"
+  }
+
+
+  def loadAtomFeedXml(anyRequester: Option[Participant], onlyEmbComments: Boolean)
+        : xml.Node = {
+    val LoadPostsResult(postsOneMaySee, pageStuffById) =
+          loadPostsMaySeeByQuery(
+                anyRequester, OrderBy.MostRecentFirst, limit = 25,
+                inclUnapprovedPosts = false, inclTitles = false,
+                onlyEmbComments = onlyEmbComments,
+                inclUnlistedPagePosts = onlyEmbComments,
+                writtenById = None)
 
     if (postsOneMaySee.isEmpty)
       throwNotFound("TyE0FEEDPOSTS", "No posts found, or they are private")
 
     val origin = theSiteOrigin()
     debiki.AtomFeedXml.renderFeed(origin, postsOneMaySee, pageStuffById,
-      isForEmbeddedComments = onlyEmbeddedComments)
+          isForEmbeddedComments = onlyEmbComments)
   }
 
 
-  private def siteFeedKey = MemCacheKey(siteId, "FeedKey")
-  private def commentsFeedKey = MemCacheKey(siteId, "CmtsFeedKey")
+  private def siteFeedKey(pptId: UserId) = MemCacheKey(siteId, s"$pptId|FeedKey")
+  private def commentsFeedKey(pptId: UserId) = MemCacheKey(siteId, s"$pptId|CmtsFeedKey")
 
 }
 

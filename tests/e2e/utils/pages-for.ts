@@ -3906,6 +3906,11 @@ export class TyE2eTestBrowser {
               '.esDropModal_content .esExplDrp_entry', toGroupName);
         },
 
+        removeGroup: (groupId: UserId) => {
+          this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Dl`);
+          this.waitUntilGone(`.s_PoP-Grp-${groupId}`);
+        },
+
         addGroup: (groupName: string) => {
           this.waitAndClick('.s_CD_Sec_AddB');
           this.waitAndClick('.s_PoP-Select-Grp .e_SelGrpB');
@@ -6017,10 +6022,13 @@ export class TyE2eTestBrowser {
         this.$$('.esAdminArea .dw-main-nav > li').length,
 
       settings: {
-        clickSaveAll: () => {
+        clickSaveAll: (ps: { willFail?: boolean } = {}) => {
           this.scrollToBottom();
           this.waitAndClick('.esA_SaveBar_SaveAllB');
           this.waitUntilLoadingOverlayGone();
+          if (!ps.willFail) {
+            this.waitUntilGone('.esA_SaveBar_SaveAllB');
+          }
         },
 
         clickLegalNavLink: () => {

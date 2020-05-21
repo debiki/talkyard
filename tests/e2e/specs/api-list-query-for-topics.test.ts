@@ -137,16 +137,16 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
 
   // Since no Like votes, the most recently active topics should be listed first.
 
-  let response: SearchQueryResults<PageFound>;
+  let response: ListQueryResults<PageListed>;
 
   it("Maria lists pages in the Specific category", () => {
-    response = server.apiV0.listQuery<PageFound>({
+    response = server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
         findWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${specificCatExtId}`] },
       },
-    });
+    }) as ListQueryResults<PageListed>;
   });
 
   it("She finds three pages", () => {
@@ -154,9 +154,9 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
   });
 
 
-  let pageOneFound: PageFound;
-  let pageTwoFound: PageFound;
-  let pageThreeFound: PageFound;
+  let pageOneFound: PageListed;
+  let pageTwoFound: PageListed;
+  let pageThreeFound: PageListed;
 
   it("The first page is the most recently added page: Zzz  [TyT025WKRGJ]", () => {
     pageOneFound = response.thingsFound[0];
@@ -212,13 +212,13 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
   });
 
   it("Maria again lists pages in the Specific category", () => {
-    response = server.apiV0.listQuery<PageFound>({
+    response = server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
         findWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${specificCatExtId}`] },
       },
-    });
+    }) as ListQueryResults<PageListed>;
   });
 
   it("She again finds three pages", () => {
@@ -245,13 +245,13 @@ describe("api-list-query-for-topics.test.ts  TyT603AKSL25", () => {
 
 
   function listStaffPages() {
-    return server.apiV0.listQuery<PageFound>({
+    return server.apiV0.listQuery<PageListed>({
       origin: siteIdAddress.origin,
       listQuery: {
         findWhat: 'Pages',
         lookWhere: { inCategories: [`extid:${staffCatExtId}`] },
       },
-    });
+    }) as ListQueryResults<PageListed>;
   }
 
   it("Maria tries to list pages in the Staff category", () => {

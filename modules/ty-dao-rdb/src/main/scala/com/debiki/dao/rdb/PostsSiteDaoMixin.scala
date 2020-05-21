@@ -104,7 +104,7 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post] = {
+  def loadPostsByNrs(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post] = {
     if (pagePostNrs.isEmpty)
       return Nil
 
@@ -236,8 +236,9 @@ trait PostsSiteDaoMixin extends SiteTransaction {
   } */
 
 
-  def loadPostsSkipTitles(limit: Int, orderBy: OrderBy, byUserId: Option[UserId])
-        : immutable.Seq[Post] = {
+  def loadPostsByQuery(limit: Int, orderBy: OrderBy, byUserId: Option[UserId],
+        includeTitlePosts: Boolean, includeUnapproved: Boolean,
+        inclUnlistedPagePosts_unimpl: Boolean): immutable.Seq[Post] = {
     dieIf(orderBy != OrderBy.MostRecentFirst, "EdE1DRJ7Y", "Unimpl")
 
     val values = ArrayBuffer[AnyRef](siteId.asAnyRef)
@@ -249,10 +250,22 @@ trait PostsSiteDaoMixin extends SiteTransaction {
         "and created_by_id = ?"
     }
 
+    val andNotTitle = includeTitlePosts ? "" | s"and post_nr <> $TitleNr"
+    val andSomeVersionApproved = includeUnapproved ?
+          "" | "and approved_at is not null"
+
+    // This'll require a join w pages3 and categories3.
+    val andPageNotUnlisted_unimpl = !inclUnlistedPagePosts_unimpl ? "" | ""
+
     val query = s"""
-      select * from posts3 where site_id = ? $andAuthorEq and post_nr <> $TitleNr
-      order by created_at desc limit $limit
-      """
+          select * from posts3
+          where site_id = ?
+              $andAuthorEq
+              $andNotTitle
+              $andSomeVersionApproved
+              $andPageNotUnlisted_unimpl
+          order by created_at desc limit $limit """
+
     runQueryFindMany(query, values.toList, rs => {
       readPost(rs)
     })

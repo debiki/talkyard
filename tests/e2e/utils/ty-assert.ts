@@ -6,10 +6,27 @@ interface TyAssert {
 }
 
 
+function toPrettyString(sth): string {
+  if (_.isObject(sth)) return JSON.stringify(sth, undefined, 2);
+  return `${sth}`;
+}
+
+
 const tyAssert: any = {   // : any = works around:
               // error TS2775: Assertions require every name in the call target
               // to be declared with an explicit type annotation.
   ...assert,
+
+  ok: (test, message: string, sth?) => {
+    const wholeMessage = message + (sth ? toPrettyString(sth) : '');
+    assert.ok(test, wholeMessage);
+  },
+
+
+  fail: (message: string, sth?) => {
+    const wholeMessage = message + (sth ? toPrettyString(sth) : '');
+    assert.fail(wholeMessage);
+  },
 
   // Maybe might as well always use this one, instead of  strictEqual  sometimes?
   // Could do that change later — but start with deepEq as a separate fn.
@@ -26,7 +43,7 @@ const tyAssert: any = {   // : any = works around:
       `    should not be:  ${JSON.stringify(wrongValue)}\n`);
   },
 
-  eq: (actual, expected, message?) => {
+  eq: (actual, expected, message?: string, detailsObj?) => {
     // Show the two values on two lines, aligned, so one sees at a glance
     // what's wrong.
     let wholeMessage = '\n\n' +
@@ -36,7 +53,9 @@ const tyAssert: any = {   // : any = works around:
     if (message) {
       wholeMessage +=
           `  Details:\n` +
-          `    ${message}\n`;
+          `    ${toPrettyString(message) +
+                    (detailsObj ? toPrettyString(detailsObj) : '')
+                }\n`;
     }
     assert.strictEqual(actual, expected, wholeMessage);
   },

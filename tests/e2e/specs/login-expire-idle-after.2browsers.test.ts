@@ -118,8 +118,8 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
     owensBrowser.adminArea.settings.login.setExpireIdleAfterMinutes(2000);
   });
 
-  it("... saves, again", () => {
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("... tries to save", () => {
+    owensBrowser.adminArea.settings.clickSaveAll({ willFail: true });
   });
 
   it("... but his session also expired", () => {
@@ -127,19 +127,22 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
     owensBrowser.serverErrorDialog.close();
   });
 
-  it("He tries to save, still doesn't work, of course", () => {
-    owensBrowser.adminArea.settings.clickSaveAll();
+  it("... He tries once more, still doesn't work, of course", () => {
+    owensBrowser.adminArea.settings.clickSaveAll({ willFail: true });
     owensBrowser.serverErrorDialog.waitForNotLoggedInAsAdminError();
     owensBrowser.serverErrorDialog.close();
   });
 
-  it("... he logs in again", () => {
+  it("Owen logs in again", () => {
     owensBrowser.refresh();
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
-  it("... and now he can configure 2000 minutes expiration time", () => {
+  it("... again configures 2000 minutes expiration time", () => {
     owensBrowser.adminArea.settings.login.setExpireIdleAfterMinutes(2000);
+  });
+
+  it("... and saves, works now", () => {
     owensBrowser.adminArea.settings.clickSaveAll();
   });
 
@@ -150,6 +153,13 @@ describe("expire-idle-session  TyT7RBKTJ25", () => {
   it("This didn't expire Maria's session; she can post a third reply", () => {
     mariasBrowser.complex.replyToOrigPost("Maybe I'll stay");
     mariasBrowser.topic.waitForPostAssertTextMatches(c.FirstReplyNr + 2, "Maybe I'll stay");
+  });
+
+  it("And Owen can keep changing the expiration time", () => {
+    owensBrowser.adminArea.settings.login.setExpireIdleAfterMinutes(2098);
+    // This wouldn't work, if session expired — there'd be a modal error dialog:
+    owensBrowser.adminArea.settings.clickSaveAll();
+    owensBrowser.adminArea.settings.login.setExpireIdleAfterMinutes(2099);
   });
 
 });

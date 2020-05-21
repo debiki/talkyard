@@ -70,7 +70,10 @@ function initOrExit(theSettings) {
 function postOrDie(url, data, opts: { apiRequesterId?: number, apiSecret?: string,
       retryIfXsrfTokenExpired?: boolean, fail?: boolean } = {})
       : { statusCode: number, headers, bodyText: string, bodyJson: () => any } {
+
   dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2WKG4]");
+  dieIf(!!opts.apiRequesterId !== !!opts.apiSecret,
+        "API user id or secret missing [TyE450KST]");
 
   const passwordParam =
       (url.indexOf('?') === -1 ? '?' : '&') + 'e2eTestPassword=' + settings.e2eTestPassword;
@@ -511,15 +514,21 @@ function fullTextSearch<T extends ThingFound>(ps: { origin: string, queryText: s
 }
 
 
-function listQuery<T extends ThingFound>(ps: {
-      origin: string, listQuery: ListQuery, sortOrder?: SortOrder })
-      :  ListQueryResults<T> {
+function listQuery<T extends ThingFound>(
+      ps: { origin: string, listQuery: ListQuery, sortOrder?: SortOrder },
+      postPs: { fail?: boolean, apiRequesterId?: UserId, apiSecret?: string } = {})
+      : ListQueryResults<T> | string {
   const url = ps.origin + '/-/v0/list';
   const requestBody: ListQueryApiRequest = {
     listQuery: ps.listQuery,
     pretty: true,
   };
-  const responseObj = postOrDie(url, requestBody);
+
+  const responseObj = postOrDie(url, requestBody, postPs);
+
+  if (postPs.fail)
+    return responseObj.bodyText;
+
   const responseBody = responseObj.bodyJson() as ListQueryApiResponse<T>;
   const result = responseObj.statusCode === 200 && !isApiErrorResponse(responseBody)
       ? responseBody

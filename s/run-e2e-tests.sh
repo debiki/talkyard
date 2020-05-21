@@ -426,6 +426,7 @@ function runAllE2eTests {
 
   $r s/wdio --only api-search-full-text $args
   $r s/wdio --only api-list-query-for-topics $args
+  $r s/wdio --only api-list-query-for-posts $args
 
   # wip:
   # settings-allow-local-signup
