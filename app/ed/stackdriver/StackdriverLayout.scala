@@ -143,9 +143,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
     json += "severity" -> JsString(event.getLevel.levelStr)
     json += "serviceContext" -> Json.obj(
        "service" -> "talkyard-app",
-       // COULD read version from 'event' somehow?
-       // Or update via 'sed' from inside s/bump-versions.sh? [0AMJQ2]
-       "version" -> "0.0.1")
+       "version" -> generatedcode.BuildInfo.version)
     json += "context" -> Json.obj("reportLocation" -> reportLocationJson)
     json
   }
