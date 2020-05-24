@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2012-2018 Kaj Magnus Lindberg
+  * Copyright (c) 2012-2020 Kaj Magnus Lindberg
   *
   * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Affero General Public License as
@@ -35,60 +35,38 @@ val versionFileContents = {
   finally source.close()
 }
 
+
 val appName = "talkyard-server"
+
 
 val appVersion = {
   // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
   versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
 }
 
-// Stuff shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
+
+// Code shared between <repo-root>/app/ and <repo-root>/modules/ty-dao-rdb.
 lazy val edCore =
   project in file("modules/ed-core")
+
 
 // ty = Talkyard, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
 lazy val tyDaoRdb =
   (project in file("modules/ty-dao-rdb"))
     .dependsOn(edCore)
 
+
 val appDependencies = Seq(
   play.sbt.PlayImport.ws,
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
-  "com.typesafe.play" %% "play-json" % "2.8.1",
+  Dependencies.Play.json,
   // OpenAuth and OpenID etc Authentication.
-  // Don't use v 5.0.7 — it uses some Google "People API" which is by default disabled;
-  // would require everyone that uses Talkyard to reconfigure their Google auth app.
-  // The PR that switches to the People API:
-  //   https://github.com/mohiva/play-silhouette/pull/549/files
-  // To start using it, one just upgrades to >= 5.0.7.
-  // This will cause this error before the API has been enabled:
-  /*
-  app_1  | [error] application - Error during OAuth2 authentication with Silhouette [TYE0AUUNKN]
-  app_1  | com.mohiva.play.silhouette.impl.exceptions.ProfileRetrievalException: [Silhouette][google] Error retrieving profile information. Error code: 403, message: People API has not been used in project 731449476019 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/people.googleapis.com/overview?project=731449476019 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
-
-  So, go there, and click Create Credentials (a button to the right).
-  Select:
-   - People API
-   - Web Server
-   - User Data
-
-   Then you'll see an OAuth Consent Screen.
-
-   Then fill in  https://your-talkyard-server/-/login-auth-callback/google
-   as an "Authorized redirect URIs".
-   (Skip the "Authorized JavaScript origins" section.)
-
-   Then you'll see a client ID and secret — copy-paste them into
-   the  google.clientID="..."  and  google.clientSecret="..." fields
-   in /opt/talkyard/conf/play-framework.conf.
-
-   */
   "com.mohiva" %% "play-silhouette" % "7.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
   // PostgreSQL JDBC client driver
   // see: https://mvnrepository.com/artifact/org.postgresql/postgresql/
-  "org.postgresql" % "postgresql" % "42.2.4",  // sync with ty-dao-rdb build.sbt [4AST5M]
+  Dependencies.Libs.postgresqlJbcdClient,
   // HikariCP — "A solid high-performance JDBC connection pool at last"
   "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:
@@ -99,8 +77,8 @@ val appDependencies = Seq(
   "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
   // ElasticSearch needs log4j
   "log4j" % "log4j" % "1.2.17",
-  "org.apache.commons" % "commons-email" % "1.5",
-  "com.google.guava" % "guava" % "25.0-jre",                // newest as of 18-07-19
+  Dependencies.Libs.apacheCommonsEmail,
+  Dependencies.Libs.guava,
   "org.jsoup" % "jsoup" % "1.11.3",                         // newest as of 18-07-17
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -112,7 +90,7 @@ val appDependencies = Seq(
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
-  //"org.apache.tika" % "tika-core" % "1.18",               // newest as of 18-07-17  sync w core [5ZBW49]
+  // Dependencies.Libs.apacheTika
   "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
   "io.jaegertracing" % "jaeger-client" % "0.32.0",
   "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
@@ -127,8 +105,8 @@ val appDependencies = Seq(
   "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
   // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-  "org.scalatest" %% "scalatest" % "3.1.1" % "test", // but prefer ScalaTest
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test)
+  Dependencies.Libs.scalaTest,
+  Dependencies.Libs.scalaTestPlusPlay)
 
 
 val main = (project in file("."))
