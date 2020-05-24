@@ -306,7 +306,7 @@ dev-images:  prod_asset_bundles  _copy_typesafe_activator
 # Starts an SBT shell where you can run unit tests by typing 'test'. These test require
 # the minified asset bundles, to run (because the app server loads and execs React Javascript
 # server side.)
-play-cli: prod_asset_bundles _copy_typesafe_activator
+play-cli: prod_asset_bundles _copy_typesafe_activator dead-app
 	s/d-cli
 
 
