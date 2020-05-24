@@ -57,7 +57,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      globals.testSetTime(startTime)
+      globals.testSetTime(NoSiteId, startTime)
       globals.systemDao.getOrCreateFirstSite()
       dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("us_adm", dao)

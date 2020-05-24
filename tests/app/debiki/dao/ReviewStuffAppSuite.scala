@@ -79,7 +79,8 @@ class ReviewStuffAppSuite(randomString: String)
       dao.makeReviewDecisionIfAuthz(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
         ReviewDecision.Accept)
       // Wait until the Janitor has carried out the decision. [5YMBWQT]
-      globals.testFastForwardTimeMillis((ReviewDecision.UndoTimoutSeconds + 1) * MillisPerSecond)
+      globals.fastForwardTestTimeMillis(
+            NoSiteId, (ReviewDecision.UndoTimoutSeconds + 1) * MillisPerSecond)
       var delay = 100
       var total = 0
       while (true) {

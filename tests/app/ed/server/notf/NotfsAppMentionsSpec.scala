@@ -76,7 +76,7 @@ class NotfsAppMentionsSpec extends DaoAppSuite(disableScripts = false) {
     val now = new ju.Date()
 
     "prepare" in {
-      globals.testSetTime(startTime)
+      globals.testSetTime(NoSiteId, startTime)
       globals.systemDao.getOrCreateFirstSite()
       dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("ntf_ownr", dao)

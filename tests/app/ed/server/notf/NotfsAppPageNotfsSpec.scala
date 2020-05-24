@@ -69,7 +69,7 @@ class NotfsAppPageNotfsSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      globals.testSetTime(startTime)
+      globals.testSetTime(NoSiteId, startTime)
       globals.systemDao.getOrCreateFirstSite()
       owner = createPasswordOwner("ntf_ownr", dao)
       ownerWho = Who(owner.id, browserIdData)

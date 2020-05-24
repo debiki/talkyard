@@ -150,9 +150,6 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
       "TyEMAY0IMPDMP", o"""May not import site dumps. Set talkyard.mayImportSite to true,
          in ${talkyard.server.ProdConfFilePath}, to allow this. And restart.""")
     val isTestDeleteOld = deleteOldSite is true
-    if (isTestDeleteOld && !globals.isProd) {
-      globals.testResetTime()
-    }
     importOverwriteImpl(request, request.body, overwriteSite = None, isTest = isTestDeleteOld)
   }
 
@@ -163,7 +160,6 @@ class SitePatchController @Inject()(cc: ControllerComponents, edContext: EdConte
     // importSiteJson() just above, and a url param 'isTestDeleteOld'?
     throwForbiddenIf(!security.hasOkE2eTestPassword(request),
       "TyE5JKU2", "Importing test sites only allowed when e2e testing")
-    globals.testResetTime()
     importOverwriteImpl(request, request.body, overwriteSite = None, isTest = true)
   }
 

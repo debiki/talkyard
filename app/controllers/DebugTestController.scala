@@ -241,7 +241,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
     throwForbiddenIf(!globals.mayFastForwardTime,
         "EdE5AKWYQ1", "To fast-forward time, in Prod mode, you need a wizard's wand")
     val seconds = (request.body \ "seconds").as[Int]
-    globals.testFastForwardTimeMillis(seconds * 1000)
+    globals.fastForwardTestTimeMillis(request.siteId, seconds * 1000)
     Ok
   }
 

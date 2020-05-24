@@ -82,9 +82,6 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
-    // In case we're running end-to-end tests:
-    globals.testResetTime()
-
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
     val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]

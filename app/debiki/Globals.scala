@@ -947,8 +947,7 @@ class Globals(
     }
 
     _state = null
-    timeStartMillis = None
-    timeOffsetMillis = 0
+    timeMillisBySiteId.clear()
 
     shutdownLogging()
   }
@@ -999,39 +998,44 @@ class Globals(
 
 
   def now(): When = {
-    // [E2EBUG]: This won't work when running many e2e tests in parallel.
-    // But can make this work, by letting the time offset be per site.
     val millisNow =
-      if (!isInitialized || !mayFastForwardTime) System.currentTimeMillis()
+      if (!isInitialized || !mayFastForwardTime) {
+        System.currentTimeMillis()
+      }
       else {
-        val millisStart = timeStartMillis getOrElse System.currentTimeMillis()
-        millisStart + timeOffsetMillis
+        val siteId = NoSiteId
+        val startAndOffset = timeMillisBySiteId.getOrElse(
+              siteId, (System.currentTimeMillis(), 0L))
+
+        val millisStart = startAndOffset._1
+        val offset = startAndOffset._2
+        millisStart + offset
       }
     When.fromMillis(millisNow)
   }
 
   /** When running tests only. */
-  def testSetTime(when: When): Unit = {
-    timeStartMillis = Some(when.millis)
-    timeOffsetMillis = 0
+  def testSetTime(siteId: SiteId, when: When): Unit = {
+    timeMillisBySiteId.put(siteId, (when.millis, 0L))
   }
 
   /** When running tests only. */
-  def testFastForwardTimeMillis(millis: Long): Unit = {
-    timeOffsetMillis += millis
+  def fastForwardTestTimeMillis(siteId: SiteId, millis: Long): Unit = {
+    val startAndOffset = timeMillisBySiteId.getOrElse(siteId, (-1L, 0L))
+    val newOffset = startAndOffset._2 + millis
+    timeMillisBySiteId.put(siteId, (startAndOffset._1, newOffset))
   }
 
   /** When running tests only. */
-  def testResetTime(): Unit = {
-    timeStartMillis = None
-    timeOffsetMillis = 0
+  def resetAnyTestTime(siteId: SiteId): Unit = {
+    timeMillisBySiteId.remove(siteId)
   }
 
-  @volatile
-  private var timeStartMillis: Option[Long] = None
+  // Pairs of (start-millis, offset-millis) — per site, so can change the
+  // time for different sites in parallel.
+  private val timeMillisBySiteId =
+    scala.collection.concurrent.TrieMap[SiteId, (Long, Long)]()
 
-  @volatile
-  private var timeOffsetMillis: Long = 0
 
 
   val loadGlobalAdminScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAdminScript")

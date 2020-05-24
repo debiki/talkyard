@@ -900,7 +900,7 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
         var merlinMember: User = null
 
         "add a 2nd reply, via the page's ext id" in {
-          globals.testFastForwardTimeMillis(60 * 1000)
+          globals.fastForwardTestTimeMillis(NoSiteId, 60 * 1000)
 
           merlinMember = createPasswordUser("merlin_un", dao)
 

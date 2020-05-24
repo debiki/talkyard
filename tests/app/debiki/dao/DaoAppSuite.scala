@@ -114,14 +114,14 @@ class DaoAppSuite(
 
   def setTime(when: When) {
     _currentTime = when
-    globals.testSetTime(when)
+    globals.testSetTime(NoSiteId, when)
   }
 
   def playTimeSeconds(seconds: Long): Unit = playTimeMillis(seconds * 1000)
 
   def playTimeMillis(millis: Long) {
     _currentTime = _currentTime plusMillis millis
-    globals.testSetTime(_currentTime)
+    globals.testSetTime(NoSiteId, _currentTime)
   }
 
 

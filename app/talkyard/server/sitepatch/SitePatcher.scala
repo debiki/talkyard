@@ -1336,6 +1336,7 @@ case class SitePatcher(globals: debiki.Globals) {
     // If we restored a site, then there're already things in the mem cache and Redis cache,
     // for the site we're overwriting when restoring. Remove any such stuff — or Talkyard
     // might do surprising things.
+    anySiteToOverwrite.foreach(site => globals.resetAnyTestTime(site.id))
     val newSiteDao = globals.siteDao(newSite.id)
     newSiteDao.memCache.clearThisSite()
     newSiteDao.redisCache.clearThisSite()
