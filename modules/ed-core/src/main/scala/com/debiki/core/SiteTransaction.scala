@@ -357,7 +357,6 @@ trait SiteTransaction {
   def loadIdentities(userId: UserId): immutable.Seq[Identity]
   def loadAllIdentities(): immutable.Seq[Identity]
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
-  def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId): Unit
 
   def nextGuestId: UserId

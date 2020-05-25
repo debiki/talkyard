@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -45,7 +45,6 @@ trait LoginSiteDaoMixin extends SiteTransaction {
     val loginGrant: MemberLoginGrant = try { loginAttempt match {
       case x: PasswordLoginAttempt => loginWithPassword(x, requireVerifiedEmail)
       case x: EmailLoginAttempt => loginWithEmailId(x)
-      case x: OpenIdLoginAttempt => loginOpenId(x)      // SHOULD check requireVerifiedEmail
       case x: OpenAuthLoginAttempt => loginOpenAuth(x)  // SHOULD check requireVerifiedEmail
     }}
     catch {
@@ -197,71 +196,6 @@ trait LoginSiteDaoMixin extends SiteTransaction {
   }
 
 
-  private def loginOpenId(loginAttempt: OpenIdLoginAttempt): MemberLoginGrant = {
-    die("EsE6UYKJ2", "Unimpl") /*
-    transactionCheckQuota { implicit connection =>
-
-    // Load any matching Identity and the related User.
-      val (identityInDb: Option[Identity], userInDb: Option[User]) =
-        _loadIdtyDetailsAndUser(forOpenIdDetails = loginAttempt.openIdDetails)
-
-      // Create user if absent.
-      val user = userInDb match {
-        case Some(u) => u
-        case None =>
-          ??? /* Don't create a new user from here
-          val details = loginAttempt.openIdDetails
-          val userNoId =  User(
-            id = "?",
-            displayName = details.firstName,
-            email = details.email getOrElse "",
-            emailNotfPrefs = EmailNotfPrefs.Unspecified,
-            country = details.country,
-            website = "",
-            isAdmin = false,
-            isOwner = false)
-
-          val userWithId = _insertUser(siteId, userNoId)
-          userWithId
-          */
-      }
-
-      // Create or update the OpenID identity.
-      //
-      // (It's absent, if this is the first time the user logs in.
-      // It needs to be updated, if the user has changed e.g. her
-      // OpenID name or email.)
-      //
-      // (Concerning simultaneous inserts/updates by different threads or
-      // server nodes: This insert might result in a unique key violation
-      // error. Simply let the error propagate and the login fail.
-      // This login was supposedly initiated by a human, and there is
-      // no point in allowing exactly simultaneous logins by one
-      // single human.)
-
-      val identity = identityInDb match {
-        case None =>
-          ??? /* Don't create a new identity from here
-          val identityNoId = IdentityOpenId(id = "?", userId = user.id, loginAttempt.openIdDetails)
-          insertOpenIdIdentity(siteId, identityNoId)(connection)
-          */
-        case Some(old: IdentityOpenId) =>
-          val nev = IdentityOpenId(id = old.id, userId = user.id, loginAttempt.openIdDetails)
-          if (nev != old) {
-            dieIf(nev.openIdDetails.oidClaimedId != old.openIdDetails.oidClaimedId, "DwE73YQ2")
-            _updateIdentity(nev)
-          }
-          nev
-        case x => throwBadDatabaseData("DwE26DFW0", s"A non-OpenID identity found in database: $x")
-      }
-
-      LoginGrant(Some(identity), user, isNewIdentity = identityInDb.isEmpty,
-        isNewRole = userInDb.isEmpty)
-    }
-    */
-  }
-
-
   private def loginOpenAuth(loginAttempt: OpenAuthLoginAttempt): MemberLoginGrant = {
     transactionCheckQuota { connection =>
       loginOpenAuthImpl(loginAttempt)(connection)
@@ -281,8 +215,6 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       die(o"""s$siteId: User ${identityInDb.userId} missing for OpenAuth
           identity ${identityInDb.id}""", "TyE4WKBQR")
     }
-
-    // (For some unimportant comments, see the corresponding comment in loginOpenId() above.)
 
     val identity =
       if (loginAttempt.openAuthDetails == identityInDb.openAuthDetails) identityInDb

@@ -29,9 +29,6 @@ POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
 POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
-#GET   /-/login-openid       controllers.LoginWithOpenIdController.loginGet
-#POST  /-/login-openid       controllers.LoginWithOpenIdController.loginPost
-#GET   /-/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 # also: /-/v0/sso-login via ApiV0Controller
 
 GET   /-/login-oidc/:providerName           controllers.LoginWithOpenAuthController.loginOidcStart(providerName, returnToUrl: String = "/")
