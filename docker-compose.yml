@@ -271,7 +271,7 @@ services:
   #      if you want to:  https://www.keycloak.org/app/
   #   2) But later, change the Root URL to ... what?
   #      sth like:  e2e-test-keycloak.localhost ?
-  #                            http://localhost/-/login-oidc/keycloak <—— now when testing
+  #               for now:     http://localhost/-/login-oidc/local-keycloak-test
   #
   # Since you selected 'confidential' above, a tab 'Credentials' appear once you click Save,
   # go there and copy the client secret.
@@ -290,7 +290,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:10.0.0
     ports:
-      - '8080:8080'   # oops, conflicts with blog comments static pages server 8080
+      - '8113:8080'  # 113 = same as ip addr, last byte. Sth else often listens on 8080
     environment:
       # Without 'h2', KeyCloak uses internal heuristics that sometimes wants a non-existing
       # MySQL database, blocks for a minute, logs a 3066 lines long error message and exits.
