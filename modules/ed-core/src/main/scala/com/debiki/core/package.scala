@@ -89,6 +89,8 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type OidcProviderId = Int
+
 
   // Avoid exposing ExtIds. It's best if strangers and non-staff members cannot see
   // them anywhere. Because ext ids might include numbers that makes it possible
