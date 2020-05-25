@@ -397,7 +397,6 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadIdentities(userId: UserId): immutable.Seq[Identity]
   def loadAllIdentities(): immutable.Seq[Identity]
   def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
-  def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId): Unit
 
   def nextGuestId: UserId
