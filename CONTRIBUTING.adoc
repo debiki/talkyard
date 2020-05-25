@@ -1,0 +1,37 @@
+
+
+=== Refactoring
+
+
+==== Ask first
+
+Please ask the maintainers before you refactor something non-trivial,
+because refactorings (incl automatic refactorings via an IDE)
+sometimes result in huge diffs,
+which could take "forever" for the maintainers to code review.
+Then it's better if the maintainers do the refactorings themselves
+— this can save time for them and for you: Tell them what they should refactor,
+and wait, and they'll get it done for you.
+
+
+==== Moving code to new files
+
+If you move methods or a class to a new file, then,
+when the Talkyard project maintainers review the diff,
+it'll look as if new code has been added,
+and as if all lines would need to be carefully reviewed
+— when in fact old code was just moved elsewhere.
+
+_This could cause the maintainers to reject the contribution_,
+until you've made it simpler to code review,
+by instead making the changes like so:
+
+1) Copy the whole file to the new file. Commit.
+2) Delete [the source code you want to move] from the old file.
+   Delete [the code you do _not_ want to move] from the new file.
+   Maybe rename any class in the new file.
+3) Commit again.
+
+Now the maintainers will see a copy file commit,
+and a delete-lots-of-code commit. Both of which are quick to review.
+
