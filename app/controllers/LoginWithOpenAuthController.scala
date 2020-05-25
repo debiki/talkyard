@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,10 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
+import com.github.scribejava.apis.{KeycloakApi => s_KeycloakApi}
+import com.github.scribejava.core.builder.{ServiceBuilder => s_ServiceBuilder}
+import com.github.scribejava.core.model.{OAuth2AccessTokenErrorResponse => s_OAuth2AccessTokenErrorResponse, OAuth2AccessToken => s_OAuth2AccessToken, OAuthAsyncRequestCallback => s_OAuthAsyncRequestCallback, OAuthRequest => s_OAuthRequest, Response => s_Response, Verb => s_Verb}
+import com.github.scribejava.core.oauth.{OAuth20Service => s_OAuth20Service}
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -33,13 +37,16 @@ import debiki.EdHttp._
 import ed.server._
 import ed.server.http._
 import ed.server.security.EdSecurity
+import java.io.{IOException => j_IOException}
+import java.util.concurrent.{ExecutionException => j_ExecutionException}
 import javax.inject.Inject
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.Configuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 import talkyard.server.{ProdConfFilePath, TyLogging}
 
 
@@ -94,20 +101,166 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
 
 
-  def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
+  private case class StateAndNonce(browserIdOrEmpty: String, nonce: String)
+
+  val realmName = "talkyard_keycloak_test_realm"
+
+  val oidcOpOrigin = "http://keycloak:8080"
+  val odicOpConfUrlPath = s"/auth/realms/$realmName/.well-known/openid-configuration"
+  val oidcOpConfUrl = s"$oidcOpOrigin$odicOpConfUrlPath"
+
+  val redirectUrlPath = "/-/login-oidc/keycloak/callback"
+
+  val userInfoUrl = s"$oidcOpOrigin/auth/realms/$realmName/protocol/openid-connect/userinfo"
+  //val protectedResourceUrl =
+  //                    baseUrl + "/auth/realms/" + realm + "/protocol/openid-connect/userinfo"
+
+  private val oidcProviderMetadataByConfigUrl = caffeine.cache.Caffeine.newBuilder()
+    // 2000 sites with OIDC enabled on this server is a lot
+    .maximumSize(2000)
+    // Let's refresh daily? Caching forever would be ok too.
+    .expireAfterWrite(24, java.util.concurrent.TimeUnit.HOURS)
+    .build().asInstanceOf[caffeine.cache.Cache[String, AnyRef]]  // n_OIDCProviderMetadata
+
+  private val oidcStateNonceCache = caffeine.cache.Caffeine.newBuilder()
+    .maximumSize(20*1000) // [ADJMEMUSG]
+    .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES) // [4WHKTP06]
+    .build().asInstanceOf[caffeine.cache.Cache[String, StateAndNonce]]
+
+
+  val keycloakClientId = "talkyard_keycloak_test_client"
+  val keycloakClientSecret = "63b9659b-db05-4f99-8aa6-bd7a993bff40" // just testing!
+
+  val alias = "local-keycloak-test"
+  val baseUrl = oidcOpOrigin
+  val realm = "talkyard_keycloak_test_realm"
+
+  // just testing
+  private def makeJavaScribeOAuthService(origin: String): s_OAuth20Service = {
+    val callback = origin + s"/-/login-oidc/$alias/callback"
+    new s_ServiceBuilder(keycloakClientId)
+          .apiSecret(keycloakClientSecret)
+          .defaultScope("openid")
+          .callback(callback)
+          .build(s_KeycloakApi.instance(baseUrl, realm))
+  }
+
+  private val scribeOAuth20Service = makeJavaScribeOAuthService("http://localhost")
+
+  def loginOidcStart(provider: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
-    startAuthenticationImpl(provider, returnToUrl, request)
+
+    val service = scribeOAuth20Service // makeJavaScribeOAuthService(request.origin)
+
+    // Obtain the Authorization URL
+    System.out.println("Fetching the KeyCloak Authorization URL...")
+    val authorizationUrl: String = service.getAuthorizationUrl()
+    System.out.println("Got the Authorization URL!")
+    System.out.println(s"Redirecting the browser to: $authorizationUrl")
+    Future.successful(
+          play.api.mvc.Results.Redirect(
+                authorizationUrl, status = play.api.http.Status.SEE_OTHER))
   }
 
 
-  private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
-        : Future[Result] = {
+  def loginOidcCallback(providerName: String, session_state: String, code: String)
+          : Action[Unit] = AsyncGetActionIsLogin { request =>
+
+    // !! check the state !! xsrf
+
+    val service = makeJavaScribeOAuthService(request.origin)
+
+    val accessTokenPromise = Promise[s_OAuth2AccessToken]()
+    val userInfoPromise = Promise[s_Response]()
+
+    service.getAccessToken(code, new s_OAuthAsyncRequestCallback[s_OAuth2AccessToken] {
+      override def onCompleted(token: s_OAuth2AccessToken): Unit = {
+        accessTokenPromise.success(token)
+      }
+      override def onThrowable(t: Throwable): Unit = {
+        accessTokenPromise.failure(t)
+      }
+    })
+
+    accessTokenPromise.future.onComplete({
+      case Failure(throwable: Throwable) => throwable match {
+        case ex: s_OAuth2AccessTokenErrorResponse =>
+          Future.successful(ForbiddenResult(
+            "TyEOIDCTOKENRSP", s"Error response from OIDC token endpoint: ${ex.toString}"))
+        case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+          Future.successful(InternalErrorResult(
+            "TyEOIDCTOKENREQ", s"Error requesting OIDC token: ${ex.toString}"))
+      }
+
+      case Success(oauthAccessToken: s_OAuth2AccessToken) =>
+        val getUserInfoRequest = new s_OAuthRequest(s_Verb.GET, userInfoUrl)
+        service.signRequest(oauthAccessToken, getUserInfoRequest)
+
+        service.execute(getUserInfoRequest, new s_OAuthAsyncRequestCallback[s_Response] {
+          override def onCompleted(response: s_Response): Unit = {
+            userInfoPromise.success(response)
+          }
+          override def onThrowable(t: Throwable): Unit = {
+            userInfoPromise.failure(t)
+          }
+        })
+    })
+
+    val futureResponseToBrowser = userInfoPromise.future.transform {
+      case Failure(throwable: Throwable) => throwable match {
+        case ex @ (_: InterruptedException | _: j_ExecutionException | _: j_IOException) =>
+          Success(InternalErrorResult(
+                "TyEOIDCTOKENREQ", s"Error requesting OIDC token: ${ex.toString}"))
+      }
+
+      case Success(response: s_Response) =>
+        val httpStatusCode = response.getCode
+        val body = response.getBody
+        lazy val randVal = nextRandomString()
+
+        if (httpStatusCode < 200 || 299 < httpStatusCode) {
+          logger.warn(i"""Weird status code from userinfo endpoint: $httpStatusCode,
+              |Error id: '$randVal'
+              |Provider: $providerName
+              |Response body:
+              |$body
+              |""")
+          Success(InternalErrorResult("TyEOIDCUSRINFRSP", o"""Unexpected status code:
+                $httpStatusCode, see logs for details, search for '$randVal'"""))
+        }
+        else {
+          val sb = StringBuilder.newBuilder
+          sb.append("Got it! Lets see what we found...\n\n")
+          sb.append(response.getCode + '\n')
+          sb.append(response.getBody + '\n')
+
+          Success(Ok(sb.toString))
+        }
+    }
+
+    futureResponseToBrowser
+  }
+
+
+  def logoutOidc(): Action[Unit] = AsyncGetActionIsLogin { request =>
+    Future.successful(NotImplementedResult("TyEOIDCLGO", "Not implemented"))
+  }
+
+
+  def startAuthentication(providerName: String, returnToUrl: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+    startAuthenticationImpl(providerName, returnToUrl, request)
+  }
+
+
+  private def startAuthenticationImpl(providerName: String, returnToUrl: String,
+        request: GetRequest): Future[Result] = {
 
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
 
-    var futureResult = startOrFinishAuthenticationWithSilhouette(provider, request)
+    var futureResult = startOrFinishAuthenticationWithSilhouette(providerName, request)
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
         result.withCookies(
@@ -130,8 +283,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def finishAuthentication(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
-    startOrFinishAuthenticationWithSilhouette(provider, request)
+  def finishAuthentication(providerName: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+    startOrFinishAuthenticationWithSilhouette(providerName, request)
   }
 
 
@@ -736,7 +890,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   /** Redirects to and logs in via anyLoginOrigin; then redirects back to this site, with
     * a session id and xsrf token included in the GET request.
     */
-  private def loginViaLoginOrigin(providerName: String, request: RequestHeader): Future[Result] = {
+  private def loginViaLoginOrigin(providerName: String, request: RequestHeader)
+        : Future[Result] = {
     // Parallel logins? Is the same user logging in in two browser tabs, at the same time?
     // People sometimes do, for some reason, and if that won't work, they sometimes contact
     // the Talkyard developers and ask what's wrong. Only to avoid these support requests,
@@ -763,15 +918,17 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     * The request origin must be the anyLoginOrigin, because that's the origin that the
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
-  def loginAtLoginOriginThenReturnToOriginalSite(provider: String, returnToOrigin: String,
-        xsrfToken: String): Action[Unit] = AsyncGetActionIsLogin { request =>
+  def loginAtLoginOriginThenReturnToOriginalSite(providerName: String,
+          returnToOrigin: String, xsrfToken: String): Action[Unit] =
+        AsyncGetActionIsLogin { request =>
+
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (globals.anyLoginOrigin isNot originOf(request))
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
-    val futureResponse = startOrFinishAuthenticationWithSilhouette(provider, request)
+    val futureResponse = startOrFinishAuthenticationWithSilhouette(providerName, request)
     futureResponse map { response =>
       response.withCookies(
         SecureCookie(name = ReturnToSiteOriginTokenCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
