@@ -397,7 +397,8 @@ export const LoginDialogContent = createClassAndFactory({
                 OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
             !ss.enableLinkedInLogin ? null :
                 OpenAuthButton(makeOauthProps('icon-linkedin', 'LinkedIn')),
-            // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
+            // SMALLER_BUNDLE  could remove the Yahoo icon?
+            // OpenID 1.0 since long gone, so skip:  icon-yahoo Yahoo!
             )),
 
         isSignUp && ss.allowLocalSignup === false ? null : (
@@ -471,25 +472,6 @@ const OpenAuthButton = createClassAndFactory({
         this.props.content || this.props.provider));
   }
 });
-
-
-// Later, create some OpenId button too? Old LiveScript code:  CLEAN_UP REMOVE
-/**
- * Logs in at Yahoo by submitting an OpenID login form in a popup.
- * /
-function submitOpenIdLoginForm(openidIdentifier)
-  form = $("""
-    <form action="#{eds.ser x verOrigin}/-/api/login-openid" method="POST">
-      <input type="text" name="openid_identifier" value="#openidIdentifier">
-    </form>
-    """)
-  # Submit form in a new login popup window, unless we already are in a login window.
-  if eds.isInLoginWindow
-    $('body').append(form)
-  else
-    d.i.createOpenIdLoginPopup(form)
-  form.submit()
-  false */
 
 
 

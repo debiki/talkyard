@@ -1,4 +1,4 @@
-All Talkyard code is Copyright (c) 2010-2018 Kaj Magnus Lindberg, and also Copyright (c) Debiki AB.
+All Talkyard code is Copyright (c) 2010-2020 Kaj Magnus Lindberg, and also Copyright (c) Debiki AB.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -69,7 +69,7 @@ Javascript and CSS:
     https://github.com/mailru/FileAPI
 
   - Fontello
-    ./modules/fontello/
+    ./images/web/ty-media/fontello/
     Different fonts copyrighted by different people.
     Various licenses.
     http://fontello.com/
@@ -92,11 +92,6 @@ Javascript and CSS:
     Apache License 2.0
     https://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
 
-  - jQuery
-    ./node_modules/jquery/
-    Copyright (c) 2011 John Resig, http://jquery.com/
-    MIT license
-
   - jQuery Browser Plugin
     ./client/third-party/jquery.browser.js
     Original code Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors, http://jquery.org/license
@@ -110,15 +105,10 @@ Javascript and CSS:
     MIT license
 
   - jQuery ':scrollable' selector
-    ./client/vendor/jquery-scrollable.js
+    ./client/third-party/jquery-scrollable.js
     Copyright (c) 2011 Robert Koritnik
     MIT license
     https://github.com/litera/jquery-scrollintoview/blob/master/
-
-  - jQuery AtWho
-    ./node_modules/at.js/
-    Copyright (c) 2013 chord.luo@gmail.com
-    MIT license
 
   - popuplib.js
     ./client/vendor/popuplib.js
@@ -164,10 +154,6 @@ Javascript and CSS:
     Copyright (C) 2013 Dustan Kasten
     MIT license
     https://github.com/iamdustan/smoothscroll
-
-  - YepNope
-    ./bower_components/yepnope/
-    Tri-licensed: WTFPL | MIT | BSD
 
 Javascript and Java:
 
