@@ -352,6 +352,10 @@ trait SiteTransaction {
   def loadInvitesCreatedBy(createdById: UserId): immutable.Seq[Invite]
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
+  def upsertOidcProvider(oidcProvider: OidcProvider): Unit
+  def loadOidcProvider(alias: String): Option[OidcProvider]
+  def loadAllOidcProviders(): Seq[OidcProvider]
+
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity): Unit
   def loadIdentities(userId: UserId): immutable.Seq[Identity]

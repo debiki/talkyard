@@ -103,9 +103,12 @@ class DaoAppSuite(
   }
 
 
-  def browserIdData = BrowserIdData("1.2.3.4", idCookie = Some("dummy_id_cookie"), fingerprint = 334455)
-  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
-    userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
+  def browserIdData: BrowserIdData =
+    BrowserIdData("1.2.3.4", idCookie = Some("dummy_id_cookie"), fingerprint = 334455)
+
+  def dummySpamRelReqStuff: SpamRelReqStuff =
+    SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy",
+          userName = None, userEmail = None, userUrl = None, userTrustLevel = None)
 
 
   private var _currentTime: When = _
@@ -124,8 +127,8 @@ class DaoAppSuite(
     globals.testSetTime(_currentTime)
   }
 
-
-  def createSite(hostname: String, settings: SettingsToSave = SettingsToSave()): (Site, SiteDao) = {
+  def createSite(hostname: String, settings: SettingsToSave = SettingsToSave())
+        : (Site, SiteDao) = {
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
     val site = globals.systemDao.createAdditionalSite(
       anySiteId = None,

@@ -89,6 +89,8 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type OidcProviderId = Int
+
   sealed abstract class MarkupLang
   object MarkupLang {
     case object Html extends MarkupLang
