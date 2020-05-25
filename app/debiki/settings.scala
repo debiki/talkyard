@@ -40,8 +40,15 @@ trait AllSettings {
   // def approveInvitesHow: HowApproveInvites.BeforeTheyAreSent/AfterSignup/AlwaysAllow
   def inviteOnly: Boolean
   def allowSignup: Boolean
-  def allowLocalSignup: Boolean
-  def allowGuestLogin: Boolean
+  def enableCustomIdps: Boolean
+
+  /** Can only be enabled, if enableCustomIdps true; there's a db constraint:
+    * settings_c_enable_use_only_custom_idps
+    */
+  def useOnlyCustomIdps: Boolean
+
+  def allowLocalSignup: Boolean  // RENAME? to  enableLocalSignup. Allow/deny for authz instead?
+  def allowGuestLogin: Boolean   // RENAME  to  enableGuestLogin.
   def enableGoogleLogin: Boolean
   def enableFacebookLogin: Boolean
   def enableTwitterLogin: Boolean
@@ -74,7 +81,7 @@ trait AllSettings {
   def begForEmailAddress: Boolean
 
   // Single Sign-On
-  def enableSso: Boolean
+  def enableSso: Boolean  // RENAME QUICK to enableTySso ?  different from custom IDP SSO
   def ssoUrl: String
   //  If a user logs in via SSO, but admin approval of new users is required, and the user's
   // account hasn't been approved (or has been rejected), then the user is sent to this page.
@@ -82,7 +89,7 @@ trait AllSettings {
 
   // If login required and SSO enabled, and one logs out, then both 1 and 2 happen:
   //
-  // 1. If one clicks Logout, one gets logged out and threafter redirected to this URL.
+  // 1. If one clicks Logout, one gets logged out and thereafter redirected to this URL.
   //
   // 2. I one is *not* logged in, one gets sent directly to the SSO login url.
   // However, doing this without a logout URL, then, if clicking Logout,
@@ -203,6 +210,8 @@ trait AllSettings {
     expireIdleAfterMins = Some(self.expireIdleAfterMins),
     inviteOnly = Some(self.inviteOnly),
     allowSignup = Some(self.allowSignup),
+    enableCustomIdps = Some(self.enableCustomIdps),
+    useOnlyCustomIdps = Some(self.useOnlyCustomIdps),
     allowLocalSignup = Some(self.allowLocalSignup),
     allowGuestLogin = Some(self.allowGuestLogin),
     enableGoogleLogin = Some(self.enableGoogleLogin),
@@ -326,6 +335,8 @@ object AllSettings {
     val expireIdleAfterMins: Int = 60 * 24 * 365  // [7AKR04]
     val inviteOnly = false
     val allowSignup = true
+    val enableCustomIdps = false
+    val useOnlyCustomIdps = false
     val allowLocalSignup = true
     val allowGuestLogin = false
     val enableGoogleLogin: Boolean = globals.socialLogin.googleOAuthSettings.isGood
@@ -450,6 +461,8 @@ case class EffectiveSettings(
   def expireIdleAfterMins: Int = firstInChain(_.expireIdleAfterMins) getOrElse default.expireIdleAfterMins
   def inviteOnly: Boolean = firstInChain(_.inviteOnly) getOrElse default.inviteOnly
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
+  def enableCustomIdps: Boolean = firstInChain(_.enableCustomIdps) getOrElse default.enableCustomIdps
+  def useOnlyCustomIdps: Boolean = firstInChain(_.useOnlyCustomIdps) getOrElse default.useOnlyCustomIdps
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
   def enableGoogleLogin: Boolean = firstInChain(_.enableGoogleLogin) getOrElse default.enableGoogleLogin
@@ -551,11 +564,13 @@ case class EffectiveSettings(
 
   def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5] and then remove, use only userMustBeAuthenticated but rename to mustLoginToRead
 
-  def effectiveSsoLoginRequiredLogoutUrl: Option[String] =  // [350RKDDF5]
+  def effectiveSsoLoginRequiredLogoutUrl: Option[String] = { // [350RKDDF5]
+    COULD // do this also if usingCustomIdpSso
     if (enableSso && userMustBeAuthenticated && ssoLoginRequiredLogoutUrl.nonEmpty)
       Some(ssoLoginRequiredLogoutUrl)
     else
       None
+  }
 
   def allowCorsFromParsed: Seq[String] = {
     EffectiveSettings.getLinesNotCommentedOut(allowCorsFrom)
@@ -577,13 +592,16 @@ case class EffectiveSettings(
 
   def isGuestLoginAllowed: Boolean =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
-      !inviteOnly && allowSignup && !enableSso
+      !inviteOnly && allowSignup && !enableSso && !useOnlyCustomIdps
 
-  def isEmailAddressAllowed(address: String): Boolean =
-    // If SSO enabled, the remote SSO system determines what's allowed and what's not. [7AKBR25]
-    if (enableSso) true
+  def isEmailAddressAllowed(address: String): Boolean = {
+    // With SSO, the remote SSO system determines what's allowed and
+    // what's not.  [alwd_eml_doms]
+    val enableSsoOrOnlyCustIdps = enableSso || useOnlyCustomIdps
+    if (enableSsoOrOnlyCustIdps) true
     else EffectiveSettings.isEmailAddressAllowed(
       address, allowListText = emailDomainWhitelist, blockListText = emailDomainBlacklist)
+  }
 
   /** Finds any invalid setting value, or invalid settings configurations. */
   def findAnyError: Option[String] = {
@@ -685,6 +703,8 @@ object Settings2 {
       "expireIdleAfterMins" -> JsNumberOrNull(s.expireIdleAfterMins),
       "inviteOnly" -> JsBooleanOrNull(s.inviteOnly),
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
+      "enableCustomIdps" -> JsBooleanOrNull(s.enableCustomIdps),
+      "useOnlyCustomIdps" -> JsBooleanOrNull(s.useOnlyCustomIdps),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
       "enableGoogleLogin" -> JsBooleanOrNull(s.enableGoogleLogin),
@@ -791,6 +811,8 @@ object Settings2 {
     expireIdleAfterMins = anyInt(json, "expireIdleAfterMins", d.expireIdleAfterMins),
     inviteOnly = anyBool(json, "inviteOnly", d.inviteOnly),
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
+    enableCustomIdps = anyBool(json, "enableCustomIdps", d.enableCustomIdps),
+    useOnlyCustomIdps = anyBool(json, "useOnlyCustomIdps", d.useOnlyCustomIdps),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
     enableGoogleLogin = anyBool(json, "enableGoogleLogin", d.enableGoogleLogin),

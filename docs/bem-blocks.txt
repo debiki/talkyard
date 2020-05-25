@@ -20,22 +20,28 @@ Ab = about
 Em = email
 B  = button, e.g. ReplyB
 It = list item
+CUD = create user dialog
 D  = dialog,  e.g. AbtUsrD
 Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
 Ed  = edit
+Edr = editor
 Fxd = fixed, Stc = static
 CB = checkbox, e.g. s_SthCB
 Cb = Contextbar
 Cr = create
 Cu = Custom, e.g. CuNav = custom navigation links
-L   = list
-Ln  = link — of course, like `ln -s ...` in Linux.
+L   = list, when at the end, e.g.:  '..._IdpsL' for Identity Providers list
+LD  = Log in Dialog, RENAME to LiD
+LiD = Log in Dialog
+Ls  = list
+Ln  = link — like `ln -s ...` in Linux.
 Lv  = level
 Mod = moderation
 Mnt = mention
+Nm  = name
 Nf  = notification,  e.g. e_NfEm_NwTp = notification email, about a new topic
 Nw  = new
 Pf = preference, e.g. NfPfs = notification preferences

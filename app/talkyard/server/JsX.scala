@@ -333,11 +333,15 @@ object JsX {
       case oauIdty: OpenAuthIdentity =>
         val details = oauIdty.openAuthDetails
         Json.obj(
-          "identityType" -> "OAuth",
+          "identityType" -> "OAuth", // REMOVE
           "identityId" -> oauIdty.id,
           "userId" -> oauIdty.userId,
-          "providerId" -> details.providerId,
-          "providerKey" -> details.providerKey,
+          "providerId" -> JsStringOrNull(details.confFileIdpId), // REMOVE
+          "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
+          "idpSiteId" -> JsI32OrNull(details.idpSiteId),
+          "idpId" -> JsI32OrNull(details.idpId),
+          "providerKey" -> details.idpUserId,  // REMOVE
+          "idpUserId" -> details.idpUserId,
           "firstName" -> JsStringOrNull(details.firstName),
           "lastName" -> JsStringOrNull(details.lastName),
           "fullName" -> JsStringOrNull(details.fullName),
@@ -633,10 +637,16 @@ object JsX {
   def readJsString(json: JsObject, field: String): String =
     JsonUtils.readString(json, field)
 
-  def JsBooleanOrNull(value: Option[Boolean]): JsValue =
+  def JsBooleanOrNull(value: Option[Boolean]): JsValue =  // RENAME to JsBoolOrNull
+    JsBoolOrNull(value)
+
+  def JsBoolOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
-  def JsNumberOrNull(value: Option[Int]): JsValue =
+  def JsNumberOrNull(value: Option[Int]): JsValue =  // RENAME to JsNumOrNull
+    JsI32OrNull(value)
+
+  def JsI32OrNull(value: Opt[i32]): JsValue =  // Scala 3: union types:  i32 | i64  ?
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def JsLongOrNull(value: Option[Long]): JsValue =
@@ -794,6 +804,45 @@ object JsX {
       "pageId" -> JsStringOrNull(reviewTask.pageId),
       "postId" -> JsNumberOrNull(reviewTask.postId),
       "postNr" -> JsNumberOrNull(reviewTask.postNr))
+  }
+
+
+  /** Public login info, for this Identity Provider (IDP) — does Not include
+    * the OIDC client id or secret.
+    */
+  def JsIdentityProviderPubFields(idp: IdentityProvider): JsObject = {
+    Json.obj(
+      // "id" — no. Might leak info about how many providers have been configured.
+      // (Maybe there are some inactive, for example.)
+      "protocol" -> idp.protocol_c,
+      "alias" -> idp.alias_c,
+      "enabled" -> idp.enabled_c,
+      "displayName" -> JsStringOrNull(idp.display_name_c),
+      "description" -> JsStringOrNull(idp.description_c),
+      "guiOrder" -> JsNumberOrNull(idp.gui_order_c))
+  }
+
+
+  def JsIdentityProviderSecretConf(idp: IdentityProvider): JsObject = {
+    val pubFields = JsIdentityProviderPubFields(idp)
+    pubFields ++ Json.obj(
+        "confFileIdpId" -> JsStringOrNull(idp.confFileIdpId),
+        "siteId" -> JsI32OrNull(idp.idpSiteId),
+        "idpId" -> JsI32OrNull(idp.idpId),
+        "trustVerifiedEmail" -> idp.trust_verified_email_c,
+        "linkAccountNoLogin" -> idp.link_account_no_login_c,
+        "syncMode" -> idp.sync_mode_c,
+        "idpAuthorizationUrl" -> idp.idp_authorization_url_c,
+        "idpAccessTokenUrl" -> idp.idp_access_token_url_c,
+        "idpUserInfoUrl" -> idp.idp_user_info_url_c,
+        "idpUserInfoFieldsMap" -> idp.idp_user_info_fields_map_c,
+        "idpLogoutUrl" -> JsStringOrNull(idp.idp_logout_url_c),
+        "idpClientId" -> idp.idp_client_id_c,
+        "idpClientSecret" -> idp.idp_client_secret_c,
+        "idpIssuer" -> JsStringOrNull(idp.idp_issuer_c),
+        "authReqScope" -> JsStringOrNull(idp.auth_req_scope_c),
+        "authReqHostedDomain" -> JsStringOrNull(idp.auth_req_hosted_domain_c),
+        "userinfoReqSendUserIp" -> JsBoolOrNull(idp.userinfo_req_send_user_ip_c))
   }
 
 }

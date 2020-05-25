@@ -65,6 +65,8 @@ case class EditedSettings(
   expireIdleAfterMins: Option[Int],
   inviteOnly: Option[Boolean],
   allowSignup: Option[Boolean],
+  enableCustomIdps: Option[Boolean],
+  useOnlyCustomIdps: Option[Boolean],
   allowLocalSignup: Option[Boolean],
   allowGuestLogin: Option[Boolean],
   enableGoogleLogin: Option[Boolean],
@@ -200,6 +202,8 @@ object EditedSettings {
     expireIdleAfterMins = None,
     inviteOnly = None,
     allowSignup = None,
+    enableCustomIdps = None,
+    useOnlyCustomIdps = None,
     allowLocalSignup = None,
     allowGuestLogin = None,
     enableGoogleLogin = None,
@@ -311,6 +315,8 @@ case class SettingsToSave(
   expireIdleAfterMins: Option[Option[Int]] = None,
   inviteOnly: Option[Option[Boolean]] = None,
   allowSignup: Option[Option[Boolean]] = None,
+  enableCustomIdps: Option[Option[Boolean]] = None,
+  useOnlyCustomIdps: Option[Option[Boolean]] = None,
   allowLocalSignup: Option[Option[Boolean]] = None,
   allowGuestLogin: Option[Option[Boolean]] = None,
   enableGoogleLogin: Option[Option[Boolean]] = None,
@@ -410,6 +416,14 @@ case class SettingsToSave(
   // The language code must be like en_US.
   require(languageCode.forall(_.forall(_.isAToZUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
   require(languageCode.forall(_.forall(_.length < 10)), "Too long language code [TyE2WKBP5]")
+
+  // There's also a db constraint: settings_c_enable_use_only_custom_idps.
+  useOnlyCustomIdps foreach { onlyCustom: Opt[Bo] =>
+    if (onlyCustom is true) {
+      require(enableCustomIdps.exists(_ is true),
+            "Cannot use only custom IDPs, when IDPs not enabled [TyE3054RSMD]")
+    }
+  }
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
       contentLicense.isDefined) {

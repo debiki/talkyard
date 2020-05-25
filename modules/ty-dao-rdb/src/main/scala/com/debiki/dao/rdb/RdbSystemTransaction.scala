@@ -850,7 +850,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
 
   def deletePersonalDataFromOldSpamCheckTasks() {
     // For now, just delete any old tasks. Later, could be nice to remember tasks
-    // that resulted in spam actually being found — since that can result in the author
+    // that resulted in spam actually being found — since that can result in the author
     // getting auto blocked; then, can be good to know why that happened.
     val deleteMoreStatement = s"""
       delete from spam_check_queue3
@@ -948,6 +948,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       delete from blocks3
       delete from guest_prefs3
       delete from identities3
+      delete from idps_t
       delete from invites3
       delete from api_secrets3
       delete from user_visit_stats3

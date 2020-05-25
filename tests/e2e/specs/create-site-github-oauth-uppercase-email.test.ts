@@ -72,8 +72,9 @@ describe('create-site-github-oauth-uppercase-email  @createsite  @login @github 
   });
 
   it("... signup is indeed via GitHub and a mixed case email address  [TyT4AR8GFAH]", () => {
-    browser.userProfilePage.preferences.emailsLogins.waitAndAssertLoginMethodId({
-        providerName: 'github', id: settings.githubEmailMixedCase });
+    browser.userProfilePage.preferences.emailsLogins.waitAndAssertLoginMethod({
+          providerName: 'github', username: settings.githubUsernameMixedCase,
+          emailAddr: settings.githubEmailMixedCase });
   });
 
   it("... which was converted to lowercase", () => {

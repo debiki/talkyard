@@ -152,8 +152,7 @@ const InvitedUsersPanel = createFactory<any>({
       if (this.isGone) return;
       // Invites sent at the same time, are sorted by email address. [inv_sort_odr]
       const invitesSorted = [...invites];
-      invitesSorted.sort((a, b) =>
-              a.invitedEmailAddress.localeCompare(b.invitedEmailAddress));
+      arr_sortAlphaInPlace(invitesSorted, inv => inv.invitedEmailAddress);
       this.setState({ invites: [...invites, ...this.state.invites] });
     });
   },

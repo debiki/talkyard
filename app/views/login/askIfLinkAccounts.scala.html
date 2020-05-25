@@ -1,0 +1,78 @@
+@(tpi: debiki.SiteTpi, origNonceBack: String,
+    oldEmailAddr: String, oldEmailVerified: Boolean,
+    oldUsername: String, createdOnDate: String,
+    newIdentityNameOrEmailOrId: String, idpName: String, linkSecret: String)
+
+@css = @{("""
+input[type="text"] {
+width: 440px;
+max-width: 90%;
+padding: 5px;
+}
+""")}
+
+@youHaveOrThereIs = @{
+  if (oldEmailVerified)  "You already have"
+  else "There is already"
+}
+@yesClass = @{ if (oldEmailVerified)  "btn-primary" else "btn-default" }
+@noClass  = @{ if (!oldEmailVerified) "btn-primary" else "btn-default" }
+
+@views.html.createsite.main(tpi, css = css) {
+
+<h1>Link accounts?</h1>
+<br>
+
+@* Note that the person reading this, controls the email addr,
+ so it's hens old account — but if email verification not required
+ at this site, then, the old account could be an attacker's account
+ (an "Account fixation attack", or an impostor somehow?), or someone who
+ misspelled hens real email address, when signing up some time ago.
+
+ In any case, should be fine to show the old account email and username here.
+
+ SECURITY TODO compare origNonceBack with the local storage nonce.  [br_authn_nonce]
+*@
+<p>
+ @youHaveOrThereIs an account here with email address <tt>@oldEmailAddr</tt>,
+ username <tt>@oldUsername</tt>, created on @createdOnDate.
+</p>
+
+@* [act_fx_atk] *@
+@if(!oldEmailVerified) {
+<p>BUT that other account <b>has not verified its email address</b>!</p>
+<p>Maybe someone else, not you, created it?</p>
+<p>
+<b>Are you sure it's your account?</b>
+If it's not yours, click <b>No</b> below,
+and contact the site admins and tell them someone else has created
+an account with your email address.
+</p>
+}
+
+<p>
+ Now you're trying to login via: <i>@idpName</i>,
+ as user <i>@newIdentityNameOrEmailOrId</i>,
+ with <b>the same email address</b>.
+</p>
+
+<p>Do you want to link your <i>@idpName</i> account <i>@newIdentityNameOrEmailOrId</i>
+ to the account you already have here?<br>
+ Then you'll be able to login here, via <i>@idpName</i>.
+</p>
+
+<form action="@controllers.routes.LoginWithOpenAuthController.answerLinkAccounts"
+      class="form" autocomplete="off" method="POST">
+ <input name='linkSecret' type='hidden' value='@linkSecret'>
+
+ <button type="submit" class="btn @yesClass e_YesLnActsB" name="choice" value="YesLn">
+   Yes, link accounts
+ </button>
+
+ <button type="submit" class="btn @noClass e_DoNotLnActsB" name="choice" value="NoCancel">
+   No, cancel
+ </button>
+</form>
+
+}
+

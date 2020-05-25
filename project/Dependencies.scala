@@ -48,6 +48,13 @@ object Dependencies {
 
     // OAuth lib, also works for OIDC (OpenID Connect).
     // VENDOR_THIS — it'd be good to Maven-build via Makefile?
+    // 7.0.0 won't work: it depends on:
+    //   com.fasterxml.jackson.core:jackson-databind:2.11.2
+    //   and jackson-annotations and jackson-core  2.11.2
+    // but Play Framework requires version >= 2.10.0 and < 2.11.0,
+    // throws an error:
+    //  """...JsonMappingException: Scala module 2.10.3 requires
+    //     Jackson Databind version..."""
     val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
 
     // Not v 3.1.2?

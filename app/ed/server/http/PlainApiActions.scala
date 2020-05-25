@@ -50,11 +50,12 @@ class PlainApiActions(
   import safeActions.ExceptionAction
 
   def PlainApiAction[B](parser: BodyParser[B],
-        rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false,
-        avoidCookies: Boolean = false)
+        rateLimits: RateLimits, allowAnyone: Bo = false, isLogin: Bo = false,
+        avoidCookies: Bo = false, skipXsrfCheck: Bo = false)
         : ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits,
-        allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies)
+        allowAnyone = allowAnyone, isLogin = isLogin, avoidCookies = avoidCookies,
+        skipXsrfCheck = skipXsrfCheck)
 
   def PlainApiActionStaffOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, NoRateLimits, staffOnly = true)
@@ -90,7 +91,8 @@ class PlainApiActions(
         avoidCookies: Boolean = false,
         isLogin: Boolean = false,
         superAdminOnly: Boolean = false,
-        viaApiSecretOnly: Boolean = false): ActionBuilder[ApiRequest, B] =
+        viaApiSecretOnly: Boolean = false,
+        skipXsrfCheck: Bo = false): ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
 
     override def parser: BodyParser[B] =
@@ -346,7 +348,8 @@ class PlainApiActions(
           dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
           security.checkSidAndXsrfToken(
                 request, anyRequestBody = Some(request.body), siteId = site.id,
-                expireIdleAfterMins, maySetCookies = maySetCookies)
+                expireIdleAfterMins, maySetCookies = maySetCookies,
+                skipXsrfCheck = skipXsrfCheck)
       }
 
       // Ignore and delete any broken or expired session id cookie.

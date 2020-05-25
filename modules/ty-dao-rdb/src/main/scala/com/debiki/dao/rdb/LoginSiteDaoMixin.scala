@@ -199,14 +199,11 @@ trait LoginSiteDaoMixin extends SiteTransaction {
 
 
   private def loginOpenAuth(loginAttempt: OpenAuthLoginAttempt): MemberLoginGrant = {
-    transactionCheckQuota { connection =>
-      loginOpenAuthImpl(loginAttempt)(connection)
-    }
+    loginOpenAuthImpl(loginAttempt)
   }
 
 
-  private def loginOpenAuthImpl(loginAttempt: OpenAuthLoginAttempt)
-        (connection: js.Connection): MemberLoginGrant = {
+  private def loginOpenAuthImpl(loginAttempt: OpenAuthLoginAttempt): MemberLoginGrant = {
 
     val identityInDb = loadOpenAuthIdentity(loginAttempt.profileProviderAndKey) getOrElse {
       throw IdentityNotFoundException
@@ -223,7 +220,7 @@ trait LoginSiteDaoMixin extends SiteTransaction {
       else {
         val updatedIdentity = OpenAuthIdentity(
           identityInDb.id, userId = user.id, loginAttempt.openAuthDetails)
-        updateOpenAuthIdentity(updatedIdentity)(connection)
+        updateOpenAuthIdentity(updatedIdentity)
         updatedIdentity
       }
 

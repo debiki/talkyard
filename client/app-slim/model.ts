@@ -952,6 +952,8 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true
   allowGuestLogin?: boolean;            // default: false
+  customIdps?: IdentityProviderPubFields[];   // default: undefined
+  useOnlyCustomIdps?: boolean;          // default: false
   enableGoogleLogin: boolean;           // default: depends on config file
   enableFacebookLogin: boolean;         // default: depends on config file
   enableTwitterLogin: boolean;          // default: depends on config file
@@ -1220,6 +1222,33 @@ interface UserDetailsStatsGroups extends UserInclDetailsWithStats {
 }
 
 
+interface CreateUserParams {
+  idpName?: St;
+  idpHasVerifiedEmail?: Bo;
+  username?: St;
+  fullName?: St;
+  email?: St;
+  origNonceBack?: St;
+  authDataCacheKey?: St;
+  anyReturnToUrl?: St;
+  // anyAfterloginCallback? (): U;
+  preventClose?: true;
+}
+
+
+interface CreateUserDialogContentProps extends CreateUserParams {
+  store: Store;
+  afterLoginCallback?;
+  closeDialog: (_?: St) => Vo;
+  loginReason?;
+  isForGuest?: Bo;
+  isForPasswordUser?: Bo;
+
+  switchBetweenGuestAndPassword?: () => Vo;
+}
+
+
+
 interface UiPrefs {
   inp?: UiPrefsIninePreviews;
   fbs?: UiPrefsForumButtons;
@@ -1259,21 +1288,6 @@ const enum EditMemberAction {
 
   SetIsModerator = 8,
   SetNotModerator = 9,
-}
-
-
-interface UserEmailAddress {
-  emailAddress: string;
-  addedAt: number;
-  verifiedAt?: number;
-  removedAt?: number;
-}
-
-
-interface UserLoginMethods {
-  loginType: string;
-  provider: string;
-  email?: string;
 }
 
 
@@ -1467,6 +1481,8 @@ interface Settings extends TopicInterfaceSettings {
   userMustBeApproved: boolean;
   inviteOnly: boolean;
   allowSignup: boolean;
+  enableCustomIdps: Bo;
+  useOnlyCustomIdps: Bo;
   allowLocalSignup: boolean;
   allowGuestLogin: boolean;
   enableGoogleLogin: boolean;
@@ -1488,6 +1504,10 @@ interface Settings extends TopicInterfaceSettings {
   ssoUrl: string;
   ssoNotApprovedUrl: string;
   ssoLoginRequiredLogoutUrl: string;
+
+  // Own email server
+  enableOwnEmailServer: boolean;
+  ownEmailServerConfig: string;
 
   // Moderation
   requireApprovalIfTrustLte: TrustLevel;  // RENAME to apprBeforeIfTrustLte  ?
@@ -1606,6 +1626,37 @@ interface ApiSecret {
 }
 
 
+interface IdentityProviderPubFields {
+  protocol: St;
+  alias: St;
+  displayName?: St;
+  description?: St;
+  // iconUrl?: St;  — later
+  guiOrder?: Nr;
+}
+
+
+interface IdentityProviderSecretConf extends IdentityProviderPubFields {
+  id: Nr;
+  enabled: Bo;
+  adminComments?: St;
+  trustVerifiedEmail: Bo;
+  linkAccountNoLogin: Bo;
+  syncMode: Nr;
+  idpAuthorizationUrl: St;
+  idpAccessTokenUrl: St;
+  idpUserInfoUrl: St;
+  idpUserInfoFieldsMap?: { [field: string]: string },
+  idpLogoutUrl?: St;
+  idpClientId: St;
+  idpClientSecret: St;
+  idpIssuer?: St;
+  idpScopes?: St;
+  idpHostedDomain?: St;
+  idpSendUserIp?: Bo;
+}
+
+
 
 
 // =========================================================================
@@ -1629,11 +1680,15 @@ interface CatsTreeCat extends Category {
 
 
 interface ExplainingTitleText {
-  iconUrl?: string;
-  title: string;
+  iconUrl?: St;
+  title: St;
   text: any;
   key?: any;
   subStuff?: any;
+}
+
+interface ExplainingTitleTextSelected extends ExplainingTitleText {
+  eventKey: any;
 }
 
 interface ExplainingListItemProps extends ExplainingTitleText {
@@ -1808,8 +1863,8 @@ interface EditPageResponse {
 
 
 interface LoginPopupLoginResponse {
-  status: 'LoginOk' | 'LoginFailed';
-  queryString?: string;
+  status: 'LoginOk' | 'LoginFailed';  // CLEAN_UP REMOVE no longer needed [J0935RKSDM]
+  origNonceBack?: St;
 
   // Will have fewer capabilities than a "real" session when opening the Talkyard site
   // directly as the main window (rather than embedded somewhere).
@@ -1821,7 +1876,8 @@ interface LoginPopupLoginResponse {
   weakSessionId?: string;  // [NOCOOKIES]
 }
 
-interface GuestLoginResponse {   // RENAME to SignupOrGuestOrPasswordLoginResponse?
+interface AuthnResponse {
+  origNonceBack?: St;
   userCreatedAndLoggedIn: boolean;
   emailVerifiedAndLoggedIn: boolean;
   weakSessionId?: string;
@@ -1877,16 +1933,19 @@ interface UserAccountResponse {
 }
 
 interface UserAccountEmailAddr {
-  emailAddress: string;
+  emailAddress: St;
   addedAt: WhenMs;
   verifiedAt?: WhenMs;
+  removedAt?:  WhenMs;
 }
 
 interface UserAccountLoginMethod {  // Maybe repl w Identity = Scala: JsIdentity?
-  loginType: string;
-  provider: string;
-  email?: string;
-  externalId?: string;
+  loginType: St;
+  provider: St;  // change to providerName?
+  idpAuthUrl?: St;
+  idpUsername?: St;
+  idpEmailAddr?: St;
+  idpUserId?: St;
 }
 
 

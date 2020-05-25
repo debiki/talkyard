@@ -104,6 +104,7 @@ class SiteDao(
   with SettingsDao
   with SpecialContentDao
   with ed.server.auth.AuthzSiteDaoMixin
+  with talkyard.server.authn.AuthnSiteDaoMixin
   with ForumDao
   with CategoriesDao
   with PagesDao
@@ -128,6 +129,7 @@ class SiteDao(
   import SiteDao._
 
   // Could be protected instead? Then need to move parts of ApiV0Controller to inside the Dao.
+  // Need more caches? E.g. one that expires keys after 1 hour, say [mem_cache_exp_secs].
   lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
 
   lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
@@ -216,8 +218,13 @@ class SiteDao(
     val result: R = readWriteTransaction(tx => {
       val result = fn(tx, staleStuff)
 
-      // Refresh database page cache:
-      tx.markPagesHtmlStale(staleStuff.stalePageIdsInDb)
+      if (staleStuff.areAllPagesStale) {
+        tx.bumpSiteVersion()
+      }
+      else {
+        // Refresh database page cache:
+        tx.markPagesHtmlStale(staleStuff.stalePageIdsInDb)
+      }
 
       // [cache_race_counter] Maybe bump mem cache contents counter here,
       // just before this tx ends and the mem cache thus becomes stale?
@@ -228,7 +235,11 @@ class SiteDao(
     }, allowOverQuota)
 
     // Refresh in-memory cache:  [rm_cache_listeners]
-    if (staleStuff.nonEmpty) {
+    if (staleStuff.areAllPagesStale) {
+      // Currently then need to: (although clears unnecessarily much)
+      memCache.clearThisSite()
+    }
+    else if (staleStuff.nonEmpty) {
       staleStuff.staleParticipantIdsInMem foreach { ppId =>
         removeUserFromMemCache(ppId)
       }

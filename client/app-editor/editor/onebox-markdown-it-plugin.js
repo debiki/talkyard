@@ -81,7 +81,7 @@ function renderOnebox(tokens, index, options, env, renderer) {
     oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString); // [js_scala_interop]
   }
   else {
-    var randomClass = 'onebox-' + Math.random().toString(36).slice(2);
+    var randomClass = 'onebox-' + Math.random().toString(36).slice(2);  // [js_rand_val]
     debiki2.Server.loadOneboxSafeHtml(token.link, function(safeHtml) {
       function makeReplacement() {
         if (safeHtml) {

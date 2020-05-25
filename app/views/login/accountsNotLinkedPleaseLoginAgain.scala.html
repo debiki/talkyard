@@ -1,0 +1,34 @@
+@(tpi: debiki.SiteTpi, origNonceBack: String, tryLoginAgainUrl: String, idpName: String)
+
+@css = @{("""
+""")}
+
+@* SECURITY SHOULD compare origNonceBack with the local storage nonce, and
+ generate a new nonce and use in loginUrlNewNonce below.  [br_authn_nonce]
+*@
+@tryAgainUrlNewNonce = @{
+  tryLoginAgainUrl
+}
+
+@views.html.createsite.main(tpi, css = css) {
+
+<h1>Try again?</h1>
+<br>
+
+<p>
+ Would you like to log in again, over at @idpName —
+ with a different account this time? Or create a new?
+</p>
+
+<p>
+  <a href="@tryAgainUrlNewNonce" class="btn btn-primary">Login again</a>
+</p>
+
+<p>
+  @* UX SHOULD skip this for embedded comments pages? Then don't know what's at: /
+   at the embedding website. *@
+  <a href="/" class="btn btn-default">Go to topic list page / Home</a>
+</p>
+
+}
+

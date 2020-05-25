@@ -5,6 +5,89 @@
 
 
 --======================================================================
+--  identities3
+--======================================================================
+
+------------------------------------------------------------------------
+comment on column  identities3.idp_user_id_c  is $_$
+
+For OIDC, this is the 'sub', Subject Identifier.
+$_$;
+
+
+------------------------------------------------------------------------
+
+
+--======================================================================
+--  idps_t
+--======================================================================
+
+------------------------------------------------------------------------
+comment on table  idps_t  is $_$
+
+OIDC and OAuth2 providers, e.g. a company's private Keycloak server.
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.protocol_c  is $_$
+
+Lowercase, because is lowercase in the url path. Is incl in the primary
+key, so one can change from say  /-/authn/oauth2/the-alias to
+/-/authn/oidc/the-alias  without having to change the alias (or disable
+the old authn for a short while).
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.alias_c  is $_$
+
+Alnum lowercase, because appears in urls.
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.gui_order_c  is $_$
+
+When logging in, identity providers with lower numbers are shown first.
+(If one has configured more than one provider.)
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.sync_mode_c  is $_$
+
+What to do, when logging in, if there's already a user in the Ty database
+with the same email address, or the same external identity id.
+E.g. just login, don't sync. Or overwrite fields in the Ty database
+with values from the IDP, maybe even update the email address.'
+$_$;
+
+
+------------------------------------------------------------------------
+comment on column  idps_t.idp_access_token_auth_method_c  is $_$
+
+How the Talkyard server authenticates with the ID provider, when
+sending the auth code to get the OAuth2 access token.
+Null and 'client_secret_basic' means
+HTTP Basic Auth, whilst 'client_secret_post' means 'client_id' and
+'client_secret' in the form-data encoded POST body (not recommended).
+
+OIDC also mentions 'client_secret_jwt', 'private_key_jwt' and 'none',
+see https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication,
+— Talkyard doesn't support these.
+
+Also see: https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
+> ... Client, then it MUST authenticate to the Token Endpoint using
+> the authentication method registered for its client_id ...
+$_$;
+
+
+
+------------------------------------------------------------------------
+
+
+--======================================================================
 --  links_t
 --======================================================================
 

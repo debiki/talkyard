@@ -744,6 +744,8 @@ case class User(
 
   def primaryEmailAddress: String = email
 
+  def emailVerified: Bo = emailVerifiedAt.isDefined
+
   def canReceiveEmail: Boolean =  // dupl (603RU430)
     primaryEmailAddress.nonEmpty && emailVerifiedAt.isDefined
 
@@ -786,6 +788,7 @@ trait MemberMaybeDetails {
   def fullName: Option[String]
   def usernameHashId: String
   def primaryEmailAddress: String
+  def emailVerified: Bo
   def nameOrUsername: String = fullName getOrElse theUsername
 
   def usernameParensFullName: String = fullName match {
@@ -1018,6 +1021,8 @@ case class UserInclDetails( // ok for export
 
   def extIdAsRef: Option[ParsedRef.ExternalId] = extId.map(ParsedRef.ExternalId)
   def ssoIdAsRef: Option[ParsedRef.SingleSignOnId] = ssoId.map(ParsedRef.SingleSignOnId)
+
+  def emailVerified: Bo = emailVerifiedAt.isDefined
 
   def canReceiveEmail: Boolean =  // dupl (603RU430)
     primaryEmailAddress.nonEmpty && emailVerifiedAt.isDefined
@@ -1555,8 +1560,8 @@ case class IdentityEmailId(
 
 }
 
-
-case class IdentityOpenId(
+@deprecated("now")
+case class IdentityOpenId(   // QUICK RENAME to OldOpenIdIdentity?
   id: IdentityId,
   override val userId: UserId,
   openIdDetails: OpenIdDetails) extends Identity {
@@ -1571,7 +1576,7 @@ case class IdentityOpenId(
 }
 
 
-case class OpenIdDetails(
+case class OpenIdDetails(   // RENAME  to OldOpenId10Details? Or inline in
   oidEndpoint: String,
   oidVersion: String,
   oidRealm: String,  // perhaps need not load from db?
@@ -1590,32 +1595,84 @@ case class OpenIdDetails(
 }
 
 
+/**
+ *
+ * @param id identities_t primary key, not the same as OpenAuthDetails.idpUserId.
+ * @param userId pats_t foreign key.
+ * @param openAuthDetails
+ */
 case class OpenAuthIdentity(
-  id: IdentityId,
+  id: IdentityId,  // CLEAN_UP change from String to Int
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
   def usesEmailAddress(emailAddress: String): Boolean =
     openAuthDetails.email is emailAddress
 
-  def loginMethodName: String = openAuthDetails.providerId
+  def loginMethodName: St =
+    openAuthDetails.confFileIdpId getOrElse
+        openAuthDetails.prettyIdpId
 
   require(userId >= LowestAuthenticatedUserId, "EdE4KFJ7C")
 }
 
 
-@deprecated("now", "Use ExternalSocialProfile instead")
-case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
-  providerId: String,
-  providerKey: String,
-  username: Option[String] = None,
-  firstName: Option[String] = None,
-  lastName: Option[String] = None,
-  fullName: Option[String] = None,
-  email: Option[String] = None,
-  avatarUrl: Option[String] = None) {
+class OidcIdToken(val idTokenStr: St) {
+  // Later OIDC id_token field values here.
+}
 
-  def providerIdAndKey = OpenAuthProviderIdKey(providerId, providerKey)
+
+// Merge with ExternalSocialProfile into ... ExtIdpUser? IdentityFromIdp? IdpIdentity?  Or just ExtIdentity or ExtIdpIdentity or Identity?
+/**
+  * @param confFileIdpId — from old Silhouette config. Will migrate to authn site IDPs?
+  * @param idpSiteId — if IDP is configured at another site (an authn site) [idp_site_id_c]
+  * @param idpId
+  * @param idpUserId
+  * @param username
+  * @param firstName
+  * @param lastName
+  * @param fullName
+  * @param email
+  * @param isEmailVerifiedByIdp
+  * @param avatarUrl
+  * @param userInfoJson
+  * @param oidcIdToken
+  */
+case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
+  confFileIdpId: Opt[ConfFileIdpId] = None,
+  idpSiteId: Opt[SiteId] = None,
+  idpId: Opt[IdpId] = None,
+  idpUserId: St,
+  username: Opt[St] = None,
+  firstName: Opt[St] = None,
+  lastName: Opt[St] = None,
+  fullName: Opt[St] = None,
+  email: Opt[St] = None,
+  isEmailVerifiedByIdp: Opt[Bo] = None,
+  avatarUrl: Opt[St] = None,
+  userInfoJson: Opt[JsObject] = None,
+  oidcIdToken: Opt[OidcIdToken] = None) {
+
+  require(confFileIdpId.forall(_.trim.nonEmpty), "TyE395RKTE2")
+  require(confFileIdpId.isDefined != idpId.isDefined, "TyE205KRDJ2M")
+  require(idpSiteId.isDefined == idpId.isDefined, "TyE05MG256M")
+  require(idpSiteId.isNot(0), "TyE05MG2567")
+  require(idpId.forall(_ >= 1), "TyE395RKTE3")
+  require(idpUserId.nonEmpty, "TyE507Q5K42")
+  require(email.isDefined || isEmailVerifiedByIdp.isNot(true), "TyE6JKRGL24")
+
+  def providerIdAndKey: OpenAuthProviderIdKey =
+    OpenAuthProviderIdKey(
+          confFileIdpId = confFileIdpId,
+          idpSiteId = idpSiteId,
+          idpId = idpId,
+          idpUserId = idpUserId)
+
+  def isPerSite: Bo = idpId.isDefined
+  def isFromConfFile: Bo = confFileIdpId.isDefined
+
+  def prettyIdpId: St = IdentityProvider.prettyId(
+        confFileIdpId, idpSiteId = idpSiteId, idpId = idpId)
 
   def displayNameOrEmpty: String = {
     fullName.orElse({
@@ -1624,12 +1681,27 @@ case class OpenAuthDetails(   // [exp] ok use, country, createdAt missing, fine
     }).orElse(firstName).orElse(lastName) getOrElse ""
   }
 
+  def nameOrUsername: Opt[St] = {
+    val n = displayNameOrEmpty
+    if (n.nonEmpty) Some(n)
+    else username
+  }
+
   // Mixed case email addresses not allowed, for security reasons. See db fn email_seems_ok.
   def emailLowercasedOrEmpty: String = email.map(_.toLowerCase) getOrElse ""
 }
 
 
-case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
+case class OpenAuthProviderIdKey(
+  confFileIdpId: Opt[ConfFileIdpId],
+  idpSiteId: Opt[SiteId],
+  idpId: Opt[IdpId],
+  idpUserId: St) {
+
+  require(confFileIdpId.isDefined != idpId.isDefined, "TyE305MKTFJ4")
+  require(idpSiteId.isDefined == idpId.isDefined, "TyE05MG2560")
+  require(idpUserId.nonEmpty, "TyE39M5RK4TK2")
+}
 
 
 case class MemberLoginGrant(

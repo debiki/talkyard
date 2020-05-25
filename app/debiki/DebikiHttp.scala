@@ -21,6 +21,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import ed.server.security.EdSecurity
 import controllers.{LoginController, routes}
 import java.{net => jn}
 import play.api.libs.json.{JsLookupResult, JsValue}
@@ -35,7 +36,7 @@ import scala.util.Try
 /**
  * HTTP utilities.
  */
-object EdHttp {
+object EdHttp {  // REFACTOR move to  talkyard.server.http object methods?
 
 
   // ----- Limits
@@ -107,6 +108,9 @@ object EdHttp {
   def InternalErrorResult2(message: String): Result =
     R.InternalServerError("500 Internal Server Error\n"+ message)
 
+  def BadGatewayResult(errCode: St, message: St, moreDetails: St = ""): Result =
+    R.BadGateway(s"502 Bad Gateway\n$message [$errCode]\n\n$moreDetails")
+
   private lazy val materializerActorSystem = ActorSystem("materializerActorSystem")
   private lazy val theMaterializer = ActorMaterializer()(materializerActorSystem)
 
@@ -165,15 +169,30 @@ object EdHttp {
   def throwBadRequestIf(condition: Boolean, errCode: String, message: => String = ""): Unit =
     if (condition) throwBadRequest(errCode, message)
 
+  def throwBadReqIf(condition: Bo, errCode: St, message: St = ""): U =
+    if (condition) throwBadReq(errCode, message)
+
+  def throwBadReqIfLowEntropy(value: St, paramName: St, errCode: St): U =
+    throwBadReqIf(EdSecurity.tooLowEntropy(value), errCode,
+          s"Param '$paramName' has low entropy, value: '$value' [$errCode]")
+
   def throwBadReq(errCode: String, message: String = ""): Nothing =
     throw ResultException(BadReqResult(errCode, message))
 
   def throwUnprocessableEntity(errCode: String, message: String = "") =
     throw ResultException(UnprocessableEntityResult(errCode, message))
 
-  def throwBadArgument(errCode: String, parameterName: String, problem: String = ""): Nothing =
-    throwBadReq(errCode, "Bad `"+ parameterName +"` value" + (
-      if (problem.nonEmpty) ": " + problem else ""))
+  def throwBadParamIf(test: Bo, errCode: St, paramName: St, problemOrValue: St = ""): U =
+    if (test)
+      throwBadParam(errCode, paramName, problemOrValue)
+
+  def throwBadParam(errCode: St, paramName: St, problemOrValue: St = ""): Nothing =
+    throwBadArgument(errCode, paramName, problemOrValue)
+
+  // RENAME to throwBadParam? started, see above.
+  def throwBadArgument(errCode: St, paramName: St, problemOrValue: St = ""): Nothing =
+    throwBadReq(errCode, s"Bad '$paramName' value" + (
+          if (problemOrValue.nonEmpty) s": $problemOrValue" else ""))
 
   def throwBadConfigFile(errCode: String, message: String): Nothing =
     throwNotFound(errCode, message)
@@ -354,6 +373,12 @@ object EdHttp {
 
 
   implicit class GetOrThrowBadArgument[A](val underlying: Option[A]) {
+    def getOrThrowForbidden(errorCode: String, message: => String = ""): A = {
+      underlying getOrElse {
+        throwForbidden(errorCode, message)
+      }
+    }
+
     def getOrThrowBadRequest(errorCode: String, message: => String = ""): A = {
       underlying getOrElse {
         throwBadRequest(errorCode, message)

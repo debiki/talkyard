@@ -18,6 +18,7 @@
 package ed.server.security
 
 import com.debiki.core._
+import com.debiki.core.isDevOrTest
 import com.debiki.core.Prelude._
 import debiki.{AllSettings, EdHttp, EffectiveSettings, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
@@ -123,6 +124,12 @@ object EdSecurity {
   val XsrfTokenHeaderName = "X-XSRF-TOKEN"
 
   private val BrowserIdCookieName = "dwCoBrId"
+
+  def tooLowEntropy(value: St): Bo = {
+    SECURITY // make more fancy. For now, just this:
+    value.length < 10
+  }
+
 }
 
 
@@ -315,7 +322,7 @@ class EdSecurity(globals: Globals) {
    * but not here (the WebSocket upgrade request has no body, no custom headers).
    */
   def checkSidAndXsrfToken[A](request: RequestHeader, anyRequestBody: Option[A],
-        siteId: SiteId, expireIdleAfterMins: Long, maySetCookies: Boolean)
+        siteId: SiteId, expireIdleAfterMins: i64, maySetCookies: Bo, skipXsrfCheck: Bo)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
     val expireIdleAfterMillis: Long = expireIdleAfterMins * MillisPerMinute
@@ -336,7 +343,7 @@ class EdSecurity(globals: Globals) {
     val anyXsrfCookieValue = urlDecodeCookie(XsrfCookieName, request)
 
     val sidXsrfNewCookies: (SidStatus, XsrfOk, List[Cookie]) =
-      if (request.method == "GET") {
+      if (request.method == "GET" || skipXsrfCheck) {
         // Accept this request, and create new XSRF token if needed.
         // Don't throw anything (for now at least). [GETNOTHROW]
 
@@ -458,7 +465,9 @@ class EdSecurity(globals: Globals) {
           xsrfStatus.asInstanceOf[XsrfOk]
         }
 
-        sessionIdStatus match {
+        CLEAN_UP // simplify this weird match-case!  & don't take & "return"
+        // sessionIdStatus for no reason all the time.
+        val r = sessionIdStatus match {
           case s: SidOk => (s, xsrfOk, Nil)
           case SidAbsent => (SidAbsent, xsrfOk, Nil)
           case s: SidExpired => (s, xsrfOk, Nil)
@@ -469,6 +478,8 @@ class EdSecurity(globals: Globals) {
                 .discardingCookies(
                   DiscardingSessionCookie))
         }
+        dieIf(isDevOrTest && r != (sessionIdStatus, xsrfOk, Nil), "TyE205RKPG36")
+        r
       }
 
     sidXsrfNewCookies

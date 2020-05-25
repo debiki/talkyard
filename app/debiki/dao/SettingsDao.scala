@@ -94,6 +94,9 @@ trait SettingsDao {
       def turnsOff(getEnabled: EffectiveSettings => Boolean) =
         !getEnabled(newSettings) && getEnabled(oldSettings)
 
+      def turnsOn(getEnabled: EffectiveSettings => Boolean) =
+        getEnabled(newSettings) && !getEnabled(oldSettings)
+
       // Prevent admins from accidentally locking themselves or other admins out.
       def throwIfLogsInWith(loginMethodName: String): Unit = {
         val loginMethodLowercase = loginMethodName.toLowerCase
@@ -122,6 +125,43 @@ trait SettingsDao {
       if (turnsOff(_.enableLinkedInLogin)) throwIfLogsInWith(providers.oauth2.LinkedInProvider.ID)
       if (turnsOff(_.enableVkLogin)) throwIfLogsInWith(providers.oauth2.VKProvider.ID)
       if (turnsOff(_.enableInstagramLogin)) throwIfLogsInWith(providers.oauth2.InstagramProvider.ID)
+
+      // Don't restrict login to only custom OIDC, before knows it works:
+      if (turnsOn(_.useOnlyCustomIdps)) {
+        val (admin: User, adminsIdentities: Seq[Identity]) =
+              adminsAndIdentities.find(_._1.id == byWho.id) getOrDie "TyE5MGRT4"
+        dieIf(admin.id != byWho.id, "TyE36KRST743")
+
+        val siteIdps = tx.loadAllIdentityProviders()
+        val adminsEnabledIdentity = adminsIdentities find {
+          case oau: OpenAuthIdentity =>
+            oau.openAuthDetails.idpId match {
+              case None => false
+              case Some(adminsIdpId: IdpId) =>
+                val anyIdp = siteIdps.find(idp =>
+                      idp.idpId.is(adminsIdpId) &&
+                          // If `idp` is a server global IDP from another
+                          // site:   [idp_site_id_c]
+                          idp.idpSiteId == oau.openAuthDetails.idpSiteId)
+                // The admin uses this IDP — but is it enabled?
+                anyIdp.exists(_.enabled_c)
+            }
+          case _ =>
+            false
+        }
+
+        // If the admin hasn't logged in with any now enabled IDP, hen is
+        // somewhat likely locking henself out.
+        if (adminsEnabledIdentity.isEmpty) {
+          throwBadRequest("TyEADM0LGI2", o"""You cannot restrict login to
+               only custom OIDC or OAuth2, before you have logged in yourself
+               in that way, so you know it actually works.""")
+        }
+        else {
+          // Still not impossible that the admin is locking henself out,
+          // but less likely.
+        }
+      }
 
       tx.insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,

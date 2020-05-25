@@ -592,7 +592,7 @@ type OnErrorFn = (xhr: XMLHttpRequest) => any;
   */
 function postJsonSuccess(
   urlPath: string,
-  onOk: ((response: any) => void) | UseBeacon,
+  onOk: ((response: any) => void) | UseBeacon,  // RENAME all onDone and success to onOk
   data: JsonData | OnErrorFn,
   onError?: JsonData | OnErrorFn,
   options?: { showLoadingOverlay?: boolean },  // default true, for POST requests
@@ -768,7 +768,7 @@ export function loadEditorAndMoreBundles(callback?) {
 }
 
 
-export function loadMoreScriptsBundle(callback?: () => void): Promise<void> {
+export function loadMoreScriptsBundle(callback?: () => Vo): Promise<Vo> {
   if (debiki.internal._showCreateUserDialog && !moreScriptsPromise) {
     // This means more-bundle was included in a <script> tag,
     // because _showCreateUserDialog() is in more-bundle.
@@ -959,6 +959,19 @@ export function stopRedirectingExtraHostnames(success: () => void) {
 }
 
 
+
+export function loadIdentityProviders(onOk: (
+        idps: IdentityProviderSecretConf[]) => Vo) {
+  get('/-/load-oidc-config', onOk);
+}
+
+
+export function upsertIdentityProvider(idps: IdentityProviderSecretConf[],
+        onOk: () => Vo, onError: (message: St) => Vo) {
+  postJsonSuccess('/-/upsert-oidc-config', onOk, idps);
+}
+
+
 export function loadSpecialContent(rootPageId: string, contentId: string,
       doneCallback: (any) => void) {
   let url = '/-/load-special-content?rootPageId=' + (rootPageId ? rootPageId : '') +
@@ -1068,7 +1081,7 @@ export function loginWithPassword(emailOrUsername: string, password: string, onD
 
 
 export function loginAsGuest(name: string, email: string,
-      onDone: (response: GuestLoginResponse) => void, onError: () => void) {
+      onDone: (response: AuthnResponse) => void, onError: () => void) {
   postJsonSuccess('/-/login-guest', makeUpdNoCookiesTempSessionIdFn(onDone), onError, {
     name: name,
     email: email

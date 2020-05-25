@@ -293,7 +293,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
           username = (body \ "username").asOptStringNoneIfBlank,
           fullName = (body \ "fullName").asOptStringNoneIfBlank,
           avatarUrl = (body \ "avatarUrl").asOptStringNoneIfBlank,
-          aboutUser = (body \ "aboutUser").asOptStringNoneIfBlank,
+          aboutUser = (body \ "aboutUser").asOptStringNoneIfBlank,  // RENAME to 'bio', right
           isAdmin = (body \ "isAdmin").asOpt[Boolean].getOrElse(false),
           isModerator = (body \ "isModerator").asOpt[Boolean].getOrElse(false))) getOrIfFailure { ex =>
             throwBadRequest("TyEBADEXTUSR", ex.getMessage)

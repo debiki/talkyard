@@ -30,7 +30,7 @@ import RdbUtil._
 
 /** Creates and updates users and identities.  Docs [8KFUT20].
   */
-trait UserSiteDaoMixin extends SiteTransaction {
+trait UserSiteDaoMixin extends SiteTransaction {  // RENAME; QUICK // to UserSiteTxMixin
   self: RdbSiteTransaction =>
 
   val IsOwnerOrStaff = o"""(

@@ -15,31 +15,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@* TODO RENAME to loginPopupCallbackPage.scala.html ?  *@
+@* TODO RENAME to  sendAuthnResultToOpenerCloseThisWin.scala.html ?  *@
 
-@(weakSessionId: String)
+@(origNonceBack: String, weakSessionId: String)
 
 <!DOCTYPE html>
 <html>
 <head>
 <script type='text/javascript'>
-function returnToOpener() {
-  // A Chrome 63 bug previously required a try-catch workaround here. [4PKGTEW20].
-  window.opener.debiki.internal.handleLoginResponse({
+  window.opener.debiki.internal.handleLoginResponse({@* [login_cont_in_opnr] *@
     @* Typescript interface: LoginPopupLoginResponse  *@
-    queryString: (window.location+'').split('?')[1],
+    origNonceBack: '@origNonceBack',
     weakSessionId: '@weakSessionId',  // [NOCOOKIES]
     status: 'LoginOk'
   });
   window.close();
-}
 </script>
 </head>
-<body onload='returnToOpener();'>
-  <!-- views/login/loginPopupCallback.scala.html -->
-  <p class="e_AlreadyLoggedIn">
-    You have been logged in, welcome!
-  </p>
+<body>
+<!-- views/login/loginPopupCallback.scala.html -->
+@* If the text below appears, something is amiss — instead, we're supposed
+ to be in a login popup win now, and we tried to close it, see above, and
+ continue in the opener instead.
+
+ But if that didn't work (then there's a bug), let's show a link to the homepage,
+ so as not to leave anyone stranded.  (But don't bother translating, 0I18N.)
+ *@
+<p class="e_AlreadyLoggedIn">
+  You have been logged in, welcome!
+</p>
+<p>
+  <a href="/">Go to start page</a>
+</p>
 </body>
 </html>
 

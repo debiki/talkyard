@@ -374,8 +374,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         case oauthId: OpenAuthIdentity =>
           val details: OpenAuthDetails = oauthId.openAuthDetails
           Json.obj(
-            "providerId" -> details.providerId,
-            "providerKey" -> details.providerKey,
+            // UX SHOULD replace the IDP ids with IDP name, e.g. "Gmail" or "Facebook"?
+            "providerId" -> details.confFileIdpId,  // REMOVE
+            "confFileIdpId" -> JsStringOrNull(details.confFileIdpId),
+            "idpSiteId" -> JsI32OrNull(details.idpSiteId),
+            "idpId" -> JsI32OrNull(details.idpId),
+            "providerKey" -> details.idpUserId,  // REMOVE
+            "idpUserId" -> details.idpUserId,
+            "username" -> JsStringOrNull(details.username),
             "firstName" -> JsStringOrNull(details.firstName),
             "lastName" -> JsStringOrNull(details.lastName),
             "fullName" -> JsStringOrNull(details.fullName),
@@ -469,36 +475,49 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     })
 
     var loginMethodsJson = JsArray(identities map { identity: Identity =>
-      val (provider, email) = identity match {
+      val (idpName: St,
+           idpAuthUrl: Opt[St],
+           idpUsername: Opt[St],
+           idpUserId: Opt[St],
+           emailAddr: Opt[St]) = identity match {
         case oa: OpenAuthIdentity =>
           val details = oa.openAuthDetails
-          (details.providerId, details.email)
+          val customIdp = details.idpId flatMap dao.getIdentityProviderById
+          val idpName = customIdp.map(_.nameOrAlias).getOrElse(
+                details.confFileIdpId.get)
+          val idpUsername = details.username
+          val idpAuthUrl = customIdp.map(_.idp_authorization_url_c)
+          (idpName, idpAuthUrl, idpUsername, Some(details.idpUserId), details.email)
         case oid: IdentityOpenId =>
           val details = oid.openIdDetails
-          (details.oidEndpoint, details.email)
+          (details.oidEndpoint, None, None, Some(details.oidClaimedId), details.email)
         case x =>
-          (classNameOf(x), None)
+          (classNameOf(x), None, None, None, None)
       }
       Json.obj(  // Typescript: UserAccountLoginMethod
         // COULD instead use: JsIdentity  ?
         "loginType" -> classNameOf(identity),
-        "provider" -> provider,
-        "email" -> JsStringOrNull(email))
+        "provider" -> idpName,
+        "idpAuthUrl" -> idpAuthUrl,
+        "idpUsername" -> idpUsername,
+        "idpUserId" -> idpUserId,
+        "idpEmailAddr" -> JsStringOrNull(emailAddr))
     })
 
     if (memberInclDetails.passwordHash.isDefined) {
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "Local",
-        "provider" -> "password",
-        "email" -> memberInclDetails.primaryEmailAddress)
+        "loginType" -> "LocalPwd",
+        "provider" -> "Password",
+        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress)
     }
 
     if (memberInclDetails.ssoId.isDefined) {
+      // Tests: sso-login-member  TyT5HNATS20P.TyTE2ESSOLGIMS
       loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
-        "loginType" -> "Single Sign-On",
-        "provider" -> "external",
-        "email" -> memberInclDetails.primaryEmailAddress,
-        "externalId" -> JsStringOrNull(memberInclDetails.ssoId))
+        "loginType" -> "TySsoApi",
+        "provider" -> "Talkyard Single Sign-On API",
+        "idpEmailAddr" -> memberInclDetails.primaryEmailAddress,
+        "idpUserId" -> JsStringOrNull(memberInclDetails.ssoId))
     }
 
     OkSafeJson(Json.obj(  // UserAccountResponse

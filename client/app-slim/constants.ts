@@ -45,6 +45,7 @@ const NoId = 0;
 const NoCategoryId = 0;
 const NoPermissionId = 0;
 
+// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum PostNrs in types-and-const-enums.ts?
 const NoPostId = -1;  // dupl in reply.js
 const TitleNr = 0;
 const BodyNr = 1;
@@ -56,12 +57,14 @@ const NoDraftNr = 0;
 const MaxVirtPostNr = -1000 * 1000;
 const MinRealPostNr = TitleNr;
 
+// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum ParticipantIds or ParpIds or PpIds?
 const NoUserId = 0;
 const SystemUserId = 1;
 const SysbotUserId = 2;
 const MinMemberId = SystemUserId;
 const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
 const LowestNormalMemberId = 10;         // also in scala  [S7KPWG42]
+
 const MaxUsernameLength = 20;            // in scala [6AKBR20Q]
 
 const MaxGuestId = -2;
@@ -95,6 +98,7 @@ const ShowNoErrorDialog: ErrorPolicy = -112234;
 
 const UseBeacon = 'UseBeacon';
 
+// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to const enum somehow?
 const SiteStatusStrings = [
   'NoAdmin',
   'Active',
@@ -105,6 +109,8 @@ const SiteStatusStrings = [
   'Purged'];
 
 
+// COULD_OPTIMIZE SMALLER_BUNDLE MOVE to  const enum UrlPaths in types-and-const-enums.ts?
+// + see other MOVE in this file too.
 const ApiUrlPathPrefix = '/-/';
 const UsersRoot = '/-/users/';
 const GroupsRoot = '/-/groups/';
@@ -112,19 +118,23 @@ const SearchRootPath = '/-/search';
 const AdminRoot = '/-/admin/';
 
 
+// MOVE to const enum ForumRoutePaths in types-and-const-enums.ts?
 const RoutePathLatest = 'latest';  // change to 'active'?  here too: [394SMDLW20] + 99 more places?
 const RoutePathNew = 'new';
 const RoutePathTop = 'top';
 const RoutePathCategories = 'categories';
 
 
+// MOVE to const enum CookieNames in types-and-const-enums.ts?
 const ImpersonationCookieName = 'esCoImp';
 
 
+// MOVE to const enum WidthsPx ? in types-and-const-enums.ts? ------
 // Some CSS and layout related constants. [6PFDS3]
 // Also see: docs/ux-design.adoc
 const UseWideForumLayoutMinWidth = 1000;  // (or 1024 would work too, doesn't matter)
 const UseWidePageLayoutMinWidth = 750;    // (or 768 ok too)
+
 // Also see: [wide_topbar_min_px]
 const WatchbarWidth = 230;  // dupl in css [7GYK42]
 const ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
@@ -134,9 +144,11 @@ const ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
 // the exact correct html, othewise hydration fails, causes randomly broken html.
 const ServerSideWindowWidthMobile = 500;
 const ServerSideWindowWidthLaptop = 1200;
+// ---------------------------------------------------------------
 
 const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
 
+// MOVE to const enum FragActions in types-and-const-enums.ts?
 const FragActionAndReplyToPost = '&replyToPost';
 const FragActionAndEditPost = '&editPost';
 const FragActionHashComposeTopic = '#composeTopic';
@@ -145,6 +157,7 @@ const FragActionHashScrollLatest = '#scrollToLatestPost';
 const FragActionHashScrollToBottom  = '#scrollToBottom';  // rename to ...BottomButtons?
 
 
+// MOVE to const enum FragParams in types-and-const-enums.ts?
 // The post nr param looks a bit different, '-' not '=', because it's used in urls to link to
 // posts, so nice if it uses '-' like url tend to do. Whereas the other params are more like
 // api request params to the Javascript code, so then they can look like code & url params?

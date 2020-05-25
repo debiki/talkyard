@@ -35,6 +35,9 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def AsyncGetActionIsLogin(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, isLogin = true).async(f)
 
+  def AsyncGetActionIsLoginRateLimited(f: GetRequest => Future[Result]): mvc.Action[Unit] =
+    PlainApiAction(cc.parsers.empty, RateLimits.Login, isLogin = true).async(f)
+
   def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, rateLimits).async(f)
@@ -76,10 +79,11 @@ class EdController(cc: ControllerComponents, val context: EdContext)
 
 
   def JsonOrFormDataPostAction(rateLimits: RateLimits, maxBytes: Int,
-        allowAnyone: Boolean = false, isLogin: Boolean = false)
+        allowAnyone: Bo = false, isLogin: Bo = false, skipXsrfCheck: Bo = false)
   (f: ApiRequest[JsonOrFormDataBody] => Result): Action[JsonOrFormDataBody] =
     PlainApiAction(new JsonOrFormDataBodyParser(executionContext, cc).parser(maxBytes = maxBytes),
-      rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
+          rateLimits, allowAnyone = allowAnyone, isLogin = isLogin,
+          skipXsrfCheck = skipXsrfCheck)(f)
 
   def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int,
         allowAnyone: Boolean = false, avoidCookies: Boolean = false)(

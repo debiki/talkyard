@@ -26,14 +26,19 @@
 // And this or this — I think "boolean" is so long and distracting:
 //
 //   const shallFeedLion: boolean = countDaysSinceLastZebra();
-//   const shallFeedLion: B = countDaysSinceLastZebra();
+//   const shallFeedLion: Bo = countDaysSinceLastZebra();
+//
+// And thanks to St and Nr, lots of line breaks in function signatures,
+// can be avoided. — Really short names, for really frequently used things?
 //
 type U = undefined;
-type B = boolean;
+type Vo = void; // but not 'V' because that's sometimes a 'V'alue template param.
+type Nl = null; // but not 'Nu' because that could be "Number".
+type Nu = null;  // REMOVE
+type Ay = any;  // but not 'An' because that sounds like 'an'.
 type Bo = boolean;
-type N = number;
 type Nr = number;
-type S = string;
+type S = string;  // REMOVE
 type St = string;
 
 type SiteData = any;   // [3SD5PB7]
@@ -66,6 +71,12 @@ type ExtImpId = ExtId; // RENAME to ExtId
 
 type Ref = string;
 type RefOrId = Ref | number;
+
+
+const enum UrlPaths {
+  AdminLogin = '/-/admin-login',
+  AuthnRoot = '/-/authn/',
+}
 
 
 const enum ReviewDecision {
@@ -442,6 +453,21 @@ const enum Sizes {
   Megabyte = 1000 * 1000,  // MB
   Mebibyte = 1024 * 1024,  // MiB
 }
+
+
+const enum WhichStorage {
+  PageVar = 1,
+  SessionStorage = 4,
+  //CookieStorage = 8,
+  LocalStorage = 12,
+  //IndexDb = 16,
+}
+
+
+const enum StorageKeys {
+  AuthnNonce = 'authnNonce',
+}
+
 
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

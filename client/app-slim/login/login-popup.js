@@ -52,9 +52,15 @@ d.i.createLoginPopup = function(url) {
     if (darkCover) {
       darkCover.style.visibility = 'hidden';
     }
+
     if (d.i.handleLoginResponse !== null) {
-      d.i.handleLoginResponse({status: 'LoginFailed'});
+      d.i.handleLoginResponse = null;
+      console.debug('User closed the login popup window?');
+      // (If instead the user colsed the main window, but kept this login popup
+      // window open, see:  [authn_win_gone].)
+      // d.i.handleLoginResponse({status: 'LoginFailed'});  [J0935RKSDM]
     }
+
     if (waitCallback !== null) {
       window.clearInterval(waitCallback);
       waitCallback = null;
@@ -67,6 +73,10 @@ d.i.createLoginPopup = function(url) {
   // COULD RENAME to handleLoginPopupResult?
   //
   d.i.handleLoginResponse = function(result /* : LoginPopupLoginResponse */) {
+    // SECURITY SHOULD compare result.origNonceBack (if any) with  [br_authn_nonce]
+    // our local storage nonce.
+    // If mismatch, then, delete any session id cookie and ignore result.weakSessionId,
+    // show a warning dialog?
     try {
       // Sometimes we've remembered any weakSessionId already, namely if
       // we sent a create-new-user ajax request from the login popup — then we got back
@@ -84,14 +94,13 @@ d.i.createLoginPopup = function(url) {
 
     d.i.handleLoginResponse = null;
     var errorMsg;
-    if (result.status === 'LoginFailed') {
+    if (result.status === 'LoginFailed') {  // can remove this block?  [J0935RKSDM]
       console.debug('User closed popup window?');
       return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
       // Login OK.
-      // (Find queryString example at the end of this file.)
       debiki2.login.continueAfterLogin();
       return;
     }

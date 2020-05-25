@@ -44,6 +44,8 @@ object MemCache {
 
 class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetrics) {
 
+  REFACTOR // change DaoMemCache: one per site  [mem_cache_per_site] [mem_cache_exp_secs]
+
   private val logger = TyLogger("MemCache")
 
   COULD_OPTIMIZE; REFACTOR // Inline all clean-cache calls instead. [rm_cache_listeners]
@@ -142,6 +144,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
         key: MemCacheKey,
         ifFound: => Unit = {},
         orCacheAndReturn: => Option[A] = null,
+        //expireAfterSeconds: Option[Int] = None,
         metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false)(
         implicit classTag: ClassTag[A]): Option[A] = time(metric) { hitMeter =>

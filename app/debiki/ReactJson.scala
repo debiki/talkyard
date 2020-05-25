@@ -98,11 +98,12 @@ class JsonMaker(dao: SiteDao) {
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
     val globals = pageReq.context.globals
-    val site = pageReq.dao.theSite()
-    val siteSettings = pageReq.dao.getWholeSiteSettings()
+    val site = dao.theSite()
+    val siteSettings = dao.getWholeSiteSettings()
+    val idps = dao.getIdentityProviders(onlyEnabled = true)
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
-    val everyonesPerms = pageReq.dao.getPermsForEveryone()
+    val everyonesPerms = dao.getPermsForEveryone()
     val pageId = pageReq.thePageId
 
     val pageJsonObj = Json.obj(
@@ -134,7 +135,7 @@ class JsonMaker(dao: SiteDao) {
       "makeEmbeddedCommentsSite" -> siteSettings.allowEmbeddingFrom.nonEmpty,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
       "me" -> noUserSpecificData(everyonesPerms),
@@ -354,6 +355,7 @@ class JsonMaker(dao: SiteDao) {
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
 
     val site = dao.theSite()
+    val idps = dao.getIdentityProviders(onlyEnabled = true)
 
     val jsonObj = Json.obj(
       "dbgSrc" -> "PgToJ",
@@ -373,7 +375,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(authzCtx.tooManyPermissions),
@@ -413,7 +415,8 @@ class JsonMaker(dao: SiteDao) {
     val globals = request.context.globals
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
-    val site = request.dao.theSite()
+    val site = dao.theSite()
+    val idps = dao.getIdentityProviders(onlyEnabled = true)
     var result = Json.obj(
       "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
@@ -428,7 +431,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, idps, globals),
       "me" -> noUserSpecificData(dao.getPermsForEveryone()),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "siteSections" -> makeSiteSectionsJson(),
@@ -1193,11 +1196,11 @@ object JsonMaker {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, globals: Globals)
-        : JsObject = {
+  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings,
+        customIdps: Seq[IdentityProvider], globals: Globals): JsObject = {
     // Only include settings that differ from the default.
 
-    var json = Json.obj(
+    var json = if (settings.useOnlyCustomIdps) JsEmptyObj else Json.obj(
       // The defaults depend on if these login methods are defined in the config files,
       // so need to always include, client side (client side, default values = unknown).
       "enableGoogleLogin" -> settings.enableGoogleLogin,
@@ -1208,6 +1211,10 @@ object JsonMaker {
       "enableLinkedInLogin" -> settings.enableLinkedInLogin,
       "enableVkLogin" -> settings.enableVkLogin,
       "enableInstagramLogin" -> settings.enableInstagramLogin)
+
+    if (customIdps.nonEmpty && settings.enableCustomIdps) {
+      json += "customIdps" -> JsArray(customIdps map JsIdentityProviderPubFields)
+    }
 
     val D = AllSettings.makeDefault(globals)
     if (settings.termsOfUseUrl != D.termsOfUseUrl)
@@ -1220,6 +1227,10 @@ object JsonMaker {
       json += "inviteOnly" -> JsBoolean(settings.inviteOnly)
     if (settings.allowSignup != D.allowSignup)
       json += "allowSignup" -> JsBoolean(settings.allowSignup)
+    if (settings.enableCustomIdps != D.enableCustomIdps)
+      json += "enableCustomIdps" -> JsBoolean(settings.enableCustomIdps)
+    if (settings.useOnlyCustomIdps != D.useOnlyCustomIdps)
+      json += "useOnlyCustomIdps" -> JsBoolean(settings.useOnlyCustomIdps)
     if (settings.allowLocalSignup != D.allowLocalSignup)
       json += "allowLocalSignup" -> JsBoolean(settings.allowLocalSignup)
     if (settings.isGuestLoginAllowed != D.allowGuestLogin)

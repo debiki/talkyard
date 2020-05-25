@@ -36,6 +36,13 @@ export function openDefaultStupidDialog(props: StupidDialogStuff) {
 }
 
 
+export function showCreateUserDialog(params: CreateUserParams) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki.internal._showCreateUserDialog(params);
+  });
+}
+
+
 export function openAboutUserDialog(who: number | string | BriefUser, at, extraInfo?: string) {
   Server.loadMoreScriptsBundle(() => {
     if (_.isString(who) || _.isNumber(who)) {

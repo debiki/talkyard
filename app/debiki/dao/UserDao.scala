@@ -517,9 +517,9 @@ trait UserDao {
   }
 
 
-  def createIdentityUserAndLogin(newUserData: NewUserData, browserIdData: BrowserIdData)
-        : MemberLoginGrant = {
-    val loginGrant = readWriteTransaction { tx =>
+  def saveIdentityCreateUser(newUserData: NewUserData, browserIdData: BrowserIdData)
+        : (Identity, UserInclDetails) = {
+    val (identity, user) = readWriteTransaction { tx =>
       val userId = tx.nextMemberId
       val user: UserInclDetails = newUserData.makeUser(userId, tx.now.toJavaDate)
       val identityId = tx.nextIdentityId
@@ -533,7 +533,9 @@ trait UserDao {
         inUseFrom = tx.now, userId = user.id))
       tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = tx.now, emailedAt = None))
-      tx.insertIdentity(identity)
+
+      tx.insertIdentity(identity)  // use saveIdentityLinkToUser() instead somehow?
+
       joinGloballyPinnedChats(user.briefUser, tx)
 
       // Dupl code [2ABKS03R]
@@ -542,13 +544,14 @@ trait UserDao {
       }
 
       tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
-      MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
+      AUDIT_LOG
+      (identity, user)
     }
 
     uncacheBuiltInGroups()
     // Also uncache any custom groups, if auto-joins any such groups here.  [inv2groups]
-    memCache.fireUserCreated(loginGrant.user)
-    loginGrant
+    memCache.fireUserCreated(user.briefUser)
+    (identity, user)
   }
 
 
@@ -557,9 +560,9 @@ trait UserDao {
     * later on try to login via e.g. a Gmail account with the same email address.
     * Then we want to create a Gmail OpenAuth identity and connect it to the user
     * in the database.
+  REFACTOR; MOVE // to AuthnSiteDaoMixin.scala
     */
-  def createIdentityConnectToUserAndLogin(user: User, oauthDetails: OpenAuthDetails)
-        : MemberLoginGrant = {
+  def saveIdentityLinkToUser(oauthDetails: OpenAuthDetails, user: User): Identity = {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
     require(user.isAuthenticated, "DwE4KEF8")
@@ -568,7 +571,8 @@ trait UserDao {
       val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)
       tx.insertIdentity(identity)
       addUserStats(UserStats(user.id, lastSeenAt = tx.now))(tx)
-      MemberLoginGrant(Some(identity), user, isNewIdentity = true, isNewMember = false)
+      AUDIT_LOG
+      identity
     }
   }
 

@@ -1,0 +1,20 @@
+@(tpi: debiki.SiteTpi, subject: String, emailToVerify: String, expMins: Int)
+
+@css = @{("""
+""")}
+
+@views.html.createsite.main(tpi, css = css) {
+
+<h1>Verify your email address</h1>
+<br>
+
+<p>We sent you an email, title:  <i>@subject</i>
+
+<p>Check your email inbox:  @emailToVerify</p>
+
+<p>You can close this page.<br>
+ The link in the email expires in @expMins minutes.
+</p>
+
+}
+

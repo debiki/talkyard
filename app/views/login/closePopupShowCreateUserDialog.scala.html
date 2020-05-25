@@ -15,15 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(providerId: String, newUserUsername: String, newUserFullName: String, newUserEmail: String,
+@* TODO RENAME to showCreateUserDialogInOpenerCloseThisWin.scala.html    *@
+
+@(origNonceBack: String, idpName: String, idpHasVerifiedEmail: Boolean,
+    newUserUsername: String, newUserFullName: String, newUserEmail: String,
     authDataCacheKey: String, anyContinueToUrl: Option[String])
 
-@* Closes the OpenAuth or OpenID login popup window, and opens a create user dialog
- * in the window.opener (which should be the main page where e.g. a forum topic and all
- * replies are shown).
+@* Closes the Identity Provider authentication popup window, and opens a
+ * create user dialog in the window.opener instead (which should be the
+ * main page where e.g. a forum topic and all replies are shown).
  *
  * Not for embedded comments logins, because then we'll continue running inside
- * the popup, see showCreateUserDialog.scala.html.
+ * the popup (see showCreateUserDialog.scala.html)  — would be tricky, UX wise,
+ * to try to show a create-user dialog in Talkyard's iframe.
  *@
 
 @continueToUrlOrEmpty = @{
@@ -35,8 +39,10 @@
 <body>
 <!-- views/login/closePopupShowCreateUserDialog.scala.html -->
 <script type='text/javascript'>
-    window.opener.debiki.internal.showCreateUserDialog({
-      providerId: '@providerId',
+    window.opener.debiki2.morebundle.showCreateUserDialog({
+      origNonceBack: '@origNonceBack',
+      idpName: '@idpName',
+      idpHasVerifiedEmail: @idpHasVerifiedEmail,
       username: '@newUserUsername',
       fullName: '@newUserFullName',
       email: '@newUserEmail',
@@ -51,11 +57,6 @@
 <p>
   Did you go to here, via Facebook's mobile app?
   If so, you're likely using Facebook's built-in browser. It makes things break.
-
-  @* Previously, this was caused by a Chrome v 63 bug, since long fixed (by Google).
-  https://bugs.chromium.org/p/chromium/issues/detail?id=796912
-  and a workaround was needed here: [4PKGTEW20]. Google added, and fixed, the bug in
-  Dec-Jan-Feb 2017, 2018.  *@
 </p>
 <p>
   Instead, copy the login URL, and log in outside Facebook.

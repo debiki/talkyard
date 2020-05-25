@@ -492,6 +492,55 @@ case class SitePatchParser(context: EdContext) {
   }
 
 
+  def parseIdentityProviderorBad(jsValue: JsValue, siteId: SiteId)
+          : IdentityProvider Or ErrMsg  = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"IdentityProvider json is not an object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      val idpId = readOptInt(jsObj, "idpId")
+      val idpSiteId = readOptInt(jsObj, "siteId")
+
+      // Linking to an IDP at another site is not yet supported.  [idp_site_id_c]
+      dieIf(idpSiteId.isSomethingButNot(siteId), "TyE3205MKT5B",
+            s"json idp site id: $idpSiteId but this site id: $siteId")
+
+      Good(IdentityProvider(
+            confFileIdpId = readOptString(jsObj, "confFileIdpId"),
+            idpSiteId = idpSiteId,
+            idpId = idpId,
+            protocol_c = readString(jsObj, "protocol"),
+            alias_c = readString(jsObj, "alias"),
+            enabled_c = readBoolean(jsObj, "enabled"),
+            display_name_c = readOptString(jsObj, "displayName"),
+            description_c = readOptString(jsObj, "description"),
+            admin_comments_c = readOptString(jsObj, "adminComments"),
+            trust_verified_email_c = readBoolean(jsObj, "trustVerifiedEmail"),
+            link_account_no_login_c = readBoolean(jsObj, "linkAccountNoLogin"),
+            gui_order_c = readOptInt(jsObj, "guiOrder"),
+            sync_mode_c = readInt(jsObj, "syncMode"),
+            idp_authorization_url_c = readString(jsObj, "idpAuthorizationUrl"),
+            idp_access_token_url_c = readString(jsObj, "idpAccessTokenUrl"),
+            idp_user_info_url_c = readString(jsObj, "idpUserInfoUrl"),
+            idp_user_info_fields_map_c = parseOptJsObject(jsObj, "idpUserInfoFieldsMap"),
+            idp_logout_url_c = readOptString(jsObj, "idpLogoutUrl"),
+            idp_client_id_c = readString(jsObj, "idpClientId"),
+            idp_client_secret_c = readString(jsObj, "idpClientSecret"),
+            idp_issuer_c = readOptString(jsObj, "idpIssuer"),
+            auth_req_scope_c = readOptString(jsObj, "authReqScope"),
+            auth_req_hosted_domain_c = readOptString(jsObj, "authReqHostedDomain"),
+            userinfo_req_send_user_ip_c = readOptBool(jsObj, "userinfoReqSendUserIp")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for IdentityProvider: ${ex.getMessage}")
+    }
+  }
+
+
   def readGuestOrBad(jsValue: JsValue, guestEmailPrefs: Map[String, EmailNotfPrefs], isE2eTest: Boolean)
         : Guest Or ErrorMessage = {
     val jsObj = jsValue match {
@@ -548,13 +597,19 @@ case class SitePatchParser(context: EdContext) {
         return Bad("Only OpenAuth identities supported right now [TyE06@T32]")
       }
       val oauDetails = OpenAuthDetails(
-        providerId = readString(jsObj, "providerId"),
-        providerKey = readString(jsObj, "providerKey"),
-        firstName = readOptString(jsObj, "firstName"),
-        lastName = readOptString(jsObj, "lastName"),
-        fullName = readOptString(jsObj, "fullName"),
-        email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
-        avatarUrl = readOptString(jsObj, "avatarUrl"))
+            confFileIdpId = parseOptSt(jsObj, "confFileIdpId", "providerId"),
+            idpSiteId = readOptInt(jsObj, "idpSiteId"),
+            idpId = readOptInt(jsObj, "idpId"),
+            idpUserId = parseSt(jsObj, "idpUserId", altName = "providerKey"),
+            username = readOptString(jsObj, "username"),
+            firstName = readOptString(jsObj, "firstName"),
+            lastName = readOptString(jsObj, "lastName"),
+            fullName = readOptString(jsObj, "fullName"),
+            email = readOptString(jsObj, "email"),  // RENAME to emailAddr?
+            isEmailVerifiedByIdp = parseOptBo(jsObj, "isEmailVerifiedByIdp"),
+            avatarUrl = readOptString(jsObj, "avatarUrl"),
+            userInfoJson = None,  // for now
+            oidcIdToken = None)   // for now
       val identity = OpenAuthIdentity(
         id = identityId,
         userId = readInt(jsObj, "userId"),

@@ -25,20 +25,23 @@ GET   /-/logout                 controllers.LoginController.logout(currentUrlPat
 POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/resend-owner-email-addr-verif-email controllers.LoginController.resendSiteOwnerAddrVerifEmail
 
+# REFACTOR Would like to remove, use  /-/authn/password/
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
 POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
 # also: /-/v0/sso-login via ApiV0Controller
 
-GET   /-/login-oidc/:providerName           controllers.LoginWithOpenAuthController.loginOidcStart(providerName, returnToUrl: String = "/")
-GET   /-/login-oidc/:providerName/callback  controllers.LoginWithOpenAuthController.loginOidcCallback(providerName, session_state, code)
-GET   /-/logout-oidc                        controllers.LoginWithOpenAuthController.logoutOidc
+GET   /-/authn/:protocol/:providerAlias           controllers.LoginWithOpenAuthController.authnStart(protocol, providerAlias, returnToUrl, nonce, authViaAuthnOrigin: Option[Boolean], selectAccountAtIdp: Option[Boolean])
+GET   /-/authn/continue-at-authn-origin           controllers.LoginWithOpenAuthController.continueAtAuthnOrigin(secretNonce)
+GET   /-/authn/:protocol/:providerAlias/redirback controllers.LoginWithOpenAuthController.authnRedirBack(protocol, providerAlias, state, session_state: Option[String], code)
+GET   /-/authn/finish-at-orig-site                controllers.LoginWithOpenAuthController.finishAtOrigSite(secretNonce)
 
-# Would like to rename to:
-# GET   /-/login-oauth/:providerName
-# GET   /-/login-oauth/:providerName/callback
-GET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: String = "/")
+GET   /-/authn/verif-email-ask-if-link-accounts   controllers.LoginWithOpenAuthController.verifyEmailAskIfLinkAccounts(secretNonce)
+POST  /-/authn/ans-link-accounts                  controllers.LoginWithOpenAuthController.answerLinkAccounts
+
+# Would like to remove, use /-/authn/oauth2/:name  instead:
+GET   /-/login-openauth/:providerName controllers.LoginWithOpenAuthController.startAuthentication(providerName, returnToUrl: Option[String])
 GET   /-/login-auth-callback/:providerName  controllers.LoginWithOpenAuthController.finishAuthentication(providerName)
 GET   /-/login-oauth-then-return/:providerName controllers.LoginWithOpenAuthController.loginAtLoginOriginThenReturnToOriginalSite(providerName, returnToOrigin, xsrfToken)
 GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
@@ -89,6 +92,8 @@ GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings
 POST  /-/change-hostname        controllers.SettingsController.changeHostname
 POST  /-/update-extra-hostnames controllers.SettingsController.updateExtraHostnames
+GET   /-/load-oidc-config       controllers.SettingsController.loadOidcConfig
+POST  /-/upsert-oidc-config     controllers.SettingsController.upsertOidcConfig
 
 GET   /-/terms-of-use            controllers.LegalController.viewTermsOfUsePage
 GET   /-/privacy-policy          controllers.LegalController.viewPrivacyPolicyPage

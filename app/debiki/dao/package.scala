@@ -26,22 +26,33 @@ package object dao {
 
   type DaoMemCache = caffeine.cache.Cache[String, DaoMemCacheAnyItem]
 
-  case class MemCacheItem[A](value: A, siteCacheVersion: Long)
+  case class MemCacheItem[A](
+    value: A,
+    siteCacheVersion: Long)
 
   type DaoMemCacheAnyItem = MemCacheItem[Any]
 
+
+  REFACTOR; COULD_OPTIMIZE // change DaoMemCache so there's one per site!  [mem_cache_per_site]
+  // Instead of indexing by s"$siteId|...key....".
+  //
   case class MemCacheKey(siteId: SiteId, rest: String) {
     override def toString = s"$siteId|$rest"
   }
 
-  def MemCacheKeyAnySite(value: String) = MemCacheKey(siteId = NoSiteId, value)
+  def MemCacheKeyAnySite(value: String): MemCacheKey =
+    MemCacheKey(siteId = NoSiteId, value)
 
-  def MemCacheValueIgnoreVersion[A](value: A) = MemCacheItem(value, MemCache.IgnoreSiteCacheVersion)
+  def MemCacheValueIgnoreVersion[A](value: A): MemCacheItem[A] =
+    MemCacheItem(value, MemCache.IgnoreSiteCacheVersion)
 
 
   type UsersOnlineCache = caffeine.cache.Cache[SiteId, UsersOnlineStuff]
 
-  case class UsersOnlineStuff(users: Seq[Participant], usersJson: JsArray, numStrangers: Int)
+  case class UsersOnlineStuff(
+    users: Seq[Participant],
+    usersJson: JsArray,
+    numStrangers: Int)
 
 }
 

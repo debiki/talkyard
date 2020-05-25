@@ -57,6 +57,7 @@ const api = {
     if (message) console.log(getOrCall(message));
     const exceptionIndented = '   ' + ex.toString().replace(/\n/g, "\n   ");
     console.log(exceptionColor(exceptionIndented));
+    console.trace();
   },
   logErrorIf: function (test: boolean, message: string, ex?: any) {
     if (test) {
@@ -68,6 +69,7 @@ const api = {
     // Avoid printing 'undefined' if ex is undefined.
     if (_.isUndefined(ex)) console.error(m);
     else console.error(m, ex);
+    console.trace();
   },
   logServerRequest: function(message: string) {
     console.log(serverRequestColor(message));

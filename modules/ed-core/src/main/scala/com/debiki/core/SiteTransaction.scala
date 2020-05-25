@@ -392,6 +392,11 @@ trait SiteTransaction {   RENAME // to SiteTx — already started with a type Si
   def loadInvitesCreatedBy(createdById: UserId): immutable.Seq[Invite]
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
+  def upsertIdentityProvider(identityProvider: IdentityProvider): AnyProblem
+  def deleteIdentityProviderById(idpId: IdpId): Bo
+  def loadIdentityProviderByAlias(protocol: St, alias: St): Opt[IdentityProvider]
+  def loadAllIdentityProviders(): Seq[IdentityProvider]
+
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity): Unit
   def loadIdentities(userId: UserId): immutable.Seq[Identity]

@@ -59,7 +59,7 @@ export function stableStringifySkipNulls(obj: any, skipNulls: boolean): string {
 }
 
 
-export function putInLocalStorage(key, value) {   // CLEAN_UP REMOVE Use BrowserStorage instead
+export function putInLocalStorage(key: St, value) {   // CLEAN_UP REMOVE Use BrowserStorage instead
   key = stableStringifySkipNulls(key, true);
   // In Safari, private browsing mode, there's no local storage, so setItem() throws an error.
   try {
@@ -72,7 +72,7 @@ export function putInLocalStorage(key, value) {   // CLEAN_UP REMOVE Use Browser
 }
 
 
-export function putInSessionStorage(key, value) {
+export function putInSessionStorage(key: St, value) {
   key = stableStringifySkipNulls(key, true);
   // In Safari, private browsing mode, there's no session storage, so setItem() throws an error.
   try {
@@ -85,13 +85,13 @@ export function putInSessionStorage(key, value) {
 }
 
 
-export function getFromLocalStorage(key) {
+export function getFromLocalStorage(key: St): any | null {
   key = stableStringifySkipNulls(key, true);
   return getFromStorage(true, stupidLocalStorage, key);
 }
 
 
-export function getFromSessionStorage(key) {
+export function getFromSessionStorage(key: St): any | null {
   key = stableStringifySkipNulls(key, true);
   return getFromStorage(false, stupidSessionStorage, key);
 }
@@ -107,7 +107,7 @@ export function canUseLocalStorage(): boolean {
 }
 
 
-function getFromStorage(useLocal: boolean, stupidStorage, key) {
+function getFromStorage(useLocal: boolean, stupidStorage, key): any | null {
   // In FF, if third party cookies have been disabled, localStorage.getItem throws a security
   // error, if this code runs in an iframe. More details: [7IWD20ZQ1]
   // In iOS and Chrome, this error is thrown:
@@ -115,11 +115,11 @@ function getFromStorage(useLocal: boolean, stupidStorage, key) {
   // if cookie access is disabled (seems to be by default on iOS).
   // In Chrome, to make that error happen, go to:  chrome://settings/content/cookies and disable
   // "Allow sites to save and read cookie data", and then access localStorage/ (outside a try {}).
-  let value = null;
+  let value: any | null = null;
   try {
     const realStorage = useLocal ? localStorage : sessionStorage;
-    value = realStorage.getItem(key);
-    value = value && JSON.parse(value);
+    const strOrNull = realStorage.getItem(key);
+    value = strOrNull && JSON.parse(strOrNull);
   }
   catch (ignored) {
   }

@@ -751,7 +751,7 @@ function findIntInHashFrag(valuePrefix: string, theHash: string): PostNr | undef
 }
 
 
-function findStrInHashFrag(valuePrefix: string, theHash: string): S | U {
+function findStrInHashFrag(valuePrefix: St, theHash: St): St | U {
   const start = theHash.indexOf(valuePrefix);
   if (start === -1) return undefined;
   const valueStart = start + valuePrefix.length;
@@ -763,7 +763,7 @@ function findStrInHashFrag(valuePrefix: string, theHash: string): S | U {
 
 // Returns -1 if none of [#&] found.
 //
-function indexOfAmpHash(text: S, start: N): N {
+function indexOfAmpHash(text: St, start: Nr): Nr {
   // Sometimes Talkyard uses # as a hash frag param separator.
   const nextHash = text.indexOf('#', start);
   const nextAmp = text.indexOf('&', start);

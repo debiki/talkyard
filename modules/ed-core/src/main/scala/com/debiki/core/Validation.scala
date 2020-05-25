@@ -22,7 +22,7 @@ import Prelude._
 import scala.util.matching.Regex
 
 
-object Validation {
+object Validation {  RENAME // to Check, so:  Check.ifBadEmail( ...)  — looks nice?
 
   private val EmailOkCharsRegex = """\S+@\S+\.\S+$""".r
 
@@ -47,10 +47,27 @@ object Validation {
   }
 
 
-  // CLEAN_UP don't return the email — looks as if it's maybe getting changed
+  def ifBadEmail(email: Opt[St], siteId: SiteId, fn: Problem => U): U = {
+    email.foreach(e => ifBadEmail(e, siteId = siteId, fn))
+  }
+
+
+  def ifBadEmail(email: St, siteId: SiteId, fn: Problem => U): U = {
+    checkEmail(email) match {
+      case Bad(problem) => fn(Problem(problem, siteId = siteId))
+      case _ => // noop
+    }
+  }
+
+
+  @deprecated // use ifBadEmail() instead — then cannot forget to check any return val
   def checkEmail(email: String): String Or ErrorMessage = {
     if (!email.isEmpty && EmailOkCharsRegex.unapplySeq(email).isEmpty)
-      return Bad("Invalid email address")
+      return Bad("Invalid email address [TyE35M0ABT4]")
+
+    val numAt = email.count(_ == '@')
+    if (numAt >= 2)
+      return Bad(s"More than one '@' in email address [TyE35M0ABT2]")
 
     Good(email)
   }
