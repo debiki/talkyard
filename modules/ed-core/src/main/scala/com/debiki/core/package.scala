@@ -1218,6 +1218,9 @@ package object core {
   def I18N = ()           // Translation missing
   def READ = ()           // Something that could be good to read, before continuing coding.
 
+  def VENDOR_THIS = ()
+  def DELETE_DEPENDENCY = ()
+
   def GRAPH_DATABASE = () // Some queries are inefficient and require lots of code, when using a
                           // relational database — but are simple and fast, with a graph database.
 }

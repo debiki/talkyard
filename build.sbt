@@ -62,6 +62,7 @@ val appDependencies = Seq(
   play.sbt.Play.autoImport.filters,
   Dependencies.Play.json,
   // OpenAuth and OpenID etc Authentication.
+  Dependencies.Libs.scribeJava,
   "com.mohiva" %% "play-silhouette" % "7.0.0",
   "com.mohiva" %% "play-silhouette-crypto-jca" % "7.0.0",
   // PostgreSQL JDBC client driver

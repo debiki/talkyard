@@ -24,6 +24,10 @@ object Dependencies {
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
     val apacheTika = "org.apache.tika" % "tika-core" % "1.18"    // for username .ext test, sync w core [5AKR20]
 
+    // OAuth lib, also works for OIDC (OpenID Connect).
+    // VENDOR_THIS — it'd be good to Maven-build via Makefile?
+    val scribeJava = "com.github.scribejava" % "scribejava-apis" % "6.9.0"
+        
     // Not v 3.1.2?
     val scalactic = "org.scalactic" %% "scalactic" % "3.1.1"
     val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1" % "test"
