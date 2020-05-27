@@ -115,7 +115,7 @@ describe("authz basic see reply create  TyT2ABKR83N", () => {
     let onlyAdminsSeeCatId = 6;
 
     let forumPage = forum.forumPage = siteBuilder.addForumPageAndRootCategory({
-      id: 'fmp',
+      id: c.FirstPageId,
       rootCategoryId: rootCategoryId,
       // This category is restricted — we don't add any access permissions.
       // That's weird. Commented out this debug assertion to make

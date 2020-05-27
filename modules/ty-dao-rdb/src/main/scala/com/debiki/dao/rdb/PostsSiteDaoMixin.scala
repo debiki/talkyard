@@ -264,7 +264,11 @@ trait PostsSiteDaoMixin extends SiteTransaction {
               $andNotTitle
               $andSomeVersionApproved
               $andPageNotUnlisted_unimpl
-          order by created_at desc limit $limit """
+          order by created_at desc,
+             -- Page title and body have the same creation time.
+             -- Consider the title created before the page body.
+             page_id desc, post_nr desc
+          limit $limit """
 
     runQueryFindMany(query, values.toList, rs => {
       readPost(rs)

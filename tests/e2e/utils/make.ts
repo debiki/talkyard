@@ -468,7 +468,7 @@ const make = {
     const rootCategoryId = 1;
 
     const forumPage = make.page({
-      id: 'fmp',
+      id: c.FirstPageId,
       role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: c.SystemUserId,
