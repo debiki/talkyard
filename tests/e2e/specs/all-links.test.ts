@@ -27,13 +27,13 @@ describe('all links', function() {
     site.guests.push(make.guestGreta());
     site.guests.push(make.guestGunnar());
 
-    // later?: site.pagePaths.push(make.path('/', 'fmp'));
+    // later?: site.pagePaths.push(make.path('/', c.FirstPageId));
 
     // Dupl test code below [6FKR4D0]
     var rootCategoryId = 1;
 
     var forumPage = make.page({
-      id: 'fmp',
+      id: c.FirstPageId,
       role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: SystemUserId,

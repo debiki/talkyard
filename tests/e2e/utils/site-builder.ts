@@ -238,7 +238,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       const defaultCategoryId = 2;
 
       const forumPage = forum.forumPage = api.addForumPageAndRootCategory({
-        id: 'fmp',
+        id: c.FirstPageId,
         rootCategoryId: rootCategoryId,
         defaultCategoryId: defaultCategoryId,
         title: opts.title,

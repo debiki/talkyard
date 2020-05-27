@@ -188,9 +188,9 @@ describe("api-w-sso-upsert-pages   TyT60KRJXT4X3", () => {
     assert.equal(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle-bymaja-ssoid');
+    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-2/upspageonetitle-bymaja-ssoid');
 
-    assert.equal(firstUpsertedPage.id, "1");
+    assert.equal(firstUpsertedPage.id, "2");
     assert.equal(firstUpsertedPage.pageType, c.TestPageRole.Idea);
     utils.checkNewPageFields(firstUpsertedPage, {
       categoryId: forum.categories.categoryA.id,

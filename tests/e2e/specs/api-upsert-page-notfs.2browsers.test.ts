@@ -194,9 +194,9 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
     assert.equal(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-1/upspageonetitle');
+    assert.equal(firstUpsertedPage.urlPaths.canonical, '/-2/upspageonetitle');
 
-    assert.equal(firstUpsertedPage.id, "1");
+    assert.equal(firstUpsertedPage.id, "2");
     assert.equal(firstUpsertedPage.pageType, c.TestPageRole.Idea);
     utils.checkNewPageFields(firstUpsertedPage, {
       categoryId: forum.categories.categoryA.id,
@@ -247,8 +247,8 @@ describe("api-upsert-page-notfs   TyT502RKTLXM296", () => {
     upsertedPageUrlFromEmail = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
-        // Instead,  /-1:
-        'https?://.*/-1', email.bodyHtmlText);
+        // Instead,  /-2:
+        'https?://.*/-2', email.bodyHtmlText);
     // won't work right now:
     // assert.includes(upsertedPageUrlFromEmail, firstUpsertedPage.urlPaths.canonical);
   });
