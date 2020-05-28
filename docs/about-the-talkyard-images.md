@@ -6,20 +6,13 @@ Here're the Talkyar images, located in [`../images/<image-name>`](../images/), a
 
 ### [web](../images/web/)
 
-This is a HTTP server, currently Nginx with Lua.
-Planning to change to OpenResty, with automatic HTTPS via
-https://github.com/GUI/lua-resty-auto-ssl (currently one
-needs to run LetsEncryp's `certbot` manually).
+This is a HTTP server: OpenResty, an Nginx distribution with Lua.
 
 Nginx serves uploaded files and transpiled Javascript and CSS directly
 from the file system. Also does some request rate limiting.
 And outgoing bandwith limiting, see `images/web/ed-lua/lua-limit-bandwidth`,
 to reduce? elliminate? the risk that you get a surprise bill from your cloud provider
 for high bandwidth costs.
-
-Currently includes a certain Nchan Nginx module, for long polling.
-However, I think Nchan isn't needed. The plan is instead to use HTTP2 and
-Server Sent Events, directly from Play Framework, in the `app` container.
 
 
 ### [app](../images/app/)
