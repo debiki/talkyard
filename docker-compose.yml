@@ -9,7 +9,9 @@ networks:
 
 services:
   web:
-    build: images/web/
+    build:
+      context: images/web
+      dockerfile: Dockerfile.openresty
     image: ${DOCKER_REPOSITORY}/talkyard-web
     # so can specify core dump path [NGXCORED]
     #privileged: true
