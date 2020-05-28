@@ -326,10 +326,6 @@ COPY ty-media /opt/talkyard/ty-media
 COPY ed-lua   /opt/talkyard/lua/
 COPY assets   /opt/talkyard/assets
 
-
-# Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from
-# inside the Docker network only, so that only Play Framework (located inside the network)
-# can publish events.
 EXPOSE 80 443
 
 # Core dumps
