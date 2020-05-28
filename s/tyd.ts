@@ -21,7 +21,7 @@ completion.on('mainCmd', ({ reply }) => {
         'u', 'up', //'watchup',
         'w', 'watch',
         'ps',
-        'k', 'kill',
+        'k', 'kill', 'ka', 'kw',
         'r', 'restart', 'ra',
         'down',
         'recreate',

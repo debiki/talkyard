@@ -9,7 +9,9 @@ networks:
 
 services:
   web:
-    build: images/web/
+    build:
+      context: images/web
+      dockerfile: Dockerfile.or  # openresty
     image: ${DOCKER_REPOSITORY}/talkyard-web
     # so can specify core dump path [NGXCORED]
     #privileged: true
@@ -32,7 +34,7 @@ services:
         ipv4_address: ${INTERNAL_NET_WEB_IP}
     depends_on:
       - app
-      #- cache [NCHANREDIS]
+      #- cache
     environment:
       TY_NGX_ERR_LOG_LEVEL: 'debug'
       #TY_NGX_LIMIT_REQ_BODY_SIZE: "5m"

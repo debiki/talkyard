@@ -1,3 +1,15 @@
+# Use like so:
+#
+# d/c -f docker-compose.yml -f docker-compose-no-limits.yml   kill web
+# d/c -f docker-compose.yml -f docker-compose-no-limits.yml   rm -f web
+# d/c -f docker-compose.yml -f docker-compose-no-limits.yml   build web
+# d/c -f docker-compose.yml -f docker-compose-no-limits.yml   up -d web
+# d/c -f docker-compose.yml -f docker-compose-no-limits.yml   ps
+#
+
+# Don't forget to add default values in the Dockerfile, [0KW2UY3]
+# and enable Nginx access_log buffering (nginx.conf).
+
 version: '3.7'
 services:
   web:

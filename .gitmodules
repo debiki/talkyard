@@ -20,9 +20,13 @@
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
 	url = https://github.com/debiki/talkyard-versions.git
+
+# CLEAN_UP REMOVE it's bundled with OpenResty
 [submodule "images/web/modules/lua-nginx-module"]
 	path = images/web/modules/lua-nginx-module
 	url = https://github.com/openresty/lua-nginx-module.git
+
+# CLEAN_UP REMOVE it's bundled with OpenResty
 [submodule "images/web/modules/luajit"]
 	path = images/web/modules/luajit
 	# This LuaJIT GitHub repo is a mirror of: http://luajit.org/git/luajit-2.0.git
@@ -37,15 +41,22 @@
 [submodule "images/web/modules/ngx_devel_kit"]
 	path = images/web/modules/ngx_devel_kit
 	url = https://github.com/simpl/ngx_devel_kit.git
+
+# But keep this.
 [submodule "images/web/lua-packages/lua-resty-http"]
 	path = images/web/lua-packages/lua-resty-http
 	url = https://github.com/ledgetech/lua-resty-http.git
+
+# CLEAN_UP REMOVE it's bundled with OpenResty
 [submodule "images/web/lua-packages/lua-resty-redis"]
 	path = images/web/lua-packages/lua-resty-redis
 	url = https://github.com/openresty/lua-resty-redis.git
+
+# CLEAN_UP REMOVE it's bundled with OpenResty
 [submodule "images/web/lua-packages/lua-resty-lrucache"]
 	path = images/web/lua-packages/lua-resty-lrucache
 	url = https://github.com/openresty/lua-resty-lrucache.git
+
 [submodule "modules/sanitize-html"]
 	path = modules/sanitize-html
 	url = https://github.com/debiki/sanitize-html.git
@@ -64,6 +75,36 @@
 [submodule "modules/talkyard-prod-swarm"]
 	path = modules/talkyard-prod-swarm
 	url = https://github.com/debiki/talkyard-prod-swarm.git
+
+# ----- Vendors
+
+# Vendored code is in the ty-vendors repo, but in different branches
+# — and each branch is checked out as a separate submodule, where it's needed,
+# e.g. OpenResty at images/web/openresty, so accessible to the
+# images/web/Dockerfile.
+# But why not different submodules, instead of branches? Because creating
+# different submodules is boring, right. Creating a new branch is quicker.
+#
+# To fetch only the current branch from the remote repo, do this:
+#
+#   git fetch origin `git rev-parse --abbrev-ref HEAD`
+#
+#   # Or with Git >= v2.22: (not tested)
+#   git fetch origin `git branch --show-current`
+#
+# To add a submodule but only a branch, do e.g.:
+#
+#   git submodule add -b ty-openresty \
+#       https://github.com/debiki/ty-vendors.git \
+#       images/web/openresty
+#
+
 [submodule "vendors/jars"]
 	path = vendors/jars
 	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-jars
+
+[submodule "images/web/openresty"]
+	path = images/web/openresty
+	url = https://github.com/debiki/ty-vendors.git
+	branch = ty-openresty

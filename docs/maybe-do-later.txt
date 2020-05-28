@@ -210,7 +210,7 @@ Or, cluster tables — but:
   However, clustering posts3 / posts_t by page_id_c = good idea.
 }}}2
 
-[onesocket]
+DONE [onesocket]
 Subscribe to live-updates via a "shared web worker" so each browser gets its own connection,
 rather than each browser tab.  See e.g.:
 https://stackoverflow.com/questions/9554896/sharing-websocket-across-browser-tabs
@@ -571,3 +571,7 @@ Without! any long running db transactions. 1) loads the data it needs, in a read
 Then, compiles Commonmark to html, finds all links etc.
 Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
 save the rebuilt post.
+
+
+ [ty_v1] Things to fix before Ty v0.X —> v1.0.
+ 

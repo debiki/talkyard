@@ -22,11 +22,17 @@ httpc:set_timeouts(1000, 5000, 5000)
 -- this error:  'error: no resolver defined to resolve "app"')
 httpc:connect("app", 9000)
 
+
 -- COULD parse the request body and split at the form-data boundaries,
 -- to find out how large each file is, in case there're many uploads in
 -- the same request.  And to check mime types and file extensions [pre_chk_upl_ext].
 -- See: https://www.gakhov.com/articles/
 --          implementing-api-based-fileserver-with-nginx-and-lua.html
+--
+-- There's this Lua module: lua_resty_upload, which can parse form-data
+-- and detect the sizes of the individual files.
+--
+--
 -- COULD calculate Sha256 hashes of these individual files, and ask the
 -- server if they've been saved already, server side, and then skip uploading
 -- those files (just adding the <a href=...> links).
@@ -43,6 +49,7 @@ local res, err = httpc:request({
         ["X-Forwarded-For"] = ngx.var.proxy_add_x_forwarded_for,
     },
 })
+
 
 local toFromSize =
         "to: " .. host ..

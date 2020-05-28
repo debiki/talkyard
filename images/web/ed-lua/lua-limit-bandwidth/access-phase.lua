@@ -33,7 +33,7 @@ local normal_speed = 150e3
 local slow_speed = 33e3
 local speed = full_speed
 
-function slow_down(new_speed)
+local function slow_down(new_speed)
     if new_speed < speed then
         speed = new_speed
     end
