@@ -229,6 +229,7 @@ interface PostListed extends PostFoundOrListed {
   pageId: PageId;
   pageTitle: string;
   urlPath: string;
+  author: UserFound,
   approvedHtmlSanitized?: string;
 }
 
