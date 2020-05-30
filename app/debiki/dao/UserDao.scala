@@ -493,6 +493,23 @@ trait UserDao {
   }
 
 
+  def upsertIdentityProvider(identityProvider: IdentityProvider): AnyProblem = {
+    COULD_OPTIMIZE // clear idp cache
+    readWriteTransaction(_.upsertIdentityProvider(identityProvider))
+  }
+
+
+  def getIdentityProviderByAlias(protocol: String, alias: String): Option[IdentityProvider] = {
+    COULD_OPTIMIZE // cache
+    readOnlyTransaction(_.loadIdentityProviderByAlias(protocol: String, alias: String))
+  }
+
+
+  def loadAllIdentityProviders(): Seq[IdentityProvider] = {
+    readOnlyTransaction(_.loadAllIdentityProviders())
+  }
+
+
   def createIdentityUserAndLogin(newUserData: NewUserData, browserIdData: BrowserIdData)
         : MemberLoginGrant = {
     val loginGrant = readWriteTransaction { tx =>

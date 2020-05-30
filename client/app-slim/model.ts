@@ -1460,6 +1460,8 @@ interface Settings extends TopicInterfaceSettings {
   allowSignup: boolean;
   allowLocalSignup: boolean;
   allowGuestLogin: boolean;
+  enableOidc: boolean;
+  onlyOidc: boolean;
   enableGoogleLogin: boolean;
   enableFacebookLogin: boolean;
   enableTwitterLogin: boolean;
@@ -1479,6 +1481,10 @@ interface Settings extends TopicInterfaceSettings {
   ssoUrl: string;
   ssoNotApprovedUrl: string;
   ssoLoginRequiredLogoutUrl: string;
+
+  // Own email server
+  enableOwnEmailServer: boolean;
+  ownEmailServerConfig: string;
 
   // Moderation
   numFirstPostsToAllow: number;

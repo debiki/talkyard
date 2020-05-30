@@ -219,6 +219,135 @@ trait AuthnSiteTxMixin extends SiteTransaction {
     identityInDb
   }
 
+
+  def upsertIdentityProvider(identityProvider: IdentityProvider): AnyProblem = {
+    val sql = """
+          insert into identity_providers_t(
+            site_id_c,
+            id_c,
+            protocol_c,
+            alias_c,
+            display_name_c,
+            description_c,
+            enabled_c,
+            trust_verified_email_c,
+            link_account_no_login_c,
+            gui_order_c,
+            sync_mode_c,
+            idp_authorization_url_c,
+            idp_access_token_url_c,
+            idp_user_info_url_c,
+            idp_logout_url_c,
+            idp_client_id_c,
+            idp_client_secret_c,
+            idp_issuer_c,
+            idp_scopes_c,
+            idp_hosted_domain_c,
+            idp_send_user_ip_c)
+          values (
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          on conflict (site_id_c, id_c) do update set
+            protocol_c = excluded.protocol_c,
+            alias_c = excluded.alias_c,
+            display_name_c = excluded.display_name_c,
+            description_c = excluded.description_c,
+            enabled_c = excluded.enabled_c,
+            trust_verified_email_c = excluded.trust_verified_email_c,
+            link_account_no_login_c = excluded.link_account_no_login_c,
+            gui_order_c = excluded.gui_order_c,
+            sync_mode_c = excluded.sync_mode_c,
+            idp_authorization_url_c = excluded.idp_authorization_url_c,
+            idp_access_token_url_c = excluded.idp_access_token_url_c,
+            idp_user_info_url_c = excluded.idp_user_info_url_c,
+            idp_logout_url_c = excluded.idp_logout_url_c,
+            idp_client_id_c = excluded.idp_client_id_c,
+            idp_client_secret_c = excluded.idp_client_secret_c,
+            idp_issuer_c = excluded.idp_issuer_c,
+            idp_scopes_c = excluded.idp_scopes_c,
+            idp_hosted_domain_c = excluded.idp_hosted_domain_c,
+            idp_send_user_ip_c = excluded.idp_send_user_ip_c  """
+
+    // TODO: UK on proto & alias
+
+    val p = identityProvider
+    dieIf(p.site_id_c != siteId, "TyE50250RKD53")
+
+    val values = List[AnyRef](
+          siteId.asAnyRef,
+          p.id_c.asAnyRef,
+          p.protocol_c,
+          p.alias_c,
+          p.display_name_c.orNullVarchar,
+          p.description_c.orNullVarchar,
+          p.enabled_c.asAnyRef,
+          p.trust_verified_email_c.asAnyRef,
+          p.link_account_no_login_c.asAnyRef,
+          p.gui_order_c.orNullInt,
+          p.sync_mode_c.asAnyRef,
+          p.idp_authorization_url_c,
+          p.idp_access_token_url_c,
+          p.idp_user_info_url_c,
+          p.idp_logout_url_c.orNullVarchar,
+          p.idp_client_id_c,
+          p.idp_client_secret_c,
+          p.idp_issuer_c.orNullVarchar,
+          p.idp_scopes_c.orNullVarchar,
+          p.idp_hosted_domain_c.orNullVarchar,
+          p.idp_send_user_ip_c.orNullBoolean)
+
+    runUpdate(sql, values)
+
+    SHOULD // capture UK error
+    Fine
+  }
+
+
+  def loadIdentityProviderByAlias(protocol: String, alias: String): Option[IdentityProvider] = {
+    val query = """
+          select * from identity_providers_t
+          where site_id_c = ? and protocol_c = ? and alias_c = ? """
+    val values = List(siteId.asAnyRef, protocol, alias)
+    runQueryFindOneOrNone(query, values, rs => {
+      readIdentityProvider(rs)
+    })
+  }
+
+
+  def loadAllIdentityProviders(): Seq[IdentityProvider] = {
+    val query = """
+          select * from identity_providers_t
+          where site_id_c = ? """
+    runQueryFindMany(query, List(siteId.asAnyRef), rs => {
+      readIdentityProvider(rs)
+    })
+  }
+
+
+  private def readIdentityProvider(rs: js.ResultSet): IdentityProvider = {
+    IdentityProvider(
+          site_id_c = rs.getInt("site_id_c"),
+          id_c = rs.getInt("id_c"),
+          protocol_c = rs.getString("protocol_c"),
+          alias_c = rs.getString("alias_c"),
+          display_name_c = getOptString(rs, "display_name_c"),
+          description_c = getOptString(rs, "description_c"),
+          enabled_c = getBool(rs, "enabled_c"),
+          trust_verified_email_c = getBool(rs, "trust_verified_email_c"),
+          link_account_no_login_c = getBool(rs, "link_account_no_login_c"),
+          gui_order_c = getOptInt(rs, "gui_order_c"),
+          sync_mode_c = rs.getInt("sync_mode_c"),  //  int not null,
+          idp_authorization_url_c = rs.getString("idp_authorization_url_c"),
+          idp_access_token_url_c = rs.getString("idp_access_token_url_c"),
+          idp_user_info_url_c = rs.getString("idp_user_info_url_c"),
+          idp_logout_url_c = getOptString(rs, "idp_logout_url_c"),
+          idp_client_id_c = rs.getString("idp_client_id_c"),
+          idp_client_secret_c = rs.getString("idp_client_secret_c"),
+          idp_issuer_c = getOptString(rs, "idp_issuer_c"),
+          idp_scopes_c = getOptString(rs, "idp_scopes_c"),
+          idp_hosted_domain_c = getOptString(rs, "idp_hosted_domain_c"),
+          idp_send_user_ip_c = getOptBool(rs, "idp_send_user_ip_c"))
+  }
+
 }
 
 
