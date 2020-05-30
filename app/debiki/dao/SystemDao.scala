@@ -394,7 +394,7 @@ class SystemDao(
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site, details) =>
-        logger.error(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
+        logger.warn(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
     } } }

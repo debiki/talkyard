@@ -15,12 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ed.server.dao
+package talkyard.server.auth
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import debiki._
-import debiki.dao.{CreateForumResult, DaoAppSuite, SiteDao}
+import debiki.dao.{DaoAppSuite, SiteDao}
 
 
 class AuthOidcAppSpec extends DaoAppSuite {
@@ -28,37 +26,21 @@ class AuthOidcAppSpec extends DaoAppSuite {
   val when: When = When.fromMillis(3100010001000L)
   val createdAt: When = when.minusMillis(10001000)
 
-  import globals.systemDao
-
-  lazy val dao: SiteDao = {
+  lazy val daoSite1: SiteDao = {
     globals.systemDao.getOrCreateFirstSite()
     globals.siteDao(Site.FirstSiteId)
   }
 
-  lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
-    Who(SystemUserId, browserIdData)).get.pagePath.pageId
+  lazy val forumId: PageId = daoSite1.createForum(
+        title = "Forum to delete", folder = "/", isForEmbCmts = false,
+        Who(SystemUserId, browserIdData)).get.pagePath.pageId
 
   lazy val (site2, daoSite2) = createSite("site2")
 
-  lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/", isForEmbCmts = false,
-    Who(SystemUserId, browserIdData)).get.pagePath.pageId
+  lazy val forumSite2Id: PageId = daoSite2.createForum(
+        title = "Forum site 2", folder = "/", isForEmbCmts = false,
+        Who(SystemUserId, browserIdData)).get.pagePath.pageId
 
-  var admin: Participant = null
-  var pageId: PageId = null
-  var otherPageId: PageId = null
-  var thirdPageId: PageId = null
-
-  var ownerSite2: Participant = null
-  var memberASite2: Participant = null
-  var memberBSite2: Participant = null
-  var memberCSite2: Participant = null
-  var memberDSite2: Participant = null
-  var memberESite2: Participant = null
-
-  var memberASite2Stats: UserStats = null
-  var memberBSite2Stats: UserStats = null
-  var memberCSite2Stats: UserStats = null
-  var memberDSite2Stats: UserStats = null
 
   def makeAndUpsertStats(dao: SiteDao, userId: UserId, minutes: Int): UserStats = {
     val stats = UserStats(
@@ -74,73 +56,89 @@ class AuthOidcAppSpec extends DaoAppSuite {
 
 
   "prepare: create site 1 and 2" in {
-    dao // creates site 1
+    daoSite1 // creates site 1
     daoSite2 // creates site 2, incl owner
   }
 
-  "prepare: create forums" in {
-    forumId // creates forum, site 1
-    forumSite2Id  // creates forum, site 2
-  }
 
-  "prepare: create users" in {
-    admin = createPasswordOwner(s"smr_adm", dao, createdAt = Some(createdAt))
-    ownerSite2 = createPasswordOwner("site2_owner", daoSite2, createdAt = Some(createdAt))
-  }
+  lazy val oidcProvider = IdentityProvider(
+        site_id_c = daoSite1.siteId,
+        id_c = 1,
+        protocol_c = "oidc",
+        alias_c = "odic_alias_site_1",
+        display_name_c = Some("OIDC Displ Name"),
+        description_c = Some("description_c"),
+        enabled_c = true,
+        trust_verified_email_c = true,
+        link_account_no_login_c = false,
+        gui_order_c = None,
+        sync_mode_c = 1,  // for now, always 1 = ImportOnFirstLogin, later, also: SyncOnAllLogins
+        idp_authorization_url_c = "op_authorization_url_c",
+        idp_access_token_url_c = "op_access_token_url_c",
+        idp_user_info_url_c = "op_user_info_url_c",
+        idp_logout_url_c = None,
+        idp_client_id_c = "op_client_id_c",
+        idp_client_secret_c = "op_client_secret_c",
+        idp_issuer_c = Some("op_issuer_c"),
+        idp_scopes_c = Some("op_scopes_c"),
+        idp_hosted_domain_c = Some("op_hosted_domain_c"),
+        idp_send_user_ip_c = None)
+
+  lazy val oidcProviderEdited = IdentityProvider(
+        site_id_c = oidcProvider.site_id_c,
+        id_c = oidcProvider.id_c,
+        protocol_c = "oauth2",
+        alias_c = oidcProvider.alias_c + "_edited",
+        display_name_c = oidcProvider.display_name_c.map(_ + " Edited"),
+        description_c = oidcProvider.description_c.map(_ + " Edited"),
+        enabled_c = !oidcProvider.enabled_c,
+        trust_verified_email_c = !oidcProvider.trust_verified_email_c,
+        link_account_no_login_c = !oidcProvider.link_account_no_login_c,
+        gui_order_c = oidcProvider.gui_order_c.map(_ + 1),
+        sync_mode_c = 1,
+        idp_authorization_url_c = oidcProvider.idp_authorization_url_c + "_edited",
+        idp_access_token_url_c = oidcProvider.idp_access_token_url_c + "_edited",
+        idp_user_info_url_c = oidcProvider.idp_user_info_url_c + "_edited",
+        idp_logout_url_c = oidcProvider.idp_logout_url_c.map(_ + "_edited"),
+        idp_client_id_c = oidcProvider.idp_client_id_c + "_edited",
+        idp_client_secret_c = oidcProvider.idp_client_secret_c + "_edited",
+        idp_issuer_c = oidcProvider.idp_issuer_c.map(_ + "_edited"),
+        idp_scopes_c = oidcProvider.idp_scopes_c.map(_ + "_edited"),
+        idp_hosted_domain_c = oidcProvider.idp_hosted_domain_c.map(_ + "_edited"),
+        idp_send_user_ip_c = oidcProvider.idp_send_user_ip_c.map(!_))
 
 
-  "load UserStats to find users to send summary emails to" - {
-    "find stats for site owner, with limit = 1" in {
-      var savedOwnerStats = makeAndUpsertStats(daoSite2, ownerSite2.id, -60)
-      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
-      stats.size mustBe 1
-      val (siteWithStatsId, loadedOwnerStats) = stats.head
-      siteWithStatsId mustBe daoSite2.siteId
-      loadedOwnerStats.size mustBe 1
-      loadedOwnerStats.head mustBe savedOwnerStats
+  "insert, find, update, find AuthN providers" - {
+    "insert" in {
+      daoSite1.readWriteTransaction { tx =>
+        tx.upsertIdentityProvider(oidcProvider)
+      }
     }
 
-    "change the next-summary date, so it's in the future — now, won't find that user" in {
-      makeAndUpsertStats(daoSite2, ownerSite2.id, +60)
-      // Now, the owner will be skipped, some other user will be found instead, at FirstSiteId.
-      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
-      stats.size mustBe 1
-      val (siteWithStatsId, userStats) = stats.head
-      siteWithStatsId mustBe dao.siteId
+    "read back" in {
+      daoSite1.readOnlyTransaction { tx =>
+        val x = tx.loadIdentityProviderByAlias(oidcProvider.protocol_c, oidcProvider.alias_c)
+        x.get mustBe oidcProvider
+      }
     }
 
-    "create more users" in {
-      memberASite2 = createPasswordUser(s"s2_ma", daoSite2, createdAt = Some(createdAt))
-      memberBSite2 = createPasswordUser(s"s2_mb", daoSite2, createdAt = Some(createdAt))
-      memberCSite2 = createPasswordUser(s"s2_mc", daoSite2, createdAt = Some(createdAt))
-      memberDSite2 = createPasswordUser(s"s2_md", daoSite2, createdAt = Some(createdAt))
-      memberESite2 = createPasswordUser(s"s2_me", daoSite2, createdAt = Some(createdAt))
-
-      memberASite2Stats = makeAndUpsertStats(daoSite2, memberASite2.id, -1)  // 3rd
-      memberBSite2Stats = makeAndUpsertStats(daoSite2, memberBSite2.id, -10) // loaded first
-      memberCSite2Stats = makeAndUpsertStats(daoSite2, memberCSite2.id, -5)  // 2nd
-      memberDSite2Stats = makeAndUpsertStats(daoSite2, memberDSite2.id, +10) // not loaded
-      // member E: next-summary-email-at = null, means unknown, so loaded
+    "update" in {
+      daoSite1.readWriteTransaction { tx =>
+        tx.upsertIdentityProvider(oidcProviderEdited)
+      }
     }
 
-    "check loads correct send-summaries-to stats" in {
-      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 999)
-      stats.size mustBe 2
-      stats.keys must contain(dao.siteId)
-      stats.keys must contain(daoSite2.siteId)
-      val firstSiteStats = stats(dao.siteId)
-      firstSiteStats.size mustBe 1
-      firstSiteStats.head.userId mustBe admin.id
+    "read back after update" in {
+      daoSite1.readWriteTransaction { tx =>
+        // The original one is gone.
+        tx.loadIdentityProviderByAlias(
+              oidcProvider.protocol_c, oidcProvider.alias_c) mustBe None
 
-      val secondSiteStats = stats(daoSite2.siteId)
-      secondSiteStats.size mustBe 4
-      secondSiteStats(0) mustBe memberBSite2Stats // first: -10 is oldest
-      secondSiteStats(1) mustBe memberCSite2Stats // 2nd:   - 5
-      secondSiteStats(2) mustBe memberASite2Stats // 3rd:   - 1 is the most recent
-      // But D: +10 minutes from now = not yet time to send summary email.
-      // E: time-to-send = null = unknown —> sorted last
-      secondSiteStats(3).userId mustBe memberESite2.id
-      secondSiteStats(3).nextSummaryEmailAt mustBe None
+        // New:
+        tx.loadIdentityProviderByAlias(
+              oidcProviderEdited.protocol_c, oidcProviderEdited.alias_c
+              ) mustBe Some(oidcProviderEdited)
+      }
     }
   }
 

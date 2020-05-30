@@ -920,6 +920,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
       delete from blocks3
       delete from guest_prefs3
       delete from identities3
+      delete from identity_providers_t
       delete from invites3
       delete from api_secrets3
       delete from user_visit_stats3

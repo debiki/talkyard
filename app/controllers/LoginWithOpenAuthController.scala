@@ -136,7 +136,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   val realm = "talkyard_keycloak_test_realm"
 
   // just testing
-  private def makeJavaScribeOAuthService(origin: String): s_OAuth20Service = {
+  private def makeJavaScribeOAuthService(origin: String, idp: IdentityProvider)
+        : s_OAuth20Service = {
     val callback = origin + s"/-/login-oidc/$alias/callback"
     new s_ServiceBuilder(keycloakClientId)
           .apiSecret(keycloakClientSecret)
@@ -145,12 +146,43 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           .build(s_KeycloakApi.instance(baseUrl, realm))
   }
 
-  private val scribeOAuth20Service = makeJavaScribeOAuthService("http://localhost")
+  //private val scribeOAuth20Service = makeJavaScribeOAuthService("http://localhost")
 
-  def loginOidcStart(provider: String, returnToUrl: String): Action[Unit] =
-        AsyncGetActionIsLogin { request =>
 
-    val service = scribeOAuth20Service // makeJavaScribeOAuthService(request.origin)
+  def oidcOrOauth2Start(protocol: String, providerAlias: String,
+          returnToUrl: String): Action[Unit]
+          = AsyncGetActionIsLogin { request =>
+      oidcOrOauth2StartImpl(protocol, providerAlias, returnToUrl, request)
+    }
+
+
+  private def oidcOrOauth2StartImpl(protocol: String, providerAlias: String,
+        returnToUrl: String, request: GetRequest): Future[Result] = {
+
+    import request.dao
+
+    protocol match {
+      case "oidc" | "oauth2" =>
+      case _ => throwNotFound("TyEBADPROTO", "TyE603RFKEGM")
+    }
+
+    val customIdp = dao.getIdentityProviderByAlias(protocol, providerAlias) getOrElse {
+      val settings = request.siteSettings
+      // if ! settings  protocol + provider  enabled
+      // return Forbidden / not found
+
+      if (globals.anyLoginOrigin isSomethingButNot originOf(request)) {
+        // OAuth providers have been configured to send authentication data to
+        // anyLoginOrigin.get. We'll redirect to that origin, login there, and it'll
+        // send the user back here.
+        return loginViaLoginOrigin(providerAlias, request.underlying)
+      }
+
+      // throw forbidden, or not found
+      ???
+    }
+
+    val service = makeJavaScribeOAuthService(request.origin, customIdp)
 
     // Obtain the Authorization URL
     System.out.println("Fetching the KeyCloak Authorization URL...")
@@ -163,12 +195,20 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def loginOidcCallback(providerName: String, session_state: String, code: String)
-          : Action[Unit] = AsyncGetActionIsLogin { request =>
+  def oidcOrOauth2Callback(protocol: String, providerAlias: String,
+          session_state: String, code: String): Action[Unit]
+          = AsyncGetActionIsLogin { request =>
 
     // !! check the state !! xsrf
 
-    val service = makeJavaScribeOAuthService(request.origin)
+    val customIdp = request.dao.getIdentityProviderByAlias(protocol, providerAlias) getOrElse {
+      // if  is login origin   fine, use config file default login settings
+      // else
+      //   return forbidden
+      ???
+    }
+
+    val service = makeJavaScribeOAuthService(request.origin, customIdp)
 
     val accessTokenPromise = Promise[s_OAuth2AccessToken]()
     val userInfoPromise = Promise[s_Response]()
@@ -221,7 +261,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         if (httpStatusCode < 200 || 299 < httpStatusCode) {
           logger.warn(i"""Weird status code from userinfo endpoint: $httpStatusCode,
               |Error id: '$randVal'
-              |Provider: $providerName
+              |Provider: $providerAlias
               |Response body:
               |$body
               |""")
@@ -242,8 +282,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def logoutOidc(): Action[Unit] = AsyncGetActionIsLogin { request =>
+  def oidcLogout(): Action[Unit] = AsyncGetActionIsLogin { request =>
     Future.successful(NotImplementedResult("TyEOIDCLGO", "Not implemented"))
+    // TODO backchannel logout from  /-/logout ?
   }
 
 
