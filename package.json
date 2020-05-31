@@ -8,6 +8,7 @@
   "license": "AGPL-3.0",
   "scripts": {
     "watch": "webpack --watch",
+    "exp": "webpack --config webpack.config.tysw.js",
     "dev": "webpack-dev-server --open",
     "build": "webpack"
   },

@@ -1,0 +1,155 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// If the service worker js and the page js, are the same version, they'll
+// accept each other's messages. Otherwise:
+// 1) If the page js is newer, it registers a new up-to-date service worker [REGSW],
+// and waits for it to claim the page. Thereafter the page and the service
+// worker happily talk with each other.
+// 2) If the sw js is newer, it'll reject messages from the page,
+// and tell the page to show a dialog "Please refresh. New version available".
+// This is a separate version number, so won't need to reinstall the service
+// worker, if it didn't change. Hmm?
+export const TalkyardVersion =
+  // @ifdef DEBUG
+  // gulp-preprocess hasn't been configured to processes debug builds ...
+  'debug-build-0001';
+  // @endif
+  // ... only prod builds, so this'll work:
+  '/* @echo TALKYARD_VERSION */';
+
+
+export const ReactStartedClass = 'dw-react-started';
+
+export const EmptyPageId = '0';
+export const NumEmptyPageDummyPosts = 2; // orig post dummy title and body
+
+// When self hosting, exactly one site is created, by default, and its id is FirstSiteId.
+export const FirstSiteId = 1;
+
+export const NoId = 0;
+export const NoCategoryId = 0;
+export const NoPermissionId = 0;
+
+export const NoPostId = -1;  // dupl in reply.js
+export const TitleNr = 0;
+export const BodyNr = 1;
+export const BodyNrStr = '1';
+export const FirstReplyNr = 2;
+export const NoDraftNr = 0;
+
+// Posts nrs below this, are previews of reply drafts not yet published.
+export const MaxVirtPostNr = -1000 * 1000;
+export const MinRealPostNr = TitleNr;
+
+export const NoUserId = 0;
+export const SystemUserId = 1;
+export const SysbotUserId = 2;
+export const MinMemberId = SystemUserId;
+export const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
+export const LowestNormalMemberId = 10;         // also in scala  [S7KPWG42]
+export const MaxUsernameLength = 20;            // in scala [6AKBR20Q]
+
+export const MaxGuestId = -2;
+export const UnknownUserId = -3;
+//export const CurrentUserNotLoggedInId = -1?  or  -4;  ?
+
+export const ReviewDecisionUndoTimoutSeconds = 12; // sync with Scala and test code [2PUKQB0]
+
+export const ManualReadMark = 1;
+export const YellowStarMark = 2;
+export const FirstStarMark = 2;
+export const BlueStarMark = 3;
+export const LastStarMark = 3;
+
+// Sync with Scala, and an input error checker [6KG2W57]
+export const MaxNumFirstPosts = 10;
+
+export const MaxEmailsPerUser = 5;  // also in scala [4GKRDF0]
+
+// If we try to load a user with this id, or a post with this nr, etc, then
+// something is amiss. Can then show and error or do nothing.
+export const TooHighNumber = 100e6;  // [05RKVJWG2]
+
+// Send back IgnoreThisError to the caller from an error callback, and the caller won't
+// continue with its default error handling — it'll ignore the error.
+// Send back undefined or anything else to the caller, and the error will be considered.
+type ErrorPolicy = number | void;
+
+export const IgnoreThisError: ErrorPolicy = -112233;
+export const ShowNoErrorDialog: ErrorPolicy = -112234;
+
+export const UseBeacon = 'UseBeacon';
+
+export const SiteStatusStrings = [
+  'NoAdmin',
+  'Active',
+  'ReadAndCleanOnly',
+  'HiddenUnlessStaff',
+  'HiddenUnlessAdmin',
+  'Deleted',
+  'Purged'];
+
+
+export const ApiUrlPathPrefix = '/-/';
+export const UsersRoot = '/-/users/';
+export const GroupsRoot = '/-/groups/';
+export const SearchRootPath = '/-/search';
+export const AdminRoot = '/-/admin/';
+
+
+export const RoutePathLatest = 'latest';  // change to 'active'?  here too: [394SMDLW20] + 99 more places?
+export const RoutePathNew = 'new';
+export const RoutePathTop = 'top';
+export const RoutePathCategories = 'categories';
+
+
+export const ImpersonationCookieName = 'esCoImp';
+
+
+// Some CSS and layout related constants. [6PFDS3]
+export const UseWideForumLayoutMinWidth = 1000;
+export const UseWidePageLayoutMinWidth = 750;
+export const WatchbarWidth = 230;  // dupl in css [7GYK42]
+export const ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
+
+export const ServerSideWindowWidthMobile = 500;
+export const ServerSideWindowWidthLaptop = 1200;
+
+
+export const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
+
+export const FragActionAndReplyToPost = '&replyToPost';
+export const FragActionAndEditPost = '&editPost';
+export const FragActionHashComposeTopic = '#composeTopic';
+export const FragActionHashComposeMessage = '#composeDirectMessage';
+export const FragActionHashScrollLatest = '#scrollToLatestPost';
+export const FragActionHashScrollToBottom  = '#scrollToBottom';  // rename to ...BottomButtons?
+
+
+// The post nr param looks a bit different, '-' not '=', because it's used in urls to link to
+// posts, so nice if it uses '-' like url tend to do. Whereas the other params are more like
+// api request params to the Javascript code, so then they can look like code & url params?
+export const FragParamPostNr = '#post-';
+export const FragParamCommentNr = '#comment-';
+export const FragParamDraftNr = '&draftNr=';
+export const FragParamReplyType = '&replyType=';
+export const FragParamTopicType = '&topicType=';
+export const FragParamCategoryId = '&categoryId=';
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

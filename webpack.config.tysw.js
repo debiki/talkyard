@@ -2,11 +2,11 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-
 module.exports = {
   mode: 'development',
+
   entry: {
-    print: './client/webpacktest/src/print.js',
+    serviceworker: './client/serviceworker-wptest/service-worker.ts',
     app: './client/webpacktest/src/index.ts',
   },
 
@@ -26,7 +26,7 @@ module.exports = {
   ],
 
   output: {
-    filename: '[name].bundle.js',
+    filename: '[name].js',
     path: path.resolve(__dirname, 'images/web/assets/wp/'),
   },
 
@@ -39,9 +39,12 @@ module.exports = {
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        include: /client\/webpacktest/,
+        include: [
+          /client\/webpacktest/,
+          /client\/serviceworker-wptest/,
+        ],
         // Has no effect
-        exclude: /node_modules/,
+        //exclude: /node_modules/,
 
         //xxinclude: [
         //  path.resolve(__dirname, 'src'),
