@@ -2015,7 +2015,7 @@ const EmailSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.enableOwnEmailServer = target.checked;
           }
-        }),
+        });
 
     const customEmailServerConfig =
         Setting2(props, { type: 'textarea', label: "Email server config",
@@ -2025,12 +2025,12 @@ const EmailSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.ownEmailServerConfig = target.value;
           }
-        }),
+        });
 
     return (
       r.div({},
         enableCustomEmailServer,
-        customEmailServerConfig,
+        customEmailServerConfig));
   },
 });
 
