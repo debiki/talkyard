@@ -1,0 +1,14 @@
+
+<!doctype html>
+<html>
+  <head>
+    <title>Getting Started</title>
+    <!-- script src="https://unpkg.com/lodash@4.16.6"></script -->
+    <script src="print.bundle.js"></script>
+  </head>
+  <body>
+    <h1>TITLE HERE</h1>
+    <!--script src="./src/index.js"></script -->
+    <script src="app.bundle.js"></script>
+  </body>
+</html>
