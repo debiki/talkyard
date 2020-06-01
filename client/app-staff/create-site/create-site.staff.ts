@@ -15,13 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../staff-prelude.staff.ts" />
+import * as _ from 'lodash';
 
-//------------------------------------------------------------------------------
-   namespace debiki2.createsite {
-//------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
+
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const Switch = d2.Switch;
+const Route = d2.Route;
+const RedirToNoSlash = d2.RedirToNoSlash;
+const createClassAndFactory = d2.createClassAndFactory;
+const createFactory = d2.createFactory;
+const utils = d2.utils;
+const Server = d2.Server;
+const anyForbiddenPassword = d2.anyForbiddenPassword;
+const PrimaryButton = d2.PrimaryButton;
+const InputTypeSubmit = d2.InputTypeSubmit;
+//--- / "Importing" old namespace debiki2 ---------------------------------
 
 const PatternInput = utils.PatternInput;
 
@@ -296,7 +308,4 @@ function deriveLocalHostname(embeddingSiteAddress) {
 }
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

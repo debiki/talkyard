@@ -1,9 +1,15 @@
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
+import * as React from 'react';
 
 const r = ReactDOMFactories;
+
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const Server = d2.Server;
+const isNullOrUndefined = d2.isNullOrUndefined;
+const Button = d2.Button;
+//--- / "Importing" old namespace debiki2 ---------------------------------
 
 
 export const ContentsPanel = React.createFactory<AdminPanelProps>(
@@ -62,7 +68,4 @@ export const ContentsPanel = React.createFactory<AdminPanelProps>(
 });
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

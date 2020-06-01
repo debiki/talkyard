@@ -16,11 +16,15 @@
  */
 
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
-
 const r = ReactDOMFactories;
+
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const linkToAdminPageLoginSettings = d2.linkToAdminPageLoginSettings;
+const linkToStaffInvitePage = d2.linkToStaffInvitePage;
+//--- / "Importing" old namespace debiki2 ---------------------------------
+
 
 
 // The admin guide is placed in the sidebar [8YKFW32], because then it'll be accessible from
@@ -75,7 +79,5 @@ export var AdminGuide =
       r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' },
         "support forum", r.span({ className: 'icon-link-ext' })), '.'));
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

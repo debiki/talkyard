@@ -104,3 +104,12 @@ those Git submodules can be squashed or sth like that, making them small again
 — without affecting the history in the main repo (it'd just be updated to point to
 the squashed stuff).
 
+
+
+WebPack not Parcel
+"Parcel performs no type checking. You can use tsc --noEmit to have typescript check your files"
+https://parceljs.org/typeScript.html
+
+"Parcel 2: TypeScript automatic zero configuration not type checking or reading tsconfig.json #4022"
+https://github.com/parcel-bundler/parcel/issues/4022
+

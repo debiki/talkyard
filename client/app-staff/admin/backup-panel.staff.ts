@@ -1,7 +1,6 @@
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 const r = ReactDOMFactories;
 const Modal = rb.Modal;
@@ -9,6 +8,18 @@ const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
+
+
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const utils = d2.utils;
+const Server = d2.Server;
+const PrimaryButton = d2.PrimaryButton;
+const Button = d2.Button;
+const LinkButton = d2.LinkButton;
+//--- / "Importing" old namespace debiki2 ---------------------------------
+
 
 
 export const BackupPanel = React.createFactory<AdminPanelProps>(
@@ -92,7 +103,4 @@ const ImportBackupDiag = React.createFactory(function() {
 });
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

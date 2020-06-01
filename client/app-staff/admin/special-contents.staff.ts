@@ -15,11 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../staff-prelude.staff.ts" />
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const createComponent = d2.createComponent;
+const utils = d2.utils;
+const Server = d2.Server;
+const PrimaryButton = d2.PrimaryButton;
+const Button = d2.Button;
+//--- / "Importing" old namespace debiki2 ---------------------------------
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
 const PageUnloadAlerter = utils.PageUnloadAlerter;
@@ -124,7 +129,5 @@ export var SpecialContent = createComponent({
   }
 });
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

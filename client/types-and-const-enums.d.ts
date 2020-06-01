@@ -273,7 +273,7 @@ const enum DiscussionLayout {
 }
 
 type NestingDepth = number;
-const InfiniteNesting: NestingDepth = -1;  // sync with Scala
+//const InfiniteNesting: NestingDepth = -1;  // sync with Scala
 
 const enum PostSortOrder {
   Default = 0,

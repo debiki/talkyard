@@ -15,12 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../staff-prelude.staff.ts" />
+import * as ReactDOM from 'react-dom';
+
+//  import  moment?  how where
 declare var moment;
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
 const Modal = rb.Modal;
@@ -28,6 +27,24 @@ const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
+
+
+// Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const createComponent = d2.createComponent;
+const createFactory = d2.createFactory;
+const utils = d2.utils;
+const Server = d2.Server;
+const threatLevel_toString = d2.threatLevel_toString;
+const linkToUserProfilePage = d2.linkToUserProfilePage;
+const linkToUsersEmailAddrs = d2.linkToUsersEmailAddrs;
+const Button = d2.Button;
+const ExtLinkButton = d2.ExtLinkButton;
+const trustLevel_toString = d2.trustLevel_toString;
+const Input = d2.Input;
+//--- / "Importing" old namespace debiki2 ---------------------------------
+
 
 
 export const UserProfileAdminView = createFactory({
@@ -565,7 +582,4 @@ const MemberThreatLevelDialog = createComponent({
 });
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
