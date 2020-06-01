@@ -41,6 +41,7 @@
     "@types/assert": "^1.4.7",
     "@types/minimist": "^1.2.0",
     "@types/node": "^14.0.1",
+    "@types/webpack": "^4.41.16",
     "@wdio/cli": "^6.1.11",
     "@wdio/devtools-service": "^6.1.11",
     "@wdio/dot-reporter": "^6.1.9",
@@ -53,7 +54,10 @@
     "@wdio/sync": "^6.1.8",
     "ansi-colors": "^4.1.1",
     "chromedriver": "^81.0.0",
+    "clean-webpack-plugin": "^3.0.0",
     "del": "^5.1.0",
+    "fork-ts-checker-notifier-webpack-plugin": "^2.0.0",
+    "fork-ts-checker-webpack-plugin": "^4.1.6",
     "gulp": "^4.0.2",
     "gulp-clean-css": "^4.3.0",
     "gulp-cli": "^2.2.0",
@@ -78,10 +82,14 @@
     "request": "^2.88.2",
     "stylus": "^0.54.7",
     "sync-request": "^6.1.0",
+    "ts-loader": "^7.0.5",
     "ts-node": "^8.10.1",
     "tsconfig-paths": "^3.9.0",
     "typescript": "^3.9.2",
-    "wdio-chromedriver-service": "^6.0.3"
+    "wdio-chromedriver-service": "^6.0.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0"
   },
   "resolutions": {
     "stylus": "0.54.7"

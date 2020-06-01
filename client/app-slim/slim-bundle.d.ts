@@ -1,6 +1,6 @@
 
 /// <reference path="server-vars.d.ts" />
-/// <reference path="model.ts" />
+/// <reference path="model.d.ts" />
 /// <reference path="translations.d.ts" />
 
 declare const t: TalkyardTranslations;
@@ -13,7 +13,7 @@ declare const ReactDOMFactories: any;
 declare function createReactClass<P, S = {}>(spec: React.ComponentSpec<P, S>):
     React.ClassicComponentClass<P>;
 
-declare function reactCreateFactory(x);
+declare function reactCreateFactory<Props>(x);
 declare const rFragment: any;
 
 declare function doNextFrameOrNow(x);

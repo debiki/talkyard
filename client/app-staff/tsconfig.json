@@ -1,16 +1,19 @@
 {
     "compilerOptions": {
-        "target": "ES5",
+        "target": "es6",
         "removeComments": false,
-        "lib": ["es5", "es2015", "dom"],
+        "lib": ["es5", "es6", "dom"],
         "types": ["react", "react-dom", "lodash", "core-js"],
-        "outFile": "staff-typescript.js",
+            // "./client/app-slim/model.d.ts", "../app-slim/slim-bundle.d.ts"],
+            // "../app-slim/model.d.ts", "../app-slim/slim-bundle.d.ts"],
+            //"model.d", "server-vars.d.ts", "slim-bundle.d.ts",
+            //"staff-bundle-already-loaded.d.ts", "translations.d.ts"],
+        // "outFile": "staff-typescript.js",
         "sourceMap": true,
         "inlineSources": true  // include source code in mapping file
     },
     "include": [
         "**/*.ts",
-        "../app-slim/slim-bundle.d.ts",
     ],
     "exclude": [
         "staff-bundle-already-loaded.d.ts",

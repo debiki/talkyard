@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="./../types-and-const-enums.ts" />
+/// <reference path="./../types-and-const-enums.d.ts" />
 /// <reference path="./../third-party/third-party-types.d.ts" />
 
 type DateMs = WhenMs;  // use When instead? sounds better since using When server side too
@@ -47,7 +47,7 @@ interface MayMayNot {
 }
 
 
-const enum MagicAnchor {
+declare const enum MagicAnchor {
   ScrollToLatest = 1,
 }
 
@@ -86,7 +86,7 @@ interface FragAction {
 }
 
 
-const enum FragActionType {
+declare const enum FragActionType {
   // Javascript-scrolls to show the #hash-fragment, taking the topbar height into account.
   ScrollToSelector = 11,
   ScrollToPost = 12,
@@ -329,7 +329,7 @@ interface Post {
 
 
 // Determines which write-post guidelines will be shown in the editor.
-const enum WritingWhat {
+declare const enum WritingWhat {
   NewPage = 1,
   ReplyToOriginalPost = 2,
   ReplyToNotOriginalPost = 3,
@@ -588,7 +588,7 @@ interface TalkyardTourStep {
   highlightOffsetY?: number;
 }
 
-const enum PlaceHow {
+declare const enum PlaceHow {
   ToTheLeft = 1,
   ToTheRight = 2,
   Above = 3,
@@ -696,7 +696,7 @@ interface Watchbar {
 }
 
 
-const enum WatchbarSection {
+declare const enum WatchbarSection {
   SubCommunities = 1,
   RecentTopics = 2,
   ChatChannels = 3,
@@ -1008,7 +1008,7 @@ interface TopicInterfaceSettings {
 }
 
 
-const enum WidthLayout {
+declare const enum WidthLayout {
   Tiny = 1,
   Medium = 3,
 }
@@ -1075,7 +1075,7 @@ interface SpecialContent {
 }
 
 
-const enum AvatarSize {
+declare const enum AvatarSize {
   Tiny = 1, // the default
   Small = 2,
   Medium = 3,
@@ -1218,7 +1218,7 @@ interface UiPrefs {
   xls?: UiPrefsExternaLInks;
 }
 
-const enum UiPrefsIninePreviews {
+declare const enum UiPrefsIninePreviews {
   // Only an in-page preview, no in editor preview
   Show = 1, // RENAME to Only?
   // No in-page preview
@@ -1227,18 +1227,18 @@ const enum UiPrefsIninePreviews {
   Double = 3,
 }
 
-const enum UiPrefsForumButtons {
+declare const enum UiPrefsForumButtons {
   CategoryDropdownFirst = 1,
   TopicFilterFirst = 2,
 }
 
-const enum UiPrefsExternaLInks {
+declare const enum UiPrefsExternaLInks {
   OpenInSameTab = 1,
   OpenInNewTab = 2,
 }
 
 
-const enum EditMemberAction {
+declare const enum EditMemberAction {
   SetEmailVerified = 1,
   SetEmailUnverified = 2,
 
@@ -1269,7 +1269,7 @@ interface UserLoginMethods {
 }
 
 
-const enum LoginReason {
+declare const enum LoginReason {
   SignUp = 13,
   LoginToChat = 10,
   LoginToLike = 11,
@@ -1281,7 +1281,7 @@ const enum LoginReason {
 }
 
 
-const enum Presence {
+declare const enum Presence {
   Active = 1,
   Away = 2,
 }
@@ -1816,7 +1816,7 @@ interface IframeOffsetWinSize {
 // ----- Service worker messages  [sw]
 
 
-const enum SwDo {  // Service worker, do: ....
+declare const enum SwDo {  // Service worker, do: ....
   TellMeYourVersion = 1,
   SubscribeToEvents = 2,
   StartMagicTime = 3,
@@ -1880,7 +1880,7 @@ interface PlayTimeSwMessage extends MessageToServiceWorker {
 }
 
 
-const enum SwSays {  // The service worker says: ....
+declare const enum SwSays {  // The service worker says: ....
   MyVersionIs = 1,
 }
 

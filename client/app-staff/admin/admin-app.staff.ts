@@ -15,24 +15,275 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../staff-prelude.staff.ts" />
-/// <reference path="review-all.staff.ts" />
-/// <reference path="review-posts.staff.ts" />
-/// <reference path="api-panel.staff.ts" />
-/// <reference path="users.staff.ts" />
-/// <reference path="contents-panel.staff.ts" />
-/// <reference path="backup-panel.staff.ts" />
-/// <reference path="users-one.staff.ts" />
-/// <reference path="hostname-editor.staff.ts" />
+/// <reference path="../model.d.ts" />
+/// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../../app-more/more-bundle-already-loaded.d.ts" />
 
-declare const _me: Myself;  // [7UKWBA2]
+import * as _ from 'lodash';
+import { UsersTab } from './users.staff';
+import { ContentsPanel } from './contents-panel.staff';
+import { BackupPanel } from './backup-panel.staff';
+import { ApiPanel } from './api-panel.staff';
+import { ReviewAllPanel } from './review-all.staff';
+import { staffTours } from './staff-tours.staff';
+import { openHostnameEditor } from './hostname-editor.staff';
+import { SpecialContent } from './special-contents.staff';
 
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
+
+declare global {
+  const _me: Myself;  // [7UKWBA2]
+}
 
 const r = ReactDOMFactories;
+
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const logM = d2.logM;
+const logD = d2.logD;
+
+const getMainWin = d2.getMainWin;
+const getMainWinStore = d2.getMainWinStore;
+const win_canUseCookies = d2.win_canUseCookies;
+
+const getNowMs = d2.getNowMs;
+
+const iframeOffsetWinSize = d2.iframeOffsetWinSize;
+
+const oneIfDef = d2.oneIfDef;
+
+const $first = d2.$first;
+const $all = d2.$all;
+const $byId = d2.$byId;
+//const $$ = d2.$$;
+const $h = d2.$h;
+
+const flashPostNrIfThere = d2.flashPostNrIfThere;
+
+// React-Router:
+const Router = d2.Router;
+const Switch = d2.Switch;
+const Route = d2.Route;
+const Redirect = d2.Redirect;
+const RedirPath = d2.RedirPath;
+const RedirToNoSlash = d2.RedirToNoSlash;
+const RedirAppend = d2.RedirAppend;
+const Link = d2.Link;
+const NavLink = d2.NavLink;
+const LiNavLink = d2.LiNavLink;
+const LiExtLink = d2.LiExtLink;
+
+const createComponent = d2.createComponent;
+const createClassAndFactory = d2.createClassAndFactory;
+const createFactory = d2.createFactory;
+
+
+const replaceById = d2.replaceById;
+const deleteById = d2.deleteById;
+
+const notfs = d2.notfs;
+
+const utils = d2.utils;
+
+const util = d2.util;
+const help = d2.help;
+const topbar = d2.topbar;
+const sidebar = d2.sidebar;
+const editor = d2.editor;
+const login = d2.login;
+
+const reactGetRefRect = d2.reactGetRefRect;
+const Server = d2.Server;
+const StoreListenerMixin = d2.StoreListenerMixin;
+
+const useStoreState = d2.useStoreState;
+const ReactActions = d2.ReactActions;
+
+const ReactStore = d2.ReactStore;
+
+const findDOMNode = d2.findDOMNode;
+const die = d2.die;
+const dieIf = d2.dieIf;
+const scrollToBottom = d2.scrollToBottom;
+const prettyBytes = d2.prettyBytes;
+const reactelements = d2.reactelements;
+const hashStringToNumber = d2.hashStringToNumber;
+
+const stableStringify = d2.stableStringify;
+
+const canUseLocalStorage = d2.canUseLocalStorage;
+const putInLocalStorage = d2.putInLocalStorage;
+const putInSessionStorage = d2.putInSessionStorage;
+const getFromLocalStorage = d2.getFromLocalStorage;
+const getFromSessionStorage = d2.getFromSessionStorage;
+const removeFromLocalStorage = d2.removeFromLocalStorage;
+const removeFromSessionStorage = d2.removeFromSessionStorage;
+
+const BrowserStorage = d2.BrowserStorage;
+
+const event_isCtrlEnter = d2.event_isCtrlEnter;
+const event_isEscape = d2.event_isEscape;
+const page_isChat = d2.page_isChat;
+const page_isPrivateGroup = d2.page_isPrivateGroup;
+const pageRole_iconClass = d2.pageRole_iconClass;
+
+const me_uiPrefs = d2.me_uiPrefs;
+const member_isBuiltIn = d2.member_isBuiltIn;
+const user_isSuspended = d2.user_isSuspended;
+const user_threatLevel = d2.user_threatLevel;
+const user_trustLevel = d2.user_trustLevel;
+const user_isGone = d2.user_isGone;
+
+const uppercaseFirst = d2.uppercaseFirst;
+const firstDefinedOf = d2.firstDefinedOf;
+const groupByKeepOne = d2.groupByKeepOne;
+const isNullOrUndefined = d2.isNullOrUndefined;
+const isDefined2 = d2.isDefined2;
+const nonEmpty = d2.nonEmpty;
+const isDigitsOnly = d2.isDigitsOnly;
+const isBlank = d2.isBlank;
+
+const whenMsToIsoDate = d2.whenMsToIsoDate;
+
+const seemsSelfHosted = d2.seemsSelfHosted;
+const isInSomeEmbCommentsIframe = d2.isInSomeEmbCommentsIframe;
+const isBlogCommentsSite = d2.isBlogCommentsSite;
+const isCommunitySite = d2.isCommunitySite;
+
+const isWikiPost = d2.isWikiPost;
+const isStaff = d2.isStaff;
+const user_isTrustMinNotThreat = d2.user_isTrustMinNotThreat;
+const threatLevel_toString = d2.threatLevel_toString;
+const isGuest = d2.isGuest;
+const user_isGuest = d2.user_isGuest;
+const store_maySendDirectMessageTo = d2.store_maySendDirectMessageTo;
+const page_isGroupTalk = d2.page_isGroupTalk;
+
+const store_getAuthorOrMissing = d2.store_getAuthorOrMissing;
+const store_getUserOrMissing = d2.store_getUserOrMissing;
+const store_thisIsMyPage = d2.store_thisIsMyPage;
+
+const draftType_toPostType = d2.draftType_toPostType;
+const postType_toDraftType = d2.postType_toDraftType;
+const store_findTheDefaultCategory = d2.store_findTheDefaultCategory;
+const store_ancestorsCategoriesCurrLast = d2.store_ancestorsCategoriesCurrLast;
+const store_findCatsWhereIMayCreateTopics = d2.store_findCatsWhereIMayCreateTopics;
+const store_getPostId = d2.store_getPostId;
+
+const page_makePostPatch = d2.page_makePostPatch;
+const store_makeDraftPostPatch = d2.store_makeDraftPostPatch;
+
+const post_makePreviewIdNr = d2.post_makePreviewIdNr;
+
+const store_makeNewPostPreviewPatch = d2.store_makeNewPostPreviewPatch;
+const store_makeEditsPreviewPatch = d2.store_makeEditsPreviewPatch;
+const store_makeDeletePreviewPostPatch = d2.store_makeDeletePreviewPostPatch;
+
+const hasErrorCode = d2.hasErrorCode;
+const page_mayChangeRole = d2.page_mayChangeRole;
+const page_canToggleClosed = d2.page_canToggleClosed;
+const store_maySendInvites = d2.store_maySendInvites;
+const isMember = d2.isMember;
+const userId_isGuest = d2.userId_isGuest;
+const store_isNoPage = d2.store_isNoPage;
+const store_isPageDeleted = d2.store_isPageDeleted;
+const store_canDeletePage = d2.store_canDeletePage;
+const store_canUndeletePage = d2.store_canUndeletePage;
+const store_canPinPage = d2.store_canPinPage;
+const siteStatusToString = d2.siteStatusToString;
+const cloneRect = d2.cloneRect;
+const cloneEventTargetRect = d2.cloneEventTargetRect;
+
+const origin = d2.origin;
+const linkToPageId = d2.linkToPageId;
+const linkToPostNr = d2.linkToPostNr;
+const linkToDraftSource = d2.linkToDraftSource;
+const linkToNotificationSource = d2.linkToNotificationSource;
+const linkToAdminPageAdvancedSettings = d2.linkToAdminPageAdvancedSettings;
+const linkToRedirToAboutCategoryPage = d2.linkToRedirToAboutCategoryPage;
+const linkToUserInAdminArea = d2.linkToUserInAdminArea;
+const linkToSendMessage = d2.linkToSendMessage;
+const linkToUserProfilePage = d2.linkToUserProfilePage;
+const pathTo = d2.pathTo;
+const linkToUsersNotfs = d2.linkToUsersNotfs;
+const linkToMembersNotfPrefs = d2.linkToMembersNotfPrefs;
+const linkToInvitesFromUser = d2.linkToInvitesFromUser;
+const linkToUsersEmailAddrs = d2.linkToUsersEmailAddrs;
+const linkToAdminPage = d2.linkToAdminPage;
+const linkToAdminPageLoginSettings = d2.linkToAdminPageLoginSettings;
+const linkToAdminPageModerationSettings = d2.linkToAdminPageModerationSettings;
+const linkToAdminPageEmbeddedSettings = d2.linkToAdminPageEmbeddedSettings;
+const linkToReviewPage = d2.linkToReviewPage;
+const linkToStaffInvitePage = d2.linkToStaffInvitePage;
+const externalLinkToAdminHelp = d2.externalLinkToAdminHelp;
+const linkToGroups = d2.linkToGroups;
+const linkToMyDraftsEtc = d2.linkToMyDraftsEtc;
+const linkToMyProfilePage = d2.linkToMyProfilePage;
+const linkToUpload = d2.linkToUpload;
+const linkToResetPassword = d2.linkToResetPassword;
+
+const anyForbiddenPassword = d2.anyForbiddenPassword;
+
+const isSection = d2.isSection;
+const page_isClosedNotDone = d2.page_isClosedNotDone;
+const page_hasDoingStatus = d2.page_hasDoingStatus;
+const page_canChangeCategory = d2.page_canChangeCategory;
+const page_mostRecentPostNr = d2.page_mostRecentPostNr;
+
+const settings_showCategories = d2.settings_showCategories;
+const settings_showFilterButton = d2.settings_showFilterButton;
+const settings_showTopicTypes = d2.settings_showTopicTypes;
+const settings_selectTopicType = d2.settings_selectTopicType;
+
+
+const timeExact = d2.timeExact;
+
+const avatar = d2.avatar;
+
+const pageNotfPrefTarget_findEffPref = d2.pageNotfPrefTarget_findEffPref;
+const notfPref_title = d2.notfPref_title;
+const notfLevel_descr = d2.notfLevel_descr;
+const makeWhyNotfLvlInheritedExpl = d2.makeWhyNotfLvlInheritedExpl;
+
+const edithistory = d2.edithistory;
+const forum = d2.forum;
+const page = d2.page;
+const pagedialogs = d2.pagedialogs;
+const SelectCategoryDropdown = d2.SelectCategoryDropdown;
+
+  // From widgets.ts:
+const OnlyAdminsSee = d2.OnlyAdminsSee;
+const PrimaryButton = d2.PrimaryButton;
+const Button = d2.Button;
+const PrimaryLinkButton = d2.PrimaryLinkButton;
+const ExtLinkButton = d2.ExtLinkButton;
+const LinkUnstyled = d2.LinkUnstyled;
+const LinkButton = d2.LinkButton;
+const InputTypeSubmit = d2.InputTypeSubmit;
+const MenuItem = d2.MenuItem;
+const MenuItemLink = d2.MenuItemLink;
+const MenuItemsMany = d2.MenuItemsMany;
+const MenuItemDivider = d2.MenuItemDivider;
+const UserName = d2.UserName;
+const FacebookLogoImage = d2.FacebookLogoImage;
+
+  // From oop-methods.ts:
+const userStats_totalNumPosts = d2.userStats_totalNumPosts;
+const userStats_totalNumPostsRead = d2.userStats_totalNumPostsRead;
+const trustLevel_toString = d2.trustLevel_toString;
+
+// more-bundle
+const Input = d2.Input;
+const users = d2.users;
+const pagetools = d2.pagetools;
+const search = d2.search;
+const subcommunities = d2.subcommunities;
+const nopage = d2.nopage;
+const titleeditor = d2.titleeditor;
+//--- / "Importing" old namespace debiki2 ---------------------------------
+
+
+
 const Alert = rb.Alert;
 
 const PageUnloadAlerter = utils.PageUnloadAlerter;
@@ -2837,7 +3088,4 @@ function TipsLink(props: { to: string }, text: string) {
 }
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

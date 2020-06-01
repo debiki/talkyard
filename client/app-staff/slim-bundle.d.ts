@@ -1,0 +1,1 @@
+../app-slim/slim-bundle.d.ts

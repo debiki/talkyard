@@ -15,11 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../staff-prelude.staff.ts" />
+import * as ReactDOM from 'react-dom';
 
-//------------------------------------------------------------------------------
-   namespace debiki2.admin {
-//------------------------------------------------------------------------------
+ // Migrating to WebPack, temporary code:
+//----- "Importing" old namespace debiki2 ---------------------------------
+const d2 = debiki2;
+const utils = d2.utils;
+const util = d2.util;
+const createComponent = d2.createComponent;
+const Server = d2.Server;
+const linkToAdminPageAdvancedSettings = d2.linkToAdminPageAdvancedSettings;
+const PrimaryButton = d2.PrimaryButton;
+const Button = d2.Button;
+//--- / "Importing" old namespace debiki2 ---------------------------------
+
 
 const r = ReactDOMFactories;
 const Modal = rb.Modal;
@@ -120,7 +129,4 @@ const HostnameEditorDialog = createComponent({
 });
 
 
-//------------------------------------------------------------------------------
-   }
-//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

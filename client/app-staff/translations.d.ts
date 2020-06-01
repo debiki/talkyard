@@ -1,0 +1,1 @@
+../app-slim/translations.d.ts
