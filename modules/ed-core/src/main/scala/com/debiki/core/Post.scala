@@ -672,11 +672,12 @@ case class SimplePostPatch(
   pageRef: ParsedRef,
   parentNr: Option[PostNr],
   authorRef: ParsedRef,
-  body: String
-  // later: bodyMarkupLang: Option[MarkupLang]
-  ) {
+  bodySource: String,
+  // Could incl this field when importing sites / lots-of-data too? [IMPCORH]
+  bodyMarkupLang: Option[MarkupLang],
+) {
 
-  throwIllegalArgumentIf(body.isEmpty, "TyE602MKDPA", "Text is empty")
+  throwIllegalArgumentIf(bodySource.isEmpty, "TyE602MKDPA", "Text is empty")
   throwIllegalArgumentIf(postType == PostType.ChatMessage && parentNr.isDefined,
     "TyE50RKT0R2", o"""Currently chat messages cannot have a parentNr field; replying to other
     chat messages not yet implemented. Remove 'parentNr' please.""")

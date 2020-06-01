@@ -6,6 +6,11 @@ Instead of this file, maybe use a combination of:
  (- https://git-scm.com/docs/git-notes? )
  (- https://github.com/google/git-appraise )
 
+[immutable]
+Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
+https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
+(React wants immutable.)
+
 [subcats]
 Implement sub categories.
 
@@ -223,12 +228,17 @@ https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
 [like-notfs]
 Send notifications about getting a Like.
 
-[refactor-notfs]
-Remove Nchan. Use Rust + server-sent-events instead.
+[refactor-notfs]  DONE, except for re-enabling reconnect.
+Remove Nchan. Use Rust + server-sent-events instead.  NO, just Play and WebSocket now.
 
 
 [external-server-js]
+What? Same as [ext_markup_processor] ?
 
+[ext_markup_processor]
+Convert commonmark to html in external process / server, not in the JVM.
+Works ok in the JVM, however, if importing a large site with thousands of posts to
+process, that'd almost be a self-DoS. Better delegate to other server.
 
 [rich-text-editor]
 Later, support not only CommonMark but also rich text wysiwyg.
@@ -245,6 +255,9 @@ Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:
 https://reacttraining.com/blog/react-router-v5-1/
 But rename useParams to useUrlParams !?
 
+[bot_api]  [plugin]
+Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
+server / bot.
 
 [Scala_213]
 Try —> Using

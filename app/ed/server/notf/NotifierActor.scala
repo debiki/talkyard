@@ -130,6 +130,8 @@ class NotifierActor (val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactor
 
 
   CLEAN_UP; REFACTOR // break out to ed.server.utx.SomeNewClass? Later...  UtxDao maybe?
+  // Answer: This can instead be an external bot / server [bot_api], which once a day
+  // looks at new signups (queries Ty's API) and sends emails.
   private def createAndSendUtxReminderEmails(): Unit = {  // [plugin]
     val now = globals.now()
     val aDayAgo = now.minusDays(1)

@@ -1098,6 +1098,13 @@ case class SitePatchParser(context: EdContext) {
         case v => return Bad(s"Page extId '$extId' has bad page member ref: $v  [TyE406KSTJ3]")
       }.toVector
 
+      // Dupl code [02956KTU]
+      val bodyMarkupLang = readOptString(jsObj, "bodyMarkupLang") map { langName =>
+        MarkupLang.fromString(langName) getOrElse {
+          return Bad(s"Unknown markup language: $langName  [TyE205AUTD3]")
+        }
+      }
+
       Good(SimplePagePatch(
         extId = extId,
         pageType = pageType,
@@ -1107,7 +1114,8 @@ case class SitePatchParser(context: EdContext) {
         authorRef = Some(readString(jsObj, "authorRef")),
         pageMemberRefs = pageMemberRefs,
         title = readString(jsObj, "title").take(MaxTitleLength),
-        body = readString(jsObj, "body")))
+        bodySource = readString(jsObj, "body"),
+        bodyMarkupLang = bodyMarkupLang))
     }
     catch {
       case ex: IllegalArgumentException =>
@@ -1400,13 +1408,20 @@ case class SitePatchParser(context: EdContext) {
     try {
       val anyPostTypeInt = readOptInt(jsObj, "postType")
       val postType: PostType = anyPostTypeInt.flatMap(PostType.fromInt) getOrElse PostType.Normal
+      // Dupl code [02956KTU]
+      val markupLang = readOptString(jsObj, "bodyMarkupLang") map { langName =>
+        MarkupLang.fromString(langName) getOrElse {
+          return Bad(s"Unknown markup language: $langName  [TyE502RKDHL6]")
+        }
+      }
       Good(SimplePostPatch(
         extId = extId,
         postType = postType,
         pageRef = readParsedRef(jsObj, "pageRef", allowParticipantRef = false),
         parentNr = readOptInt(jsObj, "parentNr"),
         authorRef = readParsedRef(jsObj, "authorRef", allowParticipantRef = true),
-        body = readString(jsObj, "body")))
+        bodySource = readString(jsObj, "body"),
+        bodyMarkupLang = markupLang))
     }
     catch {
       case ex: IllegalArgumentException =>

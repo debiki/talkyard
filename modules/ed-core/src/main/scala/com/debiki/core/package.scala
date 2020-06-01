@@ -89,6 +89,17 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  sealed abstract class MarkupLang
+  object MarkupLang {
+    case object Html extends MarkupLang
+    case object CommonMark extends MarkupLang
+
+    def fromString(value: String): Option[MarkupLang] = Some(value match {
+      case "HTML" => Html
+      case "CommonMark" => CommonMark
+      case _ => return None
+    })
+  }
 
   // Avoid exposing ExtIds. It's best if strangers and non-staff members cannot see
   // them anywhere. Because ext ids might include numbers that makes it possible

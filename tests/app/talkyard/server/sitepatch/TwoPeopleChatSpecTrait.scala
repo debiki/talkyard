@@ -50,14 +50,14 @@ trait TwoPeopleChatSpecTrait {
       authorRef = alice.extId.map("extid:" + _),
       pageMemberRefs = Vector(alice.extIdAsRef.get, bob.extIdAsRef.get),
       title = "Chat Page Title",
-      body = "Chat between Alice and Bob")
+      bodySource = "Chat between Alice and Bob")
 
     lazy val chatPagePatch2 = chatPagePatch.copy(
       extId = "chatPage2ExtId",
       authorRef = sarah.extId.map("extid:" + _),
       pageMemberRefs = Vector(sarah.extIdAsRef.get, sanjo.extIdAsRef.get),
       title = "Chat Page Title 2",
-      body = "Chat between Sarah and Sanjo")
+      bodySource = "Chat between Sarah and Sanjo")
 
 
     def makeChatMessage(extId: ExtId, pagePatch: SimplePagePatch,
@@ -68,7 +68,7 @@ trait TwoPeopleChatSpecTrait {
         pageRef = ParsedRef.ExternalId(pagePatch.extId),
         parentNr = None,
         authorRef = author.extIdAsRef.get,
-        body = text)
+        bodySource = text)
 
 
     "Create anew site with a chat topic" in {
@@ -104,9 +104,9 @@ trait TwoPeopleChatSpecTrait {
           //alicesPost.pageId mustBe ???
           alicesPost.nr mustBe FirstReplyNr
           alicesPost.createdById mustBe alice.id
-          alicesPost.currentSource mustBe aliceSaysHiBobMessage.body
+          alicesPost.currentSource mustBe aliceSaysHiBobMessage.bodySource
           alicesPost.currentRevisionById mustBe alice.id
-          alicesPost.approvedHtmlSanitized.get must include(aliceSaysHiBobMessage.body)
+          alicesPost.approvedHtmlSanitized.get must include(aliceSaysHiBobMessage.bodySource)
         },
         // One notf to Bob about Alice's message:
         numNewNotfs = 1,
@@ -173,7 +173,7 @@ trait TwoPeopleChatSpecTrait {
     lazy val bobSaysHiAliceMessage = aliceSaysHiBobMessage.copy(
       extId = "bobSaysHiAliceMessage-ext-id",
       authorRef = bob.extIdAsRef.get,
-      body = "Yes Bob is my name. How did you know? ... Mind reading? " +
+      bodySource = "Yes Bob is my name. How did you know? ... Mind reading? " +
         "But I wasn't thinking about my name")
 
     "Bob replies" in {
@@ -192,7 +192,7 @@ trait TwoPeopleChatSpecTrait {
         lastPostById = bob.id,
         lastPostCheckFn = (post: Post) => {
           bobsPost = post
-          post.currentSource mustBe bobSaysHiAliceMessage.body
+          post.currentSource mustBe bobSaysHiAliceMessage.bodySource
         },
         // A notf to Alice:
         numNewNotfs = 1,
@@ -231,7 +231,7 @@ trait TwoPeopleChatSpecTrait {
         lastPostById = sarah.id,
         lastPostCheckFn = (post: Post) => {
           sarahsPost = post
-          sarahsPost.currentSource mustBe sarahSaysHiSanjoMessage.body
+          sarahsPost.currentSource mustBe sarahSaysHiSanjoMessage.bodySource
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -267,7 +267,7 @@ trait TwoPeopleChatSpecTrait {
         lastPostById = sanjo.id,
         lastPostCheckFn = (post: Post) => {
           sanjosPost = post
-          sanjosPost.currentSource mustBe sanjoRelpiesMessage.body
+          sanjosPost.currentSource mustBe sanjoRelpiesMessage.bodySource
         },
         // A notf to Sarah:
         numNewNotfs = 1,
@@ -349,7 +349,7 @@ trait TwoPeopleChatSpecTrait {
         lastPostById = sarah.id,
         lastPostCheckFn = (post: Post) => {
           sarahsPost = post
-          sarahsPost.currentSource mustBe sarahRepliesMessage.body
+          sarahsPost.currentSource mustBe sarahRepliesMessage.bodySource
         },
         // A notf to Sanjo:
         numNewNotfs = 1,
@@ -366,7 +366,7 @@ trait TwoPeopleChatSpecTrait {
 
     lazy val aliceRepliesToBobMessage = aliceSaysHiBobMessage.copy(
       extId = "aliceRepliesToBobMessage-ext-id",
-      body = "Bob, I call everyone Bob")
+      bodySource = "Bob, I call everyone Bob")
 
     "Alice replies to Bob" in {
       val simplePatch = SimpleSitePatch(
@@ -383,7 +383,7 @@ trait TwoPeopleChatSpecTrait {
         lastPostById = alice.id,
         lastPostCheckFn = (lastPost: Post) => {
           alicesPost = lastPost
-          alicesPost.currentSource mustBe aliceRepliesToBobMessage.body
+          alicesPost.currentSource mustBe aliceRepliesToBobMessage.bodySource
         },
         // One notf to Bob about Alice's message:
         numNewNotfs = 1,

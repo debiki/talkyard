@@ -345,7 +345,8 @@ case class SimpleSitePatch(
         // Sync the title with CategoryToSave [G204MF3]
         titleHtmlUnsafe = s"Description of the $theCategoryName category",
         bodyPostExtId = categoryPatch.extImpId.map(_ + "_about_page_body"),
-        bodyHtmlUnsafe = theCategoryDescription)
+        bodyHtmlUnsafe = theCategoryDescription,
+        bodyMarkupLang = Some(MarkupLang.Html))
         .badMap { problem => return Bad(problem) }
     }
 
@@ -381,7 +382,8 @@ case class SimpleSitePatch(
         titlePostExtId = Some(pagePatch.extId + "_title"),
         titleHtmlUnsafe = pagePatch.title,
         bodyPostExtId = Some(pagePatch.extId + "_body"),
-        bodyHtmlUnsafe = pagePatch.body)
+        bodyHtmlUnsafe = pagePatch.bodySource,
+        bodyMarkupLang = pagePatch.bodyMarkupLang)
         .badMap { problem => return Bad(problem) }
     }
 
@@ -396,7 +398,9 @@ case class SimpleSitePatch(
       titleHtmlUnsafe: String,
       titlePostExtId: Option[ExtId],
       bodyHtmlUnsafe: String,
-      bodyPostExtId: Option[ExtId]): Unit Or ErrorMessage = {
+      bodyPostExtId: Option[ExtId],
+      bodyMarkupLang: Option[MarkupLang]): Unit Or ErrorMessage = {
+
       // Page already exists?
       val pageMetaInDb: Option[PageMeta] =
         pageExtId.flatMap(extId => dao.getPageMetaByExtId(extId))
@@ -430,10 +434,20 @@ case class SimpleSitePatch(
         pageSlug = pageSlug,
         canonical = true))
 
-      // Assume the page title and body source is html, not CommonMark.
-      // Later, could add a field title/bodyMarkupLang: 'Html' or 'Commonmark'? [IMPCORH]
-      //
-      val bodyHtmlSanitized = Jsoup.clean(bodyHtmlUnsafe, TextAndHtml.relaxedHtmlTagWhitelist)
+      // Dupl code [IMPCORH]
+      val bodyHtmlSanitized =
+        if (bodyMarkupLang is MarkupLang.Html) {
+          Jsoup.clean(bodyHtmlUnsafe, TextAndHtml.relaxedHtmlTagWhitelist)
+        }
+        else {
+          val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
+          val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+            bodyHtmlUnsafe,
+            embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+            followLinks = false)
+          textAndHtml.safeHtml
+        }
+
       val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
 
       nextPostId += 1
@@ -575,21 +589,33 @@ case class SimpleSitePatch(
         return Bad(s"Author not found: '${postPatch.authorRef}' [TyE502KTDXG52]")
       }
 
-      val htmlSanitized = Jsoup.clean(postPatch.body, TextAndHtml.relaxedHtmlTagWhitelist)
+      // Dupl code [IMPCORH]
+      val htmlSanitized =
+        if (postPatch.bodyMarkupLang is MarkupLang.Html) {
+          Jsoup.clean(postPatch.bodySource, TextAndHtml.relaxedHtmlTagWhitelist)
+        }
+        else {
+          val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
+          val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+                postPatch.bodySource,
+                embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+                followLinks = false)
+          textAndHtml.safeHtml
+        }
 
       val post = Post.create(
-        uniqueId = nextPostId,
-        extImpId = Some(postPatch.extId),
-        pageId = pageId,
-        postNr = postNr,
-        parent = parentPost,
-        multireplyPostNrs = Set.empty,
-        postType = postPatch.postType,
-        createdAt = now.toJavaDate,
-        createdById = author.id,
-        source = postPatch.body,
-        htmlSanitized = htmlSanitized,
-        approvedById = Some(SysbotUserId))
+            uniqueId = nextPostId,
+            extImpId = Some(postPatch.extId),
+            pageId = pageId,
+            postNr = postNr,
+            parent = parentPost,
+            multireplyPostNrs = Set.empty,
+            postType = postPatch.postType,
+            createdAt = now.toJavaDate,
+            createdById = author.id,
+            source = postPatch.bodySource,
+            htmlSanitized = htmlSanitized,
+            approvedById = Some(SysbotUserId))
 
       posts.append(post)
     }

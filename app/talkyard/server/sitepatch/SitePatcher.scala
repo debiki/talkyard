@@ -531,7 +531,7 @@ case class SitePatcher(globals: debiki.Globals) {
                 (in postsRealByTempPagePostNr)"""))
             dieIf(postTempParentNr.parentNr != postInPatch.parentNr, "TyE306RKTJ2")
 
-            val postRealIdsNrsNoHtml =
+            val postRealIdsNrsMaybeHtml =
               if (postInPatch.parentNr.forall(_ < FirstTempImpId)) {
                 postTempParentNr
               }
@@ -557,15 +557,26 @@ case class SitePatcher(globals: debiki.Globals) {
             // Answer: Just add a field approvedSourceMarkupLang: 'Html' or 'Commonmark'
             // or just  markupLang: ...  ?
             //
-            val postReal = postRealIdsNrsNoHtml.approvedSource match {
-              case None => postRealIdsNrsNoHtml
+            val postReal = postRealIdsNrsMaybeHtml.approvedSource match {
+              case None => postRealIdsNrsMaybeHtml
               case Some(approvedSource) =>
-                postRealIdsNrsNoHtml.copy(
-                  // This is html only, no @mentions supported here when importing.
+                if (postRealIdsNrsMaybeHtml.approvedHtmlSanitized.isDefined) {
+                  // This happens via /-/v0/upsert-simple — then, we've converted
+                  // the incoming CommonMark to HTML already: [IMPCORH].
+                  postRealIdsNrsMaybeHtml
+                }
+                else {
+                  // No @mentions supported here when importing.
                   // So skip @mentions later when generating notifications? [305TKRW24]
-                  approvedHtmlSanitized = Some(
-                    Jsoup.clean(
-                      approvedSource, TextAndHtml.relaxedHtmlTagWhitelist)))
+                  // Later: Add a markupLang field? For now, assume html —
+                  // otherwise, could put the server under too heavy load.
+                  // If importing 9999 posts and pages, would need to convert from CommonMark
+                  // to html in an external process / server? [ext_markup_processor]
+                  postRealIdsNrsMaybeHtml.copy(
+                        approvedHtmlSanitized = Some(
+                          Jsoup.clean(
+                            approvedSource, TextAndHtml.relaxedHtmlTagWhitelist)))
+                }
             }
 
             tx.insertPost(postReal)

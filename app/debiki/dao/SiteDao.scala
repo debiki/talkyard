@@ -72,6 +72,8 @@ trait ReadOnlySiteDao {
   def now(): When
 
   def nashorn: Nashorn
+  def textAndHtmlMaker: TextAndHtmlMaker
+  def makePostRenderSettings(pageType: PageType): PostRendererSettings
 }
 
 

@@ -65,12 +65,18 @@ const michaelsReplyToMajasApiTopic = {
   body: 'michaelsReplyToMajasApiTopic hello Maja',
 };
 
+const michaelsProgrReplyToMajasUiTopic_lineOne =
+    'michaelsProgrReplyToMajasUiTopic progr note text';
+
 const michaelsProgrReplyToMajasUiTopic = {
   ...michaelsReplyToMajasApiTopic,
   extId: 'michaelsProgrReplyToMajasUiTopic extId',
   pageRef: '', // filled in later (3909682)
   postType: c.TestPostType.BottomComment,
-  body: 'michaelsProgrReplyToMajasUiTopic progr note text',
+  body: michaelsProgrReplyToMajasUiTopic_lineOne + '\n' +
+        '  "ddqq"  \'ssqq\'  question: ?   and: &  hash: #  \n' +
+        '<script src="https://danger.example.com></script>\n' +
+        '<script>danger</script>\n',
 };
 
 const majasApiReplyToMichael = {
@@ -167,7 +173,7 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
 
   it("... remembers its Talkyard id", () => {
     majasUiTopicId = majasBrowser.getPageId();
-    assert.eq(majasUiTopicId, '1');
+    assert.eq(majasUiTopicId, '2');
   });
 
   it("... returns to the topic list", () => {
@@ -194,9 +200,9 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
     majasApiTopic = upsertResponse.pages[0];
 
     assert.equal(majasApiTopic.urlPaths.canonical,
-        `/-2/${majasApiTopicUpsData.title.toLowerCase().replace(/ /g, '-')}`);
+        `/-3/${majasApiTopicUpsData.title.toLowerCase().replace(/ /g, '-')}`);
 
-    assert.equal(majasApiTopic.id, "2");
+    assert.equal(majasApiTopic.id, "3");
     assert.equal(majasApiTopic.pageType, c.TestPageRole.Idea);
     utils.checkNewPageFields(majasApiTopic, {
       categoryId: forum.categories.specificCategory.id,
@@ -219,15 +225,35 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
     numNotfEmailsSent += 1;
   });
 
-  let majasUiTopicNotfEmail;
+  let majasUiTopicNotfEmail: EmailSubjectBody;
 
   it("... Maja gets notified", () => {
     majasUiTopicNotfEmail = server.waitUntilLastEmailMatches(
         siteIdAddress.id, maja.emailAddress,
-        [maja.username, michaelsProgrReplyToMajasUiTopic.body], browserA).matchedEmail;
+        // Line 2 contains magic regex chars, won't match.
+        [maja.username, michaelsProgrReplyToMajasUiTopic_lineOne], browserA).matchedEmail;
   });
 
-  it("But no one else", () => {
+  it("... The email has no double escaped '&amp;' and '&quot;'", () => {
+    const bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
+    console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
+majasBrowser.debug();
+    assert.includes(bodyHtmlText, ' &quot;ddqq&quot; ');
+    assert.includes(bodyHtmlText, " 'ssqq' ");
+    assert.includes(bodyHtmlText, " question: ? ");
+    assert.includes(bodyHtmlText, " and: &amp; ");
+    assert.includes(bodyHtmlText, " hash: # ");
+  });
+
+  it("... script tags gone", () => {
+    const danger = 'danger';
+    assert.includes(michaelsProgrReplyToMajasUiTopic.body, c.ScriptTagName);
+    assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
+    assert.excludes(majasUiTopicNotfEmail.bodyHtmlText, c.ScriptTagName);
+    assert.excludes(majasUiTopicNotfEmail.bodyHtmlText, danger);
+  });
+
+  it("No one else got notified", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numNotfEmailsSent, `Emails sent to: ${addrsByTimeAsc}`);
   });

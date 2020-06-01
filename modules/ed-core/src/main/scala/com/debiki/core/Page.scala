@@ -396,7 +396,7 @@ case class PageMeta( // ?RENAME to Page? And rename Page to PageAndPosts?  [exp]
     val body = page.parts.body
     def bodyVotes(fn: Post => Int): Int = body.map(fn) getOrElse 0
 
-    var newMeta = copy(
+    val newMeta = copy(
       bumpedAt = When.anyJavaDateLatestOf(
         bumpedAt, page.parts.lastVisibleReply.map(_.createdAt)),
       lastApprovedReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
@@ -431,13 +431,12 @@ case class SimplePagePatch(
   authorRef: Option[Ref],
   pageMemberRefs: Vector[ParsedRef],
   title: String,
-  body: String
-  // later: bodyMarkupLang: Option[MarkupLang]
-  ) {
-
+  bodySource: String,
+  bodyMarkupLang: Option[MarkupLang],
+) {
   throwIllegalArgumentIf(title.isEmpty, "TyE306GXF24", "Page title is empty")
   throwIllegalArgumentIf(title.length > MaxTitleLength, "TyE5qDKWQJ6", "Title too long")
-  throwIllegalArgumentIf(body.isEmpty, "TyE306GXF25", "Page body is empty")
+  throwIllegalArgumentIf(bodySource.isEmpty, "TyE306GXF25", "Page body is empty")
   Validation.findExtIdProblem(extId) foreach { problem =>
     throwIllegalArgument("TyE8FKDXT2", s"Bad page extId: $problem")
   }

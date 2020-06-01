@@ -124,6 +124,9 @@ export = {
   EmbCommentsJsonExportCopy: 'target/emb-comments-site-dump.COPY.json',
   EmbCommentsJsonExportCopyFileName: 'emb-comments-site-dump.COPY.json',
 
+  // Nice to easily find xss related tests?
+  ScriptTagName: 'script',
+
   FirstPageId: '1',
 
   FiftyPrimes: [

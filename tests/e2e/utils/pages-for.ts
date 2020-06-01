@@ -1856,6 +1856,12 @@ export class TyE2eTestBrowser {
     }
 
 
+    waitAndGetVisibleHtml(selector): string {
+      this.waitForVisibleText(selector);
+      return this.$(selector).getHTML();
+    }
+
+
     assertTextMatches(selector: string, regex: string | RegExp, regex2?: string | RegExp) {
       this._assertOneOrAnyTextMatches(false, selector, regex, regex2);
     }
@@ -4476,6 +4482,14 @@ export class TyE2eTestBrowser {
 
       assertPostTextMatches: (postNr: PostNr, text: string | RegExp) => {
         this.assertTextMatches(this.topic.postBodySelector(postNr), text)
+      },
+
+      getPostText: (postNr: PostNr): string => {
+        return this.waitAndGetVisibleText(this.topic.postBodySelector(postNr));
+      },
+
+      getPostHtml: (postNr: PostNr): string => {
+        return this.waitAndGetVisibleHtml(this.topic.postBodySelector(postNr));
       },
 
       waitUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp) => {
