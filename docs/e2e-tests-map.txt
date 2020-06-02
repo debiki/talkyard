@@ -928,10 +928,12 @@ api:
   upsert pages:
     sanitize html:
           - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
+        in email:
+          - api-upsert-posts.2browsers.test.ts   TyT60RKNJF24C: TyT0RKDL5MW
     slugifying long and weird titles:
           - api-upsert-pages.2browsers.test.ts   TyT692SKBDWJ74
   upsert posts:
-          - api-upsert-posts.2browsers.test.ts
+          - api-upsert-posts.2browsers.test.ts   TyT60RKNJF24C
   private chat:
           - api-private-chat-two-pps-sso-extid.2browsers.test.ts   TyT603WKVJW336
           - api-private-chat-two-pps-list-use-usernames.2browsers.test.ts  TYT6924VBNF962

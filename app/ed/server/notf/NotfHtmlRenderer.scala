@@ -99,8 +99,13 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       return Nil
     }
 
-    val markupSource = post.approvedSource getOrElse {
-      if (notf.notfType == NotificationType.NewPostReviewTask) post.currentSource
+    val postText = post.approvedHtmlSanitized.map(htmlText => {
+      val doc = org.jsoup.Jsoup.parse(htmlText)
+      doc.body().text()
+    }) getOrElse {
+      if (notf.notfType == NotificationType.NewPostReviewTask) {
+        post.currentSource
+      }
       else {
         // Weird.
         return Nil
@@ -140,8 +145,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     // But for now:
     val maxLenBeforeEscapes = maxNotificationLength / "&quot;".length
 
-    val ellipsis = (markupSource.length > maxLenBeforeEscapes) ? "..." | ""
-    val html = Text(markupSource.take(maxLenBeforeEscapes) + ellipsis)
+    val ellipsis = (postText.length > maxLenBeforeEscapes) ? "..." | ""
+    val html = Text(postText.take(maxLenBeforeEscapes) + ellipsis)
 
     val (whatHappened, dotOrComma, inPostWrittenBy) = notf.notfType match {
       case NotificationType.Message =>

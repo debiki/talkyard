@@ -68,15 +68,20 @@ const michaelsReplyToMajasApiTopic = {
 const michaelsProgrReplyToMajasUiTopic_lineOne =
     'michaelsProgrReplyToMajasUiTopic progr note text';
 
+const danger = 'danger';
+
 const michaelsProgrReplyToMajasUiTopic = {
   ...michaelsReplyToMajasApiTopic,
   extId: 'michaelsProgrReplyToMajasUiTopic extId',
   pageRef: '', // filled in later (3909682)
   postType: c.TestPostType.BottomComment,
   body: michaelsProgrReplyToMajasUiTopic_lineOne + '\n' +
-        '  "ddqq"  \'ssqq\'  question: ?   and: &  hash: #  \n' +
-        '<script src="https://danger.example.com></script>\n' +
-        '<script>danger</script>\n',
+        '  "ddqq"  \'ssqq\'  question: ?   and: &  hash: # .\n' +
+        '  less than: <  greater than: > .\n' +
+        `  <a href="#" onclick="alert('${danger}')">link_text</a> ` +
+        `  <a href="javascript:alert('${danger}');">link_text</a> ` +
+        `  <script src="https://${danger}.example.com"></script>\n` +
+        `  <script>${danger}</script>\n`,
 };
 
 const majasApiReplyToMichael = {
@@ -237,16 +242,16 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
   it("... The email has no double escaped '&amp;' and '&quot;'", () => {
     const bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
     console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
-majasBrowser.debug();
-    assert.includes(bodyHtmlText, ' &quot;ddqq&quot; ');
+    assert.includes(bodyHtmlText, " &quot;ddqq&quot; ");
     assert.includes(bodyHtmlText, " 'ssqq' ");
     assert.includes(bodyHtmlText, " question: ? ");
     assert.includes(bodyHtmlText, " and: &amp; ");
     assert.includes(bodyHtmlText, " hash: # ");
+    assert.includes(bodyHtmlText, " less than: &lt; ");
+    assert.includes(bodyHtmlText, " greater than: &gt; ");
   });
 
-  it("... script tags gone", () => {
-    const danger = 'danger';
+  it("... script tags not in email  TyT0RKDL5MW", () => {
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, c.ScriptTagName);
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
     assert.excludes(majasUiTopicNotfEmail.bodyHtmlText, c.ScriptTagName);
@@ -334,7 +339,7 @@ majasBrowser.debug();
 
   let replyNotfLink: string;
 
-  it("Maja finds a page link in a notf email", () => {
+  it("Maja finds a page link in the notf email about Michael's reply", () => {
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
@@ -348,7 +353,7 @@ majasBrowser.debug();
 
   it("... sees Michael's reply", () => {
     majasBrowser.topic.waitForPostAssertTextMatches(
-        c.FirstReplyNr, michaelsProgrReplyToMajasUiTopic.body);
+        c.FirstReplyNr, michaelsProgrReplyToMajasUiTopic_lineOne);
   });
 
   it("Michael fins a notf link to Maja's reply", () => {
