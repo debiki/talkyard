@@ -242,6 +242,7 @@ ${ htmlToPaste ? htmlToPaste : `
       pageId: PageId,
       authorId?: UserId,
       approvedSource: string,
+      approvedHtmlSanitized: string,
     }) => {
 
     assert.ok(!post.lastApprovedEditAt);
@@ -286,9 +287,9 @@ ${ htmlToPaste ? htmlToPaste : `
     assert.eq(post.numDistinctEditors, 1);
     assert.eq(post.numBuryVotes, 0);
     assert.ok(!post.currRevLastEditedAt);
-    assert.eq(post.approvedSource, ps.approvedSource);
+    assert.eq(post.approvedSource.trim(), ps.approvedSource.trim());
     assert.ok(!post.bodyHiddenReason);
-    assert.eq(post.approvedHtmlSanitized, ps.approvedSource); // simpler
+    assert.eq(post.approvedHtmlSanitized.trim(), ps.approvedHtmlSanitized.trim());
     if (ps.authorId) assert.eq(post.currRevById, ps.authorId);
     assert.ok(!post.lastApprovedEditById);
   },

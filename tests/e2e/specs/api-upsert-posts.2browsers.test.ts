@@ -241,7 +241,8 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
 
   it("... The email has no double escaped '&amp;' and '&quot;'", () => {
     const bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
-    console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
+    //console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
+    // Dupl match list. (69723056)
     assert.includes(bodyHtmlText, " &quot;ddqq&quot; ");
     assert.includes(bodyHtmlText, " 'ssqq' ");
     assert.includes(bodyHtmlText, " question: ? ");
@@ -354,6 +355,23 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
   it("... sees Michael's reply", () => {
     majasBrowser.topic.waitForPostAssertTextMatches(
         c.FirstReplyNr, michaelsProgrReplyToMajasUiTopic_lineOne);
+  });
+
+  it("... it's been sanitized: script tags gone  TyT0RKDL5MW", () => {
+majasBrowser.debug();
+    const bodyHtmlText = majasBrowser.topic.getPostHtml(c.FirstReplyNr);
+    // Dupl match list. (69723056)
+    assert.includes(bodyHtmlText, '');
+    assert.includes(bodyHtmlText, " &quot;ddqq&quot; ");
+    assert.includes(bodyHtmlText, " 'ssqq' ");
+    assert.includes(bodyHtmlText, " question: ? ");
+    assert.includes(bodyHtmlText, " and: &amp; ");
+    assert.includes(bodyHtmlText, " hash: # ");
+    assert.includes(bodyHtmlText, " less than: &lt; ");
+    assert.includes(bodyHtmlText, " greater than: &gt; ");
+
+    assert.excludes(bodyHtmlText, c.ScriptTagName);
+    assert.excludes(bodyHtmlText, danger);
   });
 
   it("Michael fins a notf link to Maja's reply", () => {

@@ -39,6 +39,7 @@ const apiSecret: TestApiSecret = {
 
 const evil_example_com = 'evil.example.com';
 const script_gets_removed = 'script_gets_removed';
+const onclick = 'onclick';
 
 
 const categoryExtId = 'cat_ext_id';
@@ -66,6 +67,8 @@ _italics_
 
 > Quoty-Quote
 
+<a href="#" onclick="alert('${script_gets_removed}')">link_text_01</a>
+<a href="javascript:alert('${script_gets_removed}');">link_text_02</a>
 <script src="http://${evil_example_com}/so_evil_script.js"></script>
 <script src="http://${evil_example_com}/so_evil_script.js">${script_gets_removed}</script>
 `,
@@ -92,6 +95,8 @@ const pageTwoToUpsert_htmlBody = {
     <blockquote>blockquote_stays</blockquote>
     <ul><li>list_stays</li></ul>
     <table><tbody><td>table_stays</td></tbody></table>
+    <a href="#" onclick="alert('${script_gets_removed}')">link_text_03</a>
+    <a href="javascript:alert('${script_gets_removed}');">link_text_04</a>
     <script src="http://${evil_example_com}/so_evil_script.js"></script>
     <script src="http://${evil_example_com}/so_evil_script.js">${script_gets_removed}</script>
     **not_bold** \`not_code\`
@@ -252,19 +257,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     owensBrowser.topic.waitForPostAssertTextMatches(c.BodyNr, UpsPageOneBodyStart);
     bodyText = owensBrowser.topic.getPostHtml(c.BodyNr);
 
-    // The ComomonMark source should now be HTML, this: (from the Scala debugger)
-    //
-    //    RenderCommonmarkResult(<h3>UpsPageOneBodyStart</h3>
-    //    <pre><code>testyFunction(&quot;par_ame_te_r&quot;);
-    //    var variable = 123;
-    //    </code></pre>
-    //    <p><strong>bold_font</strong></p>
-    //    <p><em>italics</em></p>
-    //    <blockquote>
-    //    <p>Quoty-Quote</p>
-    //    </blockquote>
-    //    ,Set())
-
+    // The ComomonMark source should now be HTML.
     // These tests will do for now?:
     assert.includes(bodyText, '<h3>UpsPageOneBodyStart</h3>');
     // Step by step, simpler to troubleshoot:
@@ -278,6 +271,9 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     assert.includes(bodyText, '<blockquote>');
     assert.includes(bodyText, '<p>Quoty-Quote</p>');
     assert.includes(bodyText, '</blockquote>');
+    // The link text was kept (but script links and onclick removed, tested below).
+    assert.includes(bodyText, 'link_text_01');
+    assert.includes(bodyText, 'link_text_02');
     // The code block backticks should be gone.
     assert.excludes(bodyText, '`');
     // The bold font stars '**' too.
@@ -291,10 +287,15 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
   it("... script tags gone  TyT306KTG24M", () => {
     // First, test the tests.
     assert.eq('script', c.ScriptTagName);
+    assert.includes(pageOneToUpsert_commonMarkBody.body, UpsPageOneBodyStart);
+    assert.includes(pageOneToUpsert_commonMarkBody.body, c.javascript);
+    assert.includes(pageOneToUpsert_commonMarkBody.body, onclick);
     assert.includes(pageOneToUpsert_commonMarkBody.body, c.ScriptTagName);
     assert.includes(pageOneToUpsert_commonMarkBody.body, script_gets_removed);
     assert.includes(pageOneToUpsert_commonMarkBody.body, evil_example_com);
     // Now the real test:
+    assert.excludes(bodyText, c.javascript);
+    assert.excludes(bodyText, onclick);
     assert.excludes(bodyText, c.ScriptTagName);
     assert.excludes(bodyText, script_gets_removed);
     assert.excludes(bodyText, evil_example_com);
@@ -411,17 +412,25 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
         /<blockquote>[\s]*blockquote_stays[\s]*<\/blockquote>/,
         /<ul>[\s]*<li>[\s]*list_stays[\s]*<\/li>[\s]*<\/ul>/,
         /<table>[\s]*<tbody>[\s]*<tr>[\s]*<td>[\s]*table_stays[\s]*<\/td>[\s]*<\/tr>[\s]*<\/tbody>[\s]*<\/table>/,
+        /link_text_03/,
+        /link_text_04/,
         /\*\*not_bold\*\* `not_code`/,
         'last_line_stays']);
   });
 
   it("... but not the <script> tag; it got removed by the sanitizer  TyT306KTG24M", () => {
     // First, test the tests.
+    assert.includes(pageTwoToUpsert_htmlBody.body, 'h1_stays');
+    assert.includes(pageTwoToUpsert_htmlBody.body, c.javascript);
+    assert.includes(pageTwoToUpsert_htmlBody.body, onclick);
     assert.includes(pageTwoToUpsert_htmlBody.body, c.ScriptTagName);
     assert.includes(pageTwoToUpsert_htmlBody.body, script_gets_removed);
     assert.includes(pageTwoToUpsert_htmlBody.body, evil_example_com);
+    assert.includes(pageTwoToUpsert_htmlBody.body, 'so_evil_script');
     // Now the real test:
     owensBrowser.topic.assertPostHtmlDoesNotMatch(c.BodyNr, [
+        c.javascript,
+        onclick,
         script_gets_removed,
         c.ScriptTagName,
         '<script',

@@ -273,9 +273,9 @@ export default function addApiChatTestSteps(variants: {
     assert.eq(upsertResponse.pages.length, 1);
     firstUpsertedPage = upsertResponse.pages[0];
 
-    assert.eq(firstUpsertedPage.urlPaths.canonical, '/-1/chatpageone-title');
+    assert.eq(firstUpsertedPage.urlPaths.canonical, '/-2/chatpageone-title');
 
-    assert.eq(firstUpsertedPage.id, '1');
+    assert.eq(firstUpsertedPage.id, '2');
     assert.eq(firstUpsertedPage.pageType, c.TestPageRole.PrivateChat);
     utils.checkNewPageFields(firstUpsertedPage, {
       categoryId: forum.categories.specificCategory.id,
@@ -289,9 +289,10 @@ export default function addApiChatTestSteps(variants: {
       postNr: c.FirstReplyNr,
       parentNr: undefined,
       postType: PostType.ChatMessage,
-      pageId: '1',
+      pageId: '2',
       // authorId: chuma.id, // ?? what id did the server assign to Chuma
       approvedSource: chumaSaysHiCharlieChatMessage.body,
+      approvedHtmlSanitized: `<p>${chumaSaysHiCharlieChatMessage.body}</p>`,
     });
   });
 

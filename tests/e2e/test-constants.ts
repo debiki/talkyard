@@ -126,6 +126,7 @@ export = {
 
   // Nice to easily find xss related tests?
   ScriptTagName: 'script',
+  javascript: 'javascript',
 
   FirstPageId: '1',
 

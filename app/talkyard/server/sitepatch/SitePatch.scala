@@ -345,7 +345,7 @@ case class SimpleSitePatch(
         // Sync the title with CategoryToSave [G204MF3]
         titleHtmlUnsafe = s"Description of the $theCategoryName category",
         bodyPostExtId = categoryPatch.extImpId.map(_ + "_about_page_body"),
-        bodyHtmlUnsafe = theCategoryDescription,
+        bodySource = theCategoryDescription,
         bodyMarkupLang = Some(MarkupLang.Html))
         .badMap { problem => return Bad(problem) }
     }
@@ -382,7 +382,7 @@ case class SimpleSitePatch(
         titlePostExtId = Some(pagePatch.extId + "_title"),
         titleHtmlUnsafe = pagePatch.title,
         bodyPostExtId = Some(pagePatch.extId + "_body"),
-        bodyHtmlUnsafe = pagePatch.bodySource,
+        bodySource = pagePatch.bodySource,
         bodyMarkupLang = pagePatch.bodyMarkupLang)
         .badMap { problem => return Bad(problem) }
     }
@@ -397,7 +397,7 @@ case class SimpleSitePatch(
       categoryId: Option[CategoryId],
       titleHtmlUnsafe: String,
       titlePostExtId: Option[ExtId],
-      bodyHtmlUnsafe: String,
+      bodySource: String,
       bodyPostExtId: Option[ExtId],
       bodyMarkupLang: Option[MarkupLang]): Unit Or ErrorMessage = {
 
@@ -437,14 +437,13 @@ case class SimpleSitePatch(
       // Dupl code [IMPCORH]
       val bodyHtmlSanitized =
         if (bodyMarkupLang is MarkupLang.Html) {
-          Jsoup.clean(bodyHtmlUnsafe, TextAndHtml.relaxedHtmlTagWhitelist)
+          Jsoup.clean(bodySource, TextAndHtml.relaxedHtmlTagWhitelist)
         }
         else {
           val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
           val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
-            bodyHtmlUnsafe,
-            embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
-            followLinks = false)
+                bodySource, embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
+                followLinks = false)
           textAndHtml.safeHtml
         }
 
@@ -504,7 +503,7 @@ case class SimpleSitePatch(
         id = nextPostId,
         extImpId = bodyPostExtId,
         nr = PageParts.BodyNr,
-        approvedSource = Some(bodyHtmlUnsafe),
+        approvedSource = Some(bodySource),
         approvedHtmlSanitized = Some(bodyHtmlSanitized))
 
       posts.append(titlePost)
