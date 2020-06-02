@@ -54,7 +54,7 @@ GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbedde
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
-#GET  /-/v0/search              controllers.SearchController.doSearchPubApiGet(q, pretty: Option[Boolean])
+GET   /-/v0/search              controllers.SearchController.doSearchPubApiGet(freetext: Option[String], pretty: Option[Boolean])
 POST  /-/v0/search              controllers.SearchController.doSearchPubApiPost
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
@@ -338,6 +338,12 @@ GET   /-/v0/list-users          controllers.UserController.listMembersPubApi(use
 # REFACTOR use ApiSecretPostJsonAction instead, move to more precise controllers?
 GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoint)
 POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
+
+# CORS pre-flight requests — they're replied to immediately, here: [CORSPREFL].
+# The actual endpoint won't get called until the real request happens.
+# In fact only  /-/v0/... is allowed — but this endpoints accepts /*whatever
+# so can returns developer friendly error messages outside /-/v0/  [CORSPATH].
+OPTIONS  /*whatever             controllers.ApiV0Controller.getFromApi(whatever)
 
 
 # ----- PWA

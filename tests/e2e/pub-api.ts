@@ -333,7 +333,11 @@ type CompoundSearchQuery =
   SinglSearchQuery[];
 
 interface SinglSearchQuery {
+  // "Freetext" refers to free-form text, meaning, unstructured text:
+  // The user can type anything. And the server interprets the meaning as best
+  // it can, maybe interprets "buy ice skating shoes" as "buy ice skates".
   freetext?: string;
+
   findWhat?: FindWhat,
   lookWhere?: LookWhere;
 };

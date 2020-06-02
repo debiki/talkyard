@@ -179,6 +179,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
 
   def colonPort: String = request.host.dropWhile(_ != ':')
 
+  def method: String = request.method
   def uri: String = request.uri
 
   def queryString: Map[String, Seq[String]] = request.queryString

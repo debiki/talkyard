@@ -476,6 +476,12 @@ function runAllE2eTests {
   # else: the user has probably started the server henself already, do nothing.
 
 
+  # API: CORS
+  # ------------
+
+  # $r s/wdio --only api-search-cors.2browsers $args
+
+
   # Embedded forum
   # ------------
 

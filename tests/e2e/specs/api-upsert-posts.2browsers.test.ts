@@ -69,6 +69,8 @@ const michaelsProgrReplyToMajasUiTopic_lineOne =
     'michaelsProgrReplyToMajasUiTopic progr note text';
 
 const danger = 'danger';
+const link_text_01 = 'link_text_01';
+const link_text_02 = 'link_text_02';
 
 const michaelsProgrReplyToMajasUiTopic = {
   ...michaelsReplyToMajasApiTopic,
@@ -76,12 +78,12 @@ const michaelsProgrReplyToMajasUiTopic = {
   pageRef: '', // filled in later (3909682)
   postType: c.TestPostType.BottomComment,
   body: michaelsProgrReplyToMajasUiTopic_lineOne + '\n' +
-        '  "ddqq"  \'ssqq\'  question: ?   and: &  hash: # .\n' +
-        '  less than: <  greater than: > .\n' +
-        `  <a href="#" onclick="alert('${danger}')">link_text</a> ` +
-        `  <a href="javascript:alert('${danger}');">link_text</a> ` +
-        `  <script src="https://${danger}.example.com"></script>\n` +
-        `  <script>${danger}</script>\n`,
+        'o "ddqq"  \'ssqq\'  question: ?   and: &  hash: # o\n' +
+        'o less than: <  greater than: > o\n' +
+        `<a href="#" onclick="alert('${danger}')">${link_text_01}</a>\n` +
+        `<a href="javascript:alert('${danger}');">${link_text_02}</a>\n` +
+        `<script src="https://${danger}.example.com"></script>\n` +
+        `<script>${danger}</script>\n`,
 };
 
 const majasApiReplyToMichael = {
@@ -239,8 +241,10 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
         [maja.username, michaelsProgrReplyToMajasUiTopic_lineOne], browserA).matchedEmail;
   });
 
+  let bodyHtmlText: string;
+
   it("... The email has no double escaped '&amp;' and '&quot;'", () => {
-    const bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
+    bodyHtmlText = majasUiTopicNotfEmail.bodyHtmlText;
     //console.log('\n\nEMLBDY:\n\n' + bodyHtmlText + '\n\n-------------------');
     // Dupl match list. (69723056)
     assert.includes(bodyHtmlText, " &quot;ddqq&quot; ");
@@ -250,13 +254,17 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
     assert.includes(bodyHtmlText, " hash: # ");
     assert.includes(bodyHtmlText, " less than: &lt; ");
     assert.includes(bodyHtmlText, " greater than: &gt; ");
+    assert.includes(bodyHtmlText, link_text_01);
+    assert.includes(bodyHtmlText, link_text_02);
   });
 
   it("... script tags not in email  TyT0RKDL5MW", () => {
+    // Test the tests:
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, c.ScriptTagName);
     assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
-    assert.excludes(majasUiTopicNotfEmail.bodyHtmlText, c.ScriptTagName);
-    assert.excludes(majasUiTopicNotfEmail.bodyHtmlText, danger);
+    // Real tests:
+    assert.excludes(bodyHtmlText, c.ScriptTagName);
+    assert.excludes(bodyHtmlText, danger);
   });
 
   it("No one else got notified", () => {
@@ -358,17 +366,24 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
   });
 
   it("... it's been sanitized: script tags gone  TyT0RKDL5MW", () => {
-majasBrowser.debug();
     const bodyHtmlText = majasBrowser.topic.getPostHtml(c.FirstReplyNr);
+
+    // Test the test:
+    assert.includes(michaelsProgrReplyToMajasUiTopic.body, link_text_02);
+    assert.includes(michaelsProgrReplyToMajasUiTopic.body, danger);
+
+    // Real tests:
     // Dupl match list. (69723056)
     assert.includes(bodyHtmlText, '');
-    assert.includes(bodyHtmlText, " &quot;ddqq&quot; ");
+    assert.includes(bodyHtmlText, ' "ddqq" ');  // '"' need not be escaped here ...
     assert.includes(bodyHtmlText, " 'ssqq' ");
     assert.includes(bodyHtmlText, " question: ? ");
-    assert.includes(bodyHtmlText, " and: &amp; ");
+    assert.includes(bodyHtmlText, " and: &amp; ");   // but '&'  needs to be escaped
     assert.includes(bodyHtmlText, " hash: # ");
-    assert.includes(bodyHtmlText, " less than: &lt; ");
-    assert.includes(bodyHtmlText, " greater than: &gt; ");
+    assert.includes(bodyHtmlText, " less than: &lt; ");     // and '<'
+    assert.includes(bodyHtmlText, " greater than: &gt; ");  // and '>'  too
+    assert.includes(bodyHtmlText, link_text_01);
+    assert.includes(bodyHtmlText, link_text_02);
 
     assert.excludes(bodyHtmlText, c.ScriptTagName);
     assert.excludes(bodyHtmlText, danger);

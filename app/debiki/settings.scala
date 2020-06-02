@@ -162,6 +162,11 @@ trait AllSettings {
   def enableDirectMessages: Boolean
   def enableSimilarTopics: Boolean
 
+  /** CORS means Cross-Origin Resource Sharing. */
+  def enableCors: Boolean
+  def allowCorsFrom: String
+  def allowCorsCreds: Boolean
+
   def showSubCommunities: Boolean  // RENAME to enableSubCommunities? Why "show"?
   def showExperimental: Boolean
   def featureFlags: String
@@ -263,6 +268,9 @@ trait AllSettings {
     enableChat = Some(self.enableChat),
     enableDirectMessages = Some(self.enableDirectMessages),
     enableSimilarTopics = Some(self.enableSimilarTopics),
+    enableCors = Some(self.enableCors),
+    allowCorsFrom = Some(self.allowCorsFrom),
+    allowCorsCreds = Some(self.allowCorsCreds),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     featureFlags = Some(self.featureFlags),
@@ -384,6 +392,9 @@ object AllSettings {
     val enableChat = true
     val enableDirectMessages = true
     val enableSimilarTopics = true
+    val enableCors = false
+    val allowCorsFrom = ""
+    val allowCorsCreds = false
     val showSubCommunities = false
     val showExperimental = false
     val featureFlags = ""
@@ -494,6 +505,9 @@ case class EffectiveSettings(
   def enableChat: Boolean = firstInChain(_.enableChat) getOrElse default.enableChat
   def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
   def enableSimilarTopics: Boolean = firstInChain(_.enableSimilarTopics) getOrElse default.enableSimilarTopics
+  def enableCors: Boolean = firstInChain(_.enableCors) getOrElse default.enableCors
+  def allowCorsFrom: String = firstInChain(_.allowCorsFrom) getOrElse default.allowCorsFrom
+  def allowCorsCreds: Boolean = firstInChain(_.allowCorsCreds) getOrElse default.allowCorsCreds
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def featureFlags: String = firstInChain(_.featureFlags) getOrElse default.featureFlags
@@ -518,6 +532,10 @@ case class EffectiveSettings(
       Some(ssoLoginRequiredLogoutUrl)
     else
       None
+
+  def allowCorsFromParsed: Seq[String] = {
+    EffectiveSettings.getLinesNotCommentedOut(allowCorsFrom)
+  }
 
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:
@@ -556,12 +574,20 @@ case class EffectiveSettings(
 object EffectiveSettings {
   val UrlPathRegex: Regex = """^(https?:\/\/)?([^\/]+)(\/.*)?$""".r
 
+
+  def getLinesNotCommentedOut(text: String): Seq[String] = {
+    text.split("\n").map(_.trim).filterNot(
+          line => line.isEmpty || line.startsWith("#"))
+  }
+
+
   /** Removes comment '#' lines, removes URL paths (Chrome doesn't like), adds https
     * if only http specified. Returns a list of allowed embedding origins.
     */
   def improveAllowEmbeddingFrom(allowEmbeddingFrom: String): Seq[String] = {
     val okSources = ArrayBuffer[String]()
 
+    CLEAN_UP // use getLinesNotCommentedOut()
     val ancestorSourcesMaybePath =
       allowEmbeddingFrom.split("\n").map(_.trim).filterNot(
         line => line.isEmpty || line.startsWith("#"))
@@ -710,6 +736,9 @@ object Settings2 {
       "enableChat" -> JsBooleanOrNull(s.enableChat),
       "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
       "enableSimilarTopics" -> JsBooleanOrNull(s.enableSimilarTopics),
+      "enableCors" -> JsBooleanOrNull(s.enableCors),
+      "allowCorsFrom" -> JsStringOrNull(s.allowCorsFrom),
+      "allowCorsCreds" -> JsBooleanOrNull(s.allowCorsCreds),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "featureFlags" -> JsStringOrNull(s.featureFlags),
@@ -812,6 +841,9 @@ object Settings2 {
     enableChat = anyBool(json, "enableChat", d.enableChat),
     enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
     enableSimilarTopics = anyBool(json, "enableSimilarTopics", d.enableSimilarTopics),
+    enableCors = anyBool(json, "enableCors", d.enableCors),
+    allowCorsFrom = anyString(json, "allowCorsFrom", d.allowCorsFrom),
+    allowCorsCreds = anyBool(json, "allowCorsCreds", d.allowCorsCreds),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     featureFlags = anyString(json, "featureFlags", d.featureFlags),

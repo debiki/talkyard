@@ -668,13 +668,10 @@ class Globals(
     *
     * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
     * for example:  site-123.example.com,
-    * then the site is looked up directly by id. This is useful for embedded
-    * comment sites, since their address isn't important, and if we always access
-    * them via site id, we don't need to ask the side admin to come up with any
-    * site address.
+    * then the site is looked up directly by id.
     */
   def lookupSiteOrThrow(request: RequestHeader): SiteBrief = {
-    lookupSiteOrThrow(host = request.host, request.uri)
+    lookupSiteOrThrow(host = request.host, request.uri)   // [SRTMD40754445]
   }
 
 

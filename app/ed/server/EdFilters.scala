@@ -27,7 +27,7 @@ import play.filters.gzip.{GzipFilter, GzipFilterConfig}
 /** Tells Play Framework to gzip responses, but not movies/images/music.
   *
   * Docs: https://www.playframework.com/documentation/2.6.x/GzipEncoding — but that
-  * doesn't work whith compile time dependency injection (with the config copied
+  * doesn't work with compile time dependency injection (with the config copied
   * from the docs). Instead, seems I need to create my own filter, as done here. (?)
   */
 object EdFilters {

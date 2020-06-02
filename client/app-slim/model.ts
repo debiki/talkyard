@@ -1523,6 +1523,10 @@ interface Settings extends TopicInterfaceSettings {
   enableChat: boolean;
   enableDirectMessages: boolean;
   enableSimilarTopics: boolean;
+  enableCors: boolean;
+  allowCorsFrom: String;
+  allowCorsCreds: boolean;
+
   showSubCommunities: boolean;
   showExperimental: boolean;
   featureFlags: string;
@@ -1640,6 +1644,8 @@ interface Rect {
 type OnDone = (() => void);
 type OnDoneOrBeacon = OnDone | UseBeacon;
 type ErrorStatusHandler = (errorStatusCode?: number) => void;
+type ErrorDetailsStatusHandler = (
+        errorStatusCode: number | U, errorStatusText: string | U, details?) => void;
 
 
 /// The browser gives you a Response, but that's not an object so { ...response } won't work.

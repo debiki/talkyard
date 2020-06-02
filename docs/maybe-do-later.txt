@@ -249,6 +249,9 @@ Then first need to fix: [DRAFTPRVW] ?
 Find a better macro lib that won't "destroy" the file if @endif is on the line just above '}'.
 Use the C preprocessor? Didn't find anything else that does what I'm looking for.
 
+[devfriendly]
+Maybe make all endpoints that accept, say, only POST, reply and tell other method
+type invocations that they should use POST? Would need to change Play Fmw for this.
 
 [React_Router_v51]
 Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:

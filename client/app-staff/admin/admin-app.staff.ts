@@ -1070,6 +1070,8 @@ const FeatureSettings = createFactory({
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     const isForumEnabled = valueOf(s => s.enableForum);
+    const isApiEnabled = valueOf(s => s.enableApi);
+    const isApiAndCorsEnabled = isApiEnabled && valueOf(s => s.enableCors);
 
     return (
       r.div({},
@@ -1104,6 +1106,46 @@ const FeatureSettings = createFactory({
             newSettings.enableApi = target.checked;
           }
         }),
+
+        !isApiEnabled ? null :
+              TipsLink({ to: linkToAdminApi() }, "Jump to API settings page ..."),
+
+        // Move these CORS settings to the API tab, later.
+        !isApiEnabled ? null : Setting2(props, {
+          type: 'checkbox', className: 'e_EnbCors',
+          label: "Enable Cross-Origin Resource Sharing (CORS)",
+          help: "Lets other websites of yours, send API requests to this Talkyard site.",
+          getter: (s: Settings) => s.enableCors,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableCors = target.checked;
+          }
+        }),
+
+        !isApiAndCorsEnabled ? null : Setting2(props, {
+          type: 'textarea', label: "Allow CORS requests from",
+          className: 's_A_Ss_AlwCrsFrm e_CorsFrm',
+          help: r.span({}, "Lets Javascript in browsers at these origins (one per line) " +
+            "send API requests to this Talkyard site, and read the responses. " +
+            "Example:  https://www.your-website.com (note: no trailing '/'). " +
+            "Lines starting with '#' are ignored."),
+          placeholder: "https://www.your-website.com",
+          getter: (s: Settings) => s.allowCorsFrom,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowCorsFrom = target.value;
+          }
+        }),
+
+        /* Not yet impl/tested, server side. The server would reply Frobidden. [CORSCREDSUNIMPL]
+        !isApiAndCorsEnabled ? null : Setting2(props, {
+          type: 'checkbox',
+          label: "Allow CORS credentials",
+          help: "Includes cookies in CORS requests, so the reuests happens as " +
+              "the Talkayrd user one is logged in as, if any.",
+          getter: (s: Settings) => s.allowCorsCreds,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowCorsCreds = target.checked;
+          }
+        }), */
 
         !isForumEnabled ? null : Setting2(props, {
           type: 'checkbox', label: "Enable categories",
@@ -2696,6 +2738,12 @@ function Setting2(panelProps, props, anyChildren?) {
       Input({ ...props, disabled }, anyChildren),
       resetToDefaultButton,
       undoChangesButton));
+}
+
+
+function TipsLink(props: { to: string }, text: string) {
+  return Link({ to: props.to, className: 'col-sm-offset-3 col-sm-9 s_A_Ss_TipsL' },
+      text);
 }
 
 

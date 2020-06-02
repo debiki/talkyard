@@ -1,0 +1,157 @@
+<html>
+<head>
+<title>External Scripts E2E page</title>
+<style>
+body { background: black; color: #d3d; }
+h1 { font-size: 20px; font-family: monospace }
+pre { background: #222; color: #3ee; }
+</style>
+<script>
+
+// Fetches, via a POST requests, stuff from another server. [CORSPOST]
+// Shows what went wrong (if anything).
+// This will only work, if that other server has been configured to allow
+// CORS requests from the current server (current origin).
+//
+/* Usage ex:
+
+corsFetch({ url: 'http://e2e-test-cid-0-0-now-2522.localhost/-/v0/search',
+      POST: {}, function(rsp) { console.log(JSON.stringify(rsp, 0, 2)) }});
+
+*/
+function corsFetch(ps) {
+  const onError = function(statusCode, statusText, ex) {
+    const message = `Error: ${statusCode} ${statusText}`;
+    console.error(message, ex)
+    logToPageAndConsole(`${message}: ${ex}`);
+  }
+
+  const method = ps.POST ? 'POST' : 'GET';
+
+  const options = {
+    // Could specify 'same-origin', but then harder to troubleshoot, when such
+    // requests look different.
+    credentials: 'omit',
+    method,
+    keepalive: true,
+    // This makes the response body readable for this in-browser Javascript code.
+    mode: 'cors',
+    referrer: 'no-referrer',
+    // Don't follow redirects.
+    redirect: 'error',
+    headers: {
+    },
+  };
+
+  if (method === 'POST') {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(ps.POST);
+  }
+
+  fetch(ps.url, options).then(function(response) {
+    // We got the response http headers. Get the body too, also if we got an error
+    // status code — so we can show details from the response body about what
+    // went wrong. Use text() not json() so we can print the response body if it's
+    // a plain text error message, or corrupt json that caused a parse error.
+    console.trace(`Got fetch() response headers: ${response.status
+          } ${response.statusText} [TyMGOTHDRS]`);
+
+    response.text().then(function(text) {
+      console.trace(`Got fetch() response text [TyMGOTTXT]: ` + text);
+
+      if (response.status !== 200) {
+        console.error(`fetch() error response, status ${response.status
+                } ${response.statusText} [TyEFETCHERR], response text:\n${text}`);
+        onError(response.status, response.statusText, text);
+        return;
+      }
+
+      let json;
+      try { json = JSON.parse(text) }
+      catch (ex) {
+        console.error(`Error parsing JSON in fetch() 200 ${response.statusText
+              } response [TyEFETCH0JSN]:\n${text}`, ex);
+        onError(200, response.statusText, "Error parsing response json");
+        return;
+      }
+
+      try { ps.onDone(json) }
+      catch (ex) {
+        console.error(`Error in fetch() 200  ${response.statusText
+              } response handler [TyERSPHNDL]`, ex);
+      }
+    }).catch(function(error) {
+      console.error(`Error getting fetch() response body [TyEFETCH0BDY]: `, error);
+      onError(response.status, response.statusText, error);
+    });
+  }).catch(function(error) {
+    console.error(`fetch() failed, no response [TyEFETCHFAIL]: `, error);
+    onError(0, '', error);
+  });
+}
+
+
+function logToPageAndConsole(textOrObj) {
+  const text = ((typeof textOrObj) === 'object') ?
+      JSON.stringify(textOrObj, undefined, 4) : textOrObj;
+  console.log(text);
+  const textnode = document.createTextNode(text);
+  const preNode = document.createElement("pre");
+  preNode.append(textnode);
+  const logElem = document.getElementById('e2e_log');
+  logElem.append(preNode);
+}
+
+</script>
+</head>
+
+<body>
+<h1>Cross-Origin Resource Sharing E2E test page</h1>
+
+<p>Here's Javascript, you can run in Dev Tools here on this page: However, this
+might not show the response status text or response body — so can be hard
+to know what went wrong. Using cURL can be simpler, see below.
+</p>
+
+<pre>
+corsFetch({
+    url: 'http://  host  /-/v0/search',
+    POST: { searchQuery: { freetext: 'search phrase' }},
+    onDone: function(rsp) { logToPageAndConsole(rsp) }});
+</pre>
+
+<p>
+Or use <b>cURL</b>, in a Linux shell — here's a pre-flight request:
+(this is what the browser does to find out if Cross-Origin is allowed)
+</p>
+
+<pre>
+talkyard_server="http://localhost"
+
+curl -v -v -X OPTIONS -H "Origin: http://localhost:8080" \
+    -H "Access-Control-Request-Method: GET" \
+    "$talkyard_server/-/v0/ping"
+
+# Two "real" requests — try both with the right and the wrong Origin header:
+
+curl -v -v -X GET -H "Origin: http://localhost:8080" \
+    "$talkyard_server/-/v0/ping"
+
+curl -v -v -X POST -H "Origin: http://localhost:8080" \
+    -H 'Content-Type: application/json' \
+    --data '{ "searchQuery": { "freetext": "search phrase" }}' \
+    "$talkyard_server/-/v0/search"
+
+
+# ? -H "Access-Control-Request-Headers: X-Requested-With" \
+</pre>
+
+<p>
+You can convert cURL to fetch(), there's: https://kigiri.github.io/fetch/,
+https://stackoverflow.com/questions/31039629/convert-curl-get-to-javascript-fetch
+</p>
+
+<p>Log: (most recent first)</p>
+<div id="e2e_log" style="color: #ddd"></div>
+</body>
+</html>

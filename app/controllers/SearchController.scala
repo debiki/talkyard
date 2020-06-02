@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
 import ed.server.search._
 import ed.server.http._
+import debiki.EdHttp._
 import scala.collection.immutable.Seq
 import Prelude._
 import debiki.dao.{SearchQuery, SiteDao}
@@ -86,18 +87,33 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  /* Later:
-  def doSearchPubApiGet(q: String, pretty: Option[Boolean]): Action[Unit] =  // [PUB_API]
+  /** "Freetext" refers to free-form text, meaning, unstructured text:
+    * the user can type anything. And the server interprets the meaning as best
+    * it can, maybe interprets "buy ice skating shoes" as "buy ice skates".
+    */
+  def doSearchPubApiGet(freetext: Option[String], pretty: Option[Boolean]): Action[Unit] =  // [PUB_API]
          AsyncGetActionRateLimited( RateLimits.FullTextSearch) { request: GetRequest =>
     import request.{dao, user => requester}
 
-    val searchQuery = parseRawSearchQueryString(q, categorySlug => {
+    // Actually, maybe allow POST only? However it's nice to get this developer
+    // friendly No message, rather than an "endpoint not found" error. [devfriendly]
+    throwForbidden("TyEUSEPOST",
+          "You did a GET request to /-/v0/search, please use POST instead")
+
+    // Developer friendly. Otherwise, if freetext: String (not Option), then Play
+    // replies with lots of HTML, but that's hard to read when in Dev Tools or
+    // Bash + curl.
+    val theText = freetext.getOrThrowBadRequest("TyEAPI0QUERY",
+          o"""You did a GET request, but  ?freetext=... query param missing.
+            Or you can send a POST request with JSON body""")
+
+    val searchQuery = parseRawSearchQueryString(theText, categorySlug => {
       // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
       dao.getCategoryBySlug(categorySlug).map(_.id)
     })
 
     doSearchPubApiImpl(searchQuery, dao, request, requester, pretty.getOrElse(false))
-  } */
+  }
 
 
   def doSearchPubApiPost(): Action[JsValue] = AsyncPostJsonAction(  // [PUB_API]
@@ -108,6 +124,7 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val searchQueryJson = (body \ "searchQuery").as[JsObject]
     val q = (searchQueryJson \ "freetext").as[String]
 
+    // Right now, only { freetext: ... } supported — same as: GET /-/v0/search?freetext=...  .
     val searchQuery = parseRawSearchQueryString(q, categorySlug => {
       // BUG (need not fix now): What if many sub communities, same cat slug? [4GWRQA28]
       dao.getCategoryBySlug(categorySlug).map(_.id)

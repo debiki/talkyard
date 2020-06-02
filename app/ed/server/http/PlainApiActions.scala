@@ -30,6 +30,9 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import EdSecurity.AvoidCookiesHeaderName
+import scala.collection.mutable
+import play.api.http.{HeaderNames => p_HNs}
+import play.api.mvc.{Results => p_Results}
 import talkyard.server.TyLogging
 
 
@@ -93,7 +96,7 @@ class PlainApiActions(
     override def parser: BodyParser[B] =
       aParser
 
-    override implicit protected def executionContext: ExecutionContext =
+    override protected def executionContext: ExecutionContext =
       globals.executionContext
 
     def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
@@ -105,6 +108,7 @@ class PlainApiActions(
         action(request)
       }
     }
+
 
     override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result])
             : Future[Result] = {
@@ -128,22 +132,22 @@ class PlainApiActions(
       //
       val promise = Promise[Result]()
       globals.actorSystem.scheduler.scheduleOnce(delay = 2.seconds) {
-        invokeBlockImpl[A](request, block) onComplete {
+        invokeBlockImpl[A](request, block).onComplete({
           case Success(value) =>
             promise.success(value)
           case Failure(exception) =>
             promise.failure(exception)
-        }
-      }
+        })(executionContext)
+      }(executionContext)
       promise.future
     }
+
 
     private def invokeBlockImpl[A](request: Request[A], block: ApiRequest[A] => Future[Result])
         : Future[Result] = {
 
-      val site = globals.lookupSiteOrThrow(request)
+      // ----- Under maintenance?
 
-      // Under maintenance?
       // Throw if the server is under maintenance, and the request tries to do anything
       // but reading, e.g. saving a reply. That is, throw for all POST request. Except for
       // logout or login, so people can login and read (OpenAuth login is GET only).
@@ -153,28 +157,109 @@ class PlainApiActions(
           && request.path != logoutPath
           && request.path != loginPasswordPath) {
         throwServiceUnavailable("TyMMAINTWORK", o"""The server is under maintenance:
-            You cannot do anything, except for reading.""")
+              You cannot do anything, except for reading.""")
       }
 
-      request.headers.get("Authorization") match {
-        case Some(authHeaderValue) =>
-          invokeBlockAuthViaApiSecret(request, site, authHeaderValue, block)
-        case None =>
-          throwForbiddenIf(viaApiSecretOnly,
-            "TyE0APIRQ", s"You may invoke ${request.path} only via the API")
-          invokeBlockAuthViaCookie(request, site, block)
+      // ----- Cross-Origin (CORS) request?
+
+      val site = globals.lookupSiteOrThrow(request)
+      val siteDao = globals.siteDao(site.id)
+      val siteSettings = siteDao.getWholeSiteSettings()
+
+      // Is this a CORS request?
+      val corsInfo = security.checkIfCorsRequest(request, siteSettings)
+      val corsHeaders = mutable.ArrayBuffer[(String, String)]()
+
+      // Add CORS headers if needed — both for pre-flight and real requests.
+      corsInfo match {
+        case CorsInfo.OkayCrossOrigin(okayOrigin, _, _) =>
+          corsHeaders.append(p_HNs.ACCESS_CONTROL_ALLOW_ORIGIN -> okayOrigin)
+
+          // Seconds.  5 min for now when testing — should be pretty ok in prod too.
+          corsHeaders.append(p_HNs.ACCESS_CONTROL_MAX_AGE -> "300")
+
+          // Talkyard only uses GET and POST (never PUT or DELETE etc).
+          corsHeaders.append(p_HNs.ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST")
+
+          // No cookies (credentials), for now.
+          // Without the below header in the server's response, the browser will discard
+          // the response, if the request included cookies.
+          // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Requests_with_credentials
+          // ""fetch won’t send cookies, unless you set the credentials init option
+          // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+          //
+          // add_header Access-Control-Allow-Credentials 'true' always; // Ngnix syntax
+
+          // These allowed by default: Accept, Accept-Language, Content-Language, Content-Type,
+          // see: https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header.
+          // However there's additional restrictions: Only form data or plain text allowed
+          // — not json. So, incl Content-Type too, then, json allowed.
+          //
+          // Forbidden headers are allowed — that is, headers the browser javascript
+          // cannot change, like: Origin, Host, User-Agent, Connection: keep-alive,
+          // Content-Length, DNT. Need not include any of those.
+          // https://fetch.spec.whatwg.org/#forbidden-header-name
+          //
+          corsHeaders.append(p_HNs.ACCESS_CONTROL_ALLOW_HEADERS ->
+                "Content-Type, Authorization, X-Requested-With, X-Xsrf-Token, X-Ty-Xsrf")
+
+        case x =>
+          dieIf(x.isCrossOrigin, "TyE5603SKDH7")
       }
+
+      // Reply directly, if CORS pre-flight request. [CORSPREFL]
+      // There'll be a 2nd "real" request and that's when we'll do something.
+      if (corsInfo.isPreFlight) {
+        return Future.successful(
+              p_Results.NoContent.withHeaders(corsHeaders: _*))
+      }
+
+      // ----- Handle the request
+
+      // [APIAUTHN]  If there's an Authorization header, we'll use it but ignore
+      // any cookie.
+      val futureResult =
+        try {
+          request.headers.get("Authorization") match {
+            case Some(authHeaderValue) =>
+              invokeBlockAuthViaApiSecret(
+                    request, site, siteDao, siteSettings, authHeaderValue, block)
+
+            case None =>
+              throwForbiddenIf(viaApiSecretOnly,
+                    "TyE0APIRQ", s"You may invoke ${request.path} only via the API")
+              dieIf(corsInfo.isCrossOrigin && corsInfo.hasCorsCreds &&
+                    !siteSettings.allowCorsCreds, "TyE603RKDJL5")
+
+              invokeBlockAuthViaCookie(
+                    request, corsInfo, site, siteDao, siteSettings, block)
+          }
+        }
+        catch {
+          // Dupl code [RESLTEXC]
+          case ResultException(result) =>
+            // So can add CORS headers below.
+            Future.successful(result)
+        }
+
+      // ----- Add CORS headers?
+
+      if (corsHeaders.isEmpty) futureResult
+      else futureResult.map(_.withHeaders(corsHeaders: _*))(executionContext)
     }
 
 
     private def invokeBlockAuthViaApiSecret[A](request: Request[A], site: SiteBrief,
+          dao: SiteDao, settings: AllSettings,
           authHeaderValue: String, block: ApiRequest[A] => Future[Result]): Future[Result] = {
       val usernamePasswordBase64Encoded = authHeaderValue.replaceFirst("Basic ", "")
       val decodedBytes: Array[Byte] = acb.Base64.decodeBase64(usernamePasswordBase64Encoded)
       val usernameColonPassword = new String(decodedBytes, "UTF-8")
       val (username, colonPassword) = usernameColonPassword.span(_ != ':')
       val secretKey = colonPassword.drop(1)
-      val dao = globals.siteDao(site.id)
+
+      // But if API disabled ???? TODO
+
       val apiSecret = dao.getApiSecret(secretKey) getOrElse {
         throwNotFound("TyEAPI0SECRET", "No such API secret or it has been deleted")
       }
@@ -218,7 +303,9 @@ class PlainApiActions(
     }
 
 
-    private def invokeBlockAuthViaCookie[A](request: Request[A], site: SiteBrief,
+    private def invokeBlockAuthViaCookie[A](request: Request[A], corsInfo: CorsInfo,
+          site: SiteBrief,
+          dao: SiteDao, siteSettings: AllSettings,
           block: ApiRequest[A] => Future[Result]): Future[Result] = {
 
       // Why avoid cookies? In an embedded comments iframe, cookies frequently get blocked
@@ -228,7 +315,7 @@ class PlainApiActions(
       // And, for subsequent requests — to *other* endpoints — the browser Javascript code sets
       // the AvoidCookiesHeaderName header, so we won't froget that we should avoid cookies here.
       val hasCookiesAlready = request.cookies.exists(_.name != "esCoE2eTestPassword")
-      val maySetCookies = hasCookiesAlready || {
+      val maySetCookies = hasCookiesAlready || {   // TODO
         val shallAvoid = avoidCookies || {
           val avoidCookiesHeaderValue = request.headers.get(AvoidCookiesHeaderName)
           if (avoidCookiesHeaderValue.isEmpty) false
@@ -240,13 +327,27 @@ class PlainApiActions(
 
       // Below: A bit dupl code, same as for WebSocket upgrade requests. [WSHTTPREQ]
 
-      val dao = globals.siteDao(site.id)
-      val expireIdleAfterMins = dao.getWholeSiteSettings().expireIdleAfterMins
+      val expireIdleAfterMins = siteSettings.expireIdleAfterMins
 
-      val (actualSidStatus, xsrfOk, newCookies) =
-        security.checkSidAndXsrfToken(
-          request, anyRequestBody = Some(request.body), siteId = site.id,
-          expireIdleAfterMins, maySetCookies = maySetCookies)
+      val (actualSidStatus, xsrfOk, newCookies) = corsInfo match {
+        case ci: CorsInfo.OkayCrossOrigin =>
+          // Cross-origin requests with credentials (i.e. session id cookie)
+          // not yet tested and thought throw.
+          // Continue as a stranger (a not logged in user).
+          throwForbiddenIf(ci.hasCorsCreds,  // [CORSCREDSUNIMPL]
+                "TyECORSCREDSUNIM", o"""Cross-Origin requests with credentials
+                  (i.e. session id cookie) not implemented""")
+          // Skip any xsrf token check since this origin is *supposed* to do
+          // cross-origin requests, right.
+          // Currently only publicly accessible data can be seen, since proceeding
+          // with no session id.
+          (SidAbsent, XsrfOk("cors_no_xsrf"), Nil)
+        case ci =>
+          dieIf(ci.isCrossOrigin, "TyEJ2503TKHJ")
+          security.checkSidAndXsrfToken(
+                request, anyRequestBody = Some(request.body), siteId = site.id,
+                expireIdleAfterMins, maySetCookies = maySetCookies)
+      }
 
       // Ignore and delete any broken or expired session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
@@ -300,7 +401,7 @@ class PlainApiActions(
           resultOldCookies
         }
         else {
-          resultOldCookies map { result =>
+          resultOldCookies.map({ result =>
             var resultWithCookies = result
               .withCookies(newCookies ::: newBrowserIdCookie: _*)
               .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
@@ -309,7 +410,7 @@ class PlainApiActions(
                 resultWithCookies.discardingCookies(DiscardingSessionCookie)
             }
             resultWithCookies
-          }
+          })(executionContext)
         }
 
       resultOkSid
@@ -421,7 +522,7 @@ class PlainApiActions(
 
         // ViewPageController has allow-anyone = true.
         val isXhr = isAjax(request)
-        val isInternalApi = isXhr
+        val isInternalApi = isXhr  // TODO
         def isPublicApi = request.path.startsWith("/-/v0/")
         def isApiReq = isInternalApi || isPublicApi
 
@@ -430,7 +531,7 @@ class PlainApiActions(
           else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
         }
 
-        val siteSettings = dao.getWholeSiteSettings()
+        val siteSettings = dao.getWholeSiteSettings()   // TODO pass along inst
 
         if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated)
           goToHomepageOrIfApiReqThen(throwForbidden(
@@ -482,7 +583,7 @@ class PlainApiActions(
           // A bug in Talkyard's JSON parsing, or the client sent bad JSON?
           logger.warn(i"""s${site.id}: Bad JSON exception [TyEJSONEX]
               |$requestUriAndIp""", ex)
-          throw ex
+          throw ResultException(Results.BadRequest(s"Bad JSON: $ex [TyEJSONEX]"))
         case ex: Exception =>
           logger.error(i"""s${site.id}: API request unexpected exception [TyEUNEXPEX],
               |$requestUriAndIp""", ex)
@@ -492,7 +593,7 @@ class PlainApiActions(
         timerContext.stop()
       }
 
-      result onComplete {
+      result.onComplete({
         case Success(_) =>
           //logger.debug(
             //s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
@@ -501,12 +602,12 @@ class PlainApiActions(
           //            case ex: ResultException ?
           logger.debug(
             s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
-      }
+      })(executionContext)
 
       if (isSuspended) {
         // BUG: (old? can still happen?) We won't get here if e.g. a 403 Forbidden exception
         // was thrown because 'anyUser' was set to None. How solve that?
-        result = result.map(_.discardingCookies(DiscardingSessionCookie))
+        result = result.map(_.discardingCookies(DiscardingSessionCookie))(executionContext)
       }
       result
     }

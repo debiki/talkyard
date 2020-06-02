@@ -57,15 +57,19 @@ export function linkToAdminPage(): string {
 }
 
 export function linkToAdminPageLoginSettings(): string {
-  return linkToAdminPage()+ 'settings/login';
+  return linkToAdminPage() + 'settings/login';
+}
+
+export function linkToAdminApi(): string {
+  return linkToAdminPage() + 'api';
 }
 
 export function linkToAdminPageModerationSettings(): string {
-  return linkToAdminPage()+ 'settings/moderation';
+  return linkToAdminPage() + 'settings/moderation';
 }
 
 export function linkToAdminPageEmbeddedSettings(): string {
-  return linkToAdminPage()+ 'settings/embedded-comments';
+  return linkToAdminPage() + 'settings/embedded-comments';
 }
 
 export function linkToAdminPageAdvancedSettings(differentHostname?: string): string {

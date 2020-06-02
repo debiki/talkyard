@@ -119,6 +119,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         fr
       }
       catch {
+        // Dupl code [RESLTEXC]
         case ex: OverQuotaException =>
           Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
             disk quota has been exceeded, sorry. [DwE7GH4R2]"""))

@@ -6142,6 +6142,20 @@ export class TyE2eTestBrowser {
           }
         },
 
+        features: {
+          goHere: (origin?: string, opts: { loginAs? } = {}) => {
+            this.adminArea._goToMaybeLogin(origin, '/-/admin/settings/features', opts);
+          },
+
+          setEnableApi: (enabled: boolean) => {
+            //this.waitAndClick('#te_EnblApi', { maybeMoves: true });
+            this.scrollIntoViewInPageColumn('#te_EnblApi');
+            this.waitUntilDoesNotMove('#te_EnblApi');
+            this.setCheckbox('#te_EnblApi', enabled);
+            //this.waitAndClick('#te_EnblApi');
+          },
+        },
+
         embedded: {
           goHere: (origin?: string) => {
             this.go((origin || '') + '/-/admin/settings/embedded-comments');

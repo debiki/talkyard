@@ -134,6 +134,8 @@ function sendFetchRequest(channelId: string, onDone: (response) => void,
 
   let options: any = {
     credentials: 'same-origin',
+    // This fails requests to external origins.
+    mode: 'same-origin',
     referrer: 'no-referrer',
     redirect: 'error',
     signal: anyAbortController ? anyAbortController.signal : undefined,
@@ -172,6 +174,221 @@ function sendFetchRequest(channelId: string, onDone: (response) => void,
 }
 
 */
+
+interface PendingFetch {
+  request,
+  abort: () => void;
+}
+
+
+// ---------------------------------------------------------------
+// @ifdef DEBUG
+// This fn not yet needed — nice to have though, when trying out CORS requests.
+// And later, when using fetch() everywhere.  [FETCHEX]
+
+// Fetches, via a POST requests, stuff from another server. [CORSPOST]
+// Shows what went wrong (if anything).
+// This will only work, if that other server has been configured to allow
+// CORS requests from the current server (current origin).
+//
+// This could almost be a blog post (!) — so many things can go wrong,
+// What about open sourcing this fn under MIT?
+//
+export function corsPost(ps: { url: string, xsrfToken: string, data: any,
+        onDone: (responseJson) => void, onError?: ErrorDetailsStatusHandler })
+        : PendingFetch {
+
+  const onError: ErrorDetailsStatusHandler = function(statusCode, statusText, ex?) {
+    try {
+      ps.onError?.(statusCode, statusText, ex);
+    }
+    catch (ex2) {
+      console.error(`Error in error handler, after corsPost():ing to ${ps.url} ` +
+            `and handling respone status ${statusCode} ${statusText}: `, ex2);
+    }
+  }
+
+  dieIf(_.isString(ps.data),
+      "'data' should be a javascript object not a string [TyE503RSKDH]");
+
+  // There are browsers with fetch() but no AbortController, e.g. UC Browser for Android
+  // and Opera Mini (this as of 2020-06).
+  const anyAbortController = ('AbortController' in self) ?
+          new AbortController() : undefined;
+
+  const method = 'POST';
+
+  const options: RequestInit = {
+    // Could specify 'same-origin', but then harder to troubleshoot, when such
+    // requests look different.
+    credentials: 'omit',
+    method,
+    keepalive: true,
+    // This makes the response body readable for this in-browser Javascript code.
+    mode: 'cors',
+    referrer: 'no-referrer',
+    // Don't follow redirects.
+    redirect: 'error',
+    signal: anyAbortController?.signal,
+    headers: {
+      'Content-Type': 'application/json',  // if POSTing.
+    },
+    body: JSON.stringify(ps.data),
+  };
+
+  // Do here, so won't add any `xsrf: undefined` field, if missing — that'd
+  // get sent as "undefined" (a string).
+  if (ps.xsrfToken) {
+    options.headers['X-Xsrf-Token'] = ps.xsrfToken;
+  }
+
+  const ongoingRequest = fetch(ps.url, options).then(function(response) {
+    // We got the response http headers. Get the body too, also if we got an error
+    // status code — so we can show details from the response body about what
+    // went wrong. Use text() not json() so we can print the response body if it's
+    // a plain text error message, or corrupt json that caused a parse error.
+    console.trace(`Got fetch() response headers: ${response.status
+          } ${response.statusText} [TyMGOTHDRS]`);
+
+    response.text().then(function(text) {
+      console.trace(`Got fetch() response text [TyMGOTTXT]: ` + text);
+
+      if (response.status !== 200) {
+        console.error(`fetch() error response, status ${response.status
+                } ${response.statusText} [TyEFETCHERR], response text:\n${text}`);
+        onError(response.status, response.statusText, text);
+        return;
+      }
+
+      let json;
+      try { json = JSON.parse(text) }
+      catch (ex) {
+        console.error(`Error parsing JSON in fetch() 200 ${response.statusText
+              } response [TyEFETCH0JSN]:\n${text}`, ex);
+        onError(200, response.statusText, "Error parsing response json");
+        return;
+      }
+
+      try { ps.onDone(json) }
+      catch (ex) {
+        console.error(`Error in fetch() 200  ${response.statusText
+              } response handler [TyERSPHNDL]`, ex);
+      }
+    }).catch(function(error) {
+      console.error(`Error getting fetch() response body [TyEFETCH0BDY]: `, error);
+      onError(response.status, response.statusText, error);
+    });
+  }).catch(function(error) {
+    console.error(`fetch() failed, no response [TyEFETCHFAIL]: `, error);
+    onError(0, '', error);
+  });
+
+  return {
+    request: ongoingRequest,
+    abort: !anyAbortController ? null : () => anyAbortController.abort(),
+  };
+}
+
+// In Javascript:
+/*
+
+ex:  corsPost({ url: 'http://site-3.localhost/-/v0/search', data: {},
+        onDone: r => { console.log('RSLT: ' + JSON.stringify(r)); }  });
+
+function corsPost(ps) {  
+
+  const onError = function(statusCode, statusText, ex) {
+    try {
+      !ps.onError || ps.onError(statusCode, statusText, ex);
+    }
+    catch (ex2) {
+      console.error(`Error in error handler, after corsPost():ing to ${ps.url} ` +
+            `and handling respone status ${statusCode} ${statusText}: `, ex2);
+    }
+  }
+
+  // There are browsers with fetch() but no AbortController, e.g. UC Browser for Android
+  // and Opera Mini (this as of 2020-06).
+  const anyAbortController = ('AbortController' in self) ?
+          new AbortController() : undefined;
+
+  const method = 'POST';
+
+  const options = {
+    // Could specify 'same-origin', but then harder to troubleshoot, when such
+    // requests look different.
+    credentials: 'omit',
+    method,
+    keepalive: true,
+    // This makes the response body readable for this in-browser Javascript code.
+    mode: 'cors',
+    referrer: 'no-referrer',
+    // Don't follow redirects.
+    redirect: 'error',
+    signal: anyAbortController?.signal,
+    headers: {
+      'Content-Type': 'application/json',  // if POSTing.
+    },
+    body: JSON.stringify(ps.data),
+  };
+
+  // Do here, so won't add any `xsrf: undefined` field, if missing — that'd
+  // get sent as "undefined" (a string).
+  if (ps.xsrfToken) {
+    options.headers['X-Xsrf-Token'] = ps.xsrfToken;
+  }
+
+  const ongoingRequest = fetch(ps.url, options).then(function(response) {
+    // We got the response http headers. Get the body too, also if we got an error
+    // status code — so we can show details from the response body about what
+    // went wrong. Use text() not json() so we can print the response body if it's
+    // a plain text error message, or corrupt json that caused a parse error.
+    console.trace(`Got fetch() response headers: ${response.status
+          } ${response.statusText} [TyMGOTHDRS]`);
+
+    response.text().then(function(text) {
+      console.trace(`Got fetch() response text [TyMGOTTXT]: ` + text);
+
+      if (response.status !== 200) {
+        console.error(`fetch() error response, status ${response.status
+                } ${response.statusText} [TyEFETCHERR], response text:\n${text}`);
+        onError(response.status, response.statusText, text);
+        return;
+      }
+
+      let json;
+      try { json = JSON.parse(text) }
+      catch (ex) {
+        console.error(`Error parsing JSON in fetch() 200 ${response.statusText
+              } response [TyEFETCH0JSN]:\n${text}`, ex);
+        onError(200, response.statusText, "Error parsing response json");
+        return;
+      }
+
+      try { ps.onDone(json) }
+      catch (ex) {
+        console.error(`Error in fetch() 200  ${response.statusText
+              } response handler [TyERSPHNDL]`, ex);
+      }
+    }).catch(function(error) {
+      console.error(`Error getting fetch() response body [TyEFETCH0BDY]: `, error);
+      onError(response.status, response.statusText, error);
+    });
+  }).catch(function(error) {
+    console.error(`fetch() failed, no response [TyEFETCHFAIL]: `, error);
+    onError(0, '', error);
+  });
+
+  return {
+    request: ongoingRequest,
+    abort: !anyAbortController ? null : () => anyAbortController.abort(),
+  };
+}
+
+*/
+// @endif
+// ---------------------------------------------------------------
+
 
 export function uploadFiles(endpoint: string, files: any[], onDone, onError) {
   dieIf(files.length !== 1,  `${files.length} files [TyE06WKTDN23]`);

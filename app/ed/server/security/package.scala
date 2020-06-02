@@ -19,12 +19,13 @@ package ed.server.security
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{EdHttp, Globals}
+import debiki.{AllSettings, EdHttp, EffectiveSettings, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import play.api.mvc.{Cookie, DiscardingCookie, RequestHeader}
 import scala.util.Try
 import EdSecurity._
 import ed.server.auth.MayMaybe
+import play.api.http.{HeaderNames => p_HNs}
 import talkyard.server.TyLogger
 
 
@@ -125,6 +126,29 @@ object EdSecurity {
 }
 
 
+sealed abstract class CorsInfo {
+  def isCrossOrigin: Boolean = false
+  def hasCorsCreds: Boolean = false
+  def isPreFlight: Boolean = false
+}
+
+object CorsInfo {
+  case object NotCorsNoOriginHeader extends CorsInfo
+  case class SameOrigins(requestAndTargetOrigin: String) extends CorsInfo
+
+  case class OkayCrossOrigin(
+    requestOrigin: String,
+    override val hasCorsCreds: Boolean,
+    override val isPreFlight: Boolean,
+  ) extends CorsInfo {
+    override def isCrossOrigin: Boolean = true
+
+    // Should return Forbidden before this, then.
+    dieIf(hasCorsCreds && isPreFlight, "TyE6933KR445")
+  }
+}
+
+
 class EdSecurity(globals: Globals) {
 
   import EdHttp._
@@ -138,6 +162,123 @@ class EdSecurity(globals: Globals) {
     * because the sid expired. Hmm?
     */
   private val XsrfAliveExtraSeconds = 3600
+
+  // Is this an allowed (CORS) Cross-Origin-Resource-Sharing request?
+  def checkIfCorsRequest(request: RequestHeader, siteSettings: EffectiveSettings): CorsInfo = {
+
+    val isPreFlight = request.method == "OPTIONS"
+
+    // *For now*, only handle CORS requests to /-/v0/... so won't
+    // accidentally break other endpoints, now when trying out CORS.
+    if (request.path.indexOf("/-/v0/") != 0) {
+      throwForbiddenIf(isPreFlight, "TyCORSPATH", "CORS only allowed in /-/v0/") // [CORSPATH]
+      // We'll check cookie and xsrf token, just like before CORS support got added.
+      return CorsInfo.NotCorsNoOriginHeader // (690732856Y)
+    }
+
+    // If the Origin header is *absent*, this cannot be a CORS request, because:
+    // ""The `Origin` header is a version of the `Referer` [sic] header that
+    //   does not reveal a path. It is used for all HTTP fetches whose
+    //   request’s response tainting is "cors", as well as those where
+    //   request’s method is neither `GET` nor `HEAD`. Due to compatibility
+    //   constraints it is not included in all fetches.""
+    // https://fetch.spec.whatwg.org/#origin-header  2020-05
+    //
+    // (About the Origin header:
+    // ""the Origin header field indicates the origin(s) that "caused"
+    //   the user agent [browser] to issue the request [...]
+    //   For example, consider [a browser] that executes scripts on behalf of
+    //   origins.  If one of those scripts causes the [browser] to issue an
+    //   HTTP request, [the browser] MAY use the Origin header field to
+    //   [tell the server from where the request comes]""
+    // https://tools.ietf.org/html/rfc6454#section-7.2  2020-05
+    // All modern browsers do the above, incl IE11, https://caniuse.com/#feat=cors 2020-05  )
+    //
+    // (Theoretically, some GET requests without Origin can be from another server,
+    // e.g. for loading an image or script tag — but any script sending such requests,
+    // cannot see the response. Such requests aren't CORS requests. Although there's
+    // a trick with scripts called JSONP — it's obsoleted by CORS.)
+    //
+    val requestOrigin: String = request.headers.get(p_HNs.ORIGIN) getOrElse {
+      return CorsInfo.NotCorsNoOriginHeader
+    }
+
+    // Nginx uses host 'app:9000' for Talkyard, so I think we need to use the
+    // Host header (but not any hostname in the requested url).
+    //
+    // TODO look at the req from Nginx —  is the Host header used here?
+    // or a hostname in the request line?
+    //
+    // Use the same as here: [SRTMD40754445]
+    val targetHost: String = request.host /*headers.get(p_HNs.HOST) getOrElse {
+      throwForbidden("TyE0HOSTHDR", "Host header missing")
+    } */
+
+    throwForbiddenIf(
+          isPreFlight && request.headers.get(p_HNs.ACCESS_CONTROL_REQUEST_METHOD).isEmpty,
+          "TyENOTPREFL01", o"""All OPTIONS requests to here must be CORS
+              pre-flight requests — but this is no pre-flight request? It has
+              no ${ p_HNs.ACCESS_CONTROL_REQUEST_METHOD} header""")
+
+    // Can convert hostname to lowercase — Play Framework does that, here:
+    // filters-helpers_2.12-2.8.1-sources.jar!/play/filters/cors/AbstractCORSPolicy.scala
+    // in isSameOrigin() — but is unnecessary, maybe slightly risky? Require exact match.
+    // Using the Host header is best, right? [USEHOSTHDR]
+    val targetOrigin = globals.schemeColonSlashSlash + targetHost +
+          "" // globals.colonPort  ?? needed or incl in  request.host ?  [SRTMD40754445]
+    val isSameOrigin = targetOrigin == requestOrigin
+
+    // Play Fmw does this:
+    // val x = new URI((if (request.secure) "https://" else "http://") +
+    //                  request.host.toLowerCase(Locale.ENGLISH))
+    //    ...  == (x.getScheme, x.getHost, x.getPort)
+
+    // This'd be weird?
+    throwForbiddenIf(isPreFlight && isSameOrigin,
+          "TyEPREFLSAMEORG", o"""I don't want pre-flight requests to the same
+              origin: $targetOrigin  (and target host was: $targetHost,
+              request origin: $requestOrigin)""")
+
+    if (isSameOrigin)
+      return CorsInfo.SameOrigins(requestAndTargetOrigin = targetOrigin)
+
+    // Ok request method?
+    throwForbiddenIf(!isPreFlight && request.method != "GET" && request.method != "POST",
+          "TyECORSMTD", s"Forbidden CORS request method: ${request.method}")
+
+    // Ok URL path?  (currently dead code (690732856Y)) [CORSPATH]
+    throwForbiddenIf(request.path.indexOf("/-/v0/") != 0,
+          "TyECORSPATH", o"""CORS requests only allowed to url path: ${request.path},
+            but you requested: ${request.path}""")
+
+    // From an allowed external website?
+    val okOrigins: Seq[String] = siteSettings.allowCorsFromParsed
+
+    // (If this is a pre-flight request and CORS not allowed, then could reply
+    // with CORS info headers and status 204, but why? Replying Forbidden is simpler.)
+    throwForbiddenIf(!okOrigins.contains(requestOrigin),
+          "TyECORSORIG", o"""This looks like a CORS (Cross-Origin) request,
+            but this site doesn't allow CORS requests from your origin. Your origin is:
+            $requestOrigin.  This site: $targetOrigin  (and target host was: $targetHost)""")
+
+    // Without cookies?
+    // ""By default, in cross-site XMLHttpRequest or Fetch invocations,
+    //   browsers will not send credentials. A specific flag has to be set [...]""
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Requests_with_credentials
+    //   2020-05
+    val hasCreds = request.cookies.nonEmpty
+    throwForbiddenIf(hasCreds && !siteSettings.allowCorsCreds,
+          "TyECORSCOOKIES", o"""This looks like a CORS (Cross-Origin) request,
+            but it includes credentials (cookies), which this site doesn't allow.""")
+
+    throwForbiddenIf(hasCreds && isPreFlight,
+          "TyEPREFLCREDS", "CORS pre-flight request *with cookies* — not allowed.")
+
+    // This cross-origin request is okay.
+    CorsInfo.OkayCrossOrigin(
+          requestOrigin, hasCorsCreds = hasCreds, isPreFlight = isPreFlight)
+  }
+
 
   /**
    * Finds the session id and any xsrf token in the specified request;

@@ -102,6 +102,7 @@ const tyAssert: any = {   // : any = works around:
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {
+    tyAssert.ok(text.length > 0, 'TyE4906895SK', 'text empty');
     const ix = text.indexOf(unexpectedSubstring);
     assert.ok(ix === -1,
       message || `This: "${unexpectedSubstring}" is incorrectly included in: "${text}"`);

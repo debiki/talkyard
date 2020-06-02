@@ -78,12 +78,14 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     // Needed for embedded comments signup-login to work if 3rd party cookies blocked. [306KUD244]
     val isOneTimeLogin = apiEndpoint == "login-with-secret"
 
-    throwForbiddenIf(!settings.enableApi && !isOneTimeLogin,
-      "TyEAPIDSBLD", "API disabled")
+    throwForbiddenIf(!settings.enableApi && !isOneTimeLogin, "TyEAPIDSBLD",
+          s"API not enabled. You tried to call: ${request.method} ${request.uri}")
 
     val EmbeddedCommentsFeedPath = "embedded-comments-feed"
 
     apiEndpoint match {
+      case "ping" =>
+        Ok(s"pong from: ${request.method} ${request.uri}\n")
 
       // Move export-site-json to SiteBackupController, an ApiSecretPostJsonAction, instead.
       //
@@ -276,6 +278,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
     apiEndpoint match {
+      case "ping" =>
+        Ok(s"pong from: ${request.method} ${request.uri}\n")
+
       case "sso-upsert-user-generate-login-secret" |
         "upsert-external-user-generate-login-secret" =>  // deprecated name, remove
         val extUser = Try(ExternalUser(  // Typescript ExternalUser [7KBA24Y] no SingleSignOnUser
