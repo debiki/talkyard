@@ -750,14 +750,15 @@ forum software.
 License
 -----------------------------
 
-- AGPL, see below.
-- And dual licensed under AGPL and GPL, from 2026-01-01 00:00:01 UTC and onwards.
+- AGPLv3 or later, see below.
+- And dual licensed under AGPLv3 and GPLv3 or later,
+  from 2026-01-01 00:00:01 UTC and onwards.
 - I (KajMagnus) bump the above becomes-dual-licensed date, with one year,
   each year — for the most recent version of Talkyard.
-  Meaning, the most recent version of Talkyard, becomes GPLv2, always 5 years
-  into the future (as long as I bump the date regularly).
+  Meaning, the most recent version of Talkyard, becomes GPLv3 or later,
+  always 5 years into the future (as long as I bump the date regularly).
 
-AGPL:
+AGPLv3 or later:
 
 ```
 Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
@@ -776,26 +777,24 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 
-Plus GPLv2 or later, from 2026-01-01 and onwards:
+Plus GPLv3 or later, from 2026-01-01 and onwards:
 
 ```
 Copyright (c) 2010-2020  Kaj Magnus Lindberg and Debiki AB
 
-This program is free software; from 2026-01-01 00:00:01 UTC and
+This program is free software: from 2026-01-01 00:00:01 UTC and
 onwards, you can redistribute it and/or
 modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
+as published by the Free Software Foundation, either version 3
 of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details,
-from 2026-01-01 00:00:01 UTC and onwards.
+GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
 
 vim: list et ts=2 sw=2 tw=0 fo=r

@@ -7,7 +7,7 @@
     "url": "https://github.com/debiki/to-talkyard/"
   },
   "author": "Debiki AB and Kaj Magnus Lindberg",
-  "license": "GPLv2",
+  "license": "GPLv3",
   "scripts": {
     "start": "npm run serve",
     "build": "npm run build-ts && npm run tslint",
