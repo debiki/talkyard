@@ -46,12 +46,21 @@ Later. Fast?:  https://openbase.io/js/gulp-tsb
 // https://github.com/TypeStrong/ts-loader
 module.exports = {
     context: __dirname, // process.cwd(), // to automatically find tsconfig.json
-    mode: 'development',
-    entry: './index.ts',
+    //mode: 'development',
+    mode: 'production', // PROD
+    //entry: './index.ts',
+    entry: {
+        index: {
+            import: './index.ts',
+            filename: 'staff-bundle.wp.js',
+            dependOn:'shared-bundle'
+        },
+        'shared-bundle': ['lodash', 'moment', 'react' ,'react-dom'],
+    },
     output: {
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve('images', 'web', 'assets', 'wptst'),
         filename: '[name].js',
-        publicPath: "/"
+        publicPath: '/',
     },
     plugins: [
         new ForkTsCheckerWebpackPlugin({
@@ -76,7 +85,8 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
-    devtool: 'inline-source-map',
+    //devtool: 'inline-source-map',
+    devtool: 'source-map', // PROD
     devServer: {
         clientLogLevel: 'warning',
         open: true,
