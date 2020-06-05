@@ -1,4 +1,4 @@
-/// <reference path="model.ts" />
+/// <reference path="model.d.ts" />
 
 declare const talkyard: TalkyardApi;
 

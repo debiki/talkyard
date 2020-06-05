@@ -16,9 +16,7 @@
  */
 
 import * as ReactDOM from 'react-dom';
-
-//  import  moment?  how where
-declare var moment;
+import * as moment from 'moment';
 
 
 const r = ReactDOMFactories;

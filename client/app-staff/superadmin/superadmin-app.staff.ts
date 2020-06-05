@@ -16,9 +16,7 @@
  */
 
 import * as _ from 'lodash';
-
-//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
-declare var moment: any;
+import * as moment from 'moment';
 
 
 // Migrating to WebPack, temporary code:

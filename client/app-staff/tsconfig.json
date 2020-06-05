@@ -1,6 +1,12 @@
 {
     "compilerOptions": {
         "target": "es6",
+
+        // Default is 'classic', causes this error:
+        // ERROR in /home/kajmagnus/styd/d7/node_modules/@types/react/index.d.ts(29,22):
+        // TS2307: Cannot find module 'csstype' or its corresponding type declarations.
+        "moduleResolution": "node",
+
         "removeComments": false,
         "lib": ["es5", "es6", "dom"],
         "types": ["react", "react-dom", "lodash", "core-js"],
