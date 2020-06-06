@@ -349,10 +349,11 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
   let replyNotfLink: string;
 
   it("Maja finds a page link in the notf email about Michael's reply", () => {
+    assert.eq(majasUiTopicId, c.SecondPageId);
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
-        // Instead,  /-1:
+        // Instead,  /-N:
         'https?://.*/-' + majasUiTopicId, majasUiTopicNotfEmail.bodyHtmlText);
   });
 
@@ -393,7 +394,7 @@ describe("api-upsert-posts   TyT60RKNJF24C", () => {
     replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
-        // Instead,  /-1:
+        // Instead,  /-N:
         'https?://.*/-' + majasApiTopic.id, michaelsReplyNotfEmail.bodyHtmlText);
   });
 

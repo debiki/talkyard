@@ -33,6 +33,8 @@ let mariasQuestion = "Can I ask questions?";
 let owensQuestionAnswer = "Yes if the number of questions is a prime number. 2, 3, 5, 7, 11 you know.";
 let mariasOwnOpReply = "Hmm, myself, let me think";
 
+const mariasQuestionSearchQuery = "ask questions";
+
 let siteId;
 
 
@@ -205,8 +207,8 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("... and the stranger won't find it when searching", () => {
-    stranger.topbar.searchFor(mariasQuestion);
-    stranger.searchResultsPage.assertPhraseNotFound(mariasQuestion);
+    stranger.topbar.searchFor(mariasQuestionSearchQuery);
+    stranger.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
   it("... and cannot accesss it via a direct link", () => {
@@ -250,8 +252,8 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("... and won't find it when searching", () => {
-    michael.topbar.searchFor(mariasQuestion);
-    michael.searchResultsPage.assertPhraseNotFound(mariasQuestion);
+    michael.topbar.searchFor(mariasQuestionSearchQuery);
+    michael.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
 
@@ -290,8 +292,8 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("... and search for it and find it", () => {
-    maria.topbar.searchFor(mariasQuestion);
-    maria.searchResultsPage.waitForAssertNumPagesFound(mariasQuestion, 1);
+    maria.topbar.searchFor(mariasQuestionSearchQuery);
+    maria.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
   });
 
 
@@ -329,8 +331,8 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("not when searching", () => {
-    maria.topbar.searchFor(mariasQuestion);
-    maria.searchResultsPage.assertPhraseNotFound(mariasQuestion);
+    maria.topbar.searchFor(mariasQuestionSearchQuery);
+    maria.searchResultsPage.assertPhraseNotFound(mariasQuestionSearchQuery);
   });
 
 
@@ -343,8 +345,8 @@ describe("private chat direct message notfs  TyT602RKDL42", () => {
   });
 
   it("... finds the topic when searching", () => {
-    alicesBrowser.topbar.searchFor(mariasQuestion);
-    alicesBrowser.searchResultsPage.waitForAssertNumPagesFound(mariasQuestion, 1);
+    alicesBrowser.topbar.searchFor(mariasQuestionSearchQuery);
+    alicesBrowser.searchResultsPage.waitForAssertNumPagesFound(mariasQuestionSearchQuery, 1);
   });
 
   it("... can click link and see it", () => {

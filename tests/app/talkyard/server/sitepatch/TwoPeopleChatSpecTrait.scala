@@ -50,7 +50,8 @@ trait TwoPeopleChatSpecTrait {
       authorRef = alice.extId.map("extid:" + _),
       pageMemberRefs = Vector(alice.extIdAsRef.get, bob.extIdAsRef.get),
       title = "Chat Page Title",
-      bodySource = "Chat between Alice and Bob")
+      bodySource = "Chat between Alice and Bob",
+      bodyMarkupLang = Some(MarkupLang.Html))
 
     lazy val chatPagePatch2 = chatPagePatch.copy(
       extId = "chatPage2ExtId",
@@ -68,7 +69,8 @@ trait TwoPeopleChatSpecTrait {
         pageRef = ParsedRef.ExternalId(pagePatch.extId),
         parentNr = None,
         authorRef = author.extIdAsRef.get,
-        bodySource = text)
+        bodySource = text,
+        bodyMarkupLang = Some(MarkupLang.Html))
 
 
     "Create anew site with a chat topic" in {

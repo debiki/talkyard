@@ -76,7 +76,7 @@ describe("chat-create-from-profile-pages.2browsers.test.ts  TyT306RAKN2", () => 
     const replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
-        // Instead,  /-1:
+        // Instead,  /-N:
         `https?://.*/-[0-9]+`, email.bodyHtmlText);
     mariasBrowser.go2(replyNotfLink);
   });

@@ -13,7 +13,7 @@ import c = require('../test-constants');
 let idAddress: IdAddress;
 let browser: TyE2eTestBrowser;
 
-const googleUSersTopic =
+const googleUsersTopic =
     { title: "I am the Goog of Email", body: "Faster than snails I send mails" };
 
 const testName = 'login-required-oauth-signup-login.test.ts';
@@ -58,12 +58,12 @@ describe(`${testName}  TyT406MRTJW2`, () => {
   });
 
   it("The Gmail user can create a topic  @gmail @google", () => {
-    browser.complex.createAndSaveTopic(googleUSersTopic);
+    browser.complex.createAndSaveTopic(googleUsersTopic);
   });
 
   it("Logs out", () => {
     browser.rememberCurrentUrl();
-    assert.equal(browser.urlPath(), '/-1/i-am-the-goog-of-email');
+    assert.equal(browser.urlPath(), `/-${c.SecondPageId}/i-am-the-goog-of-email`);
     browser.topbar.clickLogout({ waitForLoginButton: false });
   });
 
@@ -97,18 +97,18 @@ describe(`${testName}  TyT406MRTJW2`, () => {
 
 
   it("Sees the topic in the topic list", () => {
-    browser.forumTopicList.waitForTopicVisible(googleUSersTopic.title);
+    browser.forumTopicList.waitForTopicVisible(googleUsersTopic.title);
     browser.forumTopicList.assertNumVisible(1);
   });
 
 
   it("... opens it", () => {
-    browser.forumTopicList.goToTopic(googleUSersTopic.title);
+    browser.forumTopicList.goToTopic(googleUsersTopic.title);
   });
 
 
   it("The topic is visible @gmail @google", () => {
-    browser.topic.waitForPostAssertTextMatches(c.BodyNr, googleUSersTopic.body);
+    browser.topic.waitForPostAssertTextMatches(c.BodyNr, googleUsersTopic.body);
   });
 
 });

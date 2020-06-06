@@ -95,7 +95,7 @@ describe("direct-messages-delete.2browsers.test.ts  TyT5033FKSNS57", () => {
     const replyNotfLink = utils.findFirstLinkToUrlIn(
         // Currently the link uses the page id, not url slug.
         // So, not:  + firstUpsertedPage.urlPaths.canonical
-        // Instead,  /-1:
+        // Instead,  /-N:
         `https?://.*/-${mariasMessagePageId}`, emailToMichael.bodyHtmlText);
     michaelsBrowser.go2(replyNotfLink);
   });
