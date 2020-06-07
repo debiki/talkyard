@@ -1,4 +1,4 @@
-/// <reference path="./model.ts" />
+/// <reference path="./model.d.ts" />
 /// <reference path="./constants.ts" />
 /// <reference path="./magic-time.ts" />
 

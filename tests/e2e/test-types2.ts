@@ -273,7 +273,7 @@ interface TestGuest {  // try to rename to Guest
 }
 
 
-interface TestCategory {  // try to merge with Category in model.ts?
+interface TestCategory {  // try to merge with Category in model.d.ts?
   id: number;
   extId?: string;
   sectionPageId: string;

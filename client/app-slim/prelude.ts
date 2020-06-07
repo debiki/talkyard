@@ -16,7 +16,7 @@
  */
 
 /// <reference path="server-vars.d.ts" />
-/// <reference path="model.ts" />
+/// <reference path="model.d.ts" />
 /// <reference path="constants.ts" />
 /// <reference path="translations.d.ts" />
 /// <reference path="magic-time.ts" />

@@ -44,7 +44,7 @@ function rememberScrollPosition(pageId: PageId) {
 }
 
 // UX BUG SHOULD the first time for each new page, scroll to the last read post, ...
-// (i.e. ReadingProgress.lastViewedPostNr in model.ts)
+// (i.e. ReadingProgress.lastViewedPostNr in model.d.ts)
 function scrollToLastPosition(pageId: PageId) {
   const xy = scrollXyByPageId[pageId] || [0, 0];   // ... instead of always 0,0 first
   const pageCol = $byId('esPageColumn');

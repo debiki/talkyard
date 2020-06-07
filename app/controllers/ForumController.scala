@@ -86,7 +86,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       if pageStuff.pageRole == PageType.Forum
       pagePath: PagePath <- dao.getPagePath(pageId)
     } yield {
-      // Return model.ts: interface Forum.
+      // Return model.d.ts: interface Forum.
       Json.obj(
         "pageId" -> pageId,
         "path" -> pagePath.value,

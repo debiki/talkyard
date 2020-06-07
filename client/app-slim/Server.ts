@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="model.ts" />
+/// <reference path="model.d.ts" />
 /// <reference path="links.ts" />
 /// <reference path="ServerApi.ts" />
 

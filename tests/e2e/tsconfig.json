@@ -21,7 +21,7 @@
     },
     "include": [
         "../../client/app-slim/constants.ts",
-        "../../client/app-slim/model.ts",
+        "../../client/app-slim/model.d.ts",
         "./**/*.ts"
     ]
 }
