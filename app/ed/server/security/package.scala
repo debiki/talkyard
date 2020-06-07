@@ -203,35 +203,30 @@ class EdSecurity(globals: Globals) {
       return CorsInfo.NotCorsNoOriginHeader
     }
 
-    // Nginx uses host 'app:9000' for Talkyard, so I think we need to use the
-    // Host header (but not any hostname in the requested url).
-    //
-    // TODO look at the req from Nginx —  is the Host header used here?
-    // or a hostname in the request line?
-    //
-    // Use the same as here: [SRTMD40754445]
-    val targetHost: String = request.host /*headers.get(p_HNs.HOST) getOrElse {
-      throwForbidden("TyE0HOSTHDR", "Host header missing")
-    } */
+    // Nginx sends the host in the Host header. [ngx_host_hdr]
+    // For now: (this uses the Host header too — there's no host in the request line)
+    val targetHost: String = request.host
+    // Later:
+    //val targetHost: String = request.headers.get(p_HNs.HOST) getOrElse {
+    //  throwForbidden("TyE0HOSTHDR", "Host header missing")
+    //}
 
     throwForbiddenIf(
           isPreFlight && request.headers.get(p_HNs.ACCESS_CONTROL_REQUEST_METHOD).isEmpty,
           "TyENOTPREFL01", o"""All OPTIONS requests to here must be CORS
               pre-flight requests — but this is no pre-flight request? It has
-              no ${ p_HNs.ACCESS_CONTROL_REQUEST_METHOD} header""")
+              no ${p_HNs.ACCESS_CONTROL_REQUEST_METHOD} header""")
 
-    // Can convert hostname to lowercase — Play Framework does that, here:
+    // Could convert hostname to lowercase — Play Framework does that, here:
     // filters-helpers_2.12-2.8.1-sources.jar!/play/filters/cors/AbstractCORSPolicy.scala
-    // in isSameOrigin() — but is unnecessary, maybe slightly risky? Require exact match.
-    // Using the Host header is best, right? [USEHOSTHDR]
-    val targetOrigin = globals.schemeColonSlashSlash + targetHost +
-          "" // globals.colonPort  ?? needed or incl in  request.host ?  [SRTMD40754445]
+    // in isSameOrigin() — but feels unnecessary, maybe slightly risky?
+    // (Play Fmw does this:
+    //    val x = new URI((if (request.secure) "https://" else "http://") +
+    //        request.host.toLowerCase(Locale.ENGLISH))
+    //    ...  == (x.getScheme, x.getHost, x.getPort)  )
+    // Require exact match instead:
+    val targetOrigin = globals.schemeColonSlashSlash + targetHost + globals.colonPort
     val isSameOrigin = targetOrigin == requestOrigin
-
-    // Play Fmw does this:
-    // val x = new URI((if (request.secure) "https://" else "http://") +
-    //                  request.host.toLowerCase(Locale.ENGLISH))
-    //    ...  == (x.getScheme, x.getHost, x.getPort)
 
     // This'd be weird?
     throwForbiddenIf(isPreFlight && isSameOrigin,

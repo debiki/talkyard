@@ -46,6 +46,7 @@ import scala.util.matching.Regex
 import ed.server.EdContext
 import ed.server.http.GetRequest
 import ed.server.jobs.Janitor
+import play.api.http.{HeaderNames => p_HeaderNames}
 import play.api.mvc.RequestHeader
 import talkyard.server.TyLogging
 
@@ -671,7 +672,16 @@ class Globals(
     * then the site is looked up directly by id.
     */
   def lookupSiteOrThrow(request: RequestHeader): SiteBrief = {
-    lookupSiteOrThrow(host = request.host, request.uri)   // [SRTMD40754445]
+    // Nginx sends the host name in the Host header — not in the request line.
+    // (So, no need to use Play's request.host, which looks first in the request
+    // line for any Absolute-URI,  e.g.: 'https://example.com/url/path',  defined in RFC 3986
+    // https://tools.ietf.org/html/rfc3986#page-27
+    // — Nginx instead sends just  '/url/path' and the host in the Host header.)
+    // Later:
+    //val hostInHeader = request.headers.get(p_HeaderNames.HOST).getOrElse("") //  [ngx_host_hdr]
+    // For now: (doesn't matter — this'll use the Host header anyway)
+    val hostInHeader = request.host
+    lookupSiteOrThrow(host = hostInHeader, request.uri)
   }
 
 

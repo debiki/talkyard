@@ -274,7 +274,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
     import request.{siteId, body, dao}
     lazy val now = context.globals.now()
 
-    throwForbiddenIf(!request.isViaApiSecret,
+    throwForbiddenIf(!request.isViaApiSecret && apiEndpoint != "ping",
         "TyEAPI0SECRET", "The API may be called only via Basic Auth and an API secret")
 
     apiEndpoint match {
