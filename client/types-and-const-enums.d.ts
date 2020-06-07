@@ -52,7 +52,7 @@ type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
 
 
-const enum ReviewDecision {
+declare const enum ReviewDecision {
   // 1nnn = Accept.
   Accept = 1001,
   // 3nnn = Request changes.
@@ -61,14 +61,14 @@ const enum ReviewDecision {
 }
 
 
-const enum FlagType {
+declare const enum FlagType {
   Spam = 51,
   Inapt = 52,
   Other = 53,
 }
 
 
-const enum DeletedStatus {
+declare const enum DeletedStatus {
   SelfBit = 1,
   SuccessorsBit = 2,
   TreeBits = SelfBit | SuccessorsBit,
@@ -77,7 +77,7 @@ const enum DeletedStatus {
 }
 
 
-const enum DraftStatus {  // sync with test code [5ABXG20]
+declare const enum DraftStatus {  // sync with test code [5ABXG20]
   NotLoaded = 0,
   NothingHappened = 1,
   EditsUndone = 2,
@@ -94,7 +94,7 @@ const enum DraftStatus {  // sync with test code [5ABXG20]
 
 
 // draftType_toPostType() can convert to PostType.
-const enum DraftType {
+declare const enum DraftType {
   Scratch = 1,
   Topic = 2,
   DirectMessage = 3,
@@ -105,7 +105,7 @@ const enum DraftType {
 
 
 // postType_toDraftType() can convert to DraftType.
-const enum PostType {   // sync with test code [26BKA01]
+declare const enum PostType {   // sync with test code [26BKA01]
   Normal = 1,         // RENAME to NormalPost
   Flat = 2,           // CLEAN_UP remove
   ChatMessage = 3,
@@ -117,7 +117,7 @@ const enum PostType {   // sync with test code [26BKA01]
 }
 
 
-const enum PostVoteType {
+declare const enum PostVoteType {
   Like = 41,
   Disagree = 42,
   Bury = 43,
@@ -125,7 +125,7 @@ const enum PostVoteType {
 }
 
 
-const enum PageNotfLevel {
+declare const enum PageNotfLevel {
   EveryPostAllEdits = 9,
   EveryPost = 8,
   TopicProgress = 7,
@@ -138,7 +138,7 @@ const enum PageNotfLevel {
 }
 
 
-const enum NotificationType {
+declare const enum NotificationType {
   DirectReply = 301,
   Mention = 302,  // DirectMention
   // GroupMention =
@@ -150,7 +150,7 @@ const enum NotificationType {
 }
 
 
-const enum EmailNotfPrefs {
+declare const enum EmailNotfPrefs {
   ReceiveAlways = 5,
   Receive = 1,
   DontReceive = 2,
@@ -159,7 +159,7 @@ const enum EmailNotfPrefs {
 }
 
 
-const enum IncludeInSummaries {
+declare const enum IncludeInSummaries {
   Default = 0,
   YesFeatured = 1,
   NoExclude = 3
@@ -170,7 +170,7 @@ const enum IncludeInSummaries {
 type PageLayout = number;
 
 
-const enum TopicListLayout {
+declare const enum TopicListLayout {
   Default = 0,
   TitleOnly = 1,
   TitleExcerptSameLine = 2,
@@ -181,12 +181,12 @@ const enum TopicListLayout {
 }
 
 
-const enum CategoriesLayout {
+declare const enum CategoriesLayout {
   Default = 0,
 }
 
 
-const enum TopicLayout {
+declare const enum TopicLayout {
   Default = 0,  // then, depends on topic type. E.g. question-answers —> threaded discussion.
   ThreadedDiscussion = 1001,
   FlatProgress = 1002,
@@ -194,14 +194,14 @@ const enum TopicLayout {
 }
 
 
-const enum ShowAuthorHow {
+declare const enum ShowAuthorHow {
   UsernameOnly = 1,
   UsernameThenFullName = 2,
   FullNameThenUsername = 3,  // the default
 }
 
 
-const enum TopicSortOrder {
+declare const enum TopicSortOrder {
   BumpTime = 1,
   CreatedAt = 2,
   ScoreAndBumpTime = 3,
@@ -209,7 +209,7 @@ const enum TopicSortOrder {
 }
 
 
-const enum TopTopicsPeriod {
+declare const enum TopTopicsPeriod {
   Day = 1,
   Week = 2,
   Month = 3,
@@ -220,7 +220,7 @@ const enum TopTopicsPeriod {
 
 type PageType = PageRole;
 
-const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to PageType
+declare const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to PageType
   CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,
@@ -246,7 +246,7 @@ const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to 
 
 
 // Sync with Scala [5KBF02].
-const enum PageDoingStatus {
+declare const enum PageDoingStatus {
   Discussing = 1,
   Planned = 2,
   Started = 3,
@@ -262,20 +262,20 @@ const enum PageDoingStatus {
 }
 
 
-const enum PinPageWhere {
+declare const enum PinPageWhere {
   InCategory = 1,
   Globally = 3,
 }
 
 
-const enum DiscussionLayout {
+declare const enum DiscussionLayout {
   Default = 0,
 }
 
 type NestingDepth = number;
 //const InfiniteNesting: NestingDepth = -1;  // sync with Scala
 
-const enum PostSortOrder {
+declare const enum PostSortOrder {
   Default = 0,
   BestFirst = 1,
   NewestFirst = 2,
@@ -284,13 +284,13 @@ const enum PostSortOrder {
   // NewAndBestFirst = 5,
 }
 
-const enum ProgressLayout {
+declare const enum ProgressLayout {
   Default = 0,
   Enabled = 1,
   MostlyDisabled = 2,
 }
 
-const enum OrigPostVotes {
+declare const enum OrigPostVotes {
   Default = 0,
   NoVotes = 1,
   LikeVotesOnly = 2,
@@ -299,7 +299,7 @@ const enum OrigPostVotes {
 
 
 
-const enum SiteStatus {
+declare const enum SiteStatus {
   NoAdmin = 1,
   Active = 2,
   ReadAndCleanOnly = 3,
@@ -310,7 +310,7 @@ const enum SiteStatus {
 }
 
 
-const enum TrustLevel {
+declare const enum TrustLevel {
   Stranger = 0,
   New = 1,
   Basic = 2,
@@ -321,7 +321,7 @@ const enum TrustLevel {
 }
 
 
-const enum ThreatLevel {
+declare const enum ThreatLevel {
   SuperSafe = 1,
   SeemsSafe = 2,
   HopefullySafe = 3,
@@ -331,7 +331,7 @@ const enum ThreatLevel {
 }
 
 
-const enum Groups {
+declare const enum Groups {
   NoUserId = 0,
   EveryoneId = 10,
   AllMembersId = 11,
@@ -347,14 +347,14 @@ const enum Groups {
 }
 
 
-const enum ContribAgreement {
+declare const enum ContribAgreement {
   CcBy3And4 = 10,
   CcBySa3And4 = 40,
   CcByNcSa3And4 = 70,
   UseOnThisSiteOnly = 100
 }
 
-const enum ContentLicense {
+declare const enum ContentLicense {
   CcBy4 = 10,
   CcBySa4 = 40,
   CcByNcSa4 = 70,
@@ -362,7 +362,7 @@ const enum ContentLicense {
 }
 
 
-const enum HostRole {
+declare const enum HostRole {
   Canonical = 1,
   Redirect = 2,
   Link = 3,

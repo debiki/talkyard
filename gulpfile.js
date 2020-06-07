@@ -275,8 +275,9 @@ var _2dJsFiles = [   // temporarily broken,  [SLIMTYPE]  [2D_LAYOUT]
   'client/app-2d/utterscroll/utterscroll.js',
   'target/client/2d-typescript.js']; */
 
+/*
 var staffJsFiles = [
-      'target/client/staff-typescript.js'];
+      'target/client/staff-typescript.js']; */
 
 var editorJsFiles = [
       // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
@@ -427,7 +428,7 @@ function compileServerTypescriptConcatJavascript() {
 var swTypescriptProject = typeScript.createProject("client/serviceworker/tsconfig.json");
 var slimTypescriptProject = typeScript.createProject("client/app-slim/tsconfig.json");
 var moreTypescriptProject = typeScript.createProject("client/app-more/tsconfig.json");
-var staffTypescriptProject = typeScript.createProject("client/app-staff/tsconfig.json");
+//var staffTypescriptProject = typeScript.createProject("client/app-staff/tsconfig.json");
 var editorTypescriptProject = typeScript.createProject("client/app-editor/tsconfig.json");
 var blogCommentsTypescriptProject = typeScript.createProject("client/embedded-comments/tsconfig.json");
 /*
@@ -507,13 +508,14 @@ gulp.task('compile2dTypescript-concatScripts',
 }));
  */
 
+ /*
 gulp.task('compileStaffTypescript', () => {
   return compileOtherTypescript(staffTypescriptProject);
 });
 gulp.task('compileStaffTypescript-concatScripts',
         gulp.series('compileStaffTypescript',() => {
   return makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer');
-}));
+})); */
 
 
 gulp.task('compileEditorTypescript', () => {
@@ -569,7 +571,7 @@ gulp.task('compileConcatAllScripts', gulp.series(  // speed up w gulp.parallel? 
   'compileSlimTypescript-concatScripts',
   'compileMoreTypescript-concatScripts',
   // _2dTypescriptProject: disabled
-  'compileStaffTypescript-concatScripts',
+  //'compileStaffTypescript-concatScripts',
   'compileEditorTypescript-concatScripts',
   'compileBlogCommentsTypescript-concatScripts',
   'bundleZxcvbn'));
@@ -787,10 +789,10 @@ gulp.task('watch', gulp.series((done) => {
       gulp.series('compileMoreTypescript-concatScripts'))
     .on('change', logChangeFn('More typescript'));
 
-  gulp.watch(
-      ['client/app-staff/**/*.js', 'client/app-staff/**/*.ts'],
-      gulp.series('compileStaffTypescript-concatScripts'))
-    .on('change', logChangeFn('Staff typescript'));
+  // gulp.watch(
+  //     ['client/app-staff/**/*.js', 'client/app-staff/**/*.ts'],
+  //     gulp.series('compileStaffTypescript-concatScripts'))
+  //   .on('change', logChangeFn('Staff typescript'));
 
   gulp.watch(['client/app-editor/**/*.js', 'client/app-editor/**/*.ts'],
       gulp.series('compileEditorTypescript-concatScripts'))
