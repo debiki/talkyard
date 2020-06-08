@@ -236,7 +236,7 @@ const EditCategoryDialog = createClassAndFactory({
       : r.div({},
         PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB', disabled: !canSave },
           saveButtonTitle),
-        Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel")));
+        Button({ onClick: this.close, className: 'e_CancelCatB' }, "Cancel")));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esCatDlg s_CD' },

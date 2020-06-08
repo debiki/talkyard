@@ -17,7 +17,10 @@
 
 (function() {
 
-var pluginId = 'Onebox';
+// NEXT seems ok simple to create an IntLnRndr for internal link titles?
+// And [[wiki style]] links and later #[tags]?
+
+var pluginId = 'LnPvRndr';  // means LinkPreviewRenderer
 
 
 /**
@@ -33,13 +36,18 @@ debiki.internal.oneboxMarkdownItPlugin = function(md) {
 
 function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
   var startLine = state.getLines(startLineIndex, startLineIndex + 1, state.blkIndent, false);
+
+  // Ooops! cancels if 1st line not the link.
   if (startLine[0] !== 'h' || startLine[1] !== 't' || startLine[2] !== 't')
     return false;
 
+  // Ooops! cancels if >= 2 lines in para.
   var nextLine = state.getLines(startLineIndex + 1, startLineIndex + 2, state.blkIndent, false);
   if (nextLine)
     return false;
 
+  // SHOULD require only its own line, not its own paragraph! (Otherwise,
+  // people don't "discover" the link preview functionality).
   if (state.parentType !== 'root' &&     // works with markdown-it 7
       state.parentType !== 'paragraph')  // works with markdown-it 8
     return false; // not a top level block
@@ -70,7 +78,7 @@ function renderOnebox(tokens, index, options, env, renderer) {
     // We're running server side then? In case the string is a Nashorn ConsString,
     // which won't work now when calling back out to Scala/Java code:
     var linkAsJavaString = String(token.link);
-    oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString);
+    oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString); // [js_scala_interop]
   }
   else {
     var randomClass = 'onebox-' + Math.random().toString(36).slice(2);
@@ -80,8 +88,13 @@ function renderOnebox(tokens, index, options, env, renderer) {
           return debiki2.$h.parseHtml(safeHtml)[0];
         }
         // The link couldn't be oneboxed. Show a plain <a href=...> link instead.
-        // (rel=nofollow gets added here: [7WBK2A04] for other not-a-onebox-attempt links.)
-        return Bliss.create('a', { href: token.link, rel: 'nofollow', text: token.link });
+        // (rel=nofollow gets added here: [rel_nofollow] for other not-a-onebox-attempt links.)
+        return Bliss.create('a', {
+          href: token.link,
+          // target: _blank — don't add! without also adding noopener on the next line:
+          rel: 'nofollow',   // + ' noopener' — for [reverse_tabnabbing].
+          text: token.link,
+         });
       }
       var placeholders = debiki2.$all('.' + randomClass);
       // The placeholders might have disappeared, if the editor was closed or the

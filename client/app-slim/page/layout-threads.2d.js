@@ -33,7 +33,7 @@ d.i.layoutThreads = function() {
     // Hack: Is this a YouTube video thread? Then set width 480, that's how wide
     // the videos want to be. Set 505px though because there's padding, and jQuery 1.7
     // doesn't understand box-sizing: border-box; [fix_when_upgraded_jquery]
-    if ($thread.find('> .dw-p .dw-ob-youtube').length) {
+    if ($thread.find('> .dw-p .s_LnPv-YouTube').length) {
       width = Math.max(width, 505);
     }
     $thread.css('width', width + 'px');

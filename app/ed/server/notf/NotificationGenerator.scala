@@ -19,7 +19,7 @@ package ed.server.notf
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.{Globals, Nashorn, TextAndHtml}
+import debiki._
 import debiki.EdHttp.throwForbiddenIf
 import ed.server.notf.NotificationGenerator._
 import scala.collection.{immutable, mutable}
@@ -40,6 +40,8 @@ case class NotificationGenerator(
   nashorn: Nashorn,
   config: debiki.Config) {
 
+  dieIf(Globals.isDevOrTest && tx.siteId != dao.siteId, "TyE603RSKHAN3")
+
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
 
@@ -52,6 +54,7 @@ case class NotificationGenerator(
   private var anyAuthor: Option[Participant] = None
   private def author: Participant = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
+  private lazy val site: SiteIdHostnames = dao.theSite()
 
   def generatedNotifications =
     Notifications(
@@ -59,11 +62,21 @@ case class NotificationGenerator(
       toDelete = notfsToDelete.toVector)
 
 
-  def generateForNewPost(page: Page, newPost: Post, anyNewTextAndHtml: Option[TextAndHtml],
+  def generateForNewPost(page: Page, newPost: Post, sourceAndHtml: Option[SourceAndHtml],
         anyReviewTask: Option[ReviewTask],
         skipMentions: Boolean = false): Notifications = {
 
     require(page.id == newPost.pageId, "TyE74KEW9")
+
+    if (newPost.isTitle)
+      return generatedNotifications  // [no_title_notfs]
+
+    val anyNewTextAndHtml: Option[TextAndHtml] = sourceAndHtml.map({
+      case t: TextAndHtml => t
+      case _ =>
+        dieIf(Globals.isDevOrTest, "TyE305KTUDP3", "Got a TitleSourceAndHtml")
+        return generatedNotifications
+    })
 
     // A new embedded discussions page shouldn't generate a notification, [new_emb_pg_notf]
     // because those pages are lazy auto created – and uninteresting event.
@@ -74,6 +87,8 @@ case class NotificationGenerator(
       return generatedNotifications
 
     if (anyReviewTask.isDefined) {
+      COULD // Move this to a new fn  generateForReviewTask()  instead? [revw_task_notfs]
+
       // Generate notifications to staff members, so they can review this post. Don't
       // notify others until later, when the post has been approved and is visible.
 
@@ -141,8 +156,8 @@ case class NotificationGenerator(
     BUG // harmless. If a mention is removed, and added back, a new notf is sent. TyT2ABKS057
     // Probably don't want that?
     if (!skipMentions) {
-      val mentionedUsernames = anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(
-        newPost.approvedSource getOrDie "DwE82FK4", nashorn)
+      val mentionedUsernames = anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(  // [nashorn_in_tx] [save_post_lns_mentions]
+            newPost.approvedSource getOrDie "DwE82FK4", site, nashorn)
 
       var mentionedMembers: Set[Participant] = mentionedUsernames.flatMap(tx.loadMemberByUsername)
 
@@ -553,7 +568,7 @@ case class NotificationGenerator(
 
   /** Creates and deletes mentions, if '@username's are added/removed by this edit.
     */
-  def generateForEdits(oldPost: Post, newPost: Post, anyNewTextAndHtml: Option[TextAndHtml])
+  def generateForEdits(oldPost: Post, newPost: Post, anyNewSourceAndHtml: Option[SourceAndHtml])
         : Notifications = {
 
     BUG; SHOULD; REFACTOR // [5BKR03] Load users already mentioned — from the database, not
@@ -577,6 +592,15 @@ case class NotificationGenerator(
       return Notifications.None
     }
 
+    val anyNewTextAndHtml: Option[TextAndHtml] = anyNewSourceAndHtml map {
+      case t: TextAndHtml => t
+      case _: TitleSourceAndHtml =>
+        // Currently titles cannot mention people, and editing it generates no notfs.
+        // However, maybe later staff wants to get notified if titles of "important"
+        // pages somehow get changed. For now, do nothing though. [no_title_notfs]
+        return Notifications.None  // or: return generatedNotifications? the same?
+    }
+
     anyAuthor = Some(tx.loadTheParticipant(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
@@ -586,9 +610,12 @@ case class NotificationGenerator(
         s"appr.HtmlSan.: ${newPost.approvedHtmlSanitized}, safeHtml: ${textAndHtml.safeHtml} [TyE4WB78]")
     }
 
-    val oldMentions: Set[String] = findMentions(oldPost.approvedSource getOrDie "TyE0YKW3", nashorn)
-    val newMentions: Set[String] = anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(
-        newPost.approvedSource getOrDie "DwE2BF81", nashorn)
+    val oldMentions: Set[String] =
+          findMentions(oldPost.approvedSource getOrDie "TyE0YKW3", site, nashorn)  // [nashorn_in_tx]
+
+    val newMentions: Set[String] =
+          anyNewTextAndHtml.map(_.usernameMentions) getOrElse findMentions(  // [nashorn_in_tx]
+                newPost.approvedSource getOrDie "DwE2BF81", site, nashorn)
 
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
@@ -704,7 +731,7 @@ object NotificationGenerator {
     "(?s)^(.*[^a-zA-Z0-9_])?@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9].*".r  // [UNPUNCT]
 
 
-  def findMentions(text: String, nashorn: Nashorn): Set[String] = {
+  def findMentions(text: String, site: SiteIdHostnames, nashorn: Nashorn): Set[String] = {
     // Try to avoid rendering Commonmark source via Nashorn, if cannot possibly be any mentions:
     if (!MaybeMentionsRegex.matches(text))
       return Set.empty
@@ -713,7 +740,7 @@ object NotificationGenerator {
       // BUG? COULD incl origin here, so links won't be interpreted relative any
       // web browser client's address? — Right now, no images incl in reply notf emails
       // anyway, so need not fix now.
-      text, pubSiteId = "dummy", embeddedOriginOrEmpty = "",
+      text, site, embeddedOriginOrEmpty = "",
       allowClassIdDataAttrs = false, followLinks = false)
 
     result.mentions

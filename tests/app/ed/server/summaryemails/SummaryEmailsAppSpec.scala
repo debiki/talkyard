@@ -144,9 +144,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
 
 
   "prepare: create no-summaries and staff-only categories" in {
-    val noSummariesCategoryId = dao.readWriteTransaction { tx =>
-      tx.nextCategoryId()
-    }
+    val noSummariesCategoryId = dao.readTx(_.nextCategoryId())
     categoryNoSummaries = dao.createCategory(
       CategoryToSave(
         anyId = Some(noSummariesCategoryId),

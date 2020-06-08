@@ -323,7 +323,7 @@ object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.se
     // This won't generate any new page notf — but the first *reply*, does. [new_emb_pg_notf]
     dao.createPage(pageRole, PageStatus.Published,
           anyCategoryId = Some(placeInCatId), anyFolder = slug, anySlug = folder,
-          titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
+          title = TitleSourceAndHtml(s"Comments for $embeddingUrl"),
           bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
             s"Comments for: $embeddingUrl"),
           showId = true, deleteDraftNr = None,  // later, will be a draft to delete? [BLGCMNT1]

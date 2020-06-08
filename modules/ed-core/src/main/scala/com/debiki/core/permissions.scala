@@ -44,6 +44,10 @@ case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagge
   // maySeeIfEmbeddedAlthoughLoginRequired  [emb_login_req]
   //  — for embedded comments categories, when site Login Required to Read enabled.
 
+  // Can be nice for staff — and which other people? — to see unlisted categories
+  // and topics:
+  // maySeeUnlistedTopics  ?
+
   // Later, perhaps:
   // pin/unpin
   // close and/or archive

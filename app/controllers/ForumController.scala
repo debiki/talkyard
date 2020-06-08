@@ -379,41 +379,55 @@ object ForumController {
   //
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
+    topicToJsonImpl(topic.meta, topicStuff, topic.path.value)
+  }
+
+
+  def topicToJson(topicStuff: PageStuff, urlPath: String): JsObject = {
+    topicToJsonImpl(topicStuff.pageMeta, topicStuff, urlPath)
+  }
+
+
+  private def topicToJsonImpl(page: PageMeta, topicStuff: PageStuff, urlPath: String)
+        : JsObject = {
+    // Try to remove 'page' or topicStuff.pageMeta? Don't need both.
+    dieIf(Globals.isDevOrTest && page != topicStuff.pageMeta, "TyE305DRJ24")
+
     Json.obj(
-      "pageId" -> topic.id,
-      "pageRole" -> topic.pageType.toInt,
+      "pageId" -> page.pageId,
+      "pageRole" -> page.pageType.toInt,
       "title" -> topicStuff.title,
-      "url" -> topic.path.value,
+      "url" -> urlPath,
       // Private chats & formal messages might not belong to any category.
-      "categoryId" -> JsNumberOrNull(topic.categoryId),
-      "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
-      "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
+      "categoryId" -> JsNumberOrNull(page.categoryId),
+      "pinOrder" -> JsNumberOrNull(page.pinOrder),
+      "pinWhere" -> JsNumberOrNull(page.pinWhere.map(_.toInt)),
       "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),
       "firstImageUrls" -> JsArray(topicStuff.bodyImageUrls.map(JsString)),
       "popularRepliesImageUrls" -> JsArray(topicStuff.popularRepliesImageUrls.map(JsString)),
-      "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
-      "numLikes" -> topic.meta.numLikes,
-      "numWrongs" -> topic.meta.numWrongs,
-      "numBurys" -> topic.meta.numBurys,
-      "numUnwanteds" -> topic.meta.numUnwanteds,
-      "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
-      "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
-      "authorId" -> JsNumber(topic.meta.authorId),
-      "createdAtMs" -> JsDateMs(topic.meta.createdAt),
-      "bumpedAtMs" -> JsDateMsOrNull(topic.meta.bumpedAt),
-      "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastApprovedReplyAt),
+      "numPosts" -> JsNumber(page.numRepliesVisible + 1),
+      "numLikes" -> page.numLikes,
+      "numWrongs" -> page.numWrongs,
+      "numBurys" -> page.numBurys,
+      "numUnwanteds" -> page.numUnwanteds,
+      "numOrigPostLikes" -> page.numOrigPostLikeVotes,
+      "numOrigPostReplies" -> page.numOrigPostRepliesVisible,
+      "authorId" -> JsNumber(page.authorId),
+      "createdAtMs" -> JsDateMs(page.createdAt),
+      "bumpedAtMs" -> JsDateMsOrNull(page.bumpedAt),
+      "lastReplyAtMs" -> JsDateMsOrNull(page.lastApprovedReplyAt),
       "lastReplyerId" -> JsNumberOrNull(topicStuff.lastReplyerId),
       "frequentPosterIds" -> JsArray(topicStuff.frequentPosterIds.map(JsNumber(_))),
-      "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
-      "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostId),
-      "plannedAtMs" -> dateOrNull(topic.meta.plannedAt),
-      "startedAtMs" -> dateOrNull(topic.meta.startedAt),
-      "doneAtMs" -> dateOrNull(topic.meta.doneAt),
-      "closedAtMs" -> dateOrNull(topic.meta.closedAt),
-      "lockedAtMs" -> dateOrNull(topic.meta.lockedAt),
-      "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
-      "hiddenAtMs" -> JsWhenMsOrNull(topic.meta.hiddenAt),
-      "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
+      "answeredAtMs" -> dateOrNull(page.answeredAt),
+      "answerPostUniqueId" -> JsNumberOrNull(page.answerPostId),
+      "plannedAtMs" -> dateOrNull(page.plannedAt),
+      "startedAtMs" -> dateOrNull(page.startedAt),
+      "doneAtMs" -> dateOrNull(page.doneAt),
+      "closedAtMs" -> dateOrNull(page.closedAt),
+      "lockedAtMs" -> dateOrNull(page.lockedAt),
+      "frozenAtMs" -> dateOrNull(page.frozenAt),
+      "hiddenAtMs" -> JsWhenMsOrNull(page.hiddenAt),
+      "deletedAtMs" -> JsDateMsOrNull(page.deletedAt))
   }
 
 }

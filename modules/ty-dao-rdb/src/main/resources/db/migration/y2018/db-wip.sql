@@ -2,6 +2,8 @@
 --  alter table users3 drop constraint dw1_users_emlntf__c;
 -- later, change col type to Int, add 0 < ... < 1000 constraint?
 
+-- add:  upload_refs3.is_approved  ?   [is_upl_ref_aprvd]
+
 
 alter table settings3 add column media_in_posts int;
 alter table settings3 add constraint settings_c_mediainposts check (
@@ -33,6 +35,8 @@ rename table alt_page_ids3 to discussion_keys;
 -- or an url path:   /....
 ---------------
 
+-- RENAME page_html3 to  page_html_t  or  html_cache_t
+-- RENAME pages3 to  page_meta_t?
 -- RENAME  default_category_id  to def_sub_cat_id, no, def_descendant_cat_id
 -- RENAME  users3.last_reply_at/by_id  to  last_appr_repl_at/by_id
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2020 Kaj Magnus Lindberg
  * Parts Copyright (c) 2013 jzeta (Joanna Zeta)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,25 +24,32 @@ package debiki.onebox.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, Nashorn}
+import debiki.Globals
+import debiki.TextAndHtml.safeEncodeForHtml
 import debiki.onebox._
-import scala.util.Success
+import org.scalactic.Good
+import scala.util.matching.Regex
 
 
 
-class VideoOnebox(globals: Globals, nashorn: Nashorn)
-  extends InstantOneboxEngine(globals, nashorn) {
+class VideoPrevwRendrEng(globals: Globals)
+  extends InstantLinkPrevwRendrEng(globals) {
 
-  val regex = """^(https?:)?\/\/.*\.(mov|mp4|m4v|webm|ogv)(\?.*)?$""".r
+  override val regex: Regex =
+    """^(https?:)?\/\/.*\.(mov|mp4|m4v|webm|ogv)(\?.*)?$""".r
 
-  val cssClassName = "dw-ob-video"
+  def providerLnPvCssClassName = "s_LnPv-Video"
 
-  // (rel=nofollow not needed – will be sanitized. Incl anyway.)
-  def renderInstantly(url: String) = Success(o"""
-     <video width='100%' height='100%' controls src='$url'>
-       <a href='$url' rel='nofollow'>$url</a>
+  override def alreadySanitized = true
+
+  def renderInstantly(unsafeUrl: String): Good[String] = {
+    val safeUrl = safeEncodeForHtml(unsafeUrl)
+    Good(o"""
+     <video width='100%' height='100%' controls src='$safeUrl'>
+       <a href='$safeUrl' target='_blank' rel='nofollow noopener'>$safeUrl</a>
      </video>
     """)
+  }
 
 }
 

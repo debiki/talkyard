@@ -34,6 +34,8 @@ object Dependencies {
     val apacheCommonsEmail = "org.apache.commons" % "commons-email" % "1.5"
     val apacheTika = "org.apache.tika" % "tika-core" % "1.18"    // for username .ext test, sync w core [5AKR20]
 
+    val jsoup = "org.jsoup" % "jsoup" % "1.13.1"   // newest as of 2020-06
+
     // Not v 3.1.2?
     val scalactic = "org.scalactic" %% "scalactic" % "3.1.1"
     val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1" % "test"

@@ -278,6 +278,33 @@ h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
     text-decoration: underline;
 
 
+// Internal backlinks
+.s_InLns
+  float: left;
+  // Align with post actions, e.g. the Orig Post Reply button. [post_acts_valign]
+  margin: $postActionsMarginTop 30px 0 0;
+
+.s_InLns_Ttl
+  padding-top: 8px; // align w Like, Reply etc button icons and text
+  margin: 0 0 5px;
+  color: hsl(0, 0%, 45%);
+  //font-style: italic;
+  //letter-spacing: 0.2px;
+  //word-spacing: 0.5px;
+  line-height: 165%;  // same as Reply button, so v-aligned [post_acts_valign]
+
+.s_InLns li
+  margin: 0 0 13px -1px;
+  list-style: none;
+  display: inline-block;
+
+a.s_InLns_Ln
+  color: hsl(0, 0%, 45%) !important;
+  margin-right: 20px;
+  &::before
+    margin-right: 5px;
+
+
 // The append-bottom comments section
 //==============================
 

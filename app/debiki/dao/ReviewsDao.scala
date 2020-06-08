@@ -25,6 +25,7 @@ import java.{util => ju}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable, immutable}
 import play.{api => p}
+import talkyard.server.dao._
 
 
 /** Review stuff: a ReviewTask and the users and posts it refers to.
@@ -146,7 +147,7 @@ trait ReviewsDao {
   def carryOutReviewDecision(taskId: ReviewTaskId): Unit = {
     val pageIdsToRefresh = mutable.Set[PageId]()
 
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val anyTask = tx.loadReviewTask(taskId)
       val task = anyTask.getOrDie("EsE8YM42", s"s$siteId: Review task $taskId not found")
       task.pageId.map(pageIdsToRefresh.add)
@@ -199,17 +200,19 @@ trait ReviewsDao {
                 // SPAM RACE COULD unhide only if rev nr that got hidden <=
                 // rev that was reviewed. [6GKC3U]
                 changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
-                    PostStatusAction.UnhidePost, userId = decidedById, doingReviewTask = Some(task), tx)
+                      PostStatusAction.UnhidePost, userId = decidedById,
+                      doingReviewTask = Some(task), tx, staleStuff)
               }
             }
             else {
               if (task.isForBothTitleAndBody) {
                 // This is for a new page. Approve the *title* here, and the *body* just below.
                 dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
-                approvePostImpl(post.pageId, PageParts.TitleNr, approverId = decidedById, tx)
+                approvePostImpl(post.pageId, PageParts.TitleNr, approverId = decidedById,
+                      tx, staleStuff)
               }
-              approvePostImpl(post.pageId, post.nr, approverId = decidedById, tx)
-              perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx)
+              approvePostImpl(post.pageId, post.nr, approverId = decidedById, tx, staleStuff)
+              perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx, staleStuff)
             }
             updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam = false, task, tx)
           case ReviewDecision.DeletePostOrPage =>
@@ -218,11 +221,11 @@ trait ReviewsDao {
             if (task.isForBothTitleAndBody) {
               val pageId = task.pageId getOrDie "TyE4K85R2"
               deletePagesImpl(Seq(pageId), deleterId = decidedById,
-                  browserIdData, doingReviewTask = Some(task))(tx)
+                    browserIdData, doingReviewTask = Some(task))(tx, staleStuff)
             }
             else {
               deletePostImpl(post.pageId, postNr = post.nr, deletedById = decidedById,
-                  doingReviewTask = Some(task), browserIdData, tx)
+                    doingReviewTask = Some(task), browserIdData, tx, staleStuff)
             }
             // Need not:
             // updateSpamCheckTasksBecauseReviewDecision(humanSaysIsSpam = true, task, tx)
@@ -318,7 +321,7 @@ trait ReviewsDao {
     * the user that much.
     */
   private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
-        tx: SiteTransaction): Unit = {
+        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
     val settings = loadWholeSiteSettings(tx)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
@@ -376,7 +379,7 @@ trait ReviewsDao {
 
         for ((pageId, posts) <- allPostsToApprove.groupBy(_.pageId)) {
           pageIdsToRefresh += pageId
-          autoApprovePendingEarlyPosts(pageId, posts)(tx)
+          autoApprovePendingEarlyPosts(pageId, posts)(tx, staleStuff)
         }
       }
     }

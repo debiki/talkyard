@@ -306,6 +306,10 @@ object PagePath {
     * - (server)/forum/latest/bugs — and this should be changed to just /forum/. [5AQXJ2]
     */
   def fromUrlPath(siteId: SiteId, path: String): PagePath.Parsed = {
+    // Some Java APIs return null.
+    if (path eq null)
+      return Parsed.Bad("URL path is null")
+
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
     var adjustedPath = path
     // If a forum is located at /base-path/, but also a sort order is specified, e.g. /latest or /top:

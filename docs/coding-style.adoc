@@ -18,7 +18,7 @@ the code simpler to read — and a bit longer. Or adding line breaks,
 so the "important" method invokations are visible at _the start of the line_,
 or in their own paragraphs, so you find them easily, when glancing at the code.
 
-Talkyard maybe never will use something like Cats (a Sala funcional programming library).
+Talkyard maybe never will use something like Cats (a Sala functional programming library).
 Cats makes the code shorter, but _harder to read_?
 Example: `EitherT.liftF("a".some)` — what's that — everyone would need to learn
 Cats too, not just Scala.
@@ -48,8 +48,8 @@ Indented _statements_: 2 spaces as typical in Scala code.
 Talkyard: Only one "interesting" thing should happen per line.
 
 Talkyard: Max 95 chars per line. Then you can have two editor tabs open side by side
-on a 14'' 1920 px wide laptop
-(1920 is a typical laptop resolution, at least now year 2020).
+on a 14'' 1920 px wide laptop, at least with font Droid Sans Mono size 12.
+(1920 is a typical laptop resolution, at least now year 2020.)
 
 > _"Do not unnecessarily use braces where a single statement will do."_
 
@@ -71,6 +71,9 @@ _as long as_ after the `if` follows a blank line, or keyword like `else`, `retur
 > _"LOCAL variable names should be short, and to the point. If you have some
 > random integer loop counter, it should probably be called i. Calling it
 > loop_counter is non-productive, if there is no chance of it being mis-understood"_
+
+Here's how to name things, e.g. database tables, indexes, constraints:
+link:naming-notes.
 
 
 === Comments
@@ -110,9 +113,14 @@ Look at Rust: https://doc.rust-lang.org/book/ch09-00-error-handling.html
 
 In the same way, Talkyard's Scala code has `Hopefully[T, E]`
 when something hopefully returns a `T`
-but might fail with an error of type `E`. — In this way, it's really hard
-to accidentally forget to handle a recoverable error.
+but might fail with a wants-special-hanling problem of type `E`. — In this way,
+it's really hard to accidentally forget to special-handle such problems,
+and show a user friendly message (instead of Internal Error).
 (The name `Result` is used by Play Framework.)
+
+However if the error is "unrecoverable", e.g. a browser sends
+json with the wrong field names, then it's ok to throw something
+(e.g. `throwBadRequest()`) making the client show an error dialog.
 
 
 
@@ -124,6 +132,12 @@ so you don't know they're there and change how things work.
 (Extending classes with extra methods is fine though, i.e. `implicit class ...`.
 Then, everything visible.)
 
+
+
+=== Database misc
+
+Use PostgreSQL's `num_nonnulls()` (new since pg v9.6) —
+not Talkyard's own old `one_unless_null()`.
 
 
 1: https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst

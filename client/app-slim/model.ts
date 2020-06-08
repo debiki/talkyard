@@ -24,6 +24,11 @@ type HttpRequest = XMLHttpRequest;
 type UseBeacon = 'UseBeacon';
 
 
+interface LinkTitleUrl {
+  title: string;
+  url: string;
+}
+
 interface CheckboxEvent {
   target: {
     checked: boolean;
@@ -379,6 +384,7 @@ interface MyPageData {
   groupsPageNotfPrefs: PageNotfPref[];
   readingProgress?: ReadingProgress;
   votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
+  internalBacklinks?: Topic[];
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: Participant[];
   postNrsAutoReadLongAgo: number[];
@@ -756,6 +762,8 @@ interface Page
   forumId?: string;
   ancestorsRootFirst?: Ancestor[];
   categoryId?: number;
+  internalBacklinks?: Topic[];
+  externalBacklinks?: LinkTitleUrl[];
   pageRole: PageRole;
   pagePath: PagePath;
   pageLayout?: PageLayout;  // REMOVE, move to TopicInterfaceSettings

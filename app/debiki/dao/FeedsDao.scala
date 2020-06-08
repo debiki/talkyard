@@ -30,7 +30,7 @@ trait FeedsDao {
   self: SiteDao =>
 
 
-  memCache.onPageCreated { sitePageId =>
+  memCache.onPageCreated { (_, _) =>
     emptyFeedsCache()
   }
 

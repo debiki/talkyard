@@ -1249,7 +1249,7 @@ case class UsernameUsage(
 
 
 
-object UnknownParticipant extends Participant {
+object UnknownParticipant extends Participant {  // RENAME to Stranger?
   override def id: UserId = UnknownUserId
   override def email: String = ""
   override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive

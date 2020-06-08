@@ -177,6 +177,14 @@ case class SiteIdOrigins(
   siteId: SiteId, pubId: PubSiteId, siteOrigin: String, uploadsOrigin: String)
 
 
+trait SiteIdHostnames {
+  def id: SiteId
+  def pubId: PubSiteId
+  def canonicalHostnameStr: Option[String]
+  def allHostnames: Seq[String]
+}
+
+
 case class Site(
   id: SiteId,
   pubId: PubSiteId,
@@ -184,12 +192,16 @@ case class Site(
   name: String,
   createdAt: When,
   creatorIp: String,
-  hostnames: Vector[Hostname]) {
+  hostnames: Vector[Hostname]) extends SiteIdHostnames {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
   def canonicalHostname: Option[Hostname] = hostnames.find(_.role == Hostname.RoleCanonical)
+  def canonicalHostnameStr: Option[String] = canonicalHostname.map(_.hostname)
+
+  def allHostnames: Seq[String] = hostnames.map(_.hostname)
+
   def isTestSite: Boolean = id <= MaxTestSiteId
 
   def brief =
@@ -294,6 +306,10 @@ object Hostname {
 }
 
 
+/**
+  * @param hostname — doesn't include scheme or port, but maybe should? [remember_port]
+  *   Doesn't matter in real life, whatever is fine.
+  */
 case class Hostname(
   hostname: String,
   role: Hostname.Role) {

@@ -83,7 +83,7 @@ class SystemDao(
   def getSiteById(siteId: SiteId): Option[Site] = {
     // We use SiteDao.getSite() because it caches.
     COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create
-    // temp SiteDao obj.
+    // temp SiteDao obj.  Or, not needed, after:  [rm_cache_listeners]  ?
     globals.siteDao(siteId).getSite()
   }
 
@@ -202,6 +202,8 @@ class SystemDao(
       "TyE5S20PUJ6", (site: Site) => s"Trying to delete *real* site: $site")
 
     val siteIdsToDelete = sitesToDeleteMaybeDupls.map(_.id).toSet
+    logger.info(s"Deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
+
     SiteDao.synchronizeOnManySiteIds(siteIdsToDelete) {
       // Not dangerous — we locked these site ids (the line above).
       globals.systemDao.dangerous_readWriteTransaction { sysTx =>
@@ -248,6 +250,8 @@ class SystemDao(
       val redisCache = new RedisCache(siteId, globals.redisClient, globals.now)
       redisCache.clearThisSite()
     }
+
+    logger.info(s"Done deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
 
     // ----- Cancel any background jobs
 
@@ -428,7 +432,7 @@ class SystemDao(
   def refreshPageInMemCache(sitePageId: SitePageId): Unit = {
     // No:  memCache.firePageSaved(sitePageId)   [rm_cache_listeners]
     // — then, no event listeners registered, would have no effect. Instead:
-    globals.siteDao(sitePageId.siteId).memCache.firePageSaved(sitePageId)
+    globals.siteDao(sitePageId.siteId).refreshPageInMemCache(sitePageId.pageId)
   }
 
 

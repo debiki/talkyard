@@ -34,6 +34,13 @@ object MemCache {
 }
 
 
+/**
+  * BUG RACE:s [cache_race_counter]: something gets loaded and cached, but at the
+  * same time gets uncached — then, the old version might get re-insterted.
+  * Handle this by adding a counter, and all uncache fns bump the counter,
+  * and all add-to-cache fns skip adding to cache, if that counter has changed,
+  * since just before they started loading the stuff to cache.
+  */
 
 class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetrics) {
 
@@ -57,19 +64,19 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
   // - change firePageCreated() to uncacheStuffBecausePageCreated(pageId)
   // - change firePageSaved() to uncacheStuffBecausePageSaved(pageId)
   // ... etc
-  private var pageCreatedListeners = List[(PagePath => Unit)]()
+  private var pageCreatedListeners = List[(SiteId, PagePathWithId) => Unit]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()
   private var userCreatedListeners = List[(Participant => Unit)]()
 
 
-  def onPageCreated(callback: (PagePath => Unit)): Unit = {
+  def onPageCreated(callback: (SiteId, PagePathWithId) => Unit): Unit = {
     pageCreatedListeners ::= callback
   }
 
 
-  def firePageCreated(pagePath: PagePath): Unit = {
-    pageCreatedListeners foreach (_(pagePath))
+  def firePageCreated(siteId: SiteId, pagePath: PagePathWithId): Unit = {
+    pageCreatedListeners foreach (_(siteId, pagePath))
   }
 
 

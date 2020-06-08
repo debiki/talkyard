@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
+import tyZssert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { TyE2eTestBrowser } from '../utils/pages-for';
@@ -35,15 +36,22 @@ let videoYouTubeIdInvalid = 'https://www.youtube.com/watch?v=DAR27FWzyZY';
 let videoYouTubeId = 'DAR27FWzyZY';
 let videoYouTubeUrl = `https://www.youtube.com/watch?v=${videoYouTubeId}`;
 let videoYouTubeUrlInvalidId = `https://www.youtube.com/watch?v=${videoYouTubeIdInvalid}`;
-let imageJpgOnebox = `aside.onebox.dw-ob-image a[href="${imageJpgUrl}"] img[src="${imageJpgUrl}"]`;
-let imagePngOnebox = `aside.onebox.dw-ob-image a[href="${imagePngUrl}"] img[src="${imagePngUrl}"]`;
-let imageGifOnebox = `aside.onebox.dw-ob-image a[href="${imageGifUrl}"] img[src="${imageGifUrl}"]`;
-let videoMp4Onebox = `aside.onebox.dw-ob-video video[src="${videoMp4Url}"]`;
+let imageJpgOnebox = `aside.onebox.s_LnPv-Img a[href="${imageJpgUrl}"] img[src="${imageJpgUrl}"]`;
+let imagePngOnebox = `aside.onebox.s_LnPv-Img a[href="${imagePngUrl}"] img[src="${imagePngUrl}"]`;
+let imageGifOnebox = `aside.onebox.s_LnPv-Img a[href="${imageGifUrl}"] img[src="${imageGifUrl}"]`;
+let videoMp4Onebox = `aside.onebox.s_LnPv-Video video[src="${videoMp4Url}"]`;
 let videoYouTubeOnebox =
-    `aside.onebox.dw-ob-youtube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
+    `aside.onebox.s_LnPv-YouTube iframe[src^="https://www.youtube.com/embed/${videoYouTubeId}"]`;
 
 const inPagePreviewSelector = '.s_P-Prvw ';
 const inEditorPreviewSelector = '#debiki-editor-controller .preview ';
+
+
+// Also try w real pics & vids:  TESTS_MISSING
+//  https://preview.redd.it/7fig79vdq4451.png?width=640&height=640&crop=smart&auto=webp&s=548214ef563f762152ab1c0733b37fbf16bad3c8
+//  http://techslides.com/demos/sample-videos/small.mp4
+// verify does resize & show?
+
 
 describe("editor onebox:", () => {
 
@@ -130,57 +138,63 @@ describe("editor onebox:", () => {
 
   it("She can also post image urls, which get converted to onebox <img> tags", () => {
     mariasBrowser.complex.replyToOrigPost(imageJpgUrl);
-    mariasBrowser.topic.waitForPostNrVisible(2);
-    assert(mariasBrowser.topic.postNrContains(2, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(2, imageJpgOnebox));
+    mariasBrowser.topic.waitUntilPostHtmlMatches(2, /\.jpg/);
+    mariasBrowser.topic.assertPostNrContains(2, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(2, imageJpgOnebox);
   });
 
   it("But unknown links won't get converted to oneboxes", () => {
     const weirdUrl = 'https://www.example.com/what.is.this.weirdweird';
-    mariasBrowser.complex.replyToOrigPost('https://www.example.com/what.is.this.weirdweird');
-    mariasBrowser.topic.waitForPostNrVisible(3);
-    assert(!mariasBrowser.topic.postNrContains(3, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(3, `a[href="${weirdUrl}"]`));
+    mariasBrowser.complex.replyToOrigPost(weirdUrl);
+    mariasBrowser.topic.waitUntilPostTextMatches(3, 'weirdweird');
+    mariasBrowser.topic.assertPostNrNotContains(3, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(3, `a[href="${weirdUrl}"]`);
   });
 
   it("A media url inside a text paragraph is converted to a link, not a onebox", () => {
     mariasBrowser.complex.replyToOrigPost('zzz ' + imageJpgUrl + ' qqq');
-    mariasBrowser.topic.waitForPostAssertTextMatches(4, 'zzz .* qqq');
-    assert(!mariasBrowser.topic.postNrContains(4, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(4, `a[href="${imageJpgUrl}"]`));
+    mariasBrowser.topic.waitUntilPostTextMatches(4, 'zzz .* qqq');
+    mariasBrowser.topic.assertPostNrNotContains(4, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(4, `a[href="${imageJpgUrl}"]`);
   });
 
   it("A onebox can be inserted between two text paragraphs", () => {
     mariasBrowser.complex.replyToOrigPost("Paragraph one.\n\n" + imageJpgUrl + "\n\nPara two.");
-    mariasBrowser.topic.waitForPostAssertTextMatches(5, "Paragraph one");
+    mariasBrowser.topic.waitUntilPostTextMatches(5, "Paragraph one");
     mariasBrowser.topic.assertPostTextMatches(5, "Para two");
     // Failed once.
-    assert(mariasBrowser.topic.postNrContains(5, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(5, imageJpgOnebox));
+    mariasBrowser.topic.assertPostNrContains(5, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(5, imageJpgOnebox);
   });
 
-  it("Jpg, png, gif, mp4, YouTube oneboxes work fine", () => {
+  it("Jpg, png, gif, mp4 link previews work fine", () => {
+    // This happens to be 5 x 2 links, = 10, < max which is 11 [TyT603RTDJ43].
+    // (Each link preview has a widget link, and also a "View at ..." clickable link.)
     mariasBrowser.complex.replyToOrigPost(
         imageJpgUrl + '\n\n' +
         imagePngUrl + '\n\n' +
         imageGifUrl + '\n\n' +
         videoMp4Url + '\n\n' +
         videoYouTubeUrl);
-    mariasBrowser.topic.waitForPostNrVisible(6);
-    assert(mariasBrowser.topic.postNrContains(6, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(6, imageJpgOnebox));
-    assert(mariasBrowser.topic.postNrContains(6, imagePngOnebox));
-    assert(mariasBrowser.topic.postNrContains(6, imageGifOnebox));
-    assert(mariasBrowser.topic.postNrContains(6, videoMp4Onebox));
-    assert(mariasBrowser.topic.postNrContains(6, videoYouTubeOnebox));
+    mariasBrowser.topic.waitUntilPostHtmlMatches(6, /\.jpg/);
+    mariasBrowser.topic.assertPostNrContains(6, dotOneboxClass);
+    mariasBrowser.topic.assertPostNrContains(6, imageJpgOnebox);
+    mariasBrowser.topic.assertPostNrContains(6, imagePngOnebox);
+    mariasBrowser.topic.assertPostNrContains(6, imageGifOnebox);
+    mariasBrowser.topic.assertPostNrContains(6, videoMp4Onebox);
+  });
+
+  it("... and YouTube links too", () => {
+    mariasBrowser.topic.assertPostNrContains(6, videoYouTubeOnebox);
   });
 
   it("The server survives an invalid YouTube video id", () => {
     // Reply to the previous post because we've now scrolled down so the orig post isn't visible.
     mariasBrowser.complex.replyToPostNr(6, videoYouTubeUrlInvalidId + '\n\n\nPlain text.');
-    mariasBrowser.topic.waitForPostAssertTextMatches(7, "Plain text");
-    assert(!mariasBrowser.topic.postNrContains(7, dotOneboxClass));
-    assert(mariasBrowser.topic.postNrContains(7, `a[href="${videoYouTubeUrlInvalidId}"]`));
+    mariasBrowser.topic.waitUntilPostTextMatches(7, "Plain text");
+    mariasBrowser.topic.assertPostNrContains(7, '.s_LnPv-Err');
+    mariasBrowser.topic.assertPostNrContains(7, `a[href="${videoYouTubeUrlInvalidId}"]`);
+    mariasBrowser.topic.assertPostTextMatches(7, 'TyEYOUTBID_');
   });
 
 });

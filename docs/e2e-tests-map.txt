@@ -348,8 +348,11 @@ categories -
     gets marked as deleted for staff:
     hidden for non-staff:
     topics hidden unless staff:
+          - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATTPC054
     topics not found when searching:
     can undelete:
+    backlinks from topics inside disappear:
+          - links-internal.2browsers.test.ts  TyTINTLNS54824.TyTDELCATBLNS
   permissions: see (1QRY7)
   upsert categories:  (upscats)
 
@@ -411,6 +414,7 @@ editor -
     edit wiki post:
           - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   maximize editor:
+          - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68.TyT033SKHWW73M
   preview:
   upload things:  (7KFC2)
   other buttons -
@@ -431,6 +435,13 @@ editor -
   slow 3g:
           - slow-3g-navigate-edit-drafts.2browsers.test.ts   TyT40PKDRT4
 
+clean html,
+sanitized,
+sanitizing:
+  [rel_nofollow]:
+          - TESTS_MISSING   (tested manually though)
+  [reverse_tabnabbing]:
+          - TESTS_MISSING   (tested manually though)
 
 mentions:
   simple:
@@ -447,6 +458,27 @@ mentions:
   no dupl mentions when combining @channel, @member, @group:
   when really many members:
           - many-users-mention-list-join-group.2browsers.test.ts  TyT2602SKJJ356
+
+
+onebox,  # deprecated name
+link previews:
+  editor maximized, split, noraml,
+  innline-in-page,
+  in-editor:
+          - embed-twitter-tweets-etc.test.ts  TyT0JSM8PF68   RENAME to link-preview-twitter?
+  auto-size sandboxed iframe:
+          - TESTS_MISSING  TyT037MKAH24
+  [reverse_tabnabbing]:
+          - TESTS_MISSING
+  misc providers:
+          - link-previews-all-others.test.ts  TyT550RMHJ25
+  internal block quote preview,
+  internal inline title preview:
+          - TESTS_MISSING  TyTINTLNPRVW
+
+backlinks,
+internal links:
+          - links-internal.2browsers.test.ts  TyTINTLNS54824
 
 discussion -
   users on page:
@@ -958,7 +990,9 @@ api:
   upsert pages:
     gets sanitized:
           - api-upsert-pages.2browsers.test.ts   TyT603PKRAEPGJ5
-        in email:
+    gets sanitized, stops [reverse_tabnabbing]:
+          - TESTS_MISSING
+    gets sanitized in email:
           - api-upsert-posts.2browsers.test.ts   TyT60RKNJF24C: TyT0RKDL5MW
     slugifying long and weird titles:
           - api-upsert-pages.2browsers.test.ts   TyT692SKBDWJ74

@@ -20,12 +20,13 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import debiki.{TextAndHtml, TextAndHtmlMaker}
+import debiki.{TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
-import org.scalactic.{ErrorMessage, Good, Or}
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
+import talkyard.server.dao._
 
 
 case class SectionCategories(
@@ -112,8 +113,8 @@ case class CategoryToSave(
 
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
-  def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
-    textAndHtmlMaker.forTitle(s"Description of the $name category")  // sync with the upserter [G204MF3]
+  def makeAboutTopicTitle(): TitleSourceAndHtml =
+    TitleSourceAndHtml(s"Description of the $name category")  // sync with the upserter [G204MF3]  I18N
 
   def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
     textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
@@ -617,7 +618,11 @@ trait CategoriesDao {
     if (oldCategory.name != editedCategory.name || permissionsChanged) {
       // All pages in this category need to be regenerated, because the category name is
       // included on the pages. Or if permissions edited: hard to know which pages are affected,
-      // so just empty the whole cache.
+      // so just empty the whole cache. — Not only pages in `editedCategory` are
+      // affected — but also pages *linked from* those pages, since Talkyard shows
+      // which other topics link to a topic. And if one of those linking topics
+      // becomes access-restricted, then, the linked topic needs to be uncached
+      // and rerendered, so the link disappears.  [cats_clear_cache]
       emptyCache()
     }
     else {
@@ -636,8 +641,8 @@ trait CategoriesDao {
 
   def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         byWho: Who): CreateCategoryResult = {
-    val result = readWriteTransaction { tx =>
-      createCategoryImpl(newCategoryData, permissions, byWho)(tx)
+    val result = writeTx { (tx, staleStuff) =>
+      createCategoryImpl(newCategoryData, permissions, byWho)(tx, staleStuff)
     }
     // Need to reload permissions and categories, so this new category and its permissions
     // also get included.
@@ -650,7 +655,7 @@ trait CategoriesDao {
 
 
   def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
-        byWho: Who)(tx: SiteTransaction): CreateCategoryResult = {
+        byWho: Who)(tx: SiteTransaction, staleStuff: StaleStuff): CreateCategoryResult = {
 
     val categoryId = tx.nextCategoryId()  // [4GKWSR1]
     newCategoryData.anyId foreach { id =>
@@ -673,19 +678,15 @@ trait CategoriesDao {
     val category = newCategoryData.makeCategory(categoryId, tx.now.toJavaDate)
     tx.insertCategoryMarkSectionPageStale(category)
 
-    val titleTextAndHtml = newCategoryData.makeAboutTopicTitle(textAndHtmlMaker)
+    val titleSourceAndHtml = newCategoryData.makeAboutTopicTitle()
     val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
 
     val aboutPagePath = createPageImpl(
         PageType.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
-        titleSource = titleTextAndHtml.text,
-        titleHtmlSanitized = titleTextAndHtml.safeHtml,
-        bodySource = bodyTextAndHtml.text,
-        bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = None,
-        pinWhere = None,
-        byWho, spamRelReqStuff = None, tx,
+        title = titleSourceAndHtml, body = bodyTextAndHtml,
+        pinOrder = None, pinWhere = None,
+        byWho, spamRelReqStuff = None, tx, staleStuff,
         // if createDeletedAboutTopic, then TESTS_MISSING [5WAKR02], e2e test won't get created.
         createAsDeleted = newCategoryData.createDeletedAboutTopic)._1
 
@@ -707,17 +708,33 @@ trait CategoriesDao {
 
   def deleteUndeleteCategory(categoryId: CategoryId, delete: Boolean, who: Who): Unit = {
     readWriteTransaction { tx =>
-      throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
-      val categoryBefore = tx.loadCategory(categoryId) getOrElse {
-        throwNotFound("EdE5FK8E2", s"No category with id $categoryId")
-      }
-      val categoryAfter = categoryBefore.copy(
-        deletedAt = if (delete) Some(tx.now.toJavaDate) else None)
-      tx.updateCategoryMarkSectionPageStale(categoryAfter)
+      deleteUndelCategoryImpl(categoryId, delete = delete, who)(tx)
     }
+    COULD_OPTIMIZE // clear less — see comment in deleteUndelCategoryImpl
+    memCache.clearThisSite()
+  }
+
+
+  CLEAN_UP // change  delete: Boolean to case objects Delete and Undelete.
+  def deleteUndelCategoryImpl(categoryId: CategoryId, delete: Boolean, who: Who)(
+        tx: SiteTx): Unit = {
+
+    throwForbiddenIf(!tx.isAdmin(who.id), "EdEGEF239S", "Not admin")
+
+    val categoryBefore = tx.loadCategory(categoryId) getOrElse throwNotFound(
+          "EdE5FK8E2", s"No category with id $categoryId")
+    val categoryAfter = categoryBefore.copy(
+          deletedAt = if (delete) Some(tx.now.toJavaDate) else None)
+
+    tx.updateCategoryMarkSectionPageStale(categoryAfter)
+
     // All pages in the category now needs to be rerendered.
-    COULD_OPTIMIZE // only remove-from-cache / mark-as-dirty pages inside the category.
-    emptyCache()
+    // And pages *linked from* pages in the categories — for the correct
+    // backlinks to appear.
+    COULD_OPTIMIZE // only remove-from-cache / mark-as-dirty pages inside the category,
+    // plus linked pages — but that's not so easy? Wait with that.  [cats_clear_cache]
+    //emptyCache()
+    tx.bumpSiteVersion()
   }
 
 

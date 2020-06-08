@@ -1,11 +1,9 @@
 package ed.server
 
 import com.debiki.core._
-import debiki.onebox.Onebox
-import debiki.{Globals, RateLimiter, Nashorn, TextAndHtmlMaker}
+import debiki.{Globals, RateLimiter, Nashorn}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
-import play.{api => p}
 import play.api._
 import play.api.http.FileMimeTypes
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -64,14 +62,11 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   val rateLimiter = new RateLimiter(globals, security)
   val safeActions = new SafeActions(globals, security, controllerComponents.parsers)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
-
   val nashorn = new Nashorn(globals)
-  val oneboxes = new Onebox(globals, nashorn)
-  nashorn.setOneboxes(oneboxes)
 
   val context = new EdContext(
-    globals, security, safeActions, plainApiActions, nashorn, oneboxes,
-    materializer, controllerComponents)
+        globals, security, safeActions, plainApiActions, nashorn,
+        materializer, controllerComponents)
 
   globals.setEdContext(context)
   globals.startStuff()
@@ -147,7 +142,6 @@ class EdContext(
   val safeActions: SafeActions,
   val plainApiActions: PlainApiActions,
   val nashorn: Nashorn,
-  val oneboxes: Onebox,
   val akkaStreamMaterializer: akka.stream.Materializer,
   // Hide so fewer parts of the app get access to Play's internal stuff.
   private val controllerComponents: ControllerComponents) {

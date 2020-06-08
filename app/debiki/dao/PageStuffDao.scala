@@ -29,7 +29,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 case class PageStuff(
   pageId: PageId,
-  pageRole: PageType,
+  pageMeta: PageMeta,
   title: String,
   bodyExcerpt: Option[String],
   // Need not cache these urls per server origin? [5JKWBP2]
@@ -37,9 +37,13 @@ case class PageStuff(
   popularRepliesImageUrls: immutable.Seq[String],
   authorUserId: UserId,  // RENAME to just authorId
   lastReplyerId: Option[UserId],
-  frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
+  frequentPosterIds: Seq[UserId]) extends PageTitleRole {
 
-  def role: PageType = pageRole
+  def role: PageType = pageType  // DELETE
+  def pageType: PageType = pageMeta.pageType
+  def doingStatus: PageDoingStatus = pageMeta.doingStatus
+
+  def pageRole: PageType = pageType  // DELETE
 
   def categoryId: Option[CategoryId] = pageMeta.categoryId
 
@@ -67,6 +71,13 @@ trait PageStuffDao {
   }
 
 
+  RENAME // to getPageStuffById
+  def getOnePageStuffById(pageId: PageId): Option[PageStuff] = {
+    getPageStuffById(Seq(pageId)).get(pageId)
+  }
+
+
+  RENAME // to getPageStuffsById
   def getPageStuffById(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
     // Somewhat dupl code [5KWE02], PagePathMetaDao.getPageMetasAsMap() and UserDao are similar.
     // Break out helper function getManyById[K, V](keys) ?
@@ -139,14 +150,14 @@ trait PageStuffDao {
 
       val summary = PageStuff(
         pageId,
-        pageMeta.pageType,
+        pageMeta,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerpt = anyExcerpt.map(_.text),
         bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
         popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
         lastReplyerId = pageMeta.lastApprovedReplyById,
-        frequentPosterIds = pageMeta.frequentPosterIds)(pageMeta)
+        frequentPosterIds = pageMeta.frequentPosterIds)
 
       stuffById += pageMeta.pageId -> summary
     }

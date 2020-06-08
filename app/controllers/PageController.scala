@@ -62,7 +62,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
-    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
+    val titleSourceAndHtml = TitleSourceAndHtml(titleText)
 
     if (!requester.isStaff) {
       // Showing id —> page slug cannot be mistaken for forum sort order [5AQXJ2].
@@ -88,7 +88,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-      anySlug, titleTextAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
+      anySlug, titleSourceAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
       request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId))

@@ -28,8 +28,9 @@ import javax.inject.Inject
 import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
 import EditController._
+import debiki.onebox.LinkPreviewRenderer
 import scala.concurrent.ExecutionContext
-import talkyard.server.JsX.{JsStringOrNull, JsDraft, JsDraftOrNull}
+import talkyard.server.JsX.{JsDraft, JsDraftOrNull, JsStringOrNull}
 
 
 /** Edits pages and posts.
@@ -222,18 +223,41 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  /** Downloads the linked resource via an external request to the URL (assuming it's
-    * a trusted safe site) then creates and returns sanitized onebox html.
+  /** Returns html for embedding the contents at the url in a Talkyard post.
+    * Does this by sending a request to the content provider, for example, calls:
+    *   https://publish.twitter.com/oembed?url=the_url
+    * and gets back Twitter tweet json that shows how to embed the tweet,
+    * then creates and returns sanitized onebox html.
+    *
+    * RENAME to fetchLinkPreview, & client side too
     */
-  def onebox(url: String): Action[Unit] = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
-    context.oneboxes.loadRenderSanitize(url, javascriptEngine = None).transform(
-      html => Ok(html),
-      throwable => throwable match {
-        case ex: DebikiException =>
-          ResultException(BadReqResult("EdE4PKE0", s"Cannot onebox that link: ${ex.getMessage}"))
-        case _ =>
-          ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link"))
-      })(execCtx)
+  def onebox(url: String): Action[Unit] = AsyncGetActionRateLimited(
+        RateLimits.FetchLinkPreview) { request =>
+    import edContext.globals
+    import request.{siteId, requesterOrUnknown}
+
+    val inline = false  // later, query param
+
+    val renderer = new LinkPreviewRenderer(
+          globals, siteId = siteId, mayHttpFetch = true,
+          requesterId = requesterOrUnknown.id)
+
+    // link_previews_t.link_url_c is max 500.
+    throwForbiddenIf(url.length >= LinkPreviewRenderer.MaxUrlLength,
+          "TyELNPVURLLEN", "URL too long")
+
+    val response = renderer.fetchRenderSanitize(url, inline).transform(
+          html => Ok(html),
+          throwable => throwable match {
+            case ex: DebikiException =>
+              ResultException(BadReqResult(
+                    "TyELNKPVWEXC", s"Cannot preview that link: ${ex.getMessage}"))
+            case _ =>
+              ResultException(BadReqResult(
+                    "TyELNKPVWUNK", "Cannot preview that link"))
+          })(execCtx)
+
+    response
   }
 
 

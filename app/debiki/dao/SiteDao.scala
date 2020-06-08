@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2012-2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,11 +24,10 @@ import debiki.EdHttp._
 import ed.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
-import talkyard.server.TyLogger
-
+import talkyard.server.dao._
+import talkyard.server.{PostRendererSettings, TyLogging}
 import scala.collection.immutable
 import scala.collection.mutable
-import SiteDao._
 import ed.server.EdContext
 import ed.server.auth.MayMaybe
 import ed.server.notf.NotificationGenerator
@@ -38,7 +37,6 @@ import ed.server.summaryemails.SummaryEmailsDao
 import org.scalactic.{ErrorMessage, Or}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
-import talkyard.server.PostRendererSettings
 
 
 
@@ -100,6 +98,7 @@ class SiteDao(
   private val elasticSearchClient: es.client.Client,
   val config: Config)
   extends AnyRef
+  with TyLogging
   with ReadOnlySiteDao
   with AssetBundleDao
   with SettingsDao
@@ -109,6 +108,7 @@ class SiteDao(
   with CategoriesDao
   with PagesDao
   with PagePathMetaDao
+  with PageLinksDao
   with PageStuffDao
   with PagePopularityDao
   with RenderedPageHtmlDao
@@ -125,7 +125,7 @@ class SiteDao(
   with FeedsDao
   with AuditDao {
 
-  protected lazy val logger: play.api.Logger = TyLogger("SiteDao")
+  import SiteDao._
 
   // Could be protected instead? Then need to move parts of ApiV0Controller to inside the Dao.
   lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
@@ -140,6 +140,8 @@ class SiteDao(
   def now(): When = globals.now()
   def nashorn: Nashorn = context.nashorn
 
+  REFACTOR // rename to anyPageDao and return a Some(PageDao) with PageMeta pre-loaded
+  // if the page exist, otherwise None? — If callers "always" want a PageMeta.
   def newPageDao(pageId: PageId, tx: SiteTransaction): PageDao =
     PageDao(pageId, loadWholeSiteSettings(tx), tx)
 
@@ -147,16 +149,17 @@ class SiteDao(
   // which automatically knows the right embeddedOriginOrEmpty and followLinks etc,
   // so won't need to always use makePostRenderSettings() below before
   // using textAndHtmlMaker?
-  def textAndHtmlMaker = new TextAndHtmlMaker(this.thePubSiteId(), context.nashorn)
+  def textAndHtmlMaker = new TextAndHtmlMaker(theSite(), context.nashorn)
 
   def makePostRenderSettings(pageType: PageType): PostRendererSettings = {
     val embeddedOriginOrEmpty =
-      if (pageType == PageType.EmbeddedComments) theSiteOrigin()
-      else ""
+          if (pageType == PageType.EmbeddedComments) theSiteOrigin()
+          else ""
     PostRendererSettings(
-      embeddedOriginOrEmpty = embeddedOriginOrEmpty,
-      pageRole = pageType,
-      thePubSiteId())
+          embeddedOriginOrEmpty = embeddedOriginOrEmpty,
+          pageRole = pageType,
+          siteId = siteId,
+          thePubSiteId())
   }
 
   def notfGenerator(tx: SiteTransaction) =
@@ -192,7 +195,47 @@ class SiteDao(
   private def thisSiteCacheKey = siteCacheKey(this.siteId)
 
 
-  // Rename to ...NoRetry, add readWriteTransactionWithRetry
+  def writeTx[R](fn: (SiteTransaction, StaleStuff) => R): R = {
+    writeTx()(fn)
+  }
+
+
+  def writeTx[R](retry: Boolean = false, allowOverQuota: Boolean = false)(
+          fn: (SiteTransaction, StaleStuff) => R): R = {
+    dieIf(retry, "TyE403KSDH46", "writeTx(retry = true) not yet impl")
+
+    val staleStuff = new StaleStuff()
+    val result: R = readWriteTransaction(tx => {
+      val result = fn(tx, staleStuff)
+
+      // Refresh database page cache:
+      tx.markPagesHtmlStale(staleStuff.stalePageIdsInDb)
+
+      // [cache_race_counter] Maybe bump mem cache contents counter here,
+      // just before this tx ends and the mem cache thus becomes stale?
+      // Set it to an odd value — an anything read from the cache,
+      // when the counter was odd, must not be cached.
+
+      result
+    }, allowOverQuota)
+
+    // Refresh in-memory cache:  [rm_cache_listeners]
+    if (staleStuff.nonEmpty) {
+      staleStuff.stalePageIdsInMem foreach { pageId =>
+        refreshPageInMemCache(pageId)
+      }
+      uncacheLinks(staleStuff)
+    }
+
+    // [cache_race_counter] Maybe somehow "mark as done" the bumping of the
+    // mem cache contents counter?
+    // Set it to an even value — mem cache ok to use again.
+
+    result
+  }
+
+
+  @deprecated("now", "use writeTx { (tx, staleStuff) => ... } instead")
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
     // Serialize writes per site. This avoids all? transaction rollbacks because of
     // serialization errors in Postgres (e.g. if 2 people post 2 comments at the same time).
@@ -211,7 +254,11 @@ class SiteDao(
     }
   }
 
+  RENAME // to just readTx
   def readOnlyTransaction[R](fn: SiteTransaction => R): R =
+    readTx(fn)
+
+  def readTx[R](fn: SiteTx => R): R =
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
 
   def readOnlyTransactionTryReuse[R](anyTx: Option[SiteTransaction])(fn: SiteTransaction => R): R =
@@ -225,7 +272,9 @@ class SiteDao(
 
 
   def refreshPageInMemCache(pageId: PageId): Unit = {
+    // Old approach:
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+    // New:  [rm_cache_listeners]
   }
 
   def refreshPagesInAnyCache(pageIds: collection.Set[PageId]): Unit = {
@@ -527,7 +576,7 @@ class SiteDao(
 
 
 
-object SiteDao {
+object SiteDao extends TyLogging {
 
   private val SoftMaxOldHostnames = 5
   private val WaitUntilAnotherHostnameInterval = 60

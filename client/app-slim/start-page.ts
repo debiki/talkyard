@@ -17,6 +17,8 @@
 
 /// <reference path="prelude.ts" />
 /// <reference path="init-all-react-roots.ts" />
+/// <reference path="link-previews.ts" />
+
 
 const d = { i: debiki.internal };
 
@@ -343,6 +345,7 @@ function renderPageInBrowser() {
   });
 
   function lastStep() {
+    debiki2.listenForLinkPreviewIframeSizeMessages();
     debiki2.startMagicTime(eds.testNowMs);
     pageStarted = true;
     _.each(scriptLoadDoneCallbacks, function(c) { c(); });

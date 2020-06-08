@@ -181,14 +181,31 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       numPostsTotal = oldMeta.numPostsTotal + (addsNewDoingStatusMetaPost ? 1 | 0),
       version = oldMeta.version + 1)
 
-    request.dao.readWriteTransaction { tx =>  // COULD wrap everything in this transaction
+    request.dao.writeTx { (tx, staleStuff) =>  // COULD wrap everything in this transaction
                                                         // and move it to PagesDao?
       tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       if (addsNewDoingStatusMetaPost) {
         dao.addMetaMessage(requester, s" marked this topic as ${newMeta.doingStatus}", pageId, tx)
       }
+
       if (newMeta.categoryId != oldMeta.categoryId) {
         tx.indexAllPostsOnPage(pageId)
+      }
+
+      // If moved to new category, with maybe different access permissions
+      // or maybe even deleted,
+      // or if topic type changed to, say, private chat, then,
+      // need to uncache backlinks on other pages back to this page.
+      val maybeStaleBacklinks =
+            newMeta.categoryId != oldMeta.categoryId ||
+            newMeta.pageType.isPrivateGroupTalk != oldMeta.pageType.isPrivateGroupTalk
+
+      if (maybeStaleBacklinks) {
+        TESTS_MISSING  // TyTBACKLNSCAT
+        val linkedPageIds = tx.loadPageIdsLinkedFromPage(pageId)
+        staleStuff.addPageIds(linkedPageIds, pageModified = false, backlinksStale = true)
+        // Page version bumped above.
+        staleStuff.addPageId(pageId, memCacheOnly = true)
       }
       // Should: Update audit log
     }

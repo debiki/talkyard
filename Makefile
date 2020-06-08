@@ -122,6 +122,7 @@ node_modules/.bin/gulp: git-subm-init-upd
 prod_asset_bundle_files:=\
   images/web/assets/talkyard-comments.min.js.gz \
   images/web/assets/talkyard-service-worker.min.js.gz \
+  images/web/assets/ext-iframe.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.min.js.gz \
@@ -169,6 +170,7 @@ debug_asset_bundles_files: \
   images/app/assets/server-bundle.js \
   images/web/assets/talkyard-comments.js.gz \
   images/web/assets/talkyard-service-worker.js.gz \
+  images/web/assets/ext-iframe.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
@@ -176,6 +178,14 @@ debug_asset_bundles_files: \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz
 
+images/web/assets/ext-iframe.js.gz: ext_iframe_js
+images/web/assets/ext-iframe.min.js.gz: ext_iframe_js
+
+# Skip minify, for now.
+ext_iframe_js:
+	@cp      client/ext-iframe.js   images/web/assets/ext-iframe.min.js
+	@gzip -c client/ext-iframe.js > images/web/assets/ext-iframe.min.js.gz
+	@gzip -c client/ext-iframe.js > images/web/assets/ext-iframe.js.gz
 
 images/app/assets/server-bundle.js: \
        $(shell find client/server/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))

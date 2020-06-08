@@ -573,9 +573,8 @@ case class SitePatcher(globals: debiki.Globals) {
                   // If importing 9999 posts and pages, would need to convert from CommonMark
                   // to html in an external process / server? [ext_markup_processor]
                   postRealIdsNrsMaybeHtml.copy(
-                        approvedHtmlSanitized = Some(
-                          Jsoup.clean(
-                            approvedSource, TextAndHtml.relaxedHtmlTagWhitelist)))
+                        approvedHtmlSanitized = Some(TextAndHtml.sanitizeRelaxed(
+                            approvedSource)))
                 }
             }
 
@@ -605,6 +604,8 @@ case class SitePatcher(globals: debiki.Globals) {
             // Full-text-search index this new post.
             TESTS_MISSING // this test: [2WBKP05] commented out, assumes isn't indexed.
             tx.indexPostsSoon(postReal)
+
+            // Backlinks  [imp_exp_blns] [readlater]
 
             postsRealByTempId.put(postInPatch.id, postReal)
             postsRealByTempPagePostNr.put(postInPatch.pagePostNr, postReal)
@@ -1015,7 +1016,8 @@ case class SitePatcher(globals: debiki.Globals) {
           // Has no effet as of now — currently only one new post / page at a time,
           // via /-/v0/upsert-simple.
           notfGenerator.generateForNewPost(
-            dao.newPageDao(post.pageId, tx), post, anyNewTextAndHtml = None, anyReviewTask = None)
+                dao.newPageDao(post.pageId, tx), post,
+                sourceAndHtml = None, anyReviewTask = None)
         }
 
         // Group chats, direct messages:
@@ -1302,6 +1304,8 @@ case class SitePatcher(globals: debiki.Globals) {
         }
         else {
           tx.indexPostsSoon(post) // [TyT036WKHW2]
+
+          // Backlinks  [imp_exp_blns] [readlater]
         }
       }
 

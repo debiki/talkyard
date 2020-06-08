@@ -50,7 +50,7 @@ describe("categories", function() {
     owen.loginDialog.loginWithPassword(owen);
     owen.forumButtons.clickViewCategories();
     owen.waitForAtLeast(1, '.esForum_cats_cat .forum-title');
-    owen.assertTextMatches('.esForum_cats_cat .forum-title', /Uncategorized/, /default/);
+    owen.assertTextMatches('.esForum_cats_cat .forum-title', [/Uncategorized/, /default/]);
   });
 
   it("Owen creates a category", function() {

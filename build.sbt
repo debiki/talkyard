@@ -79,7 +79,7 @@ val appDependencies = Seq(
   "log4j" % "log4j" % "1.2.17",
   Dependencies.Libs.apacheCommonsEmail,
   Dependencies.Libs.guava,
-  "org.jsoup" % "jsoup" % "1.11.3",                         // newest as of 18-07-17
+  Dependencies.Libs.jsoup,
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
   "ch.qos.logback" % "logback-classic" % "1.2.3",           // newest as of 18-07-17

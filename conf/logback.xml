@@ -40,7 +40,7 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="TRACE" />
   <logger name="tysvapp" level="TRACE" />
-  <logger name="tysvapp.MemCache" level="DEBUG" />
+  <logger name="tysvapp.MemCache" level="TRACE" />
   <logger name="org.elasticsearch" level="INFO" />
 
   <root level="WARN">

@@ -19,15 +19,15 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, TextAndHtml, TextAndHtmlMaker}
+import debiki.{Globals, TextAndHtml, TextAndHtmlMaker, TitleSourceAndHtml}
 import ed.server.{EdAppComponents, EdContext}
 import org.scalatest._
 import org.scalatestplus.play.{BaseOneAppPerSuite, FakeApplicationFactory}
 import DaoAppSuite._
 import java.io.File
-
 import play.api.inject.DefaultApplicationLifecycle
 import play.api._
+import talkyard.server.dao.StaleStuff
 
 
 
@@ -52,13 +52,35 @@ class DaoAppSuite(
   val extraConfig: Map[String, String] = Map.empty)
   extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
 
+
+  /** Adds new ScalaTest syntax:  "test name".inReadTx(dao) { tx => .... }
+    */
+  implicit class InTxString(val underlying: String) {
+    def inReadTx(dao: => SiteDao)(f: SiteTx => Any /* Assertion */): Unit = {
+      underlying in dao.readTx(f)
+    }
+    def inWriteTx(dao: => SiteDao)(f: (SiteTx, StaleStuff) => Any /* Assertion */): Unit = {
+      underlying in dao.writeTx(f)
+    }
+  }
+
+
   Globals.setIsProdForever(false)
 
   private var edAppComponents: EdAppComponents = _
 
   lazy val context: EdContext = edAppComponents.context
   lazy val globals: Globals = context.globals
-  lazy val textAndHtmlMaker: TextAndHtmlMaker = new TextAndHtmlMaker("testsiteid", context.nashorn)
+
+
+  val dummyNoSite: SiteIdHostnames = new SiteIdHostnames {
+    val id: SiteId = NoSiteId
+    val pubId = "testsiteid"
+    val canonicalHostnameStr = Some("forum.example.com")
+    val allHostnames: Seq[String] = canonicalHostnameStr.toSeq
+  }
+
+  lazy val textAndHtmlMaker = new TextAndHtmlMaker(dummyNoSite, context.nashorn)
 
 
   override def fakeApplication: Application = {
@@ -275,42 +297,55 @@ class DaoAppSuite(
   }
 
 
-  /*
-  def createCategory(sectionPageId: PageId,
-        bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
-        dao: SiteDao, anyCategoryId: Option[CategoryId] = None): (Category, Seq[PermsOnPages]) = {
+  def createCategory(slug: String, forumPageId: PageId, parentCategoryId: CategoryId,
+        authorId: UserId, browserIdData: BrowserIdData,
+        dao: SiteDao, anyCategoryId: Option[CategoryId] = None): CreateCategoryResult = {
+
+    val newCatId = dao.readTx(_.nextCategoryId())
 
     val categoryData: CategoryToSave = CategoryToSave(
-      anyId = None, //Some(categoryId),
-      sectionPageId = sectionPageId,
-      parentId = (categoryJson \ "parentId").as[CategoryId],
-      name = (categoryJson \ "name").as[String],
-      slug = (categoryJson \ "slug").as[String].toLowerCase,
-      description = CategoriesDao.CategoryDescriptionSource,
-      position = (categoryJson \ "position").as[Int],
-      newTopicTypes = List(defaultTopicType),
-      shallBeDefaultCategory = shallBeDefaultCategory,
-      unlistCategory = unlistCategory,
-      unlistTopics = unlistTopics,
-      includeInSummaries = includeInSummaries)
+          anyId = Some(newCatId),
+          sectionPageId = forumPageId,
+          parentId = parentCategoryId,
+          name = s"Cat $slug Name",
+          slug = slug,
+          position = 50,
+          newTopicTypes = List(PageType.Discussion),
+          shallBeDefaultCategory = false,
+          unlistCategory = false,
+          unlistTopics = false,
+          includeInSummaries = IncludeInSummaries.Default,
+          description = s"Cat $slug Description")
 
-    val permissions = ArrayBuffer[PermsOnPages]()
+    val permissions = Vector(
+          ForumDao.makeEveryonesDefaultCategoryPerms(newCatId),
+          ForumDao.makeStaffCategoryPerms(newCatId))
 
-    request.dao.createCategory(
-      categoryData, permissions.to[immutable.Seq], request.who)
-  } */
+    dao.createCategory(categoryData, permissions, Who(SystemUserId, browserIdData))
+  }
 
 
-  def createPage(pageRole: PageType, titleTextAndHtml: TextAndHtml,
+  REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
+  def createPage(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
         extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): PageId = {
-    dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
+    createPage2(pageRole, titleTextAndHtml = titleTextAndHtml,
+          bodyTextAndHtml = bodyTextAndHtml, authorId = authorId, browserIdData = browserIdData,
+          dao = dao, anyCategoryId = anyCategoryId,
+          extId = extId, discussionIds = discussionIds).id
+  }
+
+  def createPage2(pageRole: PageType, titleTextAndHtml: TitleSourceAndHtml,
+        bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
+        dao: SiteDao, anyCategoryId: Option[CategoryId] = None,
+        extId: Option[ExtId] = None, discussionIds: Set[AltPageId] = Set.empty): CreatePageResult = {
+    dao.createPage2(
+      pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
-      titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
+      title = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff,
-      discussionIds = discussionIds, extId = extId
-    ).pageId
+      discussionIds = discussionIds, extId = extId)
   }
 
 

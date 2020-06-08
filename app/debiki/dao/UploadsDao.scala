@@ -51,7 +51,7 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
-    // Over quota?
+    // Over quota? [fs_quota]
     val siteStats = loadResourceUsage()
     siteStats.fileStorageLimitBytes foreach { maxBytes =>
       throwForbiddenIf(siteStats.fileStorageUsedBytes > maxBytes,
@@ -143,6 +143,7 @@ trait UploadsDao {
       sizeAsLong.toInt
     }
 
+    // We check if the whole site is over quota, above. [fs_quota]
     throwIfUploadedTooMuchRecently(uploadedById, sizeBytes = sizeBytes)
 
     val hashPathSuffix = makeHashPath(optimizedFile, optimizedDotSuffix)
@@ -215,17 +216,20 @@ trait UploadsDao {
   }
 
 
-  def findUploadRefsInPost(post: Post): Set[UploadRef] = {   // find mentions at the same time? [4WKAB02]
+  /** Do as part of  [[debiki.TextAndHtmlMaker.findLinksEtc]]  ? */
+  @deprecated("now")
+  def findUploadRefsInPost(post: Post): Set[UploadRef] = {
     val pubId = thePubSiteId()
     val approvedRefs = post.approvedHtmlSanitized.map(
-      h => findUploadRefsInText(h, pubId)) getOrElse Set.empty
+          h => findUploadRefsInHtml(h, pubId)) getOrElse Set.empty
     val currentRefs =
       if (post.nr == PageParts.TitleNr) Nil
       else {
-        val renderResult = context.nashorn.renderAndSanitizeCommonMark(
-            post.currentSource, pubSiteId = pubId, embeddedOriginOrEmpty = "",
-            allowClassIdDataAttrs = false, followLinks = false)
-        findUploadRefsInText(renderResult.safeHtml, pubId)
+        val renderResult = context.nashorn.renderAndSanitizeCommonMark(  // [nashorn_in_tx]
+              post.currentSource, theSite(),
+              embeddedOriginOrEmpty = "",
+              allowClassIdDataAttrs = false, followLinks = false)
+        findUploadRefsInHtml(renderResult.safeHtml, pubId)
       }
     approvedRefs ++ currentRefs
   }
@@ -236,7 +240,7 @@ trait UploadsDao {
       val user = transaction.loadParticipant(uploaderId) getOrElse throwForbidden(
         "EsE7KMW2", "Strangely enough, your user account just disappeared")
 
-      // God mode.
+      // Admins can do whatever.
       if (user.isAdmin)
         return
 
@@ -364,10 +368,15 @@ object UploadsDao {
   }
 
 
-  def findUploadRefsInText(html: String, pubSiteId: String): Set[UploadRef] = {
+  def findUploadRefsInHtml(html: String, pubSiteId: String): Set[UploadRef] = {  RENAME // move to TextAndHtml?
     // Tested here:  tests/app/debiki/dao/UploadsDaoSpec.scala
-
     val links: Seq[String] = TextAndHtmlMaker.findLinks(html)
+    findUploadRefsInLinks(links.toSet, pubSiteId)
+  }
+
+
+  def findUploadRefsInLinks(links: Set[String], pubSiteId: String): Set[UploadRef] = {  RENAME // move to TextAndHtml?
+
     val references = ArrayBuffer[UploadRef]()
 
     links foreach addUrlIfReferencesUploadedFile
@@ -376,9 +385,9 @@ object UploadsDao {
       val urlPath =
         if (urlString startsWith "/") urlString
         else {
-          try new java.net.URL(urlString).getPath
+          try new java.net.URI(urlString).getPathEmptyNotNull
           catch {
-            case _: java.net.MalformedURLException =>
+            case _: java.net.URISyntaxException | _: java.net.MalformedURLException =>
               return
           }
         }

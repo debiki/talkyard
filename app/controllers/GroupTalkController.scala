@@ -71,10 +71,10 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text,
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       allowClassIdDataAttrs = true, followLinks = false)
-    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(title)
+    val titleSourceAndHtml = TitleSourceAndHtml(title)
 
     val pagePath = dao.startGroupTalk(
-      titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
+      titleSourceAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
       request.spamRelatedStuff, deleteDraftNr)
 
     OkSafeJson(JsString(pagePath.pageId))

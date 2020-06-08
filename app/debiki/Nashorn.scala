@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{io => jio}
 import javax.{script => js}
-import debiki.onebox.{InstantOneboxRendererForNashorn, Onebox}
+import debiki.onebox.{LinkPreviewRendererForNashorn, LinkPreviewRenderer}
 import org.apache.lucene.util.IOUtils
 import scala.concurrent.Future
 import Nashorn._
@@ -70,13 +70,6 @@ class Nashorn(
   private def secure = globals.secure
   private def cdnOrigin: Option[String] = globals.anyCdnOrigin
   private def isTestSoDisableScripts = globals.isTestDisableScripts
-
-  private var oneboxes: Option[Onebox] = None
-
-  def setOneboxes(oneboxes: Onebox): Unit = {
-    dieIf(this.oneboxes.isDefined, "EdE2KQTG0")
-    this.oneboxes = Some(oneboxes)
-  }
 
 
   /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
@@ -201,9 +194,16 @@ class Nashorn(
   }
 
 
-  def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PubSiteId,
+  def renderAndSanitizeCommonMark(
+        commonMarkSource: String,
+        siteIdHostnames: SiteIdHostnames,
         embeddedOriginOrEmpty: String,
-        allowClassIdDataAttrs: Boolean, followLinks: Boolean): RenderCommonmarkResult = {
+        allowClassIdDataAttrs: Boolean,
+        followLinks: Boolean): RenderCommonmarkResult = {
+
+    val siteId = siteIdHostnames.id
+    val pubSiteId = siteIdHostnames.pubId
+
     if (isTestSoDisableScripts)
       return RenderCommonmarkResult("Scripts disabled [EsM5GY52]", Set.empty)
 
@@ -233,17 +233,24 @@ class Nashorn(
       cdnOrigin.getOrElse(
         embeddedOriginOrEmpty) +
           ed.server.UploadsUrlBasePath + pubSiteId + '/'
-    val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
 
-    val (safeHtmlNoOneboxes, mentions) = withJavascriptEngine(engine => {
-      // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
-      // and we'll reuse `engine` so we won't have to create any additional engine.
-      oneboxRenderer.javascriptEngine = Some(engine)
-      val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
-          true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
-          followLinks.asInstanceOf[Object],
-          oneboxRenderer, uploadsUrlPrefix)
-      oneboxRenderer.javascriptEngine = None
+    // This link preview renderer fetches previews from the database,
+    // link_previews_t, but makes no external requests — cannot do that from inside
+    // a Nashorn script.
+    val prevwRenderer = new LinkPreviewRendererForNashorn(
+          new LinkPreviewRenderer(
+              globals, siteId = siteId,
+              // Cannot do external requests from inside Nashorn.
+              mayHttpFetch = false,
+              // The requester doesn't matter — won't fetch external data.
+              requesterId = SystemUserId))
+
+    val (safeHtmlNoPreviews, mentions) = withJavascriptEngine(engine => {
+      val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark",
+            commonMarkSource,
+            true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
+            followLinks.asInstanceOf[Object],
+            prevwRenderer, uploadsUrlPrefix)
 
       val result: ScriptObjectMirror = resultObj match {
         case scriptObjectMirror: ScriptObjectMirror =>
@@ -283,9 +290,7 @@ class Nashorn(
       (safeHtml, mentions.toSet)
     })
 
-    // Before commenting in: Make all render functions async so we won't block when downloading.
-    //oneboxRenderer.waitForDownloadsToFinish()
-    val safeHtmlWithOneboxes = oneboxRenderer.replacePlaceholders(safeHtmlNoOneboxes)
+    val safeHtmlWithOneboxes = prevwRenderer.replacePlaceholders(safeHtmlNoPreviews)
     RenderCommonmarkResult(safeHtmlWithOneboxes, mentions)
   }
 
