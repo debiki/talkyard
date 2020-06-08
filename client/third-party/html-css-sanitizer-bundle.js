@@ -4650,6 +4650,7 @@ var html = (function(html4) {
       }
       if (attribName === 'target' && value === '_blank') { // KajMagnus hack
         // Allow (don't clear value).
+        // We've added rel=noopener already: [reverse_tabnabbing].
       }
       else if (attribName.substr(0, 5) === 'data-') { // KajMagnus hack
         // Allow data- attrs (don't clear). SECURITY SHOULD allow for custom html pages only? [5JMUKWA1]
@@ -4958,7 +4959,6 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     }
   };
 
-  if (!followLinks) {
     //var siteId = debiki2.ReactStore.allData().siteId;
     //if (siteId === 98) {  // doesn't work, site id not updated when just rendering markdown.
                             // instead, always rel=follow StackExchange links, for now.
@@ -4966,9 +4966,10 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // as per the cc-by-sa license. This is a hack, but ... no time for the "real" solution
       // right now, which SECURITY would probably be to rel=follow links in posts-upvoted-or-created-
       // -by-trusted-members.
-      sanitizeHtmlConfig.transformTags = {
-        'a': function(tagName, attribs) {
-          var newAttribs = _.clone(attribs);
+  sanitizeHtmlConfig.transformTags = {
+    'a': function(tagName, attribs) {
+      var newAttribs = _.clone(attribs) || {};
+      if (!followLinks) {
           // SHOULD add a 'rel=follow links to domains: ...' config value instead of this: [relfollow]
           if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
               /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
@@ -4980,20 +4981,26 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
             // and also don't start with '///', but instead starts with '/something'.
           }
           else {
+            // rel=nofollow added here: [rel_nofollow] too.  TESTS_MISSING
             newAttribs.rel = 'nofollow';
           }
-          return { tagName: 'a', attribs: newAttribs };
-        }
-      };
-    /*
+      }
+
+      // Stop [reverse_tabnabbing],  TESTS_MISSING
+      // https://owasp.org/www-community/attacks/Reverse_Tabnabbing
+      // Could do only if:  newAttribs.target.indexOf('_blank') >= 0
+      // but this is simpler:
+      if (newAttribs.target) {
+        var space = newAttribs.rel ? ' ' : '';
+        newAttribs.rel = (newAttribs.rel || '') + space + 'noopener';
+      }
+
+      return { tagName: 'a', attribs: newAttribs };
     }
-    else {
-      sanitizeHtmlConfig.transformTags = {
-        // Currently rel=nofollow added here: [7WBK2A04] too.
-        'a': sanitizeHtml.simpleTransform('a', { rel: 'nofollow' })
-      };
-    }*/
-  }
+  };
+
+  // UX COULD [disallow_h1_h2], annoying if ppl can insert such large titles
+  // in their posts?
 
   // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and
   // could be used to make the post look weird. (Fairly harmless though.)

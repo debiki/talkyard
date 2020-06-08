@@ -44,6 +44,9 @@ const enum IsWhere {
   EmbEditorIframe = 5,
   EmbLast = 5,
 
+  // If switching to e.g. a link preview embedded iframe.
+  UnknownIframe = 9,
+
   // Another server, e.g. Google's OAuth login page. But not an
   // embedding blog post page.
   External = 10,

@@ -696,6 +696,28 @@ const RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
+    let backlinksElm;
+    const pubLinks = page.internalBacklinks || [];
+    const restrLinks = me.myCurrentPageData.internalBacklinks || [];
+    const internalBacklinks: Topic[] = [...pubLinks];
+    for (const restrLink of restrLinks) {
+      const publLink = _.find(pubLinks, l => l.pageId === restrLink.pageId); // [On2]
+      if (!publLink) {
+        internalBacklinks.push(restrLink);
+      }
+    }
+    if (nonEmpty(internalBacklinks)) {
+      backlinksElm =
+            r.div({ className: 's_InLns' },
+              r.p({ className: 's_InLns_Ttl' }, "Linked from:"), // I18N
+              r.ol({},
+                internalBacklinks.map((topic: Topic) =>
+                  r.li({ key: topic.pageId },
+                    Link({ to: topic.url, className: 's_InLns_Ln icon-link' },
+                      topic.title))
+              )));
+    }
+
     let repliesAreFlat = false;
     let discOrProgrReplyNrs = rootPost.childNrsSorted.concat(page.parentlessReplyNrsSorted);
 
@@ -986,6 +1008,7 @@ const RootPostAndComments = createComponent({
         socialButtons,
         deletedText,
         postActions,
+        backlinksElm,
         debiki2.page.Metabar(),
         anyHorizontalArrowToChildren,
         // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,

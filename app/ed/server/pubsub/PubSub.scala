@@ -320,7 +320,9 @@ class PubSubActor(val globals: Globals) extends Actor {
               client missing: $anyClientA, $anyClientB [TyE603KRSTD4]""")
       }
       else if (anyClientA.isEmpty) {
-        // Maybe just disconnected?
+        // This happens after sever restart — then, the browser continues
+        // sending activity messages, but hasn't yet connected to the newly started
+        // server. (Maybe happens in other cases too.)
         logger.debug(o"""s$siteId: Got ${user.nameHashId} activity message, but
               there is no such WebSocket client [TyM502RDJ5]""")
       }

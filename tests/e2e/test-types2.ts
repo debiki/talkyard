@@ -48,6 +48,8 @@ interface TestSettings {
   debugBefore: boolean;
   debugAfterwards: boolean;
   include3rdPartyDependentTests?: boolean;
+  // To test only one. E.g. 'google' (OAuth2) or 'reddit' (oEmbed link previews).
+  only3rdParty?: string;
   grep: string;
   only: string;
   browserName: 'firefox' | 'chrome';

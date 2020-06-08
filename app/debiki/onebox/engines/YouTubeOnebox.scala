@@ -1,6 +1,5 @@
 /**
  * Copyright (c) 2015 Kaj Magnus Lindberg
- * Parts Copyright (c) 2013 jzeta (Joanna Zeta)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,19 +24,22 @@ package debiki.onebox.engines
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.onebox._
-import java.{net => jn, util => ju}
-import scala.util.{Failure, Success, Try}
-import YouTubeOnebox._
-import debiki.{Globals, Nashorn}
+import java.{net => jn}
+import debiki.Globals
+import debiki.TextAndHtml
+import org.scalactic.{Bad, Good, Or}
 
 
+class YouTubePrevwRendrEng(globals: Globals) extends InstantLinkPrevwRendrEng(globals) {
 
-class YouTubeOnebox(globals: Globals, nashorn: Nashorn)
-  extends InstantOneboxEngine(globals, nashorn) {
+  import YouTubePrevwRendrEng._
 
-  val regex = """^https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/.+$""".r
+  override def handles(url: String): Boolean =
+    YouTubePrevwRendrEngOEmbed.handles(url)
 
-  val cssClassName = "dw-ob-youtube"
+  override def providerName: Option[String] = Some("YouTube")
+
+  def providerLnPvCssClassName = "s_LnPv-YouTube"
 
   /** Do not use java.net.URL because it might try to do a reverse lookup of the hostname
     * (its operator equals).
@@ -46,47 +48,67 @@ class YouTubeOnebox(globals: Globals, nashorn: Nashorn)
 
   override val alreadySanitized = true
 
-  def renderInstantly(safeUrl: String): Try[String] = {
+  def renderInstantly(safeUrl: String): String Or LinkPreviewProblem = {
     javaUri = new jn.URI(safeUrl)
     findVideoId(javaUri) match {
-      case Some(videoId) =>
-        // We must sanitize here because alreadySanitized above is true, so that
-        // the iframe below won't be removed.
-        // (Better sanitize, also if seems to be no werird chars in the id.)
-        if (videoId.exists(""":/?&=;,.()[]{}"'\""" contains _))
-          return Failure(com.debiki.core.DebikiException(
-            "EdE2URKT04", "Bad YouTube video ID, cannot create onebox"))
-        val safeId = sanitizeUrl(videoId)
-        val unsafeParams = findParams(javaUri) getOrElse {
-          return Failure(com.debiki.core.DebikiException(
-            "EdE7DI60", "Bad YouTube video URL, cannot create onebox"))
+      case Some(unsafeVideoId) =>
+        // Double check id.
+        if (unsafeVideoId.exists(""":/?&=;,.()[]{}"'\""" contains _)) {
+          return Bad(LinkPreviewProblem(
+                "Bad YouTube video ID, cannot create preview",
+                unsafeUrl = safeUrl, errorCode = "TyEYOUTBID_"))
         }
-        val safeParams = sanitizeUrl(unsafeParams)
+
+        val unsafeParams = findParams(javaUri) getOrElse {
+          return Bad(LinkPreviewProblem(
+                "Bad YouTube video URL, cannot create preview",
+                unsafeUrl = safeUrl, errorCode = "TyEYOUTBPS"))
+        }
+
+        SECURITY; SHOULD // also include the origin parameter to the URL [yt_ln_pv_orig],
+        //  > specifying the URL scheme (http:// or https://) and full domain of your
+        //  > host page asthe parameter value. While origin is optional, including it
+        //  > protects against malicious third-party JavaScript being injected into
+        //  > your page and hijacking control of your YouTube player.
+        // https://developers.google.com/youtube/iframe_api_reference#Loading_a_Video_Player
+        //
+        // So, needs site origin too.
+        // Re-render if origin changes :-(  ?  (new Talkyard hostname)  [html_json]
+
+        val safeSrcAttr = TextAndHtml.safeEncodeForHtmlAttrOnly(
+              s"https://www.youtube.com/embed/$unsafeVideoId?wmode=opaque&$unsafeParams")
+
         // wmode=opaque makes it possible to cover the iframe with a transparent div,
         // which Utterscroll needs so the iframe won't steal mouse move events.
         // The default wmode is windowed which in effect places it above everything.
         // See http://stackoverflow.com/questions/3820325/overlay-opaque-div-over-youtube-iframe
         // Seems wmode might not be needed in Chrome today (June 2015) but feels better to
         // add it anyway.
-        Success(o"""
-          <iframe src="https://www.youtube.com/embed/$safeId?wmode=opaque&$safeParams"
-              frameborder="0" allowfullscreen></iframe>""")
+        SECURITY; COULD // sandbox YouTube iframe by default. Later.
+        Good(
+            s"""<iframe src="$safeSrcAttr" frameborder="0" allowfullscreen></iframe>""")
+
       case None =>
         // To do: Have a look at
         //  https://github.com/discourse/onebox/blob/master/lib/onebox/engine/youtube_onebox.rb
-        Failure(com.debiki.core.DebikiException(
-          "DwE45kFE2", "Cannot currently onebox this YouTube URL"))
+        // No, instead use oEmbed.
+        Bad(LinkPreviewProblem(
+              "Cannot currently onebox this YouTube URL",
+              unsafeUrl = safeUrl, errorCode = "TyEYOUTB0ID"))
     }
   }
 
 }
 
 
-object YouTubeOnebox {
+/** Parts Copyright (c) 2013 jzeta (Joanna Zeta)
+  * MIT: https://github.com/discourse/onebox/blob/master/LICENSE.txt
+  */
+object YouTubePrevwRendrEng {
 
-  private val SlashVideoIdRegex = """\/([^\/]+)""".r
-  private val SlashEmbedSlashVideoIdRegex = """\/embed\/([^\/]+)""".r
-  private val QueryStringVideoIdRegex = """v=([^&\?]+)""".r.unanchored
+  private val SlashVideoIdRegex = """/([^/]+)""".r
+  private val SlashEmbedSlashVideoIdRegex = """/embed/([^/]+)""".r
+  private val QueryStringVideoIdRegex = """v=([^&?]+)""".r.unanchored
 
 
   /** We can get the video id directly for URLs like:
@@ -95,7 +117,7 @@ object YouTubeOnebox {
     * - https://www.youtube.com/embed/112233abc
     */
   def findVideoId(javaUri: jn.URI): Option[String] = {
-    val path = javaUri.getPath
+    val path = javaUri.getPathEmptyNotNull
     if (javaUri.getHost endsWith "youtu.be") {
       // The url is like: http://youtu.be/112233abc
       SlashVideoIdRegex findGroupIn path

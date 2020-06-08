@@ -18,10 +18,10 @@
 package debiki.dao
 
 import java.io.RandomAccessFile
-
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.ResultException
+import debiki.TitleSourceAndHtml
 import org.scalatest._
 import java.{io => jio}
 
@@ -97,34 +97,34 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
             .replaceAllLiterally(s"/-/u/$pubSiteIdTwo/", "")
             .replaceAllLiterally("/-/u/", ""))
 
-      UploadsDao.findUploadRefsInText("", "pubsiteid") mustBe Set.empty
-      UploadsDao.findUploadRefsInText("nothing\nhere\nbye", "pubsiteid") mustBe Set.empty
+      UploadsDao.findUploadRefsInHtml("", "pubsiteid") mustBe Set.empty
+      UploadsDao.findUploadRefsInHtml("nothing\nhere\nbye", "pubsiteid") mustBe Set.empty
 
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"not a link: $uploadUrlPath", pubSiteIdOne) mustBe Set.empty
 
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"<img src='$uploadUrlPath'>", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
       // Text before and after.
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"hi\nthere<img src='$uploadUrlPath'>good\nbye", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"""double quotes: <img src="$uploadUrlPath">""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"""link: <a href="$uploadUrlPath">text</a>""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"""area: <area href="$uploadUrlPath"></area>""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
 
       // Bad attr:
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"""weird: <a x-href="$uploadUrlPath"></a>""", pubSiteIdOne) mustBe Set.empty
 
       // Many refs, different tags
-      UploadsDao.findUploadRefsInText(i"""
+      UploadsDao.findUploadRefsInHtml(i"""
          |<a href="$uploadUrlPath2">text</a>
          |<img src="$uploadUrlPath3">
          |<video src="$uploadUrlPath4">
@@ -133,23 +133,23 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
             mkRef(uploadUrlPath2), mkRef(uploadUrlPath3), mkRef(uploadUrlPath4))
 
       // Wrong site id
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"<img src='$uploadUrlPath'>", "wrongid") mustBe Set.empty
 
       // Wrong site id, and correct id too
-      UploadsDao.findUploadRefsInText(i"""
+      UploadsDao.findUploadRefsInHtml(i"""
         |<a href="$uploadUrlPath">text</a>
         |<a href="$uploadUrlPathSiteTwo">text</a>
         |""", pubSiteIdTwo) mustBe Set(mkRef(uploadUrlPathSiteTwo))
 
       // No site id
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"<img src='$pathNoSite'>", "whateverid") mustBe Set(mkRef(pathNoSite))
 
       // Bad paths:
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"<a href='$badPathTooFewChars'>text</a>", pubSiteIdOne) mustBe Set.empty
-      UploadsDao.findUploadRefsInText(
+      UploadsDao.findUploadRefsInHtml(
         s"<a href='$badPathSlashMissing'>text</a>", pubSiteIdOne) mustBe Set.empty
     }
   }
@@ -301,11 +301,11 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 0
 
       info("create page, link first file, now some quota used")
-      val titleTextAndHtml = textAndHtmlMaker.forTitle("Planets")
+      val titleSourceAndHtml = TitleSourceAndHtml("Planets")
       val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
-        titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
+        title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtml,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
@@ -355,11 +355,11 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         browserIdData)
 
       info("create page, link missing file, no quota used")
-      val titleTextAndHtml = textAndHtmlMaker.forTitle("The Sun")
+      val titleSourceAndHtml = TitleSourceAndHtml("The Sun")
       val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
-        titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
+        title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtml,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
@@ -434,7 +434,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       // COULD speed up by writing html, not commonmark, and passing a noop CommonmarRenderer
       // to TextAndHtml (see its function signature).
-      val titleTextAndHtml = textAndHtmlMaker.forTitle("Planets")
+      val titleSourceAndHtml = TitleSourceAndHtml("Planets")
       val bodyTextAndHtmlSite1 = textAndHtmlMaker.forBodyOrComment(
         s"[Shared](${sharedFile.ref.url}), [site-one](${site1File.ref.url})")
       val bodyTextAndHtmlSite2 = textAndHtmlMaker.forBodyOrComment(
@@ -442,12 +442,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       val pagePath1 = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
-        titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
+        title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
         showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       dao2.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
-        titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
+        title = titleSourceAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
         showId = true, deleteDraftNr = None, Who(user2.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()

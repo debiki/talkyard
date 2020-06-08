@@ -33,8 +33,7 @@ let mallory: Member;
 let mallorysBrowser: TyE2eTestBrowser;
 let strangersBrowser: TyE2eTestBrowser;
 
-let siteIdAddress: IdAddress;
-let siteId: SiteId;
+let site: IdAddress;
 
 let forum: TwoPagesTestForum;  // or: LargeTestForum
 
@@ -99,10 +98,9 @@ describe("some-e2e-test  TyT1234ABC", () => {
     // forum.categories.specificCategory.extId = 'specific cat ext id';
 
     assert.refEq(builder.getSite(), forum.siteData);
-    siteIdAddress = server.importSiteData(forum.siteData);
-    siteId = siteIdAddress.id;
-    server.skipRateLimits(siteId);
-    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
+    site = server.importSiteData(forum.siteData);
+    server.skipRateLimits(site.id);
+    discussionPageUrl = site.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
   it("initialize people", () => {
@@ -131,12 +129,12 @@ describe("some-e2e-test  TyT1234ABC", () => {
   });
 
   it("Owen logs in to admin area, ... ", () => {
-    owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
+    owensBrowser.adminArea.goToUsersEnabled(site.origin);
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
   it("Maria logs in", () => {
-    mariasBrowser.go2(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
+    mariasBrowser.go2(site.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 

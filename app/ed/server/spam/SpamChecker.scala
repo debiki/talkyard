@@ -19,7 +19,7 @@ package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{AllSettings, Config, TextAndHtml, TextAndHtmlMaker}
+import debiki.{AllSettings, Config, Nashorn, TextAndHtml, TextAndHtmlMaker}
 import debiki.EdHttp.throwForbidden
 import debiki.JsonUtils.readOptString
 import java.{net => jn}
@@ -116,12 +116,14 @@ object BadSpamCheckResponseException extends QuickException
 class SpamChecker(
   config: Config,
   isDevTest: Boolean,
-  originOfSiteId: Function[SiteId, Option[String]],
-  settingsBySiteId: Function[SiteId, AllSettings],
+  // Maybe clean up this a bit, too many params?
+  siteById: SiteId => Option[Site],
+  originOfSiteId: SiteId => Option[String],
+  settingsBySiteId: SiteId => AllSettings,
   executionContext: ExecutionContext,
   playConf: play.api.Configuration,
   wsClient: WSClient,
-  textAndHtmlMaker: TextAndHtmlMaker) {
+  nashorn: Nashorn) {
 
   private val logger = TyLogger("SpamChecker")
 
@@ -315,6 +317,14 @@ class SpamChecker(
 
     val siteSettings: AllSettings = settingsBySiteId(spamCheckTask.siteId)
 
+    val site: Site = siteById(spamCheckTask.siteId) getOrElse {
+      logger.warn(s"Site gone? id: ${spamCheckTask.siteId}, [TyE03KSUJ6M]")
+      return Future.successful(Nil)
+    }
+
+    // Save links and @mentions in posts3 / posts_t /  [save_post_lns_mentions]
+    // post_revisions_t, so won't need to find again here.
+    val textAndHtmlMaker = new TextAndHtmlMaker(site, nashorn)
     val textAndHtml = textAndHtmlMaker.forHtmlAlready(postToSpamCheck.htmlToSpamCheck)
 
     val spamTestFutures: Vector[Future[SpamCheckResult]] =
@@ -470,7 +480,7 @@ class SpamChecker(
     // recognize the top level domain.
     import org.apache.commons.validator.routines.{UrlValidator, RegexValidator}
     val urlValidator = new UrlValidator(new RegexValidator(".*"), UrlValidator.ALLOW_2_SLASHES)
-    val validUrls = textAndHtml.links.filter(urlValidator.isValid)
+    val validUrls = textAndHtml.externalLinks.filter(urlValidator.isValid)
     if (validUrls.isEmpty)
       return None
 
@@ -663,7 +673,7 @@ class SpamChecker(
     */
 
     // Consider this spam if there's any link with a raw ip address.
-    textAndHtml.linkIpAddresses.headOption foreach { ipAddress =>
+    textAndHtml.extLinkIpAddresses.headOption foreach { ipAddress =>
       return Vector(successful(SpamCheckResult.SpamFound(
         spamCheckerDomain = "localhost",
         humanReadableMessage =
@@ -672,7 +682,7 @@ class SpamChecker(
           to be spam. [TyE4PUM2]""")))
     }
 
-    val domainsToCheck = textAndHtml.linkDomains // TODO: scrubDomains(textAndHtml.linkDomains)...
+    val domainsToCheck = textAndHtml.extLinkDomains // TODO: scrubDomains(textAndHtml.linkDomains)...
       // (Skip example.com, so can be used in e2e tests without the tests failing because of
       // "spam" detected here.)
       .filterNot(d => d.endsWith(".example.com") || d == "example.com")
@@ -885,7 +895,8 @@ class SpamChecker(
     // The content that was submitted.
     anyTextToCheck foreach { t =>
       if (t.nonEmpty)
-        body.append("&comment_content=" + encode(t))  // COULD: htmlLinksOnePerLine [4KTF0WCR]
+        // COULD: externalLinksOnePerLineHtml [4KTF0WCR]
+        body.append("&comment_content=" + encode(t))
     }
 
     // The UTC timestamp of the creation of the comment, in ISO 8601 format. May be

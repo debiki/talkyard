@@ -47,7 +47,7 @@ object RenderedPageHtmlDao {
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  memCache.onPageCreated { _ =>
+  memCache.onPageCreated { case (_, _) =>
     uncacheForums(this.siteId)
   }
 
@@ -68,8 +68,9 @@ trait RenderedPageHtmlDao {
       val jsonResult: PageToJsonResult = jsonMaker.pageToJson(pageId, renderParams)
 
       // This is the html for the topic and replies, i.e. the main content / interesting thing.
+      RENAME // 'HtmlContent'  to 'PagePosts'?  More specific?
       val (cachedHtmlContent, cachedVersion) =
-        renderContentMaybeUseDatabaseCache(
+        renderContentMaybeUseDatabaseCache(  // RENAME to renderPagePostsUseDbCache ?
             pageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
       val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString,

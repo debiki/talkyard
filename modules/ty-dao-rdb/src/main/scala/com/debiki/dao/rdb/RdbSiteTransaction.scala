@@ -44,6 +44,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   with TagsSiteDaoMixin
   with PageUsersSiteDaoMixin
   with UploadsSiteDaoMixin
+  with LinksSiteTxMixin
   with CategoriesSiteDaoMixin
   with SearchSiteDaoMixin
   with SpamCheckQueueDaoMixin
@@ -286,7 +287,7 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   def runUpdateSingleRow(statement: String, values: List[AnyRef] = Nil): Boolean = {
     val numRowsUpdated = runUpdate(statement, values)
     dieIf(numRowsUpdated > 1, "TyE4KBW2L0", o"""This statement modified $numRowsUpdated rows
-         but should have touched one row only: $statement""")
+          but should have modified one row only: $statement""")
     numRowsUpdated == 1
   }
 

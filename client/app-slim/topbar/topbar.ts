@@ -224,7 +224,12 @@ export const TopBar = createComponent({
     const PageTitleIfFixed = () => !showTitleInTopbar ? null :
         r.div({ className: 's_Tb_Pg_Ttl' }, anyUnsafeTitleSource);  // [title_plain_txt]
 
-    if (!showTitleInTopbar && (isUnlisted || isSectionPage) && !isEmbComments) {
+    // A new category permission: SeeUnlistedTopics? For now:  [staff_can_see]
+    const showAlthoughUnlisted = isStaff(me);
+
+    if (!showTitleInTopbar // <—— BUG remove?  incorrectly cancels isUnlisted
+            && ((isUnlisted && !showAlthoughUnlisted) || isSectionPage)
+            && !isEmbComments) {
       // Show no ancestor categories.
       // But should show title, also if unlisted — not impl.
     }

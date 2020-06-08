@@ -37,6 +37,13 @@ import scala.concurrent.ExecutionContext
   * A single actor is used for this (just one, across all servers) so we can
   * avoid indexing stuff, or even the same thing, too frequently.
   * Because frequent updates should be avoided, see link [30G23] in package.scala.
+  *
+  * Would it make sense to index backlinks here too? [rebuild_reindex_posts]
+  * Maybe can reindex whatever that's missing, e.g. full text search, tags,
+  * mentions, or backlinks — look at each post in the queue, find out what's missing.
+  * Because it's faster to look at each post just once, and reindex
+  * everything at once, for that post, than to load and look at it, once per
+  * index type?
   */
 object SearchEngineIndexer extends TyLogging {
 

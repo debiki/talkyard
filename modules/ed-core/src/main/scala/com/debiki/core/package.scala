@@ -93,6 +93,8 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type SiteTx = SiteTransaction  // renaming it, wip
+
   sealed abstract class MarkupLang
   object MarkupLang {
     case object Html extends MarkupLang
@@ -166,6 +168,7 @@ package object core {
     pageId.length == 10 && pageId.startsWith("2000") // good enough for now
 
   type Tag = String
+  type TagDefId = Int
   type TagLabelId = Int
   type TagLabel = String
   val NoTagId: TagLabelId = 0
@@ -454,9 +457,9 @@ package object core {
   case class SiteUserId(siteId: SiteId, userId: UserId)
   case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)
 
-  trait PageTitleRole {
+  trait PageTitleRole {  RENAME // to PageTitleType
     def title: String
-    def role: PageType
+    def role: PageType  ; RENAME // to pageType
   }
 
 
@@ -1174,6 +1177,9 @@ package object core {
     futureResults.map(_.reverse)(execCtx)  // because of  ::  above
   }
 
+  def FutGood[T](t: T): Future[Good[T]] = Future.successful(Good(t))
+  def FutBad[T](t: T): Future[Bad[T]] = Future.successful(Bad(t))
+
 
   /** If you're short of time, add e.g. an UNTESTED statement. The compiler
     * ensures you don't do a typo. Then, before a release:
@@ -1186,9 +1192,16 @@ package object core {
   def SEC_TESTS_MISSING = ()
   def ADD_TO_DOCS = ()
   def SHOULD_CODE_REVIEW = ()
+  def CR_DONE = ()
   def FASTER_E2E_TESTS = () // An opportunity to speed up the e2e tests (maybe just marginally)
   def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
+
+  // Maybe split into [defense] and [weakness]?
+  // [defense] code tags are good — means security issues that have been dealt with.
+  // [weakness] means an issues not yet handled, might lead to a 'vulnerability'
+  // that an attacker / 'threat actor' can 'exploit'.
   def SECURITY = ()       // Some security issue, not necessarily so very important
+
   def SELF_DOS = ()
   def ASTROTURFING = ()   // Someone creates many accounts and pretends to be many people
   def PRIVACY = ()        // Could make things a bit more private
@@ -1207,6 +1220,7 @@ package object core {
   def SLOW_QUERY = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = () // Also see [On2] but typically O(n^2) is intentional (because simpler).
+  def WOULD_OPTIMIZE = () // Unimportant thing that could be optimized.
   def BLOCKING_REQ = ()
   def EDIT_INDEX = ()     // Database index could be simplified. Or investigate if it's getting used?
   def AVOID_RERENDER = ()
@@ -1221,6 +1235,7 @@ package object core {
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def DO_AFTER = ()       // Something that should be done after a certain date.
+  def FIX_AFTER = ()      // Bug to fix after a certain date.
   def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.

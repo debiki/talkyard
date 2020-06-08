@@ -70,6 +70,7 @@ describe("spam test, no external services  TyT530KRM1R", () => {
   });
 
   // Use both http and https links.
+  // 11 is max [TyT603RTDJ43].
   const tooManyLinks = `<3 links <3 <3 <3
         http://example.com/link-1
         http://example.com/link-2
@@ -81,7 +82,8 @@ describe("spam test, no external services  TyT530KRM1R", () => {
         https://example.com/link-8
         https://example.com/link-9
         https://example.com/link-10
-        https://example.com/link-11`;
+        https://example.com/link-11
+        https://example.com/link-12`;
 
   it("Mallory posts too many links, the server thinks it's spam and rejects the comment", () => {
     mallorysBrowser.forumButtons.clickCreateTopic();

@@ -126,12 +126,13 @@ trait SpecialContentDao {
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPost(bodyPost)
 
-    val dummyPagePath = PagePath(siteId, "/", Some(pageId), showId = true, pageSlug = "dummy")
+    val dummyPagePath = PagePathWithId(
+          "/", pageId = pageId, showId = true, pageSlug = "dummy", canonical = true)
     if (affectsWholeSite(pageId)) {
       emptyCacheImpl(transaction)
     }
     else {
-      memCache.firePageCreated(dummyPagePath)
+      memCache.firePageCreated(siteId, dummyPagePath)
     }
   }
 

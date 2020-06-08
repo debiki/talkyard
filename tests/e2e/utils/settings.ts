@@ -32,13 +32,15 @@ settings.newSiteDomain = settings.newSiteDomain || settings.host;
 settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;
 // dant = debug afterwards, no timeout
-settings.debugAfterwards = args.debugAfterwards || args.da || args.dant;
+settings.debugAfterwards = args.debugAfter || args.debugAfterwards || args.da || args.dant;
 settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;
 
 // Quick way to disable all browser.debug():
 settings.noDebug = args.nodebug || args.nd;
 
 settings.block3rdPartyCookies = args.block3rdPartyCookies || args.b3c;
+
+settings.only3rdParty = args.only3rdParty || args.o3;
 
 const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);

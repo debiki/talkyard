@@ -145,7 +145,7 @@ object Prelude {
   }
 
 
-  private def formatErrorMessage(errorCode: String, details: String) =
+  def formatErrorMessage(errorCode: String, details: String) =
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
 
   def dieIf(condition: Boolean, errorCode: String, problem: => Any = null): Unit =
@@ -817,6 +817,20 @@ object Prelude {
 
   val CollapseSpacesRegex: Regex = """\s\s*""".r
 
+
+  implicit class RichJavaUri(val underlying: java.net.URI) extends AnyVal {
+    def getHostOrNone: Option[String] = {
+      val h = underlying.getHost
+      if (h eq null) None
+      else Some(h)
+    }
+
+    def getPathEmptyNotNull: String = {
+      // Java's getPath() can return null, don't know how to reproduce that though.
+      val path = underlying.getPath
+      if (path eq null) "" else path
+    }
+  }
 
   implicit class RichLinkedHashMap[K, V](val underlying: mutable.LinkedHashMap[K, V])
       extends AnyVal {

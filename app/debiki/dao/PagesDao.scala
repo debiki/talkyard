@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,12 +24,23 @@ import com.debiki.core.PageParts.FirstReplyNr
 import com.debiki.core.Participant.SystemUserId
 import debiki._
 import debiki.EdHttp._
-import ed.server.auth.{Authz, ForumAuthzContext}
+import ed.server.auth.Authz
 import ed.server.spam.SpamChecker
 import java.{util => ju}
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
+import talkyard.server.dao._
 import math.max
 import org.owasp.encoder.Encode
+
+
+case class CreatePageResult(
+  path: PagePathWithId,
+  bodyPost: Post,
+  anyReviewTask: Option[ReviewTask],
+  anyCategoryId: Option[CategoryId]) {
+
+  def id: PageId = path.pageId
+}
 
 
 /** Creates and deletes pages, changes their states, e.g. Closed or Solved etc.
@@ -50,12 +61,30 @@ trait PagesDao {
   }
 
 
+  REMOVE; CLEAN_UP // use createPage2 instead, and rename it to createPage().
   def createPage(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
-        anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
+        anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
         discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
         extId: Option[ExtId] = None): PagePathWithId = {
+
+    createPage2(pageRole, pageStatus = pageStatus, anyCategoryId = anyCategoryId,
+          anyFolder = anyFolder, anySlug = anySlug, title = title,
+          bodyTextAndHtml = bodyTextAndHtml, showId = showId,
+          deleteDraftNr = deleteDraftNr, byWho = byWho,
+          spamRelReqStuff = spamRelReqStuff,
+          discussionIds = discussionIds, embeddingUrl = embeddingUrl,
+          extId = extId).path
+  }
+
+
+  def createPage2(pageRole: PageType, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+        anyFolder: Option[String], anySlug: Option[String], title: TitleSourceAndHtml,
+        bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
+        spamRelReqStuff: SpamRelReqStuff,
+        discussionIds: Set[AltPageId] = Set.empty, embeddingUrl: Option[String] = None,
+        extId: Option[ExtId] = None): CreatePageResult = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -74,23 +103,25 @@ trait PagesDao {
     if (bodyTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE3KFE29", "Page body should not be empty")
 
-    if (titleTextAndHtml.text.length > MaxTitleLength)
+    if (title.source.length > MaxTitleLength)
       throwBadReq("DwE4HEFW8", s"Title too long, max length is $MaxTitleLength")
 
-    if (titleTextAndHtml.safeHtml.trim.isEmpty)
+    if (title.safeHtml.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
     dieIf(discussionIds.exists(_.startsWith("diid:")), "TyE0KRTDT53J")
 
     quickCheckIfSpamThenThrow(byWho, bodyTextAndHtml, spamRelReqStuff)
 
-    val pagePath = readWriteTransaction { tx =>
-      val (pagePath, bodyPost, anyReviewTask) = createPageImpl(pageRole, pageStatus, anyCategoryId,
-        anyFolder = anyFolder, anySlug = anySlug, showId = showId,
-        titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
-        bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
-        tx, discussionIds = discussionIds, embeddingUrl = embeddingUrl, extId = extId)
+    val result = writeTx { (tx, staleStuff) =>
+      val (pagePath, bodyPost, anyReviewTask) =
+            createPageImpl(
+                pageRole, pageStatus, anyCategoryId,
+                anyFolder = anyFolder, anySlug = anySlug, showId = showId,
+                title = title, body = bodyTextAndHtml,
+                pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
+                tx, staleStuff, discussionIds = discussionIds,
+                embeddingUrl = embeddingUrl, extId = extId)
 
       val notifications = notfGenerator(tx).generateForNewPost(
         newPageDao(pagePath.pageId, tx),
@@ -102,43 +133,27 @@ trait PagesDao {
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
 
-      pagePath
+      CreatePageResult(
+            pagePath, bodyPost, anyReviewTask, anyCategoryId = anyCategoryId)
     }
 
-    memCache.firePageCreated(pagePath.toOld(siteId))
-    pagePath
+    memCache.firePageCreated(siteId, result.path)
+    result
     // Don't start rendering any html. See comment below [5KWC58]
   }
 
 
-  /** Returns (PagePath, body-post)
+  /** Returns (PagePath, body-post, any-review-task)
     */
-  def createPageImpl2(pageRole: PageType,
-        title: TextAndHtml, body: TextAndHtml,
-        pageStatus: PageStatus = PageStatus.Published,
-        anyCategoryId: Option[CategoryId] = None,
-        anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
-        pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
-        byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-        tx: SiteTransaction): (PagePathWithId, Post) = {
-    val result = createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
-      anyFolder = anyFolder, anySlug = anySlug, showId = showId,
-      titleSource = title.text, titleHtmlSanitized = title.safeHtml,
-      bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
-      pinOrder = pinOrder, pinWhere = pinWhere,
-      byWho, spamRelReqStuff, tx = tx,
-      layout = None)
-    (result._1, result._2)
-  }
-
   def createPageImpl(pageRole: PageType, pageStatus: PageStatus,
       anyCategoryId: Option[CategoryId],
       anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
-      titleSource: String, titleHtmlSanitized: String,
-      bodySource: String, bodyHtmlSanitized: String,
-      pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
+      title: TitleSourceAndHtml,
+      body: TextAndHtml,
+      pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
       tx: SiteTransaction,
+      staleStuff: StaleStuff,
       hidePageBody: Boolean = false,
       layout: Option[PageLayout] = None,
       bodyPostType: PostType = PostType.Normal,
@@ -154,7 +169,7 @@ trait PagesDao {
     val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId)
     val groupIds = tx.loadGroupIdsMemberIdFirst(author)
     val permissions = tx.loadPermsOnPages()
-    val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
+    //val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)  ?  [5FLK02]
     val settings = loadWholeSiteSettings(tx)
 
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
@@ -165,13 +180,13 @@ trait PagesDao {
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)
-    require(!titleSource.isEmpty && !titleHtmlSanitized.isEmpty, "EsE7MGK24")
-    require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
+    require(!title.source.isEmpty && !title.safeHtml.isEmpty, "EsE7MGK24")
+    require(!body.source.isEmpty && !body.safeHtml.isEmpty, "EsE1WKUQ5")
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
     require(embeddingUrl.trimNoneIfBlank == embeddingUrl, "Cannot have blank emb urls [TyE75SPJBJ]")
 
     val pageSlug = anySlug.getOrElse({
-        context.nashorn.slugifyTitle(titleSource)
+        context.nashorn.slugifyTitle(title.source)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     COULD // try to move this authz + review-reason check to ed.server.auth.Authz?
@@ -231,8 +246,8 @@ trait PagesDao {
       pageId = pageId,
       createdAt = now.toJavaDate,
       createdById = authorId,
-      source = titleSource,
-      htmlSanitized = titleHtmlSanitized,
+      source = title.source,
+      htmlSanitized = title.safeHtml,
       approvedById = approvedById)
 
     val bodyPost = Post.createBody(
@@ -240,8 +255,8 @@ trait PagesDao {
       pageId = pageId,
       createdAt = now.toJavaDate,
       createdById = authorId,
-      source = bodySource,
-      htmlSanitized = bodyHtmlSanitized,
+      source = body.source,
+      htmlSanitized = body.safeHtml,
       postType = bodyPostType,
       approvedById = approvedById)
       .copy(
@@ -249,7 +264,11 @@ trait PagesDao {
         bodyHiddenById = ifThenSome(hidePageBody, authorId),
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
-    val uploadPaths = findUploadRefsInPost(bodyPost)
+    val uploadRefs = body.uploadRefs
+    if (Globals.isDevOrTest) {
+      val uplRefs2 = findUploadRefsInPost(bodyPost)
+      dieIf(uploadRefs != uplRefs2, "TyE7RTEGP04", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
+    }
 
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId,
       extId = extId,
@@ -302,7 +321,7 @@ trait PagesDao {
               pageId = pageMeta.pageId,
               pageType = pageMeta.pageType,
               pageAvailableAt = When.fromDate(pageMeta.publishedAt getOrElse pageMeta.createdAt),
-              htmlToSpamCheck = bodyHtmlSanitized,
+              htmlToSpamCheck = body.safeHtml,
               language = settings.languageCode)),
             who = byWho,
             requestStuff = spamStuffPageUri))
@@ -344,9 +363,14 @@ trait PagesDao {
     if (approvedById.isDefined) {
       updatePagePopularity(
         PreLoadedPageParts(pageMeta, Vector(titlePost, bodyPost)), tx)
+
+      // Add links, and uncache linked pages — need to rerender them, with
+      // a backlink to this new page.
+      // Need not: staleStuff.addPageId(new-page-id) — page didn't exist before.
+      saveDeleteLinks(bodyPost, body, authorId, tx, staleStuff, skipBugWarn = true)
     }
 
-    uploadPaths foreach { hashPathSuffix =>
+    uploadRefs foreach { hashPathSuffix =>
       tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
 
@@ -527,20 +551,21 @@ trait PagesDao {
 
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         undelete: Boolean): Unit = {
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
       deletePagesImpl(pageIds, deleterId, browserIdData, doingReviewTask = None,
-          undelete = undelete)(tx)
+            undelete = undelete)(tx, staleStuff)
     }
     refreshPagesInAnyCache(pageIds.toSet)
   }
 
 
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(tx: SiteTransaction): Unit = {
+        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(
+        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
 
     val deleter = tx.loadTheParticipant(deleterId)
     if (!deleter.isStaff)
@@ -607,6 +632,16 @@ trait PagesDao {
       tx.insertAuditLogEntry(auditLogEntry)
       tx.indexAllPostsOnPage(pageId)
       // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
+
+      // Refresh backlinks — this page now deleted.
+      // (However, we don't delete from links_t, when deleting pages or categories
+      // — that would sometime cause lots of writes to the database. Instead,
+      // backlinks to deleted and access restricted pages and categories are
+      // filtered out, when reading from the db.)
+      val linkedPageIds = tx.loadPageIdsLinkedFromPage(pageId)
+      staleStuff.addPageIds(linkedPageIds, pageModified = false, backlinksStale = true)
+      // Page version bumped above.
+      staleStuff.addPageId(pageId, memCacheOnly = true)
 
       val un = undelete ? "un" | ""
       addMetaMessage(deleter, s" ${un}deleted this topic", pageId, tx)

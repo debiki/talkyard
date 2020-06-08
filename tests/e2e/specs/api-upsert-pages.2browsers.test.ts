@@ -430,7 +430,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
         '<pre>pre_stays</pre>',
         'link_url_stays',
         'nofollow',
-        '<a rel="nofollow" href="http://link_url_stays.example.com">link_text_stays</a>',
+        '<a href="http://link_url_stays.example.com" rel="nofollow noopener">link_text_stays</a>',
         'img_alt_stays',
         '<img alt="img_alt_stays" src="https://nice.example.com/img.jpg">',
         /<blockquote>[\s]*blockquote_stays[\s]*<\/blockquote>/,

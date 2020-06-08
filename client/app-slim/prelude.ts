@@ -135,6 +135,7 @@ export function logD(message, ex?) {
   console.debug.apply(console, arguments);
 }
 
+export const logT = logD; // for now, trace.
 
 export function logAndDebugDie(errorMessage: string, ex?) {
   console.error(errorMessage, ex);

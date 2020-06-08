@@ -153,7 +153,7 @@ package object search {
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
       Fields.ApprovedPlainText -> JsStringOrNull(approvedPlainText),
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
-      Fields.UnapprovedSource -> (
+      Fields.UnapprovedSource -> (  // [ix_unappr]
         if (post.isCurrentVersionApproved) JsNull else JsString(post.currentSource)),
       Fields.Tags -> JsArray(tags.toSeq.map(JsString)),
       Fields.CategoryId -> JsNumberOrNull(categoryId),

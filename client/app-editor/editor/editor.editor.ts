@@ -141,6 +141,7 @@ export const Editor = createFactory<any, EditorState>({
   },
 
   UNSAFE_componentWillMount: function() {
+    // Sync delay w e2e test. [upd_ed_pv_delay]
     this.updatePreviewSoon = _.debounce(this.updatePreviewNow, 333);
 
     this.saveDraftSoon = _.debounce(() => {

@@ -101,7 +101,8 @@ class E2eTestCounters {
 }
 
 
-class Globals(
+class Globals(  // RENAME to TyApp? or AppContext? TyAppContext? variable name = appCtx
+                // But then rename EdContext  to ... what?
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
@@ -616,6 +617,9 @@ class Globals(
   def settingsBySiteId(siteId: SiteId): AllSettings =
     siteDao(siteId).getWholeSiteSettings()
 
+  def siteById(siteId: SiteId): Option[Site] =
+    systemDao.getSiteById(siteId)
+
   def originOfSiteId(siteId: SiteId): Option[String] =
     systemDao.getSiteById(siteId).flatMap(_.canonicalHostname.map(originOf))
 
@@ -1129,10 +1133,9 @@ class Globals(
       RenderContentService.startNewActor(outer, edContext.nashorn)
 
     val spamChecker = new SpamChecker(
-      config,
-      isDevTest = isOrWasTest, originOfSiteId, settingsBySiteId,
-      executionContext, appLoaderContext.initialConfiguration, wsClient,
-      new TextAndHtmlMaker("dummysiteid", edContext.nashorn))
+          config, isDevTest = isOrWasTest, siteById, originOfSiteId, settingsBySiteId,
+          executionContext, appLoaderContext.initialConfiguration, wsClient,
+          edContext.nashorn)
 
     spamChecker.start()
 

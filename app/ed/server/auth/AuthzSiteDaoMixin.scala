@@ -92,14 +92,13 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  @deprecated("now", "use Authz instead and dieOrDenyIf")
-  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(transaction: SiteTransaction): Unit = {
-    throwIfMayNotSeePage(page.meta, user)(transaction)
+  def throwIfMayNotSeePage(page: Page, user: Option[Participant])(tx: SiteTx): Unit = {
+    throwIfMayNotSeePage(page.meta, user)(tx)
   }
 
 
-  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(transaction: SiteTransaction): Unit = {
-    val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(transaction))
+  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[Participant])(tx: SiteTx): Unit = {
+    val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(tx))
     if (!may)
       throwIndistinguishableNotFound(s"EdE5FKAW0-$debugCode")
   }

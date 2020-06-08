@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,17 +26,14 @@ import debiki._
 import debiki.EdHttp._
 import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
-import play.{api => p}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
+import talkyard.server.dao._
 import PostsDao._
-import com.debiki.core
-import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType
 import ed.server.auth.Authz
 import ed.server.spam.SpamChecker
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
-import talkyard.server.{IfCached, PostRendererSettings}
 
 
 case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
@@ -88,10 +85,10 @@ trait PostsDao {
 
     quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
-    val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { tx =>
+    val (newPost, author, notifications, anyReviewTask) = writeTx { (tx, staleStuff) =>
       deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
-      insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType, byWho, spamRelReqStuff,
-        now, authorId, tx)
+      insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType,
+            byWho, spamRelReqStuff, now, authorId, tx, staleStuff)
     }
 
     refreshPageInMemCache(pageId)
@@ -106,7 +103,8 @@ trait PostsDao {
 
   def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
         postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
-        now: When, authorId: UserId, tx: SiteTransaction, skipNotifications: Boolean = false)
+        now: When, authorId: UserId, tx: SiteTransaction, staleStuff: StaleStuff,
+        skipNotifications: Boolean = false)
         : (Post, Participant, Notifications, Option[ReviewTask]) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE25JP5L2")
@@ -200,7 +198,13 @@ trait PostsDao {
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
       version = oldMeta.version + 1)
 
-    val uploadRefs = findUploadRefsInPost(newPost)
+    // Since the post didn't exist before, it's enough to remember the refs
+    // from the new textAndHtml only. [new_upl_refs]
+    val uploadRefs = textAndHtml.uploadRefs
+    if (Globals.isDevOrTest) {
+      val uplRefs2 = findUploadRefsInPost(newPost)
+      dieIf(uploadRefs != uplRefs2, "TyE503SKH5", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
+    }
 
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
@@ -268,6 +272,9 @@ trait PostsDao {
         // Should be the same — the page type didn't change (we're just adding a reply).
         postsOrderNesting = page.parts.postsOrderNesting)
       updatePagePopularity(pagePartsInclNewPost, tx)
+
+      staleStuff.addPageId(pageId)
+      saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
     }
     uploadRefs foreach { uploadRef =>
       tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
@@ -279,7 +286,7 @@ trait PostsDao {
     val notifications =
       if (skipNotifications) Notifications.None
       else notfGenerator(tx).generateForNewPost(
-            page, newPost, anyNewTextAndHtml = Some(textAndHtml), anyReviewTask)
+            page, newPost, Some(textAndHtml), anyReviewTask)
     tx.saveDeleteNotifications(notifications)
 
     (newPost, author, notifications, anyReviewTask)
@@ -489,7 +496,7 @@ trait PostsDao {
 
     quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
-    val (post, author, notifications) = readWriteTransaction { tx =>
+    val (post, author, notifications) = writeTx { (tx, staleStuff) =>
       val authorAndLevels = loadUserAndLevels(byWho, tx)
       val author = authorAndLevels.user
 
@@ -529,10 +536,11 @@ trait PostsDao {
               // get notified about the text in the previous chat message (that text
               // was likely not intended directly for them).  TyT306WKCDE4 [NEXTCHATMSG]
               textAndHtml.usernameMentions.isEmpty =>
-          appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, tx)
+          appendToLastChatMessage(
+                lastMessage, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
         case _ =>
-          val (post, notfs) =
-            createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, tx)
+          val (post, notfs) = createNewChatMessage(
+                page, textAndHtml, byWho, spamRelReqStuff, tx, staleStuff)
           // For now, let's create review tasks only for new messages, but not when appending
           // to the prev message. Should work well enough + won't be too many review tasks.
           val anyReviewTask = if (reviewReasons.isEmpty) None
@@ -564,7 +572,8 @@ trait PostsDao {
 
 
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
-      spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
+        spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction, staleStuff: StaleStuff)
+        : (Post, Notifications) = {
 
     require(textAndHtml.safeHtml.trim.nonEmpty, "TyE592MWP2")
 
@@ -614,7 +623,12 @@ trait PostsDao {
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
 
-    val uploadRefs = findUploadRefsInPost(newPost)
+    // New post, all refs in textAndHtml regardless of if approved or not. [new_upl_refs]
+    val uploadRefs: Set[UploadRef] = textAndHtml.uploadRefs
+    if (Globals.isDevOrTest) {
+      val uplRefs2: Set[UploadRef] = findUploadRefsInPost(newPost)
+      dieIf(uploadRefs != uplRefs2, "TyE38RDHD4", s"uploadRefs: $uploadRefs, 2: $uplRefs2")
+    }
 
     SECURITY // COULD: if is new chat user, create review task to look at his/her first
     // chat messages, but only the first few.
@@ -667,6 +681,10 @@ trait PostsDao {
     uploadRefs foreach { uploadRef =>
       tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
+
+    staleStuff.addPageId(page.id)
+    saveDeleteLinks(newPost, textAndHtml, authorId, tx, staleStuff)
+
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
     insertAuditLogEntry(auditLogEntry, tx)
 
@@ -675,7 +693,7 @@ trait PostsDao {
     // & publish [pubsub]
 
     val notfs = notfGenerator(tx).generateForNewPost(
-      page, newPost, anyNewTextAndHtml = Some(textAndHtml), anyReviewTask = None)
+      page, newPost, sourceAndHtml = Some(textAndHtml), anyReviewTask = None)
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -688,7 +706,8 @@ trait PostsDao {
     * is more nice, from a ux perspective? with one message instead of many small?
     */
   private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
-        spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
+        spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction, staleStuff: StaleStuff)
+        : (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
@@ -715,7 +734,7 @@ trait PostsDao {
     val pageMeta = tx.loadThePageMeta(lastPost.pageId)
 
     val postRenderSettings = makePostRenderSettings(pageMeta.pageType)
-    val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(
+    val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(  // [nashorn_in_tx]
       newCombinedText,
       embeddedOriginOrEmpty = postRenderSettings.embeddedOriginOrEmpty,
       followLinks = false)
@@ -757,7 +776,11 @@ trait PostsDao {
     tx.updatePost(editedPost)
     tx.indexPostsSoon(editedPost)
     anySpamCheckTask.foreach(tx.insertSpamCheckTask)
-    saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, tx)
+    saveDeleteUploadRefs(lastPost, editedPost = editedPost, textAndHtml,
+          isAppending = true, isEditing = false, authorId, tx)
+
+    staleStuff.addPageId(editedPost.pageId)
+    saveDeleteLinks(editedPost, combinedTextAndHtml, authorId, tx, staleStuff)
 
     val oldMeta = tx.loadThePageMeta(lastPost.pageId)
     val newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -781,7 +804,7 @@ trait PostsDao {
   /** Edits the post, if authorized to edit it.
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
-        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: TextAndHtml): Unit = {
+        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: SourceAndHtml): Unit = {
     val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
@@ -789,9 +812,13 @@ trait PostsDao {
     if (newTextAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
 
-    quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
+    newTextAndHtml match {
+      case _: TitleSourceAndHtml => ()
+      case postSourceAndHtml: TextAndHtml =>
+        quickCheckIfSpamThenThrow(who, postSourceAndHtml, spamRelReqStuff)
+    }
 
-    val anyEditedCategory = readWriteTransaction { tx =>
+    val anyEditedCategory = writeTx { (tx, staleStuff) =>
       val editorAndLevels = loadUserAndLevels(who, tx)
       val editor = editorAndLevels.user
       val page = newPageDao(pageId, tx)
@@ -1050,7 +1077,8 @@ trait PostsDao {
       tx.indexPostsSoon(editedPost)
       anySpamCheckTask.foreach(tx.insertSpamCheckTask)
       newRevision.foreach(tx.insertPostRevision)
-      saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, tx)
+      saveDeleteUploadRefs(postToEdit, editedPost = editedPost, newTextAndHtml,
+            isAppending = false, isEditing = true, editorId, tx)
 
       insertAuditLogEntry(auditLogEntry, tx)
 
@@ -1060,14 +1088,23 @@ trait PostsDao {
       anyEditedCategory.foreach(tx.updateCategoryMarkSectionPageStale)
 
       reviewTask.foreach(tx.upsertReviewTask)
+      SHOULD // generate review task notf?  [revw_task_notfs]
+      // At least if the edits not yet approved — then, annoying for the person
+      // who did the edits, if they "never" appear because the staff didn't notice.
+      // val notfs = notfGenerator(tx).generateForReviewTask( ...)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
       }
 
-      TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
-      val notfs = notfGenerator(tx).generateForEdits(postToEdit, editedPost, Some(newTextAndHtml))
-      tx.saveDeleteNotifications(notfs)
+      if (editedPost.isCurrentVersionApproved) {
+        staleStuff.addPageId(editedPost.pageId)
+        saveDeleteLinks(editedPost, newTextAndHtml, editorId, tx, staleStuff)
+        TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
+        val notfs = notfGenerator(tx).generateForEdits(
+              postToEdit, editedPost, Some(newTextAndHtml))
+        tx.saveDeleteNotifications(notfs)
+      }
 
       deleteDraftNr.foreach(nr => tx.deleteDraft(editorId, nr))
 
@@ -1095,14 +1132,199 @@ trait PostsDao {
   }
 
 
-  private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post, editorId: UserId,
-        tx: SiteTransaction): Unit = {
+  /** Links are saved only for the approved version (if any) of a post.
+    * So, if someone submits a new post, or edits an old post, we don't
+    * save any links, until the new post, or the edits, have been approved.
+    *
+    * If there're many links from page A to B, then, remember all of them,
+    * per unique url, e.g. both:  /some-topic  and:  /-123-some-topic.
+    *
+    * Reasoning: If that linked page with id 123 gets moved to:  [many_lns_same_page]
+    *   /another-url-path
+    * then the  /some-topic  link breaks,
+    * but /-123-some-topic will still work, because it includes the page id
+    * in the url.
+    * And if later moving page /-234-replacement  to  /some-topic,
+    * then the /some-topic link will start working again — pointing
+    * to the new page. Which is sometimes what one wants.
+    *
+    * So links can be different, although they're to the same page.
+    *
+    * No need, though, to remember two different /-123-some-topic  links from
+    * the same post.  That's why [[SourceAndHtml.internalLinks]] is a Set.
+    *
+    * staleStuff must include post.pageId already.
+    */
+  def saveDeleteLinks(post: Post, sourceAndHtml: SourceAndHtml, writerId: UserId,
+          tx: SiteTx, staleStuff: StaleStuff, skipBugWarn: Boolean = false): Unit = {
+    // Some e2e tests: backlinks-basic.2browsers.test.ts  TyTINTLNS54824
+
+    // Let's always add the page id to staleStuff before, just so that
+    // here we can check that that wasn't forgotten.
+    // Don't do from in here — that'd be unexpected?, in this fn about links.
+    if (!skipBugWarn && !staleStuff.includesPageModified(post.pageId)) {
+      bugWarn("TyE306KTD3", s"s$siteId: staleStuff: linking page id ${
+            post.pageId} hasn't been modified? Post: $post")
+    }
+
+    dieIf(!post.isCurrentVersionApproved && Globals.isDevOrTest, "TyE406RMTK2")
+    if (!post.isCurrentVersionApproved)
+      return
+
+    val approvedAt: When = post.lastApprovedAt getOrElse {
+      bugWarn("TyE42RKTJ56", s"s$siteId: Post approved but no date: $post")
+      return
+    }
+
+    if (post.currentSource != sourceAndHtml.source) {
+      bugWarn("TyE305RKT5", o"""s$siteId: post.currentSource != sourceAndHtml.source,
+            post: $post,  sourceAndHtml.source: ${sourceAndHtml.source}""")
+      return
+    }
+
+    COULD // remove param writerId? It's in the post already, right?:
+    // (Or use  post.currentRevisionById — no, a new lastApprovedRevisionById ?)
+    if (post.lastApprovedEditById.getOrElse(post.createdById) != writerId) {
+      bugWarn("TyE63WKDJ356", s"s$siteId: post last writer id != writerId = ${
+            writerId}:  $post")
+      return
+    }
+
+    val pageIdsLinkedBefore = tx.loadPageIdsLinkedFromPage(post.pageId)
+    val linksBefore: Seq[Link] = tx.loadLinksFromPost(post.id)
+
+    val linkUrlsAfter = sourceAndHtml.internalLinks
+    val newLinkUrls: Set[String] = linkUrlsAfter.filterNot(linkUrl =>
+          linksBefore.exists(_.linkUrl == linkUrl))
+
+    val newLinks = newLinkUrls flatMap { linkUrl: String =>
+      val uri = new java.net.URI(linkUrl)
+      val urlPath = uri.getPathEmptyNotNull
+      val anyPagePath: Option[PagePathWithId] = getPagePathForUrlPath(urlPath)
+      // This might result in many links from a page to another — but these
+      // links will all have different url paths, e.g.:  [many_lns_same_page]
+      //   - /-1234/link-by-id
+      //   - /-1234/by-id-but-old-page-slug
+      //   - /id-less-path-to-same-page
+      anyPagePath map { path: PagePathWithId =>
+        Link(fromPostId = post.id,
+              linkUrl = linkUrl,
+              addedAt = approvedAt,
+              addedById = writerId,
+              isExternal = false,
+              toPageId = Some(path.pageId))
+      }
+    }
+
+    // [On2], fine.
+    val deletedLinks = linksBefore.filter(lb => !linkUrlsAfter.contains(lb.linkUrl))
+
+    tx.deleteLinksFromPost(post.id, deletedLinks.map(_.linkUrl).toSet)
+    newLinks foreach tx.upsertLink
+
+    val pageIdsLinkedAfter = tx.loadPageIdsLinkedFromPage(post.pageId)
+
+    // Uncache backlinked pages. [uncache_blns]
+    WOULD_OPTIMIZE // use Guava.symmetricDifference.  But not Scala's  setA.diff.setB.
+    val stalePageIds =
+          (pageIdsLinkedBefore -- pageIdsLinkedAfter) ++
+            (pageIdsLinkedAfter -- pageIdsLinkedBefore)
+    staleStuff.addPageIds(stalePageIds, pageModified = false, backlinksStale = true)
+  }
+
+
+  private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post,
+        sourceAndHtml: SourceAndHtml, isAppending: Boolean, isEditing: Boolean,
+        editorId: UserId, tx: SiteTransaction): Unit = {
     // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
     // 1) approved version of the post, and 2) the current possibly unapproved version.
     // Because if any of the approved or the current version links to an uploaded file,
     // we should keep the file.
-    val currentUploadRefs = findUploadRefsInPost(editedPost)
+
+    if (isEditing && editedPost.currentSource != sourceAndHtml.source) {
+      bugWarn("TyE5WKG20J", s"s$siteId: editedPost.currentSource != sourceAndHtml.source: ${
+            editedPost}")
+      return
+    }
+
+    if (isEditing && editedPost.isCurrentVersionApproved &&
+          editedPost.lastApprovedEditById.isNot(editorId)) {
+      bugWarn("TyE205AKT3", s"s$siteId: editedPost last editor id != editorId = ${
+            editorId}:  $editedPost")
+      // Don't return, didn't before (2020-07).
+    }
+    // Or use  post.currentRevisionById?:
+    dieIf(Globals.isDevOrTest && editedPost.currentRevisionById != editorId, "TyE3056KTD")
+
     val oldUploadRefs = tx.loadUploadedFileReferences(postToEdit.id)
+
+    val currentUploadRefs: Set[UploadRef] = {
+      if (isAppending) {
+        require(!isEditing)
+        oldUploadRefs ++ sourceAndHtml.uploadRefs  // [52TKTSJ5]
+      }
+      else {
+        TESTS_MISSING // or?
+
+        require(isEditing)
+        // Tricky! We don't know which of oldUploadRefs are approved,
+        // and which one's aren't, and should be removed because they aren't
+        // in the new edited unapproved source.
+        //
+        // Example:
+        //
+        // Old approved text includes:  https://old-appr-ref
+        // Old next *unapproved* revision includes: (old Post.currentSource)
+        //   https://old-appr-ref   and https://old-unappr-ref
+        //
+        // The edited new unapproved revision (new Post.currentSource) includes
+        // no ref at all. We cannot remove  https://old-appr-ref,
+        // until the new edited version has been approved.
+        // But we do want to remove  https://old-unappr-ref.
+        // So, there's a difference between *un*approved and approved old upl ref,
+        // and we want to know which ones of the old refs, have been approved
+        // (need to keep those).
+        // Maybe remember in the db? [is_upl_ref_aprvd]
+        //
+        // This won't work:
+        //
+        // var newRefs = sourceAndHtml.uploadRefs
+        // if (postToEdit.isSomeVersionApproved && !editedPost.isCurrentVersionApproved) {
+        //   // Then any old & approved refs are still in use.
+        //   // But! This might add *too many** refs:
+        //   newRefs ++= oldUploadRefs
+        //   // Because we might need to *remove* some refs from the previous
+        //   // unapproved version, that are not in the ne unapproved version.
+        //   // But we don't know which of oldUploadRefs those are.
+        // }
+        // So, we need to:
+        val pubId = thePubSiteId()
+        val approvedRefs = editedPost.approvedHtmlSanitized.map(
+              html => UploadsDao.findUploadRefsInHtml(html, pubId)) getOrElse Set.empty
+        val unapprRefs = sourceAndHtml.uploadRefs
+
+        // (In the comment example above, approvedRefs would include  https://old-appr-ref,
+        // but unapprRefs might, and might not.)
+        val refs = approvedRefs ++ unapprRefs
+
+        if (Globals.isDevOrTest) {
+          val r2 = findUploadRefsInPost(editedPost) // [nashorn_in_tx]
+          dieIf(refs != r2, "TyE306KSM233", s"refs: $refs, r2: $r2")
+        }
+
+        refs
+
+        // Two solution, to avoid slow things (like Nashorn) inside
+        // a tx, are 1) to add  editedPost  to a background queue,
+        // which re-indexes the post later?
+        // That could actually be index_queue3! Already there, and updated
+        // properly.
+        // Or 2) to generate the prev post's refs in a separate step,
+        // before this tx. And remember which ones are approved, and
+        // which are unapproved.
+      }
+    }
+
     val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
     val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
 
@@ -1317,20 +1539,29 @@ trait PostsDao {
 
   def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId)
         : ChangePostStatusResult = {
-    val result = readWriteTransaction(
-      changePostStatusImpl(postNr, pageId = pageId, action, userId = userId, doingReviewTask = None, _))
+    val result = writeTx { (tx, staleStuff) =>
+      changePostStatusImpl(postNr, pageId = pageId, action, userId = userId,
+            doingReviewTask = None, tx, staleStuff)
+    }
     refreshPageInMemCache(pageId)
     result
   }
 
 
   def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
-        userId: UserId, doingReviewTask: Option[ReviewTask], tx: SiteTransaction)
+        userId: UserId, doingReviewTask: Option[ReviewTask], tx: SiteTransaction,
+        staleStuff: StaleStuff)
         : ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
+    import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
     val page = newPageDao(pageId, tx)
+    if (!page.exists)
+      throwIndistinguishableNotFound("TyE05KSRDM3")
+
     val user = tx.loadParticipant(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+
+    SECURITY; COULD // check if may see post, not just the page?  [whispers] [staff_can_see]
     throwIfMayNotSeePage(page, Some(user))(tx)
 
     val postBefore = page.parts.thePostByNr(postNr)
@@ -1357,17 +1588,28 @@ trait PostsDao {
     var numOrigPostVisibleRepliesGone = 0
     var numOrigPostVisibleRepliesBack = 0
 
-    def updateNumVisible(postBefore: Post, postAfter: Post): Unit = {
+    val uncacheBacklinksFromPostIds = mutable.Set[PostId]()
+
+    def rememberBacklinksUpdCounts(postBefore: Post, postAfter: Post): Unit = {
+      if (postBefore.isVisible == postAfter.isVisible)
+        return
+
+      // The post got un/deleted, or un/hidden — so now internal links might
+      // have dis/appeared. Remember this post id, so we can uncache pages
+      // it links to, so their backlinks get refreshed.
+      uncacheBacklinksFromPostIds += postBefore.id
+
       if (!postBefore.isReply)
         return
-      if (postBefore.isVisible && !postAfter.isVisible) {
+
+      if (!postAfter.isVisible) {
         dieIf(numVisibleRepliesBack > 0, "EdE6PK4W0")
         numVisibleRepliesGone += 1
         if (postBefore.isOrigPostReply) {
           numOrigPostVisibleRepliesGone += 1
         }
       }
-      if (!postBefore.isVisible && postAfter.isVisible) {
+      if (postAfter.isVisible) {
         dieIf(numVisibleRepliesGone > 0, "EdE7BST2Z")
         numVisibleRepliesBack += 1
         if (postBefore.isOrigPostReply) {
@@ -1378,7 +1620,8 @@ trait PostsDao {
 
     val now = globals.now().toJavaDate
 
-    // Update the directly affected post.
+    // ----- Update the directly affected post
+
     val postAfter = action match {
       case PSA.HidePost => postBefore.copyWithNewStatus(now, userId, bodyHidden = true)
       case PSA.UnhidePost => postBefore.copyWithNewStatus(now, userId, bodyUnhidden = true)
@@ -1389,7 +1632,7 @@ trait PostsDao {
       case PSA.DeleteTree => postBefore.copyWithNewStatus(now, userId, treeDeleted = true)
     }
 
-    updateNumVisible(postBefore, postAfter = postAfter)
+    rememberBacklinksUpdCounts(postBefore, postAfter = postAfter)
 
     val postsDeleted = ArrayBuffer[Post]()
     val postsUndeleted = ArrayBuffer[Post]()
@@ -1404,6 +1647,8 @@ trait PostsDao {
         postsUndeleted.append(postAfter)
       }
     }
+
+    // ----- Update successors
 
     // Update any indirectly affected posts, e.g. subsequent comments in the same
     // thread that are being deleted recursively.
@@ -1428,13 +1673,30 @@ trait PostsDao {
 
       var postsToReindex = Vector[Post]()
       anyUpdatedSuccessor foreach { updatedSuccessor =>
-        updateNumVisible(postBefore = successor, postAfter = updatedSuccessor)
+        rememberBacklinksUpdCounts(postBefore = successor, postAfter = updatedSuccessor)
         tx.updatePost(updatedSuccessor)
         if (successor.isDeleted != updatedSuccessor.isDeleted) {
           postsToReindex :+= updatedSuccessor
         }
       }
       tx.indexPostsSoon(postsToReindex: _*)
+    }
+
+    // ----- Update related things
+
+    BUG; SHOULD // delete upload refs, if any posts deleted?  [rm_upl_refs]
+
+    if (uncacheBacklinksFromPostIds.nonEmpty) {
+      // Uncache backlinked pages. [uncache_blns]
+      // (We don't delete links, when soft-deleting a post or page. Instead, such
+      // links are filtered out when querying. [q_deld_lns] )
+      val linkedPageIds = tx.loadPageIdsLinkedFromPosts(
+            uncacheBacklinksFromPostIds.toSet)
+
+      // This might refresh unnecessarily many pages, if there're other posts that
+      // link to the same pages, so which pages are linked, didn't actually change.
+      staleStuff.addPageIds(
+            linkedPageIds, pageModified = false, backlinksStale = true)
     }
 
     val oldMeta = page.meta
@@ -1457,6 +1719,7 @@ trait PostsDao {
     // instead, notfs about deleted posts, or on deleted pages, are filtered
     // out here: [SKIPDDNTFS].
 
+    // We don't both delete and undelete at the same time.
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.
@@ -1481,6 +1744,8 @@ trait PostsDao {
       updateSpamCheckTaskBecausePostDeleted(postBefore, postAuthor, deleter = user, tx)
     }
 
+    // ----- Update the page
+
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
     val isChatWithWrongReplyCount =
       page.pageType.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
@@ -1498,6 +1763,7 @@ trait PostsDao {
       updatePagePopularity(page.parts, tx)
     }
 
+    staleStuff.addPageId(page.id, memCacheOnly = true)
     tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
     // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
@@ -1508,7 +1774,8 @@ trait PostsDao {
   }
 
 
-  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId, tx: SiteTransaction): Unit = {
+  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
+          tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
 
     val page = newPageDao(pageId, tx)
     val pageMeta = page.meta
@@ -1523,10 +1790,24 @@ trait PostsDao {
       throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
 
     // ------ The post
-    val renderSettings = makePostRenderSettings(pageMeta.pageType)
-    COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. [4WKAB02]
-    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
-      IfCached.Die("TyE2BKYUF4"))
+
+    // A bit similar / dupl code [APRPOSTDPL]
+    REFACTOR // save the current html directly, so this step not needed  [nashorn_in_tx]
+    // and remember links and @mentions. [4WKAB02]
+    val sourceAndHtml: SourceAndHtml =
+          if (postBefore.isTitle) {
+            TitleSourceAndHtml(postBefore.currentSource)
+          }
+          else {
+            val renderSettings = makePostRenderSettings(pageMeta.pageType)
+            textAndHtmlMaker.forBodyOrComment(
+                  postBefore.currentSource,
+                  embeddedOriginOrEmpty = renderSettings.embeddedOriginOrEmpty,
+                  allowClassIdDataAttrs = postBefore.nr == PageParts.BodyNr,
+                  // [WHENFOLLOW]
+                  followLinks = postBefore.nr == PageParts.BodyNr &&
+                        pageMeta.pageType.shallFollowLinks)
+          }
 
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
     // or remove them.
@@ -1537,7 +1818,7 @@ trait PostsDao {
       approvedAt = Some(tx.now.toJavaDate),
       approvedById = Some(approverId),
       approvedSource = Some(postBefore.currentSource),
-      approvedHtmlSanitized = Some(approvedHtmlSanitized),
+      approvedHtmlSanitized = Some(sourceAndHtml.safeHtml),
       currentRevSourcePatch = None,
       // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
       bodyHiddenAt = None,
@@ -1545,6 +1826,9 @@ trait PostsDao {
       bodyHiddenReason = None)
     tx.updatePost(postAfter)
     tx.indexPostsSoon(postAfter)
+
+    staleStuff.addPageId(pageId, memCacheOnly = true) // page version bumped below
+    saveDeleteLinks(postAfter, sourceAndHtml, postAfter.createdById, tx, staleStuff)
 
     SHOULD // delete any review tasks.
 
@@ -1597,20 +1881,20 @@ trait PostsDao {
         Notifications.None
       }
       else if (isApprovingNewPost) {
-        notfGenerator(tx).generateForNewPost(page, postAfter, anyNewTextAndHtml = None,
-          anyReviewTask = None)
+        notfGenerator(tx).generateForNewPost(page, postAfter, Some(sourceAndHtml),
+              anyReviewTask = None)
       }
       else {
-        notfGenerator(tx).generateForEdits(postBefore, postAfter, None)
+        notfGenerator(tx).generateForEdits(postBefore, postAfter, Some(sourceAndHtml))
       }
     tx.saveDeleteNotifications(notifications)
 
-    refreshPagesInAnyCache(Set[PageId](pageId))
+    refreshPagesInAnyCache(Set[PageId](pageId))  ; REMOVE // <—— no longer needed, staleStuff instead
   }
 
 
   def autoApprovePendingEarlyPosts(pageId: PageId, posts: Iterable[Post])(
-        tx: SiteTransaction): Unit = {
+        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
 
     if (posts.isEmpty) return
     require(posts.forall(_.pageId == pageId), "EdE2AX5N6")
@@ -1621,6 +1905,8 @@ trait PostsDao {
     var numNewVisibleReplies = 0
     var numNewVisibleOpReplies = 0
 
+    staleStuff.addPageId(pageId, memCacheOnly = true)  // page version bumped below
+
     for {
       post <- posts
       if !post.isSomeVersionApproved
@@ -1630,10 +1916,23 @@ trait PostsDao {
 
       // ----- A post
 
-      val renderSettings = makePostRenderSettings(pageMeta.pageType)
-      COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. + [4WKAB02]x
-      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
-        IfCached.Die("TyE2PKL99"))
+      // A bit similar / dupl code [APRPOSTDPL]
+      REFACTOR // save the current html directly, so this step not needed  [nashorn_in_tx]
+      // and remember links and @mentions. [4WKAB02]
+      val sourceAndHtml: SourceAndHtml =
+            if (post.isTitle) {
+              TitleSourceAndHtml(post.currentSource)
+            }
+            else {
+              val renderSettings = makePostRenderSettings(pageMeta.pageType)
+              textAndHtmlMaker.forBodyOrComment(
+                    post.currentSource,
+                    embeddedOriginOrEmpty = renderSettings.embeddedOriginOrEmpty,
+                    allowClassIdDataAttrs = post.nr == PageParts.BodyNr,
+                    // [WHENFOLLOW]
+                    followLinks = post.nr == PageParts.BodyNr &&
+                          pageMeta.pageType.shallFollowLinks)
+            }
 
       // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
       // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
@@ -1642,17 +1941,19 @@ trait PostsDao {
         approvedAt = Some(tx.now.toJavaDate),
         approvedById = Some(SystemUserId),
         approvedSource = Some(post.currentSource),
-        approvedHtmlSanitized = Some(approvedHtmlSanitized),
+        approvedHtmlSanitized = Some(sourceAndHtml.safeHtml),
         currentRevSourcePatch = None)
 
       tx.updatePost(postAfter)
       tx.indexPostsSoon(postAfter)
 
+      saveDeleteLinks(postAfter, sourceAndHtml, post.createdById, tx, staleStuff)
+
       // ------ Notifications
 
       if (!post.isTitle) {
-        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter, anyNewTextAndHtml = None,
-          anyReviewTask = None)
+        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter,
+              Some(sourceAndHtml), anyReviewTask = None)
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -1690,19 +1991,25 @@ trait PostsDao {
 
   def deletePost(pageId: PageId, postNr: PostNr, deletedById: UserId,
         browserIdData: BrowserIdData): Unit = {
-    readWriteTransaction(deletePostImpl(
-      pageId, postNr = postNr, deletedById = deletedById, doingReviewTask = None, browserIdData, _))
-    refreshPageInMemCache(pageId)
+    writeTx { (tx, staleStuff) =>
+      deletePostImpl(pageId, postNr = postNr, deletedById = deletedById,
+            doingReviewTask = None, browserIdData, tx, staleStuff)
+    }
+    refreshPageInMemCache(pageId)  ; REMOVE // auto do via [staleStuff]
   }
 
 
   def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
-        doingReviewTask: Option[ReviewTask], browserIdData: BrowserIdData,  tx: SiteTransaction): Unit = {
+        doingReviewTask: Option[ReviewTask], browserIdData: BrowserIdData,
+        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
     val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
       doingReviewTask = doingReviewTask,
-      tx = tx)
+      tx = tx, staleStuff = staleStuff)
+
     // The caller needs to: refreshPageInMemCache(pageId) — and should be done just after tx ended.
+    // EDIT: That's soon not needed, use [staleStuff] instead and [rm_cache_listeners].  CLEAN_UP
+
     result
   }
 
@@ -1811,7 +2118,7 @@ trait PostsDao {
 
     val now = globals.now()
 
-    val (postBefore, postAfter, storePatch) = readWriteTransaction { tx =>
+    val (postBefore, postAfter, storePatch) = writeTx { (tx, staleStuff) =>
       val mover = tx.loadTheUser(moverId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
@@ -1914,6 +2221,29 @@ trait PostsDao {
 
           postsAfter foreach tx.updatePost
           tx.indexPostsSoon(postsAfter: _*)
+
+          // Uncache backlinked pages. [uncache_blns]
+          // (Need not update links_t or upload_refs3, because links and upload refs
+          // are from *posts* not from *pages*.)
+          //
+          // Note: If moving posts within the same page:
+          // Even if moved to elsewhere *on the same page*,
+          // it's good to refresh any linked pages – in case the posts somehow
+          // got moved to an access restricted location on the same page,
+          // say, placed as replies to a tree-deleted ancestor post.
+          //
+          // Note: If moving posts to a different page:
+          // Even if there're other posts on the old page that still
+          // link to a page P, also after the posts got moved, we might still need
+          // to uncache page P, because now afterwards if the posts got moved to
+          // a different page, that new page now also links to P.
+          //
+          val linkedPageIds = tx.loadPageIdsLinkedFromPosts(postsAfter.map(_.id).toSet)
+          staleStuff.addPageIds(linkedPageIds, backlinksStale = true)
+
+          COULD // if target page is deleted, or in a deleted category,
+          // then remove upl refs, or mark as deleted?  [rm_upl_refs]
+
           auditEntries foreach tx.insertAuditLogEntry
           tx.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
           // Mark both fromPage and toPage sections as stale, in case they're different forums.
@@ -1923,8 +2253,13 @@ trait PostsDao {
           postAfter
         }
 
+      staleStuff.addPageIds(
+            // Page versions bumped just above — only need to refresh mem cache.
+            Set(fromPage.id, toPage.id), memCacheOnly = true)
+
+      // Would be good to [save_post_lns_mentions], so wouldn't need to recompute here.
       val notfs = notfGenerator(tx).generateForNewPost(
-        toPage, postAfter, anyNewTextAndHtml = None, anyReviewTask = None, skipMentions = true)
+        toPage, postAfter, sourceAndHtml = None, anyReviewTask = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
@@ -1932,8 +2267,8 @@ trait PostsDao {
       (postToMove, postAfter, patch)
     }
 
-    refreshPageInMemCache(postBefore.pageId)
-    if (postBefore.pageId != postAfter.pageId) {
+    refreshPageInMemCache(postBefore.pageId)  ; REMOVE // now not needed, instead [staleStuff] above
+    if (postBefore.pageId != postAfter.pageId) {       //
       refreshPageInMemCache(postAfter.pageId)
     }
 
@@ -1973,7 +2308,7 @@ trait PostsDao {
 
   private def doFlagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType,
         flaggerId: UserId): (Post, Boolean) = {
-    readWriteTransaction { tx =>
+    writeTx { (tx, staleStuff) =>
       val flagger = tx.loadTheUser(flaggerId)
       val postBefore = tx.loadThePost(pageId, postNr)
       val pageMeta = tx.loadThePageMeta(pageId)
@@ -1998,10 +2333,14 @@ trait PostsDao {
       // Hide post, update page?
       val shallHide = newNumFlags >= settings.numFlagsToHidePost && !postBefore.isBodyHidden
       if (shallHide) {
-        hidePostsOnPage(Vector(postAfter), pageId, "This post was flagged")(tx)
+        hidePostsOnPage(Vector(postAfter), pageId,
+              "This post was flagged")(tx, staleStuff) ; I18N
+        bugWarnIf(!staleStuff.includesPageModified(pageId), "TyU305RKD")
       }
       else {
         tx.updatePost(postAfter)
+        // Need not: staleStuff.addPageId(pageId)
+        // because the page caches don't care about flags — only staff can see.
       }
 
       tx.insertPostAction(
@@ -2018,7 +2357,7 @@ trait PostsDao {
   private def ifBadAuthorCensorEverything(post: Post): immutable.Seq[Post] = {
     val userId = post.createdById
     val pageIdsToRefresh = mutable.Set[PageId]()
-    val postsHidden = readWriteTransaction { tx =>
+    val postsHidden = writeTx { (tx, staleStuff) =>
       val user = tx.loadParticipant(userId) getOrDie "EdE6FKW02"
       if (!user.effectiveTrustLevel.isStrangerOrNewMember)
         return Nil
@@ -2083,7 +2422,7 @@ trait PostsDao {
 
       // Find the user's posts — we'll hide them.
       // (The whole page gets hidden by hidePostsOnPage() below, if all posts get hidden.)
-      val postToMaybeHide =
+      val postsToMaybeHide =
         if (user.isMember) {
           tx.loadPostsByQuery(limit = numThings, OrderBy.MostRecentFirst,
                 byUserId = Some(userId), includeTitlePosts = false,
@@ -2091,27 +2430,31 @@ trait PostsDao {
                 .filter(!_.isBodyHidden)
         }
         else {
-          tx.loadPostsByUniqueId(guestPostIds).values.filter(!_.isBodyHidden)
+          tx.loadPostsByUniqueId(guestPostIds).values.filter(p =>
+                !p.isBodyHidden && !p.isTitle)
         }
 
       // Don't hide posts that have been reviewed and deemed okay.
       // (Hmm, could hide them anyway if they were edited later ... oh now gets too complicated.)
-      val postToHide = postToMaybeHide filter { post =>
+      val postsToHide = postsToMaybeHide filter { post =>
         // This is O(n^2), so keep numThings small (6WKUT02), like <= 100.
         val anyReviewTask = tasks.find(_.postId.contains(post.id))
         !anyReviewTask.exists(_.decision.exists(_.isFine))
       }
 
-      val postToHideByPage = postToHide.groupBy(_.pageId)
+      val postToHideByPage = postsToHide.groupBy(_.pageId)
       for ((pageId, posts) <- postToHideByPage) {
-        hidePostsOnPage(posts, pageId, "Many posts by this author got flagged, hiding all")(tx)
-        pageIdsToRefresh += pageId
+        hidePostsOnPage(posts, pageId, "Many posts by this author got flagged, hiding all")(
+              tx, staleStuff)
+        bugWarnIf(!staleStuff.includesPageModified(pageId), "TyE304RK5B3")
+        pageIdsToRefresh += pageId  ; CLEAN_UP; REMOVE // not needed now with staleStuff
       }
-      postToHide
+
+      postsToHide
     }
 
     removeUserFromMemCache(userId)
-    pageIdsToRefresh.foreach(refreshPageInMemCache)
+    pageIdsToRefresh.foreach(refreshPageInMemCache)  ; REMOVE // not needed now with staleStuff
     postsHidden.to[immutable.Seq]
   }
 
@@ -2130,10 +2473,12 @@ trait PostsDao {
   }
 
 
-  private def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
-        tx: SiteTransaction): Unit = {
-    dieIf(posts.exists(_.pageId != pageId), "EdE7GKU23Y4")
-    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; SECURITY ; ANNOYING // end users can trigger internal error
+  def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
+        tx: SiteTransaction, staleStuff: StaleStuff): Unit = {
+    posts.find(_.pageId != pageId) foreach { post =>
+      die("TyE7GKU23Y4", s"post.pageId = ${post.pageId}, but pageId = $pageId")
+    }
+    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2")
     val postsToHide = posts.filter(!_.isBodyHidden)
     if (postsToHide.isEmpty)
       return
@@ -2181,6 +2526,11 @@ trait PostsDao {
         // The page might be hidden now, or num-replies has changed, so refresh forum topic list.
         markSectionPageStale = true)
       updatePagePopularity(newPageDao(pageId, tx).parts, tx)
+
+      staleStuff.addPageId(pageId, memCacheOnly = true) // page version bumped above
+      // Uncache backlinks on linked pages. [uncache_blns]
+      val linkedPageIds = tx.loadPageIdsLinkedFromPosts(postsToHide.map(_.id).toSet)
+      staleStuff.addPageIds(linkedPageIds, pageModified = false, backlinksStale = true)
     }
   }
 

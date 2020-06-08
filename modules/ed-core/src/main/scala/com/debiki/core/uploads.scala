@@ -37,6 +37,8 @@ case class UploadRef(
 
   def url: String = baseUrl + hashPath
 
+  // def isApproved: Boolean  [is_upl_ref_aprvd] ?
+
 }
 
 

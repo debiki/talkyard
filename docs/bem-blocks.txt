@@ -18,7 +18,8 @@ B  = button, e.g. ReplyB
 T  = table
 Ttl = title,  no just Tl   RENAME
 Txt = text,   no just Tx   RENAME
-Lk = link
+Lk = link NO
+Ln = link — of course, like `ln -s ...` in Linux.
 L  = list
 It = list item
 D  = dialog,  e.g. AbtUsrD
@@ -43,6 +44,7 @@ G  = group
 Pp = participant
 P, Pg = page
 Prvw = preview
+Pv = Preview, e.g. LnPv = link preview
 Po = post
 Snz = Snooze
 Tb = Topbar   RENAME esTopbarWrap to s_Tb

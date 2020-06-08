@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.TitleSourceAndHtml
 import org.scalatest._
 
 
@@ -46,7 +47,7 @@ class ReviewStuffAppSuite(randomString: String)
     def newAdminAndPage() {
       thePageId = dao.createPage(PageType.Discussion, PageStatus.Published,
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
-        titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
+        title = TitleSourceAndHtml("title_62952 $r"),
         bodyTextAndHtml = textAndHtmlMaker.testBody("discussion_230593 $r"),
         showId = true, deleteDraftNr = None,
         Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).pageId

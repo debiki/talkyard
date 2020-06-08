@@ -19,12 +19,13 @@ package talkyard.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude.die
-import debiki.Nashorn
+import debiki.{Nashorn, TextAndHtml}
 
 
 case class PostRendererSettings(
   embeddedOriginOrEmpty: String,
   pageRole: PageType,
+  siteId: SiteId,
   pubSiteId: PubSiteId)
 
 
@@ -39,7 +40,9 @@ object IfCached {
 class PostRenderer(private val nashorn: Nashorn) {
 
 
-  def renderAndSanitize(post: Post, settings: PostRendererSettings, ifCached: IfCached): String = {
+  @deprecated("now", "to do: save approved sanitized html in posts3 table [nashorn_in_tx]")
+  def renderAndSanitize(post: Post, settings: PostRendererSettings, ifCached: IfCached,
+        site: SiteIdHostnames): String = {
     if (ifCached == IfCached.Ignore) {
     }
     else if (post.isCurrentVersionApproved && post.approvedHtmlSanitized.isDefined) {
@@ -65,7 +68,7 @@ class PostRenderer(private val nashorn: Nashorn) {
       // Reuse @mentions? [4WKAB02]
       val renderResult = nashorn.renderAndSanitizeCommonMark(
           post.currentSource,
-          pubSiteId = settings.pubSiteId,
+          site,
           embeddedOriginOrEmpty = settings.embeddedOriginOrEmpty,
           allowClassIdDataAttrs = isBody,
           followLinks = followLinks)
@@ -86,6 +89,4 @@ class PostRenderer(private val nashorn: Nashorn) {
 
 }
 
-
-case class CommonMarkSourceAndHtml(source: String, html: String)
 

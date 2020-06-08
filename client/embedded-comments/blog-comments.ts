@@ -685,7 +685,7 @@ function setIframeSize(iframe, dimensions) {
 }
 
 
-function findIframeThatSent(event) {
+function findIframeThatSent(event) {  // [find_evt_ifrm]
   // See http://stackoverflow.com/a/18267415/694469
   if (commentsIframe && commentsIframe.contentWindow === event.source)
     return commentsIframe;

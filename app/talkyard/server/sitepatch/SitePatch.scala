@@ -441,7 +441,7 @@ case class SimpleSitePatch(
       // Dupl code [IMPCORH]
       val bodyHtmlSanitized =
         if (bodyMarkupLang is MarkupLang.Html) {
-          Jsoup.clean(bodySource, TextAndHtml.relaxedHtmlTagWhitelist)
+          TextAndHtml.sanitizeRelaxed(bodySource)
         }
         else {
           val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)
@@ -451,7 +451,7 @@ case class SimpleSitePatch(
           textAndHtml.safeHtml
         }
 
-      val titleHtmlSanitized = Jsoup.clean(titleHtmlUnsafe, Whitelist.basic)
+      val titleHtmlSanitized = TextAndHtml.sanitizeTitleText(titleHtmlUnsafe)
 
       nextPostId += 1
       val titlePost = Post(  // dupl code, use Post.create() instead [DUPPSTCRT]
@@ -595,7 +595,7 @@ case class SimpleSitePatch(
       // Dupl code [IMPCORH]
       val htmlSanitized =
         if (postPatch.bodyMarkupLang is MarkupLang.Html) {
-          Jsoup.clean(postPatch.bodySource, TextAndHtml.relaxedHtmlTagWhitelist)
+          TextAndHtml.sanitizeRelaxed(postPatch.bodySource)
         }
         else {
           val postRenderSettings = dao.makePostRenderSettings(pageMeta.pageType)

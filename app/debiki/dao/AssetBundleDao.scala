@@ -48,9 +48,9 @@ trait AssetBundleDao {
   }
 
 
-  memCache.onPageCreated { pagePath =>
+  memCache.onPageCreated { case (siteId, pagePath) =>
     tryUncacheAll(
-      makeSitePathDependencyKey(pagePath.siteId, path = pagePath.value))
+      makeSitePathDependencyKey(siteId, path = pagePath.value))
   }
 
   memCache.onPageSaved { sitePageId =>

@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.TitleSourceAndHtml
 import org.scalatest._
 
 
@@ -37,7 +38,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       createPasswordOwner("5kwu8f40", dao)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.BasicMember)
       val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.BasicMember)
-      val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_558206"),
+      val pagePath = dao.startGroupTalk(TitleSourceAndHtml("title_558206"),
         body = textAndHtmlMaker.testBody("message_2749"), PageType.FormalMessage,
         toUserIds = Set(userTwo.id), sentByWho = Who(userOne.id, browserIdData),
         dummySpamRelReqStuff, deleteDraftNr = None)
@@ -111,7 +112,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     def testMayNotMessage(dao: SiteDao, admin: Participant, sender: Participant, otherUser: Participant) {
       info("a moderate threat can message admin"); {
-        val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
+        val pagePath = dao.startGroupTalk(TitleSourceAndHtml("title_0482745"),
           body = textAndHtmlMaker.testBody("body_0482745"), PageType.FormalMessage,
           toUserIds = Set(admin.id), sentByWho = Who(sender.id, browserIdData),
           dummySpamRelReqStuff, deleteDraftNr = None)
@@ -133,7 +134,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePathWithId =
-      dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
+      dao.startGroupTalk(TitleSourceAndHtml("title_0482745"),
         body = textAndHtmlMaker.testBody("body_0482745"), PageType.FormalMessage, toUserIds = toWhom,
         sentByWho = Who(fromUserId, browserIdData), dummySpamRelReqStuff, deleteDraftNr = None)
   }

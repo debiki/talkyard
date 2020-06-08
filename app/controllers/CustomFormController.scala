@@ -75,7 +75,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     val pageType = PageType.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
     val titleText = (request.body \ "newTopicTitle").as[String]
     val bodyText = (request.body \ "newTopicBody").as[String]
-    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
+    val titleSourceAndHtml = TitleSourceAndHtml(titleText)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     // BUG (need not fix now) if there are many sub communities with the same category slug. [4GWRQA28]
@@ -84,7 +84,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
         "EsE0FYK42", s"No category with slug: $categorySlug")
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
-      anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
+      anyFolder = None, anySlug = None, titleSourceAndHtml, bodyTextAndHtml,
       showId = true, deleteDraftNr = None,
       request.who, request.spamRelatedStuff)
 

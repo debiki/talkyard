@@ -452,7 +452,7 @@ object Authz {
       if (category.isDeleted) {
         isDeleted = true
         if (!isStaff)
-          return MayWhat.mayNotSee("EdECATDELD")
+          return MayWhat.mayNotSee("TyECATDELD_")
       }
 
       // (Skip category.unlistTopics here — one may access those topics; they're just

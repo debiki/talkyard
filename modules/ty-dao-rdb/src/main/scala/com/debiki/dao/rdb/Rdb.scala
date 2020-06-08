@@ -150,6 +150,10 @@ object Rdb {
     if (value.contains("")) None else value
   }
 
+  def getJsObject(rs: js.ResultSet, column: String): JsObject = {
+    getOptJsObject(rs, column).getOrDie("TyE603DTJ0M", s"Column is null: $column")
+  }
+
   def getOptJsObject(rs: js.ResultSet, column: String): Option[JsObject] = {
     val anyString = getOptString(rs, column)
     anyString.map(s => Json.parse(s).asInstanceOf[JsObject])

@@ -9,6 +9,17 @@ Instead of this file, maybe use a combination of:
  (- https://git-scm.com/docs/git-notes? )
  (- https://github.com/google/git-appraise )
 
+[ty_themes]
+Primary button colors, secondary, background, arrows, fonts,
+and embedded widgets, e.g. Twitter's oEmbed has a 'link_color: #223344' attr,
+                            and  theme=light/dark.
+
+[staff_can_see]
+Add a black hanglock next to things one can see, because of one's extra
+access permissions? E.g. editing category settings, or backlinks from
+access restricted topics.
+
+
 [immutable]
 Make all js objs "light weight immutable", via Typescript's 'readonly' properties:
 https://www.typescriptlang.org/docs/handbook/interfaces.html#readonly-properties
@@ -43,6 +54,14 @@ https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Che
 Rename User to Participant and User to Member.  Participant = Guest or Member, Member = User or Group.
 Rename variables named like "member" to "user", "memberOrGroup" to "member", "user" to "participant"
 Rename "indie" to user" and "people" to "members"
+
+[security]
+prevent usernames from being displayed in Unicode, if mixed charsets used,
+e.g. Latin + Cryllic = facebooĸ.com  (homograph attacks).
+
+[authn]
+What about adding U2F login?
+https://github.com/Yubico/java-webauthn-server/ — a Java U2F / WebAuthn lib.
 
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.
@@ -275,6 +294,28 @@ https://news.ycombinator.com/item?id=19862002
 SECURITY: https://news.ycombinator.com/item?id=19856419 "HTTP headers for the responsible developer"
 https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
 
+SECURITY tests: https://github.com/beefproject/beef  ?
+Also see:   [sec_tst_rscs] in sanitize-posts.2browsers.test.ts.
+
+
+[emb_login_req]
+Make  login-required work also for embeded comments.
+
+[emb_forum]
+Make it possible to embedd a forum, or fourm cateory (no just blog comments).
+
+[ty_oemb_og]
+Add oEmbed & OpenGraph support to Ty.
+See e.g.:
+  https://wordpress.org/plugins/wpsso/
+  https://blog.ycombinator.com/how-to-build-an-oembed-integration-for-your-startup-and-why-its-necessary/
+And OpenGraph:
+  https://wordpress.org/support/topic/social-sharing-on-linkedin-description-not-appearing/
+LinkedIn likes oEmbed better than OpenGraph:
+  https://surniaulula.com/2019/standards/og/linkedin-prefers-oembed-data-instead-of-open-graph/
+(Commercial:  https://embed.ly  +  https://iframely.com,
+iframely = OSS too:  https://github.com/itteco/iframely/tree/master/plugins/domains )
+
 [like-notfs]
 Send notifications about getting a Like.
 
@@ -294,6 +335,18 @@ process, that'd almost be a self-DoS. Better delegate to other server.
 Later, support not only CommonMark but also rich text wysiwyg.
 Then first need to fix: [DRAFTPRVW] ?
 
+[html_json] [nashorn_in_tx] [save_post_lns_mentions]
+Keep sanitized html in a json array with placeholders for site origin,
+page titles (internal links), usernames, so the html can be reconstructed
+"instantly" if the site origin changes, pages renamed, username changed.
+And for different display resolutions — without having to re-render
+CommonMark to html (which can be a bit slow).
+
+[nashorn_in_tx]  COULD_OPTIMIZE
+Do outside tx.
+
+[double_tx]  COULD_OPTIMIZE
+Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
 
 [macro-bug]
 Find a better macro lib that won't "destroy" the file if @endif is on the line just above '}'.
@@ -308,14 +361,15 @@ Migrate unnecessary Route({ ... render: ({ match }) => ...) to hooks:
 https://reacttraining.com/blog/react-router-v5-1/
 But rename useParams to useUrlParams !?
 
+
 [bot_api]  [plugin]
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
 
-[extensions]
+
+[extensions] [themes]
 Needs new table: t_extensions
 
-[themes]
 Wow! Stylus <3  This:
     $uiHue = _subst_uiHue;
     $uiColor = _subst_hsl($uiHue 80% 50%);
@@ -343,6 +397,18 @@ Wow! Stylus <3  This:
 Then just Scala repl-all-literally, w custom colors & fonts ets, & @media (min-width: ...).
 
 
+[site_conf_vals]
+Generate target=_blank noopener links?
+Generate https://host/page/path links, or /page/path links,  for in site rel links?
+
+
+[nashorn_in_tx]  COULD_OPTIMIZE
+Do outside tx.
+
+
+[double_tx]  COULD_OPTIMIZE
+Read-only tx in tx is ok but unnecessary, a tiny bit slower & more mem.
+
 
 [Scala_213]
 Try —> Using
@@ -354,6 +420,13 @@ ex data to incl: https://docs.mattermost.com/administration/statistics.html
    + stats:
       https://docs.mattermost.com/deployment/metrics.html#statistics
   ~= GitHub Contributors stats would be nice, per user / group?
+   + stats per tag(s) / categories / users / groups.
+       to see how a department or team (group) or type of topics
+       (tags or category) is doing.
+   Median and 90, 99 percentil response time? and Done [x] or Answered (v) time?
+   Maybe as a function of when during the day, and on which day, topic posted?
+   Both first reply response time (first reply to the Orig Post)
+     and Followup replies response time, for replying to replies (until topic closed / done).
 If wants very detailed: https://www.timescale.com?  PipelineDB?  Prometheus?
 but then as a separate pg instance?
 So a full dump of the actual site won't take forever because terrabytes time series data.
@@ -361,3 +434,30 @@ And cannot be 100% there are no bugs causing problems when running DDL data-def-
    "PostgreSQL instance was unrecoverably corrupted after the virtual machine running it was powered off"  https://dev.t-matix.com/blog/postgresql-as-a-time-series-database/
 https://news.ycombinator.com/item?id=20760324
 TimescaleDB = pg extentsion, nice, no need to learn a completely new db & storage type.
+
+[typesafe_lua]
+Maybe: https://github.com/teal-language/tl  Teal, a typed dialect of Lua  ?
+  by https://github.com/hishamhm  works at Kong. FOSDEM2020, VSCode & Vim support.
+https://github.com/emilk/sol — no longer in active development
+
+[content_filter]
+E.g. disallow toxic speech, or pics of zebras if that's against the community's rules.
+
+[blake3]  COULD_OPTIMIZE
+Blake3 is ~ 10x faster than SHA2:
+  https://news.ycombinator.com/item?id=22021769
+  https://news.ycombinator.com/item?id=22003315
+Wait until there's a well tested Java lib available?
+Then use Blake3 instead e.g. to hash long Redis keys (and just delete the old
+cached things, it's a cache).
+
+[rebuild_reindex_posts]
+A background job that regenerates html (CommonMark –> html) and
+renindexes all posts (or all posts in a category / tag / by certain participants).
+It finds all links/backlinks, upload refs, ext link preview links,
+changes any  embeddedOriginOrEmpty links,  and any url subfolder installation path,
+& full text search reindexes,
+Without! any long running db transactions. 1) loads the data it needs, in a read-only tx.
+Then, compiles Commonmark to html, finds all links etc.
+Then, a read-write-tx: If the post wasn't changed since the r/o tx, then
+save the rebuilt post.

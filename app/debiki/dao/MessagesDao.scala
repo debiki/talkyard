@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.throwForbidden
 import ed.server.pubsub
-import debiki.TextAndHtml
+import debiki.{TextAndHtml, TitleSourceAndHtml}
 
 
 trait MessagesDao {
@@ -31,7 +31,7 @@ trait MessagesDao {
   /** COULD perhaps this method be used to create OpenChat pages too? So that the creator
     * gets auto added to the page? [5KTE02Z]
     */
-  def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageType,
+  def startGroupTalk(title: TitleSourceAndHtml, body: TextAndHtml, pageRole: PageType,
         toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff,
         deleteDraftNr: Option[DraftNr]): PagePathWithId = {
 
@@ -55,7 +55,7 @@ trait MessagesDao {
 
     quickCheckIfSpamThenThrow(sentByWho, body, spamRelReqStuff)
 
-    val (pagePath, notfs, sender) = readWriteTransaction { tx =>
+    val (pagePath, notfs, sender) = writeTx { (tx, staleStuff) =>
       val sender = loadUserAndLevels(sentByWho, tx)
 
       // 1) Don't let unpolite users start private-messaging other well behaved users.
@@ -71,8 +71,12 @@ trait MessagesDao {
 
       // This generates no review task — staff aren't asked to review and approve
       // direct messages; such messages can be semi private.
-      val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
-        byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), tx = tx)
+      val (pagePath, bodyPost, _) = createPageImpl(
+            pageRole, PageStatus.Published, anyCategoryId = None,
+            anyFolder = None, anySlug = None, showId = true,
+            title = title, body = body,
+            byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff),
+            tx = tx, staleStuff = staleStuff)
 
       // If this is a private topic, they'll get notified about all posts,
       // by default, although no notf pref configured here. [PRIVCHATNOTFS]

@@ -63,7 +63,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
        |$instructions
        """
 
-    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
+    val titleSourceAndHtml = TitleSourceAndHtml(titleText)
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     val categorySlug = (request.body \ "categorySlug").as[String]
@@ -71,7 +71,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
-      anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
+      anyFolder = None, anySlug = None, titleSourceAndHtml, bodyTextAndHtml,
       showId = true, deleteDraftNr = None, request.who, request.spamRelatedStuff)
 
     Ok

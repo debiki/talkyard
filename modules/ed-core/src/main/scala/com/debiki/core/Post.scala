@@ -449,25 +449,31 @@ case class Post(   // [exp] ok use
   require(!(nr < PageParts.FirstReplyNr && shallAppendLast), "EdE2WTB064")
   require(!(isMetaMessage && isOrigPostReply), "EdE744GSQF")
 
-  def isTitle = nr == PageParts.TitleNr
-  def isOrigPost = nr == PageParts.BodyNr
-  def isReply = nr >= PageParts.FirstReplyNr && !isMetaMessage
-  def isOrigPostReply = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
-  def isMultireply = isReply && multireplyPostNrs.nonEmpty
-  def isFlat = tyype == PostType.Flat
-  def isMetaMessage = tyype == PostType.MetaMessage
-  def isBottomComment = tyype == PostType.BottomComment   // RENAME to isProgressReply
-  def shallAppendLast = isMetaMessage || isBottomComment
-  def isBodyHidden = bodyHiddenAt.isDefined
-  def isDeleted = deletedStatus.isDeleted
-  def isSomeVersionApproved = approvedRevisionNr.isDefined
-  def isCurrentVersionApproved = approvedRevisionNr == Some(currentRevisionNr)
-  def isVisible = isSomeVersionApproved && !isBodyHidden && !isDeleted  // (rename to isActive? isInUse?)
-  def isWiki = tyype.isWiki
+  def isTitle: Boolean = nr == PageParts.TitleNr
+  def isOrigPost: Boolean = nr == PageParts.BodyNr
+  def isReply: Boolean = nr >= PageParts.FirstReplyNr && !isMetaMessage
+  def isOrigPostReply: Boolean = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
+  def isMultireply: Boolean = isReply && multireplyPostNrs.nonEmpty
+  def isFlat: Boolean = tyype == PostType.Flat
+  def isMetaMessage: Boolean = tyype == PostType.MetaMessage
+  def isBottomComment: Boolean = tyype == PostType.BottomComment   // RENAME to isProgressReply
+  def shallAppendLast: Boolean = isMetaMessage || isBottomComment
+  def isBodyHidden: Boolean = bodyHiddenAt.isDefined
+  def isDeleted: Boolean = deletedStatus.isDeleted
+  def isSomeVersionApproved: Boolean = approvedRevisionNr.isDefined
+  def isCurrentVersionApproved: Boolean = approvedRevisionNr.contains(currentRevisionNr)
+  def isVisible: Boolean = isSomeVersionApproved && !isBodyHidden && !isDeleted  // (rename to isActive? isInUse?)
+  def isWiki: Boolean = tyype.isWiki
 
   def pagePostId = PagePostId(pageId, id)
   def pagePostNr = PagePostNr(pageId, nr)
   def hasAnId: Boolean = nr >= PageParts.LowestPostNr
+
+  def lastApprovedAt: Option[When] =
+    lastApprovedEditAt.map(When.fromDate) orElse {
+      if (isSomeVersionApproved) Some(createdWhen)
+      else None
+    }
 
   def createdAtUnixSeconds: UnixMillis = createdAt.getTime / 1000
   def createdAtMillis: UnixMillis = createdAt.getTime
