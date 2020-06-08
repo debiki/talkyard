@@ -602,7 +602,11 @@ export function loadStaffScriptsBundle(callback) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
     // previews of CommonMark comments [7PKEW24]). This'll load them both.
     loadEditorAndMoreBundles(() => {
-      loadJs(eds.assetUrlPrefix + 'staff-bundle.' + eds.minMaxJs, function() {
+      loadJs(eds.assetUrlPrefix + 'staff-bundle.wp.' + eds.minMaxJs, function() {
+        // experimenting w Wepback: [45656084535653]
+        debiki2.admin = ((window as any).tyStaffLib).adminApi.admin;
+        debiki2.superadmin = ((window as any).tyStaffLib).adminApi.superadmin;
+        debiki2.createsite = ((window as any).tyStaffLib).adminApi.createsite;
         resolve();
         callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
       }, function() {

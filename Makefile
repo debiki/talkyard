@@ -125,7 +125,6 @@ prod_asset_bundle_files:=\
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.min.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.min.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.min.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.css.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.rtl.min.css.gz \
@@ -172,7 +171,6 @@ debug_asset_bundles_files: \
   images/web/assets/$(TALKYARD_VERSION)/editor-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/more-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz \
-  images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz \
   images/web/assets/$(TALKYARD_VERSION)/styles-bundle.css.gz
 
@@ -207,10 +205,10 @@ images/web/assets/$(TALKYARD_VERSION)/slim-bundle.js.gz: \
 	@echo "Regenerating $@"
 	s/d-gulp  compileSlimTypescript-concatScripts
 
-images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
-       $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
-	@echo "Regenerating $@"
-	s/d-gulp  compileStaffTypescript-concatScripts
+#images/web/assets/$(TALKYARD_VERSION)/staff-bundle.js.gz: \
+#       $(shell find client/app-staff/ -type f  \(  -name '*.ts'  -o  -name '*.js'  \))
+#	@echo "Regenerating $@"
+#	s/d-gulp  compileStaffTypescript-concatScripts
 
 images/web/assets/$(TALKYARD_VERSION)/zxcvbn.js.gz: \
        node_modules/zxcvbn/dist/zxcvbn.js
