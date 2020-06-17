@@ -23,8 +23,12 @@
 @import com.debiki.core.PageType.EmbeddedComments
 @import org.owasp.encoder.Encode
 
-@altPageIdOrUndefined = @{
-  tpi.anyAltPageId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined"
+@discussionIdOrUndefined = @{
+  tpi.anyDiscussionId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined"
+}
+
+@lazyCreatePageInCatId = @{
+  tpi.lazyCreatePageInCatId.map((id: Int) => s"${id}") getOrElse "undefined"
 }
 
 @embeddingUrlOrUndefined = @{
@@ -234,7 +238,8 @@ var eds = {
   embeddingOrigin: @Html(embeddingOriginOrUndefined),
   embeddingUrl: @Html(embeddingUrlOrUndefined),
   embeddedPageId: _isInIframe ? _pageId : undefined,
-  embeddedPageAltId: @Html(altPageIdOrUndefined),
+  embeddedPageAltId: @Html(discussionIdOrUndefined),
+  lazyCreatePageInCatId: @Html(lazyCreatePageInCatId),
   assetUrlPrefix: '@tpi.assetUrlPrefix',
   uploadsUrlPrefixCommonmark: '@tpi.uploadsUrlPrefix',
   isTestSite: @{ tpi.site.isTestSite.toString },

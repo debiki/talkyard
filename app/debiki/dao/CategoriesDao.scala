@@ -180,6 +180,15 @@ trait CategoriesDao {
     parseRef(ref, allowParticipantRef = false) map getCategoryByParsedRef
   }
 
+  def getOrThrowAnyCategoryByRef(catRef: Ref): Category = {
+    val any = getCategoryByRef(catRef).getOrIfBad { problem =>
+      throwBadRequest("TyEBADCATRF", s"Bad category ref: $problem")
+    }
+    any getOrElse {
+      throwNotFound("TyE404CATRF", s"Category not found, category ref: '$catRef'")
+    }
+  }
+
   def getCategoryByParsedRef(parsedRef: ParsedRef): Option[Category] = {
     val cats = getAllCategories()
     parsedRef match {
@@ -188,6 +197,8 @@ trait CategoriesDao {
       case ParsedRef.TalkyardId(tyId) =>
         val catId = tyId.toIntOption getOrElse { return None }
         cats.find(_.id == catId)
+      case _ =>
+        None
     }
   }
 

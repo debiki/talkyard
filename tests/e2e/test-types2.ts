@@ -543,6 +543,7 @@ interface EmptyTestForum {
     corax?: Member;
     regina?: Member;
     trillian?: Member;
+    memah?: Member;
     maria?: Member;
     maja?: Member;
     michael?: Member;
@@ -553,6 +554,7 @@ interface EmptyTestForum {
   guests: {
   };
   categories: {
+    rootCategory: { id: number },
     categoryA: CategoryJustAdded;
   };
 }
@@ -566,6 +568,7 @@ interface TwoPagesTestForum extends EmptyTestForum {
     aboutStaffOnlyCategory: { title: string };
   };
   categories: {
+    rootCategory: { id: number },
     categoryA: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;
     specificCategory: CategoryJustAdded;
@@ -590,6 +593,7 @@ interface LargeTestForum extends EmptyTestForum {
     aboutDeletedCategory: { title: string };
   };
   categories: {
+    rootCategory: { id: number },
     categoryA: CategoryJustAdded;
     categoryB: CategoryJustAdded;
     staffOnlyCategory: CategoryJustAdded;

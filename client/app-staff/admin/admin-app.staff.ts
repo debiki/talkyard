@@ -1394,15 +1394,20 @@ const EmbeddedCommentsSettings = createFactory({
           }
         }),
 
-        /*
-        !urlSeemsValid || !enableForum ? null : Setting2(props, { type: 'number',
-          label: "Embedded comments category id",
-          help: "In which categoy to place embedded blog comments discussions.",
-          getter: (s: Settings) => s.numFlagsToHidePost,
+        /*  [emb_mcts_cat]
+        !urlSeemsValid || !enableForum ? null : Setting2(props, {
+          label: "Embedded comments category",
+          help: "In which categoy to place embedded blog comments discussions. " +
+              "Default: 'extid:embedded_comments'",  // ??
+              No! Instead: Cat id + foreign key.
+          getter: (s: Settings) => s.embCommentsCatRef,  no! yes:  s.embeddedCommentsCategoryId
           update: (newSettings: Settings, target) => {
-            let num = parseInt(target.value);
-            newSettings.embeddedCommentsCategoryId = num;
+            newSettings.embCommentsCatRef = target.value;
           }
+
+          + You can also add a html tag attribute  data-category="... "
+          for each blog post or documentation page, and in that way
+          place discusions from different blog post in different categories.
         }),  */
 
         whichBlogQuestion,

@@ -51,7 +51,11 @@ package object core {
 
   type PostRevNr = Int
 
-  type PageId = String
+  REFACTOR // change page id to Int (not String) — is always an Int anyway,
+  // except for the forum main page at Ty .io.
+  type PageId = String  // Int better
+
+  // ... But this should be a string.
   type AltPageId = String
 
   type PageVersion = Int

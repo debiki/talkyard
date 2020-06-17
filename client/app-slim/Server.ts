@@ -54,9 +54,10 @@ interface RequestData {
 }
 
 
-interface NewEmbCommentsPageAltIdUrl {
-  altPageId?: string;
+interface NewEmbCommentsPageIdCatUrl {
+  discussionId?: string;
   embeddingUrl?: string;
+  lazyCreatePageInCatId?: CategoryId;
 }
 
 
@@ -1283,13 +1284,16 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 export function savePageNotfPrefUpdStoreIfSelf(memberId: UserId, target: PageNotfPrefTarget,
       notfLevel: PageNotfLevel, onDone?: () => void) {
   const notfPref: PageNotfPref = { ...target, memberId, notfLevel };
-  const postData: PageNotfPref & NewEmbCommentsPageAltIdUrl = notfPref;
+  const postData: PageNotfPref & NewEmbCommentsPageIdCatUrl = notfPref;
 
   // If this is for an embedded comments page that hasn't yet been created, we should
   // also include any alt page id, and the embedding url. [4AMJX7]
   if (notfPref.pageId === EmptyPageId) {
-    postData.altPageId = eds.embeddedPageAltId || undefined;
+    // COULD instead:
+    // const serverVars = getMainWin().eds;
+    postData.discussionId = eds.embeddedPageAltId || undefined;  // undef not ''
     postData.embeddingUrl = eds.embeddingUrl || undefined;
+    postData.lazyCreatePageInCatId = eds.lazyCreatePageInCatId;
   }
 
   postJsonSuccess('/-/save-content-notf-pref', (response) => {
@@ -1606,8 +1610,9 @@ export function saveVote(data: {
   const dataWithEmbeddingUrl = {
     ...data,
     pageId: getPageId() || undefined,
-    altPageId: eds.embeddedPageAltId || undefined,
+    discussionId: eds.embeddedPageAltId || undefined,  // undef not ''
     embeddingUrl: eds.embeddingUrl || undefined,
+    lazyCreatePageInCatId: eds.lazyCreatePageInCatId,
   }
   postJsonSuccess('/-/vote', (response) => {
     if (response.newlyCreatedPageId) {
@@ -1706,8 +1711,9 @@ export function saveReply(editorsPageId: PageId, postNrs: PostNr[], text: string
           // Old (as of Jan 2020), keep for a while?:
           getPageId() || undefined,
       // Incl altPageId and embeddingUrl, so any embedded page can be created lazily. [4AMJX7]
-      altPageId: eds.embeddedPageAltId || undefined,
+      discussionId: eds.embeddedPageAltId || undefined,  // undef not ''
       embeddingUrl: eds.embeddingUrl || undefined,
+      lazyCreatePageInCatId: eds.lazyCreatePageInCatId,
       postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
       text: text,

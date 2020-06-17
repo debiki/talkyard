@@ -43,8 +43,10 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
-    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
+    val anyDiscussionId = (body \ "discussionId").asOpt[AltPageId] orElse (
+          body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // deprecated name [058RKTJ64] 2020-06
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
+    val lazyCreatePageInCatId = (body \ "lazyCreatePageInCatId").asOpt[CategoryId]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
@@ -58,8 +60,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
     val (pageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-      anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
-      anyEmbeddingUrl = anyEmbeddingUrl, request)
+          anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
+          anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
+          request)
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
@@ -139,7 +142,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 case class NewEmbPage(path: PagePathWithId, origPostId: PostId)
 
 
-object EmbeddedCommentsPageCreator {
+object EmbeddedCommentsPageCreator {   REFACTOR; CLEAN_UP; // moe to talkyard.server.embpages ?
 
 
   /** The browser wants to know if a new page got created.
@@ -165,6 +168,7 @@ object EmbeddedCommentsPageCreator {
         anyPageId: Option[PageId],
         anyDiscussionId: Option[String],
         anyEmbeddingUrl: Option[String],
+        lazyCreatePageInCatId: Option[CategoryId],
         request: DebikiRequest[_]): (PageId, Option[NewEmbPage]) = {
     anyPageId foreach { pageId =>
       if (pageId != NoPageId)
@@ -270,55 +274,61 @@ object EmbeddedCommentsPageCreator {
     // Create a new embedded discussion page.
     // It hasn't yet been created, and is needed, so we can associate the thing
     // we're currently saving (e.g. a reply) with a page.
-    val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyDiscussionId)
-    val origPost = request.dao.loadPost(newPagePath.pageId, BodyNr).getOrDie(
-      "TyE305WKTSR", s"s${request.siteId}: Couldn't load orig post of new page $newPagePath")
+    val newPagePath = tryCreateEmbeddedCommentsPage(
+          request, embeddingUrl, anyDiscussionId, lazyCreatePageInCatId)
+    val origPost = request.dao.loadPost(newPagePath.pageId, BodyNr).getOrDie("TyE305WKTSR",
+          s"s${request.siteId}: Couldn't load orig post of new page $newPagePath")
     (newPagePath.pageId, Some(NewEmbPage(newPagePath, origPost.id)))
   }
 
 
   private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String,
-        anyDiscussionId: Option[String]): PagePathWithId = {
+        anyDiscussionId: Option[String], lazyCreatePageInCatId: Option[CategoryId])
+        : PagePathWithId = {
     import request.{dao, requester, context}
 
-    // (Security, fine: I don't think we need to verify that there is actually a page at
-    // the embedding url. Theoretically it's possible for Mallory to post comments to an url,
-    // where he knows a page will get auto-published later at a certain date-time. Then,
-    // when the page gets auto-published, his possibly weird comments will be there, waiting.
-    // But he might as well write a bot that posts the comments, the moments the page gets published?
-    // The real solution to this, is instead to moderate new users' first comments, right?)
+    // Later, the params above can optionally be signed with PASTEO [blog_comments_sso],
+    // so end users cannot edit the page html and fake different
+    // discussion ids or category ids.  Then, comments are guaranteed to get posted
+    // on the right page, and pages lazy-created in the intended categories.
 
     val siteSettings = dao.getWholeSiteSettings()
     if (siteSettings.allowEmbeddingFrom.isEmpty) {
       SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
+      // What? That' not needed — the browsers don't allow cross-origin POST requests,
+      // unless the admins explicitly enable that for their Ty site.
+
       throwForbidden2("EdE2WTKG8", "Embedded comments allow-from origin not configured")
     }
 
     val slug = None
     val folder = None
-    val categoryId = {
+
+    val placeInCatId = lazyCreatePageInCatId getOrElse {
       val id = siteSettings.embeddedCommentsCategoryId
       if (id != NoCategoryId) id
       else dao.getDefaultCategoryId()
     }
-    val categoriesRootLast = dao.getAncestorCategoriesRootLast(categoryId)
+
+    val categoriesRootLast = dao.getAncestorCategoriesRootLast(placeInCatId)
     val pageRole = PageType.EmbeddedComments
 
     context.security.throwNoUnless(Authz.mayCreatePage(
-      request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),
-      pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
-      inCategoriesRootLast = categoriesRootLast,
-      tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
-      "EdE7USC2R8")
+          request.theUserAndLevels, dao.getGroupIdsOwnFirst(requester),
+          pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
+          inCategoriesRootLast = categoriesRootLast,
+          tooManyPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+          "EdE7USC2R8")
 
+    // This won't generate any new page notf — but the first *reply*, does. [new_emb_pg_notf]
     dao.createPage(pageRole, PageStatus.Published,
-      anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
-      titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
-      bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
-        s"Comments for: $embeddingUrl"),
-      showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
-      Who.System, request.spamRelatedStuff, discussionIds = anyDiscussionId.toSet,
-      embeddingUrl = Some(embeddingUrl))
+          anyCategoryId = Some(placeInCatId), anyFolder = slug, anySlug = folder,
+          titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
+          bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
+            s"Comments for: $embeddingUrl"),
+          showId = true, deleteDraftNr = None,  // later, will be a draft to delete? [BLGCMNT1]
+          Who.System, request.spamRelatedStuff, discussionIds = anyDiscussionId.toSet,
+          embeddingUrl = Some(embeddingUrl))
   }
 
 }

@@ -50,8 +50,12 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
     val anyPageId = (body \ "pageId").asOpt[PageId]
-    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
+
+    val anyDiscussionId = (body \ "discussionId").asOpt[AltPageId] orElse (
+          body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // deprecated name [058RKTJ64] 2020-06
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
+    val lazyCreatePageInCatId = (body \ "lazyCreatePageInCatId").asOpt[CategoryId]
+
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
@@ -92,8 +96,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val (pageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-      anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
-      anyEmbeddingUrl = anyEmbeddingUrl, request)
+          anyPageId = anyPageId, anyDiscussionId = anyDiscussionId,
+          anyEmbeddingUrl = anyEmbeddingUrl, lazyCreatePageInCatId = lazyCreatePageInCatId,
+          request)
 
     if (delete) {
       dao.deleteVote(pageId, postNr, voteType, voterId = request.theUser.id)

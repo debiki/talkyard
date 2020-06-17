@@ -396,6 +396,8 @@ function runAllE2eTests {
   $r s/wdio --only search-public-basic.2browsers $args
   $r s/wdio --only search-private-chat.2browsers $args
 
+  # This test is flaky because missing feature: disabling email notfs for replies
+  # one has seen.
   $r s/wdio --only summary-emails.2browsers $args
 
   $r s/wdio --only invites-by-adm-click-email-set-pwd-link.2browsers $args
@@ -518,6 +520,8 @@ function runAllE2eTests {
   $r s/wdio       --only embedded-comments-vote-first $args
   $r s/wdio       --only embedded-comments-conf-notf-pref-first $args
   $r s/wdio       --only embedded-comments-sort-order-op-likes-btn-txt.2browsers $args
+  $r s/wdio       --only embedded-comments-category-refs.2browsers $args
+  $r s/wdio       --only embedded-comments-cat-refs-and-disc-ids.2browsers $args
   $r s/wdio       --only embedded-comments-uploads-origin $args
   $r s/wdio       --only embedded-comments-short-script-cache-time $args
   # (all names included in short-cache-time already)

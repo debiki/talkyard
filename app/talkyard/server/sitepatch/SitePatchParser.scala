@@ -874,7 +874,7 @@ case class SitePatchParser(context: EdContext) {
         pageId = readOptString(jsObj, "pageId"),
         pagesInCategoryId = readOptInt(jsObj, "pagesInCategoryId"),
         //pagesWithTagLabelId: Option[TagLabelId] = None, — later
-        wholeSite = readBoolean(jsObj, "wholeSite")))
+        wholeSite = readOptBool(jsObj, "wholeSite").getOrElse(false)))
     }
     catch {
       case ex: IllegalArgumentException =>

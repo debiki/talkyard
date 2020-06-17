@@ -4493,6 +4493,7 @@ export class TyE2eTestBrowser {
       },
 
       waitUntilPostTextMatches: (postNr: PostNr, regex: string | RegExp) => {
+        this.switchToEmbCommentsIframeIfNeeded();
         this.waitUntilTextMatches(this.topic.postBodySelector(postNr), regex);
       },
 

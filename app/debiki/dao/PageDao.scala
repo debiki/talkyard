@@ -61,7 +61,7 @@ case class PageDao(override val id: PageId, settings: AllSettings, transaction: 
 }
 
 
-case class NonExistingPage(
+case class NotYetCreatedEmbeddedPage(
   override val siteId: SiteId,
   pageRole: PageType,
   anyCategoryId: Option[CategoryId],

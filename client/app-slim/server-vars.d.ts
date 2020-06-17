@@ -81,14 +81,15 @@ interface ServerVars {
   // For embedded comments.
   isInEmbeddedCommentsIframe: boolean;
   isInEmbeddedEditor: boolean;
-  embeddingOrigin: string | undefined;
-  embeddingUrl: string | undefined;
-  embeddedPageAltId: string | undefined;
+  embeddingOrigin?: string;
+  embeddingUrl?: string;
+  embeddedPageAltId?: string;  // RENAME to embeddedDiscussionId
+  lazyCreatePageInCatId?: CategoryId;
   // Sometimes lazy-inited when the page gets lazy-created, when the first reply is posted. [4HKW28]
-  embeddedPageId: string | undefined;
+  embeddedPageId?: string;
 
   // When creating new site.
-  baseDomain: string | undefined;
+  baseDomain?: string;
 
   // Is non-zero, if the server is read-only, because of maintenance work. The value
   // is the Unix second when the maintenance work is believed to be done, or 1 if unspecified.

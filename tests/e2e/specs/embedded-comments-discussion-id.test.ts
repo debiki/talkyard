@@ -33,7 +33,7 @@ const pageBbbSlug = 'emb-cmts-bbb.html';
 const pageCccSlug = 'emb-cmts-ccc.html';
 
 
-describe("emb cmts discussion-id", () => {
+describe("emb-cmts.discussion-id  TyT603KRDL46", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = new TyE2eTestBrowser(wdioBrowser);

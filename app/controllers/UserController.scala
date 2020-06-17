@@ -1133,8 +1133,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val newNotfLevel = newNotfLevelInt.flatMap(NotfLevel.fromInt)
 
     // If is a not-yet-created embedded comments page:
-    val anyDiscussionId = (body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // rename to "discussionId" [058RKTJ64]
+    val anyDiscussionId = (body \ "discussionId").asOpt[AltPageId] orElse (
+          body \ "altPageId").asOpt[AltPageId] ; CLEAN_UP // deprecated name [058RKTJ64] 2020-06
     val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
+    val lazyCreatePageInCatId = (body \ "lazyCreatePageInCatId").asOpt[CategoryId]
 
     def participant = dao.getTheParticipant(memberId)
 
@@ -1155,9 +1157,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // https://www.talkyard.io/-227#post-8
     val (anyPageId: Option[PageId], newEmbPage: Option[NewEmbPage]) =
       if (anyPageIdMaybeEmptyPage is EmptyPageId) {
-        val (newPageId: PageId, newEmbPage) = EmbeddedCommentsPageCreator.getOrCreatePageId(
-          anyPageId = Some(EmptyPageId), anyDiscussionId = anyDiscussionId,
-          anyEmbeddingUrl = anyEmbeddingUrl, request)
+        val (newPageId: PageId, newEmbPage) =
+              EmbeddedCommentsPageCreator.getOrCreatePageId(
+                    anyPageId = Some(EmptyPageId), anyDiscussionId = anyDiscussionId,
+                    anyEmbeddingUrl = anyEmbeddingUrl,
+                    lazyCreatePageInCatId = lazyCreatePageInCatId, request)
         (Some(newPageId), newEmbPage)
       }
       else {

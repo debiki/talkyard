@@ -25,12 +25,24 @@ declare function smoothScroll(elem: Element, x: number, y: number,
     durationMs?: number, onDone?: () => void);
 
 interface WindowWithTalkyardProps {
-  talkyardDebug: boolean | number | undefined;
+  talkyardLogLevel: number | undefined;
+  talkyardDebug: boolean | number | undefined; // deprecated 2020-06-16
   edRemoveCommentsAndEditor: () => void;
   edReloadCommentsAndEditor: () => void;
   talkyardRemoveCommentsAndEditor: () => void;
   talkyardReloadCommentsAndEditor: () => void;
 }
+
+// Later: SSO and HMAC via https://pasteo.io? https://paseto.io/rfc/  [blog_comments_sso]
+// User json:
+// <script>
+// // Page global data:
+// takyardData = "pasteo:...";  // json, incl user sso fields, PASTEO signed/encrypted
+// </script>
+//
+// And per comments section config in html attr:
+// <div class="talkyard-comments" data-talkyard="pasteo:...">
+
 
 // Seems need to add  import * as ...  and import  embedding-page.d.ts [052MKHGJw3]
 // to be able to add fields to `window` — but then also need to add a bundler
@@ -39,15 +51,21 @@ interface WindowWithTalkyardProps {
 // For now, instead:
 const windowWithTalkyardProps: WindowWithTalkyardProps = <any> window;
 
+// Talkyard's log levels:
+// off, fatal, error, warn, info, config, debug, trace, annoying
+//   0,    10,    20,   30,   40,     50,    60,    70,       80
+const winLogLvl = windowWithTalkyardProps.talkyardLogLevel;
+const winDbg = windowWithTalkyardProps.talkyardDebug;
+const talkyardLogLevel: number | string = (typeof winLogLvl !== 'undefined') ? winLogLvl : (
+    winDbg === false || winDbg === 0 ? 'warn' : 'trace');
 
 // Default to logging debug messages, for now, because people send screenshots of the
 // console when sth is amiss, and nice to get the log messages then.
 const debugLog: (...args) => void =
-    (windowWithTalkyardProps.talkyardDebug === false ||
-        windowWithTalkyardProps.talkyardDebug === 0 ||
-        !window.console)
-    ? function() {}
-    : function() {
+    // For now, so at least 'warn' works, as per the "disable logging by ..."
+    // comment below.
+    !talkyardLogLevel || talkyardLogLevel === 'warn' ||
+        !window.console ? function() {} : function() {
       // Clone the function arguments array.
       const args = [].slice.call(arguments);
       // Add a prefix to the 1st arg, the actuall message.
@@ -59,7 +77,7 @@ const debugLog: (...args) => void =
       console.log.apply(console, args);
     };
 
-debugLog("Starting... (disable logging by setting talkyardDebug = false)");
+debugLog("Starting... (disable logging by setting talkyardLogLevel = 'warn')");
 
 const d = { i: debiki.internal };
 const serverOrigin = d.i.commentsServerOrigin;
@@ -172,11 +190,21 @@ function loadCommentsCreateEditor() {
   // But at least don't allow newlines and tabs? That'd probably be some weird bug?
   var discussionId = commentsElem.getAttribute('data-discussion-id');
   if (/[\t\r\n]/.test(discussionId)) {
-    var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
+    var errorMessage = "Bad discussion id: " + discussionId + ' [TyEEMDIID]';
     debugLog(errorMessage);
     throw Error(errorMessage);
   }
-  var discussionIdParam = discussionId ? 'discussionId=' + discussionId + '&' : '';
+  var discIdParam = discussionId ? `discussionId=${discussionId}&` : '';
+
+  // To place the lazy-created embedded discussion pages in a specific
+  // category. E.g.:  data-category="extid:some_category"
+  var categoryRef = commentsElem.getAttribute('data-category');
+  if (/[\t\r\n]/.test(categoryRef)) {
+    var errorMessage = `Bad category ref: ${categoryRef} [TyEEMCATRFCL]`;
+    debugLog(errorMessage);
+    throw Error(errorMessage);
+  }
+  const catRefParam = categoryRef ? `category=${categoryRef}&` : '';
 
   var edPageId = commentsElem.getAttribute('data-ed-page-id'); // old name [2EBG05]
   if (!edPageId) {
@@ -185,7 +213,12 @@ function loadCommentsCreateEditor() {
   var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
   var htmlClassParam = htmlClass ? '&htmlClass=' + htmlClass : '';
 
-  var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam + htmlClassParam;
+  const logLevelParam = talkyardLogLevel ? `&logLevel=${talkyardLogLevel}` : '';
+
+  const allUrlParams =
+          edPageIdParam + discIdParam + catRefParam + embeddingUrlParam +
+          htmlClassParam + logLevelParam;
+
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
   var loadWeinre = window.location.hash.indexOf('&loadWeinre') >= 0;  // [WEINRE]
   if (loadWeinre) {

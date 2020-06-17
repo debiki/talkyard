@@ -49,8 +49,8 @@ POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonat
 GET   /-/load-online-users      ed.server.pubsub.SubscriberController.loadOnlineUsers
 GET   /-/websocket              ed.server.pubsub.SubscriberController.webSocket
 
-GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
-GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
+GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String])
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, discussionId: Option[String], edPageId: Option[String], category: Option[String])
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch

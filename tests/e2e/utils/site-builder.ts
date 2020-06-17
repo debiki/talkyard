@@ -113,7 +113,9 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
       const page = api.addPage({
         dbgSrc: 'StBldrCatWAbt',
-        id: `about_cat_${opts.slug.replace('-', '_')}`.substr(0, 32),
+        // There's a small risk this id will collide with another page in the site,
+        // duing import, if the tests includes many other pages.
+        id: '' + (opts.id + 19000),
         folder: '/',
         showId: false,
         slug: `about-cat-${opts.slug}`,
@@ -194,7 +196,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
     addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
           : EmptyTestForum {
-      const members = opts.members || ['mons', 'modya', 'regina', 'corax', 'maria', 'michael', 'mallory'];
+      const members = opts.members ||
+              ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory'];
       const forum = {
         siteData: site,
         forumPage: <PageToMake> undefined,
@@ -207,6 +210,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
           corax: _.includes(members, 'corax') ? make.memberCorax() : undefined,
           regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
           trillian: _.includes(members, 'trillian') ? make.memberTrillian() : undefined,
+          memah: _.includes(members, 'memah') ? make.memberMemah() : undefined,
           maria: _.includes(members, 'maria') ? make.memberMaria() : undefined,
           maja: _.includes(members, 'maja') ? make.memberMaja() : undefined,
           michael: _.includes(members, 'michael') ? make.memberMichael() : undefined,
@@ -225,6 +229,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       if (forum.members.corax) site.members.push(forum.members.corax);
       if (forum.members.regina) site.members.push(forum.members.regina);
       if (forum.members.trillian) site.members.push(forum.members.trillian);
+      if (forum.members.memah) site.members.push(forum.members.memah);
       if (forum.members.maria) site.members.push(forum.members.maria);
       if (forum.members.maja) site.members.push(forum.members.maja);
       if (forum.members.michael) site.members.push(forum.members.michael);
@@ -244,6 +249,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         title: opts.title,
         introText: opts.introText,
       });
+
+      forum.categories.rootCategory = { id: rootCategoryId };
 
       // ---- Categories
 

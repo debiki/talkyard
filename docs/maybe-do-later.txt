@@ -1,4 +1,7 @@
-When doing these things, search for the tag too e.g. "[subcats]".
+In this file: Features and fixes to maybe implement in the future.
+Each issue starts with a "code tag", e.g.:  [subcats]
+which you can search for across the whole code base, to find some-of / all-of
+the relevant source code places to change.
 
 
 Instead of this file, maybe use a combination of:
@@ -209,6 +212,18 @@ within X days, then the site staff get notified? (Passive group managers = not g
 If moves CDN to a different address, or moves Talkyard server to a new address,
 then, lazily regenerate html with the correct addresses, for links to uploaded
 images etc.
+
+[blog_comments_sso]
+Use PASTEO https://news.ycombinator.com/item?id=17877332
+ http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-fo...
+ http://cryto.net/%7Ejoepie91/blog/2016/06/19/stop-using-jwt-...
+ https://paragonie.com/blog/2017/03/jwt-json-web-tokens-is-ba...
+ https://paseto.io
+Wow this is nice!:
+     local: shared-key authenticated encryption
+     Local tokens are encrypted
+     https://github.com/atholbro/paseto#local-and-public
+(Determinsistic json stringify: https://www.npmjs.com/package/fast-stable-stringify )
 
 [serversid]
 Server side sesison ids, maybe in Redis? So can log ppl out, without having access

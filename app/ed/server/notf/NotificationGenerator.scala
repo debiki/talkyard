@@ -65,6 +65,14 @@ case class NotificationGenerator(
 
     require(page.id == newPost.pageId, "TyE74KEW9")
 
+    // A new embedded discussions page shouldn't generate a notification, [new_emb_pg_notf]
+    // because those pages are lazy auto created – and uninteresting event.
+    // Instead, *the first reply* generates a new page notification.
+    // (Embedded pages are also auto-created e.g. if there's a Like vote — maybe
+    // there'll never be any reply.)
+    if (page.meta.pageType == PageType.EmbeddedComments && newPost.isOrigPost)
+      return generatedNotifications
+
     if (anyReviewTask.isDefined) {
       // Generate notifications to staff members, so they can review this post. Don't
       // notify others until later, when the post has been approved and is visible.
@@ -175,10 +183,29 @@ case class NotificationGenerator(
   }
 
 
-  private def addWatchingSomethingNotfs(page: Page, newPost: Post, pageMemberIds: Set[UserId]): Unit = {
+  private def addWatchingSomethingNotfs(page: Page, newPost: Post,
+        pageMemberIds: Set[UserId]): Unit = {
+
+    val isEmbDiscFirstReply =
+          page.pageType == PageType.EmbeddedComments &&
+          newPost.isOrigPostReply && newPost.isSomeVersionApproved && (
+            // Currently not decided if `page` should includes newPost or not.
+            // So let's try both: 1) If `newPost` not incl in `page`:
+            page.meta.numRepliesVisible == 0 ||
+            // Or 2) if it *is*:
+            (page.meta.numRepliesVisible == 1 &&
+                page.parts.lastVisibleReply.exists(p => p.id == newPost.id)))
 
     val minNotfLevel =
-      if (newPost.isOrigPost) {
+      if (isEmbDiscFirstReply) {
+        // This is the first reply in an auto-created embedded discussion — time
+        // to create the new page notification.  [new_emb_pg_notf]
+        // (We didn't do that when the page got lazy-auto-created — that could have
+        // been just someone configuring page notf prefs; then, a page id is needed,
+        // but we don't want to get notified about that.)
+        NotfLevel.WatchingFirst
+      }
+      else if (newPost.isOrigPost) {
         // Everyone with a notf level for this page / category / whole-site, at or above
         // WatchingFirst, want to know about this.
         NotfLevel.WatchingFirst
@@ -235,7 +262,8 @@ case class NotificationGenerator(
 
     val allPrefsOnPage = notfPrefsOnPage ++ privTopicPrefsOnPage
 
-    makeNewPostSubscrNotfFor(allPrefsOnPage, newPost, minNotfLevel, memberIdsHandled)
+    makeNewPostSubscrNotfFor(
+          allPrefsOnPage, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
 
     // If private page, skip cat & whole site notf prefs
     // — only page members and people (like moderators) who explicitly follow
@@ -247,19 +275,22 @@ case class NotificationGenerator(
     // ----- Parent category
 
     val notfPrefsOnCategory = page.categoryId.map(tx.loadPageNotfPrefsOnCategory) getOrElse Nil
-    makeNewPostSubscrNotfFor(notfPrefsOnCategory, newPost, minNotfLevel, memberIdsHandled)
+    makeNewPostSubscrNotfFor(
+          notfPrefsOnCategory, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
 
     // ----- Grandparent category? [subcats]
 
     // ----- Tags
 
     // notPrefsOnTags = ... (later)
-    //makeNewPostSubscrNotfFor(notPrefsOnTags, NotificationType.PostTagged, newPost ...)
+    //makeNewPostSubscrNotfFor(
+    //     notPrefsOnTags, NotificationType.PostTagged, newPost, isEmbCommFirstReply ...)
 
     // ----- Whole site
 
     val notfPrefsOnSite = tx.loadPageNotfPrefsOnSite()
-    makeNewPostSubscrNotfFor(notfPrefsOnSite, newPost, minNotfLevel, memberIdsHandled)
+    makeNewPostSubscrNotfFor(
+          notfPrefsOnSite, newPost, isEmbDiscFirstReply, minNotfLevel, memberIdsHandled)
   }
 
 
@@ -415,7 +446,8 @@ case class NotificationGenerator(
     * Or to 3) pages tagged with some certain tag(s). Or 4) *the whole site*.
     */
   private def makeNewPostSubscrNotfFor(notfPrefs: Seq[PageNotfPref], newPost: Post,
-      minNotfLevel: NotfLevel, memberIdsHandled: mutable.Set[UserId]): Unit = {
+        isEmbDiscFirstReply: Boolean, minNotfLevel: NotfLevel,
+        memberIdsHandled: mutable.Set[UserId]): Unit = {
 
     val membersById = tx.loadParticipantsAsMap(notfPrefs.map(_.peopleId))
     val memberIdsHandlingNow = mutable.HashSet[MemberId]()
@@ -500,6 +532,7 @@ case class NotificationGenerator(
 
       sentToUserIds += member.id
       notfsToCreate += Notification.NewPost(
+        // UX maybe a NotificationType.NewPage instead? Especially if: isEmbDiscFirstReply.
         NotificationType.NewPost,
         id = bumpAndGetNextNotfId(),
         createdAt = newPost.createdAt,

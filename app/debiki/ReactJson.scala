@@ -148,12 +148,14 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  /** Useful when rendering embedded comments, and no comment has been posted yet so the
-    * embedded comments page has not yet been created. Or if constructing a wiki, and
-    * navigating to a wiki page that has not yet been created.
+  /** Used when rendering embedded comments, and no comment has been posted yet, so the
+    * embedded comments page has not yet been created.
+    *
+    * Later?: Or if constructing a wiki, and navigating via a wiki link `[[Page Title]]``
+    * to a wiki page that has not yet been created.
     */
-  def pageThatDoesNotExistsToJson(dummyPage: NonExistingPage, renderParams: PageRenderParams)
-        : PageToJsonResult = {
+  def notYetCreatedPageToJson(dummyPage: NotYetCreatedEmbeddedPage,
+          renderParams: PageRenderParams): PageToJsonResult = {
     require(dummyPage.id == EmptyPageId, "TyE5UKBQ2")
     dao.readOnlyTransaction { tx =>
       pageToJsonImpl(dummyPage, renderParams, tx)

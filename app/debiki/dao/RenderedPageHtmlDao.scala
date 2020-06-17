@@ -72,9 +72,13 @@ trait RenderedPageHtmlDao {
         renderContentMaybeUseDatabaseCache(
             pageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
-      val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString, jsonResult.version,
-        cachedHtmlContent, cachedVersion, jsonResult.pageTitleUnsafe, jsonResult.customHeadTags,
-        anyAltPageId = pageRequest.altPageId, anyEmbeddingUrl = pageRequest.embeddingUrl)
+      val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString,
+            jsonResult.version, cachedHtmlContent, cachedVersion,
+            jsonResult.pageTitleUnsafe, jsonResult.customHeadTags,
+            anyDiscussionId = pageRequest.altPageId,
+            anyEmbeddingUrl = pageRequest.embeddingUrl,
+            // Page already exists — no lazy-create-in-category needed.
+            lazyCreatePageInCatId = None)
 
       // This is the html for the whole page: <html>, <head>, <body>, and <script>s,
       // and the html content.

@@ -109,12 +109,13 @@ class SiteTpi protected (
   def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
-  def anyCurrentPageRole: Option[PageType] = None
+  def anyCurrentPageRole: Option[PageType]
   def anyCurrentPageLayout: Option[PageLayout] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
-  def anyAltPageId: Option[AltPageId] = None
-  def anyEmbeddingUrl: Option[String] = None
+  def anyDiscussionId: Option[AltPageId]
+  def anyEmbeddingUrl: Option[String]
+  def lazyCreatePageInCatId: Option[CategoryId]
 
   def anyEmbeddingOrigin: Option[String] = anyEmbeddingUrl map { url =>
     var numSlashes = 0
@@ -289,9 +290,10 @@ class EditPageTpi(
   request: GetRequest,
   val pageRole: PageType,
   val anyEmbeddedPageId: Option[PageId],
-  override val anyAltPageId: Option[AltPageId],
-  override val anyEmbeddingUrl: Option[String]) extends SiteTpi(request) {
-
+  override val anyDiscussionId: Option[AltPageId],
+  override val anyEmbeddingUrl: Option[String],
+  override val lazyCreatePageInCatId: Option[CategoryId],
+) extends SiteTpi(request) {
   override def anyCurrentPageRole = Some(pageRole)
 }
 
@@ -306,9 +308,11 @@ class PageTpi(
   private val cachedVersion: CachedPageVersion,
   private val pageTitleUnsafe: Option[String],
   override val anyCustomMetaTags: FindHeadTagsResult,
-  override val anyAltPageId: Option[AltPageId],
-  override val anyEmbeddingUrl: Option[String])
-  extends SiteTpi(pageReq, json = None, pageTitleUnsafe = pageTitleUnsafe) {
+  override val anyDiscussionId: Option[AltPageId],
+  override val anyEmbeddingUrl: Option[String],
+  override val lazyCreatePageInCatId: Option[CategoryId],
+) extends
+    SiteTpi(pageReq, json = None, pageTitleUnsafe = pageTitleUnsafe) {
 
   override def anyCurrentPageLayout = Some(pageReq.thePageMeta.layout)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)

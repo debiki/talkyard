@@ -167,6 +167,20 @@ const make = {
     };
   },
 
+  memberMemah: function(template: Partial<Member> = {}): Member {
+    return {
+      ...template,
+      id: getAndBumpNextUserId(),
+      username: "memah",
+      fullName: "Memah",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--memah@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:pub-mem020",
+      password: "pub-mem020",
+    };
+  },
+
   memberMaria: function(template: Partial<Member> = {}): Member {
     return {
       ...template,

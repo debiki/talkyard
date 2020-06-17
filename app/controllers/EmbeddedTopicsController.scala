@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.dao.{NonExistingPage, SiteDao}
+import debiki.dao.{NotYetCreatedEmbeddedPage, SiteDao}
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import ed.server.security.EdSecurity
@@ -49,53 +49,71 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId],   // [5BRW02]
-        edPageId: Option[PageId]): Action[Unit] =
+          edPageId: Option[PageId], category: Option[Ref]): Action[Unit] =
       AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
 
     import request.dao
 
-    val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
+    // Later, the params can optionally be signed with PASTEO,  [blog_comments_sso]
+    // for those who are worried that end users edit the html and type their own
+    // category or discussion ids. (There's always access control though.)
+
+    val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl,
+          category, dao)
+
     val (renderedPage, pageRequest) = anyRealPageId match {
       case None =>
         // Embedded comments page not yet created. Return a dummy page; we'll create a real one,
         // later when the first reply gets posted.
-        val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
-            PageType.EmbeddedComments, globals.now())
-        val categoryId = dao.getDefaultCategoryId()
+        val pageRequest = ViewPageController.makeEmptyPageRequest(
+              request, EmptyPageId, showId = true,
+              PageType.EmbeddedComments, globals.now())
+
+        // In which category should the page get lazy-created?
+        val lazyCreatePageInCat = category.map(dao.getOrThrowAnyCategoryByRef)
+        val lazyCreateInCatId =
+                lazyCreatePageInCat.map(_.id) getOrElse dao.getDefaultCategoryId()
 
         BUG // this'll use the default settings [04MDKG356] — which means the Like
         // button will always be visible, for an empty blog comments page.
-        // Need to pass the settings to NonExistingPage somehow, but it's in ty-core
+        // Need to pass the settings to NotYetCreatedEmbeddedPage somehow, but it's in ty-core
         // which doesn't know about that class.
-        val dummyPage = NonExistingPage(
-          dao.siteId, PageType.EmbeddedComments, Some(categoryId), embeddingUrl, globals.now())
+        val lazyPage = NotYetCreatedEmbeddedPage(
+              dao.siteId, PageType.EmbeddedComments, anyCategoryId = Some(lazyCreateInCatId),
+              embeddingUrl = embeddingUrl, globals.now())
 
-        val (maySee, debugCode) = dao.maySeePageUseCache(dummyPage.meta, request.requester)
-        if (!maySee)
+        val (maySee, debugCode) = dao.maySeePageUseCache(lazyPage.meta, request.requester)
+        if (!maySee) {
+          // Happens e.g. if placed in an access restricted category.
           security.throwIndistinguishableNotFound(debugCode)
+        }
 
         val pageRenderParams = PageRenderParams(
-          widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
-          isEmbedded = true,
-          origin = request.origin,
-          anyCdnOrigin = globals.anyCdnOrigin,
-          anyPageRoot = None,
-          anyPageQuery = None)
+              widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
+              isEmbedded = true,
+              origin = request.origin,
+              anyCdnOrigin = globals.anyCdnOrigin,
+              anyPageRoot = None,
+              anyPageQuery = None)
 
-        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(dummyPage, pageRenderParams)
+        val jsonStuff = dao.jsonMaker.notYetCreatedPageToJson(lazyPage, pageRenderParams)
 
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
         // So skip: Nashorn.renderPage(jsonStuff.reactStoreJsonString)
         val tpi = new PageTpi(pageRequest, jsonStuff.reactStoreJsonString, jsonStuff.version,
-          "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
-          jsonStuff.pageTitleUnsafe, jsonStuff.customHeadTags, anyAltPageId = discussionId,
-          anyEmbeddingUrl = Some(embeddingUrl))
+              "Lazy page [TyMLAZYPAGE]", WrongCachedPageVersion,
+              jsonStuff.pageTitleUnsafe, jsonStuff.customHeadTags,
+              anyDiscussionId = discussionId, anyEmbeddingUrl = Some(embeddingUrl),
+              lazyCreatePageInCatId = Some(lazyCreateInCatId))
         val htmlString = views.html.templates.page(tpi).body
 
         (RenderedPage(htmlString, "NoJson-1WB4Z6", unapprovedPostAuthorIds = Set.empty), pageRequest)
 
       case Some(realId) =>
+        // (For now, ignore `category` here. Or, some time later, would an admin setting
+        // to move move the page to that category make sense?  [auto_upd_emb_cat])
+
         val pageMeta = dao.getThePageMeta(realId)
         if (pageMeta.pageType != PageType.EmbeddedComments)
           throwForbidden("EdE2F6UHY3", "Not an embedded comments page",
@@ -155,14 +173,29 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
-          edPageId: Option[PageId]): Action[Unit] =
+          edPageId: Option[PageId], category: Option[Ref]): Action[Unit] =
         AsyncGetActionMaybeSkipCookies(avoidCookies = true) { request =>
     import request.{dao, requester}
 
-    val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
+    val anyRealPageId = getAnyRealPageId(
+          edPageId, discussionId, embeddingUrl, categoryRef = category, request.dao)
+
+    val lazyCreatePageInCatId =
+          if (anyRealPageId.isDefined) {
+            // The page already exists and was placed in some category already.
+            // For now, don't move it to `category`. (Maybe could be an admin
+            // setting to do that.  [auto_upd_emb_cat])
+            None
+          }
+          else {
+            category.map(dao.getOrThrowAnyCategoryByRef)
+          }
+
     val tpi = new EditPageTpi(request, PageType.EmbeddedComments,
-          anyEmbeddedPageId = anyRealPageId, anyAltPageId = discussionId,
-          anyEmbeddingUrl = Some(embeddingUrl))
+          anyEmbeddedPageId = anyRealPageId, anyDiscussionId = discussionId,
+          anyEmbeddingUrl = Some(embeddingUrl),
+          lazyCreatePageInCatId = lazyCreatePageInCatId.map(_.id))
+
     val htmlStr = views.html.embeddedEditor(tpi).body
 
     for {
@@ -181,7 +214,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   private def getAnyRealPageId(edPageId: Option[PageId], discussionId: Option[String],
-        embeddingUrl: String, dao: SiteDao): Option[PageId] = {
+        embeddingUrl: String, categoryRef: Option[Ref], dao: SiteDao): Option[PageId] = {
+
     // Lookup the page by Talkyard page id, if specified, otherwise
     // use the discussion id, or the embedding url, or, if no match,
     // the embedding url path (so works across all origins).
@@ -189,25 +223,28 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     // if the same Talkyard site provides comments for two different blogs?
     // Then later there could be a config value that says the 2nd blog should
     // lookup discussions by full url origin + path.
-    //
-    // **Or** better? [COMCATS] The embeddeing page specifies a
-    // data-category-ref="extid:blog_cat_name"
-    // ??? what:\
-    //    and then Talkyard looks up the *per category* embedding origins for the blog
-    //    with ext id 'blog_cat_name', and in that category finds the
-    //    embeddded comments topic with a matching url path?
-    // Intsead:
-    //    and then Talkyard looks at all topics in that category, and finds the one
-    //    with a matching url path. Meaning, emb comments url paths would be unique
-    //    per category?
+
+    // If looking up by url path only, then, look only in any category [emb_disc_cat]
+    // specified by categoryRef.  This'd make it possible for blogs
+    // at different origins, to share the same Talkayrd site, but different
+    // categories. And if a blog gets moved to a new origin — Talkyard
+    // would still find the correct embedded page, thanks to looking in
+    // the correct category — *also* if both blogs have pages with that
+    // same url path.
+
+    // This'd require embedded page url paths to be unique *per category*.
+    // (And, the root category, could be used, when no specific category specified.)
+
     // And:
     //    The cateory needs a way to construct urls back to the blog. So there needs to
     //    be a per category embeddingOrigin setting?
-    ///   when generating links in notifiation emails.
+    //    when generating links in notification emails.
     //
+    // Old comments, a bit good ideas? -------------------------
     // Per category embedding-origins give people a simple way to move a blog to a new domain,
     // and tell Talkyard about the change once and only once — by updating the category
     // and change its embedding domain.
+    //
     // So, maybe add a new category setting? Namely embeddingDomain?
     // Which must be one of the allowEmbeddingFrom domains.
     // Maybe the extId isn't needed? Instead,
@@ -216,12 +253,18 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
     // stores comments in a different category? (could be sub categories) and
     // each such category has an embeddingOrigin setting, and url paths need to be
     // unique only within a category?
+    //
+    // 2020-06: No. Turns out the same website sometimes wants to create embedded
+    //     discussions *in different categories*, one for each section of their website.
+    //
+    // Old comment:
     // I think a per category embeddingOrigin setting is all that's needed —
-    // the  data-category-ref="extid:category_ext_id" would only be needed if one
+    // the  data-category="extid:category_ext_id" would only be needed if one
     // wants to store comments for many different blogs in the same category?
     // Or comments for different parts of the same domain, in different categories?
     // ... but that sounds like a valid use case (!). So, maybe both
     // embeddingOrigin and data-category-ref makes sense then.
+    // ---------------------------------------------------------
     //
     edPageId orElse {
       discussionId.trimNoneIfBlank match {

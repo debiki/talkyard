@@ -552,6 +552,13 @@ embedded comments:
                 embedded-comments-create-site-no-verif-email-admin-area-tour.2browsers.test.ts
   embedded editor:
           - may not see page:   TyT035KRGMTW2  TESTS_MISSING  SEC_TEST_MISSING
+  different discussion id:
+          - embedded-comments-discussion-id.test.ts   TyT603KRDL46
+  place in custom categories:
+          - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59
+          - embedded-comments-cat-refs-and-disc-ids.2browsers.test.ts  TyT603WDL46
+  notf about new discusion:
+          - embedded-comments-category-refs.2browsers.test.ts   TyT03RKHJF59.TyT063AKDGW60
 
 
 uploads -  (7KFC2)
