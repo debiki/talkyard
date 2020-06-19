@@ -1595,6 +1595,17 @@ interface ApiSecret {
 
 // ----- Admin Area
 
+interface AdminDashboard {
+  siteStats: SiteStats;
+}
+
+interface SiteStats {
+  dbStorageLimitBytes: number;
+  dbStorageUsedBytes: number;
+  fileStorageLimitBytes: number;
+  fileStorageUsedBytes: number;
+}
+
 interface AdminPanelProps {
   store: Store;
   loadAllSettingsIfNeeded: () => void;
@@ -1625,6 +1636,7 @@ interface SASite {
   canonicalHostname: string;
   createdAtMs: number;
   staffUsers: UserInclDetails[];
+  stats: SiteStats;
   superStaffNotes?: string;
 }
 

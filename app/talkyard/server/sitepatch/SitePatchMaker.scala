@@ -129,7 +129,7 @@ object SitePatchMaker {
         anyDump.map(_.site) getOrElse Some(tx.loadSiteInclDetails().getOrDie("TyE2S6WKDL"))
       anySite foreach { site =>
         fields("meta") =
-          JsSiteInclDetails(site)
+          JsSiteInclDetails_old(site)
       }
 
       val anyEditeSiteSettings =

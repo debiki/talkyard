@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../staff-prelude.staff.ts" />
+/// <reference path="../admin/oop-method.staff.ts" />
 //xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
 declare var moment: any;
 
@@ -237,6 +238,14 @@ const SiteTableRow = createComponent({
             PrimaryButton({ className: 's_SA_S_Notes_SaveB', onClick: this.saveNotes },
               "Save"));
 
+    // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi =1024 bytes.
+    // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
+    const ps = admin.prettyStats(site.stats);
+    const quota = r.div({ class: 's_SA_S_Storage'},
+        `db: ${ps.dbMb.toPrecision(2)} MB = ${ps.dbPercentStr}% of ${ps.dbMaxMb} MB`, r.br(),
+        `fs: ${ps.fsMb.toPrecision(2)} MB = ${ps.fsPercentStr}% of ${ps.fsMaxMb} MB`
+        );
+
     return (
       r.tr({},
         r.td({},
@@ -247,7 +256,8 @@ const SiteTableRow = createComponent({
           reactivateButton,
           deleteButton,
           undeleteButton,
-          purgeButton),
+          purgeButton,
+          quota),
         r.td({},
           r.div({},
             r.a({ href: '//' + canonHostname }, canonHostname),

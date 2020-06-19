@@ -67,7 +67,7 @@ package object core {
   SHOULD // make this configurable, per site.  Now needs > 100
   val MaxCategories = 300
 
-  type PublSiteId = String
+  type PubSiteId = String
 
   type SiteId = Int
   val NoSiteId = 0

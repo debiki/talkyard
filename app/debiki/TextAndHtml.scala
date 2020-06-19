@@ -125,7 +125,7 @@ object TextAndHtmlMaker {
 
 /** Thread safe.
   */
-class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
+class TextAndHtmlMaker(pubSiteId: PubSiteId, nashorn: Nashorn) {
 
   private class TextAndHtmlImpl(
     val text: String,

@@ -25,8 +25,10 @@ import ed.server._
 import ed.server.http.{ApiRequest, JsonOrFormDataBody}
 import ed.server.security.EdSecurity
 import javax.inject.Inject
+import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents, Result}
 import scala.concurrent.Future
+import talkyard.server.JsX
 
 
 
@@ -73,6 +75,15 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       response withCookies SecureCookie(
         EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
     }
+  }
+
+
+
+  def getDashboardData: Action[Unit] = AdminGetAction { request =>
+    import request.dao
+    val siteInclDetails = dao.theSiteInclDetails()
+    OkSafeJson(Json.obj(
+          "siteStats" -> JsX.JsSiteStats(siteInclDetails.stats)))
   }
 
 

@@ -186,7 +186,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
   def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { request: mvc.Request[_] =>
     // (Original request available in:  request.headers.get("X-Original-URI") )
-    val siteId = context.globals.systemDao.getSiteIdByPublId(publSiteId) getOrElse {
+    val siteId = context.globals.systemDao.getSiteIdByPubId(publSiteId) getOrElse {
       throwForbidden("TyESITEPUBID", s"No site with publ id '$publSiteId'")
     }
     val siteDao: debiki.dao.SiteDao = context.globals.siteDao(siteId)

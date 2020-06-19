@@ -617,7 +617,7 @@ class Globals(
     siteDao(siteId).getWholeSiteSettings()
 
   def originOfSiteId(siteId: SiteId): Option[String] =
-    systemDao.getSite(siteId).flatMap(_.canonicalHostname.map(originOf))
+    systemDao.getSiteById(siteId).flatMap(_.canonicalHostname.map(originOf))
 
   def originOf(site: Site): Option[String] = site.canonicalHostname.map(originOf)
   def originOf(host: Hostname): String = originOf(host.hostname)
@@ -702,7 +702,7 @@ class Globals(
       val hostname = defaultSiteHostname getOrElse throwForbidden(
         "EsE5UYK2", o"""No site hostname configured (config value: $DefaultSiteHostnameConfValName)""")
       if (defaultSiteId != FirstSiteId) {
-        val site = systemDao.getSite(defaultSiteId).getOrDie(
+        val site = systemDao.getSiteById(defaultSiteId).getOrDie(
           "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
             default site id (config value: $DefaultSiteIdConfValName)""")
         SiteBrief(defaultSiteId, site.pubId, Some(hostname), site.status)
@@ -723,8 +723,8 @@ class Globals(
     hostname match {
       case SiteByIdRegex(siteIdString: String) =>
         val anySite =
-          if (siteIdString.length >= Site.MinPublSiteIdLength) {
-            systemDao.getSiteByPublId(siteIdString)
+          if (siteIdString.length >= Site.MinPubSiteIdLength) {
+            systemDao.getSiteByPubId(siteIdString)
           }
           else {
             SECURITY; PRIVACY // LATER, don't allow lookup by direct id, in prod mode,  [5UKFBQW2]
@@ -734,7 +734,7 @@ class Globals(
             // throwForbiddenIf(isProd && !okForbiddenPassword,
             //    "TyE4HJWQ10", "Looking up sites by private id is not allowed")
             val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
-            systemDao.getSite(siteId)
+            systemDao.getSiteById(siteId)
           }
         anySite match {
           case None =>
@@ -774,7 +774,7 @@ class Globals(
         throwSiteNotFound(
           hostname, debugCode = "LKPCANHOST")
     }
-    val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
+    val site = systemDao.getSiteById(lookupResult.siteId) getOrDie "EsE2KU503"
     site.brief
   }
 

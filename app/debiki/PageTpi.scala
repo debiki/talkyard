@@ -73,7 +73,7 @@ class SiteTpi protected (
   }
 
   def site: SiteBrief = debikiRequest.site
-  def pubSiteId: PublSiteId = debikiRequest.site.pubId
+  def pubSiteId: PubSiteId = debikiRequest.site.pubId
   def siteId: SiteId = debikiRequest.siteId
   def siteSettings: EffectiveSettings = debikiRequest.siteSettings
 
@@ -109,13 +109,13 @@ class SiteTpi protected (
   def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
-  def anyCurrentPageRole: Option[PageType]
+  def anyCurrentPageRole: Option[PageType] = None
   def anyCurrentPageLayout: Option[PageLayout] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
-  def anyDiscussionId: Option[AltPageId]
-  def anyEmbeddingUrl: Option[String]
-  def lazyCreatePageInCatId: Option[CategoryId]
+  def anyDiscussionId: Option[AltPageId] = None
+  def anyEmbeddingUrl: Option[String] = None
+  def lazyCreatePageInCatId: Option[CategoryId] = None
 
   def anyEmbeddingOrigin: Option[String] = anyEmbeddingUrl map { url =>
     var numSlashes = 0

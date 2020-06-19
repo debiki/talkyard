@@ -32,7 +32,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
   private val LocalhostAddress = "127.0.0.1"
 
 
-  def createSite(id: Option[SiteId], pubId: PublSiteId,
+  def createSite(id: Option[SiteId], pubId: PubSiteId,
     name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site = {
@@ -58,7 +58,7 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
     }
 
     val newSiteNoId = Site(theId, pubId = pubId, status, name = name, createdAt = createdAt,
-      creatorIp = creatorIp, hostnames = Nil)
+      creatorIp = creatorIp, hostnames = Vector.empty)
 
     val newSite =
       try insertSite(newSiteNoId, quotaLimitMegabytes)
@@ -161,20 +161,6 @@ trait CreateSiteSystemDaoMixin extends SystemTransaction {  // RENAME to SystemS
             throw ex
       }
     dieIf(!inserted, "EdE4KEWW2")
-  }
-
-
-  def loadSiteByName(name: String): Option[Site] = {
-    loadSites().find(_.name == name)
-  }
-
-  def deleteSiteByName(name: String): Option[Site] = {
-    require(Hostname.isE2eTestHostname(name), "Can delete test sites only [EdE4PF0Y4]")
-    val site = loadSites().find(_.name == name) getOrElse {
-      return None
-    }
-    deleteSiteById(site.id)  // not locked :- (   dangerous_readWriteTransaction, BUG tx race, rollback risk
-    Some(site)
   }
 
 

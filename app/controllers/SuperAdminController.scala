@@ -23,8 +23,8 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}
-import play.api.libs.json.{JsArray, JsObject, JsString, Json}
-import play.api.mvc.ControllerComponents
+import play.api.libs.json._
+import play.api.mvc.{Action, ControllerComponents}
 import talkyard.server.JsX._
 
 
@@ -33,12 +33,12 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   import context.globals
 
-  def redirect = GetAction { apiReq =>
+  def redirect: Action[Unit] = GetAction { apiReq =>
     Redirect(routes.SuperAdminController.superAdminApp("").url)
   }
 
 
-  def superAdminApp(clientRoute: String) = SuperAdminGetAction { apiReq =>
+  def superAdminApp(clientRoute: String): Action[Unit] = SuperAdminGetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     val siteTpi = SiteTpi(apiReq)
     val pageBody = views.html.adminPage(siteTpi, appId = "theSuperAdminApp").body
@@ -47,12 +47,13 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   // (Rename to getDashboardData() ?)
-  def listSites() = SuperAdminGetAction { request =>
+  def listSites(): Action[Unit] = SuperAdminGetAction { request =>
     listSitesImpl()
   }
 
 
-  def updateSites() = SuperAdminPostJsonAction(maxBytes = 10*1000) { request =>
+  def updateSites(): Action[JsValue] = SuperAdminPostJsonAction(maxBytes = 10*1000) {
+          request =>
     val jsObjs = request.body.as[Seq[JsObject]]
     val patches: Seq[SuperAdminSitePatch] = jsObjs.map(jsObj => {
       val siteId = (jsObj \ "id").as[SiteId]
@@ -70,18 +71,20 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   private def listSitesImpl(): p.mvc.Result = {
     // The most recent first.
-    val (sitesUnsorted: Seq[Site], staffBySiteId) = globals.systemDao.loadSitesAndStaff()
+    val (sitesUnsorted: Seq[SiteInclDetails], staffBySiteId) =
+          globals.systemDao.loadSitesInclDetailsAndStaff()
     val sitesNewFirst = sitesUnsorted.sortBy(-_.createdAt.toUnixMillis)
     OkSafeJson(Json.obj(
       "appVersion" -> globals.applicationVersion,
       "superadmin" -> Json.obj(
         "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
-        "sites" -> sitesNewFirst.map(s => siteToJson(s, staffBySiteId.getOrElse(s.id, Nil))))))
+        "sites" -> sitesNewFirst.map(site => siteToJson(
+                      site, staffBySiteId.getOrElse(site.id, Nil))))))
   }
 
 
-  private def siteToJson(site: Site, staff: Seq[UserInclDetails]) = {
+  private def siteToJson(site: SiteInclDetails, staff: Seq[UserInclDetails]) = {
     Json.obj(
       "id" -> site.id,
       "pubId" -> site.pubId,
@@ -91,9 +94,11 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
       "name" -> site.name,
       "superStaffNotes" -> JsStringOrNull(site.superStaffNotes),
       "createdAtMs" -> site.createdAt.toUnixMillis,
-      "staffUsers" -> JsArray(staff.map(staffUser =>
+      "stats" -> JsSiteStats(site.stats),
+      "staffUsers" -> JsArray(staff.map { staffUser =>
         JsUserInclDetails(
-          staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true))))
+              staffUser, usersById = Map.empty, groups = Nil, callerIsAdmin = true)
+      }))
   }
 
 }

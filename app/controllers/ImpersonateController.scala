@@ -68,7 +68,7 @@ class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdCon
         globals.siteByIdOrigin(siteId)
       }
       else {
-        val site = globals.systemDao.getSite(siteId)
+        val site = globals.systemDao.getSiteById(siteId)
         site.flatMap(globals.originOf) getOrElse globals.siteByIdOrigin(siteId)
       }
     val pathAndQuery = routes.ImpersonateController.impersonateWithKey(secretKey).url

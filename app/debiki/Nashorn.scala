@@ -201,7 +201,7 @@ class Nashorn(
   }
 
 
-  def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PublSiteId,
+  def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PubSiteId,
         embeddedOriginOrEmpty: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): RenderCommonmarkResult = {
     if (isTestSoDisableScripts)

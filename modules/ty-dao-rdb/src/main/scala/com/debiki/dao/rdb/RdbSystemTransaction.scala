@@ -232,85 +232,112 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
   }
 
 
-  override def loadSites(): immutable.Seq[Site] =
-    loadSitesImpl(all = true).to[immutable.Seq]
+  def loadSiteByName(name: String): Option[Site] = {
+    loadSiteByWhat(name = name)
+  }
 
 
-  def loadSitesWithIds(siteIds: Seq[SiteId]): Seq[Site] =
-    if (siteIds.isEmpty) Nil
-    else loadSitesImpl(siteIds)
+  def loadSiteByPubId(pubId: PubSiteId): Option[Site] = {
+    loadSiteByWhat(pubId = pubId)
+  }
+
+
+  private def loadSiteByWhat(pubId: PubSiteId = null, name: String = null): Option[Site] = {
+    val (what, value) =
+          if (pubId ne null) ("publ_id", pubId)
+          else if (name ne null) ("name", name)
+          else die("TyE06#KSDKHR")
+
+    val query = s"select * from sites3 where $what = ?"
+    runQueryFindOneOrNone(query, List(value), rs => {
+      val siteId = rs.getInt("id")
+      val hostsBySiteId = loadHosts(Seq(siteId))
+      val hosts = hostsBySiteId.getOrElse(siteId, Nil)
+      getSite(rs, hosts)
+    })
+  }
+
+
+  def loadSitesByIds(siteIds: Seq[SiteId]): Seq[Site] =
+    loadSitesImpl(siteIds)
 
 
   private def loadHosts(siteIds: Seq[SiteId] = Nil, all: Boolean = false)
         : Map[SiteId, List[HostnameInclDetails]] = {
-    // For now, load one or all.
-    require(siteIds.length == 1 || all)
+    if (siteIds.isEmpty && !all)
+      return Map.empty
 
-    var hostsByTenantId = Map[SiteId, List[HostnameInclDetails]]().withDefaultValue(Nil)
+    require(siteIds.nonEmpty != all)
+
+    var hostsBySiteId = Map[SiteId, List[HostnameInclDetails]]().withDefaultValue(Nil)
     var hostsQuery = "select SITE_ID, HOST, CANONICAL, ctime from hosts3"
     var hostsValues: List[AnyRef] = Nil
     if (!all) {
-      UNTESTED
-      hostsQuery += " where SITE_ID = ?" // for now, later: in (...)
-      hostsValues = List(siteIds.head.asAnyRef)
+      hostsQuery += s" where site_id in (${ makeInListFor(siteIds) })"
+      hostsValues = siteIds.map(_.asAnyRef).toList
     }
     runQuery(hostsQuery, hostsValues, rs => {
         while (rs.next) {
           val siteId = rs.getInt("SITE_ID")
-          var hosts = hostsByTenantId(siteId)
+          var hosts = hostsBySiteId(siteId)
           hosts ::= HostnameInclDetails(
              hostname = rs.getString("HOST"),
              role = _toTenantHostRole(rs.getString("CANONICAL")),
              addedAt = getWhen(rs, "ctime"))
-          hostsByTenantId = hostsByTenantId.updated(siteId, hosts)
+          hostsBySiteId = hostsBySiteId.updated(siteId, hosts)
         }
       })
-    hostsByTenantId
+    hostsBySiteId
   }
 
 
-  def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Boolean = false): Seq[Site] = {
-    // For now, load one or all.
-    require(siteIds.length == 1 || all)
+  private def loadSitesImpl(siteIds: Seq[SiteId] = Nil, all: Boolean = false): Seq[Site] = {
+    if (siteIds.isEmpty && !all)
+      return Nil
 
-    val hostsByTenantId: Map[SiteId, List[HostnameInclDetails]] = loadHosts(siteIds, all)
+    require(siteIds.nonEmpty != all, "Both site ids and all = true [TyE40RKSH2]")
+
+    val hostsBySiteId: Map[SiteId, List[HostnameInclDetails]] = loadHosts(siteIds, all)
+
+    val (whereIdsIn, values) =
+        if (all) ("", Nil)
+        else (
+          s"where id in (${ makeInListFor(siteIds) })",
+          siteIds.toList.map(_.asAnyRef))
 
     var sitesQuery = s"""
-      select id, publ_id, status, name, ctime, creator_ip, creator_email_address,
-          super_staff_notes
+      select id, publ_id, status, name, ctime, creator_ip, creator_email_address
       from sites3
+          $whereIdsIn
       """
-    var sitesValues: List[AnyRef] = Nil
-    if (!all) {
-      sitesQuery += " where ID = ?"  // for now, later: in (...)
-      sitesValues = List(siteIds.head.asAnyRef)
-    }
-    var tenants = List[Site]()
-    runQuery(sitesQuery, sitesValues, rs => {
-      while (rs.next) {
-        val siteId = rs.getInt("ID")
-        val hosts = hostsByTenantId(siteId)
-        tenants ::= Site(
-          id = siteId,
-          pubId = rs.getString("publ_id"),
-          status = SiteStatus.fromInt(rs.getInt("status")).getOrDie("EsE2KUY67"),
-          name = rs.getString("NAME"),
-          createdAt = getWhen(rs, "ctime"),
-          creatorIp = rs.getString("CREATOR_IP"),
-          hostnames = hosts.map(_.noDetails),
-          superStaffNotes = getOptString(rs, "super_staff_notes"))
-      }
+
+    runQueryFindMany(sitesQuery, values, rs => {
+      val siteId = rs.getInt("ID")
+      val hosts = hostsBySiteId(siteId)
+      val site = getSite(rs, hosts)
+      dieIf(site.id != siteId, "TyE60RKDHN5")
+      site
     })
-    tenants
   }
 
 
-  def loadSiteInclDetails(siteId: SiteId): Option[SiteInclDetails] = {
+  def loadAllSitesInclDetails(): immutable.Seq[SiteInclDetails] = {
+    val hostsBySiteId: Map[SiteId, List[HostnameInclDetails]] = loadHosts(all = true)
+    val query = "select * from sites3"
+    runQueryFindMany(query, Nil, rs => {
+      val siteId = rs.getInt("id")
+      var hosts = hostsBySiteId(siteId)
+      getSiteInclDetails(rs, hosts)
+    })
+  }
+
+
+  def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails] = {
     val hosts = loadHosts(Seq(siteId)).values.headOption.getOrElse(Nil)
-    val query = s"""
-      select * from sites3 where id = ?
-      """
-    runQueryFindOneOrNone(query, List(siteId.asAnyRef), rs => RdbUtil.getSiteInclDetails(rs, hosts))
+    val query = "select * from sites3 where id = ?"
+    runQueryFindOneOrNone(query, List(siteId.asAnyRef), rs => {
+      getSiteInclDetails(rs, hosts)
+    })
   }
 
 

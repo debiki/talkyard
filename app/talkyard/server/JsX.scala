@@ -38,7 +38,7 @@ import scala.collection.immutable
 //
 object JsX {
 
-  def JsSiteInclDetails(site: SiteInclDetails): JsObject = {
+  def JsSiteInclDetails_old(site: SiteInclDetails): JsObject = {
     Json.obj(
       "id" -> site.id,
       "pubId" -> site.pubId,
@@ -83,6 +83,31 @@ object JsX {
       hostname = readJsString(json, "hostname"),
       role = Hostname.Role.fromInt(readJsInt(json, "role")).get,
       addedAt = readJsWhen(json, "addedAt"))
+  }
+
+
+  def JsSiteStats(stats: ResourceUse): JsObject = {
+    Json.obj(
+          "dbStorageLimitBytes" -> stats.databaseStorageLimitBytes,
+          "dbStorageUsedBytes" -> stats.estimatedDbBytesUsed,
+          "fileStorageLimitBytes" -> stats.fileStorageLimitBytes,
+          "fileStorageUsedBytes" -> stats.fileStorageUsedBytes,
+          "numAuditRows" -> stats.numAuditRows,
+          "numGuests" -> stats.numGuests,
+          "numIdentities" -> stats.numIdentities,
+          "numParticipants" -> stats.numParticipants,
+          "numPages" -> stats.numPages,
+          "numPageParticipants" -> stats.numPageParticipants,
+          "numPosts" -> stats.numPosts,
+          "numPostTextBytes" -> stats.numPostTextBytes,
+          "numPostRevisions" -> stats.numPostRevisions,
+          "numPostRevBytes" -> stats.numPostRevBytes,
+          "numPostsRead" -> stats.numPostsRead,
+          "numActions" -> stats.numActions,
+          "numUploads" -> stats.numUploads,
+          "numUploadBytes" -> stats.numUploadBytes,
+          "numNotfs" -> stats.numNotfs,
+          "numEmailsSent" -> stats.numEmailsSent)
   }
 
 

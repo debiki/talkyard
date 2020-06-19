@@ -85,10 +85,13 @@ Search for that tag.
 Improve sub communities, e.g. selecting a category across all sub communities,
 not only the current one.
 
+[performance]
 Performance tests:
  "Capture a timeline trace of your site to help diagnose performance issues."
  https://github.com/GoogleChrome/puppeteer
 
+Test on real life anonymized data:  PostgreSQL Anonymizer?
+   https://www.postgresql.org/about/news/2017
 
 [onesocket]
 Subscribe to live-updates via a "shared web worker" so each browser gets its own connection,
@@ -279,3 +282,18 @@ server / bot.
 
 [Scala_213]
 Try —> Using
+
+[site_statistics]
+ex data to incl: https://docs.mattermost.com/administration/statistics.html
+   https://github.com/mattermost/mattermost-server/blob/master/app/analytics.go
+     &  https://meta.discourse.org/u?period=weekly
+   + stats:
+      https://docs.mattermost.com/deployment/metrics.html#statistics
+  ~= GitHub Contributors stats would be nice, per user / group?
+If wants very detailed: https://www.timescale.com?  PipelineDB?  Prometheus?
+but then as a separate pg instance?
+So a full dump of the actual site won't take forever because terrabytes time series data.
+And cannot be 100% there are no bugs causing problems when running DDL data-def-lang migrations?
+   "PostgreSQL instance was unrecoverably corrupted after the virtual machine running it was powered off"  https://dev.t-matix.com/blog/postgresql-as-a-time-series-database/
+https://news.ycombinator.com/item?id=20760324
+TimescaleDB = pg extentsion, nice, no need to learn a completely new db & storage type.

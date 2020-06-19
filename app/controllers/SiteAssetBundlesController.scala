@@ -56,8 +56,8 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
   }
 
 
-  def customAsset(pubSiteId: PublSiteId, fileName: String): Action[Unit] = GetAction { request =>
-    val siteId = globals.systemDao.getSiteIdByPublId(pubSiteId) getOrElse {
+  def customAsset(pubSiteId: PubSiteId, fileName: String): Action[Unit] = GetAction { request =>
+    val siteId = globals.systemDao.getSiteIdByPubId(pubSiteId) getOrElse {
       throwNotFound("TyE2PKH8", s"No site with publ id $pubSiteId")
     }
     customAssetImpl(siteId = siteId, fileName = fileName, request)

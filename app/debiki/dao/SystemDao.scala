@@ -68,48 +68,63 @@ class SystemDao(
   }
 
 
+
   // ----- Sites
 
-  def theSite(siteId: SiteId): Site = getSite(siteId) getOrDie "EsE2WUY5"
 
-  def getOrCreateFirstSite(): Site = getSite(FirstSiteId) getOrElse createFirstSite()
+  def theSiteById(siteId: SiteId): Site =
+    getSiteById(siteId) getOrDie "TyESITE0F"
 
-  def getSite(siteId: SiteId): Option[Site] = {
-    COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
+
+  def getOrCreateFirstSite(): Site =
+    getSiteById(FirstSiteId) getOrElse createFirstSite()
+
+
+  def getSiteById(siteId: SiteId): Option[Site] = {
+    // We use SiteDao.getSite() because it caches.
+    COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create
+    // temp SiteDao obj.
     globals.siteDao(siteId).getSite()
   }
 
-  def getSiteByPublId(publSiteId: PublSiteId): Option[Site] = {
-    getSiteIdByPublId(publSiteId).flatMap(getSite)
-  }
 
-  def getSiteIdByPublId(pubSiteId: PublSiteId): Option[SiteId] = {
-    // The publ and private ids never change; no need to ever uncache this.
+  def getSiteByPubId(publSiteId: PubSiteId): Option[Site] =
+    getSiteIdByPubId(publSiteId).flatMap(getSiteById) // caches
+
+
+  def getSiteIdByPubId(pubSiteId: PubSiteId): Option[SiteId] = {
+    // The publ and private ids never change, ok cache forever.
     memCache.lookup(
-      MemCacheKeyAnySite(s"$pubSiteId|pubSiteId"),
-      orCacheAndReturn = {
-        COULD_OPTIMIZE // don't load *all* sites here.  (And optimize this too: [4GUKW27])
-        loadSites().find(_.pubId == pubSiteId) map { site =>
-          site.id.asInstanceOf[Integer]
-        }
-      }).map(_.toInt)
+          MemCacheKeyAnySite(s"$pubSiteId|pubSiteId"),
+          orCacheAndReturn = {
+            val anySite = loadSiteByPubId(pubSiteId)
+            anySite.map(_.id.asInstanceOf[Integer])
+          }).map(_.toInt)
   }
 
-  def loadSites(): Seq[Site] =
-    readOnlyTransaction(_.loadSites())
 
-  def loadSitesAndStaff(): (Seq[Site], Map[SiteId, Seq[UserInclDetails]]) =
+  def loadSiteByPubId(pubId: PubSiteId): Option[Site] =
+    readOnlyTransaction(_.loadSiteByPubId(pubId))
+
+
+  def loadSitesInclDetailsAndStaff()
+        : (Seq[SiteInclDetails], Map[SiteId, Seq[UserInclDetails]]) =
     readOnlyTransaction { tx =>
-      val sites = tx.loadSites()
+      val sites = tx.loadAllSitesInclDetails()
       val staff = tx.loadStaffForAllSites()
       (sites, staff)
     }
 
+  def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails] =
+    readOnlyTransaction(_.loadSiteInclDetailsById(siteId))
+
   def loadSitesWithIds(siteIds: Seq[SiteId]): Seq[Site] =
-    readOnlyTransaction(_.loadSitesWithIds(siteIds))
+    readOnlyTransaction(_.loadSitesByIds(siteIds))
+
 
   def loadSite(siteId: SiteId): Option[Site] =
-    readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
+    readOnlyTransaction(_.loadSitesByIds(Seq(siteId)).headOption)
+
 
   def updateSites(sites: Seq[SuperAdminSitePatch]): Unit = {
     val sitesToClear = mutable.Set[SiteId]()
@@ -129,7 +144,7 @@ class SystemDao(
   private def createFirstSite(): Site = {
     val pubId =
       if (globals.isOrWasTest) Site.FirstSiteTestPublicId
-      else Site.newPublId()
+      else Site.newPubId()
     // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
     dangerous_readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
@@ -255,7 +270,7 @@ class SystemDao(
     */
   def createAdditionalSite(
     anySiteId: Option[SiteId],
-    pubId: PublSiteId,
+    pubId: PubSiteId,
     name: String,
     status: SiteStatus,
     hostname: Option[String],
@@ -387,7 +402,7 @@ class SystemDao(
         browserLocation = None,
         targetSiteId = createdFromSiteId))
 
-      newSite.copy(hostnames = newSiteHost.toList)
+      newSite.copy(hostnames = newSiteHost.toVector)
     }
     catch {
       case ex @ DbDao.SiteAlreadyExistsException(site, details) =>

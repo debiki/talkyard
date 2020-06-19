@@ -60,11 +60,13 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
               createdFromIp = Some(browserIdData.ip),
               creatorEmailAddress = None,
               nextPageId = 1,
-              quotaLimitMbs = testForumQuotaLimit,
               hostnames = Vector(HostnameInclDetails(
-                hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+                    hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
               version = 1,
-              numParticipants = 13  // 10 built-in groups, plus the System, Sysbot and Unknown users
+              stats = ResourceUse(
+                    quotaLimitMbs = testForumQuotaLimit,
+                    // 10 built-in groups, plus the System, Sysbot and Unknown users.
+                    numParticipants = 13)
             )),
           // Built-in groups are included in the dump, because they can be renamed.
           groups =
@@ -118,13 +120,14 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some("1.2.3.4"),
             creatorEmailAddress = None,
-            numPostTextBytes = actualDump.theSite.numPostTextBytes,
             nextPageId = 1,
-            quotaLimitMbs = testForumQuotaLimit,
             hostnames = Vector(HostnameInclDetails(
-              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+                  hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 2,
-            numParticipants = 14)))
+            stats = ResourceUse(
+                  quotaLimitMbs = testForumQuotaLimit,
+                  numPostTextBytes = actualDump.theSite.numPostTextBytes,
+                  numParticipants = 14))))
         actualDump mustBe expectedDump
       }
 
@@ -222,16 +225,17 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some("1.2.3.4"),
             creatorEmailAddress = None,
-            //numCategories = 2,  currently no such field
-            numPages = 1,
-            numPosts = 2,
-            numPostTextBytes = actualDump.theSite.numPostTextBytes,
             nextPageId = 2,
-            quotaLimitMbs = testForumQuotaLimit,
             hostnames = Vector(HostnameInclDetails(
-              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+                  hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 2,
-            numParticipants = 14)))
+            stats = ResourceUse(
+                  quotaLimitMbs = testForumQuotaLimit,
+                  //numCategories = 2,  currently no such field
+                  numPages = 1,
+                  numPosts = 2,
+                  numPostTextBytes = actualDump.theSite.numPostTextBytes,
+                  numParticipants = 14))))
         actualDump mustBe expectedDump
       }
 
@@ -336,16 +340,17 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some(browserIdData.ip),
             creatorEmailAddress = None,
-            //numCategories = 2,
-            numPages = 1,
-            numPosts = 0,
-            numPostTextBytes = actualDump.theSite.numPostTextBytes,
             nextPageId = 2,
-            quotaLimitMbs = testForumQuotaLimit,
             hostnames = Vector(HostnameInclDetails(
-              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+                  hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 2,
-            numParticipants = 13)))
+            stats = ResourceUse(
+                  quotaLimitMbs = testForumQuotaLimit,
+                  //numCategories = 2,
+                  numPages = 1,
+                  numPosts = 0,
+                  numPostTextBytes = actualDump.theSite.numPostTextBytes,
+                  numParticipants = 13))))
 
         actualDump mustBe expectedDump
       }
@@ -488,16 +493,17 @@ class SitePatcherAppSpec extends DaoAppSuite // (disableScripts = false)  // TyT
             createdAt = actualDump.theSite.createdAt,
             createdFromIp = Some(browserIdData.ip),
             creatorEmailAddress = None,
-            //numCategories = 2,
-            numPages = 1,
-            numPosts = 0,
-            numPostTextBytes = actualDump.theSite.numPostTextBytes,
             nextPageId = 2,
-            quotaLimitMbs = testForumQuotaLimit,
             hostnames = Vector(HostnameInclDetails(
-              hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
+                  hostname = siteName, Hostname.RoleCanonical, addedAt = globals.now())),
             version = 2,
-            numParticipants = 13)))
+            stats = ResourceUse(
+                  quotaLimitMbs = testForumQuotaLimit,
+                  //numCategories = 2,
+                  numPages = 1,
+                  numPosts = 0,
+                  numPostTextBytes = actualDump.theSite.numPostTextBytes,
+                  numParticipants = 13))))
 
         actualDump mustBe expectedDump
       }

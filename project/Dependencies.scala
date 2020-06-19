@@ -14,6 +14,13 @@ object Dependencies {
 
   object Libs {
     // See: https://mvnrepository.com/artifact/org.postgresql/postgresql/
+    // Upgr to: 42.2.14?
+    //   https://github.com/pgjdbc/pgjdbc#maven-central
+    //   https://github.com/pgjdbc/pgjdbc/blob/master/CHANGELOG.md
+    //   Cool:  cancelQuery()  https://github.com/pgjdbc/pgjdbc/pull/1157
+    //          e.g. stop bg queries that turns out weren't needed.
+    //   supports Pg 11, 12.
+
     val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.4"
 
     // Database migrations.

@@ -99,37 +99,55 @@ object RdbUtil {
   }
 
 
+  def getSite(rs: js.ResultSet, hostnames: immutable.Seq[HostnameInclDetails]): Site = {
+    Site(id = rs.getInt("id"),
+          pubId = rs.getString("publ_id"),
+          status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
+          name = rs.getString("name"),
+          createdAt = getWhen(rs, "ctime"),
+          creatorIp = getString(rs, "creator_ip"),
+          hostnames = hostnames.map(_.noDetails).toVector)
+  }
+
+
   def getSiteInclDetails(rs: js.ResultSet, hostnames: immutable.Seq[HostnameInclDetails])
         : SiteInclDetails = {
+    val stats = getSiteStats(rs)
     SiteInclDetails(
-      id = rs.getInt("id"),
-      pubId = rs.getString("publ_id"),
-      name = rs.getString("name"),
-      createdAt = getWhen(rs, "ctime"),
-      createdFromIp = getOptString(rs, "creator_ip"),
-      nextPageId = rs.getInt("next_page_id"),
-      creatorEmailAddress = getOptString(rs, "creator_email_address"),
-      quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
-      version = rs.getInt("version"),
-      superStaffNotes = getOptString(rs, "super_staff_notes"),
-      numParticipants = rs.getInt("num_roles"),
-      numGuests = rs.getInt("num_guests"),
-      numIdentities = rs.getInt("num_identities"),
-      numPageUsers = rs.getInt("num_role_settings"),
-      numPages = rs.getInt("num_pages"),
-      numPosts = rs.getInt("num_posts"),
-      numPostTextBytes = rs.getInt("num_post_text_bytes"),
-      numPostsRead = rs.getInt("num_posts_read"),
-      numActions = rs.getInt("num_actions"),
-      numNotfs = rs.getInt("num_notfs"),
-      numEmailsSent = rs.getInt("num_emails_sent"),
-      numAuditRows = rs.getInt("num_audit_rows"),
-      numUploads = rs.getInt("num_uploads"),
-      numUploadBytes = rs.getLong("num_upload_bytes"),
-      numPostRevisions = rs.getInt("num_post_revisions"),
-      numPostRevBytes = rs.getLong("num_post_rev_bytes"),
-      status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
-      hostnames = hostnames)
+          id = rs.getInt("id"),
+          pubId = rs.getString("publ_id"),
+          name = rs.getString("name"),
+          createdAt = getWhen(rs, "ctime"),
+          createdFromIp = getOptString(rs, "creator_ip"),
+          nextPageId = rs.getInt("next_page_id"),
+          creatorEmailAddress = getOptString(rs, "creator_email_address"),
+          version = rs.getInt("version"),
+          superStaffNotes = getOptString(rs, "super_staff_notes"),
+          status = SiteStatus.fromInt(rs.getInt("status")).getOrElse(SiteStatus.Deleted),
+          hostnames = hostnames,
+          stats = stats)
+  }
+
+
+  def getSiteStats(rs: js.ResultSet): ResourceUse = {
+    ResourceUse(
+          quotaLimitMbs = getOptInt(rs, "quota_limit_mbs"),
+          numAuditRows = rs.getInt("num_audit_rows"),
+          numGuests = rs.getInt("num_guests"),
+          numIdentities = rs.getInt("num_identities"),
+          numParticipants = rs.getInt("num_roles"),
+          numPageParticipants = rs.getInt("num_role_settings"),
+          numPages = rs.getInt("num_pages"),
+          numPosts = rs.getInt("num_posts"),
+          numPostTextBytes = rs.getLong("num_post_text_bytes"),
+          numPostRevisions = rs.getInt("num_post_revisions"),
+          numPostRevBytes = rs.getLong("num_post_rev_bytes"),
+          numPostsRead = rs.getInt("num_posts_read"),
+          numActions = rs.getInt("num_actions"),
+          numUploads = rs.getInt("num_uploads"),
+          numUploadBytes = rs.getLong("num_upload_bytes"),
+          numNotfs = rs.getInt("num_notfs"),
+          numEmailsSent = rs.getInt("num_emails_sent"))
   }
 
 

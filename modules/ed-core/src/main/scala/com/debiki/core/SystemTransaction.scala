@@ -39,16 +39,19 @@ trait SystemTransaction {
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
     */
-  def createSite(id: Option[SiteId], pubId: PublSiteId,
+  def createSite(id: Option[SiteId], pubId: PubSiteId,
     name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, createdAt: When): Site
 
   def siteTransaction(siteId: SiteId): SiteTransaction  // oops doesn't (and cannot) use SiteDao.synchronizeOnSiteId
 
-  def loadSites(): immutable.Seq[Site]
+  def loadSiteByPubId(pubId: PubSiteId): Option[Site]
 
-  def loadSitesWithIds(tenantIds: Seq[SiteId]): Seq[Site]
+  def loadAllSitesInclDetails(): immutable.Seq[SiteInclDetails]
+  def loadSiteInclDetailsById(siteId: SiteId): Option[SiteInclDetails]
+
+  def loadSitesByIds(tenantIds: Seq[SiteId]): Seq[Site]
 
   def loadSiteByName(name: String): Option[Site]
 
@@ -57,7 +60,7 @@ trait SystemTransaction {
     lookupCanonicalHost(hostname).flatMap(canonicalHost => loadSite(canonicalHost.siteId))
 
   def loadSite(siteId: SiteId): Option[Site] =
-    loadSitesWithIds(Seq(siteId)).headOption
+    loadSitesByIds(Seq(siteId)).headOption
 
   def updateSites(sites: Seq[SuperAdminSitePatch]): Unit
 
@@ -66,8 +69,6 @@ trait SystemTransaction {
   def insertSiteHost(siteId: SiteId, host: Hostname): Unit
   def deleteAnyHostname(hostname: String): Boolean
 
-  /** Returns Some(the-deleted-site) if it existed. */
-  def deleteSiteByName(name: String): Option[Site]
   def deleteSiteById(siteId: SiteId, mayDeleteRealSite: Boolean = false): Boolean
 
 

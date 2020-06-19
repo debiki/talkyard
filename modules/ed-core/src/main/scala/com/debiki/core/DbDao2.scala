@@ -42,7 +42,7 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
     * site uses too much disk space.
     */
   def readWriteSiteTransaction[R](siteId: SiteId, allowOverQuota: Boolean = false)(
-        fn: (SiteTransaction) => R): R = {
+        fn: SiteTransaction => R): R = {
     val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false,
       mustBeSerializable = true)
     var committed = false
@@ -52,8 +52,8 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
         return
       if (!allowOverQuota) {
         val resourceUsage = transaction.loadResourceUsage()
-        resourceUsage.quotaLimitMegabytes foreach { limit =>
-          val quotaExceededBytes = resourceUsage.estimatedBytesUsed - limit * 1000L * 1000L
+        resourceUsage.databaseStorageLimitBytes foreach { limitBytes =>
+          val quotaExceededBytes = resourceUsage.estimatedDbBytesUsed - limitBytes
           if (quotaExceededBytes > 0)
             throw OverQuotaException(siteId, resourceUsage)
         }

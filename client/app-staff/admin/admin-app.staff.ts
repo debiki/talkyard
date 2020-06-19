@@ -275,6 +275,9 @@ const AdminAppComponent = createReactClass(<any> {
 
     const ar = AdminRoot;
 
+    const dashboardLink = me.isAdmin ?
+        LiNavLink({ to: ar + 'dashboard', className: 'e_DashbB' }, "Dashboard") : null;
+
     const settingsLink = me.isAdmin ?
         LiNavLink({ to: ar + 'settings', className: 'e_StngsB' }, "Settings") : null;
 
@@ -323,6 +326,7 @@ const AdminAppComponent = createReactClass(<any> {
         RedirAppend({ path: ar + 'review', append: '/all' }),
         RedirAppend({ path: ar + 'settings', append: defaultSettingsPath }),
         RedirAppend({ path: ar + 'customize', append: '/basic' }),
+        Route({ path: ar + 'dashboard', render: () => DashboardPanel(childProps) }),
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
         Route({ path: ar + 'contents', render: () => ContentsPanel(childProps) }),
@@ -336,6 +340,7 @@ const AdminAppComponent = createReactClass(<any> {
         topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
           r.ul({ className: 'dw-main-nav nav nav-pills' },
+            dashboardLink,
             settingsLink,
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
             contentsLink,
@@ -426,6 +431,56 @@ function OnlyForAdmins() {
       "Only for admins. You can review other people's posts, though, ",
       r.a({ href: linkToAdminPage() }, " go here."));
 }
+
+
+
+const DashboardPanel = React.createFactory<any>(function(props) {
+  const [dashboardData, setDashboardData] = React.useState<AdminDashboard | null>(null);
+
+  React.useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  function loadDashboard() {
+    Server.loadAdminDashboard(setDashboardData);
+  }
+
+  if (!dashboardData)
+    return r.p({}, "Loading ...");
+
+  const ps = admin.prettyStats(dashboardData.siteStats);
+
+  return (
+    r.div({ class: 's_A_Db' },
+      r.h3({}, "Dashboard"),
+      r.p({}, "Work in progress (June, 2020). For now, disk usage info:"),
+
+      // kB = kilobytes, 1000 bytes.  1 KiB (uppercase K) = 1 kibi =1024 bytes.
+      // MB = 1000 * 1000 byte. MiB = 1024 * 1024 bytes.
+      r.p({ class: 's_A_Db_Storage' },
+        `Database storage used: `,
+        r.code({}, `${prettyNum(ps.dbMb)} MB = ${
+                ps.dbPercentStr}% of ${ps.dbMaxMb} MB`)),
+
+      r.p({ class: 's_A_Db_Storage' },
+        `Uploaded files storage used: `,
+        r.code({}, `${prettyNum(ps.fsMb)} MB = ${
+                ps.fsPercentStr}% of ${ps.fsMaxMb} MB`)),
+
+      r.br(),
+      r.p({}, "(We try to over estimate the database storage used, so that " +
+          "later when we make the estimates more accurate, the numbers will go down.)"),
+
+      // Later: Render w https://github.com/FormidableLabs/victory  ?
+      // Looks nice:
+      //   https://formidable.com/open-source/victory/about/#showcase
+      // Backed by a small biz, FormidableLabs.
+      // Found here:
+      //   https://dev.to/giteden/top-5-react-chart-libraries-for-2020-1amb
+      //
+      // Hmm doesn't look nice yet, so display-none:
+      r.pre({ style: { display: 'none' }}, JSON.stringify(dashboardData, undefined, 4))));
+});
 
 
 

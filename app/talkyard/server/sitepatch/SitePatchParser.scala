@@ -455,17 +455,17 @@ case class SitePatchParser(context: EdContext) {
     }
 
     SiteInclDetails(
-      id = NoSiteId,
-      pubId = readOptString(jsObject, "pubId") getOrElse Site.newPublId(),
-      status = siteStatus,
-      name = name,
-      createdAt = readWhen(jsObject, "createdAtMs"),
-      createdFromIp = None,
-      creatorEmailAddress = None,
-      nextPageId = readInt(jsObject, "nextPageId"),
-      quotaLimitMbs = None,
-      version = readInt(jsObject, "version"),
-      hostnames = hostnames.toList)
+          id = NoSiteId,
+          pubId = readOptString(jsObject, "pubId") getOrElse Site.newPubId(),
+          status = siteStatus,
+          name = name,
+          createdAt = readWhen(jsObject, "createdAtMs"),
+          createdFromIp = None,
+          creatorEmailAddress = None,
+          nextPageId = readInt(jsObject, "nextPageId"),
+          version = readInt(jsObject, "version"),
+          hostnames = hostnames.toList,
+          stats = ResourceUse(quotaLimitMbs = None))
   }
 
 

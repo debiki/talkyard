@@ -278,7 +278,12 @@ class SiteDao(
 
   def theSite(): Site = getSite().getOrDie("DwE5CB50", s"Site $siteId not found")
 
-  def thePubSiteId(): PublSiteId =
+  def theSiteInclDetails(): SiteInclDetails = {
+    globals.systemDao.loadSiteInclDetailsById(siteId).getOrDie(
+          "TyE592KTD", s"Site $siteId not found")
+  }
+
+  def thePubSiteId(): PubSiteId =
     theSite().pubId
 
   /** Uses the hostname, if no name available. Well currently always uses the hostname.
@@ -395,15 +400,15 @@ class SiteDao(
   }
 
   def changeExtraHostsRole(newRole: Hostname.Role): Unit = {
-    readWriteTransaction { transaction =>
-      transaction.changeExtraHostsRole(newRole)
+    readWriteTransaction { tx =>
+      tx.changeExtraHostsRole(newRole)
       uncacheSiteFromMemCache()
     }
   }
 
   def loadResourceUsage(): ResourceUse = {
-    readWriteTransaction { transaction =>
-      transaction.loadResourceUsage()
+    readOnlyTransaction { tx =>
+      tx.loadResourceUsage()
     }
   }
 
@@ -587,13 +592,16 @@ object SiteDao {
     // talkyard.defaultSiteId has been set to != 1.)
     if (site.id != globals.defaultSiteId) {
       val hostname = globals.siteByIdHostname(site.id)
-      return site.copy(hostnames = Hostname(hostname, Hostname.RoleCanonical) :: site.hostnames)
+      val canonicalHost = Hostname(hostname, Hostname.RoleCanonical)
+      COULD_OPTIMIZE // is :+ faster?
+      return site.copy(hostnames = canonicalHost +: site.hostnames)
     }
 
     val defaultHostname = globals.defaultSiteHostname.getOrDie(
       "TyE5GKU2S7", s"No ${Globals.DefaultSiteHostnameConfValName} specified")
     val canonicalHost = Hostname(defaultHostname, Hostname.RoleCanonical)
-    site.copy(hostnames = canonicalHost :: site.hostnames)
+    COULD_OPTIMIZE // is :+ faster?
+    site.copy(hostnames = canonicalHost +: site.hostnames)
   }
 
 }

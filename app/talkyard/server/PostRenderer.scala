@@ -25,7 +25,7 @@ import debiki.Nashorn
 case class PostRendererSettings(
   embeddedOriginOrEmpty: String,
   pageRole: PageType,
-  pubSiteId: PublSiteId)
+  pubSiteId: PubSiteId)
 
 
 sealed abstract class IfCached

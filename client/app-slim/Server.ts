@@ -907,6 +907,12 @@ export function createSite(localHostname: string,
 }
 
 
+export function loadAdminDashboard(onDone: (_: AdminDashboard) => void) {
+  get('/-/load-dashboard', onDone);
+}
+
+
+
 interface LoadSettingsResult {
   effectiveSettings: Settings;
   defaultSettings: Settings;

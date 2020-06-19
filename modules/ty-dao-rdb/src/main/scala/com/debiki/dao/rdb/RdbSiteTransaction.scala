@@ -310,34 +310,17 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   }
 
 
-  def loadResourceUsage() = loadResourceUsage(theOneAndOnlyConnection)
+  def loadResourceUsage(): ResourceUse =
+    loadResourceUsage(theOneAndOnlyConnection)
 
 
   def loadResourceUsage(connection: js.Connection): ResourceUse = {
     val sql = """
-      select * from sites3 where ID = ?
+      select * from sites3 where id = ?
       """
-    db.query(sql, List(siteId.asAnyRef), rs => {
-      rs.next()
-      dieUnless(rs.isLast, "DwE59FKQ2")
-      ResourceUse(
-        quotaLimitMegabytes = getOptionalInt(rs, "QUOTA_LIMIT_MBS"),
-        numGuests = rs.getInt("NUM_GUESTS"),
-        numIdentities = rs.getInt("NUM_IDENTITIES"),
-        numRoles = rs.getInt("NUM_ROLES"),
-        numRoleSettings = rs.getInt("NUM_ROLE_SETTINGS"),
-        numPages = rs.getInt("NUM_PAGES"),
-        numPosts = rs.getInt("NUM_POSTS"),
-        numPostTextBytes = rs.getLong("NUM_POST_TEXT_BYTES"),
-        numPostRevisions = rs.getInt("num_post_revisions"),
-        numPostRevisionBytes = rs.getLong("num_post_rev_bytes"),
-        numPostsRead = rs.getInt("NUM_POSTS_READ"),
-        numActions = rs.getInt("NUM_ACTIONS"),
-        numUploads = rs.getInt("num_uploads"),
-        numUploadBytes = rs.getLong("num_upload_bytes"),
-        numNotfs = rs.getInt("NUM_NOTFS"),
-        numEmailsSent = rs.getInt("NUM_EMAILS_SENT"))
-    })(connection)
+    runQueryFindExactlyOne(sql, List(siteId.asAnyRef), rs => {
+      getSiteStats(rs)
+    })
   }
 
 
@@ -692,12 +675,12 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
 
 
   def loadSite(): Option[Site] = {
-    asSystem.loadSitesWithIds(List(siteId)).headOption
+    asSystem.loadSitesByIds(List(siteId)).headOption
   }
 
 
   def loadSiteInclDetails(): Option[SiteInclDetails] = {
-    asSystem.loadSiteInclDetails(siteId)
+    asSystem.loadSiteInclDetailsById(siteId)
   }
 
 

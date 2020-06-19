@@ -28,6 +28,30 @@ export function reviewTask_doneOrGone(reviewTask: ReviewTask): boolean {
 }
 
 
+export interface PrettyDiskStats {
+  dbMb: number;
+  dbMaxMb?: number;
+  dbPercentStr?: string;
+  fsMb: number;
+  fsMaxMb?: number;
+  fsPercentStr?: string;
+}
+
+
+export function prettyStats(stats: SiteStats): PrettyDiskStats {
+  const Mega = 1000 * 1000;
+
+  const dbMb = stats.dbStorageUsedBytes / Mega;
+  const dbMaxMb = stats.dbStorageLimitBytes && stats.dbStorageLimitBytes / Mega;
+  const dbPercentStr = dbMaxMb && (100 * dbMb / dbMaxMb).toPrecision(2);
+
+  const fsMb = stats.fileStorageUsedBytes / Mega;
+  const fsMaxMb = stats.fileStorageLimitBytes && stats.fileStorageLimitBytes / Mega;
+  const fsPercentStr = fsMaxMb && (100 * fsMb / fsMaxMb).toPrecision(2);
+
+  return { dbMb, dbMaxMb, dbPercentStr, fsMb, fsMaxMb, fsPercentStr };
+}
+
 //------------------------------------------------------------------------------
   }
 //------------------------------------------------------------------------------

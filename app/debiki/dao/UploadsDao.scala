@@ -51,6 +51,15 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
+    // Over quota?
+    val siteStats = loadResourceUsage()
+    siteStats.fileStorageLimitBytes foreach { maxBytes =>
+      throwForbiddenIf(siteStats.fileStorageUsedBytes > maxBytes,
+          "TyEUPLDQUOTA", o"""Over quota: Too much disk used by uploaded files.
+              MBs used: ${siteStats.numUploadBytes / 1000 / 1000
+              }, limit: ${maxBytes / 1000 / 1000}""")
+    }
+
     def maxUploadSizeBytes = globals.maxUploadSizeBytes
 
     val publicUploadsDir = globals.anyPublicUploadsDir getOrElse throwForbidden(
@@ -193,9 +202,7 @@ trait UploadsDao {
 
   def fileHasBeenUploaded(hashPath: String): Boolean = {
     readOnlyTransaction { tx =>
-      COULD_OPTIMIZE // (not important) needn't find all site ids, can just check this.siteId. [4GUKW27]
-      val siteIds = tx.loadSiteIdsUsingUpload(UploadRef(UploadsUrlBasePath, hashPath))
-      siteIds contains this.siteId
+      tx.isSiteIdUsingUpload(siteId, UploadRef(UploadsUrlBasePath, hashPath))
     }
   }
 

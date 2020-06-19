@@ -27,6 +27,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
         ip: String = null, browserIdCookie: String = null,
         browserFingerprint: Int = -1,
         localHostname: Option[String] = None, hostname: Option[String] = None,
+        pubId: Option[String] = None, name: Option[String] = None,
         isTestSite: Boolean = false): Site = {
     require(prefix % 20 == 0) // else prefix + number just below won't be a nice looking number
     val theFingerprint = if (browserFingerprint == -1) prefix + number else browserFingerprint
@@ -36,21 +37,23 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
     globals.systemDao.createAdditionalSite(
-      anySiteId = None, pubId = s"createsitepubid-$thePrefix",
-      name = theLocalHostname, status = SiteStatus.Active, hostname = Some(theHostname),
+      anySiteId = None, pubId = pubId getOrElse s"createsitepubid-$thePrefix",
+      name = name getOrElse theLocalHostname, status = SiteStatus.Active,
+      hostname = Some(theHostname),
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
       createdFromSiteId = Some(FirstSiteId))
   }
 
+  var siteOneowner: User = _
 
-  "CreateSiteDao can" - {
+  "CreateSiteDao and SystemTransaction can" - {
 
     "create sites" in {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
-      createPasswordOwner("555uuyyww", dao)
+      siteOneowner = createPasswordOwner("555uuyyww", dao)
       val user = createPasswordUser("qq33yy55ee", dao)
 
       info("a real site")
@@ -82,6 +85,74 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       pending
     }
 
+    lazy val sitePubId1000 = createOneSite(siteOneowner, 100, 1, pubId = Some("pubid1000"))
+    lazy val siteLocalHostnameAabb = createOneSite(
+          siteOneowner, 100, 2, name = Some("aabb"), hostname = Some("aabb.ex.co"))
+
+    "create more sites, different names" in {
+      sitePubId1000
+      siteLocalHostnameAabb
+    }
+
+    "lookup site by public id, name and hostname" in {
+      globals.systemDao.dangerous_readWriteTransaction { tx =>
+        info("by public id")
+        tx.loadSiteByPubId(sitePubId1000.pubId).map(_.id) mustBe Some(sitePubId1000.id)
+
+        info("by wrong public id — finds nothing")
+        tx.loadSiteByPubId("wroooong") mustBe None
+
+        info("by hostname")
+        tx.loadSiteByHostname("aabb.ex.co") mustBe Some(siteLocalHostnameAabb)
+
+        info("by wrong hostname — finds nothing")
+        tx.loadSiteByHostname("aabb.ex.org") mustBe None
+
+        info("by name")
+        tx.loadSiteByName("aabb") mustBe Some(siteLocalHostnameAabb)
+
+        info("by wrong name — finds nothing")
+        tx.loadSiteByName("wrongname") mustBe None
+      }
+    }
+
+    "lookup many sites" in {
+      globals.systemDao.dangerous_readWriteTransaction { tx =>
+        tx.loadSitesByIds(Nil).length mustBe 0
+        tx.loadSitesByIds(Seq(345678)).length mustBe 0
+
+        val sites = tx.loadSitesByIds(Seq(
+              sitePubId1000.id, siteLocalHostnameAabb.id, 234567))
+
+        sites.length mustBe 2
+        sites.exists(_.id == sitePubId1000.id) mustBe true
+        sites.exists(_.id == siteLocalHostnameAabb.id) mustBe true
+      }
+    }
+
+    "update and read back" in {
+      globals.systemDao.dangerous_readWriteTransaction { tx =>
+        tx.updateSites(Seq(SuperAdminSitePatch(
+              sitePubId1000.id, SiteStatus.HiddenUnlessAdmin, Some("notes_notes"))))
+      }
+      globals.systemDao.dangerous_readWriteTransaction { tx =>
+        val site = tx.loadSiteInclDetailsById(sitePubId1000.id).get
+        site.superStaffNotes mustBe Some("notes_notes")
+        site.status mustBe SiteStatus.HiddenUnlessAdmin
+      }
+    }
+
+    "load all sites incl details, and staff" in {
+      globals.systemDao.dangerous_readWriteTransaction { tx =>
+        // Just run the queries? for now
+
+        info("all sites")
+        tx.loadAllSitesInclDetails()
+
+        info("staff for all sites")
+        tx.loadStaffForAllSites()
+      }
+    }
 
     "not create too many sites per person" in {
       val dao = globals.siteDao(Site.FirstSiteId)

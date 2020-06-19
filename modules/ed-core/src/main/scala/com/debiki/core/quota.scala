@@ -28,35 +28,56 @@ case class OverQuotaException(
 
 
 case class ResourceUse(
-   quotaLimitMegabytes: Option[Int] = None,
+   quotaLimitMbs: Option[Int] = None,
+   numAuditRows: Int = 0,
    numGuests: Int = 0,
    numIdentities: Int = 0,
-   numRoles: Int = 0,
-   numRoleSettings: Int = 0,
+   numParticipants: Int = 0,
    numPages: Int = 0,
+   numPageParticipants: Int = 0,
    numPosts: Int = 0,
    numPostTextBytes: Long = 0,
    numPostRevisions: Int = 0,
-   numPostRevisionBytes: Long = 0,
+   numPostRevBytes: Long = 0,
    numPostsRead: Long = 0,
    numActions: Int = 0,
+   // numCategories
+   // numTagDefinitions
+   // numTagSets
+   // numTagInstances
    numUploads: Int = 0,
    numUploadBytes: Long = 0,
    numNotfs: Int = 0,
-   numEmailsSent: Int = 0) {
+   numEmailsSent: Int = 0,
+) {
+
+  def databaseStorageLimitBytes: Option[Long] =
+    quotaLimitMbs.map(_.toLong * 1000L * 1000L)
+
+  // For now, use the same limit for db storage, as for uploaded files,
+  // i.e. quotaLimitMbs. Later, uploaded files will have their own & higher limit.
+  def fileStorageLimitBytes: Option[Long] =
+    databaseStorageLimitBytes
+
+  def fileStorageUsedBytes: Long =
+    numUploadBytes
+    // later: also += num local backup bytes? private uploads bytes?
+    // E.g. if generates a backup, it's saved on the local file system
+    // — then, include here.
 
   override def toString = o"""
     ResourceUse(
-     quotaLimitMegabytes: $quotaLimitMegabytes,
+     quotaLimitMbs: $quotaLimitMbs,
+     numAuditRows: $numAuditRows,
      numGuests: $numGuests,
      numIdentities: $numIdentities,
-     numRoles: $numRoles,
-     numRoleSettings: $numRoleSettings,
+     numParticipants: $numParticipants,
      numPages: $numPages,
+     numPageParticipants: $numPageParticipants,
      numPosts: $numPosts,
      numPostTextBytes: $numPostTextBytes,
      numPostRevisions: $numPostRevisions,
-     numPostRevisionBytes: $numPostRevisionBytes,
+     numPostRevBytes: $numPostRevBytes,
      numPostsRead: $numPostsRead,
      numActions: $numActions,
      numUploads: $numUploads,
@@ -67,20 +88,21 @@ case class ResourceUse(
   // Let's guess 2kB if I don't know better, and multiply by 3 to stay on the
   // safe side (i.e. overestimate disk usage, so a site's estimated disk usage will
   // shrink in the future, when these estimates are adjusted).
-  def estimatedBytesUsed =
+  def estimatedDbBytesUsed: Long =
+    numAuditRows      * 2000 * 3 +  // ??
     numGuests         * 2000 * 3 +  // ??
     numIdentities     * 2000 * 3 +  // ??
-    numRoles          * 2000 * 3 +  // ??
-    numRoleSettings   * 2000 * 3 +  // ??
+    numParticipants   * 2000 * 3 +  // ??
     numPages          * 2000 * 3 +  // ??
+    numPageParticipants * 2000 * 3 +  // ??
     numPosts          * 2000 * 3 * 2 +  // ??, plus *2 for the full text search index
     numPostTextBytes  * 3 + // *3 because of the full text search index. I'm just guessing
     numPostRevisions  * 2000 * 3 +  // ??
-    numPostRevisionBytes +
+    numPostRevBytes +
     numPostsRead      *  500 * 3 +  // ??
     numActions        *  500 * 3 +
     numUploads        * 1000 * 3 +  // ??
-    numUploadBytes +
+    //numUploadBytes +  — no, these files aren't stored in the database.
     numNotfs          * 2000 * 3 +  // ??
     numEmailsSent     * 2000 * 3
 

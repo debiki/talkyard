@@ -36,13 +36,13 @@ object Site {
   val GenerateTestSiteMagicId: SiteId = -1
   val MaxTestSiteId: SiteId = -2
 
-  val MinPublSiteIdLength = 8
-  val NewPublSiteIdLength = 10
-  require(NewPublSiteIdLength >= MinPublSiteIdLength)
+  val MinPubSiteIdLength = 8
+  val NewPubSiteIdLength = 10
+  require(NewPubSiteIdLength >= MinPubSiteIdLength)
 
   val Ipv4AnyPortRegex: Regex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
-  def newPublId(): PublSiteId = nextRandomString() take NewPublSiteIdLength
+  def newPubId(): PubSiteId = nextRandomString() take NewPubSiteIdLength
 
   /** Must be a valid host name, not too long or too short (less than 6 chars),
     * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
@@ -75,7 +75,7 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: Option[String], status: SiteStatus) {
+case class SiteBrief(id: SiteId, pubId: PubSiteId, hostname: Option[String], status: SiteStatus) {
   def isTestSite: Boolean = id <= Site.MaxTestSiteId
 }
 
@@ -174,20 +174,17 @@ object SiteStatus {
 
 
 case class SiteIdOrigins(
-  siteId: SiteId, pubId: PublSiteId, siteOrigin: String, uploadsOrigin: String)
+  siteId: SiteId, pubId: PubSiteId, siteOrigin: String, uploadsOrigin: String)
 
 
-/** A website.
-  */
-case class Site(  // delete? Use only SiteInclDetails instead?
+case class Site(
   id: SiteId,
-  pubId: PublSiteId,
+  pubId: PubSiteId,
   status: SiteStatus,
   name: String,
   createdAt: When,
   creatorIp: String,
-  hostnames: List[Hostname],
-  superStaffNotes: Option[String] = None) {
+  hostnames: Vector[Hostname]) {
 
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
@@ -212,29 +209,12 @@ case class SiteInclDetails(  // [exp] ok use
   createdFromIp: Option[IpAddress],    // REMOVE move to audit log
   creatorEmailAddress: Option[String], // REMOVE move to audit log
   nextPageId: Int,
-  quotaLimitMbs: Option[Int],
   hostnames: immutable.Seq[HostnameInclDetails],
   version: Int,  // >= 1,
+  stats: ResourceUse,
   // Don't incl in json exports — it's for super staff only.
   superStaffNotes: Option[String] = None,
-  // >= 13 because of built-in members: System, Sysbot, Unknown, 10 groups Everyone .. Admins.
-  numParticipants: Int = 0,
-  numGuests: Int = 0,  // gone? delete
-  numIdentities: Int = 0,
-  // + numCategories?
-  numPageUsers: Int = 0,
-  numPages: Int = 0,
-  numPosts: Int = 0,
-  numPostTextBytes: Int = 0,
-  numPostsRead: Int = 0,
-  numActions: Int = 0,
-  numNotfs: Int = 0,
-  numEmailsSent: Int = 0,
-  numAuditRows: Int = 0,
-  numUploads: Int = 0,
-  numUploadBytes: Long = 0,
-  numPostRevisions: Int = 0,
-  numPostRevBytes: Long = 0) {
+) {
 
   def canonicalHostname: Option[HostnameInclDetails] =
     hostnames.find(_.role == Hostname.RoleCanonical)
@@ -252,6 +232,27 @@ case class SiteInclDetails(  // [exp] ok use
     val newCanon = HostnameInclDetails(hostname, Hostname.RoleCanonical, addedAt = addedAt)
     copy(hostnames = newCanon +: oldNoCanon)
   }
+
+  def quotaLimitMbs: Option[Int] = stats.quotaLimitMbs
+
+  /** numParticipants is >= 13 because of built-in members:
+    * System, Sysbot, Unknown, 10 groups Everyone .. Admins. */
+  def numParticipants: Int = stats.numParticipants
+  def numGuests: Int = stats.numGuests
+  def numIdentities: Int = stats.numIdentities
+  def numPageUsers: Int = stats.numPageParticipants
+  def numPages: Int = stats.numPages
+  def numPosts: Int = stats.numPosts
+  def numPostTextBytes: Long = stats.numPostTextBytes
+  def numPostRevisions: Int = stats.numPostRevisions
+  def numPostRevBytes: Long = stats.numPostRevBytes
+  def numPostsRead: Long = stats.numPostsRead
+  def numActions: Int = stats.numActions
+  def numNotfs: Int = stats.numNotfs
+  def numEmailsSent: Int = stats.numEmailsSent
+  def numAuditRows: Int = stats.numAuditRows
+  def numUploads: Int = stats.numUploads
+  def numUploadBytes: Long = stats.numUploadBytes
 }
 
 

@@ -207,17 +207,18 @@ trait UploadsSiteDaoMixin extends SiteTransaction {
   }
 
 
-  def loadSiteIdsUsingUpload(ref: UploadRef): Set[SiteId] = {
-    val query = """
+  def loadSiteIdsUsingUploadImpl(ref: UploadRef, onlySiteId: Option[SiteId]): Set[SiteId] = {
+    val siteIdEqAnd = onlySiteId.isDefined ? "site_id = ? and" | ""
+    val query = s"""
       select distinct site_id from upload_refs3
-        where base_url = ? and hash_path = ?
+        where $siteIdEqAnd base_url = ? and hash_path = ?
       union
       select distinct site_id from users3
         where (avatar_tiny_base_url = ? and avatar_tiny_hash_path = ?)
            or (avatar_small_base_url = ? and avatar_small_hash_path = ?)
            or (avatar_medium_base_url = ? and avatar_medium_hash_path = ?)
       """
-    val values = List(
+    val values = onlySiteId.map(_.asAnyRef).toList ::: List(
       ref.baseUrl, ref.hashPath,
       ref.baseUrl, ref.hashPath,
       ref.baseUrl, ref.hashPath,

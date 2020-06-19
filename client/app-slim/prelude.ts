@@ -316,6 +316,13 @@ export function isDigitsOnly(maybeDigits: string): boolean {
   // It considers '123e45' a number though so don't use. )
 }
 
+// E.g. 55555.0 —> 56000, looks nicer? But:  .toPrecision(2) —> "5.6e+4".
+export function prettyNum(num: number): number {
+  // Ugh: (55555.0).toPrecision(2)          —> "5.6e+4"
+  // But:  Number((55555.0).toPrecision(2)) —> 56000   nice
+  // Thanks, https://stackoverflow.com/a/4689230/694469
+  return Number(num.toPrecision(2));
+}
 
 export function uppercaseFirst(text: string): string {
   return !text ? text : (

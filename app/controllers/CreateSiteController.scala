@@ -146,7 +146,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         globals.systemDao.dangerous_readWriteTransaction { sysTx =>
           globals.systemDao.createAdditionalSite(
             anySiteId = None,
-            pubId = Site.newPublId(),
+            pubId = Site.newPubId(),
             name = localHostname,
             SiteStatus.NoAdmin,
             hostname = Some(hostname),
