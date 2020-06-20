@@ -551,6 +551,7 @@ const LoginAndSignupSettings = createFactory({
     const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
     const featureFlags = valueOf(s => s.featureFlags);
+    const allowEmbeddingFrom = valueOf(s => s.allowEmbeddingFrom);
 
     const canEnableGuestLogin =
       !valueOf(s => s.userMustBeApproved) && !loginRequired &&
@@ -560,8 +561,22 @@ const LoginAndSignupSettings = createFactory({
         " Cannot be enabled, because has not been configured server side, " +
         "in /opt/talkyard/conf/play-framework.conf.";
 
-    const ssoTestPageLink = r.a({ href: '/-/sso-test', className: 'e_SsoTestL' }, "/-/sso-test");
-    const adminLoginLink = r.a({ href: '/-/admin-login', className: 'e_AdmLgiL' }, "/-/admin-login");
+    const ssoTestPageLink =
+            r.a({ href: '/-/sso-test', className: 'e_SsoTestL' }, "/-/sso-test");
+    const adminLoginLink =
+            r.a({ href: '/-/admin-login', className: 'e_AdmLgiL' }, "/-/admin-login");
+
+    // COULD show this warning also in the embedded commenst tab.
+    // But maybe better spend the time adding another permission setting:
+    // May embed pages, although forum is Login Required. [emb_login_req]
+    const cannotCombineLoginReqWithEmbCmts =
+            " Error: Cannot combine Login Required with Embedded Comments [TyE592RKD] ";
+    const [embCommentsBroken1, embCommentsBroken2] =
+            !loginRequired || !allowEmbeddingFrom ? [null, null] : [
+                r.div({ className: 'col-sm-offset-3 s_A_Ss_Err'},
+                    cannotCombineLoginReqWithEmbCmts),
+                r.span({ className: 's_A_Ss_S_Err'},
+                    cannotCombineLoginReqWithEmbCmts)];
 
     return (
       r.div({},
@@ -593,11 +608,17 @@ const LoginAndSignupSettings = createFactory({
           ... later ... and enable  (6KWU20) above.
         }), */
 
+        embCommentsBroken1,
+
         Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
           className: 'e_A_Ss_S-LoginRequiredCB',
+          // Won't work with blog comments !
+          // Maybe new category access permission? Visible to strangers,
+          // if embedded? + error if not
           help: r.span({}, "Require authentication to read content. Users must then login " +
             "with ", r.i({}, "for example"), " password, or Google or Facebook or Single Sing-On " +
-            "— but anonymous access is disabled."),
+            "— but anonymous access is disabled.",
+             embCommentsBroken2),
           getter: (s: Settings) => s.userMustBeAuthenticated,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeAuthenticated = target.checked;

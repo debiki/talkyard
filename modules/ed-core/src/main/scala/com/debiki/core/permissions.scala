@@ -41,6 +41,9 @@ case class PermsOnPages(  // [exp] ok use. Missing, fine: may_see_private_flagge
   maySee: Option[Boolean] = None,
   maySeeOwn: Option[Boolean] = None) {
 
+  // maySeeIfEmbeddedAlthoughLoginRequired  [emb_login_req]
+  //  — for embedded comments categories, when site Login Required to Read enabled.
+
   // Later, perhaps:
   // pin/unpin
   // close and/or archive
