@@ -224,9 +224,32 @@ class EdSecurity(globals: Globals) {
     //    val x = new URI((if (request.secure) "https://" else "http://") +
     //        request.host.toLowerCase(Locale.ENGLISH))
     //    ...  == (x.getScheme, x.getHost, x.getPort)  )
-    // Require exact match instead:
-    val targetOrigin = globals.schemeColonSlashSlash + targetHost + globals.colonPort
+    //
+    // Require exact match instead.
+    //
+    // ----- Port
+    //
+    // Don' append:  globals.colonPort  — the Host header should include the port
+    // number already, if it's non-standard:
+    // >  A "host" without any trailing port information implies the default
+    // >  port for the service requested (e.g., "80" for an HTTP URL).
+    // https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+    //
+    // The Origin header also includes the port if non-standard:
+    // >  <port> Optional
+    // >  TCP port number on which the server is listening. If no port is given,
+    // >  the default port for the service requested (e.g., "80" for an HTTP URL)
+    // >  is implied.
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+    //
+    // (However, some programs include the port also if it's the standard one,
+    // e.g. the Baidu Spider: https://stackoverflow.com/a/19169789/694469.
+    // So, could:   if targetHost ends with ':80' or ':443'  also compare with
+    // requestOrigin + standard port.)
+    //
+    val targetOrigin = globals.schemeColonSlashSlash + targetHost
     val isSameOrigin = targetOrigin == requestOrigin
+
 
     // This'd be weird?
     throwForbiddenIf(isPreFlight && isSameOrigin,
