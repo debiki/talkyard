@@ -106,6 +106,7 @@ sso,
 single-sign-on:  (3093533)
           - sso-test  TyT4ABKRW0268
           - sso-login-member  TyT5HNATS20P
+          - sso-login-new-members.2browsers  TyT306FKRDJ5
           - sso-login-required  TyT7KSD20RG42
           - sso-approval-required  TyT502RKDJH3
           - sso-login-and-approval-required  TyT503KRTTR204BR
@@ -115,6 +116,12 @@ single-sign-on:  (3093533)
           - api-w-sso-upsert-pages.2browsers.test.ts  TyT60KRJXT4X3
   one-time login secret abuse:
           - sso-one-time-key-errors.2browsers.test.ts  TyT5025BDUJQP4R
+  unusual names:
+          - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT603KTMM653
+  email conflict:
+          - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT0WMRSKJ4
+  dupl username made unique:
+          - sso-login-new-members.2browsers  TyT306FKRDJ5.TyT05MSH47R
 
 impersonate:
           - impersonate-post-as-other.2browsers  TyT502KNG24

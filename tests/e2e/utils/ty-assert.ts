@@ -74,18 +74,12 @@ const tyAssert: any = {   // : any = works around:
   },
 
   matches: (text: string, regexOrString: RegExp | string) => {
-    assert.fail("Untested [TyE4069RKTS$]");
-    /*
-      const regex = _.isString(regexOrString) ?
-          new RegExp(regexOrString) : regexOrString;
-      assert(regex.test(text), '\n\n' +
-          `  assert.matches:\n` +
-          `       This regex:  ${regex.toString()}\n` +
-          `       does not match:  (between the ----)\n` +
-          `------------------------------------------------------------------------\n` +
-          `${text}\n` +
-          `------------------------------------------------------------------------\n` +
-          `\n`); */
+    const regex = _.isString(regexOrString) ?
+            new RegExp(regexOrString) : regexOrString;
+    assert.ok(regex.test(text), '\n\n' +
+        `  assert.matches:\n` +
+        `       This regex:  ${regex.toString()}\n` +
+        `       does not match:  ${inlineOrDashPara(text)}\n`);
   },
 
   includes: (text: string, expectedSubstring: string, message?: string) => {
@@ -93,12 +87,8 @@ const tyAssert: any = {   // : any = works around:
     const ix = text.indexOf(expectedSubstring);
     assert.ok(ix >= 0, '\n\n' + (message ||
       `  assert.includes:\n` +
-      `     This:  "${expectedSubstring}"\n` +
-      `     is missing from:  (between the ----)\n` +
-      `------------------------------------------------------------------------\n` +
-      `${text}\n` +
-      `------------------------------------------------------------------------\n` +
-      `\n`));
+      `     This text:  "${expectedSubstring}"\n` +
+      `     is missing from:  ${inlineOrDashPara(text)}\n`));
   },
 
   excludes: (text: string, unexpectedSubstring: string, message?: string) => {
@@ -109,5 +99,13 @@ const tyAssert: any = {   // : any = works around:
   }
 };
 
+
+function inlineOrDashPara(text: string): string {
+  return text.indexOf('\n') === -1 ? `"${text}"` : (
+        `(between the ---)\n` +
+        `------------------------------------------------------------------------\n` +
+        `${text}\n` +
+        `------------------------------------------------------------------------\n`);
+}
 
 export = tyAssert;

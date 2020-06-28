@@ -59,6 +59,16 @@ const pageOneToUpsert_commonMarkBody = {
 \`\`\`
 testyFunction("par_ame_te_r");
 var variable = 123;
+const arrowFn = () => "five & 'three'";
+
+    // indented 4 spaces
+    char_p value = "Rikki-Tikki-Tavi";
+    int & myHero = reinterpret_cast<int &>(value);
+    cout << myHero << endl;
+
+    # bash
+    cat mice.bat 2>&1 | tee -a pets-left.log
+
 \`\`\`
 
 **bold_font**
@@ -259,14 +269,33 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
 
     // The ComomonMark source should now be HTML.
     // These tests will do for now?:
+
+    // This: ### ... got converted to <h3> ...
+    assert.excludes(bodyText, '###');
     assert.includes(bodyText, '<h3>UpsPageOneBodyStart</h3>');
+    // '# bash' is still there though — that '#' is in a code block.
+    assert.includes(bodyText, '    # bash');
+
     // Step by step, simpler to troubleshoot:
+
+    // The code block backticks got converted to <pre><code>:
+    assert.excludes(bodyText, '`');
     assert.includes(bodyText, '<pre>');
     assert.includes(bodyText, '<pre><code>testyFunction');
     assert.includes(bodyText, '<pre><code>testyFunction("par_ame_te_r");');
     assert.includes(bodyText, 'var variable = 123;');
+
+    // In a code block, '> < &' get escaped.
+    assert.includes(bodyText, 'arrowFn = () =&gt;');
+    assert.includes(bodyText, 'cout &lt;&lt; myHero &lt;&lt; endl;');
+    assert.includes(bodyText, 'cat mice.bat 2&gt;&amp;1 | tee');
+
     assert.includes(bodyText, '</code></pre>');
+
+    // The bold font stars '**' got converted to <strong>.
+    assert.excludes(bodyText, '*');
     assert.includes(bodyText, '<p><strong>bold_font</strong></p>');
+
     assert.includes(bodyText, '<p><em>italics</em></p>');
     assert.includes(bodyText, '<blockquote>');
     assert.includes(bodyText, '<p>Quoty-Quote</p>');
@@ -274,12 +303,7 @@ describe("api-upsert-pages   TyT603PKRAEPGJ5", () => {
     // The link text was kept (but script links and onclick removed, tested below).
     assert.includes(bodyText, 'link_text_01');
     assert.includes(bodyText, 'link_text_02');
-    // The code block backticks should be gone.
-    assert.excludes(bodyText, '`');
-    // The bold font stars '**' too.
-    assert.excludes(bodyText, '*');
-    // And the title ###.
-    assert.excludes(bodyText, '#');
+
     // And the quote line (bbefore getting transformed to <tag>...</tag>).
     assert.excludes(bodyText, '> quote');
   });

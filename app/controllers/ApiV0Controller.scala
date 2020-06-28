@@ -342,7 +342,7 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext,
             dieIf(user.primaryEmailAddress != extUser.primaryEmailAddress, "TyE7AKBR8")
 
             throwForbiddenIf(user.ssoId.isDefined,
-                "TyE5AKBR20", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is
+                "TyESSOEMLCONFL_", o"""s$siteId: Email address ${extUser.primaryEmailAddress} is
                   already in use by Talkyard user ${user.usernameHashId} which mirrors
                   external user 'ssoid:${user.ssoId}' — cannot create a mirror account for
                   external user 'ssoid:${extUser.ssoId} that use that same email address""")

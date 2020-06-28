@@ -263,7 +263,7 @@ export class TyE2eTestBrowser {
       const url = anyUrl || this.#br.getUrl();
       const matches = url.match(/(https?:\/\/[^\/]+)\//);
       if (!matches) {
-        throw Error('NoOrigin');
+        throw Error(`No_origin_ in url: ${url}  (anyUrl: ${anyUrl})`);
       }
       return matches[1];
     }
@@ -331,7 +331,7 @@ export class TyE2eTestBrowser {
 
         try { url = this._findOrigin() + url; }
         catch (ex) {
-          dieIf(ex.message === 'NoOrigin',
+          dieIf(ex.message?.indexOf('No_origin_') >= 0,
               `When opening the first page: ${url}, you need to specify the server origin [TyE7UKHW2]`);
           throw ex;
         }

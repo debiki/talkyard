@@ -447,6 +447,7 @@ function runAllE2eTests {
 
   $r s/wdio --only sso-test.2browsers $args
   $r s/wdio --only sso-login-member.2browsers $args
+  $r s/wdio --only sso-login-new-members.2browsers $args
   $r s/wdio --only sso-login-required.2browsers $args
   $r s/wdio --only sso-login-required-w-logout-url.2browsers $args
   # unimpl:  s/wdio --only sso-approval-required.2browsers $args

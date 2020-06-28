@@ -20,7 +20,7 @@ package com.debiki.core
 import org.scalatest._
 
 
-class UserSpec extends FreeSpec with MustMatchers {
+class UserSpec extends FreeSpec with MustMatchers {   // TyT05RDPS24
 
   "User can" - {
 

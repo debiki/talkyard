@@ -473,6 +473,8 @@ case object Participant {
     */
   def makeOkayUsername(somethingMaybeWeird: String, allowDotDash: Boolean,
         isUsernameInUse: String => Boolean): Option[String] = {
+    // Tested in UserSpec:  TyT05RDPS24
+    // And this e2e test: TyT306FKRDJ5.TyT05MSH47R
 
     if (somethingMaybeWeird.isEmpty)
       return None
@@ -560,7 +562,8 @@ case object Participant {
       if (!isInUse)
         return Some(nextToTry)
 
-      // Append i random numbers to make the username unique. Repeat with i, i+1, i+2 chars,
+      // Append i random numbers [mk_un_unq] to make the username unique.
+      // Repeat with i, i+1, i+2 chars,
       // until we find one. However, what if usernameOkCharsLen is already almost max-chars long?
       // Then remove chars at the end, repl with random numbers, until we find something unique.
       val wantsNumRandom = i

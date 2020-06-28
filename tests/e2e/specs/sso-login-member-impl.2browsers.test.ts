@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
+import tyAssert = require('../utils/ty-assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import { buildSite } from '../utils/site-builder';
@@ -41,14 +42,25 @@ const ssoUrlVarsReplaced = (path: string): string =>
 const mariasSsoId = 'mariasSsoId';
 const mariasReplyText = "I login as usual, although SSO is being tested.";
 
+export interface ExtUserAndResult {
+  extUser: ExternalUser;
+  expectedErrorCode?: string;
+  usernameAfteMustBe?: string;
+  usernameAfteMustMatch?: RegExp;
+}
+
+export interface SsoLoginTestVariants {
+  loginRequired: boolean;
+  ssoLoginRequiredLogoutUrl?: string;
+  approvalRequired: boolean;
+  extUsers?: ExtUserAndResult[];
+}
 
 // Previously, there was a bug [SSOBUGHACK] when combining SSO with Login Required,
 // so let's test those combinations.
 
-function constructSsoLoginTest(testName: string, variants: {
-      loginRequired: boolean,
-      ssoLoginRequiredLogoutUrl?: string,
-      approvalRequired: boolean }) {  describe(testName, () => {  // I don't want to reindent now
+function constructSsoLoginTest(testName: string, variants: SsoLoginTestVariants) {
+      describe(testName, () => {
 
   dieIf(variants.approvalRequired,
       "Not impl: variants.approvalRequired [TyE305KDKSHT20]")  // see (unimpl3904643)
@@ -139,12 +151,38 @@ function constructSsoLoginTest(testName: string, variants: {
   }
 
 
-  // ------ Maria logs in via SSO
+  // ------ Ext users logs in via SSO
+
+  for (let extUserNr = 0; extUserNr < (variants.extUsers?.length || 1); ++extUserNr) {
+    addOneExtUserTests(variants, () => apiSecret, extUserNr);
+  }
+
+}); }
+
+
+
+function addOneExtUserTests(variants: SsoLoginTestVariants, getApiSecret: () => string,
+            extUserNr: number) {
 
   const willBeInstantRedirect = !!(
       variants.loginRequired && variants.ssoLoginRequiredLogoutUrl);
 
-  it("Maria goes to the discussion page", () => {
+  const newExtUser: ExtUserAndResult = variants.extUsers?.[extUserNr];
+
+  let externalMaria: ExternalUser;
+  let extUserDispName: string;
+  let extUsernameMustBe: string;
+  let expectedErrorCode = newExtUser?.expectedErrorCode;
+
+  it(`${extUserDispName} goes to the discussion page`, () => {
+    const extUserAndResult: ExtUserAndResult = variants.extUsers?.[extUserNr];
+    externalMaria = extUserAndResult?.extUser ||
+            // `maria` not available outside this fn.
+            utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
+
+    extUsernameMustBe = extUserAndResult?.usernameAfteMustBe || 'maria';
+    extUserDispName = externalMaria.fullName || `@${externalMaria.username}`;
+
     // (Don't try to disable rate limits, if there'll be an instant redirect
     // — that'd cause "Error: unable to set cookie". )
     mariasBrowser.go2(discussionPageUrl, {
@@ -189,48 +227,61 @@ function constructSsoLoginTest(testName: string, variants: {
     assert.equal(url, ssoUrlVarsReplaced(pathQueryHash));
   });
 
-  it("Let's pretend she logs in ... (noop)", () => {
+  it("Let's pretend hen logs in ... (noop)", () => {
     // Noop.
   });
 
-  let oneTimeLoginSecret: string;
+  let oneTimeLoginSecretOrError: string;
 
-  it("The remote server does an API request to Talkyard, to synchronize her account", () => {
-    const externalMaria = utils.makeExternalUserFor(maria, { ssoId: mariasSsoId });
-    oneTimeLoginSecret = server.apiV0.upsertUserGetLoginSecret({ origin: siteIdAddress.origin,
-        apiRequesterId: c.SysbotUserId, apiSecret, externalUser: externalMaria });
+  it("The remote server does an API request to Talkyard, to synchronize hens account", () => {
+    oneTimeLoginSecretOrError = server.apiV0.upsertUserGetLoginSecret({
+          origin: siteIdAddress.origin, apiRequesterId: c.SysbotUserId,
+          apiSecret: getApiSecret(), externalUser: externalMaria,
+          fail: !!expectedErrorCode });
   });
 
+  if (expectedErrorCode) {
+    it(`But there's an error: ${expectedErrorCode}`, () => {
+      const errorMessage = oneTimeLoginSecretOrError;
+      tyAssert.includes(errorMessage, expectedErrorCode);
+    });
+  }
+  else {  // don't want to reindent now
+
+  let oneTimeLoginSecret: string;
+
   it("... gets back a one time login secret", () => {
+    oneTimeLoginSecret = oneTimeLoginSecretOrError;
     console.log(`Got back login secret: ${ oneTimeLoginSecret }`);
     assert(oneTimeLoginSecret);
   });
 
-  it("... redirects Maria to the Talkyard login-with-secret endpoint", () => {
+  it(`... redirects ${extUserDispName} to the Talkyard login-with-secret endpoint`, () => {
     mariasBrowser.rememberCurrentUrl();
     mariasBrowser.apiV0.loginWithSecret({
-      origin: siteIdAddress.origin, oneTimeSecret: oneTimeLoginSecret, thenGoTo: discussionPageUrl });
+            origin: siteIdAddress.origin, oneTimeSecret: oneTimeLoginSecret,
+            thenGoTo: discussionPageUrl });
     mariasBrowser.waitForNewUrl();
   });
 
-  it("The Talkayrd server logs her in, and redirects her back to where she started", () => {
+  it("The Talkayrd server logs hen in, and redirects hen back to where hen started", () => {
     const url = mariasBrowser.getUrl();
     assert.equal(url, discussionPageUrl);
   });
 
 
   if (variants.approvalRequired) {
-    it("There's a message to Maria that she's not yet approved", () => {
+    it(`There's a message to ${extUserDispName} that hen's not yet approved`, () => {
       mariasBrowser.assertMayNotLoginBecauseNotYetApproved();
     });
 
-    it("Owen approves Maria to join the site", () => {
+    it(`Owen approves ${extUserDispName} to join the site`, () => {
       owensBrowser.adminArea.goToUsersEnabled();
       owensBrowser.adminArea.users.switchToWaiting();
       owensBrowser.adminArea.users.waiting.approveFirstListedUser();
     });
 
-    it("Maria reloads the page", () => {
+    it(`${extUserDispName} reloads the page`, () => {
       mariasBrowser.refresh();
       // ... Oh she actually needs to login again. Thereafter, will work. (unimpl3904643)
       // But right now, this blocks forever.
@@ -239,13 +290,25 @@ function constructSsoLoginTest(testName: string, variants: {
   }
 
 
-  it("Maria is logged in now, as Maria", () => {
-    const username = mariasBrowser.topbar.getMyUsername();
-    assert.equal(username, 'maria');
+  let generatedUsername;
+
+  it(`${extUserDispName} is logged in now`, () => {
+    generatedUsername = mariasBrowser.topbar.getMyUsername();
+    assert.ok(generatedUsername.length >= 1);
   });
 
 
-  it("Maria logs out", () => {
+  it(`... as @${newExtUser?.usernameAfteMustMatch || extUsernameMustBe}`, () => {
+    if (newExtUser?.usernameAfteMustMatch) {
+      tyAssert.matches(generatedUsername, newExtUser?.usernameAfteMustMatch);
+    }
+    else {
+      tyAssert.eq(generatedUsername, extUsernameMustBe);
+    }
+  });
+
+
+  it(`${extUserDispName} logs out`, () => {
     mariasBrowser.rememberCurrentUrl();
     mariasBrowser.topbar.clickLogout({ waitForLoginButton: !variants.loginRequired });
   });
@@ -283,7 +346,7 @@ function constructSsoLoginTest(testName: string, variants: {
 
   */
 
-
-}); }
+  }
+}
 
 export default constructSsoLoginTest;
