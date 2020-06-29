@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2020 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -41,7 +41,10 @@ object RenderContentService {
       name = s"RenderContentActor")
   }
 
-  object RegenerateStaleHtml
+  case class RegenerateStaleHtml(
+    nextPageIds: Seq[PageIdToRerender] = Nil,
+    idsLoadedAt: When = When.Genesis)
+
   object PauseThreeSeconds
 
 }
@@ -86,7 +89,8 @@ class RenderContentActor(
         case throwable: Throwable =>
           logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
       }
-    case RegenerateStaleHtml =>
+
+    case RegenerateStaleHtml(nextPageIds: Seq[PageIdToRerender], idsLoadedAt) =>
       val nanosBeore = System.nanoTime()
       val shallPause = pauseUntilNanos exists { untilNanos =>
         if (nanosBeore < untilNanos) true
@@ -96,11 +100,17 @@ class RenderContentActor(
         }
       }
 
+      var nextRerenderMessage: Option[RegenerateStaleHtml] = None
+
       if (shallPause) {
-        context.system.scheduler.scheduleOnce(1 second, self, RegenerateStaleHtml)(execCtx)
+        // Forget nextPageIds; we'll lookup pages again.
+        context.system.scheduler.scheduleOnce(1.second, self, RegenerateStaleHtml())(execCtx)
       }
       else try {
-        val anyError = findAndUpdateOneOutOfDatePage()
+        val (anyError, remainingIds, remainingLoadedAt) =
+              findAndUpdateOneOutOfDatePage(nextPageIds, idsLoadedAt)
+
+        nextRerenderMessage = Some(RegenerateStaleHtml(remainingIds, remainingLoadedAt))
         if (anyError.isDefined) {
           numBackgroundRenderErrorsInARow += 1
         }
@@ -121,9 +131,11 @@ class RenderContentActor(
       }
       finally {
         if (globals.testsDoneServerGone) {
-          logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
+          logger.debug("Tests done, server gone. Stopping background rendering. [EsM5KG3]")
         }
         else {
+          val message = nextRerenderMessage getOrElse RegenerateStaleHtml()
+          val seemsNothingToDo = message.nextPageIds.isEmpty
           // Typically takes 5 - 50 millis to render a page (my core i7 laptop, released 2015).
           // However, a Google Compute Engine 2 vCPU VPS spiked the CPU to 80-90%, when
           // waiting 100ms between each page. Anyway, let's try to not use more than 50% of
@@ -131,12 +143,23 @@ class RenderContentActor(
           // the last pages, on average?
           var millisToPause = math.max(50, avgMillisToBackgroundRender.toLong)
           if (numBackgroundRenderErrorsInARow > 5) {
-            // This almost certainly isn't recoverable. Source code bug, needs fix & redeployment.
-            logger.warn("Slowing down background rendering: There are errors, and don't want to " +
-              "fill the disks with error log messages. Retrying once every 30 seconds. [TyE5WKBAQ25]")
+            // This almost certainly isn't recoverable. Source code bug.
+            logger.warn(o"""Slowing down background rendering: There are errors, and
+                  don't want to fill the disks with error log messages. Retrying once
+                  every 30 seconds. [TyE5WKBAQ25]""")
             millisToPause = 30 * 1000
           }
-          context.system.scheduler.scheduleOnce(millisToPause.millis, self, RegenerateStaleHtml)(execCtx)
+          else if (seemsNothingToDo) {
+            // Then wait a second — so we won't run the find-pages-to-render query
+            // so often; that could put the CPU under a bit high load (like, 40%
+            // on a 2 virtual-cores VPS, in Google Cloud, 2020-06). [rerndr_qry]
+            // 50 ms —> 45% - 50% 1 core CPU, just to run the query, in a Docker
+            // container on my core i7 (released 2015).
+            // 1000 ms —> 10-13% CPU instead.
+            millisToPause = 2000  // and 2000 ms —> 2-12%
+          }
+          context.system.scheduler.scheduleOnce(
+                millisToPause.millis, self, message)(execCtx)
         }
       }
   }
@@ -220,10 +243,10 @@ class RenderContentActor(
     // ----- Is still out-of-date?
 
     // There might be many threads and servers that re-render this page, so although it was
-    // out of date a short while ago, now, fractions of a second later, maybe it's been
-    // rerendered already.
+    // out of date a short while ago, maybe now it's been rerendered already. #205RMTD4
 
-    val cachedAndCurrentVersions = globals.systemDao.loadCachedPageVersion(sitePageId, renderParams)
+    val cachedAndCurrentVersions =
+          globals.systemDao.loadCachedPageVersion(sitePageId, renderParams)
 
     val isOutOfDate = cachedAndCurrentVersions match {
       case None => true
@@ -266,14 +289,35 @@ class RenderContentActor(
   }
 
 
-  private def findAndUpdateOneOutOfDatePage(): Option[ErrorMessage] = {
-    val pageIdsToRerender = globals.systemDao.loadPageIdsToRerender(1)
-    for (toRerender <- pageIdsToRerender) {
-      val result = rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParamsAndHash = None)
-      if (result.isBad)
-        return Some(result.swap.get)
-    }
-    None
+  private def findAndUpdateOneOutOfDatePage(
+        remainingPageIds: Seq[PageIdToRerender], remainingLoadedAt: When)
+        : (Option[ErrorMessage], Seq[PageIdToRerender], When) = {
+
+    val now = globals.now()
+    val (nextIdsToRerender: Seq[PageIdToRerender], nextLoadedAt) =
+          // Refresh the pages-to-rerender after some seconds. We do an extra
+          // up-to-date check anyway. #205RMTD4
+          if (remainingPageIds.nonEmpty && now.millisSince(remainingLoadedAt) < 2500) {
+            (remainingPageIds, remainingLoadedAt)
+          }
+          else {
+            // These queries are a bit slow [rerndr_qry], so find many pages at once.
+            val max = 25
+            val nextIds = globals.systemDao.loadPageIdsToRerender(max)
+            val howMany = nextIds.length + (if (nextIds.length >= max) "+" else "")
+            logger.debug(s"Found $howMany pages to rerender: $nextIds [TyMBGRFIND]")
+            (nextIds, now)
+          }
+
+    if (nextIdsToRerender.isEmpty)
+      return (None, Nil, now)
+
+    val toRerender = nextIdsToRerender.head
+    val result = rerenderContentHtmlUpdateCache(
+          toRerender.sitePageId, customParamsAndHash = None)
+
+    val anyError = if (result.isBad) Some(result.swap.get) else None
+    (anyError, nextIdsToRerender.tail, nextLoadedAt)
   }
 
 }

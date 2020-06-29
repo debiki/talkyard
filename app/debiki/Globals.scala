@@ -900,7 +900,7 @@ class Globals(
 
     if (!isTestDisableBackgroundJobs) {
       actorSystem.scheduler.scheduleOnce(5.seconds, state.renderContentActorRef,
-          RenderContentService.RegenerateStaleHtml)(executionContext)
+          RenderContentService.RegenerateStaleHtml())(executionContext)
     }
 
     logger.info("Done creating rendering engines [EsMENGDONE]")

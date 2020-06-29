@@ -600,11 +600,11 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     // e.g. add a pages-to-rerender queue table. Or just indexes somehow.
 
     // First find pages for which there is on cached content html.
-    // But not very new pages (more recent than a few minutes) because they'll
-    // most likely be rendered by a GET request handling thread any time soon, when
-    // they're asked for, for the first time. See debiki.dao.RenderedPageHtmlDao [5KWC58].
+    // But not very new pages (more recent than a few minutes) because those pages
+    // will likely be rendered by a GET request handling thread any time soon, when
+    // they're requested, the first time. See debiki.dao.RenderedPageHtmlDao [5KWC58].
     val pagesNotCached = mutable.Set[PageIdToRerender]()
-    val neverRenderedQuery = s""" -- Q487189653, SLOW_QUERY: 4 ms @ Ty.io, runs often!
+    val neverRenderedQuery = s""" -- SLOW_QUERY: 4 ms @ Ty.io [rerndr_qry]
       select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
       from pages3 p left join page_html3 h
           on p.site_id = h.site_id and p.page_id = h.page_id
@@ -633,7 +633,7 @@ class RdbSystemTransaction(val daoFactory: RdbDaoFactory, val now: When)
     // a message to the RenderContentService, if the page gets accessed. [4KGJW2]
     val pagesStale = mutable.Set[PageIdToRerender]()
     if (pagesNotCached.size < limit) {
-      val outOfDateQuery = s""" -- Q69284235, SLOW_QUERY: 9 ms @ Ty.io, runs often!
+      val outOfDateQuery = s""" -- SLOW_QUERY: 9 ms @ Ty.io  [rerndr_qry]
         select p.site_id, p.page_id, p.version current_version, h.page_version cached_version
         from pages3 p inner join page_html3 h
             on p.site_id = h.site_id and p.page_id = h.page_id and p.version > h.page_version
