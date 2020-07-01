@@ -20,7 +20,10 @@ object Dependencies {
     //   Cool:  cancelQuery()  https://github.com/pgjdbc/pgjdbc/pull/1157
     //          e.g. stop bg queries that turns out weren't needed.
     //   supports Pg 11, 12.
-
+    // Or switch to: https://github.com/impossibl/pgjdbc-ng/
+    // supports listener-notify.
+    // https://stackoverflow.com/questions/21632243/
+    //        how-do-i-get-asynchronous-event-driven-listen-notify-support-in-java-using-a-p
     val postgresqlJbcdClient = "org.postgresql" % "postgresql" % "42.2.4"
 
     // Database migrations.

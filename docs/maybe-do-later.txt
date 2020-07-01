@@ -93,6 +93,38 @@ Performance tests:
 Test on real life anonymized data:  PostgreSQL Anonymizer?
    https://www.postgresql.org/about/news/2017
 
+[table_partitions]
+{{{2 Shard tables by site_id_c?
+Needs pg11 (not pg10): In pg11, a parent table index gets auto-created on child tables
+(both child tables that already existed, or get created after the index).
+What happens when partitions created and there's data already?
+Ans:
+  > It is not possible to turn a regular table into a partitioned table or vice versa
+  https://www.postgresql.org/docs/current/ddl-partitioning.html
+Ok, so partitioning means renaming the tables, and creating new, w partitions,
+then copying the old data?
+(Not needed in Ty's case, but pg11 supports updating rows and auto-moving
+to the correct partition.)
+Actually, needs pg12: foreign keys fully compatible with partitioned tables:
+    can have partitioned table on either side of a foreign key constraint.
+    (Ty's case: always both sides.)
+    > for the first time it is possible in PostgreSQL to maintain large volumes
+    > of data while maintaining referential integrity
+    https://www.2ndquadrant.com/en/blog/postgresql-12-foreign-keys-and-partitioned-tables/
+    pg11: enable_partitionwise_aggregate
+Nice way to quickly delete a whole site: Just drop the whole partitioned tables.
+  > very quickly delete millions of records because it doesn't have to individually delete every record
+
+Pg12 has good partition pruning: at ~ 8k partitions, speed is ~90% of w just 1 table, and ~100% up to
+about 2k partitions. https://www.2ndquadrant.com/en/blog/postgresql-12-partitioning/
+
+Or, cluster tables — but:
+  > when the table is subsequently updated, the changes are not clustered
+  https://www.postgresql.org/docs/12/sql-cluster.html
+  One can periodically recluster — but that requries an exclusive lock!
+  However, clustering posts3 / posts_t by page_id_c = good idea.
+}}}2
+
 [onesocket]
 Subscribe to live-updates via a "shared web worker" so each browser gets its own connection,
 rather than each browser tab.  See e.g.:
