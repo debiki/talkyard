@@ -39,6 +39,19 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
   private val logger = TyLogger("MemCache")
 
+  COULD_OPTIMIZE; REFACTOR // Inline all clean-cache calls instead. [rm_cache_listeners]
+  // Skip this listener stuff.  — Then, simpler to see what's happening, exactly
+  // what gets cleared, when. And slightly faster, Dao:s more light-weight.
+  // Like so:
+  // def onPageCreated(pageId) {
+  //   siteDao.clearXCache()
+  //   siteDao.clearYCache()
+  //   siteDao.clearZCache()
+  // }
+  // And rename DaoMemCache to CacheImpl and MemCache to DaoMemCache
+  // or InProcessDaoCache?
+
+
   // COULD delete & rewrite this listener stuff. It's error prone & complicated, bug just killed.
   // Something like this?
   // - change firePageCreated() to uncacheStuffBecausePageCreated(pageId)

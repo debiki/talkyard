@@ -426,7 +426,9 @@ class SystemDao(
   // ----- Pages
 
   def refreshPageInMemCache(sitePageId: SitePageId): Unit = {
-    memCache.firePageSaved(sitePageId)
+    // No:  memCache.firePageSaved(sitePageId)   [rm_cache_listeners]
+    // — then, no event listeners registered, would have no effect. Instead:
+    globals.siteDao(sitePageId.siteId).memCache.firePageSaved(sitePageId)
   }
 
 
