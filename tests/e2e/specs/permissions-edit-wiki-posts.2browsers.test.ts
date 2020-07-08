@@ -203,7 +203,7 @@ describe("permissions-edit-wiki-posts  TyT603RKDEJ46", () => {
 
   it("... and so she does", () => {
     memahsBrowser.complex.editPageBody(
-          `I edit Wikis from Wikiland.\n`, { append: true });
+          `_ I edit Wikis from Wikiland _`, { append: true });
   });
 
   it("In the edits history, there're now 3 authors  TESTS_MISSING  TyTEDREVS02", () => {

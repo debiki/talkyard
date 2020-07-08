@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as assert from 'assert';
+import { dieIf } from './log-and-die';
 
 interface TyAssert {
   // Implement later
@@ -84,6 +85,11 @@ const tyAssert: any = {   // : any = works around:
 
   includes: (text: string, expectedSubstring: string, message?: string) => {
     // Could make this work w regexs too.
+
+    dieIf(!_.isString(text), `\`text\` is not a string, here it is:  ${text}`);
+    dieIf(!_.isString(expectedSubstring), `\`expectedSubstring\` is not a string, ` +
+          `here it is:  ${expectedSubstring}`);
+
     const ix = text.indexOf(expectedSubstring);
     assert.ok(ix >= 0, '\n\n' + (message ||
       `  assert.includes:\n` +
