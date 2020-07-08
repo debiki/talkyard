@@ -435,13 +435,14 @@ editor -
   slow 3g:
           - slow-3g-navigate-edit-drafts.2browsers.test.ts   TyT40PKDRT4
 
-clean html,
-sanitized,
-sanitizing:
+sanitize posts,
+sanitizer,
+sanitizing,
+clean html:
   [rel_nofollow]:
-          - TESTS_MISSING   (tested manually though)
+          - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTRELNOFLW01
   [reverse_tabnabbing]:
-          - TESTS_MISSING   (tested manually though)
+          - sanitize-posts.2browsers.test.ts  TyT603RMDL3.TyTREVTABNAB01
 
 mentions:
   simple:

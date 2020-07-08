@@ -4560,7 +4560,7 @@ export class TyE2eTestBrowser {
 
 
     topic = {
-      postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd`,
+      postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd .dw-p-bd-blk`,
 
       forAllPostIndexNrElem: (fn: (index: number, postNr: PostNr, elem) => void) => {
         const postElems = this.$$('[id^="post-"]');
