@@ -6139,7 +6139,7 @@ export class TyE2eTestBrowser {
             this.waitAndSetValue('.e_EmailWhitelist textarea', text, { checkAndRetry: true });
           },
 
-          setEmailDomainBlacklist: (text: string) => {
+          setEmailDomainBlocklist: (text: string) => {
             this.scrollIntoViewInPageColumn('.e_EmailBlacklist textarea');
             this.waitAndSetValue('.e_EmailBlacklist textarea', text, { checkAndRetry: true });
           },

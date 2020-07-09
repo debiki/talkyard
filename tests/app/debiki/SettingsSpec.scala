@@ -102,66 +102,66 @@ class SettingsSpec extends FreeSpec with MustMatchers {
     val evilOrg = "evil.org"
     val okayOrg = "okay.org"
 
-    "allow empty, if no blacklist or whitelist" in {
+    "allow empty, if no blocklist or allowlist" in {
       isEmailAddressAllowed("", "", "") mustBe true
     }
 
-    "allow any email, if no blacklist or whitelist" in {
+    "allow any email, if no blocklist or allowlist" in {
       isEmailAddressAllowed("any@email.com", "", "") mustBe true
     }
 
-    "handle a whitelist" - {
-      "disallow email not in whitelist" in {
-        isEmailAddressAllowed("any@email.com", whiteListText = okayOrg, "") mustBe false
+    "handle an allowlist" - {
+      "disallow email not in allowlist" in {
+        isEmailAddressAllowed("any@email.com", allowListText = okayOrg, "") mustBe false
       }
 
-      "allow email in whitelist" in {
-        isEmailAddressAllowed("ok@" + okayOrg, whiteListText = okayOrg, "") mustBe true
-        isEmailAddressAllowed("more.most@" + okayOrg, whiteListText = okayOrg, "") mustBe true
+      "allow email in allowlist" in {
+        isEmailAddressAllowed("ok@" + okayOrg, allowListText = okayOrg, "") mustBe true
+        isEmailAddressAllowed("more.most@" + okayOrg, allowListText = okayOrg, "") mustBe true
       }
 
-      "allow exact email in whitelist" in {
+      "allow exact email in allowlist" in {
         val exactEmail = "exact@email.com"
-        isEmailAddressAllowed(exactEmail, whiteListText = exactEmail, "") mustBe true
+        isEmailAddressAllowed(exactEmail, allowListText = exactEmail, "") mustBe true
       }
 
-      "but not sub domains of whitelisted domains" in {
-        isEmailAddressAllowed("ok@sub." + okayOrg, whiteListText = okayOrg, "") mustBe false
+      "but not sub domains of allowlisted domains" in {
+        isEmailAddressAllowed("ok@sub." + okayOrg, allowListText = okayOrg, "") mustBe false
       }
     }
 
-    "handle a blacklist" - {
-      "disallow blacklisted email domains" in {
-        isEmailAddressAllowed("ok@" + evilOrg, "", blackListText = evilOrg) mustBe false
+    "handle a blocklist" - {
+      "disallow blocklisted email domains" in {
+        isEmailAddressAllowed("ok@" + evilOrg, "", blockListText = evilOrg) mustBe false
       }
 
-      "but allow non-blacklisted emails" in {
-        isEmailAddressAllowed("ok@other.org", "", blackListText = evilOrg) mustBe true
+      "but allow non-blocklisted emails" in {
+        isEmailAddressAllowed("ok@other.org", "", blockListText = evilOrg) mustBe true
       }
 
-      "disallow exact email in blacklist" in {
+      "disallow exact email in blocklist" in {
         val exactEmail = "exact@email.com"
-        isEmailAddressAllowed(exactEmail, "", blackListText = exactEmail) mustBe false
+        isEmailAddressAllowed(exactEmail, "", blockListText = exactEmail) mustBe false
       }
     }
 
-    "handle a whitelist plus blacklist" - {
-      "disallows email domains not white listed, even if not black listed" in {
-        // Not in whitelist.
-        isEmailAddressAllowed("ok@sth.org", okayOrg, blackListText = evilOrg) mustBe false
+    "handle a allowlist plus blocklist" - {
+      "disallows email domains not allow listed, even if not block listed" in {
+        // Not in allowlist.
+        isEmailAddressAllowed("ok@sth.org", okayOrg, blockListText = evilOrg) mustBe false
       }
 
-      "disallows black listed domain, also if is white listed" in {
-        // In whitelist, but blacklisted.
+      "disallows block listed domain, also if is allow listed" in {
+        // In allowlist, but blocklisted.
         isEmailAddressAllowed("ok@" + evilOrg, evilOrg, evilOrg) mustBe false
       }
 
-      "disallows black listed email, in white listed domain" in {
+      "disallows block listed email, in allow listed domain" in {
         val badEmail = "so-bad@" + okayOrg
-        // Domain white listed, but the exact email is in the blacklist.
-        isEmailAddressAllowed(badEmail, okayOrg, blackListText = badEmail) mustBe false
-        // Domain white listed, and the exact email is not in the blacklist.
-        isEmailAddressAllowed("x" + badEmail, okayOrg, blackListText = badEmail) mustBe true
+        // Domain allow listed, but the exact email is in the blocklist.
+        isEmailAddressAllowed(badEmail, okayOrg, blockListText = badEmail) mustBe false
+        // Domain allow listed, and the exact email is not in the blocklist.
+        isEmailAddressAllowed("x" + badEmail, okayOrg, blockListText = badEmail) mustBe true
       }
     }
     val manyLines = i"""
@@ -174,49 +174,49 @@ class SettingsSpec extends FreeSpec with MustMatchers {
 
     val commentedOutDomain = "gone.com"
 
-    "handle multi line whitelist" - {
-      val whitelist = manyLines
+    "handle multi line allowlist" - {
+      val allowlist = manyLines
 
-      "many lines whitelist with comments and whitespace" in {
-        isEmailAddressAllowed("ok@domain.one.com", whiteListText = whitelist, "") mustBe true
-        isEmailAddressAllowed("ok@domain.three.here.io", whiteListText = whitelist, "") mustBe true
-        isEmailAddressAllowed("ko@other.domain", whiteListText = whitelist, "") mustBe false
+      "many lines allowlist with comments and whitespace" in {
+        isEmailAddressAllowed("ok@domain.one.com", allowListText = allowlist, "") mustBe true
+        isEmailAddressAllowed("ok@domain.three.here.io", allowListText = allowlist, "") mustBe true
+        isEmailAddressAllowed("ko@other.domain", allowListText = allowlist, "") mustBe false
       }
 
       "@ prefixed domain" in {
-        isEmailAddressAllowed("ok@two.com", whiteListText = whitelist, "") mustBe true
+        isEmailAddressAllowed("ok@two.com", allowListText = allowlist, "") mustBe true
       }
 
       "commented out domain" in {
         isEmailAddressAllowed(
-          "hi@" + commentedOutDomain, whitelist, "") mustBe false
+          "hi@" + commentedOutDomain, allowlist, "") mustBe false
         isEmailAddressAllowed(
-          "hi@" + commentedOutDomain, whitelist + s"\n # $commentedOutDomain", "") mustBe false
+          "hi@" + commentedOutDomain, allowlist + s"\n # $commentedOutDomain", "") mustBe false
         isEmailAddressAllowed(
-          "hi@" + commentedOutDomain, whitelist + s"\n $commentedOutDomain", "") mustBe true
+          "hi@" + commentedOutDomain, allowlist + s"\n $commentedOutDomain", "") mustBe true
       }
     }
 
-    "handle multi line blacklist" - {
-      val blacklist = manyLines
+    "handle multi line blocklist" - {
+      val blocklist = manyLines
 
-      "many lines blacklist with comments and whitespace" in {
-        isEmailAddressAllowed("no@domain.one.com", "", blackListText = blacklist) mustBe false
-        isEmailAddressAllowed("no@two.com", "", blackListText = blacklist) mustBe false
-        isEmailAddressAllowed("no@domain.three.here.io", "", blackListText = blacklist
+      "many lines blocklist with comments and whitespace" in {
+        isEmailAddressAllowed("no@domain.one.com", "", blockListText = blocklist) mustBe false
+        isEmailAddressAllowed("no@two.com", "", blockListText = blocklist) mustBe false
+        isEmailAddressAllowed("no@domain.three.here.io", "", blockListText = blocklist
             ) mustBe false
-        isEmailAddressAllowed("ok@other.com", "", blackListText = blacklist) mustBe true
+        isEmailAddressAllowed("ok@other.com", "", blockListText = blocklist) mustBe true
       }
 
       "commented out domain" in {
         isEmailAddressAllowed(
-          "hi@" + commentedOutDomain, "", blackListText = blacklist) mustBe true
+          "hi@" + commentedOutDomain, "", blockListText = blocklist) mustBe true
         isEmailAddressAllowed(
           "hi@" + commentedOutDomain, "",
-            blackListText = blacklist + s"\n # $commentedOutDomain") mustBe true
+            blockListText = blocklist + s"\n # $commentedOutDomain") mustBe true
         isEmailAddressAllowed(
           "hi@" + commentedOutDomain, "",
-            blackListText = blacklist + s"\n   $commentedOutDomain") mustBe false
+            blockListText = blocklist + s"\n   $commentedOutDomain") mustBe false
       }
     }
 

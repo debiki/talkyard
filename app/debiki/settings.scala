@@ -567,7 +567,7 @@ case class EffectiveSettings(
     // If SSO enabled, the remote SSO system determines what's allowed and what's not. [7AKBR25]
     if (enableSso) true
     else EffectiveSettings.isEmailAddressAllowed(
-      address, whiteListText = emailDomainWhitelist, blackListText = emailDomainBlacklist)
+      address, allowListText = emailDomainWhitelist, blockListText = emailDomainBlacklist)
 
   /** Finds any invalid setting value, or invalid settings configurations. */
   def findAnyError: Option[String] = {
@@ -622,11 +622,11 @@ object EffectiveSettings {
     okSources.toSeq
   }
 
-  def isEmailAddressAllowed(address: String, whiteListText: String, blackListText: String)
+  def isEmailAddressAllowed(address: String, allowListText: String, blockListText: String)
         : Boolean = {
     def canBeDomain(line: String) = line.nonEmpty && line.headOption.isNot('#')
-    val whiteDomainsIterator = whiteListText.lines.map(_.trim).filter(canBeDomain)
-    val blackDomainsIterator = blackListText.lines.map(_.trim).filter(canBeDomain)
+    val whiteDomainsIterator = allowListText.lines.map(_.trim).filter(canBeDomain)
+    val blackDomainsIterator = blockListText.lines.map(_.trim).filter(canBeDomain)
     def addrEndsWith(domain: String) =
       if (domain.contains("@") && domain.head != '@') {
         // Is an email address, not a domain. Fine — let people specify full addresses. And

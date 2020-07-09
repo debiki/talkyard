@@ -42,7 +42,7 @@ const notOkayOrgUser =
     { emailAddress: 'e2e-test-a@' + notOkayOrgDomain, username: "NOk", password: "1 pet is 1 cat" };
 
 
-describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
+describe("email-domain-allowlist-blocklist [TyT5AKRD04]", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -72,10 +72,10 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
   });
 
 
-  // ----- Blacklist
+  // ----- Blocklist
 
-  it("Owen blacklists the domains 'very.bad.com' and 'evil.org'", () => {
-    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(
+  it("Owen blocklists the domains 'very.bad.com' and 'evil.org'", () => {
+    owensBrowser.adminArea.settings.login.setEmailDomainBlocklist(
       'very.bad.com\n' +
       'oh.so.not.not\n' +
       '# A comment and blank line and a whitespace line\n' +
@@ -89,7 +89,7 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
     strangersBrowser.go(siteIdAddress.origin);
   });
 
-  it("... attempts to sign up with a blacklisted domains", () => {
+  it("... attempts to sign up with a blocklisted domains", () => {
     strangersBrowser.complex.signUpAsMemberViaTopbar(evilOrgUserOne);
   });
 
@@ -101,8 +101,8 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
     strangersBrowser.serverErrorDialog.close();
   });
 
-  it("Owen clears the blacklist", () => {
-    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist('');
+  it("Owen clears the blocklist", () => {
+    owensBrowser.adminArea.settings.login.setEmailDomainBlocklist('');
     owensBrowser.adminArea.settings.clickSaveAll();  // BUG won't reappear  !
   });
 
@@ -152,10 +152,10 @@ describe("email-domain-whitelist-blacklist [TyT5AKRD04]", () => {
   });
 
 
-  // ----- Whithelist with blacklisted sub domains
+  // ----- Allowlist with blocklisted sub domains
 
   it("Owen black lists a sub domain of the whitelist: " + notOkayOrgDomain, () => {
-    owensBrowser.adminArea.settings.login.setEmailDomainBlacklist(notOkayOrgDomain);
+    owensBrowser.adminArea.settings.login.setEmailDomainBlocklist(notOkayOrgDomain);
     owensBrowser.adminArea.settings.clickSaveAll();
   });
 
