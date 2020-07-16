@@ -611,11 +611,11 @@ sealed trait Participant {
   def isBuiltIn: Boolean = Participant.isBuiltInPerson(id) || Participant.isBuiltInGroup(id)
   def isGone: Boolean = isDeactivated || isDeleted
 
-  def isStaffOrCoreMember: Boolean =
+  def isStaffOrCoreMember: Boolean =  // but what about threat level?
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt
 
-  def isStaffOrTrusted: Boolean =
-    isStaff || effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt
+  def isStaffOrTrustedNotThreat: Boolean =
+    isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember)
 
   def isStaffOrFullMember: Boolean =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.FullMember.toInt

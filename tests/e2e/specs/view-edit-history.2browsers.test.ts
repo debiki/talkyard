@@ -115,7 +115,7 @@ describe("view-edit-history  TyT60RKDWL25", () => {
     mariasBrowser.complex.replyToPostNr(c.FirstReplyNr, newReply_original);
   });
 
-  it("... ninja-edits it — no new revision created", () => {
+  it("... ninja-edits it — no new revision created  TyTNINJA01", () => {
     mariasBrowser.complex.editPostNr(c.FirstReplyNr + 1, newReply_ninjaEdited);
   });
 

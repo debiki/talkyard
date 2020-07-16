@@ -916,7 +916,9 @@ trait PostsDao {
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
-        if (editor.isStaff) {
+        if (editor.isStaffOrTrustedNotThreat) {
+          // Don't review late edits by trusted members — trusting them is
+          // the point with the >= TrustedMember trust levels. TyTLADEETD01
           None
         }
         else if (postRecentlyCreated && !editorAndLevels.threatLevel.isThreat) {
@@ -1007,6 +1009,7 @@ trait PostsDao {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
       }
 
+      TESTS_MISSING // notf not sent until after ninja edit window ended?  TyTNINJED02
       val notfs = notfGenerator(tx).generateForEdits(postToEdit, editedPost, Some(newTextAndHtml))
       tx.saveDeleteNotifications(notfs)
 

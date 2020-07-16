@@ -194,7 +194,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
     },
 
 
-    addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
+    addEmptyForum: function(opts: { title: string, introText?: string,
+          members?: WellKnownMemberUsername[] })
           : EmptyTestForum {
       const members = opts.members ||
               ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory'];
@@ -235,9 +236,12 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       if (forum.members.michael) site.members.push(forum.members.michael);
       if (forum.members.mallory) site.members.push(forum.members.mallory);
 
+      // What? Only do if unspecified! Fix some other time ...
       _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
+      // ... then can remove these 3 lines:
       if (forum.members.corax) forum.members.corax.trustLevel = c.TestTrustLevel.CoreMember;
       if (forum.members.regina) forum.members.regina.trustLevel = c.TestTrustLevel.Regular;
+      if (forum.members.trillian) forum.members.trillian.trustLevel = c.TestTrustLevel.Trusted;
 
       const rootCategoryId = 1;
       const defaultCategoryId = 2;
@@ -268,7 +272,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
 
     addTwoPagesForum: function(opts: { title: string, introText?: string,
-          members?: string[], categoryExtId?: string })
+          members?: WellKnownMemberUsername[], categoryExtId?: string })
           : TwoPagesTestForum {
       const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
@@ -347,7 +351,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
     },
 
 
-    addLargeForum: function(opts: { title: string, introText?: string, members?: string[] })
+    addLargeForum: function(opts: { title: string, introText?: string,
+          members?: WellKnownMemberUsername[] })
           : LargeTestForum {
       const forum: LargeTestForum = <LargeTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;

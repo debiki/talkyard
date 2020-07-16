@@ -248,6 +248,11 @@ interface Member {
   threatLevel?: ThreatLevel;
 }
 
+type WellKnownMemberUsername =
+      'owen' | 'adam' | 'alice' | 'mons' | 'modya' | 'corax' |
+      'regina' | 'trillian' | 'memah' | 'maria' | 'maja' | 'michael' |
+      'mallory'  ;
+
 interface NameAndPassword {
   username: string;
   password?: string;

@@ -411,10 +411,14 @@ editor -
   other buttons -
     ...
   similar topics:
-            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
-  ninja-edit,
+          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+  late edits:
+            - review-edits-ninja-late.2browsers.test.ts  TyTREVWEDTLATE.TyTLADEETD01
+  ninja-edit:
+          - view-edit-history.2browsers.test.ts  TyT60RKDWL25.TyTNINJA01
+          - review-edits-ninja-late.2browsers.test.ts  TyTREVWEDTLATE.TyTNINJED02 TESTS_MISSING
   view edit history:
-            - view-edit-history.2browsers.test.ts  TyT60RKDWL25
+          - view-edit-history.2browsers.test.ts  TyT60RKDWL25
   save edits from other page:
     should ask: "Jump back and view the now edited post?" [JMPBCK]
   slow 3g:
@@ -689,6 +693,10 @@ admin -
 moderation,
 review posts,
 reviews - [TyT5DKW7U]
+    ninja edits,
+    normal edits,
+    late edits
+            - review-edits-ninja-late.2browsers.test.ts  TyTREVWEDTLATE.TyTLADEETD01 .TyTNINJED02
     gets emailed about review tasks:  — see (502M7)
     see spam below: (4BKS0)
     delete flagged:   — also see (6JS3)
