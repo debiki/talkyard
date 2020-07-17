@@ -26,7 +26,7 @@
   "dependencies": {
     "async": "^2.6.0",
     "chalk": "^2.2.0",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.19",
     "minimist": "^1.2.0",
     "sax": "^1.2.4"
   },
