@@ -190,6 +190,7 @@ profile page, a group:
           - notf-prefs-custom-groups.2browsers.test.ts  TyT60MRAT24
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
           - user-self-delete-upd-groups.2browsers.test.ts  TyT6DMSNW3560
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
 
 groups:
   list members:
@@ -213,7 +214,8 @@ groups:
           - group-mentions-built-in-groups.2browsers.test.ts  TyT4AWJL208R
           - group-mentions-custom-group.2browsers.test.ts  TyT5BMRP2058
   permissions, custom groups:
-            - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+          - group-permissions-similar-topics.2browsers.test.ts  TyT05BMRSH2J
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
 
 security:
   access denied,
@@ -230,7 +232,8 @@ security:
             - TyT502RKTJF4  SEC_TEST_MISSING
   add to watchbar a page one may not see:
             -  TyT602KRGJG SEC_TESTS_MISSING
-
+  edit wiki topics permission:
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46.TyTWIKIPRMS
   misc security: SEC_TEST_MISSING
 
 
@@ -405,6 +408,8 @@ edit,
 editor -
   edit post:
           - drafts-reply-edit-dir-msg.2browsers.test.ts   TyT5A2HSL8
+    edit wiki post:
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   maximize editor:
   preview:
   upload things:  (7KFC2)
@@ -417,7 +422,9 @@ editor -
   ninja-edit:
           - view-edit-history.2browsers.test.ts  TyT60RKDWL25.TyTNINJA01
           - review-edits-ninja-late.2browsers.test.ts  TyTREVWEDTLATE.TyTNINJED02 TESTS_MISSING
+  view edit revisions,
   view edit history:
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46.TyTEDREVS02  TESTS_MISSING
           - view-edit-history.2browsers.test.ts  TyT60RKDWL25
   save edits from other page:
     should ask: "Jump back and view the now edited post?" [JMPBCK]
@@ -487,6 +494,7 @@ post -
     see who voted:
   delete:
   wikify:
+          - permissions-edit-wiki-posts.2browsers.test.ts  TyT603RKDEJ46
   flag -   — also see (6JS3)
     cannot flag delted post:
   view author -

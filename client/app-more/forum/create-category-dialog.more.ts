@@ -122,7 +122,8 @@ const EditCategoryDialog = createClassAndFactory({
           groups: groups,
           permissions: [
             defaultPermsOnPages(-11, Groups.EveryoneId, categoryId, false),
-            defaultPermsOnPages(-12, Groups.StaffId, categoryId, true)],
+            defaultPermsOnPages(-12, Groups.FullMembersId, categoryId, false),
+            defaultPermsOnPages(-13, Groups.StaffId, categoryId, true)],
         });
       });
     }
@@ -450,7 +451,7 @@ function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
     // Sync these default perms with Scala code. [7KFWY025]
     mayEditPage: isStaff || undefined,
     mayEditComment: isStaff || undefined,
-    mayEditWiki: isStaff || undefined,
+    mayEditWiki: isStaff || forWhoId >= Groups.FullMembersId, // [DEFMAYEDWIKI]
     // If someone sees hen's own post, hen would probably get angry if hen couldn't edit it?
     // And staff probably expects everyone to be allowed to edit their own posts, by default?
     // So, 'true' by default.
@@ -483,6 +484,7 @@ const CategorySecurity = createClassAndFactory({
   },
 
   render: function() {
+    // Sorted by permission id server side [SORTCATPERMS].
     const permissions: PermsOnPage[] = this.props.permissions;
     if (!permissions)
       return null;
@@ -520,6 +522,25 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
 
   const peopleClass = forGroup ? 's_PoP-Grp-' + forGroup.id : 's_PoP-Select-Grp';
 
+  // Disable checkboxes that has no effect anyway, because of permissions inhereted
+  // from other groups. — Right now, this works only for trust level groups,
+  // and from the Everyone group.
+  // (Moderators might not have all permissions everywhere? So <= Groups.MaxTrustLevelId
+  // below, excluding moderators [mods_not_all_perms])
+  let anyInhPerms: PermsOnPageNoIdOrPp | U;
+  if (thisPerm.forPeopleId <= Groups.MaxTrustLevelId) {
+    for (let perm of allPerms) {
+      if (perm.forPeopleId < thisPerm.forPeopleId) {
+        anyInhPerms = perms_join(perm, anyInhPerms);
+      }
+    }
+  }
+
+  const inhPerms: PermsOnPageNoIdOrPp = anyInhPerms ||  (
+          thisPerm.forPeopleId === Groups.EveryoneId
+              ? {}
+              : _.find(allPerms, p => p.forPeopleId === Groups.EveryoneId) || {});
+
   return r.li({ className: 's_PoP ' + peopleClass, key: thisPerm.id },
     r.div({ className: 's_PoP_Expl' }, "These people: "),
     r.div({ className: 's_PoP_Un' }, selectGroupDropdown),
@@ -527,62 +548,62 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
     r.br(),
     r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "may do this: "),
     r.div({ className: 's_PoP_Ps' },
-      Checkbox('s_PoP_Ps_P_EdPg', "Edit other people's topics",
+      Checkbox('s_PoP_Ps_P_EdPg', "Edit other people's topics", inhPerms.mayEditPage,
           thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => {
         p.mayEditPage = c;
         if (c) p.mayEditOwn = true;
       }),
-      Checkbox('s_PoP_Ps_P_EdCm', "Edit others' comments",
+      Checkbox('s_PoP_Ps_P_EdCm', "Edit others' replies", inhPerms.mayEditComment,
           thisPerm.mayEditComment, (p: PermsOnPage, c: boolean) => {
         p.mayEditComment = c;
         if (c) p.mayEditOwn = true;
       }),
-      Checkbox('s_PoP_Ps_P_EdWk', "Edit wiki posts",
+      Checkbox('s_PoP_Ps_P_EdWk', "Edit wiki posts", inhPerms.mayEditWiki,
           thisPerm.mayEditWiki, (p: PermsOnPage, c: boolean) => {
         p.mayEditWiki = c;
         if (c) p.mayEditOwn = true;
       }),
-      Checkbox('s_PoP_Ps_P_EdOwn', "Edit one's own stuff",
+      Checkbox('s_PoP_Ps_P_EdOwn', "Edit one's own stuff", inhPerms.mayEditOwn,
           thisPerm.mayEditOwn, (p: PermsOnPage, c: boolean) => {
         p.mayEditOwn = c;
-        if (c === false) {  // but not if undefined
-          p.mayEditPage = false;
-          p.mayEditComment = false;
-          p.mayEditWiki = false;
+        if (c === false) {  // but not if undefined  — what? why not (NOTUNDEF)
+          p.mayEditPage = false;    // UX BUG doesnt' work, pretty harmless
+          p.mayEditComment = false; //
+          p.mayEditWiki = false;    //
         }
       }),
-      Checkbox('s_PoP_Ps_P_DlPg', "Delete others' topics",
+      Checkbox('s_PoP_Ps_P_DlPg', "Delete others' topics", inhPerms.mayDeletePage,
           thisPerm.mayDeletePage, (p: PermsOnPage, c: boolean) => p.mayDeletePage = c),
-      Checkbox('s_PoP_Ps_P_DlCm', "Delete others' comments",
+      Checkbox('s_PoP_Ps_P_DlCm', "Delete others' replies", inhPerms.mayDeleteComment,
           thisPerm.mayDeleteComment, (p: PermsOnPage, c: boolean) => p.mayDeleteComment = c),
-      Checkbox('s_PoP_Ps_P_CrPg', "Create pages",
+      Checkbox('s_PoP_Ps_P_CrPg', "Create pages", inhPerms.mayCreatePage,
           thisPerm.mayCreatePage, (p: PermsOnPage, c: boolean) => p.mayCreatePage = c),
-      Checkbox('s_PoP_Ps_P_Re', "Post comments",
+      Checkbox('s_PoP_Ps_P_Re', "Post replies", inhPerms.mayPostComment,
           thisPerm.mayPostComment, (p: PermsOnPage, c: boolean) => p.mayPostComment = c),
-      Checkbox('s_PoP_Ps_P_See', "See other people's topics",
+      Checkbox('s_PoP_Ps_P_See', "See other people's topics", inhPerms.maySee,
           thisPerm.maySee, (p: PermsOnPage, c: boolean) => {
         p.maySee = c;
         if (c) p.maySeeOwn = true;
       }),
-      Checkbox('s_PoP_Ps_P_SeeOwn', "See one's own topics",
+      Checkbox('s_PoP_Ps_P_SeeOwn', "See one's own topics", inhPerms.maySeeOwn,
           thisPerm.maySeeOwn, (p: PermsOnPage, c: boolean) => {
         p.maySeeOwn = c;
-        if (c === false) { // but not if undefined
-          p.maySee = false;
+        if (c === false) {   // but not if undefined  — what? why not (NOTUNDEF)
+          p.maySee = false;  // UX BUG doesnt' work, pretty harmless
         }
       })));
 
-  function Checkbox(className: string, label: string, checked: boolean,
-          set: (p: PermsOnPage, b: boolean) => void ) {
-    const onChange = function(event) {
+  function Checkbox(className: string, label: string, inherited: boolean, checked: boolean,
+          set: (p: PermsOnPage, b: boolean) => void) {
+    const onChange = inherited ? undefined : function(event) {
       const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
       const thisPerm2: PermsOnPage = { ...thisPerm };  // clones
       set(thisPerm2, event.target.checked);
       replaceById(allPerms2, thisPerm2);
       updatePermissions(allPerms2);
     };
-    return Input({ className: className, type: 'checkbox', label: label, checked: checked,
-        onChange: onChange });
+    return Input({ className: className, type: 'checkbox', label: label,
+        checked: checked || inherited, onChange: onChange, disabled: inherited });
   }
 }
 

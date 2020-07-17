@@ -252,14 +252,21 @@ object Authz {
     val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
     if (isOwnPost) {
       // Fine, may edit.
+      // But shouldn't:  isOwnPost && mayWhat.mayEditOwn ?  (2020-07-17)
     }
     else if (pageMeta.pageType == PageType.MindMap) {  // [0JUK2WA5]
       if (!mayWhat.mayEditPage)
         return NoMayNot("EdEM0ED0YOURMINDM", "You may not edit other people's mind maps")
     }
+    else if (post.isWiki && mayWhat.mayEditWiki && !post.isTitle) {
+      // Fine, may edit.  But exclude titles, for now. Otherwise, could be
+      // surprising if an attacker renames a page to sth else, and edits it,
+      // and the staff don't realize which page got edited, since renamed?
+      // I think titles aren't wikifiable at all, currently, anyway.
+    }
     else if (post.isOrigPost || post.isTitle) {
       if (!mayWhat.mayEditPage)
-        return NoMayNot("EdEM0ED0YOURORIGP", "You may not edit other people's pages")
+        return NoMayNot("EdEM0ED0YOURORIGP_", "You may not edit other people's pages")
     }
     // Later: else if is meta discussion ... [METADISC]
     else {
@@ -354,6 +361,10 @@ object Authz {
     tooManyPermissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Boolean = true): MayWhat = {
 
+    // Admins, but not moderators, have access to everything.
+    // Why? Might sometimes be good with a place for members to bring up problems
+    // with weird behaving moderators, where those mods cannot read and edit & delete
+    // the discussions. [mods_not_all_perms]
     if (user.exists(_.isAdmin))
       return MayEverything
 
@@ -368,8 +379,6 @@ object Authz {
     */
 
     var mayWhat = MayPerhapsSee
-
-    // var isWiki = .... but this is per post. Hmm. The post is not available here. [05PWPZ24]
 
     pageMeta foreach { meta =>
       categoriesRootLast.headOption foreach { parentCategory =>

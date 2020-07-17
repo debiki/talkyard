@@ -340,6 +340,7 @@ const enum Groups {
   TrustedId = 14,
   RegularsId = 15,
   CoreMembersId = 16,
+  MaxTrustLevelId = CoreMembersId,
   StaffId = 17,
   ModeratorsId = 18,
   AdminsId = 19,

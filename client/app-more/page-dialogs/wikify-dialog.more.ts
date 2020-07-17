@@ -58,10 +58,6 @@ const WikifyDialog = createComponent({
     this.setState({ isOpen: false, post: null });
   },
 
-  changeToStaffWiki: function() {
-    ReactActions.changePostType(this.state.post, PostType.StaffWiki, this.close);
-  },
-
   changeToCommunityWiki: function() {
     ReactActions.changePostType(this.state.post, PostType.CommunityWiki, this.close);
   },
@@ -79,39 +75,35 @@ const WikifyDialog = createComponent({
       // Nothing.
     }
     else if (isWiki) {
-      title = "Cancel Wiki status?";
+      title = "Cancel Wiki status?";  // I18N
       const whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
       content =
         r.div({},
-          r.p({}, "This post is a wiki editable by " + whichPeople +
-              " members and the original author."),
+          r.p({}, "This post is a wiki. Others can edit it."),   // I18N
           r.div({ className: 'dw-wikify-btns' },
-            Button({ onClick: this.changeBackToNormal,
-                help: "The original author's name will be shown again. Only he or she " +
-                  "and staff will be able to edit it. The author will be credited " +
-                  "with any like votes."}, "Change back to normal")));
+            Button({ onClick: this.changeBackToNormal, className: 'e_UnWk',
+                help: "Will show the original author's name again, " +  // I18N
+                      "and prevent others from editing it (except for staff)."},
+                  "Change back to normal")));
     }
     else {
-      title = "Change to Wiki?";
+      title = "Change to Wiki?";  // I18N
       content =
         r.div({},
-          r.p({}, "Change this post to a Wiki post so many people can edit it? "
+          r.p({},
+              "Then, others can edit it."  // I18N
             /* excl this — too much text to read, and maybe Like votes aren't so important.
             "(The post author will then get no credits for Like votes, for this post.)" */),
           r.div({ className: 'dw-wikify-btns' },
-            Button({ onClick: this.changeToStaffWiki,
-                help: "Staff members will be able to edit this post." },
-              "Change to Staff Wiki"),
-            Button({ onClick: this.changeToCommunityWiki,
-                help: "Community members who may edit wikis, will be able to edit this post." },
-                "Change to Community Wiki")));
+            Button({ onClick: this.changeToCommunityWiki, className: 'e_MkWk' },
+                "Yes, make Wiki")));
     }
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-wikify-dialog' },
         ModalHeader({}, ModalTitle({}, title)),
         ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'))));
+        ModalFooter({}, Button({ onClick: this.close }, t.Cancel))));
   }
 });
 

@@ -1202,6 +1202,7 @@ export class TyE2eTestBrowser {
         return !!text;
       }, {
         ...ps,
+        serverErrorDialogIsFine: selector.indexOf('.s_SED_Msg') >= 0,
         message: `Waiting for visible non-empty text, selector:  ${selector}\n` +
             `    isExisting: ${isExisting}, isDisplayed: ${isDisplayed}, getText: ${
             _.isUndefined(text) ? 'undefined' : `"${text}"`}`,
@@ -1720,8 +1721,9 @@ export class TyE2eTestBrowser {
     }
 
 
-    waitUntilTextMatches(selector: string, regex: string | RegExp) {
-      this.waitAndGetElemWithText(selector, regex);
+    waitUntilTextMatches(selector: string, regex: string | RegExp,
+            opts: { timeoutMs?: number, invert?: boolean } = {}) {
+      this.waitAndGetElemWithText(selector, regex, opts);
     }
 
 
@@ -1789,7 +1791,7 @@ export class TyE2eTestBrowser {
 
 
     waitAndGetElemWithText(selector: string, stringOrRegex: string | RegExp,
-          timeoutMs?: number): WebdriverIO.Element {
+          opts: { timeoutMs?: number, invert?: boolean } = {}): WebdriverIO.Element {
       const regex = getRegExpOrDie(stringOrRegex);
 
       // Don't use this.#br.waitUntil(..) — exceptions in waitUntil apparently don't
@@ -1803,7 +1805,7 @@ export class TyE2eTestBrowser {
           const elem = elems[i];
           const text = elem.getText();
           const matches = regex.test(text);
-          if (matches)
+          if (matches && !opts.invert || !matches && opts.invert)
             return elem;
 
           texts += `"${text}", `;
@@ -1820,7 +1822,7 @@ export class TyE2eTestBrowser {
               `--------------------------------------------------------`));
         }
 
-        if (timeoutMs && elapsedMs > timeoutMs) {
+        if (opts.timeoutMs && elapsedMs > opts.timeoutMs) {
           tyAssert.fail(`Didn't find text ${regex} in selector '${selector}'. ` +
             `Instead, the matching selectors texts are: [${texts}]  [TyE40MRBL25]`)
         }
@@ -3934,6 +3936,11 @@ export class TyE2eTestBrowser {
           this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
         },
 
+        setMayEditWiki: (groupId: UserId, may: boolean) => {
+          // For now, just click once
+          this.waitAndClick(`li.s_PoP:last-child .s_PoP_Ps_P_EdWk input`);  // for now
+        },
+
         setMaySee: (groupId: UserId, may: boolean) => {
           // For now, just click once
           this.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
@@ -4010,6 +4017,11 @@ export class TyE2eTestBrowser {
 
       hitEnterToSelectUser: () => {
         // Might not work in Firefox. Didn't in wdio v4.
+        // Doesn't work with DevTools; types the letters in "Return" instead. [E2EBUG]
+        // But works with WebDriver / Selenium.
+        logWarningIf(settings.useDevtoolsProtocol, `\n\n` +
+              `this.#br.keys(['Return'])  won't work with DevTools!  ` +
+              `Just types "Return" instead\n\n`);
         this.#br.keys(['Return']);
       },
 
@@ -4633,6 +4645,19 @@ export class TyE2eTestBrowser {
         }
       },
 
+      wikifyPostNr: (postNr: PostNr, shallWikify: boolean) => {
+        // Break out fn? (5936RKTL6)
+        utils.tryManyTimes("Wikify post", 3, () => {
+          if (!this.isVisible('.s_PA_WkB')) {
+            this.topic.clickMoreForPostNr(postNr);
+          }
+          this.waitAndClick('.s_PA_WkB', { timeoutMs: 500 });
+          this.waitAndClick(shallWikify ? '.e_MkWk' : '.e_UnWk', { timeoutMs: 500 });
+          this.waitUntilTextMatches(`#post-${postNr} + .esPA .dw-a-edit`, "Wiki", {
+                  timeoutMs: 500, invert: !shallWikify });
+        });
+      },
+
       canEditSomething: (): boolean => {
         return this.isVisible('.dw-a-edit');
       },
@@ -4699,6 +4724,7 @@ export class TyE2eTestBrowser {
       },
 
       openMoveDialogForPostNr: (postNr: PostNr) => {
+        // Break out fn? (5936RKTL6)
         // This always works, when the tests are visible and I look at them.
         // But can block forever, in an invisible this.#br. Just repeat until works.
         utils.tryManyTimes("Open move post dialog", 3, () => {
@@ -5316,7 +5342,7 @@ export class TyE2eTestBrowser {
         this.$$('.esSERP_Hit_PageTitle').length,
 
       assertResultPageTitlePresent: (title: string) => {
-        this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, 1);
+        this.waitAndGetElemWithText('.esSERP_Hit_PageTitle', title, { timeoutMs: 1 });
       },
 
       goToSearchResult: (linkText?: string) => {

@@ -598,6 +598,7 @@ const RootPostAndComments = createComponent({
     }
 
     postClass += rootPost.isPreview ? ' s_P-Prvw' : '';
+    postClass += post_isWiki(rootPost) ? ' s_P-Wiki' : '';
 
     const isThreadedDiscussion = page_isThreadedDiscussion(page);
     const isFlatProgress = page_isFlatProgress(page);
@@ -1406,6 +1407,7 @@ export const Post = createComponent({
     const isFlat = this.props.isFlat;
 
     extraClasses += post.isPreview ? ' s_P-Prvw' : '';
+    extraClasses += post_isWiki(post) ? ' s_P-Wiki' : '';
 
     if (post.isPreview && !post.isEditing) {
       // This sohuld be a draft of a new reply.

@@ -108,6 +108,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       (tx.loadPermsOnPages(), tx.loadAllGroupsAsSeq())
     }
     val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
+          // Better sort, otherwise listed in random order, client side. [SORTCATPERMS]
+          .sortBy(_.id)
+
     OkSafeJson(Json.obj(  // Typescript: LoadCategoryResponse
       "category" -> catJson,
       "permissions" -> catPerms.map(JsonMaker.permissionToJson),
@@ -115,7 +118,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 1000) { request =>
+  def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 5000) { request =>
     BUG // fairly harmless in this case: The lost update bug.
     import request.{dao, body, requester}
     val categoryJson = (body \ "category").as[JsObject]

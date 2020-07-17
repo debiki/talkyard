@@ -139,7 +139,8 @@ sealed abstract class PostType(protected val IntValue: Int) {
 }
 
 
-// See harmless bug below. Should change to a bit field, or split into separate fields.
+// REFACTOR. See harmless bug below. Should change to a bit field, or split into separate fields.
+//
 object PostType {
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
   case object Normal extends PostType(1)
@@ -155,7 +156,7 @@ object PostType {
   // RENAME to ProgressPost
   case object BottomComment extends PostType(4) { override def placeLast = true }
 
-  CLEAN_UP // REMOVE StaffWiki, use the permission system instead.
+  CLEAN_UP // REMOVE StaffWiki, use the permission system instead.  [NOSTAFFWIKI]
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
     override def isWiki = true

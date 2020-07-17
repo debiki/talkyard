@@ -480,6 +480,8 @@ object JsX {
 
 
   def JsPostInclDetails(post: Post): JsObject = {
+    COULD_OPTIMIZE // Skip null / false fields, so less json.
+    // E.g. excl currRevSourcePatch, instead of 'currRevSourcePatch: null'.
     Json.obj(
       "id" -> post.id,
       "pageId" -> post.pageId,

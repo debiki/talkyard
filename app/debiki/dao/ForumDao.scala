@@ -240,6 +240,7 @@ trait ForumDao {
         includeInSummaries = IncludeInSummaries.NoExclude),
       immutable.Seq[PermsOnPages](
         makeEveryonesDefaultCategoryPerms(defaultCategoryId),
+        makeFullMembersDefaultCategoryPerms(defaultCategoryId),
         makeStaffCategoryPerms(defaultCategoryId)),
       bySystem)(tx)
 
@@ -284,6 +285,7 @@ trait ForumDao {
         includeInSummaries = IncludeInSummaries.Default),
       immutable.Seq[PermsOnPages](
         makeEveryonesDefaultCategoryPerms(generalCategoryId),
+        makeFullMembersDefaultCategoryPerms(generalCategoryId),
         makeStaffCategoryPerms(generalCategoryId)),
       bySystem)(tx)
 
@@ -310,6 +312,7 @@ trait ForumDao {
           includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
+          makeFullMembersDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
     }
@@ -334,6 +337,7 @@ trait ForumDao {
           includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
+          makeFullMembersDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
     }
@@ -363,6 +367,7 @@ trait ForumDao {
           includeInSummaries = IncludeInSummaries.NoExclude),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
+          makeFullMembersDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
         bySystem)(tx)
     } */
@@ -715,6 +720,16 @@ object ForumDao {
     mayPostComment = Some(true),
     maySee = Some(true),
     maySeeOwn = Some(true))
+
+
+  /** New and basic members may not edit Wiki pages — that'd be too risky?
+    * (Of course admins can change this, for their own site.)  [DEFMAYEDWIKI]
+    * Sync with dupl code in Typescript. [7KFWY025]
+    */
+  def makeFullMembersDefaultCategoryPerms(categoryId: CategoryId): PermsOnPages =
+    makeEveryonesDefaultCategoryPerms(categoryId).copy(
+          forPeopleId = Group.FullMembersId,
+          mayEditWiki = Some(true))
 
 
   // Sync with dupl code in Typescript. [7KFWY025]

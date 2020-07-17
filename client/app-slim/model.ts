@@ -482,6 +482,9 @@ interface PermsOnPage {
 }
 
 
+type PermsOnPageNoIdOrPp = Omit<PermsOnPage, 'id' | 'forPeopleId'>
+
+
 interface PageNotfPrefTarget {
   pageId?: PageId;
   pagesInCategoryId?: CategoryId;

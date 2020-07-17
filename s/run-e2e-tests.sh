@@ -305,7 +305,6 @@ function runAllE2eTests {
 
   $r s/wdio --only move-posts-same-page.2browsers $args
   $r s/wdio --only move-posts-other-page.2browsers $args
-  # + wikify-posts
   # + delete-posts
 
   $r s/wdio --only settings-allowed-email-domains.2browsers $args
@@ -415,6 +414,7 @@ function runAllE2eTests {
   $r s/wdio --only group-mentions-custom-groups.2browsers $args
 
   $r s/wdio --only group-permissions-similar-topics.2browsers $args
+  $r s/wdio --only permissions-edit-wiki-posts.2browsers $args
 
   $r s/wdio --only slow-3g-navigate-edit-drafts.2browsers $args
 

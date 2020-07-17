@@ -361,6 +361,10 @@ export function makeWhyNotfLvlInheritedExpl(effPref: EffPageNotfPref, ppsById: P
   return inheritedOrDefault + fromUserName + forWholeSite + onCategory;
 }
 
+export function post_isWiki(post: Post): boolean {
+  // Skip PostType.StaffWiki, using the permission system instead. [NOSTAFFWIKI]
+  return post.postType === PostType.CommunityWiki;
+}
 
 export function post_isDeleted(post: Post): boolean {   // dupl code [2PKQSB5]
   return post.isPostDeleted || post.isTreeDeleted;
@@ -638,13 +642,11 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   const page: Page = store.currentPage;
   const me = store.me;
   const isMindMap = page.pageRole === PageRole.MindMap;
+  const isWiki = post_isWiki(post);
   const isOwnPage = store_thisIsMyPage(store);
-  const isOwnPostOrWikiPost =
-      post.authorId === me.id ||
-      (me.isAuthenticated && post.postType === PostType.CommunityWiki); // [05PWPZ24]
-
+  const isOwnPost = post.authorId === me.id;
   let isOwn = isEditPage ? isOwnPage :
-      isOwnPostOrWikiPost ||
+      isOwnPost ||
         // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
         post.isApproved && isMindMap && isOwnPage;
 
@@ -659,28 +661,65 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   if (page.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
     may = true;
 
+  // Least specific: Whole site permissions. Can be overridden per category and
+  // sub cats, in the ancestor categories loop below.
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
+      // --- What!? Can't all this just be:
+      const simplerMay =
+              p.mayEditPage ||
+              p.mayEditWiki && isWiki ||
+              p.mayEditOwn && isOwn;
+      // And:
+      // may = may || simplerMay
+      // Hmm, but below, if !mayEditOwn, then, different. But why would
+      // anyone ever config such permissions?
+      // -----------------
       if (isDefined2(p.mayEditPage)) {
         may = p.mayEditPage;
+      }
+      if (isDefined2(p.mayEditWiki) && isWiki) {
+        may = may || p.mayEditWiki;
       }
       if (isDefined2(p.mayEditOwn) && isOwn) {
         may = p.mayEditOwn;
       }
+      // @ifdef DEBUG
+      dieIf(simplerMay !== may, 'TyE35MRKTDJ35');
+      // @endif
+      void 0;
     }
   });
 
-  // Here we loop through the cats in the correct order though, [0GMK2WAL].
+  // Here we loop through ancestor cateories, from root cat to sub cat. [0GMK2WAL].
   const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   for (let i = 0; i < ancestorCategories.length; ++i) {
     const ancestor = ancestorCategories[i];
     me.permsOnPages.forEach((p: PermsOnPage) => {
       if (p.onCategoryId === ancestor.categoryId) {
+        let mayThisCat: boolean | U;
+        // This can change `may` from true to false — so, you can prevent people
+        // from editing a sub category, even if they can edit the parent category.
         if (isDefined2(p.mayEditPage)) {
-          may = p.mayEditPage;
+          mayThisCat = p.mayEditPage;
+        }
+        // But this is weird! What if one may edit all pages in the parent cat,
+        // and this post is a wiki — but one may not edit wikis in this category?
+        // Then, should be allowed to edit it.  isWiki should only *add* edit permissions,
+        // never remove.
+        // However, if the permission in the parent cat, was for *wiki*, then,
+        // !mayEditWiki here, should cancel that. So, need to keep track of if
+        // permissions are because is-wiki or not.  [subcats]
+        // Fortunately, sub cats not so very implemented yet. So whatever is fine, now.
+        if (isDefined2(p.mayEditWiki) && isWiki) {
+          mayThisCat = mayThisCat || p.mayEditWiki
+                || may;  // <—— so won't remove parent cat perms
         }
         if (isDefined2(p.mayEditOwn) && isOwn) {
-          may = p.mayEditOwn;
+          mayThisCat = p.mayEditOwn;
+        }
+        if (isDefined2(mayThisCat)) {
+          may = mayThisCat;
         }
       }
     });
@@ -942,6 +981,37 @@ export function store_makeDeletePostPatch(post: Post): StorePatch {
     postsByPageId,
   };
 }
+
+
+
+// Permissions
+//----------------------------------
+
+
+export function perms_join(pA: PermsOnPage, pB?: PermsOnPageNoIdOrPp): PermsOnPageNoIdOrPp {
+  if (!pB) return pA;
+  return {
+    // id — omitted
+    // forPeopleId — omitted
+    onWholeSite: pA.onWholeSite || pB.onWholeSite,
+    onCategoryId: pA.onCategoryId || pB.onCategoryId,
+    onPageId: pA.onPageId || pB.onPageId,
+    onPostId: pA.onPostId || pB.onPostId,
+    // later: onTagId?: TagId;
+    mayEditPage: pA.mayEditPage || pB.mayEditPage,
+    mayEditComment: pA.mayEditComment || pB.mayEditComment,
+    mayEditWiki: pA.mayEditWiki || pB.mayEditWiki,
+    mayEditOwn: pA.mayEditOwn || pB.mayEditOwn,
+    mayDeletePage: pA.mayDeletePage || pB.mayDeletePage,
+    mayDeleteComment: pA.mayDeleteComment || pB.mayDeleteComment,
+    mayCreatePage: pA.mayCreatePage || pB.mayCreatePage,
+    mayPostComment: pA.mayPostComment || pB.mayPostComment,
+    // later: mayPostProgressNotes ?
+    maySee: pA.maySee || pB.maySee,
+    maySeeOwn: pA.maySeeOwn || pB.maySeeOwn,
+  };
+}
+
 
 
 // Category

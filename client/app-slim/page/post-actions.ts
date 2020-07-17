@@ -86,9 +86,11 @@ export const NoCommentsPageActions = createComponent({
     });
     const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
 
+    const spaceWiki = post_isWiki(post) ? " Wiki" : ''; // I18N
+
     const editBtn = store.isEditorOpen ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, onClick: this.onEditClick },
-          t.EditV + (
+          t.EditV + spaceWiki + (
             anyEditsDraft ? " — " + t.d.UnfinEdits : ''));  // [UFINEDT]
 
     const actions = editBtn;
@@ -385,11 +387,14 @@ export const PostActions = createComponent({
     });
     const unfinEditsClass = anyEditsDraft ? ' s_UnfinEd' : '';
 
+    const wikiSpace = post_isWiki(post) ? "Wiki " : ''; // I18N
+
     const mayEdit = store_mayIEditPost(store, post);
     const editButton = !mayEdit || isEditorOpenAlready ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit' + unfinEditsClass, title: t.EditV,
               onClick: this.onEditClick },
-          anyEditsDraft ? t.d.UnfinEdits : null);  // [UFINEDT]
+          wikiSpace + (
+              anyEditsDraft ? t.d.UnfinEdits : ''));  // [UFINEDT]
 
     const link =
         r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,

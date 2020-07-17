@@ -340,6 +340,8 @@ declare namespace debiki2 {
   var cloneRect;
   var cloneEventTargetRect;
 
+  function perms_join(pA: PermsOnPage, pB: PermsOnPageNoIdOrPp | U): PermsOnPageNoIdOrPp;
+
   function origin(): string;
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;

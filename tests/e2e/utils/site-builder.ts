@@ -195,7 +195,7 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
 
     addEmptyForum: function(opts: { title: string, introText?: string,
-          members?: WellKnownMemberUsername[] })
+          members?: WellKnownMemberUsername[], categoryPerms?: 'FullMembersMayEditWiki' })
           : EmptyTestForum {
       const members = opts.members ||
               ['mons', 'modya', 'regina', 'corax', 'memah', 'maria', 'michael', 'mallory'];
@@ -265,14 +265,15 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         slug: 'category-a',
         aboutPageText: "Category A description.",
       });
-      api.addDefaultCatPerms(site, forum.categories.categoryA.id, 1);
+      api.addDefaultCatPerms(site, forum.categories.categoryA.id, 1, opts.categoryPerms);
 
       return forum;
     },
 
 
     addTwoPagesForum: function(opts: { title: string, introText?: string,
-          members?: WellKnownMemberUsername[], categoryExtId?: string })
+          members?: WellKnownMemberUsername[], categoryExtId?: string,
+          categoryPerms?: 'FullMembersMayEditWiki' })
           : TwoPagesTestForum {
       const forum: TwoPagesTestForum = <TwoPagesTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
@@ -298,8 +299,10 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
 
       // ---- Permissions on categories
 
+      const morePerms = !!opts.categoryPerms;
+
       // Staff only:
-      const staffPermsId = 3; // 1 & 2 = for the default category
+      const staffPermsId = morePerms ? 4 : 3; // 1 & 2 = for the default category
       site.permsOnPages.push({
         id: staffPermsId,
         forPeopleId: c.StaffId,
@@ -317,7 +320,8 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       });
 
       // The specific category:
-      api.addDefaultCatPerms(site, specificCategoryId, staffPermsId + 1);
+      api.addDefaultCatPerms(site, specificCategoryId, staffPermsId + 1,
+              opts.categoryPerms);
 
       // ---- Two pages
 
@@ -531,8 +535,9 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
       return forum;
     },
 
-    addDefaultCatPerms: (site: SiteData, categoryId: CategoryId, startPermissionId: PermissionId) => {
-      site.permsOnPages.push({
+    addDefaultCatPerms: (site: SiteData, categoryId: CategoryId, startPermissionId: PermissionId,
+            categoryPerms?: 'FullMembersMayEditWiki') => {
+      const everyonesPerms = {
         id: startPermissionId,
         forPeopleId: c.EveryoneId,
         onCategoryId: categoryId,
@@ -541,10 +546,23 @@ function buildSite(site: SiteData | U = undefined, ps: { okInitEarly?: boolean }
         mayPostComment: true,
         maySee: true,
         maySeeOwn: true,
-      });
+      };
+      site.permsOnPages.push(everyonesPerms);
+
+      let nextPerm = startPermissionId + 1;
+
+      if (categoryPerms === 'FullMembersMayEditWiki') {
+        site.permsOnPages.push({
+          ...everyonesPerms,
+          id: nextPerm,
+          forPeopleId: c.FullMembersId,
+          mayEditWiki: true,
+        });
+        nextPerm += 1;
+      }
 
       site.permsOnPages.push({
-        id: startPermissionId + 1,
+        id: nextPerm,
         forPeopleId: c.StaffId,
         onCategoryId: categoryId,
         mayEditPage: true,
