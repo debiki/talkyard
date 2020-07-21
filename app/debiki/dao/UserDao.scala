@@ -1302,6 +1302,24 @@ trait UserDao {
         newWatchbar = newWatchbar.removePageTryKeepInRecent(pageMeta)
       }
     }
+    adRemoveWbImpl(oldWatchbar, newWatchbar = newWatchbar, userId)
+  }
+
+
+  def removeFromWatchbarRecent(pageIds: Iterable[PageId], requesterId: UserId)
+          : Option[BareWatchbar] = {
+    TESTS_MISSING
+    val oldWatchbar = getOrCreateWatchbar(requesterId)
+    var newWatchbar = oldWatchbar
+    for (pageId <- pageIds) {
+      newWatchbar = newWatchbar.removeFromRecent(pageId)
+    }
+    adRemoveWbImpl(oldWatchbar, newWatchbar = newWatchbar, requesterId)
+  }
+
+
+  private def adRemoveWbImpl(oldWatchbar: BareWatchbar, newWatchbar: BareWatchbar,
+          userId: UserId): Option[BareWatchbar] = {
 
     if (oldWatchbar == newWatchbar) {
       // This happens if we're adding a user whose in-memory watchbar got created in

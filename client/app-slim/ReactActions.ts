@@ -779,6 +779,11 @@ export function setWatchbarOpen(open: boolean) {
 }
 
 
+export function configWatchbar(ps: { removePageIdFromRecent }) {
+  Server.configWatchbar(ps, setWatchbar);
+}
+
+
 export function setWatchbar(watchbar: Watchbar) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetWatchbar,

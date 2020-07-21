@@ -1788,6 +1788,12 @@ export function leavePage() {
 }
 
 
+export function configWatchbar(ps: { removePageIdFromRecent: PageId },
+      onDone: (wb: Watchbar) => void) {
+  postJsonSuccess('/-/config-watchbar', onDone, ps);
+}
+
+
 export function startPrivateGroupTalk(title: string, text: string, pageRole: PageRole,
     userIds: number[], deleteDraftNr: DraftNr, success: (pageId: PageId) => void) {
   postJsonSuccess('/-/start-private-group-talk', success,

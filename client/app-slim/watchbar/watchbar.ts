@@ -317,19 +317,25 @@ const SingleTopic = createComponent({
     const viewMembersButtonTitle = !isChat ? t.wb.ViewPeopleHere : (
         isAuthorOrStaff ? t.wb.ViewAddRemoveMembers : t.wb.ViewChatMembers);
 
+    const removeThisItemBtn = !isCurrent || !isRecent ? null :
+        MenuItem({ className: 'e_WbRm', onSelect: () =>
+              ReactActions.configWatchbar({ removePageIdFromRecent: topic.pageId }) },
+          t.Remove);
+
     // UX COULD check role? and make it possible to edit title etc, without having to join.
     const editChatInfoButton = !isChat || !isAuthorOrStaff || !isCurrent ? null :
         MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
           t.wb.EditChat);
 
-    const leaveButton = !isChat && !isSubCommunity ? null :
+    const leaveButton = !isChat && !isSubCommunity || !isCurrent ? null :
         MenuItem({ onSelect: this.openLeavePageDialog, id: 'e2eWB_LeaveB' },
           isChat? t.wb.LeaveThisChat : t.wb.LeaveThisCommunity);
 
     // If a community is listed in the Recent section, then one hasn't joined it.
-    const joinButton = !showSubCommunities || !isRecent || topic.type !== PageRole.Forum ? null  :
-      MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
-        t.wb.JoinThisCommunity);
+    const joinButton = !showSubCommunities || !isRecent ||
+              topic.type !== PageRole.Forum || !isCurrent ? null  :
+        MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
+          t.wb.JoinThisCommunity);
 
     const topicActionsButton = !isCurrent ? null :
       ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: t.wb.TopicActions }),
@@ -341,6 +347,7 @@ const SingleTopic = createComponent({
           editChatInfoButton,
           leaveButton,
           joinButton,
+          removeThisItemBtn,
         ));
 
     if (this.props.homeIcon) {

@@ -190,6 +190,7 @@ POST  /-/add-users-to-page      controllers.PageController.addUsersToPage
 POST  /-/remove-users-from-page controllers.PageController.removeUsersFromPage
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/leave-page             controllers.PageController.leavePage
+POST  /-/config-watchbar        controllers.PageController.configWatchbar
 
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage

@@ -268,6 +268,11 @@ case class BareWatchbar(
   }
 
 
+  def removeFromRecent(pageId: PageId): BareWatchbar = {
+    copy(recentTopics = recentTopics.filter(_.pageId != pageId))
+  }
+
+
   def removePageTryKeepInRecent(pageMeta: PageMeta): BareWatchbar = {
     // Private pages shouldn't be shown in the recent list, because once one has left them,
     // they are no longer accessible (because they're private).

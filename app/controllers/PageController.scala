@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
+import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
@@ -301,13 +302,29 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def joinOrLeavePage(join: Boolean, request: JsonPostRequest) = {
+    import request.{dao, who}
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.joinOrLeavePageIfAuth(pageId, join = join, who = request.who) match {
+    val anyChangedWatchbar = dao.joinOrLeavePageIfAuth(pageId, join = join, who = who)
+    replyWithWatchbar(anyChangedWatchbar, dao)
+  }
+
+
+  private def replyWithWatchbar(watchbar: Option[BareWatchbar], dao: SiteDao) = {
+    watchbar match {
       case Some(newWatchbar) =>
-        val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(newWatchbar)
+        val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(newWatchbar)
         Ok(watchbarWithTitles.toJsonWithTitles)
       case None => Ok
     }
+  }
+
+
+  def configWatchbar: Action[JsValue] = PostJsonAction(RateLimits.ViewPage, maxBytes = 500) {
+          request =>
+    import request.{dao, theRequesterId}
+    val pageId = (request.body \ "removePageIdFromRecent").as[PageId]
+    val anyChangedWatchbar = dao.removeFromWatchbarRecent(Set(pageId), theRequesterId)
+    replyWithWatchbar(anyChangedWatchbar, dao)
   }
 
 }

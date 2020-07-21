@@ -124,7 +124,9 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
     userTrustLevel = user.map(_.effectiveTrustLevel))
 
   def theUser: Participant = user_!
+  @deprecated("now", "use theRequesterId instead")
   def theUserId: UserId = theUser.id
+  def theRequesterId: UserId = theUser.id
 
   def userAndLevels: AnyUserAndThreatLevel = {
     val threatLevel = user match {
