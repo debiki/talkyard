@@ -19,6 +19,7 @@ package com.debiki.core
 
 import EditedSettings._
 import Prelude._
+import play.api.libs.json.JsObject
 
 
 sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt: Int = IntVal }
@@ -116,6 +117,7 @@ case class EditedSettings(
   headScriptsHtml: Option[String],
   endOfBodyHtml: Option[String],
   headerHtml: Option[String],
+  navConf: Option[JsObject],
   footerHtml: Option[String],
   horizontalComments: Option[Boolean],
   socialLinksHtml: Option[String],
@@ -235,6 +237,7 @@ object EditedSettings {
     headScriptsHtml = None,
     endOfBodyHtml = None,
     headerHtml = None,
+    navConf = None,
     footerHtml = None,
     horizontalComments = None,
     socialLinksHtml = None,
@@ -341,6 +344,7 @@ case class SettingsToSave(
   headScriptsHtml: Option[Option[String]] = None,
   endOfBodyHtml: Option[Option[String]] = None,
   headerHtml: Option[Option[String]] = None,
+  navConf: Option[Option[JsObject]] = None,
   footerHtml: Option[Option[String]] = None,
   horizontalComments: Option[Option[Boolean]] = None,
   socialLinksHtml: Option[Option[String]] = None,

@@ -25,8 +25,10 @@ Dd = deleted
 Dl = delete  — change to 'Dt'? 'Dl' looks like Download doesn't it?
 Df = draft
 Dl = download — change to Dwnl? so rare
-CB = checkbox
+CB = checkbox, e.g. s_SthCB
+Cb = Contextbar
 Cr = create
+Cu = Custom, e.g. CuLns = custom links
 Nf = notification
 Pf = preference, e.g. NfPfs = notification preferences
 Pw = password, e.g. NewPwI
@@ -39,8 +41,10 @@ Pp = participant
 P, Pg = page
 Prvw = preview
 Po = post
+Tb = Topbar   RENAME esTopbarWrap to s_Tb
 Un = username
 FN = full name
+Wb = Watchbar
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
 ...    = B means Button
@@ -85,7 +89,7 @@ s_APAs_OPRB     = After-page orig-post-reply-button
 s_CD            = category dialog: create/edit categories
 s_CD_Sec_PoPs   = category dialog, security tab, list of perms-on-pages
 
-esCB            = context bar (the right sidebar)
+esCB            = context bar (the right sidebar)  RENAME s_Cb  Contextbar but NOT ContextBar.
 
 s_Dfs_Df_Ttl    = the title (Ttl), of a draft (Df), in a list of drafts (Dfs).
 
@@ -129,7 +133,7 @@ s_InvD          = invites dialog
 
 esLD            = login/signup dialog
 
-s_MB            = topic metabar (just below the Orig Post, before all replies)
+s_MB            = topic metabar (just below the Orig Post, before all replies)  RENAME: Mb not MB
 
 s_MMB-IsImp     = my menu button, is-impersonating
 s_MM            = my menu (one's avatar + username, in the topbar)   RENAME s_MM to s_MyMenu ?
@@ -211,7 +215,7 @@ SP_SRs          = search page, search results
 SR              = search result
 
 esTB            = topbar (with the breadcrump and login & signup, or user name)
-s_TB_Cs_C       = topbar, ancestor categories, one of them
+s_TB_Cs_C       = topbar, ancestor categories, one of them  RENAME:  Tb  not TB.
 s_TB_Cs_C-Dd    = deleted
 
 esTs            = page/post tags
@@ -238,7 +242,7 @@ esTTD           = Topic type dropdown
 s_VAD           = View As dialog
 s_VAD_Sbd       = Somebody to view as
 
-esWB            = watchbar (the left sidebar)
+esWB            = watchbar (the left sidebar)  RENAME  Wb = Watchbar not WatchBar!
 esWB_T          = watchbar topic
 
 p_ShareD        = share dialog, e.g. Twitter, Google etc.

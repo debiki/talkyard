@@ -126,14 +126,19 @@ trait AllSettings {
   def akismetApiKey: String
   def sendEmailToAkismet: Boolean
   def faviconUrl: String
+
   def headStylesHtml: String
   def headScriptsHtml: String
   def endOfBodyHtml: String
   def headerHtml: String
+  def navConf: JsObject
   def footerHtml: String
+
   def horizontalComments: Boolean
+
   def socialLinksHtml: String
   def logoUrlOrHtml: String
+
   def orgDomain: String
   def orgFullName: String
   def orgShortName: String
@@ -246,6 +251,7 @@ trait AllSettings {
     headScriptsHtml = Some(self.headScriptsHtml),
     endOfBodyHtml = Some(self.endOfBodyHtml),
     headerHtml = Some(self.headerHtml),
+    navConf = Some(self.navConf),
     footerHtml = Some(self.footerHtml),
     horizontalComments = Some(self.horizontalComments),
     socialLinksHtml = Some(self.socialLinksHtml),
@@ -364,6 +370,7 @@ object AllSettings {
     val headScriptsHtml = ""
     val endOfBodyHtml = ""
     val headerHtml = ""
+    val navConf = JsEmptyObj
     val footerHtml = /* default CSS here: [5UK62W] */ o"""
       <footer><p>
         <a href="/-/terms-of-use" rel="nofollow">Terms of use</a>
@@ -483,6 +490,7 @@ case class EffectiveSettings(
   def headScriptsHtml: String = firstInChain(_.headScriptsHtml) getOrElse default.headScriptsHtml
   def endOfBodyHtml: String = firstInChain(_.endOfBodyHtml) getOrElse default.endOfBodyHtml
   def headerHtml: String = firstInChain(_.headerHtml) getOrElse default.headerHtml
+  def navConf: JsObject = firstInChain(_.navConf) getOrElse default.navConf
   def footerHtml: String = firstInChain(_.footerHtml) getOrElse default.footerHtml
   def horizontalComments: Boolean = firstInChain(_.horizontalComments) getOrElse default.horizontalComments
   def socialLinksHtml: String = firstInChain(_.socialLinksHtml) getOrElse default.socialLinksHtml
@@ -714,6 +722,7 @@ object Settings2 {
       "headScriptsHtml" -> JsStringOrNull(s.headScriptsHtml),
       "endOfBodyHtml" -> JsStringOrNull(s.endOfBodyHtml),
       "headerHtml" -> JsStringOrNull(s.headerHtml),
+      "navConf" -> s.navConf.getOrElse(JsNull).as[JsValue],
       "footerHtml" -> JsStringOrNull(s.footerHtml),
       "horizontalComments" -> JsBooleanOrNull(s.horizontalComments),
       "socialLinksHtml" -> JsStringOrNull(s.socialLinksHtml),
@@ -815,6 +824,7 @@ object Settings2 {
     headScriptsHtml = anyString(json, "headScriptsHtml", d.headScriptsHtml),
     endOfBodyHtml = anyString(json, "endOfBodyHtml", d.endOfBodyHtml),
     headerHtml = anyString(json, "headerHtml", d.headerHtml),
+    navConf = anyJsObj(json, "navConf", d.navConf),
     footerHtml = anyString(json, "footerHtml", d.footerHtml),
     horizontalComments = anyBool(json, "horizontalComments", d.horizontalComments),
     socialLinksHtml = anyString(json, "socialLinksHtml", d.socialLinksHtml),
@@ -902,5 +912,17 @@ object Settings2 {
         None
       case bad =>
         throwBadRequest("EdE7GK2Z8", s"'$field' is not a JsNumber, but a ${classNameOf(bad)}")
+    }
+
+
+  private def anyJsObj(json: JsValue, field: String, default: JsObject)
+          : Option[Option[JsObject]] =
+    (json \ field).toOption.map {
+      case o: JsObject =>
+        if (o == default) None else Some(o)
+      case JsNull =>
+        None
+      case bad =>
+        throwBadRequest("TyE304KP23", s"'$field' is not a JsObject, but a ${classNameOf(bad)}")
     }
 }

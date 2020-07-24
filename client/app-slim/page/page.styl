@@ -54,7 +54,7 @@ body
   width: 100vw;
   height: 100vh;
 
-.dw-fixed-topbar-wrap,
+.s_Tb-Fxd,
 .esScrollBtns_fixedBar,
 html:not(.s_InIframe) #esPageColumn
   top: 0;
@@ -65,10 +65,10 @@ html:not(.s_InIframe) #esPageColumn
   right: $contextbarWidth;
   @media (max-width: $contextbarHasMinWidthMaxWinWidth)
     right: $contextbarMinWidth;
-  &.dw-fixed-topbar-wrap
+  &.s_Tb-Fxd
     bottom: auto;
 html:not(.s_InIframe).esSidebarsOverlayPage
-  .dw-fixed-topbar-wrap,
+  .s_Tb-Fxd,
   .esScrollBtns_fixedBar,
   #esPageColumn
     // ...but if the screen too small, let the sidebars overlay the page instead.
@@ -124,7 +124,7 @@ html:not(.s_InIframe).esSidebarsOverlayPage
   bottom: 0;
   z-index: $sidebarZIndex - 1;
   background: black;
-  opacity: 0.5;
+  opacity: 0.7;
   display: none;
 
 
@@ -132,7 +132,7 @@ html.s_InIframe,
 html:not(.es-pagebar-open)
   #esThisbarColumn
     display: none;
-  .dw-fixed-topbar-wrap,
+  .s_Tb-Fxd,
   .esScrollBtns_fixedBar,
   #esPageColumn
     right: 0;
@@ -141,7 +141,7 @@ html.s_InIframe,
 html:not(.es-watchbar-open)
   #esWatchbarColumn
     display: none;
-  .dw-fixed-topbar-wrap,
+  .s_Tb-Fxd,
   .esScrollBtns_fixedBar,
   #esPageColumn
     left: 0;
@@ -176,9 +176,9 @@ html.s_PT-7  // forum
 #topbar > .container,
 #dwPosts > .container,
 #dwPosts > div > .container,
-.esTopbarWrap > .container,
+.s_Tb > .container,
 .esAdminArea > .container,
-#dwPosts > div > .esTopbarWrap > .container  // try to remove
+#dwPosts > div > .s_Tb > .container  // try to remove
   padding-left: 20px;
   padding-right: 20px;
   @media (max-width: 850px)
@@ -195,9 +195,9 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   #topbar > .container,
   #dwPosts > .container,
   #dwPosts > div > .container,
-  .esTopbarWrap > .container,
+  .s_Tb > .container,
   .esAdminArea > .container,
-  #dwPosts > div > .esTopbarWrap > .container  // try to remove
+  #dwPosts > div > .s_Tb > .container  // try to remove
     padding-left: 25px;
 
 #dwPosts

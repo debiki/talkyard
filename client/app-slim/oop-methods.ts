@@ -70,6 +70,28 @@ export function urlPath_isToForum(urlPath: string, forumPath: string): boolean {
 }
 
 
+export function autoPageType_isProfile(autoPageType: AutoPageType): boolean {
+  return autoPageType === AutoPageType.UserProfilePage ||
+        autoPageType === AutoPageType.AllGroupsPage ||
+        autoPageType === AutoPageType.GroupProfilePage;
+}
+
+
+export function location_autoPageType(location: { pathname: string } | U): AutoPageType {
+  const urlPath = location ? location.pathname : '';
+  if (urlPath.indexOf(UsersRoot) === 0) return AutoPageType.UserProfilePage;
+  if (urlPath === GroupsRoot) return AutoPageType.AllGroupsPage;
+  if (urlPath.indexOf(GroupsRoot) === 0) return AutoPageType.GroupProfilePage;
+  if (urlPath.indexOf(SearchRootPath) === 0) return AutoPageType.SearchPage;
+  if (urlPath.indexOf(AdminRoot) === 0) return AutoPageType.AdminArea;
+
+  // This'd be weird: (instead, ought to match one of the locations above)
+  if (urlPath.indexOf(ApiUrlPathPrefix) === 0) return AutoPageType.ApiSomewhere;
+
+  return AutoPageType.NoAutoPage;
+}
+
+
 export function topic_lastActivityAtMs(topic: Topic): number {
    return topic.bumpedAtMs || topic.createdAtMs;
 }

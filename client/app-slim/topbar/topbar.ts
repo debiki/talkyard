@@ -37,7 +37,7 @@ const FixedTopDist = 8;
 
 
 export function getTopbarHeightInclShadow(): number {
-  const topbarElem = $first('.dw-fixed-topbar-wrap');
+  const topbarElem = $first('.s_Tb-Fxd');
   return !topbarElem ? 0 :
       topbarElem.offsetHeight + 4; // shadow size (the '+ X') dupl here: [5YKW25]
 }
@@ -153,11 +153,16 @@ export const TopBar = createComponent({
     const pageRole = page.pageRole;
     const isChat = page_isChat(page.pageRole);
     const isEmbComments = pageRole === PageRole.EmbeddedComments;
+    const isBitDown = this.state.fixed;
+    const navConf: BrowserCode = store.settings.navConf || {};
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
     if (pageRole === PageRole.CustomHtmlPage && (!this.state.fixed || !me || !me.isLoggedIn))
       return r.div();
+
+    const autoPageType = location_autoPageType(this.props.location);
+
 
     // Sidebars just make newcomers confused, if shown on some About Us page. However, if logged
     // in already, then one likely knows how they work —> then one would instead be confused,
@@ -290,8 +295,18 @@ export const TopBar = createComponent({
 
     // ------- Forum title
 
+    const siteLogoHtml =
+        isBitDown && navConf.topbarBitDownLogo || navConf.topbarAtTopLogo;
+
+    const siteLogoTitle = siteLogoHtml &&
+        // No custom code in the admin area — bad if it breaks.
+        autoPageType !== AutoPageType.AdminArea &&
+        r.div({
+            className: 's_Tb_CuLogo s_Cu',
+            dangerouslySetInnerHTML: { __html: siteLogoHtml }});
+
     let pageTitle;
-    if (pageRole === PageRole.Forum) {
+    if (!siteLogoTitle && pageRole === PageRole.Forum && !autoPageType) {
       pageTitle =
           r.div({ className: 'dw-topbar-title' },
             debiki2.page.Title({ store, hideButtons: this.state.fixed }));
@@ -304,31 +319,63 @@ export const TopBar = createComponent({
     let customTitle = this.props.customTitle;
     let backToSiteButton = this.props.backToSiteButtonTitle;
 
-    if (this.props.location) {
-      const path: string = this.props.location.pathname;
-      if (path.indexOf(UsersRoot) === 0 || path.indexOf(GroupsRoot) === 0) {
-        backToSiteButton = t.tb.BackFromUsr;
-        customTitle = path === GroupsRoot
+    const backToGroups = autoPageType !== AutoPageType.GroupProfilePage ? null :
+            LinkUnstyled({ to: GroupsRoot,
+                className: 'esTopbar_custom_backToSite btn icon-reply s_AllGroupsL' },
+              t.mm.ViewGroups);
+
+    if (autoPageType_isProfile(autoPageType)) {
+      backToSiteButton = t.tb.BackFromUsr;
+      /*
+      const isAllGroupsPage = autoPageType === AutoPageType.AllGroupsPage;
+      const isOneGroup = autoPageType === AutoPageType.GroupProfilePage;
+      customTitle = isAllGroupsPage
             ? t.GroupsC
-            : (path.startsWith(GroupsRoot)
-                ? LinkUnstyled({ to: GroupsRoot }, t.GroupsC)
-                : t.tb.AbtUsr);
-      }
-      else if (path.indexOf(SearchRootPath) === 0) {
-        customTitle = t.tb.SearchPg;
-        backToSiteButton = t.Back;
-      }
+            : (isOneGroup ? LinkUnstyled({ to: GroupsRoot }, t.GroupsC)
+                          : t.tb.AbtUsr);
+      */
+    }
+    else if (autoPageType === AutoPageType.SearchPage) {
+      customTitle = t.tb.SearchPg;
+      backToSiteButton = t.Back;
     }
 
-    if (customTitle) {
+    if (siteLogoTitle) {
+      // Show only siteLogoTitle, i.e. custom site logo & title.
+      customTitle = undefined;
+    }
+    else if (customTitle) {
       customTitle = r.h1({ className: 'esTopbar_custom_title' }, customTitle);
     }
+
+    // @ifdef DEBUG
+    // Either we're on a page with a title, or we're in some API section.
+    dieIf(pageTitle && customTitle, 'TyE06RKTD6');
+    // @endif
 
     if (this.props.showBackToSite || backToSiteButton) {
       backToSiteButton = LinkUnstyled({ className: 'esTopbar_custom_backToSite btn icon-reply',
           href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;
     }
+
+    // ------- Custom navigation
+
+    const custLinksHtml = isBitDown && navConf.topbarBitDownNav || navConf.topbarAtTopNav;
+    const customNavLinks = custLinksHtml &&
+        r.div({
+            className: 's_Tb_CuLns s_Cu',
+            dangerouslySetInnerHTML: { __html: custLinksHtml }});
+
+    // ------- Buttons and search field
+
+    const searchAndButtons =
+        r.div({ className: 'esTopbar_right' },
+          searchButton,  // later:  show input field so can just start typing
+          signupButton,
+          loginButton,
+          toolsButton,
+          avatarNameDropdown);
 
     // ------- Open Contextbar button
 
@@ -436,28 +483,31 @@ export const TopBar = createComponent({
               Math.max(0, Math.ceil((eds.mainWorkUntilSecs * 1000 - Date.now()) / 3600/1000)) + " hours")));
               */
 
-    const topbar =
+    const topbarRow1 =
       r.div({ className: 'esTopbar' + extraMarginClass },
-        r.div({ className: 'esTopbar_right' },
-          signupButton,
-          loginButton,
-          toolsButton,
-          searchButton,
-          avatarNameDropdown),
+        siteLogoTitle,
         r.div({ className: 'esTopbar_custom' },
           customTitle,
           // UX REFACTOR break out to its own widget, incl a retry-timeout countdown?
           r.div({ className: 's_NoInetM' }, t.ni.NoInet), //  [NOINETMSG]
           // "Will retry in X seconds"  I18N  seconds for live notfs retry, not reading progr
           anyMaintWorkMessage,
+          backToGroups,
           backToSiteButton),
         pageTitle,
-        ancestorCategories);
+        customNavLinks,
+        ancestorCategories,
+        searchAndButtons);
+
+    const topbarRow2 = navConf.topbarAtTopNavLine2 &&
+        r.div({
+            className: 's_Tb_CuLns2 s_Cu',
+            dangerouslySetInnerHTML: { __html: navConf.topbarAtTopNavLine2 }});
 
     let fixItClass = '';
     let placeholderIfFixed;
     if (this.state.fixed) {
-      fixItClass = ' dw-fixed-topbar-wrap';
+      fixItClass = ' dw-fixed-topbar-wrap s_Tb-Fxd';  // RENAME to s_Tb-Fxd
       // (This placeholder is actually totally needed, otherwise in some cases it'd be
       // impossible to scroll down — because when the topbar gets removed from the flow
       // via position:fixed, the page gets shorter, and then sometimes this results in the
@@ -474,11 +524,16 @@ export const TopBar = createComponent({
     return rFragment({},
       r.div({},
         placeholderIfFixed,
-        r.div({ className: 'esTopbarWrap' + fixItClass },
-          openWatchbarButton,
-          openContextbarButton,
-          r.div({ className: 'container' },
-            topbar))),
+        r.div({ className: 'esTopbarWrap s_Tb' + fixItClass },  // RENAME to s_Tb, no Wrap
+          r.div({ className: 's_Tb_Row1' },
+            openWatchbarButton,
+            openContextbarButton,
+            r.div({ className: 'container' }, topbarRow1)),
+          // Sometimes nice with a 2nd row, for nav links, if on mobile.
+          // Instead of hamburger menu (which "hides" the nav links).
+          topbarRow2 &&
+            r.div({ className: 's_Tb_Row2' },
+              r.div({ className: 'container' }, topbarRow2)))),
       adminGettingStartedTips);
   }
 });

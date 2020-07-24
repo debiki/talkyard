@@ -1162,6 +1162,8 @@ object JsonMaker {
       json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
     if (settings.showExperimental != D.showExperimental)
       json += "showExperimental" -> JsBoolean(settings.showExperimental)
+    if (settings.navConf != D.navConf)
+      json += "navConf" -> settings.navConf
     if (settings.forumMainView != D.forumMainView)
       json += "forumMainView" -> JsString(settings.forumMainView)
     if (settings.forumTopicsSortButtons != D.forumTopicsSortButtons)

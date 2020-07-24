@@ -978,6 +978,7 @@ interface SettingsVisibleClientSide extends TopicInterfaceSettings {
   enableDirectMessages?: boolean;       // default: true
   enableSimilarTopics?: boolean;        // default: depends on config file, later: true
   showSubCommunities?: boolean;         // default: false
+  navConf?: BrowserCode;                // default: {}
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
   forumCategoryLinks?: string;          // default: 'categories'
@@ -1542,6 +1543,7 @@ interface Settings extends TopicInterfaceSettings {
   endOfBodyHtml: string;
 
   headerHtml: string;
+  navConf: BrowserCode;
   footerHtml: string;
 
   socialLinksHtml: string;
@@ -1649,6 +1651,21 @@ interface Rect {
   left: number;
   right: number;
   bottom: number;
+}
+
+
+
+// ----- Extensions, plugins, themes
+
+// Later, part of an extensions system.
+// For now:
+interface BrowserCode {
+  topbarAtTopLogo?: string;
+  topbarAtTopNav?: string;
+  topbarAtTopNavLine2?: string;
+  topbarBitDownLogo?: string;
+  topbarBitDownNav?: string;
+  topbarBitDownNavLine2?: string;
 }
 
 

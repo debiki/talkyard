@@ -37,12 +37,13 @@ html:not(.js)
   .esTopbar
     padding: 20px 0 0;
 
-.esTopbarWrap
+.s_Tb
   z-index: 3;
   min-height: 40px;
 
 // New:
 .esTopbar
+  display: flex;
   clearfix()
   pointer-events: none;
   background: none !important; // IE11
@@ -85,6 +86,7 @@ html:not(.js)
 
 
 .esTopbar_signUp
+  margin-left: 7px;
   margin-right: 6px;
 
 .esOpenPagebarBtn,
@@ -96,12 +98,23 @@ html:not(.js)
   &.esOpenWatchbarBtn
     padding-right: 0;
   z-index: 1;
-.dw-fixed-topbar-wrap // rename to theTB_FixedWrap ?
+.s_Tb-Fxd
   .esOpenPagebarBtn,
   .esOpenWatchbarBtn
     top: 0;
     margin-top: 0;
     padding-top: 9px;
+
+
+.s_Tb_Row2
+  ul, ol
+    display: flex;
+  li
+    list-style: none;
+    margin: 0 auto;
+    a
+      display: inline-block;
+      padding: 9px 10px 11px;
 
 .esOpenWatchbarBtn_text
   font-size: 14px;
@@ -227,7 +240,7 @@ html.es-watchbar-open
   &.icon-reply:before
     margin-right: 4px;
 
-.dw-fixed-topbar-wrap
+.s_Tb-Fxd
   .dw-topbar-title
     margin-top: 3px;
   .esTopbar_ancestors > li
@@ -237,8 +250,8 @@ html.es-watchbar-open
 
 
 .esTB_SearchBtn
-  padding: 1px 5px 3px 4px;
-  margin: 0 0 0 2px;
+  padding: 2px 5px 0px 4px;
+  margin: 0;
   .icon-search
     color: hsl(0, 0%, 50%);
     font-size: 21px;
@@ -385,6 +398,11 @@ html.es-watchbar-open
   font-size: 15px;
   color: hsl(0, 100%, 40%);
 
+.esMyMenu
+  padding-right: 6px;
+  position: relative;
+  right: -6px;
+
 .esMyMenu .esAvtr
   margin-right: 5px;
 
@@ -413,7 +431,7 @@ html:not(.es-watchbar-open),
 // If screen very narrow, always place title on separate line, so won't jump up/down when
 // opening/closing  the watchbar.
 html.esSidebarsOverlayPage
-  .esTopbarWrap:not(.dw-fixed-topbar-wrap)
+  .s_Tb:not(.s_Tb-Fxd)
     @media (max-width: $titleOwnLineMaxWidth)
       .dw-topbar-title
         clear: both;
@@ -466,12 +484,18 @@ html.esSidebarsOverlayPage
 
       min-width: 40px;
 
+    &.dw-a-tools
+      margin-left: 0;  // now search btn to the left
+
+  .s_Tb_CuLogo,
+  .s_Tb_CuLns,
   .esTopbar_ancestors,
   .esTopbar_right
     margin-top: 15px;
 
   .esTopbar_right
-    float: right;
+    margin-left: auto;  // right alights, in a flexbox
+    //float: right;  // no, now flexbox instead
 
     .btn
       border-radius: 0;
@@ -494,7 +518,7 @@ html.esSidebarsOverlayPage
           font-weight: bold;
 
 
-.dw-fixed-topbar-wrap
+.s_Tb-Fxd
   z-index: 1010;
   background: white;
   // shrink -2px so won't overlap #esPageScrollable scrollbar
@@ -572,7 +596,7 @@ html.esSidebarsOverlayPage
 
 // There's a topbar-padding-right that prenvents the topbar from overlapping the page scrollbar.
 // Remove this padding when the topbar is full-width. See [5FK7RS2] above
-html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
+html.esSidebarsOverlayPage .s_Tb-Fxd
   margin-right: 0;
 
 
@@ -610,6 +634,17 @@ html.esSidebarsOverlayPage .dw-fixed-topbar-wrap
     color: hsl(207, 44%, 33%);
     &::before
       opacity: 0.75;
+
+
+
+// Custom title, logo, links
+// ==========================
+
+.s_Tb_CuLogo,
+.s_Tb_CuLns
+  pointer-events: auto;
+  display: inline-block;
+
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

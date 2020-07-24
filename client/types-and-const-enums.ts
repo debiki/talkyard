@@ -218,6 +218,20 @@ const enum TopTopicsPeriod {
   All = 6
 }
 
+
+const enum AutoPageType {
+  NoAutoPage = 0,
+  UserProfilePage = -1,
+  GroupProfilePage = -2,
+  AllGroupsPage = -3,
+  SearchPage = -11,
+  //StaffSpace = -21,
+  AdminArea = -22,
+  //SuperAdminArea = -23,
+  ApiSomewhere = -99,
+}
+
+
 type PageType = PageRole;
 
 const enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]  RENAME to PageType

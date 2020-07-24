@@ -280,6 +280,9 @@ But rename useParams to useUrlParams !?
 Nice API for writing bots, e.g. chat bots or a Usability Testing Exchange external
 server / bot.
 
+[extensions]
+Needs new table: t_extensions
+
 [Scala_213]
 Try —> Using
 

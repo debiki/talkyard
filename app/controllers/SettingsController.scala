@@ -61,8 +61,13 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
   /** Moderators may not change any settings.
+    *
+    * Why up to 50k? Because some html settings can include inline SVG,
+    * and an SVG logo can be like 10 kb so 10 is too little.
+    * Later: Could move such html to  t_extensions,  for e.g. themes and
+    * custom html incl svg. [extensions]
     */
-  def saveSiteSettings: Action[JsValue] = AdminPostJsonAction(maxBytes = 10*1000) {
+  def saveSiteSettings: Action[JsValue] = AdminPostJsonAction(maxBytes = 50*1000) {
         request: JsonPostRequest =>
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body, globals)
     request.dao.saveSiteSettings(settingsToSave, request.who)

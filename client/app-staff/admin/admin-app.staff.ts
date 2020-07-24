@@ -2620,6 +2620,9 @@ const CustomizeHtmlPanel = createFactory({
 
   render: function() {
     const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    let navConfJsonExeption;
+
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
 
@@ -2642,6 +2645,24 @@ const CustomizeHtmlPanel = createFactory({
           getter: (s: Settings) => s.headerHtml,
           update: (newSettings: Settings, target) => {
             newSettings.headerHtml = target.value;
+          }
+        }),
+
+        currentSettings.showExperimental &&
+        Setting2(props, { type: 'textarea', label: "Top nav HTML",
+          help: "Top navigation bar configuration (will be a GUI later)",
+          placeholder: "",
+          error: navConfJsonExeption,
+          getter: (s: Settings) => JSON.stringify(s.navConf, undefined, 2),
+          update: (newSettings: Settings, target) => {
+            try {
+              const json = JSON.parse(target.value);
+              newSettings.navConf = json;
+              navConfJsonExeption = null;
+            }
+            catch (ex) {
+              navConfJsonExeption = '' + ex;
+            }
           }
         }),
 
@@ -2817,6 +2838,7 @@ function Setting2(panelProps, props, anyChildren?) {
   return (
     r.div({},
       Input({ ...props, disabled }, anyChildren),
+      props.error && r.div({ style: { color: 'red' }}, props.error),
       resetToDefaultButton,
       undoChangesButton));
 }

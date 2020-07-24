@@ -115,6 +115,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         head_scripts_html,
         end_of_body_html,
         header_html,
+        nav_conf,
         footer_html,
         horizontal_comments,
         social_links_html,
@@ -148,8 +149,8 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
         html_tag_css_classes)
       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-          ?, ?, ?, ?)
+          ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
     val values = List(
       siteId.asAnyRef,
@@ -211,6 +212,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       editedSettings2.headScriptsHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.endOfBodyHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.headerHtml.getOrElse(None).trimOrNullVarchar,
+      editedSettings2.navConf.getOrElse(None).orNullJson,
       editedSettings2.footerHtml.getOrElse(None).trimOrNullVarchar,
       editedSettings2.horizontalComments.getOrElse(None).orNullBoolean,
       editedSettings2.socialLinksHtml.getOrElse(None).trimOrNullVarchar,
@@ -319,6 +321,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
     maybeSet("head_scripts_html", s.headScriptsHtml.map(_.trimOrNullVarchar))
     maybeSet("end_of_body_html", s.endOfBodyHtml.map(_.trimOrNullVarchar))
     maybeSet("header_html", s.headerHtml.map(_.trimOrNullVarchar))
+    maybeSet("nav_conf", s.navConf.map(_.orNullJson))
     maybeSet("footer_html", s.footerHtml.map(_.trimOrNullVarchar))
     maybeSet("horizontal_comments", s.horizontalComments.map(_.orNullBoolean))
     maybeSet("social_links_html", s.socialLinksHtml.map(_.trimOrNullVarchar))
@@ -427,6 +430,7 @@ trait SettingsSiteDaoMixin extends SiteTransaction {
       headScriptsHtml = getOptString(rs, "head_scripts_html"),
       endOfBodyHtml = getOptString(rs, "end_of_body_html"),
       headerHtml = getOptString(rs, "header_html"),
+      navConf = getOptJsObject(rs, "nav_conf"),
       footerHtml = getOptString(rs, "footer_html"),
       horizontalComments = getOptBool(rs, "horizontal_comments"),
       socialLinksHtml = getOptString(rs, "social_links_html"),
