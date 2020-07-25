@@ -154,7 +154,7 @@ function runE2eTest {
       if [ $? -ne 0 ]; then
         log_message "Failed: $cmd" >> $failfile
         log_message "Test failed trice, aborting." >> $failfile
-        cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
+        cmd_with_debug=$(echo $@)  # skip:  | sed 's/wdio /wdio-debug-9101 /')  doesn't work anyway
         echo
         echo
         echo "*** ERROR [TyEE2E] ***"
