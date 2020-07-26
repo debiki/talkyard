@@ -2397,7 +2397,7 @@ export class TyE2eTestBrowser {
 
       clickBack: () => {
         this.repeatUntilAtNewUrl(() => {
-          this.waitAndClick('.esTopbar_custom_backToSite');
+          this.waitAndClick('.s_Tb_Ln-Bck');
         });
       },
 
@@ -2840,7 +2840,7 @@ export class TyE2eTestBrowser {
         assert(!this.isVisible('.dw-p'));
         assert(!this.isVisible('.dw-p-ttl'));
         // Admin area not shown.
-        assert(!this.isVisible('.esTopbar_custom_backToSite'));
+        assert(!this.isVisible('.s_Tb_Ln'));
         assert(!this.isVisible('#dw-react-admin-app'));
         // User profile not shown.
         assert(!this.isVisible(this.userProfilePage.avatarAboutButtonsSelector));
@@ -5433,7 +5433,7 @@ export class TyE2eTestBrowser {
 
       _navigateBackToUsersOrGroupsList: (isGroup: boolean) => {
         this.repeatUntilAtNewUrl(() => {
-          this.waitAndClick('.esTopbar_custom_title a');
+          this.waitAndClick('.s_Tb_Ln-Grps');
         });
         if (this.urlPath().startsWith(c.GroupsUrlPrefix)) {
           assert(isGroup);
@@ -5984,7 +5984,7 @@ export class TyE2eTestBrowser {
 
       clickLeaveAdminArea: () => {
         this.repeatUntilAtNewUrl(() => {
-          this.waitAndClick('.esTopbar_custom_backToSite');
+          this.waitAndClick('.s_Tb_Ln-Bck');
         });
       },
 

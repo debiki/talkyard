@@ -321,7 +321,7 @@ export const TopBar = createComponent({
 
     const backToGroups = autoPageType !== AutoPageType.GroupProfilePage ? null :
             LinkUnstyled({ to: GroupsRoot,
-                className: 'esTopbar_custom_backToSite btn icon-reply s_AllGroupsL' },
+                className: 's_Tb_Ln s_Tb_Ln-Grps btn icon-reply' },
               t.mm.ViewGroups);
 
     if (autoPageType_isProfile(autoPageType)) {
@@ -354,7 +354,7 @@ export const TopBar = createComponent({
     // @endif
 
     if (this.props.showBackToSite || backToSiteButton) {
-      backToSiteButton = LinkUnstyled({ className: 'esTopbar_custom_backToSite btn icon-reply',
+      backToSiteButton = LinkUnstyled({ className: 's_Tb_Ln s_Tb_Ln-Bck btn icon-reply',
           href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;
     }

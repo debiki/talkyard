@@ -82,7 +82,7 @@ describe("invite-to-groups  TyT7WKTJ40ZT22", () => {
   });
 
   it("... and a Teachers group", () => {
-    owensBrowser.waitAndClick('.esTopbar_custom_title a');
+    owensBrowser.waitAndClick('.s_Tb_Ln-Grps');
     owensBrowser.groupListPage.createGroup(
         { username: GroupTeachersUsername, fullName: GroupTeachersFullName });
   });
