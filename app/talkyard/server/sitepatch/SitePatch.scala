@@ -332,7 +332,10 @@ case class SimpleSitePatch(
         updatedAt = now.toJavaDate))
 
       permsOnPages.append(ForumDao.makeEveryonesDefaultCategoryPerms(nextCategoryId))
-      permsOnPages.append(ForumDao.makeFullMembersDefaultCategoryPerms(nextCategoryId))
+
+      // Wait, don't enable this yet — would need to update many many tests:
+      //permsOnPages.append(ForumDao.makeFullMembersDefaultCategoryPerms(nextCategoryId))
+
       permsOnPages.append(ForumDao.makeStaffCategoryPerms(nextCategoryId))
 
       appendPage(

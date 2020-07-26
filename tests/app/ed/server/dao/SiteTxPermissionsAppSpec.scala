@@ -25,14 +25,17 @@ import debiki.dao.{CreateForumResult, DaoAppSuite, SiteDao}
 class SiteTxPermissionsAppSpec extends DaoAppSuite {
 
   // Everyone's permissions on the General category,
-  // staff's permissions on the General category,
+  // full members',
+  // staff's,
   // everyone's permissions on the Questions category,
-  // staff's permissions on the Questions category,
+  // full members',
+  // staff's,
   // everyone's permissions on the Ideas category,
-  // staff's permissions on the Ideas category,
+  // full members',
+  // staff's,
   // staff's permissions on the Staff category,
-  // = 7
-  val NumDefaultForumPermissions = 7
+  // = 10
+  val NumDefaultForumPermissions = 10
 
 
   "SiteTransaction can handle PermsOnPages" - {
