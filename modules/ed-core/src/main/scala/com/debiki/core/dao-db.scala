@@ -31,10 +31,10 @@ abstract class DbDaoFactory {  CLEAN_UP; // Delete this class? And rename DbDao2
   final def newDbDao2(): DbDao2 =
     new DbDao2(this)
 
-  protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Boolean,
-    mustBeSerializable: Boolean): SiteTransaction
+  protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Bo,
+    mustBeSerializable: Bo): SiteTx
 
-  protected[core] def newSystemTransaction(readOnly: Boolean): SystemTransaction
+  protected[core] def newSystemTransaction(readOnly: Bo, allSitesWriteLocked: Bo): SysTx
 
 }
 

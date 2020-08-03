@@ -95,7 +95,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     }
 
     "lookup site by public id, name and hostname" in {
-      globals.systemDao.dangerous_readWriteTransaction { tx =>
+      globals.systemDao.writeTxLockAllSites { tx =>
         info("by public id")
         tx.loadSiteByPubId(sitePubId1000.pubId).map(_.id) mustBe Some(sitePubId1000.id)
 
@@ -117,7 +117,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     }
 
     "lookup many sites" in {
-      globals.systemDao.dangerous_readWriteTransaction { tx =>
+      globals.systemDao.writeTxLockAllSites { tx =>
         tx.loadSitesByIds(Nil).length mustBe 0
         tx.loadSitesByIds(Seq(345678)).length mustBe 0
 
@@ -131,13 +131,13 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     }
 
     "update and read back" in {
-      globals.systemDao.dangerous_readWriteTransaction { tx =>
+      globals.systemDao.writeTxLockAllSites { tx =>
         tx.updateSites(Seq(SuperAdminSitePatch(
               sitePubId1000.id, SiteStatus.HiddenUnlessAdmin,
               newNotes = Some("notes_notes"),
               featureFlags = "ffTestFlagOne ffTestFlag2")))
       }
-      globals.systemDao.dangerous_readWriteTransaction { tx =>
+      globals.systemDao.writeTxLockAllSites { tx =>
         val site = tx.loadSiteInclDetailsById(sitePubId1000.id).get
         site.superStaffNotes mustBe Some("notes_notes")
         site.featureFlags mustBe "ffTestFlagOne ffTestFlag2"
@@ -146,7 +146,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     }
 
     "load all sites incl details, and staff" in {
-      globals.systemDao.dangerous_readWriteTransaction { tx =>
+      globals.systemDao.writeTxLockAllSites { tx =>
         // Just run the queries? for now
 
         info("all sites")

@@ -82,31 +82,33 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
-  def readOnlySystemTransaction[R](fn: (SystemTransaction) => R): R = {
-    val transaction = dbDaoFactory.newSystemTransaction(readOnly = true)
+  def readOnlySystemTransaction[R](fn: SysTx => R): R = {
+    val tx = dbDaoFactory.newSystemTransaction(
+          readOnly = true, allSitesWriteLocked = false)
     try {
-      fn(transaction)
+      fn(tx)
     }
     finally {
-      transaction.rollback()
+      tx.rollback()
     }
   }
 
 
   /** Unlike readWriteSiteTransaction, this one doesn't throw OverQuotaException.
     */
-  def readWriteSystemTransaction[R](fn: (SystemTransaction) => R): R = {
-    val transaction = dbDaoFactory.newSystemTransaction(readOnly = false)
+  def readWriteSystemTransaction[R](fn: SysTx => R, allSitesWriteLocked: Bo): R = {
+    val tx = dbDaoFactory.newSystemTransaction(
+          readOnly = false, allSitesWriteLocked = allSitesWriteLocked)
     var committed = false
     try {
-      val result = fn(transaction)
-      transaction.commit()
+      val result = fn(tx)
+      tx.commit()
       committed = true
       result
     }
     finally {
       if (!committed) {
-        transaction.rollback()
+        tx.rollback()
       }
     }
   }

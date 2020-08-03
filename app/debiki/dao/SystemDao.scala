@@ -26,6 +26,7 @@ import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
 import ed.server.spam.ClearCheckingSpamNowCache
+import java.util.concurrent.TimeUnit
 import play.api.libs.json.JsObject
 import talkyard.server.JsX
 import talkyard.server.TyLogger
@@ -46,25 +47,53 @@ class SystemDao(
 
   val memCache = new MemCache(NoSiteId, cache, globals.mostMetrics)
 
-  private def readOnlyTransaction[R](fn: SystemTransaction => R): R =
+
+  // [Scala_3] Opaque type: SysTx —> SysTxRead
+  RENAME
+  private def readOnlyTransaction[R](fn: SysTx => R): R =
+    readTx(fn)
+  private def readTx[R](fn: SysTx => R): R =
     dbDao2.readOnlySystemTransaction(fn)
 
-  // WARNING: [PGSERZERR] Causes transaction rollbacks, rarely and infrequently, if writing
+
+  // [Scala_3] Opaque type: SysTx —> SysTxWriteAllSites
+  def writeTxLockAllSites[R](fn: SysTx => R): R =
+    SystemDao.withWholeDbWriteLock {
+      dbDao2.readWriteSystemTransaction(fn, allSitesWriteLocked = true)
+    }
+
+
+  // Note: [PGSERZERR] Would cause transaction rollbacks, rarely and infrequently, if writing
   // to the same parts of the same tables, at the same time as per site transactions.
   // Even if the app server code is otherwise fine and bug free. It's a database thing.
   // So, don't use this for updating per-site things. Instead, create a site specific
   // dao and site specific transactions — they do the database writes under mutex,
   // and so avoids any tx rollbacks.
-  def dangerous_readWriteTransaction[R](fn: SystemTransaction => R): R =
-    dbDao2.readWriteSystemTransaction(fn)
+  // Edit: Now instead we just write lock all sites instead.
+  def writeTxLockManySites[R](siteIds_ignored: Set[SiteId])(fn: SysTx => R): R = {
+    // For now:
+    writeTxLockAllSites(fn)
+    // Earlier, but can cause rollbacks: (see comment above)
+    // SiteDao.withManySiteWriteLocks(siteIdsToDelete)(fn)
+  }
 
-  def dangerous_readWriteTransactionReuseOld[R](
-        anyOldTx: Option[SystemTransaction])(fn: SystemTransaction => R): R =
-    if (anyOldTx.isDefined) fn(anyOldTx.get)
-    else dbDao2.readWriteSystemTransaction(fn)
 
-  def applyEvolutions(): Unit = {
-    dangerous_readWriteTransaction(_.applyEvolutions())
+  // [Scala_3] Opaque type: anyOldTx must be a SysTxWriteAllSites
+  def writeTxLockAllSitesReuseAnyOldTx[R](
+        anyOldTx: Opt[SysTx])(fn: SysTx => R): R = {
+    anyOldTx match {
+      case Some(oldTx) =>
+        DO_AFTER // 2021-08-01 enable dieIf in Prod
+        dieIf(Globals.isDevOrTest && !oldTx.allSitesWriteLocked,
+              "TyE502MSK", "Trying to reuse old tx but it hasn't a complete write lock")
+        fn(oldTx)
+      case None =>
+        writeTxLockAllSites(fn)
+    }
+  }
+
+  def applyEvolutions(): U = {
+    writeTxLockAllSites(_.applyEvolutions())
   }
 
 
@@ -138,7 +167,11 @@ class SystemDao(
         sitesToClear.add(patch.siteId)
       }
     }
-    dangerous_readWriteTransaction(_.updateSites(sites))  // BUG tx race, rollback risk
+    COULD_OPTIMIZE // clearDatabaseCacheAndMemCache() does:
+    // `readWriteTransaction(_.bumpSiteVersion())`, but could instead pass
+    // a param `bumpSiteVersion = true` to updateSites(), so won't need
+    // two separate transactions.
+    writeTxLockAllSites(_.updateSites(sites))
     for (siteId <- sitesToClear) {
       globals.siteDao(siteId).clearDatabaseCacheAndMemCache()
     }
@@ -147,10 +180,9 @@ class SystemDao(
 
   private def createFirstSite(): Site = {
     val pubId =
-      if (globals.isOrWasTest) Site.FirstSiteTestPublicId
-      else Site.newPubId()
-    // Not dangerous: The site doesn't yet exist, so no other transactions can access it.
-    dangerous_readWriteTransaction { sysTx =>
+          if (globals.isOrWasTest) Site.FirstSiteTestPublicId
+          else Site.newPubId()
+    writeTxLockAllSites { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
         pubId = pubId, name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
@@ -210,11 +242,8 @@ class SystemDao(
     val siteIdsToDelete = sitesToDeleteMaybeDupls.map(_.id).toSet
     logger.info(s"Deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
 
-    SiteDao.synchronizeOnManySiteIds(siteIdsToDelete) {
-      // Not dangerous — we locked these site ids (the line above).
-      globals.systemDao.dangerous_readWriteTransaction { sysTx =>
-        deleteSites(siteIdsToDelete, sysTx)
-      }
+    globals.systemDao.writeTxLockManySites(siteIdsToDelete) { sysTx =>
+      deleteSites(siteIdsToDelete, sysTx)
     }
   }
 
@@ -312,8 +341,8 @@ class SystemDao(
     // anySiteId must have been locked already, by the caller. So things
     // always get locked in the same order (avoids deadlocks).
 
-    SiteDao.synchronizeOnManySiteIds(anySiteId.toSet) {
-          globals.systemDao.dangerous_readWriteTransactionReuseOld(anySysTx) { sysTx =>
+    // (Could lock only anySiteId, if no tx to reuse.)
+    globals.systemDao.writeTxLockAllSitesReuseAnyOldTx(anySysTx) { sysTx =>
               try {
       // Keep all this in sync with createFirstSite(). (5DWSR42)
 
@@ -419,7 +448,7 @@ class SystemDao(
         logger.warn(o"""Cannot create site, dupl key error [TyE4ZKTP01]: $site,
            details: $details""")
         throw ex
-    } } }
+    } }
   }
 
 
@@ -487,15 +516,15 @@ class SystemDao(
     }
   }
 
-  def deleteFromIndexQueue(post: Post, siteId: SiteId): Unit = {
-    dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
-      transaction.deleteFromIndexQueue(post, siteId)
+  def deleteFromIndexQueue(post: Post, siteId: SiteId): U = {
+    writeTxLockAllSites { tx =>
+      tx.deleteFromIndexQueue(post, siteId)
     }
   }
 
-  def addEverythingInLanguagesToIndexQueue(languages: Set[String]): Unit = {
-    dangerous_readWriteTransaction { transaction =>  // BUG tx race, rollback risk
-      transaction.addEverythingInLanguagesToIndexQueue(languages)
+  def addEverythingInLanguagesToIndexQueue(languages: Set[St]): U = {
+    writeTxLockAllSites { tx =>
+      tx.addEverythingInLanguagesToIndexQueue(languages)
     }
   }
 
@@ -626,34 +655,34 @@ class SystemDao(
 
   // ----- The janitor actor
 
-  def deletePersonalDataFromOldAuditLogEntries(): Unit = {
-    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+  def deletePersonalDataFromOldAuditLogEntries(): U = {
+    writeTxLockAllSites { tx =>
       tx.deletePersonalDataFromOldAuditLogEntries()
     }
   }
 
-  def deletePersonalDataFromOldSpamCheckTasks(): Unit = {
-    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+  def deletePersonalDataFromOldSpamCheckTasks(): U = {
+    writeTxLockAllSites { tx =>
       tx.deletePersonalDataFromOldSpamCheckTasks()
     }
   }
 
-  def deleteOldUnusedUploads(): Unit =  {
-    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+  def deleteOldUnusedUploads(): U =  {
+    writeTxLockAllSites { tx =>
       tx.deleteOldUnusedUploads()
     }
   }
 
   def purgeOldDeletedSites(): U = {
-    dangerous_readWriteTransaction { tx =>  // BUG tx race, rollback risk
+    writeTxLockAllSites { tx =>
       val sites = tx.loadSitesDeletedNotPurged()
       logger.debug(s"Could purge some of these deleted sites: ${sites.map(_.toLogSt)}")
       // also:  [enb_req_ltr]
     }
   }
 
-  def executePendingReviewTasks(): Unit =  {
-    val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readOnlyTransaction { tx =>
+  def executePendingReviewTasks(): U =  {
+    val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readTx { tx =>
       tx.loadReviewTaskIdsToExecute()
     }
     taskIdsBySite foreach { case (siteId, taskIds) =>
@@ -690,7 +719,7 @@ class SystemDao(
   // ----- Testing
 
   def emptyDatabase(): Unit = {
-    dangerous_readWriteTransaction { transaction =>
+    writeTxLockAllSites { transaction =>
       dieIf(!globals.isOrWasTest, "EsE500EDB0")
       transaction.emptyDatabase()
     }
@@ -724,6 +753,59 @@ class SystemDao(
 
 
 object SystemDao {
+
+  /** A mutex, to avoid PostgreSQL serialization errors.
+    *
+    * The SystemDao write-locks it, when writing to the database,
+    * because it writes to "anywhere", often many sites at once.
+    *
+    * Whilst SiteDao:s only read-locks it — they restrict their writes
+    * to specific sites only, and it's ok if many SiteDao:s have write transactions
+    * open at the same time, to different sites.
+    */
+  private val wholeDbLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+
+  private val wholeDbWriteLock = wholeDbLock.writeLock()
+  private val wholeDbReadLock = wholeDbLock.readLock()
+
+  // Wait for some seconds — maybe there's a JVM garbage collection pause.
+  private val lockTimeoutSecs = 5L
+
+  // This is for the SystemDao to write lock the whole PostgreSQL database.
+  private def withWholeDbWriteLock[R](block: => R): R = {
+    if (wholeDbWriteLock.tryLock(lockTimeoutSecs, TimeUnit.SECONDS)) {
+      try {
+        block
+      }
+      finally {
+        wholeDbWriteLock.unlock()
+      }
+    }
+    else {
+      throw new RuntimeException(o"""SystemDao couldn't lock wholeDbWriteLock,
+            timed out after $lockTimeoutSecs seconds [TyE0SYSDAOLOCK]""")
+    }
+  }
+
+
+  /** This is for SiteDao's to prevent the SystemDao from write locking the
+    * whole PostgreSQL database, when a SiteDao has write locked a single site.
+    */
+  def withWholeDbReadLock[R](block: => R): R = {
+    if (wholeDbReadLock.tryLock(lockTimeoutSecs, TimeUnit.SECONDS)) {
+      try {
+        block
+      }
+      finally {
+        wholeDbReadLock.unlock()
+      }
+    }
+    else {
+      throw new RuntimeException(o"""SystemDao or a SiteDao couldn't lock
+            wholeDbReadLock, timed out after $lockTimeoutSecs seconds [TyE0SYSDAOLOCK]""")
+    }
+  }
+
 
   private def canonicalHostKey(host: String) =
     // Site id unknown, that's what we're about to lookup.

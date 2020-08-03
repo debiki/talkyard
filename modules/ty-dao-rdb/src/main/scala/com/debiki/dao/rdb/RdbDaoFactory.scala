@@ -18,6 +18,7 @@
 package com.debiki.dao.rdb
 
 import com.debiki.core._
+import com.debiki.core.Prelude.dieIf
 
 
 /** Constructs per site data access objects, and one global.
@@ -30,18 +31,20 @@ class RdbDaoFactory(
   val isTest: Boolean = false) extends DbDaoFactory {
 
 
-  override def newSiteTransaction(siteId: SiteId, readOnly: Boolean, mustBeSerializable: Boolean)
-      : SiteTransaction = {
-    val transaction = new RdbSiteTransaction(siteId, this, getCurrentTime())
-    transaction.createTheOneAndOnlyConnection(readOnly, mustBeSerializable = mustBeSerializable)
-    transaction
+  override def newSiteTransaction(siteId: SiteId, readOnly: Bo, mustBeSerializable: Bo)
+      : SiteTx = {
+    val tx = new RdbSiteTransaction(siteId, this, getCurrentTime())
+    tx.createTheOneAndOnlyConnection(readOnly, mustBeSerializable = mustBeSerializable)
+    tx
   }
 
 
-  override def newSystemTransaction(readOnly: Boolean): SystemTransaction = {
-    val transaction = new RdbSystemTransaction(this, getCurrentTime())
-    transaction.createTheOneAndOnlyConnection(readOnly = readOnly)
-    transaction
+  override def newSystemTransaction(readOnly: Bo, allSitesWriteLocked: Bo): SysTx = {
+    dieIf(readOnly && allSitesWriteLocked, "TyE603MRP23")
+    val tx = new RdbSystemTransaction(
+          this, getCurrentTime(), allSitesWriteLocked = allSitesWriteLocked)
+    tx.createTheOneAndOnlyConnection(readOnly = readOnly)
+    tx
   }
 
 }

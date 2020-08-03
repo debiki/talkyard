@@ -279,20 +279,14 @@ class SiteDao(
 
   @deprecated("now", "use writeTx { (tx, staleStuff) => ... } instead")
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
-    // Serialize writes per site. This avoids all? transaction rollbacks because of
+    // Serialize writes per site. This reduces transaction rollbacks because of
     // serialization errors in Postgres (e.g. if 2 people post 2 comments at the same time).
-    // Later: Send a message to a per-site actor instead which handles all writes for that site,
-    // one at a time. Wait for a reply for at most ... 1? 5? (Right now we might block
-    // forever though, bad bad bad.)
-    SECURITY // this makes a DoS attack possible? By posting comments all the time, one can make
-    // all threads block, waiting for the per-site lock. There's rate limiting stuff though
-    // so doing this takes some effort.
+
     DB_CONFICT // ? there're other ways to create per-site Dao:s too: by starting with a SystemDao.
-    synchronizeOnSiteId(siteId) {
+    withSiteWriteLock(siteId) {
       dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) {
         fn(_)
       }
-      // If serialization error, try once? twice? again?
     }
   }
 
@@ -631,41 +625,53 @@ object SiteDao extends TyLogging {
   private val SoftMaxOldHostnames = 5
   private val WaitUntilAnotherHostnameInterval = 60
 
-  private val locksBySiteId = mutable.HashMap[SiteId, ReentrantLock]()
+  private val locksBySiteId =
+        scala.collection.concurrent.TrieMap[SiteId, ReentrantLock]()
 
-  def siteCacheKey(siteId: SiteId) = MemCacheKey(siteId, "|SiteId")
+  def siteCacheKey(siteId: SiteId): MemCacheKey = MemCacheKey(siteId, "|SiteId")
 
 
-  def synchronizeOnManySiteIds[R](siteIds: Set[SiteId])(block: => R): R = {
+  /*
+  def withManySiteWriteLocks_Real_[R](siteIds: Set[SiteId])(block: => R): R = {
     // Lock in same order, to avoid deadlocks.
     val idsSorted = siteIds.toSeq.sorted
-    syncManyImpl(idsSorted) {
+    lockManyImpl(idsSorted) {
       block
     }
   }
 
 
-  private def syncManyImpl[R](siteIds: Seq[SiteId])(block: => R): R = {
+  private def lockManyImpl[R](siteIds: Seq[SiteId])(block: => R): R = {
     if (siteIds.isEmpty) {
       block
     }
     else {
       val lockNowId = siteIds.head
       val lockLaterIds = siteIds.tail
-      synchronizeOnSiteId(lockNowId) {
-        syncManyImpl(lockLaterIds) {
+      siteWriteLockIdImpl(lockNowId) {
+        lockManyImpl(lockLaterIds) {
           block
         }
       }
     }
+  } */
+
+
+  def withSiteWriteLock[R](siteId: SiteId)(block: => R): R = {
+    // Prevent the SystemDao from getting any whole db write lock.
+    SystemDao.withWholeDbReadLock {
+      // Then lock the desired site only — letting other threads write lock
+      // other unrelated sites in parallel.
+      siteWriteLockIdImpl(siteId)(block)
+    }
   }
 
 
-  def synchronizeOnSiteId[R](siteId: SiteId)(block: => R): R = {
+  private def siteWriteLockIdImpl[R](siteId: SiteId)(block: => R): R = {
     val lock = locksBySiteId.getOrElseUpdate(siteId, new ReentrantLock)
     // Wait for fairly long (some seconds) in case a garbage collection takes long.
     // (Previously we waited forever here — so a few seconds should be fine.)
-    if (lock.tryLock(3L, TimeUnit.SECONDS)) {
+    if (lock.tryLock(5L, TimeUnit.SECONDS)) {
       try {
         block
       }

@@ -172,6 +172,7 @@ package object core {
   val NoPermissionId = 0
   val PermissionAlreadyExistsMinId = 1
 
+  type SysTx = SystemTransaction
   type SiteTx = SiteTransaction  // renaming it, wip
 
   type ConfFileIdpId = St

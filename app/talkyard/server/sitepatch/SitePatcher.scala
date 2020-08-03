@@ -1107,9 +1107,7 @@ case class SitePatcher(globals: debiki.Globals) {
     dieIf(siteData.isTestSiteOkDelete && siteIdToOverwrite.exists(_ > MaxTestSiteId),
       "TyE5032FPKJ63", s"Trying to e2e-test overwrite real site: $anySiteToOverwrite")
 
-    val newSite = SiteDao.synchronizeOnManySiteIds(siteIdToOverwrite) {
-        // Not dangerous: We've locked any site to overwrite, already.
-        globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+    val newSite = globals.systemDao.writeTxLockManySites(siteIdToOverwrite) { sysTx =>
 
       // It's good to delete the old site and create the new one, in the same
       // transaction — so we won't be left without any site at all, if something
@@ -1351,7 +1349,7 @@ case class SitePatcher(globals: debiki.Globals) {
       }
 
       theNewSite
-    }}
+    }
 
     // If we restored a site, then there're already things in the mem cache and Redis cache,
     // for the site we're overwriting when restoring. Remove any such stuff — or Talkyard

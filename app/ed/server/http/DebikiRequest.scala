@@ -22,7 +22,7 @@ import com.debiki.core.PageOrderOffset
 import com.debiki.core.Prelude._
 import controllers.Utils.ValidationImplicits._
 import debiki._
-import debiki.dao.SiteDao
+import debiki.dao.{SiteDao, SystemDao}
 import debiki.EdHttp._
 import ed.server.EdContext
 import ed.server.auth.ForumAuthzContext
@@ -57,6 +57,7 @@ abstract class AuthnReqHeader extends SomethingToRateLimit {
   def user: Option[Participant] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
                         // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
+  def systemDao: SystemDao = globals.systemDao
 
   def theSiteUserId: SiteUserId = SiteUserId(site.id, theUser.id)
 
