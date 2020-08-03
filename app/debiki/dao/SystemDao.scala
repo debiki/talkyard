@@ -26,6 +26,7 @@ import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.{ForgetEndToEndTestEmails, Globals}
 import ed.server.spam.ClearCheckingSpamNowCache
+import java.util.concurrent.TimeUnit
 import play.api.libs.json.JsObject
 import talkyard.server.JsX
 import talkyard.server.TyLogger
@@ -56,12 +57,14 @@ class SystemDao(
   // dao and site specific transactions — they do the database writes under mutex,
   // and so avoids any tx rollbacks.
   def dangerous_readWriteTransaction[R](fn: SystemTransaction => R): R =
-    dbDao2.readWriteSystemTransaction(fn)
+    SystemDao.withWholeDbWriteLock {
+      dbDao2.readWriteSystemTransaction(fn)
+    }
 
   def dangerous_readWriteTransactionReuseOld[R](
         anyOldTx: Option[SystemTransaction])(fn: SystemTransaction => R): R =
     if (anyOldTx.isDefined) fn(anyOldTx.get)
-    else dbDao2.readWriteSystemTransaction(fn)
+    else dangerous_readWriteTransaction(fn)
 
   def applyEvolutions(): Unit = {
     dangerous_readWriteTransaction(_.applyEvolutions())
@@ -204,9 +207,13 @@ class SystemDao(
     val siteIdsToDelete = sitesToDeleteMaybeDupls.map(_.id).toSet
     logger.info(s"Deleting sites: $siteIdsToDelete")  ; AUDIT_LOG
 
-    SiteDao.synchronizeOnManySiteIds(siteIdsToDelete) {
-      // Not dangerous — we locked these site ids (the line above).
-      globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+//  SiteDao.synchronizeOnManySiteIds(siteIdsToDelete) {
+//    // Not dangerous — we locked these site ids (the line above).
+//    globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+
+    globals.systemDao.dangerous_readWriteTransaction { sysTx =>
+      // NOT NEEDED:  Not dangerous — we locked these site ids (the line above).
+      SiteDao.withManySiteWriteLocks(siteIdsToDelete) {
         deleteSites(siteIdsToDelete, sysTx)
       }
     }
@@ -306,8 +313,8 @@ class SystemDao(
     // anySiteId must have been locked already, by the caller. So things
     // always get locked in the same order (avoids deadlocks).
 
-    SiteDao.synchronizeOnManySiteIds(anySiteId.toSet) {
-          globals.systemDao.dangerous_readWriteTransactionReuseOld(anySysTx) { sysTx =>
+    globals.systemDao.dangerous_readWriteTransactionReuseOld(anySysTx) { sysTx =>
+          SiteDao.withManySiteWriteLocks(anySiteId.toSet) {
               try {
       // Keep all this in sync with createFirstSite(). (5DWSR42)
 
@@ -707,6 +714,59 @@ class SystemDao(
 
 
 object SystemDao {
+
+  /** A mutex, to avoid PostgreSQL serialization errors.
+    *
+    * The SystemDao write-locks it, when writing to the database,
+    * because it writes to "anywhere", often many sites at once.
+    *
+    * Whilst SiteDao:s only read-locks it — they restrict their writes
+    * to specific sites only, and it's ok if many SiteDao:s have write transactions
+    * open at the same time, to different sites.
+    */
+  private val wholeDbLock = new java.util.concurrent.locks.ReentrantReadWriteLock()
+
+  private val wholeDbWriteLock = wholeDbLock.writeLock()
+  private val wholeDbReadLock = wholeDbLock.readLock()
+
+  // Wait for some seconds — maybe there's a JVM garbage collection pause.
+  private val lockTimeoutSecs = 5L
+
+  // This is for the SystemDao to write lock the whole PostgreSQL database.
+  private def withWholeDbWriteLock[R](block: => R): R = {
+    if (wholeDbWriteLock.tryLock(lockTimeoutSecs, TimeUnit.SECONDS)) {
+      try {
+        block
+      }
+      finally {
+        wholeDbWriteLock.unlock()
+      }
+    }
+    else {
+      throw new RuntimeException(o"""SystemDao couldn't lock wholeDbWriteLock,
+            timed out after $lockTimeoutSecs seconds [TyE0SYSDAOLOCK]""")
+    }
+  }
+
+
+  /** This is for SiteDao's to prevent the SystemDao from write locking the
+    * whole PostgreSQL database, when a SiteDao has write locked a single site.
+    */
+  def withWholeDbReadLock[R](block: => R): R = {
+    if (wholeDbReadLock.tryLock(lockTimeoutSecs, TimeUnit.SECONDS)) {
+      try {
+        block
+      }
+      finally {
+        wholeDbReadLock.unlock()
+      }
+    }
+    else {
+      throw new RuntimeException(o"""SystemDao or a SiteDao ouldn't lock
+            wholeDbReadLock, timed out after $lockTimeoutSecs seconds [TyE0SYSDAOLOCK]""")
+    }
+  }
+
 
   private def canonicalHostKey(host: String) =
     // Site id unknown, that's what we're about to lookup.
