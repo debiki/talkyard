@@ -105,8 +105,8 @@ class RdbSiteTransaction(var siteId: SiteId, val daoFactory: RdbDaoFactory, val 
   // COULD move to new superclass?
   def createTheOneAndOnlyConnection(readOnly: Boolean, mustBeSerializable: Boolean) {
     require(_theOneAndOnlyConnection.isEmpty)
-    _theOneAndOnlyConnection = Some(db.getConnection(
-      readOnly = readOnly, mustBeSerializable = mustBeSerializable))
+    _theOneAndOnlyConnection = Some(
+          db.getConnection(readOnly = readOnly, mustBeSerializable = mustBeSerializable))
   }
 
   // COULD move to new superclass?
