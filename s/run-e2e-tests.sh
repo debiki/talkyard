@@ -280,7 +280,7 @@ function runAllE2eTests {
 
   $r s/wdio --only votes-and-best-first $args
 
-  $r s/wdio --only editor-onebox $args
+  $r s/wdio --only embed-images-mp4-youtube  $args
   $r s/wdio --only view-edit-history.2browsers $args
   $r s/wdio --only upload-images-and-files $args
 

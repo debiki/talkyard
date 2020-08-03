@@ -11,6 +11,7 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
+import { logMessage } from '../utils/log-and-die';
 
 // s/wdio target/e2e/wdio.2chrome.conf.js  --only embedded-comments-create-site-import-disqus.2browsers   --da
 
@@ -444,6 +445,13 @@ ${htmlToPaste}
     `);
   }
 
+  it(`... removes any old Talkyard patch file`, () => {
+    if (fs.existsSync(talkyardPatchFilePath)) {
+      logMessage(`Renaming: ${talkyardPatchFilePath}  to:  ...old-test`)
+      fs.renameSync(talkyardPatchFilePath, talkyardPatchFilePath + '.old-test');
+    }
+    assert.ok(!fs.existsSync(talkyardPatchFilePath));
+  });
 
   it(`... and converts to Talkyard format: ${talkyardPatchFilePath}`, () => {
     convertDisqusFileToTalkyardFile(disqusXmlDumpFilePath, talkyardPatchFilePath);
@@ -456,6 +464,9 @@ ${htmlToPaste}
           `--writeTo=${dst}`);
   }
 
+  it(`... a Talkyard patch json file appears: ${talkyardPatchFilePath}`, () => {
+    assert.ok(fs.existsSync(talkyardPatchFilePath));
+  });
 
   it("... and posts to the Talkyard server", () => {
     postCommentsToTalkyard(talkyardPatchFilePath);
