@@ -40,6 +40,10 @@ export function addTestExtraMillis(extraMs: number) {
   testExtraMillis += extraMs;
 }
 
+export function getNowMins(): WhenMins {
+  return Math.round(getNowMs() / 1000 / 60);
+}
+
 export function getNowMs(): WhenMs {
   if (!startTimeMs)
     return Date.now();

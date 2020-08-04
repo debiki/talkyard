@@ -1699,8 +1699,9 @@ object BrowserIdData {
   *
   * Not 100% accurate. [BADSTATS]
   */
-case class UserStats(
+case class UserStats(   // RENAME? to ParticipantDynData? PpDynData? PpLive? PpFreqFields? Meaning, frequently changed fields, not just stats
   userId: UserId,
+  snoozeUntil: Option[When] = None,
   // SHOULD update based on browser activity
   // Change to Option? If user upserted via API but has never actually visited the forum?
   // And change firstSeenAtOr0 to Option[When] too? (5032957635)
@@ -1769,6 +1770,10 @@ case class UserStats(
     require(numLikesGiven >= 0, "EdE4GKWL015")
   }
 
+
+  def isSnoozing(now: When): Boolean = {
+    snoozeUntil.exists(_.millis > now.millis)
+  }
 
   def firstSeenAtNot0: When =
     if (firstSeenAtOr0.millis > 0) firstSeenAtOr0

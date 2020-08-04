@@ -139,6 +139,9 @@ function lazyDialogMaker() {
       dropdownDialog = ReactDOM.render(componentFactory, utils.makeMountNode());
     }
   }
+
+  Maybe instead use Portal?  E.g.:  [use_portal]
+    https://codesandbox.io/s/7kxj9p9qm0?from-embed=&file=/src/Dialog/index.js
 }  */
 
 
@@ -172,6 +175,8 @@ const CreateGroupDialog = React.createFactory<{}>(function() {
     };
     Server.createGroup(newGroupNoId, (newGroupWithId: Group) => {
       onCreatedCallback[0](newGroupWithId);
+      // But how does the dialog ever get closed? There's no
+      // setOnCreatedCallback(null) here?
     });
   }
 

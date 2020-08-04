@@ -398,6 +398,17 @@ html.es-watchbar-open
   font-size: 15px;
   color: hsl(0, 100%, 40%);
 
+$snoozeIconSize = 28px;
+
+.s_SnzI
+  display: inline-block;
+  height: $snoozeIconSize;
+
+.s_MMB_Snz .s_SnzI
+  margin: 0 4px 0 8px;
+  position: relative;
+  top: 1px;
+
 .esMyMenu
   padding-right: 6px;
   position: relative;
@@ -418,8 +429,22 @@ html.es-watchbar-open
 .esMyMenu_adminHelp
   max-width: 200px;
 
-.s_MM_NotfsBs
+.DW .s_MM_NotfsBs
   margin-bottom: 3px !important;
+  a
+    padding: 11px;
+    &:first-child
+      margin-left: 9px;  // 11px + 9px = 20px  [dropdown_a_padding]
+
+.s_MM_SnzB
+  padding-left: $snoozeIconSize + 2px !important;
+  position: relative;
+
+  .s_SnzI
+    margin: 0 3px 0 0;
+    position: absolute;
+    left: 0;
+    top: 6px;
 
 .esTopbar
   position: relative;

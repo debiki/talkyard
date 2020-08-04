@@ -669,6 +669,9 @@ object JsX {
   def JsWhenMsOrNull(value: Option[When]): JsValue =
     value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
 
+  def JsWhenMinsOrNull(value: Option[When]): JsValue =
+    value.map(when => JsNumber(when.unixMinutes)).getOrElse(JsNull)
+
   def JsDateMsOrNull(value: Option[ju.Date]): JsValue =
     value.map(JsDateMs).getOrElse(JsNull)
 

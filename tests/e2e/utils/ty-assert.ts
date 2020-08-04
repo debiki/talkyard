@@ -17,6 +17,10 @@ const tyAssert: any = {   // : any = works around:
               // to be declared with an explicit type annotation.
   ...assert,
 
+  that: (test, message: string, sth?) => {
+    tyAssert.ok(test, message, sth);
+  },
+
   ok: (test, message: string, sth?) => {
     const wholeMessage = message + (sth ? toPrettyString(sth) : '');
     assert.ok(test, wholeMessage);

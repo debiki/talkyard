@@ -464,6 +464,16 @@ export function member_isBuiltIn(member: Member): boolean {
 //----------------------------------
 
 
+// Returns 0 if not snoozing or time's up.
+//
+export function pp_snoozeLeftMs(me: Myself): number {
+  if (!me.snoozeUntilMins)
+    return 0;
+  const msLeft = me.snoozeUntilMins * 60 * 1000 - getNowMs();
+  return msLeft > 0 ? msLeft : 0;
+}
+
+
 export function user_isSuspended(user: UserInclDetails, nowMs: WhenMs): boolean {
   return user.suspendedTillEpoch && ((user.suspendedTillEpoch * 1000) > nowMs);
 }

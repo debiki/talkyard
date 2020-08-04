@@ -149,6 +149,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
       insert into user_stats3 (
         site_id,
         user_id,
+        snooze_notfs_until,
         last_seen_at,
         last_posted_at,
         last_emailed_at,
@@ -177,8 +178,11 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
         num_likes_received,
         num_solutions_provided,
         tour_tips_seen)
-      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       on conflict (site_id, user_id) do update set
+        snooze_notfs_until =
+            excluded.snooze_notfs_until,
         last_seen_at =
             greatest(user_stats3.last_seen_at, excluded.last_seen_at),
         last_posted_at =
@@ -224,6 +228,7 @@ trait PostsReadStatsSiteDaoMixin extends SiteTransaction { // RENAME to ReadStat
     val values = List(
       siteId.asAnyRef,
       userStats.userId.asAnyRef,
+      userStats.snoozeUntil.orNullTimestamp,
       userStats.lastSeenAt.asTimestamp,
       userStats.lastPostedAt.orNullTimestamp,
       userStats.lastEmailedAt.orNullTimestamp,

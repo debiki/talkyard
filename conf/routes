@@ -111,6 +111,7 @@ POST  /-/mark-tour-tips-seen    controllers.UserController.markTourTipsSeen
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-all-notfs-as-seen controllers.UserController.markAllNotfsAsSeen
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
+POST  /-/snooze-notfs           controllers.UserController.snoozeNotifications
 POST  /-/save-content-notf-pref controllers.UserController.saveContentNotfPref
 GET   /-/load-groups            controllers.UserController.loadGroups()
 POST  /-/create-group           controllers.UserController.createGroup()
@@ -280,6 +281,7 @@ POST  /-/v0/upsert-simple        talkyard.server.sitepatch.SitePatchController.u
 POST  /-/v0/upsert-patch         talkyard.server.sitepatch.SitePatchController.upsertPatchJson
 
 
+GET  /-/view-time               controllers.DebugTestController.viewTime
 POST /-/play-time               controllers.DebugTestController.playTime
 POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
 GET  /-/metrics                 controllers.DebugTestController.showMetrics

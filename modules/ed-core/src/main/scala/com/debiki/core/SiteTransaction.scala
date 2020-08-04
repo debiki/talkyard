@@ -211,6 +211,14 @@ trait SiteTransaction {
         readFromIp: String): Unit
 
 
+  def loadParticipantAndStats(ppId: UserId): (Option[Participant], Option[UserStats]) = {
+    val pp = loadParticipant(ppId) getOrElse {
+      return (None, None)
+    }
+    val anyStats = loadUserStats(ppId)
+    (Some(pp), anyStats)
+  }
+
   def loadUserStats(userId: UserId): Option[UserStats]
   def loadAllUserStats(): immutable.Seq[UserStats]
   def upsertUserStats(userStats: UserStats): Unit

@@ -430,6 +430,8 @@ interface Myself extends OwnPageNotfPrefs {
   thereAreMoreUnseenNotfs: boolean;
   notifications: Notification[];
 
+  snoozeUntilMins?: WhenMins | false;
+
   watchbarTopics?: WatchbarTopics;
   watchbar: Watchbar;
 

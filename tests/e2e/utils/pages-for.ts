@@ -71,6 +71,11 @@ function makeTimeoutMs(suggestedTimeoutMs?: number): number {
 
 type ElemRect = { x: number, y: number, width: number, height: number };
 
+interface SnoozeTime {
+  hours?: number;
+  minutes?: number;
+  toWhen?: 'TomorrowMorning9am';
+};
 
 function isBlank(x: string): boolean {
   return _.isEmpty(x) || !x.trim();
@@ -1417,8 +1422,11 @@ export class TyE2eTestBrowser {
       }
     }
 
-    refreshUntilGone(what: string) {
+    refreshUntilGone(what: string, opts: { waitForMyDataAdded?: boolean } = {}) {
       while (true) {
+        if (opts.waitForMyDataAdded) {
+          this.waitForMyDataAdded();
+        }
         let resultsByBrowser = this.isVisible(what);
         let isVisibleValues = allBrowserValues(resultsByBrowser);
         let goneEverywhere = !_.some(isVisibleValues);
@@ -2652,6 +2660,34 @@ export class TyE2eTestBrowser {
           this.topbar.openMyMenu();
           this.waitAndClick(selector);
           this.waitForNewUrl();
+        },
+
+        _snoozeIcon: '.s_MMB_Snz .s_SnzI',
+
+        snoozeNotfs: (ps: SnoozeTime = {}) => {
+          tyAssert.not(this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
+          this.waitAndClick('.s_MM_SnzB');
+          if (ps.toWhen === 'TomorrowMorning9am') {
+            this.waitAndClickFirst('.s_SnzD_9amBs .btn');
+          }
+          this.waitAndClick('.e_SnzB');
+          this.topbar.closeMyMenuIfOpen();
+          this.waitForVisible(this.topbar.myMenu._snoozeIcon);
+
+          if (ps.hours && !ps.minutes) {
+            this.assertTextMatches('.s_MMB_Snz', `${ps.hours}h`);
+          }
+          if (!ps.hours && ps.minutes) {
+            this.assertTextMatches('.s_MMB_Snz', `${ps.minutes}m`);
+          }
+        },
+
+        unsnooze: () => {
+          tyAssert.that(this.isVisible(this.topbar.myMenu._snoozeIcon));  // ttt
+          this.waitAndClick('.s_MM_SnzB');
+          this.waitAndClick('.e_UnSnzB');
+          this.topbar.closeMyMenuIfOpen();
+          this.waitForGone(this.topbar.myMenu._snoozeIcon);
         },
 
         dismNotfsBtnClass: '.e_DismNotfs',
@@ -7204,6 +7240,16 @@ export class TyE2eTestBrowser {
       loginWithPasswordViaMetabar: (ps: NameAndPassword) => {
         this.metabar.clickLogin();
         this.loginDialog.loginWithPasswordInPopup(ps);
+      },
+
+      snoozeNotifications: (ps: SnoozeTime = {}) => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.snoozeNotfs(ps);
+      },
+
+      unsnoozeNotifications: () => {
+        this.topbar.openMyMenu();
+        this.topbar.myMenu.unsnooze();
       },
 
       closeSidebars: () => {

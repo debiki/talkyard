@@ -472,6 +472,7 @@ object RdbUtil {
   }
 
   val UserStatsSelectListItems: String = i"""
+    |snooze_notfs_until,
     |last_seen_at,
     |last_posted_at,
     |last_emailed_at,
@@ -505,6 +506,7 @@ object RdbUtil {
   def getUserStats(rs: js.ResultSet): UserStats = {
     UserStats(
       userId = rs.getInt("user_id"),
+      snoozeUntil = getOptWhen(rs, "snooze_notfs_until"),
       lastSeenAt = getWhen(rs, "last_seen_at"),
       lastPostedAt = getOptWhen(rs, "last_posted_at"),
       lastEmailedAt = getOptWhen(rs, "last_emailed_at"),

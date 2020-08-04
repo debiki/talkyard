@@ -79,13 +79,19 @@ export const MyMenuContent = createFactory({
 
     // ------- Personal notf icons
 
+    const SnoozeBtn = () =>
+      LinkUnstyled({ onClick: () => pagedialogs.openSnoozeDialog(me), className: 's_MM_SnzB' },
+          r.img({ className: 's_SnzI', src: '/-/media/sysuicons/bell_snooze.svg' }),
+          pp_snoozeLeftMs(me) ? "Stop snoozing" : "Snooze");  // I18N
+
     const notfsDivider = me.notifications.length ? MenuItemDivider() : null;
     const showMarkAsReadButton = me.numTalkToOthersNotfs + me.numTalkToMeNotfs >= 1;
-    const viewAllNotfsOrClear = !me.notifications.length ? null :
+    const viewAllNotfsOrClear =
         MenuItemsMany({ className: 's_MM_NotfsBs' },
           LinkUnstyled({ to: linkToUsersNotfs(me.username) }, t.mm.MoreNotfs),
-          !showMarkAsReadButton ? null :
-            LinkUnstyled({ onClick: this.markNotfsRead, className: 'e_DismNotfs' }, t.mm.DismNotfs));
+          showMarkAsReadButton &&
+              LinkUnstyled({ onClick: this.markNotfsRead, className: 'e_DismNotfs' }, t.mm.DismNotfs),
+          SnoozeBtn());
     // Nice to have a View All button at the bottom of the notifications list too, if it's long,
     // especially on mobile so won't need to scroll up.
     const extraViewAllNotfsOrClear = me.notifications.length <= 10 ? null :

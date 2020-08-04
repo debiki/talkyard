@@ -32,7 +32,7 @@ import javax.inject.Inject
 import org.slf4j.Marker
 import play.api.libs.json._
 import play.{api => p}
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents, Result}
 import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -235,14 +235,49 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
+  def viewTime: Action[Unit] = GetAction { _ =>
+    makeTimeResponse()
+  }
+
+
   /** Fast-forwards the server's current time, for End-to-End tests.
     */
-  def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) { request =>
+  def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) {
+          request =>
     throwForbiddenIf(!globals.mayFastForwardTime,
         "EdE5AKWYQ1", "To fast-forward time, in Prod mode, you need a wizard's wand")
-    val seconds = (request.body \ "seconds").as[Int]
-    globals.testFastForwardTimeMillis(seconds * 1000)
-    Ok
+    val anySeconds = (request.body \ "seconds").asOpt[Int]
+    anySeconds foreach { seconds =>
+      globals.testFastForwardTimeMillis(seconds * 1000)
+    }
+    makeTimeResponse()
+  }
+
+  def makeTimeResponse(): Result = {
+    def showTime(millis: Long): String = i"""
+        |now millis:  $millis
+        |now seconds: ${millis / 1000}
+        |now minutes: ${millis / 1000 / 60}
+        |now iso:     ${toIso8601T(millis)}
+        |now iso day: ${toIso8601Day(millis)}
+        |"""
+
+    val tyNowMs = globals.now().millis
+    val realNowMs = new java.util.Date().getTime
+    val diffMs = tyNowMs - realNowMs
+    val diffMsDbl = diffMs.toDouble
+    Ok("Ty:" +
+          showTime(tyNowMs) +
+        "\nReal:" +
+          showTime(realNowMs) + i"""
+        |
+        |Difference Ty - Real:
+        |millis: $diffMs
+        |seconds: ${diffMs / 1000}
+        |minutes: ${diffMsDbl / 1000 / 60}
+        |hours: ${diffMsDbl / 1000 / 3600}
+        |days: ${diffMsDbl / 1000 / 3600 / 24}
+        |""") as TEXT
   }
 
 

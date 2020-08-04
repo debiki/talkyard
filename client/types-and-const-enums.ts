@@ -47,7 +47,8 @@ type EmailId = String;
 type AuditLogEntryId = number;
 type TagLabel = string;
 type ApiSecretNr = number;
-type WhenMs = number;
+type WhenMs = number;   // Unix time: milliseconds since 1970, needs 8 bytes
+type WhenMins = number; // Unix time: minutes since 1970, needs just 4 bytes
 type ExtId = string;
 type ExtImpId = ExtId; // RENAME to ExtId
 

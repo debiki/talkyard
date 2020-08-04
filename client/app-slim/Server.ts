@@ -1388,6 +1388,11 @@ export function markNotificationAsSeen(notfId: number, onDone?: () => void, onEr
 }
 
 
+export function snoozeNotfs(untilMins: number | false, onDone?: () => void) {
+  postJsonSuccess('/-/snooze-notfs', onDone, { untilMins });
+}
+
+
 /*
 export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: PageNotfLevel) {
   postJsonSuccess('/-/set-tag-notf-level', () => {

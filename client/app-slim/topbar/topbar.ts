@@ -232,13 +232,32 @@ export const TopBar = createComponent({
       }
     }
 
-    let myAvatar = !me.isLoggedIn ? null :
+    const myAvatar = !me.isLoggedIn ? null :
         avatar.Avatar({ user: me, origins: store, ignoreClicks: true });
+
+    let snoozeLeftMs = pp_snoozeLeftMs(me);
+    if (snoozeLeftMs > 50 * 60 * 1000) {
+      // Almost an hour — then, exact time isn't important. Add 9 mins, so X hours
+      // won't seem to change to X - 1 hours after a millisecond.
+      snoozeLeftMs += 9 * 60 * 1000;
+    }
+
+    // Show num days, if within a month. Otherwse, exact date.
+    const snoozeUntilTxt = snoozeLeftMs && (
+        snoozeLeftMs < 1000 * 3600 * 24 * 31
+            ? debiki.prettyLetterDuration(snoozeLeftMs)
+            : prettyMonthDayYear(getNowMs() + snoozeLeftMs, true));
+
+    const snoozeIcon = !!snoozeUntilTxt &&
+        r.span({ className: 's_MMB_Snz' },
+          r.img({ alt: "Snoozing", className: 's_SnzI',   // I18N
+              src: '/-/media/sysuicons/bell_snooze.svg' }),
+          snoozeUntilTxt);
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
       utils.ModalDropdownButton({
           // RENAME 'esMyMenu' to 's_MMB' (my-menu button).
-          className: 'esAvtrName esMyMenu' + isImpersonatingClass,  // CLEAN_UP RENAME btn class to ...B
+          className: 'esAvtrName esMyMenu s_MMB' + isImpersonatingClass,  // CLEAN_UP RENAME to s_MMB
           dialogClassName: 's_MM',
           ref: 'myMenuButton',
           showCloseButton: true,
@@ -248,18 +267,20 @@ export const TopBar = createComponent({
           // they want MyMenu to stay open so they can continue Command-Click
           // opening notifications.
           stayOpenOnCmdShiftClick: true,
-          title: r.span({},
+          title: rFragment({},
             urgentReviewTasks,
             otherReviewTasks,
             impersonatingStrangerInfo,
             myAvatar,
+            // RENAME classes below to: s_MMB_Un (username) and s_MMB_You
             // If screen wide:
             r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
             // If screen narrow:
             r.span({ className: 'esAvtrName_you' }, t.You),
             talkToMeNotfs,
             talkToOthersNotfs,
-            otherNotfs) },
+            otherNotfs,
+            snoozeIcon) },
         MyMenuContentComponent({ store }));
 
 

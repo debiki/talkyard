@@ -734,7 +734,7 @@ class JsonMaker(dao: SiteDao) {
       } getOrElse (
           Nil, JsEmptyObj, JsEmptyObj, JsArray())
 
-    val (threatLevel, tourTipsSeenJson, uiPrefsOwnFirstJsonSeq) = requester match {
+    val (threatLevel, tourTipsSeenJson, uiPrefsOwnFirstJsonSeq, anyStats) = requester match {
       case member: User =>
         COULD_OPTIMIZE // load stats together with other user fields, in the same db request
         val (requesterInclDetails, anyStats) = tx.loadTheUserInclDetailsAndStatsById(requester.id)
@@ -749,11 +749,12 @@ class JsonMaker(dao: SiteDao) {
         val uiPrefsOwnFirstJsonSeq: Seq[JsValue] = ownUiPrefsJson +: groupsUiPrefsJson
         (member.threatLevel,
           tourTipsSeenJson,
-          uiPrefsOwnFirstJsonSeq)
+          uiPrefsOwnFirstJsonSeq,
+          anyStats)
       case _ =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
         // correct threat level. However, for now, since this is for the browser only, this'll do:
-        (ThreatLevel.HopefullySafe, Nil, Nil)
+        (ThreatLevel.HopefullySafe, Nil, Nil, None)
     }
 
     val anyReadingProgress = anyPageId.flatMap(tx.loadReadProgress(requester.id, _))
@@ -805,6 +806,8 @@ class JsonMaker(dao: SiteDao) {
       "numOtherNotfs" -> notfsAndCounts.numOther,
       "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
       "notifications" -> notfsAndCounts.notfsJson,
+
+      "snoozeUntilMins" -> JsWhenMinsOrNull(anyStats.flatMap(_.snoozeUntil)),
 
       "watchbar" -> watchbar.toJsonWithTitles,
 

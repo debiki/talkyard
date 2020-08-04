@@ -870,6 +870,16 @@ export function updateOnlineUsersLists(numOnlineStrangers: number, onlineUsers: 
 }
 
 
+export function snoozeUntilMins(whenMins: WhenMins | false) {
+  Server.snoozeNotfs(whenMins, () => {
+    const myselfPatch: MyselfPatch = {
+      snoozeUntilMins: whenMins,
+    }
+    patchTheStore({ me: myselfPatch });
+  });
+}
+
+
 function markAnyNotificationAsSeen(postNr: number) {
   // The store will tell the server that any notf has been seen.
   ReactDispatcher.handleViewAction({

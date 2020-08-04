@@ -41,6 +41,7 @@ Pp = participant
 P, Pg = page
 Prvw = preview
 Po = post
+Snz = Snooze
 Tb = Topbar   RENAME esTopbarWrap to s_Tb
 Un = username
 FN = full name

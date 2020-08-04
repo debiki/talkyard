@@ -446,12 +446,20 @@ class SiteDao(
       skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
   }
 
-  def markNotificationAsSeen(userId: UserId, notfId: NotificationId) = {
+  def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit = {
     val user = loadTheUserInclDetailsById(userId)
     readWriteTransaction(_.markNotfsAsSeen(userId, Some(notfId),
       skipEmails = user.emailNotfPrefs != EmailNotfPrefs.ReceiveAlways))
   }
 
+  def snoozeNotifications(reqrId: UserId, untilWhen: Option[When]): Unit = {
+    //writeTx { (tx, _) =>
+    readWriteTransaction { tx =>
+      val statsBefore = tx.loadUserStats(reqrId) getOrDie "EdE2FPJR9"
+      val statsAfter = statsBefore.copy(snoozeUntil = untilWhen)
+      tx.upsertUserStats(statsAfter)
+    }
+  }
 
   // ----- API secrets
 

@@ -1115,8 +1115,24 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
         request =>
+    import request.{dao, theRequesterId}
     val notfId = (request.body \ "notfId").as[NotificationId]
-    request.dao.markNotificationAsSeen(request.theUserId, notfId)
+    dao.markNotificationAsSeen(theRequesterId, notfId)
+    Ok
+  }
+
+
+  def snoozeNotifications(): Action[JsValue] =
+          PostJsonAction(RateLimits.ConfigUser, 200) { request =>
+    import request.{dao, theRequesterId}
+    val untilWhen: Option[When] =
+          (request.body \ "untilMins").as[JsValue] match {
+            case JsFalse => None
+            case JsNumber(whenMins) if whenMins >= 0 =>
+              Some(When.fromMinutes(whenMins.toInt))
+            case x => throwBadRequest("TyE46RKTDJ7", s"Bad untilMins: $x")
+          }
+    dao.snoozeNotifications(theRequesterId, untilWhen)
     Ok
   }
 
@@ -1440,64 +1456,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
     else response
   }
-
-
-  /*
-  private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
-    Json.obj(
-      "userId" -> userInfo.info.id,
-      "displayName" -> userInfo.info.anyName,
-      "username" -> JsStringOrNull(userInfo.info.anyUsername),
-      "isAdmin" -> userInfo.info.isAdmin,
-      "isModerator" -> userInfo.info.isModerator,
-      "numPages" -> userInfo.stats.numPages,
-      "numPosts" -> userInfo.stats.numPosts,
-      "numReplies" -> userInfo.stats.numReplies,
-      "numLikesGiven" -> userInfo.stats.numLikesGiven,
-      "numLikesReceived" -> userInfo.stats.numLikesReceived,
-      "numWrongsGiven" -> userInfo.stats.numWrongsGiven,
-      "numWrongsReceived" -> userInfo.stats.numWrongsReceived,
-      "numBurysGiven" -> userInfo.stats.numBurysGiven,
-      "numBurysReceived" -> userInfo.stats.numBurysReceived)
-
-    /* Discourse also includes:
-      "avatar_template": ...
-      "badge_count" : 0,
-      "bio_cooked" : "<p>Hi <strong>everybody</strong>! </p>",
-      "bio_excerpt" : "Hi everybody!",
-      "bio_raw" : "\nHi **everybody**! ",
-      "can_edit" : false,
-      "can_edit_email" : false,
-      "can_edit_name" : false,
-      "can_edit_username" : false,
-      "can_send_private_message_to_user" : true,
-      "created_at" : "2013-02-17T15:09:06.675-05:00",
-       group membership info
-      "featured_user_badge_ids" : [  ],
-      "invited_by" : null,
-      "last_posted_at" : "2014-05-10T02:47:06.860-04:00",
-      "last_seen_at" : "2014-05-10T03:42:16.842-04:00",
-      "profile_background" : "/uploads/default/4870/f95c8f5b0817f799.jpg",
-      "stats" : [ { "action_type" : 4,
-              "count" : 5,
-              "id" : null
-            },
-            { "action_type" : 5,
-              "count" : 217,
-              "id" : null
-            },
-            ... 11 stats
-          ],
-        "title" : "designerator",
-        "trust_level" : 2,
-        "username" : "awesomerobot",
-        "website" : "https://"
-      },
-      "user_badges" : [ ]
-     */
-  }
-  */
-
 
 
   private def aboutMemberPrefsFromJson(json: JsValue): AboutUserPrefs = {
